@@ -1,0 +1,11 @@
+func foo() { }
+func foo(int a) { }
+func foo(int a, int b) { }
+func foo() -> int { return 42; }
+func foo() -> int, bool { return 42, false; }
+func foo() -> int { const answer = 42; return answer; }
+func foo() -> int { var answer = 41; answer++; return answer; }
+func foo() -> int { var answer = 43; answer--; return answer; }
+func foo() -> int { return (0 - -0xC) / 2 * (0o4 + 0b11); }
+var foo = 42;
+const foo = 42;
