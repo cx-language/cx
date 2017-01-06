@@ -1,0 +1,23 @@
+(source-file
+    (func-decl foo () void)
+    (func-decl foo ((int a)) void)
+    (func-decl foo ((int a) (int b)) void)
+    (func-decl foo () int
+        (return-stmt 42))
+    (func-decl foo () (int bool)
+        (return-stmt 42 false))
+    (func-decl foo () int
+        (var-stmt answer 42)
+        (return-stmt answer))
+    (func-decl foo () int
+        (var-stmt answer 41)
+        (inc-stmt answer)
+        (return-stmt answer))
+    (func-decl foo () int
+        (var-stmt answer 43)
+        (dec-stmt answer)
+        (return-stmt answer))
+    (func-decl foo () int
+        (return-stmt ((0 - (-12)) / (2 * (4 + 3)))))
+    (var-decl foo 42)
+    (var-decl foo 42))

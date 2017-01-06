@@ -1,10 +1,20 @@
 %{
     #include <iostream>
     #include <cstdlib>
+    #include <vector>
+    #include "../ast/expr.h"
+    #include "../ast/decl.h"
     #include "parser.hpp"
 
     #define SAVE_STRING yylval.string = strndup(yytext, yyleng)
-    #define SAVE_NUMBER(base) yylval.number = strtoll(yytext, 0, base)
+    void saveNumber(int base) {
+        switch (yytext[1]) {
+            case 'b': yylval.number = strtoll(yytext + 2, 0, base); break;
+            case 'o': yylval.number = strtoll(yytext + 2, 0, base); break;
+            case 'x': yylval.number = strtoll(yytext + 2, 0, base); break;
+            default:  yylval.number = strtoll(yytext,     0, base); break;
+        }
+    }
     #define TOKEN(token) token
 
     #pragma GCC diagnostic ignored "-Wdeprecated-register"
@@ -24,12 +34,12 @@
 
 [ \t\n]+                ; // skip whitespace
 [a-zA-Z_][a-zA-Z_0-9]*  SAVE_STRING; return IDENTIFIER;
-0b[0-1]*                SAVE_NUMBER(2); return NUMBER;
-0o[0-7]*                SAVE_NUMBER(8); return NUMBER;
-0                       SAVE_NUMBER(10); return NUMBER;
-[1-9][0-9]*             SAVE_NUMBER(10); return NUMBER;
-0x[0-9a-f]*             SAVE_NUMBER(16); return NUMBER;
-0x[0-9A-F]*             SAVE_NUMBER(16); return NUMBER;
+0b[0-1]*                saveNumber(2); return NUMBER;
+0o[0-7]*                saveNumber(8); return NUMBER;
+0                       saveNumber(10); return NUMBER;
+[1-9][0-9]*             saveNumber(10); return NUMBER;
+0x[0-9a-f]*             saveNumber(16); return NUMBER;
+0x[0-9A-F]*             saveNumber(16); return NUMBER;
 
 "=="                    return TOKEN(EQ);
 "!="                    return TOKEN(NE);
