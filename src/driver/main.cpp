@@ -3,7 +3,7 @@
 #include <vector>
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
-#include "parser.hpp"
+#include "../parser/parser.hpp"
 
 extern FILE* yyin;
 int yyparse();

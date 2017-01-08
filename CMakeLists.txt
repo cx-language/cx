@@ -9,6 +9,7 @@ find_package(Boost REQUIRED)
 enable_testing()
 
 add_subdirectory(src/ast)
+add_subdirectory(src/driver)
 add_subdirectory(src/parser)
 add_subdirectory(test/parser)
 

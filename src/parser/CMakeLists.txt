@@ -9,6 +9,5 @@ BISON_TARGET(DeltaParser
     ${CMAKE_CURRENT_SOURCE_DIR}/parser.cpp)
 ADD_FLEX_BISON_DEPENDENCY(DeltaLexer DeltaParser)
 
-add_executable(delta main.cpp
-    ${FLEX_DeltaLexer_OUTPUTS} ${BISON_DeltaParser_OUTPUTS})
-target_link_libraries(delta deltaAST)
+add_library(deltaParser ${FLEX_DeltaLexer_OUTPUTS} ${BISON_DeltaParser_OUTPUTS})
+target_link_libraries(deltaParser deltaAST)
