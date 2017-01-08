@@ -8,7 +8,7 @@ path_to_delta=$1
 source_file=$2
 ast_file=$2.ast
 
-actual_ast=$($path_to_delta $source_file)
+actual_ast=$($path_to_delta -print-ast $source_file)
 expected_ast=$(cat $ast_file)
 
 diff <(echo "$actual_ast") <(echo "$expected_ast")
