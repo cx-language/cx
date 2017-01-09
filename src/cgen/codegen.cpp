@@ -49,6 +49,15 @@ void codegen(const BinaryExpr& expr) {
     *out << ")";
 }
 
+void codegen(const CallExpr& expr) {
+    *out << expr.funcName << "(";
+    for (const Expr& arg : expr.args) {
+        codegen(arg);
+        if (&arg != &expr.args.back()) *out << ",";
+    }
+    *out << ")";
+}
+
 void codegen(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:   codegen(expr.getVariableExpr()); break;
@@ -56,6 +65,7 @@ void codegen(const Expr& expr) {
         case ExprKind::BoolLiteralExpr:codegen(expr.getBoolLiteralExpr()); break;
         case ExprKind::PrefixExpr:     codegen(expr.getPrefixExpr()); break;
         case ExprKind::BinaryExpr:     codegen(expr.getBinaryExpr()); break;
+        case ExprKind::CallExpr:       codegen(expr.getCallExpr()); break;
     }
 }
 

@@ -33,6 +33,14 @@ std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
     return out << "(" << *expr.left << " " << expr.op << " " << *expr.right << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
+    return out << "(call " << expr.funcName << " ";
+    for (const Expr& arg : expr.args) {
+        out << arg;
+        if (&arg != &expr.args.back()) out << " ";
+    }
+}
+
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:   return out << expr.getVariableExpr();
@@ -40,6 +48,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::BoolLiteralExpr:return out << expr.getBoolLiteralExpr();
         case ExprKind::PrefixExpr:     return out << expr.getPrefixExpr();
         case ExprKind::BinaryExpr:     return out << expr.getBinaryExpr();
+        case ExprKind::CallExpr:       return out << expr.getCallExpr();
     }
 }
 
@@ -71,20 +80,6 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::IncrementStmt: return out << stmt.getIncrementStmt();
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
     }
-}
-
-std::ostream& operator<<(std::ostream& out, const Type& type) {
-    if (type.isTuple()) {
-        out << "(";
-        for (const Type& memberType : type.getNames()) {
-            out << memberType;
-            if (&memberType != &type.getNames().back()) out << " ";
-        }
-        out << ")";
-    } else {
-        out << type.getName();
-    }
-    return out;
 }
 
 std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {

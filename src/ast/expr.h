@@ -3,10 +3,12 @@
 #include <string>
 #include <memory>
 #include <cassert>
+#include <vector>
 #include <boost/variant.hpp>
+#include <boost/optional.hpp>
+#include "type.h"
 
 class Expr;
-class Type;
 
 enum class ExprKind {
     VariableExpr,
@@ -14,6 +16,7 @@ enum class ExprKind {
     BoolLiteralExpr,
     PrefixExpr,
     BinaryExpr,
+    CallExpr,
 };
 
 struct VariableExpr {
@@ -39,6 +42,11 @@ struct BinaryExpr {
     std::unique_ptr<Expr> right;
 };
 
+struct CallExpr {
+    std::string funcName;
+    std::vector<Expr> args;
+};
+
 class Expr {
 public:
 #define DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(KIND) \
@@ -57,12 +65,15 @@ public:
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BoolLiteralExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(PrefixExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BinaryExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CallExpr)
 #undef DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR
 
     Expr(Expr&& expr) : data(std::move(expr.data)) { }
     ExprKind getKind() const { return static_cast<ExprKind>(data.which()); }
-    Type getType() const;
+    const Type& getType() const { return *type; }
+    void setType(Type t) { type = std::move(t); }
 
 private:
-    boost::variant<VariableExpr, IntLiteralExpr, BoolLiteralExpr, PrefixExpr, BinaryExpr> data;
+    boost::variant<VariableExpr, IntLiteralExpr, BoolLiteralExpr, PrefixExpr, BinaryExpr, CallExpr> data;
+    boost::optional<Type> type;
 };

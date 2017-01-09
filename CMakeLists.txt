@@ -14,6 +14,7 @@ add_subdirectory(src/driver)
 add_subdirectory(src/parser)
 add_subdirectory(src/sema)
 add_subdirectory(test/cgen)
+add_subdirectory(test/misc)
 add_subdirectory(test/parser)
 add_subdirectory(test/sema)
 

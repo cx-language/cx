@@ -1,0 +1,5 @@
+func foo() -> int { return 42; }
+
+func main() {
+    var i = foo();
+}

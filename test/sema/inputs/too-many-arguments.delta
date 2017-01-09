@@ -1,0 +1,2 @@
+func sum(int a, int b) -> int { return a + b; }
+func main() { var foo = sum(1, 2, 3); }

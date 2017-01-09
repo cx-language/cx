@@ -47,3 +47,17 @@ bool operator==(const Type& lhs, const Type& rhs) {
 bool operator!=(const Type& lhs, const Type& rhs) {
     return !(lhs == rhs);
 }
+
+std::ostream& operator<<(std::ostream& out, const Type& type) {
+    if (type.isTuple()) {
+        out << "(";
+        for (const Type& memberType : type.getNames()) {
+            out << memberType;
+            if (&memberType != &type.getNames().back()) out << " ";
+        }
+        out << ")";
+    } else {
+        out << type.getName();
+    }
+    return out;
+}

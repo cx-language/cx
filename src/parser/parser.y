@@ -67,12 +67,14 @@
 %token <string> IDENTIFIER
 %token <number> NUMBER
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
+             call_expression
 %type <declList> declaration_list
 %type <decl> declaration function_definition variable_definition
              immutable_variable_definition mutable_variable_definition
 %type <stmtList> function_body
 %type <stmt> statement return_statement increment_statement decrement_statement
 %type <exprList> return_value_list nonempty_return_value_list
+                 argument_list nonempty_argument_list
 %type <paramDeclList> parameter_list nonempty_parameter_list
 %type <paramDecl> parameter
 %type <type> return_type_specifier return_type_list
@@ -173,7 +175,8 @@ expression:
 |   FALSE { $$ = new Expr(BoolLiteralExpr{false}); }
 |   prefix_expression { $$ = $1; }
 |   binary_expression { $$ = $1; }
-|   parenthesized_expression { $$ = $1; };
+|   parenthesized_expression { $$ = $1; }
+|   call_expression { $$ = $1; };
 
 prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{'+', u($2)}); };
 
@@ -192,5 +195,16 @@ binary_expression:
     expression "/" expression { $$ = new Expr(BinaryExpr{'/', u($1), u($3)}); };
 
 parenthesized_expression: "(" expression ")" { $$ = $2; };
+
+call_expression:
+    IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$1, std::move(*$3)}); };
+
+argument_list:
+    /* empty */ { $$ = new std::vector<Expr>(); }
+|   nonempty_argument_list { $$ = $1; };
+
+nonempty_argument_list:
+    expression { $$ = new std::vector<Expr>(); $$->push_back(std::move(*$1)); }
+|   nonempty_argument_list "," expression { $$ = $1; $$->push_back(std::move(*$3)); };
 
 %%

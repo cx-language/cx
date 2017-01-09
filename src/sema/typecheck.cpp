@@ -2,6 +2,7 @@
 #include <limits>
 #include <unordered_map>
 #include <boost/utility/string_ref.hpp>
+#include <boost/optional.hpp>
 #include "typecheck.h"
 #include "../ast/type.h"
 #include "../ast/expr.h"
@@ -18,7 +19,7 @@ template<typename... Args>
     exit(1);
 }
 
-Type typecheck(Expr& expr);
+const Type& typecheck(Expr& expr);
 
 Type typecheck(VariableExpr& expr) {
     auto it = symbolTable.find(expr.identifier);
@@ -57,14 +58,43 @@ Type typecheck(BinaryExpr& expr) {
     return leftType;
 }
 
-Type typecheck(Expr& expr) {
-    switch (expr.getKind()) {
-        case ExprKind::VariableExpr:   return typecheck(expr.getVariableExpr()); break;
-        case ExprKind::IntLiteralExpr: return typecheck(expr.getIntLiteralExpr()); break;
-        case ExprKind::BoolLiteralExpr:return typecheck(expr.getBoolLiteralExpr()); break;
-        case ExprKind::PrefixExpr:     return typecheck(expr.getPrefixExpr()); break;
-        case ExprKind::BinaryExpr:     return typecheck(expr.getBinaryExpr()); break;
+Type typecheck(CallExpr& expr) {
+    auto it = symbolTable.find(expr.funcName);
+    if (it == symbolTable.end()) {
+        error("unknown function '", expr.funcName, "'");
     }
+    if (it->second.getKind() != TypeKind::FuncType) {
+        error("'", expr.funcName, "' is not a function");
+    }
+    const auto& params = it->second.getFuncType().paramTypes;
+    if (expr.args.size() < params.size()) {
+        error("too few arguments to '", expr.funcName, "', expected ", params.size());
+    }
+    if (expr.args.size() > params.size()) {
+        error("too many arguments to '", expr.funcName, "', expected ", params.size());
+    }
+    for (int i = 0; i < params.size(); ++i) {
+        auto argType = typecheck(expr.args[i]);
+        if (argType != params[i]) {
+            error("invalid argument #", i + 1, " type '", argType, "' to '",
+                expr.funcName, "', expected '", params[i], "'");
+        }
+    }
+    return Type(it->second.getFuncType().returnTypes);
+}
+
+const Type& typecheck(Expr& expr) {
+    boost::optional<Type> type;
+    switch (expr.getKind()) {
+        case ExprKind::VariableExpr:    type = typecheck(expr.getVariableExpr()); break;
+        case ExprKind::IntLiteralExpr:  type = typecheck(expr.getIntLiteralExpr()); break;
+        case ExprKind::BoolLiteralExpr: type = typecheck(expr.getBoolLiteralExpr()); break;
+        case ExprKind::PrefixExpr:      type = typecheck(expr.getPrefixExpr()); break;
+        case ExprKind::BinaryExpr:      type = typecheck(expr.getBinaryExpr()); break;
+        case ExprKind::CallExpr:        type = typecheck(expr.getCallExpr()); break;
+    }
+    expr.setType(std::move(*type));
+    return expr.getType();
 }
 
 void typecheck(ReturnStmt& stmt) {
@@ -103,8 +133,20 @@ void typecheck(ParamDecl& decl) {
     symbolTable.insert({decl.name, Type(decl.type)});
 }
 
+static std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
+    std::vector<Type> paramTypes;
+    paramTypes.reserve(params.size());
+    for (const auto& param : params) paramTypes.emplace_back(param.type);
+    return paramTypes;
+}
+
 void typecheck(FuncDecl& decl) {
-    // TODO: decl.returnType, decl.name
+    if (symbolTable.count(decl.name) > 0) {
+        error("redefinition of '", decl.name, "'");
+    }
+    auto returnTypes = decl.returnType.isTuple()
+        ? decl.returnType.getNames() : std::vector<Type>{Type(decl.returnType.getName())};
+    symbolTable.insert({decl.name, Type(FuncType{returnTypes, mapToTypes(decl.params)})});
     auto symbolTableBackup = symbolTable;
     for (ParamDecl& param : decl.params) typecheck(param);
     for (Stmt& stmt : decl.body) typecheck(stmt);

@@ -1,0 +1,2 @@
+func fooz() -> int { return 42; }
+func main() { var i = foo(); }
