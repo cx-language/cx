@@ -34,3 +34,16 @@ const std::vector<Type>& Type::getNames() const {
     assert(isTuple());
     return boost::get<std::vector<Type>>(data);
 }
+
+bool operator==(const Type& lhs, const Type& rhs) {
+    if (lhs.isTuple() != rhs.isTuple()) return false;
+    if (lhs.isTuple()) {
+        return lhs.getNames() == rhs.getNames();
+    } else {
+        return lhs.getName() == rhs.getName();
+    }
+}
+
+bool operator!=(const Type& lhs, const Type& rhs) {
+    return !(lhs == rhs);
+}

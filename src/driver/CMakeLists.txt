@@ -1,5 +1,5 @@
 file(GLOB SOURCES *.h *.cpp)
 add_executable(delta ${SOURCES})
-target_link_libraries(delta deltaParser deltaCGen)
+target_link_libraries(delta deltaParser deltaSema deltaCGen)
 target_include_directories(delta SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 target_link_libraries(delta ${Boost_LIBRARIES})

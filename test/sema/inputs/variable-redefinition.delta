@@ -1,0 +1,4 @@
+func main() {
+    var foo = 1;
+    var foo = 2;
+}

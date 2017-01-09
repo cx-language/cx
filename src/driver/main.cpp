@@ -6,6 +6,7 @@
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
 #include "../parser/parser.hpp"
+#include "../sema/typecheck.h"
 #include "../cgen/codegen.h"
 
 extern FILE* yyin;
@@ -41,6 +42,8 @@ int main(int argc, char** argv) {
 
         int result = yyparse();
         if (result != 0) return result;
+
+        typecheck(globalAST);
 
         if (printAST) {
             std::cout << globalAST;

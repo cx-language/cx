@@ -20,4 +20,4 @@
     (func-decl foo () int
         (return-stmt ((0 - (-12)) / (2 * (4 + 3)))))
     (var-decl foo 42)
-    (var-decl foo 42))
+    (var-decl bar 42))

@@ -12,8 +12,10 @@ add_subdirectory(src/ast)
 add_subdirectory(src/cgen)
 add_subdirectory(src/driver)
 add_subdirectory(src/parser)
+add_subdirectory(src/sema)
 add_subdirectory(test/cgen)
 add_subdirectory(test/parser)
+add_subdirectory(test/sema)
 
 # Add 'check' target with --output-on-failure.
 if (CMAKE_CONFIGURATION_TYPES)

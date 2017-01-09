@@ -22,3 +22,6 @@ public:
 private:
     boost::variant<std::string, std::vector<Type>> data;
 };
+
+bool operator==(const Type&, const Type&);
+bool operator!=(const Type&, const Type&);
