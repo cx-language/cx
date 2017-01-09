@@ -6,6 +6,7 @@
 #include <boost/variant.hpp>
 
 class Expr;
+class Type;
 
 enum class ExprKind {
     VariableExpr,
@@ -54,6 +55,7 @@ public:
 
     Expr(Expr&& expr) : data(std::move(expr.data)) { }
     ExprKind getKind() const { return static_cast<ExprKind>(data.which()); }
+    Type getType() const;
 
 private:
     boost::variant<VariableExpr, IntLiteralExpr, PrefixExpr, BinaryExpr> data;

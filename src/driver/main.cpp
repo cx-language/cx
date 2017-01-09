@@ -6,6 +6,7 @@
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
 #include "../parser/parser.hpp"
+#include "../cgen/codegen.h"
 
 extern FILE* yyin;
 int yyparse();
@@ -26,7 +27,9 @@ int main(int argc, char** argv) {
     }
 
     std::vector<boost::string_ref> args(argv + 1, argv + argc);
+    const bool syntaxOnly = checkFlag("-fsyntax-only", args);
     const bool printAST = checkFlag("-print-ast", args);
+    const bool outputToStdout = checkFlag("-o=stdout", args);
 
     for (boost::string_ref filePath : args) {
         yyin = fopen(filePath.data(), "rb");
@@ -41,6 +44,8 @@ int main(int argc, char** argv) {
 
         if (printAST) {
             std::cout << globalAST;
+        } else if (!syntaxOnly) {
+            cgen::compile(globalAST, outputToStdout ? "stdout" : (std::string(filePath) + ".c"));
         }
         globalAST.clear();
     }
