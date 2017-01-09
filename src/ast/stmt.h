@@ -7,7 +7,7 @@
 
 class VarDecl;
 
-enum class StmtType {
+enum class StmtKind {
     ReturnStmt,
     VariableStmt,
     IncrementStmt,
@@ -32,25 +32,25 @@ struct DecrementStmt {
 
 class Stmt {
 public:
-#define DEFINE_STMT_TYPE_GETTER_AND_CONSTRUCTOR(type, member) \
-    Stmt(type&& value) : data(std::move(value)) { } \
+#define DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(KIND) \
+    Stmt(KIND&& value) : data(std::move(value)) { } \
     \
-    type& get##type() { \
-        assert(getType() == StmtType::type); \
-        return boost::get<type>(data); \
+    KIND& get##KIND() { \
+        assert(getKind() == StmtKind::KIND); \
+        return boost::get<KIND>(data); \
     } \
-    const type& get##type() const { \
-        assert(getType() == StmtType::type); \
-        return boost::get<type>(data); \
+    const KIND& get##KIND() const { \
+        assert(getKind() == StmtKind::KIND); \
+        return boost::get<KIND>(data); \
     }
-    DEFINE_STMT_TYPE_GETTER_AND_CONSTRUCTOR(ReturnStmt, returnStmt)
-    DEFINE_STMT_TYPE_GETTER_AND_CONSTRUCTOR(VariableStmt, variableStmt)
-    DEFINE_STMT_TYPE_GETTER_AND_CONSTRUCTOR(IncrementStmt, incrementStmt)
-    DEFINE_STMT_TYPE_GETTER_AND_CONSTRUCTOR(DecrementStmt, decrementStmt)
-#undef DEFINE_STMT_TYPE_GETTER_AND_CONSTRUCTOR
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(ReturnStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(VariableStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IncrementStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DecrementStmt)
+#undef DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR
 
     Stmt(Stmt&& stmt) : data(std::move(stmt.data)) { }
-    StmtType getType() const { return static_cast<StmtType>(data.which()); }
+    StmtKind getKind() const { return static_cast<StmtKind>(data.which()); }
 
 private:
     boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt> data;

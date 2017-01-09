@@ -30,11 +30,11 @@ std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
-    switch (expr.getType()) {
-        case ExprType::VariableExpr:   return out << expr.getVariableExpr();
-        case ExprType::IntLiteralExpr: return out << expr.getIntLiteralExpr();
-        case ExprType::PrefixExpr:     return out << expr.getPrefixExpr();
-        case ExprType::BinaryExpr:     return out << expr.getBinaryExpr();
+    switch (expr.getKind()) {
+        case ExprKind::VariableExpr:   return out << expr.getVariableExpr();
+        case ExprKind::IntLiteralExpr: return out << expr.getIntLiteralExpr();
+        case ExprKind::PrefixExpr:     return out << expr.getPrefixExpr();
+        case ExprKind::BinaryExpr:     return out << expr.getBinaryExpr();
     }
 }
 
@@ -60,11 +60,11 @@ std::ostream& operator<<(std::ostream& out, const DecrementStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
-    switch (stmt.getType()) {
-        case StmtType::ReturnStmt:    return out << stmt.getReturnStmt();
-        case StmtType::VariableStmt:  return out << stmt.getVariableStmt();
-        case StmtType::IncrementStmt: return out << stmt.getIncrementStmt();
-        case StmtType::DecrementStmt: return out << stmt.getDecrementStmt();
+    switch (stmt.getKind()) {
+        case StmtKind::ReturnStmt:    return out << stmt.getReturnStmt();
+        case StmtKind::VariableStmt:  return out << stmt.getVariableStmt();
+        case StmtKind::IncrementStmt: return out << stmt.getIncrementStmt();
+        case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
     }
 }
 
@@ -106,10 +106,10 @@ std::ostream& operator<<(std::ostream& out, const VarDecl& decl) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Decl& decl) {
-    switch (decl.getType()) {
-        case DeclType::ParamDecl: return out << decl.getParamDecl();
-        case DeclType::FuncDecl:  return out << decl.getFuncDecl();
-        case DeclType::VarDecl:   return out << decl.getVarDecl();
+    switch (decl.getKind()) {
+        case DeclKind::ParamDecl: return out << decl.getParamDecl();
+        case DeclKind::FuncDecl:  return out << decl.getFuncDecl();
+        case DeclKind::VarDecl:   return out << decl.getVarDecl();
     }
 }
 

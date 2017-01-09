@@ -7,7 +7,7 @@
 
 class Expr;
 
-enum class ExprType {
+enum class ExprKind {
     VariableExpr,
     IntLiteralExpr,
     PrefixExpr,
@@ -35,25 +35,25 @@ struct BinaryExpr {
 
 class Expr {
 public:
-#define DEFINE_EXPR_TYPE_GETTER_AND_CONSTRUCTOR(type, member) \
-    Expr(type&& value) : data(std::move(value)) { } \
+#define DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(KIND) \
+    Expr(KIND&& value) : data(std::move(value)) { } \
     \
-    type& get##type() { \
-        assert(getType() == ExprType::type); \
-        return boost::get<type>(data); \
+    KIND& get##KIND() { \
+        assert(getKind() == ExprKind::KIND); \
+        return boost::get<KIND>(data); \
     } \
-    const type& get##type() const { \
-        assert(getType() == ExprType::type); \
-        return boost::get<type>(data); \
+    const KIND& get##KIND() const { \
+        assert(getKind() == ExprKind::KIND); \
+        return boost::get<KIND>(data); \
     }
-    DEFINE_EXPR_TYPE_GETTER_AND_CONSTRUCTOR(VariableExpr, variableExpr)
-    DEFINE_EXPR_TYPE_GETTER_AND_CONSTRUCTOR(IntLiteralExpr, intLiteralExpr)
-    DEFINE_EXPR_TYPE_GETTER_AND_CONSTRUCTOR(PrefixExpr, prefixExpr)
-    DEFINE_EXPR_TYPE_GETTER_AND_CONSTRUCTOR(BinaryExpr, binaryExpr)
-#undef DEFINE_EXPR_TYPE_GETTER_AND_CONSTRUCTOR
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(VariableExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(IntLiteralExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(PrefixExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BinaryExpr)
+#undef DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR
 
     Expr(Expr&& expr) : data(std::move(expr.data)) { }
-    ExprType getType() const { return static_cast<ExprType>(data.which()); }
+    ExprKind getKind() const { return static_cast<ExprKind>(data.which()); }
 
 private:
     boost::variant<VariableExpr, IntLiteralExpr, PrefixExpr, BinaryExpr> data;

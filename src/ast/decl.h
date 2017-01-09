@@ -9,7 +9,7 @@
 #include "stmt.h"
 #include "type.h"
 
-enum class DeclType {
+enum class DeclKind {
     ParamDecl,
     FuncDecl,
     VarDecl,
@@ -34,24 +34,24 @@ struct VarDecl {
 
 class Decl {
 public:
-#define DEFINE_DECL_TYPE_GETTER_AND_CONSTRUCTOR(type) \
-    Decl(type&& value) : data(std::move(value)) { } \
+#define DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(KIND) \
+    Decl(KIND&& value) : data(std::move(value)) { } \
     \
-    type& get##type() { \
-        assert(getType() == DeclType::type); \
-        return boost::get<type>(data); \
+    KIND& get##KIND() { \
+        assert(getKind() == DeclKind::KIND); \
+        return boost::get<KIND>(data); \
     } \
-    const type& get##type() const { \
-        assert(getType() == DeclType::type); \
-        return boost::get<type>(data); \
+    const KIND& get##KIND() const { \
+        assert(getKind() == DeclKind::KIND); \
+        return boost::get<KIND>(data); \
     }
-    DEFINE_DECL_TYPE_GETTER_AND_CONSTRUCTOR(ParamDecl)
-    DEFINE_DECL_TYPE_GETTER_AND_CONSTRUCTOR(FuncDecl)
-    DEFINE_DECL_TYPE_GETTER_AND_CONSTRUCTOR(VarDecl)
-#undef DEFINE_DECL_TYPE_GETTER_AND_CONSTRUCTOR
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(ParamDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FuncDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(VarDecl)
+#undef DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR
 
     Decl(Decl&& decl) : data(std::move(decl.data)) { }
-    DeclType getType() const { return static_cast<DeclType>(data.which()); }
+    DeclKind getKind() const { return static_cast<DeclKind>(data.which()); }
 
 private:
     boost::variant<ParamDecl, FuncDecl, VarDecl> data;
