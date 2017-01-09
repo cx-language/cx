@@ -11,6 +11,14 @@ extern FILE* yyin;
 int yyparse();
 extern std::vector<Decl> globalAST;
 
+/// If `args` contains `flag`, removes it and returns true, otherwise returns false.
+bool checkFlag(boost::string_ref flag, std::vector<boost::string_ref>& args) {
+    const auto it = std::find(args.begin(), args.end(), flag);
+    const bool contains = it != args.end();
+    if (contains) args.erase(it);
+    return contains;
+}
+
 int main(int argc, char** argv) {
     if (argc == 1) {
         std::cout << "error: no input files" << std::endl;
@@ -18,10 +26,7 @@ int main(int argc, char** argv) {
     }
 
     std::vector<boost::string_ref> args(argv + 1, argv + argc);
-
-    const auto it = std::find(args.begin(), args.end(), "-print-ast");
-    const bool printAST = it != args.end();
-    if (printAST) args.erase(it);
+    const bool printAST = checkFlag("-print-ast", args);
 
     for (boost::string_ref filePath : args) {
         yyin = fopen(filePath.data(), "rb");
