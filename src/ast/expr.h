@@ -11,6 +11,7 @@ class Type;
 enum class ExprKind {
     VariableExpr,
     IntLiteralExpr,
+    BoolLiteralExpr,
     PrefixExpr,
     BinaryExpr,
 };
@@ -21,6 +22,10 @@ struct VariableExpr {
 
 struct IntLiteralExpr {
     int64_t value;
+};
+
+struct BoolLiteralExpr {
+    bool value;
 };
 
 struct PrefixExpr {
@@ -49,6 +54,7 @@ public:
     }
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(VariableExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(IntLiteralExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BoolLiteralExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(PrefixExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BinaryExpr)
 #undef DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR
@@ -58,5 +64,5 @@ public:
     Type getType() const;
 
 private:
-    boost::variant<VariableExpr, IntLiteralExpr, PrefixExpr, BinaryExpr> data;
+    boost::variant<VariableExpr, IntLiteralExpr, BoolLiteralExpr, PrefixExpr, BinaryExpr> data;
 };

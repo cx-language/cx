@@ -27,9 +27,11 @@
 "const"                 return TOKEN(CONST);
 "else"                  return TOKEN(ELSE);
 "extern"                return TOKEN(EXTERN);
+"false"                 return TOKEN(FALSE);
 "func"                  return TOKEN(FUNC);
 "if"                    return TOKEN(IF);
 "return"                return TOKEN(RETURN);
+"true"                  return TOKEN(TRUE);
 "var"                   return TOKEN(VAR);
 
 [ \t\n]+                ; // skip whitespace

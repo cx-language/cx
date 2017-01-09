@@ -25,9 +25,11 @@
 %token CONST    "const"
 %token ELSE     "else"
 %token EXTERN   "extern"
+%token FALSE    "false"
 %token FUNC     "func"
 %token IF       "if"
 %token RETURN   "return"
+%token TRUE     "true"
 %token VAR      "var"
 
 // Operators
@@ -167,6 +169,8 @@ decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{std::move
 expression:
     IDENTIFIER { $$ = new Expr(VariableExpr{$1}); }
 |   NUMBER { $$ = new Expr(IntLiteralExpr{$1}); }
+|   TRUE { $$ = new Expr(BoolLiteralExpr{true}); }
+|   FALSE { $$ = new Expr(BoolLiteralExpr{false}); }
 |   prefix_expression { $$ = $1; }
 |   binary_expression { $$ = $1; }
 |   parenthesized_expression { $$ = $1; };
