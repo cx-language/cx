@@ -114,13 +114,18 @@ void codegen(const ParamDecl& decl) {
     *out << decl.type << " " << decl.name;
 }
 
-void codegen(const FuncDecl& decl) {
+void codegenPrototype(const FuncDecl& decl) {
     *out << toString(decl.returnType) << " " << decl.name << "(";
     for (const ParamDecl& param : decl.params) {
         codegen(param);
         if (&param != &decl.params.back()) *out << ",";
     }
-    *out << "){";
+    *out << ")";
+}
+
+void codegen(const FuncDecl& decl) {
+    codegenPrototype(decl);
+    *out << "{";
     auto currentFuncBackup = currentFunc;
     currentFunc = &decl;
     for (const Stmt& stmt : decl.body) {
@@ -153,6 +158,15 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
     }
 
     *out << "#include <stdbool.h>\n";
+
+    // Output function declarations first.
+    for (const Decl& decl : decls) {
+        if (decl.getKind() == DeclKind::FuncDecl) {
+            codegenPrototype(decl.getFuncDecl());
+            *out << ";";
+        }
+    }
+
     for (const Decl& decl : decls) {
         codegen(decl);
     }

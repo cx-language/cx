@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
 
     if (!printAST && !compileOnly) {
         // Compile and link C output.
-        std::string command = "cc";
+        std::string command = "cc -Werror";
         for (boost::string_ref filePath : args) {
             command.append(" ");
             command.append(filePath.data(), filePath.size());
