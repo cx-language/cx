@@ -10,32 +10,40 @@ enum class TypeKind {
     BasicType,
     TupleType,
     FuncType,
+    PtrType,
 };
 
 class Type;
+
+struct BasicType {
+    std::string name;
+};
+
+struct TupleType {
+    std::vector<Type> subtypes;
+};
 
 struct FuncType {
     std::vector<Type> returnTypes;
     std::vector<Type> paramTypes;
 };
 
+struct PtrType {
+    std::unique_ptr<Type> pointeeType;
+    PtrType(std::unique_ptr<Type> type) : pointeeType(std::move(type)) { }
+    PtrType(const PtrType&);
+    PtrType& operator=(const PtrType&);
+};
+
 class Type {
 public:
-    /// Creates a non-tuple type with the given type name.
-    explicit Type(std::string name);
-
-    /// Creates a tuple type containing the given types.
-    explicit Type(std::vector<Type> names);
-
-    void appendType(std::string name);
-    bool isTuple() const;
-    std::string& getName();
-    const std::string& getName() const;
-    std::vector<Type>& getNames();
-    const std::vector<Type>& getNames() const;
-
 #define DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(KIND) \
-    Type(KIND&& value) : data(std::move(value)) { } \
+    Type(KIND&& value) : data(std::move(value)) { \
+        if (TypeKind::KIND == TypeKind::TupleType && getTupleType().subtypes.size() == 1) {\
+            auto type = std::move(getTupleType().subtypes[0]); \
+            *this = std::move(type); \
+        } \
+    } \
     \
     KIND& get##KIND() { \
         assert(getKind() == TypeKind::KIND); \
@@ -45,13 +53,17 @@ public:
         assert(getKind() == TypeKind::KIND); \
         return boost::get<KIND>(data); \
     }
+    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(BasicType)
+    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(TupleType)
     DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(FuncType)
+    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(PtrType)
 #undef DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR
 
+    void appendType(Type type);
     TypeKind getKind() const { return static_cast<TypeKind>(data.which()); }
 
 private:
-    boost::variant<std::string, std::vector<Type>, FuncType> data;
+    boost::variant<BasicType, TupleType, FuncType, PtrType> data;
 };
 
 bool operator==(const Type&, const Type&);

@@ -30,20 +30,24 @@ Type typecheck(VariableExpr& expr) {
     return it->second;
 }
 
+Type typecheck(StrLiteralExpr& expr) {
+    return Type(PtrType{std::unique_ptr<Type>(new Type(BasicType{"char"}))});
+}
+
 Type typecheck(IntLiteralExpr& expr) {
     if (expr.value >= std::numeric_limits<int32_t>::min()
     &&  expr.value <= std::numeric_limits<int32_t>::max())
-        return Type("int");
+        return Type(BasicType{"int"});
     else
     if (expr.value >= std::numeric_limits<int64_t>::min()
     &&  expr.value <= std::numeric_limits<int64_t>::max())
-        return Type("int64");
+        return Type(BasicType{"int64"});
     else
         error("integer literal is too large");
 }
 
 Type typecheck(BoolLiteralExpr&) {
-    return Type("bool");
+    return Type(BasicType{"bool"});
 }
 
 Type typecheck(PrefixExpr& expr) {
@@ -81,13 +85,14 @@ Type typecheck(CallExpr& expr) {
                 expr.funcName, "', expected '", params[i], "'");
         }
     }
-    return Type(it->second.getFuncType().returnTypes);
+    return Type(TupleType{it->second.getFuncType().returnTypes});
 }
 
 const Type& typecheck(Expr& expr) {
     boost::optional<Type> type;
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:    type = typecheck(expr.getVariableExpr()); break;
+        case ExprKind::StrLiteralExpr:  type = typecheck(expr.getStrLiteralExpr()); break;
         case ExprKind::IntLiteralExpr:  type = typecheck(expr.getIntLiteralExpr()); break;
         case ExprKind::BoolLiteralExpr: type = typecheck(expr.getBoolLiteralExpr()); break;
         case ExprKind::PrefixExpr:      type = typecheck(expr.getPrefixExpr()); break;
@@ -103,7 +108,8 @@ void typecheck(ReturnStmt& stmt) {
     for (Expr& expr : stmt.values) {
         returnValueTypes.push_back(typecheck(expr));
     }
-    Type returnType = returnValueTypes.size() > 1 ? Type(returnValueTypes) : returnValueTypes[0];
+    Type returnType = returnValueTypes.size() > 1
+        ? Type(TupleType{std::move(returnValueTypes)}) : std::move(returnValueTypes[0]);
     if (returnType != *funcReturnType) {
         error("mismatching return type '", returnType, "', expected '", *funcReturnType, "'");
     }
@@ -153,8 +159,8 @@ void addToSymbolTable(const FuncDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
     }
-    auto returnTypes = decl.returnType.isTuple()
-        ? decl.returnType.getNames() : std::vector<Type>{Type(decl.returnType.getName())};
+    auto returnTypes = decl.returnType.getKind() == TypeKind::TupleType
+        ? decl.returnType.getTupleType().subtypes : std::vector<Type>{decl.returnType};
     symbolTable.insert({decl.name, Type(FuncType{returnTypes, mapToTypes(decl.params)})});
 }
 
@@ -165,7 +171,7 @@ void typecheck(FuncDecl& decl) {
     funcReturnType = &decl.returnType;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
     funcReturnType = nullptr;
-    symbolTable = symbolTableBackup;
+    symbolTable = std::move(symbolTableBackup);
 }
 
 void typecheck(VarDecl& decl) {

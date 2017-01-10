@@ -8,16 +8,22 @@ static std::ostream* out = nullptr;
 /// Points to the function whose body is currently being generated.
 static const FuncDecl* currentFunc = nullptr;
 
-std::string toString(const Type& type) {
-    if (type.isTuple()) {
-        std::string string = "struct{";
-        int index = 0;
-        for (const Type& subtype : type.getNames()) {
-            string += toString(subtype) + " _" + std::to_string(index++) + ";";
+std::string toC(const Type& type) {
+    switch (type.getKind()) {
+        case TypeKind::BasicType:
+            return type.getBasicType().name;
+        case TypeKind::TupleType: {
+            std::string string = "struct{";
+            int index = 0;
+            for (const Type& subtype : type.getTupleType().subtypes) {
+                string += toC(subtype) + " _" + std::to_string(index++) + ";";
+            }
+            return string + "}";
         }
-        return string + "}";
-    } else {
-        return type.getName();
+        case TypeKind::FuncType:
+            abort(); // TODO
+        case TypeKind::PtrType:
+            return toC(*type.getPtrType().pointeeType) + "*";
     }
 }
 
@@ -25,6 +31,10 @@ void codegen(const Expr& expr);
 
 void codegen(const VariableExpr& expr) {
     *out << expr.identifier;
+}
+
+void codegen(const StrLiteralExpr& expr) {
+    *out << '"' << expr.value << '"';
 }
 
 void codegen(const IntLiteralExpr& expr) {
@@ -61,6 +71,7 @@ void codegen(const CallExpr& expr) {
 void codegen(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:   codegen(expr.getVariableExpr()); break;
+        case ExprKind::StrLiteralExpr: codegen(expr.getStrLiteralExpr()); break;
         case ExprKind::IntLiteralExpr: codegen(expr.getIntLiteralExpr()); break;
         case ExprKind::BoolLiteralExpr:codegen(expr.getBoolLiteralExpr()); break;
         case ExprKind::PrefixExpr:     codegen(expr.getPrefixExpr()); break;
@@ -115,7 +126,7 @@ void codegen(const ParamDecl& decl) {
 }
 
 void codegenPrototype(const FuncDecl& decl) {
-    *out << toString(decl.returnType) << " " << decl.name << "(";
+    *out << toC(decl.returnType) << " " << decl.name << "(";
     for (const ParamDecl& param : decl.params) {
         codegen(param);
         if (&param != &decl.params.back()) *out << ",";
@@ -137,7 +148,7 @@ void codegen(const FuncDecl& decl) {
 }
 
 void codegen(const VarDecl& decl) {
-    *out << toString(decl.initializer.getType()) << " " << decl.name << "=";
+    *out << toC(decl.initializer.getType()) << " " << decl.name << "=";
     codegen(decl.initializer);
     *out << ";";
 }

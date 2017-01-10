@@ -12,6 +12,7 @@ class Expr;
 
 enum class ExprKind {
     VariableExpr,
+    StrLiteralExpr,
     IntLiteralExpr,
     BoolLiteralExpr,
     PrefixExpr,
@@ -21,6 +22,10 @@ enum class ExprKind {
 
 struct VariableExpr {
     std::string identifier;
+};
+
+struct StrLiteralExpr {
+    std::string value;
 };
 
 struct IntLiteralExpr {
@@ -61,6 +66,7 @@ public:
         return boost::get<KIND>(data); \
     }
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(VariableExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(StrLiteralExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(IntLiteralExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BoolLiteralExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(PrefixExpr)
@@ -74,6 +80,7 @@ public:
     void setType(Type t) { type = std::move(t); }
 
 private:
-    boost::variant<VariableExpr, IntLiteralExpr, BoolLiteralExpr, PrefixExpr, BinaryExpr, CallExpr> data;
+    boost::variant<VariableExpr, StrLiteralExpr, IntLiteralExpr, BoolLiteralExpr,
+        PrefixExpr, BinaryExpr, CallExpr> data;
     boost::optional<Type> type;
 };

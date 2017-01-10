@@ -51,8 +51,8 @@ compile_and_run_and_check_output() {
 
     if [[ $actual_output != $expected_output ]]; then
         echo "FAILED:"
-        echo "expected output: $expected_output"
-        echo "actual output: $actual_output"
+        echo "expected output: \"$expected_output\""
+        echo "actual output:   \"$actual_output\""
         exit 1
     fi
 }
@@ -61,3 +61,4 @@ compile function-call.delta
 compile function-call-before-declaration.delta
 compile_and_run_and_check_exit_status exit-status.delta 42
 compile_and_run_and_check_output extern-c-function.delta "foo"
+compile_and_run_and_check_output print-string-literal.delta "Hello, World!"

@@ -1,0 +1,8 @@
+func getMessage() -> char* { return "Hello, World!"; }
+
+func main() -> int {
+    puts(getMessage());
+    return 0;
+}
+
+extern func puts(char* str) -> int;

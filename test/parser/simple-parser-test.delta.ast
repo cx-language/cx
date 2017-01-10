@@ -4,7 +4,7 @@
     (func-decl foo3 ((int a) (int b)) void)
     (func-decl foo4 () int
         (return-stmt 42))
-    (func-decl foo5 () (int bool)
+    (func-decl foo5 () (int, bool)
         (return-stmt 42 false))
     (func-decl foo6 () int
         (var-stmt answer 42)

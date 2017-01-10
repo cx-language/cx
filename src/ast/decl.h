@@ -17,7 +17,7 @@ enum class DeclKind {
 };
 
 struct ParamDecl {
-    std::string type;
+    Type type;
     std::string name;
 };
 

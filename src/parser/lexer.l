@@ -7,6 +7,7 @@
     #include "parser.hpp"
 
     #define SAVE_STRING yylval.string = strndup(yytext, yyleng)
+    #define SAVE_STRING_LITERAL yylval.string = strndup(yytext + 1, yyleng - 2)
     void saveNumber(int base) {
         switch (yytext[1]) {
             case 'b': yylval.number = strtoll(yytext + 2, 0, base); break;
@@ -36,6 +37,7 @@
 
 [ \t\n]+                ; // skip whitespace
 [a-zA-Z_][a-zA-Z_0-9]*  SAVE_STRING; return IDENTIFIER;
+\"[^\"]*\"              SAVE_STRING_LITERAL; return STRING_LITERAL;
 0b[0-1]*                saveNumber(2); return NUMBER;
 0o[0-7]*                saveNumber(8); return NUMBER;
 0                       saveNumber(10); return NUMBER;

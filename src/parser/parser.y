@@ -65,7 +65,7 @@
 %token SEMICOLON";"
 %token RARROW   "->"
 
-%token <string> IDENTIFIER
+%token <string> IDENTIFIER STRING_LITERAL
 %token <number> NUMBER
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
              call_expression
@@ -80,7 +80,7 @@
                  argument_list nonempty_argument_list
 %type <paramDeclList> parameter_list nonempty_parameter_list
 %type <paramDecl> parameter
-%type <type> return_type_specifier return_type_list
+%type <type> type return_type_specifier return_type_list
 
 %union {
     char* string;
@@ -124,12 +124,12 @@ extern_function_declaration:
     "extern" function_prototype ";" { $$ = $2; };
 
 return_type_specifier:
-    /* empty */ { $$ = new Type("void"); }
+    /* empty */ { $$ = new Type(BasicType{"void"}); }
 |   "->" return_type_list { $$ = $2; };
 
 return_type_list:
-    IDENTIFIER { $$ = new Type($1); }
-|   return_type_list "," IDENTIFIER { $$ = $1; $$->appendType($3); };
+    type { $$ = $1; }
+|   return_type_list "," type { $$ = $1; $$->appendType(std::move(*$3)); };
 
 parameter_list:
     /* empty */ { $$ = new std::vector<ParamDecl>(); }
@@ -139,11 +139,15 @@ nonempty_parameter_list:
     parameter { $$ = new std::vector<ParamDecl>(); $$->push_back(std::move(*$1)); }
 |   nonempty_parameter_list "," parameter { $$ = $1; $$->push_back(std::move(*$3)); };
 
-parameter: IDENTIFIER IDENTIFIER { $$ = new ParamDecl{$1, $2}; };
+parameter: type IDENTIFIER { $$ = new ParamDecl{std::move(*$1), $2}; };
 
 function_body:
     /* empty */ { $$ = new std::vector<Stmt>(); }
 |   function_body statement { $$ = $1; $1->push_back(std::move(*$2)); };
+
+type:
+    IDENTIFIER { $$ = new Type(BasicType{$1}); }
+|   type "*" { $$ = new Type(PtrType{u($1)}); };
 
 // Statements //////////////////////////////////////////////////////////////////
 
@@ -186,6 +190,7 @@ call_statement:
 
 expression:
     IDENTIFIER { $$ = new Expr(VariableExpr{$1}); }
+|   STRING_LITERAL { $$ = new Expr(StrLiteralExpr{$1}); }
 |   NUMBER { $$ = new Expr(IntLiteralExpr{$1}); }
 |   TRUE { $$ = new Expr(BoolLiteralExpr{true}); }
 |   FALSE { $$ = new Expr(BoolLiteralExpr{false}); }
