@@ -77,7 +77,7 @@
              typed_variable_definition
 %type <stmtList> else_body statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
-             call_statement if_statement while_statement
+             call_statement if_statement while_statement assignment_statement
 %type <exprList> return_value_list nonempty_return_value_list
                  argument_list nonempty_argument_list
 %type <paramDeclList> parameter_list nonempty_parameter_list
@@ -155,6 +155,7 @@ type:
 
 statement:
     variable_definition { $$ = new Stmt(VariableStmt{&$1->getVarDecl()}); }
+|   assignment_statement{ $$ = $1; }
 |   return_statement    { $$ = $1; }
 |   increment_statement { $$ = $1; }
 |   decrement_statement { $$ = $1; }
@@ -175,6 +176,9 @@ mutable_variable_definition:
 
 typed_variable_definition:
     type    IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{std::move(*$1), $2, std::move(*$4)}); };
+
+assignment_statement:
+    IDENTIFIER "=" expression ";" { $$ = new Stmt(AssignStmt{{$1}, std::move(*$3)}); };
 
 return_statement:
     "return" return_value_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2)}); };

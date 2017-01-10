@@ -16,6 +16,7 @@ enum class StmtKind {
     CallStmt,
     IfStmt,
     WhileStmt,
+    AssignStmt,
 };
 
 struct ReturnStmt {
@@ -49,6 +50,11 @@ struct WhileStmt {
     std::vector<Stmt> body;
 };
 
+struct AssignStmt {
+    VariableExpr lhs;
+    Expr rhs;
+};
+
 class Stmt {
 public:
 #define DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(KIND) \
@@ -69,6 +75,7 @@ public:
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(CallStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IfStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(WhileStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(AssignStmt)
 #undef DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR
 
     Stmt(Stmt&& stmt) : data(std::move(stmt.data)) { }
@@ -76,5 +83,5 @@ public:
 
 private:
     boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt,
-        CallStmt, IfStmt, WhileStmt> data;
+        CallStmt, IfStmt, WhileStmt, AssignStmt> data;
 };

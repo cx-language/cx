@@ -149,6 +149,14 @@ void typecheck(WhileStmt& stmt) {
     for (Stmt& stmt : stmt.body) typecheck(stmt);
 }
 
+void typecheck(AssignStmt& stmt) {
+    const Type& lhsType = typecheck(stmt.lhs);
+    const Type& rhsType = typecheck(stmt.rhs);
+    if (rhsType != lhsType) {
+        error("cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+    }
+}
+
 void typecheck(Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    typecheck(stmt.getReturnStmt()); break;
@@ -158,6 +166,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::CallStmt:      typecheck(stmt.getCallStmt().expr); break;
         case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
         case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;
+        case StmtKind::AssignStmt:    typecheck(stmt.getAssignStmt()); break;
     }
 }
 
