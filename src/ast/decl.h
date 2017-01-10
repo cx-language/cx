@@ -30,10 +30,17 @@ struct FuncDecl {
 };
 
 struct VarDecl {
-    boost::optional<Type> type; /// none if declared with 'var' or 'const'.
+    /// The explicitly declared type, or a bool indicating whether the inferred
+    /// type should be mutable.
+    boost::variant<Type, bool> type;
     std::string name;
     Expr initializer;
-    bool isMutable;
+
+    boost::optional<const Type&> getDeclaredType() const {
+        if (type.which() == 0) return boost::get<Type>(type);
+        else return boost::none;
+    }
+    bool isMutable() const { return boost::get<bool>(type); }
 };
 
 class Decl {

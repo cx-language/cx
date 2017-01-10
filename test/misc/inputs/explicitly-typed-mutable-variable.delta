@@ -1,0 +1,5 @@
+func main() -> int {
+    mutable int m = 4;
+    m--;
+    return m;
+}

@@ -31,6 +31,7 @@
 "false"                 return TOKEN(FALSE);
 "func"                  return TOKEN(FUNC);
 "if"                    return TOKEN(IF);
+"mutable"               return TOKEN(MUTABLE);
 "return"                return TOKEN(RETURN);
 "true"                  return TOKEN(TRUE);
 "var"                   return TOKEN(VAR);

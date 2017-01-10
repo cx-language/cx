@@ -1,0 +1,4 @@
+func main() {
+    int m = 4;
+    m--;
+}

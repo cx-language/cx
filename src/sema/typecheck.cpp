@@ -217,11 +217,16 @@ void typecheck(VarDecl& decl) {
         error("redefinition of '", decl.name, "'");
     }
     auto initType = typecheck(decl.initializer);
-    if (decl.type && *decl.type != initType) {
-        error("cannot initialize variable of type '", *decl.type, "' with '", initType, "'");
+    if (auto declaredType = decl.getDeclaredType()) {
+        if (*declaredType != initType) {
+            error("cannot initialize variable of type '", *declaredType,
+                "' with '", initType, "'");
+        }
+        symbolTable.insert({decl.name, *declaredType});
+    } else {
+        initType.setMutable(decl.isMutable());
+        symbolTable.insert({decl.name, std::move(initType)});
     }
-    initType.setMutable(decl.isMutable);
-    symbolTable.insert({decl.name, std::move(initType)});
 }
 
 void typecheck(Decl& decl) {

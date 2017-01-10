@@ -29,6 +29,7 @@
 %token FALSE    "false"
 %token FUNC     "func"
 %token IF       "if"
+%token MUTABLE  "mutable"
 %token RETURN   "return"
 %token TRUE     "true"
 %token VAR      "var"
@@ -149,6 +150,7 @@ statement_list:
 
 type:
     IDENTIFIER { $$ = new Type(BasicType{$1}); }
+|   "mutable" type { $$ = $2; $$->setMutable(true); }
 |   type "*" { $$ = new Type(PtrType{u($1)}); };
 
 // Statements //////////////////////////////////////////////////////////////////
@@ -169,10 +171,10 @@ variable_definition:
 |   typed_variable_definition     { $$ = $1; };
 
 immutable_variable_definition:
-    "const" IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{{}, $2, std::move(*$4)}); };
+    "const" IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{false, $2, std::move(*$4)}); };
 
 mutable_variable_definition:
-    "var"   IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{{}, $2, std::move(*$4), true}); };
+    "var"   IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{true, $2, std::move(*$4)}); };
 
 typed_variable_definition:
     type    IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{std::move(*$1), $2, std::move(*$4)}); };

@@ -34,3 +34,4 @@ check_error explicitly-typed-variable.delta "cannot initialize variable of type 
 check_error assignment-of-invalid-type.delta "cannot assign 'int' to variable of type 'bool'"
 check_error assignment-to-immutable.delta "cannot assign to immutable variable 'i'"
 check_error increment-of-immutable.delta "cannot increment immutable value"
+check_error explicitly-typed-immutable-variable.delta "cannot decrement immutable value"
