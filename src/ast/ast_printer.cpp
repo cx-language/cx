@@ -12,6 +12,7 @@ static std::ostream& br(std::ostream& out) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Expr& expr);
+std::ostream& operator<<(std::ostream& out, const Stmt& stmt);
 
 std::ostream& operator<<(std::ostream& out, const VariableExpr& expr) {
     return out << expr.identifier;
@@ -78,6 +79,28 @@ std::ostream& operator<<(std::ostream& out, const DecrementStmt& stmt) {
     return out << br << "(dec-stmt " << stmt.operand << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
+    out << br << "(if-stmt " << stmt.condition << " ";
+    indentLevel++;
+    out << br << "(then";
+    indentLevel++;
+    for (const Stmt& substmt : stmt.thenBody) {
+        out << br << substmt;
+    }
+    out << ")";
+    indentLevel--;
+    out << br << "(else";
+    indentLevel++;
+    for (const Stmt& substmt : stmt.elseBody) {
+        if (substmt.getKind() != StmtKind::IfStmt) out << br;
+        out << substmt;
+    }
+    indentLevel--;
+    out << ")";
+    indentLevel--;
+    return out << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    return out << stmt.getReturnStmt();
@@ -85,6 +108,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::IncrementStmt: return out << stmt.getIncrementStmt();
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
         case StmtKind::CallStmt:      return out << stmt.getCallStmt().expr;
+        case StmtKind::IfStmt:        return out << stmt.getIfStmt();
     }
 }
 

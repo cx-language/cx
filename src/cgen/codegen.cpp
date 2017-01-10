@@ -28,6 +28,7 @@ std::string toC(const Type& type) {
 }
 
 void codegen(const Expr& expr);
+void codegen(const Stmt& stmt);
 
 void codegen(const VariableExpr& expr) {
     *out << expr.identifier;
@@ -111,6 +112,23 @@ void codegen(const DecrementStmt& stmt) {
     *out << "--;";
 }
 
+void codegen(const IfStmt& stmt) {
+    *out << "if(";
+    codegen(stmt.condition);
+    *out << "){";
+    for (const Stmt& stmt : stmt.thenBody) {
+        codegen(stmt);
+    }
+    *out << "}";
+    if (!stmt.elseBody.empty()) {
+        *out << "else{";
+        for (const Stmt& stmt : stmt.elseBody) {
+            codegen(stmt);
+        }
+        *out << "}";
+    }
+}
+
 void codegen(const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    codegen(stmt.getReturnStmt()); break;
@@ -118,6 +136,7 @@ void codegen(const Stmt& stmt) {
         case StmtKind::IncrementStmt: codegen(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: codegen(stmt.getDecrementStmt()); break;
         case StmtKind::CallStmt:      codegen(stmt.getCallStmt().expr); *out << ";"; break;
+        case StmtKind::IfStmt:        codegen(stmt.getIfStmt()); break;
     }
 }
 

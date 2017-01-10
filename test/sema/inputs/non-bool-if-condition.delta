@@ -1,0 +1,7 @@
+func main() {
+    if (0) {
+        puts("a");
+    } else {
+        puts("b");
+    }
+}

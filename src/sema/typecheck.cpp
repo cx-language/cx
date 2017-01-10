@@ -21,6 +21,7 @@ template<typename... Args>
 }
 
 const Type& typecheck(Expr& expr);
+void typecheck(Stmt& stmt);
 
 Type typecheck(VariableExpr& expr) {
     auto it = symbolTable.find(expr.identifier);
@@ -131,6 +132,15 @@ void typecheck(DecrementStmt& stmt) {
     // TODO: check that operand supports decrement operation.
 }
 
+void typecheck(IfStmt& stmt) {
+    const Type& conditionType = typecheck(stmt.condition);
+    if (conditionType != Type(BasicType{"bool"})) {
+        error("'if' condition must have type 'bool'");
+    }
+    for (Stmt& stmt : stmt.thenBody) typecheck(stmt);
+    for (Stmt& stmt : stmt.elseBody) typecheck(stmt);
+}
+
 void typecheck(Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    typecheck(stmt.getReturnStmt()); break;
@@ -138,6 +148,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::IncrementStmt: typecheck(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: typecheck(stmt.getDecrementStmt()); break;
         case StmtKind::CallStmt:      typecheck(stmt.getCallStmt().expr); break;
+        case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
     }
 }
 

@@ -73,9 +73,9 @@
 %type <decl> declaration function_definition function_prototype
              extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
-%type <stmtList> function_body
+%type <stmtList> else_body statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
-             call_statement
+             call_statement if_statement
 %type <exprList> return_value_list nonempty_return_value_list
                  argument_list nonempty_argument_list
 %type <paramDeclList> parameter_list nonempty_parameter_list
@@ -112,7 +112,7 @@ declaration:
 // Declarations ////////////////////////////////////////////////////////////////
 
 function_definition:
-    function_prototype "{" function_body "}"
+    function_prototype "{" statement_list "}"
         { $$ = $1; $$->getFuncDecl().body = std::move(*$3); };
 
 function_prototype:
@@ -141,9 +141,9 @@ nonempty_parameter_list:
 
 parameter: type IDENTIFIER { $$ = new ParamDecl{std::move(*$1), $2}; };
 
-function_body:
+statement_list:
     /* empty */ { $$ = new std::vector<Stmt>(); }
-|   function_body statement { $$ = $1; $1->push_back(std::move(*$2)); };
+|   statement_list statement { $$ = $1; $1->push_back(std::move(*$2)); };
 
 type:
     IDENTIFIER { $$ = new Type(BasicType{$1}); }
@@ -156,7 +156,8 @@ statement:
 |   return_statement    { $$ = $1; }
 |   increment_statement { $$ = $1; }
 |   decrement_statement { $$ = $1; }
-|   call_statement      { $$ = $1; };
+|   call_statement      { $$ = $1; }
+|   if_statement        { $$ = $1; };
 
 variable_definition:
     immutable_variable_definition { $$ = $1; }
@@ -185,6 +186,16 @@ decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{std::move
 
 call_statement:
     call_expression ";" { $$ = new Stmt(CallStmt{std::move($1->getCallExpr())}); };
+
+if_statement:
+    "if" "(" expression ")" "{" statement_list "}"
+        { $$ = new Stmt(IfStmt{std::move(*$3), std::move(*$6), {}}); }
+|   "if" "(" expression ")" "{" statement_list "}" "else" else_body
+        { $$ = new Stmt(IfStmt{std::move(*$3), std::move(*$6), std::move(*$9)}); };
+
+else_body:
+    if_statement { $$ = new std::vector<Stmt>(); $$->push_back(std::move(*$1)); }
+|   "{" statement_list "}" { $$ = $2; };
 
 // Expressions /////////////////////////////////////////////////////////////////
 

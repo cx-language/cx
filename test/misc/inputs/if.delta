@@ -1,0 +1,21 @@
+func main() {
+    if (true) {
+        puts("a");
+    }
+
+    if (false) {
+        puts("b");
+    } else {
+        puts("c");
+    }
+
+    if (false) {
+        puts("d");
+    } else if (true) {
+        puts("e");
+    } else {
+        puts("d");
+    }
+}
+
+extern func puts(char* s);

@@ -6,6 +6,7 @@
 #include "expr.h"
 
 class VarDecl;
+class Stmt;
 
 enum class StmtKind {
     ReturnStmt,
@@ -13,6 +14,7 @@ enum class StmtKind {
     IncrementStmt,
     DecrementStmt,
     CallStmt,
+    IfStmt,
 };
 
 struct ReturnStmt {
@@ -35,6 +37,12 @@ struct CallStmt {
     CallExpr expr;
 };
 
+struct IfStmt {
+    Expr condition;
+    std::vector<Stmt> thenBody;
+    std::vector<Stmt> elseBody;
+};
+
 class Stmt {
 public:
 #define DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(KIND) \
@@ -53,11 +61,13 @@ public:
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IncrementStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DecrementStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(CallStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IfStmt)
 #undef DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR
 
     Stmt(Stmt&& stmt) : data(std::move(stmt.data)) { }
     StmtKind getKind() const { return static_cast<StmtKind>(data.which()); }
 
 private:
-    boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt, CallStmt> data;
+    boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt,
+        CallStmt, IfStmt> data;
 };
