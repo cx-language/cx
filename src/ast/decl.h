@@ -30,6 +30,7 @@ struct FuncDecl {
 };
 
 struct VarDecl {
+    boost::optional<Type> type; /// none if declared with 'var' or 'const'.
     std::string name;
     Expr initializer;
 };

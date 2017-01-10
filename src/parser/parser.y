@@ -74,6 +74,7 @@
 %type <decl> declaration function_definition function_prototype
              extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
+             typed_variable_definition
 %type <stmtList> else_body statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
              call_statement if_statement while_statement
@@ -163,13 +164,17 @@ statement:
 
 variable_definition:
     immutable_variable_definition { $$ = $1; }
-|   mutable_variable_definition   { $$ = $1; };
+|   mutable_variable_definition   { $$ = $1; }
+|   typed_variable_definition     { $$ = $1; };
 
 immutable_variable_definition:
-    "const" IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{$2, std::move(*$4)}); };
+    "const" IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{{}, $2, std::move(*$4)}); };
 
 mutable_variable_definition:
-    "var"   IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{$2, std::move(*$4)}); };
+    "var"   IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{{}, $2, std::move(*$4)}); };
+
+typed_variable_definition:
+    type    IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{std::move(*$1), $2, std::move(*$4)}); };
 
 return_statement:
     "return" return_value_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2)}); };

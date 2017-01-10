@@ -198,7 +198,11 @@ void typecheck(VarDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({decl.name, typecheck(decl.initializer)});
+    auto initType = typecheck(decl.initializer);
+    if (decl.type && *decl.type != initType) {
+        error("cannot initialize variable of type '", *decl.type, "' with '", initType, "'");
+    }
+    symbolTable.insert({decl.name, std::move(initType)});
 }
 
 void typecheck(Decl& decl) {

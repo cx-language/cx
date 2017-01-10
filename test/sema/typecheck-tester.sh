@@ -30,3 +30,4 @@ check_error invalid-argument-type.delta "invalid argument #1 type 'bool' to 'foo
 check_error call-nonfunction-variable.delta "'foo' is not a function"
 check_error return-value-in-void-function.delta "mismatching return type 'int', expected 'void'"
 check_error non-bool-if-condition.delta "'if' condition must have type 'bool'"
+check_error explicitly-typed-variable.delta "cannot initialize variable of type 'int' with 'bool'"
