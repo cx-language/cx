@@ -36,6 +36,7 @@
 "var"                   return TOKEN(VAR);
 
 [ \t\n]+                ; // skip whitespace
+"//".*                  ; // skip line comments
 [a-zA-Z_][a-zA-Z_0-9]*  SAVE_STRING; return IDENTIFIER;
 \"[^\"]*\"              SAVE_STRING_LITERAL; return STRING_LITERAL;
 0b[0-1]*                saveNumber(2); return NUMBER;
