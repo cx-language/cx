@@ -1,0 +1,9 @@
+func main() {
+    var i = 0;
+    while (i < 3) {
+        puts("foo");
+        i++;
+    }
+}
+
+extern func puts(char* str);

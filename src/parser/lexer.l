@@ -34,6 +34,7 @@
 "return"                return TOKEN(RETURN);
 "true"                  return TOKEN(TRUE);
 "var"                   return TOKEN(VAR);
+"while"                 return TOKEN(WHILE);
 
 [ \t\n]+                ; // skip whitespace
 "//".*                  ; // skip line comments

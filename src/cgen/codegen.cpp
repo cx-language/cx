@@ -129,6 +129,16 @@ void codegen(const IfStmt& stmt) {
     }
 }
 
+void codegen(const WhileStmt& stmt) {
+    *out << "while(";
+    codegen(stmt.condition);
+    *out << "){";
+    for (const Stmt& stmt : stmt.body) {
+        codegen(stmt);
+    }
+    *out << "}";
+}
+
 void codegen(const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    codegen(stmt.getReturnStmt()); break;
@@ -137,6 +147,7 @@ void codegen(const Stmt& stmt) {
         case StmtKind::DecrementStmt: codegen(stmt.getDecrementStmt()); break;
         case StmtKind::CallStmt:      codegen(stmt.getCallStmt().expr); *out << ";"; break;
         case StmtKind::IfStmt:        codegen(stmt.getIfStmt()); break;
+        case StmtKind::WhileStmt:     codegen(stmt.getWhileStmt()); break;
     }
 }
 

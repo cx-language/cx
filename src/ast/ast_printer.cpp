@@ -81,7 +81,7 @@ std::ostream& operator<<(std::ostream& out, const DecrementStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
-    out << br << "(if-stmt " << stmt.condition << " ";
+    out << br << "(if-stmt " << stmt.condition;
     indentLevel++;
     out << br << "(then";
     indentLevel++;
@@ -102,6 +102,16 @@ std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
     return out << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
+    out << br << "(while-stmt " << stmt.condition;
+    indentLevel++;
+    for (const Stmt& substmt : stmt.body) {
+        out << br << substmt;
+    }
+    indentLevel--;
+    return out << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    return out << stmt.getReturnStmt();
@@ -110,6 +120,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
         case StmtKind::CallStmt:      return out << stmt.getCallStmt().expr;
         case StmtKind::IfStmt:        return out << stmt.getIfStmt();
+        case StmtKind::WhileStmt:     return out << stmt.getWhileStmt();
     }
 }
 

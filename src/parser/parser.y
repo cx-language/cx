@@ -32,6 +32,7 @@
 %token RETURN   "return"
 %token TRUE     "true"
 %token VAR      "var"
+%token WHILE    "while"
 
 // Operators
 %token EQ       "=="
@@ -75,7 +76,7 @@
              immutable_variable_definition mutable_variable_definition
 %type <stmtList> else_body statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
-             call_statement if_statement
+             call_statement if_statement while_statement
 %type <exprList> return_value_list nonempty_return_value_list
                  argument_list nonempty_argument_list
 %type <paramDeclList> parameter_list nonempty_parameter_list
@@ -157,7 +158,8 @@ statement:
 |   increment_statement { $$ = $1; }
 |   decrement_statement { $$ = $1; }
 |   call_statement      { $$ = $1; }
-|   if_statement        { $$ = $1; };
+|   if_statement        { $$ = $1; }
+|   while_statement     { $$ = $1; };
 
 variable_definition:
     immutable_variable_definition { $$ = $1; }
@@ -196,6 +198,10 @@ if_statement:
 else_body:
     if_statement { $$ = new std::vector<Stmt>(); $$->push_back(std::move(*$1)); }
 |   "{" statement_list "}" { $$ = $2; };
+
+while_statement:
+    "while" "(" expression ")" "{" statement_list "}"
+        { $$ = new Stmt(WhileStmt{std::move(*$3), std::move(*$6)}); };
 
 // Expressions /////////////////////////////////////////////////////////////////
 

@@ -141,6 +141,14 @@ void typecheck(IfStmt& stmt) {
     for (Stmt& stmt : stmt.elseBody) typecheck(stmt);
 }
 
+void typecheck(WhileStmt& stmt) {
+    const Type& conditionType = typecheck(stmt.condition);
+    if (conditionType != Type(BasicType{"bool"})) {
+        error("'while' condition must have type 'bool'");
+    }
+    for (Stmt& stmt : stmt.body) typecheck(stmt);
+}
+
 void typecheck(Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    typecheck(stmt.getReturnStmt()); break;
@@ -149,6 +157,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::DecrementStmt: typecheck(stmt.getDecrementStmt()); break;
         case StmtKind::CallStmt:      typecheck(stmt.getCallStmt().expr); break;
         case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
+        case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;
     }
 }
 
