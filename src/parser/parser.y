@@ -3,6 +3,7 @@
     #include <vector>
     #include "../ast/expr.h"
     #include "../ast/decl.h"
+    #include "../sema/typecheck.h"
 
     int yylex();
 
@@ -110,7 +111,8 @@ declaration:
 
 function_definition:
     "func" IDENTIFIER "(" parameter_list ")" return_type_specifier "{" function_body "}"
-        { $$ = new Decl(FuncDecl{$2, std::move(*$4), std::move(*$6), std::move(*$8)}); };
+        { $$ = new Decl(FuncDecl{$2, std::move(*$4), std::move(*$6), std::move(*$8)});
+          addToSymbolTable($$->getFuncDecl()); };
 
 return_type_specifier:
     /* empty */ { $$ = new Type("void"); }

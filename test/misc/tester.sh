@@ -16,3 +16,4 @@ compile() {
 }
 
 compile function-call.delta
+compile function-call-before-declaration.delta

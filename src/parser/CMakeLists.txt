@@ -10,4 +10,4 @@ BISON_TARGET(DeltaParser
 ADD_FLEX_BISON_DEPENDENCY(DeltaLexer DeltaParser)
 
 add_library(deltaParser ${FLEX_DeltaLexer_OUTPUTS} ${BISON_DeltaParser_OUTPUTS})
-target_link_libraries(deltaParser deltaAST)
+target_link_libraries(deltaParser deltaAST deltaSema)

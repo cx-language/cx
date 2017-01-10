@@ -141,13 +141,16 @@ static std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
     return paramTypes;
 }
 
-void typecheck(FuncDecl& decl) {
+void addToSymbolTable(const FuncDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
     }
     auto returnTypes = decl.returnType.isTuple()
         ? decl.returnType.getNames() : std::vector<Type>{Type(decl.returnType.getName())};
     symbolTable.insert({decl.name, Type(FuncType{returnTypes, mapToTypes(decl.params)})});
+}
+
+void typecheck(FuncDecl& decl) {
     auto symbolTableBackup = symbolTable;
     for (ParamDecl& param : decl.params) typecheck(param);
     for (Stmt& stmt : decl.body) typecheck(stmt);
