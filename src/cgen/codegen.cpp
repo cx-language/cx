@@ -126,7 +126,8 @@ void codegen(const ParamDecl& decl) {
 }
 
 void codegenPrototype(const FuncDecl& decl) {
-    *out << toC(decl.returnType) << " " << decl.name << "(";
+    *out << (decl.name == "main" ? "int" : toC(decl.returnType));
+    *out << " " << decl.name << "(";
     for (const ParamDecl& param : decl.params) {
         codegen(param);
         if (&param != &decl.params.back()) *out << ",";
@@ -144,6 +145,7 @@ void codegen(const FuncDecl& decl) {
         codegen(stmt);
     }
     currentFunc = currentFuncBackup;
+    if (decl.name == "main") *out << "return 0;";
     *out << "}";
 }
 

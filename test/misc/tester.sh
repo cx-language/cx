@@ -61,5 +61,6 @@ compile function-call.delta
 compile function-call-before-declaration.delta
 compile comments.delta
 compile_and_run_and_check_exit_status exit-status.delta 42
+compile_and_run_and_check_exit_status void-main.delta 0
 compile_and_run_and_check_output extern-c-function.delta "foo"
 compile_and_run_and_check_output print-string-literal.delta "Hello, World!"
