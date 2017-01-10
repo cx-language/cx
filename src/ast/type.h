@@ -25,7 +25,7 @@ public:
     explicit Type(std::string name);
 
     /// Creates a tuple type containing the given types.
-    Type(std::vector<Type> names);
+    explicit Type(std::vector<Type> names);
 
     void appendType(std::string name);
     bool isTuple() const;

@@ -9,6 +9,7 @@
 #include "../ast/decl.h"
 
 static std::unordered_map<std::string, Type> symbolTable;
+static const Type* funcReturnType = nullptr;
 
 template<typename... Args>
 [[noreturn]] static void error(Args&&... args) {
@@ -98,7 +99,14 @@ const Type& typecheck(Expr& expr) {
 }
 
 void typecheck(ReturnStmt& stmt) {
-    for (Expr& expr : stmt.values) typecheck(expr);
+    std::vector<Type> returnValueTypes;
+    for (Expr& expr : stmt.values) {
+        returnValueTypes.push_back(typecheck(expr));
+    }
+    Type returnType = returnValueTypes.size() > 1 ? Type(returnValueTypes) : returnValueTypes[0];
+    if (returnType != *funcReturnType) {
+        error("mismatching return type '", returnType, "', expected '", *funcReturnType, "'");
+    }
 }
 
 void typecheck(VarDecl& decl);
@@ -153,7 +161,9 @@ void addToSymbolTable(const FuncDecl& decl) {
 void typecheck(FuncDecl& decl) {
     auto symbolTableBackup = symbolTable;
     for (ParamDecl& param : decl.params) typecheck(param);
+    funcReturnType = &decl.returnType;
     for (Stmt& stmt : decl.body) typecheck(stmt);
+    funcReturnType = nullptr;
     symbolTable = symbolTableBackup;
 }
 

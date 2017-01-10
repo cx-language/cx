@@ -2,7 +2,13 @@
 
 Type::Type(std::string name) : data(std::move(name)) { }
 
-Type::Type(std::vector<Type> names) : data(std::move(names)) { }
+Type::Type(std::vector<Type> names) {
+    if (names.size() == 1)  {
+        data = std::move(names[0].getName());
+    } else {
+        data = std::move(names);
+    }
+}
 
 void Type::appendType(std::string name) {
     if (!isTuple()) {
