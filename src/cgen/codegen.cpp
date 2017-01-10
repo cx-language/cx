@@ -88,7 +88,7 @@ void codegen(const ReturnStmt& stmt) {
     } else if (stmt.values.size() > 1) {
         *out << "(__typeof__(" << currentFunc->name << "())){";
         for (const Expr& expr : stmt.values) {
-            codegen(stmt.values[0]);
+            codegen(expr);
             if (&expr != &stmt.values.back()) *out << ",";
         }
         *out << "}";
