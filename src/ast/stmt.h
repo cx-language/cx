@@ -12,6 +12,7 @@ enum class StmtKind {
     VariableStmt,
     IncrementStmt,
     DecrementStmt,
+    CallStmt,
 };
 
 struct ReturnStmt {
@@ -28,6 +29,10 @@ struct IncrementStmt {
 
 struct DecrementStmt {
     Expr operand;
+};
+
+struct CallStmt {
+    CallExpr expr;
 };
 
 class Stmt {
@@ -47,11 +52,12 @@ public:
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(VariableStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IncrementStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DecrementStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(CallStmt)
 #undef DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR
 
     Stmt(Stmt&& stmt) : data(std::move(stmt.data)) { }
     StmtKind getKind() const { return static_cast<StmtKind>(data.which()); }
 
 private:
-    boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt> data;
+    boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt, CallStmt> data;
 };

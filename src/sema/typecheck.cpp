@@ -123,6 +123,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::VariableStmt:  typecheck(stmt.getVariableStmt()); break;
         case StmtKind::IncrementStmt: typecheck(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: typecheck(stmt.getDecrementStmt()); break;
+        case StmtKind::CallStmt:      typecheck(stmt.getCallStmt().expr); break;
     }
 }
 

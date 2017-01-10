@@ -73,6 +73,7 @@
              immutable_variable_definition mutable_variable_definition
 %type <stmtList> function_body
 %type <stmt> statement return_statement increment_statement decrement_statement
+             call_statement
 %type <exprList> return_value_list nonempty_return_value_list
                  argument_list nonempty_argument_list
 %type <paramDeclList> parameter_list nonempty_parameter_list
@@ -139,7 +140,8 @@ statement:
     variable_definition { $$ = new Stmt(VariableStmt{&$1->getVarDecl()}); }
 |   return_statement    { $$ = $1; }
 |   increment_statement { $$ = $1; }
-|   decrement_statement { $$ = $1; };
+|   decrement_statement { $$ = $1; }
+|   call_statement      { $$ = $1; };
 
 variable_definition:
     immutable_variable_definition { $$ = $1; }
@@ -165,6 +167,9 @@ nonempty_return_value_list:
 increment_statement: expression "++" ";" { $$ = new Stmt(IncrementStmt{std::move(*$1)}); };
 
 decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{std::move(*$1)}); };
+
+call_statement:
+    call_expression ";" { $$ = new Stmt(CallStmt{std::move($1->getCallExpr())}); };
 
 // Expressions /////////////////////////////////////////////////////////////////
 

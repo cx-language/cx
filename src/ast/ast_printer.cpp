@@ -79,6 +79,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::VariableStmt:  return out << stmt.getVariableStmt();
         case StmtKind::IncrementStmt: return out << stmt.getIncrementStmt();
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
+        case StmtKind::CallStmt:      return out << stmt.getCallStmt().expr;
     }
 }
 
