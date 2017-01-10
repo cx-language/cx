@@ -29,6 +29,7 @@ int main(int argc, char** argv) {
 
     std::vector<boost::string_ref> args(argv + 1, argv + argc);
     const bool syntaxOnly = checkFlag("-fsyntax-only", args);
+    const bool compileOnly = checkFlag("-c", args);
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
 
@@ -51,5 +52,20 @@ int main(int argc, char** argv) {
             cgen::compile(globalAST, outputToStdout ? "stdout" : (std::string(filePath) + ".c"));
         }
         globalAST.clear();
+    }
+
+    if (!printAST && !compileOnly) {
+        // Compile and link C output.
+        std::string command = "cc";
+        for (boost::string_ref filePath : args) {
+            command.append(" ");
+            command.append(filePath.data(), filePath.size());
+            command.append(".c");
+        }
+        if (!outputToStdout) std::cout << command << '\n';
+        system(command.c_str());
+        for (boost::string_ref filePath : args) {
+            std::remove((std::string(filePath) + ".c").c_str());
+        }
     }
 }

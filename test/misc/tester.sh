@@ -15,5 +15,27 @@ compile() {
     fi
 }
 
+compile_and_run_and_check_exit_status() {
+    source_file=$1
+    expected_exit_status=$2
+
+    $path_to_delta inputs/$source_file
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+    ./a.out
+    actual_exit_status=$?
+    rm a.out
+
+    if [ $actual_exit_status -ne $expected_exit_status ]; then
+        echo "FAILED: expected exit status: $expected_exit_status," \
+             "actual exit status: $actual_exit_status"
+        exit 1
+    fi
+}
+
 compile function-call.delta
 compile function-call-before-declaration.delta
+compile_and_run_and_check_exit_status exit-status.delta 42

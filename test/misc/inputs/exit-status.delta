@@ -1,0 +1,2 @@
+func main() -> int { return getExitStatus(); }
+func getExitStatus() -> int { return 42; }
