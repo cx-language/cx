@@ -63,9 +63,12 @@ int main(int argc, char** argv) {
             command.append(".c");
         }
         if (!outputToStdout) std::cout << command << '\n';
-        system(command.c_str());
+        const int ccExitStatus = system(command.c_str());
+
         for (boost::string_ref filePath : args) {
             std::remove((std::string(filePath) + ".c").c_str());
         }
+
+        if (ccExitStatus != 0) exit(ccExitStatus);
     }
 }
