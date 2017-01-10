@@ -66,3 +66,4 @@ compile_and_run_and_check_exit_status void-main.delta 0
 compile_and_run_and_check_output extern-c-function.delta "foo"
 compile_and_run_and_check_output print-string-literal.delta "Hello, World!"
 compile_and_run_and_check_output if.delta $'a\nc\ne'
+compile_and_run_and_check_output comparison-operators.delta $'a\nc\ne\ng\ni\nk'

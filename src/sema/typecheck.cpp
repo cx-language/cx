@@ -61,7 +61,7 @@ Type typecheck(BinaryExpr& expr) {
     if (leftType != rightType) {
         error("operands to binary expression must have same type");
     }
-    return leftType;
+    return expr.op.isComparisonOperator() ? Type(BasicType{"bool"}) : leftType;
 }
 
 Type typecheck(CallExpr& expr) {

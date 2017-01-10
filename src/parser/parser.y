@@ -210,21 +210,18 @@ expression:
 |   parenthesized_expression { $$ = $1; }
 |   call_expression { $$ = $1; };
 
-prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{'+', u($2)}); };
-
-prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{'-', u($2)}); };
-
-binary_expression:
-    expression "+" expression { $$ = new Expr(BinaryExpr{'+', u($1), u($3)}); };
-
-binary_expression:
-    expression "-" expression { $$ = new Expr(BinaryExpr{'-', u($1), u($3)}); };
-
-binary_expression:
-    expression "*" expression { $$ = new Expr(BinaryExpr{'*', u($1), u($3)}); };
-
-binary_expression:
-    expression "/" expression { $$ = new Expr(BinaryExpr{'/', u($1), u($3)}); };
+prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2)}); };
+prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2)}); };
+binary_expression: expression "==" expression { $$ = new Expr(BinaryExpr{EQ, u($1), u($3)}); };
+binary_expression: expression "!=" expression { $$ = new Expr(BinaryExpr{NE, u($1), u($3)}); };
+binary_expression: expression "<"  expression { $$ = new Expr(BinaryExpr{LT, u($1), u($3)}); };
+binary_expression: expression "<=" expression { $$ = new Expr(BinaryExpr{LE, u($1), u($3)}); };
+binary_expression: expression ">"  expression { $$ = new Expr(BinaryExpr{GT, u($1), u($3)}); };
+binary_expression: expression ">=" expression { $$ = new Expr(BinaryExpr{GE, u($1), u($3)}); };
+binary_expression: expression "+"  expression { $$ = new Expr(BinaryExpr{PLUS, u($1), u($3)}); };
+binary_expression: expression "-"  expression { $$ = new Expr(BinaryExpr{MINUS, u($1), u($3)}); };
+binary_expression: expression "*"  expression { $$ = new Expr(BinaryExpr{ASTERISK, u($1), u($3)}); };
+binary_expression: expression "/"  expression { $$ = new Expr(BinaryExpr{SLASH, u($1), u($3)}); };
 
 parenthesized_expression: "(" expression ")" { $$ = $2; };
 
@@ -240,3 +237,5 @@ nonempty_argument_list:
 |   nonempty_argument_list "," expression { $$ = $1; $$->push_back(std::move(*$3)); };
 
 %%
+
+#include "operators.cpp"

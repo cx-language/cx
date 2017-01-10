@@ -7,6 +7,7 @@
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
 #include "type.h"
+#include "../parser/operators.h"
 
 class Expr;
 
@@ -37,12 +38,12 @@ struct BoolLiteralExpr {
 };
 
 struct PrefixExpr {
-    char op;
+    PrefixOperator op;
     std::unique_ptr<Expr> operand;
 };
 
 struct BinaryExpr {
-    char op;
+    BinaryOperator op;
     std::unique_ptr<Expr> left;
     std::unique_ptr<Expr> right;
 };
