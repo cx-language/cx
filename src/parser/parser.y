@@ -172,7 +172,7 @@ immutable_variable_definition:
     "const" IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{{}, $2, std::move(*$4)}); };
 
 mutable_variable_definition:
-    "var"   IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{{}, $2, std::move(*$4)}); };
+    "var"   IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{{}, $2, std::move(*$4), true}); };
 
 typed_variable_definition:
     type    IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{std::move(*$1), $2, std::move(*$4)}); };

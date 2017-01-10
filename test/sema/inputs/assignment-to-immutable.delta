@@ -1,0 +1,4 @@
+func main() {
+    const i = 2;
+    i = 1;
+}

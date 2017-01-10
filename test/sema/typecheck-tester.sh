@@ -32,3 +32,5 @@ check_error return-value-in-void-function.delta "mismatching return type 'int', 
 check_error non-bool-if-condition.delta "'if' condition must have type 'bool'"
 check_error explicitly-typed-variable.delta "cannot initialize variable of type 'int' with 'bool'"
 check_error assignment-of-invalid-type.delta "cannot assign 'int' to variable of type 'bool'"
+check_error assignment-to-immutable.delta "cannot assign to immutable variable 'i'"
+check_error increment-of-immutable.delta "cannot increment immutable value"

@@ -123,12 +123,18 @@ void typecheck(VariableStmt& stmt) {
 }
 
 void typecheck(IncrementStmt& stmt) {
-    typecheck(stmt.operand);
+    auto type = typecheck(stmt.operand);
+    if (!type.isMutable()) {
+        error("cannot increment immutable value");
+    }
     // TODO: check that operand supports increment operation.
 }
 
 void typecheck(DecrementStmt& stmt) {
-    typecheck(stmt.operand);
+    auto type = typecheck(stmt.operand);
+    if (!type.isMutable()) {
+        error("cannot decrement immutable value");
+    }
     // TODO: check that operand supports decrement operation.
 }
 
@@ -154,6 +160,9 @@ void typecheck(AssignStmt& stmt) {
     const Type& rhsType = typecheck(stmt.rhs);
     if (rhsType != lhsType) {
         error("cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+    }
+    if (!lhsType.isMutable()) {
+        error("cannot assign to immutable variable '", stmt.lhs.identifier, "'");
     }
 }
 
@@ -211,6 +220,7 @@ void typecheck(VarDecl& decl) {
     if (decl.type && *decl.type != initType) {
         error("cannot initialize variable of type '", *decl.type, "' with '", initType, "'");
     }
+    initType.setMutable(decl.isMutable);
     symbolTable.insert({decl.name, std::move(initType)});
 }
 

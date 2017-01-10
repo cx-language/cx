@@ -38,7 +38,7 @@ struct PtrType {
 class Type {
 public:
 #define DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(KIND) \
-    Type(KIND&& value) : data(std::move(value)) { \
+    Type(KIND&& value, bool isMutable = false) : data(std::move(value)), mutableFlag(isMutable) { \
         if (TypeKind::KIND == TypeKind::TupleType && getTupleType().subtypes.size() == 1) {\
             auto type = std::move(getTupleType().subtypes[0]); \
             *this = std::move(type); \
@@ -60,10 +60,13 @@ public:
 #undef DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR
 
     void appendType(Type type);
+    bool isMutable() const { return mutableFlag; }
+    void setMutable(bool isMutable) { mutableFlag = isMutable; }
     TypeKind getKind() const { return static_cast<TypeKind>(data.which()); }
 
 private:
     boost::variant<BasicType, TupleType, FuncType, PtrType> data;
+    bool mutableFlag;
 };
 
 bool operator==(const Type&, const Type&);
