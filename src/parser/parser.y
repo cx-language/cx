@@ -70,7 +70,8 @@
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
              call_expression
 %type <declList> declaration_list
-%type <decl> declaration function_definition variable_definition
+%type <decl> declaration function_definition function_prototype
+             extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
 %type <stmtList> function_body
 %type <stmt> statement return_statement increment_statement decrement_statement
@@ -105,14 +106,22 @@ declaration_list:
 
 declaration:
     function_definition { $$ = $1; }
+|   extern_function_declaration { $$ = $1; }
 |   variable_definition { $$ = $1; };
 
 // Declarations ////////////////////////////////////////////////////////////////
 
 function_definition:
-    "func" IDENTIFIER "(" parameter_list ")" return_type_specifier "{" function_body "}"
-        { $$ = new Decl(FuncDecl{$2, std::move(*$4), std::move(*$6), std::move(*$8)});
+    function_prototype "{" function_body "}"
+        { $$ = $1; $$->getFuncDecl().body = std::move(*$3); };
+
+function_prototype:
+    "func" IDENTIFIER "(" parameter_list ")" return_type_specifier
+        { $$ = new Decl(FuncDecl{$2, std::move(*$4), std::move(*$6)});
           addToSymbolTable($$->getFuncDecl()); };
+
+extern_function_declaration:
+    "extern" function_prototype ";" { $$ = $2; };
 
 return_type_specifier:
     /* empty */ { $$ = new Type("void"); }

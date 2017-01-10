@@ -36,6 +36,28 @@ compile_and_run_and_check_exit_status() {
     fi
 }
 
+compile_and_run_and_check_output() {
+    source_file=$1
+    expected_output=$2
+
+    $path_to_delta inputs/$source_file
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+    actual_output=$(./a.out)
+    rm a.out
+
+    if [[ $actual_output != $expected_output ]]; then
+        echo "FAILED:"
+        echo "expected output: $expected_output"
+        echo "actual output: $actual_output"
+        exit 1
+    fi
+}
+
 compile function-call.delta
 compile function-call-before-declaration.delta
 compile_and_run_and_check_exit_status exit-status.delta 42
+compile_and_run_and_check_output extern-c-function.delta "foo"

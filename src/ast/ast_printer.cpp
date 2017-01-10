@@ -88,17 +88,22 @@ std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {
 }
 
 std::ostream& operator<<(std::ostream& out, const FuncDecl& decl) {
-    out << br << "(func-decl " << decl.name << " (";
+    out << br << (decl.isExtern() ? "(extern-func-decl " : "(func-decl ");
+    out << decl.name << " (";
     for (const ParamDecl& param : decl.params) {
         out << param;
         if (&param != &decl.params.back()) out << " ";
     }
     out << ") " << decl.returnType;
-    indentLevel++;
-    for (const Stmt& stmt : decl.body) {
-        out << stmt;
+
+    if (!decl.isExtern()) {
+        indentLevel++;
+        for (const Stmt& stmt : *decl.body) {
+            out << stmt;
+        }
+        indentLevel--;
     }
-    indentLevel--;
+
     return out << ")";
 }
 

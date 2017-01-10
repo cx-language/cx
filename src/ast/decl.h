@@ -5,6 +5,7 @@
 #include <cassert>
 #include <vector>
 #include <boost/variant.hpp>
+#include <boost/optional.hpp>
 #include "expr.h"
 #include "stmt.h"
 #include "type.h"
@@ -24,7 +25,8 @@ struct FuncDecl {
     std::string name;
     std::vector<ParamDecl> params;
     Type returnType;
-    std::vector<Stmt> body;
+    boost::optional<std::vector<Stmt>> body;
+    bool isExtern() const { return body == boost::none; };
 };
 
 struct VarDecl {

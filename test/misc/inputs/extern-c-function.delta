@@ -1,0 +1,9 @@
+func main() -> int {
+    putchar(102);
+    putchar(111);
+    putchar(111);
+    putchar(10);
+    return 0;
+}
+
+extern func putchar(int ch) -> int;

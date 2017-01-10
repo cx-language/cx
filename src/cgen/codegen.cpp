@@ -106,7 +106,7 @@ void codegen(const Stmt& stmt) {
         case StmtKind::VariableStmt:  codegen(stmt.getVariableStmt()); break;
         case StmtKind::IncrementStmt: codegen(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: codegen(stmt.getDecrementStmt()); break;
-        case StmtKind::CallStmt:      codegen(stmt.getCallStmt().expr); break;
+        case StmtKind::CallStmt:      codegen(stmt.getCallStmt().expr); *out << ";"; break;
     }
 }
 
@@ -124,11 +124,12 @@ void codegenPrototype(const FuncDecl& decl) {
 }
 
 void codegen(const FuncDecl& decl) {
+    if (decl.isExtern()) return;
     codegenPrototype(decl);
     *out << "{";
     auto currentFuncBackup = currentFunc;
     currentFunc = &decl;
-    for (const Stmt& stmt : decl.body) {
+    for (const Stmt& stmt : *decl.body) {
         codegen(stmt);
     }
     currentFunc = currentFuncBackup;

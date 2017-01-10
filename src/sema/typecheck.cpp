@@ -159,10 +159,11 @@ void addToSymbolTable(const FuncDecl& decl) {
 }
 
 void typecheck(FuncDecl& decl) {
+    if (decl.isExtern()) return;
     auto symbolTableBackup = symbolTable;
     for (ParamDecl& param : decl.params) typecheck(param);
     funcReturnType = &decl.returnType;
-    for (Stmt& stmt : decl.body) typecheck(stmt);
+    for (Stmt& stmt : *decl.body) typecheck(stmt);
     funcReturnType = nullptr;
     symbolTable = symbolTableBackup;
 }
