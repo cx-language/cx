@@ -144,6 +144,25 @@ const Type& typecheck(Expr& expr) {
     return expr.getType();
 }
 
+static bool isValidConversion(const std::vector<Expr>& exprs, const Type& source, const Type& target) {
+    if (source.getKind() != TypeKind::TupleType) {
+        assert(target.getKind() != TypeKind::TupleType);
+        assert(exprs.size() == 1);
+        return isValidConversion(exprs[0], source, target);
+    }
+    assert(target.getKind() == TypeKind::TupleType);
+
+    const TupleType& sourceTuple = source.getTupleType();
+    const TupleType& targetTuple = source.getTupleType();
+
+    for (int i = 0; i < exprs.size(); ++i) {
+        if (!isValidConversion(exprs[i], sourceTuple.subtypes.at(i), targetTuple.subtypes.at(i))) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void typecheck(ReturnStmt& stmt) {
     std::vector<Type> returnValueTypes;
     for (Expr& expr : stmt.values) {
@@ -151,7 +170,7 @@ void typecheck(ReturnStmt& stmt) {
     }
     Type returnType = returnValueTypes.size() > 1
         ? Type(TupleType{std::move(returnValueTypes)}) : std::move(returnValueTypes[0]);
-    if (returnType != *funcReturnType) {
+    if (!isValidConversion(stmt.values, returnType, *funcReturnType)) {
         error("mismatching return type '", returnType, "', expected '", *funcReturnType, "'");
     }
 }

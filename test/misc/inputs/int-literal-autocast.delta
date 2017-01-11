@@ -1,5 +1,7 @@
 func foo(uint a) { }
 func bar(uint8 a) { }
+func baz() -> uint { return 0; }
+func qux() -> uint, uint8 { return 0, 0; }
 
 func main() {
     foo(0);
