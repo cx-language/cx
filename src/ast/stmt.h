@@ -5,7 +5,7 @@
 #include <boost/variant.hpp>
 #include "expr.h"
 
-class VarDecl;
+struct VarDecl;
 class Stmt;
 
 enum class StmtKind {

@@ -3,7 +3,7 @@
 #include <vector>
 
 class Decl;
-class FuncDecl;
+struct FuncDecl;
 
 void addToSymbolTable(const FuncDecl& decl);
 void typecheck(std::vector<Decl>& decls);
