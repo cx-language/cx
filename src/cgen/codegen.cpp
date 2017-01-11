@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <functional>
+#include <boost/utility/string_ref.hpp>
 #include "codegen.h"
 
 static std::ostream* out = nullptr;
@@ -10,8 +11,20 @@ static const FuncDecl* currentFunc = nullptr;
 
 std::string toC(const Type& type) {
     switch (type.getKind()) {
-        case TypeKind::BasicType:
-            return type.getBasicType().name;
+        case TypeKind::BasicType: {
+            boost::string_ref name = type.getBasicType().name;
+            if (name == "int") return "int";
+            if (name == "uint") return "unsigned";
+            if (name == "int8") return "int8_t";
+            if (name == "int16") return "int16_t";
+            if (name == "int32") return "int32_t";
+            if (name == "int64") return "int64_t";
+            if (name == "uint8") return "uint8_t";
+            if (name == "uint16") return "uint16_t";
+            if (name == "uint32") return "uint32_t";
+            if (name == "uint64") return "uint64_t";
+            return std::string(name);
+        }
         case TypeKind::TupleType: {
             std::string string = "struct{";
             int index = 0;
@@ -160,7 +173,7 @@ void codegen(const Stmt& stmt) {
 }
 
 void codegen(const ParamDecl& decl) {
-    *out << decl.type << " " << decl.name;
+    *out << toC(decl.type) << " " << decl.name;
 }
 
 void codegenPrototype(const FuncDecl& decl) {
@@ -209,7 +222,7 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
         out = &outputFile;
     }
 
-    *out << "#include <stdbool.h>\n";
+    *out << "#include <stdbool.h>\n#include <stdint.h>\n";
 
     // Output function declarations first.
     for (const Decl& decl : decls) {
