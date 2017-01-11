@@ -188,8 +188,8 @@ void codegen(const FuncDecl& decl) {
 }
 
 void codegen(const VarDecl& decl) {
-    *out << toC(decl.initializer.getType()) << " " << decl.name << "=";
-    codegen(decl.initializer);
+    *out << toC(decl.initializer->getType()) << " " << decl.name << "=";
+    codegen(*decl.initializer);
     *out << ";";
 }
 

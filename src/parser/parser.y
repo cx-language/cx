@@ -116,7 +116,7 @@ declaration:
 
 function_definition:
     function_prototype "{" statement_list "}"
-        { $$ = $1; $$->getFuncDecl().body = std::move(*$3); };
+        { $$ = $1; $$->getFuncDecl().body.reset($3); };
 
 function_prototype:
     "func" IDENTIFIER "(" parameter_list ")" return_type_specifier
@@ -171,13 +171,16 @@ variable_definition:
 |   typed_variable_definition     { $$ = $1; };
 
 immutable_variable_definition:
-    "const" IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{false, $2, std::move(*$4)}); };
+    "const" IDENTIFIER "=" expression ";"
+        { $$ = new Decl(VarDecl{false, $2, std::shared_ptr<Expr>($4)}); };
 
 mutable_variable_definition:
-    "var"   IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{true, $2, std::move(*$4)}); };
+    "var"   IDENTIFIER "=" expression ";"
+        { $$ = new Decl(VarDecl{true, $2, std::shared_ptr<Expr>($4)}); };
 
 typed_variable_definition:
-    type    IDENTIFIER "=" expression ";" { $$ = new Decl(VarDecl{std::move(*$1), $2, std::move(*$4)}); };
+    type    IDENTIFIER "=" expression ";"
+        { $$ = new Decl(VarDecl{std::move(*$1), $2, std::shared_ptr<Expr>($4)}); };
 
 assignment_statement:
     IDENTIFIER "=" expression ";" { $$ = new Stmt(AssignStmt{{$1}, std::move(*$3)}); };

@@ -69,7 +69,7 @@ std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const VariableStmt& stmt) {
-    return out << br << "(var-stmt " << stmt.decl->name << " " << stmt.decl->initializer << ")";
+    return out << br << "(var-stmt " << stmt.decl->name << " " << *stmt.decl->initializer << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const IncrementStmt& stmt) {
@@ -154,7 +154,7 @@ std::ostream& operator<<(std::ostream& out, const FuncDecl& decl) {
 }
 
 std::ostream& operator<<(std::ostream& out, const VarDecl& decl) {
-    return out << br << "(var-decl " << decl.name << " " << decl.initializer << ")";
+    return out << br << "(var-decl " << decl.name << " " << *decl.initializer << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const Decl& decl) {

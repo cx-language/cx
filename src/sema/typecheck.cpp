@@ -8,7 +8,7 @@
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 
-static std::unordered_map<std::string, Type> symbolTable;
+static std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
 static const Type* funcReturnType = nullptr;
 
 template<typename... Args>
@@ -23,12 +23,16 @@ template<typename... Args>
 const Type& typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
 
-Type typecheck(VariableExpr& expr) {
+const Type& typecheck(VariableExpr& expr) {
     auto it = symbolTable.find(expr.identifier);
     if (it == symbolTable.end()) {
         error("unknown identifier '", expr.identifier, "'");
     }
-    return it->second;
+    switch (it->second->getKind()) {
+        case DeclKind::VarDecl: return it->second->getVarDecl().getType();
+        case DeclKind::ParamDecl: return it->second->getParamDecl().type;
+        case DeclKind::FuncDecl: assert(false); // TODO
+    }
 }
 
 Type typecheck(StrLiteralExpr& expr) {
@@ -69,10 +73,10 @@ Type typecheck(CallExpr& expr) {
     if (it == symbolTable.end()) {
         error("unknown function '", expr.funcName, "'");
     }
-    if (it->second.getKind() != TypeKind::FuncType) {
+    if (it->second->getKind() != DeclKind::FuncDecl) {
         error("'", expr.funcName, "' is not a function");
     }
-    const auto& params = it->second.getFuncType().paramTypes;
+    const auto& params = it->second->getFuncDecl().getFuncType().paramTypes;
     if (expr.args.size() < params.size()) {
         error("too few arguments to '", expr.funcName, "', expected ", params.size());
     }
@@ -86,7 +90,7 @@ Type typecheck(CallExpr& expr) {
                 expr.funcName, "', expected '", params[i], "'");
         }
     }
-    return Type(TupleType{it->second.getFuncType().returnTypes});
+    return Type(TupleType{it->second->getFuncDecl().getFuncType().returnTypes});
 }
 
 const Type& typecheck(Expr& expr) {
@@ -183,23 +187,14 @@ void typecheck(ParamDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({decl.name, Type(decl.type)});
-}
-
-static std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
-    std::vector<Type> paramTypes;
-    paramTypes.reserve(params.size());
-    for (const auto& param : params) paramTypes.emplace_back(param.type);
-    return paramTypes;
+    symbolTable.insert({decl.name, new Decl(ParamDecl(decl))});
 }
 
 void addToSymbolTable(const FuncDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
     }
-    auto returnTypes = decl.returnType.getKind() == TypeKind::TupleType
-        ? decl.returnType.getTupleType().subtypes : std::vector<Type>{decl.returnType};
-    symbolTable.insert({decl.name, Type(FuncType{returnTypes, mapToTypes(decl.params)})});
+    symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
 }
 
 void typecheck(FuncDecl& decl) {
@@ -216,16 +211,17 @@ void typecheck(VarDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
     }
-    auto initType = typecheck(decl.initializer);
+    auto initType = typecheck(*decl.initializer);
     if (auto declaredType = decl.getDeclaredType()) {
         if (*declaredType != initType) {
             error("cannot initialize variable of type '", *declaredType,
                 "' with '", initType, "'");
         }
-        symbolTable.insert({decl.name, *declaredType});
+        symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     } else {
         initType.setMutable(decl.isMutable());
-        symbolTable.insert({decl.name, std::move(initType)});
+        decl.type = std::move(initType);
+        symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     }
 }
 

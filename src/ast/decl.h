@@ -25,8 +25,9 @@ struct FuncDecl {
     std::string name;
     std::vector<ParamDecl> params;
     Type returnType;
-    boost::optional<std::vector<Stmt>> body;
-    bool isExtern() const { return body == boost::none; };
+    std::shared_ptr<std::vector<Stmt>> body;
+    bool isExtern() const { return body == nullptr; };
+    FuncType getFuncType() const;
 };
 
 struct VarDecl {
@@ -34,11 +35,14 @@ struct VarDecl {
     /// type should be mutable.
     boost::variant<Type, bool> type;
     std::string name;
-    Expr initializer;
+    std::shared_ptr<Expr> initializer;
 
     boost::optional<const Type&> getDeclaredType() const {
         if (type.which() == 0) return boost::get<Type>(type);
         else return boost::none;
+    }
+    const Type& getType() const {
+        return boost::get<Type>(type);
     }
     bool isMutable() const { return boost::get<bool>(type); }
 };
