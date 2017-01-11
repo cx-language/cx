@@ -33,6 +33,7 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::VarDecl: return it->second->getVarDecl().getType();
         case DeclKind::ParamDecl: return it->second->getParamDecl().type;
         case DeclKind::FuncDecl: return it->second->getFuncDecl().getFuncType();
+        case DeclKind::TypeDecl: return it->second->getTypeDecl().getType();
     }
 }
 
@@ -255,6 +256,13 @@ void addToSymbolTable(const FuncDecl& decl) {
     symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
 }
 
+void addToSymbolTable(const TypeDecl& decl) {
+    if (symbolTable.count(decl.name) > 0) {
+        error("redefinition of '", decl.name, "'");
+    }
+    symbolTable.insert({decl.name, new Decl(TypeDecl(decl))});
+}
+
 void typecheck(FuncDecl& decl) {
     if (decl.isExtern()) return;
     auto symbolTableBackup = symbolTable;
@@ -263,6 +271,10 @@ void typecheck(FuncDecl& decl) {
     for (Stmt& stmt : *decl.body) typecheck(stmt);
     funcReturnType = nullptr;
     symbolTable = std::move(symbolTableBackup);
+}
+
+void typecheck(TypeDecl& decl) {
+    // TODO
 }
 
 void typecheck(VarDecl& decl) {
@@ -290,6 +302,7 @@ void typecheck(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
+        case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   typecheck(decl.getVarDecl()); break;
     }
 }

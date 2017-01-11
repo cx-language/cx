@@ -12,3 +12,7 @@ FuncType FuncDecl::getFuncType() const {
         ? returnType.getTupleType().subtypes : std::vector<Type>{returnType};
     return FuncType{returnTypes, mapToTypes(params)};
 }
+
+Type TypeDecl::getType() const {
+    return BasicType{name};
+}

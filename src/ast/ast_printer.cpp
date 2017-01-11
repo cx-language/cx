@@ -153,6 +153,15 @@ std::ostream& operator<<(std::ostream& out, const FuncDecl& decl) {
     return out << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const TypeDecl& decl) {
+    out << br << "(type-decl ";
+    switch (decl.tag) {
+        case TypeTag::Struct: out << "struct ";
+        case TypeTag::Class: out << "class ";
+    }
+    return out << decl.name << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const VarDecl& decl) {
     return out << br << "(var-decl " << decl.name << " " << *decl.initializer << ")";
 }
@@ -161,6 +170,7 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: return out << decl.getParamDecl();
         case DeclKind::FuncDecl:  return out << decl.getFuncDecl();
+        case DeclKind::TypeDecl:  return out << decl.getTypeDecl();
         case DeclKind::VarDecl:   return out << decl.getVarDecl();
     }
 }

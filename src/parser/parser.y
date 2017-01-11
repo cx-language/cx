@@ -23,6 +23,7 @@
 %error-verbose
 
 // Keywords
+%token CLASS    "class"
 %token CONST    "const"
 %token ELSE     "else"
 %token EXTERN   "extern"
@@ -31,6 +32,7 @@
 %token IF       "if"
 %token MUTABLE  "mutable"
 %token RETURN   "return"
+%token STRUCT   "struct"
 %token TRUE     "true"
 %token VAR      "var"
 %token WHILE    "while"
@@ -75,7 +77,7 @@
 %type <decl> declaration function_definition function_prototype
              extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
-             typed_variable_definition
+             typed_variable_definition composite_type_declaration
 %type <stmtList> else_body statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
              call_statement if_statement while_statement assignment_statement
@@ -110,6 +112,7 @@ declaration_list:
 declaration:
     function_definition { $$ = $1; }
 |   extern_function_declaration { $$ = $1; }
+|   composite_type_declaration { $$ = $1; }
 |   variable_definition { $$ = $1; };
 
 // Declarations ////////////////////////////////////////////////////////////////
@@ -152,6 +155,12 @@ type:
     IDENTIFIER { $$ = new Type(BasicType{$1}); }
 |   "mutable" type { $$ = $2; $$->setMutable(true); }
 |   type "*" { $$ = new Type(PtrType{u($1)}); };
+
+composite_type_declaration:
+    "struct" IDENTIFIER "{" "}" { $$ = new Decl(TypeDecl{TypeTag::Struct, $2});
+                                  addToSymbolTable($$->getTypeDecl()); }
+|   "class"  IDENTIFIER "{" "}" { $$ = new Decl(TypeDecl{TypeTag::Class, $2});
+                                  addToSymbolTable($$->getTypeDecl()); };
 
 // Statements //////////////////////////////////////////////////////////////////
 

@@ -200,6 +200,12 @@ void codegen(const FuncDecl& decl) {
     *out << "}";
 }
 
+void codegen(const TypeDecl& decl) {
+    *out << "typedef struct " << decl.name << "{";
+    // TODO
+    *out << "}" << decl.name << ";";
+}
+
 void codegen(const VarDecl& decl) {
     *out << toC(decl.initializer->getType()) << " " << decl.name << "=";
     codegen(*decl.initializer);
@@ -210,6 +216,7 @@ void codegen(const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: codegen(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  codegen(decl.getFuncDecl()); break;
+        case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
     }
 }
@@ -224,15 +231,31 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
 
     *out << "#include <stdbool.h>\n#include <stdint.h>\n";
 
-    // Output function declarations first.
+    // Output struct definitions first.
     for (const Decl& decl : decls) {
-        if (decl.getKind() == DeclKind::FuncDecl) {
-            codegenPrototype(decl.getFuncDecl());
-            *out << ";";
+        switch (decl.getKind()) {
+            case DeclKind::TypeDecl:
+                codegen(decl.getTypeDecl());
+                *out << ";";
+                break;
+            case DeclKind::FuncDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl: break;
+        }
+    }
+
+    // Output function declarations.
+    for (const Decl& decl : decls) {
+        switch (decl.getKind()) {
+            case DeclKind::FuncDecl:
+                codegenPrototype(decl.getFuncDecl());
+                *out << ";";
+                break;
+            case DeclKind::TypeDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl: break;
         }
     }
 
     for (const Decl& decl : decls) {
-        codegen(decl);
+        if (decl.getKind() != DeclKind::TypeDecl) { // Struct definitions have already been emitted.
+            codegen(decl);
+        }
     }
 }

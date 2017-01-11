@@ -27,6 +27,7 @@
 
 %%
 
+"class"                 return TOKEN(CLASS);
 "const"                 return TOKEN(CONST);
 "else"                  return TOKEN(ELSE);
 "extern"                return TOKEN(EXTERN);
@@ -35,6 +36,7 @@
 "if"                    return TOKEN(IF);
 "mutable"               return TOKEN(MUTABLE);
 "return"                return TOKEN(RETURN);
+"struct"                return TOKEN(STRUCT);
 "true"                  return TOKEN(TRUE);
 "var"                   return TOKEN(VAR);
 "while"                 return TOKEN(WHILE);

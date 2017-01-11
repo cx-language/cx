@@ -13,6 +13,7 @@
 enum class DeclKind {
     ParamDecl,
     FuncDecl,
+    TypeDecl,
     VarDecl,
 };
 
@@ -28,6 +29,14 @@ struct FuncDecl {
     std::shared_ptr<std::vector<Stmt>> body;
     bool isExtern() const { return body == nullptr; };
     FuncType getFuncType() const;
+};
+
+enum class TypeTag { Struct, Class };
+
+struct TypeDecl {
+    TypeTag tag;
+    std::string name;
+    Type getType() const;
 };
 
 struct VarDecl {
@@ -62,6 +71,7 @@ public:
     }
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(ParamDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FuncDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(TypeDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(VarDecl)
 #undef DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR
 
@@ -69,5 +79,5 @@ public:
     DeclKind getKind() const { return static_cast<DeclKind>(data.which()); }
 
 private:
-    boost::variant<ParamDecl, FuncDecl, VarDecl> data;
+    boost::variant<ParamDecl, FuncDecl, TypeDecl, VarDecl> data;
 };
