@@ -23,7 +23,7 @@ template<typename... Args>
 const Type& typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
 
-const Type& typecheck(VariableExpr& expr) {
+Type typecheck(VariableExpr& expr) {
     auto it = symbolTable.find(expr.identifier);
     if (it == symbolTable.end()) {
         error("unknown identifier '", expr.identifier, "'");
@@ -31,7 +31,7 @@ const Type& typecheck(VariableExpr& expr) {
     switch (it->second->getKind()) {
         case DeclKind::VarDecl: return it->second->getVarDecl().getType();
         case DeclKind::ParamDecl: return it->second->getParamDecl().type;
-        case DeclKind::FuncDecl: assert(false); // TODO
+        case DeclKind::FuncDecl: return it->second->getFuncDecl().getFuncType();
     }
 }
 
@@ -161,6 +161,9 @@ void typecheck(WhileStmt& stmt) {
 
 void typecheck(AssignStmt& stmt) {
     const Type& lhsType = typecheck(stmt.lhs);
+    if (lhsType.getKind() == TypeKind::FuncType) {
+        error("cannot assign to function");
+    }
     const Type& rhsType = typecheck(stmt.rhs);
     if (rhsType != lhsType) {
         error("cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
@@ -212,6 +215,9 @@ void typecheck(VarDecl& decl) {
         error("redefinition of '", decl.name, "'");
     }
     auto initType = typecheck(*decl.initializer);
+    if (initType.getKind() == TypeKind::FuncType) {
+        error("function pointers not implemented yet");
+    }
     if (auto declaredType = decl.getDeclaredType()) {
         if (*declaredType != initType) {
             error("cannot initialize variable of type '", *declaredType,

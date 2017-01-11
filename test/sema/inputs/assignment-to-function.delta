@@ -1,0 +1,4 @@
+func foo() { }
+func main() {
+    foo = 1;
+}
