@@ -19,6 +19,8 @@
     #define TOKEN(token) token
 
     #pragma GCC diagnostic ignored "-Wdeprecated-register"
+    #pragma GCC diagnostic ignored "-Wunused-function"
+    #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
 %}
 
 %option noyywrap
