@@ -2,6 +2,7 @@
 #include <limits>
 #include <unordered_map>
 #include <boost/utility/string_ref.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 #include <boost/optional.hpp>
 #include "typecheck.h"
 #include "../ast/type.h"
@@ -68,6 +69,38 @@ Type typecheck(BinaryExpr& expr) {
     return expr.op.isComparisonOperator() ? Type(BasicType{"bool"}) : leftType;
 }
 
+template<typename IntType>
+bool checkRange(int64_t value, boost::string_ref param) {
+    try {
+        boost::numeric_cast<IntType>(value);
+        return true;
+    } catch (...) {
+        error(value, " is out of range for parameter of type '", param, "'");
+    }
+}
+
+static bool isValidArgument(const Expr& arg, const Type& argType, const Type& paramType) {
+    if (argType == paramType) return true;
+
+    // Autocast integer literals to parameter type if within range, error out if not within range.
+    if (arg.getKind() == ExprKind::IntLiteralExpr && paramType.getKind() == TypeKind::BasicType) {
+        int64_t value{arg.getIntLiteralExpr().value};
+        boost::string_ref param = paramType.getBasicType().name;
+        if (param == "int") return checkRange<int>(value, param);
+        if (param == "uint") return checkRange<unsigned>(value, param);
+        if (param == "int8") return checkRange<int8_t>(value, param);
+        if (param == "int16") return checkRange<int16_t>(value, param);
+        if (param == "int32") return checkRange<int32_t>(value, param);
+        if (param == "int64") return checkRange<int64_t>(value, param);
+        if (param == "uint8") return checkRange<uint8_t>(value, param);
+        if (param == "uint16") return checkRange<uint16_t>(value, param);
+        if (param == "uint32") return checkRange<uint32_t>(value, param);
+        if (param == "uint64") return checkRange<uint64_t>(value, param);
+    }
+
+    return false;
+}
+
 Type typecheck(CallExpr& expr) {
     auto it = symbolTable.find(expr.funcName);
     if (it == symbolTable.end()) {
@@ -85,7 +118,7 @@ Type typecheck(CallExpr& expr) {
     }
     for (int i = 0; i < params.size(); ++i) {
         auto argType = typecheck(expr.args[i]);
-        if (argType != params[i]) {
+        if (!isValidArgument(expr.args[i], argType, params[i])) {
             error("invalid argument #", i + 1, " type '", argType, "' to '",
                 expr.funcName, "', expected '", params[i], "'");
         }

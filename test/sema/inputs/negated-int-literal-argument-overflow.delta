@@ -1,0 +1,4 @@
+func foo(uint a) { }
+func main() {
+    foo(-1);
+}

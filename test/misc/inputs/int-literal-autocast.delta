@@ -1,0 +1,9 @@
+func foo(uint a) { }
+func bar(uint8 a) { }
+
+func main() {
+    foo(0);
+    foo(1);
+    bar(0);
+    bar(255);
+}

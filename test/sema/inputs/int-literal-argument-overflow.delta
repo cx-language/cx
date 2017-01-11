@@ -1,0 +1,4 @@
+func foo(uint8 a) { }
+func main() {
+    foo(256);
+}
