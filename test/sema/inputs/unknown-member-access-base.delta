@@ -1,0 +1,9 @@
+class Foo {
+    int qux;
+}
+
+init Foo() { }
+
+func main() {
+    var bar = foo.bar;
+}

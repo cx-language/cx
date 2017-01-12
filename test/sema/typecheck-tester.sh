@@ -40,3 +40,6 @@ check_error explicitly-typed-immutable-variable.delta "cannot decrement immutabl
 check_error int-literal-argument-overflow.delta "256 is out of range for parameter of type 'uint8'"
 check_error negated-int-literal-argument-overflow.delta "invalid argument #1 type 'int' to 'foo', expected 'uint'"
 check_error composite-type-redefinition.delta "redefinition of 'Foo'"
+check_error nonexisting-member-access.delta "no member named 'bar' in 'foo'"
+check_error unsupported-member-access.delta "'Foo' doesn't support member access"
+check_error unknown-member-access-base.delta "unknown identifier 'foo'"

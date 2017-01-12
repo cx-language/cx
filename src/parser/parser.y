@@ -73,7 +73,7 @@
 %token <string> IDENTIFIER STRING_LITERAL
 %token <number> NUMBER
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
-             call_expression
+             call_expression member_access_expression
 %type <declList> declaration_list
 %type <decl> declaration function_definition initializer_definition function_prototype
              extern_function_declaration variable_definition
@@ -256,7 +256,8 @@ expression:
 |   prefix_expression { $$ = $1; }
 |   binary_expression { $$ = $1; }
 |   parenthesized_expression { $$ = $1; }
-|   call_expression { $$ = $1; };
+|   call_expression { $$ = $1; }
+|   member_access_expression { $$ = $1; };
 
 prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2)}); };
 prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2)}); };
@@ -283,6 +284,9 @@ argument_list:
 nonempty_argument_list:
     expression { $$ = new std::vector<Expr>(); $$->push_back(std::move(*$1)); }
 |   nonempty_argument_list "," expression { $$ = $1; $$->push_back(std::move(*$3)); };
+
+member_access_expression:
+    IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3}); };
 
 %%
 

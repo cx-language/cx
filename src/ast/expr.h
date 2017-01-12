@@ -19,6 +19,7 @@ enum class ExprKind {
     PrefixExpr,
     BinaryExpr,
     CallExpr,
+    MemberExpr,
 };
 
 struct VariableExpr {
@@ -54,6 +55,12 @@ struct CallExpr {
     bool isInitializerCall;
 };
 
+/// A member access expression using the dot syntax, such as 'a.b'.
+struct MemberExpr {
+    std::string base;
+    std::string member;
+};
+
 class Expr {
 public:
 #define DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(KIND) \
@@ -74,6 +81,7 @@ public:
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(PrefixExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BinaryExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CallExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(MemberExpr)
 #undef DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR
 
     Expr(Expr&& expr) : data(std::move(expr.data)) { }
@@ -83,6 +91,6 @@ public:
 
 private:
     boost::variant<VariableExpr, StrLiteralExpr, IntLiteralExpr, BoolLiteralExpr,
-        PrefixExpr, BinaryExpr, CallExpr> data;
+        PrefixExpr, BinaryExpr, CallExpr, MemberExpr> data;
     boost::optional<Type> type;
 };

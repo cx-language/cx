@@ -146,6 +146,24 @@ Type typecheck(CallExpr& expr) {
     return Type(TupleType{it->second->getFuncDecl().getFuncType().returnTypes});
 }
 
+Type typecheck(MemberExpr& expr) {
+    auto it = symbolTable.find(expr.base);
+    if (it == symbolTable.end()) {
+        error("unknown identifier '", expr.base, "'");
+    }
+    if (it->second->getKind() != DeclKind::VarDecl) {
+        error("'", expr.base, "' doesn't support member access");
+    }
+    auto typeIt = symbolTable.find(it->second->getVarDecl().getType().getBasicType().name);
+    assert(typeIt != symbolTable.end());
+    for (const FieldDecl& field : typeIt->second->getTypeDecl().fields) {
+        if (field.name == expr.member) {
+            return field.type;
+        }
+    }
+    error("no member named '", expr.member, "' in '", expr.base, "'");
+}
+
 const Type& typecheck(Expr& expr) {
     boost::optional<Type> type;
     switch (expr.getKind()) {
@@ -156,6 +174,7 @@ const Type& typecheck(Expr& expr) {
         case ExprKind::PrefixExpr:      type = typecheck(expr.getPrefixExpr()); break;
         case ExprKind::BinaryExpr:      type = typecheck(expr.getBinaryExpr()); break;
         case ExprKind::CallExpr:        type = typecheck(expr.getCallExpr()); break;
+        case ExprKind::MemberExpr:      type = typecheck(expr.getMemberExpr()); break;
     }
     expr.setType(std::move(*type));
     return expr.getType();

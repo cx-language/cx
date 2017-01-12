@@ -62,7 +62,7 @@ compile function-call.delta
 compile function-call-before-declaration.delta
 compile comments.delta
 compile int-literal-autocast.delta
-compile_and_run_and_check_exit_status composite-types.delta 2
+compile_and_run_and_check_exit_status composite-types.delta 5
 compile_and_run_and_check_exit_status composite-type-use-before-declaration.delta 2
 compile_and_run_and_check_exit_status exit-status.delta 42
 compile_and_run_and_check_exit_status void-main.delta 0

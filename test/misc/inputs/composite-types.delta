@@ -15,5 +15,5 @@ init X(int aa) {
 
 func main() -> int {
     var x = X(5);
-    return 2;
+    return x.a;
 }

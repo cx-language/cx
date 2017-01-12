@@ -47,6 +47,10 @@ std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
     return out << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const MemberExpr& expr) {
+    return out << "(member-expr " << expr.base << " " << expr.member << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:   return out << expr.getVariableExpr();
@@ -56,6 +60,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::PrefixExpr:     return out << expr.getPrefixExpr();
         case ExprKind::BinaryExpr:     return out << expr.getBinaryExpr();
         case ExprKind::CallExpr:       return out << expr.getCallExpr();
+        case ExprKind::MemberExpr:     return out << expr.getMemberExpr();
     }
 }
 
