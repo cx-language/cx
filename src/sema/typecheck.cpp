@@ -108,12 +108,15 @@ static bool isValidConversion(const Expr& expr, const Type& source, const Type& 
     return false;
 }
 
+static void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
+                         const std::string& funcName);
+
 Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args) {
     auto it = symbolTable.find("__init_" + type.name);
     if (it == symbolTable.end()) {
         error("no matching initializer for '", type.name, "'");
     }
-    // TODO: Validate initializer arguments.
+    validateArgs(args, it->second->getInitDecl().params, "'" + type.name + "' initializer");
     return type.getType();
 }
 
@@ -129,24 +132,29 @@ Type typecheck(CallExpr& expr) {
     if (it->second->getKind() != DeclKind::FuncDecl) {
         error("'", expr.funcName, "' is not a function");
     }
-    const auto& params = it->second->getFuncDecl().params;
-    if (expr.args.size() < params.size()) {
-        error("too few arguments to '", expr.funcName, "', expected ", params.size());
+    validateArgs(expr.args, it->second->getFuncDecl().params, "'" + expr.funcName + "'");
+    return Type(TupleType{it->second->getFuncDecl().getFuncType().returnTypes});
+}
+
+static void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
+                         const std::string& funcName) {
+    if (args.size() < params.size()) {
+        error("too few arguments to ", funcName, ", expected ", params.size());
     }
-    if (expr.args.size() > params.size()) {
-        error("too many arguments to '", expr.funcName, "', expected ", params.size());
+    if (args.size() > params.size()) {
+        error("too many arguments to ", funcName, ", expected ", params.size());
     }
     for (int i = 0; i < params.size(); ++i) {
-        if (!params[i].label.empty() && expr.args[i].label != params[i].label) {
-            error("invalid label '", expr.args[i].label, "' for argument #", i + 1, ", expected '", params[i].label, "'");
+        if (!params[i].label.empty() && args[i].label != params[i].label) {
+            error("invalid label '", args[i].label, "' for argument #", i + 1,
+                ", expected '", params[i].label, "'");
         }
-        auto argType = typecheck(*expr.args[i].value);
-        if (!isValidConversion(*expr.args[i].value, argType, params[i].type)) {
-            error("invalid argument #", i + 1, " type '", argType, "' to '",
-                expr.funcName, "', expected '", params[i].type, "'");
+        auto argType = typecheck(*args[i].value);
+        if (!isValidConversion(*args[i].value, argType, params[i].type)) {
+            error("invalid argument #", i + 1, " type '", argType, "' to ",
+                funcName, ", expected '", params[i].type, "'");
         }
     }
-    return Type(TupleType{it->second->getFuncDecl().getFuncType().returnTypes});
 }
 
 Type typecheck(MemberExpr& expr) {

@@ -45,3 +45,4 @@ check_error unsupported-member-access.delta "'Foo' doesn't support member access
 check_error unknown-member-access-base.delta "unknown identifier 'foo'"
 check_error immutable-member-mutation.delta "cannot decrement immutable value"
 check_error mismatching-argument-label.delta "invalid label 'qux' for argument #2, expected 'bar'"
+check_error mismatching-argument-label-init.delta "invalid label 'bar' for argument #1, expected 'foo'"
