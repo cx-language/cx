@@ -77,8 +77,8 @@ void codegen(const BinaryExpr& expr) {
 void codegen(const CallExpr& expr) {
     if (expr.isInitializerCall) *out << "__init_" << expr.funcName << "(";
     else *out << expr.funcName << "(";
-    for (const Expr& arg : expr.args) {
-        codegen(arg);
+    for (const Arg& arg : expr.args) {
+        codegen(*arg.value);
         if (&arg != &expr.args.back()) *out << ",";
     }
     *out << ")";

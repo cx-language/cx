@@ -49,9 +49,14 @@ struct BinaryExpr {
     std::unique_ptr<Expr> right;
 };
 
+struct Arg {
+    std::string label; // Empty if no label.
+    std::unique_ptr<Expr> value;
+};
+
 struct CallExpr {
     std::string funcName;
-    std::vector<Expr> args;
+    std::vector<Arg> args;
     bool isInitializerCall;
 };
 

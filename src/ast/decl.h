@@ -20,6 +20,7 @@ enum class DeclKind {
 };
 
 struct ParamDecl {
+    std::string label; // Empty if no label.
     Type type;
     std::string name;
 };

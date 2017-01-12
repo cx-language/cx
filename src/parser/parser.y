@@ -83,7 +83,8 @@
 %type <stmt> statement return_statement increment_statement decrement_statement
              call_statement if_statement while_statement assignment_statement
 %type <exprList> return_value_list nonempty_return_value_list
-                 argument_list nonempty_argument_list
+%type <argList> argument_list nonempty_argument_list
+%type <arg> argument
 %type <paramDeclList> parameter_list nonempty_parameter_list
 %type <paramDecl> parameter
 %type <fieldDeclList> member_list
@@ -98,6 +99,8 @@
     std::vector<FieldDecl>* fieldDeclList;
     std::vector<Stmt>* stmtList;
     std::vector<Expr>* exprList;
+    std::vector<Arg>* argList;
+    Arg* arg;
     Decl* decl;
     ParamDecl* paramDecl;
     FieldDecl* fieldDecl;
@@ -151,7 +154,9 @@ nonempty_parameter_list:
     parameter { $$ = new std::vector<ParamDecl>(); $$->push_back(std::move(*$1)); }
 |   nonempty_parameter_list "," parameter { $$ = $1; $$->push_back(std::move(*$3)); };
 
-parameter: type IDENTIFIER { $$ = new ParamDecl{std::move(*$1), $2}; };
+parameter:
+    type IDENTIFIER { $$ = new ParamDecl{"", std::move(*$1), $2}; }
+|   IDENTIFIER ":" type IDENTIFIER { $$ = new ParamDecl{$1, std::move(*$3), $4}; };
 
 statement_list:
     /* empty */ { $$ = new std::vector<Stmt>(); }
@@ -278,12 +283,16 @@ call_expression:
     IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$1, std::move(*$3)}); };
 
 argument_list:
-    /* empty */ { $$ = new std::vector<Expr>(); }
+    /* empty */ { $$ = new std::vector<Arg>(); }
 |   nonempty_argument_list { $$ = $1; };
 
 nonempty_argument_list:
-    expression { $$ = new std::vector<Expr>(); $$->push_back(std::move(*$1)); }
-|   nonempty_argument_list "," expression { $$ = $1; $$->push_back(std::move(*$3)); };
+    argument { $$ = new std::vector<Arg>(); $$->push_back(std::move(*$1)); }
+|   nonempty_argument_list "," argument { $$ = $1; $$->push_back(std::move(*$3)); };
+
+argument:
+    expression { $$ = new Arg{"", u($1)};  }
+|   IDENTIFIER ":" expression { $$ = new Arg{$1, u($3)}; };
 
 member_access_expression:
     IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3}); };

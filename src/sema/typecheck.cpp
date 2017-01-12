@@ -108,7 +108,7 @@ static bool isValidConversion(const Expr& expr, const Type& source, const Type& 
     return false;
 }
 
-Type typecheckInitExpr(const TypeDecl& type, const std::vector<Expr>& args) {
+Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args) {
     auto it = symbolTable.find("__init_" + type.name);
     if (it == symbolTable.end()) {
         error("no matching initializer for '", type.name, "'");
@@ -129,7 +129,7 @@ Type typecheck(CallExpr& expr) {
     if (it->second->getKind() != DeclKind::FuncDecl) {
         error("'", expr.funcName, "' is not a function");
     }
-    const auto& params = it->second->getFuncDecl().getFuncType().paramTypes;
+    const auto& params = it->second->getFuncDecl().params;
     if (expr.args.size() < params.size()) {
         error("too few arguments to '", expr.funcName, "', expected ", params.size());
     }
@@ -137,10 +137,13 @@ Type typecheck(CallExpr& expr) {
         error("too many arguments to '", expr.funcName, "', expected ", params.size());
     }
     for (int i = 0; i < params.size(); ++i) {
-        auto argType = typecheck(expr.args[i]);
-        if (!isValidConversion(expr.args[i], argType, params[i])) {
+        if (!params[i].label.empty() && expr.args[i].label != params[i].label) {
+            error("invalid label '", expr.args[i].label, "' for argument #", i + 1, ", expected '", params[i].label, "'");
+        }
+        auto argType = typecheck(*expr.args[i].value);
+        if (!isValidConversion(*expr.args[i].value, argType, params[i].type)) {
             error("invalid argument #", i + 1, " type '", argType, "' to '",
-                expr.funcName, "', expected '", params[i], "'");
+                expr.funcName, "', expected '", params[i].type, "'");
         }
     }
     return Type(TupleType{it->second->getFuncDecl().getFuncType().returnTypes});
