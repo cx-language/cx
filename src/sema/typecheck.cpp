@@ -260,7 +260,11 @@ void typecheck(AssignStmt& stmt) {
         error("cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
     if (!lhsType.isMutable() && !inInitializer) {
-        error("cannot assign to immutable variable '", stmt.lhs.identifier, "'");
+        if (stmt.lhs.getKind() == ExprKind::VariableExpr) {
+            error("cannot assign to immutable variable '", stmt.lhs.getVariableExpr().identifier, "'");
+        } else {
+            error("cannot assign to immutable expression");
+        }
     }
 }
 

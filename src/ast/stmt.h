@@ -51,7 +51,7 @@ struct WhileStmt {
 };
 
 struct AssignStmt {
-    VariableExpr lhs;
+    Expr lhs;
     Expr rhs;
 };
 

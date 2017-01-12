@@ -211,7 +211,7 @@ typed_variable_definition:
         { $$ = new Decl(VarDecl{std::move(*$1), $2, std::shared_ptr<Expr>($4)}); };
 
 assignment_statement:
-    IDENTIFIER "=" expression ";" { $$ = new Stmt(AssignStmt{{$1}, std::move(*$3)}); };
+    expression "=" expression ";" { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3)}); };
 
 return_statement:
     "return" return_value_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2)}); };

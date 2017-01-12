@@ -1,0 +1,12 @@
+struct X {
+    int a;
+}
+
+init X(int aa) {
+    a = aa;
+}
+
+func main() {
+    var x = X(5);
+    x.a--;
+}

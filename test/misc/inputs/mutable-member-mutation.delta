@@ -1,0 +1,14 @@
+struct X {
+    mutable int a;
+}
+
+init X(int aa) {
+    a = aa;
+}
+
+func main() -> int {
+    var x = X(0);
+    x.a = 5;
+    x.a++;
+    return x.a;
+}
