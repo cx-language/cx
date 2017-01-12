@@ -15,6 +15,7 @@ enum class DeclKind {
     FuncDecl,
     TypeDecl,
     VarDecl,
+    FieldDecl, /// A struct or class field declaration.
 };
 
 struct ParamDecl {
@@ -36,6 +37,7 @@ enum class TypeTag { Struct, Class };
 struct TypeDecl {
     TypeTag tag;
     std::string name;
+    std::vector<struct FieldDecl> fields;
     Type getType() const;
 };
 
@@ -56,6 +58,11 @@ struct VarDecl {
     bool isMutable() const { return boost::get<bool>(type); }
 };
 
+struct FieldDecl {
+    Type type;
+    std::string name;
+};
+
 class Decl {
 public:
 #define DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(KIND) \
@@ -73,11 +80,12 @@ public:
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FuncDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(TypeDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(VarDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FieldDecl)
 #undef DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR
 
     Decl(Decl&& decl) : data(std::move(decl.data)) { }
     DeclKind getKind() const { return static_cast<DeclKind>(data.which()); }
 
 private:
-    boost::variant<ParamDecl, FuncDecl, TypeDecl, VarDecl> data;
+    boost::variant<ParamDecl, FuncDecl, TypeDecl, VarDecl, FieldDecl> data;
 };

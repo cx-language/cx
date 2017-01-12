@@ -9,3 +9,11 @@ func foo8() -> int { var answer = 43; answer--; return answer; }
 func foo9() -> int { return (0 - -0xC) / 2 * (0o4 + 0b11); }
 var foo10 = 42;
 const foo11 = 42;
+struct S1 {
+    uint a;
+    char* b;
+}
+class C1 {
+    int8 a;
+    bool* b;
+}

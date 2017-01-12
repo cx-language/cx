@@ -34,6 +34,7 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::ParamDecl: return it->second->getParamDecl().type;
         case DeclKind::FuncDecl: return it->second->getFuncDecl().getFuncType();
         case DeclKind::TypeDecl: return it->second->getTypeDecl().getType();
+        case DeclKind::FieldDecl: return it->second->getFieldDecl().type;
     }
 }
 
@@ -298,12 +299,16 @@ void typecheck(VarDecl& decl) {
     }
 }
 
+void typecheck(FieldDecl& decl) {
+}
+
 void typecheck(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   typecheck(decl.getVarDecl()); break;
+        case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;
     }
 }
 

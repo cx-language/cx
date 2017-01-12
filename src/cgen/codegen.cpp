@@ -202,7 +202,9 @@ void codegen(const FuncDecl& decl) {
 
 void codegen(const TypeDecl& decl) {
     *out << "typedef struct " << decl.name << "{";
-    // TODO
+    for (const FieldDecl& field : decl.fields) {
+        *out << toC(field.type) << " " << field.name << ";";
+    }
     *out << "}" << decl.name << ";";
 }
 
@@ -212,12 +214,17 @@ void codegen(const VarDecl& decl) {
     *out << ";";
 }
 
+void codegen(const FieldDecl& decl) {
+    *out << toC(decl.type) << " " << decl.name << ";";
+}
+
 void codegen(const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: codegen(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  codegen(decl.getFuncDecl()); break;
         case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
+        case DeclKind::FieldDecl: codegen(decl.getFieldDecl()); break;
     }
 }
 
@@ -236,9 +243,10 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
         switch (decl.getKind()) {
             case DeclKind::TypeDecl:
                 codegen(decl.getTypeDecl());
-                *out << ";";
                 break;
-            case DeclKind::FuncDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl: break;
+            case DeclKind::FuncDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
+            case DeclKind::FieldDecl:
+                break;
         }
     }
 
@@ -249,7 +257,9 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
                 codegenPrototype(decl.getFuncDecl());
                 *out << ";";
                 break;
-            case DeclKind::TypeDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl: break;
+            case DeclKind::TypeDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
+            case DeclKind::FieldDecl:
+                break;
         }
     }
 

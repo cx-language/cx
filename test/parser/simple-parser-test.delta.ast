@@ -20,4 +20,10 @@
     (func-decl foo9 () int
         (return-stmt ((0 - (-12)) / (2 * (4 + 3)))))
     (var-decl foo10 42)
-    (var-decl foo11 42))
+    (var-decl foo11 42)
+    (type-decl struct S1
+        (field-decl uint a)
+        (field-decl char* b))
+    (type-decl class C1
+        (field-decl int8 a)
+        (field-decl bool* b)))

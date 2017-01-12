@@ -85,6 +85,8 @@
                  argument_list nonempty_argument_list
 %type <paramDeclList> parameter_list nonempty_parameter_list
 %type <paramDecl> parameter
+%type <fieldDeclList> member_list
+%type <fieldDecl> field_declaration
 %type <type> type return_type_specifier return_type_list
 
 %union {
@@ -92,10 +94,12 @@
     long long number;
     std::vector<Decl>* declList;
     std::vector<ParamDecl>* paramDeclList;
+    std::vector<FieldDecl>* fieldDeclList;
     std::vector<Stmt>* stmtList;
     std::vector<Expr>* exprList;
     Decl* decl;
     ParamDecl* paramDecl;
+    FieldDecl* fieldDecl;
     Stmt* stmt;
     Expr* expr;
     Type* type;
@@ -157,10 +161,17 @@ type:
 |   type "*" { $$ = new Type(PtrType{u($1)}); };
 
 composite_type_declaration:
-    "struct" IDENTIFIER "{" "}" { $$ = new Decl(TypeDecl{TypeTag::Struct, $2});
-                                  addToSymbolTable($$->getTypeDecl()); }
-|   "class"  IDENTIFIER "{" "}" { $$ = new Decl(TypeDecl{TypeTag::Class, $2});
-                                  addToSymbolTable($$->getTypeDecl()); };
+    "struct" IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Struct, $2, std::move(*$4)});
+                                              addToSymbolTable($$->getTypeDecl()); }
+|   "class"  IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Class, $2, std::move(*$4)});
+                                              addToSymbolTable($$->getTypeDecl()); };
+
+member_list:
+    /* empty */ { $$ = new std::vector<FieldDecl>(); }
+|   member_list field_declaration { $$ = $1; $$->push_back(std::move(*$2)); };
+
+field_declaration:
+    type IDENTIFIER ";" { $$ = new FieldDecl{std::move(*$1), $2}; };
 
 // Statements //////////////////////////////////////////////////////////////////
 
