@@ -34,6 +34,7 @@
 "false"                 return TOKEN(FALSE);
 "func"                  return TOKEN(FUNC);
 "if"                    return TOKEN(IF);
+"init"                  return TOKEN(INIT);
 "mutable"               return TOKEN(MUTABLE);
 "return"                return TOKEN(RETURN);
 "struct"                return TOKEN(STRUCT);

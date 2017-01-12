@@ -11,6 +11,7 @@
 
 static std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
 static const Type* funcReturnType = nullptr;
+static bool inInitializer = false;
 
 template<typename... Args>
 [[noreturn]] static void error(Args&&... args) {
@@ -33,6 +34,7 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::VarDecl: return it->second->getVarDecl().getType();
         case DeclKind::ParamDecl: return it->second->getParamDecl().type;
         case DeclKind::FuncDecl: return it->second->getFuncDecl().getFuncType();
+        case DeclKind::InitDecl: assert(false && "cannot refer to initializers yet");
         case DeclKind::TypeDecl: return it->second->getTypeDecl().getType();
         case DeclKind::FieldDecl: return it->second->getFieldDecl().type;
     }
@@ -106,10 +108,23 @@ static bool isValidConversion(const Expr& expr, const Type& source, const Type& 
     return false;
 }
 
+Type typecheckInitExpr(const TypeDecl& type, const std::vector<Expr>& args) {
+    auto it = symbolTable.find("__init_" + type.name);
+    if (it == symbolTable.end()) {
+        error("no matching initializer for '", type.name, "'");
+    }
+    // TODO: Validate initializer arguments.
+    return type.getType();
+}
+
 Type typecheck(CallExpr& expr) {
     auto it = symbolTable.find(expr.funcName);
     if (it == symbolTable.end()) {
         error("unknown function '", expr.funcName, "'");
+    }
+    expr.isInitializerCall = it->second->getKind() == DeclKind::TypeDecl;
+    if (expr.isInitializerCall) {
+        return typecheckInitExpr(it->second->getTypeDecl(), expr.args);
     }
     if (it->second->getKind() != DeclKind::FuncDecl) {
         error("'", expr.funcName, "' is not a function");
@@ -225,7 +240,7 @@ void typecheck(AssignStmt& stmt) {
     if (!isValidConversion(stmt.rhs, rhsType, lhsType)) {
         error("cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
-    if (!lhsType.isMutable()) {
+    if (!lhsType.isMutable() && !inInitializer) {
         error("cannot assign to immutable variable '", stmt.lhs.identifier, "'");
     }
 }
@@ -257,6 +272,24 @@ void addToSymbolTable(const FuncDecl& decl) {
     symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
 }
 
+void addToSymbolTable(const InitDecl& decl) {
+    if (symbolTable.count("__init_" + decl.getTypeName()) > 0) {
+        error("redefinition of '", decl.getTypeName(), "' initializer");
+    }
+
+    InitDecl initDecl(decl);
+    auto it = symbolTable.find(decl.getTypeName());
+    if (it == symbolTable.end()) {
+        error("unknown identifier '", decl.getTypeName(), "'");
+    }
+    if (it->second->getKind() != DeclKind::TypeDecl) {
+        error("'", decl.getTypeName(), "' is not a class or struct");
+    }
+    initDecl.type = &it->second->getTypeDecl();
+
+    symbolTable.insert({"__init_" + decl.getTypeName(), new Decl(std::move(initDecl))});
+}
+
 void addToSymbolTable(const TypeDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
@@ -271,6 +304,26 @@ void typecheck(FuncDecl& decl) {
     funcReturnType = &decl.returnType;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
     funcReturnType = nullptr;
+    symbolTable = std::move(symbolTableBackup);
+}
+
+void typecheck(InitDecl& decl) {
+    auto symbolTableBackup = symbolTable;
+    auto it = symbolTable.find(decl.getTypeName());
+    if (it == symbolTable.end()) {
+        error("unknown identifier '", decl.getTypeName(), "'");
+    }
+    if (it->second->getKind() != DeclKind::TypeDecl) {
+        error("'", decl.getTypeName(), "' is not a class or struct");
+    }
+    decl.type = &it->second->getTypeDecl();
+    for (const FieldDecl& field : it->second->getTypeDecl().fields) {
+        symbolTable.insert({field.name, new Decl(FieldDecl(field))});
+    }
+    for (ParamDecl& param : decl.params) typecheck(param);
+    inInitializer = true;
+    for (Stmt& stmt : *decl.body) typecheck(stmt);
+    inInitializer = false;
     symbolTable = std::move(symbolTableBackup);
 }
 
@@ -306,6 +359,7 @@ void typecheck(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
+        case DeclKind::InitDecl:  typecheck(decl.getInitDecl()); break;
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   typecheck(decl.getVarDecl()); break;
         case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;

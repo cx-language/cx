@@ -2,12 +2,13 @@
 #include <fstream>
 #include <functional>
 #include <boost/utility/string_ref.hpp>
+#include <boost/optional.hpp>
 #include "codegen.h"
 
 static std::ostream* out = nullptr;
 
 /// Points to the function whose body is currently being generated.
-static const FuncDecl* currentFunc = nullptr;
+static boost::optional<std::string> currentFunc = boost::none;
 
 std::string toC(const Type& type) {
     switch (type.getKind()) {
@@ -74,7 +75,8 @@ void codegen(const BinaryExpr& expr) {
 }
 
 void codegen(const CallExpr& expr) {
-    *out << expr.funcName << "(";
+    if (expr.isInitializerCall) *out << "__init_" << expr.funcName << "(";
+    else *out << expr.funcName << "(";
     for (const Expr& arg : expr.args) {
         codegen(arg);
         if (&arg != &expr.args.back()) *out << ",";
@@ -99,7 +101,7 @@ void codegen(const ReturnStmt& stmt) {
     if (stmt.values.size() == 1) {
         codegen(stmt.values[0]);
     } else if (stmt.values.size() > 1) {
-        *out << "(__typeof__(" << currentFunc->name << "())){";
+        *out << "(__typeof__(" << *currentFunc << "())){";
         for (const Expr& expr : stmt.values) {
             codegen(expr);
             if (&expr != &stmt.values.back()) *out << ",";
@@ -191,13 +193,38 @@ void codegen(const FuncDecl& decl) {
     codegenPrototype(decl);
     *out << "{";
     auto currentFuncBackup = currentFunc;
-    currentFunc = &decl;
+    currentFunc = decl.name;
     for (const Stmt& stmt : *decl.body) {
         codegen(stmt);
     }
     currentFunc = currentFuncBackup;
     if (decl.name == "main") *out << "return 0;";
     *out << "}";
+}
+
+void codegen(const InitDecl& decl) {
+    *out << toC(decl.getTypeDecl().getType()) << " __init_" << decl.getTypeDecl().name << "(";
+    for (const ParamDecl& param : decl.params) {
+        codegen(param);
+        if (&param != &decl.params.back()) *out << ",";
+    }
+    *out << "){";
+    auto currentFuncBackup = currentFunc;
+    currentFunc = "__init_" + decl.getTypeDecl().name;
+    for (const FieldDecl& field : decl.getTypeDecl().fields) {
+        *out << toC(field.type) << " " << field.name << ";";
+    }
+    for (const Stmt& stmt : *decl.body) {
+        codegen(stmt);
+    }
+    currentFunc = currentFuncBackup;
+
+    *out << "return(" << toC(decl.getTypeDecl().getType()) << "){";
+    for (const FieldDecl& field : decl.getTypeDecl().fields) {
+        *out << field.name;
+        if (&field != &decl.getTypeDecl().fields.back()) *out << ",";
+    }
+    *out << "};}";
 }
 
 void codegen(const TypeDecl& decl) {
@@ -222,6 +249,7 @@ void codegen(const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: codegen(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  codegen(decl.getFuncDecl()); break;
+        case DeclKind::InitDecl:  codegen(decl.getInitDecl()); break;
         case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
         case DeclKind::FieldDecl: codegen(decl.getFieldDecl()); break;
@@ -245,7 +273,7 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
                 codegen(decl.getTypeDecl());
                 break;
             case DeclKind::FuncDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
-            case DeclKind::FieldDecl:
+            case DeclKind::FieldDecl: case DeclKind::InitDecl:
                 break;
         }
     }
@@ -258,7 +286,7 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
                 *out << ";";
                 break;
             case DeclKind::TypeDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
-            case DeclKind::FieldDecl:
+            case DeclKind::FieldDecl: case DeclKind::InitDecl:
                 break;
         }
     }

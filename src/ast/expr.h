@@ -51,6 +51,7 @@ struct BinaryExpr {
 struct CallExpr {
     std::string funcName;
     std::vector<Expr> args;
+    bool isInitializerCall;
 };
 
 class Expr {

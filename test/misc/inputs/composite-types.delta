@@ -8,3 +8,12 @@ struct X {
 class Y {
     char* y;
 }
+
+init X(int aa) {
+    a = aa;
+}
+
+func main() -> int {
+    var x = X(5);
+    return 2;
+}

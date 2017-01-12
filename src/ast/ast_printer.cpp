@@ -153,6 +153,21 @@ std::ostream& operator<<(std::ostream& out, const FuncDecl& decl) {
     return out << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
+    out << br << "(init-decl " << decl.getTypeDecl().name << " (";
+    for (const ParamDecl& param : decl.params) {
+        out << param;
+        if (&param != &decl.params.back()) out << " ";
+    }
+    out << ")";
+    indentLevel++;
+    for (const Stmt& stmt : *decl.body) {
+        out << stmt;
+    }
+    indentLevel--;
+    return out << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const FieldDecl& decl) {
     return out << br << "(field-decl " << decl.type << " " << decl.name << ")";
 }
@@ -180,6 +195,7 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: return out << decl.getParamDecl();
         case DeclKind::FuncDecl:  return out << decl.getFuncDecl();
+        case DeclKind::InitDecl:  return out << decl.getInitDecl();
         case DeclKind::TypeDecl:  return out << decl.getTypeDecl();
         case DeclKind::VarDecl:   return out << decl.getVarDecl();
         case DeclKind::FieldDecl: return out << decl.getFieldDecl();

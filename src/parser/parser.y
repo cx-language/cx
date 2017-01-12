@@ -30,6 +30,7 @@
 %token FALSE    "false"
 %token FUNC     "func"
 %token IF       "if"
+%token INIT     "init"
 %token MUTABLE  "mutable"
 %token RETURN   "return"
 %token STRUCT   "struct"
@@ -74,7 +75,7 @@
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
              call_expression
 %type <declList> declaration_list
-%type <decl> declaration function_definition function_prototype
+%type <decl> declaration function_definition initializer_definition function_prototype
              extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
              typed_variable_definition composite_type_declaration
@@ -115,6 +116,7 @@ declaration_list:
 
 declaration:
     function_definition { $$ = $1; }
+|   initializer_definition { $$ = $1; }
 |   extern_function_declaration { $$ = $1; }
 |   composite_type_declaration { $$ = $1; }
 |   variable_definition { $$ = $1; };
@@ -172,6 +174,12 @@ member_list:
 
 field_declaration:
     type IDENTIFIER ";" { $$ = new FieldDecl{std::move(*$1), $2}; };
+
+initializer_definition:
+    "init" IDENTIFIER "(" parameter_list ")" "{" statement_list "}"
+        { $$ = new Decl(InitDecl{$2, std::move(*$4)});
+          addToSymbolTable($$->getInitDecl());
+          $$->getInitDecl().body.reset($7); };
 
 // Statements //////////////////////////////////////////////////////////////////
 

@@ -13,6 +13,7 @@
 enum class DeclKind {
     ParamDecl,
     FuncDecl,
+    InitDecl, /// A struct or class initializer declaration.
     TypeDecl,
     VarDecl,
     FieldDecl, /// A struct or class field declaration.
@@ -30,6 +31,16 @@ struct FuncDecl {
     std::shared_ptr<std::vector<Stmt>> body;
     bool isExtern() const { return body == nullptr; };
     FuncType getFuncType() const;
+};
+
+struct InitDecl {
+    /// The name of the struct or class this initializer initializes, or (after
+    /// type checking) a pointer to the corresponding type declaration.
+    boost::variant<std::string, struct TypeDecl*> type;
+    std::vector<ParamDecl> params;
+    std::shared_ptr<std::vector<Stmt>> body;
+    TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
+    const std::string& getTypeName() const { return boost::get<std::string>(type); }
 };
 
 enum class TypeTag { Struct, Class };
@@ -78,6 +89,7 @@ public:
     }
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(ParamDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FuncDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(InitDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(TypeDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(VarDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FieldDecl)
@@ -87,5 +99,5 @@ public:
     DeclKind getKind() const { return static_cast<DeclKind>(data.which()); }
 
 private:
-    boost::variant<ParamDecl, FuncDecl, TypeDecl, VarDecl, FieldDecl> data;
+    boost::variant<ParamDecl, FuncDecl, InitDecl, TypeDecl, VarDecl, FieldDecl> data;
 };
