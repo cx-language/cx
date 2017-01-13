@@ -23,6 +23,7 @@
 %error-verbose
 
 // Keywords
+%token CAST     "cast"
 %token CLASS    "class"
 %token CONST    "const"
 %token ELSE     "else"
@@ -73,7 +74,7 @@
 %token <string> IDENTIFIER STRING_LITERAL
 %token <number> NUMBER
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
-             call_expression member_access_expression
+             call_expression cast_expression member_access_expression
 %type <declList> declaration_list
 %type <decl> declaration function_definition initializer_definition function_prototype
              extern_function_declaration variable_definition
@@ -262,6 +263,7 @@ expression:
 |   binary_expression { $$ = $1; }
 |   parenthesized_expression { $$ = $1; }
 |   call_expression { $$ = $1; }
+|   cast_expression { $$ = $1; }
 |   member_access_expression { $$ = $1; };
 
 prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2)}); };
@@ -281,6 +283,9 @@ parenthesized_expression: "(" expression ")" { $$ = $2; };
 
 call_expression:
     IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$1, std::move(*$3)}); };
+
+cast_expression:
+    "cast" "<" type ">" "(" expression ")" { $$ = new Expr(CastExpr{std::move(*$3), u($6)}); };
 
 argument_list:
     /* empty */ { $$ = new std::vector<Arg>(); }

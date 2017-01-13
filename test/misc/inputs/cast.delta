@@ -1,0 +1,6 @@
+extern func calloc(size_t count, size_t size) -> void*;
+
+func main() -> int {
+    var byteptr = cast<uint8*>(calloc(1, 1));
+    return cast<int>(byteptr == cast<uint8*>(cast<void*>(byteptr)));
+}

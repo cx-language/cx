@@ -162,6 +162,39 @@ static void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDe
     }
 }
 
+const Type& typecheck(CastExpr& expr) {
+    const Type& sourceType = typecheck(*expr.expr);
+    const Type& targetType = expr.type;
+
+    switch (sourceType.getKind()) {
+        case TypeKind::BasicType:
+            if (sourceType.getBasicType().name == "bool") {
+                if (targetType.getKind() == TypeKind::BasicType
+                && targetType.getBasicType().name == "int") {
+                    return targetType; // bool -> int
+                }
+            }
+        case TypeKind::TupleType:
+        case TypeKind::FuncType:
+            break;
+        case TypeKind::PtrType:
+            const Type& sourcePointee = *sourceType.getPtrType().pointeeType;
+            if (targetType.getKind() == TypeKind::PtrType) {
+                if (sourcePointee.getKind() == TypeKind::BasicType
+                && sourcePointee.getBasicType().name == "void") {
+                    return targetType; // void* -> T*
+                }
+                const Type& targetPointee = *targetType.getPtrType().pointeeType;
+                if (targetPointee.getKind() == TypeKind::BasicType
+                && targetPointee.getBasicType().name == "void") {
+                    return targetType; // T* -> void*
+                }
+            }
+            break;
+    }
+    error("illegal cast from '", sourceType, "' to '", targetType, "'");
+}
+
 Type typecheck(MemberExpr& expr) {
     auto it = symbolTable.find(expr.base);
     if (it == symbolTable.end()) {
@@ -190,6 +223,7 @@ const Type& typecheck(Expr& expr) {
         case ExprKind::PrefixExpr:      type = typecheck(expr.getPrefixExpr()); break;
         case ExprKind::BinaryExpr:      type = typecheck(expr.getBinaryExpr()); break;
         case ExprKind::CallExpr:        type = typecheck(expr.getCallExpr()); break;
+        case ExprKind::CastExpr:        type = typecheck(expr.getCastExpr()); break;
         case ExprKind::MemberExpr:      type = typecheck(expr.getMemberExpr()); break;
     }
     expr.setType(std::move(*type));

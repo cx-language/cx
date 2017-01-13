@@ -84,6 +84,12 @@ void codegen(const CallExpr& expr) {
     *out << ")";
 }
 
+void codegen(const CastExpr& expr) {
+    *out << "((" << toC(expr.type) << ")(";
+    codegen(*expr.expr);
+    *out << "))";
+}
+
 void codegen(const MemberExpr& expr) {
     *out << expr.base << "." << expr.member;
 }
@@ -97,6 +103,7 @@ void codegen(const Expr& expr) {
         case ExprKind::PrefixExpr:     codegen(expr.getPrefixExpr()); break;
         case ExprKind::BinaryExpr:     codegen(expr.getBinaryExpr()); break;
         case ExprKind::CallExpr:       codegen(expr.getCallExpr()); break;
+        case ExprKind::CastExpr:       codegen(expr.getCastExpr()); break;
         case ExprKind::MemberExpr:     codegen(expr.getMemberExpr()); break;
     }
 }

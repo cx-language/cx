@@ -71,6 +71,7 @@ compile_and_run_and_check_exit_status variable-assignment.delta 42
 compile_and_run_and_check_exit_status explicitly-typed-mutable-variable.delta 3
 compile_and_run_and_check_exit_status named-parameters.delta 5
 compile_and_run_and_check_exit_status malloc-realloc-free.delta 0
+compile_and_run_and_check_exit_status cast.delta 1
 compile_and_run_and_check_output extern-c-function.delta "foo"
 compile_and_run_and_check_output print-string-literal.delta "Hello, World!"
 compile_and_run_and_check_output if.delta $'a\nc\ne'

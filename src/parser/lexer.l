@@ -27,6 +27,7 @@
 
 %%
 
+"cast"                  return TOKEN(CAST);
 "class"                 return TOKEN(CLASS);
 "const"                 return TOKEN(CONST);
 "else"                  return TOKEN(ELSE);

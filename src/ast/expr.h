@@ -19,6 +19,7 @@ enum class ExprKind {
     PrefixExpr,
     BinaryExpr,
     CallExpr,
+    CastExpr,
     MemberExpr,
 };
 
@@ -60,6 +61,12 @@ struct CallExpr {
     bool isInitializerCall;
 };
 
+/// A type cast expression using the 'cast' keyword, e.g. 'cast<type>(expr)'.
+struct CastExpr {
+    Type type;
+    std::unique_ptr<Expr> expr;
+};
+
 /// A member access expression using the dot syntax, such as 'a.b'.
 struct MemberExpr {
     std::string base;
@@ -86,6 +93,7 @@ public:
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(PrefixExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BinaryExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CallExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CastExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(MemberExpr)
 #undef DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR
 
@@ -96,6 +104,6 @@ public:
 
 private:
     boost::variant<VariableExpr, StrLiteralExpr, IntLiteralExpr, BoolLiteralExpr,
-        PrefixExpr, BinaryExpr, CallExpr, MemberExpr> data;
+        PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr> data;
     boost::optional<Type> type;
 };
