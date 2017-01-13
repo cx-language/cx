@@ -1,0 +1,9 @@
+extern func malloc(size_t n) -> void*;
+extern func realloc(void* p, size_t n) -> void*;
+extern func free(void* p);
+
+func main() {
+    var buffer = malloc(1);
+    buffer = realloc(buffer, 4);
+    free(buffer);
+}

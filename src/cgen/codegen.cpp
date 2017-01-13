@@ -269,7 +269,7 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
         out = &outputFile;
     }
 
-    *out << "#include <stdbool.h>\n#include <stdint.h>\n";
+    *out << "#include <stdbool.h>\n#include <stdint.h>\n#include <stddef.h>\n";
 
     // Output struct definitions first.
     for (const Decl& decl : decls) {
