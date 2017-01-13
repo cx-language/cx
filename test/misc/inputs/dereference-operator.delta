@@ -1,0 +1,6 @@
+extern func calloc(size_t count, size_t size) -> void*;
+
+func main() -> int {
+    var buffer = cast<int*>(calloc(1, 8));
+    return *buffer;
+}

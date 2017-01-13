@@ -8,6 +8,7 @@
 #include "../ast/type.h"
 #include "../ast/expr.h"
 #include "../ast/decl.h"
+#include "../parser/parser.hpp"
 
 static std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
 static const Type* funcReturnType = nullptr;
@@ -61,6 +62,13 @@ Type typecheck(BoolLiteralExpr&) {
 }
 
 Type typecheck(PrefixExpr& expr) {
+    if (expr.op.rawValue == ASTERISK) { // Dereference operation
+        auto operandType = typecheck(*expr.operand);
+        if (operandType.getKind() != TypeKind::PtrType) {
+            error("cannot dereference non-pointer type '", operandType, "'");
+        }
+        return *operandType.getPtrType().pointeeType;
+    }
     return typecheck(*expr.operand);
 }
 

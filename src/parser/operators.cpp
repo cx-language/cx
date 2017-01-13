@@ -12,6 +12,7 @@ std::ostream& operator<<(std::ostream& out, PrefixOperator op) {
     switch (op.rawValue) {
         case PLUS:  return out << "+";
         case MINUS: return out << "-";
+        case ASTERISK: return out << "*";
         default: assert(false);
     }
 }
