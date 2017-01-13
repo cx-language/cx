@@ -22,8 +22,8 @@ add_subdirectory(test/sema)
 if (CMAKE_CONFIGURATION_TYPES)
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
         --force-new-ctest-process --output-on-failure
-        --build-config "$<CONFIGURATION>")
+        --build-config "$<CONFIGURATION>" USES_TERMINAL)
 else()
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
-        --force-new-ctest-process --output-on-failure)
+        --force-new-ctest-process --output-on-failure USES_TERMINAL)
 endif()
