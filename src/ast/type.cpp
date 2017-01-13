@@ -25,7 +25,27 @@ void Type::appendType(Type type) {
     getTupleType().subtypes.emplace_back(std::move(type));
 }
 
+bool Type::isImplicitlyConvertibleTo(const Type& type) const {
+    switch (getKind()) {
+        case TypeKind::BasicType:
+            return type.getKind() == TypeKind::BasicType
+            && getBasicType().name == type.getBasicType().name;
+        case TypeKind::TupleType:
+            return type.getKind() == TypeKind::TupleType
+            && getTupleType().subtypes == type.getTupleType().subtypes;
+        case TypeKind::FuncType:
+            return type.getKind() == TypeKind::FuncType
+            && getFuncType().returnTypes == type.getFuncType().returnTypes
+            && getFuncType().paramTypes == type.getFuncType().paramTypes;
+        case TypeKind::PtrType:
+            return type.getKind() == TypeKind::PtrType
+            && (getPtrType().pointeeType->isMutable() || !type.getPtrType().pointeeType->isMutable())
+            && getPtrType().pointeeType->isImplicitlyConvertibleTo(*type.getPtrType().pointeeType);
+    }
+}
+
 bool operator==(const Type& lhs, const Type& rhs) {
+    if (lhs.isMutable() != rhs.isMutable()) return false;
     switch (lhs.getKind()) {
         case TypeKind::BasicType:
             return rhs.getKind() == TypeKind::BasicType
@@ -50,6 +70,7 @@ bool operator!=(const Type& lhs, const Type& rhs) {
 std::ostream& operator<<(std::ostream& out, const Type& type) {
     switch (type.getKind()) {
         case TypeKind::BasicType:
+            if (type.isMutable()) out << "mutable ";
             return out << type.getBasicType().name;
         case TypeKind::TupleType:
             out << "(";
@@ -71,6 +92,7 @@ std::ostream& operator<<(std::ostream& out, const Type& type) {
             }
             return out;
         case TypeKind::PtrType:
+            if (type.isMutable()) return out << "mutable(" << *type.getPtrType().pointeeType << "*)";
             return out << *type.getPtrType().pointeeType << "*";
     }
 }

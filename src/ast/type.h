@@ -60,6 +60,7 @@ public:
 #undef DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR
 
     void appendType(Type type);
+    bool isImplicitlyConvertibleTo(const Type&) const;
     bool isMutable() const { return mutableFlag; }
     void setMutable(bool isMutable) { mutableFlag = isMutable; }
     TypeKind getKind() const { return static_cast<TypeKind>(data.which()); }

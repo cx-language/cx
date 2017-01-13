@@ -1,0 +1,5 @@
+extern func foo() -> mutable int*;
+
+func main() {
+    int* p = foo();
+}

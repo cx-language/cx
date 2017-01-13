@@ -95,7 +95,7 @@ bool checkRange(int64_t value, boost::string_ref param) {
 }
 
 static bool isValidConversion(const Expr& expr, const Type& source, const Type& target) {
-    if (source == target) return true;
+    if (source.isImplicitlyConvertibleTo(target)) return true;
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
     if (expr.getKind() == ExprKind::IntLiteralExpr && target.getKind() == TypeKind::BasicType) {
@@ -188,14 +188,16 @@ const Type& typecheck(CastExpr& expr) {
         case TypeKind::PtrType:
             const Type& sourcePointee = *sourceType.getPtrType().pointeeType;
             if (targetType.getKind() == TypeKind::PtrType) {
-                if (sourcePointee.getKind() == TypeKind::BasicType
-                && sourcePointee.getBasicType().name == "void") {
-                    return targetType; // void* -> T*
-                }
                 const Type& targetPointee = *targetType.getPtrType().pointeeType;
+                if (sourcePointee.getKind() == TypeKind::BasicType
+                && sourcePointee.getBasicType().name == "void"
+                && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
+                    return targetType; // (mutable) void* -> T* / mutable void* -> mutable T*
+                }
                 if (targetPointee.getKind() == TypeKind::BasicType
-                && targetPointee.getBasicType().name == "void") {
-                    return targetType; // T* -> void*
+                && targetPointee.getBasicType().name == "void"
+                && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
+                    return targetType; // (mutable) T* -> void* / mutable T* -> mutable void*
                 }
             }
             break;

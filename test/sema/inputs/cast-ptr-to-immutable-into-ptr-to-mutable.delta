@@ -1,0 +1,5 @@
+extern func malloc(size_t n) -> void*;
+
+func main() {
+    const buffer = cast<mutable int*>(malloc(1));
+}
