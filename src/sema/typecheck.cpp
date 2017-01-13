@@ -145,7 +145,11 @@ static void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDe
         error("too many arguments to ", funcName, ", expected ", params.size());
     }
     for (int i = 0; i < params.size(); ++i) {
-        if (!params[i].label.empty() && args[i].label != params[i].label) {
+        if (args[i].label != params[i].label) {
+            if (params[i].label.empty()) {
+                error("excess argument label '", args[i].label, "' for argument #", i + 1,
+                    ", expected no label");
+            }
             error("invalid label '", args[i].label, "' for argument #", i + 1,
                 ", expected '", params[i].label, "'");
         }
