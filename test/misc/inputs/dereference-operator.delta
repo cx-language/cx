@@ -1,6 +1,8 @@
 extern func calloc(size_t count, size_t size) -> void*;
 
 func main() -> int {
-    var buffer = cast<int*>(calloc(1, 8));
+    const buffer = cast<mutable int*>(calloc(1, 8));
+    *buffer = 41;
+    *buffer++;
     return *buffer;
 }

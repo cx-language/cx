@@ -165,7 +165,8 @@ statement_list:
 
 type:
     IDENTIFIER { $$ = new Type(BasicType{$1}); }
-|   "mutable" type { $$ = $2; $$->setMutable(true); }
+|   "mutable" IDENTIFIER { $$ = new Type(BasicType{$2}); $$->setMutable(true); }
+|   "mutable" "(" type "*" ")" { $$ = new Type(PtrType{u($3)}); $$->setMutable(true); }
 |   type "*" { $$ = new Type(PtrType{u($1)}); };
 
 composite_type_declaration:
