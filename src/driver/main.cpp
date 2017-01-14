@@ -62,7 +62,6 @@ int main(int argc, char** argv) {
             command.append(filePath.data(), filePath.size());
             command.append(".c");
         }
-        if (!outputToStdout) std::cout << command << '\n';
         const int ccExitStatus = system(command.c_str());
 
         for (boost::string_ref filePath : args) {
