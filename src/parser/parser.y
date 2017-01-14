@@ -6,20 +6,19 @@
     #include "../sema/typecheck.h"
 
     int yylex();
-
-    int yyerror(const char* message) {
-        std::cout << "error: " << message << '\n';
-        return 1;
-    }
+    int yyerror(const char*);
 
     /// The root of the abstract syntax tree, for passing from Bison to compiler.
-    std::vector<Decl> globalAST;
+    extern std::vector<Decl> globalAST;
 
     /// Shorthand to avoid overly long lines.
     template<typename T>
     std::unique_ptr<T> u(T* ptr) { return std::unique_ptr<T>(ptr); }
+
+    #pragma GCC diagnostic ignored "-Wunused-function"
 %}
 
+%glr-parser
 %error-verbose
 
 // Keywords
@@ -71,10 +70,16 @@
 %token SEMICOLON";"
 %token RARROW   "->"
 
+// Precedence and associativity
+%left "+" "-"
+%left "*" "/"
+
+// Types
 %token <string> IDENTIFIER STRING_LITERAL
 %token <number> NUMBER
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
              call_expression cast_expression member_access_expression
+             assignment_lhs_expression
 %type <declList> declaration_list
 %type <decl> declaration function_definition initializer_definition function_prototype
              extern_function_declaration variable_definition
@@ -218,7 +223,8 @@ typed_variable_definition:
         { $$ = new Decl(VarDecl{std::move(*$1), $2, std::shared_ptr<Expr>($4)}); };
 
 assignment_statement:
-    expression "=" expression ";" { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3)}); };
+    assignment_lhs_expression "=" expression ";"
+        { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3)}); };
 
 return_statement:
     "return" return_value_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2)}); };
@@ -267,6 +273,14 @@ expression:
 |   cast_expression { $$ = $1; }
 |   member_access_expression { $$ = $1; };
 
+assignment_lhs_expression:
+    IDENTIFIER { $$ = new Expr(VariableExpr{$1}); }
+|   prefix_expression { $$ = $1; }
+|   parenthesized_expression { $$ = $1; }
+|   call_expression { $$ = $1; }
+|   cast_expression { $$ = $1; }
+|   member_access_expression { $$ = $1; };
+
 prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2)}); };
 prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2)}); };
 prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{ASTERISK, u($2)}); };
@@ -305,5 +319,12 @@ member_access_expression:
     IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3}); };
 
 %%
+
+int yyerror(const char* message) {
+    std::cout << "error: " << message << '\n';
+    return 1;
+}
+
+std::vector<Decl> globalAST;
 
 #include "operators.cpp"
