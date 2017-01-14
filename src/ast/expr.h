@@ -21,6 +21,7 @@ enum class ExprKind {
     CallExpr,
     CastExpr,
     MemberExpr,
+    SubscriptExpr,
 };
 
 struct VariableExpr {
@@ -73,6 +74,12 @@ struct MemberExpr {
     std::string member;
 };
 
+/// An array element access expression using the element's index in brackets, e.g. 'array[index]'.
+struct SubscriptExpr {
+    std::unique_ptr<Expr> array;
+    std::unique_ptr<Expr> index;
+};
+
 class Expr {
 public:
 #define DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(KIND) \
@@ -95,6 +102,7 @@ public:
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CallExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CastExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(MemberExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(SubscriptExpr)
 #undef DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR
 
     Expr(Expr&& expr) : data(std::move(expr.data)) { }
@@ -104,6 +112,6 @@ public:
 
 private:
     boost::variant<VariableExpr, StrLiteralExpr, IntLiteralExpr, BoolLiteralExpr,
-        PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr> data;
+        PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr, SubscriptExpr> data;
     boost::optional<Type> type;
 };

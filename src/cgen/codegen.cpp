@@ -26,6 +26,10 @@ std::string toC(const Type& type) {
             if (name == "uint64") return "uint64_t";
             return std::string(name);
         }
+        case TypeKind::ArrayType: {
+            return toC(*type.getArrayType().elementType)
+                + "[" + std::to_string(type.getArrayType().size) + "]";
+        }
         case TypeKind::TupleType: {
             std::string string = "struct{";
             int index = 0;
@@ -37,6 +41,9 @@ std::string toC(const Type& type) {
         case TypeKind::FuncType:
             abort(); // TODO
         case TypeKind::PtrType:
+            if (type.getPtrType().pointeeType->getKind() == TypeKind::ArrayType) {
+                return toC(*type.getPtrType().pointeeType->getArrayType().elementType) + "*";
+            }
             return toC(*type.getPtrType().pointeeType) + "*";
     }
 }
@@ -94,6 +101,13 @@ void codegen(const MemberExpr& expr) {
     *out << expr.base << "." << expr.member;
 }
 
+void codegen(const SubscriptExpr& expr) {
+    codegen(*expr.array);
+    *out << "[";
+    codegen(*expr.index);
+    *out << "]";
+}
+
 void codegen(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:   codegen(expr.getVariableExpr()); break;
@@ -105,6 +119,7 @@ void codegen(const Expr& expr) {
         case ExprKind::CallExpr:       codegen(expr.getCallExpr()); break;
         case ExprKind::CastExpr:       codegen(expr.getCastExpr()); break;
         case ExprKind::MemberExpr:     codegen(expr.getMemberExpr()); break;
+        case ExprKind::SubscriptExpr:  codegen(expr.getSubscriptExpr()); break;
     }
 }
 

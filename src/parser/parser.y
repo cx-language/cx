@@ -62,6 +62,8 @@
 %token ASSIGN   "="
 %token LPAREN   "("
 %token RPAREN   ")"
+%token LBRACKET "["
+%token RBRACKET "]"
 %token LBRACE   "{"
 %token RBRACE   "}"
 %token DOT      "."
@@ -78,7 +80,7 @@
 %token <string> IDENTIFIER STRING_LITERAL
 %token <number> NUMBER
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
-             call_expression cast_expression member_access_expression
+             call_expression cast_expression member_access_expression subscript_expression
              assignment_lhs_expression
 %type <declList> declaration_list
 %type <decl> declaration function_definition initializer_definition function_prototype
@@ -170,7 +172,9 @@ statement_list:
 
 type:
     IDENTIFIER { $$ = new Type(BasicType{$1}); }
+|   IDENTIFIER "[" NUMBER "]" { $$ = new Type(ArrayType{u(new Type(BasicType{$1})), $3}); }
 |   "mutable" IDENTIFIER { $$ = new Type(BasicType{$2}); $$->setMutable(true); }
+|   "mutable" IDENTIFIER "[" NUMBER "]" { auto e = new Type(BasicType{$2}); e->setMutable(true); $$ = new Type(ArrayType{u(e), $4}); $$->setMutable(true);  }
 |   "mutable" "(" type "*" ")" { $$ = new Type(PtrType{u($3)}); $$->setMutable(true); }
 |   type "*" { $$ = new Type(PtrType{u($1)}); };
 
@@ -271,7 +275,8 @@ expression:
 |   parenthesized_expression { $$ = $1; }
 |   call_expression { $$ = $1; }
 |   cast_expression { $$ = $1; }
-|   member_access_expression { $$ = $1; };
+|   member_access_expression { $$ = $1; }
+|   subscript_expression { $$ = $1; };
 
 assignment_lhs_expression:
     IDENTIFIER { $$ = new Expr(VariableExpr{$1}); }
@@ -279,7 +284,8 @@ assignment_lhs_expression:
 |   parenthesized_expression { $$ = $1; }
 |   call_expression { $$ = $1; }
 |   cast_expression { $$ = $1; }
-|   member_access_expression { $$ = $1; };
+|   member_access_expression { $$ = $1; }
+|   subscript_expression { $$ = $1; };
 
 prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2)}); };
 prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2)}); };
@@ -317,6 +323,9 @@ argument:
 
 member_access_expression:
     IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3}); };
+
+subscript_expression:
+    expression "[" expression "]" { $$ = new Expr(SubscriptExpr{u($1), u($3)}); };
 
 %%
 

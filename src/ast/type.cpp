@@ -1,6 +1,16 @@
 #include <boost/optional.hpp>
 #include "type.h"
 
+ArrayType::ArrayType(const ArrayType& type) : elementType(new Type(*type.elementType)), size(type.size) { }
+
+ArrayType& ArrayType::operator=(const ArrayType& type) {
+    if (&type != this) {
+        elementType.reset(new Type(*type.elementType));
+        size = type.size;
+    }
+    return *this;
+}
+
 PtrType::PtrType(const PtrType& type) : pointeeType(new Type(*type.pointeeType)) { }
 
 PtrType& PtrType::operator=(const PtrType& type) {
@@ -14,6 +24,7 @@ void Type::appendType(Type type) {
     boost::optional<Type> firstType;
     switch (getKind()) {
         case TypeKind::BasicType: firstType = std::move(getBasicType()); break;
+        case TypeKind::ArrayType: firstType = std::move(getArrayType()); break;
         case TypeKind::TupleType: break;
         case TypeKind::FuncType: firstType = std::move(getFuncType()); break;
         case TypeKind::PtrType: firstType = std::move(getPtrType()); break;
@@ -30,6 +41,9 @@ bool Type::isImplicitlyConvertibleTo(const Type& type) const {
         case TypeKind::BasicType:
             return type.getKind() == TypeKind::BasicType
             && getBasicType().name == type.getBasicType().name;
+        case TypeKind::ArrayType:
+            return type.getKind() == TypeKind::ArrayType
+            && getArrayType().elementType == type.getArrayType().elementType;
         case TypeKind::TupleType:
             return type.getKind() == TypeKind::TupleType
             && getTupleType().subtypes == type.getTupleType().subtypes;
@@ -50,6 +64,9 @@ bool operator==(const Type& lhs, const Type& rhs) {
         case TypeKind::BasicType:
             return rhs.getKind() == TypeKind::BasicType
             && lhs.getBasicType().name == rhs.getBasicType().name;
+        case TypeKind::ArrayType:
+            return rhs.getKind() == TypeKind::ArrayType
+            && lhs.getArrayType().elementType == rhs.getArrayType().elementType;
         case TypeKind::TupleType:
             return rhs.getKind() == TypeKind::TupleType
             && lhs.getTupleType().subtypes == rhs.getTupleType().subtypes;
@@ -72,6 +89,8 @@ std::ostream& operator<<(std::ostream& out, const Type& type) {
         case TypeKind::BasicType:
             if (type.isMutable()) out << "mutable ";
             return out << type.getBasicType().name;
+        case TypeKind::ArrayType:
+            return out << *type.getArrayType().elementType << "[" << type.getArrayType().size << "]";
         case TypeKind::TupleType:
             out << "(";
             for (const Type& subtype : type.getTupleType().subtypes) {

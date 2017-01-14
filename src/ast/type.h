@@ -8,6 +8,7 @@
 
 enum class TypeKind {
     BasicType,
+    ArrayType,
     TupleType,
     FuncType,
     PtrType,
@@ -17,6 +18,14 @@ class Type;
 
 struct BasicType {
     std::string name;
+};
+
+struct ArrayType {
+    std::unique_ptr<Type> elementType;
+    int64_t size;
+    ArrayType(std::unique_ptr<Type> type, int64_t size) : elementType(std::move(type)), size(size) { }
+    ArrayType(const ArrayType&);
+    ArrayType& operator=(const ArrayType&);
 };
 
 struct TupleType {
@@ -54,6 +63,7 @@ public:
         return boost::get<KIND>(data); \
     }
     DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(BasicType)
+    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(ArrayType)
     DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(TupleType)
     DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(FuncType)
     DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(PtrType)
@@ -66,7 +76,7 @@ public:
     TypeKind getKind() const { return static_cast<TypeKind>(data.which()); }
 
 private:
-    boost::variant<BasicType, TupleType, FuncType, PtrType> data;
+    boost::variant<BasicType, ArrayType, TupleType, FuncType, PtrType> data;
     bool mutableFlag;
 };
 

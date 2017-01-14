@@ -79,3 +79,4 @@ compile_and_run_and_check_output print-string-literal.delta "Hello, World!"
 compile_and_run_and_check_output if.delta $'a\nc\ne'
 compile_and_run_and_check_output comparison-operators.delta $'a\nc\ne\ng\ni\nk'
 compile_and_run_and_check_output while-loop.delta $'foo\nfoo\nfoo'
+compile_and_run_and_check_output array-subscript-via-pointer.delta "Foo"

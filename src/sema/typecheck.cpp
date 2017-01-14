@@ -182,6 +182,7 @@ const Type& typecheck(CastExpr& expr) {
                     return targetType; // bool -> int
                 }
             }
+        case TypeKind::ArrayType:
         case TypeKind::TupleType:
         case TypeKind::FuncType:
             break;
@@ -223,6 +224,33 @@ Type typecheck(MemberExpr& expr) {
     error("no member named '", expr.member, "' in '", expr.base, "'");
 }
 
+Type typecheck(SubscriptExpr& expr) {
+    const Type& lhsType = typecheck(*expr.array);
+    const ArrayType* arrayType;
+
+    if (lhsType.getKind() == TypeKind::ArrayType) {
+        arrayType = &lhsType.getArrayType();
+    } else if (lhsType.getKind() == TypeKind::PtrType
+    && lhsType.getPtrType().pointeeType->getKind() == TypeKind::ArrayType) {
+        arrayType = &lhsType.getPtrType().pointeeType->getArrayType();
+    } else {
+        error("cannot subscript '", lhsType, "', expected array or pointer-to-array");
+    }
+
+    const Type& indexType = typecheck(*expr.index);
+    if (!isValidConversion(*expr.index, indexType, Type(BasicType{"int"}))) {
+        error("illegal subscript index type '", indexType, "', expected 'int'");
+    }
+
+    if (expr.index->getKind() == ExprKind::IntLiteralExpr
+    && expr.index->getIntLiteralExpr().value >= arrayType->size) {
+        error("accessing array out-of-bounds with index ", expr.index->getIntLiteralExpr().value,
+            ", array size is ", arrayType->size);
+    }
+
+    return *arrayType->elementType;
+}
+
 const Type& typecheck(Expr& expr) {
     boost::optional<Type> type;
     switch (expr.getKind()) {
@@ -235,6 +263,7 @@ const Type& typecheck(Expr& expr) {
         case ExprKind::CallExpr:        type = typecheck(expr.getCallExpr()); break;
         case ExprKind::CastExpr:        type = typecheck(expr.getCastExpr()); break;
         case ExprKind::MemberExpr:      type = typecheck(expr.getMemberExpr()); break;
+        case ExprKind::SubscriptExpr:   type = typecheck(expr.getSubscriptExpr()); break;
     }
     expr.setType(std::move(*type));
     return expr.getType();

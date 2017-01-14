@@ -64,6 +64,8 @@
 "="                     return TOKEN(ASSIGN);
 "("                     return TOKEN(LPAREN);
 ")"                     return TOKEN(RPAREN);
+"["                     return TOKEN(LBRACKET);
+"]"                     return TOKEN(RBRACKET);
 "{"                     return TOKEN(LBRACE);
 "}"                     return TOKEN(RBRACE);
 "."                     return TOKEN(DOT);

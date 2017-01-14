@@ -39,7 +39,7 @@ std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
-    out << "(call " << expr.funcName << " ";
+    out << br << "(call " << expr.funcName << " ";
     for (const Arg& arg : expr.args) {
         out << *arg.value;
         if (&arg != &expr.args.back()) out << " ";
@@ -55,6 +55,10 @@ std::ostream& operator<<(std::ostream& out, const MemberExpr& expr) {
     return out << "(member-expr " << expr.base << " " << expr.member << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const SubscriptExpr& expr) {
+    return out << "(subscript " << *expr.array << " " << *expr.index << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:   return out << expr.getVariableExpr();
@@ -66,6 +70,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::CallExpr:       return out << expr.getCallExpr();
         case ExprKind::CastExpr:       return out << expr.getCastExpr();
         case ExprKind::MemberExpr:     return out << expr.getMemberExpr();
+        case ExprKind::SubscriptExpr:  return out << expr.getSubscriptExpr();
     }
 }
 
