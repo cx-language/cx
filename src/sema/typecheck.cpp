@@ -69,6 +69,9 @@ Type typecheck(PrefixExpr& expr) {
         }
         return *operandType.getPtrType().pointeeType;
     }
+    if (expr.op.rawValue == AND) { // Address-of operation
+        return Type(PtrType{std::unique_ptr<Type>(new Type(typecheck(*expr.operand)))});
+    }
     return typecheck(*expr.operand);
 }
 

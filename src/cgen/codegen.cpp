@@ -68,7 +68,10 @@ void codegen(const BoolLiteralExpr& expr) {
 }
 
 void codegen(const PrefixExpr& expr) {
-    *out << "(" << expr.op;
+    *out << "(";
+    if (expr.operand->getType().getKind() != TypeKind::ArrayType) {
+        *out << expr.op;
+    }
     codegen(*expr.operand);
     *out << ")";
 }

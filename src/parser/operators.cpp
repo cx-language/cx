@@ -13,6 +13,7 @@ std::ostream& operator<<(std::ostream& out, PrefixOperator op) {
         case PLUS:  return out << "+";
         case MINUS: return out << "-";
         case ASTERISK: return out << "*";
+        case AND: return out << "&";
         default: assert(false);
     }
 }

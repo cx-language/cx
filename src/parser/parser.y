@@ -4,7 +4,7 @@
     #include "../ast/expr.h"
     #include "../ast/decl.h"
     #include "../sema/typecheck.h"
-
+#define YYDEBUG 1
     int yylex();
     int yyerror(const char*);
 
@@ -76,6 +76,8 @@
 // Precedence and associativity
 %left "+" "-"
 %left "*" "/"
+%left "&"
+%left "[" "]"
 
 // Types
 %token <string> IDENTIFIER STRING_LITERAL
@@ -287,6 +289,7 @@ assignment_lhs_expression:
 prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2)}); };
 prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2)}); };
 prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{ASTERISK, u($2)}); };
+prefix_expression: "&" expression { $$ = new Expr(PrefixExpr{AND, u($2)}); };
 binary_expression: expression "==" expression { $$ = new Expr(BinaryExpr{EQ, u($1), u($3)}); };
 binary_expression: expression "!=" expression { $$ = new Expr(BinaryExpr{NE, u($1), u($3)}); };
 binary_expression: expression "<"  expression { $$ = new Expr(BinaryExpr{LT, u($1), u($3)}); };

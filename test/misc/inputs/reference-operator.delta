@@ -1,0 +1,11 @@
+extern func puts(uint8* s);
+
+func main() {
+    mutable uint8[4] buffer = uninitialized;
+    const ptr = &buffer;
+    ptr[0] = 66;
+    ptr[1] = 0x61;
+    ptr[2] = 0o162;
+    ptr[3] = 0b0;
+    puts(&buffer[0]);
+}

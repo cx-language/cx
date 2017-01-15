@@ -80,6 +80,7 @@
 "/"                     return TOKEN(SLASH);
 "++"                    return TOKEN(INCREMENT);
 "--"                    return TOKEN(DECREMENT);
+"&"                     return TOKEN(AND);
 .                       std::cout << "error: unknown token\n"; yyterminate();
 
 %%
