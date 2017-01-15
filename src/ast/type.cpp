@@ -43,6 +43,7 @@ bool Type::isImplicitlyConvertibleTo(const Type& type) const {
             && getBasicType().name == type.getBasicType().name;
         case TypeKind::ArrayType:
             return type.getKind() == TypeKind::ArrayType
+            && getArrayType().size == type.getArrayType().size
             && getArrayType().elementType->isImplicitlyConvertibleTo(*type.getArrayType().elementType);
         case TypeKind::TupleType:
             return type.getKind() == TypeKind::TupleType

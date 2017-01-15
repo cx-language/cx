@@ -11,7 +11,7 @@ check_error() {
 
     compiler_stdout=$($path_to_delta -fsyntax-only inputs/$source_file)
 
-    if [[ $expected_error != $compiler_stdout ]]; then
+    if [[ "$expected_error" != "$compiler_stdout" ]]; then
         echo "FAILED:"
         echo "expected error: \"$expected_error\""
         echo "actual output:  \"$compiler_stdout\""
@@ -54,3 +54,4 @@ check_error mismatching-argument-label-init.delta "invalid label 'bar' for argum
 check_error excess-argument-label.delta "excess argument label 'foo' for argument #1, expected no label"
 check_error illegal-cast.delta "illegal cast from 'bool' to 'int**'"
 check_error cast-ptr-to-immutable-into-ptr-to-mutable.delta "illegal cast from 'void*' to 'mutable int*'"
+check_error return-array-with-wrong-size.delta "mismatching return type 'mutable int[2]', expected 'int[1]'"

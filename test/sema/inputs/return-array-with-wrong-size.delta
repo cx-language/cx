@@ -1,0 +1,4 @@
+func foo() -> int[1] {
+    mutable int[2] buffer = uninitialized;
+    return buffer;
+}
