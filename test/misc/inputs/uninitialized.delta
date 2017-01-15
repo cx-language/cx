@@ -1,0 +1,15 @@
+func main() -> uint8 {
+    mutable uint8[4] buffer = uninitialized;
+    buffer[0] = 70;
+    buffer[1] = 0x6f;
+    buffer[2] = 0o157;
+    buffer[3] = 0b0;
+
+    mutable uint8 magic = uninitialized;
+    if (buffer[0] == 0) {
+        magic = 0;
+    } else {
+        magic = buffer[0];
+    }
+    return magic;
+}

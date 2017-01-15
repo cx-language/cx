@@ -35,6 +35,7 @@
 %token RETURN   "return"
 %token STRUCT   "struct"
 %token TRUE     "true"
+%token UNINITIALIZED "uninitialized"
 %token VAR      "var"
 %token WHILE    "while"
 
@@ -224,7 +225,9 @@ mutable_variable_definition:
 
 typed_variable_definition:
     type    IDENTIFIER "=" expression ";"
-        { $$ = new Decl(VarDecl{std::move(*$1), $2, std::shared_ptr<Expr>($4)}); };
+        { $$ = new Decl(VarDecl{std::move(*$1), $2, std::shared_ptr<Expr>($4)}); }
+|   type    IDENTIFIER "=" "uninitialized" ";"
+        { $$ = new Decl(VarDecl{std::move(*$1), $2, nullptr}); };
 
 assignment_statement:
     assignment_lhs_expression "=" expression ";"

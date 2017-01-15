@@ -263,8 +263,16 @@ void codegen(const TypeDecl& decl) {
 }
 
 void codegen(const VarDecl& decl) {
-    *out << toC(decl.initializer->getType()) << " " << decl.name << "=";
-    codegen(*decl.initializer);
+    if (decl.getType().getKind() == TypeKind::ArrayType) {
+        *out << toC(*decl.getType().getArrayType().elementType) << " " << decl.name;
+        *out << "[" << decl.getType().getArrayType().size << "]";
+    } else {
+        *out << toC(decl.getType()) << " " << decl.name;
+    }
+    if (decl.initializer) {
+        *out << "=";
+        codegen(*decl.initializer);
+    }
     *out << ";";
 }
 

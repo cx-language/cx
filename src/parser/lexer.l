@@ -40,6 +40,7 @@
 "return"                return TOKEN(RETURN);
 "struct"                return TOKEN(STRUCT);
 "true"                  return TOKEN(TRUE);
+"uninitialized"         return TOKEN(UNINITIALIZED);
 "var"                   return TOKEN(VAR);
 "while"                 return TOKEN(WHILE);
 

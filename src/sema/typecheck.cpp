@@ -447,19 +447,23 @@ void typecheck(VarDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
     }
-    auto initType = typecheck(*decl.initializer);
-    if (initType.getKind() == TypeKind::FuncType) {
-        error("function pointers not implemented yet");
+    const Type* initType = nullptr;
+    if (decl.initializer) {
+        initType = &typecheck(*decl.initializer);
+        if (initType->getKind() == TypeKind::FuncType) {
+            error("function pointers not implemented yet");
+        }
     }
     if (auto declaredType = decl.getDeclaredType()) {
-        if (!isValidConversion(*decl.initializer, initType, *declaredType)) {
+        if (initType && !isValidConversion(*decl.initializer, *initType, *declaredType)) {
             error("cannot initialize variable of type '", *declaredType,
-                "' with '", initType, "'");
+                "' with '", *initType, "'");
         }
         symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     } else {
-        initType.setMutable(decl.isMutable());
-        decl.type = std::move(initType);
+        auto initTypeCopy = *initType;
+        initTypeCopy.setMutable(decl.isMutable());
+        decl.type = std::move(initTypeCopy);
         symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     }
 }

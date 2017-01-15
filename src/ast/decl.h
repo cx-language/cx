@@ -58,7 +58,7 @@ struct VarDecl {
     /// type should be mutable.
     boost::variant<Type, bool> type;
     std::string name;
-    std::shared_ptr<Expr> initializer;
+    std::shared_ptr<Expr> initializer; /// Null if the initializer is 'uninitialized'.
 
     boost::optional<const Type&> getDeclaredType() const {
         if (type.which() == 0) return boost::get<Type>(type);
