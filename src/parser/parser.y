@@ -265,18 +265,12 @@ while_statement:
 // Expressions /////////////////////////////////////////////////////////////////
 
 expression:
-    IDENTIFIER { $$ = new Expr(VariableExpr{$1}); }
-|   STRING_LITERAL { $$ = new Expr(StrLiteralExpr{$1}); }
+    STRING_LITERAL { $$ = new Expr(StrLiteralExpr{$1}); }
 |   NUMBER { $$ = new Expr(IntLiteralExpr{$1}); }
 |   TRUE { $$ = new Expr(BoolLiteralExpr{true}); }
 |   FALSE { $$ = new Expr(BoolLiteralExpr{false}); }
-|   prefix_expression { $$ = $1; }
 |   binary_expression { $$ = $1; }
-|   parenthesized_expression { $$ = $1; }
-|   call_expression { $$ = $1; }
-|   cast_expression { $$ = $1; }
-|   member_access_expression { $$ = $1; }
-|   subscript_expression { $$ = $1; };
+|   assignment_lhs_expression { $$ = $1; };
 
 assignment_lhs_expression:
     IDENTIFIER { $$ = new Expr(VariableExpr{$1}); }
