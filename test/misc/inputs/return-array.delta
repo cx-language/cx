@@ -1,0 +1,15 @@
+extern func puts(uint8* s);
+
+func foo() -> uint8[4] {
+    mutable uint8[4] buffer = uninitialized;
+    buffer[0] = 66;
+    buffer[1] = 0x61;
+    buffer[2] = 0o162;
+    buffer[3] = 0b0;
+    return buffer;
+}
+
+func main() {
+    const array = foo();
+    puts(&array[0]);
+}

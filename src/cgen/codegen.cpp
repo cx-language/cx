@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <functional>
+#include <unordered_set>
 #include <boost/utility/string_ref.hpp>
 #include <boost/optional.hpp>
 #include "codegen.h"
@@ -9,6 +10,9 @@ static std::ostream* out = nullptr;
 
 /// Points to the function whose body is currently being generated.
 static boost::optional<std::string> currentFunc = boost::none;
+
+/// Array types that have been defined so far.
+static std::unordered_set<std::string> definedArrayTypes;
 
 std::string toC(const Type& type) {
     switch (type.getKind()) {
@@ -27,8 +31,15 @@ std::string toC(const Type& type) {
             return std::string(name);
         }
         case TypeKind::ArrayType: {
-            return toC(*type.getArrayType().elementType)
-                + "[" + std::to_string(type.getArrayType().size) + "]";
+            std::string arrayTypeCName = std::to_string(type.getArrayType().size)
+                                         + toC(*type.getArrayType().elementType);
+            if (definedArrayTypes.count(arrayTypeCName) > 0) {
+                return "struct __" + arrayTypeCName;
+            }
+            definedArrayTypes.insert(arrayTypeCName);
+            return "struct __" + arrayTypeCName + "{"
+                + toC(*type.getArrayType().elementType)
+                + " a[" + std::to_string(type.getArrayType().size) + "];}";
         }
         case TypeKind::TupleType: {
             std::string string = "struct{";
@@ -41,9 +52,6 @@ std::string toC(const Type& type) {
         case TypeKind::FuncType:
             abort(); // TODO
         case TypeKind::PtrType:
-            if (type.getPtrType().pointeeType->getKind() == TypeKind::ArrayType) {
-                return toC(*type.getPtrType().pointeeType->getArrayType().elementType) + "*";
-            }
             return toC(*type.getPtrType().pointeeType) + "*";
     }
 }
@@ -68,10 +76,7 @@ void codegen(const BoolLiteralExpr& expr) {
 }
 
 void codegen(const PrefixExpr& expr) {
-    *out << "(";
-    if (expr.operand->getType().getKind() != TypeKind::ArrayType) {
-        *out << expr.op;
-    }
+    *out << "(" << expr.op;
     codegen(*expr.operand);
     *out << ")";
 }
@@ -106,7 +111,7 @@ void codegen(const MemberExpr& expr) {
 
 void codegen(const SubscriptExpr& expr) {
     codegen(*expr.array);
-    *out << "[";
+    *out << (expr.array->getType().getKind() == TypeKind::PtrType ? "->" : ".") << "a[";
     codegen(*expr.index);
     *out << "]";
 }
@@ -266,12 +271,7 @@ void codegen(const TypeDecl& decl) {
 }
 
 void codegen(const VarDecl& decl) {
-    if (decl.getType().getKind() == TypeKind::ArrayType) {
-        *out << toC(*decl.getType().getArrayType().elementType) << " " << decl.name;
-        *out << "[" << decl.getType().getArrayType().size << "]";
-    } else {
-        *out << toC(decl.getType()) << " " << decl.name;
-    }
+    *out << toC(decl.getType()) << " " << decl.name;
     if (decl.initializer) {
         *out << "=";
         codegen(*decl.initializer);
