@@ -39,6 +39,7 @@
 "mutable"               return TOKEN(MUTABLE);
 "return"                return TOKEN(RETURN);
 "struct"                return TOKEN(STRUCT);
+"this"                  return TOKEN(THIS);
 "true"                  return TOKEN(TRUE);
 "uninitialized"         return TOKEN(UNINITIALIZED);
 "var"                   return TOKEN(VAR);
@@ -72,6 +73,7 @@
 "."                     return TOKEN(DOT);
 ","                     return TOKEN(COMMA);
 ":"                     return TOKEN(COLON);
+"::"                    return TOKEN(COLON_COLON);
 ";"                     return TOKEN(SEMICOLON);
 "->"                    return TOKEN(RARROW);
 "+"                     return TOKEN(PLUS);

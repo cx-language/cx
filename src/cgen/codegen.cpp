@@ -90,8 +90,15 @@ void codegen(const BinaryExpr& expr) {
 }
 
 void codegen(const CallExpr& expr) {
-    if (expr.isInitializerCall) *out << "__init_" << expr.funcName << "(";
-    else *out << expr.funcName << "(";
+    if (expr.isInitializerCall) {
+        *out << "__init_" << expr.funcName << "(";
+    } else if (expr.isMemberFuncCall()) {
+        *out << "__M" << expr.receiver->getType().getBasicType().name << "$" << expr.funcName << "(&";
+        codegen(*expr.receiver);
+        if (!expr.args.empty()) *out << ",";
+    } else {
+        *out << expr.funcName << "(";
+    }
     for (const Arg& arg : expr.args) {
         codegen(*arg.value);
         if (&arg != &expr.args.back()) *out << ",";
@@ -106,7 +113,9 @@ void codegen(const CastExpr& expr) {
 }
 
 void codegen(const MemberExpr& expr) {
-    *out << expr.base << "." << expr.member;
+    if (expr.base == "this") *out << "this->";
+    else *out << expr.base << ".";
+    *out << expr.member;
 }
 
 void codegen(const SubscriptExpr& expr) {
@@ -215,7 +224,12 @@ void codegen(const ParamDecl& decl) {
 
 void codegenPrototype(const FuncDecl& decl) {
     *out << (decl.name == "main" ? "int" : toC(decl.returnType));
-    *out << " " << decl.name << "(";
+    if (decl.isMemberFunc()) {
+        *out << " __M" << decl.receiverType << "$" <<  decl.name << "(" << decl.receiverType << "*this";
+        if (!decl.params.empty()) *out << ",";
+    } else {
+        *out << " " << decl.name << "(";
+    }
     for (const ParamDecl& param : decl.params) {
         codegen(param);
         if (&param != &decl.params.back()) *out << ",";

@@ -75,6 +75,7 @@ compile_and_run_and_check_exit_status malloc-realloc-free.delta 0
 compile_and_run_and_check_exit_status cast.delta 1
 compile_and_run_and_check_exit_status dereference-operator.delta 42
 compile_and_run_and_check_exit_status uninitialized.delta 70
+compile_and_run_and_check_exit_status member-function-call.delta 42
 compile_and_run_and_check_output extern-c-function.delta "foo"
 compile_and_run_and_check_output print-string-literal.delta "Hello, World!"
 compile_and_run_and_check_output if.delta $'a\nc\ne'

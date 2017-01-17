@@ -60,6 +60,8 @@ struct CallExpr {
     std::string funcName;
     std::vector<Arg> args;
     bool isInitializerCall;
+    std::unique_ptr<Expr> receiver; /// Null if non-member function call.
+    bool isMemberFuncCall() const { return receiver != nullptr; }
 };
 
 /// A type cast expression using the 'cast' keyword, e.g. 'cast<type>(expr)'.

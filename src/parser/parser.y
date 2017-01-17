@@ -34,6 +34,7 @@
 %token MUTABLE  "mutable"
 %token RETURN   "return"
 %token STRUCT   "struct"
+%token THIS     "this"
 %token TRUE     "true"
 %token UNINITIALIZED "uninitialized"
 %token VAR      "var"
@@ -70,6 +71,7 @@
 %token DOT      "."
 %token COMMA    ","
 %token COLON    ":"
+%token COLON_COLON "::"
 %token SEMICOLON";"
 %token RARROW   "->"
 
@@ -87,7 +89,7 @@
              assignment_lhs_expression
 %type <declList> declaration_list
 %type <decl> declaration function_definition initializer_definition function_prototype
-             extern_function_declaration variable_definition
+             member_function_prototype extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
              typed_variable_definition composite_type_declaration
 %type <stmtList> else_body statement_list
@@ -139,11 +141,18 @@ declaration:
 
 function_definition:
     function_prototype "{" statement_list "}"
+        { $$ = $1; $$->getFuncDecl().body.reset($3); }
+|   member_function_prototype "{" statement_list "}"
         { $$ = $1; $$->getFuncDecl().body.reset($3); };
 
 function_prototype:
     "func" IDENTIFIER "(" parameter_list ")" return_type_specifier
         { $$ = new Decl(FuncDecl{$2, std::move(*$4), std::move(*$6)});
+          addToSymbolTable($$->getFuncDecl()); };
+
+member_function_prototype:
+    "func" IDENTIFIER "::" IDENTIFIER "(" parameter_list ")" return_type_specifier
+        { $$ = new Decl(FuncDecl{$4, std::move(*$6), std::move(*$8), $2});
           addToSymbolTable($$->getFuncDecl()); };
 
 extern_function_declaration:
@@ -304,7 +313,8 @@ binary_expression: expression "/"  expression { $$ = new Expr(BinaryExpr{SLASH, 
 parenthesized_expression: "(" expression ")" { $$ = $2; };
 
 call_expression:
-    IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$1, std::move(*$3)}); };
+    IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$1, std::move(*$3)}); }
+|   expression "." IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$3, std::move(*$5), false, u($1)}); };
 
 cast_expression:
     "cast" "<" type ">" "(" expression ")" { $$ = new Expr(CastExpr{std::move(*$3), u($6)}); };
@@ -322,7 +332,8 @@ argument:
 |   IDENTIFIER ":" expression { $$ = new Arg{$1, u($3)}; };
 
 member_access_expression:
-    IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3}); };
+    "this" "." IDENTIFIER { $$ = new Expr(MemberExpr{"this", $3}); }
+|   IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3}); };
 
 subscript_expression:
     expression "[" expression "]" { $$ = new Expr(SubscriptExpr{u($1), u($3)}); };

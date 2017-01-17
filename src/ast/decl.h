@@ -29,8 +29,10 @@ struct FuncDecl {
     std::string name;
     std::vector<ParamDecl> params;
     Type returnType;
+    std::string receiverType; /// Empty if non-member function.
     std::shared_ptr<std::vector<Stmt>> body;
     bool isExtern() const { return body == nullptr; };
+    bool isMemberFunc() const { return !receiverType.empty(); }
     FuncType getFuncType() const;
 };
 

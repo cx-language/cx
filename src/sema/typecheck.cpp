@@ -140,6 +140,8 @@ Type typecheck(CallExpr& expr) {
     expr.isInitializerCall = it->second->getKind() == DeclKind::TypeDecl;
     if (expr.isInitializerCall) {
         return typecheckInitExpr(it->second->getTypeDecl(), expr.args);
+    } else if (expr.isMemberFuncCall()) {
+        typecheck(*expr.receiver);
     }
     if (it->second->getKind() != DeclKind::FuncDecl) {
         error("'", expr.funcName, "' is not a function");
@@ -412,13 +414,31 @@ void addToSymbolTable(const TypeDecl& decl) {
     symbolTable.insert({decl.name, new Decl(TypeDecl(decl))});
 }
 
+void typecheckMemberFunc(FuncDecl& decl);
+
 void typecheck(FuncDecl& decl) {
+    if (!decl.receiverType.empty()) return typecheckMemberFunc(decl);
     if (decl.isExtern()) return;
     auto symbolTableBackup = symbolTable;
     for (ParamDecl& param : decl.params) typecheck(param);
     funcReturnType = &decl.returnType;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
     funcReturnType = nullptr;
+    symbolTable = std::move(symbolTableBackup);
+}
+
+void typecheckMemberFunc(FuncDecl& decl) {
+    auto symbolTableBackup = symbolTable;
+    auto it = symbolTable.find(decl.receiverType);
+    if (it == symbolTable.end()) {
+        error("unknown identifier '", decl.receiverType, "'");
+    }
+    if (it->second->getKind() != DeclKind::TypeDecl) {
+        error("'", decl.receiverType, "' is not a class or struct");
+    }
+    symbolTable.insert({"this", new Decl(VarDecl{it->second->getTypeDecl().getType(), "this"})});
+    for (ParamDecl& param : decl.params) typecheck(param);
+    for (Stmt& stmt : *decl.body) typecheck(stmt);
     symbolTable = std::move(symbolTableBackup);
 }
 

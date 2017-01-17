@@ -1,0 +1,18 @@
+struct Foo {
+    mutable int i;
+}
+
+init Foo() {
+    i = 0;
+}
+
+func Foo::add(int amount) {
+    this.i = this.i + amount;
+}
+
+func main() -> int {
+    Foo f = Foo();
+    f.add(21);
+    f.add(21);
+    return f.i;
+}
