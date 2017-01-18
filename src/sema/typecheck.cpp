@@ -452,9 +452,7 @@ void typecheck(InitDecl& decl) {
         error("'", decl.getTypeName(), "' is not a class or struct");
     }
     decl.type = &it->second->getTypeDecl();
-    for (const FieldDecl& field : it->second->getTypeDecl().fields) {
-        symbolTable.insert({field.name, new Decl(FieldDecl(field))});
-    }
+    symbolTable.insert({"this", new Decl(VarDecl{it->second->getTypeDecl().getType(), "this"})});
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;
     for (Stmt& stmt : *decl.body) typecheck(stmt);

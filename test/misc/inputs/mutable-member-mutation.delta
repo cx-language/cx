@@ -2,8 +2,8 @@ struct X {
     mutable int a;
 }
 
-init X(int aa) {
-    a = aa;
+init X(int a) {
+    this.a = a;
 }
 
 func main() -> int {

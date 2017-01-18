@@ -113,7 +113,7 @@ void codegen(const CastExpr& expr) {
 }
 
 void codegen(const MemberExpr& expr) {
-    if (expr.base == "this") *out << "this->";
+    if (expr.base == "this" && currentFunc->find("__init_") != 0) *out << "this->";
     else *out << expr.base << ".";
     *out << expr.member;
 }
@@ -260,20 +260,12 @@ void codegen(const InitDecl& decl) {
     *out << "){";
     auto currentFuncBackup = currentFunc;
     currentFunc = "__init_" + decl.getTypeDecl().name;
-    for (const FieldDecl& field : decl.getTypeDecl().fields) {
-        *out << toC(field.type) << " " << field.name << ";";
-    }
+    *out << decl.getTypeDecl().name << " this;";
     for (const Stmt& stmt : *decl.body) {
         codegen(stmt);
     }
     currentFunc = currentFuncBackup;
-
-    *out << "return(" << toC(decl.getTypeDecl().getType()) << "){";
-    for (const FieldDecl& field : decl.getTypeDecl().fields) {
-        *out << field.name;
-        if (&field != &decl.getTypeDecl().fields.back()) *out << ",";
-    }
-    *out << "};}";
+    *out << "return this;}";
 }
 
 void codegen(const TypeDecl& decl) {

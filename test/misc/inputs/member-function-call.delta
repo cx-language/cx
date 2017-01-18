@@ -3,7 +3,7 @@ struct Foo {
 }
 
 init Foo() {
-    i = 0;
+    this.i = 0;
 }
 
 func Foo::add(int amount) {
