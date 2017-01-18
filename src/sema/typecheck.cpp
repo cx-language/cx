@@ -438,7 +438,9 @@ void typecheckMemberFunc(FuncDecl& decl) {
     }
     symbolTable.insert({"this", new Decl(VarDecl{it->second->getTypeDecl().getType(), "this"})});
     for (ParamDecl& param : decl.params) typecheck(param);
+    funcReturnType = &decl.returnType;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
+    funcReturnType = nullptr;
     symbolTable = std::move(symbolTableBackup);
 }
 

@@ -1,0 +1,16 @@
+struct Foo {
+    int value;
+}
+
+init Foo(int value) {
+    this.value = value;
+}
+
+func Foo::add(int number) -> int {
+    return this.value + number;
+}
+
+func main() -> int {
+    Foo foo = Foo(42);
+    return foo.add(-21);
+}
