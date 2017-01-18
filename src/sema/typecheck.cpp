@@ -216,10 +216,18 @@ Type typecheck(MemberExpr& expr) {
     if (it == symbolTable.end()) {
         error("unknown identifier '", expr.base, "'");
     }
-    if (it->second->getKind() != DeclKind::VarDecl) {
-        error("'", expr.base, "' doesn't support member access");
+
+    decltype(symbolTable)::iterator typeIt;
+    switch (it->second->getKind()) {
+        case DeclKind::VarDecl:
+            typeIt = symbolTable.find(it->second->getVarDecl().getType().getBasicType().name);
+            break;
+        case DeclKind::ParamDecl:
+            typeIt = symbolTable.find(it->second->getParamDecl().type.getBasicType().name);
+            break;
+        default:
+            error("'", expr.base, "' doesn't support member access");
     }
-    auto typeIt = symbolTable.find(it->second->getVarDecl().getType().getBasicType().name);
     assert(typeIt != symbolTable.end());
     for (const FieldDecl& field : typeIt->second->getTypeDecl().fields) {
         if (field.name == expr.member) {
