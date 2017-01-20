@@ -1,0 +1,575 @@
+# Delta Language Specification
+
+This document describes the syntax and semantics of the Delta programming
+language.
+
+## Introduction
+
+> Within C++, there is a much smaller and cleaner language struggling to get out.
+>
+> — Bjarne Stroustrup
+
+Delta is a general-purpose systems programming language, intended as a
+replacement for C++ (and C) for large-scale performance-critical applications.
+The language should support interoperation with C++, and provide an automated
+C++-to-Delta code conversion tool to make gradual adoption as feasible as
+possible. In addition, the language should feel familiar and attractive to C++
+programmers.
+
+### Design principles
+
+- [Progressive disclosure](https://en.wikipedia.org/wiki/Progressive_disclosure)
+  of complexity, i.e. it should be easy to write most of the code (the parts
+  that aren't performance bottlenecks) to perform reasonably efficiently, and
+  the language should provide full control to optimize the bottlenecks.
+- Code compiled in release mode must be as fast as possible on modern hardware.
+- Compilation in debug mode should be as fast as possible to speed up the
+  edit-compile-run cycle during development.
+- Be able to call C++ (and vice versa) without having to write a C wrapper for
+  everything.
+- Safe by default, but allow disabling safety checks (both individually and
+  collectively) easily where necessary. E.g. array access bounds checking,
+  integer overflow detection.
+- The language should be relatively simple, but most of the perceived
+  simplicity should come from the aforementioned progressive disclosure
+  principle. For simple things: "There should be one — and preferably only one
+  — obvious way to do it."
+- Should support large-scale development, e.g. easy greppability of
+  function/type/variable definitions.
+- Should be familiar and attractive to C++ and C developers.
+
+## Lexical structure
+
+### Keywords
+
+The following keywords are reserved and can't be used as identifiers.
+
+    break
+    case
+    cast
+    catch
+    class
+    concept
+    const
+    continue
+    default
+    defer
+    deinit
+    do
+    else
+    enum
+    extern
+    fallthrough
+    false
+    for
+    func
+    if
+    import
+    init
+    inout
+    move
+    mutable
+    mutating
+    null
+    private
+    public
+    return
+    static
+    struct
+    switch
+    this
+    throw
+    throws
+    true
+    try
+    typealias
+    uninitialized
+    var
+    while
+    _
+
+The keywords `class` and `struct` can be used as variable names but not as a
+type names.
+
+### Operators and delimiters
+
+Arithmetic operators:
+
+    +   +=  ++
+    -   -=  --
+    *   *=  **
+    /   /=
+    %   %=
+    &   &=
+    |   |=
+    ^   ^=
+    <<  <<=
+    >>  >>=
+
+Logical operators:
+
+    &&  &&=
+    ||  ||=
+    !
+
+Comparison operators:
+
+    ==
+    !=
+    <
+    >
+    <=
+    >=
+
+Miscellaneous operators:
+
+    =
+    ...
+    ..<
+
+Delimiters:
+
+    (   )
+    [   ]
+    {   }
+    ,   :   ;
+    .   ::
+    *   ?   ->
+
+From the above set of operators, the following are overloadable by user code:
+`+` (both unary and binary), `-` (both unary and binary), `*`, `/`, `%`, `==`,
+`<`.
+
+### Comments
+
+Delta has two kinds of comments:
+
+- Line comments that start with `//` and continue until the end of the line.
+- Block comments that start with `/*` and end with `*/`. Block comments can be
+  nested.
+
+### Literals
+
+#### Integer literal
+
+> _binary-digit_ → `0` | `1`<br>
+> _octal-digit_ → `0` | `1` | `2` | `3` | `4` | `5` | `6` | `7`<br>
+> _decimal-digit_ → `0` | `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9`<br>
+> _nonzero-decimal-digit_ → `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9`<br>
+> _lowercase-hex-digit_ → `0` | `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9` | `a` | `b` | `c` | `d` | `e` | `f`<br>
+> _uppercase-hex-digit_ → `0` | `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9` | `A` | `B` | `C` | `D` | `E` | `F`<br>
+>
+> _binary-integer-literal_ → `0b` _binary-digit_+<br>
+> _octal-integer-literal_ → `0o` _octal-digit_+<br>
+> _decimal-integer-literal_ → _nonzero-decimal-digit_ _decimal-digit_*<br>
+> _hex-integer-literal_ → `0x` ( _lowercase-hex-digit_+ | _uppercase-hex-digit_+ )<br>
+>
+> _integer-literal_ → _binary-integer-literal_ | _octal-integer-literal_ | _decimal-integer-literal_ | _hex-integer-literal_<br>
+
+#### Boolean literal
+
+> _boolean-literal_ → `true` | `false`<br>
+
+#### String literal
+
+> _string-literal_ → `"` _character_* `"`<br>
+
+### Identifiers
+
+> _identifier-head_ → upper- or lowercase letter `A` through `Z`<br>
+> _identifier-head_ → `_­`<br>
+> _identifier-head_ → U+00A8 | U+00AA | U+00AD | U+00AF | U+00B2–U+00B5 | U+00B7–U+00BA<br>
+> _identifier-head_ → U+00BC–U+00BE | U+00C0–U+00D6 | U+00D8–U+00F6 | U+00F8–U+00FF<br>
+> _identifier-head_ → U+0100–U+02FF | U+0370–U+167F | U+1681–U+180D | U+180F–U+1DBF<br>
+> _identifier-head_ → U+1E00–U+1FFF<br>
+> _identifier-head_ → U+200B–U+200D | U+202A–U+202E | U+203F–U+2040 | U+2054 | U+2060–U+206F<br>
+> _identifier-head_ → U+2070–U+20CF | U+2100–U+218F | U+2460–U+24FF | U+2776–U+2793<br>
+> _identifier-head_ → U+2C00–U+2DFF | U+2E80–U+2FFF<br>
+> _identifier-head_ → U+3004–U+3007 | U+3021–U+302F | U+3031–U+303F | U+3040–U+D7FF<br>
+> _identifier-head_ → U+F900–U+FD3D | U+FD40–U+FDCF | U+FDF0–U+FE1F | U+FE30–U+FE44<br>
+> _identifier-head_ → U+FE47–U+FFFD<br>
+> _identifier-head_ → U+10000–U+1FFFD | U+20000–U+2FFFD | U+30000–U+3FFFD | U+40000–U+4FFFD<br>
+> _identifier-head_ → U+50000–U+5FFFD | U+60000–U+6FFFD | U+70000–U+7FFFD | U+80000–U+8FFFD<br>
+> _identifier-head_ → U+90000–U+9FFFD | U+A0000–U+AFFFD | U+B0000–U+BFFFD | U+C0000–U+CFFFD<br>
+> _identifier-head_ → U+D0000–U+DFFFD | U+E0000–U+EFFFD<br>
+>
+> _identifier-character_ → `0` | `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9`<br>
+> _identifier-character_ → U+0300–U+036F | U+1DC0–U+1DFF | U+20D0–U+20FF | U+FE20–U+FE2F<br>
+> _identifier-character_ → _identifier-head­_<br>
+>
+> _identifier_ → _identifier-head_ _identifier-character_*<br>
+
+## Types
+
+### Integer types
+
+There are eight built-in integer types: `int8`, `int16`, `int32`, `int64`, and
+their unsigned counterparts `uint8`, `uint16`, `uint32`, `uint64`. The standard
+library also provides `int` and `uint` which are type aliases for `int32` and
+`uint32`, respectively.
+
+### Floating-point types
+
+There are three built-in floating-point types: `float32`, `float64`, and
+`float80`. The standard library also provides `float` and `double` which are
+type aliases for `float32` and `float64`, respectively.
+
+### Array types
+
+> _compile-time-sized-array-type_ → _element-type_ `[` _size_ `]`<br>
+> _run-time-sized-array-type_ → _element-type_ `[` `]`<br>
+
+_run-time-sized-array-types_ are implemented as pointer-and-size pairs under
+the hood. _compile-time-sized-array-type_ are simply a contiguous block of
+objects of the _element-type_.
+
+### String type
+
+The type `string` holds sequences of Unicode characters.
+
+### Composite types
+
+There are two kinds of composite types: classes and structs.
+
+#### Member variables
+
+Composite types contain a set of member variables. Each member variable may
+contain an associated getter and/or setter, that are called when the member
+variable is accessed or assigned to, respectively. The syntax of a member
+variable definition is as follows:
+
+> _member-variable-declaration_ → _member-variable-type_ _member-variable-name_ `;`<br>
+> _member-variable-declaration_ → _member-variable-type_ _member-variable-name_ `{` _getter-setter-definitions_ `}`<br>
+> _getter-setter-definitions_ → _getter-definition_ | _setter-definition_ | _getter-definition_ _setter-definition__<br>
+> _getter-definition_ → `get` `{` _getter-body_ `}`<br>
+> _setter-definition_ → `set` `{` _setter-body_ `}`<br>
+
+#### Class types
+
+Types declared using the `class` keyword are _class types_, also called
+_reference types_. By default, they're allocated on the stack. When passed as
+functions arguments, they're passed by reference. When class types are returned
+from functions, they're moved if they're a local variable, or otherwise returned
+by reference.
+
+Sometimes it's useful to pass classes by explicitly moving or copying them. This
+can be accomplished by using the `move` keyword, or constructing a new object by
+calling the copy constructor.
+
+#### Struct types
+
+Types declared using the `struct` keyword are _struct types_, also called _value
+types_. They're always allocated on the stack. When passed as function arguments
+and returned from functions, they're passed by copy.
+
+Sometimes it's useful to explicitly pass structs by reference, for example in
+order to modify them inside the function, and have the changes affect the actual
+value outside the function. This can be accomplished by using the `inout` keyword.
+
+### Concept types
+
+The `concept` keyword declares a concept, i.e. a set of requirements (member
+functions and properties). Types that fulfill the requirements of a concept `C`
+can be used as values for a variable of type `C`. This enables runtime
+polymorphism. Like classes and structs, concepts may be generic.
+
+### Optional type
+
+> I call it my billion-dollar mistake. It was the invention of the null
+> reference in 1965. At that time, I was designing the first comprehensive type
+> system for references in an object oriented language (ALGOL W). My goal was to
+> ensure that all use of references should be absolutely safe, with checking
+> performed automatically by the compiler. But I couldn't resist the temptation
+> to put in a null reference, simply because it was so easy to implement. This
+> has led to innumerable errors, vulnerabilities, and system crashes, which have
+> probably caused a billion dollars of pain and damage in the last forty years.
+>
+> — C. A. R. Hoare
+
+Appending `?` to a type name creates an optional type. An object of type `T?`
+(where `T` is an arbitrary type) may contain a value of type `T` or `null`. No
+other type can contain the `null` value.
+
+### Function types
+
+Function types are written out as follows:
+
+> _function-type_ → `func` `(` _parameter-type-list_ `)` `->` _return-type_<br>
+
+where _parameter-type-list_ is a comma-separated list of parameter types.
+
+### Ranges
+
+???
+
+## Declarations
+
+### Variables
+
+Variable declarations introduce a new variable into the enclosing scope. The
+syntax is as follows:
+
+> _initializing-immutable-variable-declaration_ → `const` _variable-name_ `=` _initializer_ `;`<br>
+> _initializing-mutable-variable-declaration_ → `var` _variable-name_ `=` _initializer_ `;`<br>
+> _initializing-mutable-variable-declaration_ → _type_ _variable-name_ `=` _initializer_ `;`<br>
+
+In the first two forms, the type of the variable will be inferred from the
+_initializer_, which is an expression that returns the initial value for the new
+variable. If the explicit type is given before the variable name, the compiler
+ensures that _initializer_ is of that type. No implicit conversions are allowed.
+
+_initializer_ may also be the keyword `uninitialized`, in which case the
+variable is not initialized and all use-before-initialization warnings for the
+variable will be suppressed. Reading from an uninitialized variable causes
+undefined behavior.
+
+### Functions
+
+A function can be defined with either of the following syntaxes:
+
+> `func` _function-name_ `(` _parameter-list_ `)` `{` _function-body_ `}`<br>
+> `func` _function-name_ `(` _parameter-list_ `)` `->` _return-value-list_ `{` _function-body_ `}`<br>
+
+The return type of the first version is `void`. The ___parameter-list___ is a
+comma-separated list of parameter declarations. A parameter declaration has one
+of the following syntaxes:
+
+> _parameter-type_ _parameter-name_<br>
+> _parameter-label_ `:` _parameter-type_ _parameter-name_<br>
+
+___parameter-name___ is the internal name of the parameter, and the optional
+_parameter-label_ is an external name for the parameter which must precede the
+argument value when calling the function.
+
+___return-value-list___ is a comma-separated list of one or more
+_return-value-declarations_:
+
+> _return-value-declaration_ → _return-type_ _return-value-name_<sub>opt</sub><br>
+
+#### Member functions
+
+#### Parameters
+
+Unlike C++ and C, Delta is not a copy-by-default language. When you declare a
+parameter to be of type `T`, the parameter is not automatically pass-by-value.
+Instead, whether `T` is a class or struct will determine how it's passed:
+classes are passed by reference (by default), while structs are passed by copy
+(by default).
+
+To override the default behavior, the keywords `move` and `inout` may be used:
+
+- `move` can be applied to class parameters, and forces the argument to be a
+  pass-by-value temporary, i.e. a freshly copied or moved value.
+- `inout` can be applied to struct parameters, and causes any changes to the
+  parameter to be reflected at the call site.
+
+#### Multiple return values
+
+Functions can return multiple values. In this case the return type is a
+comma-separated list of types.
+
+The individual return values can then be accessed as follows:
+
+> _multiple-return-value-assignment_ → _variable-declaration-list_ `=` _function-call_ `;`<br>
+
+where _variable-declaration-list_ is a comma-separated list of one or more
+_variable-declarators_.
+
+#### Named return values
+
+Function return values can be named. To do this, the following syntax can be
+used for an element of the _return-value-list_:
+
+> _named-return-value-declarator_ → _return-value-type_ _return-value-name_<br>
+
+An unnamed return value declarator would just leave the _return-value-name_ out.
+
+#### Private and public functions
+
+Both member functions and global functions may be declared private or public by
+prefixing the function definition with the keyword `private` or `public`.
+Private functions are only accessible from the file they're declared in. Public
+functions are accessible from anywhere, including other modules. Functions not
+marked private or public are _module-private_, i.e. only accessible within the
+module they're declared in.
+
+### Classes
+
+Classes are defined as follows:
+
+> _class-definition_ → `class` _class-name_ `{` _member-list_ `}`<br>
+
+_class-name_ becomes the name of the class. _member-list_ is a list of member
+variable declarations. Classes can be declared to satisfy concepts by
+listing the concepts after a `:` following the class name:
+
+> `class` _class-name_ `:` _concept-list_ `{` _member-list_ `}`<br>
+
+The _concept-list_ is a comma-separated list of one or more concept names. The
+compiler will emit an error if the class doesn't actually satisfy the listed
+concepts.
+
+#### Generic classes
+
+Generic classes can be declared as follows:
+
+> `class` _class-name_ `<` _generic-parameter-list_ `>` `{` _member-list_ `}`<br>
+
+where _generic-parameter-list_ is a comma separated list of one or more generic
+parameters. A generic parameter is one of the following:
+
+> _generic-type-parameter_ → _identifier_<br>
+> _generic-nontype-parameter_ → _type_ _identifier_<br>
+
+The identifier of a _generic-type-parameter_ serves as a placeholder for types
+used to instantiate the generic class. A _generic-nontype-parameter_ can be used
+to instantiate generic classes based on a constant value of any type.
+
+### Structs
+
+The syntax for declaring structs is exactly the same as for classes, except the
+keyword `class` is substituted with `struct`. Like classes, structs can be
+generic.
+
+### Type aliases
+
+Unlike `typedef` in C++ and C, and `using` in C++, type aliases in Delta are
+strongly-typed, i.e. they define a whole new type. The new type behaves
+exactly as the target (aliased) type, except that it cannot be implicitly
+converted to or from that type. Explicit conversions on the other hand are
+allowed. This can be used to create type-safe abstractions.
+
+> _alias-declaration_ → `class` _identifier_ `=` _class-name_ `;`<br>
+> _alias-declaration_ → `struct` _identifier_ `=` _struct-name_ `;`<br>
+> _alias-declaration_ → `concept` _identifier_ `=` _concept-name_ `;`<br>
+
+Type aliases can also be generic:
+
+> _generic-alias-declaration_ → `class` _identifier_ `<` _generic-parameter-list_ `>` `=` _class-name_ `;`<br>
+> _generic-alias-declaration_ → `struct` _identifier_ `<` _generic-parameter-list_ `>` `=` _struct-name_ `;`<br>
+> _generic-alias-declaration_ → `concept` _identifier_ `<` _generic-parameter-list_ `>` `=` _concept-name_ `;`<br>
+
+Generic parameters declared in the _generic-parameter-list_ are available for
+use in the _class-name_ / _struct-name_ / _concept-name_ part.
+
+## Statements
+
+### Assignment statement
+
+> _assignment-statement_ → _lvalue-expression_ `=` _expression_ `;`<br>
+
+Assignments in Delta don't return any value. This applies to compound
+assignments as well, including `++` and `--` (see below). Furthermore, this obsoletes the
+two different forms of `++` and `--`, so only the postfix versions are valid as
+syntactic sugar for `+= 1` and `-= 1`, respectively.
+
+### Increment and decrement statements
+
+> increment-statement → _lvalue-expression_ `++` `;`<br>
+> decrement-statement → _lvalue-expression_ `--` `;`<br>
+
+### Block
+
+> _block_ → `{` _statement_* `}`<br>
+
+### `if` statement
+
+> _if-statement_ → `if` `(` _expression_ `)` _block_ ( `else` _block_ )<sub>opt</sub><br>
+
+### `return` statement
+
+> _if-statement_ → `return` _return-value-list_ `;`<br>
+
+_return-value-list_ is a comma-separated list of zero or more return values.
+
+### `for`-`in` statement
+
+The `for`-`in` statement loop over a range. The syntax is as follows:
+
+> _for-in-statement_ → `for` `(` _identifier_ `in` _range-expression_ `)` _block_<br>
+
+### `while` statement
+
+The `while` statement loops until a condition evaluates to `false`. The syntax
+is as follows:
+
+> _while-statement_ → `while` `(` _condition_ `)` _block_<br>
+
+### `switch` statement
+
+> _switch-statement_ → `switch` `(` _expression_ `)` `{` _case_+ `}`<br>
+> _case_ → `case` _expression_ `:` _statement_+<br>
+> _case_ → `default` `:` _statement_+<br>
+
+In addition to integer types, the `switch` statement can be used to match
+strings.
+
+The cases in a `switch` statement don't fall through by default. The
+fall-through behavior can be enabled for a individual cases with the
+`fallthrough` keyword.
+
+`switch` statements must be exhaustive. This is enforced by the compiler.
+
+### `defer` statement
+
+The `defer` statement has the following syntax:
+
+> _defer-statement_ → `defer` _expression_ `;`<br>
+
+The _expression_ will be evaluated when leaving the function in which the
+_defer-statement_ is located.
+
+## Expressions
+
+### Unary expression
+
+> _prefix-unary-expression_ → _operator_ _operand_<br>
+
+### Binary expression
+
+> _binary-expression_ → _left-hand-side_ _binary-operator_ _right-hand-side_<br>
+
+### Conditional expression
+
+> _conditional-expression_ → _condition_ `?` _then-expression_ `:` _else-expression_<br>
+
+### Member access expression
+
+> _member-access-expression_ → _expression_ `.` _identifier_<br>
+
+### Subscript expression
+
+> _subscript-expression_ → _expression_ `[` _expression_ `]`<br>
+
+### Function call expression
+
+> _call-expression_ → _function-expression_ `(` _argument-list_ `)` <br>
+
+_argument-list_ is a comma-separated list of zero or more _argument-specifiers_:
+
+> _argument-specifier_ → _unlabeled-argument_ | _labeled-argument_<br>
+> _unlabeled-argument_ → _expression_<br>
+> _labeled-argument_ → _argument-label_ `:` _expression_<br>
+
+### Range expression
+
+> _exclusive-range-expression_ → _lower-bound_ `..<` _upper-bound_<br>
+> _inclusive-range-expression_ → _lower-bound_ `...` _upper-bound_<br>
+
+### Closure expression
+
+> _closure-expression_ → _parameter-list_ `->` _expression_<br>
+> _closure-expression_ → _parameter-list_ `->` `{` _expression_<sub>opt</sub> `}`<br>
+> _closure-expression_ → `{` _expression_<sub>opt</sub> `}`<br>
+
+## Error handling
+
+Functions that may throw errors are marked with the `throws` keyword,
+immediately after the `)` that terminates the parameter list. Other functions
+may never throw (the compiler enforces this), which helps generate more
+efficient code. Calling a throwing function requires the use of the `try` keyword:
+
+> _try-expression_ → `try` _throwing-call-expression_<br>
+
+This makes it clear which individual calls may throw and stop the execution in
+the enclosing function.
