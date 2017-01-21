@@ -23,11 +23,11 @@ PtrType& PtrType::operator=(const PtrType& type) {
 void Type::appendType(Type type) {
     boost::optional<Type> firstType;
     switch (getKind()) {
-        case TypeKind::BasicType: firstType = std::move(getBasicType()); break;
-        case TypeKind::ArrayType: firstType = std::move(getArrayType()); break;
+        case TypeKind::BasicType: firstType = Type(std::move(getBasicType())); break;
+        case TypeKind::ArrayType: firstType = Type(std::move(getArrayType())); break;
         case TypeKind::TupleType: break;
-        case TypeKind::FuncType: firstType = std::move(getFuncType()); break;
-        case TypeKind::PtrType: firstType = std::move(getPtrType()); break;
+        case TypeKind::FuncType: firstType = Type(std::move(getFuncType())); break;
+        case TypeKind::PtrType: firstType = Type(std::move(getPtrType())); break;
     }
     if (firstType) {
         data = TupleType();

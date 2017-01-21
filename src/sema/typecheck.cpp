@@ -335,21 +335,21 @@ void typecheck(DecrementStmt& stmt) {
     // TODO: check that operand supports decrement operation.
 }
 
-void typecheck(IfStmt& stmt) {
-    const Type& conditionType = typecheck(stmt.condition);
+void typecheck(IfStmt& ifStmt) {
+    const Type& conditionType = typecheck(ifStmt.condition);
     if (conditionType != Type(BasicType{"bool"})) {
         error("'if' condition must have type 'bool'");
     }
-    for (Stmt& stmt : stmt.thenBody) typecheck(stmt);
-    for (Stmt& stmt : stmt.elseBody) typecheck(stmt);
+    for (Stmt& stmt : ifStmt.thenBody) typecheck(stmt);
+    for (Stmt& stmt : ifStmt.elseBody) typecheck(stmt);
 }
 
-void typecheck(WhileStmt& stmt) {
-    const Type& conditionType = typecheck(stmt.condition);
+void typecheck(WhileStmt& whileStmt) {
+    const Type& conditionType = typecheck(whileStmt.condition);
     if (conditionType != Type(BasicType{"bool"})) {
         error("'while' condition must have type 'bool'");
     }
-    for (Stmt& stmt : stmt.body) typecheck(stmt);
+    for (Stmt& stmt : whileStmt.body) typecheck(stmt);
 }
 
 void typecheck(AssignStmt& stmt) {

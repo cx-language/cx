@@ -171,28 +171,28 @@ void codegen(const DecrementStmt& stmt) {
     *out << "--;";
 }
 
-void codegen(const IfStmt& stmt) {
+void codegen(const IfStmt& ifStmt) {
     *out << "if(";
-    codegen(stmt.condition);
+    codegen(ifStmt.condition);
     *out << "){";
-    for (const Stmt& stmt : stmt.thenBody) {
+    for (const Stmt& stmt : ifStmt.thenBody) {
         codegen(stmt);
     }
     *out << "}";
-    if (!stmt.elseBody.empty()) {
+    if (!ifStmt.elseBody.empty()) {
         *out << "else{";
-        for (const Stmt& stmt : stmt.elseBody) {
+        for (const Stmt& stmt : ifStmt.elseBody) {
             codegen(stmt);
         }
         *out << "}";
     }
 }
 
-void codegen(const WhileStmt& stmt) {
+void codegen(const WhileStmt& whileStmt) {
     *out << "while(";
-    codegen(stmt.condition);
+    codegen(whileStmt.condition);
     *out << "){";
-    for (const Stmt& stmt : stmt.body) {
+    for (const Stmt& stmt : whileStmt.body) {
         codegen(stmt);
     }
     *out << "}";
