@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
 
     if (!syntaxOnly && !printAST && !compileOnly) {
         // Compile and link C output.
-        std::string command = "cc -Werror -Wno-parentheses-equality";
+        std::string command = "cc";
         for (boost::string_ref filePath : args) {
             command.append(" ");
             command.append(filePath.data(), filePath.size());
