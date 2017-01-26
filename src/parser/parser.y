@@ -124,7 +124,7 @@
 
 %%
 
-source_file: declaration_list { globalAST = std::move(*$1); };
+source_file: declaration_list { std::move($1->begin(), $1->end(), std::back_inserter(globalAST)); };
 
 declaration_list:
     /* empty */ { $$ = new std::vector<Decl>(); }

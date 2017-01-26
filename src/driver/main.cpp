@@ -43,31 +43,20 @@ int main(int argc, char** argv) {
 
         int result = yyparse();
         if (result != 0) return result;
+    }
 
-        typecheck(globalAST);
+    typecheck(globalAST);
 
-        if (printAST) {
-            std::cout << globalAST;
-        } else if (!syntaxOnly) {
-            cgen::compile(globalAST, outputToStdout ? "stdout" : (std::string(filePath) + ".c"));
-        }
-        globalAST.clear();
+    if (printAST) {
+        std::cout << globalAST;
+    } else if (!syntaxOnly) {
+        cgen::compile(globalAST, outputToStdout ? "stdout" : "a.c");
     }
 
     if (!syntaxOnly && !printAST && !compileOnly) {
         // Compile and link C output.
-        std::string command = "cc";
-        for (boost::string_ref filePath : args) {
-            command.append(" ");
-            command.append(filePath.data(), filePath.size());
-            command.append(".c");
-        }
-        const int ccExitStatus = system(command.c_str());
-
-        for (boost::string_ref filePath : args) {
-            std::remove((std::string(filePath) + ".c").c_str());
-        }
-
+        const int ccExitStatus = std::system("cc a.c");
+        std::remove("a.c");
         if (ccExitStatus != 0) exit(ccExitStatus);
     }
 }
