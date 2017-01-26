@@ -478,7 +478,7 @@ syntactic sugar for `+= 1` and `-= 1`, respectively.
 
 ### `return` statement
 
-> _if-statement_ → `return` _return-value-list_ `;`<br>
+> _return-statement_ → `return` _return-value-list_ `;`<br>
 
 _return-value-list_ is a comma-separated list of zero or more return values.
 
