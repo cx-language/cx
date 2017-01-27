@@ -1,7 +1,6 @@
 #include <cstdio>
 #include <cassert>
 #include <unordered_map>
-#include "parser.hpp"
 
 FILE* inputFile;
 

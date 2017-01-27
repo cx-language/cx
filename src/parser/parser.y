@@ -349,4 +349,5 @@ int yyerror(const char* message) {
 
 std::vector<Decl> globalAST;
 
+#include "lexer.cpp"
 #include "operators.cpp"
