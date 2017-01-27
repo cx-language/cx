@@ -9,7 +9,7 @@
 #include "../sema/typecheck.h"
 #include "../cgen/codegen.h"
 
-extern FILE* yyin;
+extern FILE* inputFile;
 int yyparse();
 extern std::vector<Decl> globalAST;
 
@@ -34,9 +34,9 @@ int main(int argc, char** argv) {
     const bool outputToStdout = checkFlag("-o=stdout", args);
 
     for (boost::string_ref filePath : args) {
-        yyin = fopen(filePath.data(), "rb");
+        inputFile = fopen(filePath.data(), "rb");
 
-        if (!yyin) {
+        if (!inputFile) {
             std::cout << "error: no such file: '"  << filePath << "'" << std::endl;
             return 1;
         }

@@ -4,8 +4,9 @@
     #include "../ast/expr.h"
     #include "../ast/decl.h"
     #include "../sema/typecheck.h"
-#define YYDEBUG 1
-    int yylex();
+
+    #define yylex lex
+    int lex();
     int yyerror(const char*);
 
     /// The root of the abstract syntax tree, for passing from Bison to compiler.
@@ -53,6 +54,7 @@
 %token SLASH    "/"
 %token INCREMENT"++"
 %token DECREMENT"--"
+%token NOT      "!"
 %token AND      "&"
 %token AND_AND  "&&"
 %token OR       "|"
