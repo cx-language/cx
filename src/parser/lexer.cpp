@@ -203,7 +203,7 @@ int lex() {
                             error("numbers cannot start with 0[0-9], use 0o prefix for octal literal");
                         }
                         if (std::isalpha(ch) || ch == '_') {
-                            error("unexpected '", ch, "'");
+                            error("unexpected '", (char) ch, "'");
                         }
                         unreadChar(ch);
                         yylval.number = 0;

@@ -58,6 +58,24 @@ compile_and_run_and_check_output() {
     fi
 }
 
+compile_and_check_error() {
+    source_file=$1
+    expected_output="error: $2"
+
+    actual_output=$($path_to_delta inputs/$source_file)
+
+    if [ $? -eq 0 ]; then
+        exit 1
+    fi
+
+    if [[ "$actual_output" != "$expected_output" ]]; then
+        echo "FAILED:"
+        echo "expected output: \"$expected_output\""
+        echo "actual output:   \"$actual_output\""
+        exit 1
+    fi
+}
+
 compile function-call.delta
 compile function-call-before-declaration.delta
 compile comments.delta
@@ -86,3 +104,8 @@ compile_and_run_and_check_output while-loop.delta $'foo\nfoo\nfoo'
 compile_and_run_and_check_output array-subscript-via-pointer.delta "Foo"
 compile_and_run_and_check_output reference-operator.delta "Bar"
 compile_and_run_and_check_output return-array.delta "Bar"
+compile_and_check_error mixed-case-hex-literal.delta "mixed letter case in hex literal"
+compile_and_check_error leading-zero.delta "numbers cannot start with 0[0-9], use 0o prefix for octal literal"
+compile_and_check_error newline-inside-string-literal.delta "newline inside string literal"
+compile_and_check_error unexpected-character-after-zero.delta "unexpected '_'"
+compile_and_check_error unknown-token.delta "unknown token '\`'"
