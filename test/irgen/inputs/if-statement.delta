@@ -1,0 +1,10 @@
+func foo() { }
+func bar() { }
+
+func main() {
+    if (false) {
+        foo();
+    } else {
+        bar();
+    }
+}

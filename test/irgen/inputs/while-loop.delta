@@ -1,0 +1,7 @@
+extern func foo() -> bool;
+
+func main() {
+    while (foo()) {
+        foo();
+    }
+}

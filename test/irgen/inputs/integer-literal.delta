@@ -1,0 +1,5 @@
+func main() {
+    int i = 42;
+    var j = 0 + 0b01;
+    mutable int k = 0xf * 0o7;
+}
