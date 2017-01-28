@@ -62,7 +62,7 @@ Type typecheck(BoolLiteralExpr&) {
 }
 
 Type typecheck(PrefixExpr& expr) {
-    if (expr.op.rawValue == ASTERISK) { // Dereference operation
+    if (expr.op.rawValue == STAR) { // Dereference operation
         auto operandType = typecheck(*expr.operand);
         if (operandType.getKind() != TypeKind::PtrType) {
             error("cannot dereference non-pointer type '", operandType, "'");

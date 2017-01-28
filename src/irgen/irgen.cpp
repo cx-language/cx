@@ -87,11 +87,11 @@ static llvm::Value* codegenPrefixOp(const PrefixExpr& expr, CreateNegFunc intFun
 
 static llvm::Value* codegen(const PrefixExpr& expr) {
     switch (expr.op.rawValue) {
-        case PLUS:     return codegen(*expr.operand);
-        case MINUS:    return codegenPrefixOp(expr, &llvm::IRBuilder<>::CreateNeg);
-        case ASTERISK: assert(false && "IRGen doesn't support dereference operations yet");
-        case AND:      assert(false && "IRGen doesn't support reference operations yet");
-        default: assert(false);
+        case PLUS:  return codegen(*expr.operand);
+        case MINUS: return codegenPrefixOp(expr, &llvm::IRBuilder<>::CreateNeg);
+        case STAR:  assert(false && "IRGen doesn't support dereference operations yet");
+        case AND:   assert(false && "IRGen doesn't support reference operations yet");
+        default:    assert(false);
     }
 }
 
@@ -112,16 +112,16 @@ static llvm::Value* codegen(const BinaryExpr& expr) {
         || expr.right->getType().isImplicitlyConvertibleTo(expr.left->getType()));
 
     switch (expr.op.rawValue) {
-        case EQ:       return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpEQ);
-        case NE:       return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpNE);
-        case LT:       return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLT);
-        case LE:       return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLE);
-        case GT:       return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGT);
-        case GE:       return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGE);
-        case PLUS:     return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAdd);
-        case MINUS:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSub);
-        case ASTERISK: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateMul);
-        case SLASH:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSDiv);
+        case EQ:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpEQ);
+        case NE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpNE);
+        case LT:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLT);
+        case LE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLE);
+        case GT:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGT);
+        case GE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGE);
+        case PLUS:  return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAdd);
+        case MINUS: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSub);
+        case STAR:  return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateMul);
+        case SLASH: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSDiv);
         default: assert(false);
     }
 }

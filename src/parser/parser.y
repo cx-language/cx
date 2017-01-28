@@ -50,7 +50,7 @@
 %token GE       ">="
 %token PLUS     "+"
 %token MINUS    "-"
-%token ASTERISK "*"
+%token STAR     "*"
 %token SLASH    "/"
 %token INCREMENT"++"
 %token DECREMENT"--"
@@ -299,7 +299,7 @@ assignment_lhs_expression:
 
 prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2)}); };
 prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2)}); };
-prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{ASTERISK, u($2)}); };
+prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{STAR, u($2)}); };
 prefix_expression: "&" expression { $$ = new Expr(PrefixExpr{AND, u($2)}); };
 binary_expression: expression "==" expression { $$ = new Expr(BinaryExpr{EQ, u($1), u($3)}); };
 binary_expression: expression "!=" expression { $$ = new Expr(BinaryExpr{NE, u($1), u($3)}); };
@@ -309,7 +309,7 @@ binary_expression: expression ">"  expression { $$ = new Expr(BinaryExpr{GT, u($
 binary_expression: expression ">=" expression { $$ = new Expr(BinaryExpr{GE, u($1), u($3)}); };
 binary_expression: expression "+"  expression { $$ = new Expr(BinaryExpr{PLUS, u($1), u($3)}); };
 binary_expression: expression "-"  expression { $$ = new Expr(BinaryExpr{MINUS, u($1), u($3)}); };
-binary_expression: expression "*"  expression { $$ = new Expr(BinaryExpr{ASTERISK, u($1), u($3)}); };
+binary_expression: expression "*"  expression { $$ = new Expr(BinaryExpr{STAR, u($1), u($3)}); };
 binary_expression: expression "/"  expression { $$ = new Expr(BinaryExpr{SLASH, u($1), u($3)}); };
 
 parenthesized_expression: "(" expression ")" { $$ = $2; };

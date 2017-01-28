@@ -143,7 +143,7 @@ int lex() {
                 unreadChar(ch);
                 return MINUS;
             case '*':
-                return ASTERISK;
+                return STAR;
             case '<':
                 ch = readChar();
                 if (ch == '=') return LE;
