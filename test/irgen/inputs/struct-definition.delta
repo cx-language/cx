@@ -1,0 +1,10 @@
+struct Foo {
+    int a;
+    bool b;
+}
+
+init Foo(int a, bool b) { }
+
+func main() {
+    Foo f = Foo(666, true);
+}

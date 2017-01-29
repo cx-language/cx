@@ -12,6 +12,7 @@ static llvm::IRBuilder<> builder(ctx);
 static llvm::Module module("", ctx);
 static std::unordered_map<std::string, llvm::Value*> namedValues;
 static std::unordered_map<std::string, llvm::Function*> funcs;
+static std::unordered_map<std::string, llvm::StructType*> structs;
 static const std::vector<Decl>* globalDecls;
 static const Decl* currentDecl;
 
@@ -35,7 +36,9 @@ static llvm::Type* toIR(const Type& type) {
             if (name == "int16" || name == "uint16") return llvm::Type::getInt16Ty(ctx);
             if (name == "int32" || name == "uint32") return llvm::Type::getInt32Ty(ctx);
             if (name == "int64" || name == "uint64") return llvm::Type::getInt64Ty(ctx);
-            assert(false && "IRGen doesn't support custom types yet");
+            auto it = structs.find(name);
+            assert(it != structs.end());
+            return it->second;
         }
         case TypeKind::ArrayType: {
             const auto& array = type.getArrayType();
@@ -131,9 +134,16 @@ static llvm::Function* getFunc(llvm::StringRef name);
 
 static llvm::Value* codegen(const CallExpr& expr) {
     assert(!expr.isMemberFuncCall() && "IRGen doesn't support member function calls yet");
-    assert(!expr.isInitializerCall && "IRGen doesn't support initializer calls yet");
+
+    llvm::Function* func;
+    if (expr.isInitializerCall) {
+        func = module.getFunction("__init_" + expr.funcName);
+    } else {
+        func = getFunc(expr.funcName);
+    }
+
     auto args = map(expr.args, *[](const Arg& arg) { return codegen(*arg.value); });
-    return builder.CreateCall(getFunc(expr.funcName), args);
+    return builder.CreateCall(func, args);
 }
 
 static llvm::Value* codegen(const CastExpr& expr) {
@@ -324,11 +334,25 @@ static void codegen(const FuncDecl& decl) {
 }
 
 static void codegen(const InitDecl& decl) {
-    assert(false && "IRGen doesn't support custom types yet");
+    FuncDecl funcDecl{"__init_" + decl.getTypeDecl().name, decl.params, decl.getTypeDecl().getType()};
+    auto* func = codegenFuncProto(funcDecl);
+    builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", func));
+
+    auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl().getType()));
+    auto* alloca = builder.CreateAlloca(type);
+    builder.CreateStore(llvm::UndefValue::get(type), alloca);
+
+    namedValues.emplace("this", alloca);
+    for (auto& arg : func->args()) namedValues.emplace(arg.getName(), &arg);
+    for (const auto& stmt : *decl.body) codegen(stmt);
+    builder.CreateRet(builder.CreateLoad(alloca));
+
+    assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 
 static void codegen(const TypeDecl& decl) {
-    assert(false && "IRGen doesn't support custom types yet");
+    auto elements = map(decl.fields, *[](const FieldDecl& f) { return toIR(f.type); });
+    structs.emplace(decl.name, llvm::StructType::create(elements, decl.name));
 }
 
 static void codegen(const VarDecl& decl) {
