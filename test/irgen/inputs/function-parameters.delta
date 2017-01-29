@@ -1,0 +1,5 @@
+func foo(int a, bool b, uint8 c) {
+    var aa = a;
+    var bb = b;
+    var cc = c;
+}

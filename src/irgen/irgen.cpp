@@ -10,7 +10,7 @@
 static llvm::LLVMContext ctx;
 static llvm::IRBuilder<> builder(ctx);
 static llvm::Module module("", ctx);
-static std::unordered_map<std::string, llvm::AllocaInst*> allocas;
+static std::unordered_map<std::string, llvm::Value*> namedValues;
 static std::unordered_map<std::string, llvm::Function*> funcs;
 static const std::vector<Decl>* globalDecls;
 static const Decl* currentDecl;
@@ -53,14 +53,15 @@ static llvm::Type* toIR(const Type& type) {
 static llvm::Value* codegen(const Expr& expr);
 
 static llvm::Value* codegen(const VariableExpr& expr) {
-    auto it = allocas.find(expr.identifier);
-    assert(it != allocas.end());
+    auto it = namedValues.find(expr.identifier);
+    assert(it != namedValues.end());
+    if (auto* arg = llvm::dyn_cast<llvm::Argument>(it->second)) return arg;
     return builder.CreateLoad(it->second, expr.identifier);
 }
 
 static llvm::Value* codegenLvalue(const VariableExpr& expr) {
-    auto it = allocas.find(expr.identifier);
-    assert(it != allocas.end());
+    auto it = namedValues.find(expr.identifier);
+    assert(it != namedValues.end());
     return it->second;
 }
 
@@ -188,7 +189,7 @@ static void codegen(const ReturnStmt& stmt) {
 
 static void codegen(const VariableStmt& stmt) {
     auto* alloca = builder.CreateAlloca(toIR(stmt.decl->getType()), nullptr, stmt.decl->name);
-    allocas.emplace(stmt.decl->name, alloca);
+    namedValues.emplace(stmt.decl->name, alloca);
 
     if (auto initializer = stmt.decl->initializer) {
         builder.CreateStore(codegen(*stmt.decl->initializer), alloca);
@@ -306,6 +307,7 @@ static llvm::Function* getFunc(llvm::StringRef name) {
 
 static void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &func));
+    for (auto& arg : func.args()) namedValues.emplace(arg.getName(), &arg);
     for (const auto& stmt : body) codegen(stmt);
 
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
