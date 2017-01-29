@@ -1,5 +1,10 @@
-func foo(int a, bool b, uint8 c) {
+func foo(int a, bool b) -> uint {
     var aa = a;
     var bb = b;
-    var cc = c;
+    return 0;
+}
+
+func main() {
+    const value = 42;
+    var result = foo(value, true);
 }

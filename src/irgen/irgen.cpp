@@ -132,7 +132,8 @@ static llvm::Function* getFunc(llvm::StringRef name);
 static llvm::Value* codegen(const CallExpr& expr) {
     assert(!expr.isMemberFuncCall() && "IRGen doesn't support member function calls yet");
     assert(!expr.isInitializerCall && "IRGen doesn't support initializer calls yet");
-    return builder.CreateCall(getFunc(expr.funcName));
+    auto args = map(expr.args, *[](const Arg& arg) { return codegen(*arg.value); });
+    return builder.CreateCall(getFunc(expr.funcName), args);
 }
 
 static llvm::Value* codegen(const CastExpr& expr) {
