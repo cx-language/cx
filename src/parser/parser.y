@@ -31,6 +31,7 @@
 %token FALSE    "false"
 %token FUNC     "func"
 %token IF       "if"
+%token IMPORT   "import"
 %token INIT     "init"
 %token MUTABLE  "mutable"
 %token RETURN   "return"
@@ -93,7 +94,7 @@
 %type <decl> declaration function_definition initializer_definition function_prototype
              member_function_prototype extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
-             typed_variable_definition composite_type_declaration
+             typed_variable_definition composite_type_declaration import_declaration
 %type <stmtList> else_body statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
              call_statement if_statement while_statement assignment_statement
@@ -137,6 +138,7 @@ declaration:
 |   initializer_definition { $$ = $1; }
 |   extern_function_declaration { $$ = $1; }
 |   composite_type_declaration { $$ = $1; }
+|   import_declaration { $$ = $1; }
 |   variable_definition { $$ = $1; };
 
 // Declarations ////////////////////////////////////////////////////////////////
@@ -210,6 +212,9 @@ initializer_definition:
         { $$ = new Decl(InitDecl{$2, std::move(*$4)});
           addToSymbolTable($$->getInitDecl());
           $$->getInitDecl().body.reset($7); };
+
+import_declaration:
+    "import" STRING_LITERAL ";" { $$ = new Decl(ImportDecl{$2}); };
 
 // Statements //////////////////////////////////////////////////////////////////
 

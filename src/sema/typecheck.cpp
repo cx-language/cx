@@ -38,6 +38,7 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::InitDecl: assert(false && "cannot refer to initializers yet");
         case DeclKind::TypeDecl: return it->second->getTypeDecl().getType();
         case DeclKind::FieldDecl: return it->second->getFieldDecl().type;
+        case DeclKind::ImportDecl: assert(false);
     }
 }
 
@@ -502,6 +503,9 @@ void typecheck(VarDecl& decl) {
 void typecheck(FieldDecl& decl) {
 }
 
+void typecheck(ImportDecl& decl) {
+}
+
 void typecheck(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
@@ -510,6 +514,7 @@ void typecheck(Decl& decl) {
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   typecheck(decl.getVarDecl()); break;
         case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;
+        case DeclKind::ImportDecl:typecheck(decl.getImportDecl()); break;
     }
 }
 

@@ -1,3 +1,4 @@
+import "foo bar";
 func foo1() { }
 func foo2(int a) { }
 func foo3(int a, int b) { }

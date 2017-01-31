@@ -206,6 +206,10 @@ std::ostream& operator<<(std::ostream& out, const VarDecl& decl) {
     return out << br << "(var-decl " << decl.name << " " << *decl.initializer << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const ImportDecl& decl) {
+    return out << br << "(import-decl \"" << decl.target << "\")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: return out << decl.getParamDecl();
@@ -214,6 +218,7 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
         case DeclKind::TypeDecl:  return out << decl.getTypeDecl();
         case DeclKind::VarDecl:   return out << decl.getVarDecl();
         case DeclKind::FieldDecl: return out << decl.getFieldDecl();
+        case DeclKind::ImportDecl:return out << decl.getImportDecl();
     }
 }
 

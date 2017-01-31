@@ -17,6 +17,7 @@ enum class DeclKind {
     TypeDecl,
     VarDecl,
     FieldDecl, /// A struct or class field declaration.
+    ImportDecl,
 };
 
 struct ParamDecl {
@@ -77,6 +78,10 @@ struct FieldDecl {
     std::string name;
 };
 
+struct ImportDecl {
+    std::string target;
+};
+
 class Decl {
 public:
 #define DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(KIND) \
@@ -96,11 +101,12 @@ public:
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(TypeDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(VarDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FieldDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(ImportDecl)
 #undef DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR
 
     Decl(Decl&& decl) : data(std::move(decl.data)) { }
     DeclKind getKind() const { return static_cast<DeclKind>(data.which()); }
 
 private:
-    boost::variant<ParamDecl, FuncDecl, InitDecl, TypeDecl, VarDecl, FieldDecl> data;
+    boost::variant<ParamDecl, FuncDecl, InitDecl, TypeDecl, VarDecl, FieldDecl, ImportDecl> data;
 };

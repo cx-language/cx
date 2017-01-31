@@ -307,7 +307,7 @@ static llvm::Function* getFunc(llvm::StringRef name) {
                     break;
                 }
                 case DeclKind::TypeDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
-                case DeclKind::FieldDecl: case DeclKind::InitDecl:
+                case DeclKind::FieldDecl: case DeclKind::InitDecl: case DeclKind::ImportDecl:
                     break;
             }
         }
@@ -371,6 +371,7 @@ static void codegen(const Decl& decl) {
         case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
         case DeclKind::FieldDecl: codegen(decl.getFieldDecl()); break;
+        case DeclKind::ImportDecl: break;
     }
 }
 
