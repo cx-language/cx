@@ -5,6 +5,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 #include "irgen.h"
+#include "../sema/typecheck.h"
 #include "../parser/parser.hpp"
 
 static llvm::LLVMContext ctx;
