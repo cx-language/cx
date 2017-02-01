@@ -1,4 +1,4 @@
-import "foo bar";
+import "math.h";
 func foo1() { }
 func foo2(int a) { }
 func foo3(int a, int b) { }

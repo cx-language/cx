@@ -1,5 +1,5 @@
 (source-file
-    (import-decl "foo bar")
+    (import-decl "math.h")
     (func-decl foo1 () void)
     (func-decl foo2 ((int a)) void)
     (func-decl foo3 ((int a) (int b)) void)

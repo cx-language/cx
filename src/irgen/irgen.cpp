@@ -297,21 +297,8 @@ static llvm::Function* codegenFuncProto(const FuncDecl& decl) {
 static llvm::Function* getFunc(llvm::StringRef name) {
     auto it = funcs.find(name);
     if (it == funcs.end()) {
-        // Function has not been declared yet, search for it starting from currentDecl + 1.
-        // FIXME: Use deltaSema's symbolTable instead.
-        for (const auto* decl = currentDecl + 1; decl != &*globalDecls->end(); ++decl) {
-            switch (decl->getKind()) {
-                case DeclKind::FuncDecl: {
-                    const auto& funcDecl = decl->getFuncDecl();
-                    if (funcDecl.name == name) return codegenFuncProto(decl->getFuncDecl());
-                    break;
-                }
-                case DeclKind::TypeDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
-                case DeclKind::FieldDecl: case DeclKind::InitDecl: case DeclKind::ImportDecl:
-                    break;
-            }
-        }
-        assert(false);
+        // Function has not been declared yet, search for it in the symbol table.
+        return codegenFuncProto(findInSymbolTable(name).getFuncDecl());
     }
     return it->second;
 }

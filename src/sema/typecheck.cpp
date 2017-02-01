@@ -6,6 +6,7 @@
 #include <boost/optional.hpp>
 #include <llvm/ADT/StringRef.h>
 #include "typecheck.h"
+#include "c-import.h"
 #include "../ast/type.h"
 #include "../ast/expr.h"
 #include "../ast/decl.h"
@@ -14,6 +15,7 @@
 static std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
 static const Type* funcReturnType = nullptr;
 static bool inInitializer = false;
+static bool allowFunctionRedefinitions = false; // For C header importing.
 
 std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
@@ -389,7 +391,7 @@ void typecheck(ParamDecl& decl) {
 }
 
 void addToSymbolTable(const FuncDecl& decl) {
-    if (symbolTable.count(decl.name) > 0) {
+    if (!allowFunctionRedefinitions && symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
@@ -498,6 +500,9 @@ void typecheck(FieldDecl& decl) {
 }
 
 void typecheck(ImportDecl& decl) {
+    allowFunctionRedefinitions = true;
+    importCHeader(decl.target);
+    allowFunctionRedefinitions = false;
 }
 
 void typecheck(Decl& decl) {

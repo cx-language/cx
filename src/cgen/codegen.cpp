@@ -289,6 +289,10 @@ void codegen(const FieldDecl& decl) {
     *out << toC(decl.type) << " " << decl.name << ";";
 }
 
+void codegen(const ImportDecl& decl) {
+    *out << "#include <" << decl.target << ">\n";
+}
+
 void codegen(const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: codegen(decl.getParamDecl()); break;
@@ -311,14 +315,17 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
 
     *out << "#include <stdbool.h>\n#include <stdint.h>\n#include <stddef.h>\n";
 
-    // Output struct definitions first.
+    // Output #include directives and struct definitions.
     for (const Decl& decl : decls) {
         switch (decl.getKind()) {
             case DeclKind::TypeDecl:
                 codegen(decl.getTypeDecl());
                 break;
+            case DeclKind::ImportDecl:
+                codegen(decl.getImportDecl());
+                break;
             case DeclKind::FuncDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
-            case DeclKind::FieldDecl: case DeclKind::InitDecl: case DeclKind::ImportDecl:
+            case DeclKind::FieldDecl: case DeclKind::InitDecl:
                 break;
         }
     }

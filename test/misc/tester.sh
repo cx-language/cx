@@ -105,6 +105,7 @@ compile_and_run_and_check_output while-loop.delta $'foo\nfoo\nfoo'
 compile_and_run_and_check_output array-subscript-via-pointer.delta "Foo"
 compile_and_run_and_check_output reference-operator.delta "Bar"
 compile_and_run_and_check_output return-array.delta "Bar"
+compile_and_run_and_check_output import-c-header.delta "foo bar"
 compile_and_check_error mixed-case-hex-literal.delta "mixed letter case in hex literal"
 compile_and_check_error leading-zero.delta "numbers cannot start with 0[0-9], use 0o prefix for octal literal"
 compile_and_check_error newline-inside-string-literal.delta "newline inside string literal"

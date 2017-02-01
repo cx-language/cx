@@ -3,12 +3,15 @@ project(delta)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility=hidden ${CMAKE_CXX_FLAGS}")
 
 find_package(LLVM 3.9 REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
+
+find_package(Clang REQUIRED)
 
 find_package(Boost REQUIRED)
 
