@@ -4,6 +4,7 @@
 #include <boost/utility/string_ref.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/optional.hpp>
+#include <llvm/ADT/StringRef.h>
 #include "typecheck.h"
 #include "../ast/type.h"
 #include "../ast/expr.h"
@@ -13,6 +14,10 @@
 static std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
 static const Type* funcReturnType = nullptr;
 static bool inInitializer = false;
+
+std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
+    return stream.write(string.data(), string.size());
+}
 
 template<typename... Args>
 [[noreturn]] static void error(Args&&... args) {
@@ -27,17 +32,15 @@ const Type& typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
 
 Type typecheck(VariableExpr& expr) {
-    auto it = symbolTable.find(expr.identifier);
-    if (it == symbolTable.end()) {
-        error("unknown identifier '", expr.identifier, "'");
-    }
-    switch (it->second->getKind()) {
-        case DeclKind::VarDecl: return it->second->getVarDecl().getType();
-        case DeclKind::ParamDecl: return it->second->getParamDecl().type;
-        case DeclKind::FuncDecl: return it->second->getFuncDecl().getFuncType();
+    Decl& decl = findInSymbolTable(expr.identifier);
+
+    switch (decl.getKind()) {
+        case DeclKind::VarDecl: return decl.getVarDecl().getType();
+        case DeclKind::ParamDecl: return decl.getParamDecl().type;
+        case DeclKind::FuncDecl: return decl.getFuncDecl().getFuncType();
         case DeclKind::InitDecl: assert(false && "cannot refer to initializers yet");
-        case DeclKind::TypeDecl: return it->second->getTypeDecl().getType();
-        case DeclKind::FieldDecl: return it->second->getFieldDecl().type;
+        case DeclKind::TypeDecl: return decl.getTypeDecl().getType();
+        case DeclKind::FieldDecl: return decl.getFieldDecl().type;
         case DeclKind::ImportDecl: assert(false);
     }
 }
@@ -134,21 +137,18 @@ Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args) {
 }
 
 Type typecheck(CallExpr& expr) {
-    auto it = symbolTable.find(expr.funcName);
-    if (it == symbolTable.end()) {
-        error("unknown function '", expr.funcName, "'");
-    }
-    expr.isInitializerCall = it->second->getKind() == DeclKind::TypeDecl;
+    Decl& decl = findInSymbolTable(expr.funcName);
+    expr.isInitializerCall = decl.getKind() == DeclKind::TypeDecl;
     if (expr.isInitializerCall) {
-        return typecheckInitExpr(it->second->getTypeDecl(), expr.args);
+        return typecheckInitExpr(decl.getTypeDecl(), expr.args);
     } else if (expr.isMemberFuncCall()) {
         typecheck(*expr.receiver);
     }
-    if (it->second->getKind() != DeclKind::FuncDecl) {
+    if (decl.getKind() != DeclKind::FuncDecl) {
         error("'", expr.funcName, "' is not a function");
     }
-    validateArgs(expr.args, it->second->getFuncDecl().params, "'" + expr.funcName + "'");
-    return Type(TupleType{it->second->getFuncDecl().getFuncType().returnTypes});
+    validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'");
+    return Type(TupleType{decl.getFuncDecl().getFuncType().returnTypes});
 }
 
 static void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
@@ -213,24 +213,21 @@ const Type& typecheck(CastExpr& expr) {
 }
 
 Type typecheck(MemberExpr& expr) {
-    auto it = symbolTable.find(expr.base);
-    if (it == symbolTable.end()) {
-        error("unknown identifier '", expr.base, "'");
-    }
+    Decl& baseDecl = findInSymbolTable(expr.base);
 
-    decltype(symbolTable)::iterator typeIt;
-    switch (it->second->getKind()) {
+    Decl* typeDecl;
+    switch (baseDecl.getKind()) {
         case DeclKind::VarDecl:
-            typeIt = symbolTable.find(it->second->getVarDecl().getType().getBasicType().name);
+            typeDecl = &findInSymbolTable(baseDecl.getVarDecl().getType().getBasicType().name);
             break;
         case DeclKind::ParamDecl:
-            typeIt = symbolTable.find(it->second->getParamDecl().type.getBasicType().name);
+            typeDecl = &findInSymbolTable(baseDecl.getParamDecl().type.getBasicType().name);
             break;
         default:
             error("'", expr.base, "' doesn't support member access");
     }
-    assert(typeIt != symbolTable.end());
-    for (const FieldDecl& field : typeIt->second->getTypeDecl().fields) {
+
+    for (const FieldDecl& field : typeDecl->getTypeDecl().fields) {
         if (field.name == expr.member) {
             return field.type;
         }
@@ -404,14 +401,11 @@ void addToSymbolTable(const InitDecl& decl) {
     }
 
     InitDecl initDecl(decl);
-    auto it = symbolTable.find(decl.getTypeName());
-    if (it == symbolTable.end()) {
-        error("unknown identifier '", decl.getTypeName(), "'");
-    }
-    if (it->second->getKind() != DeclKind::TypeDecl) {
+    Decl& typeDecl = findInSymbolTable(decl.getTypeName());
+    if (typeDecl.getKind() != DeclKind::TypeDecl) {
         error("'", decl.getTypeName(), "' is not a class or struct");
     }
-    initDecl.type = &it->second->getTypeDecl();
+    initDecl.type = &typeDecl.getTypeDecl();
 
     symbolTable.insert({"__init_" + decl.getTypeName(), new Decl(std::move(initDecl))});
 }
@@ -421,6 +415,12 @@ void addToSymbolTable(const TypeDecl& decl) {
         error("redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(TypeDecl(decl))});
+}
+
+Decl& findInSymbolTable(llvm::StringRef name) {
+    auto it = symbolTable.find(name);
+    if (it == symbolTable.end()) error("unknown identifier '", name, "'");
+    return *it->second;
 }
 
 void typecheckMemberFunc(FuncDecl& decl);
@@ -438,14 +438,11 @@ void typecheck(FuncDecl& decl) {
 
 void typecheckMemberFunc(FuncDecl& decl) {
     auto symbolTableBackup = symbolTable;
-    auto it = symbolTable.find(decl.receiverType);
-    if (it == symbolTable.end()) {
-        error("unknown identifier '", decl.receiverType, "'");
-    }
-    if (it->second->getKind() != DeclKind::TypeDecl) {
+    Decl& receiverType = findInSymbolTable(decl.receiverType);
+    if (receiverType.getKind() != DeclKind::TypeDecl) {
         error("'", decl.receiverType, "' is not a class or struct");
     }
-    symbolTable.insert({"this", new Decl(VarDecl{it->second->getTypeDecl().getType(), "this"})});
+    symbolTable.insert({"this", new Decl(VarDecl{receiverType.getTypeDecl().getType(), "this"})});
     for (ParamDecl& param : decl.params) typecheck(param);
     funcReturnType = &decl.returnType;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
@@ -455,15 +452,12 @@ void typecheckMemberFunc(FuncDecl& decl) {
 
 void typecheck(InitDecl& decl) {
     auto symbolTableBackup = symbolTable;
-    auto it = symbolTable.find(decl.getTypeName());
-    if (it == symbolTable.end()) {
-        error("unknown identifier '", decl.getTypeName(), "'");
-    }
-    if (it->second->getKind() != DeclKind::TypeDecl) {
+    Decl& typeDecl = findInSymbolTable(decl.getTypeName());
+    if (typeDecl.getKind() != DeclKind::TypeDecl) {
         error("'", decl.getTypeName(), "' is not a class or struct");
     }
-    decl.type = &it->second->getTypeDecl();
-    symbolTable.insert({"this", new Decl(VarDecl{it->second->getTypeDecl().getType(), "this"})});
+    decl.type = &typeDecl.getTypeDecl();
+    symbolTable.insert({"this", new Decl(VarDecl{typeDecl.getTypeDecl().getType(), "this"})});
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
