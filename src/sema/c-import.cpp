@@ -1,3 +1,4 @@
+#include <unordered_set>
 #include <clang/Basic/TargetInfo.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Lex/Preprocessor.h>
@@ -13,6 +14,14 @@
 #include "../ast/decl.h"
 
 static clang::PrintingPolicy printingPolicy{clang::LangOptions()};
+
+/** Prints the message to stderr if it hasn't been printed yet. */
+static void warnOnce(const llvm::Twine& message) {
+    static std::unordered_set<std::string> printedMessages;
+    llvm::SmallVector<char, 64> buffer;
+    if (printedMessages.count(message.toStringRef(buffer)) != 0) return;
+    llvm::errs() << "WARNING: " << *printedMessages.emplace(message.str()).first << '\n';
+}
 
 static Type toDelta(clang::QualType qualtype) {
     auto& type = *qualtype.getTypePtr();
@@ -31,7 +40,7 @@ static Type toDelta(clang::QualType qualtype) {
                 case clang::BuiltinType::UInt:  return Type(BasicType{"uint"});
                 default:
                     auto name = llvm::cast<clang::BuiltinType>(type).getName(printingPolicy);
-                    llvm::errs() << "WARNING: Builtin type '" << name << "' not handled\n";
+                    warnOnce("Builtin type '" + name + "' not handled");
                     return Type(BasicType{"int"});
             }
             return Type(BasicType{llvm::cast<clang::BuiltinType>(type).getName(printingPolicy)});
@@ -42,7 +51,7 @@ static Type toDelta(clang::QualType qualtype) {
         case clang::Type::Record:
             return Type(BasicType{llvm::cast<clang::RecordType>(type).getDecl()->getName()});
         default:
-            llvm::errs() << "WARNING: " << type.getTypeClassName() << " not handled\n";
+            warnOnce(llvm::Twine(type.getTypeClassName()) + " not handled");
             return Type(BasicType{"int"});
     }
 }
