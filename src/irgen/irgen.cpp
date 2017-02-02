@@ -13,7 +13,7 @@ static llvm::IRBuilder<> builder(ctx);
 static llvm::Module module("", ctx);
 static std::unordered_map<std::string, llvm::Value*> namedValues;
 static std::unordered_map<std::string, llvm::Function*> funcs;
-static std::unordered_map<std::string, llvm::StructType*> structs;
+static std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 static const std::vector<Decl>* globalDecls;
 static const Decl* currentDecl;
 
@@ -39,7 +39,7 @@ static llvm::Type* toIR(const Type& type) {
             if (name == "int64" || name == "uint64") return llvm::Type::getInt64Ty(ctx);
             auto it = structs.find(name);
             assert(it != structs.end());
-            return it->second;
+            return it->second.first;
         }
         case TypeKind::ArrayType: {
             const auto& array = type.getArrayType();
@@ -151,8 +151,17 @@ static llvm::Value* codegen(const CastExpr& expr) {
     assert(false && "IRGen doesn't support cast expressions yet");
 }
 
+static llvm::Value* codegenLvalue(const MemberExpr& expr) {
+    auto it = namedValues.find(expr.base);
+    assert(it != namedValues.end());
+    auto structIt = structs.find(it->second->getType()->getPointerElementType()->getStructName());
+    assert(structIt != structs.end());
+    auto index = structIt->second.second->getFieldIndex(expr.member);
+    return builder.CreateStructGEP(nullptr, it->second, index);
+}
+
 static llvm::Value* codegen(const MemberExpr& expr) {
-    assert(false && "IRGen doesn't support member expressions yet");
+    return builder.CreateLoad(codegenLvalue(expr));
 }
 
 static llvm::Value* codegen(const SubscriptExpr& expr) {
@@ -184,7 +193,7 @@ static llvm::Value* codegenLvalue(const Expr& expr) {
         case ExprKind::BinaryExpr:      assert(false);
         case ExprKind::CallExpr:        assert(false && "IRGen doesn't support lvalue call expressions yet");
         case ExprKind::CastExpr:        assert(false && "IRGen doesn't support lvalue cast expressions yet");
-        case ExprKind::MemberExpr:      assert(false && "IRGen doesn't support lvalue member expressions yet");
+        case ExprKind::MemberExpr:      return codegenLvalue(expr.getMemberExpr());
         case ExprKind::SubscriptExpr:   assert(false && "IRGen doesn't support lvalue subscript expressions yet");
     }
 }
@@ -340,7 +349,7 @@ static void codegen(const InitDecl& decl) {
 
 static void codegen(const TypeDecl& decl) {
     auto elements = map(decl.fields, *[](const FieldDecl& f) { return toIR(f.type); });
-    structs.emplace(decl.name, llvm::StructType::create(elements, decl.name));
+    structs.emplace(decl.name, std::make_pair(llvm::StructType::create(elements, decl.name), &decl));
 }
 
 static void codegen(const VarDecl& decl) {

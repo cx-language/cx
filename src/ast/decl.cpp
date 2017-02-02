@@ -1,4 +1,5 @@
 #include "decl.h"
+#include <llvm/ADT/StringRef.h>
 
 static std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
     std::vector<Type> paramTypes;
@@ -15,4 +16,11 @@ FuncType FuncDecl::getFuncType() const {
 
 Type TypeDecl::getType() const {
     return BasicType{name};
+}
+
+unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
+    for (unsigned index = 0, size = fields.size(); index < size; ++index) {
+        if (fields[index].name == fieldName) return index;
+    }
+    assert(false && "unknown field");
 }

@@ -10,6 +10,8 @@
 #include "stmt.h"
 #include "type.h"
 
+namespace llvm { class StringRef; }
+
 enum class DeclKind {
     ParamDecl,
     FuncDecl,
@@ -54,6 +56,7 @@ struct TypeDecl {
     std::string name;
     std::vector<struct FieldDecl> fields;
     Type getType() const;
+    unsigned getFieldIndex(llvm::StringRef fieldName) const;
 };
 
 struct VarDecl {

@@ -1,10 +1,17 @@
 struct Foo {
-    int a;
+    mutable int a;
     bool b;
 }
 
-init Foo(int a, bool b) { }
+init Foo(int a, bool b) {
+    this.a = a;
+    this.b = b;
+    this.a++;
+}
 
 func main() {
     Foo f = Foo(666, true);
+    f.a++;
+    var bar = f.a;
+    var qux = f.b;
 }
