@@ -83,6 +83,9 @@ void importCHeader(llvm::StringRef headerName) {
 
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
+
+    ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
+    ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
     ci.createPreprocessor(clang::TU_Complete);
     ci.getPreprocessorOpts().UsePredefines = false;
 
