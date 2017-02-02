@@ -4,16 +4,18 @@
 
 FILE* inputFile;
 
-static inline int readChar() {
+namespace {
+
+inline int readChar() {
     return getc(inputFile);
 }
 
-static inline void unreadChar(int ch) {
+inline void unreadChar(int ch) {
     ungetc(ch, inputFile);
 }
 
 template<typename... Args>
-[[noreturn]] static void error(Args&&... args) {
+[[noreturn]] void error(Args&&... args) {
     std::cout << "error: ";
     using expander = int[];
     (void)expander{0, (void(std::cout << std::forward<Args>(args)), 0)...};
@@ -21,7 +23,7 @@ template<typename... Args>
     exit(1);
 }
 
-static inline void readNumber(const int base, char ch = 0) {
+inline void readNumber(const int base, char ch = 0) {
     std::string string;
     if (ch) string += (char) ch;
 
@@ -94,7 +96,7 @@ end:
     yylval.number = std::strtoll(string.c_str(), nullptr, base);
 }
 
-static const std::unordered_map<std::string, int> keywords = {
+const std::unordered_map<std::string, int> keywords = {
     {"cast",          CAST},
     {"class",         CLASS},
     {"const",         CONST},
@@ -114,6 +116,8 @@ static const std::unordered_map<std::string, int> keywords = {
     {"var",           VAR},
     {"while",         WHILE},
 };
+
+} // anonymous namespace
 
 int lex() {
     while (true) {

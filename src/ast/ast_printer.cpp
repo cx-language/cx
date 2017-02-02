@@ -4,10 +4,12 @@
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
 
-static int indentLevel = 0;
+namespace {
+
+int indentLevel = 0;
 
 /// Inserts a line break followed by appropriate indentation.
-static std::ostream& br(std::ostream& out) {
+std::ostream& br(std::ostream& out) {
     return out << '\n' << std::string(indentLevel * 4, ' ');
 }
 
@@ -221,6 +223,8 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
         case DeclKind::ImportDecl:return out << decl.getImportDecl();
     }
 }
+
+} // anonymous namespace
 
 std::ostream& operator<<(std::ostream& out, const AST& decls) {
     out << "(source-file";

@@ -6,13 +6,15 @@
 #include <boost/optional.hpp>
 #include "codegen.h"
 
-static std::ostream* out = nullptr;
+namespace {
+
+std::ostream* out = nullptr;
 
 /// Points to the function whose body is currently being generated.
-static boost::optional<std::string> currentFunc = boost::none;
+boost::optional<std::string> currentFunc = boost::none;
 
 /// Array types that have been defined so far.
-static std::unordered_set<std::string> definedArrayTypes;
+std::unordered_set<std::string> definedArrayTypes;
 
 std::string toC(const Type& type) {
     switch (type.getKind()) {
@@ -304,6 +306,8 @@ void codegen(const Decl& decl) {
         case DeclKind::ImportDecl: break;
     }
 }
+
+} // anonymous namespace
 
 void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath) {
     std::ofstream outputFile;

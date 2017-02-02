@@ -1,12 +1,16 @@
 #include "decl.h"
 #include <llvm/ADT/StringRef.h>
 
-static std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
+namespace {
+
+std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
     std::vector<Type> paramTypes;
     paramTypes.reserve(params.size());
     for (const auto& param : params) paramTypes.emplace_back(param.type);
     return paramTypes;
 }
+
+} // anonymous namespace
 
 FuncType FuncDecl::getFuncType() const {
     auto returnTypes = returnType.getKind() == TypeKind::TupleType

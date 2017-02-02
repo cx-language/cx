@@ -13,17 +13,19 @@
 #include "../ast/type.h"
 #include "../ast/decl.h"
 
-static clang::PrintingPolicy printingPolicy{clang::LangOptions()};
+namespace {
+
+clang::PrintingPolicy printingPolicy{clang::LangOptions()};
 
 /** Prints the message to stderr if it hasn't been printed yet. */
-static void warnOnce(const llvm::Twine& message) {
+void warnOnce(const llvm::Twine& message) {
     static std::unordered_set<std::string> printedMessages;
     llvm::SmallVector<char, 64> buffer;
     if (printedMessages.count(message.toStringRef(buffer)) != 0) return;
     llvm::errs() << "WARNING: " << *printedMessages.emplace(message.str()).first << '\n';
 }
 
-static Type toDelta(clang::QualType qualtype) {
+Type toDelta(clang::QualType qualtype) {
     auto& type = *qualtype.getTypePtr();
     switch (type.getTypeClass()) {
         case clang::Type::Pointer: {
@@ -56,7 +58,7 @@ static Type toDelta(clang::QualType qualtype) {
     }
 }
 
-static FuncDecl toDelta(const clang::FunctionDecl& decl) {
+FuncDecl toDelta(const clang::FunctionDecl& decl) {
     std::vector<ParamDecl> params;
     for (auto* param : decl.parameters()) {
         params.emplace_back(ParamDecl{"", toDelta(param->getType()), param->getNameAsString()});
@@ -79,6 +81,8 @@ public:
         return true; // continue parsing
     }
 };
+
+} // anonymous namespace
 
 void importCHeader(llvm::StringRef headerName) {
     clang::CompilerInstance ci;

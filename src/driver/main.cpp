@@ -14,6 +14,8 @@ extern FILE* inputFile;
 int yyparse();
 extern std::vector<Decl> globalAST;
 
+namespace {
+
 /// If `args` contains `flag`, removes it and returns true, otherwise returns false.
 bool checkFlag(boost::string_ref flag, std::vector<boost::string_ref>& args) {
     const auto it = std::find(args.begin(), args.end(), flag);
@@ -21,6 +23,8 @@ bool checkFlag(boost::string_ref flag, std::vector<boost::string_ref>& args) {
     if (contains) args.erase(it);
     return contains;
 }
+
+} // anonymous namespace
 
 int main(int argc, char** argv) {
     if (argc == 1) {

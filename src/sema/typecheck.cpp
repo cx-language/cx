@@ -12,17 +12,19 @@
 #include "../ast/decl.h"
 #include "../parser/parser.hpp"
 
-static std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
-static const Type* funcReturnType = nullptr;
-static bool inInitializer = false;
-static bool allowFunctionRedefinitions = false; // For C header importing.
+namespace {
+
+std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
+const Type* funcReturnType = nullptr;
+bool inInitializer = false;
+bool allowFunctionRedefinitions = false; // For C header importing.
 
 std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
 }
 
 template<typename... Args>
-[[noreturn]] static void error(Args&&... args) {
+[[noreturn]] void error(Args&&... args) {
     std::cout << "error: ";
     using expander = int[];
     (void)expander{0, (void(std::cout << std::forward<Args>(args)), 0)...};
@@ -81,7 +83,7 @@ Type typecheck(PrefixExpr& expr) {
     return typecheck(*expr.operand);
 }
 
-static bool isValidConversion(const Expr&, const Type&, const Type&);
+bool isValidConversion(const Expr&, const Type&, const Type&);
 
 Type typecheck(BinaryExpr& expr) {
     Type leftType = typecheck(*expr.left);
@@ -103,7 +105,7 @@ bool checkRange(int64_t value, boost::string_ref param) {
     }
 }
 
-static bool isValidConversion(const Expr& expr, const Type& source, const Type& target) {
+bool isValidConversion(const Expr& expr, const Type& source, const Type& target) {
     if (source.isImplicitlyConvertibleTo(target)) return true;
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
@@ -126,8 +128,8 @@ static bool isValidConversion(const Expr& expr, const Type& source, const Type& 
     return false;
 }
 
-static void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
-                         const std::string& funcName);
+void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
+                  const std::string& funcName);
 
 Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args) {
     auto it = symbolTable.find("__init_" + type.name);
@@ -153,8 +155,8 @@ Type typecheck(CallExpr& expr) {
     return Type(TupleType{decl.getFuncDecl().getFuncType().returnTypes});
 }
 
-static void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
-                         const std::string& funcName) {
+void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
+                  const std::string& funcName) {
     if (args.size() < params.size()) {
         error("too few arguments to ", funcName, ", expected ", params.size());
     }
@@ -282,7 +284,7 @@ const Type& typecheck(Expr& expr) {
     return expr.getType();
 }
 
-static bool isValidConversion(const std::vector<Expr>& exprs, const Type& source, const Type& target) {
+bool isValidConversion(const std::vector<Expr>& exprs, const Type& source, const Type& target) {
     if (source.getKind() != TypeKind::TupleType) {
         assert(target.getKind() != TypeKind::TupleType);
         assert(exprs.size() == 1);
@@ -390,6 +392,8 @@ void typecheck(ParamDecl& decl) {
     symbolTable.insert({decl.name, new Decl(ParamDecl(decl))});
 }
 
+} // anonymous namespace
+
 void addToSymbolTable(const FuncDecl& decl) {
     if (!allowFunctionRedefinitions && symbolTable.count(decl.name) > 0) {
         error("redefinition of '", decl.name, "'");
@@ -424,6 +428,8 @@ Decl& findInSymbolTable(llvm::StringRef name) {
     if (it == symbolTable.end()) error("unknown identifier '", name, "'");
     return *it->second;
 }
+
+namespace {
 
 void typecheckMemberFunc(FuncDecl& decl);
 
@@ -516,6 +522,8 @@ void typecheck(Decl& decl) {
         case DeclKind::ImportDecl:typecheck(decl.getImportDecl()); break;
     }
 }
+
+} // anonymous namespace
 
 void typecheck(std::vector<Decl>& decls) {
     for (Decl& decl : decls) typecheck(decl);
