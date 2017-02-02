@@ -355,11 +355,8 @@ void codegen(const TypeDecl& decl) {
 }
 
 void codegen(const VarDecl& decl) {
-    assert(false && "IRGen doesn't support global variables yet");
-}
-
-void codegen(const FieldDecl& decl) {
-    assert(false && "IRGen doesn't support custom types yet");
+    new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.isMutable(), llvm::GlobalValue::PrivateLinkage,
+                             llvm::cast<llvm::Constant>(codegen(*decl.initializer)), decl.name);
 }
 
 void codegen(const Decl& decl) {
@@ -369,7 +366,7 @@ void codegen(const Decl& decl) {
         case DeclKind::InitDecl:  codegen(decl.getInitDecl()); break;
         case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
-        case DeclKind::FieldDecl: codegen(decl.getFieldDecl()); break;
+        case DeclKind::FieldDecl: /* handled via TypeDecl */ assert(false); break;
         case DeclKind::ImportDecl: break;
     }
 }

@@ -73,7 +73,10 @@ struct VarDecl {
     const Type& getType() const {
         return boost::get<Type>(type);
     }
-    bool isMutable() const { return boost::get<bool>(type); }
+    bool isMutable() const {
+        if (type.which() == 1) return boost::get<bool>(type);
+        else return getType().isMutable();
+    }
 };
 
 struct FieldDecl {
