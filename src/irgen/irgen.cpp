@@ -168,7 +168,12 @@ llvm::Value* codegen(const CallExpr& expr) {
 }
 
 llvm::Value* codegen(const CastExpr& expr) {
-    return builder.CreateBitOrPointerCast(codegen(*expr.expr), toIR(expr.type));
+    auto* value = codegen(*expr.expr);
+    auto* type = toIR(expr.type);
+    if (value->getType()->isIntegerTy() && type->isIntegerTy()) {
+        return builder.CreateIntCast(value, type, expr.expr->getType().isSigned());
+    }
+    return builder.CreateBitOrPointerCast(value, type);
 }
 
 llvm::Value* codegenLvalue(const MemberExpr& expr) {

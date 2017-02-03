@@ -1,4 +1,5 @@
 #include <boost/optional.hpp>
+#include <llvm/ADT/StringRef.h>
 #include "type.h"
 
 ArrayType::ArrayType(const ArrayType& type) : elementType(new Type(*type.elementType)), size(type.size) { }
@@ -57,6 +58,12 @@ bool Type::isImplicitlyConvertibleTo(const Type& type) const {
             && (getPtrType().pointeeType->isMutable() || !type.getPtrType().pointeeType->isMutable())
             && getPtrType().pointeeType->isImplicitlyConvertibleTo(*type.getPtrType().pointeeType);
     }
+}
+
+bool Type::isSigned() const {
+    assert(getKind() == TypeKind::BasicType);
+    llvm::StringRef name = getBasicType().name;
+    return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
 }
 
 bool operator==(const Type& lhs, const Type& rhs) {
