@@ -13,11 +13,21 @@ namespace {
 llvm::LLVMContext ctx;
 llvm::IRBuilder<> builder(ctx);
 llvm::Module module("", ctx);
-std::unordered_map<std::string, llvm::Value*> namedValues;
+std::unordered_map<std::string, llvm::Value*> globalValues;
+std::unordered_map<std::string, llvm::Value*> localValues;
 std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 const std::vector<Decl>* globalDecls;
 const Decl* currentDecl;
+
+llvm::Value* findValue(llvm::StringRef name) {
+    auto it = localValues.find(name);
+    if (it == localValues.end()) {
+        it = globalValues.find(name);
+        assert(it != globalValues.end());
+    }
+    return it->second;
+}
 
 template<typename From, typename To>
 std::vector<To> map(const std::vector<From>& from, To (&func)(const From&)) {
@@ -59,16 +69,13 @@ llvm::Type* toIR(const Type& type) {
 llvm::Value* codegen(const Expr& expr);
 
 llvm::Value* codegen(const VariableExpr& expr) {
-    auto it = namedValues.find(expr.identifier);
-    assert(it != namedValues.end());
-    if (auto* arg = llvm::dyn_cast<llvm::Argument>(it->second)) return arg;
-    return builder.CreateLoad(it->second, expr.identifier);
+    auto* value = findValue(expr.identifier);
+    if (auto* arg = llvm::dyn_cast<llvm::Argument>(value)) return arg;
+    return builder.CreateLoad(value, expr.identifier);
 }
 
 llvm::Value* codegenLvalue(const VariableExpr& expr) {
-    auto it = namedValues.find(expr.identifier);
-    assert(it != namedValues.end());
-    return it->second;
+    return findValue(expr.identifier);
 }
 
 llvm::Value* codegen(const StrLiteralExpr& expr) {
@@ -155,17 +162,15 @@ llvm::Value* codegen(const CastExpr& expr) {
 }
 
 llvm::Value* codegenLvalue(const MemberExpr& expr) {
-    auto it = namedValues.find(expr.base);
-    assert(it != namedValues.end());
-
-    auto baseType = it->second->getType();
+    auto* value = findValue(expr.base);
+    auto baseType = value->getType();
     if (baseType->isPointerTy()) {
         baseType = baseType->getPointerElementType();
         auto index = structs.find(baseType->getStructName())->second.second->getFieldIndex(expr.member);
-        return builder.CreateStructGEP(nullptr, it->second, index);
+        return builder.CreateStructGEP(nullptr, value, index);
     } else {
         auto index = structs.find(baseType->getStructName())->second.second->getFieldIndex(expr.member);
-        return builder.CreateExtractValue(it->second, index);
+        return builder.CreateExtractValue(value, index);
     }
 }
 
@@ -220,7 +225,7 @@ void codegen(const ReturnStmt& stmt) {
 
 void codegen(const VariableStmt& stmt) {
     auto* alloca = builder.CreateAlloca(toIR(stmt.decl->getType()), nullptr, stmt.decl->name);
-    namedValues.emplace(stmt.decl->name, alloca);
+    localValues.emplace(stmt.decl->name, alloca);
 
     if (auto initializer = stmt.decl->initializer) {
         builder.CreateStore(codegen(*stmt.decl->initializer), alloca);
@@ -328,13 +333,13 @@ llvm::Function* getFunc(llvm::StringRef name) {
 
 void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &func));
-    for (auto& arg : func.args()) namedValues.emplace(arg.getName(), &arg);
+    for (auto& arg : func.args()) localValues.emplace(arg.getName(), &arg);
     for (const auto& stmt : body) codegen(stmt);
 
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
         builder.CreateRetVoid();
     }
-    namedValues.clear();
+    localValues.clear();
 }
 
 void codegen(const FuncDecl& decl) {
@@ -353,8 +358,8 @@ void codegen(const InitDecl& decl) {
     auto* alloca = builder.CreateAlloca(type);
     builder.CreateStore(llvm::UndefValue::get(type), alloca);
 
-    namedValues.emplace("this", alloca);
-    for (auto& arg : func->args()) namedValues.emplace(arg.getName(), &arg);
+    localValues.emplace("this", alloca);
+    for (auto& arg : func->args()) localValues.emplace(arg.getName(), &arg);
     for (const auto& stmt : *decl.body) codegen(stmt);
     builder.CreateRet(builder.CreateLoad(alloca));
 
@@ -367,8 +372,11 @@ void codegen(const TypeDecl& decl) {
 }
 
 void codegen(const VarDecl& decl) {
-    new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.isMutable(), llvm::GlobalValue::PrivateLinkage,
-                             llvm::cast<llvm::Constant>(codegen(*decl.initializer)), decl.name);
+    auto* value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.isMutable(),
+                                           llvm::GlobalValue::PrivateLinkage,
+                                           llvm::cast<llvm::Constant>(codegen(*decl.initializer)),
+                                           decl.name);
+    globalValues.emplace(decl.name, value);
 }
 
 void codegen(const Decl& decl) {
