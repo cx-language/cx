@@ -85,8 +85,8 @@ llvm::Value* codegen(const StrLiteralExpr& expr) {
     return builder.CreateGlobalStringPtr(expr.value);
 }
 
-llvm::Value* codegen(const IntLiteralExpr& expr) {
-    return llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(ctx), expr.value);
+llvm::Value* codegen(const IntLiteralExpr& expr, const Expr& parent) {
+    return llvm::ConstantInt::getSigned(toIR(parent.getType()), expr.value);
 }
 
 llvm::Value* codegen(const BoolLiteralExpr& expr) {
@@ -190,7 +190,7 @@ llvm::Value* codegen(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:    return codegen(expr.getVariableExpr());
         case ExprKind::StrLiteralExpr:  return codegen(expr.getStrLiteralExpr());
-        case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr());
+        case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr(), expr);
         case ExprKind::BoolLiteralExpr: return codegen(expr.getBoolLiteralExpr());
         case ExprKind::PrefixExpr:      return codegen(expr.getPrefixExpr());
         case ExprKind::BinaryExpr:      return codegen(expr.getBinaryExpr());

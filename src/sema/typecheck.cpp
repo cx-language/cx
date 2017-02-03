@@ -83,7 +83,7 @@ Type typecheck(PrefixExpr& expr) {
     return typecheck(*expr.operand);
 }
 
-bool isValidConversion(const Expr&, const Type&, const Type&);
+bool isValidConversion(Expr&, const Type&, const Type&);
 
 Type typecheck(BinaryExpr& expr) {
     Type leftType = typecheck(*expr.left);
@@ -96,33 +96,34 @@ Type typecheck(BinaryExpr& expr) {
 }
 
 template<typename IntType>
-bool checkRange(int64_t value, boost::string_ref param) {
+bool checkRange(Expr& expr, int64_t value, boost::string_ref param) {
     try {
         boost::numeric_cast<IntType>(value);
-        return true;
     } catch (...) {
         error(value, " is out of range for parameter of type '", param, "'");
     }
+    expr.setType(BasicType{param.to_string()});
+    return true;
 }
 
-bool isValidConversion(const Expr& expr, const Type& source, const Type& target) {
+bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
     if (source.isImplicitlyConvertibleTo(target)) return true;
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
     if (expr.getKind() == ExprKind::IntLiteralExpr && target.getKind() == TypeKind::BasicType) {
         int64_t value{expr.getIntLiteralExpr().value};
         boost::string_ref targetTypeName = target.getBasicType().name;
-        if (targetTypeName == "int") return checkRange<int>(value, targetTypeName);
-        if (targetTypeName == "uint") return checkRange<unsigned>(value, targetTypeName);
-        if (targetTypeName == "int8") return checkRange<int8_t>(value, targetTypeName);
-        if (targetTypeName == "int16") return checkRange<int16_t>(value, targetTypeName);
-        if (targetTypeName == "int32") return checkRange<int32_t>(value, targetTypeName);
-        if (targetTypeName == "int64") return checkRange<int64_t>(value, targetTypeName);
-        if (targetTypeName == "uint8") return checkRange<uint8_t>(value, targetTypeName);
-        if (targetTypeName == "uint16") return checkRange<uint16_t>(value, targetTypeName);
-        if (targetTypeName == "uint32") return checkRange<uint32_t>(value, targetTypeName);
-        if (targetTypeName == "uint64") return checkRange<uint64_t>(value, targetTypeName);
-        if (targetTypeName == "size_t") return checkRange<size_t>(value, targetTypeName);
+        if (targetTypeName == "int") return checkRange<int>(expr, value, targetTypeName);
+        if (targetTypeName == "uint") return checkRange<unsigned>(expr, value, targetTypeName);
+        if (targetTypeName == "int8") return checkRange<int8_t>(expr, value, targetTypeName);
+        if (targetTypeName == "int16") return checkRange<int16_t>(expr, value, targetTypeName);
+        if (targetTypeName == "int32") return checkRange<int32_t>(expr, value, targetTypeName);
+        if (targetTypeName == "int64") return checkRange<int64_t>(expr, value, targetTypeName);
+        if (targetTypeName == "uint8") return checkRange<uint8_t>(expr, value, targetTypeName);
+        if (targetTypeName == "uint16") return checkRange<uint16_t>(expr, value, targetTypeName);
+        if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
+        if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
+        if (targetTypeName == "size_t") return checkRange<size_t>(expr, value, targetTypeName);
     }
 
     return false;
@@ -284,7 +285,7 @@ const Type& typecheck(Expr& expr) {
     return expr.getType();
 }
 
-bool isValidConversion(const std::vector<Expr>& exprs, const Type& source, const Type& target) {
+bool isValidConversion(std::vector<Expr>& exprs, const Type& source, const Type& target) {
     if (source.getKind() != TypeKind::TupleType) {
         assert(target.getKind() != TypeKind::TupleType);
         assert(exprs.size() == 1);

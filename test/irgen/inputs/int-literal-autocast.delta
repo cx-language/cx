@@ -1,0 +1,8 @@
+extern func foo(uint8 a);
+
+func main() {
+    foo(1);
+    mutable uint64 b = 42;
+    b--;
+    b = b + 1;
+}
