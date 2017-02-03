@@ -113,8 +113,15 @@ llvm::Value* codegen(const PrefixExpr& expr) {
     switch (expr.op.rawValue) {
         case PLUS:  return codegen(*expr.operand);
         case MINUS: return codegenPrefixOp(expr, &llvm::IRBuilder<>::CreateNeg);
-        case STAR:  assert(false && "IRGen doesn't support dereference operations yet");
+        case STAR:  return builder.CreateLoad(codegen(*expr.operand));
         case AND:   assert(false && "IRGen doesn't support reference operations yet");
+        default:    assert(false);
+    }
+}
+
+llvm::Value* codegenLvalue(const PrefixExpr& expr) {
+    switch (expr.op.rawValue) {
+        case STAR:  return codegen(*expr.operand);
         default:    assert(false);
     }
 }
@@ -224,7 +231,7 @@ llvm::Value* codegenLvalue(const Expr& expr) {
         case ExprKind::StrLiteralExpr:  assert(false);
         case ExprKind::IntLiteralExpr:  assert(false);
         case ExprKind::BoolLiteralExpr: assert(false);
-        case ExprKind::PrefixExpr:      assert(false);
+        case ExprKind::PrefixExpr:      return codegenLvalue(expr.getPrefixExpr());
         case ExprKind::BinaryExpr:      assert(false);
         case ExprKind::CallExpr:        assert(false && "IRGen doesn't support lvalue call expressions yet");
         case ExprKind::CastExpr:        assert(false && "IRGen doesn't support lvalue cast expressions yet");
