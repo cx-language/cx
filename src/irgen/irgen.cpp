@@ -37,6 +37,8 @@ std::vector<To> map(const std::vector<From>& from, To (&func)(const From&)) {
     return to;
 }
 
+void codegen(const TypeDecl& decl);
+
 llvm::Type* toIR(const Type& type) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
@@ -50,7 +52,11 @@ llvm::Type* toIR(const Type& type) {
             if (name == "int32" || name == "uint32") return llvm::Type::getInt32Ty(ctx);
             if (name == "int64" || name == "uint64") return llvm::Type::getInt64Ty(ctx);
             auto it = structs.find(name);
-            assert(it != structs.end());
+            if (it == structs.end()) {
+                // Custom type that has not been declared yet, search for it in the symbol table.
+                codegen(findInSymbolTable(name).getTypeDecl());
+                it = structs.find(name);
+            }
             return it->second.first;
         }
         case TypeKind::ArrayType: {
