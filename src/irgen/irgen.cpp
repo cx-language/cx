@@ -61,8 +61,11 @@ llvm::Type* toIR(const Type& type) {
             assert(false && "IRGen doesn't support tuple types yet");
         case TypeKind::FuncType:
             assert(false && "IRGen doesn't support function types yet");
-        case TypeKind::PtrType:
-            return llvm::PointerType::get(toIR(*type.getPtrType().pointeeType), 0);
+        case TypeKind::PtrType: {
+            auto* pointeeType = toIR(*type.getPtrType().pointeeType);
+            if (!pointeeType->isVoidTy()) return llvm::PointerType::get(pointeeType, 0);
+            else return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0);
+        }
     }
 }
 
