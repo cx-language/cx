@@ -1,0 +1,12 @@
+struct Foo {
+    int baz;
+}
+
+init Foo() { }
+
+func Foo::bar() { }
+
+func main() {
+    var foo = Foo();
+    foo.bar();
+}

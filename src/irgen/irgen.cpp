@@ -136,8 +136,6 @@ llvm::Value* codegen(const BinaryExpr& expr) {
 llvm::Function* getFunc(llvm::StringRef name);
 
 llvm::Value* codegen(const CallExpr& expr) {
-    assert(!expr.isMemberFuncCall() && "IRGen doesn't support member function calls yet");
-
     llvm::Function* func;
     if (expr.isInitializerCall) {
         func = module.getFunction("__init_" + expr.funcName);
@@ -145,7 +143,10 @@ llvm::Value* codegen(const CallExpr& expr) {
         func = getFunc(expr.funcName);
     }
 
-    auto args = map(expr.args, *[](const Arg& arg) { return codegen(*arg.value); });
+    llvm::SmallVector<llvm::Value*, 16> args;
+    if (expr.isMemberFuncCall()) args.emplace_back(codegen(*expr.receiver));
+    for (const auto& arg : expr.args) args.emplace_back(codegen(*arg.value));
+
     return builder.CreateCall(func, args);
 }
 
@@ -291,16 +292,19 @@ void codegen(const Stmt& stmt) {
 llvm::Function* codegenFuncProto(const FuncDecl& decl) {
     const auto& funcType = decl.getFuncType();
 
-    assert(!decl.isMemberFunc() && "IRGen doesn't support member functions yet");
     assert(funcType.returnTypes.size() == 1 && "IRGen doesn't support multiple return values yet");
     auto* returnType = toIR(funcType.returnTypes[0]);
-    auto paramTypes = map(funcType.paramTypes, toIR);
+
+    llvm::SmallVector<llvm::Type*, 16> paramTypes;
+    if (decl.isMemberFunc()) paramTypes.emplace_back(structs.find(decl.receiverType)->second.first);
+    for (const auto& t : funcType.paramTypes) paramTypes.emplace_back(toIR(t));
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);
     auto* func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, decl.name, &module);
 
-    auto paramIt = decl.params.begin();
-    for (auto& a : func->args()) a.setName(paramIt++->name);
+    auto arg = func->arg_begin(), argsEnd = func->arg_end();
+    if (decl.isMemberFunc()) arg++->setName("this");
+    for (auto param = decl.params.begin(); arg != argsEnd; ++param, ++arg) arg->setName(param->name);
 
     funcs.emplace(decl.name, func);
     return func;
