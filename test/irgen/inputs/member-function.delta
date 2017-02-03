@@ -2,9 +2,11 @@ struct Foo {
     int baz;
 }
 
-init Foo() { }
+init Foo() { this.baz = 42; }
 
 func Foo::bar() { }
+
+func Foo::qux() -> int { return this.baz; }
 
 func main() {
     var foo = Foo();

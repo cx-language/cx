@@ -3,12 +3,19 @@
 define %Foo @__init_Foo() {
   %1 = alloca %Foo
   store %Foo undef, %Foo* %1
-  %2 = load %Foo, %Foo* %1
-  ret %Foo %2
+  %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
+  store i32 42, i32* %2
+  %3 = load %Foo, %Foo* %1
+  ret %Foo %3
 }
 
 define void @bar(%Foo %this) {
   ret void
+}
+
+define i32 @qux(%Foo %this) {
+  %1 = extractvalue %Foo %this, 0
+  ret i32 %1
 }
 
 define void @main() {

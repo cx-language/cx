@@ -157,14 +157,21 @@ llvm::Value* codegen(const CastExpr& expr) {
 llvm::Value* codegenLvalue(const MemberExpr& expr) {
     auto it = namedValues.find(expr.base);
     assert(it != namedValues.end());
-    auto structIt = structs.find(it->second->getType()->getPointerElementType()->getStructName());
-    assert(structIt != structs.end());
-    auto index = structIt->second.second->getFieldIndex(expr.member);
-    return builder.CreateStructGEP(nullptr, it->second, index);
+
+    auto baseType = it->second->getType();
+    if (baseType->isPointerTy()) {
+        baseType = baseType->getPointerElementType();
+        auto index = structs.find(baseType->getStructName())->second.second->getFieldIndex(expr.member);
+        return builder.CreateStructGEP(nullptr, it->second, index);
+    } else {
+        auto index = structs.find(baseType->getStructName())->second.second->getFieldIndex(expr.member);
+        return builder.CreateExtractValue(it->second, index);
+    }
 }
 
 llvm::Value* codegen(const MemberExpr& expr) {
-    return builder.CreateLoad(codegenLvalue(expr));
+    auto* value = codegenLvalue(expr);
+    return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;
 }
 
 llvm::Value* codegen(const SubscriptExpr& expr) {
@@ -327,6 +334,7 @@ void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
         builder.CreateRetVoid();
     }
+    namedValues.clear();
 }
 
 void codegen(const FuncDecl& decl) {
