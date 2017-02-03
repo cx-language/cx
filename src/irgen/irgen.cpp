@@ -370,6 +370,10 @@ void codegen(const InitDecl& decl) {
 }
 
 void codegen(const TypeDecl& decl) {
+    if (decl.fields.empty()) {
+        structs.emplace(decl.name, std::make_pair(llvm::StructType::get(ctx), &decl));
+        return;
+    }
     auto elements = map(decl.fields, *[](const FieldDecl& f) { return toIR(f.type); });
     structs.emplace(decl.name, std::make_pair(llvm::StructType::create(elements, decl.name), &decl));
 }
