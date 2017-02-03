@@ -70,6 +70,7 @@ llvm::Type* toIR(const Type& type) {
 }
 
 llvm::Value* codegen(const Expr& expr);
+llvm::Value* codegenLvalue(const Expr& expr);
 
 llvm::Value* codegen(const VariableExpr& expr) {
     auto* value = findValue(expr.identifier);
@@ -161,7 +162,7 @@ llvm::Value* codegen(const CallExpr& expr) {
 }
 
 llvm::Value* codegen(const CastExpr& expr) {
-    assert(false && "IRGen doesn't support cast expressions yet");
+    return builder.CreateBitOrPointerCast(codegen(*expr.expr), toIR(expr.type));
 }
 
 llvm::Value* codegenLvalue(const MemberExpr& expr) {
@@ -182,8 +183,13 @@ llvm::Value* codegen(const MemberExpr& expr) {
     return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;
 }
 
+llvm::Value* codegenLvalue(const SubscriptExpr& expr) {
+    return builder.CreateGEP(codegenLvalue(*expr.array),
+                             {llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegen(*expr.index)});
+}
+
 llvm::Value* codegen(const SubscriptExpr& expr) {
-    assert(false && "IRGen doesn't support subscript expressions yet");
+    return builder.CreateLoad(codegenLvalue(expr));
 }
 
 llvm::Value* codegen(const Expr& expr) {
@@ -212,7 +218,7 @@ llvm::Value* codegenLvalue(const Expr& expr) {
         case ExprKind::CallExpr:        assert(false && "IRGen doesn't support lvalue call expressions yet");
         case ExprKind::CastExpr:        assert(false && "IRGen doesn't support lvalue cast expressions yet");
         case ExprKind::MemberExpr:      return codegenLvalue(expr.getMemberExpr());
-        case ExprKind::SubscriptExpr:   assert(false && "IRGen doesn't support lvalue subscript expressions yet");
+        case ExprKind::SubscriptExpr:   return codegenLvalue(expr.getSubscriptExpr());
     }
 }
 
