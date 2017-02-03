@@ -177,7 +177,7 @@ Delta has two kinds of comments:
 ### Identifiers
 
 > _identifier-head_ → upper- or lowercase letter `A` through `Z`<br>
-> _identifier-head_ → `_­`<br>
+> _identifier-head_ → `_`<br>
 > _identifier-head_ → U+00A8 | U+00AA | U+00AD | U+00AF | U+00B2–U+00B5 | U+00B7–U+00BA<br>
 > _identifier-head_ → U+00BC–U+00BE | U+00C0–U+00D6 | U+00D8–U+00F6 | U+00F8–U+00FF<br>
 > _identifier-head_ → U+0100–U+02FF | U+0370–U+167F | U+1681–U+180D | U+180F–U+1DBF<br>
@@ -214,14 +214,33 @@ There are three built-in floating-point types: `float32`, `float64`, and
 `float80`. The standard library also provides `float` and `double` which are
 type aliases for `float32` and `float64`, respectively.
 
+### Reference types
+
+References are values that refer to other values. They can be reassigned to
+refer to another value, but they must always refer to some value.
+
+> _reference-type_ → _referenced-type_ `&`<br>
+
+### Pointer types
+
+Pointers are like references, but may additionally store the value `null` to
+denote that they don't currently point to a valid value.
+
+> _pointer-type_ → _referenced-type_ `*`<br>
+
+There's no pointer arithmetic by default. Pointers that point to array types
+(see below), like `int[]*`, may be subscripted to access the array.
+
 ### Array types
 
-> _compile-time-sized-array-type_ → _element-type_ `[` _size_ `]`<br>
-> _run-time-sized-array-type_ → _element-type_ `[` `]`<br>
+> _sized-array-type_ → _element-type_ `[` _size_ `]`<br>
+> _unsized-array-type_ → _element-type_ `[` `]`<br>
 
-_run-time-sized-array-types_ are implemented as pointer-and-size pairs under
-the hood. _compile-time-sized-array-type_ are simply a contiguous block of
-objects of the _element-type_.
+_sized-array-types_ are contiguous blocks of _size_ elements of type
+_element-type_. _unsized-array-types_ may only be used as return types and
+parameters types, and are implemented as pointer-and-size pairs under the hood,
+unless the compiler detects that the size is unused, in which case it will be
+optimized out.
 
 ### String type
 
@@ -286,9 +305,8 @@ polymorphism. Like classes and structs, concepts may be generic.
 >
 > — C. A. R. Hoare
 
-Appending `?` to a type name creates an optional type. An object of type `T?`
-(where `T` is an arbitrary type) may contain a value of type `T` or `null`. No
-other type can contain the `null` value.
+An object of the optional type `optional<T>` (where `T` is an arbitrary type)
+may contain a value of type `T` or `null`.
 
 ### Function types
 
@@ -302,6 +320,27 @@ where _parameter-type-list_ is a comma-separated list of parameter types.
 
 ???
 
+### Tuple types
+
+> _tuple-type_ → `(`<sub>opt</sub> _tuple-element-list_ `)`<sub>opt</sub><br>
+> _tuple-element-list_ → comma-separated list of one or more _tuple-elements_<br>
+> _tuple-element_ → _type_ _name_<br>
+
+Tuples behave like structs, but they're defined inline. Tuples are intended as
+a lightweight alternative for situations where defining a whole new struct feels
+overkill or inappropriate, e.g. returning multiple values from a function. The
+optional parentheses may be used for syntax disambiguation.
+
+#### Tuple unpacking
+
+The elements of a tuple value may be unpacked into individual variables as follows:
+
+> _tuple-unpack-statement_ → _variable-list_ `=` _tuple-expression_ `;`<br>
+
+_variable-list_ is a comma-separated list of one or more variable names.
+
+???
+
 ## Declarations
 
 ### Variables
@@ -309,9 +348,9 @@ where _parameter-type-list_ is a comma-separated list of parameter types.
 Variable declarations introduce a new variable into the enclosing scope. The
 syntax is as follows:
 
-> _initializing-immutable-variable-declaration_ → `const` _variable-name_ `=` _initializer_ `;`<br>
-> _initializing-mutable-variable-declaration_ → `var` _variable-name_ `=` _initializer_ `;`<br>
-> _initializing-mutable-variable-declaration_ → _type_ _variable-name_ `=` _initializer_ `;`<br>
+> _initializing-immutable-variable-definition_ → `const` _variable-name_ `=` _initializer_ `;`<br>
+> _initializing-mutable-variable-definition_ → `var` _variable-name_ `=` _initializer_ `;`<br>
+> _initializing-mutable-variable-definition_ → _type_ _variable-name_ `=` _initializer_ `;`<br>
 
 In the first two forms, the type of the variable will be inferred from the
 _initializer_, which is an expression that returns the initial value for the new
@@ -323,12 +362,18 @@ variable is not initialized and all use-before-initialization warnings for the
 variable will be suppressed. Reading from an uninitialized variable causes
 undefined behavior.
 
+> _variable-definition-with-delayed-initialization_ → _type_ _variable-name_ `;`<br>
+
+This form may be used to declare the variable in an outer scope and initialize
+it in one or more inner scopes. The compiler checks that all paths that read
+from the variable assign to it before the read.
+
 ### Functions
 
 A function can be defined with either of the following syntaxes:
 
 > `func` _function-name_ `(` _parameter-list_ `)` `{` _function-body_ `}`<br>
-> `func` _function-name_ `(` _parameter-list_ `)` `->` _return-value-list_ `{` _function-body_ `}`<br>
+> `func` _function-name_ `(` _parameter-list_ `)` `->` _return-type_ `{` _function-body_ `}`<br>
 
 The return type of the first version is `void`. The ___parameter-list___ is a
 comma-separated list of parameter declarations. A parameter declaration has one
@@ -341,10 +386,9 @@ ___parameter-name___ is the internal name of the parameter, and the optional
 _parameter-label_ is an external name for the parameter which must precede the
 argument value when calling the function.
 
-___return-value-list___ is a comma-separated list of one or more
-_return-value-declarations_:
-
-> _return-value-declaration_ → _return-type_ _return-value-name_<sub>opt</sub><br>
+___return-type___ defines what kind of values the function can return. This may
+be a tuple type to allow the function to return multiple values with a
+lightweight syntax.
 
 #### Member functions
 
@@ -362,27 +406,6 @@ To override the default behavior, the keywords `move` and `inout` may be used:
   pass-by-value temporary, i.e. a freshly copied or moved value.
 - `inout` can be applied to struct parameters, and causes any changes to the
   parameter to be reflected at the call site.
-
-#### Multiple return values
-
-Functions can return multiple values. In this case the return type is a
-comma-separated list of types.
-
-The individual return values can then be accessed as follows:
-
-> _multiple-return-value-assignment_ → _variable-declaration-list_ `=` _function-call_ `;`<br>
-
-where _variable-declaration-list_ is a comma-separated list of one or more
-_variable-declarators_.
-
-#### Named return values
-
-Function return values can be named. To do this, the following syntax can be
-used for an element of the _return-value-list_:
-
-> _named-return-value-declarator_ → _return-value-type_ _return-value-name_<br>
-
-An unnamed return value declarator would just leave the _return-value-name_ out.
 
 #### Private and public functions
 
@@ -518,6 +541,8 @@ The `defer` statement has the following syntax:
 
 The _expression_ will be evaluated when leaving the function in which the
 _defer-statement_ is located.
+
+???: Allow increment/decrement statements and assignments in `defer` body?
 
 ## Expressions
 
