@@ -119,7 +119,7 @@ llvm::Value* codegen(const PrefixExpr& expr) {
         case PLUS:  return codegen(*expr.operand);
         case MINUS: return codegenPrefixOp(expr, &llvm::IRBuilder<>::CreateNeg);
         case STAR:  return builder.CreateLoad(codegen(*expr.operand));
-        case AND:   assert(false && "IRGen doesn't support reference operations yet");
+        case AND:   return codegenLvalue(*expr.operand);
         default:    assert(false);
     }
 }
@@ -207,7 +207,9 @@ llvm::Value* codegen(const MemberExpr& expr) {
 }
 
 llvm::Value* codegenLvalue(const SubscriptExpr& expr) {
-    return builder.CreateGEP(codegenLvalue(*expr.array),
+    auto* value = codegenLvalue(*expr.array);
+    if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
+    return builder.CreateGEP(value,
                              {llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegen(*expr.index)});
 }
 
@@ -260,7 +262,7 @@ void codegen(const VariableStmt& stmt) {
     setLocalValue(stmt.decl->name, alloca);
 
     if (auto initializer = stmt.decl->initializer) {
-        builder.CreateStore(codegen(*stmt.decl->initializer), alloca);
+        builder.CreateStore(codegen(*initializer), alloca);
     }
 }
 
