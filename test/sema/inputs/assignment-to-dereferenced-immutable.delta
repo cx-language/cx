@@ -1,4 +1,4 @@
-extern func calloc(size_t count, size_t size) -> void*;
+extern func calloc(uint64 count, uint64 size) -> void*;
 
 func main() {
     var buffer = cast<int*>(calloc(1, 8));

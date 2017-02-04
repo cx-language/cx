@@ -1,4 +1,4 @@
-extern func calloc(size_t count, size_t size) -> mutable void*;
+extern func calloc(uint64 count, uint64 size) -> mutable void*;
 
 func main() -> int {
     const buffer = cast<mutable int*>(calloc(1, 8));

@@ -123,7 +123,6 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
         if (targetTypeName == "uint16") return checkRange<uint16_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
-        if (targetTypeName == "size_t") return checkRange<size_t>(expr, value, targetTypeName);
     }
 
     return false;

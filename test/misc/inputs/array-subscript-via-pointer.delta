@@ -1,4 +1,4 @@
-extern func malloc(size_t n) -> mutable void*;
+extern func malloc(uint64 n) -> mutable void*;
 extern func puts(char* s);
 
 func main() {

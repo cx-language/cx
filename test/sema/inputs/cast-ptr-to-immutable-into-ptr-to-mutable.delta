@@ -1,4 +1,4 @@
-extern func malloc(size_t n) -> void*;
+extern func malloc(uint64 n) -> void*;
 
 func main() {
     const buffer = cast<mutable int*>(malloc(1));
