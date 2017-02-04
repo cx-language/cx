@@ -83,6 +83,7 @@ int main(int argc, char** argv) {
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
     const bool codegenC = checkFlag("-codegen=c", args);
+    const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
 
     for (boost::string_ref filePath : args) {
         inputFile = fopen(filePath.data(), "rb");
@@ -106,8 +107,10 @@ int main(int argc, char** argv) {
         if (!codegenC) {
             auto& module = irgen::compile(globalAST);
             if (!outputToStdout) {
-                outputFile = "output.o";
-                emitMachineCode(module, outputFile, llvm::TargetMachine::CGFT_ObjectFile);
+                outputFile = emitAssembly ? "output.s" : "output.o";
+                auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
+                                             : llvm::TargetMachine::CGFT_ObjectFile;
+                emitMachineCode(module, outputFile, fileType);
             } else {
                 module.print(llvm::outs(), nullptr);
             }
@@ -117,7 +120,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (!syntaxOnly && !printAST && !compileOnly) {
+    if (!syntaxOnly && !printAST && !compileOnly && !emitAssembly) {
         // Compile (if it's C) and link the output.
         assert(!outputFile.empty());
         const int ccExitStatus = std::system(("cc " + outputFile).c_str());
