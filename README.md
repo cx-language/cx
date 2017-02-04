@@ -9,8 +9,8 @@ description of the language.
 
 Building Delta from source requires the following dependencies:
 a C++11 compiler, [CMake](https://cmake.org), [Boost](http://www.boost.org),
-[Bison](https://www.gnu.org/software/bison/), and
-[Flex](https://github.com/westes/flex).
+[Bison](https://www.gnu.org/software/bison/), and the [LLVM](http://llvm.org)
+and [Clang](http://clang.llvm.org) libraries.
 
 To get started, run the following commands:
 
