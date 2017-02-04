@@ -10,7 +10,7 @@ validate_ir() {
     source_file=$1
     ir_file=$2
 
-    actual_ir=$($path_to_delta -codegen=ir -o=stdout $source_file)
+    actual_ir=$($path_to_delta -o=stdout $source_file)
     expected_ir=$(cat $ir_file)
 
     diff <(echo "$actual_ir") <(echo $'\n'"$expected_ir")

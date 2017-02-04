@@ -4,6 +4,8 @@
 #include <llvm/ADT/StringRef.h>
 #include "../ast/decl.h"
 
+namespace llvm { class Module; }
+
 namespace irgen {
-    void compile(const std::vector<Decl>& decls, llvm::StringRef fileName);
+    llvm::Module& compile(const std::vector<Decl>& decls);
 }

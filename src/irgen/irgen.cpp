@@ -432,7 +432,7 @@ void codegen(const Decl& decl) {
 
 } // anonymous namespace
 
-void irgen::compile(const std::vector<Decl>& decls, llvm::StringRef outputPath) {
+llvm::Module& irgen::compile(const std::vector<Decl>& decls) {
     globalDecls = &decls;
     for (const Decl& decl : decls) {
         currentDecl = &decl;
@@ -440,8 +440,5 @@ void irgen::compile(const std::vector<Decl>& decls, llvm::StringRef outputPath) 
     }
 
     assert(!llvm::verifyModule(module, &llvm::errs()));
-
-    if (outputPath == "stdout") {
-        module.print(llvm::outs(), nullptr);
-    }
+    return module;
 }

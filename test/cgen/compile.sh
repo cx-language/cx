@@ -6,7 +6,7 @@ fi
 path_to_delta=$1
 source_file=$2
 
-compiler_stdout=$($path_to_delta -o=stdout $source_file)
+compiler_stdout=$($path_to_delta -codegen=c -o=stdout $source_file)
 
 if [ $? -ne 0 ]; then
     echo "FAILED: $compiler_stdout"
