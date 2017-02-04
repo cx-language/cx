@@ -20,6 +20,11 @@ std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> s
 const std::vector<Decl>* globalDecls;
 const Decl* currentDecl;
 
+void setLocalValue(std::string name, llvm::Value* value) {
+    bool wasInserted = localValues.emplace(std::move(name), value).second;
+    assert(wasInserted);
+}
+
 llvm::Value* findValue(llvm::StringRef name) {
     auto it = localValues.find(name);
     if (it == localValues.end()) {
@@ -252,7 +257,7 @@ void codegen(const ReturnStmt& stmt) {
 
 void codegen(const VariableStmt& stmt) {
     auto* alloca = builder.CreateAlloca(toIR(stmt.decl->getType()), nullptr, stmt.decl->name);
-    localValues.emplace(stmt.decl->name, alloca);
+    setLocalValue(stmt.decl->name, alloca);
 
     if (auto initializer = stmt.decl->initializer) {
         builder.CreateStore(codegen(*stmt.decl->initializer), alloca);
@@ -360,7 +365,7 @@ llvm::Function* getFunc(llvm::StringRef name) {
 
 void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &func));
-    for (auto& arg : func.args()) localValues.emplace(arg.getName(), &arg);
+    for (auto& arg : func.args()) setLocalValue(arg.getName(), &arg);
     for (const auto& stmt : body) codegen(stmt);
 
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
@@ -385,10 +390,11 @@ void codegen(const InitDecl& decl) {
     auto* alloca = builder.CreateAlloca(type);
     builder.CreateStore(llvm::UndefValue::get(type), alloca);
 
-    localValues.emplace("this", alloca);
-    for (auto& arg : func->args()) localValues.emplace(arg.getName(), &arg);
+    setLocalValue("this", alloca);
+    for (auto& arg : func->args()) setLocalValue(arg.getName(), &arg);
     for (const auto& stmt : *decl.body) codegen(stmt);
     builder.CreateRet(builder.CreateLoad(alloca));
+    localValues.clear();
 
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
