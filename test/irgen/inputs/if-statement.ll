@@ -6,7 +6,7 @@ define void @bar() {
   ret void
 }
 
-define void @main() {
+define i32 @main() {
   br i1 false, label %then, label %else
 
 then:                                             ; preds = %0
@@ -18,5 +18,5 @@ else:                                             ; preds = %0
   br label %endif
 
 endif:                                            ; preds = %else, %then
-  ret void
+  ret i32 0
 }

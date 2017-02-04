@@ -1,6 +1,6 @@
 declare void @foo(i8)
 
-define void @main() {
+define i32 @main() {
   call void @foo(i8 1)
   %b = alloca i64
   store i64 42, i64* %b
@@ -10,5 +10,5 @@ define void @main() {
   %b1 = load i64, i64* %b
   %3 = add i64 %b1, 1
   store i64 %3, i64* %b
-  ret void
+  ret i32 0
 }

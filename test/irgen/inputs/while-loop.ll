@@ -1,6 +1,6 @@
 declare i1 @foo()
 
-define void @main() {
+define i32 @main() {
   br label %while
 
 while:                                            ; preds = %body, %0
@@ -12,5 +12,5 @@ body:                                             ; preds = %while
   br label %while
 
 endwhile:                                         ; preds = %while
-  ret void
+  ret i32 0
 }

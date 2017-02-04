@@ -1,6 +1,6 @@
-define void @main() {
+define i32 @main() {
   call void @bar()
-  ret void
+  ret i32 0
 }
 
 declare void @bar()

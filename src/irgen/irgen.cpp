@@ -340,6 +340,7 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl) {
 
     assert(funcType.returnTypes.size() == 1 && "IRGen doesn't support multiple return values yet");
     auto* returnType = toIR(funcType.returnTypes[0]);
+    if (decl.name == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
     if (decl.isMemberFunc()) paramTypes.emplace_back(structs.find(decl.receiverType)->second.first);
@@ -371,7 +372,11 @@ void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
     for (const auto& stmt : body) codegen(stmt);
 
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
-        builder.CreateRetVoid();
+        if (func.getName() != "main") {
+            builder.CreateRetVoid();
+        } else {
+            builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
+        }
     }
     localValues.clear();
 }

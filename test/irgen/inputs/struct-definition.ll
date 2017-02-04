@@ -15,7 +15,7 @@ define %Foo @__init_Foo(i32 %a, i1 %b) {
   ret %Foo %7
 }
 
-define void @main() {
+define i32 @main() {
   %f = alloca %Foo
   %1 = call %Foo @__init_Foo(i32 666, i1 true)
   store %Foo %1, %Foo* %f
@@ -31,5 +31,5 @@ define void @main() {
   %7 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 1
   %8 = load i1, i1* %7
   store i1 %8, i1* %qux
-  ret void
+  ret i32 0
 }

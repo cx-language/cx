@@ -1,4 +1,4 @@
-define void @main() {
+define i32 @main() {
   %foo = alloca i32
   store i32 0, i32* %foo
   %1 = load i32, i32* %foo
@@ -8,5 +8,5 @@ define void @main() {
   %3 = load i32, i32* %foo
   %4 = add i32 %3, 1
   store i32 %4, i32* %foo
-  ret void
+  ret i32 0
 }
