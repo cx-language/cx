@@ -1,0 +1,2 @@
+import "stdarg.h";
+func main() { }

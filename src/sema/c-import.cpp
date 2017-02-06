@@ -82,6 +82,20 @@ public:
     }
 };
 
+// FIXME: Temporary hack for finding Clang builtin includes.
+// See http://clang.llvm.org/docs/FAQ.html#i-get-errors-about-some-headers-being-missing-stddef-h-stdarg-h
+std::string getClangBuiltinIncludePath() {
+    char path[64];
+    std::shared_ptr<FILE> f(popen("dirname $(dirname $(which clang))", "r"), pclose);
+    if (!f || fscanf(f.get(), "%63s", path) != 1) return "";
+
+    char version[6];
+    f.reset(popen("clang --version", "r"), pclose);
+    if (!f || fscanf(f.get(), "clang version %5s", version) != 1) return "";
+
+    return std::string(path) + "/lib/clang/" + version + "/include";
+}
+
 } // anonymous namespace
 
 void importCHeader(llvm::StringRef headerName) {
@@ -99,6 +113,14 @@ void importCHeader(llvm::StringRef headerName) {
 
     ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
+
+    std::string clangBuiltinIncludePath = getClangBuiltinIncludePath();
+    if (!clangBuiltinIncludePath.empty()) {
+        ci.getHeaderSearchOpts().AddPath(clangBuiltinIncludePath, clang::frontend::System, false, false);
+    } else {
+        llvm::errs() << "warning: clang not found, importing certain headers might not work\n";
+    }
+
     ci.createPreprocessor(clang::TU_Complete);
     ci.getPreprocessorOpts().UsePredefines = false;
 

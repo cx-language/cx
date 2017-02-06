@@ -97,6 +97,7 @@ compile_and_run_and_check_exit_status uninitialized.delta 70
 compile_and_run_and_check_exit_status member-function-return-type.delta 21
 compile_and_run_and_check_exit_status composite-type-parameter-member-access.delta 15
 compile_and_run_and_check_exit_status leading-underscore.delta 42
+compile_and_run_and_check_exit_status import-stdarg.h.delta 0
 compile_and_run_and_check_output extern-c-function.delta "foo"
 compile_and_run_and_check_output print-string-literal.delta "Hello, World!"
 compile_and_run_and_check_output if.delta $'a\nc\ne'
