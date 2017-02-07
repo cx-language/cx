@@ -122,7 +122,8 @@ void importCHeader(llvm::StringRef headerName) {
     }
 
     ci.createPreprocessor(clang::TU_Complete);
-    ci.getPreprocessorOpts().UsePredefines = false;
+    auto& pp = ci.getPreprocessor();
+    pp.getBuiltinInfo().initializeBuiltins(pp.getIdentifierTable(), pp.getLangOpts());
 
     ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>());
     ci.createASTContext();
