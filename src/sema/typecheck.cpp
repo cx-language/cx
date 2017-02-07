@@ -304,6 +304,12 @@ bool isValidConversion(std::vector<Expr>& exprs, const Type& source, const Type&
 }
 
 void typecheck(ReturnStmt& stmt) {
+    if (stmt.values.empty()) {
+        if (funcReturnType->getKind() != TypeKind::BasicType || funcReturnType->getBasicType().name != "void") {
+            error("expected return statement to return a value of type '", *funcReturnType, "'");
+        }
+        return;
+    }
     std::vector<Type> returnValueTypes;
     for (Expr& expr : stmt.values) {
         returnValueTypes.push_back(typecheck(expr));

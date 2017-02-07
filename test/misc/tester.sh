@@ -81,6 +81,7 @@ compile function-call-before-declaration.delta
 compile comments.delta
 compile int-literal-autocast.delta
 compile assign-ptr-to-mutable-into-ptr-to-immutable.delta
+compile void-return.delta
 compile_and_run_and_check_exit_status composite-types.delta 5
 compile_and_run_and_check_exit_status mutable-member-mutation.delta 6
 compile_and_run_and_check_exit_status composite-type-use-before-declaration.delta 2
