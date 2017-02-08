@@ -40,28 +40,24 @@ void Type::appendType(Type type) {
 bool Type::isImplicitlyConvertibleTo(const Type& type) const {
     switch (getKind()) {
         case TypeKind::BasicType:
-            return type.getKind() == TypeKind::BasicType
-            && getBasicType().name == type.getBasicType().name;
+            return type.isBasicType() && getBasicType().name == type.getBasicType().name;
         case TypeKind::ArrayType:
-            return type.getKind() == TypeKind::ArrayType
-            && getArrayType().size == type.getArrayType().size
+            return type.isArrayType() && getArrayType().size == type.getArrayType().size
             && getArrayType().elementType->isImplicitlyConvertibleTo(*type.getArrayType().elementType);
         case TypeKind::TupleType:
-            return type.getKind() == TypeKind::TupleType
-            && getTupleType().subtypes == type.getTupleType().subtypes;
+            return type.isTupleType() && getTupleType().subtypes == type.getTupleType().subtypes;
         case TypeKind::FuncType:
-            return type.getKind() == TypeKind::FuncType
-            && getFuncType().returnTypes == type.getFuncType().returnTypes
-            && getFuncType().paramTypes == type.getFuncType().paramTypes;
+            return type.isFuncType() && getFuncType().returnTypes == type.getFuncType().returnTypes
+                                     && getFuncType().paramTypes == type.getFuncType().paramTypes;
         case TypeKind::PtrType:
-            return type.getKind() == TypeKind::PtrType
+            return type.isPtrType()
             && (getPtrType().pointeeType->isMutable() || !type.getPtrType().pointeeType->isMutable())
             && getPtrType().pointeeType->isImplicitlyConvertibleTo(*type.getPtrType().pointeeType);
     }
 }
 
 bool Type::isSigned() const {
-    assert(getKind() == TypeKind::BasicType);
+    assert(isBasicType());
     llvm::StringRef name = getBasicType().name;
     return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
 }
@@ -70,21 +66,16 @@ bool operator==(const Type& lhs, const Type& rhs) {
     if (lhs.isMutable() != rhs.isMutable()) return false;
     switch (lhs.getKind()) {
         case TypeKind::BasicType:
-            return rhs.getKind() == TypeKind::BasicType
-            && lhs.getBasicType().name == rhs.getBasicType().name;
+            return rhs.isBasicType() && lhs.getBasicType().name == rhs.getBasicType().name;
         case TypeKind::ArrayType:
-            return rhs.getKind() == TypeKind::ArrayType
-            && lhs.getArrayType().elementType == rhs.getArrayType().elementType;
+            return rhs.isArrayType() && lhs.getArrayType().elementType == rhs.getArrayType().elementType;
         case TypeKind::TupleType:
-            return rhs.getKind() == TypeKind::TupleType
-            && lhs.getTupleType().subtypes == rhs.getTupleType().subtypes;
+            return rhs.isTupleType() && lhs.getTupleType().subtypes == rhs.getTupleType().subtypes;
         case TypeKind::FuncType:
-            return rhs.getKind() == TypeKind::FuncType
-            && lhs.getFuncType().returnTypes == rhs.getFuncType().returnTypes
-            && lhs.getFuncType().paramTypes == rhs.getFuncType().paramTypes;
+            return rhs.isFuncType() && lhs.getFuncType().returnTypes == rhs.getFuncType().returnTypes
+                                    && lhs.getFuncType().paramTypes == rhs.getFuncType().paramTypes;
         case TypeKind::PtrType:
-            return rhs.getKind() == TypeKind::PtrType
-            && *lhs.getPtrType().pointeeType == *rhs.getPtrType().pointeeType;
+            return rhs.isPtrType() && *lhs.getPtrType().pointeeType == *rhs.getPtrType().pointeeType;
     }
 }
 

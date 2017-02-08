@@ -60,12 +60,14 @@ public:
 #define DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(KIND) \
     Stmt(KIND&& value) : data(std::move(value)) { } \
     \
+    bool is##KIND() const { return getKind() == StmtKind::KIND; } \
+    \
     KIND& get##KIND() { \
-        assert(getKind() == StmtKind::KIND); \
+        assert(is##KIND()); \
         return boost::get<KIND>(data); \
     } \
     const KIND& get##KIND() const { \
-        assert(getKind() == StmtKind::KIND); \
+        assert(is##KIND()); \
         return boost::get<KIND>(data); \
     }
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(ReturnStmt)

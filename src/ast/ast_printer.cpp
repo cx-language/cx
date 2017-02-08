@@ -115,7 +115,7 @@ std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
     out << br << "(else";
     indentLevel++;
     for (const Stmt& substmt : stmt.elseBody) {
-        if (substmt.getKind() != StmtKind::IfStmt) out << br;
+        if (!substmt.isIfStmt()) out << br;
         out << substmt;
     }
     indentLevel--;

@@ -54,12 +54,14 @@ public:
         } \
     } \
     \
+    bool is##KIND() const { return getKind() == TypeKind::KIND; } \
+    \
     KIND& get##KIND() { \
-        assert(getKind() == TypeKind::KIND); \
+        assert(is##KIND()); \
         return boost::get<KIND>(data); \
     } \
     const KIND& get##KIND() const { \
-        assert(getKind() == TypeKind::KIND); \
+        assert(is##KIND()); \
         return boost::get<KIND>(data); \
     }
     DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(BasicType)

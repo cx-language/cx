@@ -76,7 +76,7 @@ Type typecheck(NullLiteralExpr&) {
 Type typecheck(PrefixExpr& expr) {
     if (expr.op.rawValue == STAR) { // Dereference operation
         auto operandType = typecheck(*expr.operand);
-        if (operandType.getKind() != TypeKind::PtrType) {
+        if (!operandType.isPtrType()) {
             error("cannot dereference non-pointer type '", operandType, "'");
         }
         return *operandType.getPtrType().pointeeType;
@@ -114,7 +114,7 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
     if (source.isImplicitlyConvertibleTo(target)) return true;
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
-    if (expr.getKind() == ExprKind::IntLiteralExpr && target.getKind() == TypeKind::BasicType) {
+    if (expr.isIntLiteralExpr() && target.isBasicType()) {
         int64_t value{expr.getIntLiteralExpr().value};
         boost::string_ref targetTypeName = target.getBasicType().name;
         if (targetTypeName == "int") return checkRange<int>(expr, value, targetTypeName);
@@ -127,7 +127,7 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
         if (targetTypeName == "uint16") return checkRange<uint16_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
-    } else if (expr.getKind() == ExprKind::NullLiteralExpr && target.getKind() == TypeKind::PtrType) {
+    } else if (expr.isNullLiteralExpr() && target.isPtrType()) {
         expr.setType(target);
         return true;
     }
@@ -149,13 +149,13 @@ Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args) {
 
 Type typecheck(CallExpr& expr) {
     Decl& decl = findInSymbolTable(expr.funcName);
-    expr.isInitializerCall = decl.getKind() == DeclKind::TypeDecl;
+    expr.isInitializerCall = decl.isTypeDecl();
     if (expr.isInitializerCall) {
         return typecheckInitExpr(decl.getTypeDecl(), expr.args);
     } else if (expr.isMemberFuncCall()) {
         typecheck(*expr.receiver);
     }
-    if (decl.getKind() != DeclKind::FuncDecl) {
+    if (!decl.isFuncDecl()) {
         error("'", expr.funcName, "' is not a function");
     }
     validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'");
@@ -194,8 +194,7 @@ const Type& typecheck(CastExpr& expr) {
     switch (sourceType.getKind()) {
         case TypeKind::BasicType:
             if (sourceType.getBasicType().name == "bool") {
-                if (targetType.getKind() == TypeKind::BasicType
-                && targetType.getBasicType().name == "int") {
+                if (targetType.isBasicType() && targetType.getBasicType().name == "int") {
                     return targetType; // bool -> int
                 }
             }
@@ -205,15 +204,13 @@ const Type& typecheck(CastExpr& expr) {
             break;
         case TypeKind::PtrType:
             const Type& sourcePointee = *sourceType.getPtrType().pointeeType;
-            if (targetType.getKind() == TypeKind::PtrType) {
+            if (targetType.isPtrType()) {
                 const Type& targetPointee = *targetType.getPtrType().pointeeType;
-                if (sourcePointee.getKind() == TypeKind::BasicType
-                && sourcePointee.getBasicType().name == "void"
+                if (sourcePointee.isBasicType() && sourcePointee.getBasicType().name == "void"
                 && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
                     return targetType; // (mutable) void* -> T* / mutable void* -> mutable T*
                 }
-                if (targetPointee.getKind() == TypeKind::BasicType
-                && targetPointee.getBasicType().name == "void"
+                if (targetPointee.isBasicType() && targetPointee.getBasicType().name == "void"
                 && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
                     return targetType; // (mutable) T* -> void* / mutable T* -> mutable void*
                 }
@@ -250,10 +247,9 @@ Type typecheck(SubscriptExpr& expr) {
     const Type& lhsType = typecheck(*expr.array);
     const ArrayType* arrayType;
 
-    if (lhsType.getKind() == TypeKind::ArrayType) {
+    if (lhsType.isArrayType()) {
         arrayType = &lhsType.getArrayType();
-    } else if (lhsType.getKind() == TypeKind::PtrType
-    && lhsType.getPtrType().pointeeType->getKind() == TypeKind::ArrayType) {
+    } else if (lhsType.isPtrType() && lhsType.getPtrType().pointeeType->isArrayType()) {
         arrayType = &lhsType.getPtrType().pointeeType->getArrayType();
     } else {
         error("cannot subscript '", lhsType, "', expected array or pointer-to-array");
@@ -264,8 +260,7 @@ Type typecheck(SubscriptExpr& expr) {
         error("illegal subscript index type '", indexType, "', expected 'int'");
     }
 
-    if (expr.index->getKind() == ExprKind::IntLiteralExpr
-    && expr.index->getIntLiteralExpr().value >= arrayType->size) {
+    if (expr.index->isIntLiteralExpr() && expr.index->getIntLiteralExpr().value >= arrayType->size) {
         error("accessing array out-of-bounds with index ", expr.index->getIntLiteralExpr().value,
             ", array size is ", arrayType->size);
     }
@@ -293,12 +288,12 @@ const Type& typecheck(Expr& expr) {
 }
 
 bool isValidConversion(std::vector<Expr>& exprs, const Type& source, const Type& target) {
-    if (source.getKind() != TypeKind::TupleType) {
-        assert(target.getKind() != TypeKind::TupleType);
+    if (!source.isTupleType()) {
+        assert(!target.isTupleType());
         assert(exprs.size() == 1);
         return isValidConversion(exprs[0], source, target);
     }
-    assert(target.getKind() == TypeKind::TupleType);
+    assert(target.isTupleType());
 
     const TupleType& sourceTuple = source.getTupleType();
     const TupleType& targetTuple = source.getTupleType();
@@ -313,7 +308,7 @@ bool isValidConversion(std::vector<Expr>& exprs, const Type& source, const Type&
 
 void typecheck(ReturnStmt& stmt) {
     if (stmt.values.empty()) {
-        if (funcReturnType->getKind() != TypeKind::BasicType || funcReturnType->getBasicType().name != "void") {
+        if (!funcReturnType->isBasicType() || funcReturnType->getBasicType().name != "void") {
             error("expected return statement to return a value of type '", *funcReturnType, "'");
         }
         return;
@@ -370,15 +365,13 @@ void typecheck(WhileStmt& whileStmt) {
 
 void typecheck(AssignStmt& stmt) {
     const Type& lhsType = typecheck(stmt.lhs);
-    if (lhsType.getKind() == TypeKind::FuncType) {
-        error("cannot assign to function");
-    }
+    if (lhsType.isFuncType()) error("cannot assign to function");
     const Type& rhsType = typecheck(stmt.rhs);
     if (!isValidConversion(stmt.rhs, rhsType, lhsType)) {
         error("cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
     if (!lhsType.isMutable() && !inInitializer) {
-        if (stmt.lhs.getKind() == ExprKind::VariableExpr) {
+        if (stmt.lhs.isVariableExpr()) {
             error("cannot assign to immutable variable '", stmt.lhs.getVariableExpr().identifier, "'");
         } else {
             error("cannot assign to immutable expression");
@@ -422,9 +415,7 @@ void addToSymbolTable(const InitDecl& decl) {
 
     InitDecl initDecl(decl);
     Decl& typeDecl = findInSymbolTable(decl.getTypeName());
-    if (typeDecl.getKind() != DeclKind::TypeDecl) {
-        error("'", decl.getTypeName(), "' is not a class or struct");
-    }
+    if (!typeDecl.isTypeDecl()) error("'", decl.getTypeName(), "' is not a class or struct");
     initDecl.type = &typeDecl.getTypeDecl();
 
     symbolTable.insert({"__init_" + decl.getTypeName(), new Decl(std::move(initDecl))});
@@ -461,9 +452,7 @@ void typecheck(FuncDecl& decl) {
 void typecheckMemberFunc(FuncDecl& decl) {
     auto symbolTableBackup = symbolTable;
     Decl& receiverType = findInSymbolTable(decl.receiverType);
-    if (receiverType.getKind() != DeclKind::TypeDecl) {
-        error("'", decl.receiverType, "' is not a class or struct");
-    }
+    if (!receiverType.isTypeDecl()) error("'", decl.receiverType, "' is not a class or struct");
     symbolTable.insert({"this", new Decl(VarDecl{receiverType.getTypeDecl().getType(), "this"})});
     for (ParamDecl& param : decl.params) typecheck(param);
     funcReturnType = &decl.returnType;
@@ -475,9 +464,7 @@ void typecheckMemberFunc(FuncDecl& decl) {
 void typecheck(InitDecl& decl) {
     auto symbolTableBackup = symbolTable;
     Decl& typeDecl = findInSymbolTable(decl.getTypeName());
-    if (typeDecl.getKind() != DeclKind::TypeDecl) {
-        error("'", decl.getTypeName(), "' is not a class or struct");
-    }
+    if (!typeDecl.isTypeDecl()) error("'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
     symbolTable.insert({"this", new Decl(VarDecl{typeDecl.getTypeDecl().getType(), "this"})});
     for (ParamDecl& param : decl.params) typecheck(param);
@@ -498,9 +485,7 @@ void typecheck(VarDecl& decl) {
     const Type* initType = nullptr;
     if (decl.initializer) {
         initType = &typecheck(*decl.initializer);
-        if (initType->getKind() == TypeKind::FuncType) {
-            error("function pointers not implemented yet");
-        }
+        if (initType->isFuncType()) error("function pointers not implemented yet");
     }
     if (auto declaredType = decl.getDeclaredType()) {
         if (initType && !isValidConversion(*decl.initializer, *initType, *declaredType)) {
@@ -509,7 +494,7 @@ void typecheck(VarDecl& decl) {
         }
         symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     } else {
-        if (initType->getKind() == TypeKind::BasicType && initType->getBasicType().name == "__NullLiteral") {
+        if (initType->isBasicType() && initType->getBasicType().name == "__NullLiteral") {
             error("couldn't infer type of '", decl.name, "', add a type annotation");
         }
 

@@ -90,12 +90,14 @@ public:
 #define DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(KIND) \
     Expr(KIND&& value) : data(std::move(value)) { } \
     \
+    bool is##KIND() const { return getKind() == ExprKind::KIND; } \
+    \
     KIND& get##KIND() { \
-        assert(getKind() == ExprKind::KIND); \
+        assert(is##KIND()); \
         return boost::get<KIND>(data); \
     } \
     const KIND& get##KIND() const { \
-        assert(getKind() == ExprKind::KIND); \
+        assert(is##KIND()); \
         return boost::get<KIND>(data); \
     }
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(VariableExpr)

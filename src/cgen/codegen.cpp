@@ -126,7 +126,7 @@ void codegen(const MemberExpr& expr) {
 
 void codegen(const SubscriptExpr& expr) {
     codegen(*expr.array);
-    *out << (expr.array->getType().getKind() == TypeKind::PtrType ? "->" : ".") << "a[";
+    *out << (expr.array->getType().isPtrType() ? "->" : ".") << "a[";
     codegen(*expr.index);
     *out << "]";
 }
@@ -353,7 +353,7 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
     }
 
     for (const Decl& decl : decls) {
-        if (decl.getKind() != DeclKind::TypeDecl) { // Struct definitions have already been emitted.
+        if (!decl.isTypeDecl()) { // Struct definitions have already been emitted.
             codegen(decl);
         }
     }

@@ -13,7 +13,7 @@ std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
 } // anonymous namespace
 
 FuncType FuncDecl::getFuncType() const {
-    auto returnTypes = returnType.getKind() == TypeKind::TupleType
+    auto returnTypes = returnType.isTupleType()
         ? returnType.getTupleType().subtypes : std::vector<Type>{returnType};
     return FuncType{returnTypes, mapToTypes(params)};
 }

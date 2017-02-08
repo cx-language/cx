@@ -93,12 +93,14 @@ public:
 #define DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(KIND) \
     Decl(KIND&& value) : data(std::move(value)) { } \
     \
+    bool is##KIND() const { return getKind() == DeclKind::KIND; } \
+    \
     KIND& get##KIND() { \
-        assert(getKind() == DeclKind::KIND); \
+        assert(is##KIND()); \
         return boost::get<KIND>(data); \
     } \
     const KIND& get##KIND() const { \
-        assert(getKind() == DeclKind::KIND); \
+        assert(is##KIND()); \
         return boost::get<KIND>(data); \
     }
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(ParamDecl)
