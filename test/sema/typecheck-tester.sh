@@ -56,3 +56,4 @@ check_error excess-argument-label.delta "excess argument label 'foo' for argumen
 check_error illegal-cast.delta "illegal cast from 'bool' to 'int**'"
 check_error cast-ptr-to-immutable-into-ptr-to-mutable.delta "illegal cast from 'void*' to 'mutable int*'"
 check_error return-array-with-wrong-size.delta "mismatching return type 'mutable int[2]', expected 'int[1]'"
+check_error untyped-null.delta "couldn't infer type of 'foo', add a type annotation"

@@ -32,6 +32,10 @@ std::ostream& operator<<(std::ostream& out, const BoolLiteralExpr& expr) {
     return out << (expr.value ? "true" : "false");
 }
 
+std::ostream& operator<<(std::ostream& out, const NullLiteralExpr& expr) {
+    return out << "null";
+}
+
 std::ostream& operator<<(std::ostream& out, const PrefixExpr& expr) {
     return out << "(" << expr.op << *expr.operand << ")";
 }
@@ -67,6 +71,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::StrLiteralExpr: return out << expr.getStrLiteralExpr();
         case ExprKind::IntLiteralExpr: return out << expr.getIntLiteralExpr();
         case ExprKind::BoolLiteralExpr:return out << expr.getBoolLiteralExpr();
+        case ExprKind::NullLiteralExpr:return out << expr.getNullLiteralExpr();
         case ExprKind::PrefixExpr:     return out << expr.getPrefixExpr();
         case ExprKind::BinaryExpr:     return out << expr.getBinaryExpr();
         case ExprKind::CallExpr:       return out << expr.getCallExpr();

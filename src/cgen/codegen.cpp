@@ -77,6 +77,10 @@ void codegen(const BoolLiteralExpr& expr) {
     *out << (expr.value ? "true" : "false");
 }
 
+void codegen(const NullLiteralExpr& expr) {
+    *out << "0";
+}
+
 void codegen(const PrefixExpr& expr) {
     *out << "(" << expr.op;
     codegen(*expr.operand);
@@ -133,6 +137,7 @@ void codegen(const Expr& expr) {
         case ExprKind::StrLiteralExpr: codegen(expr.getStrLiteralExpr()); break;
         case ExprKind::IntLiteralExpr: codegen(expr.getIntLiteralExpr()); break;
         case ExprKind::BoolLiteralExpr:codegen(expr.getBoolLiteralExpr()); break;
+        case ExprKind::NullLiteralExpr:codegen(expr.getNullLiteralExpr()); break;
         case ExprKind::PrefixExpr:     codegen(expr.getPrefixExpr()); break;
         case ExprKind::BinaryExpr:     codegen(expr.getBinaryExpr()); break;
         case ExprKind::CallExpr:       codegen(expr.getCallExpr()); break;

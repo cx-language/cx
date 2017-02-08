@@ -69,6 +69,10 @@ Type typecheck(BoolLiteralExpr&) {
     return Type(BasicType{"bool"});
 }
 
+Type typecheck(NullLiteralExpr&) {
+    return Type(BasicType{"__NullLiteral"});
+}
+
 Type typecheck(PrefixExpr& expr) {
     if (expr.op.rawValue == STAR) { // Dereference operation
         auto operandType = typecheck(*expr.operand);
@@ -123,6 +127,9 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
         if (targetTypeName == "uint16") return checkRange<uint16_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
+    } else if (expr.getKind() == ExprKind::NullLiteralExpr && target.getKind() == TypeKind::PtrType) {
+        expr.setType(target);
+        return true;
     }
 
     return false;
@@ -273,6 +280,7 @@ const Type& typecheck(Expr& expr) {
         case ExprKind::StrLiteralExpr:  type = typecheck(expr.getStrLiteralExpr()); break;
         case ExprKind::IntLiteralExpr:  type = typecheck(expr.getIntLiteralExpr()); break;
         case ExprKind::BoolLiteralExpr: type = typecheck(expr.getBoolLiteralExpr()); break;
+        case ExprKind::NullLiteralExpr: type = typecheck(expr.getNullLiteralExpr()); break;
         case ExprKind::PrefixExpr:      type = typecheck(expr.getPrefixExpr()); break;
         case ExprKind::BinaryExpr:      type = typecheck(expr.getBinaryExpr()); break;
         case ExprKind::CallExpr:        type = typecheck(expr.getCallExpr()); break;
@@ -501,6 +509,10 @@ void typecheck(VarDecl& decl) {
         }
         symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     } else {
+        if (initType->getKind() == TypeKind::BasicType && initType->getBasicType().name == "__NullLiteral") {
+            error("couldn't infer type of '", decl.name, "', add a type annotation");
+        }
+
         auto initTypeCopy = *initType;
         initTypeCopy.setMutable(decl.isMutable());
         decl.type = std::move(initTypeCopy);

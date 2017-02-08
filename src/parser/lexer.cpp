@@ -108,6 +108,7 @@ const std::unordered_map<std::string, int> keywords = {
     {"import",        IMPORT},
     {"init",          INIT},
     {"mutable",       MUTABLE},
+    {"null",          NULL_LITERAL},
     {"return",        RETURN},
     {"struct",        STRUCT},
     {"this",          THIS},

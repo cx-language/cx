@@ -34,6 +34,7 @@
 %token IMPORT   "import"
 %token INIT     "init"
 %token MUTABLE  "mutable"
+%token NULL_LITERAL "null"
 %token RETURN   "return"
 %token STRUCT   "struct"
 %token THIS     "this"
@@ -290,6 +291,7 @@ expression:
 |   NUMBER { $$ = new Expr(IntLiteralExpr{$1}); }
 |   TRUE { $$ = new Expr(BoolLiteralExpr{true}); }
 |   FALSE { $$ = new Expr(BoolLiteralExpr{false}); }
+|   "null" { $$ = new Expr(NullLiteralExpr()); }
 |   binary_expression { $$ = $1; }
 |   assignment_lhs_expression { $$ = $1; };
 

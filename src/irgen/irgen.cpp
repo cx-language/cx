@@ -105,6 +105,10 @@ llvm::Value* codegen(const BoolLiteralExpr& expr) {
     return expr.value ? llvm::ConstantInt::getTrue(ctx) : llvm::ConstantInt::getFalse(ctx);
 }
 
+llvm::Value* codegen(const NullLiteralExpr& expr, const Expr& parent) {
+    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(parent.getType())));
+}
+
 using CreateNegFunc       = decltype(&llvm::IRBuilder<>::CreateNeg);
 using CreateICmpFunc      = decltype(&llvm::IRBuilder<>::CreateICmpEQ);
 using CreateAddSubMulFunc = decltype(&llvm::IRBuilder<>::CreateAdd);
@@ -223,6 +227,7 @@ llvm::Value* codegen(const Expr& expr) {
         case ExprKind::StrLiteralExpr:  return codegen(expr.getStrLiteralExpr());
         case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr(), expr);
         case ExprKind::BoolLiteralExpr: return codegen(expr.getBoolLiteralExpr());
+        case ExprKind::NullLiteralExpr: return codegen(expr.getNullLiteralExpr(), expr);
         case ExprKind::PrefixExpr:      return codegen(expr.getPrefixExpr());
         case ExprKind::BinaryExpr:      return codegen(expr.getBinaryExpr());
         case ExprKind::CallExpr:        return codegen(expr.getCallExpr());
@@ -238,6 +243,7 @@ llvm::Value* codegenLvalue(const Expr& expr) {
         case ExprKind::StrLiteralExpr:  assert(false);
         case ExprKind::IntLiteralExpr:  assert(false);
         case ExprKind::BoolLiteralExpr: assert(false);
+        case ExprKind::NullLiteralExpr: assert(false);
         case ExprKind::PrefixExpr:      return codegenLvalue(expr.getPrefixExpr());
         case ExprKind::BinaryExpr:      assert(false);
         case ExprKind::CallExpr:        assert(false && "IRGen doesn't support lvalue call expressions yet");
