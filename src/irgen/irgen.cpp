@@ -291,12 +291,20 @@ void codegen(const IfStmt& ifStmt) {
     builder.CreateCondBr(condition, thenBlock, elseBlock);
 
     builder.SetInsertPoint(thenBlock);
-    for (const auto& stmt : ifStmt.thenBody) codegen(stmt);
-    builder.CreateBr(endIfBlock);
+    for (const auto& stmt : ifStmt.thenBody) {
+        codegen(stmt);
+        if (stmt.getKind() == StmtKind::ReturnStmt) break;
+    }
+    if (thenBlock->empty() || !llvm::isa<llvm::ReturnInst>(thenBlock->back()))
+        builder.CreateBr(endIfBlock);
 
     builder.SetInsertPoint(elseBlock);
-    for (const auto& stmt : ifStmt.elseBody) codegen(stmt);
-    builder.CreateBr(endIfBlock);
+    for (const auto& stmt : ifStmt.elseBody) {
+        codegen(stmt);
+        if (stmt.getKind() == StmtKind::ReturnStmt) break;
+    }
+    if (elseBlock->empty() || !llvm::isa<llvm::ReturnInst>(elseBlock->back()))
+        builder.CreateBr(endIfBlock);
 
     builder.SetInsertPoint(endIfBlock);
 }
@@ -312,8 +320,12 @@ void codegen(const WhileStmt& whileStmt) {
     builder.CreateCondBr(codegen(whileStmt.condition), body, end);
 
     builder.SetInsertPoint(body);
-    for (const auto& stmt : whileStmt.body) codegen(stmt);
-    builder.CreateBr(cond);
+    for (const auto& stmt : whileStmt.body) {
+        codegen(stmt);
+        if (stmt.getKind() == StmtKind::ReturnStmt) break;
+    }
+    if (body->empty() || !llvm::isa<llvm::ReturnInst>(body->back()))
+        builder.CreateBr(cond);
 
     builder.SetInsertPoint(end);
 }
