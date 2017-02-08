@@ -251,7 +251,8 @@ void codegen(const ReturnStmt& stmt) {
     assert(stmt.values.size() < 2 && "IRGen doesn't support multuple return values yet");
 
     if (stmt.values.empty()) {
-        builder.CreateRetVoid();
+        if (currentDecl->getFuncDecl().name != "main") builder.CreateRetVoid();
+        else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
     } else {
         builder.CreateRet(codegen(stmt.values[0]));
     }
