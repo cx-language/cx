@@ -9,7 +9,7 @@ compiler:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -y libboost-all-dev
+    - sudo apt-get install -y libboost-all-dev g++-multilib
     - wget http://releases.llvm.org/3.9.0/clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
     - tar -xvf clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
 
