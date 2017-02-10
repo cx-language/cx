@@ -7,7 +7,7 @@ path_to_delta=$1
 
 check_error() {
     source_file=$1
-    expected_error="$2: error: $3"
+    expected_error="inputs/$source_file:$2: error: $3"
 
     compiler_stdout=$($path_to_delta -fsyntax-only inputs/$source_file)
 

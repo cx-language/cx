@@ -8,8 +8,9 @@ inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
 
 template<typename... Args>
 [[noreturn]] inline void error(SrcLoc srcLoc, Args&&... args) {
-    if (srcLoc.isValid()) std::cout << srcLoc.line << ':' << srcLoc.column << ": ";
-    std::cout << "error: ";
+    std::cout << srcLoc.file << ':';
+    if (srcLoc.isValid()) std::cout << srcLoc.line << ':' << srcLoc.column << ':';
+    std::cout << " error: ";
     using expander = int[];
     (void)expander{0, (void(std::cout << std::forward<Args>(args)), 0)...};
     std::cout << '\n';

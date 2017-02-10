@@ -366,4 +366,4 @@ std::vector<Decl> globalAST;
 #include "lexer.cpp"
 #include "operators.cpp"
 
-SrcLoc loc(YYLTYPE loc) { return SrcLoc(loc.first_line, loc.first_column); }
+SrcLoc loc(YYLTYPE loc) { return SrcLoc(currentFileName, loc.first_line, loc.first_column); }

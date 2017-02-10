@@ -17,6 +17,7 @@
 #include "../irgen/irgen.h"
 
 extern FILE* inputFile;
+const char* currentFileName;
 int yyparse();
 extern std::vector<Decl> globalAST;
 
@@ -93,6 +94,7 @@ int main(int argc, char** argv) {
             return 1;
         }
 
+        currentFileName = filePath.data();
         int result = yyparse();
         if (result != 0) return result;
     }

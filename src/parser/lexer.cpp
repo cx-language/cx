@@ -5,6 +5,7 @@
 
 FILE* inputFile;
 extern YYLTYPE yylloc;
+extern const char* currentFileName;
 
 namespace {
 
@@ -25,8 +26,8 @@ inline void unreadChar(int ch) {
     ungetc(ch, inputFile);
 }
 
-inline SrcLoc firstLoc() { return SrcLoc(yylloc.first_line, yylloc.first_column); }
-inline SrcLoc lastLoc() { return SrcLoc(yylloc.last_line, yylloc.last_column); }
+inline SrcLoc firstLoc() { return SrcLoc(currentFileName, yylloc.first_line, yylloc.first_column); }
+inline SrcLoc lastLoc() { return SrcLoc(currentFileName, yylloc.last_line, yylloc.last_column); }
 
 inline void readNumber(const int base, char ch = 0) {
     std::string string;
