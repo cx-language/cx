@@ -128,6 +128,11 @@
     Type* type;
 };
 
+%initial-action {
+    yylloc.first_line = yylloc.last_line = 1;
+    yylloc.first_column = yylloc.last_column = 0;
+}
+
 %%
 
 source_file: declaration_list { std::move($1->begin(), $1->end(), std::back_inserter(globalAST)); };
