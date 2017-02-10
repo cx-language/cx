@@ -59,10 +59,13 @@ compile_and_run_and_check_output() {
 }
 
 compile_and_check_error() {
-    source_file=$1
-    expected_output="inputs/$source_file:$2: error: $3"
+    source_file="inputs/$1"
+    line_number=$(echo $2 | sed 's/:.*//')
+    column=$(echo $2 | sed 's/.*://')
+    line_content=$(sed -n "${line_number}p" $source_file)
+    expected_output="$source_file:$2: error: $3"$'\n'"$line_content"$'\n'"$(printf '%*s^' $(($column - 1)))"
 
-    actual_output=$($path_to_delta inputs/$source_file)
+    actual_output=$($path_to_delta $source_file)
 
     if [ $? -eq 0 ]; then
         exit 1

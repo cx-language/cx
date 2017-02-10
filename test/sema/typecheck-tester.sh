@@ -6,10 +6,13 @@ fi
 path_to_delta=$1
 
 check_error() {
-    source_file=$1
-    expected_error="inputs/$source_file:$2: error: $3"
+    source_file="inputs/$1"
+    line_number=$(echo $2 | sed 's/:.*//')
+    column=$(echo $2 | sed 's/.*://')
+    line_content=$(sed -n "${line_number}p" $source_file)
+    expected_error="$source_file:$2: error: $3"$'\n'"$line_content"$'\n'"$(printf '%*s^' $(($column - 1)))"
 
-    compiler_stdout=$($path_to_delta -fsyntax-only inputs/$source_file)
+    compiler_stdout=$($path_to_delta -fsyntax-only $source_file)
 
     if [[ "$expected_error" != "$compiler_stdout" ]]; then
         echo "FAILED:"
