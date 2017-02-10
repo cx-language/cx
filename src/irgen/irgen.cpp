@@ -59,7 +59,7 @@ llvm::Type* toIR(const Type& type) {
             auto it = structs.find(name);
             if (it == structs.end()) {
                 // Custom type that has not been declared yet, search for it in the symbol table.
-                codegen(findInSymbolTable(name).getTypeDecl());
+                codegen(findInSymbolTable(name, SrcLoc::invalid()).getTypeDecl());
                 it = structs.find(name);
             }
             return it->second.first;
@@ -380,7 +380,7 @@ llvm::Function* getFunc(llvm::StringRef name) {
     auto it = funcs.find(name);
     if (it == funcs.end()) {
         // Function has not been declared yet, search for it in the symbol table.
-        return codegenFuncProto(findInSymbolTable(name).getFuncDecl());
+        return codegenFuncProto(findInSymbolTable(name, SrcLoc::invalid()).getFuncDecl());
     }
     return it->second;
 }
@@ -408,7 +408,8 @@ void codegen(const FuncDecl& decl) {
 }
 
 void codegen(const InitDecl& decl) {
-    FuncDecl funcDecl{"__init_" + decl.getTypeDecl().name, decl.params, decl.getTypeDecl().getType()};
+    FuncDecl funcDecl{"__init_" + decl.getTypeDecl().name, decl.params, decl.getTypeDecl().getType(),
+        "", nullptr, SrcLoc::invalid()};
     auto* func = codegenFuncProto(funcDecl);
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", func));
 

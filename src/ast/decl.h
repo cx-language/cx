@@ -9,6 +9,7 @@
 #include "expr.h"
 #include "stmt.h"
 #include "type.h"
+#include "srcloc.h"
 
 namespace llvm { class StringRef; }
 
@@ -26,6 +27,7 @@ struct ParamDecl {
     std::string label; // Empty if no label.
     Type type;
     std::string name;
+    SrcLoc srcLoc;
 };
 
 struct FuncDecl {
@@ -34,6 +36,8 @@ struct FuncDecl {
     Type returnType;
     std::string receiverType; /// Empty if non-member function.
     std::shared_ptr<std::vector<Stmt>> body;
+    SrcLoc srcLoc;
+
     bool isExtern() const { return body == nullptr; };
     bool isMemberFunc() const { return !receiverType.empty(); }
     FuncType getFuncType() const;
@@ -45,6 +49,8 @@ struct InitDecl {
     boost::variant<std::string, struct TypeDecl*> type;
     std::vector<ParamDecl> params;
     std::shared_ptr<std::vector<Stmt>> body;
+    SrcLoc srcLoc;
+
     TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
     const std::string& getTypeName() const { return boost::get<std::string>(type); }
 };
@@ -55,6 +61,8 @@ struct TypeDecl {
     TypeTag tag;
     std::string name;
     std::vector<struct FieldDecl> fields;
+    SrcLoc srcLoc;
+
     Type getType() const;
     unsigned getFieldIndex(llvm::StringRef fieldName) const;
 };
@@ -65,6 +73,7 @@ struct VarDecl {
     boost::variant<Type, bool> type;
     std::string name;
     std::shared_ptr<Expr> initializer; /// Null if the initializer is 'uninitialized'.
+    SrcLoc srcLoc;
 
     boost::optional<const Type&> getDeclaredType() const {
         if (type.which() == 0) return boost::get<Type>(type);
@@ -82,10 +91,12 @@ struct VarDecl {
 struct FieldDecl {
     Type type;
     std::string name;
+    SrcLoc srcLoc;
 };
 
 struct ImportDecl {
     std::string target;
+    SrcLoc srcLoc;
 };
 
 class Decl {
@@ -114,6 +125,7 @@ public:
 
     Decl(Decl&& decl) : data(std::move(decl.data)) { }
     DeclKind getKind() const { return static_cast<DeclKind>(data.which()); }
+    SrcLoc getSrcLoc() const;
 
 private:
     boost::variant<ParamDecl, FuncDecl, InitDecl, TypeDecl, VarDecl, FieldDecl, ImportDecl> data;

@@ -1,27 +1,32 @@
 #include <cstdio>
 #include <cassert>
 #include <unordered_map>
+#include "../driver/utility.h"
 
 FILE* inputFile;
+extern YYLTYPE yylloc;
 
 namespace {
 
 inline int readChar() {
-    return getc(inputFile);
+    int ch = getc(inputFile);
+    if (ch != '\n') {
+        yylloc.last_column++;
+    } else {
+        yylloc.last_line++;
+        yylloc.last_column = 0;
+    }
+    return ch;
 }
 
 inline void unreadChar(int ch) {
+    assert(ch != '\n' && "cannot unread newline");
+    yylloc.last_column--;
     ungetc(ch, inputFile);
 }
 
-template<typename... Args>
-[[noreturn]] void error(Args&&... args) {
-    std::cout << "error: ";
-    using expander = int[];
-    (void)expander{0, (void(std::cout << std::forward<Args>(args)), 0)...};
-    std::cout << '\n';
-    exit(1);
-}
+inline SrcLoc firstLoc() { return SrcLoc(yylloc.first_line, yylloc.first_column); }
+inline SrcLoc lastLoc() { return SrcLoc(yylloc.last_line, yylloc.last_column); }
 
 inline void readNumber(const int base, char ch = 0) {
     std::string string;
@@ -72,12 +77,12 @@ inline void readNumber(const int base, char ch = 0) {
                         string += (char) ch;
                         break;
                     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                        if (lettercase < 0) error("mixed letter case in hex literal");
+                        if (lettercase < 0) error(lastLoc(), "mixed letter case in hex literal");
                         string += (char) ch;
                         lettercase = 1;
                         break;
                     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-                        if (lettercase > 0) error("mixed letter case in hex literal");
+                        if (lettercase > 0) error(lastLoc(), "mixed letter case in hex literal");
                         string += (char) ch;
                         lettercase = -1;
                         break;
@@ -123,6 +128,8 @@ const std::unordered_map<std::string, int> keywords = {
 int lex() {
     while (true) {
         int ch = readChar();
+        yylloc.first_line = yylloc.last_line;
+        yylloc.first_column = yylloc.last_column;
 
         switch (ch) {
             case ' ': case '\t': case '\r': case '\n':
@@ -206,10 +213,10 @@ int lex() {
                     case 'x': readNumber(16); return NUMBER;
                     default:
                         if (std::isdigit(ch)) {
-                            error("numbers cannot start with 0[0-9], use 0o prefix for octal literal");
+                            error(firstLoc(), "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
                         }
                         if (std::isalpha(ch) || ch == '_') {
-                            error("unexpected '", (char) ch, "'");
+                            error(lastLoc(), "unexpected '", (char) ch, "'");
                         }
                         unreadChar(ch);
                         yylval.number = 0;
@@ -242,15 +249,14 @@ int lex() {
             case '"': {
                 std::string string;
                 while ((ch = readChar()) != '"') {
-                    if (ch == '\n') error("newline inside string literal");
+                    if (ch == '\n') error(firstLoc(), "newline inside string literal");
                     string += (char) ch;
                 }
                 yylval.string = strndup(string.data(), string.length());
                 return STRING_LITERAL;
             }
             default:
-                std::cout << "error: unknown token '" << (char) ch << "'\n";
-                exit(1);
+                error(firstLoc(), "unknown token '", (char) ch, "'");
         }
     }
 

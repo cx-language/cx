@@ -1,4 +1,4 @@
 func main() {
-    var i = "
+    var i = "a
     ";
 }

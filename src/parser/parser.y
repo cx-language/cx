@@ -16,6 +16,8 @@
     template<typename T>
     std::unique_ptr<T> u(T* ptr) { return std::unique_ptr<T>(ptr); }
 
+    SrcLoc loc(struct YYLTYPE);
+
     #pragma GCC diagnostic ignored "-Wunused-function"
 %}
 
@@ -152,12 +154,12 @@ function_definition:
 
 function_prototype:
     "func" IDENTIFIER "(" parameter_list ")" return_type_specifier
-        { $$ = new Decl(FuncDecl{$2, std::move(*$4), std::move(*$6)});
+        { $$ = new Decl(FuncDecl{$2, std::move(*$4), std::move(*$6), "", nullptr, loc(@2)});
           addToSymbolTable($$->getFuncDecl()); };
 
 member_function_prototype:
     "func" IDENTIFIER "::" IDENTIFIER "(" parameter_list ")" return_type_specifier
-        { $$ = new Decl(FuncDecl{$4, std::move(*$6), std::move(*$8), $2});
+        { $$ = new Decl(FuncDecl{$4, std::move(*$6), std::move(*$8), $2, nullptr, loc(@2)});
           addToSymbolTable($$->getFuncDecl()); };
 
 extern_function_declaration:
@@ -180,8 +182,8 @@ nonempty_parameter_list:
 |   nonempty_parameter_list "," parameter { $$ = $1; $$->push_back(std::move(*$3)); };
 
 parameter:
-    type IDENTIFIER { $$ = new ParamDecl{"", std::move(*$1), $2}; }
-|   IDENTIFIER ":" type IDENTIFIER { $$ = new ParamDecl{$1, std::move(*$3), $4}; };
+    type IDENTIFIER { $$ = new ParamDecl{"", std::move(*$1), $2, loc(@2)}; }
+|   IDENTIFIER ":" type IDENTIFIER { $$ = new ParamDecl{$1, std::move(*$3), $4, loc(@4)}; };
 
 statement_list:
     /* empty */ { $$ = new std::vector<Stmt>(); }
@@ -196,9 +198,9 @@ type:
 |   type "*" { $$ = new Type(PtrType{u($1)}); };
 
 composite_type_declaration:
-    "struct" IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Struct, $2, std::move(*$4)});
+    "struct" IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Struct, $2, std::move(*$4), loc(@2)});
                                               addToSymbolTable($$->getTypeDecl()); }
-|   "class"  IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Class, $2, std::move(*$4)});
+|   "class"  IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Class, $2, std::move(*$4), loc(@2)});
                                               addToSymbolTable($$->getTypeDecl()); };
 
 member_list:
@@ -206,16 +208,16 @@ member_list:
 |   member_list field_declaration { $$ = $1; $$->push_back(std::move(*$2)); };
 
 field_declaration:
-    type IDENTIFIER ";" { $$ = new FieldDecl{std::move(*$1), $2}; };
+    type IDENTIFIER ";" { $$ = new FieldDecl{std::move(*$1), $2, loc(@2)}; };
 
 initializer_definition:
     "init" IDENTIFIER "(" parameter_list ")" "{" statement_list "}"
-        { $$ = new Decl(InitDecl{$2, std::move(*$4)});
+        { $$ = new Decl(InitDecl{$2, std::move(*$4), nullptr, loc(@2)});
           addToSymbolTable($$->getInitDecl());
           $$->getInitDecl().body.reset($7); };
 
 import_declaration:
-    "import" STRING_LITERAL ";" { $$ = new Decl(ImportDecl{$2}); };
+    "import" STRING_LITERAL ";" { $$ = new Decl(ImportDecl{$2, loc(@2)}); };
 
 // Statements //////////////////////////////////////////////////////////////////
 
@@ -236,24 +238,24 @@ variable_definition:
 
 immutable_variable_definition:
     "const" IDENTIFIER "=" expression ";"
-        { $$ = new Decl(VarDecl{false, $2, std::shared_ptr<Expr>($4)}); };
+        { $$ = new Decl(VarDecl{false, $2, std::shared_ptr<Expr>($4), loc(@2)}); };
 
 mutable_variable_definition:
     "var"   IDENTIFIER "=" expression ";"
-        { $$ = new Decl(VarDecl{true, $2, std::shared_ptr<Expr>($4)}); };
+        { $$ = new Decl(VarDecl{true, $2, std::shared_ptr<Expr>($4), loc(@2)}); };
 
 typed_variable_definition:
     type    IDENTIFIER "=" expression ";"
-        { $$ = new Decl(VarDecl{std::move(*$1), $2, std::shared_ptr<Expr>($4)}); }
+        { $$ = new Decl(VarDecl{std::move(*$1), $2, std::shared_ptr<Expr>($4), loc(@2)}); }
 |   type    IDENTIFIER "=" "uninitialized" ";"
-        { $$ = new Decl(VarDecl{std::move(*$1), $2, nullptr}); };
+        { $$ = new Decl(VarDecl{std::move(*$1), $2, nullptr, loc(@2)}); };
 
 assignment_statement:
     assignment_lhs_expression "=" expression ";"
-        { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3)}); };
+        { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3), loc(@2)}); };
 
 return_statement:
-    "return" return_value_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2)}); };
+    "return" return_value_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2), loc(@1)}); };
 
 return_value_list:
     /* empty */ { $$ = new std::vector<Expr>(); }
@@ -263,9 +265,9 @@ nonempty_return_value_list:
     expression { $$ = new std::vector<Expr>(); $$->push_back(std::move(*$1)); }
 |   nonempty_return_value_list "," expression { $$ = $1; $$->push_back(std::move(*$3)); };
 
-increment_statement: expression "++" ";" { $$ = new Stmt(IncrementStmt{std::move(*$1)}); };
+increment_statement: expression "++" ";" { $$ = new Stmt(IncrementStmt{std::move(*$1), loc(@2)}); };
 
-decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{std::move(*$1)}); };
+decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{std::move(*$1), loc(@2)}); };
 
 call_statement:
     call_expression ";" { $$ = new Stmt(CallStmt{std::move($1->getCallExpr())}); };
@@ -287,16 +289,16 @@ while_statement:
 // Expressions /////////////////////////////////////////////////////////////////
 
 expression:
-    STRING_LITERAL { $$ = new Expr(StrLiteralExpr{$1}); }
-|   NUMBER { $$ = new Expr(IntLiteralExpr{$1}); }
-|   TRUE { $$ = new Expr(BoolLiteralExpr{true}); }
-|   FALSE { $$ = new Expr(BoolLiteralExpr{false}); }
-|   "null" { $$ = new Expr(NullLiteralExpr()); }
+    STRING_LITERAL { $$ = new Expr(StrLiteralExpr{$1, loc(@1)}); }
+|   NUMBER { $$ = new Expr(IntLiteralExpr{$1, loc(@1)}); }
+|   TRUE { $$ = new Expr(BoolLiteralExpr{true, loc(@1)}); }
+|   FALSE { $$ = new Expr(BoolLiteralExpr{false, loc(@1)}); }
+|   "null" { $$ = new Expr(NullLiteralExpr{loc(@1)}); }
 |   binary_expression { $$ = $1; }
 |   assignment_lhs_expression { $$ = $1; };
 
 assignment_lhs_expression:
-    IDENTIFIER { $$ = new Expr(VariableExpr{$1}); }
+    IDENTIFIER { $$ = new Expr(VariableExpr{$1, loc(@1)}); }
 |   prefix_expression { $$ = $1; }
 |   parenthesized_expression { $$ = $1; }
 |   call_expression { $$ = $1; }
@@ -304,29 +306,29 @@ assignment_lhs_expression:
 |   member_access_expression { $$ = $1; }
 |   subscript_expression { $$ = $1; };
 
-prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2)}); };
-prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2)}); };
-prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{STAR, u($2)}); };
-prefix_expression: "&" expression { $$ = new Expr(PrefixExpr{AND, u($2)}); };
-binary_expression: expression "==" expression { $$ = new Expr(BinaryExpr{EQ, u($1), u($3)}); };
-binary_expression: expression "!=" expression { $$ = new Expr(BinaryExpr{NE, u($1), u($3)}); };
-binary_expression: expression "<"  expression { $$ = new Expr(BinaryExpr{LT, u($1), u($3)}); };
-binary_expression: expression "<=" expression { $$ = new Expr(BinaryExpr{LE, u($1), u($3)}); };
-binary_expression: expression ">"  expression { $$ = new Expr(BinaryExpr{GT, u($1), u($3)}); };
-binary_expression: expression ">=" expression { $$ = new Expr(BinaryExpr{GE, u($1), u($3)}); };
-binary_expression: expression "+"  expression { $$ = new Expr(BinaryExpr{PLUS, u($1), u($3)}); };
-binary_expression: expression "-"  expression { $$ = new Expr(BinaryExpr{MINUS, u($1), u($3)}); };
-binary_expression: expression "*"  expression { $$ = new Expr(BinaryExpr{STAR, u($1), u($3)}); };
-binary_expression: expression "/"  expression { $$ = new Expr(BinaryExpr{SLASH, u($1), u($3)}); };
+prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2), loc(@1)}); };
+prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2), loc(@1)}); };
+prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{STAR, u($2), loc(@1)}); };
+prefix_expression: "&" expression { $$ = new Expr(PrefixExpr{AND, u($2), loc(@1)}); };
+binary_expression: expression "==" expression { $$ = new Expr(BinaryExpr{EQ, u($1), u($3), loc(@2)}); };
+binary_expression: expression "!=" expression { $$ = new Expr(BinaryExpr{NE, u($1), u($3), loc(@2)}); };
+binary_expression: expression "<"  expression { $$ = new Expr(BinaryExpr{LT, u($1), u($3), loc(@2)}); };
+binary_expression: expression "<=" expression { $$ = new Expr(BinaryExpr{LE, u($1), u($3), loc(@2)}); };
+binary_expression: expression ">"  expression { $$ = new Expr(BinaryExpr{GT, u($1), u($3), loc(@2)}); };
+binary_expression: expression ">=" expression { $$ = new Expr(BinaryExpr{GE, u($1), u($3), loc(@2)}); };
+binary_expression: expression "+"  expression { $$ = new Expr(BinaryExpr{PLUS, u($1), u($3), loc(@2)}); };
+binary_expression: expression "-"  expression { $$ = new Expr(BinaryExpr{MINUS, u($1), u($3), loc(@2)}); };
+binary_expression: expression "*"  expression { $$ = new Expr(BinaryExpr{STAR, u($1), u($3), loc(@2)}); };
+binary_expression: expression "/"  expression { $$ = new Expr(BinaryExpr{SLASH, u($1), u($3), loc(@2)}); };
 
 parenthesized_expression: "(" expression ")" { $$ = $2; };
 
 call_expression:
-    IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$1, std::move(*$3)}); }
-|   expression "." IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$3, std::move(*$5), false, u($1)}); };
+    IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$1, std::move(*$3), false, nullptr, loc(@1)}); }
+|   expression "." IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$3, std::move(*$5), false, u($1), loc(@1)}); };
 
 cast_expression:
-    "cast" "<" type ">" "(" expression ")" { $$ = new Expr(CastExpr{std::move(*$3), u($6)}); };
+    "cast" "<" type ">" "(" expression ")" { $$ = new Expr(CastExpr{std::move(*$3), u($6), loc(@1)}); };
 
 argument_list:
     /* empty */ { $$ = new std::vector<Arg>(); }
@@ -337,15 +339,15 @@ nonempty_argument_list:
 |   nonempty_argument_list "," argument { $$ = $1; $$->push_back(std::move(*$3)); };
 
 argument:
-    expression { $$ = new Arg{"", u($1)};  }
-|   IDENTIFIER ":" expression { $$ = new Arg{$1, u($3)}; };
+    expression { $$ = new Arg{"", u($1), loc(@1)};  }
+|   IDENTIFIER ":" expression { $$ = new Arg{$1, u($3), loc(@1)}; };
 
 member_access_expression:
-    "this" "." IDENTIFIER { $$ = new Expr(MemberExpr{"this", $3}); }
-|   IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3}); };
+    "this" "." IDENTIFIER { $$ = new Expr(MemberExpr{"this", $3, loc(@1), loc(@3)}); }
+|   IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3, loc(@1), loc(@3)}); };
 
 subscript_expression:
-    expression "[" expression "]" { $$ = new Expr(SubscriptExpr{u($1), u($3)}); };
+    expression "[" expression "]" { $$ = new Expr(SubscriptExpr{u($1), u($3), loc(@2)}); };
 
 %%
 
@@ -358,3 +360,5 @@ std::vector<Decl> globalAST;
 
 #include "lexer.cpp"
 #include "operators.cpp"
+
+SrcLoc loc(YYLTYPE loc) { return SrcLoc(loc.first_line, loc.first_column); }

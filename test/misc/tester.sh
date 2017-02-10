@@ -60,7 +60,7 @@ compile_and_run_and_check_output() {
 
 compile_and_check_error() {
     source_file=$1
-    expected_output="error: $2"
+    expected_output="$2: error: $3"
 
     actual_output=$($path_to_delta inputs/$source_file)
 
@@ -108,8 +108,8 @@ compile_and_run_and_check_output array-subscript-via-pointer.delta "Foo"
 compile_and_run_and_check_output reference-operator.delta "Bar"
 compile_and_run_and_check_output return-array.delta "Bar"
 compile_and_run_and_check_output import-c-header.delta "foo bar"
-compile_and_check_error mixed-case-hex-literal.delta "mixed letter case in hex literal"
-compile_and_check_error leading-zero.delta "numbers cannot start with 0[0-9], use 0o prefix for octal literal"
-compile_and_check_error newline-inside-string-literal.delta "newline inside string literal"
-compile_and_check_error unexpected-character-after-zero.delta "unexpected '_'"
-compile_and_check_error unknown-token.delta "unknown token '\`'"
+compile_and_check_error mixed-case-hex-literal.delta 2:16 "mixed letter case in hex literal"
+compile_and_check_error leading-zero.delta 2:13 "numbers cannot start with 0[0-9], use 0o prefix for octal literal"
+compile_and_check_error newline-inside-string-literal.delta 2:13 "newline inside string literal"
+compile_and_check_error unexpected-character-after-zero.delta 2:14 "unexpected '_'"
+compile_and_check_error unknown-token.delta 1:1 "unknown token '\`'"

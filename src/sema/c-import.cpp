@@ -61,9 +61,11 @@ Type toDelta(clang::QualType qualtype) {
 FuncDecl toDelta(const clang::FunctionDecl& decl) {
     std::vector<ParamDecl> params;
     for (auto* param : decl.parameters()) {
-        params.emplace_back(ParamDecl{"", toDelta(param->getType()), param->getNameAsString()});
+        params.emplace_back(ParamDecl{"", toDelta(param->getType()),
+                            param->getNameAsString(), SrcLoc::invalid()});
     }
-    return FuncDecl{decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType())};
+    return FuncDecl{decl.getNameAsString(), std::move(params),
+                    toDelta(decl.getReturnType()), "", nullptr, SrcLoc::invalid()};
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {

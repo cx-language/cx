@@ -7,6 +7,7 @@
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
 #include "type.h"
+#include "srcloc.h"
 #include "../parser/operators.h"
 
 class Expr;
@@ -27,36 +28,45 @@ enum class ExprKind {
 
 struct VariableExpr {
     std::string identifier;
+    SrcLoc srcLoc;
 };
 
 struct StrLiteralExpr {
     std::string value;
+    SrcLoc srcLoc;
 };
 
 struct IntLiteralExpr {
     int64_t value;
+    SrcLoc srcLoc;
 };
 
 struct BoolLiteralExpr {
     bool value;
+    SrcLoc srcLoc;
 };
 
-struct NullLiteralExpr { };
+struct NullLiteralExpr {
+    SrcLoc srcLoc;
+};
 
 struct PrefixExpr {
     PrefixOperator op;
     std::unique_ptr<Expr> operand;
+    SrcLoc srcLoc;
 };
 
 struct BinaryExpr {
     BinaryOperator op;
     std::unique_ptr<Expr> left;
     std::unique_ptr<Expr> right;
+    SrcLoc srcLoc;
 };
 
 struct Arg {
     std::string label; // Empty if no label.
     std::unique_ptr<Expr> value;
+    SrcLoc srcLoc;
 };
 
 struct CallExpr {
@@ -64,6 +74,8 @@ struct CallExpr {
     std::vector<Arg> args;
     bool isInitializerCall;
     std::unique_ptr<Expr> receiver; /// Null if non-member function call.
+    SrcLoc srcLoc;
+
     bool isMemberFuncCall() const { return receiver != nullptr; }
 };
 
@@ -71,18 +83,22 @@ struct CallExpr {
 struct CastExpr {
     Type type;
     std::unique_ptr<Expr> expr;
+    SrcLoc srcLoc;
 };
 
 /// A member access expression using the dot syntax, such as 'a.b'.
 struct MemberExpr {
     std::string base;
     std::string member;
+    SrcLoc baseSrcLoc;
+    SrcLoc memberSrcLoc;
 };
 
 /// An array element access expression using the element's index in brackets, e.g. 'array[index]'.
 struct SubscriptExpr {
     std::unique_ptr<Expr> array;
     std::unique_ptr<Expr> index;
+    SrcLoc srcLoc;
 };
 
 class Expr {
@@ -117,9 +133,27 @@ public:
     ExprKind getKind() const { return static_cast<ExprKind>(data.which()); }
     const Type& getType() const { return *type; }
     void setType(Type t) { type = std::move(t); }
+    SrcLoc getSrcLoc() const;
 
 private:
     boost::variant<VariableExpr, StrLiteralExpr, IntLiteralExpr, BoolLiteralExpr, NullLiteralExpr,
         PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr, SubscriptExpr> data;
     boost::optional<Type> type;
 };
+
+// TODO: Move this to expr.cpp.
+inline SrcLoc Expr::getSrcLoc() const {
+    switch (getKind()) {
+        case ExprKind::VariableExpr:    return getVariableExpr().srcLoc;
+        case ExprKind::StrLiteralExpr:  return getStrLiteralExpr().srcLoc;
+        case ExprKind::IntLiteralExpr:  return getIntLiteralExpr().srcLoc;
+        case ExprKind::BoolLiteralExpr: return getBoolLiteralExpr().srcLoc;
+        case ExprKind::NullLiteralExpr: return getNullLiteralExpr().srcLoc;
+        case ExprKind::PrefixExpr:      return getPrefixExpr().srcLoc;
+        case ExprKind::BinaryExpr:      return getBinaryExpr().srcLoc;
+        case ExprKind::CallExpr:        return getCallExpr().srcLoc;
+        case ExprKind::CastExpr:        return getCastExpr().srcLoc;
+        case ExprKind::MemberExpr:      return getMemberExpr().baseSrcLoc;
+        case ExprKind::SubscriptExpr:   return getSubscriptExpr().srcLoc;
+    }
+}

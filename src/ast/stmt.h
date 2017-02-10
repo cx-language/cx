@@ -21,6 +21,7 @@ enum class StmtKind {
 
 struct ReturnStmt {
     std::vector<Expr> values;
+    SrcLoc srcLoc;
 };
 
 struct VariableStmt {
@@ -29,10 +30,12 @@ struct VariableStmt {
 
 struct IncrementStmt {
     Expr operand;
+    SrcLoc srcLoc; // Location of '++'.
 };
 
 struct DecrementStmt {
     Expr operand;
+    SrcLoc srcLoc; // Location of '--'.
 };
 
 struct CallStmt {
@@ -53,6 +56,7 @@ struct WhileStmt {
 struct AssignStmt {
     Expr lhs;
     Expr rhs;
+    SrcLoc srcLoc; // Location of '='.
 };
 
 class Stmt {

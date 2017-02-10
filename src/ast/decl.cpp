@@ -28,3 +28,15 @@ unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
     }
     assert(false && "unknown field");
 }
+
+SrcLoc Decl::getSrcLoc() const {
+    switch (getKind()) {
+        case DeclKind::ParamDecl:  return getParamDecl().srcLoc;
+        case DeclKind::FuncDecl:   return getFuncDecl().srcLoc;
+        case DeclKind::InitDecl:   return getInitDecl().srcLoc;
+        case DeclKind::TypeDecl:   return getTypeDecl().srcLoc;
+        case DeclKind::VarDecl:    return getVarDecl().srcLoc;
+        case DeclKind::FieldDecl:  return getFieldDecl().srcLoc;
+        case DeclKind::ImportDecl: return getImportDecl().srcLoc;
+    }
+}

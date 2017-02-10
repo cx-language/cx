@@ -7,9 +7,10 @@ class Decl;
 struct FuncDecl;
 struct InitDecl;
 struct TypeDecl;
+struct SrcLoc;
 
 void addToSymbolTable(const FuncDecl& decl);
 void addToSymbolTable(const InitDecl& decl);
 void addToSymbolTable(const TypeDecl& decl);
-Decl& findInSymbolTable(llvm::StringRef name);
+Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc);
 void typecheck(std::vector<Decl>& decls);

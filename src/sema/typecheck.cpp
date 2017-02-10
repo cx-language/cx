@@ -11,6 +11,7 @@
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../parser/parser.hpp"
+#include "../driver/utility.h"
 
 namespace {
 
@@ -19,24 +20,11 @@ const Type* funcReturnType = nullptr;
 bool inInitializer = false;
 bool allowFunctionRedefinitions = false; // For C header importing.
 
-std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
-    return stream.write(string.data(), string.size());
-}
-
-template<typename... Args>
-[[noreturn]] void error(Args&&... args) {
-    std::cout << "error: ";
-    using expander = int[];
-    (void)expander{0, (void(std::cout << std::forward<Args>(args)), 0)...};
-    std::cout << '\n';
-    exit(1);
-}
-
 const Type& typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
 
 Type typecheck(VariableExpr& expr) {
-    Decl& decl = findInSymbolTable(expr.identifier);
+    Decl& decl = findInSymbolTable(expr.identifier, expr.srcLoc);
 
     switch (decl.getKind()) {
         case DeclKind::VarDecl: return decl.getVarDecl().getType();
@@ -62,7 +50,7 @@ Type typecheck(IntLiteralExpr& expr) {
     &&  expr.value <= std::numeric_limits<int64_t>::max())
         return Type(BasicType{"int64"});
     else
-        error("integer literal is too large");
+        error(expr.srcLoc, "integer literal is too large");
 }
 
 Type typecheck(BoolLiteralExpr&) {
@@ -77,7 +65,7 @@ Type typecheck(PrefixExpr& expr) {
     if (expr.op.rawValue == STAR) { // Dereference operation
         auto operandType = typecheck(*expr.operand);
         if (!operandType.isPtrType()) {
-            error("cannot dereference non-pointer type '", operandType, "'");
+            error(expr.operand->getSrcLoc(), "cannot dereference non-pointer type '", operandType, "'");
         }
         return *operandType.getPtrType().pointeeType;
     }
@@ -94,7 +82,7 @@ Type typecheck(BinaryExpr& expr) {
     Type rightType = typecheck(*expr.right);
     if (!isValidConversion(*expr.left, leftType, rightType)
     &&  !isValidConversion(*expr.right, rightType, leftType)) {
-        error("operands to binary expression must have same type");
+        error(expr.srcLoc, "operands to binary expression must have same type");
     }
     return expr.op.isComparisonOperator() ? Type(BasicType{"bool"}) : leftType;
 }
@@ -104,7 +92,7 @@ bool checkRange(Expr& expr, int64_t value, boost::string_ref param) {
     try {
         boost::numeric_cast<IntType>(value);
     } catch (...) {
-        error(value, " is out of range for parameter of type '", param, "'");
+        error(expr.getSrcLoc(), value, " is out of range for parameter of type '", param, "'");
     }
     expr.setType(BasicType{param.to_string()});
     return true;
@@ -136,53 +124,53 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
 }
 
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
-                  const std::string& funcName);
+                  const std::string& funcName, SrcLoc srcLoc);
 
-Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args) {
+Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLoc srcLoc) {
     auto it = symbolTable.find("__init_" + type.name);
     if (it == symbolTable.end()) {
-        error("no matching initializer for '", type.name, "'");
+        error(srcLoc, "no matching initializer for '", type.name, "'");
     }
-    validateArgs(args, it->second->getInitDecl().params, "'" + type.name + "' initializer");
+    validateArgs(args, it->second->getInitDecl().params, "'" + type.name + "' initializer", srcLoc);
     return type.getType();
 }
 
 Type typecheck(CallExpr& expr) {
-    Decl& decl = findInSymbolTable(expr.funcName);
+    Decl& decl = findInSymbolTable(expr.funcName, expr.srcLoc);
     expr.isInitializerCall = decl.isTypeDecl();
     if (expr.isInitializerCall) {
-        return typecheckInitExpr(decl.getTypeDecl(), expr.args);
+        return typecheckInitExpr(decl.getTypeDecl(), expr.args, expr.srcLoc);
     } else if (expr.isMemberFuncCall()) {
         typecheck(*expr.receiver);
     }
     if (!decl.isFuncDecl()) {
-        error("'", expr.funcName, "' is not a function");
+        error(expr.srcLoc, "'", expr.funcName, "' is not a function");
     }
-    validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'");
+    validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'", expr.srcLoc);
     return Type(TupleType{decl.getFuncDecl().getFuncType().returnTypes});
 }
 
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
-                  const std::string& funcName) {
+                  const std::string& funcName, SrcLoc srcLoc) {
     if (args.size() < params.size()) {
-        error("too few arguments to ", funcName, ", expected ", params.size());
+        error(srcLoc, "too few arguments to ", funcName, ", expected ", params.size());
     }
     if (args.size() > params.size()) {
-        error("too many arguments to ", funcName, ", expected ", params.size());
+        error(srcLoc, "too many arguments to ", funcName, ", expected ", params.size());
     }
     for (int i = 0; i < params.size(); ++i) {
         if (args[i].label != params[i].label) {
             if (params[i].label.empty()) {
-                error("excess argument label '", args[i].label, "' for argument #", i + 1,
-                    ", expected no label");
+                error(args[i].srcLoc, "excess argument label '", args[i].label,
+                      "' for argument #", i + 1, ", expected no label");
             }
-            error("invalid label '", args[i].label, "' for argument #", i + 1,
-                ", expected '", params[i].label, "'");
+            error(args[i].srcLoc, "invalid label '", args[i].label, "' for argument #",
+                  i + 1, ", expected '", params[i].label, "'");
         }
         auto argType = typecheck(*args[i].value);
         if (!isValidConversion(*args[i].value, argType, params[i].type)) {
-            error("invalid argument #", i + 1, " type '", argType, "' to ",
-                funcName, ", expected '", params[i].type, "'");
+            error(args[i].srcLoc, "invalid argument #", i + 1, " type '", argType,
+                  "' to ", funcName, ", expected '", params[i].type, "'");
         }
     }
 }
@@ -217,22 +205,22 @@ const Type& typecheck(CastExpr& expr) {
             }
             break;
     }
-    error("illegal cast from '", sourceType, "' to '", targetType, "'");
+    error(expr.srcLoc, "illegal cast from '", sourceType, "' to '", targetType, "'");
 }
 
 Type typecheck(MemberExpr& expr) {
-    Decl& baseDecl = findInSymbolTable(expr.base);
+    Decl& baseDecl = findInSymbolTable(expr.base, expr.baseSrcLoc);
 
     Decl* typeDecl;
     switch (baseDecl.getKind()) {
         case DeclKind::VarDecl:
-            typeDecl = &findInSymbolTable(baseDecl.getVarDecl().getType().getBasicType().name);
+            typeDecl = &findInSymbolTable(baseDecl.getVarDecl().getType().getBasicType().name, SrcLoc::invalid());
             break;
         case DeclKind::ParamDecl:
-            typeDecl = &findInSymbolTable(baseDecl.getParamDecl().type.getBasicType().name);
+            typeDecl = &findInSymbolTable(baseDecl.getParamDecl().type.getBasicType().name, SrcLoc::invalid());
             break;
         default:
-            error("'", expr.base, "' doesn't support member access");
+            error(expr.baseSrcLoc, "'", expr.base, "' doesn't support member access");
     }
 
     for (const FieldDecl& field : typeDecl->getTypeDecl().fields) {
@@ -240,7 +228,7 @@ Type typecheck(MemberExpr& expr) {
             return field.type;
         }
     }
-    error("no member named '", expr.member, "' in '", expr.base, "'");
+    error(expr.memberSrcLoc, "no member named '", expr.member, "' in '", expr.base, "'");
 }
 
 Type typecheck(SubscriptExpr& expr) {
@@ -252,17 +240,17 @@ Type typecheck(SubscriptExpr& expr) {
     } else if (lhsType.isPtrType() && lhsType.getPtrType().pointeeType->isArrayType()) {
         arrayType = &lhsType.getPtrType().pointeeType->getArrayType();
     } else {
-        error("cannot subscript '", lhsType, "', expected array or pointer-to-array");
+        error(expr.array->getSrcLoc(), "cannot subscript '", lhsType, "', expected array or pointer-to-array");
     }
 
     const Type& indexType = typecheck(*expr.index);
     if (!isValidConversion(*expr.index, indexType, Type(BasicType{"int"}))) {
-        error("illegal subscript index type '", indexType, "', expected 'int'");
+        error(expr.index->getSrcLoc(), "illegal subscript index type '", indexType, "', expected 'int'");
     }
 
     if (expr.index->isIntLiteralExpr() && expr.index->getIntLiteralExpr().value >= arrayType->size) {
-        error("accessing array out-of-bounds with index ", expr.index->getIntLiteralExpr().value,
-            ", array size is ", arrayType->size);
+        error(expr.index->getSrcLoc(), "accessing array out-of-bounds with index ",
+              expr.index->getIntLiteralExpr().value, ", array size is ", arrayType->size);
     }
 
     return *arrayType->elementType;
@@ -309,7 +297,7 @@ bool isValidConversion(std::vector<Expr>& exprs, const Type& source, const Type&
 void typecheck(ReturnStmt& stmt) {
     if (stmt.values.empty()) {
         if (!funcReturnType->isBasicType() || funcReturnType->getBasicType().name != "void") {
-            error("expected return statement to return a value of type '", *funcReturnType, "'");
+            error(stmt.srcLoc, "expected return statement to return a value of type '", *funcReturnType, "'");
         }
         return;
     }
@@ -320,7 +308,7 @@ void typecheck(ReturnStmt& stmt) {
     Type returnType = returnValueTypes.size() > 1
         ? Type(TupleType{std::move(returnValueTypes)}) : std::move(returnValueTypes[0]);
     if (!isValidConversion(stmt.values, returnType, *funcReturnType)) {
-        error("mismatching return type '", returnType, "', expected '", *funcReturnType, "'");
+        error(stmt.srcLoc, "mismatching return type '", returnType, "', expected '", *funcReturnType, "'");
     }
 }
 
@@ -333,7 +321,7 @@ void typecheck(VariableStmt& stmt) {
 void typecheck(IncrementStmt& stmt) {
     auto type = typecheck(stmt.operand);
     if (!type.isMutable()) {
-        error("cannot increment immutable value");
+        error(stmt.srcLoc, "cannot increment immutable value");
     }
     // TODO: check that operand supports increment operation.
 }
@@ -341,7 +329,7 @@ void typecheck(IncrementStmt& stmt) {
 void typecheck(DecrementStmt& stmt) {
     auto type = typecheck(stmt.operand);
     if (!type.isMutable()) {
-        error("cannot decrement immutable value");
+        error(stmt.srcLoc, "cannot decrement immutable value");
     }
     // TODO: check that operand supports decrement operation.
 }
@@ -349,7 +337,7 @@ void typecheck(DecrementStmt& stmt) {
 void typecheck(IfStmt& ifStmt) {
     const Type& conditionType = typecheck(ifStmt.condition);
     if (conditionType != Type(BasicType{"bool"})) {
-        error("'if' condition must have type 'bool'");
+        error(ifStmt.condition.getSrcLoc(), "'if' condition must have type 'bool'");
     }
     for (Stmt& stmt : ifStmt.thenBody) typecheck(stmt);
     for (Stmt& stmt : ifStmt.elseBody) typecheck(stmt);
@@ -358,23 +346,24 @@ void typecheck(IfStmt& ifStmt) {
 void typecheck(WhileStmt& whileStmt) {
     const Type& conditionType = typecheck(whileStmt.condition);
     if (conditionType != Type(BasicType{"bool"})) {
-        error("'while' condition must have type 'bool'");
+        error(whileStmt.condition.getSrcLoc(), "'while' condition must have type 'bool'");
     }
     for (Stmt& stmt : whileStmt.body) typecheck(stmt);
 }
 
 void typecheck(AssignStmt& stmt) {
     const Type& lhsType = typecheck(stmt.lhs);
-    if (lhsType.isFuncType()) error("cannot assign to function");
+    if (lhsType.isFuncType()) error(stmt.srcLoc, "cannot assign to function");
     const Type& rhsType = typecheck(stmt.rhs);
     if (!isValidConversion(stmt.rhs, rhsType, lhsType)) {
-        error("cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+        error(stmt.rhs.getSrcLoc(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
     if (!lhsType.isMutable() && !inInitializer) {
         if (stmt.lhs.isVariableExpr()) {
-            error("cannot assign to immutable variable '", stmt.lhs.getVariableExpr().identifier, "'");
+            error(stmt.srcLoc, "cannot assign to immutable variable '",
+                  stmt.lhs.getVariableExpr().identifier, "'");
         } else {
-            error("cannot assign to immutable expression");
+            error(stmt.srcLoc, "cannot assign to immutable expression");
         }
     }
 }
@@ -394,7 +383,7 @@ void typecheck(Stmt& stmt) {
 
 void typecheck(ParamDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
-        error("redefinition of '", decl.name, "'");
+        error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(ParamDecl(decl))});
 }
@@ -403,19 +392,19 @@ void typecheck(ParamDecl& decl) {
 
 void addToSymbolTable(const FuncDecl& decl) {
     if (!allowFunctionRedefinitions && symbolTable.count(decl.name) > 0) {
-        error("redefinition of '", decl.name, "'");
+        error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
 }
 
 void addToSymbolTable(const InitDecl& decl) {
     if (symbolTable.count("__init_" + decl.getTypeName()) > 0) {
-        error("redefinition of '", decl.getTypeName(), "' initializer");
+        error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
 
     InitDecl initDecl(decl);
-    Decl& typeDecl = findInSymbolTable(decl.getTypeName());
-    if (!typeDecl.isTypeDecl()) error("'", decl.getTypeName(), "' is not a class or struct");
+    Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
+    if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     initDecl.type = &typeDecl.getTypeDecl();
 
     symbolTable.insert({"__init_" + decl.getTypeName(), new Decl(std::move(initDecl))});
@@ -423,14 +412,14 @@ void addToSymbolTable(const InitDecl& decl) {
 
 void addToSymbolTable(const TypeDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
-        error("redefinition of '", decl.name, "'");
+        error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(TypeDecl(decl))});
 }
 
-Decl& findInSymbolTable(llvm::StringRef name) {
+Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
     auto it = symbolTable.find(name);
-    if (it == symbolTable.end()) error("unknown identifier '", name, "'");
+    if (it == symbolTable.end()) error(srcLoc, "unknown identifier '", name, "'");
     return *it->second;
 }
 
@@ -451,9 +440,10 @@ void typecheck(FuncDecl& decl) {
 
 void typecheckMemberFunc(FuncDecl& decl) {
     auto symbolTableBackup = symbolTable;
-    Decl& receiverType = findInSymbolTable(decl.receiverType);
-    if (!receiverType.isTypeDecl()) error("'", decl.receiverType, "' is not a class or struct");
-    symbolTable.insert({"this", new Decl(VarDecl{receiverType.getTypeDecl().getType(), "this"})});
+    Decl& receiverType = findInSymbolTable(decl.receiverType, decl.srcLoc);
+    if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
+    symbolTable.emplace("this",
+        new Decl(VarDecl{receiverType.getTypeDecl().getType(), "this", nullptr, SrcLoc::invalid()}));
     for (ParamDecl& param : decl.params) typecheck(param);
     funcReturnType = &decl.returnType;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
@@ -463,10 +453,11 @@ void typecheckMemberFunc(FuncDecl& decl) {
 
 void typecheck(InitDecl& decl) {
     auto symbolTableBackup = symbolTable;
-    Decl& typeDecl = findInSymbolTable(decl.getTypeName());
-    if (!typeDecl.isTypeDecl()) error("'", decl.getTypeName(), "' is not a class or struct");
+    Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
+    if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
-    symbolTable.insert({"this", new Decl(VarDecl{typeDecl.getTypeDecl().getType(), "this"})});
+    symbolTable.insert({"this",
+        new Decl(VarDecl{typeDecl.getTypeDecl().getType(), "this", nullptr, SrcLoc::invalid()})});
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
@@ -480,22 +471,24 @@ void typecheck(TypeDecl& decl) {
 
 void typecheck(VarDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
-        error("redefinition of '", decl.name, "'");
+        error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     const Type* initType = nullptr;
     if (decl.initializer) {
         initType = &typecheck(*decl.initializer);
-        if (initType->isFuncType()) error("function pointers not implemented yet");
+        if (initType->isFuncType()) {
+            error(decl.initializer->getSrcLoc(), "function pointers not implemented yet");
+        }
     }
     if (auto declaredType = decl.getDeclaredType()) {
         if (initType && !isValidConversion(*decl.initializer, *initType, *declaredType)) {
-            error("cannot initialize variable of type '", *declaredType,
+            error(decl.initializer->getSrcLoc(), "cannot initialize variable of type '", *declaredType,
                 "' with '", *initType, "'");
         }
         symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     } else {
         if (initType->isBasicType() && initType->getBasicType().name == "__NullLiteral") {
-            error("couldn't infer type of '", decl.name, "', add a type annotation");
+            error(decl.srcLoc, "couldn't infer type of '", decl.name, "', add a type annotation");
         }
 
         auto initTypeCopy = *initType;
