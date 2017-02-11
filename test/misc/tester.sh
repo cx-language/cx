@@ -1,4 +1,5 @@
 #!/bin/bash
+
 if [ $# != 1 ]; then
     echo "usage: $0 path-to-delta"
     exit 1
@@ -6,85 +7,14 @@ fi
 
 path_to_delta=$1
 
-compile() {
-    source_file=$1
+source "../helpers.sh"
 
-    $path_to_delta -fsyntax-only inputs/$source_file
-
-    if [ $? -ne 0 ]; then
-        exit 1
-    fi
-}
-
-compile_and_run_and_check_exit_status() {
-    source_file=$1
-    expected_exit_status=$2
-
-    $path_to_delta inputs/$source_file
-
-    if [ $? -ne 0 ]; then
-        exit 1
-    fi
-
-    ./a.out
-    actual_exit_status=$?
-    rm a.out
-
-    if [ $actual_exit_status -ne $expected_exit_status ]; then
-        echo "FAILED: expected exit status: $expected_exit_status," \
-             "actual exit status: $actual_exit_status"
-        exit 1
-    fi
-}
-
-compile_and_run_and_check_output() {
-    source_file=$1
-    expected_output=$2
-
-    $path_to_delta inputs/$source_file
-
-    if [ $? -ne 0 ]; then
-        exit 1
-    fi
-
-    actual_output=$(./a.out)
-    rm a.out
-
-    if [[ $actual_output != $expected_output ]]; then
-        echo "FAILED:"
-        echo "expected output: \"$expected_output\""
-        echo "actual output:   \"$actual_output\""
-        exit 1
-    fi
-}
-
-compile_and_check_error() {
-    source_file="inputs/$1"
-    line_number=$(echo $2 | sed 's/:.*//')
-    column=$(echo $2 | sed 's/.*://')
-    line_content=$(sed -n "${line_number}p" $source_file)
-    expected_output="$source_file:$2: error: $3"$'\n'"$line_content"$'\n'"$(printf '%*s^' $(($column - 1)))"
-
-    actual_output=$($path_to_delta $source_file)
-
-    if [ $? -eq 0 ]; then
-        exit 1
-    fi
-
-    if [[ "$actual_output" != "$expected_output" ]]; then
-        echo "FAILED:"
-        echo "expected output: \"$expected_output\""
-        echo "actual output:   \"$actual_output\""
-        exit 1
-    fi
-}
-
-compile function-call.delta
-compile function-call-before-declaration.delta
-compile comments.delta
-compile int-literal-autocast.delta
-compile assign-ptr-to-mutable-into-ptr-to-immutable.delta
-compile void-return.delta
+compile_successfully function-call.delta -fsyntax-only
+compile_successfully function-call-before-declaration.delta -fsyntax-only
+compile_successfully comments.delta -fsyntax-only
+compile_successfully int-literal-autocast.delta -fsyntax-only
+compile_successfully assign-ptr-to-mutable-into-ptr-to-immutable.delta -fsyntax-only
+compile_successfully void-return.delta -fsyntax-only
 compile_and_run_and_check_exit_status composite-types.delta 5
 compile_and_run_and_check_exit_status mutable-member-mutation.delta 6
 compile_and_run_and_check_exit_status composite-type-use-before-declaration.delta 2
@@ -111,8 +41,8 @@ compile_and_run_and_check_output array-subscript-via-pointer.delta "Foo"
 compile_and_run_and_check_output reference-operator.delta "Bar"
 compile_and_run_and_check_output return-array.delta "Bar"
 compile_and_run_and_check_output import-c-header.delta "foo bar"
-compile_and_check_error mixed-case-hex-literal.delta 2:16 "mixed letter case in hex literal"
-compile_and_check_error leading-zero.delta 2:13 "numbers cannot start with 0[0-9], use 0o prefix for octal literal"
-compile_and_check_error newline-inside-string-literal.delta 2:13 "newline inside string literal"
-compile_and_check_error unexpected-character-after-zero.delta 2:14 "unexpected '_'"
-compile_and_check_error unknown-token.delta 1:1 "unknown token '\`'"
+check_error mixed-case-hex-literal.delta 2:16 "mixed letter case in hex literal"
+check_error leading-zero.delta 2:13 "numbers cannot start with 0[0-9], use 0o prefix for octal literal"
+check_error newline-inside-string-literal.delta 2:13 "newline inside string literal"
+check_error unexpected-character-after-zero.delta 2:14 "unexpected '_'"
+check_error unknown-token.delta 1:1 "unknown token '\`'"

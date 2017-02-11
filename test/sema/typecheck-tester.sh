@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [ $# != 1 ]; then
     echo "usage: $0 path-to-delta"
     exit 1
@@ -5,22 +7,7 @@ fi
 
 path_to_delta=$1
 
-check_error() {
-    source_file="inputs/$1"
-    line_number=$(echo $2 | sed 's/:.*//')
-    column=$(echo $2 | sed 's/.*://')
-    line_content=$(sed -n "${line_number}p" $source_file)
-    expected_error="$source_file:$2: error: $3"$'\n'"$line_content"$'\n'"$(printf '%*s^' $(($column - 1)))"
-
-    compiler_stdout=$($path_to_delta -fsyntax-only $source_file)
-
-    if [[ "$expected_error" != "$compiler_stdout" ]]; then
-        echo "FAILED:"
-        echo "expected error: \"$expected_error\""
-        echo "actual output:  \"$compiler_stdout\""
-        exit 1
-    fi
-}
+source "../helpers.sh"
 
 check_error unknown-variable.delta 2:15 "unknown identifier 'unknown'"
 check_error mismatching-binary-operands.delta 2:17 "operands to binary expression must have same type"
