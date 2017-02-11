@@ -1,5 +1,10 @@
 import "stdio.h";
+import "foo.h";
 
 func main() {
     puts("foo bar");
+    mutable Foo f = uninitialized;
+    f.bar = 5;
+    f.baz = "foo";
+    const bar = getBar(&f);
 }
