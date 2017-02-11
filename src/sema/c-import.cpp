@@ -1,4 +1,5 @@
 #include <unordered_set>
+#include <llvm/Support/Path.h>
 #include <clang/Basic/TargetInfo.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Lex/Preprocessor.h>
@@ -139,6 +140,9 @@ void importCHeader(llvm::StringRef headerName) {
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
 
+    extern const char* currentFileName;
+    llvm::StringRef importerDir = llvm::sys::path::parent_path(currentFileName);
+    ci.getHeaderSearchOpts().AddPath(importerDir,          clang::frontend::Quoted, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
 
