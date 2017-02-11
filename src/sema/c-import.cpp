@@ -26,35 +26,36 @@ void warnOnce(const llvm::Twine& message) {
 }
 
 Type toDelta(clang::QualType qualtype) {
+    const bool isMutable = !qualtype.isConstQualified();
     auto& type = *qualtype.getTypePtr();
     switch (type.getTypeClass()) {
         case clang::Type::Pointer: {
             auto pointeeType = llvm::cast<clang::PointerType>(type).getPointeeType();
-            return Type(PtrType(llvm::make_unique<Type>(toDelta(pointeeType))));
+            return Type(PtrType(llvm::make_unique<Type>(toDelta(pointeeType))), isMutable);
         }
         case clang::Type::Builtin:
             switch (llvm::cast<clang::BuiltinType>(type).getKind()) {
-                case clang::BuiltinType::Void:  return Type(BasicType{"void"});
-                case clang::BuiltinType::Bool:  return Type(BasicType{"bool"});
+                case clang::BuiltinType::Void:  return Type(BasicType{"void"}, isMutable);
+                case clang::BuiltinType::Bool:  return Type(BasicType{"bool"}, isMutable);
                 case clang::BuiltinType::Char_S:
-                case clang::BuiltinType::Char_U:return Type(BasicType{"char"});
-                case clang::BuiltinType::Int:   return Type(BasicType{"int"});
-                case clang::BuiltinType::UInt:  return Type(BasicType{"uint"});
+                case clang::BuiltinType::Char_U:return Type(BasicType{"char"}, isMutable);
+                case clang::BuiltinType::Int:   return Type(BasicType{"int"},  isMutable);
+                case clang::BuiltinType::UInt:  return Type(BasicType{"uint"}, isMutable);
                 default:
                     auto name = llvm::cast<clang::BuiltinType>(type).getName(printingPolicy);
                     warnOnce("Builtin type '" + name + "' not handled");
-                    return Type(BasicType{"int"});
+                    return Type(BasicType{"int"}, isMutable);
             }
-            return Type(BasicType{llvm::cast<clang::BuiltinType>(type).getName(printingPolicy)});
+            return Type(BasicType{llvm::cast<clang::BuiltinType>(type).getName(printingPolicy)}, isMutable);
         case clang::Type::Typedef:
             return toDelta(llvm::cast<clang::TypedefType>(type).desugar());
         case clang::Type::Elaborated:
             return toDelta(llvm::cast<clang::ElaboratedType>(type).getNamedType());
         case clang::Type::Record:
-            return Type(BasicType{llvm::cast<clang::RecordType>(type).getDecl()->getName()});
+            return Type(BasicType{llvm::cast<clang::RecordType>(type).getDecl()->getName()}, isMutable);
         default:
             warnOnce(llvm::Twine(type.getTypeClassName()) + " not handled");
-            return Type(BasicType{"int"});
+            return Type(BasicType{"int"}, isMutable);
     }
 }
 
