@@ -18,7 +18,7 @@ namespace {
 std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
 const Type* funcReturnType = nullptr;
 bool inInitializer = false;
-bool allowFunctionRedefinitions = false; // For C header importing.
+bool importingC = false;
 
 const Type& typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
@@ -391,7 +391,7 @@ void typecheck(ParamDecl& decl) {
 } // anonymous namespace
 
 void addToSymbolTable(const FuncDecl& decl) {
-    if (!allowFunctionRedefinitions && symbolTable.count(decl.name) > 0) {
+    if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
@@ -411,7 +411,7 @@ void addToSymbolTable(const InitDecl& decl) {
 }
 
 void addToSymbolTable(const TypeDecl& decl) {
-    if (symbolTable.count(decl.name) > 0) {
+    if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(TypeDecl(decl))});
@@ -502,9 +502,9 @@ void typecheck(FieldDecl& decl) {
 }
 
 void typecheck(ImportDecl& decl) {
-    allowFunctionRedefinitions = true;
+    importingC = true;
     importCHeader(decl.target);
-    allowFunctionRedefinitions = false;
+    importingC = false;
 }
 
 void typecheck(Decl& decl) {
