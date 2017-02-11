@@ -25,11 +25,19 @@ void setLocalValue(std::string name, llvm::Value* value) {
     assert(wasInserted);
 }
 
+void codegen(const Decl& decl);
+
 llvm::Value* findValue(llvm::StringRef name) {
     auto it = localValues.find(name);
     if (it == localValues.end()) {
         it = globalValues.find(name);
-        assert(it != globalValues.end());
+
+        // FIXME: It would probably be better to not access the symbol table here.
+        if (it == globalValues.end()) {
+            codegen(findInSymbolTable(name, SrcLoc::invalid()));
+            it = globalValues.find(name);
+            assert(it != globalValues.end());
+        }
     }
     return it->second;
 }

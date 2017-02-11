@@ -417,6 +417,13 @@ void addToSymbolTable(const TypeDecl& decl) {
     symbolTable.insert({decl.name, new Decl(TypeDecl(decl))});
 }
 
+void addToSymbolTable(const VarDecl& decl) {
+    if (!importingC && symbolTable.count(decl.name) > 0) {
+        error(decl.srcLoc, "redefinition of '", decl.name, "'");
+    }
+    symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
+}
+
 Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
     auto it = symbolTable.find(name);
     if (it == symbolTable.end()) error(srcLoc, "unknown identifier '", name, "'");

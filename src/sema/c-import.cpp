@@ -103,6 +103,16 @@ public:
                     if (typeDecl) addToSymbolTable(std::move(*typeDecl));
                     break;
                 }
+                case clang::Decl::Enum: {
+                    for (auto* enumerator : llvm::cast<clang::EnumDecl>(*decl).enumerators()) {
+                        auto name = enumerator->getName();
+                        auto value = enumerator->getInitVal().getExtValue();
+                        auto init = std::make_shared<Expr>(IntLiteralExpr{value, SrcLoc::invalid()});
+                        init->setType(Type(BasicType{"int"}));
+                        VarDecl varDecl{init->getType(), name, std::move(init), SrcLoc::invalid()};
+                        addToSymbolTable(std::move(varDecl));
+                    }
+                }
                 default:
                     break;
             }
