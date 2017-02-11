@@ -68,6 +68,25 @@ FuncDecl toDelta(const clang::FunctionDecl& decl) {
                     toDelta(decl.getReturnType()), "", nullptr, SrcLoc::invalid()};
 }
 
+llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {
+    if (decl.getName().empty()) return llvm::None;
+    return FieldDecl{toDelta(decl.getType()), decl.getNameAsString(), SrcLoc::invalid()};
+}
+
+llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
+    if (decl.getName().empty()) return llvm::None;
+    TypeDecl typeDecl{TypeTag::Struct, decl.getNameAsString(), {}, SrcLoc::invalid()};
+    typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
+    for (auto* field : decl.fields()) {
+        if (auto fieldDecl = toDelta(*field)) {
+            typeDecl.fields.emplace_back(std::move(*fieldDecl));
+        } else {
+            return llvm::None;
+        }
+    }
+    return typeDecl;
+}
+
 class CToDeltaConverter : public clang::ASTConsumer {
 public:
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
@@ -76,6 +95,12 @@ public:
                 case clang::Decl::Function:
                     addToSymbolTable(toDelta(llvm::cast<clang::FunctionDecl>(*decl)));
                     break;
+                case clang::Decl::Record: {
+                    if (!decl->isFirstDecl()) break;
+                    auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl));
+                    if (typeDecl) addToSymbolTable(std::move(*typeDecl));
+                    break;
+                }
                 default:
                     break;
             }
