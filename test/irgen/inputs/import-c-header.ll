@@ -7,8 +7,8 @@
 define i32 @main() {
   %1 = call i32 @puts(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0))
   %f = alloca %Foo
-  %MAGIC_NUMBER = load i32, i32* @MAGIC_NUMBER
   %2 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
+  %MAGIC_NUMBER = load i32, i32* @MAGIC_NUMBER
   store i32 %MAGIC_NUMBER, i32* %2
   %3 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 1
   store i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0), i8** %3

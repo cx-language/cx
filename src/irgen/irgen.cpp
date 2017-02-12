@@ -346,7 +346,8 @@ void codegen(const WhileStmt& whileStmt) {
 }
 
 void codegen(const AssignStmt& stmt) {
-    builder.CreateStore(codegen(stmt.rhs), codegenLvalue(stmt.lhs));
+    auto* lhs = codegenLvalue(stmt.lhs);
+    builder.CreateStore(codegen(stmt.rhs), lhs);
 }
 
 void codegen(const Stmt& stmt) {
