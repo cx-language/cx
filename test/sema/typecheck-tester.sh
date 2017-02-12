@@ -10,7 +10,7 @@ path_to_delta=$1
 source "../helpers.sh"
 
 check_error unknown-variable.delta 2:15 "unknown identifier 'unknown'"
-check_error mismatching-binary-operands.delta 2:17 "operands to binary expression must have same type"
+check_error mismatching-binary-operands.delta 2:17 "invalid operands to binary expression ('int' and 'bool')"
 check_error variable-redefinition.delta 3:9 "redefinition of 'foo'"
 check_error function-redefinition.delta 2:6 "redefinition of 'foo'"
 check_error unknown-function.delta 2:23 "unknown identifier 'foo'"

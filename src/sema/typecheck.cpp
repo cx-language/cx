@@ -82,7 +82,7 @@ Type typecheck(BinaryExpr& expr) {
     Type rightType = typecheck(*expr.right);
     if (!isValidConversion(*expr.left, leftType, rightType)
     &&  !isValidConversion(*expr.right, rightType, leftType)) {
-        error(expr.srcLoc, "operands to binary expression must have same type");
+        error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
     }
     return expr.op.isComparisonOperator() ? Type(BasicType{"bool"}) : leftType;
 }
