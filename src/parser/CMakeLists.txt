@@ -4,7 +4,7 @@ BISON_TARGET(DeltaParser
     ${CMAKE_CURRENT_SOURCE_DIR}/parser.y
     ${CMAKE_CURRENT_SOURCE_DIR}/parser.cpp)
 
-file(GLOB SOURCES *.h *.cpp)
+file(GLOB SOURCES *.h *.cpp *.y)
 add_library(deltaParser ${SOURCES} ${BISON_DeltaParser_OUTPUTS})
 target_link_libraries(deltaParser deltaAST deltaSema)
 
