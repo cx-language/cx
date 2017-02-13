@@ -77,6 +77,7 @@ public:
     bool isMutable() const { return mutableFlag; }
     void setMutable(bool isMutable) { mutableFlag = isMutable; }
     TypeKind getKind() const { return static_cast<TypeKind>(data.which()); }
+    void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
 
 private:
     boost::variant<BasicType, ArrayType, TupleType, FuncType, PtrType> data;

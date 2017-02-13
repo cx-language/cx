@@ -83,34 +83,50 @@ bool operator!=(const Type& lhs, const Type& rhs) {
     return !(lhs == rhs);
 }
 
-std::ostream& operator<<(std::ostream& out, const Type& type) {
-    switch (type.getKind()) {
+void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
+    switch (getKind()) {
         case TypeKind::BasicType:
-            if (type.isMutable()) out << "mutable ";
-            return out << type.getBasicType().name;
+            if (isMutable() && !omitTopLevelMutable) stream << "mutable ";
+            stream << getBasicType().name;
+            break;
         case TypeKind::ArrayType:
-            return out << *type.getArrayType().elementType << "[" << type.getArrayType().size << "]";
+            getArrayType().elementType->printTo(stream, omitTopLevelMutable);
+            stream << "[" << getArrayType().size << "]";
+            break;
         case TypeKind::TupleType:
-            out << "(";
-            for (const Type& subtype : type.getTupleType().subtypes) {
-                out << subtype;
-                if (&subtype != &type.getTupleType().subtypes.back()) out << ", ";
+            stream << "(";
+            for (const Type& subtype : getTupleType().subtypes) {
+                subtype.printTo(stream, omitTopLevelMutable);
+                if (&subtype != &getTupleType().subtypes.back()) stream << ", ";
             }
-            return out << ")";
+            stream << ")";
+            break;
         case TypeKind::FuncType:
-            out << "func(";
-            for (const Type& paramType : type.getFuncType().paramTypes) {
-                out << paramType;
-                if (&paramType != &type.getFuncType().paramTypes.back()) out << ", ";
+            stream << "func(";
+            for (const Type& paramType : getFuncType().paramTypes) {
+                stream << paramType;
+                if (&paramType != &getFuncType().paramTypes.back()) stream << ", ";
             }
-            out << ") -> ";
-            for (const Type& returnType : type.getFuncType().returnTypes) {
-                out << returnType;
-                if (&returnType != &type.getFuncType().returnTypes.back()) out << ", ";
+            stream << ") -> ";
+            for (const Type& returnType : getFuncType().returnTypes) {
+                stream << returnType;
+                if (&returnType != &getFuncType().returnTypes.back()) stream << ", ";
             }
-            return out;
+            break;
         case TypeKind::PtrType:
-            if (type.isMutable()) return out << "mutable(" << *type.getPtrType().pointeeType << "*)";
-            return out << *type.getPtrType().pointeeType << "*";
+            if (isMutable() && !omitTopLevelMutable) {
+                stream << "mutable(";
+                getPtrType().pointeeType->printTo(stream, false);
+                stream << "*)";
+            } else {
+                getPtrType().pointeeType->printTo(stream, false);
+                stream << "*";
+            }
+            break;
     }
+}
+
+std::ostream& operator<<(std::ostream& stream, const Type& type) {
+    type.printTo(stream, true);
+    return stream;
 }
