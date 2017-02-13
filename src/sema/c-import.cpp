@@ -17,6 +17,7 @@
 namespace {
 
 clang::PrintingPolicy printingPolicy{clang::LangOptions()};
+clang::TargetInfo* targetInfo;
 
 /** Prints the message to stderr if it hasn't been printed yet. */
 void warnOnce(const llvm::Twine& message) {
@@ -24,6 +25,42 @@ void warnOnce(const llvm::Twine& message) {
     llvm::SmallVector<char, 64> buffer;
     if (printedMessages.count(message.toStringRef(buffer)) != 0) return;
     llvm::errs() << "WARNING: " << *printedMessages.emplace(message.str()).first << '\n';
+}
+
+const char* getIntTypeByWidth(int widthInBits, bool asSigned) {
+    switch (widthInBits) {
+        case  8: return asSigned ? "int8"  : "uint8";
+        case 16: return asSigned ? "int16" : "uint16";
+        case 32: return asSigned ? "int32" : "uint32";
+        case 64: return asSigned ? "int64" : "uint64";
+    }
+    assert(false && "unsupported integer width");
+    return "";
+}
+
+const char* toDelta(const clang::BuiltinType& type) {
+    switch (type.getKind()) {
+        case clang::BuiltinType::Void: return "void";
+        case clang::BuiltinType::Bool: return "bool";
+        case clang::BuiltinType::Char_S:
+        case clang::BuiltinType::Char_U: return "char";
+        case clang::BuiltinType::SChar: return getIntTypeByWidth(targetInfo->getCharWidth(), true);
+        case clang::BuiltinType::UChar: return getIntTypeByWidth(targetInfo->getCharWidth(), false);
+        case clang::BuiltinType::Short: return getIntTypeByWidth(targetInfo->getShortWidth(), true);
+        case clang::BuiltinType::UShort: return getIntTypeByWidth(targetInfo->getShortWidth(), false);
+        case clang::BuiltinType::Int: return "int";
+        case clang::BuiltinType::UInt: return "uint";
+        case clang::BuiltinType::Long: return getIntTypeByWidth(targetInfo->getLongWidth(), true);
+        case clang::BuiltinType::ULong: return getIntTypeByWidth(targetInfo->getLongWidth(), false);
+        case clang::BuiltinType::LongLong: return getIntTypeByWidth(targetInfo->getLongLongWidth(), true);
+        case clang::BuiltinType::ULongLong: return getIntTypeByWidth(targetInfo->getLongLongWidth(), false);
+        case clang::BuiltinType::Float: return "float";
+        case clang::BuiltinType::Double: return "float64";
+        case clang::BuiltinType::LongDouble: return "float80";
+        default: break;
+    }
+    assert(false && "unsupported builtin type");
+    return "";
 }
 
 Type toDelta(clang::QualType qualtype) {
@@ -35,19 +72,7 @@ Type toDelta(clang::QualType qualtype) {
             return Type(PtrType(llvm::make_unique<Type>(toDelta(pointeeType))), isMutable);
         }
         case clang::Type::Builtin:
-            switch (llvm::cast<clang::BuiltinType>(type).getKind()) {
-                case clang::BuiltinType::Void:  return Type(BasicType{"void"}, isMutable);
-                case clang::BuiltinType::Bool:  return Type(BasicType{"bool"}, isMutable);
-                case clang::BuiltinType::Char_S:
-                case clang::BuiltinType::Char_U:return Type(BasicType{"char"}, isMutable);
-                case clang::BuiltinType::Int:   return Type(BasicType{"int"},  isMutable);
-                case clang::BuiltinType::UInt:  return Type(BasicType{"uint"}, isMutable);
-                default:
-                    auto name = llvm::cast<clang::BuiltinType>(type).getName(printingPolicy);
-                    warnOnce("Builtin type '" + name + "' not handled");
-                    return Type(BasicType{"int"}, isMutable);
-            }
-            return Type(BasicType{llvm::cast<clang::BuiltinType>(type).getName(printingPolicy)}, isMutable);
+            return Type(BasicType{toDelta(llvm::cast<clang::BuiltinType>(type))}, isMutable);
         case clang::Type::Typedef:
             return toDelta(llvm::cast<clang::TypedefType>(type).desugar());
         case clang::Type::Elaborated:
@@ -157,8 +182,8 @@ void importCHeader(llvm::StringRef headerName) {
 
     std::shared_ptr<clang::TargetOptions> pto = std::make_shared<clang::TargetOptions>();
     pto->Triple = llvm::sys::getDefaultTargetTriple();
-    clang::TargetInfo* pti = clang::TargetInfo::CreateTargetInfo(ci.getDiagnostics(), pto);
-    ci.setTarget(pti);
+    targetInfo = clang::TargetInfo::CreateTargetInfo(ci.getDiagnostics(), pto);
+    ci.setTarget(targetInfo);
 
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
