@@ -10,3 +10,5 @@ inline unsigned getBar(const struct Foo* foo) {
 typedef enum {
     MAGIC_NUMBER = 5
 } Qux;
+
+#define ANSWER 42

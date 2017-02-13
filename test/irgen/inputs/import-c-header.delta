@@ -4,7 +4,7 @@ import "foo.h";
 func main() {
     puts("foo bar");
     mutable Foo f = uninitialized;
-    f.bar = MAGIC_NUMBER;
+    f.bar = MAGIC_NUMBER + ANSWER;
     f.baz = "foo";
     const bar = getBar(&f);
 }

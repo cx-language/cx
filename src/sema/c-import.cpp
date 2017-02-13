@@ -89,6 +89,13 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
     return typeDecl;
 }
 
+void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value) {
+    auto initializer = std::make_shared<Expr>(IntLiteralExpr{value, SrcLoc::invalid()});
+    initializer->setType(Type(BasicType{"int"}));
+    VarDecl varDecl{initializer->getType(), name, std::move(initializer), SrcLoc::invalid()};
+    addToSymbolTable(std::move(varDecl));
+}
+
 class CToDeltaConverter : public clang::ASTConsumer {
 public:
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
@@ -105,12 +112,8 @@ public:
                 }
                 case clang::Decl::Enum: {
                     for (auto* enumerator : llvm::cast<clang::EnumDecl>(*decl).enumerators()) {
-                        auto name = enumerator->getName();
                         auto value = enumerator->getInitVal().getExtValue();
-                        auto init = std::make_shared<Expr>(IntLiteralExpr{value, SrcLoc::invalid()});
-                        init->setType(Type(BasicType{"int"}));
-                        VarDecl varDecl{init->getType(), name, std::move(init), SrcLoc::invalid()};
-                        addToSymbolTable(std::move(varDecl));
+                        addIntegerConstantToSymbolTable(enumerator->getName(), value);
                     }
                 }
                 default:
@@ -118,6 +121,16 @@ public:
             }
         }
         return true; // continue parsing
+    }
+};
+
+class MacroImporter : public clang::PPCallbacks {
+    void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) final override {
+        if (macro->getMacroInfo()->getNumTokens() != 1) return;
+        auto& token = macro->getMacroInfo()->getReplacementToken(0);
+        if (token.isNot(clang::tok::numeric_constant)) return;
+        const long long value = atoll(token.getLiteralData());
+        addIntegerConstantToSymbolTable(name.getIdentifierInfo()->getName(), value);
     }
 };
 
@@ -166,6 +179,7 @@ void importCHeader(llvm::StringRef headerName) {
     ci.createPreprocessor(clang::TU_Complete);
     auto& pp = ci.getPreprocessor();
     pp.getBuiltinInfo().initializeBuiltins(pp.getIdentifierTable(), pp.getLangOpts());
+    pp.addPPCallbacks(llvm::make_unique<MacroImporter>());
 
     ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>());
     ci.createASTContext();
