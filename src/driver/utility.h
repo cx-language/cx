@@ -28,8 +28,9 @@ template<typename... Args>
         std::getline(file, line);
         std::cout << '\n' << line << '\n';
         while (--srcLoc.column) std::cout << ' ';
-        std::cout << "^\n";
+        std::cout << '^';
     }
 
+    std::cout << '\n';
     exit(1);
 }
