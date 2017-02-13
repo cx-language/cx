@@ -144,15 +144,21 @@ llvm::Value* codegenLvalue(const PrefixExpr& expr) {
 }
 
 llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateICmpFunc intFunc) {
-    return (builder.*intFunc)(codegen(*expr.left), codegen(*expr.right), "");
+    llvm::Value* lhs = codegen(*expr.left);
+    llvm::Value* rhs = codegen(*expr.right);
+    return (builder.*intFunc)(lhs, rhs, "");
 }
 
 llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateAddSubMulFunc intFunc) {
-    return (builder.*intFunc)(codegen(*expr.left), codegen(*expr.right), "", false, false);
+    llvm::Value* lhs = codegen(*expr.left);
+    llvm::Value* rhs = codegen(*expr.right);
+    return (builder.*intFunc)(lhs, rhs, "", false, false);
 }
 
 llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateDivFunc intFunc) {
-    return (builder.*intFunc)(codegen(*expr.left), codegen(*expr.right), "", false);
+    llvm::Value* lhs = codegen(*expr.left);
+    llvm::Value* rhs = codegen(*expr.right);
+    return (builder.*intFunc)(lhs, rhs, "", false);
 }
 
 llvm::Value* codegen(const BinaryExpr& expr) {
