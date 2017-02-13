@@ -27,4 +27,6 @@
         (field-decl char* b))
     (type-decl class C1
         (field-decl int8 a)
-        (field-decl bool* b)))
+        (field-decl bool* b))
+    (func-decl foo12 ((int* a) (int b)) bool
+        (return-stmt ((*a) == b))))

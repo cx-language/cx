@@ -82,6 +82,7 @@
 %token RARROW   "->"
 
 // Precedence and associativity
+%nonassoc "=="
 %left "+" "-"
 %left "*" "/"
 %left "&"
