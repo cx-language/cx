@@ -1,0 +1,4 @@
+extern func foo() -> int*;
+func main() {
+    int& f = foo();
+}

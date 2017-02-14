@@ -200,8 +200,10 @@ type:
 |   IDENTIFIER "[" NUMBER "]" { $$ = new Type(ArrayType{u(new Type(BasicType{$1})), $3}); }
 |   "mutable" IDENTIFIER { $$ = new Type(BasicType{$2}); $$->setMutable(true); }
 |   "mutable" IDENTIFIER "[" NUMBER "]" { auto e = new Type(BasicType{$2}); e->setMutable(true); $$ = new Type(ArrayType{u(e), $4}); $$->setMutable(true);  }
-|   "mutable" "(" type "*" ")" { $$ = new Type(PtrType{u($3)}); $$->setMutable(true); }
-|   type "*" { $$ = new Type(PtrType{u($1)}); };
+|   "mutable" "(" type "&" ")" { $$ = new Type(PtrType{u($3), true}); $$->setMutable(true); }
+|   type "&" { $$ = new Type(PtrType{u($1), true}); }
+|   "mutable" "(" type "*" ")" { $$ = new Type(PtrType{u($3), false}); $$->setMutable(true); }
+|   type "*" { $$ = new Type(PtrType{u($1), false}); };
 
 composite_type_declaration:
     "struct" IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Struct, $2, std::move(*$4), loc(@2)});

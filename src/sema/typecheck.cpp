@@ -38,7 +38,7 @@ Type typecheck(VariableExpr& expr) {
 }
 
 Type typecheck(StrLiteralExpr& expr) {
-    return Type(PtrType{std::unique_ptr<Type>(new Type(BasicType{"char"}))});
+    return Type(PtrType{std::unique_ptr<Type>(new Type(BasicType{"char"})), true});
 }
 
 Type typecheck(IntLiteralExpr& expr) {
@@ -58,7 +58,7 @@ Type typecheck(BoolLiteralExpr&) {
 }
 
 Type typecheck(NullLiteralExpr&) {
-    return Type(BasicType{"__NullLiteral"});
+    return Type(BasicType{"null"});
 }
 
 Type typecheck(PrefixExpr& expr) {
@@ -70,7 +70,7 @@ Type typecheck(PrefixExpr& expr) {
         return *operandType.getPtrType().pointeeType;
     }
     if (expr.op.rawValue == AND) { // Address-of operation
-        return Type(PtrType{std::unique_ptr<Type>(new Type(typecheck(*expr.operand)))});
+        return Type(PtrType{std::unique_ptr<Type>(new Type(typecheck(*expr.operand))), true});
     }
     return typecheck(*expr.operand);
 }
@@ -115,7 +115,7 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
         if (targetTypeName == "uint16") return checkRange<uint16_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
-    } else if (expr.isNullLiteralExpr() && target.isPtrType()) {
+    } else if (expr.isNullLiteralExpr() && target.isPtrType() && !target.getPtrType().ref) {
         expr.setType(target);
         return true;
     }
@@ -494,7 +494,7 @@ void typecheck(VarDecl& decl) {
         }
         symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     } else {
-        if (initType->isBasicType() && initType->getBasicType().name == "__NullLiteral") {
+        if (initType->isBasicType() && initType->getBasicType().name == "null") {
             error(decl.srcLoc, "couldn't infer type of '", decl.name, "', add a type annotation");
         }
 

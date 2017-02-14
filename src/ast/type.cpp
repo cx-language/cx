@@ -12,11 +12,12 @@ ArrayType& ArrayType::operator=(const ArrayType& type) {
     return *this;
 }
 
-PtrType::PtrType(const PtrType& type) : pointeeType(new Type(*type.pointeeType)) { }
+PtrType::PtrType(const PtrType& type) : pointeeType(new Type(*type.pointeeType)), ref(type.ref) { }
 
 PtrType& PtrType::operator=(const PtrType& type) {
     if (&type != this) {
         pointeeType.reset(new Type(*type.pointeeType));
+        ref = type.ref;
     }
     return *this;
 }
@@ -51,6 +52,7 @@ bool Type::isImplicitlyConvertibleTo(const Type& type) const {
                                      && getFuncType().paramTypes == type.getFuncType().paramTypes;
         case TypeKind::PtrType:
             return type.isPtrType()
+            && (getPtrType().ref || !type.getPtrType().ref)
             && (getPtrType().pointeeType->isMutable() || !type.getPtrType().pointeeType->isMutable())
             && getPtrType().pointeeType->isImplicitlyConvertibleTo(*type.getPtrType().pointeeType);
     }
@@ -75,7 +77,9 @@ bool operator==(const Type& lhs, const Type& rhs) {
             return rhs.isFuncType() && lhs.getFuncType().returnTypes == rhs.getFuncType().returnTypes
                                     && lhs.getFuncType().paramTypes == rhs.getFuncType().paramTypes;
         case TypeKind::PtrType:
-            return rhs.isPtrType() && *lhs.getPtrType().pointeeType == *rhs.getPtrType().pointeeType;
+            return rhs.isPtrType()
+                && lhs.getPtrType().ref == rhs.getPtrType().ref
+                && *lhs.getPtrType().pointeeType == *rhs.getPtrType().pointeeType;
     }
 }
 
@@ -117,10 +121,10 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             if (isMutable() && !omitTopLevelMutable) {
                 stream << "mutable(";
                 getPtrType().pointeeType->printTo(stream, false);
-                stream << "*)";
+                stream << (getPtrType().ref ? '&' : '*') << ')';
             } else {
                 getPtrType().pointeeType->printTo(stream, false);
-                stream << "*";
+                stream << (getPtrType().ref ? '&' : '*');
             }
             break;
     }

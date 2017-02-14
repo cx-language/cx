@@ -69,7 +69,7 @@ Type toDelta(clang::QualType qualtype) {
     switch (type.getTypeClass()) {
         case clang::Type::Pointer: {
             auto pointeeType = llvm::cast<clang::PointerType>(type).getPointeeType();
-            return Type(PtrType(llvm::make_unique<Type>(toDelta(pointeeType))), isMutable);
+            return Type(PtrType(llvm::make_unique<Type>(toDelta(pointeeType)), false), isMutable);
         }
         case clang::Type::Builtin:
             return Type(BasicType{toDelta(llvm::cast<clang::BuiltinType>(type))}, isMutable);

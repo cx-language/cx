@@ -39,7 +39,9 @@ struct FuncType {
 
 struct PtrType {
     std::unique_ptr<Type> pointeeType;
-    PtrType(std::unique_ptr<Type> type) : pointeeType(std::move(type)) { }
+    bool ref;
+
+    PtrType(std::unique_ptr<Type> type, bool ref) : pointeeType(std::move(type)), ref(ref) { }
     PtrType(const PtrType&);
     PtrType& operator=(const PtrType&);
 };

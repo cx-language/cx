@@ -1,4 +1,4 @@
-func getMessage() -> char* { return "Hello, World!"; }
+func getMessage() -> char& { return "Hello, World!"; }
 
 func main() -> int {
     puts(getMessage());
