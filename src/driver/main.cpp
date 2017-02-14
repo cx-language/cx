@@ -108,32 +108,36 @@ int main(int argc, char** argv) {
 
     typecheck(globalAST);
 
-    std::string outputFile;
+    if (syntaxOnly) return 0;
 
     if (printAST) {
         std::cout << globalAST;
-    } else if (!syntaxOnly) {
-        if (!codegenC) {
-            auto& module = irgen::compile(globalAST);
-            if (!outputToStdout) {
-                outputFile = emitAssembly ? "output.s" : "output.o";
-                auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
-                                             : llvm::TargetMachine::CGFT_ObjectFile;
-                emitMachineCode(module, outputFile, fileType);
-            } else {
-                module.print(llvm::outs(), nullptr);
-            }
-        } else {
-            outputFile = "output.c";
-            cgen::compile(globalAST, outputToStdout ? "stdout" : outputFile);
-        }
+        return 0;
     }
 
-    if (!syntaxOnly && !printAST && !compileOnly && !emitAssembly) {
-        // Compile (if it's C) and link the output.
-        assert(!outputFile.empty());
-        const int ccExitStatus = std::system(("cc " + outputFile).c_str());
-        std::remove(outputFile.c_str());
-        if (ccExitStatus != 0) exit(ccExitStatus);
+    std::string outputFile;
+
+    if (!codegenC) {
+        auto& module = irgen::compile(globalAST);
+
+        if (outputToStdout) {
+            module.print(llvm::outs(), nullptr);
+            return 0;
+        }
+
+        outputFile = emitAssembly ? "output.s" : "output.o";
+        auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
+                                     : llvm::TargetMachine::CGFT_ObjectFile;
+        emitMachineCode(module, outputFile, fileType);
+    } else {
+        outputFile = "output.c";
+        cgen::compile(globalAST, outputToStdout ? "stdout" : outputFile);
     }
+
+    if (compileOnly || emitAssembly) return 0;
+
+    // Compile (if it's C) and link the output.
+    int ccExitStatus = std::system(("cc " + outputFile).c_str());
+    std::remove(outputFile.c_str());
+    return ccExitStatus;
 }
