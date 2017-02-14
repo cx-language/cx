@@ -1,5 +1,7 @@
 # Delta Programming Language
 
+[![Build Status](https://travis-ci.org/delta-lang/delta.svg?branch=master)](https://travis-ci.org/delta-lang/delta)
+
 Delta is a general-purpose programming language intended as an alternative to
 C++, C, and Rust. The project is currently in very early stages of development.
 See the (incomplete) [specification document](doc/spec.md) for a detailed
