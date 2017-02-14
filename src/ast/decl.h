@@ -13,6 +13,8 @@
 
 namespace llvm { class StringRef; }
 
+namespace delta {
+
 enum class DeclKind {
     ParamDecl,
     FuncDecl,
@@ -134,3 +136,5 @@ public:
 private:
     boost::variant<ParamDecl, FuncDecl, InitDecl, TypeDecl, VarDecl, FieldDecl, ImportDecl> data;
 };
+
+}

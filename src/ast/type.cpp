@@ -2,6 +2,8 @@
 #include <llvm/ADT/StringRef.h>
 #include "type.h"
 
+using namespace delta;
+
 ArrayType::ArrayType(const ArrayType& type) : elementType(new Type(*type.elementType)), size(type.size) { }
 
 ArrayType& ArrayType::operator=(const ArrayType& type) {
@@ -64,7 +66,7 @@ bool Type::isSigned() const {
     return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
 }
 
-bool operator==(const Type& lhs, const Type& rhs) {
+bool delta::operator==(const Type& lhs, const Type& rhs) {
     if (lhs.isMutable() != rhs.isMutable()) return false;
     switch (lhs.getKind()) {
         case TypeKind::BasicType:
@@ -83,7 +85,7 @@ bool operator==(const Type& lhs, const Type& rhs) {
     }
 }
 
-bool operator!=(const Type& lhs, const Type& rhs) {
+bool delta::operator!=(const Type& lhs, const Type& rhs) {
     return !(lhs == rhs);
 }
 
@@ -130,7 +132,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
     }
 }
 
-std::ostream& operator<<(std::ostream& stream, const Type& type) {
+std::ostream& delta::operator<<(std::ostream& stream, const Type& type) {
     type.printTo(stream, true);
     return stream;
 }

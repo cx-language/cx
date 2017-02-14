@@ -8,6 +8,8 @@
 #include "../sema/typecheck.h"
 #include "../parser/parser.hpp"
 
+using namespace delta;
+
 namespace {
 
 llvm::LLVMContext ctx;

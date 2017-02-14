@@ -8,7 +8,7 @@ bool BinaryOperator::isComparisonOperator() const {
     assert(false);
 }
 
-std::ostream& operator<<(std::ostream& out, PrefixOperator op) {
+std::ostream& delta::operator<<(std::ostream& out, PrefixOperator op) {
     switch (op.rawValue) {
         case PLUS:  return out << "+";
         case MINUS: return out << "-";
@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& out, PrefixOperator op) {
     }
 }
 
-std::ostream& operator<<(std::ostream& out, BinaryOperator op) {
+std::ostream& delta::operator<<(std::ostream& out, BinaryOperator op) {
     switch (op.rawValue) {
         case EQ:    return out << "==";
         case NE:    return out << "!=";

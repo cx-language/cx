@@ -13,6 +13,8 @@
 #include "../parser/parser.hpp"
 #include "../driver/utility.h"
 
+using namespace delta;
+
 namespace {
 
 std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
@@ -393,14 +395,14 @@ void typecheck(ParamDecl& decl) {
 
 } // anonymous namespace
 
-void addToSymbolTable(const FuncDecl& decl) {
+void delta::addToSymbolTable(const FuncDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
 }
 
-void addToSymbolTable(const InitDecl& decl) {
+void delta::addToSymbolTable(const InitDecl& decl) {
     if (symbolTable.count("__init_" + decl.getTypeName()) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
@@ -413,21 +415,21 @@ void addToSymbolTable(const InitDecl& decl) {
     symbolTable.insert({"__init_" + decl.getTypeName(), new Decl(std::move(initDecl))});
 }
 
-void addToSymbolTable(const TypeDecl& decl) {
+void delta::addToSymbolTable(const TypeDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(TypeDecl(decl))});
 }
 
-void addToSymbolTable(const VarDecl& decl) {
+void delta::addToSymbolTable(const VarDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
 }
 
-Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
+Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
     auto it = symbolTable.find(name);
     if (it == symbolTable.end()) error(srcLoc, "unknown identifier '", name, "'");
     return *it->second;
@@ -531,6 +533,6 @@ void typecheck(Decl& decl) {
 
 } // anonymous namespace
 
-void typecheck(std::vector<Decl>& decls) {
-    for (Decl& decl : decls) typecheck(decl);
+void delta::typecheck(std::vector<Decl>& decls) {
+    for (Decl& decl : decls) ::typecheck(decl);
 }

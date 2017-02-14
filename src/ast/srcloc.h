@@ -2,6 +2,8 @@
 
 #include <climits>
 
+namespace delta {
+
 struct SrcLoc {
     const char* file;
     short line;
@@ -11,3 +13,5 @@ struct SrcLoc {
     static SrcLoc invalid() { return SrcLoc(nullptr, SHRT_MIN, SHRT_MIN); }
     bool isValid() const { return line > 0 && column > 0; }
 };
+
+}

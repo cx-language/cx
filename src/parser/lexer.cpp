@@ -3,9 +3,14 @@
 #include <unordered_map>
 #include "../driver/utility.h"
 
+namespace delta {
+
 FILE* inputFile;
-extern YYLTYPE yylloc;
 extern const char* currentFileName;
+
+}
+
+extern YYLTYPE yylloc;
 
 namespace {
 
@@ -126,7 +131,7 @@ const std::unordered_map<std::string, int> keywords = {
 
 } // anonymous namespace
 
-int lex() {
+int delta::lex() {
     while (true) {
         int ch = readChar();
         yylloc.first_line = yylloc.last_line;

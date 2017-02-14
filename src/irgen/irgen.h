@@ -6,6 +6,10 @@
 
 namespace llvm { class Module; }
 
+namespace delta {
+
 namespace irgen {
     llvm::Module& compile(const std::vector<Decl>& decls);
+}
+
 }

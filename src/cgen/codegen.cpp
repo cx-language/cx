@@ -6,6 +6,8 @@
 #include <boost/optional.hpp>
 #include "codegen.h"
 
+using namespace delta;
+
 namespace {
 
 std::ostream* out = nullptr;

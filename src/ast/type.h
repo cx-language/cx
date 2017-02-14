@@ -6,6 +6,8 @@
 #include <ostream>
 #include <boost/variant.hpp>
 
+namespace delta {
+
 enum class TypeKind {
     BasicType,
     ArrayType,
@@ -89,3 +91,5 @@ private:
 bool operator==(const Type&, const Type&);
 bool operator!=(const Type&, const Type&);
 std::ostream& operator<<(std::ostream&, const Type&);
+
+}

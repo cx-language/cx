@@ -16,10 +16,17 @@
 #include "../cgen/codegen.h"
 #include "../irgen/irgen.h"
 
+using namespace delta;
+
+namespace delta {
+
 extern FILE* inputFile;
 const char* currentFileName;
-int yyparse();
 extern std::vector<Decl> globalAST;
+
+}
+
+int yyparse();
 
 namespace {
 

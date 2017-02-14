@@ -3,6 +3,8 @@
 #include <fstream>
 #include <llvm/ADT/StringRef.h>
 
+namespace delta {
+
 inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
 }
@@ -33,4 +35,6 @@ template<typename... Args>
 
     std::cout << '\n';
     exit(1);
+}
+
 }

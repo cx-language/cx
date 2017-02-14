@@ -2,6 +2,8 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
 
+using namespace delta;
+
 namespace {
 
 std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {

@@ -10,6 +10,8 @@
 #include "srcloc.h"
 #include "../parser/operators.h"
 
+namespace delta {
+
 class Expr;
 
 enum class ExprKind {
@@ -156,4 +158,6 @@ inline SrcLoc Expr::getSrcLoc() const {
         case ExprKind::MemberExpr:      return getMemberExpr().baseSrcLoc;
         case ExprKind::SubscriptExpr:   return getSubscriptExpr().srcLoc;
     }
+}
+
 }

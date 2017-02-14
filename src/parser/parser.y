@@ -5,9 +5,14 @@
     #include "../ast/decl.h"
     #include "../sema/typecheck.h"
 
+    struct YYLTYPE;
+
+    int yyerror(const char*);
+
+    namespace delta {
+
     #define yylex lex
     int lex();
-    int yyerror(const char*);
 
     /// The root of the abstract syntax tree, for passing from Bison to compiler.
     extern std::vector<Decl> globalAST;
@@ -16,7 +21,9 @@
     template<typename T>
     std::unique_ptr<T> u(T* ptr) { return std::unique_ptr<T>(ptr); }
 
-    SrcLoc loc(struct YYLTYPE);
+    SrcLoc loc(YYLTYPE);
+
+    }
 
     #pragma GCC diagnostic ignored "-Wunused-function"
 %}
@@ -114,25 +121,31 @@
 %union {
     char* string;
     long long number;
-    std::vector<Decl>* declList;
-    std::vector<ParamDecl>* paramDeclList;
-    std::vector<FieldDecl>* fieldDeclList;
-    std::vector<Stmt>* stmtList;
-    std::vector<Expr>* exprList;
-    std::vector<Arg>* argList;
-    Arg* arg;
-    Decl* decl;
-    ParamDecl* paramDecl;
-    FieldDecl* fieldDecl;
-    Stmt* stmt;
-    Expr* expr;
-    Type* type;
+    std::vector<delta::Decl>* declList;
+    std::vector<delta::ParamDecl>* paramDeclList;
+    std::vector<delta::FieldDecl>* fieldDeclList;
+    std::vector<delta::Stmt>* stmtList;
+    std::vector<delta::Expr>* exprList;
+    std::vector<delta::Arg>* argList;
+    delta::Arg* arg;
+    delta::Decl* decl;
+    delta::ParamDecl* paramDecl;
+    delta::FieldDecl* fieldDecl;
+    delta::Stmt* stmt;
+    delta::Expr* expr;
+    delta::Type* type;
 };
 
 %initial-action {
     yylloc.first_line = yylloc.last_line = 1;
     yylloc.first_column = yylloc.last_column = 0;
 }
+
+%{
+    #ifdef YYBISON // To prevent this from being put in the generated header.
+    using namespace delta;
+    #endif
+%}
 
 %%
 
@@ -364,9 +377,9 @@ int yyerror(const char* message) {
     return 1;
 }
 
-std::vector<Decl> globalAST;
+std::vector<Decl> delta::globalAST;
 
 #include "lexer.cpp"
 #include "operators.cpp"
 
-SrcLoc loc(YYLTYPE loc) { return SrcLoc(currentFileName, loc.first_line, loc.first_column); }
+SrcLoc delta::loc(YYLTYPE loc) { return SrcLoc(currentFileName, loc.first_line, loc.first_column); }

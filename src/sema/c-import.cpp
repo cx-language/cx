@@ -14,6 +14,8 @@
 #include "../ast/type.h"
 #include "../ast/decl.h"
 
+using namespace delta;
+
 namespace {
 
 clang::PrintingPolicy printingPolicy{clang::LangOptions()};
@@ -175,7 +177,7 @@ std::string getClangBuiltinIncludePath() {
 
 } // anonymous namespace
 
-void importCHeader(llvm::StringRef headerName) {
+void delta::importCHeader(llvm::StringRef headerName) {
     clang::CompilerInstance ci;
     clang::DiagnosticOptions diagnosticOptions;
     ci.createDiagnostics();

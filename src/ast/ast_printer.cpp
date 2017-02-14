@@ -4,6 +4,8 @@
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
 
+using namespace delta;
+
 namespace {
 
 int indentLevel = 0;
@@ -231,11 +233,11 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
 
 } // anonymous namespace
 
-std::ostream& operator<<(std::ostream& out, const AST& decls) {
+std::ostream& delta::operator<<(std::ostream& out, const AST& decls) {
     out << "(source-file";
     indentLevel++;
     for (const Decl& decl : decls) {
-        out << decl;
+        ::operator<<(out, decl);
     }
     indentLevel--;
     return out << ")\n";

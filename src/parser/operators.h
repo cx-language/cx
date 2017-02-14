@@ -1,5 +1,7 @@
 #pragma once
 
+namespace delta {
+
 struct PrefixOperator {
     PrefixOperator(int op) : rawValue(op) { }
     int rawValue;
@@ -13,3 +15,5 @@ struct BinaryOperator {
 
 std::ostream& operator<<(std::ostream&, PrefixOperator);
 std::ostream& operator<<(std::ostream&, BinaryOperator);
+
+}

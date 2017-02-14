@@ -5,6 +5,8 @@
 #include <boost/variant.hpp>
 #include "expr.h"
 
+namespace delta {
+
 struct VarDecl;
 class Stmt;
 
@@ -91,3 +93,5 @@ private:
     boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt,
         CallStmt, IfStmt, WhileStmt, AssignStmt> data;
 };
+
+}
