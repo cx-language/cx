@@ -1,5 +1,6 @@
 #include "decl.h"
 #include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/STLExtras.h>
 
 namespace {
 
@@ -20,6 +21,10 @@ FuncType FuncDecl::getFuncType() const {
 
 Type TypeDecl::getType() const {
     return BasicType{name};
+}
+
+Type TypeDecl::getTypeForPassing() const {
+    return tag == TypeTag::Struct ? getType() : PtrType{llvm::make_unique<Type>(getType()), true};
 }
 
 unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {

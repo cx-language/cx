@@ -213,9 +213,12 @@ Type typecheck(MemberExpr& expr) {
 
     Decl* typeDecl;
     switch (baseDecl.getKind()) {
-        case DeclKind::VarDecl:
-            typeDecl = &findInSymbolTable(baseDecl.getVarDecl().getType().getBasicType().name, SrcLoc::invalid());
+        case DeclKind::VarDecl: {
+            auto* baseType = &baseDecl.getVarDecl().getType();
+            if (baseType->isPtrType()) baseType = baseType->getPtrType().pointeeType.get();
+            typeDecl = &findInSymbolTable(baseType->getBasicType().name, SrcLoc::invalid());
             break;
+        }
         case DeclKind::ParamDecl:
             typeDecl = &findInSymbolTable(baseDecl.getParamDecl().type.getBasicType().name, SrcLoc::invalid());
             break;
@@ -450,7 +453,7 @@ void typecheckMemberFunc(FuncDecl& decl) {
     Decl& receiverType = findInSymbolTable(decl.receiverType, decl.srcLoc);
     if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
     symbolTable.emplace("this",
-        new Decl(VarDecl{receiverType.getTypeDecl().getType(), "this", nullptr, SrcLoc::invalid()}));
+        new Decl(VarDecl{receiverType.getTypeDecl().getTypeForPassing(), "this", nullptr, SrcLoc::invalid()}));
     for (ParamDecl& param : decl.params) typecheck(param);
     funcReturnType = &decl.returnType;
     for (Stmt& stmt : *decl.body) typecheck(stmt);

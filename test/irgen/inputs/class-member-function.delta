@@ -1,10 +1,10 @@
-struct Foo {
-    int baz;
+class Foo {
+    mutable int baz;
 }
 
 init Foo() { this.baz = 42; }
 
-func Foo::bar() { }
+func Foo::bar() { this.baz++; }
 
 func Foo::qux() -> int { return this.baz; }
 

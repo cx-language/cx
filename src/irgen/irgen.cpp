@@ -182,6 +182,14 @@ llvm::Value* codegen(const BinaryExpr& expr) {
 
 llvm::Function* getFunc(llvm::StringRef name);
 
+llvm::Value* codegenForPassing(const Expr& expr) {
+    const Type* thisType = &expr.getType();
+    if (thisType->isPtrType()) thisType = thisType->getPtrType().pointeeType.get();
+    auto it = structs.find(thisType->getBasicType().name);
+    assert(it != structs.end());
+    return it->second.second->passByValue() ? codegen(expr) : codegenLvalue(expr);
+}
+
 llvm::Value* codegen(const CallExpr& expr) {
     llvm::Function* func;
     if (expr.isInitializerCall) {
@@ -191,7 +199,7 @@ llvm::Value* codegen(const CallExpr& expr) {
     }
 
     llvm::SmallVector<llvm::Value*, 16> args;
-    if (expr.isMemberFuncCall()) args.emplace_back(codegen(*expr.receiver));
+    if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.receiver));
     for (const auto& arg : expr.args) args.emplace_back(codegen(*arg.value));
 
     return builder.CreateCall(func, args);
@@ -369,6 +377,15 @@ void codegen(const Stmt& stmt) {
     }
 }
 
+llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName) {
+    auto structTypeAndDecl = structs.find(typeName)->second;
+    if (structTypeAndDecl.second->passByValue()) {
+        return structTypeAndDecl.first;
+    } else {
+        return llvm::PointerType::get(structTypeAndDecl.first, 0);
+    }
+}
+
 llvm::Function* codegenFuncProto(const FuncDecl& decl) {
     const auto& funcType = decl.getFuncType();
 
@@ -377,7 +394,7 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl) {
     if (decl.name == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
-    if (decl.isMemberFunc()) paramTypes.emplace_back(structs.find(decl.receiverType)->second.first);
+    if (decl.isMemberFunc()) paramTypes.emplace_back(getLLVMTypeForPassing(decl.receiverType));
     for (const auto& t : funcType.paramTypes) paramTypes.emplace_back(toIR(t));
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);

@@ -9,24 +9,27 @@ define %Foo @__init_Foo() {
   ret %Foo %3
 }
 
-define void @bar(%Foo %this) {
+define void @bar(%Foo* %this) {
+  %1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
+  %2 = load i32, i32* %1
+  %3 = add i32 %2, 1
+  store i32 %3, i32* %1
   ret void
 }
 
-define i32 @qux(%Foo %this) {
-  %1 = extractvalue %Foo %this, 0
-  ret i32 %1
+define i32 @qux(%Foo* %this) {
+  %1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
+  %2 = load i32, i32* %1
+  ret i32 %2
 }
 
 define i32 @main() {
   %foo = alloca %Foo
   %1 = call %Foo @__init_Foo()
   store %Foo %1, %Foo* %foo
-  %foo1 = load %Foo, %Foo* %foo
-  call void @bar(%Foo %foo1)
+  call void @bar(%Foo* %foo)
   %i = alloca i32
-  %foo2 = load %Foo, %Foo* %foo
-  %2 = call i32 @qux(%Foo %foo2)
+  %2 = call i32 @qux(%Foo* %foo)
   store i32 %2, i32* %i
   ret i32 0
 }

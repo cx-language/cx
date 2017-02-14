@@ -64,6 +64,10 @@ struct TypeDecl {
     SrcLoc srcLoc;
 
     Type getType() const;
+    Type getTypeForPassing() const; /// 'T&' if this is class, or plain 'T' otherwise.
+    bool passByValue() const { return isStruct(); }
+    bool isStruct() const { return tag == TypeTag::Struct; }
+    bool isClass() const { return tag == TypeTag::Class; }
     unsigned getFieldIndex(llvm::StringRef fieldName) const;
 };
 

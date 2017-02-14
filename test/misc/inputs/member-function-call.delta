@@ -1,4 +1,4 @@
-struct Foo {
+class Foo {
     mutable int i;
 }
 
