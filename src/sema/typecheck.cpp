@@ -5,6 +5,7 @@
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/optional.hpp>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/STLExtras.h>
 #include "typecheck.h"
 #include "c-import.h"
 #include "../ast/type.h"
@@ -40,7 +41,8 @@ Type typecheck(VariableExpr& expr) {
 }
 
 Type typecheck(StrLiteralExpr& expr) {
-    return Type(PtrType{std::unique_ptr<Type>(new Type(BasicType{"char"})), true});
+    ArrayType arrayType{llvm::make_unique<Type>(BasicType{"char"}), int64_t(expr.value.size() + 1)};
+    return PtrType{llvm::make_unique<Type>(std::move(arrayType)), true};
 }
 
 Type typecheck(IntLiteralExpr& expr) {
@@ -118,6 +120,13 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
         if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
     } else if (expr.isNullLiteralExpr() && target.isPtrType() && !target.getPtrType().ref) {
+        expr.setType(target);
+        return true;
+    } else if (expr.isStrLiteralExpr() && target.isPtrType()
+               && target.getPtrType().pointeeType->isBasicType()
+               && target.getPtrType().pointeeType->getBasicType().name == "char"
+               && !target.getPtrType().pointeeType->isMutable()) {
+        // Special case: allow passing string literals as C-strings (const char*).
         expr.setType(target);
         return true;
     }

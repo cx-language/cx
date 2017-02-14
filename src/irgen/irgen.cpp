@@ -103,8 +103,13 @@ llvm::Value* codegenLvalue(const VariableExpr& expr) {
     return findValue(expr.identifier);
 }
 
-llvm::Value* codegen(const StrLiteralExpr& expr) {
-    return builder.CreateGlobalStringPtr(expr.value);
+llvm::Value* codegen(const StrLiteralExpr& expr, const Expr& parent) {
+    if (parent.getType().getPtrType().pointeeType->isArrayType()) {
+        return builder.CreateGlobalString(expr.value);
+    } else {
+        // Passing as C-string, i.e. char pointer.
+        return builder.CreateGlobalStringPtr(expr.value);
+    }
 }
 
 llvm::Value* codegen(const IntLiteralExpr& expr, const Expr& parent) {
@@ -248,7 +253,7 @@ llvm::Value* codegen(const SubscriptExpr& expr) {
 llvm::Value* codegen(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:    return codegen(expr.getVariableExpr());
-        case ExprKind::StrLiteralExpr:  return codegen(expr.getStrLiteralExpr());
+        case ExprKind::StrLiteralExpr:  return codegen(expr.getStrLiteralExpr(), expr);
         case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr(), expr);
         case ExprKind::BoolLiteralExpr: return codegen(expr.getBoolLiteralExpr());
         case ExprKind::NullLiteralExpr: return codegen(expr.getNullLiteralExpr(), expr);
