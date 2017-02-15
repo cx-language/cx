@@ -50,3 +50,4 @@ check_error untyped-null.delta 2:9 "couldn't infer type of 'foo', add a type ann
 check_error pointer-to-reference.delta 3:14 "cannot initialize variable of type 'int&' with 'int*'"
 check_error null-to-reference.delta 2:14 "cannot initialize variable of type 'int&' with 'null'"
 check_error compare-reference-to-null.delta 4:11 "invalid operands to binary expression ('int&' and 'null')"
+check_error implicit-class-copy.delta 5:9 "implicit copying of class instances is disallowed"

@@ -1,0 +1,6 @@
+class Foo { }
+
+func main() {
+    Foo f = uninitialized;
+    Foo f2 = f;
+}

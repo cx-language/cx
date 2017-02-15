@@ -135,6 +135,8 @@ public:
     ExprKind getKind() const { return static_cast<ExprKind>(data.which()); }
     const Type& getType() const { return *type; }
     void setType(Type t) { type = std::move(t); }
+    bool isLvalue() const;
+    bool isRvalue() const { return !isLvalue(); }
     SrcLoc getSrcLoc() const;
 
 private:
@@ -142,22 +144,5 @@ private:
         PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr, SubscriptExpr> data;
     boost::optional<Type> type;
 };
-
-// TODO: Move this to expr.cpp.
-inline SrcLoc Expr::getSrcLoc() const {
-    switch (getKind()) {
-        case ExprKind::VariableExpr:    return getVariableExpr().srcLoc;
-        case ExprKind::StrLiteralExpr:  return getStrLiteralExpr().srcLoc;
-        case ExprKind::IntLiteralExpr:  return getIntLiteralExpr().srcLoc;
-        case ExprKind::BoolLiteralExpr: return getBoolLiteralExpr().srcLoc;
-        case ExprKind::NullLiteralExpr: return getNullLiteralExpr().srcLoc;
-        case ExprKind::PrefixExpr:      return getPrefixExpr().srcLoc;
-        case ExprKind::BinaryExpr:      return getBinaryExpr().srcLoc;
-        case ExprKind::CallExpr:        return getCallExpr().srcLoc;
-        case ExprKind::CastExpr:        return getCastExpr().srcLoc;
-        case ExprKind::MemberExpr:      return getMemberExpr().baseSrcLoc;
-        case ExprKind::SubscriptExpr:   return getSubscriptExpr().srcLoc;
-    }
-}
 
 }

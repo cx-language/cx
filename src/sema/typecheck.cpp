@@ -490,6 +490,12 @@ void typecheck(TypeDecl& decl) {
     // TODO
 }
 
+TypeDecl* getTypeDecl(const BasicType& type) {
+    auto it = symbolTable.find(type.name);
+    if (it == symbolTable.end()) return nullptr;
+    return &it->second->getTypeDecl();
+}
+
 void typecheck(VarDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
@@ -499,6 +505,12 @@ void typecheck(VarDecl& decl) {
         initType = &typecheck(*decl.initializer);
         if (initType->isFuncType()) {
             error(decl.initializer->getSrcLoc(), "function pointers not implemented yet");
+        }
+        if (decl.initializer->isLvalue() && initType->isBasicType()) {
+            TypeDecl* typeDecl = getTypeDecl(initType->getBasicType());
+            if (typeDecl && !typeDecl->passByValue()) {
+                error(decl.srcLoc, "implicit copying of class instances is disallowed");
+            }
         }
     }
     if (auto declaredType = decl.getDeclaredType()) {
