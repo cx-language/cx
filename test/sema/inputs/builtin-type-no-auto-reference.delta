@@ -1,0 +1,5 @@
+func foo(int& ref_i) { }
+func main() {
+    int i = 42;
+    foo(i);
+}

@@ -51,3 +51,5 @@ check_error pointer-to-reference.delta 3:14 "cannot initialize variable of type 
 check_error null-to-reference.delta 2:14 "cannot initialize variable of type 'int&' with 'null'"
 check_error compare-reference-to-null.delta 4:11 "invalid operands to binary expression ('int&' and 'null')"
 check_error implicit-class-copy.delta 5:9 "implicit copying of class instances is disallowed"
+check_error builtin-type-no-auto-reference.delta 4:9 "cannot implicitly pass value types by reference, add explicit '&'"
+check_error struct-no-auto-reference.delta 5:9 "cannot implicitly pass value types by reference, add explicit '&'"

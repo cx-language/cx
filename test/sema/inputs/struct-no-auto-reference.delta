@@ -1,0 +1,6 @@
+struct Foo { int i; }
+func foo(Foo* ref_f) { }
+func main() {
+    Foo f = uninitialized;
+    foo(f);
+}

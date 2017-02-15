@@ -190,11 +190,12 @@ llvm::Value* codegen(const BinaryExpr& expr) {
 llvm::Function* getFunc(llvm::StringRef name);
 
 llvm::Value* codegenForPassing(const Expr& expr) {
+    if (expr.isRvalue() || expr.isStrLiteralExpr()) return codegen(expr);
     const Type* thisType = &expr.getType();
     if (thisType->isPtrType()) thisType = thisType->getPtrType().pointeeType.get();
     auto it = structs.find(thisType->getBasicType().name);
-    assert(it != structs.end());
-    return it->second.second->passByValue() ? codegen(expr) : codegenLvalue(expr);
+    if (it == structs.end() || it->second.second->passByValue()) return codegen(expr);
+    return codegenLvalue(expr);
 }
 
 llvm::Value* codegen(const CallExpr& expr) {
@@ -207,7 +208,7 @@ llvm::Value* codegen(const CallExpr& expr) {
 
     llvm::SmallVector<llvm::Value*, 16> args;
     if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.receiver));
-    for (const auto& arg : expr.args) args.emplace_back(codegen(*arg.value));
+    for (const auto& arg : expr.args) args.emplace_back(codegenForPassing(*arg.value));
 
     return builder.CreateCall(func, args);
 }
@@ -298,7 +299,7 @@ void codegen(const VariableStmt& stmt) {
     setLocalValue(stmt.decl->name, alloca);
 
     if (auto initializer = stmt.decl->initializer) {
-        builder.CreateStore(codegen(*initializer), alloca);
+        builder.CreateStore(codegenForPassing(*initializer), alloca);
     }
 }
 

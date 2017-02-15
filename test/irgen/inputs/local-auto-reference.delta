@@ -1,0 +1,6 @@
+class Foo { int i; }
+func main() {
+    Foo f = uninitialized;
+    Foo& rf = f;
+    Foo* pf = f;
+}

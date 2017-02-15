@@ -91,6 +91,8 @@ Type typecheck(BinaryExpr& expr) {
     return expr.op.isComparisonOperator() ? Type(BasicType{"bool"}) : leftType;
 }
 
+TypeDecl* getTypeDecl(const BasicType& type);
+
 template<typename IntType>
 bool checkRange(Expr& expr, int64_t value, boost::string_ref param) {
     try {
@@ -129,6 +131,12 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
         // Special case: allow passing string literals as C-strings (const char*).
         expr.setType(target);
         return true;
+    } else if (expr.isLvalue() && source.isBasicType() && target.isPtrType()) {
+        auto typeDecl = getTypeDecl(source.getBasicType());
+        if (!typeDecl || typeDecl->passByValue()) {
+            error(expr.getSrcLoc(), "cannot implicitly pass value types by reference, add explicit '&'");
+        }
+        if (source.isImplicitlyConvertibleTo(*target.getPtrType().pointeeType)) return true;
     }
 
     return false;
@@ -508,7 +516,8 @@ void typecheck(VarDecl& decl) {
         }
         if (decl.initializer->isLvalue() && initType->isBasicType()) {
             TypeDecl* typeDecl = getTypeDecl(initType->getBasicType());
-            if (typeDecl && !typeDecl->passByValue()) {
+            if (typeDecl && !typeDecl->passByValue()
+            && (!decl.getDeclaredType() || !decl.getDeclaredType()->isPtrType())) {
                 error(decl.srcLoc, "implicit copying of class instances is disallowed");
             }
         }
