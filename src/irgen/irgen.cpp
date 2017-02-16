@@ -227,6 +227,10 @@ llvm::Value* codegenLvalue(const MemberExpr& expr) {
     auto baseType = value->getType();
     if (baseType->isPointerTy()) {
         baseType = baseType->getPointerElementType();
+        if (baseType->isPointerTy()) {
+            baseType = baseType->getPointerElementType();
+            value = builder.CreateLoad(value);
+        }
         auto index = structs.find(baseType->getStructName())->second.second->getFieldIndex(expr.member);
         return builder.CreateStructGEP(nullptr, value, index);
     } else {

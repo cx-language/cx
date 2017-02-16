@@ -1,0 +1,13 @@
+class Foo {
+    int i;
+}
+
+func get(Foo& f) {
+    var m = f.i;
+}
+
+func main() {
+    Foo f = uninitialized;
+    Foo& rf = f;
+    var n = rf.i;
+}

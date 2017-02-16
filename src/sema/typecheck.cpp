@@ -236,22 +236,17 @@ const Type& typecheck(CastExpr& expr) {
 Type typecheck(MemberExpr& expr) {
     Decl& baseDecl = findInSymbolTable(expr.base, expr.baseSrcLoc);
 
-    Decl* typeDecl;
+    const Type* baseType;
     switch (baseDecl.getKind()) {
-        case DeclKind::VarDecl: {
-            auto* baseType = &baseDecl.getVarDecl().getType();
-            if (baseType->isPtrType()) baseType = baseType->getPtrType().pointeeType.get();
-            typeDecl = &findInSymbolTable(baseType->getBasicType().name, SrcLoc::invalid());
-            break;
-        }
-        case DeclKind::ParamDecl:
-            typeDecl = &findInSymbolTable(baseDecl.getParamDecl().type.getBasicType().name, SrcLoc::invalid());
-            break;
-        default:
-            error(expr.baseSrcLoc, "'", expr.base, "' doesn't support member access");
+        case DeclKind::VarDecl:   baseType = &baseDecl.getVarDecl().getType(); break;
+        case DeclKind::ParamDecl: baseType = &baseDecl.getParamDecl().type; break;
+        default: error(expr.baseSrcLoc, "'", expr.base, "' doesn't support member access");
     }
 
-    for (const FieldDecl& field : typeDecl->getTypeDecl().fields) {
+    if (baseType->isPtrType()) baseType = baseType->getPtrType().pointeeType.get();
+    Decl& typeDecl = findInSymbolTable(baseType->getBasicType().name, SrcLoc::invalid());
+
+    for (const FieldDecl& field : typeDecl.getTypeDecl().fields) {
         if (field.name == expr.member) {
             return field.type;
         }
