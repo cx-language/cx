@@ -55,3 +55,5 @@ check_error implicit-class-copy-to-parameter.delta 5:9 "implicit copying of clas
 check_error builtin-type-no-auto-reference.delta 4:9 "cannot implicitly pass value types by reference, add explicit '&'"
 check_error struct-no-auto-reference.delta 5:9 "cannot implicitly pass value types by reference, add explicit '&'"
 check_error invalid-operand-to-logical-not.delta 3:10 "invalid operand type 'int' to logical not"
+check_error invalid-operands-to-logical-and.delta 4:13 "invalid operands to binary expression ('int' and 'bool')"
+check_error invalid-operands-to-logical-or.delta 4:13 "invalid operands to binary expression ('bool' and 'int')"

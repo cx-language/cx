@@ -1,0 +1,5 @@
+func main() {
+    var foo = false;
+    var bar = 0;
+    if (foo || bar) { }
+}

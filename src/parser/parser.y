@@ -342,6 +342,8 @@ binary_expression: expression "+"  expression { $$ = new Expr(BinaryExpr{PLUS, u
 binary_expression: expression "-"  expression { $$ = new Expr(BinaryExpr{MINUS, u($1), u($3), loc(@2)}); };
 binary_expression: expression "*"  expression { $$ = new Expr(BinaryExpr{STAR, u($1), u($3), loc(@2)}); };
 binary_expression: expression "/"  expression { $$ = new Expr(BinaryExpr{SLASH, u($1), u($3), loc(@2)}); };
+binary_expression: expression "&&"  expression { $$ = new Expr(BinaryExpr{AND_AND, u($1), u($3), loc(@2)}); };
+binary_expression: expression "||"  expression { $$ = new Expr(BinaryExpr{OR_OR, u($1), u($3), loc(@2)}); };
 
 parenthesized_expression: "(" expression ")" { $$ = $2; };
 

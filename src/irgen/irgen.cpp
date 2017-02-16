@@ -173,6 +173,44 @@ llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateDivFunc intFunc) {
     return (builder.*intFunc)(lhs, rhs, "", false);
 }
 
+llvm::Value* codegenLogicalAnd(const BinaryExpr& expr) {
+    auto* lhsBlock = builder.GetInsertBlock();
+    auto* rhsBlock = llvm::BasicBlock::Create(ctx, "andRHS", builder.GetInsertBlock()->getParent());
+    auto* endBlock = llvm::BasicBlock::Create(ctx, "andEnd", builder.GetInsertBlock()->getParent());
+
+    llvm::Value* lhs = codegen(*expr.left);
+    builder.CreateCondBr(lhs, rhsBlock, endBlock);
+
+    builder.SetInsertPoint(rhsBlock);
+    llvm::Value* rhs = codegen(*expr.right);
+    builder.CreateBr(endBlock);
+
+    builder.SetInsertPoint(endBlock);
+    llvm::PHINode* phi = builder.CreatePHI(llvm::IntegerType::getInt1Ty(ctx), 2, "and");
+    phi->addIncoming(lhs, lhsBlock);
+    phi->addIncoming(rhs, rhsBlock);
+    return phi;
+}
+
+llvm::Value* codegenLogicalOr(const BinaryExpr& expr) {
+    auto* lhsBlock = builder.GetInsertBlock();
+    auto* rhsBlock = llvm::BasicBlock::Create(ctx, "orRHS", builder.GetInsertBlock()->getParent());
+    auto* endBlock = llvm::BasicBlock::Create(ctx, "orEnd", builder.GetInsertBlock()->getParent());
+
+    llvm::Value* lhs = codegen(*expr.left);
+    builder.CreateCondBr(lhs, endBlock, rhsBlock);
+
+    builder.SetInsertPoint(rhsBlock);
+    llvm::Value* rhs = codegen(*expr.right);
+    builder.CreateBr(endBlock);
+
+    builder.SetInsertPoint(endBlock);
+    llvm::PHINode* phi = builder.CreatePHI(llvm::IntegerType::getInt1Ty(ctx), 2, "or");
+    phi->addIncoming(lhs, lhsBlock);
+    phi->addIncoming(rhs, rhsBlock);
+    return phi;
+}
+
 llvm::Value* codegen(const BinaryExpr& expr) {
     assert(expr.left->getType().isImplicitlyConvertibleTo(expr.right->getType())
         || expr.right->getType().isImplicitlyConvertibleTo(expr.left->getType()));
@@ -188,6 +226,8 @@ llvm::Value* codegen(const BinaryExpr& expr) {
         case MINUS: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSub);
         case STAR:  return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateMul);
         case SLASH: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSDiv);
+        case AND_AND: return codegenLogicalAnd(expr);
+        case OR_OR:   return codegenLogicalOr(expr);
         default: assert(false);
     }
 }

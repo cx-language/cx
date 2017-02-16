@@ -1,0 +1,5 @@
+func main() {
+    var foo = 0;
+    var bar = true;
+    if (foo && bar) { }
+}

@@ -3,7 +3,7 @@
 bool BinaryOperator::isComparisonOperator() const {
     switch (rawValue) {
         case EQ: case NE: case LT: case LE: case GT: case GE: return true;
-        case PLUS: case MINUS: case STAR: case SLASH: return false;
+        case PLUS: case MINUS: case STAR: case SLASH: case AND_AND: case OR_OR: return false;
     }
     assert(false);
 }
@@ -31,6 +31,8 @@ std::ostream& delta::operator<<(std::ostream& out, BinaryOperator op) {
         case MINUS: return out << "-";
         case STAR:  return out << "*";
         case SLASH: return out << "/";
+        case AND_AND: return out << "&&";
+        case OR_OR:   return out << "||";
         default: assert(false);
     }
 }

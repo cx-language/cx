@@ -89,8 +89,17 @@ Type typecheck(PrefixExpr& expr) {
 bool isValidConversion(Expr&, const Type&, const Type&);
 
 Type typecheck(BinaryExpr& expr) {
-    Type leftType = typecheck(*expr.left);
-    Type rightType = typecheck(*expr.right);
+    const Type& leftType = typecheck(*expr.left);
+    const Type& rightType = typecheck(*expr.right);
+
+    if (expr.op.rawValue == AND_AND || expr.op.rawValue == OR_OR) {
+        if (leftType.isBasicType() && leftType.getBasicType().name == "bool"
+        &&  rightType.isBasicType() && rightType.getBasicType().name == "bool") {
+            return Type(BasicType{"bool"});
+        }
+        error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
+    }
+
     if (!isValidConversion(*expr.left, leftType, rightType)
     &&  !isValidConversion(*expr.right, rightType, leftType)) {
         error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
