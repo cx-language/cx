@@ -105,6 +105,12 @@ bool checkRange(Expr& expr, int64_t value, boost::string_ref param) {
 }
 
 bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
+    if (expr.isLvalue() && source.isBasicType()) {
+        TypeDecl* typeDecl = getTypeDecl(source.getBasicType());
+        if (typeDecl && !typeDecl->passByValue() && !target.isPtrType()) {
+            error(expr.getSrcLoc(), "implicit copying of class instances is disallowed");
+        }
+    }
     if (source.isImplicitlyConvertibleTo(target)) return true;
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
@@ -513,13 +519,6 @@ void typecheck(VarDecl& decl) {
         initType = &typecheck(*decl.initializer);
         if (initType->isFuncType()) {
             error(decl.initializer->getSrcLoc(), "function pointers not implemented yet");
-        }
-        if (decl.initializer->isLvalue() && initType->isBasicType()) {
-            TypeDecl* typeDecl = getTypeDecl(initType->getBasicType());
-            if (typeDecl && !typeDecl->passByValue()
-            && (!decl.getDeclaredType() || !decl.getDeclaredType()->isPtrType())) {
-                error(decl.srcLoc, "implicit copying of class instances is disallowed");
-            }
         }
     }
     if (auto declaredType = decl.getDeclaredType()) {
