@@ -331,6 +331,7 @@ prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2), loc(@1
 prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2), loc(@1)}); };
 prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{STAR, u($2), loc(@1)}); };
 prefix_expression: "&" expression { $$ = new Expr(PrefixExpr{AND, u($2), loc(@1)}); };
+prefix_expression: "!" expression { $$ = new Expr(PrefixExpr{NOT, u($2), loc(@1)}); };
 binary_expression: expression "==" expression { $$ = new Expr(BinaryExpr{EQ, u($1), u($3), loc(@2)}); };
 binary_expression: expression "!=" expression { $$ = new Expr(BinaryExpr{NE, u($1), u($3), loc(@2)}); };
 binary_expression: expression "<"  expression { $$ = new Expr(BinaryExpr{LT, u($1), u($3), loc(@2)}); };

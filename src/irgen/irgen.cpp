@@ -133,12 +133,17 @@ llvm::Value* codegenPrefixOp(const PrefixExpr& expr, CreateNegFunc intFunc) {
     return (builder.*intFunc)(codegen(*expr.operand), "", false, false);
 }
 
+llvm::Value* codegenNot(const PrefixExpr& expr) {
+    return builder.CreateNot(codegen(*expr.operand), "");
+}
+
 llvm::Value* codegen(const PrefixExpr& expr) {
     switch (expr.op.rawValue) {
         case PLUS:  return codegen(*expr.operand);
         case MINUS: return codegenPrefixOp(expr, &llvm::IRBuilder<>::CreateNeg);
         case STAR:  return builder.CreateLoad(codegen(*expr.operand));
         case AND:   return codegenLvalue(*expr.operand);
+        case NOT:   return codegenNot(expr);
         default:    assert(false);
     }
 }

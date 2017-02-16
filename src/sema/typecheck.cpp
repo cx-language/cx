@@ -66,17 +66,24 @@ Type typecheck(NullLiteralExpr&) {
 }
 
 Type typecheck(PrefixExpr& expr) {
+    const Type& operandType = typecheck(*expr.operand);
+
+    if (expr.op.rawValue == NOT) {
+        if (!operandType.isBasicType() || operandType.getBasicType().name != "bool") {
+            error(expr.operand->getSrcLoc(), "invalid operand type '", operandType, "' to logical not");
+        }
+        return operandType;
+    }
     if (expr.op.rawValue == STAR) { // Dereference operation
-        auto operandType = typecheck(*expr.operand);
         if (!operandType.isPtrType()) {
             error(expr.operand->getSrcLoc(), "cannot dereference non-pointer type '", operandType, "'");
         }
         return *operandType.getPtrType().pointeeType;
     }
     if (expr.op.rawValue == AND) { // Address-of operation
-        return Type(PtrType{std::unique_ptr<Type>(new Type(typecheck(*expr.operand))), true});
+        return Type(PtrType{llvm::make_unique<Type>(operandType), true});
     }
-    return typecheck(*expr.operand);
+    return operandType;
 }
 
 bool isValidConversion(Expr&, const Type&, const Type&);

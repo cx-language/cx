@@ -54,3 +54,4 @@ check_error implicit-class-copy.delta 5:14 "implicit copying of class instances 
 check_error implicit-class-copy-to-parameter.delta 5:9 "implicit copying of class instances is disallowed"
 check_error builtin-type-no-auto-reference.delta 4:9 "cannot implicitly pass value types by reference, add explicit '&'"
 check_error struct-no-auto-reference.delta 5:9 "cannot implicitly pass value types by reference, add explicit '&'"
+check_error invalid-operand-to-logical-not.delta 3:10 "invalid operand type 'int' to logical not"

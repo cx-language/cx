@@ -14,6 +14,7 @@ std::ostream& delta::operator<<(std::ostream& out, PrefixOperator op) {
         case MINUS: return out << "-";
         case STAR:  return out << "*";
         case AND:   return out << "&";
+        case NOT:   return out << "!";
         default: assert(false);
     }
 }
