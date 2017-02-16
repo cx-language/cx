@@ -1,0 +1,10 @@
+class Foo { int i; }
+func Foo::foo() { }
+
+struct Bar { int i; }
+func Bar::bar() { }
+
+func qux(Foo& f, Bar& b) {
+    f.foo();
+    b.bar();
+}

@@ -189,13 +189,20 @@ llvm::Value* codegen(const BinaryExpr& expr) {
 
 llvm::Function* getFunc(llvm::StringRef name);
 
-llvm::Value* codegenForPassing(const Expr& expr) {
+llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullptr) {
     if (expr.isRvalue() || expr.isStrLiteralExpr()) return codegen(expr);
-    const Type* thisType = &expr.getType();
-    if (thisType->isPtrType()) thisType = thisType->getPtrType().pointeeType.get();
-    auto it = structs.find(thisType->getBasicType().name);
-    if (it == structs.end() || it->second.second->passByValue()) return codegen(expr);
-    return codegenLvalue(expr);
+    const Type* exprType = &expr.getType();
+    if (exprType->isPtrType()) exprType = exprType->getPtrType().pointeeType.get();
+
+    auto it = structs.find(exprType->getBasicType().name);
+    if (it == structs.end() || it->second.second->passByValue()) {
+        if (expr.getType().isPtrType() && !targetType->isPointerTy()) {
+            return builder.CreateLoad(codegen(expr));
+        }
+    } else if (!expr.getType().isPtrType()) {
+        return codegenLvalue(expr);
+    }
+    return codegen(expr);
 }
 
 llvm::Value* codegen(const CallExpr& expr) {
@@ -206,9 +213,10 @@ llvm::Value* codegen(const CallExpr& expr) {
         func = getFunc(expr.funcName);
     }
 
+    auto param = func->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
-    if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.receiver));
-    for (const auto& arg : expr.args) args.emplace_back(codegenForPassing(*arg.value));
+    if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.receiver, param++->getType()));
+    for (const auto& arg : expr.args) args.emplace_back(codegenForPassing(*arg.value, param++->getType()));
 
     return builder.CreateCall(func, args);
 }

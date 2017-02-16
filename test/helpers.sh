@@ -4,7 +4,8 @@ compile_successfully() {
     compiler_stdout=$($path_to_delta inputs/$1 "${@:2}")
 
     if [ $? -ne 0 ]; then
-        echo "FAILED: $compiler_stdout"
+        echo "FAILED: $1"
+        echo "output: $compiler_stdout"
         exit 1
     fi
 }

@@ -1,0 +1,7 @@
+class Foo { int i; }
+func Foo::bar() { }
+func main() {
+    Foo f = uninitialized;
+    Foo& rf = f;
+    rf.bar();
+}
