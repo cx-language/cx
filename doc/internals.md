@@ -27,5 +27,5 @@ following components:
    native code:
    - __IRGen__ to first generate [LLVM](http://llvm.org) IR (intermediate
      representation), and then have LLVM generate the machine code for it.
-   - __CGen__ to generate (minified) C code, that we can then pass on to any C
-     compiler to handle the machine code generation.
+   - __CGen__ (obsolete) to generate (minified) C code, that we can then pass on
+     to any C compiler to handle the machine code generation.

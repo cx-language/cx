@@ -13,7 +13,6 @@
 #include "../ast/decl.h"
 #include "../parser/parser.hpp"
 #include "../sema/typecheck.h"
-#include "../cgen/codegen.h"
 #include "../irgen/irgen.h"
 
 using namespace delta;
@@ -90,7 +89,6 @@ int main(int argc, char** argv) {
     const bool compileOnly = checkFlag("-c", args);
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
-    const bool codegenC = checkFlag("-codegen=c", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
 
     for (boost::string_ref filePath : args) {
@@ -115,28 +113,21 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    std::string outputFile;
+    auto& module = irgen::compile(globalAST);
 
-    if (!codegenC) {
-        auto& module = irgen::compile(globalAST);
-
-        if (outputToStdout) {
-            module.print(llvm::outs(), nullptr);
-            return 0;
-        }
-
-        outputFile = emitAssembly ? "output.s" : "output.o";
-        auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
-                                     : llvm::TargetMachine::CGFT_ObjectFile;
-        emitMachineCode(module, outputFile, fileType);
-    } else {
-        outputFile = "output.c";
-        cgen::compile(globalAST, outputToStdout ? "stdout" : outputFile);
+    if (outputToStdout) {
+        module.print(llvm::outs(), nullptr);
+        return 0;
     }
+
+    std::string outputFile = emitAssembly ? "output.s" : "output.o";
+    auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
+                                 : llvm::TargetMachine::CGFT_ObjectFile;
+    emitMachineCode(module, outputFile, fileType);
 
     if (compileOnly || emitAssembly) return 0;
 
-    // Compile (if it's C) and link the output.
+    // Link the output.
     int ccExitStatus = std::system(("cc " + outputFile).c_str());
     std::remove(outputFile.c_str());
     return ccExitStatus;

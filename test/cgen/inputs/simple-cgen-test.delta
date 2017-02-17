@@ -1,8 +1,0 @@
-const a = 42;
-
-func main() -> int {
-    var i = 21;
-    i++;
-    var j = i * 2;
-    return a - (j + -0b010);
-}
