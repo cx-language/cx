@@ -392,6 +392,42 @@ lightweight syntax.
 
 #### Member functions
 
+Member functions are just like normal functions, except that they receive an
+additional parameter (called the "receiver") on the left-hand-side of the
+function call, separated by a period:
+
+> _member-function-call_ → _receiver_ `.` _member-function-name_ `(` _argument-list_ `)`<br>
+
+Member functions are defined as follows:
+
+> _member-function-definition_ → `func` _receiver-type_ `::` _member-function-name_ `(` _parameter-list_ `)` `{` _body_ `}`<br>
+> _member-function-definition_ → `func` _receiver-type_ `::` _member-function-name_ `(` _parameter-list_ `)` `->` _return-type_ `{` _body_ `}`<br>
+
+Inside member functions, the receiver can be accessed with the keyword `this`.
+
+##### Initializers
+
+Initializers are a special kind of member functions that are used for
+initializing newly created objects.
+
+> _initializer-definition_ → _receiver-type_ `::` `init` `(` _parameter-list_ `)` `{` _body_ `}`<br>
+
+Initializers can be invoked with the following syntax:
+
+> _initializer-call_ → _receiver-type_ `(` _argument-list_ `)`<br>
+
+The _initializer-call_ expression returns a new instance of the specified
+_receiver-type_ that has been initialized by calling the initializer function
+with a matching parameter list.
+
+##### Deinitializers
+
+Deinitializers are automatically called on objects when they're destroyed. They
+can be used e.g. to deallocate resources allocated in an initializer. They are
+declared as follows:
+
+> _deinitializer-definition_ → _receiver-type_ `::` `deinit` `(` `)` `{` _body_ `}`<br>
+
 #### Parameters
 
 Unlike C++ and C, Delta is not a copy-by-default language. When you declare a
@@ -498,6 +534,7 @@ syntactic sugar for `+= 1` and `-= 1`, respectively.
 ### `if` statement
 
 > _if-statement_ → `if` `(` _expression_ `)` _block_ ( `else` _block_ )<sub>opt</sub><br>
+> _if-statement_ → `if` `(` _expression_ `)` _block_ `else` _if-statement_<br>
 
 ### `return` statement
 
