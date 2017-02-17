@@ -1,0 +1,21 @@
+func and(int a, int b) -> int {
+    return a & b;
+}
+func or(int a, int b) -> int {
+    return a | b;
+}
+func xor(int a, int b) -> int {
+    return a ^ b;
+}
+func shl(int a, int b) -> int {
+    return a << b;
+}
+func ashr(int a, int b) -> int {
+    return a >> b;
+}
+func lshr(uint a, uint b) -> uint {
+    return a >> b;
+}
+func compl(int a) -> int {
+    return ~a;
+}

@@ -195,6 +195,10 @@ int delta::lex() {
                 if (ch == '|') return OR_OR;
                 unreadChar(ch);
                 return OR;
+            case '^':
+                return XOR;
+            case '~':
+                return COMPL;
             case '(': return LPAREN;
             case ')': return RPAREN;
             case '[': return LBRACKET;

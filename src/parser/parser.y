@@ -70,6 +70,8 @@
 %token AND_AND  "&&"
 %token OR       "|"
 %token OR_OR    "||"
+%token XOR      "^"
+%token COMPL    "~"
 %token LSHIFT   "<<"
 %token RSHIFT   ">>"
 
@@ -332,6 +334,7 @@ prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2), loc(@
 prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{STAR, u($2), loc(@1)}); };
 prefix_expression: "&" expression { $$ = new Expr(PrefixExpr{AND, u($2), loc(@1)}); };
 prefix_expression: "!" expression { $$ = new Expr(PrefixExpr{NOT, u($2), loc(@1)}); };
+prefix_expression: "~" expression { $$ = new Expr(PrefixExpr{COMPL, u($2), loc(@1)}); };
 binary_expression: expression "==" expression { $$ = new Expr(BinaryExpr{EQ, u($1), u($3), loc(@2)}); };
 binary_expression: expression "!=" expression { $$ = new Expr(BinaryExpr{NE, u($1), u($3), loc(@2)}); };
 binary_expression: expression "<"  expression { $$ = new Expr(BinaryExpr{LT, u($1), u($3), loc(@2)}); };
@@ -342,8 +345,13 @@ binary_expression: expression "+"  expression { $$ = new Expr(BinaryExpr{PLUS, u
 binary_expression: expression "-"  expression { $$ = new Expr(BinaryExpr{MINUS, u($1), u($3), loc(@2)}); };
 binary_expression: expression "*"  expression { $$ = new Expr(BinaryExpr{STAR, u($1), u($3), loc(@2)}); };
 binary_expression: expression "/"  expression { $$ = new Expr(BinaryExpr{SLASH, u($1), u($3), loc(@2)}); };
-binary_expression: expression "&&"  expression { $$ = new Expr(BinaryExpr{AND_AND, u($1), u($3), loc(@2)}); };
-binary_expression: expression "||"  expression { $$ = new Expr(BinaryExpr{OR_OR, u($1), u($3), loc(@2)}); };
+binary_expression: expression "&"  expression { $$ = new Expr(BinaryExpr{AND, u($1), u($3), loc(@2)}); };
+binary_expression: expression "&&" expression { $$ = new Expr(BinaryExpr{AND_AND, u($1), u($3), loc(@2)}); };
+binary_expression: expression "|"  expression { $$ = new Expr(BinaryExpr{OR, u($1), u($3), loc(@2)}); };
+binary_expression: expression "||" expression { $$ = new Expr(BinaryExpr{OR_OR, u($1), u($3), loc(@2)}); };
+binary_expression: expression "^"  expression { $$ = new Expr(BinaryExpr{XOR, u($1), u($3), loc(@2)}); };
+binary_expression: expression "<<" expression { $$ = new Expr(BinaryExpr{LSHIFT, u($1), u($3), loc(@2)}); };
+binary_expression: expression ">>" expression { $$ = new Expr(BinaryExpr{RSHIFT, u($1), u($3), loc(@2)}); };
 
 parenthesized_expression: "(" expression ")" { $$ = $2; };
 

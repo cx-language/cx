@@ -144,6 +144,7 @@ llvm::Value* codegen(const PrefixExpr& expr) {
         case STAR:  return builder.CreateLoad(codegen(*expr.operand));
         case AND:   return codegenLvalue(*expr.operand);
         case NOT:   return codegenNot(expr);
+        case COMPL: return codegenNot(expr);
         default:    assert(false);
     }
 }
@@ -226,6 +227,15 @@ llvm::Value* codegen(const BinaryExpr& expr) {
         case MINUS: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSub);
         case STAR:  return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateMul);
         case SLASH: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSDiv);
+        case AND:   return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAnd);
+        case OR:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateOr);
+        case XOR:   return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateXor);
+        case LSHIFT:return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateShl);
+        case RSHIFT:
+            if (expr.left->getType().isSigned())
+                return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAShr);
+            else
+                return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateLShr);
         case AND_AND: return codegenLogicalAnd(expr);
         case OR_OR:   return codegenLogicalOr(expr);
         default: assert(false);
