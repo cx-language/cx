@@ -49,7 +49,6 @@ The following keywords are reserved and can't be used as identifiers.
     cast
     catch
     class
-    concept
     const
     continue
     default
@@ -67,6 +66,7 @@ The following keywords are reserved and can't be used as identifiers.
     import
     init
     inout
+    interface
     move
     mutable
     mutating
@@ -285,12 +285,12 @@ Sometimes it's useful to explicitly pass structs by reference, for example in
 order to modify them inside the function, and have the changes affect the actual
 value outside the function. This can be accomplished by using the `inout` keyword.
 
-### Concept types
+### Interface types
 
-The `concept` keyword declares a concept, i.e. a set of requirements (member
-functions and properties). Types that fulfill the requirements of a concept `C`
-can be used as values for a variable of type `C`. This enables runtime
-polymorphism. Like classes and structs, concepts may be generic.
+The `interface` keyword declares an interface, i.e. a set of requirements (member
+functions and properties). Types that fulfill the requirements of an interface
+`I` can be used as values for a variable of type `I`. This enables runtime
+polymorphism. Like classes and structs, interfaces may be generic.
 
 ### Optional type
 
@@ -423,14 +423,14 @@ Classes are defined as follows:
 > _class-definition_ → `class` _class-name_ `{` _member-list_ `}`<br>
 
 _class-name_ becomes the name of the class. _member-list_ is a list of member
-variable declarations. Classes can be declared to satisfy concepts by
-listing the concepts after a `:` following the class name:
+variable declarations. Classes can be declared to implement interfaces by
+listing the interfaces after a `:` following the class name:
 
-> `class` _class-name_ `:` _concept-list_ `{` _member-list_ `}`<br>
+> `class` _class-name_ `:` _interface-list_ `{` _member-list_ `}`<br>
 
-The _concept-list_ is a comma-separated list of one or more concept names. The
-compiler will emit an error if the class doesn't actually satisfy the listed
-concepts.
+The _interface-list_ is a comma-separated list of one or more interface names.
+The compiler will emit an error if the class doesn't actually implement the
+specified interfaces.
 
 #### Generic classes
 
@@ -464,16 +464,16 @@ allowed. This can be used to create type-safe abstractions.
 
 > _alias-declaration_ → `class` _identifier_ `=` _class-name_ `;`<br>
 > _alias-declaration_ → `struct` _identifier_ `=` _struct-name_ `;`<br>
-> _alias-declaration_ → `concept` _identifier_ `=` _concept-name_ `;`<br>
+> _alias-declaration_ → `interface` _identifier_ `=` _interface-name_ `;`<br>
 
 Type aliases can also be generic:
 
 > _generic-alias-declaration_ → `class` _identifier_ `<` _generic-parameter-list_ `>` `=` _class-name_ `;`<br>
 > _generic-alias-declaration_ → `struct` _identifier_ `<` _generic-parameter-list_ `>` `=` _struct-name_ `;`<br>
-> _generic-alias-declaration_ → `concept` _identifier_ `<` _generic-parameter-list_ `>` `=` _concept-name_ `;`<br>
+> _generic-alias-declaration_ → `interface` _identifier_ `<` _generic-parameter-list_ `>` `=` _interface-name_ `;`<br>
 
 Generic parameters declared in the _generic-parameter-list_ are available for
-use in the _class-name_ / _struct-name_ / _concept-name_ part.
+use in the _class-name_ / _struct-name_ / _interface-name_ part.
 
 ## Statements
 
