@@ -1,5 +1,5 @@
 struct X { }
-init X(foo: int a) { }
+X::init(foo: int a) { }
 func main() {
     var x = X(bar: 5);
 }

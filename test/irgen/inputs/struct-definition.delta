@@ -3,7 +3,7 @@ struct Foo {
     bool b;
 }
 
-init Foo(int a, bool b) {
+Foo::init(int a, bool b) {
     this.a = a;
     this.b = b;
     this.a++;

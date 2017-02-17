@@ -2,7 +2,7 @@ struct Foo {
     int value;
 }
 
-init Foo(int value) {
+Foo::init(int value) {
     this.value = value;
 }
 

@@ -234,10 +234,10 @@ field_declaration:
     type IDENTIFIER ";" { $$ = new FieldDecl{std::move(*$1), $2, loc(@2)}; };
 
 initializer_definition:
-    "init" IDENTIFIER "(" parameter_list ")" "{" statement_list "}"
-        { $$ = new Decl(InitDecl{$2, std::move(*$4), nullptr, loc(@2)});
+    IDENTIFIER "::" "init" "(" parameter_list ")" "{" statement_list "}"
+        { $$ = new Decl(InitDecl{$1, std::move(*$5), nullptr, loc(@3)});
           addToSymbolTable($$->getInitDecl());
-          $$->getInitDecl().body.reset($7); };
+          $$->getInitDecl().body.reset($8); };
 
 import_declaration:
     "import" STRING_LITERAL ";" { $$ = new Decl(ImportDecl{$2, loc(@2)}); };

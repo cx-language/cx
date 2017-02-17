@@ -3,7 +3,7 @@ struct vec2 {
     mutable int y;
 }
 
-init vec2(int x, int y) {
+vec2::init(int x, int y) {
     this.x = x;
     this.y = y;
 }

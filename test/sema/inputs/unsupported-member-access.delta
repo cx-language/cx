@@ -2,7 +2,7 @@ class Foo {
     int bar;
 }
 
-init Foo() { }
+Foo::init() { }
 
 func main() {
     var bar = Foo.bar;

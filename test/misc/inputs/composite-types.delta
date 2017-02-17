@@ -9,7 +9,7 @@ class Y {
     char* y;
 }
 
-init X(int a) {
+X::init(int a) {
     this.a = a;
 }
 

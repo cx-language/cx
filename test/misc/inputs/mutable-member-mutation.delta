@@ -2,7 +2,7 @@ struct X {
     mutable int a;
 }
 
-init X(int a) {
+X::init(int a) {
     this.a = a;
 }
 

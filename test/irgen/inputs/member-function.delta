@@ -2,7 +2,7 @@ struct Foo {
     int baz;
 }
 
-init Foo() { this.baz = 42; }
+Foo::init() { this.baz = 42; }
 
 func Foo::bar() { }
 

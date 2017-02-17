@@ -2,7 +2,7 @@ class Foo {
     mutable int i;
 }
 
-init Foo() {
+Foo::init() {
     this.i = 0;
 }
 
