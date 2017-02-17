@@ -1,0 +1,6 @@
+class Foo { int i; }
+Foo::deinit() { }
+func main() {
+    Foo f = uninitialized;
+    var i = 1;
+}

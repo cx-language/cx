@@ -34,6 +34,7 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::ParamDecl: return decl.getParamDecl().type;
         case DeclKind::FuncDecl: return decl.getFuncDecl().getFuncType();
         case DeclKind::InitDecl: assert(false && "cannot refer to initializers yet");
+        case DeclKind::DeinitDecl: assert(false && "cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: return decl.getTypeDecl().getType();
         case DeclKind::FieldDecl: return decl.getFieldDecl().type;
         case DeclKind::ImportDecl: assert(false);
@@ -449,6 +450,19 @@ void delta::addToSymbolTable(const InitDecl& decl) {
     symbolTable.insert({"__init_" + decl.getTypeName(), new Decl(std::move(initDecl))});
 }
 
+void delta::addToSymbolTable(const DeinitDecl& decl) {
+    if (symbolTable.count("__deinit_" + decl.getTypeName()) > 0) {
+        error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' deinitializer");
+    }
+
+    DeinitDecl deinitDecl(decl);
+    Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
+    if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
+    deinitDecl.type = &typeDecl.getTypeDecl();
+
+    symbolTable.insert({"__deinit_" + decl.getTypeName(), new Decl(std::move(deinitDecl))});
+}
+
 void delta::addToSymbolTable(const TypeDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
@@ -511,6 +525,14 @@ void typecheck(InitDecl& decl) {
     symbolTable = std::move(symbolTableBackup);
 }
 
+void typecheck(DeinitDecl& decl) {
+    Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
+    FuncDecl funcDecl{"__deinit_" + decl.getTypeName(), {}, typeDecl.getTypeDecl().getType(),
+        decl.getTypeName(), decl.body, SrcLoc::invalid()};
+    decl.type = &typeDecl.getTypeDecl();
+    typecheckMemberFunc(funcDecl);
+}
+
 void typecheck(TypeDecl& decl) {
     // TODO
 }
@@ -564,6 +586,7 @@ void typecheck(Decl& decl) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
         case DeclKind::InitDecl:  typecheck(decl.getInitDecl()); break;
+        case DeclKind::DeinitDecl:typecheck(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   typecheck(decl.getVarDecl()); break;
         case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;

@@ -19,6 +19,7 @@ enum class DeclKind {
     ParamDecl,
     FuncDecl,
     InitDecl, /// A struct or class initializer declaration.
+    DeinitDecl, /// A struct or class deinitializer declaration.
     TypeDecl,
     VarDecl,
     FieldDecl, /// A struct or class field declaration.
@@ -50,6 +51,17 @@ struct InitDecl {
     /// type checking) a pointer to the corresponding type declaration.
     boost::variant<std::string, struct TypeDecl*> type;
     std::vector<ParamDecl> params;
+    std::shared_ptr<std::vector<Stmt>> body;
+    SrcLoc srcLoc;
+
+    TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
+    const std::string& getTypeName() const { return boost::get<std::string>(type); }
+};
+
+struct DeinitDecl {
+    /// The name of the struct or class this deinitializer deinitializes, or (after
+    /// type checking) a pointer to the corresponding type declaration.
+    boost::variant<std::string, struct TypeDecl*> type;
     std::shared_ptr<std::vector<Stmt>> body;
     SrcLoc srcLoc;
 
@@ -123,6 +135,7 @@ public:
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(ParamDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FuncDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(InitDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(DeinitDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(TypeDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(VarDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FieldDecl)
@@ -134,7 +147,8 @@ public:
     SrcLoc getSrcLoc() const;
 
 private:
-    boost::variant<ParamDecl, FuncDecl, InitDecl, TypeDecl, VarDecl, FieldDecl, ImportDecl> data;
+    boost::variant<ParamDecl, FuncDecl, InitDecl, DeinitDecl, TypeDecl, VarDecl,
+        FieldDecl, ImportDecl> data;
 };
 
 }

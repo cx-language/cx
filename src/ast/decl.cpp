@@ -41,6 +41,7 @@ SrcLoc Decl::getSrcLoc() const {
         case DeclKind::ParamDecl:  return getParamDecl().srcLoc;
         case DeclKind::FuncDecl:   return getFuncDecl().srcLoc;
         case DeclKind::InitDecl:   return getInitDecl().srcLoc;
+        case DeclKind::DeinitDecl: return getDeinitDecl().srcLoc;
         case DeclKind::TypeDecl:   return getTypeDecl().srcLoc;
         case DeclKind::VarDecl:    return getVarDecl().srcLoc;
         case DeclKind::FieldDecl:  return getFieldDecl().srcLoc;

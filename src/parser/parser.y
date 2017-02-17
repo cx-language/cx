@@ -35,6 +35,7 @@
 %token CAST     "cast"
 %token CLASS    "class"
 %token CONST    "const"
+%token DEINIT   "deinit"
 %token ELSE     "else"
 %token EXTERN   "extern"
 %token FALSE    "false"
@@ -104,7 +105,8 @@
              call_expression cast_expression member_access_expression subscript_expression
              assignment_lhs_expression
 %type <declList> declaration_list
-%type <decl> declaration function_definition initializer_definition function_prototype
+%type <decl> declaration function_definition initializer_definition
+             deinitializer_definition function_prototype
              member_function_prototype extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
              typed_variable_definition composite_type_declaration import_declaration
@@ -160,6 +162,7 @@ declaration_list:
 declaration:
     function_definition { $$ = $1; }
 |   initializer_definition { $$ = $1; }
+|   deinitializer_definition { $$ = $1; }
 |   extern_function_declaration { $$ = $1; }
 |   composite_type_declaration { $$ = $1; }
 |   import_declaration { $$ = $1; }
@@ -238,6 +241,12 @@ initializer_definition:
         { $$ = new Decl(InitDecl{$1, std::move(*$5), nullptr, loc(@3)});
           addToSymbolTable($$->getInitDecl());
           $$->getInitDecl().body.reset($8); };
+
+deinitializer_definition:
+    IDENTIFIER "::" "deinit" "(" ")" "{" statement_list "}"
+        { $$ = new Decl(DeinitDecl{$1, nullptr, loc(@3)});
+          addToSymbolTable($$->getDeinitDecl());
+          $$->getDeinitDecl().body.reset($7); };
 
 import_declaration:
     "import" STRING_LITERAL ";" { $$ = new Decl(ImportDecl{$2, loc(@2)}); };

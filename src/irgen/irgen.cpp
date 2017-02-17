@@ -452,6 +452,16 @@ void codegen(const Stmt& stmt) {
     }
 }
 
+void createDeinitCall(llvm::Value* valueToDeinit) {
+    auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(valueToDeinit);
+    auto* typeToDeinit = alloca ? alloca->getAllocatedType() : valueToDeinit->getType();
+    if (!typeToDeinit->isStructTy()) return;
+
+    llvm::StringRef typeName = typeToDeinit->getStructName();
+    llvm::Function* deinit = module.getFunction(("__deinit_" + typeName).str());
+    if (deinit) builder.CreateCall(deinit, valueToDeinit);
+}
+
 llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName) {
     auto structTypeAndDecl = structs.find(typeName)->second;
     if (structTypeAndDecl.second->passByValue()) {
@@ -497,6 +507,9 @@ void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
     for (auto& arg : func.args()) setLocalValue(arg.getName(), &arg);
     for (const auto& stmt : body) codegen(stmt);
 
+    // TODO: Fix relative order of deinitializer invocations.
+    for (auto& p : localValues) createDeinitCall(p.second);
+
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
         if (func.getName() != "main") {
             builder.CreateRetVoid();
@@ -533,6 +546,14 @@ void codegen(const InitDecl& decl) {
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 
+void codegen(const DeinitDecl& decl) {
+    FuncDecl funcDecl{"__deinit_" + decl.getTypeDecl().name, {}, BasicType{"void"},
+        decl.getTypeDecl().name, nullptr, decl.srcLoc};
+    llvm::Function* func = codegenFuncProto(funcDecl);
+    codegenFuncBody(*decl.body, *func);
+    assert(!llvm::verifyFunction(*func, &llvm::errs()));
+}
+
 void codegen(const TypeDecl& decl) {
     if (decl.fields.empty()) {
         structs.emplace(decl.name, std::make_pair(llvm::StructType::get(ctx), &decl));
@@ -555,6 +576,7 @@ void codegen(const Decl& decl) {
         case DeclKind::ParamDecl: /* handled via FuncDecl */ assert(false); break;
         case DeclKind::FuncDecl:  codegen(decl.getFuncDecl()); break;
         case DeclKind::InitDecl:  codegen(decl.getInitDecl()); break;
+        case DeclKind::DeinitDecl:codegen(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
         case DeclKind::FieldDecl: /* handled via TypeDecl */ assert(false); break;

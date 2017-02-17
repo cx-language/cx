@@ -307,6 +307,7 @@ void codegen(const Decl& decl) {
         case DeclKind::ParamDecl: codegen(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  codegen(decl.getFuncDecl()); break;
         case DeclKind::InitDecl:  codegen(decl.getInitDecl()); break;
+        case DeclKind::DeinitDecl:/* TODO */ assert(false); break;
         case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
         case DeclKind::FieldDecl: codegen(decl.getFieldDecl()); break;
@@ -336,7 +337,7 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
                 codegen(decl.getImportDecl());
                 break;
             case DeclKind::FuncDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
-            case DeclKind::FieldDecl: case DeclKind::InitDecl:
+            case DeclKind::FieldDecl: case DeclKind::InitDecl: case DeclKind::DeinitDecl:
                 break;
         }
     }
@@ -349,7 +350,8 @@ void cgen::compile(const std::vector<Decl>& decls, boost::string_ref outputPath)
                 *out << ";";
                 break;
             case DeclKind::TypeDecl: case DeclKind::ParamDecl: case DeclKind::VarDecl:
-            case DeclKind::FieldDecl: case DeclKind::InitDecl: case DeclKind::ImportDecl:
+            case DeclKind::FieldDecl: case DeclKind::InitDecl: case DeclKind::DeinitDecl:
+            case DeclKind::ImportDecl:
                 break;
         }
     }
