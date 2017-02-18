@@ -1,6 +1,9 @@
 class Foo { int i; }
 Foo::deinit() { }
+struct Bar { int i; }
+Bar::deinit() { }
 func main() {
     Foo f = uninitialized;
+    Bar b = uninitialized;
     var i = 1;
 }

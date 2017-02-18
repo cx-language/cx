@@ -457,9 +457,18 @@ void createDeinitCall(llvm::Value* valueToDeinit) {
     auto* typeToDeinit = alloca ? alloca->getAllocatedType() : valueToDeinit->getType();
     if (!typeToDeinit->isStructTy()) return;
 
+    // Prevent recursively destroying the argument in struct deinitializers.
+    if (llvm::isa<llvm::Argument>(valueToDeinit)
+        && builder.GetInsertBlock()->getParent()->getName().startswith("__deinit_")) return;
+
     llvm::StringRef typeName = typeToDeinit->getStructName();
     llvm::Function* deinit = module.getFunction(("__deinit_" + typeName).str());
-    if (deinit) builder.CreateCall(deinit, valueToDeinit);
+    if (!deinit) return;
+    if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
+        builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
+    } else {
+        builder.CreateCall(deinit, valueToDeinit);
+    }
 }
 
 llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName) {
