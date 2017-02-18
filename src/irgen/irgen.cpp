@@ -466,6 +466,9 @@ void createDeinitCall(llvm::Value* valueToDeinit) {
     if (!deinit) return;
     if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
         builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
+    } else if (!valueToDeinit->getType()->isPointerTy() && deinit->arg_begin()->getType()->isPointerTy()) {
+        llvm::errs() << "deinitialization of by-value class parameters not implemented yet\n";
+        abort();
     } else {
         builder.CreateCall(deinit, valueToDeinit);
     }
