@@ -415,6 +415,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::IncrementStmt: typecheck(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: typecheck(stmt.getDecrementStmt()); break;
         case StmtKind::CallStmt:      typecheck(stmt.getCallStmt().expr); break;
+        case StmtKind::DeferStmt:     typecheck(stmt.getDeferStmt().expr); break;
         case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
         case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;
         case StmtKind::AssignStmt:    typecheck(stmt.getAssignStmt()); break;

@@ -35,6 +35,7 @@
 %token CAST     "cast"
 %token CLASS    "class"
 %token CONST    "const"
+%token DEFER    "defer"
 %token DEINIT   "deinit"
 %token ELSE     "else"
 %token EXTERN   "extern"
@@ -112,7 +113,7 @@
              typed_variable_definition composite_type_declaration import_declaration
 %type <stmtList> else_body statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
-             call_statement if_statement while_statement assignment_statement
+             call_statement defer_statement if_statement while_statement assignment_statement
 %type <exprList> return_value_list nonempty_return_value_list
 %type <argList> argument_list nonempty_argument_list
 %type <arg> argument
@@ -260,6 +261,7 @@ statement:
 |   increment_statement { $$ = $1; }
 |   decrement_statement { $$ = $1; }
 |   call_statement      { $$ = $1; }
+|   defer_statement     { $$ = $1; }
 |   if_statement        { $$ = $1; }
 |   while_statement     { $$ = $1; };
 
@@ -303,6 +305,9 @@ decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{std::move
 
 call_statement:
     call_expression ";" { $$ = new Stmt(CallStmt{std::move($1->getCallExpr())}); };
+
+defer_statement:
+    "defer" call_expression ";" { $$ = new Stmt(DeferStmt{std::move(*$2)}); };
 
 if_statement:
     "if" "(" expression ")" "{" statement_list "}"

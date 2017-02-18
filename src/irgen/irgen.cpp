@@ -21,6 +21,7 @@ std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 const std::vector<Decl>* globalDecls;
 const Decl* currentDecl;
+llvm::SmallVector<llvm::SmallVector<const Expr*, 8>, 4> deferredExprScopes;
 
 void setLocalValue(std::string name, llvm::Value* value) {
     bool wasInserted = localValues.emplace(std::move(name), value).second;
@@ -350,8 +351,30 @@ llvm::Value* codegenLvalue(const Expr& expr) {
     }
 }
 
+void beginScope() {
+    deferredExprScopes.emplace_back();
+}
+
+void endScope() {
+    for (const Expr* expr : llvm::reverse(deferredExprScopes.back())) codegen(*expr);
+    deferredExprScopes.pop_back();
+}
+
+void deferEvaluationOf(const Expr& expr) {
+    deferredExprScopes.back().emplace_back(&expr);
+}
+
+void codegenDeferredExprsForReturn() {
+    for (auto& scope : llvm::reverse(deferredExprScopes))
+        for (const Expr* expr : llvm::reverse(scope))
+            codegen(*expr);
+    deferredExprScopes.back().clear();
+}
+
 void codegen(const ReturnStmt& stmt) {
     assert(stmt.values.size() < 2 && "IRGen doesn't support multuple return values yet");
+
+    codegenDeferredExprsForReturn();
 
     if (stmt.values.empty()) {
         if (currentDecl->getFuncDecl().name != "main") builder.CreateRetVoid();
@@ -395,18 +418,22 @@ void codegen(const IfStmt& ifStmt) {
     builder.CreateCondBr(condition, thenBlock, elseBlock);
 
     builder.SetInsertPoint(thenBlock);
+    beginScope();
     for (const auto& stmt : ifStmt.thenBody) {
         codegen(stmt);
         if (stmt.isReturnStmt()) break;
     }
+    endScope();
     if (thenBlock->empty() || !llvm::isa<llvm::ReturnInst>(thenBlock->back()))
         builder.CreateBr(endIfBlock);
 
     builder.SetInsertPoint(elseBlock);
+    beginScope();
     for (const auto& stmt : ifStmt.elseBody) {
         codegen(stmt);
         if (stmt.isReturnStmt()) break;
     }
+    endScope();
     if (elseBlock->empty() || !llvm::isa<llvm::ReturnInst>(elseBlock->back()))
         builder.CreateBr(endIfBlock);
 
@@ -424,10 +451,12 @@ void codegen(const WhileStmt& whileStmt) {
     builder.CreateCondBr(codegen(whileStmt.condition), body, end);
 
     builder.SetInsertPoint(body);
+    beginScope();
     for (const auto& stmt : whileStmt.body) {
         codegen(stmt);
         if (stmt.isReturnStmt()) break;
     }
+    endScope();
     if (body->empty() || !llvm::isa<llvm::ReturnInst>(body->back()))
         builder.CreateBr(cond);
 
@@ -446,6 +475,7 @@ void codegen(const Stmt& stmt) {
         case StmtKind::IncrementStmt: codegen(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: codegen(stmt.getDecrementStmt()); break;
         case StmtKind::CallStmt:      codegen(stmt.getCallStmt().expr); break;
+        case StmtKind::DeferStmt:     deferEvaluationOf(stmt.getDeferStmt().expr); break;
         case StmtKind::IfStmt:        codegen(stmt.getIfStmt()); break;
         case StmtKind::WhileStmt:     codegen(stmt.getWhileStmt()); break;
         case StmtKind::AssignStmt:    codegen(stmt.getAssignStmt()); break;
@@ -516,11 +546,13 @@ llvm::Function* getFunc(llvm::StringRef name) {
 
 void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &func));
+    beginScope();
     for (auto& arg : func.args()) setLocalValue(arg.getName(), &arg);
     for (const auto& stmt : body) codegen(stmt);
 
     // TODO: Fix relative order of deinitializer invocations.
     for (auto& p : localValues) createDeinitCall(p.second);
+    endScope();
 
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
         if (func.getName() != "main") {

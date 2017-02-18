@@ -16,6 +16,7 @@ enum class StmtKind {
     IncrementStmt,
     DecrementStmt,
     CallStmt,
+    DeferStmt,
     IfStmt,
     WhileStmt,
     AssignStmt,
@@ -42,6 +43,10 @@ struct DecrementStmt {
 
 struct CallStmt {
     CallExpr expr;
+};
+
+struct DeferStmt {
+    Expr expr;
 };
 
 struct IfStmt {
@@ -81,6 +86,7 @@ public:
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IncrementStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DecrementStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(CallStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DeferStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IfStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(WhileStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(AssignStmt)
@@ -91,7 +97,7 @@ public:
 
 private:
     boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt,
-        CallStmt, IfStmt, WhileStmt, AssignStmt> data;
+        CallStmt, DeferStmt, IfStmt, WhileStmt, AssignStmt> data;
 };
 
 }
