@@ -401,7 +401,7 @@ void codegenDeferredExprsAndDeinitCallsForReturn() {
 }
 
 void codegen(const ReturnStmt& stmt) {
-    assert(stmt.values.size() < 2 && "IRGen doesn't support multuple return values yet");
+    assert(stmt.values.size() < 2 && "IRGen doesn't support multiple return values yet");
 
     codegenDeferredExprsAndDeinitCallsForReturn();
 
