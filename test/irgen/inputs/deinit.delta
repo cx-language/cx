@@ -4,6 +4,13 @@ struct Bar { int i; }
 Bar::deinit() { }
 func main() {
     Foo f = uninitialized;
+    if (false) {
+        Foo f2 = uninitialized;
+    }
     Bar b = uninitialized;
+    while (false) {
+        Bar b2 = uninitialized;
+        return;
+    }
     var i = 1;
 }

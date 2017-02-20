@@ -12,6 +12,26 @@ using namespace delta;
 
 namespace {
 
+llvm::Value* codegen(const Expr& expr);
+llvm::Value* codegenLvalue(const Expr& expr);
+void deferDeinitCallOf(llvm::Value* value);
+void createDeinitCall(llvm::Value* valueToDeinit);
+
+struct Scope {
+    llvm::SmallVector<const Expr*, 8> deferredExprs;
+    llvm::SmallVector<llvm::Value*, 8> valuesToDeinit;
+
+    void onScopeEnd() {
+        for (const Expr* expr : llvm::reverse(deferredExprs)) codegen(*expr);
+        for (llvm::Value* value : llvm::reverse(valuesToDeinit)) createDeinitCall(value);
+    }
+
+    void clear() {
+        deferredExprs.clear();
+        valuesToDeinit.clear();
+    }
+};
+
 llvm::LLVMContext ctx;
 llvm::IRBuilder<> builder(ctx);
 llvm::Module module("", ctx);
@@ -21,11 +41,21 @@ std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 const std::vector<Decl>* globalDecls;
 const Decl* currentDecl;
-llvm::SmallVector<llvm::SmallVector<const Expr*, 8>, 4> deferredExprScopes;
+llvm::SmallVector<Scope, 4> scopes;
 
 void setLocalValue(std::string name, llvm::Value* value) {
     bool wasInserted = localValues.emplace(std::move(name), value).second;
     assert(wasInserted);
+
+    if (name != "this") {
+        auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(value);
+        auto* typeToDeinit = alloca ? alloca->getAllocatedType() : value->getType();
+        if (typeToDeinit->isStructTy()) {
+            llvm::StringRef typeName = typeToDeinit->getStructName();
+            llvm::Function* deinit = module.getFunction(("__deinit_" + typeName).str());
+            if (deinit) deferDeinitCallOf(value);
+        }
+    }
 }
 
 void codegen(const Decl& decl);
@@ -90,9 +120,6 @@ llvm::Type* toIR(const Type& type) {
         }
     }
 }
-
-llvm::Value* codegen(const Expr& expr);
-llvm::Value* codegenLvalue(const Expr& expr);
 
 llvm::Value* codegen(const VariableExpr& expr) {
     auto* value = findValue(expr.identifier);
@@ -352,29 +379,31 @@ llvm::Value* codegenLvalue(const Expr& expr) {
 }
 
 void beginScope() {
-    deferredExprScopes.emplace_back();
+    scopes.emplace_back();
 }
 
 void endScope() {
-    for (const Expr* expr : llvm::reverse(deferredExprScopes.back())) codegen(*expr);
-    deferredExprScopes.pop_back();
+    scopes.back().onScopeEnd();
+    scopes.pop_back();
 }
 
 void deferEvaluationOf(const Expr& expr) {
-    deferredExprScopes.back().emplace_back(&expr);
+    scopes.back().deferredExprs.emplace_back(&expr);
 }
 
-void codegenDeferredExprsForReturn() {
-    for (auto& scope : llvm::reverse(deferredExprScopes))
-        for (const Expr* expr : llvm::reverse(scope))
-            codegen(*expr);
-    deferredExprScopes.back().clear();
+void deferDeinitCallOf(llvm::Value* value) {
+    scopes.back().valuesToDeinit.emplace_back(value);
+}
+
+void codegenDeferredExprsAndDeinitCallsForReturn() {
+    for (auto& scope : llvm::reverse(scopes)) scope.onScopeEnd();
+    scopes.back().clear();
 }
 
 void codegen(const ReturnStmt& stmt) {
     assert(stmt.values.size() < 2 && "IRGen doesn't support multuple return values yet");
 
-    codegenDeferredExprsForReturn();
+    codegenDeferredExprsAndDeinitCallsForReturn();
 
     if (stmt.values.empty()) {
         if (currentDecl->getFuncDecl().name != "main") builder.CreateRetVoid();
@@ -549,9 +578,6 @@ void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
     beginScope();
     for (auto& arg : func.args()) setLocalValue(arg.getName(), &arg);
     for (const auto& stmt : body) codegen(stmt);
-
-    // TODO: Fix relative order of deinitializer invocations.
-    for (auto& p : localValues) createDeinitCall(p.second);
     endScope();
 
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
