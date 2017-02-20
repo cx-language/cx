@@ -1,9 +1,9 @@
 define void @and() {
   %a = alloca i1
-  store i1 true, i1* %a
   %b = alloca i1
-  store i1 false, i1* %b
   %c = alloca i1
+  store i1 true, i1* %a
+  store i1 false, i1* %b
   %a1 = load i1, i1* %a
   br i1 %a1, label %andRHS, label %andEnd
 
@@ -19,10 +19,10 @@ andEnd:                                           ; preds = %andRHS, %0
 
 define void @or() {
   %a = alloca i1
-  store i1 true, i1* %a
   %b = alloca i1
-  store i1 false, i1* %b
   %c = alloca i1
+  store i1 true, i1* %a
+  store i1 false, i1* %b
   %a1 = load i1, i1* %a
   br i1 %a1, label %orEnd, label %orRHS
 

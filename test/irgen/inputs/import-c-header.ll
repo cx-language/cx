@@ -6,8 +6,9 @@
 @1 = private unnamed_addr constant [4 x i8] c"foo\00"
 
 define i32 @main() {
-  %1 = call i32 @puts(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0))
   %f = alloca %Foo
+  %bar = alloca i32
+  %1 = call i32 @puts(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0))
   %2 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
   %MAGIC_NUMBER = load i32, i32* @MAGIC_NUMBER
   %ANSWER = load i32, i32* @ANSWER
@@ -15,7 +16,6 @@ define i32 @main() {
   store i32 %3, i32* %2
   %4 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 1
   store i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0), i8** %4
-  %bar = alloca i32
   %5 = call i32 @getBar(%Foo* %f)
   store i32 %5, i32* %bar
   ret i32 0

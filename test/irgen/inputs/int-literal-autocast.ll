@@ -1,8 +1,8 @@
 declare void @foo(i8)
 
 define i32 @main() {
-  call void @foo(i8 1)
   %b = alloca i64
+  call void @foo(i8 1)
   store i64 42, i64* %b
   %1 = load i64, i64* %b
   %2 = sub i64 %1, 1

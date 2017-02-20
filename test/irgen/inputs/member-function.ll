@@ -20,11 +20,11 @@ define i32 @qux(%Foo %this) {
 
 define i32 @main() {
   %foo = alloca %Foo
+  %i = alloca i32
   %1 = call %Foo @__init_Foo()
   store %Foo %1, %Foo* %foo
   %foo1 = load %Foo, %Foo* %foo
   call void @bar(%Foo %foo1)
-  %i = alloca i32
   %foo2 = load %Foo, %Foo* %foo
   %2 = call i32 @qux(%Foo %foo2)
   store i32 %2, i32* %i

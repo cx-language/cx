@@ -42,6 +42,7 @@ std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> s
 const std::vector<Decl>* globalDecls;
 const Decl* currentDecl;
 llvm::SmallVector<Scope, 4> scopes;
+llvm::BasicBlock::iterator lastAlloca;
 
 void setLocalValue(std::string name, llvm::Value* value) {
     bool wasInserted = localValues.emplace(std::move(name), value).second;
@@ -413,9 +414,27 @@ void codegen(const ReturnStmt& stmt) {
     }
 }
 
+llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type, llvm::Value* arraySize = nullptr,
+                                         const llvm::Twine& name = "") {
+    auto* insertBlock = builder.GetInsertBlock();
+    if (lastAlloca == llvm::BasicBlock::iterator()) {
+        if (insertBlock->getParent()->getEntryBlock().empty()) {
+            builder.SetInsertPoint(&insertBlock->getParent()->getEntryBlock());
+        } else {
+            builder.SetInsertPoint(&insertBlock->getParent()->getEntryBlock().front());
+        }
+    } else {
+        builder.SetInsertPoint(&insertBlock->getParent()->getEntryBlock(), std::next(lastAlloca));
+    }
+    auto* alloca = builder.CreateAlloca(type, arraySize, name);
+    lastAlloca = alloca->getIterator();
+    setLocalValue(name.str(), alloca);
+    builder.SetInsertPoint(insertBlock);
+    return alloca;
+}
+
 void codegen(const VariableStmt& stmt) {
-    auto* alloca = builder.CreateAlloca(toIR(stmt.decl->getType()), nullptr, stmt.decl->name);
-    setLocalValue(stmt.decl->name, alloca);
+    auto* alloca = createEntryBlockAlloca(toIR(stmt.decl->getType()), nullptr, stmt.decl->name);
 
     if (auto initializer = stmt.decl->initializer) {
         builder.CreateStore(codegenForPassing(*initializer), alloca);
@@ -574,6 +593,7 @@ llvm::Function* getFunc(llvm::StringRef name) {
 }
 
 void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
+    lastAlloca = llvm::BasicBlock::iterator();
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &func));
     beginScope();
     for (auto& arg : func.args()) setLocalValue(arg.getName(), &arg);
