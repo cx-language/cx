@@ -488,6 +488,42 @@ void codegen(const IfStmt& ifStmt) {
     builder.SetInsertPoint(endIfBlock);
 }
 
+void codegen(const SwitchStmt& switchStmt) {
+    auto* condition = codegen(switchStmt.condition);
+    auto* func = builder.GetInsertBlock()->getParent();
+    auto* insertBlockBackup = builder.GetInsertBlock();
+
+    std::vector<std::pair<llvm::ConstantInt*, llvm::BasicBlock*>> cases;
+    for (const SwitchCase& switchCase : switchStmt.cases) {
+        auto* value = llvm::cast<llvm::ConstantInt>(codegen(switchCase.value));
+        auto* block = llvm::BasicBlock::Create(ctx, "", func);
+
+        builder.SetInsertPoint(block);
+        beginScope();
+        for (const Stmt& stmt : switchCase.stmts) {
+            codegen(stmt);
+            if (stmt.isReturnStmt()) break;
+        }
+        endScope();
+
+        cases.emplace_back(value, block);
+    }
+
+    builder.SetInsertPoint(insertBlockBackup);
+    auto* end = llvm::BasicBlock::Create(ctx, "endswitch", func);
+    auto* switchInst = builder.CreateSwitch(condition, end);
+
+    for (const auto& p : cases) {
+        if (p.second->empty() || !llvm::isa<llvm::ReturnInst>(p.second->back())) {
+            builder.SetInsertPoint(p.second);
+            builder.CreateBr(end);
+        }
+        switchInst->addCase(p.first, p.second);
+    }
+
+    builder.SetInsertPoint(end);
+}
+
 void codegen(const WhileStmt& whileStmt) {
     auto* func = builder.GetInsertBlock()->getParent();
     auto* cond = llvm::BasicBlock::Create(ctx, "while", func);
@@ -525,6 +561,7 @@ void codegen(const Stmt& stmt) {
         case StmtKind::CallStmt:      codegen(stmt.getCallStmt().expr); break;
         case StmtKind::DeferStmt:     deferEvaluationOf(stmt.getDeferStmt().expr); break;
         case StmtKind::IfStmt:        codegen(stmt.getIfStmt()); break;
+        case StmtKind::SwitchStmt:    codegen(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     codegen(stmt.getWhileStmt()); break;
         case StmtKind::AssignStmt:    codegen(stmt.getAssignStmt()); break;
     }

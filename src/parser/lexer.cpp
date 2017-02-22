@@ -26,8 +26,12 @@ inline int readChar() {
 }
 
 inline void unreadChar(int ch) {
-    assert(ch != '\n' && "cannot unread newline");
-    yylloc.last_column--;
+    if (ch != '\n') {
+        yylloc.last_column--;
+    } else {
+        yylloc.last_line--;
+        // yylloc.last_column can be left as is because the next readChar() call will reset it anyways.
+    }
     ungetc(ch, inputFile);
 }
 
@@ -108,6 +112,7 @@ end:
 }
 
 const std::unordered_map<std::string, int> keywords = {
+    {"case",          CASE},
     {"cast",          CAST},
     {"class",         CLASS},
     {"const",         CONST},
@@ -124,6 +129,7 @@ const std::unordered_map<std::string, int> keywords = {
     {"null",          NULL_LITERAL},
     {"return",        RETURN},
     {"struct",        STRUCT},
+    {"switch",        SWITCH},
     {"this",          THIS},
     {"true",          TRUE},
     {"uninitialized", UNINITIALIZED},

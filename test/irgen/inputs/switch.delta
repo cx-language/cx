@@ -1,0 +1,9 @@
+func foo(int i) {
+    switch (i) {
+        case 0:
+        case -1:
+            foo(i);
+            foo(i);
+        case 42:
+    }
+}

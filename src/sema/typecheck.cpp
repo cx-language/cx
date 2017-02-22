@@ -383,6 +383,18 @@ void typecheck(IfStmt& ifStmt) {
     for (Stmt& stmt : ifStmt.elseBody) typecheck(stmt);
 }
 
+void typecheck(SwitchStmt& stmt) {
+    const Type& conditionType = typecheck(stmt.condition);
+    for (SwitchCase& switchCase : stmt.cases) {
+        const Type& caseType = typecheck(switchCase.value);
+        if (caseType != conditionType) {
+            error(switchCase.value.getSrcLoc(), "case value type '", caseType,
+                  "' doesn't match switch condition type '", conditionType, "'");
+        }
+        for (Stmt& caseStmt : switchCase.stmts) typecheck(caseStmt);
+    }
+}
+
 void typecheck(WhileStmt& whileStmt) {
     const Type& conditionType = typecheck(whileStmt.condition);
     if (conditionType != Type(BasicType{"bool"})) {
@@ -417,6 +429,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::CallStmt:      typecheck(stmt.getCallStmt().expr); break;
         case StmtKind::DeferStmt:     typecheck(stmt.getDeferStmt().expr); break;
         case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
+        case StmtKind::SwitchStmt:    typecheck(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;
         case StmtKind::AssignStmt:    typecheck(stmt.getAssignStmt()); break;
     }

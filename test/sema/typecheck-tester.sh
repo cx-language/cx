@@ -57,3 +57,4 @@ check_error struct-no-auto-reference.delta 5:9 "cannot implicitly pass value typ
 check_error invalid-operand-to-logical-not.delta 3:10 "invalid operand type 'int' to logical not"
 check_error invalid-operands-to-logical-and.delta 4:13 "invalid operands to binary expression ('int' and 'bool')"
 check_error invalid-operands-to-logical-or.delta 4:13 "invalid operands to binary expression ('bool' and 'int')"
+check_error mismatching-switch-case-value-type.delta 3:14 "case value type 'bool' doesn't match switch condition type 'int'"

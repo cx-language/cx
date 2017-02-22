@@ -32,6 +32,7 @@
 %error-verbose
 
 // Keywords
+%token CASE     "case"
 %token CAST     "cast"
 %token CLASS    "class"
 %token CONST    "const"
@@ -48,6 +49,7 @@
 %token NULL_LITERAL "null"
 %token RETURN   "return"
 %token STRUCT   "struct"
+%token SWITCH   "switch"
 %token THIS     "this"
 %token TRUE     "true"
 %token UNINITIALIZED "uninitialized"
@@ -113,7 +115,8 @@
              typed_variable_definition composite_type_declaration import_declaration
 %type <stmtList> else_body statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
-             call_statement defer_statement if_statement while_statement assignment_statement
+             call_statement defer_statement if_statement switch_statement while_statement
+             assignment_statement
 %type <exprList> return_value_list nonempty_return_value_list
 %type <argList> argument_list nonempty_argument_list
 %type <arg> argument
@@ -122,6 +125,8 @@
 %type <fieldDeclList> member_list
 %type <fieldDecl> field_declaration
 %type <type> type return_type_specifier return_type_list
+%type <caseList> case_list
+%type <switchCase> case
 
 %union {
     char* string;
@@ -132,6 +137,7 @@
     std::vector<delta::Stmt>* stmtList;
     std::vector<delta::Expr>* exprList;
     std::vector<delta::Arg>* argList;
+    std::vector<delta::SwitchCase>* caseList;
     delta::Arg* arg;
     delta::Decl* decl;
     delta::ParamDecl* paramDecl;
@@ -139,6 +145,7 @@
     delta::Stmt* stmt;
     delta::Expr* expr;
     delta::Type* type;
+    delta::SwitchCase* switchCase;
 };
 
 %initial-action {
@@ -263,6 +270,7 @@ statement:
 |   call_statement      { $$ = $1; }
 |   defer_statement     { $$ = $1; }
 |   if_statement        { $$ = $1; }
+|   switch_statement    { $$ = $1; }
 |   while_statement     { $$ = $1; };
 
 variable_definition:
@@ -318,6 +326,16 @@ if_statement:
 else_body:
     if_statement { $$ = new std::vector<Stmt>(); $$->push_back(std::move(*$1)); }
 |   "{" statement_list "}" { $$ = $2; };
+
+switch_statement:
+    "switch" "(" expression ")" "{" case_list "}" { $$ = new Stmt(SwitchStmt{std::move(*$3), std::move(*$6)}); };
+
+case_list:
+    case { $$ = new std::vector<SwitchCase>(); $$->push_back(std::move(*$1)); }
+|   case_list case { $$ = $1; $$->push_back(std::move(*$2)); };
+
+case:
+    "case" expression ":" statement_list { $$ = new SwitchCase{std::move(*$2), std::move(*$4)}; };
 
 while_statement:
     "while" "(" expression ")" "{" statement_list "}"

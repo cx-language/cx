@@ -47,7 +47,7 @@ std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
-    out << br << "(call " << expr.funcName << " ";
+    out << "(call " << expr.funcName << " ";
     for (const Arg& arg : expr.args) {
         out << *arg.value;
         if (&arg != &expr.args.back()) out << " ";
@@ -126,6 +126,22 @@ std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
     return out << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
+    out << br << "(switch-stmt " << stmt.condition;
+    indentLevel++;
+    for (const SwitchCase& switchCase : stmt.cases) {
+        out << br << "(case " << switchCase.value;
+        indentLevel++;
+        for (const Stmt& substmt : switchCase.stmts) {
+            out << br << substmt;
+        }
+        indentLevel--;
+        out << ")";
+    }
+    indentLevel--;
+    return out << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
     out << br << "(while-stmt " << stmt.condition;
     indentLevel++;
@@ -148,6 +164,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
         case StmtKind::CallStmt:      return out << stmt.getCallStmt().expr;
         case StmtKind::IfStmt:        return out << stmt.getIfStmt();
+        case StmtKind::SwitchStmt:    return out << stmt.getSwitchStmt();
         case StmtKind::WhileStmt:     return out << stmt.getWhileStmt();
         case StmtKind::AssignStmt:    return out << stmt.getAssignStmt();
     }

@@ -19,3 +19,11 @@ class C1 {
     bool* b;
 }
 func foo12(int* a, int b) -> bool { return *a == b; }
+func foo13(int a) {
+    switch (a) {
+        case -1:
+        case 0:
+            foo13(42);
+            foo13(42);
+    }
+}
