@@ -131,7 +131,7 @@ public:
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(SubscriptExpr)
 #undef DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR
 
-    Expr(Expr&& expr) : data(std::move(expr.data)) { }
+    Expr(Expr&&) = default;
     ExprKind getKind() const { return static_cast<ExprKind>(data.which()); }
     const Type& getType() const { return *type; }
     void setType(Type t) { type = std::move(t); }

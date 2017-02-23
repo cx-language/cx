@@ -142,7 +142,7 @@ public:
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(ImportDecl)
 #undef DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR
 
-    Decl(Decl&& decl) : data(std::move(decl.data)) { }
+    Decl(Decl&&) = default;
     DeclKind getKind() const { return static_cast<DeclKind>(data.which()); }
     SrcLoc getSrcLoc() const;
 

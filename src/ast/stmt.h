@@ -104,7 +104,7 @@ public:
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(AssignStmt)
 #undef DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR
 
-    Stmt(Stmt&& stmt) : data(std::move(stmt.data)) { }
+    Stmt(Stmt&&) = default;
     StmtKind getKind() const { return static_cast<StmtKind>(data.which()); }
 
 private:
