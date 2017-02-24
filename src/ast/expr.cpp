@@ -1,6 +1,5 @@
 #include "expr.h"
-#include "decl.h"
-#include "../parser/parser.hpp"
+#include "../parser/token.h"
 
 using namespace delta;
 
@@ -13,6 +12,6 @@ bool Expr::isLvalue() const {
         case ExprKind::NullLiteralExpr: case ExprKind::BinaryExpr: case ExprKind::CallExpr:
             return false;
         case ExprKind::PrefixExpr:
-            return getPrefixExpr().op.rawValue == STAR;
+            return getPrefixExpr().op == STAR;
     }
 }

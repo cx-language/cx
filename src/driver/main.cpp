@@ -12,21 +12,15 @@
 #include "utility.h"
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
-#include "../parser/parser.hpp"
+#include "../parser/parse.h"
 #include "../sema/typecheck.h"
 #include "../irgen/irgen.h"
 
 using namespace delta;
 
 namespace delta {
-
-extern FILE* inputFile;
 const char* currentFileName;
-extern std::vector<std::unique_ptr<Decl>> globalAST;
-
 }
-
-int yyparse();
 
 namespace {
 
@@ -126,16 +120,11 @@ int main(int argc, char** argv) {
         printErrorAndExit("no input files");
     }
 
+    std::vector<std::unique_ptr<Decl>> globalAST;
+
     for (llvm::StringRef filePath : args) {
-        inputFile = fopen(filePath.data(), "rb");
-
-        if (!inputFile) {
-            printErrorAndExit("no such file: '", filePath, "'");
-        }
-
         currentFileName = filePath.data();
-        int result = yyparse();
-        if (result != 0) return result;
+        parse(currentFileName, globalAST);
     }
 
     typecheck(globalAST, includePaths);

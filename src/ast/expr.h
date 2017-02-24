@@ -5,7 +5,7 @@
 #include <vector>
 #include "type.h"
 #include "srcloc.h"
-#include "../parser/operators.h"
+#include "../parser/token.h"
 
 namespace delta {
 

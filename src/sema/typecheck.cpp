@@ -15,7 +15,7 @@
 #include "../ast/type.h"
 #include "../ast/expr.h"
 #include "../ast/decl.h"
-#include "../parser/parser.hpp"
+#include "../parser/token.h"
 #include "../driver/utility.h"
 #include "../irgen/mangle.h"
 
@@ -91,19 +91,19 @@ Type typecheck(ArrayLiteralExpr& array) {
 Type typecheck(PrefixExpr& expr) {
     Type operandType = typecheck(*expr.operand);
 
-    if (expr.op.rawValue == NOT) {
+    if (expr.op == NOT) {
         if (!operandType.isBool()) {
             error(expr.operand->getSrcLoc(), "invalid operand type '", operandType, "' to logical not");
         }
         return operandType;
     }
-    if (expr.op.rawValue == STAR) { // Dereference operation
+    if (expr.op == STAR) { // Dereference operation
         if (!operandType.isPtrType()) {
             error(expr.operand->getSrcLoc(), "cannot dereference non-pointer type '", operandType, "'");
         }
         return operandType.getPointee();
     }
-    if (expr.op.rawValue == AND) { // Address-of operation
+    if (expr.op == AND) { // Address-of operation
         return PtrType::get(operandType, true);
     }
     return operandType;
@@ -115,7 +115,7 @@ Type typecheck(BinaryExpr& expr) {
     Type leftType = typecheck(*expr.left);
     Type rightType = typecheck(*expr.right);
 
-    if (expr.op.rawValue == AND_AND || expr.op.rawValue == OR_OR) {
+    if (expr.op == AND_AND || expr.op == OR_OR) {
         if (leftType.isBool() && rightType.isBool()) {
             return Type::getBool();
         }

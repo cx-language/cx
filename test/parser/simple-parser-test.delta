@@ -7,7 +7,7 @@ func foo5() -> int, bool { return 42, false; }
 func foo6() -> int { const answer = 42; return answer; }
 func foo7() -> int { var answer = 41; answer++; return answer; }
 func foo8() -> int { var answer = 43; answer--; return answer; }
-func foo9() -> int { return (0 - -0xC) / 2 * (0o4 + 0b11); }
+func foo9() -> int { return (0 - -0xC) / (0o4 + 0b11 * 2); }
 var foo10 = 42;
 const foo11 = 42;
 struct S1 {
