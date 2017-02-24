@@ -31,6 +31,7 @@
     (func-decl foo12 ((int* a) (int b)) bool
         (return-stmt ((*a) == b)))
     (func-decl foo13 ((int a)) void
+        (defer-stmt (call foo13 a))
         (switch-stmt a
             (case (-1)
                 (break-stmt))

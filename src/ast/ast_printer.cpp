@@ -104,6 +104,10 @@ std::ostream& operator<<(std::ostream& out, const DecrementStmt& stmt) {
     return out << br << "(dec-stmt " << stmt.operand << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const DeferStmt& stmt) {
+    return out << br << "(defer-stmt " << stmt.expr << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
     out << br << "(if-stmt " << stmt.condition;
     indentLevel++;
@@ -167,6 +171,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::IncrementStmt: return out << stmt.getIncrementStmt();
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
         case StmtKind::CallStmt:      return out << stmt.getCallStmt().expr;
+        case StmtKind::DeferStmt:     return out << stmt.getDeferStmt();
         case StmtKind::IfStmt:        return out << stmt.getIfStmt();
         case StmtKind::SwitchStmt:    return out << stmt.getSwitchStmt();
         case StmtKind::WhileStmt:     return out << stmt.getWhileStmt();
