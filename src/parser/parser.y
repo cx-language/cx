@@ -114,7 +114,7 @@
              member_function_prototype extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
              typed_variable_definition composite_type_declaration import_declaration
-%type <stmtList> else_body statement_list
+%type <stmtList> else_body statement_list nonempty_statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
              call_statement defer_statement if_statement switch_statement while_statement
              assignment_statement
@@ -221,6 +221,10 @@ parameter:
 statement_list:
     /* empty */ { $$ = new std::vector<Stmt>(); }
 |   statement_list statement { $$ = $1; $1->push_back(std::move(*$2)); };
+
+nonempty_statement_list:
+    statement { $$ = new std::vector<Stmt>(); $$->push_back(std::move(*$1)); }
+|   nonempty_statement_list statement { $$ = $1; $$->push_back(std::move(*$2)); };
 
 type:
     IDENTIFIER { $$ = new Type(BasicType{$1}); }
@@ -338,7 +342,7 @@ case_list:
 |   case_list case { $$ = $1; $$->push_back(std::move(*$2)); };
 
 case:
-    "case" expression ":" statement_list { $$ = new SwitchCase{std::move(*$2), std::move(*$4)}; };
+    "case" expression ":" nonempty_statement_list { $$ = new SwitchCase{std::move(*$2), std::move(*$4)}; };
 
 while_statement:
     "while" "(" expression ")" "{" statement_list "}"
