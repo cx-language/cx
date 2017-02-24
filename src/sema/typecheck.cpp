@@ -393,6 +393,7 @@ void typecheck(SwitchStmt& stmt) {
         }
         for (Stmt& caseStmt : switchCase.stmts) typecheck(caseStmt);
     }
+    for (Stmt& defaultStmt : stmt.defaultStmts) typecheck(defaultStmt);
 }
 
 void typecheck(WhileStmt& whileStmt) {

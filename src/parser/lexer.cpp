@@ -116,6 +116,7 @@ const std::unordered_map<std::string, int> keywords = {
     {"cast",          CAST},
     {"class",         CLASS},
     {"const",         CONST},
+    {"default",       DEFAULT},
     {"defer",         DEFER},
     {"deinit",        DEINIT},
     {"else",          ELSE},

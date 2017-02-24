@@ -36,6 +36,7 @@
 %token CAST     "cast"
 %token CLASS    "class"
 %token CONST    "const"
+%token DEFAULT  "default"
 %token DEFER    "defer"
 %token DEINIT   "deinit"
 %token ELSE     "else"
@@ -328,7 +329,9 @@ else_body:
 |   "{" statement_list "}" { $$ = $2; };
 
 switch_statement:
-    "switch" "(" expression ")" "{" case_list "}" { $$ = new Stmt(SwitchStmt{std::move(*$3), std::move(*$6)}); };
+    "switch" "(" expression ")" "{" case_list "}" { $$ = new Stmt(SwitchStmt{std::move(*$3), std::move(*$6)}); }
+|   "switch" "(" expression ")" "{" case_list "default" ":" statement_list "}"
+        { $$ = new Stmt(SwitchStmt{std::move(*$3), std::move(*$6), std::move(*$9)}); };
 
 case_list:
     case { $$ = new std::vector<SwitchCase>(); $$->push_back(std::move(*$1)); }

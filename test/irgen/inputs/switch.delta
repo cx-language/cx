@@ -6,4 +6,9 @@ func foo(int i) {
             foo(i);
         case 42:
     }
+    switch (i) {
+        case 0:
+        default:
+            foo(i);
+    }
 }

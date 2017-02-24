@@ -510,8 +510,9 @@ void codegen(const SwitchStmt& switchStmt) {
     }
 
     builder.SetInsertPoint(insertBlockBackup);
+    auto* defaultBlock = llvm::BasicBlock::Create(ctx, "default", func);
     auto* end = llvm::BasicBlock::Create(ctx, "endswitch", func);
-    auto* switchInst = builder.CreateSwitch(condition, end);
+    auto* switchInst = builder.CreateSwitch(condition, defaultBlock);
 
     for (const auto& p : cases) {
         if (p.second->empty() || !llvm::isa<llvm::ReturnInst>(p.second->back())) {
@@ -519,6 +520,18 @@ void codegen(const SwitchStmt& switchStmt) {
             builder.CreateBr(end);
         }
         switchInst->addCase(p.first, p.second);
+    }
+
+    { // Codegen the default block.
+        builder.SetInsertPoint(defaultBlock);
+        beginScope();
+        for (const Stmt& stmt : switchStmt.defaultStmts) {
+            codegen(stmt);
+            if (stmt.isReturnStmt()) break;
+        }
+        endScope();
+        if (defaultBlock->empty() || !llvm::isa<llvm::ReturnInst>(defaultBlock->back()))
+            builder.CreateBr(end);
     }
 
     builder.SetInsertPoint(end);

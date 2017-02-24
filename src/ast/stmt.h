@@ -64,6 +64,7 @@ struct SwitchCase {
 struct SwitchStmt {
     Expr condition;
     std::vector<SwitchCase> cases;
+    std::vector<Stmt> defaultStmts;
 };
 
 struct WhileStmt {
