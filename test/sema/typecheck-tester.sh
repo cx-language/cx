@@ -59,3 +59,5 @@ check_error invalid-operands-to-logical-and.delta 4:13 "invalid operands to bina
 check_error invalid-operands-to-logical-or.delta 4:13 "invalid operands to binary expression ('bool' and 'int')"
 check_error mismatching-switch-case-value-type.delta 3:14 "case value type 'bool' doesn't match switch condition type 'int'"
 check_error invalid-break.delta 2:5 "'break' is only allowed inside 'if', 'while', and 'switch' statements"
+check_error mutable-return-type.delta 1:6 "return types cannot be 'mutable'"
+check_error mutable-parameter-type.delta 1:22 "parameter types cannot be 'mutable'"

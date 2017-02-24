@@ -520,7 +520,11 @@ void typecheck(FuncDecl& decl) {
     if (!decl.receiverType.empty()) return typecheckMemberFunc(decl);
     if (decl.isExtern()) return;
     auto symbolTableBackup = symbolTable;
-    for (ParamDecl& param : decl.params) typecheck(param);
+    for (ParamDecl& param : decl.params) {
+        if (param.type.isMutable()) error(param.srcLoc, "parameter types cannot be 'mutable'");
+        typecheck(param);
+    }
+    if (decl.returnType.isMutable()) error(decl.srcLoc, "return types cannot be 'mutable'");
     funcReturnType = &decl.returnType;
     for (Stmt& stmt : *decl.body) typecheck(stmt);
     funcReturnType = nullptr;
