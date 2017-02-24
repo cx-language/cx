@@ -1,13 +1,16 @@
 func foo(int i) {
     switch (i) {
         case 0:
+            break;
         case -1:
             foo(i);
             foo(i);
         case 42:
+            break;
     }
     switch (i) {
         case 0:
+            break;
         default:
             foo(i);
     }

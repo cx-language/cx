@@ -32,7 +32,8 @@
         (return-stmt ((*a) == b)))
     (func-decl foo13 ((int a)) void
         (switch-stmt a
-            (case (-1))
+            (case (-1)
+                (break-stmt))
             (case 0
                 (call foo13 42)
                 (call foo13 42)))))

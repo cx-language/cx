@@ -32,6 +32,7 @@
 %error-verbose
 
 // Keywords
+%token BREAK    "break"
 %token CASE     "case"
 %token CAST     "cast"
 %token CLASS    "class"
@@ -117,7 +118,7 @@
 %type <stmtList> else_body statement_list nonempty_statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
              call_statement defer_statement if_statement switch_statement while_statement
-             assignment_statement
+             break_statement assignment_statement
 %type <exprList> return_value_list nonempty_return_value_list
 %type <argList> argument_list nonempty_argument_list
 %type <arg> argument
@@ -276,7 +277,8 @@ statement:
 |   defer_statement     { $$ = $1; }
 |   if_statement        { $$ = $1; }
 |   switch_statement    { $$ = $1; }
-|   while_statement     { $$ = $1; };
+|   while_statement     { $$ = $1; }
+|   break_statement     { $$ = $1; };
 
 variable_definition:
     immutable_variable_definition { $$ = $1; }
@@ -347,6 +349,9 @@ case:
 while_statement:
     "while" "(" expression ")" "{" statement_list "}"
         { $$ = new Stmt(WhileStmt{std::move(*$3), std::move(*$6)}); };
+
+break_statement:
+    "break" ";" { $$ = new Stmt(BreakStmt{loc(@1)}); };
 
 // Expressions /////////////////////////////////////////////////////////////////
 

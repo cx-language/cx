@@ -44,6 +44,9 @@ const Decl* currentDecl;
 llvm::SmallVector<Scope, 4> scopes;
 llvm::BasicBlock::iterator lastAlloca;
 
+/// The basic blocks to branch to on a 'break' statement, one element per scope.
+llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
+
 void setLocalValue(std::string name, llvm::Value* value) {
     bool wasInserted = localValues.emplace(std::move(name), value).second;
     assert(wasInserted);
@@ -463,6 +466,7 @@ void codegen(const IfStmt& ifStmt) {
     auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", func);
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", func);
     auto* endIfBlock = llvm::BasicBlock::Create(ctx, "endif", func);
+    breakTargets.push_back(endIfBlock);
     builder.CreateCondBr(condition, thenBlock, elseBlock);
 
     builder.SetInsertPoint(thenBlock);
@@ -485,6 +489,7 @@ void codegen(const IfStmt& ifStmt) {
     if (elseBlock->empty() || !llvm::isa<llvm::ReturnInst>(elseBlock->back()))
         builder.CreateBr(endIfBlock);
 
+    breakTargets.pop_back();
     builder.SetInsertPoint(endIfBlock);
 }
 
@@ -497,29 +502,34 @@ void codegen(const SwitchStmt& switchStmt) {
     for (const SwitchCase& switchCase : switchStmt.cases) {
         auto* value = llvm::cast<llvm::ConstantInt>(codegen(switchCase.value));
         auto* block = llvm::BasicBlock::Create(ctx, "", func);
-
-        builder.SetInsertPoint(block);
-        beginScope();
-        for (const Stmt& stmt : switchCase.stmts) {
-            codegen(stmt);
-            if (stmt.isReturnStmt()) break;
-        }
-        endScope();
-
         cases.emplace_back(value, block);
     }
 
     builder.SetInsertPoint(insertBlockBackup);
     auto* defaultBlock = llvm::BasicBlock::Create(ctx, "default", func);
     auto* end = llvm::BasicBlock::Create(ctx, "endswitch", func);
+    breakTargets.push_back(end);
     auto* switchInst = builder.CreateSwitch(condition, defaultBlock);
 
-    for (const auto& p : cases) {
-        if (p.second->empty() || !llvm::isa<llvm::ReturnInst>(p.second->back())) {
-            builder.SetInsertPoint(p.second);
-            builder.CreateBr(end);
+    auto casesIterator = cases.begin();
+    for (const SwitchCase& switchCase : switchStmt.cases) {
+        auto* value = casesIterator->first;
+        auto* block = casesIterator->second;
+
+        builder.SetInsertPoint(block);
+        beginScope();
+        for (const Stmt& stmt : switchCase.stmts) {
+            codegen(stmt);
+            if (stmt.isReturnStmt() || stmt.isBreakStmt()) break;
         }
-        switchInst->addCase(p.first, p.second);
+        endScope();
+
+        if (block->empty() || (!llvm::isa<llvm::ReturnInst>(block->back())
+                            && !llvm::isa<llvm::BranchInst>(block->back())))
+            builder.CreateBr(end);
+
+        switchInst->addCase(value, block);
+        ++casesIterator;
     }
 
     { // Codegen the default block.
@@ -534,6 +544,7 @@ void codegen(const SwitchStmt& switchStmt) {
             builder.CreateBr(end);
     }
 
+    breakTargets.pop_back();
     builder.SetInsertPoint(end);
 }
 
@@ -542,6 +553,7 @@ void codegen(const WhileStmt& whileStmt) {
     auto* cond = llvm::BasicBlock::Create(ctx, "while", func);
     auto* body = llvm::BasicBlock::Create(ctx, "body", func);
     auto* end = llvm::BasicBlock::Create(ctx, "endwhile", func);
+    breakTargets.push_back(end);
     builder.CreateBr(cond);
 
     builder.SetInsertPoint(cond);
@@ -557,7 +569,13 @@ void codegen(const WhileStmt& whileStmt) {
     if (body->empty() || !llvm::isa<llvm::ReturnInst>(body->back()))
         builder.CreateBr(cond);
 
+    breakTargets.pop_back();
     builder.SetInsertPoint(end);
+}
+
+void codegen(const BreakStmt& breakStmt) {
+    assert(!breakTargets.empty());
+    builder.CreateBr(breakTargets.back());
 }
 
 void codegen(const AssignStmt& stmt) {
@@ -576,6 +594,7 @@ void codegen(const Stmt& stmt) {
         case StmtKind::IfStmt:        codegen(stmt.getIfStmt()); break;
         case StmtKind::SwitchStmt:    codegen(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     codegen(stmt.getWhileStmt()); break;
+        case StmtKind::BreakStmt:     codegen(stmt.getBreakStmt()); break;
         case StmtKind::AssignStmt:    codegen(stmt.getAssignStmt()); break;
     }
 }

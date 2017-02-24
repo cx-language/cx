@@ -20,6 +20,7 @@ enum class StmtKind {
     IfStmt,
     SwitchStmt,
     WhileStmt,
+    BreakStmt,
     AssignStmt,
 };
 
@@ -72,6 +73,10 @@ struct WhileStmt {
     std::vector<Stmt> body;
 };
 
+struct BreakStmt {
+    SrcLoc srcLoc;
+};
+
 struct AssignStmt {
     Expr lhs;
     Expr rhs;
@@ -102,6 +107,7 @@ public:
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IfStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(SwitchStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(WhileStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(BreakStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(AssignStmt)
 #undef DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR
 
@@ -110,7 +116,7 @@ public:
 
 private:
     boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt,
-        CallStmt, DeferStmt, IfStmt, SwitchStmt, WhileStmt, AssignStmt> data;
+        CallStmt, DeferStmt, IfStmt, SwitchStmt, WhileStmt, BreakStmt, AssignStmt> data;
 };
 
 }

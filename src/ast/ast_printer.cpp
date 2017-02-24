@@ -152,6 +152,10 @@ std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
     return out << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const BreakStmt&) {
+    return out << "(break-stmt)";
+}
+
 std::ostream& operator<<(std::ostream& out, const AssignStmt& stmt) {
     return out << br << "(assign-stmt " << stmt.lhs << " " << stmt.rhs << ")";
 }
@@ -166,6 +170,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::IfStmt:        return out << stmt.getIfStmt();
         case StmtKind::SwitchStmt:    return out << stmt.getSwitchStmt();
         case StmtKind::WhileStmt:     return out << stmt.getWhileStmt();
+        case StmtKind::BreakStmt:     return out << stmt.getBreakStmt();
         case StmtKind::AssignStmt:    return out << stmt.getAssignStmt();
     }
 }

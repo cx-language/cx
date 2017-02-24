@@ -21,6 +21,7 @@ namespace {
 std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
 const Type* funcReturnType = nullptr;
 bool inInitializer = false;
+bool canBreak = false;
 bool importingC = false;
 
 const Type& typecheck(Expr& expr);
@@ -379,12 +380,15 @@ void typecheck(IfStmt& ifStmt) {
     if (conditionType != Type(BasicType{"bool"})) {
         error(ifStmt.condition.getSrcLoc(), "'if' condition must have type 'bool'");
     }
+    canBreak = true;
     for (Stmt& stmt : ifStmt.thenBody) typecheck(stmt);
     for (Stmt& stmt : ifStmt.elseBody) typecheck(stmt);
+    canBreak = false;
 }
 
 void typecheck(SwitchStmt& stmt) {
     const Type& conditionType = typecheck(stmt.condition);
+    canBreak = true;
     for (SwitchCase& switchCase : stmt.cases) {
         const Type& caseType = typecheck(switchCase.value);
         if (caseType != conditionType) {
@@ -394,6 +398,7 @@ void typecheck(SwitchStmt& stmt) {
         for (Stmt& caseStmt : switchCase.stmts) typecheck(caseStmt);
     }
     for (Stmt& defaultStmt : stmt.defaultStmts) typecheck(defaultStmt);
+    canBreak = false;
 }
 
 void typecheck(WhileStmt& whileStmt) {
@@ -401,7 +406,15 @@ void typecheck(WhileStmt& whileStmt) {
     if (conditionType != Type(BasicType{"bool"})) {
         error(whileStmt.condition.getSrcLoc(), "'while' condition must have type 'bool'");
     }
+    canBreak = true;
     for (Stmt& stmt : whileStmt.body) typecheck(stmt);
+    canBreak = false;
+}
+
+void typecheck(BreakStmt& breakStmt) {
+    if (!canBreak) {
+        error(breakStmt.srcLoc, "'break' is only allowed inside 'if', 'while', and 'switch' statements");
+    }
 }
 
 void typecheck(AssignStmt& stmt) {
@@ -432,6 +445,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
         case StmtKind::SwitchStmt:    typecheck(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;
+        case StmtKind::BreakStmt:     typecheck(stmt.getBreakStmt()); break;
         case StmtKind::AssignStmt:    typecheck(stmt.getAssignStmt()); break;
     }
 }

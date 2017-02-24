@@ -58,3 +58,4 @@ check_error invalid-operand-to-logical-not.delta 3:10 "invalid operand type 'int
 check_error invalid-operands-to-logical-and.delta 4:13 "invalid operands to binary expression ('int' and 'bool')"
 check_error invalid-operands-to-logical-or.delta 4:13 "invalid operands to binary expression ('bool' and 'int')"
 check_error mismatching-switch-case-value-type.delta 3:14 "case value type 'bool' doesn't match switch condition type 'int'"
+check_error invalid-break.delta 2:5 "'break' is only allowed inside 'if', 'while', and 'switch' statements"

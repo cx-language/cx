@@ -112,6 +112,7 @@ end:
 }
 
 const std::unordered_map<std::string, int> keywords = {
+    {"break",         BREAK},
     {"case",          CASE},
     {"cast",          CAST},
     {"class",         CLASS},
