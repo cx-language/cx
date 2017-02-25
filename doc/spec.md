@@ -576,8 +576,9 @@ The `defer` statement has the following syntax:
 
 > _defer-statement_ → `defer` _expression_ `;`<br>
 
-The _expression_ will be evaluated when leaving the function in which the
-_defer-statement_ is located.
+The _expression_ will be evaluated when leaving the scope where the
+_defer-statement_ is located. Multiple deferred expressions are evaluated in
+the reverse of the order they were declared in.
 
 ???: Allow increment/decrement statements and assignments in `defer` body?
 
