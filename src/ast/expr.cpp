@@ -6,8 +6,8 @@ using namespace delta;
 
 bool Expr::isLvalue() const {
     switch (getKind()) {
-        case ExprKind::VariableExpr: case ExprKind::StrLiteralExpr: case ExprKind::MemberExpr:
-        case ExprKind::SubscriptExpr:
+        case ExprKind::VariableExpr: case ExprKind::StrLiteralExpr: case ExprKind::ArrayLiteralExpr:
+        case ExprKind::MemberExpr: case ExprKind::SubscriptExpr:
             return true;
         case ExprKind::IntLiteralExpr: case ExprKind::BoolLiteralExpr: case ExprKind::CastExpr:
         case ExprKind::NullLiteralExpr: case ExprKind::BinaryExpr: case ExprKind::CallExpr:
@@ -24,6 +24,7 @@ SrcLoc Expr::getSrcLoc() const {
         case ExprKind::IntLiteralExpr:  return getIntLiteralExpr().srcLoc;
         case ExprKind::BoolLiteralExpr: return getBoolLiteralExpr().srcLoc;
         case ExprKind::NullLiteralExpr: return getNullLiteralExpr().srcLoc;
+        case ExprKind::ArrayLiteralExpr:return getArrayLiteralExpr().srcLoc;
         case ExprKind::PrefixExpr:      return getPrefixExpr().srcLoc;
         case ExprKind::BinaryExpr:      return getBinaryExpr().srcLoc;
         case ExprKind::CallExpr:        return getCallExpr().srcLoc;

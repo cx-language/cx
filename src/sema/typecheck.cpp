@@ -6,6 +6,7 @@
 #include <boost/optional.hpp>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/iterator_range.h>
 #include "typecheck.h"
 #include "c-import.h"
 #include "../ast/type.h"
@@ -65,6 +66,18 @@ Type typecheck(BoolLiteralExpr&) {
 
 Type typecheck(NullLiteralExpr&) {
     return Type(BasicType{"null"});
+}
+
+Type typecheck(ArrayLiteralExpr& array) {
+    auto& firstType = typecheck(array.elements[0]);
+    for (auto& element : llvm::drop_begin(array.elements, 1)) {
+        auto& type = typecheck(element);
+        if (type != firstType) {
+            error(element.getSrcLoc(), "mixed element types in array literal (expected '",
+                  firstType, "', found '", type, "')");
+        }
+    }
+    return ArrayType{llvm::make_unique<Type>(firstType), int64_t(array.elements.size())};
 }
 
 Type typecheck(PrefixExpr& expr) {
@@ -305,6 +318,7 @@ const Type& typecheck(Expr& expr) {
         case ExprKind::IntLiteralExpr:  type = typecheck(expr.getIntLiteralExpr()); break;
         case ExprKind::BoolLiteralExpr: type = typecheck(expr.getBoolLiteralExpr()); break;
         case ExprKind::NullLiteralExpr: type = typecheck(expr.getNullLiteralExpr()); break;
+        case ExprKind::ArrayLiteralExpr:type = typecheck(expr.getArrayLiteralExpr()); break;
         case ExprKind::PrefixExpr:      type = typecheck(expr.getPrefixExpr()); break;
         case ExprKind::BinaryExpr:      type = typecheck(expr.getBinaryExpr()); break;
         case ExprKind::CallExpr:        type = typecheck(expr.getCallExpr()); break;

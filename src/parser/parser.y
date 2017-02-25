@@ -108,7 +108,7 @@
 %token <number> NUMBER
 %type <expr> expression prefix_expression binary_expression parenthesized_expression
              call_expression cast_expression member_access_expression subscript_expression
-             assignment_lhs_expression
+             assignment_lhs_expression array_literal
 %type <declList> declaration_list
 %type <decl> declaration function_definition initializer_definition
              deinitializer_definition function_prototype
@@ -119,7 +119,7 @@
 %type <stmt> statement return_statement increment_statement decrement_statement
              call_statement defer_statement if_statement switch_statement while_statement
              break_statement assignment_statement
-%type <exprList> return_value_list nonempty_return_value_list
+%type <exprList> expression_list nonempty_expression_list
 %type <argList> argument_list nonempty_argument_list
 %type <arg> argument
 %type <paramDeclList> parameter_list nonempty_parameter_list
@@ -304,15 +304,15 @@ assignment_statement:
         { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3), loc(@2)}); };
 
 return_statement:
-    "return" return_value_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2), loc(@1)}); };
+    "return" expression_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2), loc(@1)}); };
 
-return_value_list:
+expression_list:
     /* empty */ { $$ = new std::vector<Expr>(); }
-|   nonempty_return_value_list { $$ = $1; };
+|   nonempty_expression_list { $$ = $1; };
 
-nonempty_return_value_list:
+nonempty_expression_list:
     expression { $$ = new std::vector<Expr>(); $$->push_back(std::move(*$1)); }
-|   nonempty_return_value_list "," expression { $$ = $1; $$->push_back(std::move(*$3)); };
+|   nonempty_expression_list "," expression { $$ = $1; $$->push_back(std::move(*$3)); };
 
 increment_statement: expression "++" ";" { $$ = new Stmt(IncrementStmt{std::move(*$1), loc(@2)}); };
 
@@ -361,6 +361,7 @@ expression:
 |   TRUE { $$ = new Expr(BoolLiteralExpr{true, loc(@1)}); }
 |   FALSE { $$ = new Expr(BoolLiteralExpr{false, loc(@1)}); }
 |   "null" { $$ = new Expr(NullLiteralExpr{loc(@1)}); }
+|   array_literal { $$ = $1; }
 |   binary_expression { $$ = $1; }
 |   assignment_lhs_expression { $$ = $1; };
 
@@ -396,6 +397,8 @@ binary_expression: expression "||" expression { $$ = new Expr(BinaryExpr{OR_OR, 
 binary_expression: expression "^"  expression { $$ = new Expr(BinaryExpr{XOR, u($1), u($3), loc(@2)}); };
 binary_expression: expression "<<" expression { $$ = new Expr(BinaryExpr{LSHIFT, u($1), u($3), loc(@2)}); };
 binary_expression: expression ">>" expression { $$ = new Expr(BinaryExpr{RSHIFT, u($1), u($3), loc(@2)}); };
+
+array_literal: "[" expression_list "]" { $$ = new Expr(ArrayLiteralExpr{std::move(*$2), loc(@1)}); }
 
 parenthesized_expression: "(" expression ")" { $$ = $2; };
 

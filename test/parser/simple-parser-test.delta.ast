@@ -32,6 +32,7 @@
         (return-stmt ((*a) == b)))
     (func-decl foo13 ((int a)) void
         (defer-stmt (call foo13 a))
+        (var-stmt i (array-literal 1 2 3))
         (switch-stmt a
             (case (-1)
                 (break-stmt))

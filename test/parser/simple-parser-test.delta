@@ -21,6 +21,7 @@ class C1 {
 func foo12(int* a, int b) -> bool { return *a == b; }
 func foo13(int a) {
     defer foo13(a);
+    var i = [1, 2, 3];
     switch (a) {
         case -1:
             break;

@@ -156,6 +156,14 @@ llvm::Value* codegen(const NullLiteralExpr& expr, const Expr& parent) {
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(parent.getType())));
 }
 
+llvm::Value* codegen(const ArrayLiteralExpr& expr) {
+    auto* arrayType = llvm::ArrayType::get(toIR(expr.elements[0].getType()), expr.elements.size());
+    std::vector<llvm::Constant*> values;
+    values.reserve(expr.elements.size());
+    for (auto& e : expr.elements) values.emplace_back(llvm::cast<llvm::Constant>(codegen(e)));
+    return llvm::ConstantArray::get(arrayType, values);
+}
+
 using CreateNegFunc       = decltype(&llvm::IRBuilder<>::CreateNeg);
 using CreateICmpFunc      = decltype(&llvm::IRBuilder<>::CreateICmpEQ);
 using CreateAddSubMulFunc = decltype(&llvm::IRBuilder<>::CreateAdd);
@@ -277,7 +285,7 @@ llvm::Value* codegen(const BinaryExpr& expr) {
 llvm::Function* getFunc(llvm::StringRef name);
 
 llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullptr) {
-    if (expr.isRvalue() || expr.isStrLiteralExpr()) return codegen(expr);
+    if (expr.isRvalue() || expr.isStrLiteralExpr() || expr.isArrayLiteralExpr()) return codegen(expr);
     const Type* exprType = &expr.getType();
     if (exprType->isPtrType()) exprType = exprType->getPtrType().pointeeType.get();
 
@@ -357,6 +365,7 @@ llvm::Value* codegen(const Expr& expr) {
         case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr(), expr);
         case ExprKind::BoolLiteralExpr: return codegen(expr.getBoolLiteralExpr());
         case ExprKind::NullLiteralExpr: return codegen(expr.getNullLiteralExpr(), expr);
+        case ExprKind::ArrayLiteralExpr:return codegen(expr.getArrayLiteralExpr());
         case ExprKind::PrefixExpr:      return codegen(expr.getPrefixExpr());
         case ExprKind::BinaryExpr:      return codegen(expr.getBinaryExpr());
         case ExprKind::CallExpr:        return codegen(expr.getCallExpr());
@@ -373,6 +382,7 @@ llvm::Value* codegenLvalue(const Expr& expr) {
         case ExprKind::IntLiteralExpr:  assert(false);
         case ExprKind::BoolLiteralExpr: assert(false);
         case ExprKind::NullLiteralExpr: assert(false);
+        case ExprKind::ArrayLiteralExpr:assert(false);
         case ExprKind::PrefixExpr:      return codegenLvalue(expr.getPrefixExpr());
         case ExprKind::BinaryExpr:      assert(false);
         case ExprKind::CallExpr:        assert(false && "IRGen doesn't support lvalue call expressions yet");

@@ -20,6 +20,7 @@ enum class ExprKind {
     IntLiteralExpr,
     BoolLiteralExpr,
     NullLiteralExpr,
+    ArrayLiteralExpr,
     PrefixExpr,
     BinaryExpr,
     CallExpr,
@@ -49,6 +50,11 @@ struct BoolLiteralExpr {
 };
 
 struct NullLiteralExpr {
+    SrcLoc srcLoc;
+};
+
+struct ArrayLiteralExpr {
+    std::vector<Expr> elements;
     SrcLoc srcLoc;
 };
 
@@ -123,6 +129,7 @@ public:
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(IntLiteralExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BoolLiteralExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(NullLiteralExpr)
+    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(ArrayLiteralExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(PrefixExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BinaryExpr)
     DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CallExpr)
@@ -141,7 +148,7 @@ public:
 
 private:
     boost::variant<VariableExpr, StrLiteralExpr, IntLiteralExpr, BoolLiteralExpr, NullLiteralExpr,
-        PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr, SubscriptExpr> data;
+        ArrayLiteralExpr, PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr, SubscriptExpr> data;
     boost::optional<Type> type;
 };
 

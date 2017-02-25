@@ -61,3 +61,4 @@ check_error mismatching-switch-case-value-type.delta 3:14 "case value type 'bool
 check_error invalid-break.delta 2:5 "'break' is only allowed inside 'if', 'while', and 'switch' statements"
 check_error mutable-return-type.delta 1:6 "return types cannot be 'mutable'"
 check_error mutable-parameter-type.delta 1:22 "parameter types cannot be 'mutable'"
+check_error mixed-types-in-array-literal.delta 2:23 "mixed element types in array literal (expected 'int', found 'null')"
