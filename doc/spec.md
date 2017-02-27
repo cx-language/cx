@@ -93,39 +93,26 @@ type names.
 
 ### Operators and delimiters
 
-Arithmetic operators:
+Binary arithmetic operators:
 
-    +   +=  ++
-    -   -=  --
-    *   *=  **
-    /   /=
-    %   %=
-    &   &=
-    |   |=
-    ^   ^=
-    <<  <<=
-    >>  >>=
+    +   -   *   /   **  %   &   &&  |   ||  ^   <<  >>
+    +=  -=  *=  /=  **= %=  &=  &&= |=  ||= ^=  <<= >>=
 
-Logical operators:
+Binary comparison operators:
 
-    &&  &&=
-    ||  ||=
-    !
+    ==  !=  <   >   <=  =>
 
-Comparison operators:
+Miscellaneous binary operators:
 
-    ==
-    !=
-    <
-    >
-    <=
-    >=
+    =   ... ..<
 
-Miscellaneous operators:
+Unary prefix operators:
 
-    =
-    ...
-    ..<
+    +   -   *   &   !   ~
+
+Unary postfix operators:
+
+    ++  --
 
 Delimiters:
 
@@ -134,7 +121,7 @@ Delimiters:
     {   }
     ,   :   ;
     .   ::
-    *   ?   ->
+    ->
 
 From the above set of operators, the following are overloadable by user code:
 `+` (both unary and binary), `-` (both unary and binary), `*`, `/`, `%`, `==`,
@@ -173,6 +160,13 @@ Delta has two kinds of comments:
 #### String literal
 
 > _string-literal_ → `"` _character_* `"`<br>
+
+#### Array literal
+
+> _array-literal_ → `[` _elements_ `]`<br>
+
+where _elements_ is a comma-separated list of zero or more expression of the
+same type.
 
 ### Identifiers
 
@@ -390,6 +384,8 @@ ___return-type___ defines what kind of values the function can return. This may
 be a tuple type to allow the function to return multiple values with a
 lightweight syntax.
 
+Parameter and return types may not have a top-level `mutable` modifier.
+
 #### Member functions
 
 Member functions are just like normal functions, except that they receive an
@@ -568,7 +564,8 @@ The cases in a `switch` statement don't fall through by default. The
 fall-through behavior can be enabled for a individual cases with the
 `fallthrough` keyword.
 
-`switch` statements must be exhaustive. This is enforced by the compiler.
+`switch` statements must be exhaustive if _expression_ is of an enum type. This
+is enforced by the compiler.
 
 ### `defer` statement
 
