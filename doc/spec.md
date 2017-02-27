@@ -165,7 +165,7 @@ Delta has two kinds of comments:
 
 > _array-literal_ → `[` _elements_ `]`<br>
 
-where _elements_ is a comma-separated list of zero or more expression of the
+where _elements_ is a comma-separated list of zero or more expressions of the
 same type.
 
 ### Identifiers
