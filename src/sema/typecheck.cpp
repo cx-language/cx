@@ -2,7 +2,6 @@
 #include <limits>
 #include <unordered_map>
 #include <cstdlib>
-#include <boost/utility/string_ref.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/optional.hpp>
 #include <llvm/ADT/StringRef.h>
@@ -127,13 +126,13 @@ Type typecheck(BinaryExpr& expr) {
 TypeDecl* getTypeDecl(const BasicType& type);
 
 template<typename IntType>
-bool checkRange(Expr& expr, int64_t value, boost::string_ref param) {
+bool checkRange(Expr& expr, int64_t value, llvm::StringRef param) {
     try {
         boost::numeric_cast<IntType>(value);
     } catch (...) {
         error(expr.getSrcLoc(), value, " is out of range for parameter of type '", param, "'");
     }
-    expr.setType(BasicType{param.to_string()});
+    expr.setType(BasicType{param.str()});
     return true;
 }
 
@@ -149,7 +148,7 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
     // Autocast integer literals to parameter type if within range, error out if not within range.
     if (expr.isIntLiteralExpr() && target.isBasicType()) {
         int64_t value{expr.getIntLiteralExpr().value};
-        boost::string_ref targetTypeName = target.getBasicType().name;
+        llvm::StringRef targetTypeName = target.getBasicType().name;
         if (targetTypeName == "int") return checkRange<int>(expr, value, targetTypeName);
         if (targetTypeName == "uint") return checkRange<unsigned>(expr, value, targetTypeName);
         if (targetTypeName == "int8") return checkRange<int8_t>(expr, value, targetTypeName);

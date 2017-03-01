@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <vector>
 #include <algorithm>
-#include <boost/utility/string_ref.hpp>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Target/TargetMachine.h>
@@ -30,7 +30,7 @@ int yyparse();
 namespace {
 
 /// If `args` contains `flag`, removes it and returns true, otherwise returns false.
-bool checkFlag(boost::string_ref flag, std::vector<boost::string_ref>& args) {
+bool checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) {
     const auto it = std::find(args.begin(), args.end(), flag);
     const bool contains = it != args.end();
     if (contains) args.erase(it);
@@ -84,18 +84,18 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    std::vector<boost::string_ref> args(argv + 1, argv + argc);
+    std::vector<llvm::StringRef> args(argv + 1, argv + argc);
     const bool syntaxOnly = checkFlag("-fsyntax-only", args);
     const bool compileOnly = checkFlag("-c", args);
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
 
-    for (boost::string_ref filePath : args) {
+    for (llvm::StringRef filePath : args) {
         inputFile = fopen(filePath.data(), "rb");
 
         if (!inputFile) {
-            std::cout << "error: no such file: '"  << filePath << "'" << std::endl;
+            llvm::outs() << "error: no such file: '"  << filePath << "'\n";
             return 1;
         }
 
