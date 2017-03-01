@@ -5,7 +5,7 @@
 #include <cassert>
 #include <vector>
 #include <boost/variant.hpp>
-#include <boost/optional.hpp>
+#include <llvm/ADT/Optional.h>
 #include "expr.h"
 #include "stmt.h"
 #include "type.h"
@@ -93,9 +93,8 @@ struct VarDecl {
     std::shared_ptr<Expr> initializer; /// Null if the initializer is 'uninitialized'.
     SrcLoc srcLoc;
 
-    boost::optional<const Type&> getDeclaredType() const {
-        if (type.which() == 0) return boost::get<Type>(type);
-        else return boost::none;
+    const Type* getDeclaredType() const {
+        return type.which() == 0 ? &boost::get<Type>(type) : nullptr;
     }
     const Type& getType() const {
         return boost::get<Type>(type);

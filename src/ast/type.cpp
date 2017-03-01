@@ -1,4 +1,4 @@
-#include <boost/optional.hpp>
+#include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
 #include "type.h"
 
@@ -25,7 +25,7 @@ PtrType& PtrType::operator=(const PtrType& type) {
 }
 
 void Type::appendType(Type type) {
-    boost::optional<Type> firstType;
+    llvm::Optional<Type> firstType;
     switch (getKind()) {
         case TypeKind::BasicType: firstType = Type(std::move(getBasicType())); break;
         case TypeKind::ArrayType: firstType = Type(std::move(getArrayType())); break;

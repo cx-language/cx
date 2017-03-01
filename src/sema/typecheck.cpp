@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <cstdlib>
 #include <boost/numeric/conversion/cast.hpp>
-#include <boost/optional.hpp>
+#include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/iterator_range.h>
@@ -312,7 +312,7 @@ Type typecheck(SubscriptExpr& expr) {
 }
 
 const Type& typecheck(Expr& expr) {
-    boost::optional<Type> type;
+    llvm::Optional<Type> type;
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:    type = typecheck(expr.getVariableExpr()); break;
         case ExprKind::StrLiteralExpr:  type = typecheck(expr.getStrLiteralExpr()); break;

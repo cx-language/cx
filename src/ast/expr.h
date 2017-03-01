@@ -5,7 +5,7 @@
 #include <cassert>
 #include <vector>
 #include <boost/variant.hpp>
-#include <boost/optional.hpp>
+#include <llvm/ADT/Optional.h>
 #include "type.h"
 #include "srcloc.h"
 #include "../parser/operators.h"
@@ -149,7 +149,7 @@ public:
 private:
     boost::variant<VariableExpr, StrLiteralExpr, IntLiteralExpr, BoolLiteralExpr, NullLiteralExpr,
         ArrayLiteralExpr, PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr, SubscriptExpr> data;
-    boost::optional<Type> type;
+    llvm::Optional<Type> type;
 };
 
 }
