@@ -1,6 +1,7 @@
 #include <iostream>
 #include <limits>
 #include <unordered_map>
+#include <cstdlib>
 #include <boost/utility/string_ref.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/optional.hpp>
@@ -41,6 +42,7 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::FieldDecl: return decl.getFieldDecl().type;
         case DeclKind::ImportDecl: assert(false);
     }
+    abort();
 }
 
 Type typecheck(StrLiteralExpr& expr) {

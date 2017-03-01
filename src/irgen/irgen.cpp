@@ -49,6 +49,7 @@ llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
 
 void setLocalValue(std::string name, llvm::Value* value) {
     bool wasInserted = localValues.emplace(std::move(name), value).second;
+    (void) wasInserted;
     assert(wasInserted);
 
     if (name != "this") {
@@ -185,14 +186,14 @@ llvm::Value* codegen(const PrefixExpr& expr) {
         case AND:   return codegenLvalue(*expr.operand);
         case NOT:   return codegenNot(expr);
         case COMPL: return codegenNot(expr);
-        default:    assert(false);
+        default:    assert(false); return nullptr;
     }
 }
 
 llvm::Value* codegenLvalue(const PrefixExpr& expr) {
     switch (expr.op.rawValue) {
         case STAR:  return codegen(*expr.operand);
-        default:    assert(false);
+        default:    assert(false); return nullptr;
     }
 }
 
@@ -278,7 +279,7 @@ llvm::Value* codegen(const BinaryExpr& expr) {
                 return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateLShr);
         case AND_AND: return codegenLogicalAnd(expr);
         case OR_OR:   return codegenLogicalOr(expr);
-        default: assert(false);
+        default: assert(false); return nullptr;
     }
 }
 

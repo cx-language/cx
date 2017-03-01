@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <fstream>
 #include <llvm/ADT/StringRef.h>
 
@@ -35,6 +36,11 @@ template<typename... Args>
 
     std::cout << '\n';
     exit(1);
+}
+
+[[noreturn]] inline void fatalError(const char* message) {
+    std::cerr << "FATAL ERROR: " << message << '\n';
+    abort();
 }
 
 }
