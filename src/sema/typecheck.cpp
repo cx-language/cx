@@ -85,7 +85,7 @@ Type typecheck(PrefixExpr& expr) {
     const Type& operandType = typecheck(*expr.operand);
 
     if (expr.op.rawValue == NOT) {
-        if (!operandType.isBasicType() || operandType.getBasicType().name != "bool") {
+        if (!operandType.isBasicType() || operandType.getName() != "bool") {
             error(expr.operand->getSrcLoc(), "invalid operand type '", operandType, "' to logical not");
         }
         return operandType;
@@ -94,7 +94,7 @@ Type typecheck(PrefixExpr& expr) {
         if (!operandType.isPtrType()) {
             error(expr.operand->getSrcLoc(), "cannot dereference non-pointer type '", operandType, "'");
         }
-        return *operandType.getPtrType().pointeeType;
+        return operandType.getPointee();
     }
     if (expr.op.rawValue == AND) { // Address-of operation
         return Type(PtrType{llvm::make_unique<Type>(operandType), true});
@@ -109,8 +109,8 @@ Type typecheck(BinaryExpr& expr) {
     const Type& rightType = typecheck(*expr.right);
 
     if (expr.op.rawValue == AND_AND || expr.op.rawValue == OR_OR) {
-        if (leftType.isBasicType() && leftType.getBasicType().name == "bool"
-        &&  rightType.isBasicType() && rightType.getBasicType().name == "bool") {
+        if (leftType.isBasicType() && leftType.getName() == "bool"
+        &&  rightType.isBasicType() && rightType.getName() == "bool") {
             return Type(BasicType{"bool"});
         }
         error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
@@ -148,7 +148,7 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
     // Autocast integer literals to parameter type if within range, error out if not within range.
     if (expr.isIntLiteralExpr() && target.isBasicType()) {
         int64_t value{expr.getIntLiteralExpr().value};
-        llvm::StringRef targetTypeName = target.getBasicType().name;
+        llvm::StringRef targetTypeName = target.getName();
         if (targetTypeName == "int") return checkRange<int>(expr, value, targetTypeName);
         if (targetTypeName == "uint") return checkRange<unsigned>(expr, value, targetTypeName);
         if (targetTypeName == "int8") return checkRange<int8_t>(expr, value, targetTypeName);
@@ -159,13 +159,13 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
         if (targetTypeName == "uint16") return checkRange<uint16_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
-    } else if (expr.isNullLiteralExpr() && target.isPtrType() && !target.getPtrType().ref) {
+    } else if (expr.isNullLiteralExpr() && target.isPtrType() && !target.isRef()) {
         expr.setType(target);
         return true;
     } else if (expr.isStrLiteralExpr() && target.isPtrType()
-               && target.getPtrType().pointeeType->isBasicType()
-               && target.getPtrType().pointeeType->getBasicType().name == "char"
-               && !target.getPtrType().pointeeType->isMutable()) {
+               && target.getPointee().isBasicType()
+               && target.getPointee().getName() == "char"
+               && !target.getPointee().isMutable()) {
         // Special case: allow passing string literals as C-strings (const char*).
         expr.setType(target);
         return true;
@@ -174,7 +174,7 @@ bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
         if (!typeDecl || typeDecl->passByValue()) {
             error(expr.getSrcLoc(), "cannot implicitly pass value types by reference, add explicit '&'");
         }
-        if (source.isImplicitlyConvertibleTo(*target.getPtrType().pointeeType)) return true;
+        if (source.isImplicitlyConvertibleTo(target.getPointee())) return true;
     }
 
     return false;
@@ -238,8 +238,8 @@ const Type& typecheck(CastExpr& expr) {
 
     switch (sourceType.getKind()) {
         case TypeKind::BasicType:
-            if (sourceType.getBasicType().name == "bool") {
-                if (targetType.isBasicType() && targetType.getBasicType().name == "int") {
+            if (sourceType.getName() == "bool") {
+                if (targetType.isBasicType() && targetType.getName() == "int") {
                     return targetType; // bool -> int
                 }
             }
@@ -248,14 +248,14 @@ const Type& typecheck(CastExpr& expr) {
         case TypeKind::FuncType:
             break;
         case TypeKind::PtrType:
-            const Type& sourcePointee = *sourceType.getPtrType().pointeeType;
+            const Type& sourcePointee = sourceType.getPointee();
             if (targetType.isPtrType()) {
-                const Type& targetPointee = *targetType.getPtrType().pointeeType;
-                if (sourcePointee.isBasicType() && sourcePointee.getBasicType().name == "void"
+                const Type& targetPointee = targetType.getPointee();
+                if (sourcePointee.isBasicType() && sourcePointee.getName() == "void"
                 && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
                     return targetType; // (mutable) void* -> T* / mutable void* -> mutable T*
                 }
-                if (targetPointee.isBasicType() && targetPointee.getBasicType().name == "void"
+                if (targetPointee.isBasicType() && targetPointee.getName() == "void"
                 && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
                     return targetType; // (mutable) T* -> void* / mutable T* -> mutable void*
                 }
@@ -275,8 +275,8 @@ Type typecheck(MemberExpr& expr) {
         default: error(expr.baseSrcLoc, "'", expr.base, "' doesn't support member access");
     }
 
-    if (baseType->isPtrType()) baseType = baseType->getPtrType().pointeeType.get();
-    Decl& typeDecl = findInSymbolTable(baseType->getBasicType().name, SrcLoc::invalid());
+    if (baseType->isPtrType()) baseType = &baseType->getPointee();
+    Decl& typeDecl = findInSymbolTable(baseType->getName(), SrcLoc::invalid());
 
     for (const FieldDecl& field : typeDecl.getTypeDecl().fields) {
         if (field.name == expr.member) {
@@ -286,15 +286,14 @@ Type typecheck(MemberExpr& expr) {
     error(expr.memberSrcLoc, "no member named '", expr.member, "' in '", expr.base, "'");
 }
 
-Type typecheck(SubscriptExpr& expr) {
+const Type& typecheck(SubscriptExpr& expr) {
     const Type& lhsType = typecheck(*expr.array);
     const ArrayType* arrayType;
 
     if (lhsType.isArrayType()) {
         arrayType = &lhsType.getArrayType();
-    } else if (lhsType.isPtrType() && lhsType.getPtrType().ref
-               && lhsType.getPtrType().pointeeType->isArrayType()) {
-        arrayType = &lhsType.getPtrType().pointeeType->getArrayType();
+    } else if (lhsType.isRef() && lhsType.getReferee().isArrayType()) {
+        arrayType = &lhsType.getReferee().getArrayType();
     } else {
         error(expr.array->getSrcLoc(), "cannot subscript '", lhsType, "', expected array or reference-to-array");
     }
@@ -340,11 +339,8 @@ bool isValidConversion(std::vector<Expr>& exprs, const Type& source, const Type&
     }
     assert(target.isTupleType());
 
-    const TupleType& sourceTuple = source.getTupleType();
-    const TupleType& targetTuple = source.getTupleType();
-
     for (int i = 0; i < exprs.size(); ++i) {
-        if (!isValidConversion(exprs[i], sourceTuple.subtypes.at(i), targetTuple.subtypes.at(i))) {
+        if (!isValidConversion(exprs[i], source.getSubtypes()[i], target.getSubtypes()[i])) {
             return false;
         }
     }
@@ -353,7 +349,7 @@ bool isValidConversion(std::vector<Expr>& exprs, const Type& source, const Type&
 
 void typecheck(ReturnStmt& stmt) {
     if (stmt.values.empty()) {
-        if (!funcReturnType->isBasicType() || funcReturnType->getBasicType().name != "void") {
+        if (!funcReturnType->isBasicType() || funcReturnType->getName() != "void") {
             error(stmt.srcLoc, "expected return statement to return a value of type '", *funcReturnType, "'");
         }
         return;
@@ -610,7 +606,7 @@ void typecheck(VarDecl& decl) {
         }
         symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
     } else {
-        if (initType->isBasicType() && initType->getBasicType().name == "null") {
+        if (initType->isBasicType() && initType->getName() == "null") {
             error(decl.srcLoc, "couldn't infer type of '", decl.name, "', add a type annotation");
         }
 

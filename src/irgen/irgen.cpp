@@ -93,7 +93,7 @@ void codegen(const TypeDecl& decl);
 llvm::Type* toIR(const Type& type) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
-            const auto& name = type.getBasicType().name;
+            llvm::StringRef name = type.getName();
             if (name == "void") return llvm::Type::getVoidTy(ctx);
             if (name == "bool") return llvm::Type::getInt1Ty(ctx);
             if (name == "char") return llvm::Type::getInt8Ty(ctx);
@@ -110,16 +110,14 @@ llvm::Type* toIR(const Type& type) {
             }
             return it->second.first;
         }
-        case TypeKind::ArrayType: {
-            const auto& array = type.getArrayType();
-            return llvm::ArrayType::get(toIR(*array.elementType), array.size);
-        }
+        case TypeKind::ArrayType:
+            return llvm::ArrayType::get(toIR(type.getElementType()), type.getArraySize());
         case TypeKind::TupleType:
             assert(false && "IRGen doesn't support tuple types yet");
         case TypeKind::FuncType:
             assert(false && "IRGen doesn't support function types yet");
         case TypeKind::PtrType: {
-            auto* pointeeType = toIR(*type.getPtrType().pointeeType);
+            auto* pointeeType = toIR(type.getPointee());
             if (!pointeeType->isVoidTy()) return llvm::PointerType::get(pointeeType, 0);
             else return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0);
         }
@@ -137,7 +135,7 @@ llvm::Value* codegenLvalue(const VariableExpr& expr) {
 }
 
 llvm::Value* codegen(const StrLiteralExpr& expr, const Expr& parent) {
-    if (parent.getType().getPtrType().pointeeType->isArrayType()) {
+    if (parent.getType().getPointee().isArrayType()) {
         return builder.CreateGlobalString(expr.value);
     } else {
         // Passing as C-string, i.e. char pointer.
@@ -288,9 +286,9 @@ llvm::Function* getFunc(llvm::StringRef name);
 llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullptr) {
     if (expr.isRvalue() || expr.isStrLiteralExpr() || expr.isArrayLiteralExpr()) return codegen(expr);
     const Type* exprType = &expr.getType();
-    if (exprType->isPtrType()) exprType = exprType->getPtrType().pointeeType.get();
+    if (exprType->isPtrType()) exprType = &exprType->getPointee();
 
-    auto it = structs.find(exprType->getBasicType().name);
+    auto it = structs.find(exprType->getName());
     if (it == structs.end() || it->second.second->passByValue()) {
         if (expr.getType().isPtrType() && !targetType->isPointerTy()) {
             return builder.CreateLoad(codegen(expr));

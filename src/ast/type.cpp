@@ -1,6 +1,7 @@
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
 #include "type.h"
+#include "../driver/utility.h"
 
 using namespace delta;
 
@@ -43,26 +44,26 @@ void Type::appendType(Type type) {
 bool Type::isImplicitlyConvertibleTo(const Type& type) const {
     switch (getKind()) {
         case TypeKind::BasicType:
-            return type.isBasicType() && getBasicType().name == type.getBasicType().name;
+            return type.isBasicType() && getName() == type.getName();
         case TypeKind::ArrayType:
-            return type.isArrayType() && getArrayType().size == type.getArrayType().size
-            && getArrayType().elementType->isImplicitlyConvertibleTo(*type.getArrayType().elementType);
+            return type.isArrayType() && getArraySize() == type.getArraySize()
+            && getElementType().isImplicitlyConvertibleTo(type.getElementType());
         case TypeKind::TupleType:
-            return type.isTupleType() && getTupleType().subtypes == type.getTupleType().subtypes;
+            return type.isTupleType() && getSubtypes() == type.getSubtypes();
         case TypeKind::FuncType:
-            return type.isFuncType() && getFuncType().returnTypes == type.getFuncType().returnTypes
-                                     && getFuncType().paramTypes == type.getFuncType().paramTypes;
+            return type.isFuncType() && getReturnTypes() == type.getReturnTypes()
+                                     && getParamTypes() == type.getParamTypes();
         case TypeKind::PtrType:
             return type.isPtrType()
-            && (getPtrType().ref || !type.getPtrType().ref)
-            && (getPtrType().pointeeType->isMutable() || !type.getPtrType().pointeeType->isMutable())
-            && getPtrType().pointeeType->isImplicitlyConvertibleTo(*type.getPtrType().pointeeType);
+            && (isRef() || !type.isRef())
+            && (getPointee().isMutable() || !type.getPointee().isMutable())
+            && getPointee().isImplicitlyConvertibleTo(type.getPointee());
     }
 }
 
 bool Type::isSigned() const {
     assert(isBasicType());
-    llvm::StringRef name = getBasicType().name;
+    llvm::StringRef name = getName();
     return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
 }
 
@@ -70,18 +71,16 @@ bool delta::operator==(const Type& lhs, const Type& rhs) {
     if (lhs.isMutable() != rhs.isMutable()) return false;
     switch (lhs.getKind()) {
         case TypeKind::BasicType:
-            return rhs.isBasicType() && lhs.getBasicType().name == rhs.getBasicType().name;
+            return rhs.isBasicType() && lhs.getName() == rhs.getName();
         case TypeKind::ArrayType:
-            return rhs.isArrayType() && lhs.getArrayType().elementType == rhs.getArrayType().elementType;
+            return rhs.isArrayType() && lhs.getElementType() == rhs.getElementType();
         case TypeKind::TupleType:
-            return rhs.isTupleType() && lhs.getTupleType().subtypes == rhs.getTupleType().subtypes;
+            return rhs.isTupleType() && lhs.getSubtypes() == rhs.getSubtypes();
         case TypeKind::FuncType:
-            return rhs.isFuncType() && lhs.getFuncType().returnTypes == rhs.getFuncType().returnTypes
-                                    && lhs.getFuncType().paramTypes == rhs.getFuncType().paramTypes;
+            return rhs.isFuncType() && lhs.getReturnTypes() == rhs.getReturnTypes()
+                                    && lhs.getParamTypes() == rhs.getParamTypes();
         case TypeKind::PtrType:
-            return rhs.isPtrType()
-                && lhs.getPtrType().ref == rhs.getPtrType().ref
-                && *lhs.getPtrType().pointeeType == *rhs.getPtrType().pointeeType;
+            return rhs.isPtrType() && lhs.isRef() == rhs.isRef() && lhs.getPointee() == rhs.getPointee();
     }
 }
 
@@ -93,40 +92,40 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
     switch (getKind()) {
         case TypeKind::BasicType:
             if (isMutable() && !omitTopLevelMutable) stream << "mutable ";
-            stream << getBasicType().name;
+            stream << getName();
             break;
         case TypeKind::ArrayType:
-            getArrayType().elementType->printTo(stream, omitTopLevelMutable);
-            stream << "[" << getArrayType().size << "]";
+            getElementType().printTo(stream, omitTopLevelMutable);
+            stream << "[" << getArraySize() << "]";
             break;
         case TypeKind::TupleType:
             stream << "(";
-            for (const Type& subtype : getTupleType().subtypes) {
+            for (const Type& subtype : getSubtypes()) {
                 subtype.printTo(stream, omitTopLevelMutable);
-                if (&subtype != &getTupleType().subtypes.back()) stream << ", ";
+                if (&subtype != &getSubtypes().back()) stream << ", ";
             }
             stream << ")";
             break;
         case TypeKind::FuncType:
             stream << "func(";
-            for (const Type& paramType : getFuncType().paramTypes) {
+            for (const Type& paramType : getParamTypes()) {
                 stream << paramType;
-                if (&paramType != &getFuncType().paramTypes.back()) stream << ", ";
+                if (&paramType != &getParamTypes().back()) stream << ", ";
             }
             stream << ") -> ";
-            for (const Type& returnType : getFuncType().returnTypes) {
+            for (const Type& returnType : getReturnTypes()) {
                 stream << returnType;
-                if (&returnType != &getFuncType().returnTypes.back()) stream << ", ";
+                if (&returnType != &getReturnTypes().back()) stream << ", ";
             }
             break;
         case TypeKind::PtrType:
             if (isMutable() && !omitTopLevelMutable) {
                 stream << "mutable(";
-                getPtrType().pointeeType->printTo(stream, false);
-                stream << (getPtrType().ref ? '&' : '*') << ')';
+                getPointee().printTo(stream, false);
+                stream << (isRef() ? '&' : '*') << ')';
             } else {
-                getPtrType().pointeeType->printTo(stream, false);
-                stream << (getPtrType().ref ? '&' : '*');
+                getPointee().printTo(stream, false);
+                stream << (isRef() ? '&' : '*');
             }
             break;
     }

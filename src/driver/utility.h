@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <llvm/ADT/StringRef.h>
+#include "../ast/srcloc.h"
 
 namespace delta {
 
@@ -18,7 +19,7 @@ template<typename... Args>
     } else {
         std::cout << "<unknown file>:";
     }
-    
+
     std::cout << " error: ";
     using expander = int[];
     (void)expander{0, (void(std::cout << std::forward<Args>(args)), 0)...};

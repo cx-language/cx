@@ -5,6 +5,7 @@
 #include <memory>
 #include <ostream>
 #include <boost/variant.hpp>
+#include <llvm/ADT/ArrayRef.h>
 
 namespace delta {
 
@@ -52,8 +53,8 @@ class Type {
 public:
 #define DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(KIND) \
     Type(KIND&& value, bool isMutable = false) : data(std::move(value)), mutableFlag(isMutable) { \
-        if (TypeKind::KIND == TypeKind::TupleType && getTupleType().subtypes.size() == 1) {\
-            auto type = std::move(getTupleType().subtypes[0]); \
+        if (TypeKind::KIND == TypeKind::TupleType && getSubtypes().size() == 1) { \
+            auto type = std::move(getSubtypes()[0]); \
             *this = std::move(type); \
         } \
     } \
@@ -82,6 +83,16 @@ public:
     void setMutable(bool isMutable) { mutableFlag = isMutable; }
     TypeKind getKind() const { return static_cast<TypeKind>(data.which()); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
+
+    llvm::StringRef getName() const { return getBasicType().name; }
+    const Type& getElementType() const { return *getArrayType().elementType; }
+    int getArraySize() const { return getArrayType().size; }
+    llvm::ArrayRef<Type> getSubtypes() const { return getTupleType().subtypes; }
+    llvm::ArrayRef<Type> getReturnTypes() const { return getFuncType().returnTypes; }
+    llvm::ArrayRef<Type> getParamTypes() const { return getFuncType().paramTypes; }
+    const Type& getPointee() const { return *getPtrType().pointeeType; }
+    const Type& getReferee() const { assert(isRef()); return getPointee(); }
+    bool isRef() const { return isPtrType() && getPtrType().ref; }
 
 private:
     boost::variant<BasicType, ArrayType, TupleType, FuncType, PtrType> data;
