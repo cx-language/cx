@@ -589,6 +589,12 @@ the reverse of the order they were declared in.
 
 > _binary-expression_ → _left-hand-side_ _binary-operator_ _right-hand-side_<br>
 
+#### Integer arithmetic expressions
+
+Arithmetic operations on integers (both signed and unsigned) are checked for
+overflow by default. In unchecked builds, integer overflow causes undefined
+behavior (for both signed and unsigned operations).
+
 ### Conditional expression
 
 > _conditional-expression_ → _condition_ `?` _then-expression_ `:` _else-expression_<br>
