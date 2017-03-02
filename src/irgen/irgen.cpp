@@ -201,16 +201,24 @@ llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateICmpFunc intFunc) {
     return (builder.*intFunc)(lhs, rhs, "");
 }
 
+llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateICmpFunc intFunc,
+                             CreateICmpFunc uintFunc) {
+    llvm::Value* lhs = codegen(*expr.left);
+    llvm::Value* rhs = codegen(*expr.right);
+    return (builder.*(expr.left->getType().isSigned() ? intFunc : uintFunc))(lhs, rhs, "");
+}
+
 llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateAddSubMulFunc intFunc) {
     llvm::Value* lhs = codegen(*expr.left);
     llvm::Value* rhs = codegen(*expr.right);
     return (builder.*intFunc)(lhs, rhs, "", false, false);
 }
 
-llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateDivFunc intFunc) {
+llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateDivFunc intFunc,
+                             CreateDivFunc uintFunc) {
     llvm::Value* lhs = codegen(*expr.left);
     llvm::Value* rhs = codegen(*expr.right);
-    return (builder.*intFunc)(lhs, rhs, "", false);
+    return (builder.*(expr.left->getType().isSigned() ? intFunc : uintFunc))(lhs, rhs, "", false);
 }
 
 llvm::Value* codegenLogicalAnd(const BinaryExpr& expr) {
@@ -258,23 +266,25 @@ llvm::Value* codegen(const BinaryExpr& expr) {
     switch (expr.op.rawValue) {
         case EQ:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpEQ);
         case NE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpNE);
-        case LT:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLT);
-        case LE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLE);
-        case GT:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGT);
-        case GE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGE);
+        case LT:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLT,
+                                                 &llvm::IRBuilder<>::CreateICmpULT);
+        case LE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLE,
+                                                 &llvm::IRBuilder<>::CreateICmpULE);
+        case GT:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGT,
+                                                 &llvm::IRBuilder<>::CreateICmpUGT);
+        case GE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGE,
+                                                 &llvm::IRBuilder<>::CreateICmpUGE);
         case PLUS:  return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAdd);
         case MINUS: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSub);
         case STAR:  return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateMul);
-        case SLASH: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSDiv);
+        case SLASH: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSDiv,
+                                                 &llvm::IRBuilder<>::CreateUDiv);
         case AND:   return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAnd);
         case OR:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateOr);
         case XOR:   return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateXor);
         case LSHIFT:return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateShl);
-        case RSHIFT:
-            if (expr.left->getType().isSigned())
-                return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAShr);
-            else
-                return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateLShr);
+        case RSHIFT:return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAShr,
+                                                 &llvm::IRBuilder<>::CreateLShr);
         case AND_AND: return codegenLogicalAnd(expr);
         case OR_OR:   return codegenLogicalOr(expr);
         default: assert(false); return nullptr;
