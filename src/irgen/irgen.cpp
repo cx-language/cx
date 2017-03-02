@@ -325,7 +325,7 @@ llvm::Value* codegen(const CastExpr& expr) {
 }
 
 llvm::Value* codegenLvalue(const MemberExpr& expr) {
-    auto* value = findValue(expr.base);
+    auto* value = codegenLvalue(*expr.base);
     auto baseType = value->getType();
     if (baseType->isPointerTy()) {
         baseType = baseType->getPointerElementType();

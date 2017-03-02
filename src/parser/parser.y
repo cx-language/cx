@@ -101,7 +101,7 @@
 %left "+" "-"
 %left "*" "/"
 %left "&"
-%left "[" "]"
+%left "[" "]" "."
 
 // Types
 %token <string> IDENTIFIER STRING_LITERAL
@@ -361,6 +361,7 @@ expression:
 |   TRUE { $$ = new Expr(BoolLiteralExpr{true, loc(@1)}); }
 |   FALSE { $$ = new Expr(BoolLiteralExpr{false, loc(@1)}); }
 |   "null" { $$ = new Expr(NullLiteralExpr{loc(@1)}); }
+|   "this" { $$ = new Expr(VariableExpr{"this", loc(@1)}); }
 |   array_literal { $$ = $1; }
 |   binary_expression { $$ = $1; }
 |   assignment_lhs_expression { $$ = $1; };
@@ -422,8 +423,7 @@ argument:
 |   IDENTIFIER ":" expression { $$ = new Arg{$1, u($3), loc(@1)}; };
 
 member_access_expression:
-    "this" "." IDENTIFIER { $$ = new Expr(MemberExpr{"this", $3, loc(@1), loc(@3)}); }
-|   IDENTIFIER "." IDENTIFIER { $$ = new Expr(MemberExpr{$1, $3, loc(@1), loc(@3)}); };
+    expression "." IDENTIFIER { $$ = new Expr(MemberExpr{u($1), $3, loc(@1), loc(@3)}); };
 
 subscript_expression:
     expression "[" expression "]" { $$ = new Expr(SubscriptExpr{u($1), u($3), loc(@2)}); };

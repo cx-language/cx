@@ -96,7 +96,7 @@ struct CastExpr {
 
 /// A member access expression using the dot syntax, such as 'a.b'.
 struct MemberExpr {
-    std::string base;
+    std::unique_ptr<Expr> base;
     std::string member;
     SrcLoc baseSrcLoc;
     SrcLoc memberSrcLoc;

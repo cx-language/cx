@@ -66,7 +66,7 @@ std::ostream& operator<<(std::ostream& out, const CastExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const MemberExpr& expr) {
-    return out << "(member-expr " << expr.base << " " << expr.member << ")";
+    return out << "(member-expr " << *expr.base << " " << expr.member << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const SubscriptExpr& expr) {

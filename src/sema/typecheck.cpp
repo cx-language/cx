@@ -37,7 +37,7 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::FuncDecl: return decl.getFuncDecl().getFuncType();
         case DeclKind::InitDecl: assert(false && "cannot refer to initializers yet");
         case DeclKind::DeinitDecl: assert(false && "cannot refer to deinitializers yet");
-        case DeclKind::TypeDecl: return decl.getTypeDecl().getType();
+        case DeclKind::TypeDecl: error(expr.srcLoc, "'", expr.identifier, "' is not a variable");
         case DeclKind::FieldDecl: return decl.getFieldDecl().type;
         case DeclKind::ImportDecl: assert(false);
     }
@@ -266,14 +266,7 @@ const Type& typecheck(CastExpr& expr) {
 }
 
 Type typecheck(MemberExpr& expr) {
-    Decl& baseDecl = findInSymbolTable(expr.base, expr.baseSrcLoc);
-
-    const Type* baseType;
-    switch (baseDecl.getKind()) {
-        case DeclKind::VarDecl:   baseType = &baseDecl.getVarDecl().getType(); break;
-        case DeclKind::ParamDecl: baseType = &baseDecl.getParamDecl().type; break;
-        default: error(expr.baseSrcLoc, "'", expr.base, "' doesn't support member access");
-    }
+    const Type* baseType = &typecheck(*expr.base);
 
     if (baseType->isPtrType()) baseType = &baseType->getPointee();
     Decl& typeDecl = findInSymbolTable(baseType->getName(), SrcLoc::invalid());
@@ -283,7 +276,7 @@ Type typecheck(MemberExpr& expr) {
             return field.type;
         }
     }
-    error(expr.memberSrcLoc, "no member named '", expr.member, "' in '", expr.base, "'");
+    error(expr.memberSrcLoc, "no member named '", expr.member, "' in '", *baseType, "'");
 }
 
 const Type& typecheck(SubscriptExpr& expr) {
