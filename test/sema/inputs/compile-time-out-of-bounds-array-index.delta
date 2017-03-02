@@ -1,4 +1,4 @@
-extern func foo() -> int[5]*;
+extern func foo() -> int[5]&;
 
 func main() {
     const p = foo();

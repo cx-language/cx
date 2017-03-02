@@ -35,7 +35,7 @@ check_error negated-int-literal-argument-overflow.delta 3:9 "invalid argument #1
 check_error composite-type-redefinition.delta 2:7 "redefinition of 'Foo'"
 check_error nonexisting-member-access.delta 9:19 "no member named 'bar' in 'foo'"
 check_error unsupported-member-access.delta 8:15 "'Foo' doesn't support member access"
-check_error unsupported-subscript.delta 5:5 "cannot subscript 'mutable uint8*', expected array or pointer-to-array"
+check_error unsupported-subscript.delta 5:5 "cannot subscript 'mutable uint8*', expected array or reference-to-array"
 check_error illegal-subscript-index-type.delta 5:17 "illegal subscript index type 'bool', expected 'int'"
 check_error compile-time-out-of-bounds-array-index.delta 5:17 "accessing array out-of-bounds with index 5, array size is 5"
 check_error unknown-member-access-base.delta 8:15 "unknown identifier 'foo'"

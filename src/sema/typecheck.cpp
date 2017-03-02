@@ -292,10 +292,11 @@ Type typecheck(SubscriptExpr& expr) {
 
     if (lhsType.isArrayType()) {
         arrayType = &lhsType.getArrayType();
-    } else if (lhsType.isPtrType() && lhsType.getPtrType().pointeeType->isArrayType()) {
+    } else if (lhsType.isPtrType() && lhsType.getPtrType().ref
+               && lhsType.getPtrType().pointeeType->isArrayType()) {
         arrayType = &lhsType.getPtrType().pointeeType->getArrayType();
     } else {
-        error(expr.array->getSrcLoc(), "cannot subscript '", lhsType, "', expected array or pointer-to-array");
+        error(expr.array->getSrcLoc(), "cannot subscript '", lhsType, "', expected array or reference-to-array");
     }
 
     const Type& indexType = typecheck(*expr.index);
