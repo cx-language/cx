@@ -2,7 +2,6 @@
 
 define %Foo @__init_Foo(i32 %a, i1 %b) {
   %1 = alloca %Foo
-  store %Foo undef, %Foo* %1
   %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
   store i32 %a, i32* %2
   %3 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 1

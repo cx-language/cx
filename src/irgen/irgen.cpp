@@ -713,7 +713,6 @@ void codegen(const InitDecl& decl) {
 
     auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl().getType()));
     auto* alloca = builder.CreateAlloca(type);
-    builder.CreateStore(llvm::UndefValue::get(type), alloca);
 
     setLocalValue("this", alloca);
     for (auto& arg : func->args()) setLocalValue(arg.getName(), &arg);
