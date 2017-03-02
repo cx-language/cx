@@ -130,7 +130,7 @@ bool checkRange(Expr& expr, int64_t value, llvm::StringRef param) {
     try {
         boost::numeric_cast<IntType>(value);
     } catch (...) {
-        error(expr.getSrcLoc(), value, " is out of range for parameter of type '", param, "'");
+        error(expr.getSrcLoc(), value, " is out of range for type '", param, "'");
     }
     expr.setType(BasicType{param.str()});
     return true;
