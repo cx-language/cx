@@ -46,3 +46,4 @@ check_error leading-zero.delta 2:13 "numbers cannot start with 0[0-9], use 0o pr
 check_error newline-inside-string-literal.delta 2:13 "newline inside string literal"
 check_error unexpected-character-after-zero.delta 2:14 "unexpected '_'"
 check_error unknown-token.delta 1:1 "unknown token '\`'"
+check_error tab.delta 2:10 "unknown identifier 'b'"

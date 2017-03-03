@@ -46,7 +46,8 @@ check_error() {
     line_number=$(echo $2 | sed 's/:.*//')
     column=$(echo $2 | sed 's/.*://')
     line_content=$(sed -n "${line_number}p" $source_file)
-    expected_output="$source_file:$2: error: $3"$'\n'"$line_content"$'\n'"$(printf '%*s^' $(($column - 1)))"
+    substr=${line_content:0:column - 1}
+    expected_output="$source_file:$2: error: $3"$'\n'"$line_content"$'\n'"${substr//[^	]/ }^"
     actual_output="$($path_to_delta $source_file)"
     validate_output
 }

@@ -31,7 +31,7 @@ template<typename... Args>
         std::string line;
         std::getline(file, line);
         std::cout << '\n' << line << '\n';
-        while (--srcLoc.column) std::cout << ' ';
+        for (char ch : line.substr(0, srcLoc.column - 1)) std::cout << (ch != '\t' ? ' ' : '\t');
         std::cout << '^';
     }
 
