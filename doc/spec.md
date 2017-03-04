@@ -512,11 +512,16 @@ use in the _class-name_ / _struct-name_ / _interface-name_ part.
 ### Assignment statement
 
 > _assignment-statement_ → _lvalue-expression_ `=` _expression_ `;`<br>
+> _assignment-statement_ → `_` `=` _expression_ `;`<br>
 
 Assignments in Delta don't return any value. This applies to compound
 assignments as well, including `++` and `--` (see below). Furthermore, this obsoletes the
 two different forms of `++` and `--`, so only the postfix versions are valid as
 syntactic sugar for `+= 1` and `-= 1`, respectively.
+
+The assignment to `_`, called a _discarding assignment_, can be used to ignore
+the result of the expression, suppressing any compilation errors or warnings
+that would otherwise be emitted.
 
 ### Increment and decrement statements
 

@@ -57,6 +57,7 @@
 %token UNINITIALIZED "uninitialized"
 %token VAR      "var"
 %token WHILE    "while"
+%token UNDERSCORE "_"
 
 // Operators
 %token EQ       "=="
@@ -301,7 +302,9 @@ typed_variable_definition:
 
 assignment_statement:
     assignment_lhs_expression "=" expression ";"
-        { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3), loc(@2)}); };
+        { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3), loc(@2)}); }
+|   "_" "=" expression ";"
+        { $$ = new Stmt(ExprStmt{std::move(*$3)}); };
 
 return_statement:
     "return" expression_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2), loc(@1)}); };
@@ -319,7 +322,7 @@ increment_statement: expression "++" ";" { $$ = new Stmt(IncrementStmt{std::move
 decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{std::move(*$1), loc(@2)}); };
 
 call_statement:
-    call_expression ";" { $$ = new Stmt(CallStmt{std::move($1->getCallExpr())}); };
+    call_expression ";" { $$ = new Stmt(ExprStmt{std::move(*$1)}); };
 
 defer_statement:
     "defer" call_expression ";" { $$ = new Stmt(DeferStmt{std::move(*$2)}); };

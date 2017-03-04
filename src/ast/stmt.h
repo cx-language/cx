@@ -15,7 +15,7 @@ enum class StmtKind {
     VariableStmt,
     IncrementStmt,
     DecrementStmt,
-    CallStmt,
+    ExprStmt,
     DeferStmt,
     IfStmt,
     SwitchStmt,
@@ -43,8 +43,9 @@ struct DecrementStmt {
     SrcLoc srcLoc; // Location of '--'.
 };
 
-struct CallStmt {
-    CallExpr expr;
+/// A statement that consists of the evaluation of a single expression.
+struct ExprStmt {
+    Expr expr;
 };
 
 struct DeferStmt {
@@ -102,7 +103,7 @@ public:
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(VariableStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IncrementStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DecrementStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(CallStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(ExprStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DeferStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IfStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(SwitchStmt)
@@ -116,7 +117,7 @@ public:
 
 private:
     boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt,
-        CallStmt, DeferStmt, IfStmt, SwitchStmt, WhileStmt, BreakStmt, AssignStmt> data;
+        ExprStmt, DeferStmt, IfStmt, SwitchStmt, WhileStmt, BreakStmt, AssignStmt> data;
 };
 
 }

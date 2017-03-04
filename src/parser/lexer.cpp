@@ -137,6 +137,7 @@ const std::unordered_map<std::string, int> keywords = {
     {"uninitialized", UNINITIALIZED},
     {"var",           VAR},
     {"while",         WHILE},
+    {"_",             UNDERSCORE},
 };
 
 } // anonymous namespace

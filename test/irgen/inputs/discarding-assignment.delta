@@ -1,0 +1,5 @@
+extern func foo() -> int;
+
+func main() {
+    _ = foo();
+}
