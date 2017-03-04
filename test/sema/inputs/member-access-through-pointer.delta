@@ -1,0 +1,8 @@
+struct Foo {
+    int i;
+}
+
+func main() {
+    Foo* p = null;
+    _ = p.i;
+}

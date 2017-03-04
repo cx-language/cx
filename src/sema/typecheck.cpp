@@ -198,7 +198,11 @@ Type typecheck(CallExpr& expr) {
     if (expr.isInitializerCall) {
         return typecheckInitExpr(decl.getTypeDecl(), expr.args, expr.srcLoc);
     } else if (expr.isMemberFuncCall()) {
-        typecheck(*expr.receiver);
+        const Type& receiverType = typecheck(*expr.receiver);
+        if (receiverType.isPtrType() && !receiverType.isRef()) {
+            error(expr.receiver->getSrcLoc(), "cannot call member function through pointer '",
+                  receiverType, "', pointer may be null");
+        }
     }
     if (!decl.isFuncDecl()) {
         error(expr.srcLoc, "'", expr.funcName, "' is not a function");
@@ -268,7 +272,13 @@ const Type& typecheck(CastExpr& expr) {
 Type typecheck(MemberExpr& expr) {
     const Type* baseType = &typecheck(*expr.base);
 
-    if (baseType->isPtrType()) baseType = &baseType->getPointee();
+    if (baseType->isPtrType()) {
+        if (!baseType->isRef()) {
+            error(expr.baseSrcLoc, "cannot access member through pointer '", *baseType,
+                  "', pointer may be null");
+        }
+        baseType = &baseType->getPointee();
+    }
     Decl& typeDecl = findInSymbolTable(baseType->getName(), SrcLoc::invalid());
 
     for (const FieldDecl& field : typeDecl.getTypeDecl().fields) {

@@ -1,0 +1,8 @@
+struct Foo { int i; }
+
+func Foo::bar() { }
+
+func main() {
+    Foo* f = null;
+    f.bar();
+}
