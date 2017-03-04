@@ -26,3 +26,13 @@ After this, the following commands can be used:
 
 - `make` builds the project.
 - `make check` runs the test suite and reports errors in case of failure.
+
+## Contributing
+
+Delta is an open-source language. Contributions are welcome and encouraged!
+
+## License
+
+This implementation of Delta is licensed under the MIT license, a permissive
+free software license. See the file [LICENSE.txt](LICENSE.txt) for the full
+license text.
