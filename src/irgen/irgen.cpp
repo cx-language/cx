@@ -47,19 +47,15 @@ llvm::BasicBlock::iterator lastAlloca;
 /// The basic blocks to branch to on a 'break' statement, one element per scope.
 llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
 
-void setLocalValue(std::string name, llvm::Value* value) {
+/// @param type The Delta type of the variable, or null if the variable is 'this'.
+void setLocalValue(const Type* type, std::string name, llvm::Value* value) {
     bool wasInserted = localValues.emplace(std::move(name), value).second;
     (void) wasInserted;
     assert(wasInserted);
 
-    if (name != "this") {
-        auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(value);
-        auto* typeToDeinit = alloca ? alloca->getAllocatedType() : value->getType();
-        if (typeToDeinit->isStructTy()) {
-            llvm::StringRef typeName = typeToDeinit->getStructName();
-            llvm::Function* deinit = module.getFunction(("__deinit_" + typeName).str());
-            if (deinit) deferDeinitCallOf(value);
-        }
+    if (type && type->isBasicType()) {
+        llvm::Function* deinit = module.getFunction(("__deinit_" + type->getName()).str());
+        if (deinit) deferDeinitCallOf(value);
     }
 }
 
@@ -436,7 +432,8 @@ void codegen(const ReturnStmt& stmt) {
     }
 }
 
-llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type, llvm::Value* arraySize = nullptr,
+llvm::AllocaInst* createEntryBlockAlloca(const Type* deltaType, llvm::Type* type,
+                                         llvm::Value* arraySize = nullptr,
                                          const llvm::Twine& name = "") {
     auto* insertBlock = builder.GetInsertBlock();
     if (lastAlloca == llvm::BasicBlock::iterator()) {
@@ -450,14 +447,14 @@ llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type, llvm::Value* arraySiz
     }
     auto* alloca = builder.CreateAlloca(type, arraySize, name);
     lastAlloca = alloca->getIterator();
-    setLocalValue(name.str(), alloca);
+    setLocalValue(deltaType, name.str(), alloca);
     builder.SetInsertPoint(insertBlock);
     return alloca;
 }
 
 void codegen(const VariableStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(toIR(stmt.decl->getType()), nullptr, stmt.decl->name);
-
+    auto* alloca = createEntryBlockAlloca(&stmt.decl->getType(), toIR(stmt.decl->getType()),
+                                          nullptr, stmt.decl->name);
     if (auto initializer = stmt.decl->initializer) {
         builder.CreateStore(codegenForPassing(*initializer), alloca);
     }
@@ -680,12 +677,14 @@ llvm::Function* getFunc(llvm::StringRef name) {
     return it->second;
 }
 
-void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
+void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
     lastAlloca = llvm::BasicBlock::iterator();
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &func));
     beginScope();
-    for (auto& arg : func.args()) setLocalValue(arg.getName(), &arg);
-    for (const auto& stmt : body) codegen(stmt);
+    auto arg = func.arg_begin();
+    if (decl.isMemberFunc()) setLocalValue(nullptr, "this", &*arg++);
+    for (const auto& param : decl.params) setLocalValue(&param.type, param.name, &*arg++);
+    for (const auto& stmt : *decl.body) codegen(stmt);
     endScope();
 
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
@@ -701,7 +700,7 @@ void codegenFuncBody(llvm::ArrayRef<Stmt> body, llvm::Function& func) {
 void codegen(const FuncDecl& decl) {
     auto it = funcs.find(decl.name);
     auto* func = it == funcs.end() ? codegenFuncProto(decl) : it->second;
-    if (!decl.isExtern()) codegenFuncBody(*decl.body, *func);
+    if (!decl.isExtern()) codegenFuncBody(decl, *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 
@@ -714,8 +713,9 @@ void codegen(const InitDecl& decl) {
     auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl().getType()));
     auto* alloca = builder.CreateAlloca(type);
 
-    setLocalValue("this", alloca);
-    for (auto& arg : func->args()) setLocalValue(arg.getName(), &arg);
+    setLocalValue(&funcDecl.returnType, "this", alloca);
+    auto param = decl.params.begin();
+    for (auto& arg : func->args()) setLocalValue(&param++->type, arg.getName(), &arg);
     for (const auto& stmt : *decl.body) codegen(stmt);
     builder.CreateRet(builder.CreateLoad(alloca));
     localValues.clear();
@@ -725,9 +725,9 @@ void codegen(const InitDecl& decl) {
 
 void codegen(const DeinitDecl& decl) {
     FuncDecl funcDecl{"__deinit_" + decl.getTypeDecl().name, {}, BasicType{"void"},
-        decl.getTypeDecl().name, nullptr, decl.srcLoc};
+        decl.getTypeDecl().name, decl.body, decl.srcLoc};
     llvm::Function* func = codegenFuncProto(funcDecl);
-    codegenFuncBody(*decl.body, *func);
+    codegenFuncBody(funcDecl, *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 

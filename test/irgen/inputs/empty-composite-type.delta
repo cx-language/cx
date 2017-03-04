@@ -1,0 +1,7 @@
+struct S { }
+class C { }
+
+func main() {
+    S s = uninitialized;
+    C c = uninitialized;
+}
