@@ -156,6 +156,8 @@ int delta::lex() {
                 if (ch == '/') {
                     // comment until end of line
                     while (readChar() != '\n') { }
+                } else if (ch == '=') {
+                    return SLASH_EQ;
                 } else {
                     unreadChar(ch);
                     return SLASH;
@@ -164,26 +166,41 @@ int delta::lex() {
             case '+':
                 ch = readChar();
                 if (ch == '+') return INCREMENT;
+                if (ch == '=') return PLUS_EQ;
                 unreadChar(ch);
                 return PLUS;
             case '-':
                 ch = readChar();
                 if (ch == '-') return DECREMENT;
                 if (ch == '>') return RARROW;
+                if (ch == '=') return MINUS_EQ;
                 unreadChar(ch);
                 return MINUS;
             case '*':
+                ch = readChar();
+                if (ch == '=') return STAR_EQ;
+                unreadChar(ch);
                 return STAR;
             case '<':
                 ch = readChar();
                 if (ch == '=') return LE;
-                if (ch == '<') return LSHIFT;
+                if (ch == '<') {
+                    ch = readChar();
+                    if (ch == '=') return LSHIFT_EQ;
+                    unreadChar(ch);
+                    return LSHIFT;
+                }
                 unreadChar(ch);
                 return LT;
             case '>':
                 ch = readChar();
                 if (ch == '=') return GE;
-                if (ch == '>') return RSHIFT;
+                if (ch == '>') {
+                    ch = readChar();
+                    if (ch == '=') return RSHIFT_EQ;
+                    unreadChar(ch);
+                    return RSHIFT;
+                }
                 unreadChar(ch);
                 return GT;
             case '=':
@@ -198,15 +215,30 @@ int delta::lex() {
                 return NOT;
             case '&':
                 ch = readChar();
-                if (ch == '&') return AND_AND;
+                if (ch == '&') {
+                    ch = readChar();
+                    if (ch == '=') return AND_AND_EQ;
+                    unreadChar(ch);
+                    return AND_AND;
+                }
+                if (ch == '=') return AND_EQ;
                 unreadChar(ch);
                 return AND;
             case '|':
                 ch = readChar();
-                if (ch == '|') return OR_OR;
+                if (ch == '|') {
+                    ch = readChar();
+                    if (ch == '=') return OR_OR_EQ;
+                    unreadChar(ch);
+                    return OR_OR;
+                }
+                if (ch == '=') return OR_EQ;
                 unreadChar(ch);
                 return OR;
             case '^':
+                ch = readChar();
+                if (ch == '=') return XOR_EQ;
+                unreadChar(ch);
                 return XOR;
             case '~':
                 return COMPL;

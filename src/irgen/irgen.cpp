@@ -7,6 +7,7 @@
 #include "irgen.h"
 #include "../sema/typecheck.h"
 #include "../parser/parser.hpp"
+#include "../driver/utility.h"
 
 using namespace delta;
 
@@ -159,13 +160,13 @@ llvm::Value* codegen(const ArrayLiteralExpr& expr) {
     return llvm::ConstantArray::get(arrayType, values);
 }
 
-using CreateNegFunc       = decltype(&llvm::IRBuilder<>::CreateNeg);
-using CreateICmpFunc      = decltype(&llvm::IRBuilder<>::CreateICmpEQ);
-using CreateAddSubMulFunc = decltype(&llvm::IRBuilder<>::CreateAdd);
-using CreateDivFunc       = decltype(&llvm::IRBuilder<>::CreateSDiv);
+using UnaryCreate   = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, const llvm::Twine&, bool, bool);
+using BinaryCreate0 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&);
+using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool);
+using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
 
-llvm::Value* codegenPrefixOp(const PrefixExpr& expr, CreateNegFunc intFunc) {
-    return (builder.*intFunc)(codegen(*expr.operand), "", false, false);
+llvm::Value* codegenPrefixOp(const PrefixExpr& expr, UnaryCreate create) {
+    return (builder.*create)(codegen(*expr.operand), "", false, false);
 }
 
 llvm::Value* codegenNot(const PrefixExpr& expr) {
@@ -191,42 +192,28 @@ llvm::Value* codegenLvalue(const PrefixExpr& expr) {
     }
 }
 
-llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateICmpFunc intFunc) {
-    llvm::Value* lhs = codegen(*expr.left);
-    llvm::Value* rhs = codegen(*expr.right);
-    return (builder.*intFunc)(lhs, rhs, "");
+llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate0 create) {
+    return (builder.*create)(lhs, rhs, "");
 }
 
-llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateICmpFunc intFunc,
-                             CreateICmpFunc uintFunc) {
-    llvm::Value* lhs = codegen(*expr.left);
-    llvm::Value* rhs = codegen(*expr.right);
-    return (builder.*(expr.left->getType().isSigned() ? intFunc : uintFunc))(lhs, rhs, "");
+llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate1 create) {
+    return (builder.*create)(lhs, rhs, "", false);
 }
 
-llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateAddSubMulFunc intFunc) {
-    llvm::Value* lhs = codegen(*expr.left);
-    llvm::Value* rhs = codegen(*expr.right);
-    return (builder.*intFunc)(lhs, rhs, "", false, false);
+llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate2 create) {
+    return (builder.*create)(lhs, rhs, "", false, false);
 }
 
-llvm::Value* codegenBinaryOp(const BinaryExpr& expr, CreateDivFunc intFunc,
-                             CreateDivFunc uintFunc) {
-    llvm::Value* lhs = codegen(*expr.left);
-    llvm::Value* rhs = codegen(*expr.right);
-    return (builder.*(expr.left->getType().isSigned() ? intFunc : uintFunc))(lhs, rhs, "", false);
-}
-
-llvm::Value* codegenLogicalAnd(const BinaryExpr& expr) {
+llvm::Value* codegenLogicalAnd(const Expr& left, const Expr& right) {
     auto* lhsBlock = builder.GetInsertBlock();
     auto* rhsBlock = llvm::BasicBlock::Create(ctx, "andRHS", builder.GetInsertBlock()->getParent());
     auto* endBlock = llvm::BasicBlock::Create(ctx, "andEnd", builder.GetInsertBlock()->getParent());
 
-    llvm::Value* lhs = codegen(*expr.left);
+    llvm::Value* lhs = codegen(left);
     builder.CreateCondBr(lhs, rhsBlock, endBlock);
 
     builder.SetInsertPoint(rhsBlock);
-    llvm::Value* rhs = codegen(*expr.right);
+    llvm::Value* rhs = codegen(right);
     builder.CreateBr(endBlock);
 
     builder.SetInsertPoint(endBlock);
@@ -236,16 +223,16 @@ llvm::Value* codegenLogicalAnd(const BinaryExpr& expr) {
     return phi;
 }
 
-llvm::Value* codegenLogicalOr(const BinaryExpr& expr) {
+llvm::Value* codegenLogicalOr(const Expr& left, const Expr& right) {
     auto* lhsBlock = builder.GetInsertBlock();
     auto* rhsBlock = llvm::BasicBlock::Create(ctx, "orRHS", builder.GetInsertBlock()->getParent());
     auto* endBlock = llvm::BasicBlock::Create(ctx, "orEnd", builder.GetInsertBlock()->getParent());
 
-    llvm::Value* lhs = codegen(*expr.left);
+    llvm::Value* lhs = codegen(left);
     builder.CreateCondBr(lhs, endBlock, rhsBlock);
 
     builder.SetInsertPoint(rhsBlock);
-    llvm::Value* rhs = codegen(*expr.right);
+    llvm::Value* rhs = codegen(right);
     builder.CreateBr(endBlock);
 
     builder.SetInsertPoint(endBlock);
@@ -255,35 +242,58 @@ llvm::Value* codegenLogicalOr(const BinaryExpr& expr) {
     return phi;
 }
 
+llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr) {
+    switch (op.rawValue) {
+        case EQ:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
+        case NE:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
+        case LT:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
+                                           &llvm::IRBuilder<>::CreateICmpSLT :
+                                           &llvm::IRBuilder<>::CreateICmpULT);
+        case LE:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
+                                           &llvm::IRBuilder<>::CreateICmpSLE :
+                                           &llvm::IRBuilder<>::CreateICmpULE);
+        case GT:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
+                                           &llvm::IRBuilder<>::CreateICmpSGT :
+                                           &llvm::IRBuilder<>::CreateICmpUGT);
+        case GE:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
+                                           &llvm::IRBuilder<>::CreateICmpSGE :
+                                           &llvm::IRBuilder<>::CreateICmpUGE);
+        case PLUS:  return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAdd);
+        case MINUS: return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSub);
+        case STAR:  return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateMul);
+        case SLASH: return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
+                                           &llvm::IRBuilder<>::CreateSDiv :
+                                           &llvm::IRBuilder<>::CreateUDiv);
+        case AND:   return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAnd);
+        case OR:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateOr);
+        case XOR:   return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateXor);
+        case LSHIFT:return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateShl);
+        case RSHIFT:return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
+                                           (BinaryCreate1) &llvm::IRBuilder<>::CreateAShr :
+                                           (BinaryCreate1) &llvm::IRBuilder<>::CreateLShr);
+        default: assert(false); return nullptr;
+    }
+}
+
+llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, const Expr& rhs) {
+    switch (op.rawValue) {
+        case AND_AND: return codegenLogicalAnd(lhs, rhs);
+        case OR_OR:   return codegenLogicalOr(lhs, rhs);
+        default: assert(false); return nullptr;
+    }
+}
+
 llvm::Value* codegen(const BinaryExpr& expr) {
     assert(expr.left->getType().isImplicitlyConvertibleTo(expr.right->getType())
         || expr.right->getType().isImplicitlyConvertibleTo(expr.left->getType()));
 
     switch (expr.op.rawValue) {
-        case EQ:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpEQ);
-        case NE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpNE);
-        case LT:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLT,
-                                                 &llvm::IRBuilder<>::CreateICmpULT);
-        case LE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSLE,
-                                                 &llvm::IRBuilder<>::CreateICmpULE);
-        case GT:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGT,
-                                                 &llvm::IRBuilder<>::CreateICmpUGT);
-        case GE:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateICmpSGE,
-                                                 &llvm::IRBuilder<>::CreateICmpUGE);
-        case PLUS:  return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAdd);
-        case MINUS: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSub);
-        case STAR:  return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateMul);
-        case SLASH: return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateSDiv,
-                                                 &llvm::IRBuilder<>::CreateUDiv);
-        case AND:   return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAnd);
-        case OR:    return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateOr);
-        case XOR:   return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateXor);
-        case LSHIFT:return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateShl);
-        case RSHIFT:return codegenBinaryOp(expr, &llvm::IRBuilder<>::CreateAShr,
-                                                 &llvm::IRBuilder<>::CreateLShr);
-        case AND_AND: return codegenLogicalAnd(expr);
-        case OR_OR:   return codegenLogicalOr(expr);
-        default: assert(false); return nullptr;
+        case AND_AND: case OR_OR:
+            return codegenShortCircuitBinaryOp(expr.op, *expr.left, *expr.right);
+        default:
+            llvm::Value* lhs = codegen(*expr.left);
+            llvm::Value* rhs = codegen(*expr.right);
+            return codegenBinaryOp(expr.op, lhs, rhs, *expr.left);
     }
 }
 
@@ -599,6 +609,17 @@ void codegen(const AssignStmt& stmt) {
     builder.CreateStore(codegen(stmt.rhs), lhs);
 }
 
+void codegen(const AugAssignStmt& stmt) {
+    switch (stmt.op.rawValue) {
+        case AND_AND: fatalError("'&&=' not implemented yet");
+        case OR_OR:   fatalError("'||=' not implemented yet");
+    }
+    auto* lhs = codegenLvalue(stmt.lhs);
+    auto* rhs = codegen(stmt.rhs);
+    auto* result = codegenBinaryOp(stmt.op, builder.CreateLoad(lhs), rhs, stmt.lhs);
+    builder.CreateStore(result, lhs);
+}
+
 void codegen(const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    codegen(stmt.getReturnStmt()); break;
@@ -612,6 +633,7 @@ void codegen(const Stmt& stmt) {
         case StmtKind::WhileStmt:     codegen(stmt.getWhileStmt()); break;
         case StmtKind::BreakStmt:     codegen(stmt.getBreakStmt()); break;
         case StmtKind::AssignStmt:    codegen(stmt.getAssignStmt()); break;
+        case StmtKind::AugAssignStmt: codegen(stmt.getAugAssignStmt()); break;
     }
 }
 

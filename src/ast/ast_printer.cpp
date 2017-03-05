@@ -171,6 +171,10 @@ std::ostream& operator<<(std::ostream& out, const AssignStmt& stmt) {
     return out << br << "(assign-stmt " << stmt.lhs << " " << stmt.rhs << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const AugAssignStmt& stmt) {
+    return out << br << "(comp-assign-stmt " << stmt.op << " " << stmt.lhs << " " << stmt.rhs << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    return out << stmt.getReturnStmt();
@@ -184,6 +188,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::WhileStmt:     return out << stmt.getWhileStmt();
         case StmtKind::BreakStmt:     return out << stmt.getBreakStmt();
         case StmtKind::AssignStmt:    return out << stmt.getAssignStmt();
+        case StmtKind::AugAssignStmt: return out << stmt.getAugAssignStmt();
     }
 }
 

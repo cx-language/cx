@@ -22,6 +22,7 @@ enum class StmtKind {
     WhileStmt,
     BreakStmt,
     AssignStmt,
+    AugAssignStmt,
 };
 
 struct ReturnStmt {
@@ -84,6 +85,14 @@ struct AssignStmt {
     SrcLoc srcLoc; // Location of '='.
 };
 
+/// An augmented assignment (a.k.a. compound assignment) statement.
+struct AugAssignStmt {
+    Expr lhs;
+    Expr rhs;
+    BinaryOperator op;
+    SrcLoc srcLoc; // Location of operator symbol.
+};
+
 class Stmt {
 public:
 #define DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(KIND) \
@@ -110,6 +119,7 @@ public:
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(WhileStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(BreakStmt)
     DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(AssignStmt)
+    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(AugAssignStmt)
 #undef DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR
 
     Stmt(Stmt&&) = default;
@@ -117,7 +127,8 @@ public:
 
 private:
     boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt,
-        ExprStmt, DeferStmt, IfStmt, SwitchStmt, WhileStmt, BreakStmt, AssignStmt> data;
+        ExprStmt, DeferStmt, IfStmt, SwitchStmt, WhileStmt, BreakStmt,
+        AssignStmt, AugAssignStmt> data;
 };
 
 }

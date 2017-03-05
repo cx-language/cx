@@ -432,21 +432,33 @@ void typecheck(BreakStmt& breakStmt) {
     }
 }
 
-void typecheck(AssignStmt& stmt) {
-    const Type& lhsType = typecheck(stmt.lhs);
-    if (lhsType.isFuncType()) error(stmt.srcLoc, "cannot assign to function");
-    const Type& rhsType = typecheck(stmt.rhs);
-    if (!isValidConversion(stmt.rhs, rhsType, lhsType)) {
-        error(stmt.rhs.getSrcLoc(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+void typecheckAssignment(Expr& lhs, Expr& rhs, SrcLoc srcLoc) {
+    const Type& lhsType = typecheck(lhs);
+    if (lhsType.isFuncType()) error(srcLoc, "cannot assign to function");
+    const Type& rhsType = typecheck(rhs);
+    if (!isValidConversion(rhs, rhsType, lhsType)) {
+        error(rhs.getSrcLoc(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
     if (!lhsType.isMutable() && !inInitializer) {
-        if (stmt.lhs.isVariableExpr()) {
-            error(stmt.srcLoc, "cannot assign to immutable variable '",
-                  stmt.lhs.getVariableExpr().identifier, "'");
+        if (lhs.isVariableExpr()) {
+            error(srcLoc, "cannot assign to immutable variable '",
+                  lhs.getVariableExpr().identifier, "'");
         } else {
-            error(stmt.srcLoc, "cannot assign to immutable expression");
+            error(srcLoc, "cannot assign to immutable expression");
         }
     }
+}
+
+void typecheck(AssignStmt& stmt) {
+    typecheckAssignment(stmt.lhs, stmt.rhs, stmt.srcLoc);
+}
+
+void typecheck(AugAssignStmt& stmt) {
+    Expr expr(BinaryExpr{stmt.op, std::unique_ptr<Expr>(&stmt.lhs),
+                         std::unique_ptr<Expr>(&stmt.rhs), stmt.srcLoc});
+    typecheckAssignment(stmt.lhs, expr, stmt.srcLoc);
+    expr.getBinaryExpr().left.release();
+    expr.getBinaryExpr().right.release();
 }
 
 void typecheck(Stmt& stmt) {
@@ -462,6 +474,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;
         case StmtKind::BreakStmt:     typecheck(stmt.getBreakStmt()); break;
         case StmtKind::AssignStmt:    typecheck(stmt.getAssignStmt()); break;
+        case StmtKind::AugAssignStmt: typecheck(stmt.getAugAssignStmt()); break;
     }
 }
 

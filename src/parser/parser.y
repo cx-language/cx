@@ -81,6 +81,17 @@
 %token COMPL    "~"
 %token LSHIFT   "<<"
 %token RSHIFT   ">>"
+%token PLUS_EQ  "+="
+%token MINUS_EQ "-="
+%token STAR_EQ  "*="
+%token SLASH_EQ "/="
+%token AND_EQ   "&="
+%token AND_AND_EQ"&&="
+%token OR_EQ    "|="
+%token OR_OR_EQ "||="
+%token XOR_EQ   "^="
+%token LSHIFT_EQ"<<="
+%token RSHIFT_EQ">>="
 
 // Miscellaneous
 %token ASSIGN   "="
@@ -119,7 +130,7 @@
 %type <stmtList> else_body statement_list nonempty_statement_list
 %type <stmt> statement return_statement increment_statement decrement_statement
              call_statement defer_statement if_statement switch_statement while_statement
-             break_statement assignment_statement
+             break_statement assignment_statement compound_assignment_statement
 %type <exprList> expression_list nonempty_expression_list
 %type <argList> argument_list nonempty_argument_list
 %type <arg> argument
@@ -271,6 +282,7 @@ import_declaration:
 statement:
     variable_definition { $$ = new Stmt(VariableStmt{&$1->getVarDecl()}); }
 |   assignment_statement{ $$ = $1; }
+|   compound_assignment_statement { $$ = $1; }
 |   return_statement    { $$ = $1; }
 |   increment_statement { $$ = $1; }
 |   decrement_statement { $$ = $1; }
@@ -401,6 +413,19 @@ binary_expression: expression "||" expression { $$ = new Expr(BinaryExpr{OR_OR, 
 binary_expression: expression "^"  expression { $$ = new Expr(BinaryExpr{XOR, u($1), u($3), loc(@2)}); };
 binary_expression: expression "<<" expression { $$ = new Expr(BinaryExpr{LSHIFT, u($1), u($3), loc(@2)}); };
 binary_expression: expression ">>" expression { $$ = new Expr(BinaryExpr{RSHIFT, u($1), u($3), loc(@2)}); };
+
+compound_assignment_statement:
+    assignment_lhs_expression "+="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), PLUS, loc(@2)}); }
+|   assignment_lhs_expression "-="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), MINUS, loc(@2)}); }
+|   assignment_lhs_expression "*="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), STAR, loc(@2)}); }
+|   assignment_lhs_expression "/="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), SLASH, loc(@2)}); }
+|   assignment_lhs_expression "&="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), AND, loc(@2)}); }
+|   assignment_lhs_expression "&&=" expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), AND_AND, loc(@2)}); }
+|   assignment_lhs_expression "|="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), OR, loc(@2)}); }
+|   assignment_lhs_expression "||=" expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), OR_OR, loc(@2)}); }
+|   assignment_lhs_expression "^="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), XOR, loc(@2)}); }
+|   assignment_lhs_expression "<<=" expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), LSHIFT, loc(@2)}); }
+|   assignment_lhs_expression ">>=" expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), RSHIFT, loc(@2)}); };
 
 array_literal: "[" expression_list "]" { $$ = new Expr(ArrayLiteralExpr{std::move(*$2), loc(@1)}); }
 
