@@ -79,17 +79,17 @@ bool emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
 } // anonymous namespace
 
 int main(int argc, char** argv) {
-    if (argc == 1) {
-        std::cout << "error: no input files" << std::endl;
-        return 1;
-    }
-
     std::vector<llvm::StringRef> args(argv + 1, argv + argc);
     const bool syntaxOnly = checkFlag("-fsyntax-only", args);
     const bool compileOnly = checkFlag("-c", args);
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
+
+    if (args.empty()) {
+        std::cout << "error: no input files" << std::endl;
+        return 1;
+    }
 
     for (llvm::StringRef filePath : args) {
         inputFile = fopen(filePath.data(), "rb");
