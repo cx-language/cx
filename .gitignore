@@ -15,5 +15,6 @@ rules.ninja
 parser.hpp
 parser.cpp
 
-# Executables
+# Build products
 delta
+*.a
