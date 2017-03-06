@@ -20,6 +20,6 @@ void addToSymbolTable(const DeinitDecl& decl);
 void addToSymbolTable(const TypeDecl& decl);
 void addToSymbolTable(const VarDecl& decl);
 Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc);
-void typecheck(std::vector<Decl>& decls);
+void typecheck(std::vector<Decl>& decls, const std::vector<llvm::StringRef>& includePaths);
 
 }

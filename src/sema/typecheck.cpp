@@ -5,6 +5,7 @@
 #include <boost/numeric/conversion/cast.hpp>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/iterator_range.h>
 #include "typecheck.h"
@@ -24,6 +25,7 @@ const Type* funcReturnType = nullptr;
 bool inInitializer = false;
 bool canBreak = false;
 bool importingC = false;
+llvm::ArrayRef<llvm::StringRef> includePaths;
 
 const Type& typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
@@ -638,7 +640,7 @@ void typecheck(FieldDecl& decl) {
 
 void typecheck(ImportDecl& decl) {
     importingC = true;
-    importCHeader(decl.target);
+    importCHeader(decl.target, includePaths);
     importingC = false;
 }
 
@@ -657,6 +659,7 @@ void typecheck(Decl& decl) {
 
 } // anonymous namespace
 
-void delta::typecheck(std::vector<Decl>& decls) {
+void delta::typecheck(std::vector<Decl>& decls, const std::vector<llvm::StringRef>& includePaths) {
+    ::includePaths = includePaths;
     for (Decl& decl : decls) ::typecheck(decl);
 }

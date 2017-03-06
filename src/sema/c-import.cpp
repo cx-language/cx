@@ -177,7 +177,7 @@ std::string getClangBuiltinIncludePath() {
 
 } // anonymous namespace
 
-void delta::importCHeader(llvm::StringRef headerName) {
+void delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::StringRef> includePaths) {
     clang::CompilerInstance ci;
     clang::DiagnosticOptions diagnosticOptions;
     ci.createDiagnostics();
@@ -195,6 +195,9 @@ void delta::importCHeader(llvm::StringRef headerName) {
     ci.getHeaderSearchOpts().AddPath(importerDir,          clang::frontend::Quoted, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
+    for (llvm::StringRef includePath : includePaths) {
+        ci.getHeaderSearchOpts().AddPath(includePath,      clang::frontend::System, false, false);
+    }
 
     std::string clangBuiltinIncludePath = getClangBuiltinIncludePath();
     if (!clangBuiltinIncludePath.empty()) {

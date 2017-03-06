@@ -37,6 +37,20 @@ bool checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) {
     return contains;
 }
 
+std::vector<llvm::StringRef> collectStringOptionValues(llvm::StringRef flagPrefix,
+                                                       std::vector<llvm::StringRef>& args) {
+    std::vector<llvm::StringRef> values;
+    for (auto arg = args.begin(); arg != args.end();) {
+        if (arg->startswith(flagPrefix)) {
+            values.push_back(arg->substr(flagPrefix.size()));
+            arg = args.erase(arg);
+        } else {
+            ++arg;
+        }
+    }
+    return values;
+}
+
 bool emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
                      llvm::TargetMachine::CodeGenFileType fileType) {
     llvm::InitializeNativeTarget();
@@ -85,6 +99,7 @@ int main(int argc, char** argv) {
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
+    const std::vector<llvm::StringRef> includePaths = collectStringOptionValues("-I", args);
 
     if (args.empty()) {
         std::cout << "error: no input files" << std::endl;
@@ -104,7 +119,7 @@ int main(int argc, char** argv) {
         if (result != 0) return result;
     }
 
-    typecheck(globalAST);
+    typecheck(globalAST, includePaths);
 
     if (syntaxOnly) return 0;
 
