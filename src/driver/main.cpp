@@ -9,6 +9,7 @@
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/FileSystem.h>
+#include "utility.h"
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
 #include "../parser/parser.hpp"
@@ -51,7 +52,7 @@ std::vector<llvm::StringRef> collectStringOptionValues(llvm::StringRef flagPrefi
     return values;
 }
 
-bool emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
+void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
                      llvm::TargetMachine::CodeGenFileType fileType) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
@@ -62,10 +63,7 @@ bool emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
 
     std::string errorMessage;
     auto* target = llvm::TargetRegistry::lookupTarget(targetTriple, errorMessage);
-    if (!target) {
-        llvm::errs() << errorMessage;
-        return false;
-    }
+    if (!target) printErrorAndExit(errorMessage);
 
     llvm::TargetOptions options;
     auto* targetMachine = target->createTargetMachine(targetTriple, "generic", "", options,
@@ -74,20 +72,15 @@ bool emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
 
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::F_None);
-    if (error) {
-        llvm::errs() << error.message() << '\n';
-        return false;
-    }
+    if (error) printErrorAndExit(error.message());
 
     llvm::legacy::PassManager passManager;
     if (targetMachine->addPassesToEmitFile(passManager, file, fileType)) {
-        llvm::errs() << "TargetMachine can't emit a file of this type\n";
-        return false;
+        printErrorAndExit("TargetMachine can't emit a file of this type");
     }
 
     passManager.run(module);
     file.flush();
-    return true;
 }
 
 void printHelp() {
@@ -125,22 +118,19 @@ int main(int argc, char** argv) {
 
     for (llvm::StringRef arg : args) {
         if (arg.startswith("-")) {
-            llvm::outs() << "error: unsupported option '"  << arg << "'\n";
-            return 1;
+            printErrorAndExit("unsupported option '", arg, "'");
         }
     }
 
     if (args.empty()) {
-        std::cout << "error: no input files" << std::endl;
-        return 1;
+        printErrorAndExit("no input files");
     }
 
     for (llvm::StringRef filePath : args) {
         inputFile = fopen(filePath.data(), "rb");
 
         if (!inputFile) {
-            llvm::outs() << "error: no such file: '"  << filePath << "'\n";
-            return 1;
+            printErrorAndExit("no such file: '", filePath, "'");
         }
 
         currentFileName = filePath.data();
