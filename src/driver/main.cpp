@@ -90,10 +90,32 @@ bool emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
     return true;
 }
 
+void printHelp() {
+    llvm::outs() <<
+        "OVERVIEW: Delta compiler\n"
+        "\n"
+        "USAGE: delta [options] <inputs>\n"
+        "\n"
+        "OPTIONS:\n"
+        "  -c                    - Compile only, generating an .o file; don't link\n"
+        "  -emit-assembly        - Emit assembly code\n"
+        "  -fsyntax-only         - Perform parsing and type checking\n"
+        "  -help                 - Display this help\n"
+        "  -I<directory>         - Add a header search path for C import\n"
+        "  -o=stdout             - Print the generated LLVM IR to stdout\n"
+        "  -print-ast            - Print the abstract syntax tree to stdout\n";
+}
+
 } // anonymous namespace
 
 int main(int argc, char** argv) {
     std::vector<llvm::StringRef> args(argv + 1, argv + argc);
+
+    if (checkFlag("-help", args) || checkFlag("--help", args) || checkFlag("-h", args)) {
+        printHelp();
+        return 0;
+    }
+
     const bool syntaxOnly = checkFlag("-fsyntax-only", args);
     const bool compileOnly = checkFlag("-c", args);
     const bool printAST = checkFlag("-print-ast", args);
