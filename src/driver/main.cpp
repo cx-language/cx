@@ -101,6 +101,13 @@ int main(int argc, char** argv) {
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
     const std::vector<llvm::StringRef> includePaths = collectStringOptionValues("-I", args);
 
+    for (llvm::StringRef arg : args) {
+        if (arg.startswith("-")) {
+            llvm::outs() << "error: unsupported option '"  << arg << "'\n";
+            return 1;
+        }
+    }
+
     if (args.empty()) {
         std::cout << "error: no input files" << std::endl;
         return 1;
