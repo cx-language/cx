@@ -29,6 +29,15 @@ After this, the following commands can be used:
 - `make` builds the project.
 - `make check` runs the test suite and reports errors in case of failure.
 
+## Usage
+
+The basic usage of the Delta compiler is as follows:
+
+- `delta <files>` compiles and links the given Delta source files into an executable.
+- `delta -c <files>` compiles the given Delta source files into an object (.o) file.
+
+Run `delta -help` for more options.
+
 ## Contributing
 
 Delta is an open-source language. Contributions are welcome and encouraged!
