@@ -7,6 +7,8 @@ C++, C, and Rust. The project is currently in very early stages of development.
 See the (incomplete) [specification document](doc/spec.md) for a detailed
 description of the language.
 
+You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/delta-sandbox).
+
 ## Building from source
 
 Building Delta from source requires the following dependencies:
