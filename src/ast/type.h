@@ -83,6 +83,7 @@ public:
     void setMutable(bool isMutable) { mutableFlag = isMutable; }
     TypeKind getKind() const { return static_cast<TypeKind>(data.which()); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
+    std::string toString() const;
 
     llvm::StringRef getName() const { return getBasicType().name; }
     const Type& getElementType() const { return *getArrayType().elementType; }

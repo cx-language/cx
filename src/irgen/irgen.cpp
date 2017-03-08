@@ -5,6 +5,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 #include "irgen.h"
+#include "mangle.h"
 #include "../sema/typecheck.h"
 #include "../parser/parser.hpp"
 #include "../driver/utility.h"
@@ -681,7 +682,8 @@ llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName) {
     }
 }
 
-llvm::Function* codegenFuncProto(const FuncDecl& decl, bool addToFuncs = true) {
+llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::StringRef mangledName = {},
+                                 bool addToFuncs = true) {
     const auto& funcType = decl.getFuncType();
 
     assert(funcType.returnTypes.size() == 1 && "IRGen doesn't support multiple return values yet");
@@ -693,7 +695,9 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl, bool addToFuncs = true) {
     for (const auto& t : funcType.paramTypes) paramTypes.emplace_back(toIR(t));
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);
-    auto* func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, decl.name, &module);
+    if (mangledName.empty()) mangledName = decl.name;
+    auto* func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage,
+                                        mangledName, &module);
 
     auto arg = func->arg_begin(), argsEnd = func->arg_end();
     if (decl.isMemberFunc()) arg++->setName("this");
@@ -709,7 +713,7 @@ llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::Array
     for (const GenericParamDecl& genericParam : decl.genericParams) {
         currentGenericArgs.insert({genericParam.name, toIR(*genericArg)});
     }
-    auto proto = codegenFuncProto(*decl.func, false);
+    auto proto = codegenFuncProto(*decl.func, mangle(decl, genericArgs), false);
     currentGenericArgs.clear();
     return proto;
 }
