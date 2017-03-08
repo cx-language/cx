@@ -1,6 +1,7 @@
 #include <unordered_map>
 #include <vector>
 #include <cassert>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
@@ -726,6 +727,12 @@ llvm::Function* getFuncForCall(const CallExpr& call) {
         if (decl.isFuncDecl())
             return codegenFuncProto(decl.getFuncDecl());
         else {
+            auto it = llvm::find_if(genericFuncInstantiations,
+                                    [&call](GenericFuncInstantiation& instantiation) {
+                return instantiation.decl.func->name == call.funcName
+                    && instantiation.genericArgs == llvm::ArrayRef<Type>(call.genericArgs);
+            });
+            if (it != genericFuncInstantiations.end()) return it->func;
             auto* func = codegenGenericFuncProto(decl.getGenericFuncDecl(), call.genericArgs);
             genericFuncInstantiations.emplace_back(GenericFuncInstantiation{
                 decl.getGenericFuncDecl(), call.genericArgs, func
