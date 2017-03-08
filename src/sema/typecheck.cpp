@@ -23,7 +23,7 @@ using namespace delta;
 namespace {
 
 std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
-std::unordered_map<std::string, Type> currentGenericArgs;
+std::unordered_map<std::string, Type*> currentGenericArgs;
 const Type* funcReturnType = nullptr;
 bool inInitializer = false;
 bool canBreak = false;
@@ -148,7 +148,7 @@ const Type& resolve(const Type& type) {
     if (!type.isBasicType()) return type;
     auto it = currentGenericArgs.find(type.getName());
     if (it == currentGenericArgs.end()) return type;
-    return it->second;
+    return *it->second;
 }
 
 bool isValidConversion(Expr& expr, const Type& unresolvedSource, const Type& unresolvedTarget) {
@@ -212,20 +212,23 @@ Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLo
 
 void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
     if (call.genericArgs.empty()) {
-        error(call.srcLoc, "generic argument inference not implemented yet");
+        call.genericArgs.reserve(decl.genericParams.size());
+        // FIXME: The args will also be typechecked by validateArgs()
+        // after this function. Get rid of this duplicated typechecking.
+        for (auto& arg : call.args) call.genericArgs.emplace_back(typecheck(*arg.value));
     }
-    if (call.genericArgs.size() < decl.genericParams.size()) {
+    else if (call.genericArgs.size() < decl.genericParams.size()) {
         error(call.srcLoc, "too few generic arguments to '", call.funcName,
               "', expected ", decl.genericParams.size());
     }
-    if (call.genericArgs.size() > decl.genericParams.size()) {
+    else if (call.genericArgs.size() > decl.genericParams.size()) {
         error(call.srcLoc, "too many generic arguments to '", call.funcName,
               "', expected ", decl.genericParams.size());
     }
 
     auto genericArg = call.genericArgs.begin();
     for (const GenericParamDecl& genericParam : decl.genericParams) {
-        currentGenericArgs.insert({genericParam.name, *genericArg++});
+        currentGenericArgs.insert({genericParam.name, &*genericArg++});
     }
 }
 
