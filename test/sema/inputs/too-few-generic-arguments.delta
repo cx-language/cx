@@ -1,0 +1,2 @@
+func foo<T, U>(T a, U b) -> T { return a; }
+func main() { var f = foo<int>(1, 2); }

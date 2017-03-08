@@ -196,9 +196,8 @@ std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {
     return out << "(" << decl.type << " " << decl.name << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const FuncDecl& decl) {
-    out << br << (decl.isExtern() ? "(extern-func-decl " : "(func-decl ");
-    out << decl.name << " (";
+std::ostream& printFuncBase(std::ostream& out, const FuncDecl& decl) {
+    out << " (";
     for (const ParamDecl& param : decl.params) {
         out << param;
         if (&param != &decl.params.back()) out << " ";
@@ -214,6 +213,23 @@ std::ostream& operator<<(std::ostream& out, const FuncDecl& decl) {
     }
 
     return out << ")";
+}
+
+std::ostream& operator<<(std::ostream& out, const FuncDecl& decl) {
+    out << br << (decl.isExtern() ? "(extern-func-decl " : "(func-decl ");
+    out << decl.name;
+    return printFuncBase(out, decl);
+}
+
+std::ostream& operator<<(std::ostream& out, const GenericFuncDecl& decl) {
+    out << br << (decl.func->isExtern() ? "(extern-generic-func-decl " : "(generic-func-decl ");
+    out << decl.func->name << " (";
+    for (const GenericParamDecl& genericParam : decl.genericParams) {
+        out << genericParam.name;
+        if (&genericParam != &decl.genericParams.back()) out << " ";
+    }
+    out << ")";
+    return printFuncBase(out, *decl.func);
 }
 
 std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
@@ -272,6 +288,8 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: return out << decl.getParamDecl();
         case DeclKind::FuncDecl:  return out << decl.getFuncDecl();
+        case DeclKind::GenericParamDecl: /* handled via GenericFuncDecl */ assert(false); break;
+        case DeclKind::GenericFuncDecl: return out << decl.getGenericFuncDecl();
         case DeclKind::InitDecl:  return out << decl.getInitDecl();
         case DeclKind::DeinitDecl:return out << decl.getDeinitDecl();
         case DeclKind::TypeDecl:  return out << decl.getTypeDecl();

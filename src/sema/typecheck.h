@@ -8,6 +8,7 @@ namespace delta {
 
 class Decl;
 struct FuncDecl;
+struct GenericFuncDecl;
 struct InitDecl;
 struct DeinitDecl;
 struct TypeDecl;
@@ -15,6 +16,7 @@ struct VarDecl;
 struct SrcLoc;
 
 void addToSymbolTable(const FuncDecl& decl);
+void addToSymbolTable(const GenericFuncDecl& decl);
 void addToSymbolTable(const InitDecl& decl);
 void addToSymbolTable(const DeinitDecl& decl);
 void addToSymbolTable(const TypeDecl& decl);

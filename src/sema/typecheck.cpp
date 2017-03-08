@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <cstdlib>
 #include <boost/numeric/conversion/cast.hpp>
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/ArrayRef.h>
@@ -21,6 +22,7 @@ using namespace delta;
 namespace {
 
 std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
+std::unordered_map<std::string, Type> currentGenericArgs;
 const Type* funcReturnType = nullptr;
 bool inInitializer = false;
 bool canBreak = false;
@@ -37,6 +39,8 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::VarDecl: return decl.getVarDecl().getType();
         case DeclKind::ParamDecl: return decl.getParamDecl().type;
         case DeclKind::FuncDecl: return decl.getFuncDecl().getFuncType();
+        case DeclKind::GenericParamDecl: assert(false && "cannot refer to generic parameters yet");
+        case DeclKind::GenericFuncDecl: assert(false && "cannot refer to generic functions yet");
         case DeclKind::InitDecl: assert(false && "cannot refer to initializers yet");
         case DeclKind::DeinitDecl: assert(false && "cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.srcLoc, "'", expr.identifier, "' is not a variable");
@@ -138,7 +142,18 @@ bool checkRange(Expr& expr, int64_t value, llvm::StringRef param) {
     return true;
 }
 
-bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
+/// Resolves generic parameters to their corresponding types, returns other types as is.
+const Type& resolve(const Type& type) {
+    if (!type.isBasicType()) return type;
+    auto it = currentGenericArgs.find(type.getName());
+    if (it == currentGenericArgs.end()) return type;
+    return it->second;
+}
+
+bool isValidConversion(Expr& expr, const Type& unresolvedSource, const Type& unresolvedTarget) {
+    const Type& source = resolve(unresolvedSource);
+    const Type& target = resolve(unresolvedTarget);
+
     if (expr.isLvalue() && source.isBasicType()) {
         TypeDecl* typeDecl = getTypeDecl(source.getBasicType());
         if (typeDecl && !typeDecl->passByValue() && !target.isPtrType()) {
@@ -194,6 +209,25 @@ Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLo
     return type.getType();
 }
 
+void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
+    if (call.genericArgs.empty()) {
+        error(call.srcLoc, "generic argument inference not implemented yet");
+    }
+    if (call.genericArgs.size() < decl.genericParams.size()) {
+        error(call.srcLoc, "too few generic arguments to '", call.funcName,
+              "', expected ", decl.genericParams.size());
+    }
+    if (call.genericArgs.size() > decl.genericParams.size()) {
+        error(call.srcLoc, "too many generic arguments to '", call.funcName,
+              "', expected ", decl.genericParams.size());
+    }
+
+    auto genericArg = call.genericArgs.begin();
+    for (const GenericParamDecl& genericParam : decl.genericParams) {
+        currentGenericArgs.insert({genericParam.name, *genericArg++});
+    }
+}
+
 Type typecheck(CallExpr& expr) {
     Decl& decl = findInSymbolTable(expr.funcName, expr.srcLoc);
     expr.isInitializerCall = decl.isTypeDecl();
@@ -206,11 +240,17 @@ Type typecheck(CallExpr& expr) {
                   receiverType, "', pointer may be null");
         }
     }
-    if (!decl.isFuncDecl()) {
+    if (decl.isFuncDecl()) {
+        validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'", expr.srcLoc);
+        return Type(TupleType{decl.getFuncDecl().getFuncType().returnTypes});
+    } else if (decl.isGenericFuncDecl()) {
+        setCurrentGenericArgs(decl.getGenericFuncDecl(), expr);
+        validateArgs(expr.args, decl.getGenericFuncDecl().func->params, "'" + expr.funcName + "'", expr.srcLoc);
+        currentGenericArgs.clear();
+        return Type(TupleType{decl.getGenericFuncDecl().func->getFuncType().returnTypes});
+    } else {
         error(expr.srcLoc, "'", expr.funcName, "' is not a function");
     }
-    validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'", expr.srcLoc);
-    return Type(TupleType{decl.getFuncDecl().getFuncType().returnTypes});
 }
 
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
@@ -496,6 +536,13 @@ void delta::addToSymbolTable(const FuncDecl& decl) {
     symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
 }
 
+void delta::addToSymbolTable(const GenericFuncDecl& decl) {
+    if (symbolTable.count(decl.func->name) > 0) {
+        error(decl.func->srcLoc, "redefinition of '", decl.func->name, "'");
+    }
+    symbolTable.insert({decl.func->name, new Decl(GenericFuncDecl(decl))});
+}
+
 void delta::addToSymbolTable(const InitDecl& decl) {
     if (symbolTable.count("__init_" + decl.getTypeName()) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
@@ -574,6 +621,17 @@ void typecheckMemberFunc(FuncDecl& decl) {
     symbolTable = std::move(symbolTableBackup);
 }
 
+void typecheck(GenericParamDecl& decl) {
+    if (symbolTable.count(decl.name) > 0) {
+        error(decl.srcLoc, "redefinition of '", decl.name, "'");
+    }
+}
+
+void typecheck(GenericFuncDecl& decl) {
+    for (auto& genericParam : decl.genericParams) typecheck(genericParam);
+    typecheck(*decl.func);
+}
+
 void typecheck(InitDecl& decl) {
     auto symbolTableBackup = symbolTable;
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
@@ -648,6 +706,8 @@ void typecheck(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
+        case DeclKind::GenericParamDecl: typecheck(decl.getGenericParamDecl()); break;
+        case DeclKind::GenericFuncDecl: typecheck(decl.getGenericFuncDecl()); break;
         case DeclKind::InitDecl:  typecheck(decl.getInitDecl()); break;
         case DeclKind::DeinitDecl:typecheck(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;

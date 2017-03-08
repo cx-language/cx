@@ -1,0 +1,6 @@
+func foo<T>(T t) { }
+
+func main() {
+    foo<int>(1);
+    foo<bool>(false);
+}
