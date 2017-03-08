@@ -82,6 +82,7 @@ struct CallExpr {
     std::vector<Arg> args;
     bool isInitializerCall;
     std::unique_ptr<Expr> receiver; /// Null if non-member function call.
+    std::vector<Type> genericArgs;
     SrcLoc srcLoc;
 
     bool isMemberFuncCall() const { return receiver != nullptr; }

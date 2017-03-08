@@ -1,0 +1,9 @@
+func foo<T>(T t) { }
+func bar<T>(T t) -> T { return t; }
+
+func main() {
+    foo<int>(1);
+    foo<bool>(false);
+    foo<bool>(true);
+    _ = bar("bar");
+}

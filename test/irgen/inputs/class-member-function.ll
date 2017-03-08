@@ -1,6 +1,6 @@
 %Foo = type { i32 }
 
-define %Foo @__init_Foo() {
+define %Foo @Foo.init() {
   %1 = alloca %Foo
   %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
   store i32 42, i32* %2
@@ -25,7 +25,7 @@ define i32 @qux(%Foo* %this) {
 define i32 @main() {
   %foo = alloca %Foo
   %i = alloca i32
-  %1 = call %Foo @__init_Foo()
+  %1 = call %Foo @Foo.init()
   store %Foo %1, %Foo* %foo
   call void @bar(%Foo* %foo)
   %2 = call i32 @qux(%Foo* %foo)

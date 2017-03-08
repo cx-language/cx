@@ -123,8 +123,8 @@
              assignment_lhs_expression array_literal
 %type <declList> declaration_list
 %type <decl> declaration function_definition initializer_definition
-             deinitializer_definition function_prototype
-             member_function_prototype extern_function_declaration variable_definition
+             deinitializer_definition function_prototype member_function_prototype
+             generic_function_prototype extern_function_declaration variable_definition
              immutable_variable_definition mutable_variable_definition
              typed_variable_definition composite_type_declaration import_declaration
 %type <stmtList> else_body statement_list nonempty_statement_list
@@ -136,8 +136,11 @@
 %type <arg> argument
 %type <paramDeclList> parameter_list nonempty_parameter_list
 %type <paramDecl> parameter
+%type <genericParamDeclList> generic_parameter_list
+%type <genericParamDecl> generic_parameter
 %type <fieldDeclList> member_list
 %type <fieldDecl> field_declaration
+%type <typeList> generic_argument_list
 %type <type> type return_type_specifier return_type_list
 %type <caseList> case_list
 %type <switchCase> case
@@ -147,14 +150,17 @@
     long long number;
     std::vector<delta::Decl>* declList;
     std::vector<delta::ParamDecl>* paramDeclList;
+    std::vector<delta::GenericParamDecl>* genericParamDeclList;
     std::vector<delta::FieldDecl>* fieldDeclList;
     std::vector<delta::Stmt>* stmtList;
     std::vector<delta::Expr>* exprList;
+    std::vector<delta::Type>* typeList;
     std::vector<delta::Arg>* argList;
     std::vector<delta::SwitchCase>* caseList;
     delta::Arg* arg;
     delta::Decl* decl;
     delta::ParamDecl* paramDecl;
+    delta::GenericParamDecl* genericParamDecl;
     delta::FieldDecl* fieldDecl;
     delta::Stmt* stmt;
     delta::Expr* expr;
@@ -196,7 +202,9 @@ function_definition:
     function_prototype "{" statement_list "}"
         { $$ = $1; $$->getFuncDecl().body.reset($3); }
 |   member_function_prototype "{" statement_list "}"
-        { $$ = $1; $$->getFuncDecl().body.reset($3); };
+        { $$ = $1; $$->getFuncDecl().body.reset($3); }
+|   generic_function_prototype "{" statement_list "}"
+        { $$ = $1; $$->getGenericFuncDecl().func->body.reset($3); };
 
 function_prototype:
     "func" IDENTIFIER "(" parameter_list ")" return_type_specifier
@@ -207,6 +215,11 @@ member_function_prototype:
     "func" IDENTIFIER "::" IDENTIFIER "(" parameter_list ")" return_type_specifier
         { $$ = new Decl(FuncDecl{$4, std::move(*$6), std::move(*$8), $2, nullptr, loc(@2)});
           addToSymbolTable($$->getFuncDecl()); };
+
+generic_function_prototype:
+    "func" IDENTIFIER "<" generic_parameter_list ">" "(" parameter_list ")" return_type_specifier
+        { $$ = new Decl(GenericFuncDecl{std::shared_ptr<FuncDecl>(new FuncDecl{$2, std::move(*$7), std::move(*$9), "", nullptr, loc(@2)}), std::move(*$4)});
+          addToSymbolTable($$->getGenericFuncDecl()); };
 
 extern_function_declaration:
     "extern" function_prototype ";" { $$ = $2; };
@@ -230,6 +243,13 @@ nonempty_parameter_list:
 parameter:
     type IDENTIFIER { $$ = new ParamDecl{"", std::move(*$1), $2, loc(@2)}; }
 |   IDENTIFIER ":" type IDENTIFIER { $$ = new ParamDecl{$1, std::move(*$3), $4, loc(@4)}; };
+
+generic_parameter_list:
+    generic_parameter { $$ = new std::vector<GenericParamDecl>(); $$->push_back(std::move(*$1)); }
+|   generic_parameter_list "," generic_parameter { $$ = $1; $$->push_back(std::move(*$3)); };
+
+generic_parameter:
+    IDENTIFIER { $$ = new GenericParamDecl{$1, loc(@1)}; };
 
 statement_list:
     /* empty */ { $$ = new std::vector<Stmt>(); }
@@ -432,8 +452,12 @@ array_literal: "[" expression_list "]" { $$ = new Expr(ArrayLiteralExpr{std::mov
 parenthesized_expression: "(" expression ")" { $$ = $2; };
 
 call_expression:
-    IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$1, std::move(*$3), false, nullptr, loc(@1)}); }
-|   expression "." IDENTIFIER "(" argument_list ")" { $$ = new Expr(CallExpr{$3, std::move(*$5), false, u($1), loc(@1)}); };
+    IDENTIFIER "(" argument_list ")"
+        { $$ = new Expr(CallExpr{$1, std::move(*$3), false, nullptr, {}, loc(@1)}); }
+|   expression "." IDENTIFIER "(" argument_list ")"
+        { $$ = new Expr(CallExpr{$3, std::move(*$5), false, u($1), {}, loc(@1)}); }
+|   IDENTIFIER "<" generic_argument_list ">" "(" argument_list ")"
+        { $$ = new Expr(CallExpr{$1, std::move(*$6), false, nullptr, std::move(*$3), loc(@1)}); };
 
 cast_expression:
     "cast" "<" type ">" "(" expression ")" { $$ = new Expr(CastExpr{std::move(*$3), u($6), loc(@1)}); };
@@ -449,6 +473,10 @@ nonempty_argument_list:
 argument:
     expression { $$ = new Arg{"", u($1), loc(@1)};  }
 |   IDENTIFIER ":" expression { $$ = new Arg{$1, u($3), loc(@1)}; };
+
+generic_argument_list:
+    type { $$ = new std::vector<Type>(); $$->push_back(std::move(*$1)); }
+|   generic_argument_list "," type { $$ = $1; $$->push_back(std::move(*$3)); };
 
 member_access_expression:
     expression "." IDENTIFIER { $$ = new Expr(MemberExpr{u($1), $3, loc(@1), loc(@3)}); };

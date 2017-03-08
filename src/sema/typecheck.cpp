@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <cstdlib>
 #include <boost/numeric/conversion/cast.hpp>
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/ArrayRef.h>
@@ -15,12 +16,14 @@
 #include "../ast/decl.h"
 #include "../parser/parser.hpp"
 #include "../driver/utility.h"
+#include "../irgen/mangle.h"
 
 using namespace delta;
 
 namespace {
 
 std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
+std::unordered_map<std::string, Type*> currentGenericArgs;
 const Type* funcReturnType = nullptr;
 bool inInitializer = false;
 bool canBreak = false;
@@ -37,6 +40,8 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::VarDecl: return decl.getVarDecl().getType();
         case DeclKind::ParamDecl: return decl.getParamDecl().type;
         case DeclKind::FuncDecl: return decl.getFuncDecl().getFuncType();
+        case DeclKind::GenericParamDecl: assert(false && "cannot refer to generic parameters yet");
+        case DeclKind::GenericFuncDecl: assert(false && "cannot refer to generic functions yet");
         case DeclKind::InitDecl: assert(false && "cannot refer to initializers yet");
         case DeclKind::DeinitDecl: assert(false && "cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.srcLoc, "'", expr.identifier, "' is not a variable");
@@ -138,7 +143,18 @@ bool checkRange(Expr& expr, int64_t value, llvm::StringRef param) {
     return true;
 }
 
-bool isValidConversion(Expr& expr, const Type& source, const Type& target) {
+/// Resolves generic parameters to their corresponding types, returns other types as is.
+const Type& resolve(const Type& type) {
+    if (!type.isBasicType()) return type;
+    auto it = currentGenericArgs.find(type.getName());
+    if (it == currentGenericArgs.end()) return type;
+    return *it->second;
+}
+
+bool isValidConversion(Expr& expr, const Type& unresolvedSource, const Type& unresolvedTarget) {
+    const Type& source = resolve(unresolvedSource);
+    const Type& target = resolve(unresolvedTarget);
+
     if (expr.isLvalue() && source.isBasicType()) {
         TypeDecl* typeDecl = getTypeDecl(source.getBasicType());
         if (typeDecl && !typeDecl->passByValue() && !target.isPtrType()) {
@@ -186,12 +202,34 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
                   const std::string& funcName, SrcLoc srcLoc);
 
 Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLoc srcLoc) {
-    auto it = symbolTable.find("__init_" + type.name);
+    auto it = symbolTable.find(mangleInitDecl(type.name));
     if (it == symbolTable.end()) {
         error(srcLoc, "no matching initializer for '", type.name, "'");
     }
     validateArgs(args, it->second->getInitDecl().params, "'" + type.name + "' initializer", srcLoc);
     return type.getType();
+}
+
+void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
+    if (call.genericArgs.empty()) {
+        call.genericArgs.reserve(decl.genericParams.size());
+        // FIXME: The args will also be typechecked by validateArgs()
+        // after this function. Get rid of this duplicated typechecking.
+        for (auto& arg : call.args) call.genericArgs.emplace_back(typecheck(*arg.value));
+    }
+    else if (call.genericArgs.size() < decl.genericParams.size()) {
+        error(call.srcLoc, "too few generic arguments to '", call.funcName,
+              "', expected ", decl.genericParams.size());
+    }
+    else if (call.genericArgs.size() > decl.genericParams.size()) {
+        error(call.srcLoc, "too many generic arguments to '", call.funcName,
+              "', expected ", decl.genericParams.size());
+    }
+
+    auto genericArg = call.genericArgs.begin();
+    for (const GenericParamDecl& genericParam : decl.genericParams) {
+        currentGenericArgs.insert({genericParam.name, &*genericArg++});
+    }
 }
 
 Type typecheck(CallExpr& expr) {
@@ -206,11 +244,17 @@ Type typecheck(CallExpr& expr) {
                   receiverType, "', pointer may be null");
         }
     }
-    if (!decl.isFuncDecl()) {
+    if (decl.isFuncDecl()) {
+        validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'", expr.srcLoc);
+        return Type(TupleType{decl.getFuncDecl().getFuncType().returnTypes});
+    } else if (decl.isGenericFuncDecl()) {
+        setCurrentGenericArgs(decl.getGenericFuncDecl(), expr);
+        validateArgs(expr.args, decl.getGenericFuncDecl().func->params, "'" + expr.funcName + "'", expr.srcLoc);
+        currentGenericArgs.clear();
+        return Type(TupleType{decl.getGenericFuncDecl().func->getFuncType().returnTypes});
+    } else {
         error(expr.srcLoc, "'", expr.funcName, "' is not a function");
     }
-    validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'", expr.srcLoc);
-    return Type(TupleType{decl.getFuncDecl().getFuncType().returnTypes});
 }
 
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
@@ -496,8 +540,15 @@ void delta::addToSymbolTable(const FuncDecl& decl) {
     symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
 }
 
+void delta::addToSymbolTable(const GenericFuncDecl& decl) {
+    if (symbolTable.count(decl.func->name) > 0) {
+        error(decl.func->srcLoc, "redefinition of '", decl.func->name, "'");
+    }
+    symbolTable.insert({decl.func->name, new Decl(GenericFuncDecl(decl))});
+}
+
 void delta::addToSymbolTable(const InitDecl& decl) {
-    if (symbolTable.count("__init_" + decl.getTypeName()) > 0) {
+    if (symbolTable.count(mangle(decl)) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
 
@@ -506,11 +557,11 @@ void delta::addToSymbolTable(const InitDecl& decl) {
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     initDecl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({"__init_" + decl.getTypeName(), new Decl(std::move(initDecl))});
+    symbolTable.insert({mangle(decl), new Decl(std::move(initDecl))});
 }
 
 void delta::addToSymbolTable(const DeinitDecl& decl) {
-    if (symbolTable.count("__deinit_" + decl.getTypeName()) > 0) {
+    if (symbolTable.count(mangle(decl)) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' deinitializer");
     }
 
@@ -519,7 +570,7 @@ void delta::addToSymbolTable(const DeinitDecl& decl) {
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     deinitDecl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({"__deinit_" + decl.getTypeName(), new Decl(std::move(deinitDecl))});
+    symbolTable.insert({mangle(decl), new Decl(std::move(deinitDecl))});
 }
 
 void delta::addToSymbolTable(const TypeDecl& decl) {
@@ -574,6 +625,17 @@ void typecheckMemberFunc(FuncDecl& decl) {
     symbolTable = std::move(symbolTableBackup);
 }
 
+void typecheck(GenericParamDecl& decl) {
+    if (symbolTable.count(decl.name) > 0) {
+        error(decl.srcLoc, "redefinition of '", decl.name, "'");
+    }
+}
+
+void typecheck(GenericFuncDecl& decl) {
+    for (auto& genericParam : decl.genericParams) typecheck(genericParam);
+    typecheck(*decl.func);
+}
+
 void typecheck(InitDecl& decl) {
     auto symbolTableBackup = symbolTable;
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
@@ -590,7 +652,7 @@ void typecheck(InitDecl& decl) {
 
 void typecheck(DeinitDecl& decl) {
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
-    FuncDecl funcDecl{"__deinit_" + decl.getTypeName(), {}, typeDecl.getTypeDecl().getType(),
+    FuncDecl funcDecl{mangle(decl), {}, typeDecl.getTypeDecl().getType(),
         decl.getTypeName(), decl.body, SrcLoc::invalid()};
     decl.type = &typeDecl.getTypeDecl();
     typecheckMemberFunc(funcDecl);
@@ -648,6 +710,8 @@ void typecheck(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
+        case DeclKind::GenericParamDecl: typecheck(decl.getGenericParamDecl()); break;
+        case DeclKind::GenericFuncDecl: typecheck(decl.getGenericFuncDecl()); break;
         case DeclKind::InitDecl:  typecheck(decl.getInitDecl()); break;
         case DeclKind::DeinitDecl:typecheck(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;

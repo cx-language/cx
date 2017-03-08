@@ -1,10 +1,12 @@
 #include <unordered_map>
 #include <vector>
 #include <cassert>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 #include "irgen.h"
+#include "mangle.h"
 #include "../sema/typecheck.h"
 #include "../parser/parser.hpp"
 #include "../driver/utility.h"
@@ -33,6 +35,13 @@ struct Scope {
     }
 };
 
+class GenericFuncInstantiation {
+public:
+    const GenericFuncDecl& decl;
+    llvm::ArrayRef<Type> genericArgs;
+    llvm::Function* func;
+};
+
 llvm::LLVMContext ctx;
 llvm::IRBuilder<> builder(ctx);
 llvm::Module module("", ctx);
@@ -40,6 +49,8 @@ std::unordered_map<std::string, llvm::Value*> globalValues;
 std::unordered_map<std::string, llvm::Value*> localValues;
 std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
+std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
+std::vector<GenericFuncInstantiation> genericFuncInstantiations;
 const std::vector<Decl>* globalDecls;
 const Decl* currentDecl;
 llvm::SmallVector<Scope, 4> scopes;
@@ -55,7 +66,7 @@ void setLocalValue(const Type* type, std::string name, llvm::Value* value) {
     assert(wasInserted);
 
     if (type && type->isBasicType()) {
-        llvm::Function* deinit = module.getFunction(("__deinit_" + type->getName()).str());
+        llvm::Function* deinit = module.getFunction(mangleDeinitDecl(type->getName()));
         if (deinit) deferDeinitCallOf(value);
     }
 }
@@ -101,6 +112,10 @@ llvm::Type* toIR(const Type& type) {
             if (name == "int64" || name == "uint64") return llvm::Type::getInt64Ty(ctx);
             auto it = structs.find(name);
             if (it == structs.end()) {
+                // Is it a generic parameter?
+                auto genericArg = currentGenericArgs.find(name);
+                if (genericArg != currentGenericArgs.end()) return genericArg->second;
+
                 // Custom type that has not been declared yet, search for it in the symbol table.
                 codegen(findInSymbolTable(name, SrcLoc::invalid()).getTypeDecl());
                 it = structs.find(name);
@@ -297,7 +312,7 @@ llvm::Value* codegen(const BinaryExpr& expr) {
     }
 }
 
-llvm::Function* getFunc(llvm::StringRef name);
+llvm::Function* getFuncForCall(const CallExpr&);
 
 llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullptr) {
     if (expr.isRvalue() || expr.isStrLiteralExpr() || expr.isArrayLiteralExpr()) return codegen(expr);
@@ -318,9 +333,9 @@ llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullpt
 llvm::Value* codegen(const CallExpr& expr) {
     llvm::Function* func;
     if (expr.isInitializerCall) {
-        func = module.getFunction("__init_" + expr.funcName);
+        func = module.getFunction(mangleInitDecl(expr.funcName));
     } else {
-        func = getFunc(expr.funcName);
+        func = getFuncForCall(expr);
     }
 
     auto param = func->arg_begin();
@@ -644,10 +659,10 @@ void createDeinitCall(llvm::Value* valueToDeinit) {
 
     // Prevent recursively destroying the argument in struct deinitializers.
     if (llvm::isa<llvm::Argument>(valueToDeinit)
-        && builder.GetInsertBlock()->getParent()->getName().startswith("__deinit_")) return;
+        && builder.GetInsertBlock()->getParent()->getName().endswith(".deinit")) return;
 
     llvm::StringRef typeName = typeToDeinit->getStructName();
-    llvm::Function* deinit = module.getFunction(("__deinit_" + typeName).str());
+    llvm::Function* deinit = module.getFunction(mangleDeinitDecl(typeName));
     if (!deinit) return;
     if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
         builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
@@ -668,7 +683,8 @@ llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName) {
     }
 }
 
-llvm::Function* codegenFuncProto(const FuncDecl& decl) {
+llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::StringRef mangledName = {},
+                                 bool addToFuncs = true) {
     const auto& funcType = decl.getFuncType();
 
     assert(funcType.returnTypes.size() == 1 && "IRGen doesn't support multiple return values yet");
@@ -680,21 +696,49 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl) {
     for (const auto& t : funcType.paramTypes) paramTypes.emplace_back(toIR(t));
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);
-    auto* func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage, decl.name, &module);
+    if (mangledName.empty()) mangledName = decl.name;
+    auto* func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage,
+                                        mangledName, &module);
 
     auto arg = func->arg_begin(), argsEnd = func->arg_end();
     if (decl.isMemberFunc()) arg++->setName("this");
     for (auto param = decl.params.begin(); arg != argsEnd; ++param, ++arg) arg->setName(param->name);
 
-    funcs.emplace(decl.name, func);
+    if (addToFuncs) funcs.emplace(decl.name, func);
     return func;
 }
 
-llvm::Function* getFunc(llvm::StringRef name) {
-    auto it = funcs.find(name);
+llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::ArrayRef<Type> genericArgs) {
+    assert(decl.genericParams.size() == genericArgs.size());
+    auto genericArg = genericArgs.begin();
+    for (const GenericParamDecl& genericParam : decl.genericParams) {
+        currentGenericArgs.insert({genericParam.name, toIR(*genericArg)});
+    }
+    auto proto = codegenFuncProto(*decl.func, mangle(decl, genericArgs), false);
+    currentGenericArgs.clear();
+    return proto;
+}
+
+llvm::Function* getFuncForCall(const CallExpr& call) {
+    auto it = funcs.find(call.funcName);
     if (it == funcs.end()) {
         // Function has not been declared yet, search for it in the symbol table.
-        return codegenFuncProto(findInSymbolTable(name, SrcLoc::invalid()).getFuncDecl());
+        const Decl& decl = findInSymbolTable(call.funcName, call.srcLoc);
+        if (decl.isFuncDecl())
+            return codegenFuncProto(decl.getFuncDecl());
+        else {
+            auto it = llvm::find_if(genericFuncInstantiations,
+                                    [&call](GenericFuncInstantiation& instantiation) {
+                return instantiation.decl.func->name == call.funcName
+                    && instantiation.genericArgs == llvm::ArrayRef<Type>(call.genericArgs);
+            });
+            if (it != genericFuncInstantiations.end()) return it->func;
+            auto* func = codegenGenericFuncProto(decl.getGenericFuncDecl(), call.genericArgs);
+            genericFuncInstantiations.emplace_back(GenericFuncInstantiation{
+                decl.getGenericFuncDecl(), call.genericArgs, func
+            });
+            return func;
+        }
     }
     return it->second;
 }
@@ -727,7 +771,7 @@ void codegen(const FuncDecl& decl) {
 }
 
 void codegen(const InitDecl& decl) {
-    FuncDecl funcDecl{"__init_" + decl.getTypeDecl().name, decl.params, decl.getTypeDecl().getType(),
+    FuncDecl funcDecl{mangle(decl), decl.params, decl.getTypeDecl().getType(),
         "", nullptr, SrcLoc::invalid()};
     auto* func = codegenFuncProto(funcDecl);
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", func));
@@ -746,7 +790,7 @@ void codegen(const InitDecl& decl) {
 }
 
 void codegen(const DeinitDecl& decl) {
-    FuncDecl funcDecl{"__deinit_" + decl.getTypeDecl().name, {}, BasicType{"void"},
+    FuncDecl funcDecl{mangle(decl), {}, BasicType{"void"},
         decl.getTypeDecl().name, decl.body, decl.srcLoc};
     llvm::Function* func = codegenFuncProto(funcDecl);
     codegenFuncBody(funcDecl, *func);
@@ -774,6 +818,8 @@ void codegen(const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: /* handled via FuncDecl */ assert(false); break;
         case DeclKind::FuncDecl:  codegen(decl.getFuncDecl()); break;
+        case DeclKind::GenericParamDecl: assert(false); break;
+        case DeclKind::GenericFuncDecl: break; // Cannot codegen uninstantiated generic function.
         case DeclKind::InitDecl:  codegen(decl.getInitDecl()); break;
         case DeclKind::DeinitDecl:codegen(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
@@ -790,6 +836,16 @@ llvm::Module& irgen::compile(const std::vector<Decl>& decls) {
     for (const Decl& decl : decls) {
         currentDecl = &decl;
         codegen(decl);
+    }
+
+    for (const GenericFuncInstantiation& instantiation : genericFuncInstantiations) {
+        auto genericArg = instantiation.genericArgs.begin();
+        for (const GenericParamDecl& genericParam : instantiation.decl.genericParams) {
+            currentGenericArgs.insert({genericParam.name, toIR(*genericArg)});
+        }
+        codegenFuncBody(*instantiation.decl.func, *instantiation.func);
+        assert(!llvm::verifyFunction(*instantiation.func, &llvm::errs()));
+        currentGenericArgs.clear();
     }
 
     assert(!llvm::verifyModule(module, &llvm::errs()));

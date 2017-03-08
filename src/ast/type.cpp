@@ -1,3 +1,4 @@
+#include <sstream>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
 #include "type.h"
@@ -129,6 +130,12 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             }
             break;
     }
+}
+
+std::string Type::toString() const {
+    std::ostringstream stream;
+    printTo(stream, false);
+    return stream.str();
 }
 
 std::ostream& delta::operator<<(std::ostream& stream, const Type& type) {

@@ -18,6 +18,8 @@ namespace delta {
 enum class DeclKind {
     ParamDecl,
     FuncDecl,
+    GenericParamDecl,
+    GenericFuncDecl,
     InitDecl, /// A struct or class initializer declaration.
     DeinitDecl, /// A struct or class deinitializer declaration.
     TypeDecl,
@@ -33,6 +35,11 @@ struct ParamDecl {
     SrcLoc srcLoc;
 };
 
+struct GenericParamDecl {
+    std::string name;
+    SrcLoc srcLoc;
+};
+
 struct FuncDecl {
     std::string name;
     std::vector<ParamDecl> params;
@@ -44,6 +51,11 @@ struct FuncDecl {
     bool isExtern() const { return body == nullptr; };
     bool isMemberFunc() const { return !receiverType.empty(); }
     FuncType getFuncType() const;
+};
+
+struct GenericFuncDecl {
+    std::shared_ptr<FuncDecl> func;
+    std::vector<GenericParamDecl> genericParams;
 };
 
 struct InitDecl {
@@ -133,6 +145,8 @@ public:
     }
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(ParamDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(FuncDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(GenericParamDecl)
+    DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(GenericFuncDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(InitDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(DeinitDecl)
     DEFINE_DECLKIND_GETTER_AND_CONSTRUCTOR(TypeDecl)
@@ -146,8 +160,8 @@ public:
     SrcLoc getSrcLoc() const;
 
 private:
-    boost::variant<ParamDecl, FuncDecl, InitDecl, DeinitDecl, TypeDecl, VarDecl,
-        FieldDecl, ImportDecl> data;
+    boost::variant<ParamDecl, FuncDecl, GenericParamDecl, GenericFuncDecl,
+        InitDecl, DeinitDecl, TypeDecl, VarDecl, FieldDecl, ImportDecl> data;
 };
 
 }
