@@ -65,7 +65,7 @@ void setLocalValue(const Type* type, std::string name, llvm::Value* value) {
     assert(wasInserted);
 
     if (type && type->isBasicType()) {
-        llvm::Function* deinit = module.getFunction(("__deinit_" + type->getName()).str());
+        llvm::Function* deinit = module.getFunction(mangleDeinitDecl(type->getName()));
         if (deinit) deferDeinitCallOf(value);
     }
 }
@@ -332,7 +332,7 @@ llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullpt
 llvm::Value* codegen(const CallExpr& expr) {
     llvm::Function* func;
     if (expr.isInitializerCall) {
-        func = module.getFunction("__init_" + expr.funcName);
+        func = module.getFunction(mangleInitDecl(expr.funcName));
     } else {
         func = getFuncForCall(expr);
     }
@@ -658,10 +658,10 @@ void createDeinitCall(llvm::Value* valueToDeinit) {
 
     // Prevent recursively destroying the argument in struct deinitializers.
     if (llvm::isa<llvm::Argument>(valueToDeinit)
-        && builder.GetInsertBlock()->getParent()->getName().startswith("__deinit_")) return;
+        && builder.GetInsertBlock()->getParent()->getName().endswith(".deinit")) return;
 
     llvm::StringRef typeName = typeToDeinit->getStructName();
-    llvm::Function* deinit = module.getFunction(("__deinit_" + typeName).str());
+    llvm::Function* deinit = module.getFunction(mangleDeinitDecl(typeName));
     if (!deinit) return;
     if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
         builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
@@ -764,7 +764,7 @@ void codegen(const FuncDecl& decl) {
 }
 
 void codegen(const InitDecl& decl) {
-    FuncDecl funcDecl{"__init_" + decl.getTypeDecl().name, decl.params, decl.getTypeDecl().getType(),
+    FuncDecl funcDecl{mangle(decl), decl.params, decl.getTypeDecl().getType(),
         "", nullptr, SrcLoc::invalid()};
     auto* func = codegenFuncProto(funcDecl);
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", func));
@@ -783,7 +783,7 @@ void codegen(const InitDecl& decl) {
 }
 
 void codegen(const DeinitDecl& decl) {
-    FuncDecl funcDecl{"__deinit_" + decl.getTypeDecl().name, {}, BasicType{"void"},
+    FuncDecl funcDecl{mangle(decl), {}, BasicType{"void"},
         decl.getTypeDecl().name, decl.body, decl.srcLoc};
     llvm::Function* func = codegenFuncProto(funcDecl);
     codegenFuncBody(funcDecl, *func);

@@ -16,6 +16,7 @@
 #include "../ast/decl.h"
 #include "../parser/parser.hpp"
 #include "../driver/utility.h"
+#include "../irgen/mangle.h"
 
 using namespace delta;
 
@@ -201,7 +202,7 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
                   const std::string& funcName, SrcLoc srcLoc);
 
 Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLoc srcLoc) {
-    auto it = symbolTable.find("__init_" + type.name);
+    auto it = symbolTable.find(mangleInitDecl(type.name));
     if (it == symbolTable.end()) {
         error(srcLoc, "no matching initializer for '", type.name, "'");
     }
@@ -544,7 +545,7 @@ void delta::addToSymbolTable(const GenericFuncDecl& decl) {
 }
 
 void delta::addToSymbolTable(const InitDecl& decl) {
-    if (symbolTable.count("__init_" + decl.getTypeName()) > 0) {
+    if (symbolTable.count(mangle(decl)) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
 
@@ -553,11 +554,11 @@ void delta::addToSymbolTable(const InitDecl& decl) {
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     initDecl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({"__init_" + decl.getTypeName(), new Decl(std::move(initDecl))});
+    symbolTable.insert({mangle(decl), new Decl(std::move(initDecl))});
 }
 
 void delta::addToSymbolTable(const DeinitDecl& decl) {
-    if (symbolTable.count("__deinit_" + decl.getTypeName()) > 0) {
+    if (symbolTable.count(mangle(decl)) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' deinitializer");
     }
 
@@ -566,7 +567,7 @@ void delta::addToSymbolTable(const DeinitDecl& decl) {
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     deinitDecl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({"__deinit_" + decl.getTypeName(), new Decl(std::move(deinitDecl))});
+    symbolTable.insert({mangle(decl), new Decl(std::move(deinitDecl))});
 }
 
 void delta::addToSymbolTable(const TypeDecl& decl) {
@@ -648,7 +649,7 @@ void typecheck(InitDecl& decl) {
 
 void typecheck(DeinitDecl& decl) {
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
-    FuncDecl funcDecl{"__deinit_" + decl.getTypeName(), {}, typeDecl.getTypeDecl().getType(),
+    FuncDecl funcDecl{mangle(decl), {}, typeDecl.getTypeDecl().getType(),
         decl.getTypeName(), decl.body, SrcLoc::invalid()};
     decl.type = &typeDecl.getTypeDecl();
     typecheckMemberFunc(funcDecl);

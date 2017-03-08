@@ -14,3 +14,19 @@ std::string delta::mangle(const GenericFuncDecl& decl, llvm::ArrayRef<Type> gene
     mangled += '>';
     return mangled;
 }
+
+std::string delta::mangle(const InitDecl& decl) {
+    return mangleInitDecl(decl.type.which() ? decl.getTypeDecl().name : decl.getTypeName());
+}
+
+std::string delta::mangleInitDecl(llvm::StringRef typeName) {
+    return typeName.str() + ".init";
+}
+
+std::string delta::mangle(const DeinitDecl& decl) {
+    return mangleDeinitDecl(decl.type.which() ? decl.getTypeDecl().name : decl.getTypeName());
+}
+
+std::string delta::mangleDeinitDecl(llvm::StringRef typeName) {
+    return typeName.str() + ".deinit";
+}
