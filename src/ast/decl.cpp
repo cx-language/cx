@@ -16,17 +16,16 @@ std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
 
 } // anonymous namespace
 
-FuncType FuncDecl::getFuncType() const {
-    auto returnTypes = returnType.isTupleType() ? returnType.getSubtypes() : returnType;
-    return FuncType{returnTypes, mapToTypes(params)};
+const FuncType* FuncDecl::getFuncType() const {
+    return &llvm::cast<FuncType>(*FuncType::get(returnType, mapToTypes(params)));
 }
 
 Type TypeDecl::getType() const {
-    return BasicType{name};
+    return BasicType::get(name);
 }
 
 Type TypeDecl::getTypeForPassing() const {
-    return tag == TypeTag::Struct ? getType() : PtrType{llvm::make_unique<Type>(getType()), true};
+    return tag == TypeTag::Struct ? getType() : PtrType::get(getType(), true);
 }
 
 unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {

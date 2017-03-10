@@ -1,49 +1,81 @@
 #include <sstream>
-#include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/STLExtras.h>
 #include "type.h"
 #include "../driver/utility.h"
 
 using namespace delta;
 
-ArrayType::ArrayType(const ArrayType& type) : elementType(new Type(*type.elementType)), size(type.size) { }
-
-ArrayType& ArrayType::operator=(const ArrayType& type) {
-    if (&type != this) {
-        elementType.reset(new Type(*type.elementType));
-        size = type.size;
-    }
-    return *this;
+#define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
+Type Type::get##TYPE(bool isMutable) { \
+    static BasicType type(#NAME); \
+    return Type(&type, isMutable); \
+} \
+bool Type::is##TYPE() const { \
+    return isBasicType() && getName() == #NAME; \
 }
 
-PtrType::PtrType(const PtrType& type) : pointeeType(new Type(*type.pointeeType)), ref(type.ref) { }
-
-PtrType& PtrType::operator=(const PtrType& type) {
-    if (&type != this) {
-        pointeeType.reset(new Type(*type.pointeeType));
-        ref = type.ref;
-    }
-    return *this;
-}
+DEFINE_BUILTIN_TYPE_GET_AND_IS(Void, void)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(Bool, bool)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(Int, int)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(Int64, int64)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(Char, char)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
+#undef DEFINE_BUILTIN_TYPE_GET_AND_IS
 
 void Type::appendType(Type type) {
-    llvm::Optional<Type> firstType;
-    switch (getKind()) {
-        case TypeKind::BasicType: firstType = Type(std::move(getBasicType())); break;
-        case TypeKind::ArrayType: firstType = Type(std::move(getArrayType())); break;
-        case TypeKind::TupleType: break;
-        case TypeKind::FuncType: firstType = Type(std::move(getFuncType())); break;
-        case TypeKind::PtrType: firstType = Type(std::move(getPtrType())); break;
-    }
-    if (firstType) {
-        data = TupleType();
-        getTupleType().subtypes.emplace_back(std::move(*firstType));
-    }
-    getTupleType().subtypes.emplace_back(std::move(type));
+    std::vector<Type> subtypes;
+    if (!isTupleType())
+        subtypes.push_back(*this);
+    else
+        subtypes = llvm::cast<TupleType>(*typeBase).subtypes;
+    subtypes.push_back(type);
+    typeBase = TupleType::get(std::move(subtypes)).get();
 }
 
-bool Type::isImplicitlyConvertibleTo(const Type& type) const {
-    switch (getKind()) {
+namespace {
+    std::vector<BasicType*> basicTypes;
+    std::vector<ArrayType*> arrayTypes;
+    std::vector<TupleType*> tupleTypes;
+    std::vector<FuncType*> funcTypes;
+    std::vector<PtrType*> ptrTypes;
+}
+
+#define FETCH_AND_RETURN_TYPE(TYPE, CACHE, EQUALS, ...) \
+    auto it = llvm::find_if(CACHE, [&](TYPE* t) { return EQUALS; }); \
+    if (it != CACHE.end()) return Type(*it, isMutable); \
+    CACHE.emplace_back(new TYPE(__VA_ARGS__)); \
+    return Type(CACHE.back(), isMutable);
+
+Type BasicType::get(llvm::StringRef name, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(BasicType, basicTypes, t->name == name, name)
+}
+
+Type ArrayType::get(Type elementType, int64_t size, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(ArrayType, arrayTypes,
+        t->elementType == elementType && t->size == size, elementType, size);
+}
+
+Type TupleType::get(std::vector<Type>&& subtypes, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(TupleType, tupleTypes,
+        t->subtypes == subtypes, std::move(subtypes));
+}
+
+Type FuncType::get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(FuncType, funcTypes,
+        t->returnType == returnType && t->paramTypes == paramTypes,
+        returnType, std::move(paramTypes));
+}
+
+Type PtrType::get(Type pointeeType, bool isReference, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(PtrType, ptrTypes,
+        t->pointeeType == pointeeType && t->ref == isReference, pointeeType, isReference);
+}
+
+#undef FETCH_AND_RETURN_TYPE
+
+bool Type::isImplicitlyConvertibleTo(Type type) const {
+    switch (typeBase->getKind()) {
         case TypeKind::BasicType:
             return type.isBasicType() && getName() == type.getName();
         case TypeKind::ArrayType:
@@ -52,7 +84,7 @@ bool Type::isImplicitlyConvertibleTo(const Type& type) const {
         case TypeKind::TupleType:
             return type.isTupleType() && getSubtypes() == type.getSubtypes();
         case TypeKind::FuncType:
-            return type.isFuncType() && getReturnTypes() == type.getReturnTypes()
+            return type.isFuncType() && getReturnType() == type.getReturnType()
                                      && getParamTypes() == type.getParamTypes();
         case TypeKind::PtrType:
             return type.isPtrType()
@@ -68,7 +100,17 @@ bool Type::isSigned() const {
     return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
 }
 
-bool delta::operator==(const Type& lhs, const Type& rhs) {
+llvm::StringRef Type::getName() const { return llvm::cast<BasicType>(typeBase)->name; }
+Type Type::getElementType() const { return llvm::cast<ArrayType>(typeBase)->elementType; }
+int Type::getArraySize() const { return llvm::cast<ArrayType>(typeBase)->size; }
+llvm::ArrayRef<Type> Type::getSubtypes() const { return llvm::cast<TupleType>(typeBase)->subtypes; }
+Type Type::getReturnType() const { return llvm::cast<FuncType>(typeBase)->returnType; }
+llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FuncType>(typeBase)->paramTypes; }
+Type Type::getPointee() const { return llvm::cast<PtrType>(typeBase)->pointeeType; }
+Type Type::getReferee() const { assert(isRef()); return getPointee(); }
+bool Type::isRef() const { return llvm::cast<PtrType>(typeBase)->ref; }
+
+bool delta::operator==(Type lhs, Type rhs) {
     if (lhs.isMutable() != rhs.isMutable()) return false;
     switch (lhs.getKind()) {
         case TypeKind::BasicType:
@@ -78,19 +120,19 @@ bool delta::operator==(const Type& lhs, const Type& rhs) {
         case TypeKind::TupleType:
             return rhs.isTupleType() && lhs.getSubtypes() == rhs.getSubtypes();
         case TypeKind::FuncType:
-            return rhs.isFuncType() && lhs.getReturnTypes() == rhs.getReturnTypes()
+            return rhs.isFuncType() && lhs.getReturnType() == rhs.getReturnType()
                                     && lhs.getParamTypes() == rhs.getParamTypes();
         case TypeKind::PtrType:
             return rhs.isPtrType() && lhs.isRef() == rhs.isRef() && lhs.getPointee() == rhs.getPointee();
     }
 }
 
-bool delta::operator!=(const Type& lhs, const Type& rhs) {
+bool delta::operator!=(Type lhs, Type rhs) {
     return !(lhs == rhs);
 }
 
 void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
-    switch (getKind()) {
+    switch (typeBase->getKind()) {
         case TypeKind::BasicType:
             if (isMutable() && !omitTopLevelMutable) stream << "mutable ";
             stream << getName();
@@ -114,10 +156,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
                 if (&paramType != &getParamTypes().back()) stream << ", ";
             }
             stream << ") -> ";
-            for (const Type& returnType : getReturnTypes()) {
-                stream << returnType;
-                if (&returnType != &getReturnTypes().back()) stream << ", ";
-            }
+            getReturnType().printTo(stream, true);
             break;
         case TypeKind::PtrType:
             if (isMutable() && !omitTopLevelMutable) {
@@ -138,7 +177,7 @@ std::string Type::toString() const {
     return stream.str();
 }
 
-std::ostream& delta::operator<<(std::ostream& stream, const Type& type) {
+std::ostream& delta::operator<<(std::ostream& stream, Type type) {
     type.printTo(stream, true);
     return stream;
 }

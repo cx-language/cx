@@ -141,8 +141,8 @@ public:
 
     Expr(Expr&&) = default;
     ExprKind getKind() const { return static_cast<ExprKind>(data.which()); }
-    const Type& getType() const { return *type; }
-    void setType(Type t) { type = std::move(t); }
+    Type getType() const { return *type; }
+    void setType(Type t) { type = t; }
     bool isLvalue() const;
     bool isRvalue() const { return !isLvalue(); }
     SrcLoc getSrcLoc() const;

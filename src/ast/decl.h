@@ -50,7 +50,7 @@ struct FuncDecl {
 
     bool isExtern() const { return body == nullptr; };
     bool isMemberFunc() const { return !receiverType.empty(); }
-    FuncType getFuncType() const;
+    const FuncType* getFuncType() const;
 };
 
 struct GenericFuncDecl {
@@ -105,10 +105,10 @@ struct VarDecl {
     std::shared_ptr<Expr> initializer; /// Null if the initializer is 'uninitialized'.
     SrcLoc srcLoc;
 
-    const Type* getDeclaredType() const {
-        return type.which() == 0 ? &boost::get<Type>(type) : nullptr;
+    Type getDeclaredType() const {
+        return type.which() == 0 ? boost::get<Type>(type) : nullptr;
     }
-    const Type& getType() const {
+    Type getType() const {
         return boost::get<Type>(type);
     }
     bool isMutable() const {

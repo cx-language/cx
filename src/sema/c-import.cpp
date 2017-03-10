@@ -71,19 +71,19 @@ Type toDelta(clang::QualType qualtype) {
     switch (type.getTypeClass()) {
         case clang::Type::Pointer: {
             auto pointeeType = llvm::cast<clang::PointerType>(type).getPointeeType();
-            return Type(PtrType(llvm::make_unique<Type>(toDelta(pointeeType)), false), isMutable);
+            return PtrType::get(toDelta(pointeeType), false, isMutable);
         }
         case clang::Type::Builtin:
-            return Type(BasicType{toDelta(llvm::cast<clang::BuiltinType>(type))}, isMutable);
+            return BasicType::get(toDelta(llvm::cast<clang::BuiltinType>(type)), isMutable);
         case clang::Type::Typedef:
             return toDelta(llvm::cast<clang::TypedefType>(type).desugar());
         case clang::Type::Elaborated:
             return toDelta(llvm::cast<clang::ElaboratedType>(type).getNamedType());
         case clang::Type::Record:
-            return Type(BasicType{llvm::cast<clang::RecordType>(type).getDecl()->getName()}, isMutable);
+            return BasicType::get(llvm::cast<clang::RecordType>(type).getDecl()->getName(), isMutable);
         default:
             warnOnce(llvm::Twine(type.getTypeClassName()) + " not handled");
-            return Type(BasicType{"int"}, isMutable);
+            return Type::getInt(isMutable);
     }
 }
 
@@ -118,7 +118,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
 
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value) {
     auto initializer = std::make_shared<Expr>(IntLiteralExpr{value, SrcLoc::invalid()});
-    initializer->setType(Type(BasicType{"int"}));
+    initializer->setType(Type::getInt());
     VarDecl varDecl{initializer->getType(), name, std::move(initializer), SrcLoc::invalid()};
     addToSymbolTable(std::move(varDecl));
 }

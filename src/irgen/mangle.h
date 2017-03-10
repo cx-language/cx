@@ -7,7 +7,7 @@ namespace llvm {
 }
 
 namespace delta {
-    class Type;
+    struct Type;
     struct GenericFuncDecl;
     struct InitDecl;
     struct DeinitDecl;

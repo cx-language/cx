@@ -2,10 +2,10 @@
 
 #include <vector>
 #include <string>
-#include <memory>
 #include <ostream>
-#include <boost/variant.hpp>
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Casting.h>
 
 namespace delta {
 
@@ -17,91 +17,134 @@ enum class TypeKind {
     PtrType,
 };
 
-class Type;
-
-struct BasicType {
-    std::string name;
-};
-
-struct ArrayType {
-    std::unique_ptr<Type> elementType;
-    int64_t size;
-    ArrayType(std::unique_ptr<Type> type, int64_t size) : elementType(std::move(type)), size(size) { }
-    ArrayType(const ArrayType&);
-    ArrayType& operator=(const ArrayType&);
-};
-
-struct TupleType {
-    std::vector<Type> subtypes;
-};
-
-struct FuncType {
-    std::vector<Type> returnTypes;
-    std::vector<Type> paramTypes;
-};
-
-struct PtrType {
-    std::unique_ptr<Type> pointeeType;
-    bool ref;
-
-    PtrType(std::unique_ptr<Type> type, bool ref) : pointeeType(std::move(type)), ref(ref) { }
-    PtrType(const PtrType&);
-    PtrType& operator=(const PtrType&);
-};
-
-class Type {
+class TypeBase {
 public:
-#define DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(KIND) \
-    Type(KIND&& value, bool isMutable = false) : data(std::move(value)), mutableFlag(isMutable) { \
-        if (TypeKind::KIND == TypeKind::TupleType && getSubtypes().size() == 1) { \
-            auto type = std::move(getSubtypes()[0]); \
-            *this = std::move(type); \
-        } \
-    } \
-    \
-    bool is##KIND() const { return getKind() == TypeKind::KIND; } \
-    \
-    KIND& get##KIND() { \
-        assert(is##KIND()); \
-        return boost::get<KIND>(data); \
-    } \
-    const KIND& get##KIND() const { \
-        assert(is##KIND()); \
-        return boost::get<KIND>(data); \
-    }
-    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(BasicType)
-    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(ArrayType)
-    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(TupleType)
-    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(FuncType)
-    DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR(PtrType)
-#undef DEFINE_TYPEKIND_GETTER_AND_CONSTRUCTOR
+    virtual ~TypeBase() = 0;
+    TypeKind getKind() const { return kind; }
 
-    void appendType(Type type);
-    bool isImplicitlyConvertibleTo(const Type&) const;
+protected:
+    TypeBase(TypeKind kind) : kind(kind) { }
+    
+private:
+    const TypeKind kind;
+};
+
+inline TypeBase::~TypeBase() { }
+
+struct Type {
+public:
+    Type() = default;
+    Type(const TypeBase* typeBase, bool isMutable = false)
+    : typeBase(typeBase), mutableFlag(isMutable) { }
+    const TypeBase& operator*() const { return *typeBase; }
+    explicit operator bool() const { return typeBase != nullptr; }
+    const TypeBase* get() const { return typeBase; }
+
+    bool isBasicType() const { return getKind() == TypeKind::BasicType; }
+    bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
+    bool isTupleType() const { return getKind() == TypeKind::TupleType; }
+    bool isFuncType() const { return getKind() == TypeKind::FuncType; }
+    bool isPtrType() const { return getKind() == TypeKind::PtrType; }
+    bool isVoid() const;
+    bool isBool() const;
+    bool isInt() const;
+    bool isInt64() const;
+    bool isChar() const;
+    bool isNull() const;
+
+    void appendType(Type);
+    bool isImplicitlyConvertibleTo(Type) const;
     bool isSigned() const;
     bool isMutable() const { return mutableFlag; }
-    void setMutable(bool isMutable) { mutableFlag = isMutable; }
-    TypeKind getKind() const { return static_cast<TypeKind>(data.which()); }
+    void setMutable(bool m) { mutableFlag = m; }
+    TypeKind getKind() const { return typeBase->getKind(); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
     std::string toString() const;
 
-    llvm::StringRef getName() const { return getBasicType().name; }
-    const Type& getElementType() const { return *getArrayType().elementType; }
-    int getArraySize() const { return getArrayType().size; }
-    llvm::ArrayRef<Type> getSubtypes() const { return getTupleType().subtypes; }
-    llvm::ArrayRef<Type> getReturnTypes() const { return getFuncType().returnTypes; }
-    llvm::ArrayRef<Type> getParamTypes() const { return getFuncType().paramTypes; }
-    const Type& getPointee() const { return *getPtrType().pointeeType; }
-    const Type& getReferee() const { assert(isRef()); return getPointee(); }
-    bool isRef() const { return isPtrType() && getPtrType().ref; }
+    llvm::StringRef getName() const;
+    Type getElementType() const;
+    int getArraySize() const;
+    llvm::ArrayRef<Type> getSubtypes() const;
+    Type getReturnType() const;
+    llvm::ArrayRef<Type> getParamTypes() const;
+    Type getPointee() const;
+    Type getReferee() const;
+    bool isRef() const;
+
+    static Type getVoid(bool isMutable = false);
+    static Type getBool(bool isMutable = false);
+    static Type getInt(bool isMutable = false);
+    static Type getInt64(bool isMutable = false);
+    static Type getChar(bool isMutable = false);
+    static Type getNull(bool isMutable = false);
 
 private:
-    boost::variant<BasicType, ArrayType, TupleType, FuncType, PtrType> data;
+    const TypeBase* typeBase;
     bool mutableFlag;
 };
 
-bool operator==(const Type&, const Type&);
-bool operator!=(const Type&, const Type&);
-std::ostream& operator<<(std::ostream&, const Type&);
+class BasicType : public TypeBase {
+public:
+    std::string name;
+    static Type get(llvm::StringRef name, bool isMutable = false);
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::BasicType; }
+
+private:
+    friend Type;
+    BasicType(llvm::StringRef name)
+    : TypeBase(TypeKind::BasicType), name(name) { }
+};
+
+class ArrayType : public TypeBase {
+public:
+    Type elementType;
+    int64_t size;
+    static Type get(Type type, int64_t size, bool isMutable = false);
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
+
+private:
+    ArrayType(Type type, int64_t size)
+    : TypeBase(TypeKind::ArrayType), elementType(type), size(size) { }
+};
+
+class TupleType : public TypeBase {
+public:
+    std::vector<Type> subtypes;
+    static Type get(std::vector<Type>&& subtypes, bool isMutable = false);
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
+
+private:
+    TupleType(std::vector<Type>&& subtypes)
+    : TypeBase(TypeKind::TupleType), subtypes(std::move(subtypes)) {
+        assert(this->subtypes.size() != 1);
+    }
+};
+
+class FuncType : public TypeBase {
+public:
+    Type returnType;
+    std::vector<Type> paramTypes;
+    static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable = false);
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::FuncType; }
+
+private:
+    FuncType(Type returnType, std::vector<Type>&& paramTypes)
+    : TypeBase(TypeKind::FuncType), returnType(returnType), paramTypes(std::move(paramTypes)) { }
+};
+
+class PtrType : public TypeBase {
+public:
+    Type pointeeType;
+    bool ref;
+    static Type get(Type pointeeType, bool isReference, bool isMutable = false);
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PtrType; }
+
+private:
+    PtrType(Type type, bool ref) : TypeBase(TypeKind::PtrType), pointeeType(type), ref(ref) { }
+};
+
+bool operator==(Type, Type);
+bool operator!=(Type, Type);
+std::ostream& operator<<(std::ostream&, Type);
 
 }

@@ -60,13 +60,13 @@ llvm::BasicBlock::iterator lastAlloca;
 llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
 
 /// @param type The Delta type of the variable, or null if the variable is 'this'.
-void setLocalValue(const Type* type, std::string name, llvm::Value* value) {
+void setLocalValue(Type type, std::string name, llvm::Value* value) {
     bool wasInserted = localValues.emplace(std::move(name), value).second;
     (void) wasInserted;
     assert(wasInserted);
 
-    if (type && type->isBasicType()) {
-        llvm::Function* deinit = module.getFunction(mangleDeinitDecl(type->getName()));
+    if (type && type.isBasicType()) {
+        llvm::Function* deinit = module.getFunction(mangleDeinitDecl(type.getName()));
         if (deinit) deferDeinitCallOf(value);
     }
 }
@@ -98,7 +98,7 @@ std::vector<To> map(const std::vector<From>& from, To (&func)(const From&)) {
 
 void codegen(const TypeDecl& decl);
 
-llvm::Type* toIR(const Type& type) {
+llvm::Type* toIR(Type type) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
             llvm::StringRef name = type.getName();
@@ -316,10 +316,10 @@ llvm::Function* getFuncForCall(const CallExpr&);
 
 llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullptr) {
     if (expr.isRvalue() || expr.isStrLiteralExpr() || expr.isArrayLiteralExpr()) return codegen(expr);
-    const Type* exprType = &expr.getType();
-    if (exprType->isPtrType()) exprType = &exprType->getPointee();
+    Type exprType = expr.getType();
+    if (exprType.isPtrType()) exprType = exprType.getPointee();
 
-    auto it = structs.find(exprType->getName());
+    auto it = structs.find(exprType.getName());
     if (it == structs.end() || it->second.second->passByValue()) {
         if (expr.getType().isPtrType() && !targetType->isPointerTy()) {
             return builder.CreateLoad(codegen(expr));
@@ -457,7 +457,7 @@ void codegen(const ReturnStmt& stmt) {
     }
 }
 
-llvm::AllocaInst* createEntryBlockAlloca(const Type* deltaType, llvm::Type* type,
+llvm::AllocaInst* createEntryBlockAlloca(Type deltaType, llvm::Type* type,
                                          llvm::Value* arraySize = nullptr,
                                          const llvm::Twine& name = "") {
     auto* insertBlock = builder.GetInsertBlock();
@@ -478,7 +478,7 @@ llvm::AllocaInst* createEntryBlockAlloca(const Type* deltaType, llvm::Type* type
 }
 
 void codegen(const VariableStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(&stmt.decl->getType(), toIR(stmt.decl->getType()),
+    auto* alloca = createEntryBlockAlloca(stmt.decl->getType(), toIR(stmt.decl->getType()),
                                           nullptr, stmt.decl->name);
     if (auto initializer = stmt.decl->initializer) {
         builder.CreateStore(codegenForPassing(*initializer), alloca);
@@ -685,15 +685,15 @@ llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName) {
 
 llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::StringRef mangledName = {},
                                  bool addToFuncs = true) {
-    const auto& funcType = decl.getFuncType();
+    auto* funcType = decl.getFuncType();
 
-    assert(funcType.returnTypes.size() == 1 && "IRGen doesn't support multiple return values yet");
-    auto* returnType = toIR(funcType.returnTypes[0]);
+    assert(!funcType->returnType.isTupleType() && "IRGen doesn't support tuple return values yet");
+    auto* returnType = toIR(funcType->returnType);
     if (decl.name == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
     if (decl.isMemberFunc()) paramTypes.emplace_back(getLLVMTypeForPassing(decl.receiverType));
-    for (const auto& t : funcType.paramTypes) paramTypes.emplace_back(toIR(t));
+    for (const auto& t : funcType->paramTypes) paramTypes.emplace_back(toIR(t));
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);
     if (mangledName.empty()) mangledName = decl.name;
@@ -749,7 +749,7 @@ void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
     beginScope();
     auto arg = func.arg_begin();
     if (decl.isMemberFunc()) setLocalValue(nullptr, "this", &*arg++);
-    for (const auto& param : decl.params) setLocalValue(&param.type, param.name, &*arg++);
+    for (const auto& param : decl.params) setLocalValue(param.type, param.name, &*arg++);
     for (const auto& stmt : *decl.body) codegen(stmt);
     endScope();
 
@@ -779,9 +779,9 @@ void codegen(const InitDecl& decl) {
     auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl().getType()));
     auto* alloca = builder.CreateAlloca(type);
 
-    setLocalValue(&funcDecl.returnType, "this", alloca);
+    setLocalValue(funcDecl.returnType, "this", alloca);
     auto param = decl.params.begin();
-    for (auto& arg : func->args()) setLocalValue(&param++->type, arg.getName(), &arg);
+    for (auto& arg : func->args()) setLocalValue(param++->type, arg.getName(), &arg);
     for (const auto& stmt : *decl.body) codegen(stmt);
     builder.CreateRet(builder.CreateLoad(alloca));
     localValues.clear();
@@ -790,7 +790,7 @@ void codegen(const InitDecl& decl) {
 }
 
 void codegen(const DeinitDecl& decl) {
-    FuncDecl funcDecl{mangle(decl), {}, BasicType{"void"},
+    FuncDecl funcDecl{mangle(decl), {}, Type::getVoid(),
         decl.getTypeDecl().name, decl.body, decl.srcLoc};
     llvm::Function* func = codegenFuncProto(funcDecl);
     codegenFuncBody(funcDecl, *func);

@@ -164,7 +164,7 @@
     delta::FieldDecl* fieldDecl;
     delta::Stmt* stmt;
     delta::Expr* expr;
-    delta::Type* type;
+    delta::Type type;
     delta::SwitchCase* switchCase;
 };
 
@@ -208,29 +208,29 @@ function_definition:
 
 function_prototype:
     "func" IDENTIFIER "(" parameter_list ")" return_type_specifier
-        { $$ = new Decl(FuncDecl{$2, std::move(*$4), std::move(*$6), "", nullptr, loc(@2)});
+        { $$ = new Decl(FuncDecl{$2, std::move(*$4), $6, "", nullptr, loc(@2)});
           addToSymbolTable($$->getFuncDecl()); };
 
 member_function_prototype:
     "func" IDENTIFIER "::" IDENTIFIER "(" parameter_list ")" return_type_specifier
-        { $$ = new Decl(FuncDecl{$4, std::move(*$6), std::move(*$8), $2, nullptr, loc(@2)});
+        { $$ = new Decl(FuncDecl{$4, std::move(*$6), $8, $2, nullptr, loc(@2)});
           addToSymbolTable($$->getFuncDecl()); };
 
 generic_function_prototype:
     "func" IDENTIFIER "<" generic_parameter_list ">" "(" parameter_list ")" return_type_specifier
-        { $$ = new Decl(GenericFuncDecl{std::shared_ptr<FuncDecl>(new FuncDecl{$2, std::move(*$7), std::move(*$9), "", nullptr, loc(@2)}), std::move(*$4)});
+        { $$ = new Decl(GenericFuncDecl{std::shared_ptr<FuncDecl>(new FuncDecl{$2, std::move(*$7), $9, "", nullptr, loc(@2)}), std::move(*$4)});
           addToSymbolTable($$->getGenericFuncDecl()); };
 
 extern_function_declaration:
     "extern" function_prototype ";" { $$ = $2; };
 
 return_type_specifier:
-    /* empty */ { $$ = new Type(BasicType{"void"}); }
+    /* empty */ { $$ = Type::getVoid(); }
 |   "->" return_type_list { $$ = $2; };
 
 return_type_list:
     type { $$ = $1; }
-|   return_type_list "," type { $$ = $1; $$->appendType(std::move(*$3)); };
+|   return_type_list "," type { $$ = $1; $$.appendType($3); };
 
 parameter_list:
     /* empty */ { $$ = new std::vector<ParamDecl>(); }
@@ -241,8 +241,8 @@ nonempty_parameter_list:
 |   nonempty_parameter_list "," parameter { $$ = $1; $$->push_back(std::move(*$3)); };
 
 parameter:
-    type IDENTIFIER { $$ = new ParamDecl{"", std::move(*$1), $2, loc(@2)}; }
-|   IDENTIFIER ":" type IDENTIFIER { $$ = new ParamDecl{$1, std::move(*$3), $4, loc(@4)}; };
+    type IDENTIFIER { $$ = new ParamDecl{"", $1, $2, loc(@2)}; }
+|   IDENTIFIER ":" type IDENTIFIER { $$ = new ParamDecl{$1, $3, $4, loc(@4)}; };
 
 generic_parameter_list:
     generic_parameter { $$ = new std::vector<GenericParamDecl>(); $$->push_back(std::move(*$1)); }
@@ -260,14 +260,14 @@ nonempty_statement_list:
 |   nonempty_statement_list statement { $$ = $1; $$->push_back(std::move(*$2)); };
 
 type:
-    IDENTIFIER { $$ = new Type(BasicType{$1}); }
-|   IDENTIFIER "[" NUMBER "]" { $$ = new Type(ArrayType{u(new Type(BasicType{$1})), $3}); }
-|   "mutable" IDENTIFIER { $$ = new Type(BasicType{$2}); $$->setMutable(true); }
-|   "mutable" IDENTIFIER "[" NUMBER "]" { auto e = new Type(BasicType{$2}); e->setMutable(true); $$ = new Type(ArrayType{u(e), $4}); $$->setMutable(true);  }
-|   "mutable" "(" type "&" ")" { $$ = new Type(PtrType{u($3), true}); $$->setMutable(true); }
-|   type "&" { $$ = new Type(PtrType{u($1), true}); }
-|   "mutable" "(" type "*" ")" { $$ = new Type(PtrType{u($3), false}); $$->setMutable(true); }
-|   type "*" { $$ = new Type(PtrType{u($1), false}); };
+    IDENTIFIER { $$ = BasicType::get($1); }
+|   IDENTIFIER "[" NUMBER "]" { $$ = ArrayType::get(BasicType::get($1), $3); }
+|   "mutable" IDENTIFIER { $$ = BasicType::get($2, true); }
+|   "mutable" IDENTIFIER "[" NUMBER "]" { $$ = ArrayType::get(BasicType::get($2, true), $4, true); }
+|   "mutable" "(" type "&" ")" { $$ = PtrType::get($3, true, true); }
+|   type "&" { $$ = PtrType::get($1, true); }
+|   "mutable" "(" type "*" ")" { $$ = PtrType::get($3, false, true); }
+|   type "*" { $$ = PtrType::get($1, false); };
 
 composite_type_declaration:
     "struct" IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Struct, $2, std::move(*$4), loc(@2)});
@@ -280,7 +280,7 @@ member_list:
 |   member_list field_declaration { $$ = $1; $$->push_back(std::move(*$2)); };
 
 field_declaration:
-    type IDENTIFIER ";" { $$ = new FieldDecl{std::move(*$1), $2, loc(@2)}; };
+    type IDENTIFIER ";" { $$ = new FieldDecl{$1, $2, loc(@2)}; };
 
 initializer_definition:
     IDENTIFIER "::" "init" "(" parameter_list ")" "{" statement_list "}"
@@ -328,9 +328,9 @@ mutable_variable_definition:
 
 typed_variable_definition:
     type    IDENTIFIER "=" expression ";"
-        { $$ = new Decl(VarDecl{std::move(*$1), $2, std::shared_ptr<Expr>($4), loc(@2)}); }
+        { $$ = new Decl(VarDecl{Type($1), $2, std::shared_ptr<Expr>($4), loc(@2)}); }
 |   type    IDENTIFIER "=" "uninitialized" ";"
-        { $$ = new Decl(VarDecl{std::move(*$1), $2, nullptr, loc(@2)}); };
+        { $$ = new Decl(VarDecl{Type($1), $2, nullptr, loc(@2)}); };
 
 assignment_statement:
     assignment_lhs_expression "=" expression ";"
@@ -460,7 +460,7 @@ call_expression:
         { $$ = new Expr(CallExpr{$1, std::move(*$6), false, nullptr, std::move(*$3), loc(@1)}); };
 
 cast_expression:
-    "cast" "<" type ">" "(" expression ")" { $$ = new Expr(CastExpr{std::move(*$3), u($6), loc(@1)}); };
+    "cast" "<" type ">" "(" expression ")" { $$ = new Expr(CastExpr{$3, u($6), loc(@1)}); };
 
 argument_list:
     /* empty */ { $$ = new std::vector<Arg>(); }
@@ -475,8 +475,8 @@ argument:
 |   IDENTIFIER ":" expression { $$ = new Arg{$1, u($3), loc(@1)}; };
 
 generic_argument_list:
-    type { $$ = new std::vector<Type>(); $$->push_back(std::move(*$1)); }
-|   generic_argument_list "," type { $$ = $1; $$->push_back(std::move(*$3)); };
+    type { $$ = new std::vector<Type>(); $$->emplace_back($1); }
+|   generic_argument_list "," type { $$ = $1; $$->emplace_back($3); };
 
 member_access_expression:
     expression "." IDENTIFIER { $$ = new Expr(MemberExpr{u($1), $3, loc(@1), loc(@3)}); };
