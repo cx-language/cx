@@ -40,7 +40,9 @@ Run `delta -help` for more options.
 
 ## Contributing
 
-Delta is an open-source language. Contributions are welcome and encouraged!
+Delta is an open-source language. Contributions are welcome and encouraged! See the
+current [projects](https://github.com/delta-lang/delta/projects) for things that
+need to be done.
 
 ## License
 
