@@ -29,6 +29,12 @@ After this, the following commands can be used:
 - `make` builds the project.
 - `make check` runs the test suite and reports errors in case of failure.
 
+## Documentation
+
+To generate HTML output from the documentation comments, run `doxygen doc/doxyfile`
+in the project root directory. The output is generated under `doc/html` and can be
+viewed by opening `doc/html/index.html` in a browser.
+
 ## Usage
 
 The basic usage of the Delta compiler is as follows:

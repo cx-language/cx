@@ -18,3 +18,6 @@ parser.cpp
 # Build products
 delta
 *.a
+
+# Generated documentation
+doc/html/

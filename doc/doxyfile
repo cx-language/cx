@@ -1,0 +1,12 @@
+PROJECT_NAME = delta
+INPUT = . doc src/ast src/driver src/irgen src/parser src/sema
+EXCLUDE = src/parser/parser.cpp src/parser/parser.hpp
+USE_MDFILE_AS_MAINPAGE = README.md
+EXTRACT_ALL = YES
+EXCLUDE_SYMBOLS = llvm clang
+OUTPUT_DIRECTORY = doc
+GENERATE_LATEX = NO
+HAVE_DOT = YES
+DOT_IMAGE_FORMAT = svg
+CALLER_GRAPH = YES
+BUILTIN_STL_SUPPORT = YES
