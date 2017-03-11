@@ -153,7 +153,7 @@
     std::vector<delta::GenericParamDecl>* genericParamDeclList;
     std::vector<delta::FieldDecl>* fieldDeclList;
     std::vector<delta::Stmt>* stmtList;
-    std::vector<delta::Expr>* exprList;
+    std::vector<std::unique_ptr<delta::Expr>>* exprList;
     std::vector<delta::Type>* typeList;
     std::vector<delta::Arg>* argList;
     std::vector<delta::SwitchCase>* caseList;
@@ -334,56 +334,56 @@ typed_variable_definition:
 
 assignment_statement:
     assignment_lhs_expression "=" expression ";"
-        { $$ = new Stmt(AssignStmt{std::move(*$1), std::move(*$3), loc(@2)}); }
+        { $$ = new Stmt(AssignStmt{u($1), u($3), loc(@2)}); }
 |   "_" "=" expression ";"
-        { $$ = new Stmt(ExprStmt{std::move(*$3)}); };
+        { $$ = new Stmt(ExprStmt{u($3)}); };
 
 return_statement:
     "return" expression_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2), loc(@1)}); };
 
 expression_list:
-    /* empty */ { $$ = new std::vector<Expr>(); }
+    /* empty */ { $$ = new std::vector<std::unique_ptr<Expr>>(); }
 |   nonempty_expression_list { $$ = $1; };
 
 nonempty_expression_list:
-    expression { $$ = new std::vector<Expr>(); $$->push_back(std::move(*$1)); }
-|   nonempty_expression_list "," expression { $$ = $1; $$->push_back(std::move(*$3)); };
+    expression { $$ = new std::vector<std::unique_ptr<Expr>>(); $$->emplace_back($1); }
+|   nonempty_expression_list "," expression { $$ = $1; $$->emplace_back($3); };
 
-increment_statement: expression "++" ";" { $$ = new Stmt(IncrementStmt{std::move(*$1), loc(@2)}); };
+increment_statement: expression "++" ";" { $$ = new Stmt(IncrementStmt{u($1), loc(@2)}); };
 
-decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{std::move(*$1), loc(@2)}); };
+decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{u($1), loc(@2)}); };
 
 call_statement:
-    call_expression ";" { $$ = new Stmt(ExprStmt{std::move(*$1)}); };
+    call_expression ";" { $$ = new Stmt(ExprStmt{u($1)}); };
 
 defer_statement:
-    "defer" call_expression ";" { $$ = new Stmt(DeferStmt{std::move(*$2)}); };
+    "defer" call_expression ";" { $$ = new Stmt(DeferStmt{u($2)}); };
 
 if_statement:
     "if" "(" expression ")" "{" statement_list "}"
-        { $$ = new Stmt(IfStmt{std::move(*$3), std::move(*$6), {}}); }
+        { $$ = new Stmt(IfStmt{u($3), std::move(*$6), {}}); }
 |   "if" "(" expression ")" "{" statement_list "}" "else" else_body
-        { $$ = new Stmt(IfStmt{std::move(*$3), std::move(*$6), std::move(*$9)}); };
+        { $$ = new Stmt(IfStmt{u($3), std::move(*$6), std::move(*$9)}); };
 
 else_body:
     if_statement { $$ = new std::vector<Stmt>(); $$->push_back(std::move(*$1)); }
 |   "{" statement_list "}" { $$ = $2; };
 
 switch_statement:
-    "switch" "(" expression ")" "{" case_list "}" { $$ = new Stmt(SwitchStmt{std::move(*$3), std::move(*$6)}); }
+    "switch" "(" expression ")" "{" case_list "}" { $$ = new Stmt(SwitchStmt{u($3), std::move(*$6)}); }
 |   "switch" "(" expression ")" "{" case_list "default" ":" statement_list "}"
-        { $$ = new Stmt(SwitchStmt{std::move(*$3), std::move(*$6), std::move(*$9)}); };
+        { $$ = new Stmt(SwitchStmt{u($3), std::move(*$6), std::move(*$9)}); };
 
 case_list:
     case { $$ = new std::vector<SwitchCase>(); $$->push_back(std::move(*$1)); }
 |   case_list case { $$ = $1; $$->push_back(std::move(*$2)); };
 
 case:
-    "case" expression ":" nonempty_statement_list { $$ = new SwitchCase{std::move(*$2), std::move(*$4)}; };
+    "case" expression ":" nonempty_statement_list { $$ = new SwitchCase{u($2), std::move(*$4)}; };
 
 while_statement:
     "while" "(" expression ")" "{" statement_list "}"
-        { $$ = new Stmt(WhileStmt{std::move(*$3), std::move(*$6)}); };
+        { $$ = new Stmt(WhileStmt{u($3), std::move(*$6)}); };
 
 break_statement:
     "break" ";" { $$ = new Stmt(BreakStmt{loc(@1)}); };
@@ -391,18 +391,18 @@ break_statement:
 // Expressions /////////////////////////////////////////////////////////////////
 
 expression:
-    STRING_LITERAL { $$ = new Expr(StrLiteralExpr{$1, loc(@1)}); }
-|   NUMBER { $$ = new Expr(IntLiteralExpr{$1, loc(@1)}); }
-|   TRUE { $$ = new Expr(BoolLiteralExpr{true, loc(@1)}); }
-|   FALSE { $$ = new Expr(BoolLiteralExpr{false, loc(@1)}); }
-|   "null" { $$ = new Expr(NullLiteralExpr{loc(@1)}); }
-|   "this" { $$ = new Expr(VariableExpr{"this", loc(@1)}); }
+    STRING_LITERAL { $$ = new StrLiteralExpr($1, loc(@1)); }
+|   NUMBER { $$ = new IntLiteralExpr($1, loc(@1)); }
+|   TRUE { $$ = new BoolLiteralExpr(true, loc(@1)); }
+|   FALSE { $$ = new BoolLiteralExpr(false, loc(@1)); }
+|   "null" { $$ = new NullLiteralExpr(loc(@1)); }
+|   "this" { $$ = new VariableExpr("this", loc(@1)); }
 |   array_literal { $$ = $1; }
 |   binary_expression { $$ = $1; }
 |   assignment_lhs_expression { $$ = $1; };
 
 assignment_lhs_expression:
-    IDENTIFIER { $$ = new Expr(VariableExpr{$1, loc(@1)}); }
+    IDENTIFIER { $$ = new VariableExpr($1, loc(@1)); }
 |   prefix_expression { $$ = $1; }
 |   parenthesized_expression { $$ = $1; }
 |   call_expression { $$ = $1; }
@@ -410,57 +410,57 @@ assignment_lhs_expression:
 |   member_access_expression { $$ = $1; }
 |   subscript_expression { $$ = $1; };
 
-prefix_expression: "+" expression { $$ = new Expr(PrefixExpr{PLUS, u($2), loc(@1)}); };
-prefix_expression: "-" expression { $$ = new Expr(PrefixExpr{MINUS, u($2), loc(@1)}); };
-prefix_expression: "*" expression { $$ = new Expr(PrefixExpr{STAR, u($2), loc(@1)}); };
-prefix_expression: "&" expression { $$ = new Expr(PrefixExpr{AND, u($2), loc(@1)}); };
-prefix_expression: "!" expression { $$ = new Expr(PrefixExpr{NOT, u($2), loc(@1)}); };
-prefix_expression: "~" expression { $$ = new Expr(PrefixExpr{COMPL, u($2), loc(@1)}); };
-binary_expression: expression "==" expression { $$ = new Expr(BinaryExpr{EQ, u($1), u($3), loc(@2)}); };
-binary_expression: expression "!=" expression { $$ = new Expr(BinaryExpr{NE, u($1), u($3), loc(@2)}); };
-binary_expression: expression "<"  expression { $$ = new Expr(BinaryExpr{LT, u($1), u($3), loc(@2)}); };
-binary_expression: expression "<=" expression { $$ = new Expr(BinaryExpr{LE, u($1), u($3), loc(@2)}); };
-binary_expression: expression ">"  expression { $$ = new Expr(BinaryExpr{GT, u($1), u($3), loc(@2)}); };
-binary_expression: expression ">=" expression { $$ = new Expr(BinaryExpr{GE, u($1), u($3), loc(@2)}); };
-binary_expression: expression "+"  expression { $$ = new Expr(BinaryExpr{PLUS, u($1), u($3), loc(@2)}); };
-binary_expression: expression "-"  expression { $$ = new Expr(BinaryExpr{MINUS, u($1), u($3), loc(@2)}); };
-binary_expression: expression "*"  expression { $$ = new Expr(BinaryExpr{STAR, u($1), u($3), loc(@2)}); };
-binary_expression: expression "/"  expression { $$ = new Expr(BinaryExpr{SLASH, u($1), u($3), loc(@2)}); };
-binary_expression: expression "&"  expression { $$ = new Expr(BinaryExpr{AND, u($1), u($3), loc(@2)}); };
-binary_expression: expression "&&" expression { $$ = new Expr(BinaryExpr{AND_AND, u($1), u($3), loc(@2)}); };
-binary_expression: expression "|"  expression { $$ = new Expr(BinaryExpr{OR, u($1), u($3), loc(@2)}); };
-binary_expression: expression "||" expression { $$ = new Expr(BinaryExpr{OR_OR, u($1), u($3), loc(@2)}); };
-binary_expression: expression "^"  expression { $$ = new Expr(BinaryExpr{XOR, u($1), u($3), loc(@2)}); };
-binary_expression: expression "<<" expression { $$ = new Expr(BinaryExpr{LSHIFT, u($1), u($3), loc(@2)}); };
-binary_expression: expression ">>" expression { $$ = new Expr(BinaryExpr{RSHIFT, u($1), u($3), loc(@2)}); };
+prefix_expression: "+" expression { $$ = new PrefixExpr(PLUS, u($2), loc(@1)); };
+prefix_expression: "-" expression { $$ = new PrefixExpr(MINUS, u($2), loc(@1)); };
+prefix_expression: "*" expression { $$ = new PrefixExpr(STAR, u($2), loc(@1)); };
+prefix_expression: "&" expression { $$ = new PrefixExpr(AND, u($2), loc(@1)); };
+prefix_expression: "!" expression { $$ = new PrefixExpr(NOT, u($2), loc(@1)); };
+prefix_expression: "~" expression { $$ = new PrefixExpr(COMPL, u($2), loc(@1)); };
+binary_expression: expression "==" expression { $$ = new BinaryExpr(EQ, u($1), u($3), loc(@2)); };
+binary_expression: expression "!=" expression { $$ = new BinaryExpr(NE, u($1), u($3), loc(@2)); };
+binary_expression: expression "<"  expression { $$ = new BinaryExpr(LT, u($1), u($3), loc(@2)); };
+binary_expression: expression "<=" expression { $$ = new BinaryExpr(LE, u($1), u($3), loc(@2)); };
+binary_expression: expression ">"  expression { $$ = new BinaryExpr(GT, u($1), u($3), loc(@2)); };
+binary_expression: expression ">=" expression { $$ = new BinaryExpr(GE, u($1), u($3), loc(@2)); };
+binary_expression: expression "+"  expression { $$ = new BinaryExpr(PLUS, u($1), u($3), loc(@2)); };
+binary_expression: expression "-"  expression { $$ = new BinaryExpr(MINUS, u($1), u($3), loc(@2)); };
+binary_expression: expression "*"  expression { $$ = new BinaryExpr(STAR, u($1), u($3), loc(@2)); };
+binary_expression: expression "/"  expression { $$ = new BinaryExpr(SLASH, u($1), u($3), loc(@2)); };
+binary_expression: expression "&"  expression { $$ = new BinaryExpr(AND, u($1), u($3), loc(@2)); };
+binary_expression: expression "&&" expression { $$ = new BinaryExpr(AND_AND, u($1), u($3), loc(@2)); };
+binary_expression: expression "|"  expression { $$ = new BinaryExpr(OR, u($1), u($3), loc(@2)); };
+binary_expression: expression "||" expression { $$ = new BinaryExpr(OR_OR, u($1), u($3), loc(@2)); };
+binary_expression: expression "^"  expression { $$ = new BinaryExpr(XOR, u($1), u($3), loc(@2)); };
+binary_expression: expression "<<" expression { $$ = new BinaryExpr(LSHIFT, u($1), u($3), loc(@2)); };
+binary_expression: expression ">>" expression { $$ = new BinaryExpr(RSHIFT, u($1), u($3), loc(@2)); };
 
 compound_assignment_statement:
-    assignment_lhs_expression "+="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), PLUS, loc(@2)}); }
-|   assignment_lhs_expression "-="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), MINUS, loc(@2)}); }
-|   assignment_lhs_expression "*="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), STAR, loc(@2)}); }
-|   assignment_lhs_expression "/="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), SLASH, loc(@2)}); }
-|   assignment_lhs_expression "&="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), AND, loc(@2)}); }
-|   assignment_lhs_expression "&&=" expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), AND_AND, loc(@2)}); }
-|   assignment_lhs_expression "|="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), OR, loc(@2)}); }
-|   assignment_lhs_expression "||=" expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), OR_OR, loc(@2)}); }
-|   assignment_lhs_expression "^="  expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), XOR, loc(@2)}); }
-|   assignment_lhs_expression "<<=" expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), LSHIFT, loc(@2)}); }
-|   assignment_lhs_expression ">>=" expression ";" { $$ = new Stmt(AugAssignStmt{std::move(*$1), std::move(*$3), RSHIFT, loc(@2)}); };
+    assignment_lhs_expression "+="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), PLUS, loc(@2)}); }
+|   assignment_lhs_expression "-="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), MINUS, loc(@2)}); }
+|   assignment_lhs_expression "*="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), STAR, loc(@2)}); }
+|   assignment_lhs_expression "/="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), SLASH, loc(@2)}); }
+|   assignment_lhs_expression "&="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), AND, loc(@2)}); }
+|   assignment_lhs_expression "&&=" expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), AND_AND, loc(@2)}); }
+|   assignment_lhs_expression "|="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), OR, loc(@2)}); }
+|   assignment_lhs_expression "||=" expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), OR_OR, loc(@2)}); }
+|   assignment_lhs_expression "^="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), XOR, loc(@2)}); }
+|   assignment_lhs_expression "<<=" expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), LSHIFT, loc(@2)}); }
+|   assignment_lhs_expression ">>=" expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), RSHIFT, loc(@2)}); };
 
-array_literal: "[" expression_list "]" { $$ = new Expr(ArrayLiteralExpr{std::move(*$2), loc(@1)}); }
+array_literal: "[" expression_list "]" { $$ = new ArrayLiteralExpr(std::move(*$2), loc(@1)); }
 
 parenthesized_expression: "(" expression ")" { $$ = $2; };
 
 call_expression:
     IDENTIFIER "(" argument_list ")"
-        { $$ = new Expr(CallExpr{$1, std::move(*$3), false, nullptr, {}, loc(@1)}); }
+        { $$ = new CallExpr($1, std::move(*$3), false, nullptr, {}, loc(@1)); }
 |   expression "." IDENTIFIER "(" argument_list ")"
-        { $$ = new Expr(CallExpr{$3, std::move(*$5), false, u($1), {}, loc(@1)}); }
+        { $$ = new CallExpr($3, std::move(*$5), false, u($1), {}, loc(@1)); }
 |   IDENTIFIER "<" generic_argument_list ">" "(" argument_list ")"
-        { $$ = new Expr(CallExpr{$1, std::move(*$6), false, nullptr, std::move(*$3), loc(@1)}); };
+        { $$ = new CallExpr($1, std::move(*$6), false, nullptr, std::move(*$3), loc(@1)); };
 
 cast_expression:
-    "cast" "<" type ">" "(" expression ")" { $$ = new Expr(CastExpr{$3, u($6), loc(@1)}); };
+    "cast" "<" type ">" "(" expression ")" { $$ = new CastExpr($3, u($6), loc(@1)); };
 
 argument_list:
     /* empty */ { $$ = new std::vector<Arg>(); }
@@ -479,10 +479,10 @@ generic_argument_list:
 |   generic_argument_list "," type { $$ = $1; $$->emplace_back($3); };
 
 member_access_expression:
-    expression "." IDENTIFIER { $$ = new Expr(MemberExpr{u($1), $3, loc(@1), loc(@3)}); };
+    expression "." IDENTIFIER { $$ = new MemberExpr(u($1), $3, loc(@3)); };
 
 subscript_expression:
-    expression "[" expression "]" { $$ = new Expr(SubscriptExpr{u($1), u($3), loc(@2)}); };
+    expression "[" expression "]" { $$ = new SubscriptExpr(u($1), u($3), loc(@2)); };
 
 %%
 

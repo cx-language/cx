@@ -2,17 +2,12 @@
 
 #include <string>
 #include <memory>
-#include <cassert>
 #include <vector>
-#include <boost/variant.hpp>
-#include <llvm/ADT/Optional.h>
 #include "type.h"
 #include "srcloc.h"
 #include "../parser/operators.h"
 
 namespace delta {
-
-class Expr;
 
 enum class ExprKind {
     VariableExpr,
@@ -29,128 +24,178 @@ enum class ExprKind {
     SubscriptExpr,
 };
 
-struct VariableExpr {
+class Expr {
+public:
+    virtual ~Expr() = 0;
+
+#define DEFINE_EXPR_IS_AND_GET(KIND) \
+    bool is##KIND() const { return getKind() == ExprKind::KIND; } \
+    class KIND& get##KIND() { return llvm::cast<class  KIND>(*this); } \
+    const class KIND& get##KIND() const { return llvm::cast<class KIND>(*this); }
+
+    DEFINE_EXPR_IS_AND_GET(VariableExpr)
+    DEFINE_EXPR_IS_AND_GET(StrLiteralExpr)
+    DEFINE_EXPR_IS_AND_GET(IntLiteralExpr)
+    DEFINE_EXPR_IS_AND_GET(BoolLiteralExpr)
+    DEFINE_EXPR_IS_AND_GET(NullLiteralExpr)
+    DEFINE_EXPR_IS_AND_GET(ArrayLiteralExpr)
+    DEFINE_EXPR_IS_AND_GET(PrefixExpr)
+    DEFINE_EXPR_IS_AND_GET(BinaryExpr)
+    DEFINE_EXPR_IS_AND_GET(CallExpr)
+    DEFINE_EXPR_IS_AND_GET(CastExpr)
+    DEFINE_EXPR_IS_AND_GET(MemberExpr)
+    DEFINE_EXPR_IS_AND_GET(SubscriptExpr)
+#undef DEFINE_EXPR_IS_AND_GET
+
+    ExprKind getKind() const { return kind; }
+    Type getType() const { return type; }
+    void setType(Type t) { type = t; }
+    bool isLvalue() const;
+    bool isRvalue() const { return !isLvalue(); }
+    SrcLoc getSrcLoc() const { return srcLoc; }
+
+protected:
+    Expr(ExprKind kind, SrcLoc srcLoc) : kind(kind), type(nullptr), srcLoc(srcLoc) { }
+
+private:
+    const ExprKind kind;
+    Type type;
+
+public:
+    const SrcLoc srcLoc;
+};
+
+inline Expr::~Expr() { }
+
+class VariableExpr : public Expr {
+public:
     std::string identifier;
-    SrcLoc srcLoc;
+
+    VariableExpr(std::string&& identifier, SrcLoc srcLoc)
+    : Expr(ExprKind::VariableExpr, srcLoc), identifier(std::move(identifier)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::VariableExpr; }
 };
 
-struct StrLiteralExpr {
+class StrLiteralExpr : public Expr {
+public:
     std::string value;
-    SrcLoc srcLoc;
+
+    StrLiteralExpr(std::string&& value, SrcLoc srcLoc)
+    : Expr(ExprKind::StrLiteralExpr, srcLoc), value(std::move(value)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::StrLiteralExpr; }
 };
 
-struct IntLiteralExpr {
+class IntLiteralExpr : public Expr {
+public:
     int64_t value;
-    SrcLoc srcLoc;
+
+    IntLiteralExpr(int64_t value, SrcLoc srcLoc)
+    : Expr(ExprKind::IntLiteralExpr, srcLoc), value(value) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::IntLiteralExpr; }
 };
 
-struct BoolLiteralExpr {
+class BoolLiteralExpr : public Expr {
+public:
     bool value;
-    SrcLoc srcLoc;
+
+    BoolLiteralExpr(bool value, SrcLoc srcLoc)
+    : Expr(ExprKind::BoolLiteralExpr, srcLoc), value(value) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::BoolLiteralExpr; }
 };
 
-struct NullLiteralExpr {
-    SrcLoc srcLoc;
+class NullLiteralExpr : public Expr {
+public:
+    NullLiteralExpr(SrcLoc srcLoc)
+    : Expr(ExprKind::NullLiteralExpr, srcLoc) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::NullLiteralExpr; }
 };
 
-struct ArrayLiteralExpr {
-    std::vector<Expr> elements;
-    SrcLoc srcLoc;
+class ArrayLiteralExpr : public Expr {
+public:
+    std::vector<std::unique_ptr<Expr>> elements;
+
+    ArrayLiteralExpr(std::vector<std::unique_ptr<Expr>>&& elements, SrcLoc srcLoc)
+    : Expr(ExprKind::ArrayLiteralExpr, srcLoc), elements(std::move(elements)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::ArrayLiteralExpr; }
 };
 
-struct PrefixExpr {
+class PrefixExpr : public Expr {
+public:
     PrefixOperator op;
     std::unique_ptr<Expr> operand;
-    SrcLoc srcLoc;
+
+    PrefixExpr(PrefixOperator op, std::unique_ptr<Expr> operand, SrcLoc srcLoc)
+    : Expr(ExprKind::PrefixExpr, srcLoc), op(op), operand(std::move(operand)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::PrefixExpr; }
 };
 
-struct BinaryExpr {
+class BinaryExpr : public Expr {
+public:
     BinaryOperator op;
     std::unique_ptr<Expr> left;
     std::unique_ptr<Expr> right;
-    SrcLoc srcLoc;
+
+    BinaryExpr(BinaryOperator op, std::unique_ptr<Expr> left,
+               std::unique_ptr<Expr> right, SrcLoc srcLoc)
+    : Expr(ExprKind::BinaryExpr, srcLoc), op(op), left(std::move(left)), right(std::move(right)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 };
 
-struct Arg {
+class Arg {
+public:
     std::string label; // Empty if no label.
     std::unique_ptr<Expr> value;
     SrcLoc srcLoc;
 };
 
-struct CallExpr {
+class CallExpr : public Expr {
+public:
     std::string funcName;
     std::vector<Arg> args;
     bool isInitializerCall;
     std::unique_ptr<Expr> receiver; /// Null if non-member function call.
     std::vector<Type> genericArgs;
-    SrcLoc srcLoc;
 
+    CallExpr(std::string&& funcName, std::vector<Arg>&& args, bool isInitializerCall,
+             std::unique_ptr<Expr> receiver, std::vector<Type>&& genericArgs, SrcLoc srcLoc)
+    : Expr(ExprKind::CallExpr, srcLoc), funcName(std::move(funcName)), args(std::move(args)),
+      isInitializerCall(isInitializerCall), receiver(std::move(receiver)),
+      genericArgs(std::move(genericArgs)) { }
     bool isMemberFuncCall() const { return receiver != nullptr; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::CallExpr; }
 };
 
 /// A type cast expression using the 'cast' keyword, e.g. 'cast<type>(expr)'.
-struct CastExpr {
+class CastExpr : public Expr {
+public:
     Type type;
     std::unique_ptr<Expr> expr;
-    SrcLoc srcLoc;
+
+    CastExpr(Type type, std::unique_ptr<Expr> expr, SrcLoc srcLoc)
+    : Expr(ExprKind::CastExpr, srcLoc), type(type), expr(std::move(expr)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::CastExpr; }
 };
 
 /// A member access expression using the dot syntax, such as 'a.b'.
-struct MemberExpr {
+class MemberExpr : public Expr {
+public:
     std::unique_ptr<Expr> base;
     std::string member;
-    SrcLoc baseSrcLoc;
-    SrcLoc memberSrcLoc;
+
+    MemberExpr(std::unique_ptr<Expr> base, std::string&& member, SrcLoc srcLoc)
+    : Expr(ExprKind::MemberExpr, srcLoc), base(std::move(base)), member(std::move(member)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::MemberExpr; }
 };
 
 /// An array element access expression using the element's index in brackets, e.g. 'array[index]'.
-struct SubscriptExpr {
+class SubscriptExpr : public Expr {
+public:
     std::unique_ptr<Expr> array;
     std::unique_ptr<Expr> index;
-    SrcLoc srcLoc;
-};
 
-class Expr {
-public:
-#define DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(KIND) \
-    Expr(KIND&& value) : data(std::move(value)) { } \
-    \
-    bool is##KIND() const { return getKind() == ExprKind::KIND; } \
-    \
-    KIND& get##KIND() { \
-        assert(is##KIND()); \
-        return boost::get<KIND>(data); \
-    } \
-    const KIND& get##KIND() const { \
-        assert(is##KIND()); \
-        return boost::get<KIND>(data); \
-    }
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(VariableExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(StrLiteralExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(IntLiteralExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BoolLiteralExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(NullLiteralExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(ArrayLiteralExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(PrefixExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(BinaryExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CallExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(CastExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(MemberExpr)
-    DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR(SubscriptExpr)
-#undef DEFINE_EXPRKIND_GETTER_AND_CONSTRUCTOR
-
-    Expr(Expr&&) = default;
-    ExprKind getKind() const { return static_cast<ExprKind>(data.which()); }
-    Type getType() const { return *type; }
-    void setType(Type t) { type = t; }
-    bool isLvalue() const;
-    bool isRvalue() const { return !isLvalue(); }
-    SrcLoc getSrcLoc() const;
-
-private:
-    boost::variant<VariableExpr, StrLiteralExpr, IntLiteralExpr, BoolLiteralExpr, NullLiteralExpr,
-        ArrayLiteralExpr, PrefixExpr, BinaryExpr, CallExpr, CastExpr, MemberExpr, SubscriptExpr> data;
-    llvm::Optional<Type> type;
+    SubscriptExpr(std::unique_ptr<Expr> array, std::unique_ptr<Expr> index, SrcLoc srcLoc)
+    : Expr(ExprKind::SubscriptExpr, srcLoc), array(std::move(array)), index(std::move(index)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::SubscriptExpr; }
 };
 
 }

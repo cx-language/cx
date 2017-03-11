@@ -26,7 +26,7 @@ enum class StmtKind {
 };
 
 struct ReturnStmt {
-    std::vector<Expr> values;
+    std::vector<std::unique_ptr<Expr>> values;
     SrcLoc srcLoc;
 };
 
@@ -35,43 +35,43 @@ struct VariableStmt {
 };
 
 struct IncrementStmt {
-    Expr operand;
+    std::unique_ptr<Expr> operand;
     SrcLoc srcLoc; // Location of '++'.
 };
 
 struct DecrementStmt {
-    Expr operand;
+    std::unique_ptr<Expr> operand;
     SrcLoc srcLoc; // Location of '--'.
 };
 
 /// A statement that consists of the evaluation of a single expression.
 struct ExprStmt {
-    Expr expr;
+    std::unique_ptr<Expr> expr;
 };
 
 struct DeferStmt {
-    Expr expr;
+    std::unique_ptr<Expr> expr;
 };
 
 struct IfStmt {
-    Expr condition;
+    std::unique_ptr<Expr> condition;
     std::vector<Stmt> thenBody;
     std::vector<Stmt> elseBody;
 };
 
 struct SwitchCase {
-    Expr value;
+    std::unique_ptr<Expr> value;
     std::vector<Stmt> stmts;
 };
 
 struct SwitchStmt {
-    Expr condition;
+    std::unique_ptr<Expr> condition;
     std::vector<SwitchCase> cases;
     std::vector<Stmt> defaultStmts;
 };
 
 struct WhileStmt {
-    Expr condition;
+    std::unique_ptr<Expr> condition;
     std::vector<Stmt> body;
 };
 
@@ -80,15 +80,15 @@ struct BreakStmt {
 };
 
 struct AssignStmt {
-    Expr lhs;
-    Expr rhs;
+    std::unique_ptr<Expr> lhs;
+    std::unique_ptr<Expr> rhs;
     SrcLoc srcLoc; // Location of '='.
 };
 
 /// An augmented assignment (a.k.a. compound assignment) statement.
 struct AugAssignStmt {
-    Expr lhs;
-    Expr rhs;
+    std::unique_ptr<Expr> lhs;
+    std::unique_ptr<Expr> rhs;
     BinaryOperator op;
     SrcLoc srcLoc; // Location of operator symbol.
 };

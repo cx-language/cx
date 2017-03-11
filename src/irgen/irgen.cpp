@@ -168,10 +168,11 @@ llvm::Value* codegen(const NullLiteralExpr& expr, const Expr& parent) {
 }
 
 llvm::Value* codegen(const ArrayLiteralExpr& expr) {
-    auto* arrayType = llvm::ArrayType::get(toIR(expr.elements[0].getType()), expr.elements.size());
+    auto* arrayType = llvm::ArrayType::get(toIR(expr.elements[0]->getType()), expr.elements.size());
     std::vector<llvm::Constant*> values;
     values.reserve(expr.elements.size());
-    for (auto& e : expr.elements) values.emplace_back(llvm::cast<llvm::Constant>(codegen(e)));
+    for (auto& e : expr.elements)
+        values.emplace_back(llvm::cast<llvm::Constant>(codegen(*e)));
     return llvm::ConstantArray::get(arrayType, values);
 }
 
@@ -453,7 +454,7 @@ void codegen(const ReturnStmt& stmt) {
         if (currentDecl->getFuncDecl().name != "main") builder.CreateRetVoid();
         else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
     } else {
-        builder.CreateRet(codegen(stmt.values[0]));
+        builder.CreateRet(codegen(*stmt.values[0]));
     }
 }
 
@@ -486,14 +487,14 @@ void codegen(const VariableStmt& stmt) {
 }
 
 void codegen(const IncrementStmt& stmt) {
-    auto* alloca = codegenLvalue(stmt.operand);
+    auto* alloca = codegenLvalue(*stmt.operand);
     auto* value = builder.CreateLoad(alloca);
     auto* result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
     builder.CreateStore(result, alloca);
 }
 
 void codegen(const DecrementStmt& stmt) {
-    auto* alloca = codegenLvalue(stmt.operand);
+    auto* alloca = codegenLvalue(*stmt.operand);
     auto* value = builder.CreateLoad(alloca);
     auto* result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
     builder.CreateStore(result, alloca);
@@ -502,7 +503,7 @@ void codegen(const DecrementStmt& stmt) {
 void codegen(const Stmt& stmt);
 
 void codegen(const IfStmt& ifStmt) {
-    auto* condition = codegen(ifStmt.condition);
+    auto* condition = codegen(*ifStmt.condition);
     auto* func = builder.GetInsertBlock()->getParent();
     auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", func);
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", func);
@@ -535,13 +536,13 @@ void codegen(const IfStmt& ifStmt) {
 }
 
 void codegen(const SwitchStmt& switchStmt) {
-    auto* condition = codegen(switchStmt.condition);
+    auto* condition = codegen(*switchStmt.condition);
     auto* func = builder.GetInsertBlock()->getParent();
     auto* insertBlockBackup = builder.GetInsertBlock();
 
     std::vector<std::pair<llvm::ConstantInt*, llvm::BasicBlock*>> cases;
     for (const SwitchCase& switchCase : switchStmt.cases) {
-        auto* value = llvm::cast<llvm::ConstantInt>(codegen(switchCase.value));
+        auto* value = llvm::cast<llvm::ConstantInt>(codegen(*switchCase.value));
         auto* block = llvm::BasicBlock::Create(ctx, "", func);
         cases.emplace_back(value, block);
     }
@@ -598,7 +599,7 @@ void codegen(const WhileStmt& whileStmt) {
     builder.CreateBr(cond);
 
     builder.SetInsertPoint(cond);
-    builder.CreateCondBr(codegen(whileStmt.condition), body, end);
+    builder.CreateCondBr(codegen(*whileStmt.condition), body, end);
 
     builder.SetInsertPoint(body);
     beginScope();
@@ -620,8 +621,8 @@ void codegen(const BreakStmt& breakStmt) {
 }
 
 void codegen(const AssignStmt& stmt) {
-    auto* lhs = codegenLvalue(stmt.lhs);
-    builder.CreateStore(codegen(stmt.rhs), lhs);
+    auto* lhs = codegenLvalue(*stmt.lhs);
+    builder.CreateStore(codegen(*stmt.rhs), lhs);
 }
 
 void codegen(const AugAssignStmt& stmt) {
@@ -629,9 +630,9 @@ void codegen(const AugAssignStmt& stmt) {
         case AND_AND: fatalError("'&&=' not implemented yet");
         case OR_OR:   fatalError("'||=' not implemented yet");
     }
-    auto* lhs = codegenLvalue(stmt.lhs);
-    auto* rhs = codegen(stmt.rhs);
-    auto* result = codegenBinaryOp(stmt.op, builder.CreateLoad(lhs), rhs, stmt.lhs);
+    auto* lhs = codegenLvalue(*stmt.lhs);
+    auto* rhs = codegen(*stmt.rhs);
+    auto* result = codegenBinaryOp(stmt.op, builder.CreateLoad(lhs), rhs, *stmt.lhs);
     builder.CreateStore(result, lhs);
 }
 
@@ -641,8 +642,8 @@ void codegen(const Stmt& stmt) {
         case StmtKind::VariableStmt:  codegen(stmt.getVariableStmt()); break;
         case StmtKind::IncrementStmt: codegen(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: codegen(stmt.getDecrementStmt()); break;
-        case StmtKind::ExprStmt:      codegen(stmt.getExprStmt().expr); break;
-        case StmtKind::DeferStmt:     deferEvaluationOf(stmt.getDeferStmt().expr); break;
+        case StmtKind::ExprStmt:      codegen(*stmt.getExprStmt().expr); break;
+        case StmtKind::DeferStmt:     deferEvaluationOf(*stmt.getDeferStmt().expr); break;
         case StmtKind::IfStmt:        codegen(stmt.getIfStmt()); break;
         case StmtKind::SwitchStmt:    codegen(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     codegen(stmt.getWhileStmt()); break;

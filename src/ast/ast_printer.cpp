@@ -40,7 +40,7 @@ std::ostream& operator<<(std::ostream& out, const NullLiteralExpr& expr) {
 
 std::ostream& operator<<(std::ostream& out, const ArrayLiteralExpr& expr) {
     out << "(array-literal";
-    for (auto& e : expr.elements) out << " " << e;
+    for (auto& e : expr.elements) out << " " << *e;
     return out << ")";
 }
 
@@ -92,8 +92,8 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
 
 std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
     out << br << "(return-stmt ";
-    for (const Expr& value : stmt.values) {
-        out << value;
+    for (const auto& value : stmt.values) {
+        out << *value;
         if (&value != &stmt.values.back()) out << " ";
     }
     return out << ")";
@@ -104,19 +104,19 @@ std::ostream& operator<<(std::ostream& out, const VariableStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const IncrementStmt& stmt) {
-    return out << br << "(inc-stmt " << stmt.operand << ")";
+    return out << br << "(inc-stmt " << *stmt.operand << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const DecrementStmt& stmt) {
-    return out << br << "(dec-stmt " << stmt.operand << ")";
+    return out << br << "(dec-stmt " << *stmt.operand << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const DeferStmt& stmt) {
-    return out << br << "(defer-stmt " << stmt.expr << ")";
+    return out << br << "(defer-stmt " << *stmt.expr << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
-    out << br << "(if-stmt " << stmt.condition;
+    out << br << "(if-stmt " << *stmt.condition;
     indentLevel++;
     out << br << "(then";
     indentLevel++;
@@ -138,10 +138,10 @@ std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
-    out << br << "(switch-stmt " << stmt.condition;
+    out << br << "(switch-stmt " << *stmt.condition;
     indentLevel++;
     for (const SwitchCase& switchCase : stmt.cases) {
-        out << br << "(case " << switchCase.value;
+        out << br << "(case " << *switchCase.value;
         indentLevel++;
         for (const Stmt& substmt : switchCase.stmts) {
             out << br << substmt;
@@ -154,7 +154,7 @@ std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
-    out << br << "(while-stmt " << stmt.condition;
+    out << br << "(while-stmt " << *stmt.condition;
     indentLevel++;
     for (const Stmt& substmt : stmt.body) {
         out << br << substmt;
@@ -168,11 +168,11 @@ std::ostream& operator<<(std::ostream& out, const BreakStmt&) {
 }
 
 std::ostream& operator<<(std::ostream& out, const AssignStmt& stmt) {
-    return out << br << "(assign-stmt " << stmt.lhs << " " << stmt.rhs << ")";
+    return out << br << "(assign-stmt " << *stmt.lhs << " " << *stmt.rhs << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const AugAssignStmt& stmt) {
-    return out << br << "(comp-assign-stmt " << stmt.op << " " << stmt.lhs << " " << stmt.rhs << ")";
+    return out << br << "(comp-assign-stmt " << stmt.op << " " << *stmt.lhs << " " << *stmt.rhs << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
@@ -181,7 +181,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::VariableStmt:  return out << stmt.getVariableStmt();
         case StmtKind::IncrementStmt: return out << stmt.getIncrementStmt();
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
-        case StmtKind::ExprStmt:      return out << stmt.getExprStmt().expr;
+        case StmtKind::ExprStmt:      return out << *stmt.getExprStmt().expr;
         case StmtKind::DeferStmt:     return out << stmt.getDeferStmt();
         case StmtKind::IfStmt:        return out << stmt.getIfStmt();
         case StmtKind::SwitchStmt:    return out << stmt.getSwitchStmt();

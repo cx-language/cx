@@ -76,11 +76,11 @@ Type typecheck(NullLiteralExpr&) {
 }
 
 Type typecheck(ArrayLiteralExpr& array) {
-    Type firstType = typecheck(array.elements[0]);
+    Type firstType = typecheck(*array.elements[0]);
     for (auto& element : llvm::drop_begin(array.elements, 1)) {
-        Type type = typecheck(element);
+        Type type = typecheck(*element);
         if (type != firstType) {
-            error(element.getSrcLoc(), "mixed element types in array literal (expected '",
+            error(element->getSrcLoc(), "mixed element types in array literal (expected '",
                   firstType, "', found '", type, "')");
         }
     }
@@ -315,7 +315,7 @@ Type typecheck(MemberExpr& expr) {
 
     if (baseType.isPtrType()) {
         if (!baseType.isRef()) {
-            error(expr.baseSrcLoc, "cannot access member through pointer '", baseType,
+            error(expr.base->srcLoc, "cannot access member through pointer '", baseType,
                   "', pointer may be null");
         }
         baseType = baseType.getPointee();
@@ -327,7 +327,7 @@ Type typecheck(MemberExpr& expr) {
             return field.type;
         }
     }
-    error(expr.memberSrcLoc, "no member named '", expr.member, "' in '", baseType, "'");
+    error(expr.srcLoc, "no member named '", expr.member, "' in '", baseType, "'");
 }
 
 Type typecheck(SubscriptExpr& expr) {
@@ -375,16 +375,16 @@ Type typecheck(Expr& expr) {
     return expr.getType();
 }
 
-bool isValidConversion(std::vector<Expr>& exprs, Type source, Type target) {
+bool isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source, Type target) {
     if (!source.isTupleType()) {
         assert(!target.isTupleType());
         assert(exprs.size() == 1);
-        return isValidConversion(exprs[0], source, target);
+        return isValidConversion(*exprs[0], source, target);
     }
     assert(target.isTupleType());
 
     for (int i = 0; i < exprs.size(); ++i) {
-        if (!isValidConversion(exprs[i], source.getSubtypes()[i], target.getSubtypes()[i])) {
+        if (!isValidConversion(*exprs[i], source.getSubtypes()[i], target.getSubtypes()[i])) {
             return false;
         }
     }
@@ -399,8 +399,8 @@ void typecheck(ReturnStmt& stmt) {
         return;
     }
     std::vector<Type> returnValueTypes;
-    for (Expr& expr : stmt.values) {
-        returnValueTypes.push_back(typecheck(expr));
+    for (auto& expr : stmt.values) {
+        returnValueTypes.push_back(typecheck(*expr));
     }
     Type returnType = returnValueTypes.size() > 1
         ? TupleType::get(std::move(returnValueTypes)) : returnValueTypes[0];
@@ -416,7 +416,7 @@ void typecheck(VariableStmt& stmt) {
 }
 
 void typecheck(IncrementStmt& stmt) {
-    auto type = typecheck(stmt.operand);
+    auto type = typecheck(*stmt.operand);
     if (!type.isMutable()) {
         error(stmt.srcLoc, "cannot increment immutable value");
     }
@@ -424,7 +424,7 @@ void typecheck(IncrementStmt& stmt) {
 }
 
 void typecheck(DecrementStmt& stmt) {
-    auto type = typecheck(stmt.operand);
+    auto type = typecheck(*stmt.operand);
     if (!type.isMutable()) {
         error(stmt.srcLoc, "cannot decrement immutable value");
     }
@@ -432,9 +432,9 @@ void typecheck(DecrementStmt& stmt) {
 }
 
 void typecheck(IfStmt& ifStmt) {
-    Type conditionType = typecheck(ifStmt.condition);
+    Type conditionType = typecheck(*ifStmt.condition);
     if (!conditionType.isBool()) {
-        error(ifStmt.condition.getSrcLoc(), "'if' condition must have type 'bool'");
+        error(ifStmt.condition->getSrcLoc(), "'if' condition must have type 'bool'");
     }
     canBreak = true;
     for (Stmt& stmt : ifStmt.thenBody) typecheck(stmt);
@@ -443,12 +443,12 @@ void typecheck(IfStmt& ifStmt) {
 }
 
 void typecheck(SwitchStmt& stmt) {
-    Type conditionType = typecheck(stmt.condition);
+    Type conditionType = typecheck(*stmt.condition);
     canBreak = true;
     for (SwitchCase& switchCase : stmt.cases) {
-        Type caseType = typecheck(switchCase.value);
+        Type caseType = typecheck(*switchCase.value);
         if (caseType != conditionType) {
-            error(switchCase.value.getSrcLoc(), "case value type '", caseType,
+            error(switchCase.value->getSrcLoc(), "case value type '", caseType,
                   "' doesn't match switch condition type '", conditionType, "'");
         }
         for (Stmt& caseStmt : switchCase.stmts) typecheck(caseStmt);
@@ -458,9 +458,9 @@ void typecheck(SwitchStmt& stmt) {
 }
 
 void typecheck(WhileStmt& whileStmt) {
-    Type conditionType = typecheck(whileStmt.condition);
+    Type conditionType = typecheck(*whileStmt.condition);
     if (!conditionType.isBool()) {
-        error(whileStmt.condition.getSrcLoc(), "'while' condition must have type 'bool'");
+        error(whileStmt.condition->getSrcLoc(), "'while' condition must have type 'bool'");
     }
     canBreak = true;
     for (Stmt& stmt : whileStmt.body) typecheck(stmt);
@@ -491,13 +491,13 @@ void typecheckAssignment(Expr& lhs, Expr& rhs, SrcLoc srcLoc) {
 }
 
 void typecheck(AssignStmt& stmt) {
-    typecheckAssignment(stmt.lhs, stmt.rhs, stmt.srcLoc);
+    typecheckAssignment(*stmt.lhs, *stmt.rhs, stmt.srcLoc);
 }
 
 void typecheck(AugAssignStmt& stmt) {
-    Expr expr(BinaryExpr{stmt.op, std::unique_ptr<Expr>(&stmt.lhs),
-                         std::unique_ptr<Expr>(&stmt.rhs), stmt.srcLoc});
-    typecheckAssignment(stmt.lhs, expr, stmt.srcLoc);
+    BinaryExpr expr(stmt.op, std::unique_ptr<Expr>(stmt.lhs.get()),
+                    std::unique_ptr<Expr>(stmt.rhs.get()), stmt.srcLoc);
+    typecheckAssignment(*stmt.lhs, expr, stmt.srcLoc);
     expr.getBinaryExpr().left.release();
     expr.getBinaryExpr().right.release();
 }
@@ -508,8 +508,8 @@ void typecheck(Stmt& stmt) {
         case StmtKind::VariableStmt:  typecheck(stmt.getVariableStmt()); break;
         case StmtKind::IncrementStmt: typecheck(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: typecheck(stmt.getDecrementStmt()); break;
-        case StmtKind::ExprStmt:      typecheck(stmt.getExprStmt().expr); break;
-        case StmtKind::DeferStmt:     typecheck(stmt.getDeferStmt().expr); break;
+        case StmtKind::ExprStmt:      typecheck(*stmt.getExprStmt().expr); break;
+        case StmtKind::DeferStmt:     typecheck(*stmt.getDeferStmt().expr); break;
         case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
         case StmtKind::SwitchStmt:    typecheck(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;

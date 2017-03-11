@@ -117,7 +117,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
 }
 
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value) {
-    auto initializer = std::make_shared<Expr>(IntLiteralExpr{value, SrcLoc::invalid()});
+    auto initializer = std::make_shared<IntLiteralExpr>(value, SrcLoc::invalid());
     initializer->setType(Type::getInt());
     VarDecl varDecl{initializer->getType(), name, std::move(initializer), SrcLoc::invalid()};
     addToSymbolTable(std::move(varDecl));
