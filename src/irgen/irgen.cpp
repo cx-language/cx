@@ -52,7 +52,7 @@ std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
 std::vector<GenericFuncInstantiation> genericFuncInstantiations;
-const std::vector<Decl>* globalDecls;
+const std::vector<std::unique_ptr<Decl>>* globalDecls;
 const Decl* currentDecl;
 llvm::SmallVector<Scope, 4> scopes;
 llvm::BasicBlock::iterator lastAlloca;
@@ -773,8 +773,8 @@ void codegen(const FuncDecl& decl) {
 }
 
 void codegen(const InitDecl& decl) {
-    FuncDecl funcDecl{mangle(decl), decl.params, decl.getTypeDecl().getType(),
-        "", nullptr, SrcLoc::invalid()};
+    FuncDecl funcDecl(mangle(decl), std::vector<ParamDecl>(decl.params),
+                      decl.getTypeDecl().getType(), "", SrcLoc::invalid());
     auto* func = codegenFuncProto(funcDecl);
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", func));
 
@@ -792,8 +792,9 @@ void codegen(const InitDecl& decl) {
 }
 
 void codegen(const DeinitDecl& decl) {
-    FuncDecl funcDecl{mangle(decl), {}, Type::getVoid(),
-        decl.getTypeDecl().name, decl.body, decl.srcLoc};
+    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(),
+                      std::string(decl.getTypeDecl().name), decl.srcLoc);
+    funcDecl.body = decl.body;
     llvm::Function* func = codegenFuncProto(funcDecl);
     codegenFuncBody(funcDecl, *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
@@ -833,11 +834,11 @@ void codegen(const Decl& decl) {
 
 } // anonymous namespace
 
-llvm::Module& irgen::compile(const std::vector<Decl>& decls) {
+llvm::Module& irgen::compile(const std::vector<std::unique_ptr<Decl>>& decls) {
     globalDecls = &decls;
-    for (const Decl& decl : decls) {
-        currentDecl = &decl;
-        codegen(decl);
+    for (const auto& decl : decls) {
+        currentDecl = decl.get();
+        codegen(*decl);
     }
 
     for (const GenericFuncInstantiation& instantiation : genericFuncInstantiations) {

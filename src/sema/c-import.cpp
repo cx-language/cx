@@ -89,21 +89,21 @@ Type toDelta(clang::QualType qualtype) {
 FuncDecl toDelta(const clang::FunctionDecl& decl) {
     std::vector<ParamDecl> params;
     for (auto* param : decl.parameters()) {
-        params.emplace_back(ParamDecl{"", toDelta(param->getType()),
-                            param->getNameAsString(), SrcLoc::invalid()});
+        params.emplace_back("", toDelta(param->getType()), param->getNameAsString(),
+                            SrcLoc::invalid());
     }
-    return FuncDecl{decl.getNameAsString(), std::move(params),
-                    toDelta(decl.getReturnType()), "", nullptr, SrcLoc::invalid()};
+    return FuncDecl(decl.getNameAsString(), std::move(params),
+                    toDelta(decl.getReturnType()), "", SrcLoc::invalid());
 }
 
 llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {
     if (decl.getName().empty()) return llvm::None;
-    return FieldDecl{toDelta(decl.getType()), decl.getNameAsString(), SrcLoc::invalid()};
+    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), SrcLoc::invalid());
 }
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
     if (decl.getName().empty()) return llvm::None;
-    TypeDecl typeDecl{TypeTag::Struct, decl.getNameAsString(), {}, SrcLoc::invalid()};
+    TypeDecl typeDecl(TypeTag::Struct, decl.getNameAsString(), {}, SrcLoc::invalid());
     typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field)) {
@@ -118,7 +118,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SrcLoc::invalid());
     initializer->setType(Type::getInt());
-    VarDecl varDecl{initializer->getType(), name, std::move(initializer), SrcLoc::invalid()};
+    VarDecl varDecl(initializer->getType(), name, std::move(initializer), SrcLoc::invalid());
     addToSymbolTable(std::move(varDecl));
 }
 

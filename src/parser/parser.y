@@ -15,7 +15,7 @@
     int lex();
 
     /// The root of the abstract syntax tree, for passing from Bison to compiler.
-    extern std::vector<Decl> globalAST;
+    extern std::vector<std::unique_ptr<Decl>> globalAST;
 
     /// Shorthand to avoid overly long lines.
     template<typename T>
@@ -148,7 +148,7 @@
 %union {
     char* string;
     long long number;
-    std::vector<delta::Decl>* declList;
+    std::vector<std::unique_ptr<delta::Decl>>* declList;
     std::vector<delta::ParamDecl>* paramDeclList;
     std::vector<delta::GenericParamDecl>* genericParamDeclList;
     std::vector<delta::FieldDecl>* fieldDeclList;
@@ -184,8 +184,8 @@
 source_file: declaration_list { std::move($1->begin(), $1->end(), std::back_inserter(globalAST)); };
 
 declaration_list:
-    /* empty */ { $$ = new std::vector<Decl>(); }
-|   declaration_list declaration { $$ = $1; $1->push_back(std::move(*$2)); };
+    /* empty */ { $$ = new std::vector<std::unique_ptr<Decl>>(); }
+|   declaration_list declaration { $$ = $1; $1->emplace_back($2); };
 
 declaration:
     function_definition { $$ = $1; }
@@ -208,17 +208,18 @@ function_definition:
 
 function_prototype:
     "func" IDENTIFIER "(" parameter_list ")" return_type_specifier
-        { $$ = new Decl(FuncDecl{$2, std::move(*$4), $6, "", nullptr, loc(@2)});
+        { $$ = new FuncDecl($2, std::move(*$4), $6, "", loc(@2));
           addToSymbolTable($$->getFuncDecl()); };
 
 member_function_prototype:
     "func" IDENTIFIER "::" IDENTIFIER "(" parameter_list ")" return_type_specifier
-        { $$ = new Decl(FuncDecl{$4, std::move(*$6), $8, $2, nullptr, loc(@2)});
+        { $$ = new FuncDecl($4, std::move(*$6), $8, $2, loc(@2));
           addToSymbolTable($$->getFuncDecl()); };
 
 generic_function_prototype:
     "func" IDENTIFIER "<" generic_parameter_list ">" "(" parameter_list ")" return_type_specifier
-        { $$ = new Decl(GenericFuncDecl{std::shared_ptr<FuncDecl>(new FuncDecl{$2, std::move(*$7), $9, "", nullptr, loc(@2)}), std::move(*$4)});
+        { auto p = new FuncDecl($2, std::move(*$7), $9, "", loc(@2));
+          $$ = new GenericFuncDecl(std::shared_ptr<FuncDecl>(p), std::move(*$4));
           addToSymbolTable($$->getGenericFuncDecl()); };
 
 extern_function_declaration:
@@ -241,15 +242,15 @@ nonempty_parameter_list:
 |   nonempty_parameter_list "," parameter { $$ = $1; $$->push_back(std::move(*$3)); };
 
 parameter:
-    type IDENTIFIER { $$ = new ParamDecl{"", $1, $2, loc(@2)}; }
-|   IDENTIFIER ":" type IDENTIFIER { $$ = new ParamDecl{$1, $3, $4, loc(@4)}; };
+    type IDENTIFIER { $$ = new ParamDecl("", $1, $2, loc(@2)); }
+|   IDENTIFIER ":" type IDENTIFIER { $$ = new ParamDecl($1, $3, $4, loc(@4)); };
 
 generic_parameter_list:
     generic_parameter { $$ = new std::vector<GenericParamDecl>(); $$->push_back(std::move(*$1)); }
 |   generic_parameter_list "," generic_parameter { $$ = $1; $$->push_back(std::move(*$3)); };
 
 generic_parameter:
-    IDENTIFIER { $$ = new GenericParamDecl{$1, loc(@1)}; };
+    IDENTIFIER { $$ = new GenericParamDecl($1, loc(@1)); };
 
 statement_list:
     /* empty */ { $$ = new std::vector<std::unique_ptr<Stmt>>(); }
@@ -270,9 +271,9 @@ type:
 |   type "*" { $$ = PtrType::get($1, false); };
 
 composite_type_declaration:
-    "struct" IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Struct, $2, std::move(*$4), loc(@2)});
+    "struct" IDENTIFIER "{" member_list "}" { $$ = new TypeDecl(TypeTag::Struct, $2, std::move(*$4), loc(@2));
                                               addToSymbolTable($$->getTypeDecl()); }
-|   "class"  IDENTIFIER "{" member_list "}" { $$ = new Decl(TypeDecl{TypeTag::Class, $2, std::move(*$4), loc(@2)});
+|   "class"  IDENTIFIER "{" member_list "}" { $$ = new TypeDecl(TypeTag::Class, $2, std::move(*$4), loc(@2));
                                               addToSymbolTable($$->getTypeDecl()); };
 
 member_list:
@@ -280,22 +281,20 @@ member_list:
 |   member_list field_declaration { $$ = $1; $$->push_back(std::move(*$2)); };
 
 field_declaration:
-    type IDENTIFIER ";" { $$ = new FieldDecl{$1, $2, loc(@2)}; };
+    type IDENTIFIER ";" { $$ = new FieldDecl($1, $2, loc(@2)); };
 
 initializer_definition:
     IDENTIFIER "::" "init" "(" parameter_list ")" "{" statement_list "}"
-        { $$ = new Decl(InitDecl{$1, std::move(*$5), nullptr, loc(@3)});
-          addToSymbolTable($$->getInitDecl());
-          $$->getInitDecl().body.reset($8); };
+        { $$ = new InitDecl($1, std::move(*$5), u($8), loc(@3));
+          addToSymbolTable($$->getInitDecl()); };
 
 deinitializer_definition:
     IDENTIFIER "::" "deinit" "(" ")" "{" statement_list "}"
-        { $$ = new Decl(DeinitDecl{$1, nullptr, loc(@3)});
-          addToSymbolTable($$->getDeinitDecl());
-          $$->getDeinitDecl().body.reset($7); };
+        { $$ = new DeinitDecl($1, u($7), loc(@3));
+          addToSymbolTable($$->getDeinitDecl()); };
 
 import_declaration:
-    "import" STRING_LITERAL ";" { $$ = new Decl(ImportDecl{$2, loc(@2)}); };
+    "import" STRING_LITERAL ";" { $$ = new ImportDecl($2, loc(@2)); };
 
 // Statements //////////////////////////////////////////////////////////////////
 
@@ -320,17 +319,17 @@ variable_definition:
 
 immutable_variable_definition:
     "const" IDENTIFIER "=" expression ";"
-        { $$ = new Decl(VarDecl{false, $2, std::shared_ptr<Expr>($4), loc(@2)}); };
+        { $$ = new VarDecl(false, $2, std::shared_ptr<Expr>($4), loc(@2)); };
 
 mutable_variable_definition:
     "var"   IDENTIFIER "=" expression ";"
-        { $$ = new Decl(VarDecl{true, $2, std::shared_ptr<Expr>($4), loc(@2)}); };
+        { $$ = new VarDecl(true, $2, std::shared_ptr<Expr>($4), loc(@2)); };
 
 typed_variable_definition:
     type    IDENTIFIER "=" expression ";"
-        { $$ = new Decl(VarDecl{Type($1), $2, std::shared_ptr<Expr>($4), loc(@2)}); }
+        { $$ = new VarDecl(Type($1), $2, std::shared_ptr<Expr>($4), loc(@2)); }
 |   type    IDENTIFIER "=" "uninitialized" ";"
-        { $$ = new Decl(VarDecl{Type($1), $2, nullptr, loc(@2)}); };
+        { $$ = new VarDecl(Type($1), $2, nullptr, loc(@2)); };
 
 assignment_statement:
     assignment_lhs_expression "=" expression ";"
@@ -492,7 +491,7 @@ int yyerror(const char* message) {
     return 1;
 }
 
-std::vector<Decl> delta::globalAST;
+std::vector<std::unique_ptr<Decl>> delta::globalAST;
 
 #include "lexer.cpp"
 #include "operators.cpp"

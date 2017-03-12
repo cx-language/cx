@@ -9,7 +9,7 @@ namespace llvm { class Module; }
 namespace delta {
 
 namespace irgen {
-    llvm::Module& compile(const std::vector<Decl>& decls);
+    llvm::Module& compile(const std::vector<std::unique_ptr<Decl>>& decls);
 }
 
 }

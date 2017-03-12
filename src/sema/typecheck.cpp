@@ -524,7 +524,7 @@ void typecheck(ParamDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({decl.name, new Decl(ParamDecl(decl))});
+    symbolTable.insert({ decl.name, new ParamDecl(decl) });
 }
 
 } // anonymous namespace
@@ -533,14 +533,14 @@ void delta::addToSymbolTable(const FuncDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({decl.name, new Decl(FuncDecl(decl))});
+    symbolTable.insert({ decl.name, new FuncDecl(decl) });
 }
 
 void delta::addToSymbolTable(const GenericFuncDecl& decl) {
     if (symbolTable.count(decl.func->name) > 0) {
         error(decl.func->srcLoc, "redefinition of '", decl.func->name, "'");
     }
-    symbolTable.insert({decl.func->name, new Decl(GenericFuncDecl(decl))});
+    symbolTable.insert({ decl.func->name, new GenericFuncDecl(decl) });
 }
 
 void delta::addToSymbolTable(const InitDecl& decl) {
@@ -548,12 +548,12 @@ void delta::addToSymbolTable(const InitDecl& decl) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
 
-    InitDecl initDecl(decl);
+    InitDecl* initDecl = new InitDecl(decl);
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
-    initDecl.type = &typeDecl.getTypeDecl();
+    initDecl->type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({mangle(decl), new Decl(std::move(initDecl))});
+    symbolTable.insert({ mangle(decl), initDecl });
 }
 
 void delta::addToSymbolTable(const DeinitDecl& decl) {
@@ -561,26 +561,26 @@ void delta::addToSymbolTable(const DeinitDecl& decl) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' deinitializer");
     }
 
-    DeinitDecl deinitDecl(decl);
+    DeinitDecl* deinitDecl = new DeinitDecl(decl);
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
-    deinitDecl.type = &typeDecl.getTypeDecl();
+    deinitDecl->type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({mangle(decl), new Decl(std::move(deinitDecl))});
+    symbolTable.insert({ mangle(decl), deinitDecl });
 }
 
 void delta::addToSymbolTable(const TypeDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({decl.name, new Decl(TypeDecl(decl))});
+    symbolTable.insert({ decl.name, new TypeDecl(decl) });
 }
 
 void delta::addToSymbolTable(const VarDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
+    symbolTable.insert({ decl.name, new VarDecl(decl) });
 }
 
 Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
@@ -612,8 +612,8 @@ void typecheckMemberFunc(FuncDecl& decl) {
     auto symbolTableBackup = symbolTable;
     Decl& receiverType = findInSymbolTable(decl.receiverType, decl.srcLoc);
     if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
-    symbolTable.emplace("this",
-        new Decl(VarDecl{receiverType.getTypeDecl().getTypeForPassing(), "this", nullptr, SrcLoc::invalid()}));
+    symbolTable.emplace("this", new VarDecl(receiverType.getTypeDecl().getTypeForPassing(),
+                                            "this", nullptr, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
     funcReturnType = decl.returnType;
     for (auto& stmt : *decl.body) typecheck(*stmt);
@@ -637,8 +637,8 @@ void typecheck(InitDecl& decl) {
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
-    symbolTable.insert({"this",
-        new Decl(VarDecl{typeDecl.getTypeDecl().getType(), "this", nullptr, SrcLoc::invalid()})});
+    symbolTable.insert({ "this", new VarDecl(typeDecl.getTypeDecl().getType(),
+                                             "this", nullptr, SrcLoc::invalid()) });
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;
     for (auto& stmt : *decl.body) typecheck(*stmt);
@@ -648,8 +648,9 @@ void typecheck(InitDecl& decl) {
 
 void typecheck(DeinitDecl& decl) {
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
-    FuncDecl funcDecl{mangle(decl), {}, typeDecl.getTypeDecl().getType(),
-        decl.getTypeName(), decl.body, SrcLoc::invalid()};
+    FuncDecl funcDecl(mangle(decl), {}, typeDecl.getTypeDecl().getType(),
+                      std::string(decl.getTypeName()), SrcLoc::invalid());
+    funcDecl.body = decl.body;
     decl.type = &typeDecl.getTypeDecl();
     typecheckMemberFunc(funcDecl);
 }
@@ -680,7 +681,7 @@ void typecheck(VarDecl& decl) {
             error(decl.initializer->getSrcLoc(), "cannot initialize variable of type '", declaredType,
                 "' with '", initType, "'");
         }
-        symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
+        symbolTable.insert({ decl.name, new VarDecl(decl) });
     } else {
         if (initType.isNull()) {
             error(decl.srcLoc, "couldn't infer type of '", decl.name, "', add a type annotation");
@@ -688,7 +689,7 @@ void typecheck(VarDecl& decl) {
 
         initType.setMutable(decl.isMutable());
         decl.type = initType;
-        symbolTable.insert({decl.name, new Decl(VarDecl(decl))});
+        symbolTable.insert({ decl.name, new VarDecl(decl) });
     }
 }
 
@@ -718,7 +719,8 @@ void typecheck(Decl& decl) {
 
 } // anonymous namespace
 
-void delta::typecheck(std::vector<Decl>& decls, const std::vector<llvm::StringRef>& includePaths) {
+void delta::typecheck(std::vector<std::unique_ptr<Decl>>& decls,
+                      const std::vector<llvm::StringRef>& includePaths) {
     ::includePaths = includePaths;
-    for (Decl& decl : decls) ::typecheck(decl);
+    for (auto& decl : decls) ::typecheck(*decl);
 }

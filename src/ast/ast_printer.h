@@ -4,8 +4,8 @@
 
 namespace delta {
 
-using AST = std::vector<class Decl>;
+class Decl;
 
-std::ostream& operator<<(std::ostream& out, const AST& ast);
+std::ostream& operator<<(std::ostream& out, const std::vector<std::unique_ptr<Decl>>& ast);
 
 }

@@ -302,11 +302,12 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
 
 } // anonymous namespace
 
-std::ostream& delta::operator<<(std::ostream& out, const AST& decls) {
+std::ostream& delta::operator<<(std::ostream& out,
+                                const std::vector<std::unique_ptr<Decl>>& decls) {
     out << "(source-file";
     indentLevel++;
-    for (const Decl& decl : decls) {
-        ::operator<<(out, decl);
+    for (const auto& decl : decls) {
+        ::operator<<(out, *decl);
     }
     indentLevel--;
     return out << ")\n";

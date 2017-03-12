@@ -22,7 +22,7 @@ namespace delta {
 
 extern FILE* inputFile;
 const char* currentFileName;
-extern std::vector<Decl> globalAST;
+extern std::vector<std::unique_ptr<Decl>> globalAST;
 
 }
 

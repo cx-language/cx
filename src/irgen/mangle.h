@@ -8,9 +8,9 @@ namespace llvm {
 
 namespace delta {
     struct Type;
-    struct GenericFuncDecl;
-    struct InitDecl;
-    struct DeinitDecl;
+    class GenericFuncDecl;
+    class InitDecl;
+    class DeinitDecl;
 
     std::string mangle(const GenericFuncDecl& decl, llvm::ArrayRef<Type> genericArgs);
     std::string mangle(const InitDecl& decl);

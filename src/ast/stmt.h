@@ -6,7 +6,7 @@
 
 namespace delta {
 
-struct VarDecl;
+class VarDecl;
 
 enum class StmtKind {
     ReturnStmt,
