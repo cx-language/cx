@@ -30,35 +30,35 @@ void warnOnce(const llvm::Twine& message) {
     llvm::errs() << "WARNING: " << *printedMessages.emplace(message.str()).first << '\n';
 }
 
-const char* getIntTypeByWidth(int widthInBits, bool asSigned) {
+Type getIntTypeByWidth(int widthInBits, bool asSigned) {
     switch (widthInBits) {
-        case  8: return asSigned ? "int8"  : "uint8";
-        case 16: return asSigned ? "int16" : "uint16";
-        case 32: return asSigned ? "int32" : "uint32";
-        case 64: return asSigned ? "int64" : "uint64";
+        case  8: return asSigned ? Type::getInt8()  : Type::getUInt8();
+        case 16: return asSigned ? Type::getInt16() : Type::getUInt16();
+        case 32: return asSigned ? Type::getInt32() : Type::getUInt32();
+        case 64: return asSigned ? Type::getInt64() : Type::getUInt64();
     }
     llvm_unreachable("unsupported integer width");
 }
 
-const char* toDelta(const clang::BuiltinType& type) {
+Type toDelta(const clang::BuiltinType& type) {
     switch (type.getKind()) {
-        case clang::BuiltinType::Void: return "void";
-        case clang::BuiltinType::Bool: return "bool";
+        case clang::BuiltinType::Void: return Type::getVoid();
+        case clang::BuiltinType::Bool: return Type::getBool();
         case clang::BuiltinType::Char_S:
-        case clang::BuiltinType::Char_U: return "char";
+        case clang::BuiltinType::Char_U: return Type::getChar();
         case clang::BuiltinType::SChar: return getIntTypeByWidth(targetInfo->getCharWidth(), true);
         case clang::BuiltinType::UChar: return getIntTypeByWidth(targetInfo->getCharWidth(), false);
         case clang::BuiltinType::Short: return getIntTypeByWidth(targetInfo->getShortWidth(), true);
         case clang::BuiltinType::UShort: return getIntTypeByWidth(targetInfo->getShortWidth(), false);
-        case clang::BuiltinType::Int: return "int";
-        case clang::BuiltinType::UInt: return "uint";
+        case clang::BuiltinType::Int: return Type::getInt();
+        case clang::BuiltinType::UInt: return Type::getUInt();
         case clang::BuiltinType::Long: return getIntTypeByWidth(targetInfo->getLongWidth(), true);
         case clang::BuiltinType::ULong: return getIntTypeByWidth(targetInfo->getLongWidth(), false);
         case clang::BuiltinType::LongLong: return getIntTypeByWidth(targetInfo->getLongLongWidth(), true);
         case clang::BuiltinType::ULongLong: return getIntTypeByWidth(targetInfo->getLongLongWidth(), false);
-        case clang::BuiltinType::Float: return "float";
-        case clang::BuiltinType::Double: return "float64";
-        case clang::BuiltinType::LongDouble: return "float80";
+        case clang::BuiltinType::Float: return Type::getFloat32();
+        case clang::BuiltinType::Double: return Type::getFloat64();
+        case clang::BuiltinType::LongDouble: return Type::getFloat80();
         default: break;
     }
     llvm_unreachable("unsupported builtin type");
@@ -72,8 +72,11 @@ Type toDelta(clang::QualType qualtype) {
             auto pointeeType = llvm::cast<clang::PointerType>(type).getPointeeType();
             return PtrType::get(toDelta(pointeeType), false, isMutable);
         }
-        case clang::Type::Builtin:
-            return BasicType::get(toDelta(llvm::cast<clang::BuiltinType>(type)), isMutable);
+        case clang::Type::Builtin: {
+            Type deltaType = toDelta(llvm::cast<clang::BuiltinType>(type));
+            deltaType.setMutable(isMutable);
+            return deltaType;
+        }
         case clang::Type::Typedef:
             return toDelta(llvm::cast<clang::TypedefType>(type).desugar());
         case clang::Type::Elaborated:

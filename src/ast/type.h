@@ -48,7 +48,19 @@ public:
     bool isVoid() const;
     bool isBool() const;
     bool isInt() const;
+    bool isInt8() const;
+    bool isInt16() const;
+    bool isInt32() const;
     bool isInt64() const;
+    bool isUInt() const;
+    bool isUInt8() const;
+    bool isUInt16() const;
+    bool isUInt32() const;
+    bool isUInt64() const;
+    bool isFloat() const;
+    bool isFloat32() const;
+    bool isFloat64() const;
+    bool isFloat80() const;
     bool isChar() const;
     bool isNull() const;
 
@@ -74,7 +86,19 @@ public:
     static Type getVoid(bool isMutable = false);
     static Type getBool(bool isMutable = false);
     static Type getInt(bool isMutable = false);
+    static Type getInt8(bool isMutable = false);
+    static Type getInt16(bool isMutable = false);
+    static Type getInt32(bool isMutable = false);
     static Type getInt64(bool isMutable = false);
+    static Type getUInt(bool isMutable = false);
+    static Type getUInt8(bool isMutable = false);
+    static Type getUInt16(bool isMutable = false);
+    static Type getUInt32(bool isMutable = false);
+    static Type getUInt64(bool isMutable = false);
+    static Type getFloat(bool isMutable = false);
+    static Type getFloat32(bool isMutable = false);
+    static Type getFloat64(bool isMutable = false);
+    static Type getFloat80(bool isMutable = false);
     static Type getChar(bool isMutable = false);
     static Type getNull(bool isMutable = false);
 
