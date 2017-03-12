@@ -9,6 +9,8 @@
 #include "irgen.h"
 #include "mangle.h"
 #include "../sema/typecheck.h"
+#include "../ast/expr.h"
+#include "../ast/decl.h"
 #include "../parser/parser.hpp"
 #include "../driver/utility.h"
 

@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <cassert>
 #include <unordered_map>
 #include <llvm/Support/ErrorHandling.h>
 #include "../driver/utility.h"

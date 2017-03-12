@@ -1,5 +1,4 @@
 #include <llvm/ADT/StringRef.h>
-#include <llvm/ADT/STLExtras.h>
 #include "decl.h"
 #include "../driver/utility.h"
 

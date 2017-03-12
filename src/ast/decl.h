@@ -2,7 +2,6 @@
 
 #include <string>
 #include <memory>
-#include <cassert>
 #include <vector>
 #include <boost/variant.hpp>
 #include "expr.h"

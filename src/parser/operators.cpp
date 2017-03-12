@@ -1,4 +1,3 @@
-#include <cassert>
 #include <llvm/Support/ErrorHandling.h>
 #include "operators.h"
 
