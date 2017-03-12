@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <llvm/Support/ErrorHandling.h>
 #include "ast_printer.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
@@ -288,7 +289,7 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: return out << decl.getParamDecl();
         case DeclKind::FuncDecl:  return out << decl.getFuncDecl();
-        case DeclKind::GenericParamDecl: /* handled via GenericFuncDecl */ assert(false); break;
+        case DeclKind::GenericParamDecl: llvm_unreachable("handled via GenericFuncDecl");
         case DeclKind::GenericFuncDecl: return out << decl.getGenericFuncDecl();
         case DeclKind::InitDecl:  return out << decl.getInitDecl();
         case DeclKind::DeinitDecl:return out << decl.getDeinitDecl();

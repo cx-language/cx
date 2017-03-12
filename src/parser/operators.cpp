@@ -1,4 +1,5 @@
 #include <cassert>
+#include <llvm/Support/ErrorHandling.h>
 #include "operators.h"
 
 bool BinaryOperator::isComparisonOperator() const {
@@ -16,7 +17,7 @@ std::ostream& delta::operator<<(std::ostream& out, PrefixOperator op) {
         case AND:   return out << "&";
         case NOT:   return out << "!";
         case COMPL: return out << "~";
-        default:    assert(false); return out;
+        default:    llvm_unreachable("invalid prefix operator");
     }
 }
 
@@ -39,6 +40,6 @@ std::ostream& delta::operator<<(std::ostream& out, BinaryOperator op) {
         case OR_OR:   return out << "||";
         case LSHIFT:  return out << "<<";
         case RSHIFT:  return out << ">>";
-        default:      assert(false); return out;
+        default:      llvm_unreachable("invalid binary operator");
     }
 }

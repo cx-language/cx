@@ -9,6 +9,7 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/iterator_range.h>
+#include <llvm/Support/ErrorHandling.h>
 #include "typecheck.h"
 #include "c-import.h"
 #include "../ast/type.h"
@@ -40,13 +41,13 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::VarDecl: return decl.getVarDecl().getType();
         case DeclKind::ParamDecl: return decl.getParamDecl().type;
         case DeclKind::FuncDecl: return decl.getFuncDecl().getFuncType();
-        case DeclKind::GenericParamDecl: assert(false && "cannot refer to generic parameters yet");
-        case DeclKind::GenericFuncDecl: assert(false && "cannot refer to generic functions yet");
-        case DeclKind::InitDecl: assert(false && "cannot refer to initializers yet");
-        case DeclKind::DeinitDecl: assert(false && "cannot refer to deinitializers yet");
+        case DeclKind::GenericParamDecl: llvm_unreachable("cannot refer to generic parameters yet");
+        case DeclKind::GenericFuncDecl: llvm_unreachable("cannot refer to generic functions yet");
+        case DeclKind::InitDecl: llvm_unreachable("cannot refer to initializers yet");
+        case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.srcLoc, "'", expr.identifier, "' is not a variable");
         case DeclKind::FieldDecl: return decl.getFieldDecl().type;
-        case DeclKind::ImportDecl: assert(false);
+        case DeclKind::ImportDecl: llvm_unreachable("import statement validation not implemented yet");
     }
     abort();
 }

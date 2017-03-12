@@ -1,5 +1,6 @@
 #include <unordered_set>
 #include <llvm/Support/Path.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <clang/Basic/TargetInfo.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Lex/Preprocessor.h>
@@ -36,8 +37,7 @@ const char* getIntTypeByWidth(int widthInBits, bool asSigned) {
         case 32: return asSigned ? "int32" : "uint32";
         case 64: return asSigned ? "int64" : "uint64";
     }
-    assert(false && "unsupported integer width");
-    return "";
+    llvm_unreachable("unsupported integer width");
 }
 
 const char* toDelta(const clang::BuiltinType& type) {
@@ -61,8 +61,7 @@ const char* toDelta(const clang::BuiltinType& type) {
         case clang::BuiltinType::LongDouble: return "float80";
         default: break;
     }
-    assert(false && "unsupported builtin type");
-    return "";
+    llvm_unreachable("unsupported builtin type");
 }
 
 Type toDelta(clang::QualType qualtype) {

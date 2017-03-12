@@ -2,6 +2,7 @@
 #include <vector>
 #include <cassert>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
@@ -125,9 +126,9 @@ llvm::Type* toIR(Type type) {
         case TypeKind::ArrayType:
             return llvm::ArrayType::get(toIR(type.getElementType()), type.getArraySize());
         case TypeKind::TupleType:
-            assert(false && "IRGen doesn't support tuple types yet");
+            llvm_unreachable("IRGen doesn't support tuple types yet");
         case TypeKind::FuncType:
-            assert(false && "IRGen doesn't support function types yet");
+            llvm_unreachable("IRGen doesn't support function types yet");
         case TypeKind::PtrType: {
             auto* pointeeType = toIR(type.getPointee());
             if (!pointeeType->isVoidTy()) return llvm::PointerType::get(pointeeType, 0);
@@ -197,14 +198,14 @@ llvm::Value* codegen(const PrefixExpr& expr) {
         case AND:   return codegenLvalue(*expr.operand);
         case NOT:   return codegenNot(expr);
         case COMPL: return codegenNot(expr);
-        default:    assert(false); return nullptr;
+        default:    llvm_unreachable("invalid prefix operator");
     }
 }
 
 llvm::Value* codegenLvalue(const PrefixExpr& expr) {
     switch (expr.op.rawValue) {
         case STAR:  return codegen(*expr.operand);
-        default:    assert(false); return nullptr;
+        default:    llvm_unreachable("invalid lvalue prefix operator");
     }
 }
 
@@ -287,7 +288,7 @@ llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* r
         case RSHIFT:return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
                                            (BinaryCreate1) &llvm::IRBuilder<>::CreateAShr :
                                            (BinaryCreate1) &llvm::IRBuilder<>::CreateLShr);
-        default: assert(false); return nullptr;
+        default:    llvm_unreachable("all cases handled");
     }
 }
 
@@ -295,7 +296,7 @@ llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, con
     switch (op.rawValue) {
         case AND_AND: return codegenLogicalAnd(lhs, rhs);
         case OR_OR:   return codegenLogicalOr(lhs, rhs);
-        default: assert(false); return nullptr;
+        default:      llvm_unreachable("invalid short-circuit binary operator");
     }
 }
 
@@ -409,15 +410,15 @@ llvm::Value* codegen(const Expr& expr) {
 llvm::Value* codegenLvalue(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:    return codegenLvalue(expr.getVariableExpr());
-        case ExprKind::StrLiteralExpr:  assert(false);
-        case ExprKind::IntLiteralExpr:  assert(false);
-        case ExprKind::BoolLiteralExpr: assert(false);
-        case ExprKind::NullLiteralExpr: assert(false);
-        case ExprKind::ArrayLiteralExpr:assert(false);
+        case ExprKind::StrLiteralExpr:  llvm_unreachable("no lvalue string literals");
+        case ExprKind::IntLiteralExpr:  llvm_unreachable("no lvalue integer literals");
+        case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");
+        case ExprKind::NullLiteralExpr: llvm_unreachable("no lvalue null literals");
+        case ExprKind::ArrayLiteralExpr:llvm_unreachable("no lvalue array literals");
         case ExprKind::PrefixExpr:      return codegenLvalue(expr.getPrefixExpr());
-        case ExprKind::BinaryExpr:      assert(false);
-        case ExprKind::CallExpr:        assert(false && "IRGen doesn't support lvalue call expressions yet");
-        case ExprKind::CastExpr:        assert(false && "IRGen doesn't support lvalue cast expressions yet");
+        case ExprKind::BinaryExpr:      llvm_unreachable("no lvalue binary expressions");
+        case ExprKind::CallExpr:        llvm_unreachable("IRGen doesn't support lvalue call expressions yet");
+        case ExprKind::CastExpr:        llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
         case ExprKind::MemberExpr:      return codegenLvalue(expr.getMemberExpr());
         case ExprKind::SubscriptExpr:   return codegenLvalue(expr.getSubscriptExpr());
     }
@@ -817,15 +818,15 @@ void codegen(const VarDecl& decl) {
 
 void codegen(const Decl& decl) {
     switch (decl.getKind()) {
-        case DeclKind::ParamDecl: /* handled via FuncDecl */ assert(false); break;
+        case DeclKind::ParamDecl: llvm_unreachable("handled via FuncDecl");
         case DeclKind::FuncDecl:  codegen(decl.getFuncDecl()); break;
-        case DeclKind::GenericParamDecl: assert(false); break;
+        case DeclKind::GenericParamDecl: llvm_unreachable("cannot codegen generic parameter declaration");
         case DeclKind::GenericFuncDecl: break; // Cannot codegen uninstantiated generic function.
         case DeclKind::InitDecl:  codegen(decl.getInitDecl()); break;
         case DeclKind::DeinitDecl:codegen(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
-        case DeclKind::FieldDecl: /* handled via TypeDecl */ assert(false); break;
+        case DeclKind::FieldDecl: llvm_unreachable("handled via TypeDecl");
         case DeclKind::ImportDecl: break;
     }
 }

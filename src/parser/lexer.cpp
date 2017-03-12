@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cassert>
 #include <unordered_map>
+#include <llvm/Support/ErrorHandling.h>
 #include "../driver/utility.h"
 
 namespace delta {
@@ -102,8 +103,7 @@ inline void readNumber(const int base, char ch = 0) {
             }
             break;
         }
-        default:
-            assert(false);
+        default: llvm_unreachable("invalid integer base");
     }
 
 end:
