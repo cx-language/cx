@@ -121,16 +121,16 @@ std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
     indentLevel++;
     out << br << "(then";
     indentLevel++;
-    for (const Stmt& substmt : stmt.thenBody) {
-        out << br << substmt;
+    for (const auto& substmt : stmt.thenBody) {
+        out << br << *substmt;
     }
     out << ")";
     indentLevel--;
     out << br << "(else";
     indentLevel++;
-    for (const Stmt& substmt : stmt.elseBody) {
-        if (!substmt.isIfStmt()) out << br;
-        out << substmt;
+    for (const auto& substmt : stmt.elseBody) {
+        if (!substmt->isIfStmt()) out << br;
+        out << *substmt;
     }
     indentLevel--;
     out << ")";
@@ -144,8 +144,8 @@ std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
     for (const SwitchCase& switchCase : stmt.cases) {
         out << br << "(case " << *switchCase.value;
         indentLevel++;
-        for (const Stmt& substmt : switchCase.stmts) {
-            out << br << substmt;
+        for (const auto& substmt : switchCase.stmts) {
+            out << br << *substmt;
         }
         indentLevel--;
         out << ")";
@@ -157,8 +157,8 @@ std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
 std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
     out << br << "(while-stmt " << *stmt.condition;
     indentLevel++;
-    for (const Stmt& substmt : stmt.body) {
-        out << br << substmt;
+    for (const auto& substmt : stmt.body) {
+        out << br << *substmt;
     }
     indentLevel--;
     return out << ")";
@@ -207,8 +207,8 @@ std::ostream& printFuncBase(std::ostream& out, const FuncDecl& decl) {
 
     if (!decl.isExtern()) {
         indentLevel++;
-        for (const Stmt& stmt : *decl.body) {
-            out << stmt;
+        for (const auto& stmt : *decl.body) {
+            out << *stmt;
         }
         indentLevel--;
     }
@@ -241,8 +241,8 @@ std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
     }
     out << ")";
     indentLevel++;
-    for (const Stmt& stmt : *decl.body) {
-        out << stmt;
+    for (const auto& stmt : *decl.body) {
+        out << *stmt;
     }
     indentLevel--;
     return out << ")";
@@ -251,8 +251,8 @@ std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
 std::ostream& operator<<(std::ostream& out, const DeinitDecl& decl) {
     out << br << "(deinit-decl " << decl.getTypeDecl().name;
     indentLevel++;
-    for (const Stmt& stmt : *decl.body) {
-        out << stmt;
+    for (const auto& stmt : *decl.body) {
+        out << *stmt;
     }
     indentLevel--;
     return out << ")";

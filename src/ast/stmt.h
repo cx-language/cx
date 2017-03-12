@@ -2,13 +2,11 @@
 
 #include <vector>
 #include <memory>
-#include <boost/variant.hpp>
 #include "expr.h"
 
 namespace delta {
 
 struct VarDecl;
-class Stmt;
 
 enum class StmtKind {
     ReturnStmt,
@@ -25,110 +23,171 @@ enum class StmtKind {
     AugAssignStmt,
 };
 
-struct ReturnStmt {
+class Stmt {
+public:
+    virtual ~Stmt() = 0;
+
+#define DEFINE_STMT_IS_AND_GET(KIND) \
+    bool is##KIND() const { return getKind() == StmtKind::KIND; } \
+    class KIND& get##KIND() { return llvm::cast<class KIND>(*this); } \
+    const class KIND& get##KIND() const { return llvm::cast<class KIND>(*this); }
+    DEFINE_STMT_IS_AND_GET(ReturnStmt)
+    DEFINE_STMT_IS_AND_GET(VariableStmt)
+    DEFINE_STMT_IS_AND_GET(IncrementStmt)
+    DEFINE_STMT_IS_AND_GET(DecrementStmt)
+    DEFINE_STMT_IS_AND_GET(ExprStmt)
+    DEFINE_STMT_IS_AND_GET(DeferStmt)
+    DEFINE_STMT_IS_AND_GET(IfStmt)
+    DEFINE_STMT_IS_AND_GET(SwitchStmt)
+    DEFINE_STMT_IS_AND_GET(WhileStmt)
+    DEFINE_STMT_IS_AND_GET(BreakStmt)
+    DEFINE_STMT_IS_AND_GET(AssignStmt)
+    DEFINE_STMT_IS_AND_GET(AugAssignStmt)
+#undef DEFINE_STMT_IS_AND_GET
+
+    StmtKind getKind() const { return kind; }
+
+protected:
+    Stmt(StmtKind kind) : kind(kind) { }
+
+private:
+    const StmtKind kind;
+};
+
+inline Stmt::~Stmt() { }
+
+class ReturnStmt : public Stmt {
+public:
     std::vector<std::unique_ptr<Expr>> values;
     SrcLoc srcLoc;
+
+    ReturnStmt(std::vector<std::unique_ptr<Expr>>&& values, SrcLoc srcLoc)
+    : Stmt(StmtKind::ReturnStmt), values(std::move(values)), srcLoc(srcLoc) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ReturnStmt; }
 };
 
-struct VariableStmt {
+class VariableStmt : public Stmt {
+public:
     VarDecl* decl; // FIXME: decl is owned.
+
+    VariableStmt(VarDecl* decl)
+    : Stmt(StmtKind::VariableStmt), decl(decl) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::VariableStmt; }
 };
 
-struct IncrementStmt {
+class IncrementStmt : public Stmt {
+public:
     std::unique_ptr<Expr> operand;
     SrcLoc srcLoc; // Location of '++'.
+
+    IncrementStmt(std::unique_ptr<Expr> operand, SrcLoc srcLoc)
+    : Stmt(StmtKind::IncrementStmt), operand(std::move(operand)), srcLoc(srcLoc) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IncrementStmt; }
 };
 
-struct DecrementStmt {
+class DecrementStmt : public Stmt {
+public:
     std::unique_ptr<Expr> operand;
     SrcLoc srcLoc; // Location of '--'.
+
+    DecrementStmt(std::unique_ptr<Expr> operand, SrcLoc srcLoc)
+    : Stmt(StmtKind::DecrementStmt), operand(std::move(operand)), srcLoc(srcLoc) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DecrementStmt; }
 };
 
 /// A statement that consists of the evaluation of a single expression.
-struct ExprStmt {
+class ExprStmt : public Stmt {
+public:
     std::unique_ptr<Expr> expr;
+
+    ExprStmt(std::unique_ptr<Expr> expr)
+    : Stmt(StmtKind::ExprStmt), expr(std::move(expr)) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ExprStmt; }
 };
 
-struct DeferStmt {
+class DeferStmt : public Stmt {
+public:
     std::unique_ptr<Expr> expr;
+
+    DeferStmt(std::unique_ptr<Expr> expr)
+    : Stmt(StmtKind::DeferStmt), expr(std::move(expr)) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DeferStmt; }
 };
 
-struct IfStmt {
+class IfStmt : public Stmt {
+public:
     std::unique_ptr<Expr> condition;
-    std::vector<Stmt> thenBody;
-    std::vector<Stmt> elseBody;
+    std::vector<std::unique_ptr<Stmt>> thenBody;
+    std::vector<std::unique_ptr<Stmt>> elseBody;
+
+    IfStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& thenBody,
+           std::vector<std::unique_ptr<Stmt>>&& elseBody)
+    : Stmt(StmtKind::IfStmt), condition(std::move(condition)),
+      thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IfStmt; }
 };
 
-struct SwitchCase {
+class SwitchCase {
+public:
     std::unique_ptr<Expr> value;
-    std::vector<Stmt> stmts;
+    std::vector<std::unique_ptr<Stmt>> stmts;
 };
 
-struct SwitchStmt {
+class SwitchStmt : public Stmt {
+public:
     std::unique_ptr<Expr> condition;
     std::vector<SwitchCase> cases;
-    std::vector<Stmt> defaultStmts;
+    std::vector<std::unique_ptr<Stmt>> defaultStmts;
+
+    SwitchStmt(std::unique_ptr<Expr> condition, std::vector<SwitchCase>&& cases,
+               std::vector<std::unique_ptr<Stmt>>&& defaultStmts)
+    : Stmt(StmtKind::SwitchStmt), condition(std::move(condition)),
+      cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::SwitchStmt; }
 };
 
-struct WhileStmt {
+class WhileStmt : public Stmt {
+public:
     std::unique_ptr<Expr> condition;
-    std::vector<Stmt> body;
+    std::vector<std::unique_ptr<Stmt>> body;
+
+    WhileStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& body)
+    : Stmt(StmtKind::WhileStmt), condition(std::move(condition)), body(std::move(body)) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::WhileStmt; }
 };
 
-struct BreakStmt {
+class BreakStmt : public Stmt {
+public:
     SrcLoc srcLoc;
+
+    BreakStmt(SrcLoc srcLoc) : Stmt(StmtKind::BreakStmt), srcLoc(srcLoc) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::BreakStmt; }
 };
 
-struct AssignStmt {
+class AssignStmt : public Stmt {
+public:
     std::unique_ptr<Expr> lhs;
     std::unique_ptr<Expr> rhs;
     SrcLoc srcLoc; // Location of '='.
+
+    AssignStmt(std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, SrcLoc srcLoc)
+    : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)), srcLoc(srcLoc) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AssignStmt; }
 };
 
 /// An augmented assignment (a.k.a. compound assignment) statement.
-struct AugAssignStmt {
+class AugAssignStmt : public Stmt {
+public:
     std::unique_ptr<Expr> lhs;
     std::unique_ptr<Expr> rhs;
     BinaryOperator op;
     SrcLoc srcLoc; // Location of operator symbol.
-};
 
-class Stmt {
-public:
-#define DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(KIND) \
-    Stmt(KIND&& value) : data(std::move(value)) { } \
-    \
-    bool is##KIND() const { return getKind() == StmtKind::KIND; } \
-    \
-    KIND& get##KIND() { \
-        assert(is##KIND()); \
-        return boost::get<KIND>(data); \
-    } \
-    const KIND& get##KIND() const { \
-        assert(is##KIND()); \
-        return boost::get<KIND>(data); \
-    }
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(ReturnStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(VariableStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IncrementStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DecrementStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(ExprStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(DeferStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(IfStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(SwitchStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(WhileStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(BreakStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(AssignStmt)
-    DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR(AugAssignStmt)
-#undef DEFINE_STMTKIND_GETTER_AND_CONSTRUCTOR
-
-    Stmt(Stmt&&) = default;
-    StmtKind getKind() const { return static_cast<StmtKind>(data.which()); }
-
-private:
-    boost::variant<ReturnStmt, VariableStmt, IncrementStmt, DecrementStmt,
-        ExprStmt, DeferStmt, IfStmt, SwitchStmt, WhileStmt, BreakStmt,
-        AssignStmt, AugAssignStmt> data;
+    AugAssignStmt(std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs,
+                  BinaryOperator op, SrcLoc srcLoc)
+    : Stmt(StmtKind::AugAssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)),
+      op(op), srcLoc(srcLoc) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AugAssignStmt; }
 };
 
 }

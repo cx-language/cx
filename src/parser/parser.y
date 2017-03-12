@@ -152,7 +152,7 @@
     std::vector<delta::ParamDecl>* paramDeclList;
     std::vector<delta::GenericParamDecl>* genericParamDeclList;
     std::vector<delta::FieldDecl>* fieldDeclList;
-    std::vector<delta::Stmt>* stmtList;
+    std::vector<std::unique_ptr<delta::Stmt>>* stmtList;
     std::vector<std::unique_ptr<delta::Expr>>* exprList;
     std::vector<delta::Type>* typeList;
     std::vector<delta::Arg>* argList;
@@ -252,12 +252,12 @@ generic_parameter:
     IDENTIFIER { $$ = new GenericParamDecl{$1, loc(@1)}; };
 
 statement_list:
-    /* empty */ { $$ = new std::vector<Stmt>(); }
-|   statement_list statement { $$ = $1; $1->push_back(std::move(*$2)); };
+    /* empty */ { $$ = new std::vector<std::unique_ptr<Stmt>>(); }
+|   statement_list statement { $$ = $1; $1->emplace_back($2); };
 
 nonempty_statement_list:
-    statement { $$ = new std::vector<Stmt>(); $$->push_back(std::move(*$1)); }
-|   nonempty_statement_list statement { $$ = $1; $$->push_back(std::move(*$2)); };
+    statement { $$ = new std::vector<std::unique_ptr<Stmt>>(); $$->emplace_back($1); }
+|   nonempty_statement_list statement { $$ = $1; $$->emplace_back($2); };
 
 type:
     IDENTIFIER { $$ = BasicType::get($1); }
@@ -300,7 +300,7 @@ import_declaration:
 // Statements //////////////////////////////////////////////////////////////////
 
 statement:
-    variable_definition { $$ = new Stmt(VariableStmt{&$1->getVarDecl()}); }
+    variable_definition { $$ = new VariableStmt(&$1->getVarDecl()); }
 |   assignment_statement{ $$ = $1; }
 |   compound_assignment_statement { $$ = $1; }
 |   return_statement    { $$ = $1; }
@@ -334,12 +334,12 @@ typed_variable_definition:
 
 assignment_statement:
     assignment_lhs_expression "=" expression ";"
-        { $$ = new Stmt(AssignStmt{u($1), u($3), loc(@2)}); }
+        { $$ = new AssignStmt(u($1), u($3), loc(@2)); }
 |   "_" "=" expression ";"
-        { $$ = new Stmt(ExprStmt{u($3)}); };
+        { $$ = new ExprStmt(u($3)); };
 
 return_statement:
-    "return" expression_list ";" { $$ = new Stmt(ReturnStmt{std::move(*$2), loc(@1)}); };
+    "return" expression_list ";" { $$ = new ReturnStmt(std::move(*$2), loc(@1)); };
 
 expression_list:
     /* empty */ { $$ = new std::vector<std::unique_ptr<Expr>>(); }
@@ -349,30 +349,31 @@ nonempty_expression_list:
     expression { $$ = new std::vector<std::unique_ptr<Expr>>(); $$->emplace_back($1); }
 |   nonempty_expression_list "," expression { $$ = $1; $$->emplace_back($3); };
 
-increment_statement: expression "++" ";" { $$ = new Stmt(IncrementStmt{u($1), loc(@2)}); };
+increment_statement: expression "++" ";" { $$ = new IncrementStmt(u($1), loc(@2)); };
 
-decrement_statement: expression "--" ";" { $$ = new Stmt(DecrementStmt{u($1), loc(@2)}); };
+decrement_statement: expression "--" ";" { $$ = new DecrementStmt(u($1), loc(@2)); };
 
 call_statement:
-    call_expression ";" { $$ = new Stmt(ExprStmt{u($1)}); };
+    call_expression ";" { $$ = new ExprStmt(u($1)); };
 
 defer_statement:
-    "defer" call_expression ";" { $$ = new Stmt(DeferStmt{u($2)}); };
+    "defer" call_expression ";" { $$ = new DeferStmt(u($2)); };
 
 if_statement:
     "if" "(" expression ")" "{" statement_list "}"
-        { $$ = new Stmt(IfStmt{u($3), std::move(*$6), {}}); }
+        { $$ = new IfStmt(u($3), std::move(*$6), {}); }
 |   "if" "(" expression ")" "{" statement_list "}" "else" else_body
-        { $$ = new Stmt(IfStmt{u($3), std::move(*$6), std::move(*$9)}); };
+        { $$ = new IfStmt(u($3), std::move(*$6), std::move(*$9)); };
 
 else_body:
-    if_statement { $$ = new std::vector<Stmt>(); $$->push_back(std::move(*$1)); }
+    if_statement { $$ = new std::vector<std::unique_ptr<Stmt>>(); $$->emplace_back($1); }
 |   "{" statement_list "}" { $$ = $2; };
 
 switch_statement:
-    "switch" "(" expression ")" "{" case_list "}" { $$ = new Stmt(SwitchStmt{u($3), std::move(*$6)}); }
+    "switch" "(" expression ")" "{" case_list "}"
+        { $$ = new SwitchStmt(u($3), std::move(*$6), {}); }
 |   "switch" "(" expression ")" "{" case_list "default" ":" statement_list "}"
-        { $$ = new Stmt(SwitchStmt{u($3), std::move(*$6), std::move(*$9)}); };
+        { $$ = new SwitchStmt(u($3), std::move(*$6), std::move(*$9)); };
 
 case_list:
     case { $$ = new std::vector<SwitchCase>(); $$->push_back(std::move(*$1)); }
@@ -383,10 +384,10 @@ case:
 
 while_statement:
     "while" "(" expression ")" "{" statement_list "}"
-        { $$ = new Stmt(WhileStmt{u($3), std::move(*$6)}); };
+        { $$ = new WhileStmt(u($3), std::move(*$6)); };
 
 break_statement:
-    "break" ";" { $$ = new Stmt(BreakStmt{loc(@1)}); };
+    "break" ";" { $$ = new BreakStmt(loc(@1)); };
 
 // Expressions /////////////////////////////////////////////////////////////////
 
@@ -435,17 +436,17 @@ binary_expression: expression "<<" expression { $$ = new BinaryExpr(LSHIFT, u($1
 binary_expression: expression ">>" expression { $$ = new BinaryExpr(RSHIFT, u($1), u($3), loc(@2)); };
 
 compound_assignment_statement:
-    assignment_lhs_expression "+="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), PLUS, loc(@2)}); }
-|   assignment_lhs_expression "-="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), MINUS, loc(@2)}); }
-|   assignment_lhs_expression "*="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), STAR, loc(@2)}); }
-|   assignment_lhs_expression "/="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), SLASH, loc(@2)}); }
-|   assignment_lhs_expression "&="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), AND, loc(@2)}); }
-|   assignment_lhs_expression "&&=" expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), AND_AND, loc(@2)}); }
-|   assignment_lhs_expression "|="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), OR, loc(@2)}); }
-|   assignment_lhs_expression "||=" expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), OR_OR, loc(@2)}); }
-|   assignment_lhs_expression "^="  expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), XOR, loc(@2)}); }
-|   assignment_lhs_expression "<<=" expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), LSHIFT, loc(@2)}); }
-|   assignment_lhs_expression ">>=" expression ";" { $$ = new Stmt(AugAssignStmt{u($1), u($3), RSHIFT, loc(@2)}); };
+    assignment_lhs_expression "+="  expression ";" { $$ = new AugAssignStmt(u($1), u($3), PLUS, loc(@2)); }
+|   assignment_lhs_expression "-="  expression ";" { $$ = new AugAssignStmt(u($1), u($3), MINUS, loc(@2)); }
+|   assignment_lhs_expression "*="  expression ";" { $$ = new AugAssignStmt(u($1), u($3), STAR, loc(@2)); }
+|   assignment_lhs_expression "/="  expression ";" { $$ = new AugAssignStmt(u($1), u($3), SLASH, loc(@2)); }
+|   assignment_lhs_expression "&="  expression ";" { $$ = new AugAssignStmt(u($1), u($3), AND, loc(@2)); }
+|   assignment_lhs_expression "&&=" expression ";" { $$ = new AugAssignStmt(u($1), u($3), AND_AND, loc(@2)); }
+|   assignment_lhs_expression "|="  expression ";" { $$ = new AugAssignStmt(u($1), u($3), OR, loc(@2)); }
+|   assignment_lhs_expression "||=" expression ";" { $$ = new AugAssignStmt(u($1), u($3), OR_OR, loc(@2)); }
+|   assignment_lhs_expression "^="  expression ";" { $$ = new AugAssignStmt(u($1), u($3), XOR, loc(@2)); }
+|   assignment_lhs_expression "<<=" expression ";" { $$ = new AugAssignStmt(u($1), u($3), LSHIFT, loc(@2)); }
+|   assignment_lhs_expression ">>=" expression ";" { $$ = new AugAssignStmt(u($1), u($3), RSHIFT, loc(@2)); };
 
 array_literal: "[" expression_list "]" { $$ = new ArrayLiteralExpr(std::move(*$2), loc(@1)); }
 

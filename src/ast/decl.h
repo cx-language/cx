@@ -45,7 +45,7 @@ struct FuncDecl {
     std::vector<ParamDecl> params;
     Type returnType;
     std::string receiverType; /// Empty if non-member function.
-    std::shared_ptr<std::vector<Stmt>> body;
+    std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
     SrcLoc srcLoc;
 
     bool isExtern() const { return body == nullptr; };
@@ -63,7 +63,7 @@ struct InitDecl {
     /// type checking) a pointer to the corresponding type declaration.
     boost::variant<std::string, struct TypeDecl*> type;
     std::vector<ParamDecl> params;
-    std::shared_ptr<std::vector<Stmt>> body;
+    std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
     SrcLoc srcLoc;
 
     TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
@@ -74,7 +74,7 @@ struct DeinitDecl {
     /// The name of the struct or class this deinitializer deinitializes, or (after
     /// type checking) a pointer to the corresponding type declaration.
     boost::variant<std::string, struct TypeDecl*> type;
-    std::shared_ptr<std::vector<Stmt>> body;
+    std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
     SrcLoc srcLoc;
 
     TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }

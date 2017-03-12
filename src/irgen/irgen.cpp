@@ -515,8 +515,8 @@ void codegen(const IfStmt& ifStmt) {
     builder.SetInsertPoint(thenBlock);
     beginScope();
     for (const auto& stmt : ifStmt.thenBody) {
-        codegen(stmt);
-        if (stmt.isReturnStmt()) break;
+        codegen(*stmt);
+        if (stmt->isReturnStmt()) break;
     }
     endScope();
     if (thenBlock->empty() || !llvm::isa<llvm::ReturnInst>(thenBlock->back()))
@@ -525,8 +525,8 @@ void codegen(const IfStmt& ifStmt) {
     builder.SetInsertPoint(elseBlock);
     beginScope();
     for (const auto& stmt : ifStmt.elseBody) {
-        codegen(stmt);
-        if (stmt.isReturnStmt()) break;
+        codegen(*stmt);
+        if (stmt->isReturnStmt()) break;
     }
     endScope();
     if (elseBlock->empty() || !llvm::isa<llvm::ReturnInst>(elseBlock->back()))
@@ -561,9 +561,9 @@ void codegen(const SwitchStmt& switchStmt) {
 
         builder.SetInsertPoint(block);
         beginScope();
-        for (const Stmt& stmt : switchCase.stmts) {
-            codegen(stmt);
-            if (stmt.isReturnStmt() || stmt.isBreakStmt()) break;
+        for (const auto& stmt : switchCase.stmts) {
+            codegen(*stmt);
+            if (stmt->isReturnStmt() || stmt->isBreakStmt()) break;
         }
         endScope();
 
@@ -578,9 +578,9 @@ void codegen(const SwitchStmt& switchStmt) {
     { // Codegen the default block.
         builder.SetInsertPoint(defaultBlock);
         beginScope();
-        for (const Stmt& stmt : switchStmt.defaultStmts) {
-            codegen(stmt);
-            if (stmt.isReturnStmt()) break;
+        for (const auto& stmt : switchStmt.defaultStmts) {
+            codegen(*stmt);
+            if (stmt->isReturnStmt()) break;
         }
         endScope();
         if (defaultBlock->empty() || !llvm::isa<llvm::ReturnInst>(defaultBlock->back()))
@@ -605,8 +605,8 @@ void codegen(const WhileStmt& whileStmt) {
     builder.SetInsertPoint(body);
     beginScope();
     for (const auto& stmt : whileStmt.body) {
-        codegen(stmt);
-        if (stmt.isReturnStmt()) break;
+        codegen(*stmt);
+        if (stmt->isReturnStmt()) break;
     }
     endScope();
     if (body->empty() || !llvm::isa<llvm::ReturnInst>(body->back()))
@@ -752,7 +752,7 @@ void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
     auto arg = func.arg_begin();
     if (decl.isMemberFunc()) setLocalValue(nullptr, "this", &*arg++);
     for (const auto& param : decl.params) setLocalValue(param.type, param.name, &*arg++);
-    for (const auto& stmt : *decl.body) codegen(stmt);
+    for (const auto& stmt : *decl.body) codegen(*stmt);
     endScope();
 
     if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
@@ -784,7 +784,7 @@ void codegen(const InitDecl& decl) {
     setLocalValue(funcDecl.returnType, "this", alloca);
     auto param = decl.params.begin();
     for (auto& arg : func->args()) setLocalValue(param++->type, arg.getName(), &arg);
-    for (const auto& stmt : *decl.body) codegen(stmt);
+    for (const auto& stmt : *decl.body) codegen(*stmt);
     builder.CreateRet(builder.CreateLoad(alloca));
     localValues.clear();
 

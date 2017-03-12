@@ -438,8 +438,8 @@ void typecheck(IfStmt& ifStmt) {
         error(ifStmt.condition->getSrcLoc(), "'if' condition must have type 'bool'");
     }
     canBreak = true;
-    for (Stmt& stmt : ifStmt.thenBody) typecheck(stmt);
-    for (Stmt& stmt : ifStmt.elseBody) typecheck(stmt);
+    for (auto& stmt : ifStmt.thenBody) typecheck(*stmt);
+    for (auto& stmt : ifStmt.elseBody) typecheck(*stmt);
     canBreak = false;
 }
 
@@ -452,9 +452,9 @@ void typecheck(SwitchStmt& stmt) {
             error(switchCase.value->getSrcLoc(), "case value type '", caseType,
                   "' doesn't match switch condition type '", conditionType, "'");
         }
-        for (Stmt& caseStmt : switchCase.stmts) typecheck(caseStmt);
+        for (auto& caseStmt : switchCase.stmts) typecheck(*caseStmt);
     }
-    for (Stmt& defaultStmt : stmt.defaultStmts) typecheck(defaultStmt);
+    for (auto& defaultStmt : stmt.defaultStmts) typecheck(*defaultStmt);
     canBreak = false;
 }
 
@@ -464,7 +464,7 @@ void typecheck(WhileStmt& whileStmt) {
         error(whileStmt.condition->getSrcLoc(), "'while' condition must have type 'bool'");
     }
     canBreak = true;
-    for (Stmt& stmt : whileStmt.body) typecheck(stmt);
+    for (auto& stmt : whileStmt.body) typecheck(*stmt);
     canBreak = false;
 }
 
@@ -603,7 +603,7 @@ void typecheck(FuncDecl& decl) {
     }
     if (decl.returnType.isMutable()) error(decl.srcLoc, "return types cannot be 'mutable'");
     funcReturnType = decl.returnType;
-    for (Stmt& stmt : *decl.body) typecheck(stmt);
+    for (auto& stmt : *decl.body) typecheck(*stmt);
     funcReturnType = nullptr;
     symbolTable = std::move(symbolTableBackup);
 }
@@ -616,7 +616,7 @@ void typecheckMemberFunc(FuncDecl& decl) {
         new Decl(VarDecl{receiverType.getTypeDecl().getTypeForPassing(), "this", nullptr, SrcLoc::invalid()}));
     for (ParamDecl& param : decl.params) typecheck(param);
     funcReturnType = decl.returnType;
-    for (Stmt& stmt : *decl.body) typecheck(stmt);
+    for (auto& stmt : *decl.body) typecheck(*stmt);
     funcReturnType = nullptr;
     symbolTable = std::move(symbolTableBackup);
 }
@@ -641,7 +641,7 @@ void typecheck(InitDecl& decl) {
         new Decl(VarDecl{typeDecl.getTypeDecl().getType(), "this", nullptr, SrcLoc::invalid()})});
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;
-    for (Stmt& stmt : *decl.body) typecheck(stmt);
+    for (auto& stmt : *decl.body) typecheck(*stmt);
     inInitializer = false;
     symbolTable = std::move(symbolTableBackup);
 }
