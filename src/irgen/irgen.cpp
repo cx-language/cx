@@ -812,7 +812,7 @@ void codegen(const TypeDecl& decl) {
 }
 
 void codegen(const VarDecl& decl) {
-    auto* value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.isMutable(),
+    auto* value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(),
                                            llvm::GlobalValue::PrivateLinkage,
                                            llvm::cast<llvm::Constant>(codegen(*decl.initializer)),
                                            decl.name);

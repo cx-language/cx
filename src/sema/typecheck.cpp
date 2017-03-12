@@ -676,7 +676,7 @@ void typecheck(VarDecl& decl) {
             error(decl.initializer->getSrcLoc(), "function pointers not implemented yet");
         }
     }
-    if (auto declaredType = decl.getDeclaredType()) {
+    if (auto declaredType = decl.getType()) {
         if (initType && !isValidConversion(*decl.initializer, initType, declaredType)) {
             error(decl.initializer->getSrcLoc(), "cannot initialize variable of type '", declaredType,
                 "' with '", initType, "'");
@@ -687,7 +687,7 @@ void typecheck(VarDecl& decl) {
             error(decl.srcLoc, "couldn't infer type of '", decl.name, "', add a type annotation");
         }
 
-        initType.setMutable(decl.isMutable());
+        initType.setMutable(decl.getType().isMutable());
         decl.type = initType;
         symbolTable.insert({ decl.name, new VarDecl(decl) });
     }

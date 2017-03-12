@@ -170,9 +170,7 @@ public:
 
 class VarDecl : public Decl {
 public:
-    /// The explicitly declared type, or a bool indicating whether the inferred
-    /// type should be mutable.
-    boost::variant<Type, bool> type;
+    Type type;
     std::string name;
     std::shared_ptr<Expr> initializer; /// Null if the initializer is 'uninitialized'.
     SrcLoc srcLoc;
@@ -180,19 +178,7 @@ public:
     VarDecl(Type type, std::string&& name, std::shared_ptr<Expr>&& initializer, SrcLoc srcLoc)
     : Decl(DeclKind::VarDecl), type(type), name(std::move(name)),
       initializer(std::move(initializer)), srcLoc(srcLoc) { }
-    VarDecl(bool isMutable, std::string&& name, std::shared_ptr<Expr> initializer, SrcLoc srcLoc)
-    : Decl(DeclKind::VarDecl), type(isMutable), name(std::move(name)),
-      initializer(std::move(initializer)), srcLoc(srcLoc) { }
-    Type getDeclaredType() const {
-        return type.which() == 0 ? boost::get<Type>(type) : nullptr;
-    }
-    Type getType() const {
-        return boost::get<Type>(type);
-    }
-    bool isMutable() const {
-        if (type.which() == 1) return boost::get<bool>(type);
-        else return getType().isMutable();
-    }
+    Type getType() const { return type; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }
 };
 

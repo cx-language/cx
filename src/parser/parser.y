@@ -319,11 +319,11 @@ variable_definition:
 
 immutable_variable_definition:
     "const" IDENTIFIER "=" expression ";"
-        { $$ = new VarDecl(false, $2, std::shared_ptr<Expr>($4), loc(@2)); };
+        { $$ = new VarDecl(Type(nullptr, false), $2, std::shared_ptr<Expr>($4), loc(@2)); };
 
 mutable_variable_definition:
     "var"   IDENTIFIER "=" expression ";"
-        { $$ = new VarDecl(true, $2, std::shared_ptr<Expr>($4), loc(@2)); };
+        { $$ = new VarDecl(Type(nullptr, true), $2, std::shared_ptr<Expr>($4), loc(@2)); };
 
 typed_variable_definition:
     type    IDENTIFIER "=" expression ";"
