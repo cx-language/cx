@@ -101,7 +101,10 @@ std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const VariableStmt& stmt) {
-    return out << br << "(var-stmt " << stmt.decl->name << " " << *stmt.decl->initializer << ")";
+    out << br << "(var-stmt " << stmt.decl->name << " ";
+    if (stmt.decl->initializer) out << *stmt.decl->initializer;
+    else out << "uninitialized";
+    return out << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const IncrementStmt& stmt) {
