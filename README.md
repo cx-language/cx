@@ -31,7 +31,9 @@ After this, the following commands can be used:
 
 ## Documentation
 
-To generate HTML output from the documentation comments, run `doxygen doc/doxyfile`
+Auto-generated API documentation for the compiler is available at https://delta-lang.github.io/delta/doc.
+
+To generate HTML for the API documentation locally, run `doxygen doc/doxyfile`
 in the project root directory. The output is generated under `doc/html` and can be
 viewed by opening `doc/html/index.html` in a browser.
 
