@@ -41,3 +41,12 @@ else()
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
         --force-new-ctest-process --output-on-failure USES_TERMINAL)
 endif()
+
+# Add 'coverage' target for code coverage report generation.
+file(DOWNLOAD https://github.com/bilke/cmake-modules/raw/master/CodeCoverage.cmake
+    ${CMAKE_BINARY_DIR}/cmake-modules/CodeCoverage.cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/cmake-modules)
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    include(CodeCoverage)
+    setup_target_for_coverage(coverage ctest coverage)
+endif()
