@@ -26,5 +26,5 @@ script:
 
 after_success:
     - if [ $CC != "clang" ]; then
-          coveralls --exclude clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04;
+          coveralls --exclude clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04 --exclude CMakeFiles;
       fi
