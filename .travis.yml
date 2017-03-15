@@ -20,7 +20,11 @@ script:
       -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_BUILD_TYPE=Debug .
     - make
     - make check
-    - make coverage
+    - if [ $CC != "clang" ]; then
+          make coverage;
+      fi
 
 after_success:
-    - coveralls --exclude clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04
+    - if [ $CC != "clang" ]; then
+          coveralls --exclude clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04;
+      fi
