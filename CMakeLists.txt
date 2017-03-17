@@ -48,5 +48,6 @@ file(DOWNLOAD https://github.com/bilke/cmake-modules/raw/master/CodeCoverage.cma
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/cmake-modules)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     include(CodeCoverage)
+    set(LCOV_REMOVE_EXTRA '*/v1/*')
     setup_target_for_coverage(coverage ctest coverage)
 endif()
