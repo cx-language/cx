@@ -29,6 +29,7 @@ After this, the following commands can be used:
 
 - `make` builds the project.
 - `make check` runs the test suite and reports errors in case of failure.
+- `make coverage` generates a test coverage report under `coverage/`.
 
 ## Documentation
 
