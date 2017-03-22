@@ -1,3 +1,4 @@
+// check_error 8:5 "cannot call member function through pointer 'Foo*', pointer may be null"
 struct Foo { int i; }
 
 func Foo::bar() { }

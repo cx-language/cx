@@ -1,1 +1,2 @@
+// compile_and_run_and_check_exit_status 0
 func main() { }

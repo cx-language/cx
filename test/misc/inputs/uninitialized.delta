@@ -1,3 +1,5 @@
+// compile_and_run_and_check_exit_status 70
+
 func main() -> uint8 {
     mutable uint8[4] buffer = uninitialized;
     buffer[0] = 70;

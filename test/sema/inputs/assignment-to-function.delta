@@ -1,3 +1,4 @@
+// check_error 4:9 "cannot assign to function"
 func foo() { }
 func main() {
     foo = 1;

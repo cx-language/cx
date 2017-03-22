@@ -1,3 +1,4 @@
+// check_error 4:9 "cannot assign 'int' to variable of type 'bool'"
 func main() {
     var b = false;
     b = 1;

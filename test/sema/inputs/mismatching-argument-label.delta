@@ -1,3 +1,4 @@
+// check_error 4:22 "invalid label 'qux' for argument #2, expected 'bar'"
 func f(foo: int a, bar: bool b) -> int { return a; }
 func main() -> int {
     return f(foo: 5, qux: false);

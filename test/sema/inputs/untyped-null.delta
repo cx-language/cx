@@ -1,3 +1,4 @@
+// check_error 3:9 "couldn't infer type of 'foo', add a type annotation"
 func main() {
     var foo = null;
 }

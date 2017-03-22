@@ -1,3 +1,4 @@
+// check_error 4:14 "cannot initialize variable of type 'int&' with 'int*'"
 extern func foo() -> int*;
 func main() {
     int& f = foo();

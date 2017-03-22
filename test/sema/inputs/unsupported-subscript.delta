@@ -1,3 +1,4 @@
+// check_error 6:5 "cannot subscript 'mutable uint8*', expected array or reference-to-array"
 extern func malloc(uint64 n) -> mutable void*;
 
 func main() {

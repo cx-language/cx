@@ -1,3 +1,4 @@
+// check_error 3:13 "newline inside string literal"
 func main() {
     var i = "a
     ";

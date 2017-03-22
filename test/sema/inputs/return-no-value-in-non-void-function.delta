@@ -1,3 +1,4 @@
+// check_error 3:5 "expected return statement to return a value of type 'int'"
 func foo() -> int {
     return;
 }

@@ -1,3 +1,4 @@
+// check_error 3:13 "cannot initialize variable of type 'int' with 'bool'"
 func main() {
     int i = false;
 }

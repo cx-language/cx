@@ -1,3 +1,5 @@
+// compile_and_run_and_check_output "Foo"
+
 extern func malloc(uint64 n) -> mutable void*;
 extern func puts(char* s);
 

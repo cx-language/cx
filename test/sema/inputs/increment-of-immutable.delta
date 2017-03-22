@@ -1,3 +1,4 @@
+// check_error 4:6 "cannot increment immutable value"
 func main() {
     const i = 5;
     i++;

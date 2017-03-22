@@ -1,3 +1,5 @@
+// compile_successfully -fsyntax-only
+
 func foo() -> int { return 42; }
 func bar() { }
 

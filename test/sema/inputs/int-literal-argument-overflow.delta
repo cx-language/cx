@@ -1,3 +1,4 @@
+// check_error 4:9 "256 is out of range for type 'uint8'"
 func foo(uint8 a) { }
 func main() {
     foo(256);

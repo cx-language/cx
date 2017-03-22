@@ -1,3 +1,4 @@
+// check_error 4:7 "excess argument label 'foo' for argument #1, expected no label"
 func f(int a) { }
 func main() {
     f(foo: 0);

@@ -58,3 +58,16 @@ diff_output() {
     output_prefix=$3
     diff <(echo "$actual_output") <(echo "$output_prefix$expected_output")
 }
+
+test_all() {
+    regex="// ([a-z_]+)(.*)"
+    for file in $@; do
+        first_line=$(head -n 1 $file)
+        if [[ $first_line =~ $regex ]]; then
+            eval ${BASH_REMATCH[1]} $(basename $file) ${BASH_REMATCH[2]}
+        else
+            echo "ERROR: No test command specified in $file."
+            exit 1
+        fi
+    done
+}

@@ -1,3 +1,4 @@
+// check_error 5:9 "cannot implicitly pass value types by reference, add explicit '&'"
 func foo(int& ref_i) { }
 func main() {
     int i = 42;

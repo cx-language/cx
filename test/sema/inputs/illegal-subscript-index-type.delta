@@ -1,3 +1,4 @@
+// check_error 6:17 "illegal subscript index type 'bool', expected 'int'"
 extern func foo() -> int[5]&;
 
 func main() {

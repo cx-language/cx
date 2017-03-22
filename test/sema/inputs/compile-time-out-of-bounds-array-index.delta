@@ -1,3 +1,4 @@
+// check_error 6:17 "accessing array out-of-bounds with index 5, array size is 5"
 extern func foo() -> int[5]&;
 
 func main() {

@@ -1,3 +1,4 @@
+// check_error 9:15 "'Foo' is not a variable"
 class Foo {
     int bar;
 }

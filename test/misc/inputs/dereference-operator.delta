@@ -1,3 +1,5 @@
+// compile_and_run_and_check_exit_status 42
+
 extern func calloc(uint64 count, uint64 size) -> mutable void*;
 
 func main() -> int {

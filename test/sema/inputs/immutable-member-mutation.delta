@@ -1,3 +1,4 @@
+// check_error 12:8 "cannot decrement immutable value"
 struct X {
     int a;
 }

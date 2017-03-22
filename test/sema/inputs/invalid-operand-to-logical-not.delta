@@ -1,3 +1,4 @@
+// check_error 4:10 "invalid operand type 'int' to logical not"
 func main() {
     var foo = 42;
     if (!foo) { }

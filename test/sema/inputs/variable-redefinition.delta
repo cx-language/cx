@@ -1,3 +1,4 @@
+// check_error 4:9 "redefinition of 'foo'"
 func main() {
     var foo = 1;
     var foo = 2;

@@ -1,3 +1,4 @@
+// check_error 3:16 "mixed letter case in hex literal"
 func main() {
     var i = 0xfF;
 }

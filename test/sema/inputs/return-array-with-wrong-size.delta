@@ -1,3 +1,4 @@
+// check_error 4:5 "mismatching return type 'int[2]', expected 'int[1]'"
 func foo() -> int[1] {
     mutable int[2] buffer = uninitialized;
     return buffer;

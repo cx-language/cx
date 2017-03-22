@@ -1,2 +1,3 @@
+// compile_and_run_and_check_exit_status 42
 func main() -> int { return getExitStatus(); }
 func getExitStatus() -> int { return 42; }

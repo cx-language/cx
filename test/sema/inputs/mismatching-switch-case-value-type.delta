@@ -1,3 +1,4 @@
+// check_error 4:14 "case value type 'bool' doesn't match switch condition type 'int'"
 func main() {
     switch (1) {
         case false: break;

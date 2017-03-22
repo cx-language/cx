@@ -1,3 +1,5 @@
+// compile_and_run_and_check_exit_status 21
+
 struct Foo {
     int value;
 }

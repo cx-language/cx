@@ -1,2 +1,3 @@
+// check_error 3:7 "redefinition of 'Foo'"
 struct Foo { }
 class Foo { }

@@ -1,3 +1,4 @@
+// check_error 5:13 "invalid operands to binary expression ('int' and 'bool')"
 func main() {
     var foo = 0;
     var bar = true;

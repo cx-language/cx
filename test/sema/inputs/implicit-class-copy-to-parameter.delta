@@ -1,3 +1,4 @@
+// check_error 6:9 "implicit copying of class instances is disallowed"
 class Foo { }
 func bar(Foo b) { }
 func main() {

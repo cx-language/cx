@@ -1,3 +1,5 @@
+// compile_and_run_and_check_exit_status 6
+
 struct X {
     mutable int a;
 }

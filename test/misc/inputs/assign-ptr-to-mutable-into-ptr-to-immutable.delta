@@ -1,3 +1,5 @@
+// compile_successfully -fsyntax-only
+
 extern func foo() -> mutable int*;
 
 func main() {

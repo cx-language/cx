@@ -1,3 +1,4 @@
+// check_error 4:15 "'foo' is not a function"
 func main() {
     var foo = 5;
     var bar = foo();

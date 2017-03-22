@@ -1,3 +1,5 @@
+// compile_and_run_and_check_output $'a\nc\ne\ng\ni\nk'
+
 func main() {
     if (1 == 1) { puts("a"); }
     if (1 == 2) { puts("b"); }

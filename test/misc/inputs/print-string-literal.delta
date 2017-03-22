@@ -1,3 +1,5 @@
+// compile_and_run_and_check_output "Hello, World!"
+
 func getMessage() -> char& { return "Hello, World!"; }
 
 func main() -> int {
