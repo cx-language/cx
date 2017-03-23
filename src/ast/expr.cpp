@@ -15,3 +15,15 @@ bool Expr::isLvalue() const {
             return getPrefixExpr().op == STAR;
     }
 }
+
+llvm::StringRef CallExpr::getFuncName() const {
+    switch (func->getKind()) {
+        case ExprKind::VariableExpr: return llvm::cast<VariableExpr>(*func).identifier;
+        case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(*func).member;
+        default: return "(anonymous function)";
+    }
+}
+
+Expr* CallExpr::getReceiver() const {
+    return llvm::cast<MemberExpr>(*func).base.get();
+}

@@ -337,14 +337,14 @@ llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullpt
 llvm::Value* codegen(const CallExpr& expr) {
     llvm::Function* func;
     if (expr.isInitializerCall) {
-        func = module.getFunction(mangleInitDecl(expr.funcName));
+        func = module.getFunction(mangleInitDecl(expr.getFuncName()));
     } else {
         func = getFuncForCall(expr);
     }
 
     auto param = func->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
-    if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.receiver, param++->getType()));
+    if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.getReceiver(), param++->getType()));
     for (const auto& arg : expr.args) args.emplace_back(codegenForPassing(*arg.value, param++->getType()));
 
     return builder.CreateCall(func, args);
@@ -725,16 +725,18 @@ llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::Array
 }
 
 llvm::Function* getFuncForCall(const CallExpr& call) {
-    auto it = funcs.find(call.funcName);
+    if (!call.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
+
+    auto it = funcs.find(call.getFuncName());
     if (it == funcs.end()) {
         // Function has not been declared yet, search for it in the symbol table.
-        const Decl& decl = findInSymbolTable(call.funcName, call.srcLoc);
+        const Decl& decl = findInSymbolTable(call.getFuncName(), call.srcLoc);
         if (decl.isFuncDecl())
             return codegenFuncProto(decl.getFuncDecl());
         else {
             auto it = llvm::find_if(genericFuncInstantiations,
                                     [&call](GenericFuncInstantiation& instantiation) {
-                return instantiation.decl.func->name == call.funcName
+                return instantiation.decl.func->name == call.getFuncName()
                     && instantiation.genericArgs == llvm::ArrayRef<Type>(call.genericArgs);
             });
             if (it != genericFuncInstantiations.end()) return it->func;

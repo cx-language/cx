@@ -216,11 +216,11 @@ void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
         for (auto& arg : call.args) call.genericArgs.emplace_back(typecheck(*arg.value));
     }
     else if (call.genericArgs.size() < decl.genericParams.size()) {
-        error(call.srcLoc, "too few generic arguments to '", call.funcName,
+        error(call.srcLoc, "too few generic arguments to '", call.getFuncName(),
               "', expected ", decl.genericParams.size());
     }
     else if (call.genericArgs.size() > decl.genericParams.size()) {
-        error(call.srcLoc, "too many generic arguments to '", call.funcName,
+        error(call.srcLoc, "too many generic arguments to '", call.getFuncName(),
               "', expected ", decl.genericParams.size());
     }
 
@@ -231,27 +231,31 @@ void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
 }
 
 Type typecheck(CallExpr& expr) {
-    Decl& decl = findInSymbolTable(expr.funcName, expr.srcLoc);
+    if (!expr.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
+
+    Decl& decl = findInSymbolTable(expr.getFuncName(), expr.func->getSrcLoc());
     expr.isInitializerCall = decl.isTypeDecl();
     if (expr.isInitializerCall) {
         return typecheckInitExpr(decl.getTypeDecl(), expr.args, expr.srcLoc);
     } else if (expr.isMemberFuncCall()) {
-        Type receiverType = typecheck(*expr.receiver);
+        Type receiverType = typecheck(*expr.getReceiver());
         if (receiverType.isPtrType() && !receiverType.isRef()) {
-            error(expr.receiver->getSrcLoc(), "cannot call member function through pointer '",
+            error(expr.getReceiver()->getSrcLoc(), "cannot call member function through pointer '",
                   receiverType, "', pointer may be null");
         }
     }
     if (decl.isFuncDecl()) {
-        validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'", expr.srcLoc);
+        validateArgs(expr.args, decl.getFuncDecl().params,
+                     "'" + expr.getFuncName().str() + "'", expr.srcLoc);
         return decl.getFuncDecl().getFuncType()->returnType;
     } else if (decl.isGenericFuncDecl()) {
         setCurrentGenericArgs(decl.getGenericFuncDecl(), expr);
-        validateArgs(expr.args, decl.getGenericFuncDecl().func->params, "'" + expr.funcName + "'", expr.srcLoc);
+        validateArgs(expr.args, decl.getGenericFuncDecl().func->params,
+                     "'" + expr.getFuncName().str() + "'", expr.srcLoc);
         currentGenericArgs.clear();
         return decl.getGenericFuncDecl().func->getFuncType()->returnType;
     } else {
-        error(expr.srcLoc, "'", expr.funcName, "' is not a function");
+        error(expr.func->getSrcLoc(), "'", expr.getFuncName(), "' is not a function");
     }
 }
 

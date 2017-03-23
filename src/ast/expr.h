@@ -150,18 +150,19 @@ public:
 
 class CallExpr : public Expr {
 public:
-    std::string funcName;
+    std::unique_ptr<Expr> func;
     std::vector<Arg> args;
     bool isInitializerCall;
-    std::unique_ptr<Expr> receiver; /// Null if non-member function call.
     std::vector<Type> genericArgs;
 
-    CallExpr(std::string&& funcName, std::vector<Arg>&& args, bool isInitializerCall,
-             std::unique_ptr<Expr> receiver, std::vector<Type>&& genericArgs, SrcLoc srcLoc)
-    : Expr(ExprKind::CallExpr, srcLoc), funcName(std::move(funcName)), args(std::move(args)),
-      isInitializerCall(isInitializerCall), receiver(std::move(receiver)),
-      genericArgs(std::move(genericArgs)) { }
-    bool isMemberFuncCall() const { return receiver != nullptr; }
+    CallExpr(std::unique_ptr<Expr> func, std::vector<Arg>&& args, bool isInitializerCall,
+             std::vector<Type>&& genericArgs, SrcLoc srcLoc)
+    : Expr(ExprKind::CallExpr, srcLoc), func(std::move(func)), args(std::move(args)),
+      isInitializerCall(isInitializerCall), genericArgs(std::move(genericArgs)) { }
+    bool callsNamedFunc() const { return func->isVariableExpr() || func->isMemberExpr(); }
+    llvm::StringRef getFuncName() const;
+    bool isMemberFuncCall() const { return func->isMemberExpr(); }
+    Expr* getReceiver() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::CallExpr; }
 };
 

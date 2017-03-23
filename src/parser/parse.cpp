@@ -249,12 +249,10 @@ std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand) {
     return llvm::make_unique<SubscriptExpr>(std::move(operand), std::move(index), location);
 }
 
-/// call-expr ::= (expr '.')? id generic-arg-list? '(' args ')'
+/// call-expr ::= expr generic-arg-list? '(' args ')'
 /// generic-arg-list ::= '<' generic-args '>'
 /// generic-args ::= type | type ',' generic-args
-std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> receiver) {
-    assert(currentToken() == IDENTIFIER);
-    auto name = parse(IDENTIFIER);
+std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> func) {
     std::vector<Type> genericArgs;
     if (currentToken() == LT) {
         consumeToken();
@@ -265,10 +263,10 @@ std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> receiver) {
         }
         consumeToken();
     }
+    auto location = currentLoc();
     auto args = parseArgList();
-    return llvm::make_unique<CallExpr>(std::move(name.string), std::move(args), false,
-                                       std::move(receiver), std::move(genericArgs),
-                                       name.getLoc());
+    return llvm::make_unique<CallExpr>(std::move(func), std::move(args), false,
+                                       std::move(genericArgs), location);
 }
 
 /// paren-expr ::= '(' expr ')'
@@ -296,10 +294,10 @@ std::unique_ptr<Expr> parsePostfixExpr() {
     switch (currentToken()) {
         case IDENTIFIER:
             switch (lookAhead(1)) {
-                case LPAREN: expr = parseCallExpr(nullptr); break;
+                case LPAREN: expr = parseCallExpr(parseVariableExpr()); break;
                 case LT:
                     if (shouldParseGenericArgList()) {
-                        expr = parseCallExpr(nullptr);
+                        expr = parseCallExpr(parseVariableExpr());
                         break;
                     }
                     // fallthrough
@@ -322,21 +320,11 @@ std::unique_ptr<Expr> parsePostfixExpr() {
                 expr = parseSubscript(std::move(expr));
                 break;
             case LPAREN:
-                fatalError("expression calls not implemented yet");
+                expr = parseCallExpr(std::move(expr));
                 break;
             case DOT:
                 consumeToken();
-                switch (lookAhead(1)) {
-                    case LPAREN:
-                        expr = parseCallExpr(std::move(expr));
-                        break;
-                    default:
-                        if (currentToken() == IDENTIFIER)
-                            expr = parseMemberExpr(std::move(expr));
-                        else
-                            fatalError("unimplemented");
-                        break;
-                }
+                expr = parseMemberExpr(std::move(expr));
                 break;
             default:
                 return expr;
@@ -435,7 +423,8 @@ std::unique_ptr<VariableStmt> parseVarStmtFromId(Type type) {
 
 /// call-stmt ::= call-expr ';'
 std::unique_ptr<ExprStmt> parseCallStmt() {
-    auto stmt = llvm::make_unique<ExprStmt>(parseCallExpr(nullptr));
+    // FIXME: Doesn't have to be a variable expression.
+    auto stmt = llvm::make_unique<ExprStmt>(parseCallExpr(parseVariableExpr()));
     parse(SEMICOLON);
     return stmt;
 }
@@ -460,7 +449,8 @@ std::unique_ptr<DecrementStmt> parseDecrementStmt(std::unique_ptr<Expr> operand)
 std::unique_ptr<DeferStmt> parseDeferStmt() {
     assert(currentToken() == DEFER);
     consumeToken();
-    auto stmt = llvm::make_unique<DeferStmt>(parseCallExpr(nullptr));
+    // FIXME: Doesn't have to be a variable expression.
+    auto stmt = llvm::make_unique<DeferStmt>(parseCallExpr(parseVariableExpr()));
     parse(SEMICOLON);
     return stmt;
 }
@@ -575,7 +565,7 @@ std::unique_ptr<Stmt> parseStmt() {
                         case LPAREN: { // id '.' ? '('
                             auto receiver = parseVariableExpr();
                             consumeToken();
-                            auto stmt = llvm::make_unique<ExprStmt>(parseCallExpr(std::move(receiver)));
+                            auto stmt = llvm::make_unique<ExprStmt>(parseCallExpr(parseMemberExpr(std::move(receiver))));
                             parse(SEMICOLON);
                             return std::move(stmt);
                         }
