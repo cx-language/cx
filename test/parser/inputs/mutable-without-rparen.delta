@@ -1,0 +1,2 @@
+// check_error 2:17 "expected ')', got identifier"
+mutable(int&*&* p;

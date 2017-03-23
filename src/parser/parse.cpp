@@ -1,4 +1,6 @@
 #include <vector>
+#include <sstream>
+#include <initializer_list>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #include "parse.h"
@@ -37,18 +39,51 @@ Token consumeToken() {
     return token;
 }
 
-[[noreturn]] void unexpectedToken(Token token) {
-    error(token.getLoc(), "unexpected token '", token, "'");
+/// Adds quotes around the string representation of the given token unless
+/// it's an identifier, numeric literal, string literal, or end-of-file.
+std::string quote(TokenKind tokenKind) {
+    std::ostringstream stream;
+    if (tokenKind < BREAK) {
+        stream << tokenKind;
+    } else {
+        stream << '\'' << tokenKind << '\'';
+    }
+    return stream.str();
 }
 
-void parse(TokenKind tokenKind, const char* errorMessage = nullptr) {
-    if (currentToken().kind != tokenKind) {
-        if (errorMessage)
-            error(currentLoc(), errorMessage);
-        else
-            unexpectedToken(currentToken());
+[[noreturn]] void unexpectedToken(Token token, std::initializer_list<TokenKind> expected = { }) {
+    if (expected.size() == 0) {
+        error(token.getLoc(), "unexpected ", quote(token));
     }
-    consumeToken();
+    std::ostringstream stringOfExpected;
+    for (const TokenKind& tokenKind : expected) {
+        stringOfExpected << quote(tokenKind);
+        if (&tokenKind != expected.end() - 2)
+            stringOfExpected << ", ";
+        else
+            stringOfExpected << (expected.size() != 2 ? ", or " : " or ");
+    }
+    error(token.getLoc(), "expected ", stringOfExpected.str(), "got ", quote(token));
+}
+
+void expect(TokenKind tokenKind, const char* contextInfo) {
+    if (currentToken().kind != tokenKind) {
+        error(currentLoc(), "expected ", quote(tokenKind), ' ', contextInfo,
+              ", got ", quote(currentToken()));
+    }
+}
+
+Token parse(TokenKind tokenKind, const char* contextInfo = nullptr) {
+    if (currentToken().kind != tokenKind) {
+        if (contextInfo) {
+            error(currentLoc(), "expected ", quote(tokenKind), " ", contextInfo,
+                  ", got ", quote(currentToken()));
+        } else {
+            error(currentLoc(), "expected ", quote(tokenKind),
+                  ", got ", quote(currentToken()));
+        }
+    }
+    return consumeToken();
 }
 
 std::unique_ptr<Expr> parseExpr();
@@ -56,12 +91,6 @@ std::unique_ptr<Expr> parsePreOrPostfixExpr();
 std::vector<std::unique_ptr<Expr>> parseExprListUntil(Token end);
 std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end);
 std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3);
-
-Token parseId() {
-    if (currentToken() != IDENTIFIER)
-        error(currentLoc(), "unexpected ", currentToken(), ", expecting identifier");
-    return consumeToken();
-}
 
 /// arg-list ::= '(' ')' | '(' nonempty-arg-list ')'
 /// nonempty-arg-list ::= arg | nonempty-arg-list ',' arg
@@ -73,7 +102,7 @@ std::vector<Arg> parseArgList() {
         std::string label;
         SrcLoc location = SrcLoc::invalid();
         if (lookAhead(1) == COLON) {
-            auto result = parseId();
+            auto result = parse(IDENTIFIER);
             label = std::move(result.string);
             location = result.getLoc();
             consumeToken();
@@ -90,7 +119,7 @@ std::vector<Arg> parseArgList() {
 /// var-expr ::= id
 std::unique_ptr<VariableExpr> parseVariableExpr() {
     assert(currentToken() == IDENTIFIER);
-    auto id = parseId();
+    auto id = parse(IDENTIFIER);
     return llvm::make_unique<VariableExpr>(std::move(id.string), id.getLoc());
 }
 
@@ -176,7 +205,7 @@ Type parseType() {
             type.setMutable(true);
             break;
         default:
-            unexpectedToken(currentToken());
+            unexpectedToken(currentToken(), { IDENTIFIER, MUTABLE });
     }
     while (true) {
         switch (currentToken()) {
@@ -206,7 +235,7 @@ std::unique_ptr<CastExpr> parseCastExpr() {
 
 /// member-expr ::= expr '.' id
 std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
-    auto member = parseId();
+    auto member = parse(IDENTIFIER);
     return llvm::make_unique<MemberExpr>(std::move(lhs), std::move(member.string), member.getLoc());
 }
 
@@ -225,7 +254,7 @@ std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand) {
 /// generic-args ::= type | type ',' generic-args
 std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> receiver) {
     assert(currentToken() == IDENTIFIER);
-    auto name = parseId();
+    auto name = parse(IDENTIFIER);
     std::vector<Type> genericArgs;
     if (currentToken() == LT) {
         consumeToken();
@@ -356,8 +385,8 @@ std::unique_ptr<AssignStmt> parseAssignStmt(std::unique_ptr<Expr> lhs) {
 }
 
 /// compound-assign-stmt ::= expr compound-assignment-op expr ';'
-std::unique_ptr<AugAssignStmt> parseCompoundAssignStmt() {
-    auto lhs = parseExpr();
+std::unique_ptr<AugAssignStmt> parseCompoundAssignStmt(std::unique_ptr<Expr> lhs = nullptr) {
+    if (!lhs) lhs = parseExpr();
     auto op = BinaryOperator(consumeToken().withoutCompoundEqSuffix());
     SrcLoc loc = currentLoc();
     auto rhs = parseExpr();
@@ -391,7 +420,7 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
 /// type-specifier ::= type | 'var' | 'const'
 /// initializer ::= expr | 'uninitialized'
 std::unique_ptr<VarDecl> parseVarDeclFromId(Type type) {
-    auto name = parseId();
+    auto name = parse(IDENTIFIER);
     parse(ASSIGN);
     auto initializer = currentToken() != UNINITIALIZED ? parseExpr() : nullptr;
     if (!initializer) consumeToken();
@@ -464,7 +493,7 @@ std::unique_ptr<IfStmt> parseIfStmt() {
         return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts),
                                          std::move(elseStmts));
     }
-    unexpectedToken(currentToken());
+    unexpectedToken(currentToken(), { LBRACE, IF });
 }
 
 /// while-stmt ::= 'while' '(' expr ')' '{' stmt* '}'
@@ -553,7 +582,10 @@ std::unique_ptr<Stmt> parseStmt() {
                         case ASSIGN: return parseAssignStmt(parseExpr());
                         case INCREMENT: return parseIncrementStmt(parseExpr());
                         case DECREMENT: return parseDecrementStmt(parseExpr());
-                        default: unexpectedToken(lookAhead(3));
+                        case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ:
+                        case AND_EQ: case AND_AND_EQ: case OR_EQ: case OR_OR_EQ:
+                        case XOR_EQ: case LSHIFT_EQ: case RSHIFT_EQ: return parseCompoundAssignStmt(parseExpr());
+                        default: unexpectedToken(lookAhead(3), { LPAREN, ASSIGN, INCREMENT, DECREMENT });
                     }
                     break;
                 case LBRACKET: {
@@ -562,7 +594,7 @@ std::unique_ptr<Stmt> parseStmt() {
                         case ASSIGN: return parseAssignStmt(std::move(expr));
                         case INCREMENT: return parseIncrementStmt(std::move(expr));
                         case DECREMENT: return parseDecrementStmt(std::move(expr));
-                        default: unexpectedToken(currentToken());
+                        default: unexpectedToken(currentToken(), { ASSIGN, INCREMENT, DECREMENT });
                     }
                     break;
                 }
@@ -577,7 +609,7 @@ std::unique_ptr<Stmt> parseStmt() {
                 case ASSIGN: return parseAssignStmt(std::move(expr));
                 case INCREMENT: return parseIncrementStmt(std::move(expr));
                 case DECREMENT: return parseDecrementStmt(std::move(expr));
-                default: unexpectedToken(currentToken());
+                default: unexpectedToken(currentToken(), { ASSIGN, INCREMENT, DECREMENT });
             }
             break;
         }
@@ -615,11 +647,11 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, 
 ParamDecl parseParam() {
     std::string label;
     if (lookAhead(1) == COLON) {
-        label = parseId().string;
+        label = parse(IDENTIFIER).string;
         consumeToken();
     }
     auto type = parseType();
-    auto name = parseId();
+    auto name = parse(IDENTIFIER);
     return ParamDecl(std::move(label), std::move(type), std::move(name.string), name.getLoc());
 }
 
@@ -647,16 +679,16 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
 
     std::string receiverType;
     if (lookAhead(1) == COLON_COLON) {
-        receiverType = parseId().string;
+        receiverType = parse(IDENTIFIER).string;
         parse(COLON_COLON);
     }
 
-    auto name = parseId();
+    auto name = parse(IDENTIFIER);
 
     if (genericParams) {
         parse(LT);
         while (true) {
-            auto genericParamName = parseId();
+            auto genericParamName = parse(IDENTIFIER);
             genericParams->emplace_back(genericParamName.string, genericParamName.getLoc());
             if (currentToken() == GT) break;
             parse(COMMA);
@@ -709,7 +741,7 @@ std::unique_ptr<FuncDecl> parseExternFuncDecl() {
 /// init-decl ::= id '::' 'init' param-list '{' stmt* '}'
 std::unique_ptr<InitDecl> parseInitDecl() {
     assert(currentToken() == IDENTIFIER);
-    auto type = parseId();
+    auto type = parse(IDENTIFIER);
     parse(COLON_COLON);
     parse(INIT);
     auto params = parseParamList();
@@ -723,11 +755,11 @@ std::unique_ptr<InitDecl> parseInitDecl() {
 /// deinit-decl ::= id '::' 'deinit' '(' ')' '{' stmt* '}'
 std::unique_ptr<DeinitDecl> parseDeinitDecl() {
     assert(currentToken() == IDENTIFIER);
-    auto type = parseId();
+    auto type = parse(IDENTIFIER);
     parse(COLON_COLON);
     parse(DEINIT);
     parse(LPAREN);
-    parse(RPAREN, "deinitializers cannot have parameters");
+    if (consumeToken() != RPAREN) error(currentLoc(), "deinitializers cannot have parameters");
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
@@ -737,7 +769,7 @@ std::unique_ptr<DeinitDecl> parseDeinitDecl() {
 /// field-decl ::= type id ';'
 FieldDecl parseFieldDecl() {
     auto type = parseType();
-    auto name = parseId();
+    auto name = parse(IDENTIFIER);
     parse(SEMICOLON);
     return FieldDecl(type, std::move(name.string), name.getLoc());
 }
@@ -746,7 +778,7 @@ FieldDecl parseFieldDecl() {
 std::unique_ptr<TypeDecl> parseTypeDecl() {
     assert(currentToken() == CLASS || currentToken() == STRUCT);
     auto tag = consumeToken() == CLASS ? TypeTag::Class : TypeTag::Struct;
-    auto name = parseId();
+    auto name = parse(IDENTIFIER);
     parse(LBRACE);
     std::vector<FieldDecl> fields;
     while (currentToken() != RBRACE)
@@ -759,8 +791,9 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
 std::unique_ptr<ImportDecl> parseImportDecl() {
     assert(currentToken() == IMPORT);
     consumeToken();
+    expect(STRING_LITERAL, "after 'import'");
     auto target = parseStrLiteral();
-    parse(SEMICOLON);
+    parse(SEMICOLON, "after 'import' declaration");
     return llvm::make_unique<ImportDecl>(std::move(target->value), target->getSrcLoc());
 }
 
@@ -796,7 +829,7 @@ std::unique_ptr<Decl> parseDecl() {
                         addToSymbolTable(*decl);
                         return std::move(decl);
                     }
-                    default: unexpectedToken(lookAhead(2));
+                    default: unexpectedToken(lookAhead(2), { INIT, DEINIT });
                 }
             }
             // fallthrough

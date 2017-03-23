@@ -17,3 +17,5 @@ if [ $? -ne 0 ]; then
     echo "FAILED: AST of '$source_file' doesn't match expected AST '$ast_file'"
     exit 1
 fi
+
+test_all inputs/*.delta

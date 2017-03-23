@@ -1,0 +1,4 @@
+// check_error 4:1 "expected ';', got '}'"
+func main() {
+    var a = 5
+}

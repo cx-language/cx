@@ -1,0 +1,7 @@
+// check_error 6:9 "expected '{' or 'if', got 'return'"
+func main() -> int {
+    if (true) {
+        return 1;
+    } else
+        return 0;
+}

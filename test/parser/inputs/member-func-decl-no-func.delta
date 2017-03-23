@@ -1,0 +1,2 @@
+// check_error 2:6 "expected 'init' or 'deinit', got identifier"
+int::foo() { }

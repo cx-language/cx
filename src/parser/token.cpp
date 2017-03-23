@@ -92,7 +92,7 @@ bool BinaryOperator::isComparisonOperator() const {
 
 std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
     static const char* const tokenStrings[] = {
-        "EOF", "identifier", "number", "string literal", "break", "case", "cast",
+        "end-of-file", "identifier", "number", "string literal", "break", "case", "cast",
         "class", "const", "default", "defer", "deinit", "else", "extern", "false",
         "func", "if", "import", "init", "mutable", "null", "return", "struct",
         "switch", "this", "true", "uninitialized", "var", "while",

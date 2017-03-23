@@ -1,0 +1,2 @@
+// check_error 2:2 "unexpected 'this'"
+ this
