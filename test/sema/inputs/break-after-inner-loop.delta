@@ -1,0 +1,8 @@
+// compile_successfully -fsyntax-only
+func main() {
+    while (false) {
+        while (false) {
+        }
+        break;
+    }
+}

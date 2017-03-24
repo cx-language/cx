@@ -27,7 +27,7 @@ std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
 std::unordered_map<std::string, Type> currentGenericArgs;
 Type funcReturnType = nullptr;
 bool inInitializer = false;
-bool canBreak = false;
+int breakableBlocks = 0;
 bool importingC = false;
 llvm::ArrayRef<llvm::StringRef> includePaths;
 
@@ -447,7 +447,7 @@ void typecheck(IfStmt& ifStmt) {
 
 void typecheck(SwitchStmt& stmt) {
     Type conditionType = typecheck(*stmt.condition);
-    canBreak = true;
+    breakableBlocks++;
     for (SwitchCase& switchCase : stmt.cases) {
         Type caseType = typecheck(*switchCase.value);
         if (caseType != conditionType) {
@@ -457,7 +457,7 @@ void typecheck(SwitchStmt& stmt) {
         for (auto& caseStmt : switchCase.stmts) typecheck(*caseStmt);
     }
     for (auto& defaultStmt : stmt.defaultStmts) typecheck(*defaultStmt);
-    canBreak = false;
+    breakableBlocks--;
 }
 
 void typecheck(WhileStmt& whileStmt) {
@@ -465,13 +465,13 @@ void typecheck(WhileStmt& whileStmt) {
     if (!conditionType.isBool()) {
         error(whileStmt.condition->getSrcLoc(), "'while' condition must have type 'bool'");
     }
-    canBreak = true;
+    breakableBlocks++;
     for (auto& stmt : whileStmt.body) typecheck(*stmt);
-    canBreak = false;
+    breakableBlocks--;
 }
 
 void typecheck(BreakStmt& breakStmt) {
-    if (!canBreak) {
+    if (breakableBlocks == 0) {
         error(breakStmt.srcLoc, "'break' is only allowed inside 'while' and 'switch' statements");
     }
 }
