@@ -59,6 +59,17 @@ diff_output() {
     diff <(echo "$actual_output") <(echo "$output_prefix$expected_output")
 }
 
+validate_ast() {
+    source_file=inputs/$1
+    ast_file=inputs/$1-ast
+    diff_output "$source_file -print-ast" $ast_file
+
+    if [ $? -ne 0 ]; then
+        echo "FAILED: AST of '$source_file' doesn't match expected AST '$ast_file'"
+        exit 1
+    fi
+}
+
 test_all() {
     regex="// ([a-z_]+)(.*)"
     for file in $@; do
