@@ -505,6 +505,23 @@ void codegen(const DecrementStmt& stmt) {
 
 void codegen(const Stmt& stmt);
 
+void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
+                  llvm::BasicBlock* destination, llvm::BasicBlock* continuation) {
+    builder.SetInsertPoint(destination);
+
+    beginScope();
+    for (const auto& stmt : stmts) {
+        codegen(*stmt);
+        if (stmt->isReturnStmt() || stmt->isBreakStmt()) break;
+    }
+    endScope();
+
+    llvm::BasicBlock* insertBlock = builder.GetInsertBlock();
+    if (insertBlock->empty() || (!llvm::isa<llvm::ReturnInst>(insertBlock->back())
+                              && !llvm::isa<llvm::BranchInst>(insertBlock->back())))
+        builder.CreateBr(continuation);
+}
+
 void codegen(const IfStmt& ifStmt) {
     auto* condition = codegen(*ifStmt.condition);
     auto* func = builder.GetInsertBlock()->getParent();
@@ -512,27 +529,8 @@ void codegen(const IfStmt& ifStmt) {
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", func);
     auto* endIfBlock = llvm::BasicBlock::Create(ctx, "endif", func);
     builder.CreateCondBr(condition, thenBlock, elseBlock);
-
-    builder.SetInsertPoint(thenBlock);
-    beginScope();
-    for (const auto& stmt : ifStmt.thenBody) {
-        codegen(*stmt);
-        if (stmt->isReturnStmt()) break;
-    }
-    endScope();
-    if (thenBlock->empty() || !llvm::isa<llvm::ReturnInst>(thenBlock->back()))
-        builder.CreateBr(endIfBlock);
-
-    builder.SetInsertPoint(elseBlock);
-    beginScope();
-    for (const auto& stmt : ifStmt.elseBody) {
-        codegen(*stmt);
-        if (stmt->isReturnStmt()) break;
-    }
-    endScope();
-    if (elseBlock->empty() || !llvm::isa<llvm::ReturnInst>(elseBlock->back()))
-        builder.CreateBr(endIfBlock);
-
+    codegenBlock(ifStmt.thenBody, thenBlock, endIfBlock);
+    codegenBlock(ifStmt.elseBody, elseBlock, endIfBlock);
     builder.SetInsertPoint(endIfBlock);
 }
 
@@ -558,35 +556,12 @@ void codegen(const SwitchStmt& switchStmt) {
     for (const SwitchCase& switchCase : switchStmt.cases) {
         auto* value = casesIterator->first;
         auto* block = casesIterator->second;
-
-        builder.SetInsertPoint(block);
-        beginScope();
-        for (const auto& stmt : switchCase.stmts) {
-            codegen(*stmt);
-            if (stmt->isReturnStmt() || stmt->isBreakStmt()) break;
-        }
-        endScope();
-
-        if (block->empty() || (!llvm::isa<llvm::ReturnInst>(block->back())
-                            && !llvm::isa<llvm::BranchInst>(block->back())))
-            builder.CreateBr(end);
-
+        codegenBlock(switchCase.stmts, block, end);
         switchInst->addCase(value, block);
         ++casesIterator;
     }
 
-    { // Codegen the default block.
-        builder.SetInsertPoint(defaultBlock);
-        beginScope();
-        for (const auto& stmt : switchStmt.defaultStmts) {
-            codegen(*stmt);
-            if (stmt->isReturnStmt()) break;
-        }
-        endScope();
-        if (defaultBlock->empty() || !llvm::isa<llvm::ReturnInst>(defaultBlock->back()))
-            builder.CreateBr(end);
-    }
-
+    codegenBlock(switchStmt.defaultStmts, defaultBlock, end);
     breakTargets.pop_back();
     builder.SetInsertPoint(end);
 }
@@ -601,16 +576,7 @@ void codegen(const WhileStmt& whileStmt) {
 
     builder.SetInsertPoint(cond);
     builder.CreateCondBr(codegen(*whileStmt.condition), body, end);
-
-    builder.SetInsertPoint(body);
-    beginScope();
-    for (const auto& stmt : whileStmt.body) {
-        codegen(*stmt);
-        if (stmt->isReturnStmt()) break;
-    }
-    endScope();
-    if (body->empty() || !llvm::isa<llvm::ReturnInst>(body->back()))
-        builder.CreateBr(cond);
+    codegenBlock(whileStmt.body, body, cond);
 
     breakTargets.pop_back();
     builder.SetInsertPoint(end);

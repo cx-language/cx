@@ -1,0 +1,9 @@
+func main() {
+    while (true) {
+        if (true) { break; int a = 1; }
+        break;
+    }
+    switch (1) {
+        default: break; int b = 1;
+    }
+}
