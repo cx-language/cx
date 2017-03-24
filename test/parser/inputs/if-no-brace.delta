@@ -1,0 +1,4 @@
+// check_error 3:16 "expected '{', got 'return'"
+func main() {
+    if (false) return;
+}

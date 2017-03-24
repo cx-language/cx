@@ -1,44 +1,62 @@
+#include "lex.h"
 #include <cstdio>
 #include <unordered_map>
 #include <llvm/Support/ErrorHandling.h>
+#include "parse.h"
+#include "token.h"
 #include "../driver/utility.h"
 
-namespace delta {
+using namespace delta;
+
+namespace {
 
 FILE* inputFile;
-extern const char* currentFileName;
 
 }
 
-extern YYLTYPE yylloc;
+namespace delta {
+
+extern const char* currentFileName;
+SrcLoc firstLoc(nullptr, 1, 0);
+SrcLoc lastLoc(nullptr, 1, 0);
+
+void initLexer(const char* filePath) {
+    if (inputFile) fclose(inputFile);
+    inputFile = fopen(filePath, "r");
+    if (!inputFile) {
+        printErrorAndExit("no such file: '", filePath, "'");
+    }
+
+    firstLoc.file = filePath;
+    lastLoc.file = filePath;
+}
+
+}
 
 namespace {
 
 inline int readChar() {
     int ch = getc(inputFile);
     if (ch != '\n') {
-        yylloc.last_column++;
+        lastLoc.column++;
     } else {
-        yylloc.last_line++;
-        yylloc.last_column = 0;
+        lastLoc.line++;
+        lastLoc.column = 0;
     }
     return ch;
 }
 
 inline void unreadChar(int ch) {
     if (ch != '\n') {
-        yylloc.last_column--;
+        lastLoc.column--;
     } else {
-        yylloc.last_line--;
-        // yylloc.last_column can be left as is because the next readChar() call will reset it anyways.
+        lastLoc.line--;
+        // lastLoc.column can be left as is because the next readChar() call will reset it anyways.
     }
     ungetc(ch, inputFile);
 }
 
-inline SrcLoc firstLoc() { return SrcLoc(currentFileName, yylloc.first_line, yylloc.first_column); }
-inline SrcLoc lastLoc() { return SrcLoc(currentFileName, yylloc.last_line, yylloc.last_column); }
-
-inline void readNumber(const int base, char ch = 0) {
+inline Token readNumber(const int base, char ch = 0) {
     std::string string;
     if (ch) string += (char) ch;
 
@@ -87,12 +105,12 @@ inline void readNumber(const int base, char ch = 0) {
                         string += (char) ch;
                         break;
                     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                        if (lettercase < 0) error(lastLoc(), "mixed letter case in hex literal");
+                        if (lettercase < 0) error(lastLoc, "mixed letter case in hex literal");
                         string += (char) ch;
                         lettercase = 1;
                         break;
                     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-                        if (lettercase > 0) error(lastLoc(), "mixed letter case in hex literal");
+                        if (lettercase > 0) error(lastLoc, "mixed letter case in hex literal");
                         string += (char) ch;
                         lettercase = -1;
                         break;
@@ -107,10 +125,10 @@ inline void readNumber(const int base, char ch = 0) {
 
 end:
     unreadChar(ch);
-    yylval.number = std::strtoll(string.c_str(), nullptr, base);
+    return Token(std::strtoll(string.c_str(), nullptr, base));
 }
 
-const std::unordered_map<std::string, int> keywords = {
+const std::unordered_map<std::string, TokenKind> keywords = {
     {"break",         BREAK},
     {"case",          CASE},
     {"cast",          CAST},
@@ -141,11 +159,13 @@ const std::unordered_map<std::string, int> keywords = {
 
 } // anonymous namespace
 
-int delta::lex() {
+Token delta::lex() {
+    assert(inputFile && "lexer not initialized");
+
     while (true) {
         int ch = readChar();
-        yylloc.first_line = yylloc.last_line;
-        yylloc.first_column = yylloc.last_column;
+        firstLoc.line = lastLoc.line;
+        firstLoc.column = lastLoc.column;
 
         switch (ch) {
             case ' ': case '\t': case '\r': case '\n':
@@ -260,24 +280,22 @@ int delta::lex() {
             case '0':
                 ch = readChar();
                 switch (ch) {
-                    case 'b': readNumber(2); return NUMBER;
-                    case 'o': readNumber(8); return NUMBER;
-                    case 'x': readNumber(16); return NUMBER;
+                    case 'b': return readNumber(2);
+                    case 'o': return readNumber(8);
+                    case 'x': return readNumber(16);
                     default:
                         if (std::isdigit(ch)) {
-                            error(firstLoc(), "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
+                            error(firstLoc, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
                         }
                         if (std::isalpha(ch) || ch == '_') {
-                            error(lastLoc(), "unexpected '", (char) ch, "'");
+                            error(lastLoc, "unexpected '", (char) ch, "'");
                         }
                         unreadChar(ch);
-                        yylval.number = 0;
-                        return NUMBER;
+                        return Token(0);
                 }
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9':
-                readNumber(10, ch);
-                return NUMBER;
+                return readNumber(10, ch);
             case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
             case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
             case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
@@ -295,23 +313,21 @@ int delta::lex() {
                 auto it = keywords.find(string);
                 if (it != keywords.end()) return it->second;
 
-                yylval.string = strndup(string.data(), string.length());
-                return IDENTIFIER;
+                return Token(IDENTIFIER, strndup(string.data(), string.length()));
             }
             case '"': {
                 std::string string;
                 while ((ch = readChar()) != '"') {
-                    if (ch == '\n') error(firstLoc(), "newline inside string literal");
+                    if (ch == '\n') error(firstLoc, "newline inside string literal");
                     string += (char) ch;
                 }
-                yylval.string = strndup(string.data(), string.length());
-                return STRING_LITERAL;
+                return Token(STRING_LITERAL, strndup(string.data(), string.length()));
             }
             default:
-                error(firstLoc(), "unknown token '", (char) ch, "'");
+                error(firstLoc, "unknown token '", (char) ch, "'");
         }
     }
 
 end:
-    return 0;
+    return NO_TOKEN;
 }

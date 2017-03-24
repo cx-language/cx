@@ -19,7 +19,7 @@
         (dec-stmt answer)
         (return-stmt answer))
     (func-decl foo9 () int
-        (return-stmt (((0 - (-12)) / 2) * (4 + 3))))
+        (return-stmt ((0 - (-12)) / (4 + (3 * 2)))))
     (var-decl foo10 42)
     (var-decl foo11 42)
     (type-decl struct S1

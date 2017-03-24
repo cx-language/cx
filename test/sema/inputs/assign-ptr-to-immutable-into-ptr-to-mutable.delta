@@ -1,4 +1,4 @@
-// check_error 5:22 "cannot initialize variable of type 'mutable int*' with 'int*'"
+// check_error 5:25 "cannot initialize variable of type 'mutable int*' with 'int*'"
 extern func foo() -> int*;
 
 func main() {

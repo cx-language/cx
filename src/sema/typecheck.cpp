@@ -15,7 +15,7 @@
 #include "../ast/type.h"
 #include "../ast/expr.h"
 #include "../ast/decl.h"
-#include "../parser/parser.hpp"
+#include "../parser/token.h"
 #include "../driver/utility.h"
 #include "../irgen/mangle.h"
 
@@ -91,19 +91,19 @@ Type typecheck(ArrayLiteralExpr& array) {
 Type typecheck(PrefixExpr& expr) {
     Type operandType = typecheck(*expr.operand);
 
-    if (expr.op.rawValue == NOT) {
+    if (expr.op == NOT) {
         if (!operandType.isBool()) {
             error(expr.operand->getSrcLoc(), "invalid operand type '", operandType, "' to logical not");
         }
         return operandType;
     }
-    if (expr.op.rawValue == STAR) { // Dereference operation
+    if (expr.op == STAR) { // Dereference operation
         if (!operandType.isPtrType()) {
             error(expr.operand->getSrcLoc(), "cannot dereference non-pointer type '", operandType, "'");
         }
         return operandType.getPointee();
     }
-    if (expr.op.rawValue == AND) { // Address-of operation
+    if (expr.op == AND) { // Address-of operation
         return PtrType::get(operandType, true);
     }
     return operandType;
@@ -115,7 +115,7 @@ Type typecheck(BinaryExpr& expr) {
     Type leftType = typecheck(*expr.left);
     Type rightType = typecheck(*expr.right);
 
-    if (expr.op.rawValue == AND_AND || expr.op.rawValue == OR_OR) {
+    if (expr.op == AND_AND || expr.op == OR_OR) {
         if (leftType.isBool() && rightType.isBool()) {
             return Type::getBool();
         }
@@ -216,11 +216,11 @@ void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
         for (auto& arg : call.args) call.genericArgs.emplace_back(typecheck(*arg.value));
     }
     else if (call.genericArgs.size() < decl.genericParams.size()) {
-        error(call.srcLoc, "too few generic arguments to '", call.funcName,
+        error(call.srcLoc, "too few generic arguments to '", call.getFuncName(),
               "', expected ", decl.genericParams.size());
     }
     else if (call.genericArgs.size() > decl.genericParams.size()) {
-        error(call.srcLoc, "too many generic arguments to '", call.funcName,
+        error(call.srcLoc, "too many generic arguments to '", call.getFuncName(),
               "', expected ", decl.genericParams.size());
     }
 
@@ -231,27 +231,31 @@ void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
 }
 
 Type typecheck(CallExpr& expr) {
-    Decl& decl = findInSymbolTable(expr.funcName, expr.srcLoc);
+    if (!expr.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
+
+    Decl& decl = findInSymbolTable(expr.getFuncName(), expr.func->getSrcLoc());
     expr.isInitializerCall = decl.isTypeDecl();
     if (expr.isInitializerCall) {
         return typecheckInitExpr(decl.getTypeDecl(), expr.args, expr.srcLoc);
     } else if (expr.isMemberFuncCall()) {
-        Type receiverType = typecheck(*expr.receiver);
+        Type receiverType = typecheck(*expr.getReceiver());
         if (receiverType.isPtrType() && !receiverType.isRef()) {
-            error(expr.receiver->getSrcLoc(), "cannot call member function through pointer '",
+            error(expr.getReceiver()->getSrcLoc(), "cannot call member function through pointer '",
                   receiverType, "', pointer may be null");
         }
     }
     if (decl.isFuncDecl()) {
-        validateArgs(expr.args, decl.getFuncDecl().params, "'" + expr.funcName + "'", expr.srcLoc);
+        validateArgs(expr.args, decl.getFuncDecl().params,
+                     "'" + expr.getFuncName().str() + "'", expr.srcLoc);
         return decl.getFuncDecl().getFuncType()->returnType;
     } else if (decl.isGenericFuncDecl()) {
         setCurrentGenericArgs(decl.getGenericFuncDecl(), expr);
-        validateArgs(expr.args, decl.getGenericFuncDecl().func->params, "'" + expr.funcName + "'", expr.srcLoc);
+        validateArgs(expr.args, decl.getGenericFuncDecl().func->params,
+                     "'" + expr.getFuncName().str() + "'", expr.srcLoc);
         currentGenericArgs.clear();
         return decl.getGenericFuncDecl().func->getFuncType()->returnType;
     } else {
-        error(expr.srcLoc, "'", expr.funcName, "' is not a function");
+        error(expr.func->getSrcLoc(), "'", expr.getFuncName(), "' is not a function");
     }
 }
 

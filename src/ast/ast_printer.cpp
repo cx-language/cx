@@ -54,7 +54,7 @@ std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
-    out << "(call " << expr.funcName << " ";
+    out << "(call " << *expr.func << " ";
     for (const Arg& arg : expr.args) {
         out << *arg.value;
         if (&arg != &expr.args.back()) out << " ";

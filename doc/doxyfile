@@ -1,6 +1,5 @@
 PROJECT_NAME = delta
 INPUT = . doc src/ast src/driver src/irgen src/parser src/sema
-EXCLUDE = src/parser/parser.cpp src/parser/parser.hpp
 USE_MDFILE_AS_MAINPAGE = README.md
 EXTRACT_ALL = YES
 EXCLUDE_SYMBOLS = llvm clang

@@ -1,0 +1,2 @@
+// check_error 2:8 "expected string literal after 'import', got identifier"
+import foo;

@@ -11,7 +11,7 @@
 #include "../sema/typecheck.h"
 #include "../ast/expr.h"
 #include "../ast/decl.h"
-#include "../parser/parser.hpp"
+#include "../parser/token.h"
 #include "../driver/utility.h"
 
 using namespace delta;
@@ -193,7 +193,7 @@ llvm::Value* codegenNot(const PrefixExpr& expr) {
 }
 
 llvm::Value* codegen(const PrefixExpr& expr) {
-    switch (expr.op.rawValue) {
+    switch (expr.op) {
         case PLUS:  return codegen(*expr.operand);
         case MINUS: return codegenPrefixOp(expr, &llvm::IRBuilder<>::CreateNeg);
         case STAR:  return builder.CreateLoad(codegen(*expr.operand));
@@ -205,7 +205,7 @@ llvm::Value* codegen(const PrefixExpr& expr) {
 }
 
 llvm::Value* codegenLvalue(const PrefixExpr& expr) {
-    switch (expr.op.rawValue) {
+    switch (expr.op) {
         case STAR:  return codegen(*expr.operand);
         default:    llvm_unreachable("invalid lvalue prefix operator");
     }
@@ -262,7 +262,7 @@ llvm::Value* codegenLogicalOr(const Expr& left, const Expr& right) {
 }
 
 llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr) {
-    switch (op.rawValue) {
+    switch (op) {
         case EQ:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
         case NE:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
         case LT:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
@@ -295,7 +295,7 @@ llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* r
 }
 
 llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, const Expr& rhs) {
-    switch (op.rawValue) {
+    switch (op) {
         case AND_AND: return codegenLogicalAnd(lhs, rhs);
         case OR_OR:   return codegenLogicalOr(lhs, rhs);
         default:      llvm_unreachable("invalid short-circuit binary operator");
@@ -306,7 +306,7 @@ llvm::Value* codegen(const BinaryExpr& expr) {
     assert(expr.left->getType().isImplicitlyConvertibleTo(expr.right->getType())
         || expr.right->getType().isImplicitlyConvertibleTo(expr.left->getType()));
 
-    switch (expr.op.rawValue) {
+    switch (expr.op) {
         case AND_AND: case OR_OR:
             return codegenShortCircuitBinaryOp(expr.op, *expr.left, *expr.right);
         default:
@@ -337,14 +337,14 @@ llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullpt
 llvm::Value* codegen(const CallExpr& expr) {
     llvm::Function* func;
     if (expr.isInitializerCall) {
-        func = module.getFunction(mangleInitDecl(expr.funcName));
+        func = module.getFunction(mangleInitDecl(expr.getFuncName()));
     } else {
         func = getFuncForCall(expr);
     }
 
     auto param = func->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
-    if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.receiver, param++->getType()));
+    if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.getReceiver(), param++->getType()));
     for (const auto& arg : expr.args) args.emplace_back(codegenForPassing(*arg.value, param++->getType()));
 
     return builder.CreateCall(func, args);
@@ -629,9 +629,10 @@ void codegen(const AssignStmt& stmt) {
 }
 
 void codegen(const AugAssignStmt& stmt) {
-    switch (stmt.op.rawValue) {
+    switch (stmt.op) {
         case AND_AND: fatalError("'&&=' not implemented yet");
         case OR_OR:   fatalError("'||=' not implemented yet");
+        default:      break;
     }
     auto* lhs = codegenLvalue(*stmt.lhs);
     auto* rhs = codegen(*stmt.rhs);
@@ -724,16 +725,18 @@ llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::Array
 }
 
 llvm::Function* getFuncForCall(const CallExpr& call) {
-    auto it = funcs.find(call.funcName);
+    if (!call.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
+
+    auto it = funcs.find(call.getFuncName());
     if (it == funcs.end()) {
         // Function has not been declared yet, search for it in the symbol table.
-        const Decl& decl = findInSymbolTable(call.funcName, call.srcLoc);
+        const Decl& decl = findInSymbolTable(call.getFuncName(), call.srcLoc);
         if (decl.isFuncDecl())
             return codegenFuncProto(decl.getFuncDecl());
         else {
             auto it = llvm::find_if(genericFuncInstantiations,
                                     [&call](GenericFuncInstantiation& instantiation) {
-                return instantiation.decl.func->name == call.funcName
+                return instantiation.decl.func->name == call.getFuncName()
                     && instantiation.genericArgs == llvm::ArrayRef<Type>(call.genericArgs);
             });
             if (it != genericFuncInstantiations.end()) return it->func;
