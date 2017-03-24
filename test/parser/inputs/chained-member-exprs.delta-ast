@@ -1,0 +1,3 @@
+(source-file
+    (func-decl main () void
+        (comp-assign-stmt + (member-expr (member-expr (member-expr a b) c) d) (member-expr (member-expr (member-expr e f) g) h))))

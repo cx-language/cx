@@ -422,10 +422,11 @@ std::unique_ptr<VariableStmt> parseVarStmtFromId(Type type) {
 }
 
 /// call-stmt ::= call-expr ';'
-std::unique_ptr<ExprStmt> parseCallStmt() {
-    // FIXME: Doesn't have to be a variable expression.
-    auto stmt = llvm::make_unique<ExprStmt>(parseCallExpr(parseVariableExpr()));
-    parse(SEMICOLON);
+std::unique_ptr<ExprStmt> parseCallStmt(std::unique_ptr<Expr> callExpr) {
+    assert(currentToken() == SEMICOLON);
+    assert(callExpr->isCallExpr());
+    auto stmt = llvm::make_unique<ExprStmt>(std::move(callExpr));
+    consumeToken();
     return stmt;
 }
 
@@ -551,58 +552,12 @@ std::unique_ptr<BreakStmt> parseBreakStmt() {
 std::unique_ptr<Stmt> parseStmt() {
     switch (currentToken()) {
         case IDENTIFIER:
-            switch (lookAhead(1)) {
-                case IDENTIFIER: case AND: case STAR: return parseVarStmtFromId(parseType());
-                case LPAREN: case LT: return parseCallStmt();
-                case ASSIGN: return parseAssignStmt(parseVariableExpr());
-                case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ:
-                case AND_EQ: case AND_AND_EQ: case OR_EQ: case OR_OR_EQ:
-                case XOR_EQ: case LSHIFT_EQ: case RSHIFT_EQ: return parseCompoundAssignStmt();
-                case INCREMENT: return parseIncrementStmt(parseExpr());
-                case DECREMENT: return parseDecrementStmt(parseExpr());
-                case DOT:
-                    switch (lookAhead(3)) {
-                        case LPAREN: { // id '.' ? '('
-                            auto receiver = parseVariableExpr();
-                            consumeToken();
-                            auto stmt = llvm::make_unique<ExprStmt>(parseCallExpr(parseMemberExpr(std::move(receiver))));
-                            parse(SEMICOLON);
-                            return std::move(stmt);
-                        }
-                        case ASSIGN: return parseAssignStmt(parseExpr());
-                        case INCREMENT: return parseIncrementStmt(parseExpr());
-                        case DECREMENT: return parseDecrementStmt(parseExpr());
-                        case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ:
-                        case AND_EQ: case AND_AND_EQ: case OR_EQ: case OR_OR_EQ:
-                        case XOR_EQ: case LSHIFT_EQ: case RSHIFT_EQ: return parseCompoundAssignStmt(parseExpr());
-                        default: unexpectedToken(lookAhead(3), { LPAREN, ASSIGN, INCREMENT, DECREMENT });
-                    }
-                    break;
-                case LBRACKET: {
-                    auto expr = parseExpr();
-                    switch (currentToken()) {
-                        case ASSIGN: return parseAssignStmt(std::move(expr));
-                        case INCREMENT: return parseIncrementStmt(std::move(expr));
-                        case DECREMENT: return parseDecrementStmt(std::move(expr));
-                        default: unexpectedToken(currentToken(), { ASSIGN, INCREMENT, DECREMENT });
-                    }
-                    break;
-                }
-                default: unexpectedToken(lookAhead(1));
-            }
+            if (lookAhead(1).is(IDENTIFIER, AND, STAR))
+                return parseVarStmtFromId(parseType());
+            break;
         case RETURN: return parseReturnStmt();
         case VAR: case CONST: return parseVarStmtFromId(Type(nullptr, consumeToken() == VAR));
         case MUTABLE: return parseVarStmtFromId(parseType());
-        case THIS: case STAR: {
-            auto expr = parseExpr();
-            switch (currentToken()) {
-                case ASSIGN: return parseAssignStmt(std::move(expr));
-                case INCREMENT: return parseIncrementStmt(std::move(expr));
-                case DECREMENT: return parseDecrementStmt(std::move(expr));
-                default: unexpectedToken(currentToken(), { ASSIGN, INCREMENT, DECREMENT });
-            }
-            break;
-        }
         case DEFER: return parseDeferStmt();
         case IF: return parseIfStmt();
         case WHILE: return parseWhileStmt();
@@ -615,6 +570,23 @@ std::unique_ptr<Stmt> parseStmt() {
             parse(SEMICOLON);
             return std::move(stmt);
         }
+        default: break;
+    }
+
+    // If we're here, the statement starts with an expression.
+    std::unique_ptr<Expr> expr = parseExpr();
+
+    switch (currentToken()) {
+        case SEMICOLON:
+            if (!expr->isCallExpr()) unexpectedToken(currentToken());
+            return parseCallStmt(std::move(expr));
+        case INCREMENT: return parseIncrementStmt(std::move(expr));
+        case DECREMENT: return parseDecrementStmt(std::move(expr));
+        case ASSIGN: return parseAssignStmt(std::move(expr));
+        case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ:
+        case AND_EQ: case AND_AND_EQ: case OR_EQ: case OR_OR_EQ:
+        case XOR_EQ: case LSHIFT_EQ: case RSHIFT_EQ:
+            return parseCompoundAssignStmt(std::move(expr));
         default: unexpectedToken(currentToken());
     }
 }

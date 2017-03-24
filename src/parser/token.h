@@ -95,6 +95,9 @@ struct Token {
     explicit Token(TokenKind token, char* value);
     operator TokenKind() const { return kind; }
     SrcLoc getLoc() const { return srcLoc; }
+    bool is(TokenKind kind) const { return this->kind == kind; }
+    template<typename... T>
+    bool is(TokenKind kind, T... kinds) const { return is(kind) || is(kinds...); }
     bool isBinaryOperator() const;
     bool isPrefixOperator() const;
     int getPrecedence() const;

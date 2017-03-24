@@ -127,14 +127,14 @@ int main(int argc, char** argv) {
         parse(currentFileName, globalAST);
     }
 
-    typecheck(globalAST, includePaths);
-
-    if (syntaxOnly) return 0;
-
     if (printAST) {
         std::cout << globalAST;
         return 0;
     }
+
+    typecheck(globalAST, includePaths);
+
+    if (syntaxOnly) return 0;
 
     auto& module = irgen::compile(globalAST);
 
