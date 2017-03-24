@@ -1,4 +1,6 @@
-// check_error 3:5 "'break' is only allowed inside 'if', 'while', and 'switch' statements"
+// check_error 4:9 "'break' is only allowed inside 'while' and 'switch' statements"
 func main() {
-    break;
+    if (false) {
+        break;
+    }
 }

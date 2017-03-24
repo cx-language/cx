@@ -511,7 +511,6 @@ void codegen(const IfStmt& ifStmt) {
     auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", func);
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", func);
     auto* endIfBlock = llvm::BasicBlock::Create(ctx, "endif", func);
-    breakTargets.push_back(endIfBlock);
     builder.CreateCondBr(condition, thenBlock, elseBlock);
 
     builder.SetInsertPoint(thenBlock);
@@ -534,7 +533,6 @@ void codegen(const IfStmt& ifStmt) {
     if (elseBlock->empty() || !llvm::isa<llvm::ReturnInst>(elseBlock->back()))
         builder.CreateBr(endIfBlock);
 
-    breakTargets.pop_back();
     builder.SetInsertPoint(endIfBlock);
 }
 

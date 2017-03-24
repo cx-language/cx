@@ -441,10 +441,8 @@ void typecheck(IfStmt& ifStmt) {
     if (!conditionType.isBool()) {
         error(ifStmt.condition->getSrcLoc(), "'if' condition must have type 'bool'");
     }
-    canBreak = true;
     for (auto& stmt : ifStmt.thenBody) typecheck(*stmt);
     for (auto& stmt : ifStmt.elseBody) typecheck(*stmt);
-    canBreak = false;
 }
 
 void typecheck(SwitchStmt& stmt) {
@@ -474,7 +472,7 @@ void typecheck(WhileStmt& whileStmt) {
 
 void typecheck(BreakStmt& breakStmt) {
     if (!canBreak) {
-        error(breakStmt.srcLoc, "'break' is only allowed inside 'if', 'while', and 'switch' statements");
+        error(breakStmt.srcLoc, "'break' is only allowed inside 'while' and 'switch' statements");
     }
 }
 
