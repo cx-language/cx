@@ -1,13 +1,11 @@
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <memory>
+#include <ostream>
 
 namespace delta {
 
-class Decl;
+class Module;
 
-std::ostream& operator<<(std::ostream& out, const std::vector<std::unique_ptr<Decl>>& ast);
+std::ostream& operator<<(std::ostream& out, const Module& module);
 
 }

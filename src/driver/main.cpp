@@ -12,6 +12,7 @@
 #include "utility.h"
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
+#include "../ast/module.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
 #include "../irgen/irgen.h"
@@ -120,33 +121,33 @@ int main(int argc, char** argv) {
         printErrorAndExit("no input files");
     }
 
-    std::vector<std::unique_ptr<Decl>> globalAST;
+    Module module;
 
     for (llvm::StringRef filePath : args) {
         currentFileName = filePath.data();
-        parse(currentFileName, globalAST);
+        module.addFileUnit(parse(currentFileName));
     }
 
     if (printAST) {
-        std::cout << globalAST;
+        std::cout << module;
         return 0;
     }
 
-    typecheck(globalAST, includePaths);
+    typecheck(module, includePaths);
 
     if (syntaxOnly) return 0;
 
-    auto& module = irgen::compile(globalAST);
+    auto& irModule = irgen::compile(module);
 
     if (outputToStdout) {
-        module.print(llvm::outs(), nullptr);
+        irModule.print(llvm::outs(), nullptr);
         return 0;
     }
 
     std::string outputFile = emitAssembly ? "output.s" : "output.o";
     auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
                                  : llvm::TargetMachine::CGFT_ObjectFile;
-    emitMachineCode(module, outputFile, fileType);
+    emitMachineCode(irModule, outputFile, fileType);
 
     if (compileOnly || emitAssembly) return 0;
 

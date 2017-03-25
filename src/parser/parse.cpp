@@ -8,6 +8,7 @@
 #include "token.h"
 #include "../sema/typecheck.h"
 #include "../ast/decl.h"
+#include "../ast/module.h"
 #include "../driver/utility.h"
 
 using namespace delta;
@@ -813,9 +814,14 @@ std::unique_ptr<Decl> parseDecl() {
 
 }
 
-void delta::parse(const char* filePath, std::vector<std::unique_ptr<Decl>>& outputAST) {
+FileUnit delta::parse(const char* filePath) {
     initLexer(filePath);
+    tokenBuffer.clear();
+    currentTokenIndex = 0;
     tokenBuffer.emplace_back(lex());
+
+    std::vector<std::unique_ptr<Decl>> topLevelDecls;
     while (currentToken() != NO_TOKEN)
-        outputAST.emplace_back(parseDecl());
+        topLevelDecls.emplace_back(parseDecl());
+    return FileUnit(std::move(topLevelDecls));
 }

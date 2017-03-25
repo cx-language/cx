@@ -15,6 +15,7 @@
 #include "../ast/type.h"
 #include "../ast/expr.h"
 #include "../ast/decl.h"
+#include "../ast/module.h"
 #include "../parser/token.h"
 #include "../driver/utility.h"
 #include "../irgen/mangle.h"
@@ -721,8 +722,11 @@ void typecheck(Decl& decl) {
 
 } // anonymous namespace
 
-void delta::typecheck(std::vector<std::unique_ptr<Decl>>& decls,
-                      const std::vector<llvm::StringRef>& includePaths) {
+void delta::typecheck(Module& module, const std::vector<llvm::StringRef>& includePaths) {
     ::includePaths = includePaths;
-    for (auto& decl : decls) ::typecheck(*decl);
+    for (auto& fileUnit : module.getFileUnits()) {
+        for (auto& decl : fileUnit.getTopLevelDecls()) {
+            ::typecheck(*decl);
+        }
+    }
 }

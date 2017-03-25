@@ -4,6 +4,7 @@
 #include "ast_printer.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
+#include "../ast/module.h"
 
 using namespace delta;
 
@@ -305,13 +306,15 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
 
 } // anonymous namespace
 
-std::ostream& delta::operator<<(std::ostream& out,
-                                const std::vector<std::unique_ptr<Decl>>& decls) {
-    out << "(source-file";
-    indentLevel++;
-    for (const auto& decl : decls) {
-        ::operator<<(out, *decl);
+std::ostream& delta::operator<<(std::ostream& out, const Module& module) {
+    for (const auto& fileUnit : module.getFileUnits()) {
+        out << "(source-file";
+        indentLevel++;
+        for (const auto& decl : fileUnit.getTopLevelDecls()) {
+            ::operator<<(out, *decl);
+        }
+        indentLevel--;
+        out << ")\n";
     }
-    indentLevel--;
-    return out << ")\n";
+    return out;
 }

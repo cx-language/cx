@@ -1,0 +1,4 @@
+(source-file
+    (var-decl a 42))
+(source-file
+    (var-decl b 42))

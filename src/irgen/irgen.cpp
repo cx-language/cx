@@ -11,6 +11,7 @@
 #include "../sema/typecheck.h"
 #include "../ast/expr.h"
 #include "../ast/decl.h"
+#include "../ast/module.h"
 #include "../parser/token.h"
 #include "../driver/utility.h"
 
@@ -54,7 +55,6 @@ std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
 std::vector<GenericFuncInstantiation> genericFuncInstantiations;
-const std::vector<std::unique_ptr<Decl>>* globalDecls;
 const Decl* currentDecl;
 llvm::SmallVector<Scope, 4> scopes;
 llvm::BasicBlock::iterator lastAlloca;
@@ -803,11 +803,12 @@ void codegen(const Decl& decl) {
 
 } // anonymous namespace
 
-llvm::Module& irgen::compile(const std::vector<std::unique_ptr<Decl>>& decls) {
-    globalDecls = &decls;
-    for (const auto& decl : decls) {
-        currentDecl = decl.get();
-        codegen(*decl);
+llvm::Module& irgen::compile(const Module& sourceModule) {
+    for (const auto& fileUnit : sourceModule.getFileUnits()) {
+        for (const auto& decl : fileUnit.getTopLevelDecls()) {
+            currentDecl = decl.get();
+            codegen(*decl);
+        }
     }
 
     for (const GenericFuncInstantiation& instantiation : genericFuncInstantiations) {
