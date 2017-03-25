@@ -27,8 +27,8 @@ void initLexer(const char* filePath) {
         printErrorAndExit("no such file: '", filePath, "'");
     }
 
-    firstLoc.file = filePath;
-    lastLoc.file = filePath;
+    firstLoc = SrcLoc(filePath, 1, 0);
+    lastLoc = SrcLoc(filePath, 1, 0);
 }
 
 }

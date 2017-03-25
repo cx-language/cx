@@ -20,3 +20,13 @@ if [ $? -ne 0 ]; then
     echo "FAILED: multifile parser test failed"
     exit 1
 fi
+
+# Multifile test with error.
+actual_output=$($path_to_delta -fsyntax-only inputs/multifile-error/*.delta)
+expected_output=$'inputs/multifile-error/b.delta:1:9: error: unknown identifier \'foo\'\nint b = foo;\n        ^'
+validate_output
+
+if [ $? -ne 0 ]; then
+    echo "FAILED: multifile parser test with error failed"
+    exit 1
+fi
