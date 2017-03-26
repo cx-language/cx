@@ -35,6 +35,16 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Char, char)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
 #undef DEFINE_BUILTIN_TYPE_GET_AND_IS
 
+bool Type::isBuiltinScalar(llvm::StringRef typeName) {
+    static const char* const builtinTypeNames[] = {
+        "int", "int8", "int16", "int32", "int64",
+        "uint", "uint8", "uint16", "uint32", "uint16",
+        "float", "float32", "float64", "float80", "bool", "char",
+    };
+    return std::find(std::begin(builtinTypeNames), std::end(builtinTypeNames), typeName)
+        != std::end(builtinTypeNames);
+}
+
 void Type::appendType(Type type) {
     std::vector<Type> subtypes;
     if (!isTupleType())
@@ -110,6 +120,12 @@ bool Type::isSigned() const {
     assert(isBasicType());
     llvm::StringRef name = getName();
     return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
+}
+
+bool Type::isUnsigned() const {
+    assert(isBasicType());
+    llvm::StringRef name = getName();
+    return name == "uint" || name == "uint8" || name == "uint16" || name == "uint32" || name == "uint64";
 }
 
 llvm::StringRef Type::getName() const { return llvm::cast<BasicType>(typeBase)->name; }

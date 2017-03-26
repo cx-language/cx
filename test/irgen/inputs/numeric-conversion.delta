@@ -1,0 +1,4 @@
+func foo(uint16 i) {
+    const f = float32(i);
+    const u = int64(f);
+}

@@ -358,14 +358,34 @@ llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullpt
     return codegen(expr);
 }
 
+llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type) {
+    if (expr.getType().isUnsigned() && type.isInteger()) {
+        return builder.CreateZExtOrTrunc(codegen(expr), toIR(type));
+    } else if (expr.getType().isSigned() && type.isInteger()) {
+        return builder.CreateSExtOrTrunc(codegen(expr), toIR(type));
+    } else if (expr.getType().isFloatingPoint()) {
+        if (type.isSigned()) return builder.CreateFPToSI(codegen(expr), toIR(type));
+        if (type.isUnsigned()) return builder.CreateFPToUI(codegen(expr), toIR(type));
+        if (type.isFloatingPoint()) return builder.CreateFPCast(codegen(expr), toIR(type));
+    } else if (type.isFloatingPoint()) {
+        if (expr.getType().isSigned()) return builder.CreateSIToFP(codegen(expr), toIR(type));
+        if (expr.getType().isUnsigned()) return builder.CreateUIToFP(codegen(expr), toIR(type));
+    }
+    error(expr.getSrcLoc(), "conversion from '", expr.getType(), "' to '", type, "' not supported");
+}
+
 llvm::Value* codegen(const CallExpr& expr) {
     llvm::Function* func;
     if (expr.isInitializerCall) {
+        if (Type::isBuiltinScalar(expr.getFuncName())) {
+            return codegenBuiltinConversion(*expr.args.front().value, expr.getType());
+        }
         func = module.getFunction(mangleInitDecl(expr.getFuncName()));
     } else {
         func = getFuncForCall(expr);
     }
 
+    assert(func);
     auto param = func->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
     if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.getReceiver(), param++->getType()));

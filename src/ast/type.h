@@ -69,7 +69,9 @@ public:
 
     void appendType(Type);
     bool isImplicitlyConvertibleTo(Type) const;
+    bool isInteger() const { return isSigned() || isUnsigned(); }
     bool isSigned() const;
+    bool isUnsigned() const;
     bool isMutable() const { return mutableFlag; }
     void setMutable(bool m) { mutableFlag = m; }
     TypeKind getKind() const { return typeBase->getKind(); }
@@ -104,6 +106,8 @@ public:
     static Type getFloat80(bool isMutable = false);
     static Type getChar(bool isMutable = false);
     static Type getNull(bool isMutable = false);
+
+    static bool isBuiltinScalar(llvm::StringRef typeName);
 
 private:
     const TypeBase* typeBase;

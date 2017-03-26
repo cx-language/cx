@@ -239,8 +239,27 @@ void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
     }
 }
 
+Type typecheckBuiltinConversion(CallExpr& expr) {
+    if (expr.args.size() != 1) {
+        error(expr.srcLoc, "expected single argument to converting initializer");
+    }
+    if (!expr.genericArgs.empty()) {
+        error(expr.srcLoc, "expected no generic arguments to converting initializer");
+    }
+    if (!expr.args.front().label.empty()) {
+        error(expr.srcLoc, "expected no argument label to converting initializer");
+    }
+    typecheck(*expr.args.front().value);
+    expr.isInitializerCall = true;
+    expr.setType(BasicType::get(expr.getFuncName()));
+    return expr.getType();
+}
+
 Type typecheck(CallExpr& expr) {
     if (!expr.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
+
+    if (Type::isBuiltinScalar(expr.getFuncName()))
+        return typecheckBuiltinConversion(expr);
 
     Decl& decl = findInSymbolTable(expr.getFuncName(), expr.func->getSrcLoc());
     expr.isInitializerCall = decl.isTypeDecl();
