@@ -1,0 +1,2 @@
+// check_error 2:5 "global variables cannot be uninitialized"
+int i = uninitialized;

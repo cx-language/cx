@@ -825,6 +825,7 @@ void codegen(const TypeDecl& decl) {
 }
 
 void codegen(const VarDecl& decl) {
+    assert(decl.initializer && "global variables must have initializers");
     auto* value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(),
                                            llvm::GlobalValue::PrivateLinkage,
                                            llvm::cast<llvm::Constant>(codegen(*decl.initializer)),

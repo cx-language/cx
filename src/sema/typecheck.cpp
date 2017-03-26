@@ -443,10 +443,10 @@ void typecheck(ReturnStmt& stmt) {
     }
 }
 
-void typecheck(VarDecl& decl);
+void typecheck(VarDecl& decl, bool isGlobal);
 
 void typecheck(VariableStmt& stmt) {
-    typecheck(*stmt.decl);
+    typecheck(*stmt.decl, false);
 }
 
 void typecheck(IncrementStmt& stmt) {
@@ -696,7 +696,7 @@ TypeDecl* getTypeDecl(const BasicType& type) {
     return &it->second->getTypeDecl();
 }
 
-void typecheck(VarDecl& decl) {
+void typecheck(VarDecl& decl, bool isGlobal) {
     if (symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
@@ -706,7 +706,10 @@ void typecheck(VarDecl& decl) {
         if (initType.isFuncType()) {
             error(decl.initializer->getSrcLoc(), "function pointers not implemented yet");
         }
+    } else if (isGlobal) {
+        error(decl.srcLoc, "global variables cannot be uninitialized");
     }
+
     if (auto declaredType = decl.getType()) {
         if (initType && !isValidConversion(*decl.initializer, initType, declaredType)) {
             error(decl.initializer->getSrcLoc(), "cannot initialize variable of type '", declaredType,
@@ -742,7 +745,7 @@ void typecheck(Decl& decl) {
         case DeclKind::InitDecl:  typecheck(decl.getInitDecl()); break;
         case DeclKind::DeinitDecl:typecheck(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
-        case DeclKind::VarDecl:   typecheck(decl.getVarDecl()); break;
+        case DeclKind::VarDecl:   typecheck(decl.getVarDecl(), true); break;
         case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;
         case DeclKind::ImportDecl:typecheck(decl.getImportDecl()); break;
     }
