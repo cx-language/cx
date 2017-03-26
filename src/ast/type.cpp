@@ -209,3 +209,9 @@ std::ostream& delta::operator<<(std::ostream& stream, Type type) {
     type.printTo(stream, true);
     return stream;
 }
+
+llvm::raw_ostream& delta::operator<<(llvm::raw_ostream& stream, Type type) {
+    std::ostringstream stringstream;
+    type.printTo(stringstream, true);
+    return stream << stringstream.str();
+}

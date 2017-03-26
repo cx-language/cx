@@ -1,8 +1,8 @@
 #pragma once
 
-#include <iostream>
 #include <fstream>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/raw_ostream.h>
 #include "../ast/srcloc.h"
 
 namespace delta {
@@ -13,25 +13,49 @@ inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
 
 template<typename... Args>
 [[noreturn]] inline void printErrorAndExit(Args&&... args) {
-    std::cout << "error: ";
+    if (llvm::outs().has_colors())
+        llvm::outs().changeColor(llvm::raw_ostream::RED, true);
+
+    llvm::outs() << "error: ";
+
+    if (llvm::outs().has_colors())
+        llvm::outs().resetColor().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
+
     using expander = int[];
-    (void)expander{0, (void(std::cout << std::forward<Args>(args)), 0)...};
-    std::cout << '\n';
+    (void)expander{0, (void(llvm::outs() << std::forward<Args>(args)), 0)...};
+
+    if (llvm::outs().has_colors())
+        llvm::outs().resetColor();
+
+    llvm::outs() << '\n';
     exit(1);
 }
 
 template<typename... Args>
 [[noreturn]] inline void error(SrcLoc srcLoc, Args&&... args) {
+    if (llvm::outs().has_colors())
+        llvm::outs().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
+
     if (srcLoc.file) {
-        std::cout << srcLoc.file << ':';
-        if (srcLoc.isValid()) std::cout << srcLoc.line << ':' << srcLoc.column << ':';
+        llvm::outs() << srcLoc.file << ':';
+        if (srcLoc.isValid()) llvm::outs() << srcLoc.line << ':' << srcLoc.column << ':';
     } else {
-        std::cout << "<unknown file>:";
+        llvm::outs() << "<unknown file>:";
     }
 
-    std::cout << " error: ";
+    if (llvm::outs().has_colors())
+        llvm::outs().changeColor(llvm::raw_ostream::RED, true);
+
+    llvm::outs() << " error: ";
+
+    if (llvm::outs().has_colors())
+        llvm::outs().resetColor().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
+
     using expander = int[];
-    (void)expander{0, (void(std::cout << std::forward<Args>(args)), 0)...};
+    (void)expander{0, (void(llvm::outs() << std::forward<Args>(args)), 0)...};
+
+    if (llvm::outs().has_colors())
+        llvm::outs().resetColor();
 
     if (srcLoc.file && srcLoc.isValid()) {
         // Output caret.
@@ -39,17 +63,25 @@ template<typename... Args>
         while (--srcLoc.line) file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         std::string line;
         std::getline(file, line);
-        std::cout << '\n' << line << '\n';
-        for (char ch : line.substr(0, srcLoc.column - 1)) std::cout << (ch != '\t' ? ' ' : '\t');
-        std::cout << '^';
+        llvm::outs() << '\n' << line << '\n';
+        for (char ch : line.substr(0, srcLoc.column - 1))
+            llvm::outs() << (ch != '\t' ? ' ' : '\t');
+
+        if (llvm::outs().has_colors())
+            llvm::outs().changeColor(llvm::raw_ostream::GREEN, true);
+
+        llvm::outs() << '^';
+
+        if (llvm::outs().has_colors())
+            llvm::outs().resetColor();
     }
 
-    std::cout << '\n';
+    llvm::outs() << '\n';
     exit(1);
 }
 
 [[noreturn]] inline void fatalError(const char* message) {
-    std::cerr << "FATAL ERROR: " << message << '\n';
+    llvm::errs() << "FATAL ERROR: " << message << '\n';
     abort();
 }
 

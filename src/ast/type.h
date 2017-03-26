@@ -6,6 +6,7 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Casting.h>
+#include <llvm/Support/raw_ostream.h>
 
 namespace delta {
 
@@ -177,5 +178,6 @@ private:
 bool operator==(Type, Type);
 bool operator!=(Type, Type);
 std::ostream& operator<<(std::ostream&, Type);
+llvm::raw_ostream& operator<<(llvm::raw_ostream&, Type);
 
 }
