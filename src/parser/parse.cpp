@@ -145,6 +145,13 @@ std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
     return expr;
 }
 
+std::unique_ptr<FloatLiteralExpr> parseFloatLiteral() {
+    assert(currentToken() == FLOAT_LITERAL);
+    auto expr = llvm::make_unique<FloatLiteralExpr>(currentToken().floatValue, currentLoc());
+    consumeToken();
+    return expr;
+}
+
 std::unique_ptr<BoolLiteralExpr> parseBoolLiteral() {
     std::unique_ptr<BoolLiteralExpr> expr;
     switch (currentToken()) {
@@ -287,8 +294,8 @@ bool shouldParseGenericArgList() {
         || lookAhead(1).getLoc().column + 1 == lookAhead(2).getLoc().column;
 }
 
-/// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr |
-///                  string-literal | int-literal | bool-literal | null-literal |
+/// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
+///                  int-literal | float-literal | bool-literal | null-literal |
 ///                  paren-expr | array-literal | cast-expr | subscript-expr | member-expr
 std::unique_ptr<Expr> parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
@@ -307,6 +314,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
             break;
         case STRING_LITERAL: expr = parseStrLiteral(); break;
         case NUMBER: expr = parseIntLiteral(); break;
+        case FLOAT_LITERAL: expr = parseFloatLiteral(); break;
         case TRUE: case FALSE: expr = parseBoolLiteral(); break;
         case NULL_LITERAL: expr = parseNullLiteral(); break;
         case THIS: expr = parseThis(); break;

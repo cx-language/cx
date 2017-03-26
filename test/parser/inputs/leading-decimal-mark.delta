@@ -1,0 +1,2 @@
+// check_error 2:14 "unexpected '.'"
+const half = .5;

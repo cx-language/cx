@@ -13,6 +13,7 @@ enum class ExprKind {
     VariableExpr,
     StrLiteralExpr,
     IntLiteralExpr,
+    FloatLiteralExpr,
     BoolLiteralExpr,
     NullLiteralExpr,
     ArrayLiteralExpr,
@@ -36,6 +37,7 @@ public:
     DEFINE_EXPR_IS_AND_GET(VariableExpr)
     DEFINE_EXPR_IS_AND_GET(StrLiteralExpr)
     DEFINE_EXPR_IS_AND_GET(IntLiteralExpr)
+    DEFINE_EXPR_IS_AND_GET(FloatLiteralExpr)
     DEFINE_EXPR_IS_AND_GET(BoolLiteralExpr)
     DEFINE_EXPR_IS_AND_GET(NullLiteralExpr)
     DEFINE_EXPR_IS_AND_GET(ArrayLiteralExpr)
@@ -92,6 +94,15 @@ public:
     IntLiteralExpr(int64_t value, SrcLoc srcLoc)
     : Expr(ExprKind::IntLiteralExpr, srcLoc), value(value) { }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::IntLiteralExpr; }
+};
+
+class FloatLiteralExpr : public Expr {
+public:
+    long double value;
+
+    FloatLiteralExpr(long double value, SrcLoc srcLoc)
+    : Expr(ExprKind::FloatLiteralExpr, srcLoc), value(value) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::FloatLiteralExpr; }
 };
 
 class BoolLiteralExpr : public Expr {

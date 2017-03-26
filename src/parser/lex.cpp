@@ -59,6 +59,7 @@ inline void unreadChar(int ch) {
 inline Token readNumber(const int base, char ch = 0) {
     std::string string;
     if (ch) string += (char) ch;
+    bool isFloat = ch == '.';
 
     switch (base) {
         case 2:
@@ -87,6 +88,10 @@ inline Token readNumber(const int base, char ch = 0) {
         case 10:
             while (true) {
                 switch (ch = readChar()) {
+                    case '.':
+                        if (isFloat) goto end;
+                        isFloat = true;
+                        // fallthrough
                     case '0': case '1': case '2': case '3': case '4':
                     case '5': case '6': case '7': case '8': case '9':
                         string += (char) ch;
@@ -125,6 +130,15 @@ inline Token readNumber(const int base, char ch = 0) {
 
 end:
     unreadChar(ch);
+
+    assert(!string.empty());
+    if (string.back() == '.')
+        unreadChar('.'); // Lex the '.' as a Token::DOT.
+
+    if (isFloat) {
+        assert(base == 10 && "float literals must be base-10");
+        return Token(std::strtold(string.c_str(), nullptr));
+    }
     return Token(std::strtoll(string.c_str(), nullptr, base));
 }
 
@@ -290,8 +304,11 @@ Token delta::lex() {
                         if (std::isalpha(ch) || ch == '_') {
                             error(lastLoc, "unexpected '", (char) ch, "'");
                         }
+                        if (ch == '.') {
+                            return readNumber(10, '.');
+                        }
                         unreadChar(ch);
-                        return Token(0);
+                        return Token((long long) 0);
                 }
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9':

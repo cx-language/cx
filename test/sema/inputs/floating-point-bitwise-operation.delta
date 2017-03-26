@@ -1,0 +1,4 @@
+// check_error 3:19 "invalid operands to binary expression ('float64' and 'float64')"
+func main() {
+    const a = 5.0 & 2.0;
+}

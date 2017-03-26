@@ -1,0 +1,2 @@
+// check_error 2:16 "expected identifier, got number"
+const pi = 3.1.4;

@@ -1,0 +1,2 @@
+// validate_ast
+const foo = 0.bar();

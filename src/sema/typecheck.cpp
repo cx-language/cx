@@ -69,6 +69,10 @@ Type typecheck(IntLiteralExpr& expr) {
         error(expr.srcLoc, "integer literal is too large");
 }
 
+Type typecheck(FloatLiteralExpr&) {
+    return Type::getFloat64();
+}
+
 Type typecheck(BoolLiteralExpr&) {
     return Type::getBool();
 }
@@ -120,6 +124,10 @@ Type typecheck(BinaryExpr& expr) {
         if (leftType.isBool() && rightType.isBool()) {
             return Type::getBool();
         }
+        error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
+    }
+
+    if (expr.op.isBitwiseOperator() && (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
         error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
     }
 
@@ -367,6 +375,7 @@ Type typecheck(Expr& expr) {
         case ExprKind::VariableExpr:    type = typecheck(expr.getVariableExpr()); break;
         case ExprKind::StrLiteralExpr:  type = typecheck(expr.getStrLiteralExpr()); break;
         case ExprKind::IntLiteralExpr:  type = typecheck(expr.getIntLiteralExpr()); break;
+        case ExprKind::FloatLiteralExpr:type = typecheck(expr.getFloatLiteralExpr()); break;
         case ExprKind::BoolLiteralExpr: type = typecheck(expr.getBoolLiteralExpr()); break;
         case ExprKind::NullLiteralExpr: type = typecheck(expr.getNullLiteralExpr()); break;
         case ExprKind::ArrayLiteralExpr:type = typecheck(expr.getArrayLiteralExpr()); break;

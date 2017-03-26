@@ -153,6 +153,13 @@ Delta has two kinds of comments:
 >
 > _integer-literal_ → _binary-integer-literal_ | _octal-integer-literal_ | _decimal-integer-literal_ | _hex-integer-literal_<br>
 
+#### Floating-point literal
+
+Floating-point literals have the form `[1-9][0-9]*\.[0-9]+` or `0\.[0-9]+`:
+
+> _floating-point-literal_ → _nonzero-decimal-digit_ _decimal-digit_* `.` _decimal-digit_+<br>
+> _floating-point-literal_ → `0` `.` _decimal-digit_+<br>
+
 #### Boolean literal
 
 > _boolean-literal_ → `true` | `false`<br>

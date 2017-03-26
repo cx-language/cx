@@ -32,6 +32,10 @@ std::ostream& operator<<(std::ostream& out, const IntLiteralExpr& expr) {
     return out << expr.value;
 }
 
+std::ostream& operator<<(std::ostream& out, const FloatLiteralExpr& expr) {
+    return out << expr.value;
+}
+
 std::ostream& operator<<(std::ostream& out, const BoolLiteralExpr& expr) {
     return out << (expr.value ? "true" : "false");
 }
@@ -55,10 +59,9 @@ std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
-    out << "(call " << *expr.func << " ";
+    out << "(call " << *expr.func;
     for (const Arg& arg : expr.args) {
-        out << *arg.value;
-        if (&arg != &expr.args.back()) out << " ";
+        out << " " << *arg.value;
     }
     return out << ")";
 }
@@ -80,6 +83,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::VariableExpr:   return out << expr.getVariableExpr();
         case ExprKind::StrLiteralExpr: return out << expr.getStrLiteralExpr();
         case ExprKind::IntLiteralExpr: return out << expr.getIntLiteralExpr();
+        case ExprKind::FloatLiteralExpr:return out << expr.getFloatLiteralExpr();
         case ExprKind::BoolLiteralExpr:return out << expr.getBoolLiteralExpr();
         case ExprKind::NullLiteralExpr:return out << expr.getNullLiteralExpr();
         case ExprKind::ArrayLiteralExpr:return out<< expr.getArrayLiteralExpr();

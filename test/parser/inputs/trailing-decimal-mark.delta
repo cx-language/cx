@@ -1,0 +1,2 @@
+// check_error 2:14 "expected identifier, got ';'"
+const pi = 3.;

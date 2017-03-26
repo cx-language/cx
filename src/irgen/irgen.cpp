@@ -113,6 +113,9 @@ llvm::Type* toIR(Type type) {
             if (name == "int16" || name == "uint16") return llvm::Type::getInt16Ty(ctx);
             if (name == "int32" || name == "uint32") return llvm::Type::getInt32Ty(ctx);
             if (name == "int64" || name == "uint64") return llvm::Type::getInt64Ty(ctx);
+            if (name == "float32" || name == "float") return llvm::Type::getFloatTy(ctx);
+            if (name == "float64") return llvm::Type::getDoubleTy(ctx);
+            if (name == "float80") return llvm::Type::getX86_FP80Ty(ctx);
             auto it = structs.find(name);
             if (it == structs.end()) {
                 // Is it a generic parameter?
@@ -162,6 +165,10 @@ llvm::Value* codegen(const IntLiteralExpr& expr, const Expr& parent) {
     return llvm::ConstantInt::getSigned(toIR(parent.getType()), expr.value);
 }
 
+llvm::Value* codegen(const FloatLiteralExpr& expr, const Expr& parent) {
+    return llvm::ConstantFP::get(toIR(parent.getType()), expr.value);
+}
+
 llvm::Value* codegen(const BoolLiteralExpr& expr) {
     return expr.value ? llvm::ConstantInt::getTrue(ctx) : llvm::ConstantInt::getFalse(ctx);
 }
@@ -184,10 +191,6 @@ using BinaryCreate0 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Va
 using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool);
 using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
 
-llvm::Value* codegenPrefixOp(const PrefixExpr& expr, UnaryCreate create) {
-    return (builder.*create)(codegen(*expr.operand), "", false, false);
-}
-
 llvm::Value* codegenNot(const PrefixExpr& expr) {
     return builder.CreateNot(codegen(*expr.operand), "");
 }
@@ -195,7 +198,12 @@ llvm::Value* codegenNot(const PrefixExpr& expr) {
 llvm::Value* codegen(const PrefixExpr& expr) {
     switch (expr.op) {
         case PLUS:  return codegen(*expr.operand);
-        case MINUS: return codegenPrefixOp(expr, &llvm::IRBuilder<>::CreateNeg);
+        case MINUS:
+            if (expr.operand->getType().isFloatingPoint()) {
+                return builder.CreateFNeg(codegen(*expr.operand));
+            } else {
+                return builder.CreateNeg(codegen(*expr.operand));
+            }
         case STAR:  return builder.CreateLoad(codegen(*expr.operand));
         case AND:   return codegenLvalue(*expr.operand);
         case NOT:   return codegenNot(expr);
@@ -262,6 +270,22 @@ llvm::Value* codegenLogicalOr(const Expr& left, const Expr& right) {
 }
 
 llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr) {
+    if (lhs->getType()->isFloatingPointTy()) {
+        switch (op) {
+            case EQ:    return builder.CreateFCmpOEQ(lhs, rhs);
+            case NE:    return builder.CreateFCmpONE(lhs, rhs);
+            case LT:    return builder.CreateFCmpOLT(lhs, rhs);
+            case LE:    return builder.CreateFCmpOLE(lhs, rhs);
+            case GT:    return builder.CreateFCmpOGT(lhs, rhs);
+            case GE:    return builder.CreateFCmpOGE(lhs, rhs);
+            case PLUS:  return builder.CreateFAdd(lhs, rhs);
+            case MINUS: return builder.CreateFSub(lhs, rhs);
+            case STAR:  return builder.CreateFMul(lhs, rhs);
+            case SLASH: return builder.CreateFDiv(lhs, rhs);
+            default:    llvm_unreachable("all cases handled");
+        }
+    }
+
     switch (op) {
         case EQ:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
         case NE:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
@@ -397,6 +421,7 @@ llvm::Value* codegen(const Expr& expr) {
         case ExprKind::VariableExpr:    return codegen(expr.getVariableExpr());
         case ExprKind::StrLiteralExpr:  return codegen(expr.getStrLiteralExpr(), expr);
         case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr(), expr);
+        case ExprKind::FloatLiteralExpr:return codegen(expr.getFloatLiteralExpr(), expr);
         case ExprKind::BoolLiteralExpr: return codegen(expr.getBoolLiteralExpr());
         case ExprKind::NullLiteralExpr: return codegen(expr.getNullLiteralExpr(), expr);
         case ExprKind::ArrayLiteralExpr:return codegen(expr.getArrayLiteralExpr());
@@ -414,6 +439,7 @@ llvm::Value* codegenLvalue(const Expr& expr) {
         case ExprKind::VariableExpr:    return codegenLvalue(expr.getVariableExpr());
         case ExprKind::StrLiteralExpr:  llvm_unreachable("no lvalue string literals");
         case ExprKind::IntLiteralExpr:  llvm_unreachable("no lvalue integer literals");
+        case ExprKind::FloatLiteralExpr:llvm_unreachable("no lvalue float literals");
         case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");
         case ExprKind::NullLiteralExpr: llvm_unreachable("no lvalue null literals");
         case ExprKind::ArrayLiteralExpr:llvm_unreachable("no lvalue array literals");

@@ -2,6 +2,7 @@
 #include <ostream>
 #include <cassert>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/ADT/STLExtras.h>
 
 using namespace delta;
 
@@ -49,6 +50,12 @@ Token::Token(long long number)
     assert(srcLoc.isValid());
 }
 
+Token::Token(long double floatValue)
+: kind(FLOAT_LITERAL), floatValue(floatValue),
+  srcLoc(currentFileName, firstLoc.line, firstLoc.column) {
+    assert(srcLoc.isValid());
+}
+
 Token::Token(TokenKind kind, char* value)
 : kind(kind), string(value), srcLoc(currentFileName, firstLoc.line, firstLoc.column) {
     assert(kind == IDENTIFIER || kind == STRING_LITERAL);
@@ -90,16 +97,26 @@ bool BinaryOperator::isComparisonOperator() const {
     }
 }
 
+bool BinaryOperator::isBitwiseOperator() const {
+    switch (kind) {
+        case AND: case AND_EQ: case OR: case OR_EQ: case XOR: case XOR_EQ: case COMPL:
+        case LSHIFT: case LSHIFT_EQ: case RSHIFT: case RSHIFT_EQ: return true;
+        default: return false;
+    }
+}
+
 std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
     static const char* const tokenStrings[] = {
-        "end-of-file", "identifier", "number", "string literal", "break", "case", "cast",
-        "class", "const", "default", "defer", "deinit", "else", "extern", "false",
-        "func", "if", "import", "init", "mutable", "null", "return", "struct",
-        "switch", "this", "true", "uninitialized", "var", "while",
+        "end-of-file", "identifier", "number", "float literal", "string literal",
+        "break", "case", "cast", "class", "const", "default", "defer", "deinit", "else",
+        "extern", "false", "func", "if", "import", "init", "mutable", "null", "return",
+        "struct", "switch", "this", "true", "uninitialized", "var", "while",
         "_", "==", "!=", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",
         "/", "/=", "++", "--", "!", "&", "&=", "&&", "&&=", "|", "|=", "||", "||=",
         "^", "^=", "~", "<<", "<<=", ">>", ">>=", "=", "(", ")", "[", "]", "{", "}",
         ".", ",", ":", "::", ";", "->",
     };
+    static_assert(llvm::array_lengthof(tokenStrings) == TOKEN_COUNT,
+                  "tokenStrings array not up-to-date");
     return stream << tokenStrings[tokenKind];
 }

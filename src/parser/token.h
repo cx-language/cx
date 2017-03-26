@@ -9,6 +9,7 @@ enum TokenKind {
     NO_TOKEN,
     IDENTIFIER,
     NUMBER,
+    FLOAT_LITERAL,
     STRING_LITERAL,
     BREAK, // Keywords...
     CASE,
@@ -81,17 +82,20 @@ enum TokenKind {
     COLON_COLON,
     SEMICOLON,
     RARROW,
+    TOKEN_COUNT
 };
 
 struct Token {
     const TokenKind kind;
     union {
         const long long number;
+        const long double floatValue;
         const char* const string;
     };
 
     Token(TokenKind kind);
     explicit Token(long long number);
+    explicit Token(long double floatValue);
     explicit Token(TokenKind token, char* value);
     operator TokenKind() const { return kind; }
     SrcLoc getLoc() const { return srcLoc; }
@@ -120,6 +124,7 @@ struct BinaryOperator {
     BinaryOperator(Token token);
     operator TokenKind() const { return kind; }
     bool isComparisonOperator() const;
+    bool isBitwiseOperator() const;
     TokenKind kind;
 };
 

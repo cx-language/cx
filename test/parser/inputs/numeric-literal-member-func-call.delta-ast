@@ -1,0 +1,2 @@
+(source-file
+    (var-decl foo (call (member-expr 0 bar))))
