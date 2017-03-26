@@ -1,0 +1,4 @@
+func main() { var f = Foo(5); }
+struct Foo { float f; }
+Foo::init(int i) { }
+Foo::deinit() { }

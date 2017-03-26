@@ -615,9 +615,14 @@ void delta::addToSymbolTable(const VarDecl& decl) {
 }
 
 Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
+    auto it = findInSymbolTable(name);
+    if (!it) error(srcLoc, "unknown identifier '", name, "'");
+    return *it;
+}
+
+Decl* delta::findInSymbolTable(llvm::StringRef name) {
     auto it = symbolTable.find(name);
-    if (it == symbolTable.end()) error(srcLoc, "unknown identifier '", name, "'");
-    return *it->second;
+    return it != symbolTable.end() ? &*it->second : nullptr;
 }
 
 namespace {

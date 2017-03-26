@@ -21,6 +21,7 @@ namespace {
 
 llvm::Value* codegen(const Expr& expr);
 llvm::Value* codegenLvalue(const Expr& expr);
+llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
 void deferDeinitCallOf(llvm::Value* value);
 void createDeinitCall(llvm::Value* valueToDeinit);
 
@@ -62,16 +63,25 @@ llvm::BasicBlock::iterator lastAlloca;
 /// The basic blocks to branch to on a 'break' statement, one element per scope.
 llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
 
+llvm::Function* getDeinitializerFor(Type type) {
+    std::string mangledName = mangleDeinitDecl(type.getName());
+    auto it = funcs.find(mangledName);
+    if (it == funcs.end()) {
+        if (auto decl = llvm::dyn_cast_or_null<DeinitDecl>(findInSymbolTable(mangledName)))
+            return codegenDeinitializerProto(*decl);
+        return nullptr;
+    }
+    return it->second;
+}
+
 /// @param type The Delta type of the variable, or null if the variable is 'this'.
 void setLocalValue(Type type, std::string name, llvm::Value* value) {
     bool wasInserted = localValues.emplace(std::move(name), value).second;
     (void) wasInserted;
     assert(wasInserted);
 
-    if (type && type.isBasicType()) {
-        llvm::Function* deinit = module.getFunction(mangleDeinitDecl(type.getName()));
-        if (deinit) deferDeinitCallOf(value);
-    }
+    if (type && type.isBasicType() && getDeinitializerFor(type))
+        deferDeinitCallOf(value);
 }
 
 void codegen(const Decl& decl);
@@ -375,16 +385,10 @@ llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type) {
 }
 
 llvm::Value* codegen(const CallExpr& expr) {
-    llvm::Function* func;
-    if (expr.isInitializerCall) {
-        if (Type::isBuiltinScalar(expr.getFuncName())) {
-            return codegenBuiltinConversion(*expr.args.front().value, expr.getType());
-        }
-        func = module.getFunction(mangleInitDecl(expr.getFuncName()));
-    } else {
-        func = getFuncForCall(expr);
-    }
+    if (expr.isInitializerCall && Type::isBuiltinScalar(expr.getFuncName()))
+        return codegenBuiltinConversion(*expr.args.front().value, expr.getType());
 
+    llvm::Function* func = getFuncForCall(expr);
     assert(func);
     auto param = func->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
@@ -723,6 +727,17 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::StringRef mangledNa
     return func;
 }
 
+llvm::Function* codegenInitializerProto(const InitDecl& decl) {
+    FuncDecl funcDecl(mangle(decl), std::vector<ParamDecl>(decl.params),
+                      decl.getTypeDecl().getType(), "", SrcLoc::invalid());
+    return codegenFuncProto(funcDecl);
+}
+
+llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl) {
+    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), std::string(decl.getTypeDecl().name), decl.srcLoc);
+    return codegenFuncProto(funcDecl);
+}
+
 llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::ArrayRef<Type> genericArgs) {
     assert(decl.genericParams.size() == genericArgs.size());
     auto genericArg = genericArgs.begin();
@@ -737,12 +752,17 @@ llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::Array
 llvm::Function* getFuncForCall(const CallExpr& call) {
     if (!call.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
 
-    auto it = funcs.find(call.getFuncName());
+    std::string mangledName = call.isInitializerCall
+        ? mangleInitDecl(call.getFuncName()) : call.getFuncName().str();
+
+    auto it = funcs.find(mangledName);
     if (it == funcs.end()) {
         // Function has not been declared yet, search for it in the symbol table.
-        const Decl& decl = findInSymbolTable(call.getFuncName(), call.srcLoc);
+        const Decl& decl = findInSymbolTable(mangledName, call.srcLoc);
         if (decl.isFuncDecl())
             return codegenFuncProto(decl.getFuncDecl());
+        else if (decl.isInitDecl())
+            return codegenInitializerProto(decl.getInitDecl());
         else {
             auto it = llvm::find_if(genericFuncInstantiations,
                                     [&call](GenericFuncInstantiation& instantiation) {
@@ -788,15 +808,14 @@ void codegen(const FuncDecl& decl) {
 }
 
 void codegen(const InitDecl& decl) {
-    FuncDecl funcDecl(mangle(decl), std::vector<ParamDecl>(decl.params),
-                      decl.getTypeDecl().getType(), "", SrcLoc::invalid());
-    auto* func = codegenFuncProto(funcDecl);
+    auto it = funcs.find(mangle(decl));
+    auto* func = it == funcs.end() ? codegenInitializerProto(decl) : it->second;
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", func));
 
     auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl().getType()));
     auto* alloca = builder.CreateAlloca(type);
 
-    setLocalValue(funcDecl.returnType, "this", alloca);
+    setLocalValue(nullptr, "this", alloca);
     auto param = decl.params.begin();
     for (auto& arg : func->args()) setLocalValue(param++->type, arg.getName(), &arg);
     for (const auto& stmt : *decl.body) codegen(*stmt);
@@ -810,7 +829,8 @@ void codegen(const DeinitDecl& decl) {
     FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(),
                       std::string(decl.getTypeDecl().name), decl.srcLoc);
     funcDecl.body = decl.body;
-    llvm::Function* func = codegenFuncProto(funcDecl);
+    auto it = funcs.find(mangle(decl));
+    llvm::Function* func = it == funcs.end() ? codegenFuncProto(funcDecl) : it->second;
     codegenFuncBody(funcDecl, *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
