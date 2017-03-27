@@ -257,6 +257,14 @@ std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand) {
     return llvm::make_unique<SubscriptExpr>(std::move(operand), std::move(index), location);
 }
 
+/// unwrap-expr ::= expr '!'
+std::unique_ptr<UnwrapExpr> parseUnwrapExpr(std::unique_ptr<Expr> operand) {
+    assert(currentToken() == NOT);
+    auto location = currentLoc();
+    consumeToken();
+    return llvm::make_unique<UnwrapExpr>(std::move(operand), location);
+}
+
 /// call-expr ::= expr generic-arg-list? '(' args ')'
 /// generic-arg-list ::= '<' generic-args '>'
 /// generic-args ::= type | type ',' generic-args
@@ -297,6 +305,7 @@ bool shouldParseGenericArgList() {
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
 ///                  paren-expr | array-literal | cast-expr | subscript-expr | member-expr
+///                  unwrap-expr
 std::unique_ptr<Expr> parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
     switch (currentToken()) {
@@ -334,6 +343,9 @@ std::unique_ptr<Expr> parsePostfixExpr() {
             case DOT:
                 consumeToken();
                 expr = parseMemberExpr(std::move(expr));
+                break;
+            case NOT:
+                expr = parseUnwrapExpr(std::move(expr));
                 break;
             default:
                 return expr;

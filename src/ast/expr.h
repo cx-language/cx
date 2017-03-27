@@ -23,6 +23,7 @@ enum class ExprKind {
     CastExpr,
     MemberExpr,
     SubscriptExpr,
+    UnwrapExpr,
 };
 
 class Expr {
@@ -47,6 +48,7 @@ public:
     DEFINE_EXPR_IS_AND_GET(CastExpr)
     DEFINE_EXPR_IS_AND_GET(MemberExpr)
     DEFINE_EXPR_IS_AND_GET(SubscriptExpr)
+    DEFINE_EXPR_IS_AND_GET(UnwrapExpr)
 #undef DEFINE_EXPR_IS_AND_GET
 
     ExprKind getKind() const { return kind; }
@@ -208,6 +210,18 @@ public:
     SubscriptExpr(std::unique_ptr<Expr> array, std::unique_ptr<Expr> index, SrcLoc srcLoc)
     : Expr(ExprKind::SubscriptExpr, srcLoc), array(std::move(array)), index(std::move(index)) { }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::SubscriptExpr; }
+};
+
+/// A postfix expression that unwraps a non-null pointer, yielding a reference to its
+/// pointee, e.g. 'foo!'. If the pointer is null, the operation triggers an assertion
+/// error (by default), or causes undefined behavior (in unchecked mode).
+class UnwrapExpr : public Expr {
+public:
+    std::unique_ptr<Expr> operand;
+
+    UnwrapExpr(std::unique_ptr<Expr> operand, SrcLoc srcLoc)
+    : Expr(ExprKind::UnwrapExpr, srcLoc), operand(std::move(operand)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::UnwrapExpr; }
 };
 
 }

@@ -78,6 +78,10 @@ std::ostream& operator<<(std::ostream& out, const SubscriptExpr& expr) {
     return out << "(subscript " << *expr.array << " " << *expr.index << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const UnwrapExpr& expr) {
+    return out << "(unwrap " << *expr.operand << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:   return out << expr.getVariableExpr();
@@ -93,6 +97,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::CastExpr:       return out << expr.getCastExpr();
         case ExprKind::MemberExpr:     return out << expr.getMemberExpr();
         case ExprKind::SubscriptExpr:  return out << expr.getSubscriptExpr();
+        case ExprKind::UnwrapExpr:     return out << expr.getUnwrapExpr();
     }
 }
 

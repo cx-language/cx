@@ -440,6 +440,11 @@ llvm::Value* codegen(const SubscriptExpr& expr) {
     return builder.CreateLoad(codegenLvalue(expr));
 }
 
+llvm::Value* codegen(const UnwrapExpr& expr) {
+    // TODO: Assert that the operand is non-null.
+    return codegen(*expr.operand);
+}
+
 llvm::Value* codegen(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:    return codegen(expr.getVariableExpr());
@@ -455,6 +460,7 @@ llvm::Value* codegen(const Expr& expr) {
         case ExprKind::CastExpr:        return codegen(expr.getCastExpr());
         case ExprKind::MemberExpr:      return codegen(expr.getMemberExpr());
         case ExprKind::SubscriptExpr:   return codegen(expr.getSubscriptExpr());
+        case ExprKind::UnwrapExpr:      return codegen(expr.getUnwrapExpr());
     }
 }
 
@@ -473,6 +479,7 @@ llvm::Value* codegenLvalue(const Expr& expr) {
         case ExprKind::CastExpr:        llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
         case ExprKind::MemberExpr:      return codegenLvalue(expr.getMemberExpr());
         case ExprKind::SubscriptExpr:   return codegenLvalue(expr.getSubscriptExpr());
+        case ExprKind::UnwrapExpr:      return codegen(expr.getUnwrapExpr());
     }
 }
 

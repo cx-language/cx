@@ -388,6 +388,13 @@ Type typecheck(SubscriptExpr& expr) {
     return arrayType->elementType;
 }
 
+Type typecheck(UnwrapExpr& expr) {
+    Type type = typecheck(*expr.operand);
+    if (!type.isNullablePointer())
+        error(expr.srcLoc, "cannot unwrap non-pointer type '", type, "'");
+    return PtrType::get(type.getPointee(), true);
+}
+
 Type typecheck(Expr& expr) {
     llvm::Optional<Type> type;
     switch (expr.getKind()) {
@@ -404,6 +411,7 @@ Type typecheck(Expr& expr) {
         case ExprKind::CastExpr:        type = typecheck(expr.getCastExpr()); break;
         case ExprKind::MemberExpr:      type = typecheck(expr.getMemberExpr()); break;
         case ExprKind::SubscriptExpr:   type = typecheck(expr.getSubscriptExpr()); break;
+        case ExprKind::UnwrapExpr:      type = typecheck(expr.getUnwrapExpr()); break;
     }
     expr.setType(*type);
     return expr.getType();

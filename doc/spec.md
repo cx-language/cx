@@ -112,7 +112,7 @@ Unary prefix operators:
 
 Unary postfix operators:
 
-    ++  --
+    ++  --  !
 
 Delimiters:
 
@@ -593,9 +593,19 @@ the reverse of the order they were declared in.
 
 ## Expressions
 
-### Unary expression
+### Unary expressions
 
 > _prefix-unary-expression_ → _operator_ _operand_<br>
+> _postfix-unary-expression_ → _operand_ _operator_<br>
+
+#### Unwrap expression
+
+> _unwrap-expression_ → _operand_ `!`<br>
+
+The _unwrap expression_ takes an expression of a pointer type as its operand
+and converts the pointer to a reference. If the pointer is null, a runtime
+error will be triggered by default. In unchecked mode the compiler may assume
+that the pointer expression is never null.
 
 ### Binary expression
 

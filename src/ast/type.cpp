@@ -35,6 +35,10 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Char, char)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
 #undef DEFINE_BUILTIN_TYPE_GET_AND_IS
 
+bool Type::isNullablePointer() const {
+    return isPtrType() && !llvm::cast<PtrType>(typeBase)->ref;
+}
+
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
     static const char* const builtinTypeNames[] = {
         "int", "int8", "int16", "int32", "int64",

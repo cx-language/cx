@@ -9,7 +9,7 @@ bool Expr::isLvalue() const {
         case ExprKind::MemberExpr: case ExprKind::SubscriptExpr:
             return true;
         case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr:
-        case ExprKind::BoolLiteralExpr: case ExprKind::CastExpr:
+        case ExprKind::BoolLiteralExpr: case ExprKind::CastExpr: case ExprKind::UnwrapExpr:
         case ExprKind::NullLiteralExpr: case ExprKind::BinaryExpr: case ExprKind::CallExpr:
             return false;
         case ExprKind::PrefixExpr:
