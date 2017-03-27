@@ -380,7 +380,8 @@ Type typecheck(SubscriptExpr& expr) {
         error(expr.index->getSrcLoc(), "illegal subscript index type '", indexType, "', expected 'int'");
     }
 
-    if (expr.index->isIntLiteralExpr() && expr.index->getIntLiteralExpr().value >= arrayType->size) {
+    if (!arrayType->isUnsized() && expr.index->isIntLiteralExpr()
+    && expr.index->getIntLiteralExpr().value >= arrayType->size) {
         error(expr.index->getSrcLoc(), "accessing array out-of-bounds with index ",
               expr.index->getIntLiteralExpr().value, ", array size is ", arrayType->size);
     }

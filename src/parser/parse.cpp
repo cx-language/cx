@@ -180,18 +180,24 @@ std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral() {
     return llvm::make_unique<ArrayLiteralExpr>(std::move(elements), location);
 }
 
-/// simple-type ::= id | id '[' int-literal ']'
+/// simple-type ::= id | id '[' int-literal? ']'
 Type parseSimpleType(bool isMutable) {
     assert(currentToken() == IDENTIFIER);
     auto type = BasicType::get(currentToken().string, isMutable);
     consumeToken();
     if (currentToken() != LBRACKET) return type;
     consumeToken();
-    if (currentToken() != NUMBER)
+
+    int64_t arraySize;
+    if (currentToken() == RBRACKET)
+        arraySize = ArrayType::unsized;
+    else if (currentToken() == NUMBER)
+        arraySize = consumeToken().number;
+    else
         error(currentLoc(), "non-literal array bounds not implemented yet");
-    auto arraySize = parseIntLiteral();
+
     parse(RBRACKET);
-    return ArrayType::get(type, arraySize->value);
+    return ArrayType::get(type, arraySize);
 }
 
 /// type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '&' | type '*'

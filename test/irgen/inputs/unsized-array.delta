@@ -1,0 +1,8 @@
+func main() {
+    var three = [0, 42, 0];
+    foo(&three);
+}
+
+func foo(int[]& ints) {
+    const a = ints[1];
+}

@@ -35,6 +35,10 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Char, char)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
 #undef DEFINE_BUILTIN_TYPE_GET_AND_IS
 
+bool Type::isUnsizedArrayType() const {
+    return isArrayType() && getArraySize() == ArrayType::unsized;
+}
+
 bool Type::isNullablePointer() const {
     return isPtrType() && !llvm::cast<PtrType>(typeBase)->ref;
 }
@@ -105,7 +109,8 @@ bool Type::isImplicitlyConvertibleTo(Type type) const {
         case TypeKind::BasicType:
             return type.isBasicType() && getName() == type.getName();
         case TypeKind::ArrayType:
-            return type.isArrayType() && getArraySize() == type.getArraySize()
+            return type.isArrayType()
+            && (getArraySize() == type.getArraySize() || type.isUnsizedArrayType())
             && getElementType().isImplicitlyConvertibleTo(type.getElementType());
         case TypeKind::TupleType:
             return type.isTupleType() && getSubtypes() == type.getSubtypes();
@@ -171,7 +176,9 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             break;
         case TypeKind::ArrayType:
             getElementType().printTo(stream, omitTopLevelMutable);
-            stream << "[" << getArraySize() << "]";
+            stream << "[";
+            if (!isUnsizedArrayType()) stream << getArraySize();
+            stream << "]";
             break;
         case TypeKind::TupleType:
             stream << "(";

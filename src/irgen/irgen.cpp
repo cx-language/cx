@@ -139,12 +139,16 @@ llvm::Type* toIR(Type type) {
             return it->second.first;
         }
         case TypeKind::ArrayType:
+            assert(type.getArraySize() != ArrayType::unsized && "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType()), type.getArraySize());
         case TypeKind::TupleType:
             llvm_unreachable("IRGen doesn't support tuple types yet");
         case TypeKind::FuncType:
             llvm_unreachable("IRGen doesn't support function types yet");
         case TypeKind::PtrType: {
+            if (type.getPointee().isUnsizedArrayType())
+                return llvm::StructType::get(toIR(type.getPointee().getElementType())->getPointerTo(),
+                                             llvm::Type::getInt32Ty(ctx), NULL);
             auto* pointeeType = toIR(type.getPointee());
             if (!pointeeType->isVoidTy()) return llvm::PointerType::get(pointeeType, 0);
             else return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0);
@@ -352,7 +356,24 @@ llvm::Value* codegen(const BinaryExpr& expr) {
 
 llvm::Function* getFuncForCall(const CallExpr&);
 
+bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* targetType) {
+    return sourceType.isPtrType() && sourceType.getPointee().isArrayType()
+        && targetType->isStructTy() && targetType->getStructNumElements() == 2
+        && targetType->getStructElementType(0)->isPointerTy()
+        && targetType->getStructElementType(1)->isIntegerTy(32);
+}
+
 llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullptr) {
+    if (targetType && isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
+        assert(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
+        auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegen(expr), 0, 0);
+        auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(targetType),
+                                                   elementPtr, 0);
+        auto size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx),
+                                           expr.getType().getPointee().getArraySize());
+        return builder.CreateInsertValue(arrayRef, size, 1);
+    }
+
     if (expr.isRvalue() || expr.isStrLiteralExpr() || expr.isArrayLiteralExpr()) return codegen(expr);
     Type exprType = expr.getType();
     if (exprType.isPtrType()) exprType = exprType.getPointee();
@@ -431,6 +452,11 @@ llvm::Value* codegen(const MemberExpr& expr) {
 
 llvm::Value* codegenLvalue(const SubscriptExpr& expr) {
     auto* value = codegenLvalue(*expr.array);
+
+    if (expr.array->getType().isPtrType()
+    && expr.array->getType().getPointee().isUnsizedArrayType())
+        return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegen(*expr.index));
+
     if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
     return builder.CreateGEP(value,
                              {llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegen(*expr.index)});

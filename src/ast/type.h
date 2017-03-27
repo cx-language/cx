@@ -46,6 +46,7 @@ public:
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFuncType() const { return getKind() == TypeKind::FuncType; }
     bool isPtrType() const { return getKind() == TypeKind::PtrType; }
+    bool isUnsizedArrayType() const;
     bool isNullablePointer() const;
     bool isFloatingPoint() const {
         return isFloat() || isFloat32() || isFloat64() || isFloat80();
@@ -131,7 +132,10 @@ private:
 class ArrayType : public TypeBase {
 public:
     Type elementType;
-    int64_t size;
+    int64_t size; ///< Equal to ArrayType::unsized if this is an unsized array type.
+
+    bool isUnsized() const { return size == unsized; }
+    static const int64_t unsized = -1;
     static Type get(Type type, int64_t size, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
 
