@@ -148,7 +148,7 @@ Delta has two kinds of comments:
 >
 > _binary-integer-literal_ → `0b` _binary-digit_+<br>
 > _octal-integer-literal_ → `0o` _octal-digit_+<br>
-> _decimal-integer-literal_ → _nonzero-decimal-digit_ _decimal-digit_*<br>
+> _decimal-integer-literal_ → _nonzero-decimal-digit_ _decimal-digit_* | `0`<br>
 > _hex-integer-literal_ → `0x` ( _lowercase-hex-digit_+ | _uppercase-hex-digit_+ )<br>
 >
 > _integer-literal_ → _binary-integer-literal_ | _octal-integer-literal_ | _decimal-integer-literal_ | _hex-integer-literal_<br>
