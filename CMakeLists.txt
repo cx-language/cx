@@ -11,7 +11,7 @@ if(NOT LLVM_FOUND)
 endif()
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
-include_directories(${LLVM_INCLUDE_DIRS})
+include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 # Use old libstdc++ ABI to avoid linker errors with prebuilt LLVM
 add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
