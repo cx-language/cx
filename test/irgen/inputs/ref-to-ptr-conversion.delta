@@ -1,0 +1,3 @@
+func foo(mutable int[2]& ints) {
+    int[2]* ptr = ints;
+}

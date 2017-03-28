@@ -374,7 +374,10 @@ llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullpt
         return builder.CreateInsertValue(arrayRef, size, 1);
     }
 
-    if (expr.isRvalue() || expr.isStrLiteralExpr() || expr.isArrayLiteralExpr()) return codegen(expr);
+    if (expr.isRvalue() || expr.isStrLiteralExpr() || expr.isArrayLiteralExpr()
+    || (expr.getType().isPtrType() && expr.getType().isRef() && targetType->isPointerTy()))
+        return codegen(expr);
+
     Type exprType = expr.getType();
     if (exprType.isPtrType()) exprType = exprType.getPointee();
 
@@ -578,7 +581,7 @@ void codegen(const VariableStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.decl->getType(), toIR(stmt.decl->getType()),
                                           nullptr, stmt.decl->name);
     if (auto initializer = stmt.decl->initializer) {
-        builder.CreateStore(codegenForPassing(*initializer), alloca);
+        builder.CreateStore(codegenForPassing(*initializer, alloca->getType()), alloca);
     }
 }
 
