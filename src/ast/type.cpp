@@ -35,6 +35,10 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Char, char)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
 #undef DEFINE_BUILTIN_TYPE_GET_AND_IS
 
+bool Type::isSizedArrayType() const {
+    return isArrayType() && getArraySize() != ArrayType::unsized;
+}
+
 bool Type::isUnsizedArrayType() const {
     return isArrayType() && getArraySize() == ArrayType::unsized;
 }

@@ -3,13 +3,17 @@ func main() {
     foo(&three);
     bar(&three);
     const b = three.count;
+    int[]& ref = &three;
+    const bb = ref.count;
 }
 
 func foo(int[]& ints) {
     const a = ints[1];
     const b = ints.count;
+    int[]* c = ints;
 }
 
 func bar(int[3]& ints) {
     const b = ints.count;
+    int[]* ref = ints;
 }

@@ -579,10 +579,17 @@ std::unique_ptr<BreakStmt> parseBreakStmt() {
 std::unique_ptr<Stmt> parseStmt() {
     switch (currentToken()) {
         case IDENTIFIER:
-            if (lookAhead(1).is(IDENTIFIER, AND, STAR)
-            || (lookAhead(1) == LBRACKET && lookAhead(2) == NUMBER
-            &&  lookAhead(3) == RBRACKET && lookAhead(4).is(IDENTIFIER, AND, STAR)))
+            if (lookAhead(1).is(IDENTIFIER, AND, STAR))
                 return parseVarStmtFromId(parseType());
+
+            if (lookAhead(1) == LBRACKET && lookAhead(2) == NUMBER
+            &&  lookAhead(3) == RBRACKET && lookAhead(4).is(IDENTIFIER, AND, STAR))
+                return parseVarStmtFromId(parseType());
+
+            if (lookAhead(1) == LBRACKET
+            &&  lookAhead(2) == RBRACKET && lookAhead(3).is(IDENTIFIER, AND, STAR))
+                return parseVarStmtFromId(parseType());
+
             break;
         case RETURN: return parseReturnStmt();
         case VAR: case CONST: return parseVarStmtFromId(Type(nullptr, consumeToken() == VAR));

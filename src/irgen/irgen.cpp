@@ -357,14 +357,14 @@ llvm::Value* codegen(const BinaryExpr& expr) {
 llvm::Function* getFuncForCall(const CallExpr&);
 
 bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* targetType) {
-    return sourceType.isPtrType() && sourceType.getPointee().isArrayType()
+    return sourceType.isPtrType() && sourceType.getPointee().isSizedArrayType()
         && targetType->isStructTy() && targetType->getStructNumElements() == 2
         && targetType->getStructElementType(0)->isPointerTy()
         && targetType->getStructElementType(1)->isIntegerTy(32);
 }
 
-llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullptr) {
-    if (targetType && isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
+llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType) {
+    if (isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
         assert(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
         auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegen(expr), 0, 0);
         auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(targetType),
@@ -374,12 +374,11 @@ llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType = nullpt
         return builder.CreateInsertValue(arrayRef, size, 1);
     }
 
-    if (expr.isRvalue() || expr.isStrLiteralExpr() || expr.isArrayLiteralExpr()
-    || (expr.getType().isPtrType() && expr.getType().isRef() && targetType->isPointerTy()))
-        return codegen(expr);
-
     Type exprType = expr.getType();
     if (exprType.isPtrType()) exprType = exprType.getPointee();
+
+    if (expr.isRvalue() || !exprType.isBasicType())
+        return codegen(expr);
 
     auto it = structs.find(exprType.getName());
     if (it == structs.end() || it->second.second->passByValue()) {
@@ -581,7 +580,7 @@ void codegen(const VariableStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.decl->getType(), toIR(stmt.decl->getType()),
                                           nullptr, stmt.decl->name);
     if (auto initializer = stmt.decl->initializer) {
-        builder.CreateStore(codegenForPassing(*initializer, alloca->getType()), alloca);
+        builder.CreateStore(codegenForPassing(*initializer, alloca->getAllocatedType()), alloca);
     }
 }
 
