@@ -158,7 +158,7 @@ std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
         out << br << "(case " << *switchCase.value;
         indentLevel++;
         for (const auto& substmt : switchCase.stmts) {
-            out << br << *substmt;
+            out << *substmt;
         }
         indentLevel--;
         out << ")";
@@ -178,7 +178,7 @@ std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const BreakStmt&) {
-    return out << "(break-stmt)";
+    return out << br << "(break-stmt)";
 }
 
 std::ostream& operator<<(std::ostream& out, const AssignStmt& stmt) {
@@ -195,7 +195,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::VariableStmt:  return out << stmt.getVariableStmt();
         case StmtKind::IncrementStmt: return out << stmt.getIncrementStmt();
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
-        case StmtKind::ExprStmt:      return out << *stmt.getExprStmt().expr;
+        case StmtKind::ExprStmt:      return out << br << *stmt.getExprStmt().expr;
         case StmtKind::DeferStmt:     return out << stmt.getDeferStmt();
         case StmtKind::IfStmt:        return out << stmt.getIfStmt();
         case StmtKind::SwitchStmt:    return out << stmt.getSwitchStmt();

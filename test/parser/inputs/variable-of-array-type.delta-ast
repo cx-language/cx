@@ -1,0 +1,6 @@
+(source-file
+    (var-decl foo (array-literal 0 1 2))
+    (func-decl main () void
+        (var-stmt qux (array-literal 42))
+        (assign-stmt (subscript foo 0) 3)
+        (call (member-expr (subscript foo 1) bar))))

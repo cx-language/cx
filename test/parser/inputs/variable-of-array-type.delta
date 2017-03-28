@@ -1,0 +1,7 @@
+// validate_ast
+int[3] foo = [0, 1, 2];
+func main() {
+    int[1] qux = [42];
+    foo[0] = 3;
+    foo[1].bar();
+}
