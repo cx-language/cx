@@ -353,6 +353,13 @@ Type typecheck(MemberExpr& expr) {
         }
         baseType = baseType.getPointee();
     }
+
+    if (baseType.isArrayType()) {
+        if (expr.member != "count")
+            error(expr.srcLoc, "no member named '", expr.member, "' in '", baseType, "'");
+        return Type::getInt();
+    }
+
     Decl& typeDecl = findInSymbolTable(baseType.getName(), SrcLoc::invalid());
 
     for (const FieldDecl& field : typeDecl.getTypeDecl().fields) {

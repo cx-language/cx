@@ -1,8 +1,15 @@
 func main() {
     var three = [0, 42, 0];
     foo(&three);
+    bar(&three);
+    const b = three.count;
 }
 
 func foo(int[]& ints) {
     const a = ints[1];
+    const b = ints.count;
+}
+
+func bar(int[3]& ints) {
+    const b = ints.count;
 }

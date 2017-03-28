@@ -429,6 +429,16 @@ llvm::Value* codegen(const CastExpr& expr) {
 }
 
 llvm::Value* codegenLvalue(const MemberExpr& expr) {
+    Type base = expr.base->getType();
+    if (base.isPtrType() && base.isRef()) base = base.getPointee();
+    if (base.isArrayType()) {
+        assert(expr.member == "count");
+        if (base.isUnsizedArrayType())
+            return builder.CreateExtractValue(codegen(*expr.base), 1, "count");
+        else
+            return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), base.getArraySize());
+    }
+
     auto* value = codegenLvalue(*expr.base);
     auto baseType = value->getType();
     if (baseType->isPointerTy()) {

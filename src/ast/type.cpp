@@ -153,7 +153,8 @@ bool delta::operator==(Type lhs, Type rhs) {
         case TypeKind::BasicType:
             return rhs.isBasicType() && lhs.getName() == rhs.getName();
         case TypeKind::ArrayType:
-            return rhs.isArrayType() && lhs.getElementType() == rhs.getElementType();
+            return rhs.isArrayType() && lhs.getElementType() == rhs.getElementType()
+                                     && lhs.getArraySize() == rhs.getArraySize();
         case TypeKind::TupleType:
             return rhs.isTupleType() && lhs.getSubtypes() == rhs.getSubtypes();
         case TypeKind::FuncType:
