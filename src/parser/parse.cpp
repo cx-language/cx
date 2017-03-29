@@ -140,14 +140,16 @@ std::unique_ptr<StrLiteralExpr> parseStrLiteral() {
 
 std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
     assert(currentToken() == NUMBER);
-    auto expr = llvm::make_unique<IntLiteralExpr>(currentToken().number, currentLoc());
+    auto expr = llvm::make_unique<IntLiteralExpr>(currentToken().getIntegerValue(),
+                                                  currentLoc());
     consumeToken();
     return expr;
 }
 
 std::unique_ptr<FloatLiteralExpr> parseFloatLiteral() {
     assert(currentToken() == FLOAT_LITERAL);
-    auto expr = llvm::make_unique<FloatLiteralExpr>(currentToken().floatValue, currentLoc());
+    auto expr = llvm::make_unique<FloatLiteralExpr>(currentToken().getFloatingPointValue(),
+                                                    currentLoc());
     consumeToken();
     return expr;
 }
@@ -192,7 +194,7 @@ Type parseSimpleType(bool isMutable) {
     if (currentToken() == RBRACKET)
         arraySize = ArrayType::unsized;
     else if (currentToken() == NUMBER)
-        arraySize = consumeToken().number;
+        arraySize = consumeToken().getIntegerValue();
     else
         error(currentLoc(), "non-literal array bounds not implemented yet");
 
@@ -304,7 +306,7 @@ bool shouldParseGenericArgList() {
     // Temporary hack: use spacing to determine whether to parse a generic argument list
     // of a less-than binary expression. Zero spaces on either side of '<' will cause it
     // to be interpreted as a generic argument list, for now.
-    return lookAhead(0).getLoc().column + std::strlen(lookAhead(0).string) == lookAhead(1).getLoc().column
+    return lookAhead(0).getLoc().column + lookAhead(0).string.size() == lookAhead(1).getLoc().column
         || lookAhead(1).getLoc().column + 1 == lookAhead(2).getLoc().column;
 }
 

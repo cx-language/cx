@@ -1,6 +1,9 @@
 #include "lex.h"
+#include <vector>
+#include <string>
 #include <cstdio>
 #include <unordered_map>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #include "parse.h"
 #include "token.h"
@@ -10,7 +13,8 @@ using namespace delta;
 
 namespace {
 
-FILE* inputFile;
+std::vector<std::string> fileBuffers;
+const char* currentFilePosition;
 
 }
 
@@ -21,11 +25,19 @@ SrcLoc firstLoc(nullptr, 1, 0);
 SrcLoc lastLoc(nullptr, 1, 0);
 
 void initLexer(const char* filePath) {
-    if (inputFile) fclose(inputFile);
-    inputFile = fopen(filePath, "r");
+    std::FILE* inputFile = std::fopen(filePath, "rb");
     if (!inputFile) {
         printErrorAndExit("no such file: '", filePath, "'");
     }
+
+    std::string contents;
+    std::fseek(inputFile, 0, SEEK_END);
+    contents.resize(std::ftell(inputFile));
+    std::rewind(inputFile);
+    std::fread(&contents[0], 1, contents.size(), inputFile);
+    std::fclose(inputFile);
+    fileBuffers.emplace_back(std::move(contents));
+    currentFilePosition = fileBuffers.back().data() - 1;
 
     firstLoc = SrcLoc(filePath, 1, 0);
     lastLoc = SrcLoc(filePath, 1, 0);
@@ -35,8 +47,8 @@ void initLexer(const char* filePath) {
 
 namespace {
 
-inline int readChar() {
-    int ch = getc(inputFile);
+inline char readChar() {
+    char ch = *++currentFilePosition;
     if (ch != '\n') {
         lastLoc.column++;
     } else {
@@ -46,27 +58,28 @@ inline int readChar() {
     return ch;
 }
 
-inline void unreadChar(int ch) {
+inline void unreadChar(char ch) {
     if (ch != '\n') {
         lastLoc.column--;
     } else {
         lastLoc.line--;
         // lastLoc.column can be left as is because the next readChar() call will reset it anyways.
     }
-    ungetc(ch, inputFile);
+    currentFilePosition--;
 }
 
-inline Token readNumber(const int base, char ch = 0) {
-    std::string string;
-    if (ch) string += (char) ch;
-    bool isFloat = ch == '.';
+inline Token readNumber(const char* begin, const int base) {
+    const char* end = begin + 1;
+    if (base != 10) end++;
+    bool isFloat = false;
+    char ch;
 
     switch (base) {
         case 2:
             while (true) {
                 switch (ch = readChar()) {
                     case '0': case '1':
-                        string += (char) ch;
+                        end++;
                         break;
                     default:
                         goto end;
@@ -78,7 +91,7 @@ inline Token readNumber(const int base, char ch = 0) {
                 switch (ch = readChar()) {
                     case '0': case '1': case '2': case '3': case '4':
                     case '5': case '6': case '7':
-                        string += (char) ch;
+                        end++;
                         break;
                     default:
                         goto end;
@@ -94,7 +107,7 @@ inline Token readNumber(const int base, char ch = 0) {
                         // fallthrough
                     case '0': case '1': case '2': case '3': case '4':
                     case '5': case '6': case '7': case '8': case '9':
-                        string += (char) ch;
+                        end++;
                         break;
                     default:
                         goto end;
@@ -107,16 +120,16 @@ inline Token readNumber(const int base, char ch = 0) {
                 switch (ch = readChar()) {
                     case '0': case '1': case '2': case '3': case '4':
                     case '5': case '6': case '7': case '8': case '9':
-                        string += (char) ch;
+                        end++;
                         break;
                     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
                         if (lettercase < 0) error(lastLoc, "mixed letter case in hex literal");
-                        string += (char) ch;
+                        end++;
                         lettercase = 1;
                         break;
                     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
                         if (lettercase > 0) error(lastLoc, "mixed letter case in hex literal");
-                        string += (char) ch;
+                        end++;
                         lettercase = -1;
                         break;
                     default:
@@ -131,15 +144,15 @@ inline Token readNumber(const int base, char ch = 0) {
 end:
     unreadChar(ch);
 
-    assert(!string.empty());
-    if (string.back() == '.')
+    assert(begin != end);
+    if (end[-1] == '.')
         unreadChar('.'); // Lex the '.' as a Token::DOT.
 
     if (isFloat) {
         assert(base == 10 && "float literals must be base-10");
-        return Token(std::strtold(string.c_str(), nullptr));
+        return Token(FLOAT_LITERAL, llvm::StringRef(begin, end - begin));
     }
-    return Token(std::strtoll(string.c_str(), nullptr, base));
+    return Token(NUMBER, llvm::StringRef(begin, end - begin));
 }
 
 const std::unordered_map<std::string, TokenKind> keywords = {
@@ -174,10 +187,8 @@ const std::unordered_map<std::string, TokenKind> keywords = {
 } // anonymous namespace
 
 Token delta::lex() {
-    assert(inputFile && "lexer not initialized");
-
     while (true) {
-        int ch = readChar();
+        char ch = readChar();
         firstLoc.line = lastLoc.line;
         firstLoc.column = lastLoc.column;
 
@@ -289,14 +300,14 @@ Token delta::lex() {
                 if (ch == ':') return COLON_COLON;
                 unreadChar(ch);
                 return COLON;
-            case EOF:
+            case '\0':
                 goto end;
             case '0':
                 ch = readChar();
                 switch (ch) {
-                    case 'b': return readNumber(2);
-                    case 'o': return readNumber(8);
-                    case 'x': return readNumber(16);
+                    case 'b': return readNumber(currentFilePosition - 1, 2);
+                    case 'o': return readNumber(currentFilePosition - 1, 8);
+                    case 'x': return readNumber(currentFilePosition - 1, 16);
                     default:
                         if (std::isdigit(ch)) {
                             error(firstLoc, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
@@ -304,15 +315,15 @@ Token delta::lex() {
                         if (std::isalpha(ch) || ch == '_') {
                             error(lastLoc, "unexpected '", (char) ch, "'");
                         }
-                        if (ch == '.') {
-                            return readNumber(10, '.');
+                        if (ch == '.' && std::isdigit(currentFilePosition[1])) {
+                            return readNumber(currentFilePosition - 1, 10);
                         }
                         unreadChar(ch);
-                        return Token((long long) 0);
+                        return Token(NUMBER, llvm::StringRef(currentFilePosition, 1));
                 }
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9':
-                return readNumber(10, ch);
+                return readNumber(currentFilePosition, 10);
             case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
             case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
             case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':
@@ -321,24 +332,26 @@ Token delta::lex() {
             case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
             case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
             case 'v': case 'w': case 'x': case 'y': case 'z': case '_': {
-                std::string string;
+                const char* begin = currentFilePosition;
+                const char* end = begin;
                 do {
-                    string += (char) ch;
+                    end++;
                 } while (std::isalnum(ch = readChar()) || ch == '_');
                 unreadChar(ch);
 
-                auto it = keywords.find(string);
+                auto it = keywords.find(llvm::StringRef(begin, end - begin));
                 if (it != keywords.end()) return it->second;
 
-                return Token(IDENTIFIER, strndup(string.data(), string.length()));
+                return Token(IDENTIFIER, llvm::StringRef(begin, end - begin));
             }
             case '"': {
-                std::string string;
+                const char* begin = currentFilePosition + 1;
+                const char* end = begin;
                 while ((ch = readChar()) != '"') {
                     if (ch == '\n') error(firstLoc, "newline inside string literal");
-                    string += (char) ch;
+                    end++;
                 }
-                return Token(STRING_LITERAL, strndup(string.data(), string.length()));
+                return Token(STRING_LITERAL, llvm::StringRef(begin, end - begin));
             }
             default:
                 error(firstLoc, "unknown token '", (char) ch, "'");

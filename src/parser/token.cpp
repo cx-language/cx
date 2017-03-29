@@ -1,6 +1,7 @@
 #include "token.h"
 #include <ostream>
 #include <cassert>
+#include <cerrno>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/ADT/STLExtras.h>
 
@@ -39,26 +40,9 @@ extern SrcLoc firstLoc;
 extern SrcLoc lastLoc;
 }
 
-Token::Token(TokenKind kind)
-: kind(kind), srcLoc(currentFileName, firstLoc.line, firstLoc.column) {
-    assert(kind != NUMBER);
-    assert(srcLoc.isValid());
-}
-
-Token::Token(long long number)
-: kind(NUMBER), number(number), srcLoc(currentFileName, firstLoc.line, firstLoc.column) {
-    assert(srcLoc.isValid());
-}
-
-Token::Token(long double floatValue)
-: kind(FLOAT_LITERAL), floatValue(floatValue),
-  srcLoc(currentFileName, firstLoc.line, firstLoc.column) {
-    assert(srcLoc.isValid());
-}
-
-Token::Token(TokenKind kind, char* value)
-: kind(kind), string(value), srcLoc(currentFileName, firstLoc.line, firstLoc.column) {
-    assert(kind == IDENTIFIER || kind == STRING_LITERAL);
+Token::Token(TokenKind kind, llvm::StringRef string)
+: kind(kind), string(string), srcLoc(currentFileName, firstLoc.line, firstLoc.column) {
+    assert(!string.empty() || kind == NO_TOKEN || kind >= BREAK);
     assert(srcLoc.isValid());
 }
 
@@ -80,6 +64,19 @@ bool Token::isPrefixOperator() const {
 
 int Token::getPrecedence() const {
     return int(getPrecedenceGroup(kind));
+}
+
+int64_t Token::getIntegerValue() const {
+    int64_t value;
+    bool fail = string.getAsInteger(0, value);
+    assert(!fail && "invalid integer literal");
+    return value;
+}
+
+long double Token::getFloatingPointValue() const {
+    long double value = std::strtold(string.str().c_str(), nullptr);
+    assert(errno != ERANGE && "invalid floating-point literal");
+    return value;
 }
 
 PrefixOperator::PrefixOperator(Token token) : kind(token) {

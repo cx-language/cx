@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ostream>
+#include <llvm/ADT/StringRef.h>
 #include "../ast/srcloc.h"
 
 namespace delta {
@@ -87,16 +88,9 @@ enum TokenKind {
 
 struct Token {
     const TokenKind kind;
-    union {
-        const long long number;
-        const long double floatValue;
-        const char* const string;
-    };
+    llvm::StringRef string; ///< The substring in the source code representing this token.
 
-    Token(TokenKind kind);
-    explicit Token(long long number);
-    explicit Token(long double floatValue);
-    explicit Token(TokenKind token, char* value);
+    Token(TokenKind kind, llvm::StringRef string = {});
     operator TokenKind() const { return kind; }
     SrcLoc getLoc() const { return srcLoc; }
     bool is(TokenKind kind) const { return this->kind == kind; }
@@ -105,6 +99,8 @@ struct Token {
     bool isBinaryOperator() const;
     bool isPrefixOperator() const;
     int getPrecedence() const;
+    int64_t getIntegerValue() const;
+    long double getFloatingPointValue() const;
 
     /// Strips the trailing '=' from a compound assignment operator.
     /// E.g. given '+=', returns '+', and so on.
