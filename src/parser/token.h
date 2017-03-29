@@ -9,7 +9,7 @@ namespace delta {
 enum TokenKind {
     NO_TOKEN,
     IDENTIFIER,
-    NUMBER,
+    INT_LITERAL,
     FLOAT_LITERAL,
     STRING_LITERAL,
     BREAK, // Keywords...

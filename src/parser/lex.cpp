@@ -152,7 +152,7 @@ end:
         assert(base == 10 && "float literals must be base-10");
         return Token(FLOAT_LITERAL, llvm::StringRef(begin, end - begin));
     }
-    return Token(NUMBER, llvm::StringRef(begin, end - begin));
+    return Token(INT_LITERAL, llvm::StringRef(begin, end - begin));
 }
 
 const std::unordered_map<std::string, TokenKind> keywords = {
@@ -319,7 +319,7 @@ Token delta::lex() {
                             return readNumber(currentFilePosition - 1, 10);
                         }
                         unreadChar(ch);
-                        return Token(NUMBER, llvm::StringRef(currentFilePosition, 1));
+                        return Token(INT_LITERAL, llvm::StringRef(currentFilePosition, 1));
                 }
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9':

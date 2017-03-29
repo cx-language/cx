@@ -139,7 +139,7 @@ std::unique_ptr<StrLiteralExpr> parseStrLiteral() {
 }
 
 std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
-    assert(currentToken() == NUMBER);
+    assert(currentToken() == INT_LITERAL);
     auto expr = llvm::make_unique<IntLiteralExpr>(currentToken().getIntegerValue(),
                                                   currentLoc());
     consumeToken();
@@ -193,7 +193,7 @@ Type parseSimpleType(bool isMutable) {
     int64_t arraySize;
     if (currentToken() == RBRACKET)
         arraySize = ArrayType::unsized;
-    else if (currentToken() == NUMBER)
+    else if (currentToken() == INT_LITERAL)
         arraySize = consumeToken().getIntegerValue();
     else
         error(currentLoc(), "non-literal array bounds not implemented yet");
@@ -330,7 +330,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
             }
             break;
         case STRING_LITERAL: expr = parseStrLiteral(); break;
-        case NUMBER: expr = parseIntLiteral(); break;
+        case INT_LITERAL: expr = parseIntLiteral(); break;
         case FLOAT_LITERAL: expr = parseFloatLiteral(); break;
         case TRUE: case FALSE: expr = parseBoolLiteral(); break;
         case NULL_LITERAL: expr = parseNullLiteral(); break;
@@ -584,7 +584,7 @@ std::unique_ptr<Stmt> parseStmt() {
             if (lookAhead(1).is(IDENTIFIER, AND, STAR))
                 return parseVarStmtFromId(parseType());
 
-            if (lookAhead(1) == LBRACKET && lookAhead(2) == NUMBER
+            if (lookAhead(1) == LBRACKET && lookAhead(2) == INT_LITERAL
             &&  lookAhead(3) == RBRACKET && lookAhead(4).is(IDENTIFIER, AND, STAR))
                 return parseVarStmtFromId(parseType());
 
