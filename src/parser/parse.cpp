@@ -833,15 +833,21 @@ std::unique_ptr<Decl> parseDecl() {
                 }
             }
             // fallthrough
-        case MUTABLE:
-            return parseVarDeclFromId(parseType());
+        case MUTABLE: {
+            auto decl = parseVarDeclFromId(parseType());
+            addToSymbolTable(*decl);
+            return std::move(decl);
+        }
         case CLASS: case STRUCT: {
             auto decl = parseTypeDecl();
             addToSymbolTable(*decl);
             return std::move(decl);
         }
-        case VAR: case CONST:
-            return parseVarDeclFromId(Type(nullptr, consumeToken() == VAR));
+        case VAR: case CONST: {
+            auto decl = parseVarDeclFromId(Type(nullptr, consumeToken() == VAR));
+            addToSymbolTable(*decl);
+            return std::move(decl);
+        }
         case IMPORT:
             return parseImportDecl();
         default:

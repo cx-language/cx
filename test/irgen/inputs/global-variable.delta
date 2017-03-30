@@ -1,7 +1,8 @@
 var foo = 42;
-const bar = 42;
 int baz = 42;
 mutable int qux = 42;
 
 func a() { var b = foo; }
-func c() { var d = foo; }
+func c() { var d = bar; }
+
+const bar = 42;

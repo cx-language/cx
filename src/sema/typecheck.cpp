@@ -25,6 +25,7 @@ using namespace delta;
 namespace {
 
 std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
+std::vector<VarDecl*> globalVariables;
 std::unordered_map<std::string, Type> currentGenericArgs;
 Type funcReturnType = nullptr;
 bool inInitializer = false;
@@ -425,6 +426,7 @@ Type typecheck(Expr& expr) {
         case ExprKind::SubscriptExpr:   type = typecheck(expr.getSubscriptExpr()); break;
         case ExprKind::UnwrapExpr:      type = typecheck(expr.getUnwrapExpr()); break;
     }
+    assert(*type);
     expr.setType(*type);
     return expr.getType();
 }
@@ -627,11 +629,12 @@ void delta::addToSymbolTable(const TypeDecl& decl) {
     symbolTable.insert({ decl.name, new TypeDecl(decl) });
 }
 
-void delta::addToSymbolTable(const VarDecl& decl) {
+void delta::addToSymbolTable(VarDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ decl.name, new VarDecl(decl) });
+    symbolTable.insert({ decl.name, &decl });
+    globalVariables.push_back(&decl);
 }
 
 Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
@@ -722,7 +725,7 @@ TypeDecl* getTypeDecl(const BasicType& type) {
 }
 
 void typecheck(VarDecl& decl, bool isGlobal) {
-    if (symbolTable.count(decl.name) > 0) {
+    if (!isGlobal && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     Type initType = nullptr;
@@ -780,9 +783,17 @@ void typecheck(Decl& decl) {
 
 void delta::typecheck(Module& module, const std::vector<llvm::StringRef>& includePaths) {
     ::includePaths = includePaths;
+
+    // Infer the types of global variables for use before their declaration.
+    for (VarDecl* var : globalVariables) {
+        ::typecheck(*var, true);
+    }
+
     for (auto& fileUnit : module.getFileUnits()) {
         for (auto& decl : fileUnit.getTopLevelDecls()) {
-            ::typecheck(*decl);
+            if (!decl->isVarDecl()) {
+                ::typecheck(*decl);
+            }
         }
     }
 }
