@@ -4,6 +4,11 @@
 
 using namespace delta;
 
+std::string delta::mangle(const FuncDecl& decl) {
+    if (decl.receiverType.empty()) return decl.name;
+    return decl.receiverType + "." + decl.name;
+}
+
 std::string delta::mangle(const GenericFuncDecl& decl, llvm::ArrayRef<Type> genericArgs) {
     std::string mangled = decl.func->name;
     mangled += '<';

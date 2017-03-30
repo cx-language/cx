@@ -8,11 +8,11 @@ define %Foo @Foo.init() {
   ret %Foo %3
 }
 
-define void @bar(%Foo %this) {
+define void @Foo.bar(%Foo %this) {
   ret void
 }
 
-define i32 @qux(%Foo %this) {
+define i32 @Foo.qux(%Foo %this) {
   %1 = extractvalue %Foo %this, 0
   ret i32 %1
 }
@@ -23,9 +23,9 @@ define i32 @main() {
   %1 = call %Foo @Foo.init()
   store %Foo %1, %Foo* %foo
   %foo1 = load %Foo, %Foo* %foo
-  call void @bar(%Foo %foo1)
+  call void @Foo.bar(%Foo %foo1)
   %foo2 = load %Foo, %Foo* %foo
-  %2 = call i32 @qux(%Foo %foo2)
+  %2 = call i32 @Foo.qux(%Foo %foo2)
   store i32 %2, i32* %i
   ret i32 0
 }

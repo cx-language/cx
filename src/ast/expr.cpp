@@ -1,5 +1,6 @@
 #include "expr.h"
 #include "../parser/token.h"
+#include "../irgen/mangle.h"
 
 using namespace delta;
 
@@ -23,6 +24,16 @@ llvm::StringRef CallExpr::getFuncName() const {
         case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(*func).member;
         default: return "(anonymous function)";
     }
+}
+
+std::string CallExpr::getMangledFuncName() const {
+    if (func->isMemberExpr()) {
+        Type receiverType = getReceiver()->getType();
+        if (receiverType.isPtrType()) receiverType = receiverType.getPointee();
+        return receiverType.getName().str() + "." + getFuncName().str();
+    }
+    if (isInitializerCall) return mangleInitDecl(getFuncName());
+    return getFuncName();
 }
 
 Expr* CallExpr::getReceiver() const {

@@ -747,7 +747,7 @@ llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName) {
     }
 }
 
-llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::StringRef mangledName = {},
+llvm::Function* codegenFuncProto(const FuncDecl& decl, std::string&& mangledName = {},
                                  bool addToFuncs = true) {
     auto* funcType = decl.getFuncType();
 
@@ -760,7 +760,7 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::StringRef mangledNa
     for (const auto& t : funcType->paramTypes) paramTypes.emplace_back(toIR(t));
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);
-    if (mangledName.empty()) mangledName = decl.name;
+    if (mangledName.empty()) mangledName = mangle(decl);
     auto* func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage,
                                         mangledName, &module);
 
@@ -768,19 +768,19 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::StringRef mangledNa
     if (decl.isMemberFunc()) arg++->setName("this");
     for (auto param = decl.params.begin(); arg != argsEnd; ++param, ++arg) arg->setName(param->name);
 
-    if (addToFuncs) funcs.emplace(decl.name, func);
+    if (addToFuncs) funcs.emplace(mangledName, func);
     return func;
 }
 
 llvm::Function* codegenInitializerProto(const InitDecl& decl) {
     FuncDecl funcDecl(mangle(decl), std::vector<ParamDecl>(decl.params),
                       decl.getTypeDecl().getType(), "", SrcLoc::invalid());
-    return codegenFuncProto(funcDecl);
+    return codegenFuncProto(funcDecl, mangle(decl));
 }
 
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl) {
     FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), std::string(decl.getTypeDecl().name), decl.srcLoc);
-    return codegenFuncProto(funcDecl);
+    return codegenFuncProto(funcDecl, mangle(decl));
 }
 
 llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::ArrayRef<Type> genericArgs) {
@@ -797,9 +797,7 @@ llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::Array
 llvm::Function* getFuncForCall(const CallExpr& call) {
     if (!call.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
 
-    std::string mangledName = call.isInitializerCall
-        ? mangleInitDecl(call.getFuncName()) : call.getFuncName().str();
-
+    std::string mangledName = call.getMangledFuncName();
     auto it = funcs.find(mangledName);
     if (it == funcs.end()) {
         // Function has not been declared yet, search for it in the symbol table.
@@ -846,7 +844,7 @@ void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
 }
 
 void codegen(const FuncDecl& decl) {
-    auto it = funcs.find(decl.name);
+    auto it = funcs.find(mangle(decl));
     auto* func = it == funcs.end() ? codegenFuncProto(decl) : it->second;
     if (!decl.isExtern()) codegenFuncBody(decl, *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
@@ -875,7 +873,7 @@ void codegen(const DeinitDecl& decl) {
                       std::string(decl.getTypeDecl().name), decl.srcLoc);
     funcDecl.body = decl.body;
     auto it = funcs.find(mangle(decl));
-    llvm::Function* func = it == funcs.end() ? codegenFuncProto(funcDecl) : it->second;
+    llvm::Function* func = it == funcs.end() ? codegenFuncProto(funcDecl, mangle(decl)) : it->second;
     codegenFuncBody(funcDecl, *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }

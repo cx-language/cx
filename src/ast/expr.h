@@ -174,6 +174,7 @@ public:
       isInitializerCall(isInitializerCall), genericArgs(std::move(genericArgs)) { }
     bool callsNamedFunc() const { return func->isVariableExpr() || func->isMemberExpr(); }
     llvm::StringRef getFuncName() const;
+    std::string getMangledFuncName() const;
     bool isMemberFuncCall() const { return func->isMemberExpr(); }
     Expr* getReceiver() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::CallExpr; }

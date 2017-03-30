@@ -261,12 +261,16 @@ Type typecheck(CallExpr& expr) {
     if (Type::isBuiltinScalar(expr.getFuncName()))
         return typecheckBuiltinConversion(expr);
 
-    Decl& decl = findInSymbolTable(expr.getFuncName(), expr.func->getSrcLoc());
+    if (expr.func->isMemberExpr())
+        typecheck(*expr.getReceiver());
+
+    std::string mangledName = expr.getMangledFuncName();
+    Decl& decl = findInSymbolTable(mangledName, expr.func->getSrcLoc());
     expr.isInitializerCall = decl.isTypeDecl();
     if (expr.isInitializerCall) {
         return typecheckInitExpr(decl.getTypeDecl(), expr.args, expr.srcLoc);
     } else if (expr.isMemberFuncCall()) {
-        Type receiverType = typecheck(*expr.getReceiver());
+        Type receiverType = expr.getReceiver()->getType();
         if (receiverType.isPtrType() && !receiverType.isRef()) {
             error(expr.getReceiver()->getSrcLoc(), "cannot call member function through pointer '",
                   receiverType, "', pointer may be null");
@@ -577,10 +581,10 @@ void typecheck(ParamDecl& decl) {
 } // anonymous namespace
 
 void delta::addToSymbolTable(const FuncDecl& decl) {
-    if (!importingC && symbolTable.count(decl.name) > 0) {
+    if (!importingC && symbolTable.count(mangle(decl)) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ decl.name, new FuncDecl(decl) });
+    symbolTable.insert({ mangle(decl), new FuncDecl(decl) });
 }
 
 void delta::addToSymbolTable(const GenericFuncDecl& decl) {
