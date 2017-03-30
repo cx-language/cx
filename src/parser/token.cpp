@@ -44,6 +44,10 @@ Token::Token(TokenKind kind, llvm::StringRef string)
 : kind(kind), string(string), srcLoc(currentFileName, firstLoc.line, firstLoc.column) {
     assert(!string.empty() || kind == NO_TOKEN || kind >= BREAK);
     assert(srcLoc.isValid());
+#ifndef NDEBUG
+    if (kind == INT_LITERAL) (void) getIntegerValue(); // Validate the integer value.
+    if (kind == FLOAT_LITERAL) (void) getFloatingPointValue(); // Validate the FP value.
+#endif
 }
 
 bool Token::isBinaryOperator() const {

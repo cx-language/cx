@@ -68,25 +68,33 @@ inline void unreadChar(char ch) {
     currentFilePosition--;
 }
 
-inline Token readNumber(const char* begin, const int base) {
+inline Token readNumber() {
+    const char* const begin = currentFilePosition;
     const char* end = begin + 1;
-    if (base != 10) end++;
     bool isFloat = false;
     char ch;
 
-    switch (base) {
-        case 2:
+    switch (ch = readChar()) {
+        case 'b':
+            if (begin[0] != '0') goto end;
+            end++;
             while (true) {
                 switch (ch = readChar()) {
                     case '0': case '1':
                         end++;
                         break;
                     default:
+                        if (std::isalnum(ch))
+                            error(lastLoc, "invalid digit '", ch, "' in binary literal");
+                        if (end == begin + 2)
+                            error(firstLoc, "binary literal must have at least one digit after '0b'");
                         goto end;
                 }
             }
             break;
-        case 8:
+        case 'o':
+            if (begin[0] != '0') goto end;
+            end++;
             while (true) {
                 switch (ch = readChar()) {
                     case '0': case '1': case '2': case '3': case '4':
@@ -94,13 +102,22 @@ inline Token readNumber(const char* begin, const int base) {
                         end++;
                         break;
                     default:
+                        if (std::isalnum(ch))
+                            error(lastLoc, "invalid digit '", ch, "' in octal literal");
+                        if (end == begin + 2)
+                            error(firstLoc, "octal literal must have at least one digit after '0o'");
                         goto end;
                 }
             }
             break;
-        case 10:
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+            if (begin[0] == '0')
+                error(firstLoc, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
+            // fallthrough
+        default:
             while (true) {
-                switch (ch = readChar()) {
+                switch (ch) {
                     case '.':
                         if (isFloat) goto end;
                         isFloat = true;
@@ -112,9 +129,12 @@ inline Token readNumber(const char* begin, const int base) {
                     default:
                         goto end;
                 }
+                ch = readChar();
             }
             break;
-        case 16: {
+        case 'x':
+            if (begin[0] != '0') goto end;
+            end++;
             int lettercase = 0; // 0 -> not set yet, >0 -> uppercase, <0 -> lowercase
             while (true) {
                 switch (ch = readChar()) {
@@ -133,12 +153,14 @@ inline Token readNumber(const char* begin, const int base) {
                         lettercase = -1;
                         break;
                     default:
+                        if (std::isalnum(ch))
+                            error(lastLoc, "invalid digit '", ch, "' in hex literal");
+                        if (end == begin + 2)
+                            error(firstLoc, "hex literal must have at least one digit after '0x'");
                         goto end;
                 }
             }
             break;
-        }
-        default: llvm_unreachable("invalid integer base");
     }
 
 end:
@@ -148,11 +170,7 @@ end:
     if (end[-1] == '.')
         unreadChar('.'); // Lex the '.' as a Token::DOT.
 
-    if (isFloat) {
-        assert(base == 10 && "float literals must be base-10");
-        return Token(FLOAT_LITERAL, llvm::StringRef(begin, end - begin));
-    }
-    return Token(INT_LITERAL, llvm::StringRef(begin, end - begin));
+    return Token(isFloat ? FLOAT_LITERAL : INT_LITERAL, llvm::StringRef(begin, end - begin));
 }
 
 const std::unordered_map<std::string, TokenKind> keywords = {
@@ -302,28 +320,9 @@ Token delta::lex() {
                 return COLON;
             case '\0':
                 goto end;
-            case '0':
-                ch = readChar();
-                switch (ch) {
-                    case 'b': return readNumber(currentFilePosition - 1, 2);
-                    case 'o': return readNumber(currentFilePosition - 1, 8);
-                    case 'x': return readNumber(currentFilePosition - 1, 16);
-                    default:
-                        if (std::isdigit(ch)) {
-                            error(firstLoc, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
-                        }
-                        if (std::isalpha(ch) || ch == '_') {
-                            error(lastLoc, "unexpected '", (char) ch, "'");
-                        }
-                        if (ch == '.' && std::isdigit(currentFilePosition[1])) {
-                            return readNumber(currentFilePosition - 1, 10);
-                        }
-                        unreadChar(ch);
-                        return Token(INT_LITERAL, llvm::StringRef(currentFilePosition, 1));
-                }
-            case '1': case '2': case '3': case '4': case '5':
-            case '6': case '7': case '8': case '9':
-                return readNumber(currentFilePosition, 10);
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+                return readNumber();
             case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
             case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
             case 'O': case 'P': case 'Q': case 'R': case 'S': case 'T': case 'U':

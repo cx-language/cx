@@ -1,4 +1,4 @@
-// check_error 3:14 "unexpected '_'"
+// check_error 3:14 "expected ';', got '_'"
 func main() {
     var i = 0_;
 }
