@@ -215,7 +215,7 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
                   const std::string& funcName, SrcLoc srcLoc);
 
 Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLoc srcLoc) {
-    auto it = symbolTable.find(mangleInitDecl(type.name));
+    auto it = symbolTable.find(mangleInitDecl(type.name, args));
     if (it == symbolTable.end()) {
         error(srcLoc, "no matching initializer for '", type.name, "'");
     }
@@ -270,11 +270,14 @@ Type typecheck(CallExpr& expr) {
     if (expr.func->isMemberExpr())
         typecheck(*expr.getReceiver());
 
-    std::string mangledName = expr.getMangledFuncName();
-    Decl& decl = findInSymbolTable(mangledName, expr.func->getSrcLoc());
-    expr.isInitializerCall = decl.isTypeDecl();
+    Decl* decl = findInSymbolTable(expr.getFuncName());
+    expr.isInitializerCall = decl && decl->isTypeDecl();
+    if (!expr.isInitializerCall) decl = findInSymbolTable(expr.getMangledFuncName());
+    if (!decl) error(expr.func->getSrcLoc(), "no matching function for call to '",
+                     expr.getFuncName(), "'");
+
     if (expr.isInitializerCall) {
-        return typecheckInitExpr(decl.getTypeDecl(), expr.args, expr.srcLoc);
+        return typecheckInitExpr(decl->getTypeDecl(), expr.args, expr.srcLoc);
     } else if (expr.isMemberFuncCall()) {
         Type receiverType = expr.getReceiver()->getType();
         if (receiverType.isPtrType() && !receiverType.isRef()) {
@@ -282,16 +285,16 @@ Type typecheck(CallExpr& expr) {
                   receiverType, "', pointer may be null");
         }
     }
-    if (decl.isFuncDecl()) {
-        validateArgs(expr.args, decl.getFuncDecl().params,
+    if (decl->isFuncDecl()) {
+        validateArgs(expr.args, decl->getFuncDecl().params,
                      "'" + expr.getFuncName().str() + "'", expr.srcLoc);
-        return decl.getFuncDecl().getFuncType()->returnType;
-    } else if (decl.isGenericFuncDecl()) {
-        setCurrentGenericArgs(decl.getGenericFuncDecl(), expr);
-        validateArgs(expr.args, decl.getGenericFuncDecl().func->params,
+        return decl->getFuncDecl().getFuncType()->returnType;
+    } else if (decl->isGenericFuncDecl()) {
+        setCurrentGenericArgs(decl->getGenericFuncDecl(), expr);
+        validateArgs(expr.args, decl->getGenericFuncDecl().func->params,
                      "'" + expr.getFuncName().str() + "'", expr.srcLoc);
         currentGenericArgs.clear();
-        return decl.getGenericFuncDecl().func->getFuncType()->returnType;
+        return decl->getGenericFuncDecl().func->getFuncType()->returnType;
     } else {
         error(expr.func->getSrcLoc(), "'", expr.getFuncName(), "' is not a function");
     }

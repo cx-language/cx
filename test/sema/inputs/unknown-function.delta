@@ -1,3 +1,3 @@
-// check_error 3:23 "unknown identifier 'foo'"
+// check_error 3:23 "no matching function for call to 'foo'"
 func fooz() -> int { return 42; }
 func main() { var i = foo(); }

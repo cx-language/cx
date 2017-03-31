@@ -1,4 +1,4 @@
-// check_error 5:15 "invalid label 'bar' for argument #1, expected 'foo'"
+// check_error 5:14 "no matching initializer for 'X'"
 struct X { }
 X::init(foo: int a) { }
 func main() {

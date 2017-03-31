@@ -1,4 +1,4 @@
-// check_error 4:7 "excess argument label 'foo' for argument #1, expected no label"
+// check_error 4:5 "no matching function for call to 'f'"
 func f(int a) { }
 func main() {
     f(foo: 0);
