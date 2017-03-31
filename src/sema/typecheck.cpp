@@ -1,6 +1,7 @@
 #include <iostream>
 #include <limits>
 #include <unordered_map>
+#include <vector>
 #include <cstdlib>
 #include <boost/numeric/conversion/cast.hpp>
 #include <llvm/ADT/ArrayRef.h>
@@ -24,7 +25,11 @@ using namespace delta;
 
 namespace {
 
-std::unordered_map<std::string, /*owned*/ Decl*> symbolTable;
+std::unordered_map<std::string, Decl*> symbolTable;
+
+/// Storage for Decls that are not in the AST but are referenced by the symbol table.
+std::vector<std::unique_ptr<Decl>> nonASTDecls;
+
 std::vector<VarDecl*> globalVariables;
 std::unordered_map<std::string, Type> currentGenericArgs;
 Type funcReturnType = nullptr;
@@ -577,56 +582,52 @@ void typecheck(ParamDecl& decl) {
     if (symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ decl.name, new ParamDecl(decl) });
+    symbolTable.insert({ decl.name, &decl });
 }
 
 } // anonymous namespace
 
-void delta::addToSymbolTable(const FuncDecl& decl) {
+void delta::addToSymbolTable(FuncDecl& decl) {
     if (!importingC && symbolTable.count(mangle(decl)) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ mangle(decl), new FuncDecl(decl) });
+    symbolTable.insert({ mangle(decl), &decl });
 }
 
-void delta::addToSymbolTable(const GenericFuncDecl& decl) {
+void delta::addToSymbolTable(GenericFuncDecl& decl) {
     if (symbolTable.count(decl.func->name) > 0) {
         error(decl.func->srcLoc, "redefinition of '", decl.func->name, "'");
     }
-    symbolTable.insert({ decl.func->name, new GenericFuncDecl(decl) });
+    symbolTable.insert({ decl.func->name, &decl });
 }
 
-void delta::addToSymbolTable(const InitDecl& decl) {
+void delta::addToSymbolTable(InitDecl& decl) {
     if (symbolTable.count(mangle(decl)) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
-
-    InitDecl* initDecl = new InitDecl(decl);
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
-    initDecl->type = &typeDecl.getTypeDecl();
+    decl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({ mangle(decl), initDecl });
+    symbolTable.insert({ mangle(decl), &decl });
 }
 
-void delta::addToSymbolTable(const DeinitDecl& decl) {
+void delta::addToSymbolTable(DeinitDecl& decl) {
     if (symbolTable.count(mangle(decl)) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' deinitializer");
     }
-
-    DeinitDecl* deinitDecl = new DeinitDecl(decl);
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
-    deinitDecl->type = &typeDecl.getTypeDecl();
+    decl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({ mangle(decl), deinitDecl });
+    symbolTable.insert({ mangle(decl), &decl });
 }
 
-void delta::addToSymbolTable(const TypeDecl& decl) {
+void delta::addToSymbolTable(TypeDecl& decl) {
     if (!importingC && symbolTable.count(decl.name) > 0) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ decl.name, new TypeDecl(decl) });
+    symbolTable.insert({ decl.name, &decl });
 }
 
 void delta::addToSymbolTable(VarDecl& decl) {
@@ -635,6 +636,24 @@ void delta::addToSymbolTable(VarDecl& decl) {
     }
     symbolTable.insert({ decl.name, &decl });
     globalVariables.push_back(&decl);
+}
+
+void delta::addToSymbolTable(FuncDecl&& decl) {
+    std::string name = decl.name;
+    nonASTDecls.push_back(llvm::make_unique<FuncDecl>(std::move(decl)));
+    symbolTable.insert({ std::move(name), nonASTDecls.back().get() });
+}
+
+void delta::addToSymbolTable(TypeDecl&& decl) {
+    std::string name = decl.name;
+    nonASTDecls.push_back(llvm::make_unique<TypeDecl>(std::move(decl)));
+    symbolTable.insert({ std::move(name), nonASTDecls.back().get() });
+}
+
+void delta::addToSymbolTable(VarDecl&& decl) {
+    std::string name = decl.name;
+    nonASTDecls.push_back(llvm::make_unique<VarDecl>(std::move(decl)));
+    symbolTable.insert({ std::move(name), nonASTDecls.back().get() });
 }
 
 Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {

@@ -779,7 +779,7 @@ llvm::Function* codegenInitializerProto(const InitDecl& decl) {
 }
 
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl) {
-    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), std::string(decl.getTypeDecl().name), decl.srcLoc);
+    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), decl.getTypeName().str(), decl.srcLoc);
     return codegenFuncProto(funcDecl, mangle(decl));
 }
 
@@ -869,8 +869,7 @@ void codegen(const InitDecl& decl) {
 }
 
 void codegen(const DeinitDecl& decl) {
-    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(),
-                      std::string(decl.getTypeDecl().name), decl.srcLoc);
+    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), decl.getTypeName().str(), decl.srcLoc);
     funcDecl.body = decl.body;
     auto it = funcs.find(mangle(decl));
     llvm::Function* func = it == funcs.end() ? codegenFuncProto(funcDecl, mangle(decl)) : it->second;

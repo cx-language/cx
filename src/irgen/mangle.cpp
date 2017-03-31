@@ -21,7 +21,7 @@ std::string delta::mangle(const GenericFuncDecl& decl, llvm::ArrayRef<Type> gene
 }
 
 std::string delta::mangle(const InitDecl& decl) {
-    return mangleInitDecl(decl.type.which() ? decl.getTypeDecl().name : decl.getTypeName());
+    return mangleInitDecl(decl.getTypeName());
 }
 
 std::string delta::mangleInitDecl(llvm::StringRef typeName) {
@@ -29,7 +29,7 @@ std::string delta::mangleInitDecl(llvm::StringRef typeName) {
 }
 
 std::string delta::mangle(const DeinitDecl& decl) {
-    return mangleDeinitDecl(decl.type.which() ? decl.getTypeDecl().name : decl.getTypeName());
+    return mangleDeinitDecl(decl.getTypeName());
 }
 
 std::string delta::mangleDeinitDecl(llvm::StringRef typeName) {

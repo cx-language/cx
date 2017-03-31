@@ -126,7 +126,7 @@ public:
     : Decl(DeclKind::InitDecl), type(std::move(type)), params(std::move(params)),
       body(std::move(body)), srcLoc(srcLoc) { }
     TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
-    const std::string& getTypeName() const { return boost::get<std::string>(type); }
+    llvm::StringRef getTypeName() const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }
 };
 
@@ -143,7 +143,7 @@ public:
     : Decl(DeclKind::DeinitDecl), type(std::move(type)), body(std::move(body)),
       srcLoc(srcLoc) { }
     TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
-    const std::string& getTypeName() const { return boost::get<std::string>(type); }
+    llvm::StringRef getTypeName() const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 };
 

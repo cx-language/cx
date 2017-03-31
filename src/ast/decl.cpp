@@ -19,6 +19,14 @@ const FuncType* FuncDecl::getFuncType() const {
     return &llvm::cast<FuncType>(*FuncType::get(returnType, mapToTypes(params)));
 }
 
+llvm::StringRef InitDecl::getTypeName() const {
+    return type.which() ? boost::get<TypeDecl*>(type)->name : boost::get<std::string>(type);
+}
+
+llvm::StringRef DeinitDecl::getTypeName() const {
+    return type.which() ? boost::get<TypeDecl*>(type)->name : boost::get<std::string>(type);
+}
+
 Type TypeDecl::getType() const {
     return BasicType::get(name);
 }
