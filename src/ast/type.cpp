@@ -50,7 +50,7 @@ bool Type::isNullablePointer() const {
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
     static const char* const builtinTypeNames[] = {
         "int", "int8", "int16", "int32", "int64",
-        "uint", "uint8", "uint16", "uint32", "uint16",
+        "uint", "uint8", "uint16", "uint32", "uint64",
         "float", "float32", "float64", "float80", "bool", "char",
     };
     return std::find(std::begin(builtinTypeNames), std::end(builtinTypeNames), typeName)
