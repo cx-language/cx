@@ -23,7 +23,7 @@ PrecedenceGroup getPrecedenceGroup(TokenKind tokenKind) {
         case EQ: case NE: return PrecedenceGroup::Comparison;
         case LT: case LE: case GT: case GE: return PrecedenceGroup::Comparison;
         case PLUS: case MINUS: return PrecedenceGroup::AddSub;
-        case STAR: case SLASH: return PrecedenceGroup::MulDiv;
+        case STAR: case SLASH: case MOD: return PrecedenceGroup::MulDiv;
         case AND_AND: return PrecedenceGroup::LogicalAnd;
         case OR_OR: return PrecedenceGroup::LogicalOr;
         case AND: case OR: case XOR: return PrecedenceGroup::Bitwise;
@@ -53,7 +53,7 @@ Token::Token(TokenKind kind, llvm::StringRef string)
 bool Token::isBinaryOperator() const {
     switch (kind) {
         case EQ: case NE: case LT: case LE: case GT: case GE: case PLUS:
-        case MINUS: case STAR: case SLASH: case AND: case AND_AND:
+        case MINUS: case STAR: case SLASH: case MOD: case AND: case AND_AND:
         case OR: case OR_OR: case XOR: case LSHIFT: case RSHIFT: return true;
         default: return false;
     }
@@ -113,7 +113,7 @@ std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
         "extern", "false", "func", "if", "import", "init", "mutable", "null", "return",
         "struct", "switch", "this", "true", "uninitialized", "var", "while",
         "_", "==", "!=", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",
-        "/", "/=", "++", "--", "!", "&", "&=", "&&", "&&=", "|", "|=", "||", "||=",
+        "/", "/=", "%", "%=", "++", "--", "!", "&", "&=", "&&", "&&=", "|", "|=", "||", "||=",
         "^", "^=", "~", "<<", "<<=", ">>", ">>=", "=", "(", ")", "[", "]", "{", "}",
         ".", ",", ":", "::", ";", "->",
     };

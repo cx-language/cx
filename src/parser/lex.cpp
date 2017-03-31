@@ -243,6 +243,11 @@ Token delta::lex() {
                 if (ch == '=') return STAR_EQ;
                 unreadChar(ch);
                 return STAR;
+            case '%':
+                ch = readChar();
+                if (ch == '=') return MOD_EQ;
+                unreadChar(ch);
+                return MOD;
             case '<':
                 ch = readChar();
                 if (ch == '=') return LE;

@@ -621,7 +621,7 @@ std::unique_ptr<Stmt> parseStmt() {
         case INCREMENT: return parseIncrementStmt(std::move(expr));
         case DECREMENT: return parseDecrementStmt(std::move(expr));
         case ASSIGN: return parseAssignStmt(std::move(expr));
-        case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ:
+        case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ: case MOD_EQ:
         case AND_EQ: case AND_AND_EQ: case OR_EQ: case OR_OR_EQ:
         case XOR_EQ: case LSHIFT_EQ: case RSHIFT_EQ:
             return parseCompoundAssignStmt(std::move(expr));

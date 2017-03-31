@@ -52,6 +52,8 @@ enum TokenKind {
     STAR_EQ,
     SLASH,
     SLASH_EQ,
+    MOD,
+    MOD_EQ,
     INCREMENT,
     DECREMENT,
     NOT,

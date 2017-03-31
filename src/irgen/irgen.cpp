@@ -296,6 +296,7 @@ llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* r
             case MINUS: return builder.CreateFSub(lhs, rhs);
             case STAR:  return builder.CreateFMul(lhs, rhs);
             case SLASH: return builder.CreateFDiv(lhs, rhs);
+            case MOD:   return builder.CreateFRem(lhs, rhs);
             default:    llvm_unreachable("all cases handled");
         }
     }
@@ -321,6 +322,9 @@ llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* r
         case SLASH: return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
                                            &llvm::IRBuilder<>::CreateSDiv :
                                            &llvm::IRBuilder<>::CreateUDiv);
+        case MOD:   return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
+                                           &llvm::IRBuilder<>::CreateSRem :
+                                           &llvm::IRBuilder<>::CreateURem);
         case AND:   return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAnd);
         case OR:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateOr);
         case XOR:   return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateXor);
