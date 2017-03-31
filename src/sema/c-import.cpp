@@ -1,4 +1,5 @@
 #include <unordered_set>
+#include <cstdlib>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <clang/Basic/TargetInfo.h>
@@ -124,6 +125,12 @@ void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value) {
     addToSymbolTable(VarDecl(initializer->getType(), name, initializer, SrcLoc::invalid()));
 }
 
+void addFloatConstantToSymbolTable(llvm::StringRef name, long double value) {
+    auto initializer = std::make_shared<FloatLiteralExpr>(value, SrcLoc::invalid());
+    initializer->setType(Type::getFloat64());
+    addToSymbolTable(VarDecl(initializer->getType(), name, initializer, SrcLoc::invalid()));
+}
+
 class CToDeltaConverter : public clang::ASTConsumer {
 public:
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
@@ -157,8 +164,15 @@ class MacroImporter : public clang::PPCallbacks {
         if (macro->getMacroInfo()->getNumTokens() != 1) return;
         auto& token = macro->getMacroInfo()->getReplacementToken(0);
         if (token.isNot(clang::tok::numeric_constant)) return;
-        const long long value = atoll(token.getLiteralData());
-        addIntegerConstantToSymbolTable(name.getIdentifierInfo()->getName(), value);
+
+        llvm::StringRef text(token.getLiteralData(), token.getLength());
+        if (text.find_first_of(".eE") == llvm::StringRef::npos) {
+            long long value = strtoll(text.data(), nullptr, 0);
+            addIntegerConstantToSymbolTable(name.getIdentifierInfo()->getName(), value);
+        } else {
+            long double value = strtold(text.data(), nullptr);
+            addFloatConstantToSymbolTable(name.getIdentifierInfo()->getName(), value);
+        }
     }
 };
 
