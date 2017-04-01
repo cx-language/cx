@@ -115,6 +115,9 @@ llvm::Type* toIR(Type type) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
             llvm::StringRef name = type.getName();
+            if (name == "string") return llvm::StructType::get(llvm::Type::getInt8PtrTy(ctx),
+                                                               llvm::Type::getInt32Ty(ctx),
+                                                               NULL);
             if (name == "void") return llvm::Type::getVoidTy(ctx);
             if (name == "bool") return llvm::Type::getInt1Ty(ctx);
             if (name == "char") return llvm::Type::getInt8Ty(ctx);
@@ -167,8 +170,12 @@ llvm::Value* codegenLvalue(const VariableExpr& expr) {
 }
 
 llvm::Value* codegen(const StrLiteralExpr& expr) {
-    if (expr.getType().getPointee().isArrayType()) {
-        return builder.CreateGlobalString(expr.value);
+    if (expr.getType().isString()) {
+        auto* stringPtr = builder.CreateGlobalStringPtr(expr.value);
+        auto* string = builder.CreateInsertValue(llvm::UndefValue::get(toIR(Type::getString())),
+                                                 stringPtr, 0);
+        auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.value.size());
+        return builder.CreateInsertValue(string, size, 1);
     } else {
         // Passing as C-string, i.e. char pointer.
         return builder.CreateGlobalStringPtr(expr.value);
@@ -443,9 +450,9 @@ llvm::Value* codegen(const CastExpr& expr) {
 llvm::Value* codegenLvalue(const MemberExpr& expr) {
     Type base = expr.base->getType();
     if (base.isPtrType() && base.isRef()) base = base.getPointee();
-    if (base.isArrayType()) {
+    if (base.isArrayType() || base.isString()) {
         assert(expr.member == "count");
-        if (base.isUnsizedArrayType())
+        if (base.isUnsizedArrayType() || base.isString())
             return builder.CreateExtractValue(codegen(*expr.base), 1, "count");
         else
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), base.getArraySize());

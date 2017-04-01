@@ -68,6 +68,7 @@ public:
     bool isFloat32() const;
     bool isFloat64() const;
     bool isFloat80() const;
+    bool isString() const;
     bool isChar() const;
     bool isNull() const;
 
@@ -108,6 +109,7 @@ public:
     static Type getFloat32(bool isMutable = false);
     static Type getFloat64(bool isMutable = false);
     static Type getFloat80(bool isMutable = false);
+    static Type getString(bool isMutable = false);
     static Type getChar(bool isMutable = false);
     static Type getNull(bool isMutable = false);
 

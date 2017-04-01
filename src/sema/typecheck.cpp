@@ -61,7 +61,7 @@ Type typecheck(VariableExpr& expr) {
 }
 
 Type typecheck(StrLiteralExpr& expr) {
-    return PtrType::get(ArrayType::get(Type::getChar(), int64_t(expr.value.size() + 1)), true);
+    return Type::getString();
 }
 
 Type typecheck(IntLiteralExpr& expr) {
@@ -376,7 +376,7 @@ Type typecheck(MemberExpr& expr) {
         baseType = baseType.getPointee();
     }
 
-    if (baseType.isArrayType()) {
+    if (baseType.isArrayType() || baseType.isString()) {
         if (expr.member != "count")
             error(expr.srcLoc, "no member named '", expr.member, "' in '", baseType, "'");
         return Type::getInt();

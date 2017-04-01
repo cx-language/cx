@@ -1,0 +1,15 @@
+// compile_and_run_and_check_exit_status 11
+
+func main() -> int {
+    return "abc".count + foo("quux");
+}
+
+func foo(string x) -> int {
+    var s = x;
+    s = bar(x);
+    return x.count + bar(s).count;
+}
+
+func bar(string z) -> string {
+    return z;
+}

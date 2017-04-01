@@ -1,13 +1,13 @@
 @0 = private unnamed_addr constant [4 x i8] c"bar\00"
 
 define i32 @main() {
-  %b = alloca [4 x i8]*
+  %b = alloca { i8*, i32 }
   %five = alloca i32
   call void @"foo<int>"(i32 1)
   call void @"foo<bool>"(i1 false)
   call void @"foo<bool>"(i1 true)
-  %1 = call [4 x i8]* @"bar<char[4]&>"([4 x i8]* @0)
-  store [4 x i8]* %1, [4 x i8]** %b
+  %1 = call { i8*, i32 } @"bar<string>"({ i8*, i32 } { i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3 })
+  store { i8*, i32 } %1, { i8*, i32 }* %b
   %2 = call i32 @"qux<int>"(i32 -5)
   store i32 %2, i32* %five
   ret i32 0
@@ -21,8 +21,8 @@ define void @"foo<bool>"(i1 %t) {
   ret void
 }
 
-define [4 x i8]* @"bar<char[4]&>"([4 x i8]* %t) {
-  ret [4 x i8]* %t
+define { i8*, i32 } @"bar<string>"({ i8*, i32 } %t) {
+  ret { i8*, i32 } %t
 }
 
 define i32 @"qux<int>"(i32 %t) {
