@@ -692,9 +692,12 @@ void typecheck(FuncDecl& decl) {
         typecheck(param);
     }
     if (decl.returnType.isMutable()) error(decl.srcLoc, "return types cannot be 'mutable'");
+
+    auto funcReturnTypeBackup = funcReturnType;
     funcReturnType = decl.returnType;
     for (auto& stmt : *decl.body) typecheck(*stmt);
-    funcReturnType = nullptr;
+    funcReturnType = funcReturnTypeBackup;
+
     symbolTable = std::move(symbolTableBackup);
 }
 
@@ -705,9 +708,12 @@ void typecheckMemberFunc(FuncDecl& decl) {
     symbolTable.emplace("this", new VarDecl(receiverType.getTypeDecl().getTypeForPassing(),
                                             "this", nullptr, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
+
+    auto funcReturnTypeBackup = funcReturnType;
     funcReturnType = decl.returnType;
     for (auto& stmt : *decl.body) typecheck(*stmt);
-    funcReturnType = nullptr;
+    funcReturnType = funcReturnTypeBackup;
+
     symbolTable = std::move(symbolTableBackup);
 }
 

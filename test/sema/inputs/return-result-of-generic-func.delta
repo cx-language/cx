@@ -1,0 +1,8 @@
+// compile_successfully -fsyntax-only
+func qux<T>(T t) -> T {
+    if (t < 0) { return -t; }
+    return t;
+}
+func main() -> int {
+    return qux(-35);
+}
