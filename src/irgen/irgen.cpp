@@ -166,8 +166,8 @@ llvm::Value* codegenLvalue(const VariableExpr& expr) {
     return findValue(expr.identifier);
 }
 
-llvm::Value* codegen(const StrLiteralExpr& expr, const Expr& parent) {
-    if (parent.getType().getPointee().isArrayType()) {
+llvm::Value* codegen(const StrLiteralExpr& expr) {
+    if (expr.getType().getPointee().isArrayType()) {
         return builder.CreateGlobalString(expr.value);
     } else {
         // Passing as C-string, i.e. char pointer.
@@ -175,26 +175,26 @@ llvm::Value* codegen(const StrLiteralExpr& expr, const Expr& parent) {
     }
 }
 
-llvm::Value* codegen(const IntLiteralExpr& expr, const Expr& parent) {
+llvm::Value* codegen(const IntLiteralExpr& expr) {
     // Integer literals may be typed as floating-point when used in a context
     // that requires a floating-point value. It might make sense to combine
     // IntLiteralExpr and FloatLiteralExpr into a single class.
     if (expr.getType().isFloatingPoint())
         return llvm::ConstantFP::get(toIR(expr.getType()), expr.value);
 
-    return llvm::ConstantInt::getSigned(toIR(parent.getType()), expr.value);
+    return llvm::ConstantInt::getSigned(toIR(expr.getType()), expr.value);
 }
 
-llvm::Value* codegen(const FloatLiteralExpr& expr, const Expr& parent) {
-    return llvm::ConstantFP::get(toIR(parent.getType()), expr.value);
+llvm::Value* codegen(const FloatLiteralExpr& expr) {
+    return llvm::ConstantFP::get(toIR(expr.getType()), expr.value);
 }
 
 llvm::Value* codegen(const BoolLiteralExpr& expr) {
     return expr.value ? llvm::ConstantInt::getTrue(ctx) : llvm::ConstantInt::getFalse(ctx);
 }
 
-llvm::Value* codegen(const NullLiteralExpr& expr, const Expr& parent) {
-    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(parent.getType())));
+llvm::Value* codegen(const NullLiteralExpr& expr) {
+    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
 }
 
 llvm::Value* codegen(const ArrayLiteralExpr& expr) {
@@ -496,11 +496,11 @@ llvm::Value* codegen(const UnwrapExpr& expr) {
 llvm::Value* codegen(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VariableExpr:    return codegen(expr.getVariableExpr());
-        case ExprKind::StrLiteralExpr:  return codegen(expr.getStrLiteralExpr(), expr);
-        case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr(), expr);
-        case ExprKind::FloatLiteralExpr:return codegen(expr.getFloatLiteralExpr(), expr);
+        case ExprKind::StrLiteralExpr:  return codegen(expr.getStrLiteralExpr());
+        case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr());
+        case ExprKind::FloatLiteralExpr:return codegen(expr.getFloatLiteralExpr());
         case ExprKind::BoolLiteralExpr: return codegen(expr.getBoolLiteralExpr());
-        case ExprKind::NullLiteralExpr: return codegen(expr.getNullLiteralExpr(), expr);
+        case ExprKind::NullLiteralExpr: return codegen(expr.getNullLiteralExpr());
         case ExprKind::ArrayLiteralExpr:return codegen(expr.getArrayLiteralExpr());
         case ExprKind::PrefixExpr:      return codegen(expr.getPrefixExpr());
         case ExprKind::BinaryExpr:      return codegen(expr.getBinaryExpr());
