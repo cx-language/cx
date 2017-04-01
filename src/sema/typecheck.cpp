@@ -40,6 +40,7 @@ llvm::ArrayRef<llvm::StringRef> includePaths;
 
 Type typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
+void typecheck(GenericFuncDecl& decl);
 
 Type typecheck(VariableExpr& expr) {
     Decl& decl = findInSymbolTable(expr.identifier, expr.srcLoc);
@@ -293,8 +294,10 @@ Type typecheck(CallExpr& expr) {
         setCurrentGenericArgs(decl->getGenericFuncDecl(), expr);
         validateArgs(expr.args, decl->getGenericFuncDecl().func->params,
                      "'" + expr.getFuncName().str() + "'", expr.srcLoc);
+        typecheck(decl->getGenericFuncDecl());
+        Type returnType = resolve(decl->getGenericFuncDecl().func->getFuncType()->returnType);
         currentGenericArgs.clear();
-        return decl->getGenericFuncDecl().func->getFuncType()->returnType;
+        return returnType;
     } else {
         error(expr.func->getSrcLoc(), "'", expr.getFuncName(), "' is not a function");
     }
@@ -435,7 +438,7 @@ Type typecheck(Expr& expr) {
         case ExprKind::UnwrapExpr:      type = typecheck(expr.getUnwrapExpr()); break;
     }
     assert(*type);
-    expr.setType(*type);
+    expr.setType(resolve(*type));
     return expr.getType();
 }
 
@@ -709,7 +712,11 @@ void typecheck(GenericParamDecl& decl) {
 }
 
 void typecheck(GenericFuncDecl& decl) {
-    for (auto& genericParam : decl.genericParams) typecheck(genericParam);
+    if (currentGenericArgs.empty()) {
+        for (auto& genericParam : decl.genericParams)
+            typecheck(genericParam);
+        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
+    }
     typecheck(*decl.func);
 }
 
