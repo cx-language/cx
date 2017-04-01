@@ -176,6 +176,12 @@ llvm::Value* codegen(const StrLiteralExpr& expr, const Expr& parent) {
 }
 
 llvm::Value* codegen(const IntLiteralExpr& expr, const Expr& parent) {
+    // Integer literals may be typed as floating-point when used in a context
+    // that requires a floating-point value. It might make sense to combine
+    // IntLiteralExpr and FloatLiteralExpr into a single class.
+    if (expr.getType().isFloatingPoint())
+        return llvm::ConstantFP::get(toIR(expr.getType()), expr.value);
+
     return llvm::ConstantInt::getSigned(toIR(parent.getType()), expr.value);
 }
 

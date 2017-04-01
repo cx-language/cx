@@ -192,6 +192,12 @@ bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget)
         if (targetTypeName == "uint16") return checkRange<uint16_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
         if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
+        if (targetTypeName == "float" || targetTypeName == "float32"
+        ||  targetTypeName == "float64" || targetTypeName == "float80") {
+            // TODO: Check that the integer value is losslessly convertible to the target type?
+            expr.setType(target);
+            return true;
+        }
     } else if (expr.isNullLiteralExpr() && target.isPtrType() && !target.isRef()) {
         expr.setType(target);
         return true;

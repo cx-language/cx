@@ -1,0 +1,9 @@
+// compile_successfully
+
+func foo<T>(T t) -> bool {
+    return t < 0;
+}
+
+func main() {
+    _ = foo(5.0);
+}
