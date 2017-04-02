@@ -1,0 +1,3 @@
+// compile_successfully -fsyntax-only
+class Foo { int i; }
+mutating func Foo::bar() { mutable Foo& f = this; }

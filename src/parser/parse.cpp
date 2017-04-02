@@ -801,16 +801,24 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
 ///          type-decl | import-decl | var-decl
 std::unique_ptr<Decl> parseDecl() {
     switch (currentToken()) {
-        case FUNC:
+        case MUTATING:
+            consumeToken();
+            expect(FUNC, "after 'mutating'");
+            // fallthrough
+        case FUNC: {
+            bool isMutating = lookAhead(-1) == MUTATING;
             if (lookAhead(2) != LT) {
                 auto decl = parseFuncDecl();
+                decl->setMutating(isMutating);
                 addToSymbolTable(*decl);
                 return std::move(decl);
             } else {
                 auto decl = parseGenericFuncDecl();
+                decl->func->setMutating(isMutating);
                 addToSymbolTable(*decl);
                 return std::move(decl);
             }
+        }
         case EXTERN: {
             auto decl = parseExternFuncDecl();
             addToSymbolTable(*decl);

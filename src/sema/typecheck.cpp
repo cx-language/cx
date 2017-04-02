@@ -705,7 +705,7 @@ void typecheckMemberFunc(FuncDecl& decl) {
     auto symbolTableBackup = symbolTable;
     Decl& receiverType = findInSymbolTable(decl.receiverType, decl.srcLoc);
     if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
-    symbolTable.emplace("this", new VarDecl(receiverType.getTypeDecl().getTypeForPassing(),
+    symbolTable.emplace("this", new VarDecl(receiverType.getTypeDecl().getTypeForPassing(decl.isMutating()),
                                             "this", nullptr, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
 
@@ -737,7 +737,7 @@ void typecheck(InitDecl& decl) {
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
-    symbolTable.insert({ "this", new VarDecl(typeDecl.getTypeDecl().getType(),
+    symbolTable.insert({ "this", new VarDecl(typeDecl.getTypeDecl().getType(true),
                                              "this", nullptr, SrcLoc::invalid()) });
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;

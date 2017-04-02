@@ -87,15 +87,19 @@ public:
     std::vector<ParamDecl> params;
     Type returnType;
     std::string receiverType; /// Empty if non-member function.
+    bool mutating;
     std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
     SrcLoc srcLoc;
 
     FuncDecl(std::string&& name, std::vector<ParamDecl>&& params, Type returnType,
              std::string&& receiverType, SrcLoc srcLoc)
     : Decl(DeclKind::FuncDecl), name(std::move(name)), params(std::move(params)),
-      returnType(returnType), receiverType(std::move(receiverType)), srcLoc(srcLoc) { }
+      returnType(returnType), receiverType(std::move(receiverType)), mutating(false),
+      srcLoc(srcLoc) { }
     bool isExtern() const { return body == nullptr; };
     bool isMemberFunc() const { return !receiverType.empty(); }
+    bool isMutating() const { return mutating; }
+    void setMutating(bool m) { mutating = m; }
     const FuncType* getFuncType() const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FuncDecl; }
 };
@@ -159,8 +163,8 @@ public:
     TypeDecl(TypeTag tag, std::string&& name, std::vector<FieldDecl>&& fields, SrcLoc srcLoc)
     : Decl(DeclKind::TypeDecl), tag(tag), name(std::move(name)), fields(std::move(fields)),
       srcLoc(srcLoc) { }
-    Type getType() const;
-    Type getTypeForPassing() const; /// 'T&' if this is class, or plain 'T' otherwise.
+    Type getType(bool isMutable = false) const;
+    Type getTypeForPassing(bool isMutable = false) const; /// 'T&' if this is class, or plain 'T' otherwise.
     bool passByValue() const { return isStruct(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isClass() const { return tag == TypeTag::Class; }

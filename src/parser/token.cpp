@@ -110,8 +110,8 @@ std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
     static const char* const tokenStrings[] = {
         "end-of-file", "identifier", "number", "float literal", "string literal",
         "break", "case", "cast", "class", "const", "default", "defer", "deinit", "else",
-        "extern", "false", "func", "if", "import", "init", "mutable", "null", "return",
-        "struct", "switch", "this", "true", "uninitialized", "var", "while",
+        "extern", "false", "func", "if", "import", "init", "mutable", "mutating", "null",
+        "return", "struct", "switch", "this", "true", "uninitialized", "var", "while",
         "_", "==", "!=", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",
         "/", "/=", "%", "%=", "++", "--", "!", "&", "&=", "&&", "&&=", "|", "|=", "||", "||=",
         "^", "^=", "~", "<<", "<<=", ">>", ">>=", "=", "(", ")", "[", "]", "{", "}",

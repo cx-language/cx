@@ -190,6 +190,7 @@ const std::unordered_map<std::string, TokenKind> keywords = {
     {"import",        IMPORT},
     {"init",          INIT},
     {"mutable",       MUTABLE},
+    {"mutating",      MUTATING},
     {"null",          NULL_LITERAL},
     {"return",        RETURN},
     {"struct",        STRUCT},

@@ -28,6 +28,7 @@ enum TokenKind {
     IMPORT,
     INIT,
     MUTABLE,
+    MUTATING,
     NULL_LITERAL,
     RETURN,
     STRUCT,
