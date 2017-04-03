@@ -1,4 +1,3 @@
-#include <unordered_set>
 #include <cstdlib>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -22,14 +21,6 @@ namespace {
 
 clang::PrintingPolicy printingPolicy{clang::LangOptions()};
 clang::TargetInfo* targetInfo;
-
-/** Prints the message to stderr if it hasn't been printed yet. */
-void warnOnce(const llvm::Twine& message) {
-    static std::unordered_set<std::string> printedMessages;
-    llvm::SmallVector<char, 64> buffer;
-    if (printedMessages.count(message.toStringRef(buffer)) != 0) return;
-    llvm::errs() << "WARNING: " << *printedMessages.emplace(message.str()).first << '\n';
-}
 
 Type getIntTypeByWidth(int widthInBits, bool asSigned) {
     switch (widthInBits) {
@@ -85,8 +76,7 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Record:
             return BasicType::get(llvm::cast<clang::RecordType>(type).getDecl()->getName(), isMutable);
         default:
-            warnOnce(llvm::Twine(type.getTypeClassName()) + " not handled");
-            return Type::getInt(isMutable);
+            return Type::getInt(isMutable); // FIXME: Dummy.
     }
 }
 
