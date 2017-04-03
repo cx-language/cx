@@ -40,7 +40,7 @@ std::ostream& operator<<(std::ostream& out, const BoolLiteralExpr& expr) {
     return out << (expr.value ? "true" : "false");
 }
 
-std::ostream& operator<<(std::ostream& out, const NullLiteralExpr& expr) {
+std::ostream& operator<<(std::ostream& out, const NullLiteralExpr&) {
     return out << "null";
 }
 

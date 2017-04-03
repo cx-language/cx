@@ -73,6 +73,7 @@ int Token::getPrecedence() const {
 int64_t Token::getIntegerValue() const {
     int64_t value;
     bool fail = string.getAsInteger(0, value);
+    (void) fail;
     assert(!fail && "invalid integer literal");
     return value;
 }

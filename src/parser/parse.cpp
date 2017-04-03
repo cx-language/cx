@@ -16,7 +16,7 @@ using namespace delta;
 namespace {
 
 std::vector<Token> tokenBuffer;
-int currentTokenIndex;
+size_t currentTokenIndex;
 
 Token currentToken() {
     assert(currentTokenIndex < tokenBuffer.size());
@@ -28,7 +28,7 @@ SrcLoc currentLoc() {
 }
 
 Token lookAhead(int offset) {
-    auto count = currentTokenIndex + offset - int(tokenBuffer.size()) + 1;
+    int count = int(currentTokenIndex) + offset - int(tokenBuffer.size()) + 1;
     while (count-- > 0) tokenBuffer.emplace_back(lex());
     return tokenBuffer[currentTokenIndex + offset];
 }
@@ -306,7 +306,7 @@ bool shouldParseGenericArgList() {
     // Temporary hack: use spacing to determine whether to parse a generic argument list
     // of a less-than binary expression. Zero spaces on either side of '<' will cause it
     // to be interpreted as a generic argument list, for now.
-    return lookAhead(0).getLoc().column + lookAhead(0).string.size() == lookAhead(1).getLoc().column
+    return lookAhead(0).getLoc().column + int(lookAhead(0).string.size()) == lookAhead(1).getLoc().column
         || lookAhead(1).getLoc().column + 1 == lookAhead(2).getLoc().column;
 }
 

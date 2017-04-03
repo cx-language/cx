@@ -694,7 +694,7 @@ void codegen(const WhileStmt& whileStmt) {
     builder.SetInsertPoint(end);
 }
 
-void codegen(const BreakStmt& breakStmt) {
+void codegen(const BreakStmt&) {
     assert(!breakTargets.empty());
     builder.CreateBr(breakTargets.back());
 }

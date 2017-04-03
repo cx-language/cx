@@ -60,7 +60,7 @@ Type typecheck(VariableExpr& expr) {
     abort();
 }
 
-Type typecheck(StrLiteralExpr& expr) {
+Type typecheck(StrLiteralExpr&) {
     return Type::getString();
 }
 
@@ -317,19 +317,23 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
     if (args.size() > params.size()) {
         error(srcLoc, "too many arguments to ", funcName, ", expected ", params.size());
     }
-    for (int i = 0; i < params.size(); ++i) {
-        if (args[i].label != params[i].label) {
-            if (params[i].label.empty()) {
-                error(args[i].srcLoc, "excess argument label '", args[i].label,
+
+    for (size_t i = 0; i < params.size(); ++i) {
+        const Arg& arg = args[i];
+        const ParamDecl& param = params[i];
+
+        if (arg.label != param.label) {
+            if (param.label.empty()) {
+                error(arg.srcLoc, "excess argument label '", arg.label,
                       "' for argument #", i + 1, ", expected no label");
             }
-            error(args[i].srcLoc, "invalid label '", args[i].label, "' for argument #",
-                  i + 1, ", expected '", params[i].label, "'");
+            error(arg.srcLoc, "invalid label '", arg.label, "' for argument #",
+                  i + 1, ", expected '", param.label, "'");
         }
-        auto argType = typecheck(*args[i].value);
-        if (!isValidConversion(*args[i].value, argType, params[i].type)) {
-            error(args[i].srcLoc, "invalid argument #", i + 1, " type '", argType,
-                  "' to ", funcName, ", expected '", params[i].type, "'");
+        auto argType = typecheck(*arg.value);
+        if (!isValidConversion(*arg.value, argType, param.type)) {
+            error(arg.srcLoc, "invalid argument #", i + 1, " type '", argType,
+                  "' to ", funcName, ", expected '", param.type, "'");
         }
     }
 }
@@ -456,7 +460,7 @@ bool isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source, T
     }
     assert(target.isTupleType());
 
-    for (int i = 0; i < exprs.size(); ++i) {
+    for (size_t i = 0; i < exprs.size(); ++i) {
         if (!isValidConversion(*exprs[i], source.getSubtypes()[i], target.getSubtypes()[i])) {
             return false;
         }
@@ -755,7 +759,7 @@ void typecheck(DeinitDecl& decl) {
     typecheckMemberFunc(funcDecl);
 }
 
-void typecheck(TypeDecl& decl) {
+void typecheck(TypeDecl&) {
     // TODO
 }
 
@@ -796,7 +800,7 @@ void typecheck(VarDecl& decl, bool isGlobal) {
     }
 }
 
-void typecheck(FieldDecl& decl) {
+void typecheck(FieldDecl&) {
 }
 
 void typecheck(ImportDecl& decl) {
