@@ -351,7 +351,7 @@ syntax is as follows:
 
 > _initializing-immutable-variable-definition_ → `const` _variable-name_ `=` _initializer_ `;`<br>
 > _initializing-mutable-variable-definition_ → `var` _variable-name_ `=` _initializer_ `;`<br>
-> _initializing-mutable-variable-definition_ → _type_ _variable-name_ `=` _initializer_ `;`<br>
+> _initializing-typed-variable-definition_ → _type_ _variable-name_ `=` _initializer_ `;`<br>
 
 In the first two forms, the type of the variable will be inferred from the
 _initializer_, which is an expression that returns the initial value for the new
