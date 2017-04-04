@@ -28,6 +28,7 @@ SrcLoc currentLoc() {
 }
 
 Token lookAhead(int offset) {
+    if (int(currentTokenIndex) + offset < 0) return NO_TOKEN;
     int count = int(currentTokenIndex) + offset - int(tokenBuffer.size()) + 1;
     while (count-- > 0) tokenBuffer.emplace_back(lex());
     return tokenBuffer[currentTokenIndex + offset];
