@@ -69,18 +69,18 @@ void Type::appendType(Type type) {
 }
 
 namespace {
-    std::vector<BasicType*> basicTypes;
-    std::vector<ArrayType*> arrayTypes;
-    std::vector<TupleType*> tupleTypes;
-    std::vector<FuncType*> funcTypes;
-    std::vector<PtrType*> ptrTypes;
+    std::vector<std::unique_ptr<BasicType>> basicTypes;
+    std::vector<std::unique_ptr<ArrayType>> arrayTypes;
+    std::vector<std::unique_ptr<TupleType>> tupleTypes;
+    std::vector<std::unique_ptr<FuncType>> funcTypes;
+    std::vector<std::unique_ptr<PtrType>> ptrTypes;
 }
 
 #define FETCH_AND_RETURN_TYPE(TYPE, CACHE, EQUALS, ...) \
-    auto it = llvm::find_if(CACHE, [&](TYPE* t) { return EQUALS; }); \
-    if (it != CACHE.end()) return Type(*it, isMutable); \
+    auto it = llvm::find_if(CACHE, [&](const std::unique_ptr<TYPE>& t) { return EQUALS; }); \
+    if (it != CACHE.end()) return Type(it->get(), isMutable); \
     CACHE.emplace_back(new TYPE(__VA_ARGS__)); \
-    return Type(CACHE.back(), isMutable);
+    return Type(CACHE.back().get(), isMutable);
 
 Type BasicType::get(llvm::StringRef name, bool isMutable) {
     FETCH_AND_RETURN_TYPE(BasicType, basicTypes, t->name == name, name)

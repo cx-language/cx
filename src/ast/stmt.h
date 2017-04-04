@@ -68,10 +68,10 @@ public:
 
 class VariableStmt : public Stmt {
 public:
-    VarDecl* decl; // FIXME: decl is owned.
+    std::unique_ptr<VarDecl> decl;
 
-    VariableStmt(VarDecl* decl)
-    : Stmt(StmtKind::VariableStmt), decl(decl) { }
+    VariableStmt(std::unique_ptr<VarDecl> decl)
+    : Stmt(StmtKind::VariableStmt), decl(std::move(decl)) { }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::VariableStmt; }
 };
 

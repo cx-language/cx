@@ -709,8 +709,8 @@ void typecheckMemberFunc(FuncDecl& decl) {
     auto symbolTableBackup = symbolTable;
     Decl& receiverType = findInSymbolTable(decl.receiverType, decl.srcLoc);
     if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
-    symbolTable.emplace("this", new VarDecl(receiverType.getTypeDecl().getTypeForPassing(decl.isMutating()),
-                                            "this", nullptr, SrcLoc::invalid()));
+    addToSymbolTable(VarDecl(receiverType.getTypeDecl().getTypeForPassing(decl.isMutating()),
+                             "this", nullptr, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
 
     auto funcReturnTypeBackup = funcReturnType;
@@ -741,8 +741,8 @@ void typecheck(InitDecl& decl) {
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
-    symbolTable.insert({ "this", new VarDecl(typeDecl.getTypeDecl().getType(true),
-                                             "this", nullptr, SrcLoc::invalid()) });
+    addToSymbolTable(VarDecl(typeDecl.getTypeDecl().getType(true),
+                             "this", nullptr, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;
     for (auto& stmt : *decl.body) typecheck(*stmt);
@@ -788,7 +788,6 @@ void typecheck(VarDecl& decl, bool isGlobal) {
             error(decl.initializer->getSrcLoc(), "cannot initialize variable of type '", declaredType,
                 "' with '", initType, "'");
         }
-        symbolTable.insert({ decl.name, new VarDecl(decl) });
     } else {
         if (initType.isNull()) {
             error(decl.srcLoc, "couldn't infer type of '", decl.name, "', add a type annotation");
@@ -796,8 +795,9 @@ void typecheck(VarDecl& decl, bool isGlobal) {
 
         initType.setMutable(decl.getType().isMutable());
         decl.type = initType;
-        symbolTable.insert({ decl.name, new VarDecl(decl) });
     }
+
+    if (!isGlobal) addToSymbolTable(decl);
 }
 
 void typecheck(FieldDecl&) {

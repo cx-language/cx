@@ -448,7 +448,7 @@ std::unique_ptr<VarDecl> parseVarDeclFromId(Type type) {
 }
 
 std::unique_ptr<VariableStmt> parseVarStmtFromId(Type type) {
-    return llvm::make_unique<VariableStmt>(parseVarDeclFromId(type).release());
+    return llvm::make_unique<VariableStmt>(parseVarDeclFromId(type));
 }
 
 /// call-stmt ::= call-expr ';'

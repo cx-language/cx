@@ -1,5 +1,6 @@
 #include <unordered_map>
 #include <vector>
+#include <memory>
 #include <cassert>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -50,7 +51,7 @@ public:
 llvm::LLVMContext ctx;
 llvm::IRBuilder<> builder(ctx);
 llvm::Module module("", ctx);
-std::unordered_map<std::string, llvm::Value*> globalValues;
+std::unordered_map<std::string, std::unique_ptr<llvm::Value>> globalValues;
 std::unordered_map<std::string, llvm::Value*> localValues;
 std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
@@ -89,7 +90,7 @@ void codegen(const Decl& decl);
 llvm::Value* findValue(llvm::StringRef name) {
     auto it = localValues.find(name);
     if (it == localValues.end()) {
-        it = globalValues.find(name);
+        auto it = globalValues.find(name);
 
         // FIXME: It would probably be better to not access the symbol table here.
         if (it == globalValues.end()) {
@@ -97,6 +98,7 @@ llvm::Value* findValue(llvm::StringRef name) {
             it = globalValues.find(name);
             assert(it != globalValues.end());
         }
+        return it->second.get();
     }
     return it->second;
 }
@@ -906,11 +908,12 @@ void codegen(const TypeDecl& decl) {
 void codegen(const VarDecl& decl) {
     assert(decl.initializer && "global variables must have initializers");
     if (globalValues.find(decl.name) != globalValues.end()) return;
-    auto* value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(),
-                                           llvm::GlobalValue::PrivateLinkage,
-                                           llvm::cast<llvm::Constant>(codegen(*decl.initializer)),
-                                           decl.name);
-    globalValues.emplace(decl.name, value);
+    auto value = llvm::make_unique<llvm::GlobalVariable>(module, toIR(decl.getType()),
+                                                         !decl.getType().isMutable(),
+                                                         llvm::GlobalValue::PrivateLinkage,
+                                                         llvm::cast<llvm::Constant>(codegen(*decl.initializer)),
+                                                         decl.name);
+    globalValues.emplace(decl.name, std::move(value));
 }
 
 void codegen(const Decl& decl) {
