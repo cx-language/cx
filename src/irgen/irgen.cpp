@@ -8,12 +8,12 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 #include "irgen.h"
-#include "mangle.h"
-#include "../sema/typecheck.h"
+#include "../ast/mangle.h"
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
-#include "../parser/token.h"
+#include "../ast/token.h"
+#include "../sema/typecheck.h"
 #include "../driver/utility.h"
 
 using namespace delta;

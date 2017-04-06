@@ -6,7 +6,7 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #include "parse.h"
-#include "token.h"
+#include "../ast/token.h"
 #include "../driver/utility.h"
 
 using namespace delta;
@@ -20,9 +20,8 @@ const char* currentFilePosition;
 
 namespace delta {
 
-extern const char* currentFileName;
-SrcLoc firstLoc(nullptr, 1, 0);
-SrcLoc lastLoc(nullptr, 1, 0);
+extern SrcLoc firstLoc;
+extern SrcLoc lastLoc;
 
 void initLexer(const char* filePath) {
     std::FILE* inputFile = std::fopen(filePath, "rb");

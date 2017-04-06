@@ -35,9 +35,9 @@ PrecedenceGroup getPrecedenceGroup(TokenKind tokenKind) {
 }
 
 namespace delta {
-extern const char* currentFileName;
-extern SrcLoc firstLoc;
-extern SrcLoc lastLoc;
+const char* currentFileName;
+SrcLoc firstLoc(nullptr, 1, 0);
+SrcLoc lastLoc(nullptr, 1, 0);
 }
 
 Token::Token(TokenKind kind, llvm::StringRef string)

@@ -17,9 +17,9 @@
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
-#include "../parser/token.h"
+#include "../ast/token.h"
+#include "../ast/mangle.h"
 #include "../driver/utility.h"
-#include "../irgen/mangle.h"
 
 using namespace delta;
 

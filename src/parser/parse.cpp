@@ -5,10 +5,10 @@
 #include <llvm/Support/ErrorHandling.h>
 #include "parse.h"
 #include "lex.h"
-#include "token.h"
-#include "../sema/typecheck.h"
+#include "../ast/token.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
+#include "../sema/typecheck.h"
 #include "../driver/utility.h"
 
 using namespace delta;

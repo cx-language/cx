@@ -20,7 +20,7 @@
 using namespace delta;
 
 namespace delta {
-const char* currentFileName;
+extern const char* currentFileName;
 }
 
 namespace {

@@ -1,6 +1,6 @@
 #include "expr.h"
-#include "../parser/token.h"
-#include "../irgen/mangle.h"
+#include "token.h"
+#include "mangle.h"
 
 using namespace delta;
 
