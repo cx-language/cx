@@ -14,6 +14,7 @@ enum class PrecedenceGroup {
     LogicalAnd,
     Bitwise,
     Comparison,
+    Range,
     AddSub,
     MulDiv,
 };
@@ -22,6 +23,7 @@ PrecedenceGroup getPrecedenceGroup(TokenKind tokenKind) {
     switch (tokenKind) {
         case EQ: case NE: return PrecedenceGroup::Comparison;
         case LT: case LE: case GT: case GE: return PrecedenceGroup::Comparison;
+        case DOTDOTDOT: return PrecedenceGroup::Range;
         case PLUS: case MINUS: return PrecedenceGroup::AddSub;
         case STAR: case SLASH: case MOD: return PrecedenceGroup::MulDiv;
         case AND_AND: return PrecedenceGroup::LogicalAnd;
@@ -54,7 +56,8 @@ bool Token::isBinaryOperator() const {
     switch (kind) {
         case EQ: case NE: case LT: case LE: case GT: case GE: case PLUS:
         case MINUS: case STAR: case SLASH: case MOD: case AND: case AND_AND:
-        case OR: case OR_OR: case XOR: case LSHIFT: case RSHIFT: return true;
+        case OR: case OR_OR: case XOR: case LSHIFT: case RSHIFT:
+        case DOTDOTDOT: return true;
         default: return false;
     }
 }
@@ -111,12 +114,12 @@ std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
     static const char* const tokenStrings[] = {
         "end-of-file", "identifier", "number", "float literal", "string literal",
         "break", "case", "cast", "class", "const", "default", "defer", "deinit", "else",
-        "extern", "false", "func", "if", "import", "init", "mutable", "mutating", "null",
-        "return", "struct", "switch", "this", "true", "uninitialized", "var", "while",
+        "extern", "false", "for", "func", "if", "import", "in", "init", "mutable", "mutating",
+        "null", "return", "struct", "switch", "this", "true", "uninitialized", "var", "while",
         "_", "==", "!=", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",
         "/", "/=", "%", "%=", "++", "--", "!", "&", "&=", "&&", "&&=", "|", "|=", "||", "||=",
         "^", "^=", "~", "<<", "<<=", ">>", ">>=", "=", "(", ")", "[", "]", "{", "}",
-        ".", ",", ":", "::", ";", "->",
+        ".", "...", ",", ":", "::", ";", "->",
     };
     static_assert(llvm::array_lengthof(tokenStrings) == TOKEN_COUNT,
                   "tokenStrings array not up-to-date");

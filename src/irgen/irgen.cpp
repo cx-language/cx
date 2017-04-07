@@ -145,6 +145,8 @@ llvm::Type* toIR(Type type) {
         case TypeKind::ArrayType:
             assert(type.getArraySize() != ArrayType::unsized && "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType()), type.getArraySize());
+        case TypeKind::RangeType:
+            llvm_unreachable("IRGen doesn't support range types yet");
         case TypeKind::TupleType:
             llvm_unreachable("IRGen doesn't support tuple types yet");
         case TypeKind::FuncType:
@@ -695,6 +697,53 @@ void codegen(const WhileStmt& whileStmt) {
     builder.SetInsertPoint(end);
 }
 
+// This transforms 'for (id in x...y) { ... }' (where 'x' and 'y' are integers) into:
+//
+//  var counter = x;
+//  while (counter <= y) {
+//      const id = counter;
+//      ...
+//      counter++;
+//  }
+void codegen(const ForStmt& forStmt) {
+    if (!forStmt.range->getType().isRangeType())
+        error(forStmt.range->getSrcLoc(),
+              "IRGen doesn't support 'for'-loops over non-range iterables yet");
+
+    if (!forStmt.range->getType().getIterableElementType().isInteger())
+        error(forStmt.range->getSrcLoc(),
+              "IRGen doesn't support 'for'-loops over non-integer ranges yet");
+
+    auto& range = forStmt.range->getBinaryExpr();
+    auto* counterAlloca = createEntryBlockAlloca(forStmt.range->getType().getIterableElementType(),
+                                                 toIR(forStmt.range->getType().getIterableElementType()),
+                                                 nullptr, forStmt.id);
+    builder.CreateStore(codegen(*range.left), counterAlloca);
+    auto* lastValue = codegen(*range.right);
+
+    auto* func = builder.GetInsertBlock()->getParent();
+    auto* cond = llvm::BasicBlock::Create(ctx, "for", func);
+    auto* body = llvm::BasicBlock::Create(ctx, "body", func);
+    auto* end = llvm::BasicBlock::Create(ctx, "endfor", func);
+    breakTargets.push_back(end);
+    builder.CreateBr(cond);
+
+    builder.SetInsertPoint(cond);
+    auto* counter = builder.CreateLoad(counterAlloca, forStmt.id);
+    if (range.left->getType().isSigned())
+        builder.CreateCondBr(builder.CreateICmpSLE(counter, lastValue), body, end);
+    else
+        builder.CreateCondBr(builder.CreateICmpULE(counter, lastValue), body, end);
+    codegenBlock(forStmt.body, body, cond);
+
+    builder.SetInsertPoint(&builder.GetInsertBlock()->back());
+    auto* newCounter = builder.CreateAdd(counter, llvm::ConstantInt::get(counter->getType(), 1));
+    builder.CreateStore(newCounter, counterAlloca);
+
+    breakTargets.pop_back();
+    builder.SetInsertPoint(end);
+}
+
 void codegen(const BreakStmt&) {
     assert(!breakTargets.empty());
     builder.CreateBr(breakTargets.back());
@@ -728,6 +777,7 @@ void codegen(const Stmt& stmt) {
         case StmtKind::IfStmt:        codegen(stmt.getIfStmt()); break;
         case StmtKind::SwitchStmt:    codegen(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     codegen(stmt.getWhileStmt()); break;
+        case StmtKind::ForStmt:       codegen(stmt.getForStmt()); break;
         case StmtKind::BreakStmt:     codegen(stmt.getBreakStmt()); break;
         case StmtKind::AssignStmt:    codegen(stmt.getAssignStmt()); break;
         case StmtKind::AugAssignStmt: codegen(stmt.getAugAssignStmt()); break;

@@ -18,6 +18,7 @@ enum class StmtKind {
     IfStmt,
     SwitchStmt,
     WhileStmt,
+    ForStmt,
     BreakStmt,
     AssignStmt,
     AugAssignStmt,
@@ -40,6 +41,7 @@ public:
     DEFINE_STMT_IS_AND_GET(IfStmt)
     DEFINE_STMT_IS_AND_GET(SwitchStmt)
     DEFINE_STMT_IS_AND_GET(WhileStmt)
+    DEFINE_STMT_IS_AND_GET(ForStmt)
     DEFINE_STMT_IS_AND_GET(BreakStmt)
     DEFINE_STMT_IS_AND_GET(AssignStmt)
     DEFINE_STMT_IS_AND_GET(AugAssignStmt)
@@ -154,6 +156,20 @@ public:
     WhileStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& body)
     : Stmt(StmtKind::WhileStmt), condition(std::move(condition)), body(std::move(body)) { }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::WhileStmt; }
+};
+
+class ForStmt : public Stmt {
+public:
+    std::string id;
+    std::unique_ptr<Expr> range;
+    std::vector<std::unique_ptr<Stmt>> body;
+    SrcLoc srcLoc; // Location of 'id'.
+
+    ForStmt(std::string&& id, std::unique_ptr<Expr> range,
+            std::vector<std::unique_ptr<Stmt>>&& body, SrcLoc srcLoc)
+    : Stmt(StmtKind::ForStmt), id(std::move(id)), range(std::move(range)),
+      body(std::move(body)), srcLoc(srcLoc) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
 };
 
 class BreakStmt : public Stmt {

@@ -142,6 +142,9 @@ Type typecheck(BinaryExpr& expr) {
     &&  !isValidConversion(*expr.right, rightType, leftType)) {
         error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
     }
+
+    if (expr.op == DOTDOTDOT) return RangeType::get(leftType);
+
     return expr.op.isComparisonOperator() ? Type::getBool() : leftType;
 }
 
@@ -348,6 +351,7 @@ Type typecheck(CastExpr& expr) {
                 return targetType; // bool -> int
             }
         case TypeKind::ArrayType:
+        case TypeKind::RangeType:
         case TypeKind::TupleType:
         case TypeKind::FuncType:
             break;
@@ -542,6 +546,25 @@ void typecheck(WhileStmt& whileStmt) {
     breakableBlocks--;
 }
 
+void typecheck(ForStmt& forStmt) {
+    if (symbolTable.count(forStmt.id) > 0) {
+        error(forStmt.srcLoc, "redefinition of '", forStmt.id, "'");
+    }
+
+    Type rangeType = typecheck(*forStmt.range);
+    if (!rangeType.isIterable()) {
+        error(forStmt.range->getSrcLoc(), "'for' range expression is not an 'Iterable'");
+    }
+
+    auto symbolTableBackup = symbolTable;
+    addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.id),
+                             nullptr, forStmt.srcLoc));
+    breakableBlocks++;
+    for (auto& stmt : forStmt.body) typecheck(*stmt);
+    breakableBlocks--;
+    symbolTable = symbolTableBackup;
+}
+
 void typecheck(BreakStmt& breakStmt) {
     if (breakableBlocks == 0) {
         error(breakStmt.srcLoc, "'break' is only allowed inside 'while' and 'switch' statements");
@@ -588,6 +611,7 @@ void typecheck(Stmt& stmt) {
         case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
         case StmtKind::SwitchStmt:    typecheck(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;
+        case StmtKind::ForStmt:       typecheck(stmt.getForStmt()); break;
         case StmtKind::BreakStmt:     typecheck(stmt.getBreakStmt()); break;
         case StmtKind::AssignStmt:    typecheck(stmt.getAssignStmt()); break;
         case StmtKind::AugAssignStmt: typecheck(stmt.getAugAssignStmt()); break;

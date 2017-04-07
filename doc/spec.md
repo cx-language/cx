@@ -64,6 +64,7 @@ The following keywords are reserved and can't be used as identifiers.
     func
     if
     import
+    in
     init
     inout
     interface
@@ -550,11 +551,11 @@ that would otherwise be emitted.
 
 _return-value-list_ is a comma-separated list of zero or more return values.
 
-### `for`-`in` statement
+### `for` statement
 
-The `for`-`in` statement loop over a range. The syntax is as follows:
+The `for` statement loop over a range. The syntax is as follows:
 
-> _for-in-statement_ → `for` `(` _identifier_ `in` _range-expression_ `)` _block_<br>
+> _for-statement_ → `for` `(` _identifier_ `in` _range-expression_ `)` _block_<br>
 
 ### `while` statement
 

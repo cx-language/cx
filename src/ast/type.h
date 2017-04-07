@@ -13,6 +13,7 @@ namespace delta {
 enum class TypeKind {
     BasicType,
     ArrayType,
+    RangeType,
     TupleType,
     FuncType,
     PtrType,
@@ -43,6 +44,7 @@ public:
 
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
     bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
+    bool isRangeType() const { return getKind() == TypeKind::RangeType; }
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFuncType() const { return getKind() == TypeKind::FuncType; }
     bool isPtrType() const { return getKind() == TypeKind::PtrType; }
@@ -52,6 +54,7 @@ public:
     bool isFloatingPoint() const {
         return isFloat() || isFloat32() || isFloat64() || isFloat80();
     }
+    bool isIterable() const { return isRangeType(); }
     bool isVoid() const;
     bool isBool() const;
     bool isInt() const;
@@ -92,6 +95,7 @@ public:
     Type getPointee() const;
     Type getReferee() const;
     bool isRef() const;
+    Type getIterableElementType() const;
 
     static Type getVoid(bool isMutable = false);
     static Type getBool(bool isMutable = false);
@@ -145,6 +149,18 @@ public:
 private:
     ArrayType(Type type, int64_t size)
     : TypeBase(TypeKind::ArrayType), elementType(type), size(size) { }
+};
+
+class RangeType : public TypeBase {
+public:
+    Type elementType;
+
+    static Type get(Type elementType, bool isMutable = false);
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::RangeType; }
+
+private:
+    RangeType(Type elementType)
+    : TypeBase(TypeKind::RangeType), elementType(elementType) { }
 };
 
 class TupleType : public TypeBase {

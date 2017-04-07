@@ -530,6 +530,22 @@ std::unique_ptr<WhileStmt> parseWhileStmt() {
     return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
 
+/// for-stmt ::= 'for' '(' id 'in' expr ')' '{' stmt* '}'
+std::unique_ptr<ForStmt> parseForStmt() {
+    assert(currentToken() == FOR);
+    consumeToken();
+    parse(LPAREN);
+    auto id = parse(IDENTIFIER);
+    parse(IN);
+    auto range = parseExpr();
+    parse(RPAREN);
+    parse(LBRACE);
+    auto body = parseStmtsUntil(RBRACE);
+    parse(RBRACE);
+    return llvm::make_unique<ForStmt>(std::string(id.string), std::move(range),
+                                      std::move(body), id.getLoc());
+}
+
 /// switch-stmt ::= 'switch' '(' expr ')' '{' cases default-case? '}'
 /// cases ::= case | case cases
 /// case ::= 'case' expr ':' stmt+
@@ -578,7 +594,7 @@ std::unique_ptr<BreakStmt> parseBreakStmt() {
 
 /// stmt ::= var-stmt | assign-stmt | compound-assign-stmt | return-stmt |
 ///          inc-stmt | dec-stmt | call-stmt | defer-stmt |
-///          if-stmt | switch-stmt | while-stmt | break-stmt
+///          if-stmt | switch-stmt | while-stmt | for-stmt | break-stmt
 std::unique_ptr<Stmt> parseStmt() {
     switch (currentToken()) {
         case IDENTIFIER:
@@ -600,6 +616,7 @@ std::unique_ptr<Stmt> parseStmt() {
         case DEFER: return parseDeferStmt();
         case IF: return parseIfStmt();
         case WHILE: return parseWhileStmt();
+        case FOR: return parseForStmt();
         case SWITCH: return parseSwitchStmt();
         case BREAK: return parseBreakStmt();
         case UNDERSCORE: {

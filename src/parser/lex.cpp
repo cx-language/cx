@@ -166,8 +166,11 @@ end:
     unreadChar(ch);
 
     assert(begin != end);
-    if (end[-1] == '.')
+    if (end[-1] == '.') {
         unreadChar('.'); // Lex the '.' as a Token::DOT.
+        isFloat = false;
+        end--;
+    }
 
     return Token(isFloat ? FLOAT_LITERAL : INT_LITERAL, llvm::StringRef(begin, end - begin));
 }
@@ -184,9 +187,11 @@ const std::unordered_map<std::string, TokenKind> keywords = {
     {"else",          ELSE},
     {"extern",        EXTERN},
     {"false",         FALSE},
+    {"for",           FOR},
     {"func",          FUNC},
     {"if",            IF},
     {"import",        IMPORT},
+    {"in",            IN},
     {"init",          INIT},
     {"mutable",       MUTABLE},
     {"mutating",      MUTATING},
@@ -315,7 +320,15 @@ Token delta::lex() {
             case ']': return RBRACKET;
             case '{': return LBRACE;
             case '}': return RBRACE;
-            case '.': return DOT;
+            case '.':
+                ch = readChar();
+                if (ch == '.') {
+                    char ch = readChar();
+                    if (ch == '.') return DOTDOTDOT;
+                    unreadChar(ch);
+                }
+                unreadChar(ch);
+                return DOT;
             case ',': return COMMA;
             case ';': return SEMICOLON;
             case ':':
