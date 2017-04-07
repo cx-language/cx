@@ -143,14 +143,16 @@ std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
     out << br << "(if-stmt " << *stmt.condition;
     indentLevel++;
     out << br << "(then" << stmt.thenBody << ")";
-    out << br << "(else";
-    indentLevel++;
-    for (const auto& substmt : stmt.elseBody) {
-        if (!substmt->isIfStmt()) out << br;
-        out << *substmt;
+    if (!stmt.elseBody.empty()) {
+        out << br << "(else";
+        indentLevel++;
+        for (const auto& substmt : stmt.elseBody) {
+            if (!substmt->isIfStmt()) out << br;
+            out << *substmt;
+        }
+        indentLevel--;
+        out << ")";
     }
-    indentLevel--;
-    out << ")";
     indentLevel--;
     return out << ")";
 }
