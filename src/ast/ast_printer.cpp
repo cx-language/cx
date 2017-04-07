@@ -5,6 +5,7 @@
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
 #include "../ast/module.h"
+#include "../driver/utility.h"
 
 using namespace delta;
 
@@ -293,7 +294,7 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
 
 std::ostream& delta::operator<<(std::ostream& out, const Module& module) {
     for (const auto& fileUnit : module.getFileUnits()) {
-        out << "(source-file";
+        out << "(source-file " << fileUnit.getFilePath();
         indentLevel++;
         for (const auto& decl : fileUnit.getTopLevelDecls()) {
             ::operator<<(out, *decl);

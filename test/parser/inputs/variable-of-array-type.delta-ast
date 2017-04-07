@@ -1,4 +1,4 @@
-(source-file
+(source-file inputs/variable-of-array-type.delta
     (var-decl foo (array-literal 0 1 2))
     (func-decl main () void
         (var-stmt qux (array-literal 42))

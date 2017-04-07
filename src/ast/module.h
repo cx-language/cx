@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/StringRef.h>
 
 namespace delta {
 
@@ -11,11 +12,14 @@ class Decl;
 /// Container for the AST of a single file.
 class FileUnit {
 public:
-    explicit FileUnit(std::vector<std::unique_ptr<Decl>>&& topLevelDecls)
-    : topLevelDecls(std::move(topLevelDecls)) { }
+    explicit FileUnit(llvm::StringRef filePath,
+                      std::vector<std::unique_ptr<Decl>>&& topLevelDecls)
+    : filePath(filePath), topLevelDecls(std::move(topLevelDecls)) { }
     llvm::ArrayRef<std::unique_ptr<Decl>> getTopLevelDecls() const { return topLevelDecls; }
+    llvm::StringRef getFilePath() const { return filePath; }
 
 private:
+    llvm::StringRef filePath;
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
 };
 

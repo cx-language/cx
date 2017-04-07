@@ -892,5 +892,5 @@ FileUnit delta::parse(const char* filePath) {
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
     while (currentToken() != NO_TOKEN)
         topLevelDecls.emplace_back(parseDecl());
-    return FileUnit(std::move(topLevelDecls));
+    return FileUnit(filePath, std::move(topLevelDecls));
 }

@@ -1,2 +1,2 @@
-(source-file
+(source-file inputs/floating-point-literal.delta
     (var-decl a 0.009))

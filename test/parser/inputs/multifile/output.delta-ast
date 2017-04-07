@@ -1,4 +1,4 @@
-(source-file
+(source-file inputs/multifile/a.delta
     (var-decl a 42))
-(source-file
+(source-file inputs/multifile/b.delta
     (var-decl b 42))
