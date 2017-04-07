@@ -101,6 +101,15 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     }
 }
 
+std::ostream& operator<<(std::ostream& out, llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
+    indentLevel++;
+    for (const auto& stmt : block) {
+        out << *stmt;
+    }
+    indentLevel--;
+    return out;
+}
+
 std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
     out << br << "(return-stmt ";
     for (const auto& value : stmt.values) {
@@ -132,13 +141,7 @@ std::ostream& operator<<(std::ostream& out, const DeferStmt& stmt) {
 std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
     out << br << "(if-stmt " << *stmt.condition;
     indentLevel++;
-    out << br << "(then";
-    indentLevel++;
-    for (const auto& substmt : stmt.thenBody) {
-        out << br << *substmt;
-    }
-    out << ")";
-    indentLevel--;
+    out << br << "(then" << stmt.thenBody << ")";
     out << br << "(else";
     indentLevel++;
     for (const auto& substmt : stmt.elseBody) {
@@ -155,36 +158,18 @@ std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
     out << br << "(switch-stmt " << *stmt.condition;
     indentLevel++;
     for (const SwitchCase& switchCase : stmt.cases) {
-        out << br << "(case " << *switchCase.value;
-        indentLevel++;
-        for (const auto& substmt : switchCase.stmts) {
-            out << *substmt;
-        }
-        indentLevel--;
-        out << ")";
+        out << br << "(case " << *switchCase.value << switchCase.stmts << ")";
     }
     indentLevel--;
     return out << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
-    out << br << "(while-stmt " << *stmt.condition;
-    indentLevel++;
-    for (const auto& substmt : stmt.body) {
-        out << br << *substmt;
-    }
-    indentLevel--;
-    return out << ")";
+    return out << br << "(while-stmt " << *stmt.condition << stmt.body << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const ForStmt& stmt) {
-    out << br << "(for-stmt " << stmt.id << " " << *stmt.range;
-    indentLevel++;
-    for (const auto& substmt : stmt.body) {
-        out << br << *substmt;
-    }
-    indentLevel--;
-    return out << ")";
+    return out << br << "(for-stmt " << stmt.id << " " << *stmt.range << stmt.body << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const BreakStmt&) {
@@ -228,15 +213,7 @@ std::ostream& printFuncBase(std::ostream& out, const FuncDecl& decl) {
         if (&param != &decl.params.back()) out << " ";
     }
     out << ") " << decl.returnType;
-
-    if (!decl.isExtern()) {
-        indentLevel++;
-        for (const auto& stmt : *decl.body) {
-            out << *stmt;
-        }
-        indentLevel--;
-    }
-
+    if (!decl.isExtern()) out << *decl.body;
     return out << ")";
 }
 
@@ -263,23 +240,11 @@ std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
         out << param;
         if (&param != &decl.params.back()) out << " ";
     }
-    out << ")";
-    indentLevel++;
-    for (const auto& stmt : *decl.body) {
-        out << *stmt;
-    }
-    indentLevel--;
-    return out << ")";
+    return out << ")" << *decl.body << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const DeinitDecl& decl) {
-    out << br << "(deinit-decl " << decl.getTypeDecl().name;
-    indentLevel++;
-    for (const auto& stmt : *decl.body) {
-        out << *stmt;
-    }
-    indentLevel--;
-    return out << ")";
+    return out << br << "(deinit-decl " << decl.getTypeDecl().name << *decl.body << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldDecl& decl) {
