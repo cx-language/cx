@@ -30,20 +30,29 @@ add_subdirectory(src/driver)
 add_subdirectory(src/irgen)
 add_subdirectory(src/parser)
 add_subdirectory(src/sema)
+add_subdirectory(test)
 add_subdirectory(test/irgen)
 add_subdirectory(test/misc)
 add_subdirectory(test/parser)
 add_subdirectory(test/sema)
 
-# Add 'check' target with --output-on-failure.
-if (CMAKE_CONFIGURATION_TYPES)
-    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
-        --force-new-ctest-process --output-on-failure
-        --build-config "$<CONFIGURATION>" USES_TERMINAL)
-else()
-    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
-        --force-new-ctest-process --output-on-failure USES_TERMINAL)
+if(CMAKE_CONFIGURATION_TYPES)
+    set(BUILD_CONFIG --build-config $<CONFIGURATION>)
 endif()
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
+    --force-new-ctest-process --output-on-failure ${BUILD_CONFIG} USES_TERMINAL)
+
+# Download the LLVM FileCheck utility for tests.
+set(FILECHECK_SRC_URL "https://raw.githubusercontent.com/llvm-mirror/llvm/release_${LLVM_VERSION_MAJOR}${LLVM_VERSION_MINOR}/utils/FileCheck/FileCheck.cpp")
+set(FILECHECK_SRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/FileCheck.cpp")
+if(NOT EXISTS "${FILECHECK_SRC_FILE}")
+    message(STATUS "Downloading LLVM FileCheck source")
+    file(DOWNLOAD "${FILECHECK_SRC_URL}" "${FILECHECK_SRC_FILE}")
+endif()
+add_executable(FileCheck ${FILECHECK_SRC_FILE})
+target_compile_options(FileCheck PRIVATE -w)
+llvm_map_components_to_libnames(FILECHECK_NEEDED_LIBS support)
+target_link_libraries(FileCheck PRIVATE ${FILECHECK_NEEDED_LIBS})
 
 # Add 'coverage' target for code coverage report generation.
 file(DOWNLOAD https://github.com/bilke/cmake-modules/raw/master/CodeCoverage.cmake

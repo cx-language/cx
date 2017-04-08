@@ -15,6 +15,8 @@ You can try out the language online at the [Delta Sandbox](https://delta-lang.gi
 Building Delta from source requires the following dependencies:
 a C++11 compiler, [CMake](https://cmake.org), [Boost](http://www.boost.org),
 and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries.
+To run the test suite, you also need [lit](http://llvm.org/docs/CommandGuide/lit.html),
+which you can get with `pip install lit`.
 
 To get started, run the following commands:
 
