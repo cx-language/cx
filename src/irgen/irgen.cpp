@@ -585,8 +585,7 @@ void codegen(const ReturnStmt& stmt) {
     }
 }
 
-llvm::AllocaInst* createEntryBlockAlloca(Type deltaType, llvm::Type* type,
-                                         llvm::Value* arraySize = nullptr,
+llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nullptr,
                                          const llvm::Twine& name = "") {
     auto* insertBlock = builder.GetInsertBlock();
     if (lastAlloca == llvm::BasicBlock::iterator()) {
@@ -598,16 +597,15 @@ llvm::AllocaInst* createEntryBlockAlloca(Type deltaType, llvm::Type* type,
     } else {
         builder.SetInsertPoint(&insertBlock->getParent()->getEntryBlock(), std::next(lastAlloca));
     }
-    auto* alloca = builder.CreateAlloca(type, arraySize, name);
+    auto* alloca = builder.CreateAlloca(toIR(type), arraySize, name);
     lastAlloca = alloca->getIterator();
-    setLocalValue(deltaType, name.str(), alloca);
+    setLocalValue(type, name.str(), alloca);
     builder.SetInsertPoint(insertBlock);
     return alloca;
 }
 
 void codegen(const VariableStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(stmt.decl->getType(), toIR(stmt.decl->getType()),
-                                          nullptr, stmt.decl->name);
+    auto* alloca = createEntryBlockAlloca(stmt.decl->getType(), nullptr, stmt.decl->name);
     if (auto initializer = stmt.decl->initializer) {
         builder.CreateStore(codegenForPassing(*initializer, alloca->getAllocatedType()), alloca);
     }
@@ -726,7 +724,6 @@ void codegen(const ForStmt& forStmt) {
     beginScope();
     auto& range = forStmt.range->getBinaryExpr();
     auto* counterAlloca = createEntryBlockAlloca(forStmt.range->getType().getIterableElementType(),
-                                                 toIR(forStmt.range->getType().getIterableElementType()),
                                                  nullptr, forStmt.id);
     builder.CreateStore(codegen(*range.left), counterAlloca);
     auto* lastValue = codegen(*range.right);
