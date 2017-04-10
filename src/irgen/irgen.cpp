@@ -29,6 +29,7 @@ void createDeinitCall(llvm::Value* valueToDeinit);
 struct Scope {
     llvm::SmallVector<const Expr*, 8> deferredExprs;
     llvm::SmallVector<llvm::Value*, 8> valuesToDeinit;
+    std::unordered_map<std::string, llvm::Value*> localValues;
 
     void onScopeEnd() {
         for (const Expr* expr : llvm::reverse(deferredExprs)) codegen(*expr);
@@ -51,8 +52,7 @@ public:
 llvm::LLVMContext ctx;
 llvm::IRBuilder<> builder(ctx);
 llvm::Module module("", ctx);
-std::unordered_map<std::string, llvm::Value*> globalValues;
-std::unordered_map<std::string, llvm::Value*> localValues;
+std::unordered_map<std::string, llvm::Value*> globalValues; // TODO: Store in a Scope?
 std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
@@ -77,7 +77,7 @@ llvm::Function* getDeinitializerFor(Type type) {
 
 /// @param type The Delta type of the variable, or null if the variable is 'this'.
 void setLocalValue(Type type, std::string name, llvm::Value* value) {
-    bool wasInserted = localValues.emplace(std::move(name), value).second;
+    bool wasInserted = scopes.back().localValues.emplace(std::move(name), value).second;
     (void) wasInserted;
     assert(wasInserted);
 
@@ -88,9 +88,17 @@ void setLocalValue(Type type, std::string name, llvm::Value* value) {
 void codegen(const Decl& decl);
 
 llvm::Value* findValue(llvm::StringRef name) {
-    auto it = localValues.find(name);
-    if (it == localValues.end()) {
-        it = globalValues.find(name);
+    llvm::Value* value = nullptr;
+
+    for (const auto& scope : llvm::reverse(scopes)) {
+        auto it = scope.localValues.find(name);
+        if (it == scope.localValues.end()) continue;
+        value = it->second;
+        break;
+    }
+
+    if (value == nullptr) {
+        auto it = globalValues.find(name);
 
         // FIXME: It would probably be better to not access the symbol table here.
         if (it == globalValues.end()) {
@@ -98,8 +106,9 @@ llvm::Value* findValue(llvm::StringRef name) {
             it = globalValues.find(name);
             assert(it != globalValues.end());
         }
+        value = it->second;
     }
-    return it->second;
+    return value;
 }
 
 template<typename From, typename To>
@@ -714,6 +723,7 @@ void codegen(const ForStmt& forStmt) {
         error(forStmt.range->getSrcLoc(),
               "IRGen doesn't support 'for'-loops over non-integer ranges yet");
 
+    beginScope();
     auto& range = forStmt.range->getBinaryExpr();
     auto* counterAlloca = createEntryBlockAlloca(forStmt.range->getType().getIterableElementType(),
                                                  toIR(forStmt.range->getType().getIterableElementType()),
@@ -742,6 +752,7 @@ void codegen(const ForStmt& forStmt) {
 
     breakTargets.pop_back();
     builder.SetInsertPoint(end);
+    endScope();
 }
 
 void codegen(const BreakStmt&) {
@@ -908,7 +919,6 @@ void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
             builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
         }
     }
-    localValues.clear();
 }
 
 void codegen(const FuncDecl& decl) {
@@ -926,12 +936,13 @@ void codegen(const InitDecl& decl) {
     auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl().getType()));
     auto* alloca = builder.CreateAlloca(type);
 
+    beginScope();
     setLocalValue(nullptr, "this", alloca);
     auto param = decl.params.begin();
     for (auto& arg : func->args()) setLocalValue(param++->type, arg.getName(), &arg);
     for (const auto& stmt : *decl.body) codegen(*stmt);
     builder.CreateRet(builder.CreateLoad(alloca));
-    localValues.clear();
+    endScope();
 
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }

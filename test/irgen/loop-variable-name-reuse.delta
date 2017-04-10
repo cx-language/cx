@@ -1,0 +1,6 @@
+// RUN: %delta -o=stdout %s
+
+func main() {
+    for (i in 0...5) { }
+    for (i in 0...5) { }
+}
