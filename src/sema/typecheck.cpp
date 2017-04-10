@@ -25,7 +25,41 @@ using namespace delta;
 
 namespace {
 
-std::unordered_map<std::string, Decl*> symbolTable;
+class SymbolTable {
+public:
+    SymbolTable() {
+        pushScope(); // The global scope.
+    }
+
+    void pushScope() {
+        scopes.emplace_back();
+    }
+
+    void popScope() {
+        scopes.pop_back();
+    }
+
+    Decl* find(const std::string& name) const {
+        for (const auto& scope : llvm::reverse(scopes)) {
+            auto it = scope.find(name);
+            if (it != scope.end()) return it->second;
+        }
+        return nullptr;
+    }
+
+    bool contains(const std::string& name) const {
+        return find(name) != nullptr;
+    }
+
+    void add(std::string name, Decl* decl) {
+        scopes.back().insert({ std::move(name), decl });
+    }
+
+private:
+    std::vector<std::unordered_map<std::string, Decl*>> scopes;
+};
+
+SymbolTable symbolTable;
 
 /// Storage for Decls that are not in the AST but are referenced by the symbol table.
 std::vector<std::unique_ptr<Decl>> nonASTDecls;
@@ -225,11 +259,11 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
                   const std::string& funcName, SrcLoc srcLoc);
 
 Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLoc srcLoc) {
-    auto it = symbolTable.find(mangleInitDecl(type.name, args));
-    if (it == symbolTable.end()) {
+    auto* decl = symbolTable.find(mangleInitDecl(type.name, args));
+    if (!decl) {
         error(srcLoc, "no matching initializer for '", type.name, "'");
     }
-    validateArgs(args, it->second->getInitDecl().params, "'" + type.name + "' initializer", srcLoc);
+    validateArgs(args, decl->getInitDecl().params, "'" + type.name + "' initializer", srcLoc);
     return type.getType();
 }
 
@@ -547,7 +581,7 @@ void typecheck(WhileStmt& whileStmt) {
 }
 
 void typecheck(ForStmt& forStmt) {
-    if (symbolTable.count(forStmt.id) > 0) {
+    if (symbolTable.contains(forStmt.id)) {
         error(forStmt.srcLoc, "redefinition of '", forStmt.id, "'");
     }
 
@@ -556,13 +590,13 @@ void typecheck(ForStmt& forStmt) {
         error(forStmt.range->getSrcLoc(), "'for' range expression is not an 'Iterable'");
     }
 
-    auto symbolTableBackup = symbolTable;
+    symbolTable.pushScope();
     addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.id),
                              nullptr, forStmt.srcLoc));
     breakableBlocks++;
     for (auto& stmt : forStmt.body) typecheck(*stmt);
     breakableBlocks--;
-    symbolTable = symbolTableBackup;
+    symbolTable.popScope();
 }
 
 void typecheck(BreakStmt& breakStmt) {
@@ -619,81 +653,81 @@ void typecheck(Stmt& stmt) {
 }
 
 void typecheck(ParamDecl& decl) {
-    if (symbolTable.count(decl.name) > 0) {
+    if (symbolTable.contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ decl.name, &decl });
+    symbolTable.add(decl.name, &decl);
 }
 
 } // anonymous namespace
 
 void delta::addToSymbolTable(FuncDecl& decl) {
-    if (!importingC && symbolTable.count(mangle(decl)) > 0) {
+    if (!importingC && symbolTable.contains(mangle(decl))) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ mangle(decl), &decl });
+    symbolTable.add(mangle(decl), &decl);
 }
 
 void delta::addToSymbolTable(GenericFuncDecl& decl) {
-    if (symbolTable.count(decl.func->name) > 0) {
+    if (symbolTable.contains(decl.func->name)) {
         error(decl.func->srcLoc, "redefinition of '", decl.func->name, "'");
     }
-    symbolTable.insert({ decl.func->name, &decl });
+    symbolTable.add(decl.func->name, &decl);
 }
 
 void delta::addToSymbolTable(InitDecl& decl) {
-    if (symbolTable.count(mangle(decl)) > 0) {
+    if (symbolTable.contains(mangle(decl))) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({ mangle(decl), &decl });
+    symbolTable.add(mangle(decl), &decl);
 }
 
 void delta::addToSymbolTable(DeinitDecl& decl) {
-    if (symbolTable.count(mangle(decl)) > 0) {
+    if (symbolTable.contains(mangle(decl))) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' deinitializer");
     }
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.insert({ mangle(decl), &decl });
+    symbolTable.add(mangle(decl), &decl);
 }
 
 void delta::addToSymbolTable(TypeDecl& decl) {
-    if (!importingC && symbolTable.count(decl.name) > 0) {
+    if (!importingC && symbolTable.contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ decl.name, &decl });
+    symbolTable.add(decl.name, &decl);
 }
 
 void delta::addToSymbolTable(VarDecl& decl) {
-    if (!importingC && symbolTable.count(decl.name) > 0) {
+    if (!importingC && symbolTable.contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.insert({ decl.name, &decl });
+    symbolTable.add(decl.name, &decl);
     globalVariables.push_back(&decl);
 }
 
 void delta::addToSymbolTable(FuncDecl&& decl) {
     std::string name = decl.name;
     nonASTDecls.push_back(llvm::make_unique<FuncDecl>(std::move(decl)));
-    symbolTable.insert({ std::move(name), nonASTDecls.back().get() });
+    symbolTable.add(std::move(name), nonASTDecls.back().get());
 }
 
 void delta::addToSymbolTable(TypeDecl&& decl) {
     std::string name = decl.name;
     nonASTDecls.push_back(llvm::make_unique<TypeDecl>(std::move(decl)));
-    symbolTable.insert({ std::move(name), nonASTDecls.back().get() });
+    symbolTable.add(std::move(name), nonASTDecls.back().get());
 }
 
 void delta::addToSymbolTable(VarDecl&& decl) {
     std::string name = decl.name;
     nonASTDecls.push_back(llvm::make_unique<VarDecl>(std::move(decl)));
-    symbolTable.insert({ std::move(name), nonASTDecls.back().get() });
+    symbolTable.add(std::move(name), nonASTDecls.back().get());
 }
 
 Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
@@ -703,8 +737,7 @@ Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
 }
 
 Decl* delta::findInSymbolTable(llvm::StringRef name) {
-    auto it = symbolTable.find(name);
-    return it != symbolTable.end() ? &*it->second : nullptr;
+    return symbolTable.find(name);
 }
 
 namespace {
@@ -714,7 +747,8 @@ void typecheckMemberFunc(FuncDecl& decl);
 void typecheck(FuncDecl& decl) {
     if (!decl.receiverType.empty()) return typecheckMemberFunc(decl);
     if (decl.isExtern()) return;
-    auto symbolTableBackup = symbolTable;
+
+    symbolTable.pushScope();
     for (ParamDecl& param : decl.params) {
         if (param.type.isMutable()) error(param.srcLoc, "parameter types cannot be 'mutable'");
         typecheck(param);
@@ -726,11 +760,11 @@ void typecheck(FuncDecl& decl) {
     for (auto& stmt : *decl.body) typecheck(*stmt);
     funcReturnType = funcReturnTypeBackup;
 
-    symbolTable = std::move(symbolTableBackup);
+    symbolTable.popScope();
 }
 
 void typecheckMemberFunc(FuncDecl& decl) {
-    auto symbolTableBackup = symbolTable;
+    symbolTable.pushScope();
     Decl& receiverType = findInSymbolTable(decl.receiverType, decl.srcLoc);
     if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
     addToSymbolTable(VarDecl(receiverType.getTypeDecl().getTypeForPassing(decl.isMutating()),
@@ -742,11 +776,11 @@ void typecheckMemberFunc(FuncDecl& decl) {
     for (auto& stmt : *decl.body) typecheck(*stmt);
     funcReturnType = funcReturnTypeBackup;
 
-    symbolTable = std::move(symbolTableBackup);
+    symbolTable.popScope();
 }
 
 void typecheck(GenericParamDecl& decl) {
-    if (symbolTable.count(decl.name) > 0) {
+    if (symbolTable.contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
 }
@@ -761,7 +795,7 @@ void typecheck(GenericFuncDecl& decl) {
 }
 
 void typecheck(InitDecl& decl) {
-    auto symbolTableBackup = symbolTable;
+    symbolTable.pushScope();
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
@@ -771,7 +805,7 @@ void typecheck(InitDecl& decl) {
     inInitializer = true;
     for (auto& stmt : *decl.body) typecheck(*stmt);
     inInitializer = false;
-    symbolTable = std::move(symbolTableBackup);
+    symbolTable.popScope();
 }
 
 void typecheck(DeinitDecl& decl) {
@@ -788,13 +822,13 @@ void typecheck(TypeDecl&) {
 }
 
 TypeDecl* getTypeDecl(const BasicType& type) {
-    auto it = symbolTable.find(type.name);
-    if (it == symbolTable.end()) return nullptr;
-    return &it->second->getTypeDecl();
+    auto* decl = symbolTable.find(type.name);
+    if (!decl) return nullptr;
+    return &decl->getTypeDecl();
 }
 
 void typecheck(VarDecl& decl, bool isGlobal) {
-    if (!isGlobal && symbolTable.count(decl.name) > 0) {
+    if (!isGlobal && symbolTable.contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     Type initType = nullptr;
