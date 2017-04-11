@@ -742,6 +742,25 @@ Decl* delta::findInSymbolTable(llvm::StringRef name) {
 
 namespace {
 
+bool returns(const Stmt& stmt) {
+    switch (stmt.getKind()) {
+        case StmtKind::ReturnStmt: return true;
+        case StmtKind::IfStmt:
+            if (stmt.getIfStmt().thenBody.empty()) return false;
+            if (stmt.getIfStmt().elseBody.empty()) return false;
+            if (!returns(*stmt.getIfStmt().thenBody.back())) return false;
+            if (!returns(*stmt.getIfStmt().elseBody.back())) return false;
+            return true;
+        case StmtKind::SwitchStmt:
+            for (auto& switchCase : stmt.getSwitchStmt().cases) {
+                if (!returns(*switchCase.stmts.back())) return false;
+            }
+            if (!returns(*stmt.getSwitchStmt().defaultStmts.back())) return false;
+            return true;
+        default: return false;
+    }
+}
+
 void typecheckMemberFunc(FuncDecl& decl);
 
 void typecheck(FuncDecl& decl) {
@@ -761,6 +780,10 @@ void typecheck(FuncDecl& decl) {
     funcReturnType = funcReturnTypeBackup;
 
     symbolTable.popScope();
+
+    if (!decl.returnType.isVoid() && (decl.body->empty() || !returns(*decl.body->back()))) {
+        error(decl.srcLoc, "'", decl.name, "' is missing a return statement");
+    }
 }
 
 void typecheckMemberFunc(FuncDecl& decl) {
