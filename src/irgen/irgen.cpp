@@ -23,22 +23,22 @@ namespace {
 llvm::Value* codegen(const Expr& expr);
 llvm::Value* codegenLvalue(const Expr& expr);
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
-void deferDeinitCallOf(llvm::Value* value);
-void createDeinitCall(llvm::Value* valueToDeinit);
+void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
+void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
 
 struct Scope {
     llvm::SmallVector<const Expr*, 8> deferredExprs;
-    llvm::SmallVector<llvm::Value*, 8> valuesToDeinit;
+    llvm::SmallVector<std::pair<llvm::Function*, llvm::Value*>, 8> deinitsToCall;
     std::unordered_map<std::string, llvm::Value*> localValues;
 
     void onScopeEnd() {
         for (const Expr* expr : llvm::reverse(deferredExprs)) codegen(*expr);
-        for (llvm::Value* value : llvm::reverse(valuesToDeinit)) createDeinitCall(value);
+        for (auto& p : llvm::reverse(deinitsToCall)) createDeinitCall(p.first, p.second);
     }
 
     void clear() {
         deferredExprs.clear();
-        valuesToDeinit.clear();
+        deinitsToCall.clear();
     }
 };
 
@@ -81,8 +81,10 @@ void setLocalValue(Type type, std::string name, llvm::Value* value) {
     (void) wasInserted;
     assert(wasInserted);
 
-    if (type && type.isBasicType() && getDeinitializerFor(type))
-        deferDeinitCallOf(value);
+    if (type && type.isBasicType()) {
+        llvm::Function* deinit = getDeinitializerFor(type);
+        if (deinit) deferDeinitCall(deinit, value);
+    }
 }
 
 void codegen(const Decl& decl);
@@ -563,8 +565,8 @@ void deferEvaluationOf(const Expr& expr) {
     scopes.back().deferredExprs.emplace_back(&expr);
 }
 
-void deferDeinitCallOf(llvm::Value* value) {
-    scopes.back().valuesToDeinit.emplace_back(value);
+void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
+    scopes.back().deinitsToCall.emplace_back(deinit, valueToDeinit);
 }
 
 void codegenDeferredExprsAndDeinitCallsForReturn() {
@@ -792,18 +794,11 @@ void codegen(const Stmt& stmt) {
     }
 }
 
-void createDeinitCall(llvm::Value* valueToDeinit) {
-    auto* alloca = llvm::dyn_cast<llvm::AllocaInst>(valueToDeinit);
-    auto* typeToDeinit = alloca ? alloca->getAllocatedType() : valueToDeinit->getType();
-    if (!typeToDeinit->isStructTy()) return;
-
+void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
     // Prevent recursively destroying the argument in struct deinitializers.
     if (llvm::isa<llvm::Argument>(valueToDeinit)
         && builder.GetInsertBlock()->getParent()->getName().endswith(".deinit")) return;
 
-    llvm::StringRef typeName = typeToDeinit->getStructName();
-    llvm::Function* deinit = module.getFunction(mangleDeinitDecl(typeName));
-    if (!deinit) return;
     if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
         builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
     } else if (!valueToDeinit->getType()->isPointerTy() && deinit->arg_begin()->getType()->isPointerTy()) {
