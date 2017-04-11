@@ -1,4 +1,4 @@
-// RUN: %delta -fsyntax-only %s
+// RUN: %delta -o=stdout %s
 
 func foo(int i) -> int {
     switch (i) {

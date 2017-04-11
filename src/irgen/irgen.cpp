@@ -7,6 +7,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/IR/CFG.h>
 #include "irgen.h"
 #include "../ast/mangle.h"
 #include "../ast/expr.h"
@@ -898,7 +899,13 @@ void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
     for (const auto& stmt : *decl.body) codegen(*stmt);
     endScope();
 
-    if (builder.GetInsertBlock()->empty() || !llvm::isa<llvm::ReturnInst>(builder.GetInsertBlock()->back())) {
+    auto* insertBlock = builder.GetInsertBlock();
+    if (insertBlock != &func.getEntryBlock() && llvm::pred_empty(insertBlock)) {
+        insertBlock->eraseFromParent();
+        return;
+    }
+
+    if (insertBlock->empty() || !llvm::isa<llvm::ReturnInst>(insertBlock->back())) {
         if (func.getName() != "main") {
             builder.CreateRetVoid();
         } else {

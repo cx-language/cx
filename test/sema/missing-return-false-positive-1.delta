@@ -1,4 +1,4 @@
-// RUN: %delta -fsyntax-only %s
+// RUN: %delta -o=stdout %s
 
 func foo(bool b) -> int {
     if (b) {
