@@ -52,13 +52,13 @@ public:
 llvm::LLVMContext ctx;
 llvm::IRBuilder<> builder(ctx);
 llvm::Module module("", ctx);
-std::unordered_map<std::string, llvm::Value*> globalValues; // TODO: Store in a Scope?
 std::unordered_map<std::string, llvm::Function*> funcs;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
 std::vector<GenericFuncInstantiation> genericFuncInstantiations;
 const Decl* currentDecl;
-llvm::SmallVector<Scope, 4> scopes;
+llvm::SmallVector<Scope, 4> scopes(1);
+Scope& globalScope() { return scopes.front(); }
 llvm::BasicBlock::iterator lastAlloca;
 
 /// The basic blocks to branch to on a 'break' statement, one element per scope.
@@ -100,15 +100,9 @@ llvm::Value* findValue(llvm::StringRef name) {
     }
 
     if (value == nullptr) {
-        auto it = globalValues.find(name);
-
         // FIXME: It would probably be better to not access the symbol table here.
-        if (it == globalValues.end()) {
-            codegen(findInSymbolTable(name, SrcLoc::invalid()));
-            it = globalValues.find(name);
-            assert(it != globalValues.end());
-        }
-        value = it->second;
+        codegen(findInSymbolTable(name, SrcLoc::invalid()));
+        return globalScope().localValues.find(name)->second;
     }
     return value;
 }
@@ -959,13 +953,13 @@ void codegen(const TypeDecl& decl) {
 
 void codegen(const VarDecl& decl) {
     assert(decl.initializer && "global variables must have initializers");
-    if (globalValues.find(decl.name) != globalValues.end()) return;
+    if (globalScope().localValues.find(decl.name) != globalScope().localValues.end()) return;
     auto value = new llvm::GlobalVariable(module, toIR(decl.getType()),
                                           !decl.getType().isMutable(),
                                           llvm::GlobalValue::PrivateLinkage,
                                           llvm::cast<llvm::Constant>(codegen(*decl.initializer)),
                                           decl.name);
-    globalValues.emplace(decl.name, value);
+    globalScope().localValues.emplace(decl.name, value);
 }
 
 void codegen(const Decl& decl) {
