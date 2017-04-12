@@ -1,2 +1,0 @@
-// check_error 3:1 "expected ';' after 'import' declaration, got end-of-file"
-import "foo"

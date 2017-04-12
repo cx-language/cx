@@ -1,4 +1,4 @@
-// check_error 3:14 "expected ';', got '_'"
+// check_error 3:14 "expected newline or ';', got '_'"
 func main() {
     var i = 0_;
 }

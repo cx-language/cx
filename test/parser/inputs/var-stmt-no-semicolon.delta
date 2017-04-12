@@ -1,4 +1,4 @@
-// check_error 4:1 "expected ';', got '}'"
+// compile_successfully -fsyntax-only
 func main() {
     var a = 5
 }

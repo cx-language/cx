@@ -8,6 +8,7 @@ namespace delta {
 
 enum TokenKind {
     NO_TOKEN,
+    NEWLINE, // Not lexed.
     IDENTIFIER,
     INT_LITERAL,
     FLOAT_LITERAL,
