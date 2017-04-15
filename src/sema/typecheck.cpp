@@ -428,7 +428,11 @@ Type typecheck(MemberExpr& expr) {
 
     for (const FieldDecl& field : typeDecl.getTypeDecl().fields) {
         if (field.name == expr.member) {
-            return field.type;
+            if (baseType.isMutable()) {
+                return field.type;
+            } else {
+                return field.type.asImmutable();
+            }
         }
     }
     error(expr.srcLoc, "no member named '", expr.member, "' in '", baseType, "'");

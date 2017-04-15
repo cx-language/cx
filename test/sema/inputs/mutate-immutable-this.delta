@@ -1,0 +1,4 @@
+// check_error 4:25 "cannot increment immutable value"
+
+class Foo { int i; }
+func Foo::bar() { this.i++; }

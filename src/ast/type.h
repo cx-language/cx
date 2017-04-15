@@ -82,6 +82,8 @@ public:
     bool isUnsigned() const;
     bool isMutable() const { return mutableFlag; }
     void setMutable(bool m) { mutableFlag = m; }
+    Type asMutable() const { return Type(typeBase, true); }
+    Type asImmutable() const { return Type(typeBase, false); }
     TypeKind getKind() const { return typeBase->getKind(); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
     std::string toString() const;

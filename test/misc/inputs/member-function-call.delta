@@ -8,7 +8,7 @@ Foo::init() {
     this.i = 0;
 }
 
-func Foo::add(int amount) {
+mutating func Foo::add(int amount) {
     this.i = this.i + amount;
 }
 

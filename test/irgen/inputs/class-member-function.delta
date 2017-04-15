@@ -4,7 +4,7 @@ class Foo {
 
 Foo::init() { this.baz = 42; }
 
-func Foo::bar() { this.baz++; }
+mutating func Foo::bar() { this.baz++; }
 
 func Foo::qux() -> int { return this.baz; }
 

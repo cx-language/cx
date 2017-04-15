@@ -10,7 +10,7 @@ Foo::init(int a, bool b) {
 }
 
 func main() {
-    Foo f = Foo(666, true);
+    var f = Foo(666, true);
     f.a++;
     var bar = f.a;
     var qux = f.b;
