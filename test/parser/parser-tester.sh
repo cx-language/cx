@@ -22,7 +22,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Multifile test with error.
-actual_output=$($path_to_delta -fsyntax-only inputs/multifile-error/*.delta)
+actual_output=$($path_to_delta -typecheck inputs/multifile-error/*.delta)
 expected_output=$'inputs/multifile-error/b.delta:1:9: error: unknown identifier \'foo\'\nint b = foo;\n        ^'
 validate_output
 

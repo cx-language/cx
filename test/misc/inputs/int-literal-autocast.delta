@@ -1,4 +1,4 @@
-// compile_successfully -fsyntax-only
+// compile_successfully -typecheck
 
 func foo(uint a) { }
 func bar(uint8 a) { }

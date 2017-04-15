@@ -1,4 +1,5 @@
-// compile_successfully -fsyntax-only
+// compile_successfully -typecheck
+
 func main() {
     while (false) {
         while (false) {

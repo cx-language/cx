@@ -1,3 +1,4 @@
-// compile_successfully -fsyntax-only
+// compile_successfully -typecheck
+
 class Foo { int i; }
 mutating func Foo::bar() { mutable Foo& f = this; }

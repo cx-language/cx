@@ -1,4 +1,4 @@
-// compile_successfully -fsyntax-only
+// compile_successfully -typecheck
 
 func foo() -> int { return 42; }
 func bar() { }

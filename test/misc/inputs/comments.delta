@@ -1,2 +1,3 @@
-// compile_successfully -fsyntax-only
+// compile_successfully -parse
+
 // line comment

@@ -87,7 +87,8 @@ void printHelp() {
         "OPTIONS:\n"
         "  -c                    - Compile only, generating an .o file; don't link\n"
         "  -emit-assembly        - Emit assembly code\n"
-        "  -fsyntax-only         - Perform parsing and type checking\n"
+        "  -parse                - Perform parsing\n"
+        "  -typecheck            - Perform parsing and type checking\n"
         "  -help                 - Display this help\n"
         "  -I<directory>         - Add a header search path for C import\n"
         "  -o=stdout             - Print the generated LLVM IR to stdout\n"
@@ -104,7 +105,8 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    const bool syntaxOnly = checkFlag("-fsyntax-only", args);
+    const bool parseFlag = checkFlag("-parse", args);
+    const bool typecheckFlag = checkFlag("-typecheck", args);
     const bool compileOnly = checkFlag("-c", args);
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
@@ -133,9 +135,11 @@ int main(int argc, char** argv) {
         return 0;
     }
 
+    if (parseFlag) return 0;
+
     typecheck(module, includePaths);
 
-    if (syntaxOnly) return 0;
+    if (typecheckFlag) return 0;
 
     auto& irModule = irgen::compile(module);
 

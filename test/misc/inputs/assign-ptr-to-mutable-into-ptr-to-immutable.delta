@@ -1,4 +1,4 @@
-// compile_successfully -fsyntax-only
+// compile_successfully -typecheck
 
 extern func foo() -> mutable int*;
 
