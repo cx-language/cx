@@ -83,7 +83,7 @@ Type toDelta(clang::QualType qualtype) {
 FuncDecl toDelta(const clang::FunctionDecl& decl) {
     std::vector<ParamDecl> params;
     for (auto* param : decl.parameters()) {
-        params.emplace_back("", toDelta(param->getType()), param->getNameAsString(),
+        params.emplace_back(toDelta(param->getType()), param->getNameAsString(),
                             SrcLoc::invalid());
     }
     return FuncDecl(decl.getNameAsString(), std::move(params),

@@ -156,7 +156,7 @@ public:
 
 class Arg {
 public:
-    std::string label; // Empty if no label.
+    std::string name; // Empty if no name specified.
     std::unique_ptr<Expr> value;
     SrcLoc srcLoc;
 };

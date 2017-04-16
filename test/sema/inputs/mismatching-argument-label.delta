@@ -1,5 +1,6 @@
-// check_error 4:12 "no matching function for call to 'f'"
-func f(foo: int a, bar: bool b) -> int { return a; }
+// check_error 5:23 "invalid argument name 'qux' for parameter 'bar'"
+
+func f(int foo, bool bar) -> int { return foo; }
 func main() -> int {
-    return f(foo: 5, qux: false);
+    return f(foo = 5, qux = false);
 }

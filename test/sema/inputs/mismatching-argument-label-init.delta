@@ -1,6 +1,7 @@
-// check_error 5:14 "no matching initializer for 'X'"
+// check_error 6:15 "invalid argument name 'bar' for parameter 'a'"
+
 struct X { }
-X::init(foo: int a) { }
+X::init(int a) { }
 func main() {
-    var x = X(bar: 5);
+    var x = X(bar = 5);
 }

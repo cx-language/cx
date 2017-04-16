@@ -60,14 +60,12 @@ inline Decl::~Decl() { }
 
 class ParamDecl : public Decl {
 public:
-    std::string label; // Empty if no label.
     Type type;
     std::string name;
     SrcLoc srcLoc;
 
-    ParamDecl(std::string&& label, Type type, std::string&& name, SrcLoc srcLoc)
-    : Decl(DeclKind::ParamDecl), label(std::move(label)), type(type),
-      name(std::move(name)), srcLoc(srcLoc) { }
+    ParamDecl(Type type, std::string&& name, SrcLoc srcLoc)
+    : Decl(DeclKind::ParamDecl), type(type), name(std::move(name)), srcLoc(srcLoc) { }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
 };
 

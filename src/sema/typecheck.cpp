@@ -259,7 +259,7 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
                   const std::string& funcName, SrcLoc srcLoc);
 
 Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLoc srcLoc) {
-    auto* decl = symbolTable.find(mangleInitDecl(type.name, args));
+    auto* decl = symbolTable.find(mangleInitDecl(type.name));
     if (!decl) {
         error(srcLoc, "no matching initializer for '", type.name, "'");
     }
@@ -296,8 +296,8 @@ Type typecheckBuiltinConversion(CallExpr& expr) {
     if (!expr.genericArgs.empty()) {
         error(expr.srcLoc, "expected no generic arguments to converting initializer");
     }
-    if (!expr.args.front().label.empty()) {
-        error(expr.srcLoc, "expected no argument label to converting initializer");
+    if (!expr.args.front().name.empty()) {
+        error(expr.srcLoc, "expected unnamed argument to converting initializer");
     }
     typecheck(*expr.args.front().value);
     expr.isInitializerCall = true;
@@ -359,13 +359,9 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
         const Arg& arg = args[i];
         const ParamDecl& param = params[i];
 
-        if (arg.label != param.label) {
-            if (param.label.empty()) {
-                error(arg.srcLoc, "excess argument label '", arg.label,
-                      "' for argument #", i + 1, ", expected no label");
-            }
-            error(arg.srcLoc, "invalid label '", arg.label, "' for argument #",
-                  i + 1, ", expected '", param.label, "'");
+        if (!arg.name.empty() && arg.name != param.name) {
+            error(arg.srcLoc, "invalid argument name '", arg.name,
+                  "' for parameter '", param.name, "'");
         }
         auto argType = typecheck(*arg.value);
         if (!isValidConversion(*arg.value, argType, param.type)) {

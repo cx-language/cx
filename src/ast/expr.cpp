@@ -30,10 +30,10 @@ std::string CallExpr::getMangledFuncName() const {
     if (func->isMemberExpr()) {
         Type receiverType = getReceiver()->getType();
         if (receiverType.isPtrType()) receiverType = receiverType.getPointee();
-        return mangleFuncDecl(receiverType.getName(), getFuncName(), args);
+        return mangleFuncDecl(receiverType.getName(), getFuncName());
     }
-    if (isInitializerCall) return mangleInitDecl(getFuncName(), args);
-    return mangleFuncDecl("", getFuncName(), args);
+    if (isInitializerCall) return mangleInitDecl(getFuncName());
+    return mangleFuncDecl("", getFuncName());
 }
 
 Expr* CallExpr::getReceiver() const {

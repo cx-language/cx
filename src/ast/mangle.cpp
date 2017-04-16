@@ -4,29 +4,13 @@
 
 using namespace delta;
 
-namespace {
-
-template<typename T>
-std::string appendLabels(std::string&& result, llvm::ArrayRef<T> labeledItems) {
-    for (const T& item : labeledItems) {
-        if (item.label.empty()) continue;
-        result.append("$").append(item.label);
-    }
-    return std::move(result);
-}
-
-}
-
 std::string delta::mangle(const FuncDecl& decl) {
-    llvm::ArrayRef<ParamDecl> params = decl.params;
-    if (decl.receiverType.empty()) return appendLabels(std::string(decl.name), params);
-    return appendLabels(decl.receiverType + "." + decl.name, params);
+    return mangleFuncDecl(decl.receiverType, decl.name);
 }
 
-std::string delta::mangleFuncDecl(llvm::StringRef receiverType, llvm::StringRef funcName,
-                                  llvm::ArrayRef<Arg> args) {
-    if (receiverType.empty()) return appendLabels(funcName.str(), args);
-    return appendLabels(receiverType.str() + "." + funcName.str(), args);
+std::string delta::mangleFuncDecl(llvm::StringRef receiverType, llvm::StringRef funcName) {
+    if (receiverType.empty()) return funcName.str();
+    return receiverType.str() + "." + funcName.str();
 }
 
 std::string delta::mangle(const GenericFuncDecl& decl, llvm::ArrayRef<Type> genericArgs) {
@@ -41,15 +25,11 @@ std::string delta::mangle(const GenericFuncDecl& decl, llvm::ArrayRef<Type> gene
 }
 
 std::string delta::mangle(const InitDecl& decl) {
-    return mangleInitDecl(decl.getTypeName(), decl.params);
+    return mangleInitDecl(decl.getTypeName());
 }
 
-std::string delta::mangleInitDecl(llvm::StringRef typeName, llvm::ArrayRef<ParamDecl> params) {
-    return appendLabels(typeName.str() + ".init", params);
-}
-
-std::string delta::mangleInitDecl(llvm::StringRef typeName, llvm::ArrayRef<Arg> args) {
-    return appendLabels(typeName.str() + ".init", args);
+std::string delta::mangleInitDecl(llvm::StringRef typeName) {
+    return typeName.str() + ".init";
 }
 
 std::string delta::mangle(const DeinitDecl& decl) {

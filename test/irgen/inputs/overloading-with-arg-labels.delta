@@ -1,7 +1,0 @@
-class Foo { int i; }
-Foo::init(int i) { }
-Foo::init(qux: int i) { }
-func foo(int i) { }
-func foo(qux: int i) { }
-func Foo::foo(int i) { }
-func Foo::foo(qux: int i) { }

@@ -105,22 +105,22 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, 
 
 /// arg-list ::= '(' ')' | '(' nonempty-arg-list ')'
 /// nonempty-arg-list ::= arg | nonempty-arg-list ',' arg
-/// arg ::= expr | id ':' expr
+/// arg ::= (id '=')? expr
 std::vector<Arg> parseArgList() {
     parse(LPAREN);
     std::vector<Arg> args;
     while (currentToken() != RPAREN) {
-        std::string label;
+        std::string name;
         SrcLoc location = SrcLoc::invalid();
-        if (lookAhead(1) == COLON) {
+        if (lookAhead(1) == ASSIGN) {
             auto result = parse(IDENTIFIER);
-            label = std::move(result.string);
+            name = std::move(result.string);
             location = result.getLoc();
             consumeToken();
         }
         auto value = parseExpr();
         if (!location.isValid()) location = value->getSrcLoc();
-        args.push_back({ std::move(label), std::move(value), location });
+        args.push_back({ std::move(name), std::move(value), location });
         if (currentToken() != RPAREN) parse(COMMA);
     }
     consumeToken();
@@ -673,16 +673,11 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, 
     return stmts;
 }
 
-/// param-decl ::= (id ':')? type id
+/// param-decl ::= type id
 ParamDecl parseParam() {
-    std::string label;
-    if (lookAhead(1) == COLON) {
-        label = parse(IDENTIFIER).string;
-        consumeToken();
-    }
     auto type = parseType();
     auto name = parse(IDENTIFIER);
-    return ParamDecl(std::move(label), std::move(type), std::move(name.string), name.getLoc());
+    return ParamDecl(std::move(type), std::move(name.string), name.getLoc());
 }
 
 /// param-list ::= '(' params ')'

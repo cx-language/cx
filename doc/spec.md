@@ -382,11 +382,9 @@ comma-separated list of parameter declarations. A parameter declaration has one
 of the following syntaxes:
 
 > _parameter-type_ _parameter-name_<br>
-> _parameter-label_ `:` _parameter-type_ _parameter-name_<br>
 
-___parameter-name___ is the internal name of the parameter, and the optional
-_parameter-label_ is an external name for the parameter which must precede the
-argument value when calling the function.
+___parameter-name___ is an identifier specifying the name of the parameter. A
+function cannot have multiple parameters with the same name.
 
 ___return-type___ defines what kind of values the function can return. This may
 be a tuple type to allow the function to return multiple values with a
@@ -636,9 +634,12 @@ behavior (for both signed and unsigned operations).
 
 _argument-list_ is a comma-separated list of zero or more _argument-specifiers_:
 
-> _argument-specifier_ → _unlabeled-argument_ | _labeled-argument_<br>
-> _unlabeled-argument_ → _expression_<br>
-> _labeled-argument_ → _argument-label_ `:` _expression_<br>
+> _argument-specifier_ → _unnamed-argument_ | _named-argument_<br>
+> _unnamed-argument_ → _expression_<br>
+> _named-argument_ → _argument-name_ `=` _expression_<br>
+
+_argument-name_ is an identifier specifying the name of the parameter the
+argument _expression_ is being assigned to.
 
 ### Range expression
 

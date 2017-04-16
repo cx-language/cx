@@ -1,6 +1,6 @@
 // compile_and_run_and_check_exit_status 5
 
-func f(foo: int a, bar: bool b) -> int { return a; }
+func f(int a, bool b) -> int { return a; }
 func main() -> int {
-    return f(foo: 5, bar: false);
+    return f(a = 5, b = false);
 }

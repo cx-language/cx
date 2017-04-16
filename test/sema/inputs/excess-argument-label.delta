@@ -1,5 +1,6 @@
-// check_error 4:5 "no matching function for call to 'f'"
+// check_error 5:7 "invalid argument name 'foo' for parameter 'a'"
+
 func f(int a) { }
 func main() {
-    f(foo: 0);
+    f(foo = 0);
 }
