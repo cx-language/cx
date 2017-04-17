@@ -54,6 +54,20 @@ target_compile_options(FileCheck PRIVATE -w)
 llvm_map_components_to_libnames(FILECHECK_NEEDED_LIBS support)
 target_link_libraries(FileCheck PRIVATE ${FILECHECK_NEEDED_LIBS})
 
+# Download the LLVM 'not' utility for tests.
+set(NOT_SRC_URL "https://raw.githubusercontent.com/llvm-mirror/llvm/release_${LLVM_VERSION_MAJOR}${LLVM_VERSION_MINOR}/utils/not/not.cpp")
+set(NOT_SRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/not.cpp")
+if(NOT EXISTS "${NOT_SRC_FILE}")
+    message(STATUS "Downloading LLVM 'not' source")
+    file(DOWNLOAD "${NOT_SRC_URL}" "${NOT_SRC_FILE}")
+endif()
+add_executable(not ${NOT_SRC_FILE})
+target_compile_options(not PRIVATE -w)
+llvm_map_components_to_libnames(NOT_NEEDED_LIBS support)
+target_link_libraries(not PRIVATE ${NOT_NEEDED_LIBS})
+
+add_dependencies(check FileCheck not)
+
 # Add 'coverage' target for code coverage report generation.
 file(DOWNLOAD https://github.com/bilke/cmake-modules/raw/master/CodeCoverage.cmake
     ${CMAKE_BINARY_DIR}/cmake-modules/CodeCoverage.cmake)
