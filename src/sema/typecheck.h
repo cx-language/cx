@@ -26,7 +26,7 @@ void addToSymbolTable(TypeDecl&& decl);
 void addToSymbolTable(VarDecl& decl);
 void addToSymbolTable(VarDecl&& decl);
 Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc);
-Decl* findInSymbolTable(llvm::StringRef name);
+llvm::ArrayRef<Decl*> findInSymbolTable(llvm::StringRef name);
 void typecheck(Module& module, const std::vector<llvm::StringRef>& includePaths);
 
 }

@@ -1,0 +1,21 @@
+// RUN: %delta -o=stdout %s | %FileCheck %s
+
+class Foo { int i }
+
+// CHECK: define %Foo @Foo.init(i32 %i)
+Foo::init(int i) { }
+
+// CHECK: define %Foo @Foo.init.1(i32 %qux)
+Foo::init(int qux) { }
+
+// CHECK: define void @foo(i32 %i)
+func foo(int i) { }
+
+// CHECK: define void @foo.2(i32 %qux)
+func foo(int qux) { }
+
+// CHECK: define void @Foo.foo(%Foo* %this, i32 %i)
+func Foo::foo(int i) { }
+
+// CHECK: define void @Foo.foo.3(%Foo* %this, i32 %qux)
+func Foo::foo(int qux) { }

@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+struct Foo { int o }
+Foo::init() { }
+Foo::init(int i) { }
+
+func main() {
+    // CHECK: no matching initializer for 'Foo'
+    _ = Foo(3.14)
+}

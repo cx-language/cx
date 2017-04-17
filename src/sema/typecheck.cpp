@@ -1,4 +1,4 @@
-#include <iostream>
+#include <algorithm> // std::equal
 #include <limits>
 #include <unordered_map>
 #include <vector>
@@ -7,7 +7,7 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
-#include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/iterator_range.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -39,24 +39,36 @@ public:
         scopes.pop_back();
     }
 
-    Decl* find(const std::string& name) const {
+    llvm::ArrayRef<Decl*> find(const std::string& name) const {
         for (const auto& scope : llvm::reverse(scopes)) {
             auto it = scope.find(name);
             if (it != scope.end()) return it->second;
+        }
+        return {};
+    }
+
+    template<typename T>
+    T* findWithMatchingParams(const T& toFind) const {
+        for (Decl* decl : find(mangle(toFind))) {
+            T* t = llvm::dyn_cast<T>(decl);
+            if (!t || t->params.size() != toFind.params.size()) continue;
+            if (std::equal(toFind.params.begin(), toFind.params.end(), t->params.begin(),
+                           [](const ParamDecl& a, const ParamDecl& b) { return a.name == b.name; }))
+                return t;
         }
         return nullptr;
     }
 
     bool contains(const std::string& name) const {
-        return find(name) != nullptr;
+        return !find(name).empty();
     }
 
     void add(std::string name, Decl* decl) {
-        scopes.back().insert({ std::move(name), decl });
+        scopes.back()[std::move(name)].push_back(decl);
     }
 
 private:
-    std::vector<std::unordered_map<std::string, Decl*>> scopes;
+    std::vector<std::unordered_map<std::string, llvm::SmallVector<Decl*, 1>>> scopes;
 };
 
 SymbolTable symbolTable;
@@ -255,16 +267,26 @@ bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget)
     return false;
 }
 
+bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params);
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
                   const std::string& funcName, SrcLoc srcLoc);
 
 Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLoc srcLoc) {
-    auto* decl = symbolTable.find(mangleInitDecl(type.name));
-    if (!decl) {
-        error(srcLoc, "no matching initializer for '", type.name, "'");
+    llvm::ArrayRef<Decl*> decls = symbolTable.find(mangleInitDecl(type.name));
+
+    if (decls.size() == 1) {
+        validateArgs(args, decls.front()->getInitDecl().params,
+                     "'" + type.name + "' initializer", srcLoc);
+        return type.getType();
     }
-    validateArgs(args, decl->getInitDecl().params, "'" + type.name + "' initializer", srcLoc);
-    return type.getType();
+
+    for (Decl* decl : decls) {
+        if (matchArgs(args, decl->getInitDecl().params)) {
+            return type.getType();
+        }
+    }
+
+    error(srcLoc, "no matching initializer for '", type.name, "'");
 }
 
 void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
@@ -314,15 +336,16 @@ Type typecheck(CallExpr& expr) {
     if (expr.func->isMemberExpr())
         typecheck(*expr.getReceiver());
 
-    Decl* decl = findInSymbolTable(expr.getFuncName());
-    expr.isInitializerCall = decl && decl->isTypeDecl();
-    if (!expr.isInitializerCall) decl = findInSymbolTable(expr.getMangledFuncName());
-    if (!decl) error(expr.func->getSrcLoc(), "no matching function for call to '",
-                     expr.getFuncName(), "'");
+    llvm::ArrayRef<Decl*> decls = findInSymbolTable(expr.getFuncName());
+    expr.isInitializerCall = decls.size() == 1 && decls.front()->isTypeDecl();
 
     if (expr.isInitializerCall) {
-        return typecheckInitExpr(decl->getTypeDecl(), expr.args, expr.srcLoc);
-    } else if (expr.isMemberFuncCall()) {
+        return typecheckInitExpr(decls.front()->getTypeDecl(), expr.args, expr.srcLoc);
+    }
+
+    Decl* decl = &findInSymbolTable(expr.getMangledFuncName(), expr.func->getSrcLoc());
+
+    if (expr.isMemberFuncCall()) {
         Type receiverType = expr.getReceiver()->getType();
         if (receiverType.isPtrType() && !receiverType.isRef()) {
             error(expr.getReceiver()->getSrcLoc(), "cannot call member function through pointer '",
@@ -344,6 +367,20 @@ Type typecheck(CallExpr& expr) {
     } else {
         error(expr.func->getSrcLoc(), "'", expr.getFuncName(), "' is not a function");
     }
+}
+
+bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params) {
+    if (args.size() != params.size()) return false;
+
+    for (size_t i = 0; i < params.size(); ++i) {
+        const Arg& arg = args[i];
+        const ParamDecl& param = params[i];
+
+        if (!arg.name.empty() && arg.name != param.name) return false;
+        auto argType = typecheck(*arg.value);
+        if (!isValidConversion(*arg.value, argType, param.type)) return false;
+    }
+    return true;
 }
 
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
@@ -662,7 +699,7 @@ void typecheck(ParamDecl& decl) {
 } // anonymous namespace
 
 void delta::addToSymbolTable(FuncDecl& decl) {
-    if (!importingC && symbolTable.contains(mangle(decl))) {
+    if (!importingC && symbolTable.findWithMatchingParams(decl)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.add(mangle(decl), &decl);
@@ -676,7 +713,7 @@ void delta::addToSymbolTable(GenericFuncDecl& decl) {
 }
 
 void delta::addToSymbolTable(InitDecl& decl) {
-    if (symbolTable.contains(mangle(decl))) {
+    if (symbolTable.findWithMatchingParams(decl)) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
@@ -731,12 +768,13 @@ void delta::addToSymbolTable(VarDecl&& decl) {
 }
 
 Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
-    auto it = findInSymbolTable(name);
-    if (!it) error(srcLoc, "unknown identifier '", name, "'");
-    return *it;
+    llvm::ArrayRef<Decl*> decls = findInSymbolTable(name);
+    if (decls.empty()) error(srcLoc, "unknown identifier '", name, "'");
+    if (decls.size() > 1) error(srcLoc, "ambiguous reference to '", name, "'");
+    return *decls[0];
 }
 
-Decl* delta::findInSymbolTable(llvm::StringRef name) {
+llvm::ArrayRef<Decl*> delta::findInSymbolTable(llvm::StringRef name) {
     return symbolTable.find(name);
 }
 
@@ -845,9 +883,10 @@ void typecheck(TypeDecl&) {
 }
 
 TypeDecl* getTypeDecl(const BasicType& type) {
-    auto* decl = symbolTable.find(type.name);
-    if (!decl) return nullptr;
-    return &decl->getTypeDecl();
+    llvm::ArrayRef<Decl*> decls = findInSymbolTable(type.name);
+    if (decls.empty()) return nullptr;
+    assert(decls.size() == 1);
+    return &decls[0]->getTypeDecl();
 }
 
 void typecheck(VarDecl& decl, bool isGlobal) {

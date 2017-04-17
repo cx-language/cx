@@ -3,6 +3,7 @@
 #include <string>
 
 namespace llvm {
+    class StringRef;
     template<typename T> class ArrayRef;
 }
 

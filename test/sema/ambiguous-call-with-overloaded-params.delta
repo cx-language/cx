@@ -1,0 +1,9 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func foo(int a) { }
+func foo(int b) { }
+
+func main() {
+    // CHECK: 8:5: error: ambiguous reference to 'foo'
+    foo(1)
+}
