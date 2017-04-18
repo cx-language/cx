@@ -105,14 +105,14 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, 
 
 /// arg-list ::= '(' ')' | '(' nonempty-arg-list ')'
 /// nonempty-arg-list ::= arg | nonempty-arg-list ',' arg
-/// arg ::= (id '=')? expr
+/// arg ::= (id ':')? expr
 std::vector<Arg> parseArgList() {
     parse(LPAREN);
     std::vector<Arg> args;
     while (currentToken() != RPAREN) {
         std::string name;
         SrcLoc location = SrcLoc::invalid();
-        if (lookAhead(1) == ASSIGN) {
+        if (lookAhead(1) == COLON) {
             auto result = parse(IDENTIFIER);
             name = std::move(result.string);
             location = result.getLoc();

@@ -3,5 +3,5 @@
 struct X { }
 X::init(int a) { }
 func main() {
-    var x = X(bar = 5);
+    var x = X(bar: 5);
 }

@@ -636,7 +636,7 @@ _argument-list_ is a comma-separated list of zero or more _argument-specifiers_:
 
 > _argument-specifier_ → _unnamed-argument_ | _named-argument_<br>
 > _unnamed-argument_ → _expression_<br>
-> _named-argument_ → _argument-name_ `=` _expression_<br>
+> _named-argument_ → _argument-name_ `:` _expression_<br>
 
 _argument-name_ is an identifier specifying the name of the parameter the
 argument _expression_ is being assigned to.

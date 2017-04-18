@@ -2,5 +2,5 @@
 
 func f(int a, bool b) -> int { return a; }
 func main() -> int {
-    return f(a = 5, b = false);
+    return f(a: 5, b: false);
 }

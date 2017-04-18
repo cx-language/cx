@@ -2,5 +2,5 @@
 
 func f(int a) { }
 func main() {
-    f(foo = 0);
+    f(foo: 0);
 }
