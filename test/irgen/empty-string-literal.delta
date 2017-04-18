@@ -1,0 +1,6 @@
+// RUN: %delta -o=stdout %s | %FileCheck %s
+
+func main() -> int {
+    // CHECK: ret i32 0
+    return "".count
+}

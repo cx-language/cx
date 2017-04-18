@@ -143,7 +143,8 @@ std::unique_ptr<VariableExpr> parseThis() {
 
 std::unique_ptr<StrLiteralExpr> parseStrLiteral() {
     assert(currentToken() == STRING_LITERAL);
-    auto expr = llvm::make_unique<StrLiteralExpr>(currentToken().string, currentLoc());
+    llvm::StringRef content = currentToken().string.drop_back().drop_front();
+    auto expr = llvm::make_unique<StrLiteralExpr>(content, currentLoc());
     consumeToken();
     return expr;
 }
