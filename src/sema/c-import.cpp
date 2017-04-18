@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <llvm/ADT/StringSet.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <clang/Basic/TargetInfo.h>
@@ -183,6 +184,9 @@ std::string getClangBuiltinIncludePath() {
 } // anonymous namespace
 
 void delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::StringRef> includePaths) {
+    static llvm::StringSet<> importedHeaders;
+    if (!importedHeaders.insert(headerName).second) return; // Already imported?
+
     clang::CompilerInstance ci;
     clang::DiagnosticOptions diagnosticOptions;
     ci.createDiagnostics();

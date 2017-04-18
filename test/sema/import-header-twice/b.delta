@@ -1,0 +1,8 @@
+// RUN: %delta -typecheck ./a.delta ./b.delta | %FileCheck -allow-empty %s
+
+import "header.h"
+
+func main() {
+    // CHECK-NOT: error: ambiguous reference to 'foo'
+    foo(a)
+}

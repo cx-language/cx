@@ -1,0 +1,5 @@
+// RUN: true
+
+import "header.h"
+
+const a = 42
