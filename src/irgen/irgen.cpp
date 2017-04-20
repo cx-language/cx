@@ -22,6 +22,7 @@ using namespace delta;
 namespace {
 
 llvm::Value* codegen(const Expr& expr);
+llvm::Value* codegen(const CallExpr& expr);
 llvm::Value* codegenLvalue(const Expr& expr);
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
 void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
@@ -238,20 +239,20 @@ using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Va
 using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
 
 llvm::Value* codegenNot(const PrefixExpr& expr) {
-    return builder.CreateNot(codegen(*expr.operand), "");
+    return builder.CreateNot(codegen(expr.getOperand()), "");
 }
 
 llvm::Value* codegen(const PrefixExpr& expr) {
     switch (expr.op) {
-        case PLUS:  return codegen(*expr.operand);
+        case PLUS:  return codegen(expr.getOperand());
         case MINUS:
-            if (expr.operand->getType().isFloatingPoint()) {
-                return builder.CreateFNeg(codegen(*expr.operand));
+            if (expr.getOperand().getType().isFloatingPoint()) {
+                return builder.CreateFNeg(codegen(expr.getOperand()));
             } else {
-                return builder.CreateNeg(codegen(*expr.operand));
+                return builder.CreateNeg(codegen(expr.getOperand()));
             }
-        case STAR:  return builder.CreateLoad(codegen(*expr.operand));
-        case AND:   return codegenLvalue(*expr.operand);
+        case STAR:  return builder.CreateLoad(codegen(expr.getOperand()));
+        case AND:   return codegenLvalue(expr.getOperand());
         case NOT:   return codegenNot(expr);
         case COMPL: return codegenNot(expr);
         default:    llvm_unreachable("invalid prefix operator");
@@ -260,7 +261,7 @@ llvm::Value* codegen(const PrefixExpr& expr) {
 
 llvm::Value* codegenLvalue(const PrefixExpr& expr) {
     switch (expr.op) {
-        case STAR:  return codegen(*expr.operand);
+        case STAR:  return codegen(expr.getOperand());
         default:    llvm_unreachable("invalid lvalue prefix operator");
     }
 }
@@ -377,16 +378,18 @@ llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, con
 }
 
 llvm::Value* codegen(const BinaryExpr& expr) {
-    assert(expr.left->getType().isImplicitlyConvertibleTo(expr.right->getType())
-        || expr.right->getType().isImplicitlyConvertibleTo(expr.left->getType()));
+    if (!expr.isBuiltinOp()) return codegen((const CallExpr&) expr);
+
+    assert(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType())
+        || expr.getRHS().getType().isImplicitlyConvertibleTo(expr.getLHS().getType()));
 
     switch (expr.op) {
         case AND_AND: case OR_OR:
-            return codegenShortCircuitBinaryOp(expr.op, *expr.left, *expr.right);
+            return codegenShortCircuitBinaryOp(expr.op, expr.getLHS(), expr.getRHS());
         default:
-            llvm::Value* lhs = codegen(*expr.left);
-            llvm::Value* rhs = codegen(*expr.right);
-            return codegenBinaryOp(expr.op, lhs, rhs, *expr.left);
+            llvm::Value* lhs = codegen(expr.getLHS());
+            llvm::Value* rhs = codegen(expr.getRHS());
+            return codegenBinaryOp(expr.op, lhs, rhs, expr.getLHS());
     }
 }
 
@@ -732,8 +735,8 @@ void codegen(const ForStmt& forStmt) {
     auto& range = forStmt.range->getBinaryExpr();
     auto* counterAlloca = createEntryBlockAlloca(forStmt.range->getType().getIterableElementType(),
                                                  nullptr, forStmt.id);
-    builder.CreateStore(codegen(*range.left), counterAlloca);
-    auto* lastValue = codegen(*range.right);
+    builder.CreateStore(codegen(range.getLHS()), counterAlloca);
+    auto* lastValue = codegen(range.getRHS());
 
     auto* func = builder.GetInsertBlock()->getParent();
     auto* cond = llvm::BasicBlock::Create(ctx, "for", func);
@@ -744,7 +747,7 @@ void codegen(const ForStmt& forStmt) {
 
     builder.SetInsertPoint(cond);
     auto* counter = builder.CreateLoad(counterAlloca, forStmt.id);
-    if (range.left->getType().isSigned())
+    if (range.getLHS().getType().isSigned())
         builder.CreateCondBr(builder.CreateICmpSLE(counter, lastValue), body, end);
     else
         builder.CreateCondBr(builder.CreateICmpULE(counter, lastValue), body, end);

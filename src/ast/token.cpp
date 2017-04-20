@@ -69,6 +69,13 @@ bool Token::isPrefixOperator() const {
     }
 }
 
+bool Token::isOverloadable() const {
+    switch (kind) {
+        case EQ: case LT: case PLUS: case MINUS: case STAR: case SLASH: case MOD: return true;
+        default: return false;
+    }
+}
+
 int Token::getPrecedence() const {
     return int(getPrecedenceGroup(kind));
 }
@@ -110,7 +117,7 @@ bool BinaryOperator::isBitwiseOperator() const {
     }
 }
 
-std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
+const char* delta::toString(TokenKind tokenKind) {
     static const char* const tokenStrings[] = {
         "end-of-file", "newline", "identifier", "number", "float literal", "string literal",
         "break", "case", "cast", "class", "const", "default", "defer", "deinit", "else",
@@ -123,5 +130,9 @@ std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
     };
     static_assert(llvm::array_lengthof(tokenStrings) == TOKEN_COUNT,
                   "tokenStrings array not up-to-date");
-    return stream << tokenStrings[tokenKind];
+    return tokenStrings[tokenKind];
+}
+
+std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
+    return stream << toString(tokenKind);
 }

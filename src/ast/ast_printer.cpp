@@ -52,11 +52,11 @@ std::ostream& operator<<(std::ostream& out, const ArrayLiteralExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const PrefixExpr& expr) {
-    return out << "(" << expr.op << *expr.operand << ")";
+    return out << "(" << expr.op << expr.getOperand() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
-    return out << "(" << *expr.left << " " << expr.op << " " << *expr.right << ")";
+    return out << "(" << expr.getLHS() << " " << expr.op << " " << expr.getRHS() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {

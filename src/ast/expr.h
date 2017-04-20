@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <llvm/ADT/STLExtras.h>
 #include "type.h"
 #include "srcloc.h"
 #include "token.h"
@@ -134,28 +135,6 @@ public:
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::ArrayLiteralExpr; }
 };
 
-class PrefixExpr : public Expr {
-public:
-    PrefixOperator op;
-    std::unique_ptr<Expr> operand;
-
-    PrefixExpr(PrefixOperator op, std::unique_ptr<Expr> operand, SrcLoc srcLoc)
-    : Expr(ExprKind::PrefixExpr, srcLoc), op(op), operand(std::move(operand)) { }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::PrefixExpr; }
-};
-
-class BinaryExpr : public Expr {
-public:
-    BinaryOperator op;
-    std::unique_ptr<Expr> left;
-    std::unique_ptr<Expr> right;
-
-    BinaryExpr(BinaryOperator op, std::unique_ptr<Expr> left,
-               std::unique_ptr<Expr> right, SrcLoc srcLoc)
-    : Expr(ExprKind::BinaryExpr, srcLoc), op(op), left(std::move(left)), right(std::move(right)) { }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
-};
-
 class Arg {
 public:
     std::string name; // Empty if no name specified.
@@ -182,6 +161,48 @@ public:
     Decl* getCalleeDecl() const { return calleeDecl; }
     void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::CallExpr; }
+
+protected:
+    CallExpr(ExprKind kind, std::unique_ptr<Expr> func, std::vector<Arg>&& args, SrcLoc srcLoc)
+    : Expr(kind, srcLoc), func(std::move(func)), args(std::move(args)) { }
+
+private:
+    Decl* calleeDecl;
+};
+
+inline std::vector<Arg> addArg(std::vector<Arg>&& args, std::unique_ptr<Expr> arg) {
+    args.push_back({ "", std::move(arg), SrcLoc::invalid() });
+    return std::move(args);
+}
+
+class PrefixExpr : public CallExpr {
+public:
+    PrefixOperator op;
+
+    PrefixExpr(PrefixOperator op, std::unique_ptr<Expr> operand, SrcLoc srcLoc)
+    : CallExpr(ExprKind::PrefixExpr,
+               llvm::make_unique<VariableExpr>(toString(op.kind), srcLoc),
+               addArg({}, std::move(operand)), srcLoc), op(op) { }
+    Expr& getOperand() const { return *args[0].value; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::PrefixExpr; }
+};
+
+class BinaryExpr : public CallExpr {
+public:
+    BinaryOperator op;
+
+    BinaryExpr(BinaryOperator op, std::unique_ptr<Expr> left, std::unique_ptr<Expr> right,
+               SrcLoc srcLoc)
+    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VariableExpr>(toString(op.kind), srcLoc),
+               addArg(addArg({}, std::move(left)), std::move(right)), srcLoc), op(op) { }
+    Expr& getLHS() const { return *args[0].value; }
+    Expr& getRHS() const { return *args[1].value; }
+    bool isBuiltinOp() const {
+        return getLHS().getType().isBuiltinType() && getRHS().getType().isBuiltinType();
+    }
+    Decl* getCalleeDecl() const { return calleeDecl; }
+    void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 
 private:
     Decl* calleeDecl;

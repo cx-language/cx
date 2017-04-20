@@ -709,7 +709,18 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
         parse(COLON_COLON);
     }
 
-    auto name = parse(IDENTIFIER);
+    if (currentToken() != IDENTIFIER && !currentToken().isOverloadable())
+        unexpectedToken(currentToken(), {}, "as function name");
+
+    SrcLoc nameLoc = currentLoc();
+    llvm::StringRef name;
+    if (currentToken() == IDENTIFIER) {
+        name = consumeToken().string;
+    } else if (!receiverType.empty()) {
+        error(nameLoc, "operator functions must be non-member functions");
+    } else {
+        name = toString(consumeToken().kind);
+    }
 
     if (genericParams) {
         parse(LT);
@@ -734,9 +745,9 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
         }
     }
 
-    return llvm::make_unique<FuncDecl>(std::move(name.string), std::move(params),
+    return llvm::make_unique<FuncDecl>(std::move(name), std::move(params),
                                        std::move(returnType), std::move(receiverType),
-                                       name.getLoc());
+                                       nameLoc);
 }
 
 /// func-decl ::= func-proto '{' stmt* '}'

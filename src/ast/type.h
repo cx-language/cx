@@ -48,6 +48,9 @@ public:
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFuncType() const { return getKind() == TypeKind::FuncType; }
     bool isPtrType() const { return getKind() == TypeKind::PtrType; }
+    bool isBuiltinType() const {
+        return (isBasicType() && isBuiltinScalar(getName())) || isPtrType() || isNull();
+    }
     bool isSizedArrayType() const;
     bool isUnsizedArrayType() const;
     bool isNullablePointer() const;

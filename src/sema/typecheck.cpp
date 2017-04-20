@@ -87,6 +87,7 @@ llvm::ArrayRef<llvm::StringRef> includePaths;
 Type typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
 void typecheck(GenericFuncDecl& decl);
+Type typecheck(CallExpr& expr);
 
 Type typecheck(VariableExpr& expr) {
     Decl& decl = findInSymbolTable(expr.identifier, expr.srcLoc);
@@ -147,17 +148,17 @@ Type typecheck(ArrayLiteralExpr& array) {
 }
 
 Type typecheck(PrefixExpr& expr) {
-    Type operandType = typecheck(*expr.operand);
+    Type operandType = typecheck(expr.getOperand());
 
     if (expr.op == NOT) {
         if (!operandType.isBool()) {
-            error(expr.operand->getSrcLoc(), "invalid operand type '", operandType, "' to logical not");
+            error(expr.getOperand().getSrcLoc(), "invalid operand type '", operandType, "' to logical not");
         }
         return operandType;
     }
     if (expr.op == STAR) { // Dereference operation
         if (!operandType.isPtrType()) {
-            error(expr.operand->getSrcLoc(), "cannot dereference non-pointer type '", operandType, "'");
+            error(expr.getOperand().getSrcLoc(), "cannot dereference non-pointer type '", operandType, "'");
         }
         return operandType.getPointee();
     }
@@ -170,8 +171,10 @@ Type typecheck(PrefixExpr& expr) {
 bool isValidConversion(Expr&, Type, Type);
 
 Type typecheck(BinaryExpr& expr) {
-    Type leftType = typecheck(*expr.left);
-    Type rightType = typecheck(*expr.right);
+    Type leftType = typecheck(expr.getLHS());
+    Type rightType = typecheck(expr.getRHS());
+
+    if (!expr.isBuiltinOp()) return typecheck((CallExpr&) expr);
 
     if (expr.op == AND_AND || expr.op == OR_OR) {
         if (leftType.isBool() && rightType.isBool()) {
@@ -184,8 +187,8 @@ Type typecheck(BinaryExpr& expr) {
         error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
     }
 
-    if (!isValidConversion(*expr.left, leftType, rightType)
-    &&  !isValidConversion(*expr.right, rightType, leftType)) {
+    if (!isValidConversion(expr.getLHS(), leftType, rightType)
+    &&  !isValidConversion(expr.getRHS(), rightType, leftType)) {
         error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
     }
 
@@ -709,11 +712,12 @@ void typecheck(AssignStmt& stmt) {
 }
 
 void typecheck(AugAssignStmt& stmt) {
+    // FIXME: Don't create temporary BinaryExpr.
     BinaryExpr expr(stmt.op, std::unique_ptr<Expr>(stmt.lhs.get()),
                     std::unique_ptr<Expr>(stmt.rhs.get()), stmt.srcLoc);
     typecheckAssignment(*stmt.lhs, expr, stmt.srcLoc);
-    expr.getBinaryExpr().left.release();
-    expr.getBinaryExpr().right.release();
+    expr.args[0].value.release();
+    expr.args[1].value.release();
 }
 
 void typecheck(Stmt& stmt) {

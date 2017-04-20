@@ -105,6 +105,7 @@ struct Token {
     bool is(TokenKind kind, T... kinds) const { return is(kind) || is(kinds...); }
     bool isBinaryOperator() const;
     bool isPrefixOperator() const;
+    bool isOverloadable() const;
     int getPrecedence() const;
     int64_t getIntegerValue() const;
     long double getFloatingPointValue() const;
@@ -131,6 +132,7 @@ struct BinaryOperator {
     TokenKind kind;
 };
 
+const char* toString(TokenKind tokenKind);
 std::ostream& operator<<(std::ostream& stream, TokenKind tokenKind);
 
 }

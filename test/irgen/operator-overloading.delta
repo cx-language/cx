@@ -1,0 +1,31 @@
+// RUN: %delta -o=stdout %s | %FileCheck %s
+
+struct vec2 {
+    int x
+    int y
+}
+
+vec2::init(int x, int y) {
+    this.x = x
+    this.y = y
+}
+
+// CHECK: define %vec2 @"*"(%vec2 %a, %vec2 %b)
+func *(vec2 a, vec2 b) -> vec2 {
+    return vec2(a.x * b.x, a.y * b.y)
+}
+
+func main() {
+    var v = vec2(3, 2)
+
+    // CHECK: call %vec2 @"*"(%vec2 %2, %vec2 %v1)
+    v = vec2(2, 4) * v
+
+    // CHECK: call i1 @"==<mutable vec2, vec2>"(%vec2 %v2, %vec2 %4)
+    _ = v == vec2(-1, 3)
+}
+
+// CHECK-DAG: define i1 @"==<mutable vec2, vec2>"(%vec2 %a, %vec2 %b)
+func ==<T, U>(T a, U b) -> bool {
+    return a.x == b.x;
+}
