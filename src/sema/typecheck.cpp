@@ -395,13 +395,14 @@ Type typecheck(CallExpr& expr) {
     } else {
         decl = &resolveOverload(expr, expr.getFuncName());
         expr.isInitializerCall = decl->isInitDecl();
-        if (expr.isInitializerCall) {
-            return decl->getInitDecl().getTypeDecl().getType();
-        }
     }
+
+    expr.setCalleeDecl(decl);
 
     if (decl->isFuncDecl()) {
         return decl->getFuncDecl().getFuncType()->returnType;
+    } else if (decl->isInitDecl()) {
+        return decl->getInitDecl().getTypeDecl().getType();
     } else if (decl->isGenericFuncDecl()) {
         setCurrentGenericArgs(decl->getGenericFuncDecl(), expr);
         typecheck(decl->getGenericFuncDecl());

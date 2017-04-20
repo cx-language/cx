@@ -9,6 +9,8 @@
 
 namespace delta {
 
+class Decl;
+
 enum class ExprKind {
     VariableExpr,
     StrLiteralExpr,
@@ -177,7 +179,12 @@ public:
     std::string getMangledFuncName() const;
     bool isMemberFuncCall() const { return func->isMemberExpr(); }
     Expr* getReceiver() const;
+    Decl* getCalleeDecl() const { return calleeDecl; }
+    void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::CallExpr; }
+
+private:
+    Decl* calleeDecl;
 };
 
 /// A type cast expression using the 'cast' keyword, e.g. 'cast<type>(expr)'.

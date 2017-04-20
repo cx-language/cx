@@ -873,7 +873,7 @@ llvm::Function* codegenGenericFuncProto(const GenericFuncDecl& decl, llvm::Array
 llvm::Function* getFuncForCall(const CallExpr& call) {
     if (!call.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
 
-    const Decl& decl = findInSymbolTable(call.getMangledFuncName(), call.srcLoc);
+    const Decl& decl = *call.getCalleeDecl();
 
     if (decl.isFuncDecl()) {
         auto it = funcs.find(mangleWithParams(decl.getFuncDecl()));

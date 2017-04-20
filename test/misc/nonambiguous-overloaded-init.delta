@@ -1,0 +1,9 @@
+// RUN: %delta -o=stdout %s
+
+struct Foo { }
+Foo::init(int a) { }
+Foo::init(int a, int b) { }
+
+func main() {
+    const f = Foo(1)
+}
