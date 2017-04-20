@@ -271,24 +271,6 @@ bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params);
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
                   const std::string& funcName, SrcLoc srcLoc);
 
-Type typecheckInitExpr(const TypeDecl& type, const std::vector<Arg>& args, SrcLoc srcLoc) {
-    llvm::ArrayRef<Decl*> decls = symbolTable.find(mangleInitDecl(type.name));
-
-    if (decls.size() == 1) {
-        validateArgs(args, decls.front()->getInitDecl().params,
-                     "'" + type.name + "' initializer", srcLoc);
-        return type.getType();
-    }
-
-    for (Decl* decl : decls) {
-        if (matchArgs(args, decl->getInitDecl().params)) {
-            return type.getType();
-        }
-    }
-
-    error(srcLoc, "no matching initializer for '", type.name, "'");
-}
-
 void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
     if (call.genericArgs.empty()) {
         call.genericArgs.reserve(decl.genericParams.size());
@@ -327,45 +309,107 @@ Type typecheckBuiltinConversion(CallExpr& expr) {
     return expr.getType();
 }
 
+Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
+    llvm::SmallVector<Decl*, 1> matches;
+    bool isInitCall = false;
+    bool atLeastOneFunction = false;
+    llvm::ArrayRef<Decl*> decls = findInSymbolTable(callee);
+
+    for (Decl* decl : decls) {
+        switch (decl->getKind()) {
+            case DeclKind::FuncDecl:
+                if (decls.size() == 1) {
+                    validateArgs(expr.args, decl->getFuncDecl().params,
+                                 callee, expr.func->getSrcLoc());
+                    return *decl;
+                }
+                if (matchArgs(expr.args, decl->getFuncDecl().params)) {
+                    matches.push_back(decl);
+                }
+                break;
+            case DeclKind::GenericFuncDecl:
+                setCurrentGenericArgs(decl->getGenericFuncDecl(), expr);
+                if (decls.size() == 1) {
+                    validateArgs(expr.args, decl->getGenericFuncDecl().func->params,
+                                 callee, expr.func->getSrcLoc());
+                    return *decl;
+                }
+                if (matchArgs(expr.args, decl->getGenericFuncDecl().func->params)) {
+                    matches.push_back(decl);
+                }
+                currentGenericArgs.clear();
+                break;
+            case DeclKind::TypeDecl: {
+                isInitCall = true;
+                auto initDecls = symbolTable.find(mangleInitDecl(decl->getTypeDecl().name));
+                for (Decl* initDecl : initDecls) {
+                    if (initDecls.size() == 1) {
+                        validateArgs(expr.args, initDecl->getInitDecl().params,
+                                     callee, expr.func->getSrcLoc());
+                        return *initDecl;
+                    }
+                    if (matchArgs(expr.args, initDecl->getInitDecl().params)) {
+                        matches.push_back(initDecl);
+                    }
+                }
+                break;
+            }
+            default: continue;
+        }
+        atLeastOneFunction = true;
+    }
+
+    switch (matches.size()) {
+        case 1: return *matches.front();
+        case 0:
+            if (decls.size() == 0) {
+                error(expr.func->getSrcLoc(), "unknown identifier '", callee, "'");
+            } else if (atLeastOneFunction) {
+                error(expr.func->getSrcLoc(), "no matching ", isInitCall ?
+                      "initializer for '" : "function for call to '", callee, "'");
+            } else {
+                error(expr.func->getSrcLoc(), "'", callee, "' is not a function");
+            }
+        default: error(expr.func->getSrcLoc(), "ambiguous reference to '", callee,
+                       isInitCall ? ".init'" : "'");
+    }
+}
+
 Type typecheck(CallExpr& expr) {
     if (!expr.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
 
     if (Type::isBuiltinScalar(expr.getFuncName()))
         return typecheckBuiltinConversion(expr);
 
-    if (expr.func->isMemberExpr())
-        typecheck(*expr.getReceiver());
-
-    llvm::ArrayRef<Decl*> decls = findInSymbolTable(expr.getFuncName());
-    expr.isInitializerCall = decls.size() == 1 && decls.front()->isTypeDecl();
-
-    if (expr.isInitializerCall) {
-        return typecheckInitExpr(decls.front()->getTypeDecl(), expr.args, expr.srcLoc);
-    }
-
-    Decl* decl = &findInSymbolTable(expr.getMangledFuncName(), expr.func->getSrcLoc());
+    Decl* decl;
 
     if (expr.isMemberFuncCall()) {
+        typecheck(*expr.getReceiver());
+        decl = &resolveOverload(expr, expr.getMangledFuncName());
+
         Type receiverType = expr.getReceiver()->getType();
         if (receiverType.isPtrType() && !receiverType.isRef()) {
             error(expr.getReceiver()->getSrcLoc(), "cannot call member function through pointer '",
                   receiverType, "', pointer may be null");
         }
+    } else {
+        decl = &resolveOverload(expr, expr.getFuncName());
+        expr.isInitializerCall = decl->isInitDecl();
+        if (expr.isInitializerCall) {
+            return decl->getInitDecl().getTypeDecl().getType();
+        }
     }
+
     if (decl->isFuncDecl()) {
-        validateArgs(expr.args, decl->getFuncDecl().params,
-                     "'" + expr.getFuncName().str() + "'", expr.srcLoc);
         return decl->getFuncDecl().getFuncType()->returnType;
     } else if (decl->isGenericFuncDecl()) {
         setCurrentGenericArgs(decl->getGenericFuncDecl(), expr);
-        validateArgs(expr.args, decl->getGenericFuncDecl().func->params,
-                     "'" + expr.getFuncName().str() + "'", expr.srcLoc);
         typecheck(decl->getGenericFuncDecl());
         Type returnType = resolve(decl->getGenericFuncDecl().func->getFuncType()->returnType);
         currentGenericArgs.clear();
         return returnType;
     } else {
-        error(expr.func->getSrcLoc(), "'", expr.getFuncName(), "' is not a function");
+        llvm_unreachable("all cases handled");
     }
 }
 
@@ -386,10 +430,10 @@ bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params) {
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
                   const std::string& funcName, SrcLoc srcLoc) {
     if (args.size() < params.size()) {
-        error(srcLoc, "too few arguments to ", funcName, ", expected ", params.size());
+        error(srcLoc, "too few arguments to '", funcName, "', expected ", params.size());
     }
     if (args.size() > params.size()) {
-        error(srcLoc, "too many arguments to ", funcName, ", expected ", params.size());
+        error(srcLoc, "too many arguments to '", funcName, "', expected ", params.size());
     }
 
     for (size_t i = 0; i < params.size(); ++i) {
@@ -403,7 +447,7 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
         auto argType = typecheck(*arg.value);
         if (!isValidConversion(*arg.value, argType, param.type)) {
             error(arg.srcLoc, "invalid argument #", i + 1, " type '", argType,
-                  "' to ", funcName, ", expected '", param.type, "'");
+                  "' to '", funcName, "', expected '", param.type, "'");
         }
     }
 }
