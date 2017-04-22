@@ -1,4 +1,5 @@
 #include "expr.h"
+#include "decl.h"
 #include "token.h"
 #include "mangle.h"
 
@@ -32,8 +33,12 @@ std::string CallExpr::getMangledFuncName() const {
         if (receiverType.isPtrType()) receiverType = receiverType.getPointee();
         return mangleFuncDecl(receiverType.getName(), getFuncName());
     }
-    if (isInitializerCall) return mangleInitDecl(getFuncName());
+    if (isInitCall()) return mangleInitDecl(getFuncName());
     return mangleFuncDecl("", getFuncName());
+}
+
+bool CallExpr::isInitCall() const {
+    return getCalleeDecl()->isInitDecl();
 }
 
 Expr* CallExpr::getReceiver() const {

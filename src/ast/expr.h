@@ -146,17 +146,18 @@ class CallExpr : public Expr {
 public:
     std::unique_ptr<Expr> func;
     std::vector<Arg> args;
-    bool isInitializerCall;
     std::vector<Type> genericArgs;
 
-    CallExpr(std::unique_ptr<Expr> func, std::vector<Arg>&& args, bool isInitializerCall,
+    CallExpr(std::unique_ptr<Expr> func, std::vector<Arg>&& args,
              std::vector<Type>&& genericArgs, SrcLoc srcLoc)
     : Expr(ExprKind::CallExpr, srcLoc), func(std::move(func)), args(std::move(args)),
-      isInitializerCall(isInitializerCall), genericArgs(std::move(genericArgs)) { }
+      genericArgs(std::move(genericArgs)) { }
     bool callsNamedFunc() const { return func->isVariableExpr() || func->isMemberExpr(); }
     llvm::StringRef getFuncName() const;
     std::string getMangledFuncName() const;
     bool isMemberFuncCall() const { return func->isMemberExpr(); }
+    bool isInitCall() const;
+    bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFuncName()); }
     Expr* getReceiver() const;
     Decl* getCalleeDecl() const { return calleeDecl; }
     void setCalleeDecl(Decl* decl) { calleeDecl = decl; }

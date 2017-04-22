@@ -307,7 +307,6 @@ Type typecheckBuiltinConversion(CallExpr& expr) {
         error(expr.srcLoc, "expected unnamed argument to converting initializer");
     }
     typecheck(*expr.args.front().value);
-    expr.isInitializerCall = true;
     expr.setType(BasicType::get(expr.getFuncName()));
     return expr.getType();
 }
@@ -397,7 +396,6 @@ Type typecheck(CallExpr& expr) {
         }
     } else {
         decl = &resolveOverload(expr, expr.getFuncName());
-        expr.isInitializerCall = decl->isInitDecl();
     }
 
     expr.setCalleeDecl(decl);

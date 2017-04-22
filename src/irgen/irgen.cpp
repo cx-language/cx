@@ -447,7 +447,7 @@ llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type) {
 }
 
 llvm::Value* codegen(const CallExpr& expr) {
-    if (expr.isInitializerCall && Type::isBuiltinScalar(expr.getFuncName()))
+    if (expr.isBuiltinConversion())
         return codegenBuiltinConversion(*expr.args.front().value, expr.getType());
 
     llvm::Function* func = getFuncForCall(expr);

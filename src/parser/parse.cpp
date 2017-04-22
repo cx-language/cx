@@ -300,7 +300,7 @@ std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> func) {
     }
     auto location = currentLoc();
     auto args = parseArgList();
-    return llvm::make_unique<CallExpr>(std::move(func), std::move(args), false,
+    return llvm::make_unique<CallExpr>(std::move(func), std::move(args),
                                        std::move(genericArgs), location);
 }
 
