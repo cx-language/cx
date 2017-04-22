@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <llvm/Support/Casting.h>
 #include "expr.h"
 
 namespace delta {

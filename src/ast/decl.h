@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <boost/variant.hpp>
+#include <llvm/Support/Casting.h>
 #include "expr.h"
 #include "stmt.h"
 #include "type.h"

@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/Support/Casting.h>
 #include "type.h"
 #include "srcloc.h"
 #include "token.h"
