@@ -12,6 +12,7 @@ build.ninja
 rules.ninja
 
 # Build products
+build/
 delta
 *.a
 
