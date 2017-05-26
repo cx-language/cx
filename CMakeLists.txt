@@ -21,6 +21,12 @@ add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 find_package(Clang REQUIRED)
 
+# Define the include path of the Clang builtin headers, to be used by the compiler to avoid errors
+# about missing C headers when importing C headers from Delta code. For more information, see e.g.
+# http://clang.llvm.org/docs/FAQ.html#i-get-errors-about-some-headers-being-missing-stddef-h-stdarg-h
+# CLANG_INSTALL_PREFIX is defined by ClangConfig.cmake during the above find_package(Clang) call.
+add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_INSTALL_PREFIX}/lib/clang/${LLVM_VERSION}/include")
+
 find_package(Boost REQUIRED)
 
 enable_testing()
