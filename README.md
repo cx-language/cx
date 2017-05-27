@@ -22,15 +22,18 @@ I recommend using [Ninja](https://ninja-build.org/) instead of Make, because it
 has cleaner output, and runs builds in parallel by default. It can be installed
 with `sudo apt install ninja-build` (Ubuntu) or `brew install ninja` (macOS).
 
-To get started, run the following commands:
+If you're on Ubuntu you can run the provided `setup-build-ubuntu.sh` script to
+automatically download all the dependencies and invoke the appropriate commands
+to generate a ready-to-use build system.
 
-    git clone https://github.com/delta-lang/delta.git
-    cd delta
+Otherwise, install the dependencies manually and do the following in the root
+directory of the repository:
+
     mkdir build
     cd build
     cmake -G Ninja ..
 
-After this, the following commands can be used:
+After this, the following commands can be invoked from the `build` directory:
 
 - `ninja` builds the project.
 - `ninja check` runs the test suite and reports errors in case of failure.
