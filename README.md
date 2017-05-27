@@ -18,19 +18,23 @@ and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries.
 To run the test suite, you also need [lit](http://llvm.org/docs/CommandGuide/lit.html),
 which you can get with `pip install lit`.
 
+I recommend using [Ninja](https://ninja-build.org/) instead of Make, because it
+has cleaner output, and runs builds in parallel by default. It can be installed
+with `sudo apt install ninja-build` (Ubuntu) or `brew install ninja` (macOS).
+
 To get started, run the following commands:
 
     git clone https://github.com/delta-lang/delta.git
     cd delta
     mkdir build
     cd build
-    cmake -G "Unix Makefiles" ..
+    cmake -G Ninja ..
 
 After this, the following commands can be used:
 
-- `make` builds the project.
-- `make check` runs the test suite and reports errors in case of failure.
-- `make coverage` generates a test coverage report under `coverage/`.
+- `ninja` builds the project.
+- `ninja check` runs the test suite and reports errors in case of failure.
+- `ninja coverage` generates a test coverage report under `coverage/`.
 
 ## Documentation
 
