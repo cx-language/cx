@@ -1,6 +1,7 @@
 #include <sstream>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/Support/ErrorHandling.h>
 #include "type.h"
 #include "../driver/utility.h"
 
@@ -137,6 +138,7 @@ bool Type::isImplicitlyConvertibleTo(Type type) const {
             && (getPointee().isMutable() || !type.getPointee().isMutable())
             && getPointee().isImplicitlyConvertibleTo(type.getPointee());
     }
+    llvm_unreachable("all cases handled");
 }
 
 bool Type::isSigned() const {
@@ -186,6 +188,7 @@ bool delta::operator==(Type lhs, Type rhs) {
         case TypeKind::PtrType:
             return rhs.isPtrType() && lhs.isRef() == rhs.isRef() && lhs.getPointee() == rhs.getPointee();
     }
+    llvm_unreachable("all cases handled");
 }
 
 bool delta::operator!=(Type lhs, Type rhs) {

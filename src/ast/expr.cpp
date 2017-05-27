@@ -1,4 +1,5 @@
 #include "expr.h"
+#include <llvm/Support/ErrorHandling.h>
 #include "decl.h"
 #include "token.h"
 #include "mangle.h"
@@ -17,6 +18,7 @@ bool Expr::isLvalue() const {
         case ExprKind::PrefixExpr:
             return getPrefixExpr().op == STAR;
     }
+    llvm_unreachable("all cases handled");
 }
 
 llvm::StringRef CallExpr::getFuncName() const {

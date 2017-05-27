@@ -1,4 +1,5 @@
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/ErrorHandling.h>
 #include "decl.h"
 #include "../driver/utility.h"
 
@@ -55,4 +56,5 @@ SrcLoc Decl::getSrcLoc() const {
         case DeclKind::FieldDecl:  return getFieldDecl().srcLoc;
         case DeclKind::ImportDecl: return getImportDecl().srcLoc;
     }
+    llvm_unreachable("all cases handled");
 }

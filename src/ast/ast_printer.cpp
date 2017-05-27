@@ -100,6 +100,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::SubscriptExpr:  return out << expr.getSubscriptExpr();
         case ExprKind::UnwrapExpr:     return out << expr.getUnwrapExpr();
     }
+    llvm_unreachable("all cases handled");
 }
 
 std::ostream& operator<<(std::ostream& out, llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
@@ -203,6 +204,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::AssignStmt:    return out << stmt.getAssignStmt();
         case StmtKind::AugAssignStmt: return out << stmt.getAugAssignStmt();
     }
+    llvm_unreachable("all cases handled");
 }
 
 std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {
@@ -290,6 +292,7 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
         case DeclKind::FieldDecl: return out << decl.getFieldDecl();
         case DeclKind::ImportDecl:return out << decl.getImportDecl();
     }
+    llvm_unreachable("all cases handled");
 }
 
 } // anonymous namespace

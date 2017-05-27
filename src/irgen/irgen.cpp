@@ -177,6 +177,7 @@ llvm::Type* toIR(Type type) {
             else return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0);
         }
     }
+    llvm_unreachable("all cases handled");
 }
 
 llvm::Value* codegen(const VariableExpr& expr) {
@@ -539,6 +540,7 @@ llvm::Value* codegen(const Expr& expr) {
         case ExprKind::SubscriptExpr:   return codegen(expr.getSubscriptExpr());
         case ExprKind::UnwrapExpr:      return codegen(expr.getUnwrapExpr());
     }
+    llvm_unreachable("all cases handled");
 }
 
 llvm::Value* codegenLvalue(const Expr& expr) {
@@ -558,6 +560,7 @@ llvm::Value* codegenLvalue(const Expr& expr) {
         case ExprKind::SubscriptExpr:   return codegenLvalue(expr.getSubscriptExpr());
         case ExprKind::UnwrapExpr:      return codegen(expr.getUnwrapExpr());
     }
+    llvm_unreachable("all cases handled");
 }
 
 void beginScope() {
