@@ -22,7 +22,7 @@ struct Scope {
     Scope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
     void addDeferredExpr(const Expr& expr) { deferredExprs.emplace_back(&expr); }
     void addDeinitToCall(llvm::Function* deinit, llvm::Value* value, Type type, const Decl* decl) {
-        deinitsToCall.emplace_back(DeferredDeinit{deinit, value, type, decl});
+        deinitsToCall.emplace_back(DeferredDeinit{ deinit, value, type, decl });
     }
     void addLocalValue(std::string&& name, llvm::Value* value) {
         bool didInsert = localValues.emplace(std::move(name), value).second;
@@ -59,10 +59,10 @@ public:
 private:
     friend struct Scope;
 
-    using UnaryCreate = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, const llvm::Twine&, bool, bool);
-    using BinaryCreate0 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&);
-    using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool);
-    using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
+    using UnaryCreate = llvm::Value* (llvm::IRBuilder<>::*) (llvm::Value*, const llvm::Twine&, bool, bool);
+    using BinaryCreate0 = llvm::Value* (llvm::IRBuilder<>::*) (llvm::Value*, llvm::Value*, const llvm::Twine&);
+    using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*) (llvm::Value*, llvm::Value*, const llvm::Twine&, bool);
+    using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*) (llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
 
     void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
@@ -112,8 +112,8 @@ private:
     llvm::Value* codegenLvalueExpr(const Expr& expr);
 
     void codegenDeferredExprsAndDeinitCallsForReturn();
-    void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
-                      llvm::BasicBlock* destination, llvm::BasicBlock* continuation);
+    void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination,
+                      llvm::BasicBlock* continuation);
     void codegenReturnStmt(const ReturnStmt& stmt);
     void codegenVarStmt(const VarStmt& stmt);
     void codegenIncrementStmt(const IncrementStmt& stmt);
@@ -138,6 +138,7 @@ private:
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
+    llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
     llvm::Value* codegenPointerOffset(const BinaryExpr& expr);
@@ -151,8 +152,7 @@ private:
 private:
     class FunctionInstantiation {
     public:
-        FunctionInstantiation(const FunctionDecl& decl, llvm::Function* function)
-        : decl(decl), function(function) {}
+        FunctionInstantiation(const FunctionDecl& decl, llvm::Function* function) : decl(decl), function(function) {}
         const FunctionDecl& getDecl() const { return decl; }
         llvm::Function* getFunction() const { return function; }
 

@@ -11,8 +11,7 @@ struct SourceLocation {
     IntegerType line;
     IntegerType column;
 
-    SourceLocation(const char* file, IntegerType line, IntegerType column)
-    :   file(file), line(line), column(column) {}
+    SourceLocation(const char* file, IntegerType line, IntegerType column) : file(file), line(line), column(column) {}
 
     static SourceLocation invalid() {
         auto min = std::numeric_limits<IntegerType>::min();

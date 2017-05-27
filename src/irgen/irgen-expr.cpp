@@ -30,16 +30,14 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
         static int stringLiteralCounter = 0;
-        auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}),
-                                              structs.find("StringRef")->second.second, nullptr,
-                                              "__str" + std::to_string(stringLiteralCounter++));
+        auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), structs.find("StringRef")->second.second,
+                                              nullptr, "__str" + std::to_string(stringLiteralCounter++));
         auto it = functionInstantiations.find("StringRef.init$pointer:char*$length:uint");
         builder.CreateCall(it->second.getFunction(), { alloca, stringPtr, size });
         return alloca;
     } else {
         // Passing as C-string, i.e. char pointer.
-        ASSERT(expr.getType().removeOptional().isPointerType() &&
-               expr.getType().removeOptional().getPointee().isChar());
+        ASSERT(expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar());
         return builder.CreateGlobalStringPtr(expr.getValue());
     }
 }
@@ -52,9 +50,9 @@ llvm::Value* IRGenerator::codegenIntLiteralExpr(const IntLiteralExpr& expr) {
     // Integer literals may be typed as floating-point when used in a context
     // that requires a floating-point value. It might make sense to combine
     // IntLiteralExpr and FloatLiteralExpr into a single class.
-    if (expr.getType().isFloatingPoint())
+    if (expr.getType().isFloatingPoint()) {
         return llvm::ConstantFP::get(toIR(expr.getType()), static_cast<double>(expr.getValue()));
-
+    }
     return llvm::ConstantInt::getSigned(toIR(expr.getType()), expr.getValue());
 }
 
@@ -109,28 +107,36 @@ llvm::Value* IRGenerator::codegenNot(const PrefixExpr& expr) {
 
 llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
     switch (expr.getOperator()) {
-        case Token::Plus: return codegenExpr(expr.getOperand());
+        case Token::Plus:
+            return codegenExpr(expr.getOperand());
         case Token::Minus:
             if (expr.getOperand().getType().isFloatingPoint()) {
-                return builder.CreateFPCast(builder.CreateFNeg(codegenExpr(expr.getOperand())),
-                                            toIR(expr.getType()));
+                return builder.CreateFPCast(builder.CreateFNeg(codegenExpr(expr.getOperand())), toIR(expr.getType()));
             } else {
-                return builder.CreateIntCast(builder.CreateNeg(codegenExpr(expr.getOperand())),
-                                             toIR(expr.getType()), expr.getType().isSigned());
+                return builder.CreateIntCast(builder.CreateNeg(codegenExpr(expr.getOperand())), toIR(expr.getType()),
+                                             expr.getType().isSigned());
             }
-        case Token::Star: return builder.CreateLoad(codegenExpr(expr.getOperand()));
-        case Token::And: return codegenLvalueExpr(expr.getOperand());
-        case Token::Not: return codegenNot(expr);
-        case Token::Tilde: return codegenNot(expr);
-        default: llvm_unreachable("invalid prefix operator");
+        case Token::Star:
+            return builder.CreateLoad(codegenExpr(expr.getOperand()));
+        case Token::And:
+            return codegenLvalueExpr(expr.getOperand());
+        case Token::Not:
+            return codegenNot(expr);
+        case Token::Tilde:
+            return codegenNot(expr);
+        default:
+            llvm_unreachable("invalid prefix operator");
     }
 }
 
 llvm::Value* IRGenerator::codegenLvaluePrefixExpr(const PrefixExpr& expr) {
     switch (expr.getOperator()) {
-        case Token::Star: return codegenExpr(expr.getOperand());
-        case Token::And: return codegenLvalueExpr(expr.getOperand());
-        default: llvm_unreachable("invalid lvalue prefix operator");
+        case Token::Star:
+            return codegenExpr(expr.getOperand());
+        case Token::And:
+            return codegenLvalueExpr(expr.getOperand());
+        default:
+            llvm_unreachable("invalid lvalue prefix operator");
     }
 }
 
@@ -191,25 +197,39 @@ llvm::Value* IRGenerator::codegenLogicalOr(const Expr& left, const Expr& right) 
 llvm::Value* IRGenerator::codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr) {
     if (lhs->getType()->isFloatingPointTy()) {
         switch (op) {
-            case Token::Equal: return builder.CreateFCmpOEQ(lhs, rhs);
-            case Token::NotEqual: return builder.CreateFCmpONE(lhs, rhs);
-            case Token::Less: return builder.CreateFCmpOLT(lhs, rhs);
-            case Token::LessOrEqual: return builder.CreateFCmpOLE(lhs, rhs);
-            case Token::Greater: return builder.CreateFCmpOGT(lhs, rhs);
-            case Token::GreaterOrEqual: return builder.CreateFCmpOGE(lhs, rhs);
-            case Token::Plus: return builder.CreateFAdd(lhs, rhs);
-            case Token::Minus: return builder.CreateFSub(lhs, rhs);
-            case Token::Star: return builder.CreateFMul(lhs, rhs);
-            case Token::Slash: return builder.CreateFDiv(lhs, rhs);
-            case Token::Modulo: return builder.CreateFRem(lhs, rhs);
-            default: llvm_unreachable("all cases handled");
+            case Token::Equal:
+                return builder.CreateFCmpOEQ(lhs, rhs);
+            case Token::NotEqual:
+                return builder.CreateFCmpONE(lhs, rhs);
+            case Token::Less:
+                return builder.CreateFCmpOLT(lhs, rhs);
+            case Token::LessOrEqual:
+                return builder.CreateFCmpOLE(lhs, rhs);
+            case Token::Greater:
+                return builder.CreateFCmpOGT(lhs, rhs);
+            case Token::GreaterOrEqual:
+                return builder.CreateFCmpOGE(lhs, rhs);
+            case Token::Plus:
+                return builder.CreateFAdd(lhs, rhs);
+            case Token::Minus:
+                return builder.CreateFSub(lhs, rhs);
+            case Token::Star:
+                return builder.CreateFMul(lhs, rhs);
+            case Token::Slash:
+                return builder.CreateFDiv(lhs, rhs);
+            case Token::Modulo:
+                return builder.CreateFRem(lhs, rhs);
+            default:
+                llvm_unreachable("all cases handled");
         }
     }
 
     switch (op) {
-        case Token::Equal: case Token::PointerEqual:
+        case Token::Equal:
+        case Token::PointerEqual:
             return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
-        case Token::NotEqual: case Token::PointerNotEqual:
+        case Token::NotEqual:
+        case Token::PointerNotEqual:
             return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
         case Token::Less:
             if (leftExpr.getType().isSigned()) {
@@ -274,9 +294,12 @@ llvm::Value* IRGenerator::codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, l
 
 llvm::Value* IRGenerator::codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, const Expr& rhs) {
     switch (op) {
-        case Token::AndAnd: return codegenLogicalAnd(lhs, rhs);
-        case Token::OrOr: return codegenLogicalOr(lhs, rhs);
-        default: llvm_unreachable("invalid short-circuit binary operator");
+        case Token::AndAnd:
+            return codegenLogicalAnd(lhs, rhs);
+        case Token::OrOr:
+            return codegenLogicalOr(lhs, rhs);
+        default:
+            llvm_unreachable("invalid short-circuit binary operator");
     }
 }
 
@@ -290,7 +313,8 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
     }
 
     switch (expr.getOperator()) {
-        case Token::AndAnd: case Token::OrOr:
+        case Token::AndAnd:
+        case Token::OrOr:
             return codegenShortCircuitBinaryOp(expr.getOperator(), expr.getLHS(), expr.getRHS());
         default:
             llvm::Value* lhs = codegenExpr(expr.getLHS());
@@ -300,8 +324,8 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
 }
 
 bool isBuiltinArrayToArrayRefConversion(Type sourceType, llvm::Type* targetType) {
-    return sourceType.removePointer().isArrayWithConstantSize() && targetType->isStructTy()
-        && targetType->getStructName().startswith("ArrayRef");
+    return sourceType.removePointer().isArrayWithConstantSize() && targetType->isStructTy() &&
+           targetType->getStructName().startswith("ArrayRef");
 }
 
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
@@ -318,22 +342,20 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         }
 
         auto* elementPtr = builder.CreateConstGEP2_32(nullptr, value, 0, 0);
-        auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(targetType),
-                                                   elementPtr, 0);
-        auto size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx),
-                                           expr.getType().removePointer().getArraySize());
+        auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(targetType), elementPtr, 0);
+        auto size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getType().removePointer().getArraySize());
         return builder.CreateInsertValue(arrayRef, size, 1);
     }
 
     // Handle implicit conversions to type 'T[?]*'.
-    if (targetType && expr.getType().removePointer().isArrayWithConstantSize()
-        && targetType->isPointerTy() && !targetType->getPointerElementType()->isArrayTy()) {
+    if (targetType && expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() &&
+        !targetType->getPointerElementType()->isArrayTy()) {
         return builder.CreateBitOrPointerCast(codegenLvalueExpr(expr), targetType);
     }
 
     // Handle implicit conversions to void pointer.
-    if (targetType && expr.getType().isPointerType() && !expr.getType().getPointee().isVoid()
-        && targetType->isPointerTy() && targetType->getPointerElementType()->isIntegerTy(8)) {
+    if (targetType && expr.getType().isPointerType() && !expr.getType().getPointee().isVoid() &&
+        targetType->isPointerTy() && targetType->getPointerElementType()->isIntegerTy(8)) {
         return builder.CreateBitCast(codegenExpr(expr), targetType);
     }
 
@@ -386,8 +408,8 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
         return builder.CreateZExtOrTrunc(codegenExpr(expr), toIR(type));
     } else if (expr.getType().isSigned() && type.isInteger()) {
         return builder.CreateSExtOrTrunc(codegenExpr(expr), toIR(type));
-    } else if ((expr.getType().isInteger() || expr.getType().isChar() || expr.getType().isBool())
-               && (type.isInteger() || type.isChar())) {
+    } else if ((expr.getType().isInteger() || expr.getType().isChar() || expr.getType().isBool()) &&
+               (type.isInteger() || type.isChar())) {
         return builder.CreateIntCast(codegenExpr(expr), toIR(type), expr.getType().isSigned());
     } else if (expr.getType().isFloatingPoint()) {
         if (type.isSigned()) return builder.CreateFPToSI(codegenExpr(expr), toIR(type));
@@ -401,8 +423,9 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
 }
 
 llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit) {
-    if (expr.isBuiltinConversion())
+    if (expr.isBuiltinConversion()) {
         return codegenBuiltinConversion(*expr.getArgs().front().getValue(), expr.getType());
+    }
 
     if (expr.getReceiver() && expr.getReceiverType().removePointer().isArrayType()) {
         if (expr.getFunctionName() == "size") {
@@ -611,10 +634,8 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
         return builder.CreateGEP(value, codegenExpr(*expr.getIndexExpr()));
     }
 
-    return builder.CreateGEP(value, {
-        llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0),
-        codegenExpr(*expr.getIndexExpr())
-    });
+    return builder.CreateGEP(value, { llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0),
+                                      codegenExpr(*expr.getIndexExpr()) });
 }
 
 llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
@@ -689,52 +710,92 @@ llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
 
 llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VarExpr: return codegenVarExpr(llvm::cast<VarExpr>(expr));
-        case ExprKind::StringLiteralExpr: return codegenStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
-        case ExprKind::CharacterLiteralExpr: return codegenCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr));
-        case ExprKind::IntLiteralExpr: return codegenIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr));
-        case ExprKind::FloatLiteralExpr: return codegenFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr));
-        case ExprKind::BoolLiteralExpr: return codegenBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
-        case ExprKind::NullLiteralExpr: return codegenNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
-        case ExprKind::ArrayLiteralExpr: return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
-        case ExprKind::TupleExpr: return codegenTupleExpr(llvm::cast<TupleExpr>(expr));
-        case ExprKind::PrefixExpr: return codegenPrefixExpr(llvm::cast<PrefixExpr>(expr));
-        case ExprKind::BinaryExpr: return codegenBinaryExpr(llvm::cast<BinaryExpr>(expr));
-        case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));
-        case ExprKind::CastExpr: return codegenCastExpr(llvm::cast<CastExpr>(expr));
-        case ExprKind::SizeofExpr: return codegenSizeofExpr(llvm::cast<SizeofExpr>(expr));
-        case ExprKind::AddressofExpr: return codegenAddressofExpr(llvm::cast<AddressofExpr>(expr));
-        case ExprKind::MemberExpr: return codegenMemberExpr(llvm::cast<MemberExpr>(expr));
-        case ExprKind::SubscriptExpr: return codegenSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
-        case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
-        case ExprKind::LambdaExpr: return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
-        case ExprKind::IfExpr: return codegenIfExpr(llvm::cast<IfExpr>(expr));
+        case ExprKind::VarExpr:
+            return codegenVarExpr(llvm::cast<VarExpr>(expr));
+        case ExprKind::StringLiteralExpr:
+            return codegenStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
+        case ExprKind::CharacterLiteralExpr:
+            return codegenCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr));
+        case ExprKind::IntLiteralExpr:
+            return codegenIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr));
+        case ExprKind::FloatLiteralExpr:
+            return codegenFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr));
+        case ExprKind::BoolLiteralExpr:
+            return codegenBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
+        case ExprKind::NullLiteralExpr:
+            return codegenNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
+        case ExprKind::ArrayLiteralExpr:
+            return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
+        case ExprKind::TupleExpr:
+            return codegenTupleExpr(llvm::cast<TupleExpr>(expr));
+        case ExprKind::PrefixExpr:
+            return codegenPrefixExpr(llvm::cast<PrefixExpr>(expr));
+        case ExprKind::BinaryExpr:
+            return codegenBinaryExpr(llvm::cast<BinaryExpr>(expr));
+        case ExprKind::CallExpr:
+            return codegenCallExpr(llvm::cast<CallExpr>(expr));
+        case ExprKind::CastExpr:
+            return codegenCastExpr(llvm::cast<CastExpr>(expr));
+        case ExprKind::SizeofExpr:
+            return codegenSizeofExpr(llvm::cast<SizeofExpr>(expr));
+        case ExprKind::AddressofExpr:
+            return codegenAddressofExpr(llvm::cast<AddressofExpr>(expr));
+        case ExprKind::MemberExpr:
+            return codegenMemberExpr(llvm::cast<MemberExpr>(expr));
+        case ExprKind::SubscriptExpr:
+            return codegenSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
+        case ExprKind::UnwrapExpr:
+            return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
+        case ExprKind::LambdaExpr:
+            return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
+        case ExprKind::IfExpr:
+            return codegenIfExpr(llvm::cast<IfExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }
 
 llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VarExpr: return codegenLvalueVarExpr(llvm::cast<VarExpr>(expr));
-        case ExprKind::StringLiteralExpr: return codegenStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
-        case ExprKind::CharacterLiteralExpr: return codegenCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr));
-        case ExprKind::IntLiteralExpr: llvm_unreachable("no lvalue integer literals");
-        case ExprKind::FloatLiteralExpr: llvm_unreachable("no lvalue float literals");
-        case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");
-        case ExprKind::NullLiteralExpr: llvm_unreachable("no lvalue null literals");
-        case ExprKind::ArrayLiteralExpr: return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
-        case ExprKind::TupleExpr: return codegenTupleExpr(llvm::cast<TupleExpr>(expr));
-        case ExprKind::PrefixExpr: return codegenLvaluePrefixExpr(llvm::cast<PrefixExpr>(expr));
-        case ExprKind::BinaryExpr: llvm_unreachable("no lvalue binary expressions");
-        case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));
-        case ExprKind::CastExpr: llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
-        case ExprKind::SizeofExpr: llvm_unreachable("no lvalue sizeof expressions");
-        case ExprKind::AddressofExpr: llvm_unreachable("no lvalue addressof expressions");
-        case ExprKind::MemberExpr: return codegenLvalueMemberExpr(llvm::cast<MemberExpr>(expr));
-        case ExprKind::SubscriptExpr: return codegenLvalueSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
-        case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
-        case ExprKind::LambdaExpr: return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
-        case ExprKind::IfExpr: return codegenIfExpr(llvm::cast<IfExpr>(expr));
+        case ExprKind::VarExpr:
+            return codegenLvalueVarExpr(llvm::cast<VarExpr>(expr));
+        case ExprKind::StringLiteralExpr:
+            return codegenStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
+        case ExprKind::CharacterLiteralExpr:
+            return codegenCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr));
+        case ExprKind::IntLiteralExpr:
+            llvm_unreachable("no lvalue integer literals");
+        case ExprKind::FloatLiteralExpr:
+            llvm_unreachable("no lvalue float literals");
+        case ExprKind::BoolLiteralExpr:
+            llvm_unreachable("no lvalue boolean literals");
+        case ExprKind::NullLiteralExpr:
+            llvm_unreachable("no lvalue null literals");
+        case ExprKind::ArrayLiteralExpr:
+            return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
+        case ExprKind::TupleExpr:
+            return codegenTupleExpr(llvm::cast<TupleExpr>(expr));
+        case ExprKind::PrefixExpr:
+            return codegenLvaluePrefixExpr(llvm::cast<PrefixExpr>(expr));
+        case ExprKind::BinaryExpr:
+            llvm_unreachable("no lvalue binary expressions");
+        case ExprKind::CallExpr:
+            return codegenCallExpr(llvm::cast<CallExpr>(expr));
+        case ExprKind::CastExpr:
+            llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
+        case ExprKind::SizeofExpr:
+            llvm_unreachable("no lvalue sizeof expressions");
+        case ExprKind::AddressofExpr:
+            llvm_unreachable("no lvalue addressof expressions");
+        case ExprKind::MemberExpr:
+            return codegenLvalueMemberExpr(llvm::cast<MemberExpr>(expr));
+        case ExprKind::SubscriptExpr:
+            return codegenLvalueSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
+        case ExprKind::UnwrapExpr:
+            return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
+        case ExprKind::LambdaExpr:
+            return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
+        case ExprKind::IfExpr:
+            return codegenIfExpr(llvm::cast<IfExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }

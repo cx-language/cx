@@ -5,7 +5,8 @@
 namespace llvm {
 
 class StringRef;
-template<typename T> class ArrayRef;
+template<typename T>
+class ArrayRef;
 
 }
 

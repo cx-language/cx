@@ -50,8 +50,8 @@ void evaluate(llvm::StringRef line) {
     if (!error.empty()) llvm::outs() << error << '\n';
 
     llvm::FunctionType* functionType = llvm::FunctionType::get(irGenerator.toIR(expr->getType()), {}, false);
-    llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage,
-                                                      "__anon_expr", &irModuleRef);
+    llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "__anon_expr",
+                                                      &irModuleRef);
     irGenerator.getBuilder().SetInsertPoint(llvm::BasicBlock::Create(irGenerator.getLLVMContext(), "", function));
     irGenerator.getBuilder().CreateRet(irGenerator.codegenExpr(*expr));
     ASSERT(!llvm::verifyModule(irModuleRef, &llvm::errs()));
@@ -75,11 +75,10 @@ void evaluate(llvm::StringRef line) {
 }
 
 int delta::replMain() {
-    llvm::outs() <<
-        "Welcome to the Delta REPL! Note: the REPL is still highly work-in-progress and\n"
-        "is missing many features: currently it can only evaluate expressions, so you\n"
-        "cannot e.g. declare any variables, functions, or types, or use any control flow\n"
-        "statements. Furthermore, you cannot use the standard library from the REPL yet.\n\n";
+    llvm::outs() << "Welcome to the Delta REPL! Note: the REPL is still highly work-in-progress and\n"
+                    "is missing many features: currently it can only evaluate expressions, so you\n"
+                    "cannot e.g. declare any variables, functions, or types, or use any control flow\n"
+                    "statements. Furthermore, you cannot use the standard library from the REPL yet.\n\n";
     llvm::outs().flush();
 
     llvm::LineEditor editor("", llvm::LineEditor::getDefaultHistoryPath("delta-repl"));

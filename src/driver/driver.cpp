@@ -46,8 +46,7 @@ bool delta::checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) 
 
 namespace {
 
-std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix,
-                                                   std::vector<llvm::StringRef>& args) {
+std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix, std::vector<llvm::StringRef>& args) {
     std::vector<std::string> values;
     for (auto arg = args.begin(); arg != args.end();) {
         if (arg->startswith(flagPrefix)) {
@@ -100,8 +99,7 @@ void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& importSea
     }
 }
 
-void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths,
-                                    llvm::ArrayRef<std::string> inputFiles) {
+void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths, llvm::ArrayRef<std::string> inputFiles) {
     llvm::StringSet<> relativeImportSearchPaths;
 
     for (llvm::StringRef filePath : inputFiles) {
@@ -123,8 +121,7 @@ void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths,
     addHeaderSearchPathsFromEnvVar(importSearchPaths, "C_INCLUDE_PATH");
 }
 
-void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
-                     llvm::TargetMachine::CodeGenFileType fileType,
+void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType,
                      llvm::Reloc::Model relocModel) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
@@ -139,8 +136,7 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
     if (!target) printErrorAndExit(errorMessage);
 
     llvm::TargetOptions options;
-    auto* targetMachine = target->createTargetMachine(targetTriple, "generic", "", options,
-                                                      relocModel);
+    auto* targetMachine = target->createTargetMachine(targetTriple, "generic", "", options, relocModel);
     module.setDataLayout(targetMachine->createDataLayout());
 
     std::error_code error;
@@ -254,20 +250,16 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     llvm::SmallString<128> temporaryOutputFilePath;
     auto* outputFileExtension = emitAssembly ? "s" : msvc ? "obj" : "o";
-    if (auto error = llvm::sys::fs::createTemporaryFile("delta", outputFileExtension,
-                                                        temporaryOutputFilePath)) {
+    if (auto error = llvm::sys::fs::createTemporaryFile("delta", outputFileExtension, temporaryOutputFilePath)) {
         printErrorAndExit(error.message());
     }
 
-    auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
-                                 : llvm::TargetMachine::CGFT_ObjectFile;
-    auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_
-                                                  : llvm::Reloc::Model::Static;
+    auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile : llvm::TargetMachine::CGFT_ObjectFile;
+    auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_ : llvm::Reloc::Model::Static;
     emitMachineCode(irModule, temporaryOutputFilePath, fileType, relocModel);
 
     if (compileOnly || emitAssembly) {
-        if (auto error = llvm::sys::fs::rename(temporaryOutputFilePath,
-                                               llvm::Twine("output.") + outputFileExtension)) {
+        if (auto error = llvm::sys::fs::rename(temporaryOutputFilePath, llvm::Twine("output.") + outputFileExtension)) {
             printErrorAndExit(error.message());
         }
         return 0;
@@ -286,7 +278,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         ccPath.c_str(),
         temporaryOutputFilePath.c_str(),
 #ifdef __linux__
-        "-static"
+        "-static",
 #endif
     };
 
@@ -317,8 +309,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (run) {
         std::string error;
         const char* executableArgs[] = { temporaryExecutablePath.c_str(), nullptr };
-        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs,
-                                                             nullptr, nullptr, 0, 0, &error);
+        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs, nullptr, nullptr, 0, 0,
+                                                             &error);
         llvm::sys::fs::remove(temporaryExecutablePath);
 
         if (msvc) {

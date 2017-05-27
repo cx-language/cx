@@ -24,23 +24,36 @@ enum class PrecedenceGroup {
 
 PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     switch (tokenKind) {
-        case Token::Equal: case Token::NotEqual: case Token::PointerEqual: case Token::PointerNotEqual:
+        case Token::Equal:
+        case Token::NotEqual:
+        case Token::PointerEqual:
+        case Token::PointerNotEqual:
             return PrecedenceGroup::Comparison;
-        case Token::Less: case Token::LessOrEqual: case Token::Greater: case Token::GreaterOrEqual:
+        case Token::Less:
+        case Token::LessOrEqual:
+        case Token::Greater:
+        case Token::GreaterOrEqual:
             return PrecedenceGroup::Comparison;
-        case Token::DotDot: case Token::DotDotDot:
+        case Token::DotDot:
+        case Token::DotDotDot:
             return PrecedenceGroup::Range;
-        case Token::Plus: case Token::Minus:
+        case Token::Plus:
+        case Token::Minus:
             return PrecedenceGroup::AddSub;
-        case Token::Star: case Token::Slash: case Token::Modulo:
+        case Token::Star:
+        case Token::Slash:
+        case Token::Modulo:
             return PrecedenceGroup::MulDiv;
         case Token::AndAnd:
             return PrecedenceGroup::LogicalAnd;
         case Token::OrOr:
             return PrecedenceGroup::LogicalOr;
-        case Token::And: case Token::Or: case Token::Xor:
+        case Token::And:
+        case Token::Or:
+        case Token::Xor:
             return PrecedenceGroup::Bitwise;
-        case Token::LeftShift: case Token::RightShift:
+        case Token::LeftShift:
+        case Token::RightShift:
             return PrecedenceGroup::Bitwise;
         default:
             llvm_unreachable("invalid binary operator");
@@ -61,11 +74,28 @@ Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string)
 
 bool Token::isBinaryOperator() const {
     switch (kind) {
-        case Token::Equal: case Token::NotEqual: case Token::PointerEqual: case Token::PointerNotEqual:
-        case Token::Less: case Token::LessOrEqual: case Token::Greater: case Token::GreaterOrEqual:
-        case Token::Plus: case Token::Minus: case Token::Star: case Token::Slash: case Token::Modulo:
-        case Token::And: case Token::AndAnd: case Token::Or: case Token::OrOr: case Token::Xor:
-        case Token::LeftShift: case Token::RightShift: case Token::DotDot: case Token::DotDotDot:
+        case Token::Equal:
+        case Token::NotEqual:
+        case Token::PointerEqual:
+        case Token::PointerNotEqual:
+        case Token::Less:
+        case Token::LessOrEqual:
+        case Token::Greater:
+        case Token::GreaterOrEqual:
+        case Token::Plus:
+        case Token::Minus:
+        case Token::Star:
+        case Token::Slash:
+        case Token::Modulo:
+        case Token::And:
+        case Token::AndAnd:
+        case Token::Or:
+        case Token::OrOr:
+        case Token::Xor:
+        case Token::LeftShift:
+        case Token::RightShift:
+        case Token::DotDot:
+        case Token::DotDotDot:
             return true;
         default:
             return false;
@@ -74,7 +104,11 @@ bool Token::isBinaryOperator() const {
 
 bool Token::isPrefixOperator() const {
     switch (kind) {
-        case Token::Plus: case Token::Minus: case Token::Star: case Token::And: case Token::Not:
+        case Token::Plus:
+        case Token::Minus:
+        case Token::Star:
+        case Token::And:
+        case Token::Not:
         case Token::Tilde:
             return true;
         default:
@@ -88,9 +122,18 @@ bool Token::isAssignmentOperator() const {
 
 bool Token::isCompoundAssignmentOperator() const {
     switch (kind) {
-        case Token::PlusEqual: case Token::MinusEqual: case Token::StarEqual: case Token::SlashEqual:
-        case Token::ModuloEqual: case Token::AndEqual: case Token::AndAndEqual: case Token::OrEqual:
-        case Token::OrOrEqual: case Token::XorEqual: case Token::LeftShiftEqual: case Token::RightShiftEqual:
+        case Token::PlusEqual:
+        case Token::MinusEqual:
+        case Token::StarEqual:
+        case Token::SlashEqual:
+        case Token::ModuloEqual:
+        case Token::AndEqual:
+        case Token::AndAndEqual:
+        case Token::OrEqual:
+        case Token::OrOrEqual:
+        case Token::XorEqual:
+        case Token::LeftShiftEqual:
+        case Token::RightShiftEqual:
             return true;
         default:
             return false;
@@ -99,9 +142,17 @@ bool Token::isCompoundAssignmentOperator() const {
 
 bool Token::isOverloadable() const {
     switch (kind) {
-        case Token::Equal: case Token::NotEqual: case Token::Less: case Token::LessOrEqual:
-        case Token::Greater: case Token::GreaterOrEqual: case Token::Plus: case Token::Minus:
-        case Token::Star: case Token::Slash: case Token::Modulo:
+        case Token::Equal:
+        case Token::NotEqual:
+        case Token::Less:
+        case Token::LessOrEqual:
+        case Token::Greater:
+        case Token::GreaterOrEqual:
+        case Token::Plus:
+        case Token::Minus:
+        case Token::Star:
+        case Token::Slash:
+        case Token::Modulo:
             return true;
         default:
             return false;
@@ -135,9 +186,14 @@ BinaryOperator::BinaryOperator(Token token) : kind(token) {
 
 bool BinaryOperator::isComparisonOperator() const {
     switch (kind) {
-        case Token::Equal: case Token::NotEqual: case Token::PointerEqual:
-        case Token::PointerNotEqual: case Token::Less: case Token::LessOrEqual:
-        case Token::Greater: case Token::GreaterOrEqual:
+        case Token::Equal:
+        case Token::NotEqual:
+        case Token::PointerEqual:
+        case Token::PointerNotEqual:
+        case Token::Less:
+        case Token::LessOrEqual:
+        case Token::Greater:
+        case Token::GreaterOrEqual:
             return true;
         default:
             return false;
@@ -146,9 +202,17 @@ bool BinaryOperator::isComparisonOperator() const {
 
 bool BinaryOperator::isBitwiseOperator() const {
     switch (kind) {
-        case Token::And: case Token::AndEqual: case Token::Or: case Token::OrEqual: case Token::Xor:
-        case Token::XorEqual: case Token::Tilde: case Token::LeftShift: case Token::LeftShiftEqual:
-        case Token::RightShift: case Token::RightShiftEqual:
+        case Token::And:
+        case Token::AndEqual:
+        case Token::Or:
+        case Token::OrEqual:
+        case Token::Xor:
+        case Token::XorEqual:
+        case Token::Tilde:
+        case Token::LeftShift:
+        case Token::LeftShiftEqual:
+        case Token::RightShift:
+        case Token::RightShiftEqual:
             return true;
         default:
             return false;
@@ -157,27 +221,115 @@ bool BinaryOperator::isBitwiseOperator() const {
 
 std::string BinaryOperator::getFunctionName() const {
     switch (kind) {
-        case Token::DotDot: return "Range";
-        case Token::DotDotDot: return "ClosedRange";
-        default: return toString(kind);
+        case Token::DotDot:
+            return "Range";
+        case Token::DotDotDot:
+            return "ClosedRange";
+        default:
+            return toString(kind);
     }
 }
 
 const char* delta::toString(Token::Kind tokenKind) {
     static const char* const tokenStrings[] = {
-        "end-of-file", "newline", "identifier", "number", "float literal", "string literal",
-        "character literal", "addressof", "break", "case", "cast", "class", "const", "continue",
-        "default", "defer", "deinit", "else", "enum", "extern", "false", "for", "func", "if",
-        "import", "in", "init", "interface", "let", "mutable", "mutating", "null", "return",
-        "sizeof", "struct", "switch", "this", "true", "undefined", "var", "while", "_", "#if",
-        "#else", "#endif",
-        "==", "!=", "===", "!==", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",
-        "/", "/=", "%", "%=", "++", "--", "!", "&", "&=", "&&", "&&=", "|", "|=", "||", "||=",
-        "^", "^=", "~", "<<", "<<=", ">>", ">>=", "=", "(", ")", "[", "]", "{", "}",
-        ".", "..", "...", ",", ":", ";", "->", "?"
+        "end-of-file",
+        "newline",
+        "identifier",
+        "number",
+        "float literal",
+        "string literal",
+        "character literal",
+        "addressof",
+        "break",
+        "case",
+        "cast",
+        "class",
+        "const",
+        "continue",
+        "default",
+        "defer",
+        "deinit",
+        "else",
+        "enum",
+        "extern",
+        "false",
+        "for",
+        "func",
+        "if",
+        "import",
+        "in",
+        "init",
+        "interface",
+        "let",
+        "mutable",
+        "mutating",
+        "null",
+        "return",
+        "sizeof",
+        "struct",
+        "switch",
+        "this",
+        "true",
+        "undefined",
+        "var",
+        "while",
+        "_",
+        "#if",
+        "#else",
+        "#endif",
+        "==",
+        "!=",
+        "===",
+        "!==",
+        "<",
+        "<=",
+        ">",
+        ">=",
+        "+",
+        "+=",
+        "-",
+        "-=",
+        "*",
+        "*=",
+        "/",
+        "/=",
+        "%",
+        "%=",
+        "++",
+        "--",
+        "!",
+        "&",
+        "&=",
+        "&&",
+        "&&=",
+        "|",
+        "|=",
+        "||",
+        "||=",
+        "^",
+        "^=",
+        "~",
+        "<<",
+        "<<=",
+        ">>",
+        ">>=",
+        "=",
+        "(",
+        ")",
+        "[",
+        "]",
+        "{",
+        "}",
+        ".",
+        "..",
+        "...",
+        ",",
+        ":",
+        ";",
+        "->",
+        "?",
     };
-    static_assert(llvm::array_lengthof(tokenStrings) == int(Token::TokenCount),
-                  "tokenStrings array not up-to-date");
+    static_assert(llvm::array_lengthof(tokenStrings) == int(Token::TokenCount), "tokenStrings array not up-to-date");
     return tokenStrings[int(tokenKind)];
 }
 

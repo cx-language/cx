@@ -12,8 +12,10 @@
 
 namespace llvm {
 class StringRef;
-template<typename T> class ArrayRef;
-template<typename T, unsigned N> class SmallVector;
+template<typename T>
+class ArrayRef;
+template<typename T, unsigned N>
+class SmallVector;
 }
 
 namespace delta {
@@ -27,21 +29,19 @@ struct Type;
 class Typechecker {
 public:
     Typechecker()
-    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr),
-      functionReturnType(nullptr), isPostProcessing(false) {}
+    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), functionReturnType(nullptr),
+      isPostProcessing(false) {}
 
-    Module* getCurrentModule() const { ASSERT(currentModule); return currentModule; }
+    Module* getCurrentModule() const { return ASSERT(currentModule), currentModule; }
     void setCurrentModule(Module* module) { currentModule = module; }
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
 
-    void typecheckModule(Module& module, const PackageManifest* manifest,
-                         llvm::ArrayRef<std::string> importSearchPaths,
+    void typecheckModule(Module& module, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
                          llvm::ArrayRef<std::string> frameworkSearchPaths);
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false);
     void typecheckVarDecl(VarDecl& decl, bool isGlobal);
     void typecheckFieldDecl(FieldDecl& decl);
-    void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
-                               llvm::ArrayRef<std::string> importSearchPaths,
+    void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
                                llvm::ArrayRef<std::string> frameworkSearchPaths);
     void postProcess();
 
@@ -69,8 +69,7 @@ private:
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
     void typecheckEnumDecl(EnumDecl& decl);
-    void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
-                             llvm::ArrayRef<std::string> importSearchPaths,
+    void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
                              llvm::ArrayRef<std::string> frameworkSearchPaths);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
@@ -94,29 +93,23 @@ private:
     void checkImplementsInterface(TypeDecl& type, TypeDecl& interface, SourceLocation location) const;
     bool implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
     bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const;
-    llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
-                                                CallExpr& call, llvm::ArrayRef<ParamDecl> params,
-                                                bool returnOnError);
+    llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
+                                                llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
-    Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee,
-                          bool returnNullOnError = false);
-    std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
-                                       CallExpr& call, llvm::ArrayRef<ParamDecl> params,
-                                       bool returnOnError);
+    Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, bool returnNullOnError = false);
+    std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
+                                       llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     bool isImplicitlyCopyable(Type type);
-    bool argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl,
-                        llvm::ArrayRef<ParamDecl> params = {}) const;
+    bool argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {}) const;
     void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
-    void validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params,
-                      bool isVariadic, llvm::StringRef functionName = "",
-                      SourceLocation location = SourceLocation::invalid()) const;
+    void validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params, bool isVariadic,
+                      llvm::StringRef functionName = "", SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
     void markFieldAsInitialized(Expr& expr);
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
 
-    llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
-                                                   const PackageManifest* manifest,
+    llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
                                                    llvm::ArrayRef<std::string> importSearchPaths,
                                                    llvm::ArrayRef<std::string> frameworkSearchPaths,
                                                    llvm::StringRef moduleExternalName,

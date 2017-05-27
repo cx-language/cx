@@ -41,7 +41,9 @@ template<typename SourceContainer, typename Mapper>
 auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(mapper(*source.begin()))> {
     std::vector<decltype(mapper(*source.begin()))> result;
     result.reserve(source.size());
-    for (auto& element : source) result.emplace_back(mapper(element));
+    for (auto& element : source) {
+        result.emplace_back(mapper(element));
+    }
     return result;
 }
 
@@ -57,7 +59,7 @@ static void append(TargetContainer& target, const SourceContainer& source) {
 }
 
 template<typename T>
-std::string toDisjunctiveList(llvm::ArrayRef<T> values, std::string (& stringifier)(T)) {
+std::string toDisjunctiveList(llvm::ArrayRef<T> values, std::string (&stringifier)(T)) {
     std::string string;
     for (const T& value : values) {
         string += stringifier(value);
@@ -86,13 +88,11 @@ StateSaver<T> makeStateSaver(T& state) {
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 #define SAVE_STATE(state) const auto CONCAT(stateSaver, __COUNTER__) = makeStateSaver(state)
 
-
 void skipWhitespace(llvm::StringRef& string);
 llvm::StringRef readWord(llvm::StringRef& string);
 llvm::StringRef readLine(llvm::StringRef& string);
 std::string readLineFromFile(SourceLocation location);
-void printDiagnostic(SourceLocation location, llvm::StringRef type,
-                     llvm::raw_ostream::Colors color, llvm::StringRef message);
+void printDiagnostic(SourceLocation location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message);
 
 class Note {
 public:
@@ -130,8 +130,7 @@ template<typename... Args>
 [[noreturn]] void printErrorAndExit(Args&&... args) {
     printColored("error: ", llvm::raw_ostream::RED);
     using expander = int[];
-    (void)expander{0, (void(void(printColored(std::forward<Args>(args),
-                                              llvm::raw_ostream::SAVEDCOLOR))), 0)...};
+    (void) expander{ 0, (void(void(printColored(std::forward<Args>(args), llvm::raw_ostream::SAVEDCOLOR))), 0)... };
     llvm::outs() << '\n';
     exit(1);
 }
@@ -141,7 +140,7 @@ template<typename... Args>
     std::string message;
     llvm::raw_string_ostream messageStream(message);
     using expander = int[];
-    (void)expander{0, (void(void(messageStream << std::forward<Args>(args))), 0)...};
+    (void) expander{ 0, (void(void(messageStream << std::forward<Args>(args))), 0)... };
     throw CompileError(location, std::move(messageStream.str()), std::move(notes));
 }
 
@@ -161,7 +160,7 @@ void warning(SourceLocation location, Args&&... args) {
     std::string message;
     llvm::raw_string_ostream messageStream(message);
     using expander = int[];
-    (void)expander{0, (void(void(messageStream << std::forward<Args>(args))), 0)...};
+    (void) expander{ 0, (void(void(messageStream << std::forward<Args>(args))), 0)... };
     printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, messageStream.str());
 }
 

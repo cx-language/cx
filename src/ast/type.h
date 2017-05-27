@@ -25,7 +25,7 @@ enum class TypeKind {
     TupleType,
     FunctionType,
     PointerType,
-    OptionalType
+    OptionalType,
 };
 
 class TypeBase {
@@ -44,8 +44,7 @@ inline TypeBase::~TypeBase() {}
 
 struct Type {
 public:
-    Type(TypeBase* typeBase = nullptr, bool isMutable = false)
-    : typeBase(typeBase), mutableFlag(isMutable) {}
+    Type(TypeBase* typeBase = nullptr, bool isMutable = false) : typeBase(typeBase), mutableFlag(isMutable) {}
     TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
     TypeBase* getBase() const { return typeBase; }
@@ -58,15 +57,12 @@ public:
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
     bool isOptionalType() const { return getKind() == TypeKind::OptionalType; }
     bool isBuiltinType() const {
-        return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType()
-            || isNull() || isVoid();
+        return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType() || isNull() || isVoid();
     }
     bool isArrayWithConstantSize() const;
     bool isArrayWithRuntimeSize() const;
     bool isArrayWithUnknownSize() const;
-    bool isFloatingPoint() const {
-        return isFloat() || isFloat32() || isFloat64() || isFloat80();
-    }
+    bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
     bool isVoid() const;
@@ -177,8 +173,7 @@ public:
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
 
 private:
-    ArrayType(Type type, int64_t size)
-    : TypeBase(TypeKind::ArrayType), elementType(type), size(size) {}
+    ArrayType(Type type, int64_t size) : TypeBase(TypeKind::ArrayType), elementType(type), size(size) {}
 
 private:
     Type elementType;
@@ -202,8 +197,7 @@ public:
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
 
 private:
-    TupleType(std::vector<TupleElement>&& elements)
-    : TypeBase(TypeKind::TupleType), elements(std::move(elements)) {}
+    TupleType(std::vector<TupleElement>&& elements) : TypeBase(TypeKind::TupleType), elements(std::move(elements)) {}
 
 private:
     std::vector<TupleElement> elements;
@@ -233,8 +227,7 @@ public:
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PointerType; }
 
 private:
-    PointerType(Type pointeeType)
-    : TypeBase(TypeKind::PointerType), pointeeType(pointeeType) {}
+    PointerType(Type pointeeType) : TypeBase(TypeKind::PointerType), pointeeType(pointeeType) {}
 
 private:
     Type pointeeType;
@@ -247,8 +240,7 @@ public:
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::OptionalType; }
 
 private:
-    OptionalType(Type wrappedType)
-    : TypeBase(TypeKind::OptionalType), wrappedType(wrappedType) {}
+    OptionalType(Type wrappedType) : TypeBase(TypeKind::OptionalType), wrappedType(wrappedType) {}
 
 private:
     Type wrappedType;

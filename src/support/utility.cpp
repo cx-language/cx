@@ -38,8 +38,8 @@ std::string delta::readLineFromFile(SourceLocation location) {
     return lineContent;
 }
 
-void delta::printDiagnostic(SourceLocation location, llvm::StringRef type,
-                            llvm::raw_ostream::Colors color, llvm::StringRef message) {
+void delta::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm::raw_ostream::Colors color,
+                            llvm::StringRef message) {
     if (llvm::outs().has_colors()) {
         llvm::outs().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
     }

@@ -166,26 +166,66 @@ void ASTPrinter::printIfExpr(const IfExpr& expr) {
 
 void ASTPrinter::printExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VarExpr: printVarExpr(llvm::cast<VarExpr>(expr)); break;
-        case ExprKind::StringLiteralExpr: printStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr)); break;
-        case ExprKind::CharacterLiteralExpr: printCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr)); break;
-        case ExprKind::IntLiteralExpr: printIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr)); break;
-        case ExprKind::FloatLiteralExpr: printFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr)); break;
-        case ExprKind::BoolLiteralExpr: printBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr)); break;
-        case ExprKind::NullLiteralExpr: printNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr)); break;
-        case ExprKind::ArrayLiteralExpr: printArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr)); break;
-        case ExprKind::TupleExpr: printTupleExpr(llvm::cast<TupleExpr>(expr)); break;
-        case ExprKind::PrefixExpr: printPrefixExpr(llvm::cast<PrefixExpr>(expr)); break;
-        case ExprKind::BinaryExpr: printBinaryExpr(llvm::cast<BinaryExpr>(expr)); break;
-        case ExprKind::CallExpr: printCallExpr(llvm::cast<CallExpr>(expr)); break;
-        case ExprKind::CastExpr: printCastExpr(llvm::cast<CastExpr>(expr)); break;
-        case ExprKind::SizeofExpr: printSizeofExpr(llvm::cast<SizeofExpr>(expr)); break;
-        case ExprKind::AddressofExpr: printAddressofExpr(llvm::cast<AddressofExpr>(expr)); break;
-        case ExprKind::MemberExpr: printMemberExpr(llvm::cast<MemberExpr>(expr)); break;
-        case ExprKind::SubscriptExpr: printSubscriptExpr(llvm::cast<SubscriptExpr>(expr)); break;
-        case ExprKind::UnwrapExpr: printUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;
-        case ExprKind::LambdaExpr: printLambdaExpr(llvm::cast<LambdaExpr>(expr)); break;
-        case ExprKind::IfExpr: printIfExpr(llvm::cast<IfExpr>(expr)); break;
+        case ExprKind::VarExpr:
+            printVarExpr(llvm::cast<VarExpr>(expr));
+            break;
+        case ExprKind::StringLiteralExpr:
+            printStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
+            break;
+        case ExprKind::CharacterLiteralExpr:
+            printCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr));
+            break;
+        case ExprKind::IntLiteralExpr:
+            printIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr));
+            break;
+        case ExprKind::FloatLiteralExpr:
+            printFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr));
+            break;
+        case ExprKind::BoolLiteralExpr:
+            printBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
+            break;
+        case ExprKind::NullLiteralExpr:
+            printNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
+            break;
+        case ExprKind::ArrayLiteralExpr:
+            printArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
+            break;
+        case ExprKind::TupleExpr:
+            printTupleExpr(llvm::cast<TupleExpr>(expr));
+            break;
+        case ExprKind::PrefixExpr:
+            printPrefixExpr(llvm::cast<PrefixExpr>(expr));
+            break;
+        case ExprKind::BinaryExpr:
+            printBinaryExpr(llvm::cast<BinaryExpr>(expr));
+            break;
+        case ExprKind::CallExpr:
+            printCallExpr(llvm::cast<CallExpr>(expr));
+            break;
+        case ExprKind::CastExpr:
+            printCastExpr(llvm::cast<CastExpr>(expr));
+            break;
+        case ExprKind::SizeofExpr:
+            printSizeofExpr(llvm::cast<SizeofExpr>(expr));
+            break;
+        case ExprKind::AddressofExpr:
+            printAddressofExpr(llvm::cast<AddressofExpr>(expr));
+            break;
+        case ExprKind::MemberExpr:
+            printMemberExpr(llvm::cast<MemberExpr>(expr));
+            break;
+        case ExprKind::SubscriptExpr:
+            printSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
+            break;
+        case ExprKind::UnwrapExpr:
+            printUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
+            break;
+        case ExprKind::LambdaExpr:
+            printLambdaExpr(llvm::cast<LambdaExpr>(expr));
+            break;
+        case ExprKind::IfExpr:
+            printIfExpr(llvm::cast<IfExpr>(expr));
+            break;
     }
 }
 
@@ -337,20 +377,49 @@ void ASTPrinter::printCompoundStmt(const CompoundStmt& stmt) {
 
 void ASTPrinter::printStmt(const Stmt& stmt) {
     switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt: printReturnStmt(llvm::cast<ReturnStmt>(stmt)); break;
-        case StmtKind::VarStmt: printVarStmt(llvm::cast<VarStmt>(stmt)); break;
-        case StmtKind::IncrementStmt: printIncrementStmt(llvm::cast<IncrementStmt>(stmt)); break;
-        case StmtKind::DecrementStmt: printDecrementStmt(llvm::cast<DecrementStmt>(stmt)); break;
-        case StmtKind::ExprStmt: breakLine(); printExpr(llvm::cast<ExprStmt>(stmt).getExpr()); break;
-        case StmtKind::DeferStmt: printDeferStmt(llvm::cast<DeferStmt>(stmt)); break;
-        case StmtKind::IfStmt: printIfStmt(llvm::cast<IfStmt>(stmt)); break;
-        case StmtKind::SwitchStmt: printSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
-        case StmtKind::WhileStmt: printWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
-        case StmtKind::ForStmt: printForStmt(llvm::cast<ForStmt>(stmt)); break;
-        case StmtKind::BreakStmt: printBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
-        case StmtKind::ContinueStmt: printContinueStmt(llvm::cast<ContinueStmt>(stmt)); break;
-        case StmtKind::AssignStmt: printAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
-        case StmtKind::CompoundStmt: printCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
+        case StmtKind::ReturnStmt:
+            printReturnStmt(llvm::cast<ReturnStmt>(stmt));
+            break;
+        case StmtKind::VarStmt:
+            printVarStmt(llvm::cast<VarStmt>(stmt));
+            break;
+        case StmtKind::IncrementStmt:
+            printIncrementStmt(llvm::cast<IncrementStmt>(stmt));
+            break;
+        case StmtKind::DecrementStmt:
+            printDecrementStmt(llvm::cast<DecrementStmt>(stmt));
+            break;
+        case StmtKind::ExprStmt:
+            breakLine();
+            printExpr(llvm::cast<ExprStmt>(stmt).getExpr());
+            break;
+        case StmtKind::DeferStmt:
+            printDeferStmt(llvm::cast<DeferStmt>(stmt));
+            break;
+        case StmtKind::IfStmt:
+            printIfStmt(llvm::cast<IfStmt>(stmt));
+            break;
+        case StmtKind::SwitchStmt:
+            printSwitchStmt(llvm::cast<SwitchStmt>(stmt));
+            break;
+        case StmtKind::WhileStmt:
+            printWhileStmt(llvm::cast<WhileStmt>(stmt));
+            break;
+        case StmtKind::ForStmt:
+            printForStmt(llvm::cast<ForStmt>(stmt));
+            break;
+        case StmtKind::BreakStmt:
+            printBreakStmt(llvm::cast<BreakStmt>(stmt));
+            break;
+        case StmtKind::ContinueStmt:
+            printContinueStmt(llvm::cast<ContinueStmt>(stmt));
+            break;
+        case StmtKind::AssignStmt:
+            printAssignStmt(llvm::cast<AssignStmt>(stmt));
+            break;
+        case StmtKind::CompoundStmt:
+            printCompoundStmt(llvm::cast<CompoundStmt>(stmt));
+            break;
     }
 }
 
@@ -406,11 +475,21 @@ void ASTPrinter::printTypeDecl(const TypeDecl& decl) {
     breakLine();
     out << "(type-decl ";
     switch (decl.getTag()) {
-        case TypeTag::Struct: out << "struct "; break;
-        case TypeTag::Class: out << "class "; break;
-        case TypeTag::Interface: out << "interface "; break;
-        case TypeTag::Union: out << "union "; break;
-        case TypeTag::Enum: out << "enum "; break;
+        case TypeTag::Struct:
+            out << "struct ";
+            break;
+        case TypeTag::Class:
+            out << "class ";
+            break;
+        case TypeTag::Interface:
+            out << "interface ";
+            break;
+        case TypeTag::Union:
+            out << "union ";
+            break;
+        case TypeTag::Enum:
+            out << "enum ";
+            break;
     }
     out << decl.getName();
     indentLevel++;
@@ -455,19 +534,43 @@ void ASTPrinter::printImportDecl(const ImportDecl& decl) {
 
 void ASTPrinter::printDecl(const Decl& decl) {
     switch (decl.getKind()) {
-        case DeclKind::ParamDecl: printParamDecl(llvm::cast<ParamDecl>(decl)); break;
-        case DeclKind::GenericParamDecl: llvm_unreachable("handled via FunctionTemplate"); break;
+        case DeclKind::ParamDecl:
+            printParamDecl(llvm::cast<ParamDecl>(decl));
+            break;
+        case DeclKind::GenericParamDecl:
+            llvm_unreachable("handled via FunctionTemplate");
+            break;
         case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl: printFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
-        case DeclKind::InitDecl: printInitDecl(llvm::cast<InitDecl>(decl)); break;
-        case DeclKind::DeinitDecl: printDeinitDecl(llvm::cast<DeinitDecl>(decl)); break;
-        case DeclKind::FunctionTemplate: printFunctionTemplate(llvm::cast<FunctionTemplate>(decl)); break;
-        case DeclKind::TypeDecl: printTypeDecl(llvm::cast<TypeDecl>(decl)); break;
-        case DeclKind::TypeTemplate: printTypeTemplate(llvm::cast<TypeTemplate>(decl)); break;
-        case DeclKind::EnumDecl: printTypeDecl(llvm::cast<EnumDecl>(decl)); break;
-        case DeclKind::VarDecl: printVarDecl(llvm::cast<VarDecl>(decl)); break;
-        case DeclKind::FieldDecl: printFieldDecl(llvm::cast<FieldDecl>(decl)); break;
-        case DeclKind::ImportDecl: printImportDecl(llvm::cast<ImportDecl>(decl)); break;
+        case DeclKind::MethodDecl:
+            printFunctionDecl(llvm::cast<FunctionDecl>(decl));
+            break;
+        case DeclKind::InitDecl:
+            printInitDecl(llvm::cast<InitDecl>(decl));
+            break;
+        case DeclKind::DeinitDecl:
+            printDeinitDecl(llvm::cast<DeinitDecl>(decl));
+            break;
+        case DeclKind::FunctionTemplate:
+            printFunctionTemplate(llvm::cast<FunctionTemplate>(decl));
+            break;
+        case DeclKind::TypeDecl:
+            printTypeDecl(llvm::cast<TypeDecl>(decl));
+            break;
+        case DeclKind::TypeTemplate:
+            printTypeTemplate(llvm::cast<TypeTemplate>(decl));
+            break;
+        case DeclKind::EnumDecl:
+            printTypeDecl(llvm::cast<EnumDecl>(decl));
+            break;
+        case DeclKind::VarDecl:
+            printVarDecl(llvm::cast<VarDecl>(decl));
+            break;
+        case DeclKind::FieldDecl:
+            printFieldDecl(llvm::cast<FieldDecl>(decl));
+            break;
+        case DeclKind::ImportDecl:
+            printImportDecl(llvm::cast<ImportDecl>(decl));
+            break;
     }
 }
 

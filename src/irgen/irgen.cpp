@@ -61,8 +61,7 @@ void Scope::clear() {
     deinitsToCall.clear();
 }
 
-IRGenerator::IRGenerator()
-: builder(ctx), module("", ctx) {
+IRGenerator::IRGenerator() : builder(ctx), module("", ctx) {
     scopes.push_back(Scope(*this));
 }
 
@@ -96,8 +95,7 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
             return codegenVarDecl(*llvm::cast<VarDecl>(decl));
 
         case DeclKind::FieldDecl:
-            return codegenMemberAccess(findValue("this", nullptr),
-                                       llvm::cast<FieldDecl>(decl)->getType(),
+            return codegenMemberAccess(findValue("this", nullptr), llvm::cast<FieldDecl>(decl)->getType(),
                                        llvm::cast<FieldDecl>(decl)->getName());
 
         case DeclKind::FunctionDecl:
@@ -108,30 +106,32 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
     }
 }
 
+llvm::Type* IRGenerator::getBuiltinType(llvm::StringRef name) {
+    return llvm::StringSwitch<llvm::Type*>(name)
+        .Case("void", llvm::Type::getVoidTy(ctx))
+        .Case("bool", llvm::Type::getInt1Ty(ctx))
+        .Case("char", llvm::Type::getInt8Ty(ctx))
+        .Case("int", llvm::Type::getInt32Ty(ctx))
+        .Case("int8", llvm::Type::getInt8Ty(ctx))
+        .Case("int16", llvm::Type::getInt16Ty(ctx))
+        .Case("int32", llvm::Type::getInt32Ty(ctx))
+        .Case("int64", llvm::Type::getInt64Ty(ctx))
+        .Case("uint", llvm::Type::getInt32Ty(ctx))
+        .Case("uint8", llvm::Type::getInt8Ty(ctx))
+        .Case("uint16", llvm::Type::getInt16Ty(ctx))
+        .Case("uint32", llvm::Type::getInt32Ty(ctx))
+        .Case("uint64", llvm::Type::getInt64Ty(ctx))
+        .Case("float", llvm::Type::getFloatTy(ctx))
+        .Case("float32", llvm::Type::getFloatTy(ctx))
+        .Case("float64", llvm::Type::getDoubleTy(ctx))
+        .Case("float80", llvm::Type::getX86_FP80Ty(ctx))
+        .Default(nullptr);
+}
+
 llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
-            llvm::Type* builtinType = llvm::StringSwitch<llvm::Type*>(type.getName())
-                .Case("void", llvm::Type::getVoidTy(ctx))
-                .Case("bool", llvm::Type::getInt1Ty(ctx))
-                .Case("char", llvm::Type::getInt8Ty(ctx))
-                .Case("int", llvm::Type::getInt32Ty(ctx))
-                .Case("int8", llvm::Type::getInt8Ty(ctx))
-                .Case("int16", llvm::Type::getInt16Ty(ctx))
-                .Case("int32", llvm::Type::getInt32Ty(ctx))
-                .Case("int64", llvm::Type::getInt64Ty(ctx))
-                .Case("uint", llvm::Type::getInt32Ty(ctx))
-                .Case("uint8", llvm::Type::getInt8Ty(ctx))
-                .Case("uint16", llvm::Type::getInt16Ty(ctx))
-                .Case("uint32", llvm::Type::getInt32Ty(ctx))
-                .Case("uint64", llvm::Type::getInt64Ty(ctx))
-                .Case("float", llvm::Type::getFloatTy(ctx))
-                .Case("float32", llvm::Type::getFloatTy(ctx))
-                .Case("float64", llvm::Type::getDoubleTy(ctx))
-                .Case("float80", llvm::Type::getX86_FP80Ty(ctx))
-                .Default(nullptr);
-
-            if (builtinType) return builtinType;
+            if (auto* builtinType = getBuiltinType(type.getName())) return builtinType;
 
             auto name = mangleTypeDecl(type.getName(), type.getGenericArgs());
             auto it = structs.find(name);
@@ -165,8 +165,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             }
 
             auto* pointeeType = toIR(type.getPointee(), location);
-            if (!pointeeType->isVoidTy()) return llvm::PointerType::get(pointeeType, 0);
-            else return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0);
+            return llvm::PointerType::get(pointeeType->isVoidTy() ? llvm::Type::getInt8Ty(ctx) : pointeeType, 0);
         }
         case TypeKind::OptionalType:
             if (type.getWrappedType().isPointerType()) {
@@ -223,7 +222,9 @@ void IRGenerator::deferDeinitCall(llvm::Value* valueToDeinit, Type type, const D
 }
 
 void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
-    for (auto& scope : llvm::reverse(scopes)) scope.onScopeEnd();
+    for (auto& scope : llvm::reverse(scopes)) {
+        scope.onScopeEnd();
+    }
     scopes.back().clear();
 }
 
@@ -272,8 +273,7 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
 }
 
 void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), &stmt.getDecl(), nullptr,
-                                          stmt.getDecl().getName());
+    auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), &stmt.getDecl(), nullptr, stmt.getDecl().getName());
 
     if (auto initializer = stmt.getDecl().getInitializer()) {
         if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
@@ -320,8 +320,8 @@ void IRGenerator::codegenDecrementStmt(const DecrementStmt& stmt) {
     builder.CreateStore(result, alloca);
 }
 
-void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
-                               llvm::BasicBlock* destination, llvm::BasicBlock* continuation) {
+void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination,
+                               llvm::BasicBlock* continuation) {
     builder.SetInsertPoint(destination);
 
     beginScope();
@@ -332,8 +332,8 @@ void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
     endScope();
 
     llvm::BasicBlock* insertBlock = builder.GetInsertBlock();
-    if (insertBlock->empty() || (!llvm::isa<llvm::ReturnInst>(insertBlock->back())
-                                 && !llvm::isa<llvm::BranchInst>(insertBlock->back())))
+    if (insertBlock->empty() ||
+        (!llvm::isa<llvm::ReturnInst>(insertBlock->back()) && !llvm::isa<llvm::BranchInst>(insertBlock->back())))
         builder.CreateBr(continuation);
 }
 
@@ -455,9 +455,12 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
         }
 
         switch (binaryExpr.getOperator()) {
-            case Token::AndAnd: error(stmt.getLocation(), "'&&=' not implemented yet");
-            case Token::OrOr: error(stmt.getLocation(), "'||=' not implemented yet");
-            default: break;
+            case Token::AndAnd:
+                error(stmt.getLocation(), "'&&=' not implemented yet");
+            case Token::OrOr:
+                error(stmt.getLocation(), "'||=' not implemented yet");
+            default:
+                break;
         }
 
         llvm::Value* rhsValue;
@@ -466,8 +469,7 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
             rhsValue = codegenPointerOffset(binaryExpr);
         } else {
             auto* lhsValue = builder.CreateLoad(lhsLvalue);
-            rhsValue = codegenBinaryOp(binaryExpr.getOperator(), lhsValue,
-                                       codegenExpr(binaryExpr.getRHS()), *stmt.getLHS());
+            rhsValue = codegenBinaryOp(binaryExpr.getOperator(), lhsValue, codegenExpr(binaryExpr.getRHS()), *stmt.getLHS());
         }
 
         builder.CreateStore(rhsValue, lhsLvalue);
@@ -489,20 +491,48 @@ void IRGenerator::codegenCompoundStmt(const CompoundStmt& stmt) {
 
 void IRGenerator::codegenStmt(const Stmt& stmt) {
     switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt: codegenReturnStmt(llvm::cast<ReturnStmt>(stmt)); break;
-        case StmtKind::VarStmt: codegenVarStmt(llvm::cast<VarStmt>(stmt)); break;
-        case StmtKind::IncrementStmt: codegenIncrementStmt(llvm::cast<IncrementStmt>(stmt)); break;
-        case StmtKind::DecrementStmt: codegenDecrementStmt(llvm::cast<DecrementStmt>(stmt)); break;
-        case StmtKind::ExprStmt: codegenExpr(llvm::cast<ExprStmt>(stmt).getExpr()); break;
-        case StmtKind::DeferStmt: deferEvaluationOf(llvm::cast<DeferStmt>(stmt).getExpr()); break;
-        case StmtKind::IfStmt: codegenIfStmt(llvm::cast<IfStmt>(stmt)); break;
-        case StmtKind::SwitchStmt: codegenSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
-        case StmtKind::WhileStmt: codegenWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
-        case StmtKind::ForStmt: llvm_unreachable("ForStmt should be lowered into a WhileStmt"); break;
-        case StmtKind::BreakStmt: codegenBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
-        case StmtKind::ContinueStmt: codegenContinueStmt(llvm::cast<ContinueStmt>(stmt)); break;
-        case StmtKind::AssignStmt: codegenAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
-        case StmtKind::CompoundStmt: codegenCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
+        case StmtKind::ReturnStmt:
+            codegenReturnStmt(llvm::cast<ReturnStmt>(stmt));
+            break;
+        case StmtKind::VarStmt:
+            codegenVarStmt(llvm::cast<VarStmt>(stmt));
+            break;
+        case StmtKind::IncrementStmt:
+            codegenIncrementStmt(llvm::cast<IncrementStmt>(stmt));
+            break;
+        case StmtKind::DecrementStmt:
+            codegenDecrementStmt(llvm::cast<DecrementStmt>(stmt));
+            break;
+        case StmtKind::ExprStmt:
+            codegenExpr(llvm::cast<ExprStmt>(stmt).getExpr());
+            break;
+        case StmtKind::DeferStmt:
+            deferEvaluationOf(llvm::cast<DeferStmt>(stmt).getExpr());
+            break;
+        case StmtKind::IfStmt:
+            codegenIfStmt(llvm::cast<IfStmt>(stmt));
+            break;
+        case StmtKind::SwitchStmt:
+            codegenSwitchStmt(llvm::cast<SwitchStmt>(stmt));
+            break;
+        case StmtKind::WhileStmt:
+            codegenWhileStmt(llvm::cast<WhileStmt>(stmt));
+            break;
+        case StmtKind::ForStmt:
+            llvm_unreachable("ForStmt should be lowered into a WhileStmt");
+            break;
+        case StmtKind::BreakStmt:
+            codegenBreakStmt(llvm::cast<BreakStmt>(stmt));
+            break;
+        case StmtKind::ContinueStmt:
+            codegenContinueStmt(llvm::cast<ContinueStmt>(stmt));
+            break;
+        case StmtKind::AssignStmt:
+            codegenAssignStmt(llvm::cast<AssignStmt>(stmt));
+            break;
+        case StmtKind::CompoundStmt:
+            codegenCompoundStmt(llvm::cast<CompoundStmt>(stmt));
+            break;
     }
 }
 
@@ -548,8 +578,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::str
 
     auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
     if (mangledName.empty()) mangledName = mangle(decl);
-    auto* function = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage,
-                                            mangledName, &module);
+    auto* function = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, mangledName, &module);
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
     if (decl.isMethodDecl()) arg++->setName("this");
@@ -560,8 +589,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::str
     }
 
     auto mangled = mangleWithParams(decl);
-    return functionInstantiations.try_emplace(std::move(mangled),
-                                              FunctionInstantiation(decl, function)).first->second.getFunction();
+    return functionInstantiations.try_emplace(std::move(mangled), FunctionInstantiation(decl, function)).first->second.getFunction();
 }
 
 llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
@@ -570,10 +598,7 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
     }
 
     const Decl* decl = call.getCalleeDecl();
-
-    if (!decl) {
-        return nullptr;
-    }
+    if (!decl) return nullptr;
 
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:
@@ -581,22 +606,17 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
         case DeclKind::InitDecl:
         case DeclKind::DeinitDecl:
             return getFunctionProto(*llvm::cast<FunctionDecl>(decl));
-
         case DeclKind::VarDecl:
             return findValue(llvm::cast<VarDecl>(decl)->getName(), decl);
-
         case DeclKind::ParamDecl:
             return findValue(llvm::cast<ParamDecl>(decl)->getName(), decl);
-
         case DeclKind::FieldDecl:
             if (call.getReceiver()) {
-                return codegenMemberAccess(codegenLvalueExpr(*call.getReceiver()),
-                                           llvm::cast<FieldDecl>(decl)->getType(),
+                return codegenMemberAccess(codegenLvalueExpr(*call.getReceiver()), llvm::cast<FieldDecl>(decl)->getType(),
                                            llvm::cast<FieldDecl>(decl)->getName());
             } else {
                 return findValue(llvm::cast<FieldDecl>(decl)->getName(), decl);
             }
-
         default:
             llvm_unreachable("invalid callee decl");
     }
@@ -644,9 +664,7 @@ void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
 }
 
 std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
-    return map(decl.getFields(), [&](const FieldDecl& field) {
-        return toIR(field.getType(), field.getLocation());
-    });
+    return map(decl.getFields(), [&](const FieldDecl& field) { return toIR(field.getType(), field.getLocation()); });
 }
 
 llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
@@ -718,8 +736,8 @@ llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
     if (!value || decl.getType().isMutable() /* || decl.isPublic() */) {
         auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
         auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
-        value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(),
-                                         linkage, initializer, decl.getName());
+        value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(), linkage,
+                                         initializer, decl.getName());
     }
 
     globalScope().addLocalValue(decl.getName(), value);
@@ -731,19 +749,36 @@ void IRGenerator::codegenDecl(const Decl& decl) {
     currentDecl = &decl;
 
     switch (decl.getKind()) {
-        case DeclKind::ParamDecl: llvm_unreachable("handled via FunctionDecl");
+        case DeclKind::ParamDecl:
+            llvm_unreachable("handled via FunctionDecl");
         case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl: codegenFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
-        case DeclKind::GenericParamDecl: llvm_unreachable("cannot codegen generic parameter declaration");
-        case DeclKind::InitDecl: codegenFunctionDecl(llvm::cast<InitDecl>(decl)); break;
-        case DeclKind::DeinitDecl: codegenFunctionDecl(llvm::cast<DeinitDecl>(decl)); break;
-        case DeclKind::FunctionTemplate: break;
-        case DeclKind::TypeDecl: codegenTypeDecl(llvm::cast<TypeDecl>(decl)); break;
-        case DeclKind::TypeTemplate: break;
-        case DeclKind::EnumDecl: break;
-        case DeclKind::VarDecl: codegenVarDecl(llvm::cast<VarDecl>(decl)); break;
-        case DeclKind::FieldDecl: llvm_unreachable("handled via TypeDecl");
-        case DeclKind::ImportDecl: break;
+        case DeclKind::MethodDecl:
+            codegenFunctionDecl(llvm::cast<FunctionDecl>(decl));
+            break;
+        case DeclKind::GenericParamDecl:
+            llvm_unreachable("cannot codegen generic parameter declaration");
+        case DeclKind::InitDecl:
+            codegenFunctionDecl(llvm::cast<InitDecl>(decl));
+            break;
+        case DeclKind::DeinitDecl:
+            codegenFunctionDecl(llvm::cast<DeinitDecl>(decl));
+            break;
+        case DeclKind::FunctionTemplate:
+            break;
+        case DeclKind::TypeDecl:
+            codegenTypeDecl(llvm::cast<TypeDecl>(decl));
+            break;
+        case DeclKind::TypeTemplate:
+            break;
+        case DeclKind::EnumDecl:
+            break;
+        case DeclKind::VarDecl:
+            codegenVarDecl(llvm::cast<VarDecl>(decl));
+            break;
+        case DeclKind::FieldDecl:
+            llvm_unreachable("handled via TypeDecl");
+        case DeclKind::ImportDecl:
+            break;
     }
 }
 

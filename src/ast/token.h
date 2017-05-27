@@ -116,7 +116,9 @@ struct Token {
     SourceLocation getLocation() const { return location; }
     bool is(Token::Kind kind) const { return this->kind == kind; }
     template<typename... T>
-    bool is(Token::Kind kind, T... kinds) const { return is(kind) || is(kinds...); }
+    bool is(Token::Kind kind, T... kinds) const {
+        return is(kind) || is(kinds...);
+    }
     bool isBinaryOperator() const;
     bool isPrefixOperator() const;
     bool isAssignmentOperator() const;

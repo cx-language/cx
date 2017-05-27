@@ -12,24 +12,23 @@
 using namespace delta;
 
 static void printHelp() {
-    llvm::outs() <<
-        "OVERVIEW: Delta compiler\n"
-        "\n"
-        "USAGE: delta [options] <inputs>\n"
-        "\n"
-        "OPTIONS:\n"
-        "  -c                    - Compile only, generating an .o file; don't link\n"
-        "  -emit-assembly        - Emit assembly code\n"
-        "  -emit-llvm-bitcode    - Emit LLVM bitcode\n"
-        "  -F<directory>         - Add a search path for C framework header import\n"
-        "  -fPIC                 - Emit position-independent code\n"
-        "  -help                 - Display this help\n"
-        "  -I<directory>         - Add a search path for module and C header import\n"
-        "  -parse                - Perform parsing\n"
-        "  -print-ast            - Print the abstract syntax tree to stdout\n"
-        "  -print-ir             - Print the generated LLVM IR to stdout\n"
-        "  -typecheck            - Perform parsing and type checking\n"
-        "  -Werror               - Treat warnings as errors\n";
+    llvm::outs() << "OVERVIEW: Delta compiler\n"
+                    "\n"
+                    "USAGE: delta [options] <inputs>\n"
+                    "\n"
+                    "OPTIONS:\n"
+                    "  -c                    - Compile only, generating an .o file; don't link\n"
+                    "  -emit-assembly        - Emit assembly code\n"
+                    "  -emit-llvm-bitcode    - Emit LLVM bitcode\n"
+                    "  -F<directory>         - Add a search path for C framework header import\n"
+                    "  -fPIC                 - Emit position-independent code\n"
+                    "  -help                 - Display this help\n"
+                    "  -I<directory>         - Add a search path for module and C header import\n"
+                    "  -parse                - Perform parsing\n"
+                    "  -print-ast            - Print the abstract syntax tree to stdout\n"
+                    "  -print-ir             - Print the generated LLVM IR to stdout\n"
+                    "  -typecheck            - Perform parsing and type checking\n"
+                    "  -Werror               - Treat warnings as errors\n";
 }
 
 int main(int argc, const char** argv) {

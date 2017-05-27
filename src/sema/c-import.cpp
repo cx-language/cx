@@ -37,34 +37,55 @@ clang::TargetInfo* targetInfo;
 
 Type getIntTypeByWidth(int widthInBits, bool asSigned) {
     switch (widthInBits) {
-        case  8: return asSigned ? Type::getInt8()  : Type::getUInt8();
-        case 16: return asSigned ? Type::getInt16() : Type::getUInt16();
-        case 32: return asSigned ? Type::getInt32() : Type::getUInt32();
-        case 64: return asSigned ? Type::getInt64() : Type::getUInt64();
+        case 8:
+            return asSigned ? Type::getInt8() : Type::getUInt8();
+        case 16:
+            return asSigned ? Type::getInt16() : Type::getUInt16();
+        case 32:
+            return asSigned ? Type::getInt32() : Type::getUInt32();
+        case 64:
+            return asSigned ? Type::getInt64() : Type::getUInt64();
     }
     llvm_unreachable("unsupported integer width");
 }
 
 Type toDelta(const clang::BuiltinType& type) {
     switch (type.getKind()) {
-        case clang::BuiltinType::Void: return Type::getVoid();
-        case clang::BuiltinType::Bool: return Type::getBool();
+        case clang::BuiltinType::Void:
+            return Type::getVoid();
+        case clang::BuiltinType::Bool:
+            return Type::getBool();
         case clang::BuiltinType::Char_S:
-        case clang::BuiltinType::Char_U: return Type::getChar();
-        case clang::BuiltinType::SChar: return getIntTypeByWidth(targetInfo->getCharWidth(), true);
-        case clang::BuiltinType::UChar: return getIntTypeByWidth(targetInfo->getCharWidth(), false);
-        case clang::BuiltinType::Short: return getIntTypeByWidth(targetInfo->getShortWidth(), true);
-        case clang::BuiltinType::UShort: return getIntTypeByWidth(targetInfo->getShortWidth(), false);
-        case clang::BuiltinType::Int: return Type::getInt();
-        case clang::BuiltinType::UInt: return Type::getUInt();
-        case clang::BuiltinType::Long: return getIntTypeByWidth(targetInfo->getLongWidth(), true);
-        case clang::BuiltinType::ULong: return getIntTypeByWidth(targetInfo->getLongWidth(), false);
-        case clang::BuiltinType::LongLong: return getIntTypeByWidth(targetInfo->getLongLongWidth(), true);
-        case clang::BuiltinType::ULongLong: return getIntTypeByWidth(targetInfo->getLongLongWidth(), false);
-        case clang::BuiltinType::Float: return Type::getFloat32();
-        case clang::BuiltinType::Double: return Type::getFloat64();
-        case clang::BuiltinType::LongDouble: return Type::getFloat80();
-        default: break;
+        case clang::BuiltinType::Char_U:
+            return Type::getChar();
+        case clang::BuiltinType::SChar:
+            return getIntTypeByWidth(targetInfo->getCharWidth(), true);
+        case clang::BuiltinType::UChar:
+            return getIntTypeByWidth(targetInfo->getCharWidth(), false);
+        case clang::BuiltinType::Short:
+            return getIntTypeByWidth(targetInfo->getShortWidth(), true);
+        case clang::BuiltinType::UShort:
+            return getIntTypeByWidth(targetInfo->getShortWidth(), false);
+        case clang::BuiltinType::Int:
+            return Type::getInt();
+        case clang::BuiltinType::UInt:
+            return Type::getUInt();
+        case clang::BuiltinType::Long:
+            return getIntTypeByWidth(targetInfo->getLongWidth(), true);
+        case clang::BuiltinType::ULong:
+            return getIntTypeByWidth(targetInfo->getLongWidth(), false);
+        case clang::BuiltinType::LongLong:
+            return getIntTypeByWidth(targetInfo->getLongLongWidth(), true);
+        case clang::BuiltinType::ULongLong:
+            return getIntTypeByWidth(targetInfo->getLongLongWidth(), false);
+        case clang::BuiltinType::Float:
+            return Type::getFloat32();
+        case clang::BuiltinType::Double:
+            return Type::getFloat64();
+        case clang::BuiltinType::LongDouble:
+            return Type::getFloat80();
+        default:
+            break;
     }
     llvm_unreachable("unsupported builtin type");
 }
@@ -111,8 +132,7 @@ Type toDelta(clang::QualType qualtype) {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
             auto paramTypes = map(functionProtoType.getParamTypes(),
                                   [](clang::QualType qualType) { return toDelta(qualType); });
-            return FunctionType::get(toDelta(functionProtoType.getReturnType()),
-                                     std::move(paramTypes), isMutable);
+            return FunctionType::get(toDelta(functionProtoType.getReturnType()), std::move(paramTypes), isMutable);
         }
         case clang::Type::FunctionNoProto: {
             auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
@@ -140,8 +160,8 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Vector:
             return Type::getInt(); // FIXME: Temporary.
         default:
-            error(SourceLocation::invalid(), "unhandled type class '", type.getTypeClassName(),
-                  "' (importing type '", qualtype.getAsString(), "')");
+            error(SourceLocation::invalid(), "unhandled type class '", type.getTypeClassName(), "' (importing type '",
+                  qualtype.getAsString(), "')");
     }
 }
 
@@ -149,20 +169,18 @@ FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
     auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
         return ParamDecl(toDelta(param->getType()), param->getNameAsString(), SourceLocation::invalid());
     });
-    FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
-                        decl.isVariadic(), true);
+    FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()), decl.isVariadic(), true);
     return FunctionDecl(std::move(proto), {}, *currentModule, SourceLocation::invalid());
 }
 
 llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
     if (decl.getName().empty()) return llvm::None;
-    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), typeDecl,
-                     SourceLocation::invalid());
+    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), typeDecl, SourceLocation::invalid());
 }
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
-    TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
-                      getRecordName(decl), {}, {}, *currentModule, SourceLocation::invalid());
+    TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct, getRecordName(decl), {}, {}, *currentModule,
+                      SourceLocation::invalid());
     typeDecl.getFields().reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, typeDecl)) {
@@ -175,24 +193,21 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
 }
 
 VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, *currentModule,
-                   SourceLocation::invalid());
+    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, *currentModule, SourceLocation::invalid());
 }
 
 // TODO: Use llvm::APSInt instead of int64_t.
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, clang::QualType type, Module& module) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(toDelta(type).asImmutable());
-    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
-                                    module, SourceLocation::invalid()));
+    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr, module, SourceLocation::invalid()));
 }
 
 // TODO: Use llvm::APFloat instead of long double.
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
     auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getFloat64());
-    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
-                                    module, SourceLocation::invalid()));
+    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr, module, SourceLocation::invalid()));
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {
@@ -220,8 +235,7 @@ public:
                     auto& enumDecl = llvm::cast<clang::EnumDecl>(*decl);
                     for (auto* enumerator : enumDecl.enumerators()) {
                         auto value = enumerator->getInitVal().getExtValue();
-                        addIntegerConstantToSymbolTable(enumerator->getName(), value,
-                                                        enumDecl.getIntegerType(), module);
+                        addIntegerConstantToSymbolTable(enumerator->getName(), value, enumDecl.getIntegerType(), module);
                     }
                     break;
                 }
@@ -248,8 +262,7 @@ private:
 
 class MacroImporter : public clang::PPCallbacks {
 public:
-    MacroImporter(Module& module, clang::Sema& clangSema)
-    : module(module), clangSema(clangSema) {}
+    MacroImporter(Module& module, clang::Sema& clangSema) : module(module), clangSema(clangSema) {}
 
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) final override {
         if (macro->getMacroInfo()->getNumTokens() != 1) return;
@@ -257,8 +270,7 @@ public:
 
         switch (token.getKind()) {
             case clang::tok::identifier:
-                module.addIdentifierReplacement(name.getIdentifierInfo()->getName(),
-                                                token.getIdentifierInfo()->getName());
+                module.addIdentifierReplacement(name.getIdentifierInfo()->getName(), token.getIdentifierInfo()->getName());
                 return;
 
             case clang::tok::numeric_constant:
@@ -293,8 +305,7 @@ private:
 
 } // anonymous namespace
 
-bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
-                          llvm::ArrayRef<std::string> importSearchPaths,
+bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, llvm::ArrayRef<std::string> importSearchPaths,
                           llvm::ArrayRef<std::string> frameworkSearchPaths) {
     auto it = Module::getAllImportedModulesMap().find(headerName);
     if (it != Module::getAllImportedModulesMap().end()) {
@@ -317,10 +328,10 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     ci.createSourceManager(ci.getFileManager());
 
     for (llvm::StringRef includePath : importSearchPaths) {
-        ci.getHeaderSearchOpts().AddPath(includePath,      clang::frontend::System, false, false);
+        ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
     }
     for (llvm::StringRef frameworkPath : frameworkSearchPaths) {
-        ci.getHeaderSearchOpts().AddPath(frameworkPath,    clang::frontend::System, true, false);
+        ci.getHeaderSearchOpts().AddPath(frameworkPath, clang::frontend::System, true, false);
     }
 
     ci.createPreprocessor(clang::TU_Complete);
@@ -337,8 +348,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
         headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (!fileEntry) return false;
 
-    auto fileID = ci.getSourceManager().createFileID(fileEntry, clang::SourceLocation(),
-                                                     clang::SrcMgr::C_System);
+    auto fileID = ci.getSourceManager().createFileID(fileEntry, clang::SourceLocation(), clang::SrcMgr::C_System);
     ci.getSourceManager().setMainFileID(fileID);
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(), &ci.getPreprocessor());
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext());

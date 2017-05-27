@@ -16,7 +16,7 @@ documents for a more detailed description of the language and its purpose, or
 the more learning-oriented (and equally incomplete) [Delta
 Book](https://delta-lang.gitbooks.io/delta-book/content/).
 
-You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/delta-sandbox). 
+You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/delta-sandbox).
 Also check out the [standard library API reference](https://delta-lang.surge.sh).
 
 ## Building from source
@@ -87,6 +87,11 @@ current [projects](https://github.com/delta-lang/delta/projects) for things that
 need to be done. All contributors are expected to follow the Delta
 [code of conduct](docs/CODE_OF_CONDUCT.md). If you have any questions or just want
 to chat, join our Telegram group: [t.me/deltalang](https://t.me/deltalang).
+
+The C++ code style is enforced by `scripts/format.sh`, which requires
+clang-format version 6.0.0. The script can also be run with the `fmt` CMake
+target. `scripts/format.sh --check` can be set as a git pre-commit hook to
+verify that the code is formatted.
 
 ## License
 

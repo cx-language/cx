@@ -92,8 +92,7 @@ private:
 /// Container for the AST of a whole module, comprised of one or more SourceFiles.
 class Module {
 public:
-    Module(llvm::StringRef name, std::vector<std::string>&& defines = {})
-    : name(name), defines(std::move(defines)) {}
+    Module(llvm::StringRef name, std::vector<std::string>&& defines = {}) : name(name), defines(std::move(defines)) {}
     void addSourceFile(SourceFile&& file) { sourceFiles.emplace_back(std::move(file)); }
     llvm::ArrayRef<SourceFile> getSourceFiles() const { return sourceFiles; }
     llvm::MutableArrayRef<SourceFile> getSourceFiles() { return sourceFiles; }
@@ -125,8 +124,8 @@ public:
 
     Decl& findDecl(llvm::StringRef name, SourceLocation location, SourceFile* currentSourceFile,
                    llvm::ArrayRef<std::pair<FieldDecl*, bool>> currentFieldDecls) const;
-    std::vector<Decl*> findDecls(llvm::StringRef name, SourceFile* currentSourceFile,
-                                 FunctionDecl* currentFunction, TypeDecl* receiverTypeDecl = nullptr) const;
+    std::vector<Decl*> findDecls(llvm::StringRef name, SourceFile* currentSourceFile, FunctionDecl* currentFunction,
+                                 TypeDecl* receiverTypeDecl = nullptr) const;
 
     static std::vector<Module*> getAllImportedModules();
     static llvm::StringMap<std::shared_ptr<Module>>& getAllImportedModulesMap() { return allImportedModules; }

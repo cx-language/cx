@@ -6,9 +6,7 @@ using namespace delta;
 llvm::StringMap<std::shared_ptr<Module>> Module::allImportedModules;
 
 std::vector<Module*> Module::getAllImportedModules() {
-    return map(allImportedModules, [](const llvm::StringMapEntry<std::shared_ptr<Module>>& p) {
-        return p.second.get();
-    });
+    return map(allImportedModules, [](const llvm::StringMapEntry<std::shared_ptr<Module>>& p) { return p.second.get(); });
 }
 
 llvm::ArrayRef<std::shared_ptr<Module>> Module::getStdlibModules() {
@@ -114,9 +112,12 @@ static Decl* findDeclInModules(llvm::StringRef name, SourceLocation location, co
     auto decls = findDeclsInModules(name, modules);
 
     switch (decls.size()) {
-        case 1: return decls[0];
-        case 0: return nullptr;
-        default: error(location, "ambiguous reference to '", name, "'");
+        case 1:
+            return decls[0];
+        case 0:
+            return nullptr;
+        default:
+            error(location, "ambiguous reference to '", name, "'");
     }
 }
 
@@ -151,8 +152,8 @@ Decl& Module::findDecl(llvm::StringRef name, SourceLocation location, SourceFile
     error(location, "unknown identifier '", name, "'");
 }
 
-std::vector<Decl*> Module::findDecls(llvm::StringRef name, SourceFile* currentSourceFile,
-                                     FunctionDecl* currentFunction, TypeDecl* receiverTypeDecl) const {
+std::vector<Decl*> Module::findDecls(llvm::StringRef name, SourceFile* currentSourceFile, FunctionDecl* currentFunction,
+                                     TypeDecl* receiverTypeDecl) const {
     std::vector<Decl*> decls;
 
     if (!receiverTypeDecl && currentFunction) {

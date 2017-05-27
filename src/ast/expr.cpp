@@ -48,8 +48,8 @@ bool Expr::isConstant() const {
             return llvm::cast<PrefixExpr>(this)->getOperand().isConstant();
 
         case ExprKind::BinaryExpr:
-            return llvm::cast<BinaryExpr>(this)->getLHS().isConstant()
-                && llvm::cast<BinaryExpr>(this)->getRHS().isConstant();
+            return llvm::cast<BinaryExpr>(this)->getLHS().isConstant() &&
+                   llvm::cast<BinaryExpr>(this)->getRHS().isConstant();
 
         case ExprKind::CallExpr:
             return false;
@@ -68,9 +68,9 @@ bool Expr::isConstant() const {
             return false;
 
         case ExprKind::IfExpr:
-            return llvm::cast<IfExpr>(this)->getCondition()->isConstant()
-                && llvm::cast<IfExpr>(this)->getThenExpr()->isConstant()
-                && llvm::cast<IfExpr>(this)->getElseExpr()->isConstant();
+            return llvm::cast<IfExpr>(this)->getCondition()->isConstant() &&
+                   llvm::cast<IfExpr>(this)->getThenExpr()->isConstant() &&
+                   llvm::cast<IfExpr>(this)->getElseExpr()->isConstant();
     }
 
     llvm_unreachable("all cases handled");
@@ -114,14 +114,26 @@ int64_t Expr::getConstantIntegerValue() const {
 
 bool Expr::isLvalue() const {
     switch (getKind()) {
-        case ExprKind::VarExpr: case ExprKind::StringLiteralExpr: case ExprKind::CharacterLiteralExpr:
-        case ExprKind::ArrayLiteralExpr: case ExprKind::TupleExpr: case ExprKind::MemberExpr:
-        case ExprKind::SubscriptExpr: case ExprKind::IfExpr:
+        case ExprKind::VarExpr:
+        case ExprKind::StringLiteralExpr:
+        case ExprKind::CharacterLiteralExpr:
+        case ExprKind::ArrayLiteralExpr:
+        case ExprKind::TupleExpr:
+        case ExprKind::MemberExpr:
+        case ExprKind::SubscriptExpr:
+        case ExprKind::IfExpr:
             return true;
-        case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr: case ExprKind::BoolLiteralExpr:
-        case ExprKind::NullLiteralExpr: case ExprKind::SizeofExpr: case ExprKind::AddressofExpr:
-        case ExprKind::CastExpr: case ExprKind::UnwrapExpr: case ExprKind::BinaryExpr:
-        case ExprKind::CallExpr: case ExprKind::LambdaExpr:
+        case ExprKind::IntLiteralExpr:
+        case ExprKind::FloatLiteralExpr:
+        case ExprKind::BoolLiteralExpr:
+        case ExprKind::NullLiteralExpr:
+        case ExprKind::SizeofExpr:
+        case ExprKind::AddressofExpr:
+        case ExprKind::CastExpr:
+        case ExprKind::UnwrapExpr:
+        case ExprKind::BinaryExpr:
+        case ExprKind::CallExpr:
+        case ExprKind::LambdaExpr:
             return false;
         case ExprKind::PrefixExpr:
             return llvm::cast<PrefixExpr>(this)->getOperator() == Token::Star;
@@ -177,8 +189,7 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
         }
         case ExprKind::IntLiteralExpr: {
             auto* intLiteralExpr = llvm::cast<IntLiteralExpr>(this);
-            instantiation = llvm::make_unique<IntLiteralExpr>(intLiteralExpr->getValue(),
-                                                              intLiteralExpr->getLocation());
+            instantiation = llvm::make_unique<IntLiteralExpr>(intLiteralExpr->getValue(), intLiteralExpr->getLocation());
             break;
         }
         case ExprKind::FloatLiteralExpr: {
@@ -189,8 +200,7 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
         }
         case ExprKind::BoolLiteralExpr: {
             auto* boolLiteralExpr = llvm::cast<BoolLiteralExpr>(this);
-            instantiation = llvm::make_unique<BoolLiteralExpr>(boolLiteralExpr->getValue(),
-                                                               boolLiteralExpr->getLocation());
+            instantiation = llvm::make_unique<BoolLiteralExpr>(boolLiteralExpr->getValue(), boolLiteralExpr->getLocation());
             break;
         }
         case ExprKind::NullLiteralExpr: {
@@ -201,8 +211,7 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
         case ExprKind::ArrayLiteralExpr: {
             auto* arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(this);
             auto elements = ::instantiate(arrayLiteralExpr->getElements(), genericArgs);
-            instantiation = llvm::make_unique<ArrayLiteralExpr>(std::move(elements),
-                                                                arrayLiteralExpr->getLocation());
+            instantiation = llvm::make_unique<ArrayLiteralExpr>(std::move(elements), arrayLiteralExpr->getLocation());
             break;
         }
         case ExprKind::TupleExpr: {
@@ -224,8 +233,8 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             auto* binaryExpr = llvm::cast<BinaryExpr>(this);
             auto lhs = binaryExpr->getLHS().instantiate(genericArgs);
             auto rhs = binaryExpr->getRHS().instantiate(genericArgs);
-            instantiation = llvm::make_unique<BinaryExpr>(binaryExpr->getOperator(), std::move(lhs),
-                                                          std::move(rhs), binaryExpr->getLocation());
+            instantiation = llvm::make_unique<BinaryExpr>(binaryExpr->getOperator(), std::move(lhs), std::move(rhs),
+                                                          binaryExpr->getLocation());
             break;
         }
         case ExprKind::CallExpr: {
@@ -234,11 +243,8 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             auto args = map(callExpr->getArgs(), [&](const NamedValue& arg) {
                 return NamedValue(arg.getName(), arg.getValue()->instantiate(genericArgs));
             });
-            auto callGenericArgs = map(callExpr->getGenericArgs(), [&](Type type) {
-                return type.resolve(genericArgs);
-            });
-            instantiation = llvm::make_unique<CallExpr>(std::move(callee), std::move(args),
-                                                        std::move(callGenericArgs),
+            auto callGenericArgs = map(callExpr->getGenericArgs(), [&](Type type) { return type.resolve(genericArgs); });
+            instantiation = llvm::make_unique<CallExpr>(std::move(callee), std::move(args), std::move(callGenericArgs),
                                                         callExpr->getLocation());
             if (auto* callee = callExpr->getCalleeDecl()) {
                 llvm::cast<CallExpr>(*instantiation).setCalleeDecl(callee);
@@ -251,8 +257,7 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             auto* castExpr = llvm::cast<CastExpr>(this);
             auto targetType = castExpr->getTargetType().resolve(genericArgs);
             auto expr = castExpr->getExpr().instantiate(genericArgs);
-            instantiation = llvm::make_unique<CastExpr>(targetType, std::move(expr),
-                                                        castExpr->getLocation());
+            instantiation = llvm::make_unique<CastExpr>(targetType, std::move(expr), castExpr->getLocation());
             break;
         }
         case ExprKind::SizeofExpr: {
@@ -294,8 +299,7 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
                 return ParamDecl(p.getType().resolve(genericArgs), p.getName(), p.getLocation());
             });
             auto body = lambdaExpr->getBody()->instantiate(genericArgs);
-            instantiation = llvm::make_unique<LambdaExpr>(std::move(params), std::move(body),
-                                                          lambdaExpr->getLocation());
+            instantiation = llvm::make_unique<LambdaExpr>(std::move(params), std::move(body), lambdaExpr->getLocation());
             break;
         }
         case ExprKind::IfExpr: {
@@ -303,8 +307,8 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             auto condition = ifExpr->getCondition()->instantiate(genericArgs);
             auto thenExpr = ifExpr->getThenExpr()->instantiate(genericArgs);
             auto elseExpr = ifExpr->getElseExpr()->instantiate(genericArgs);
-            instantiation = llvm::make_unique<IfExpr>(std::move(condition), std::move(thenExpr),
-                                                      std::move(elseExpr), ifExpr->getLocation());
+            instantiation = llvm::make_unique<IfExpr>(std::move(condition), std::move(thenExpr), std::move(elseExpr),
+                                                      ifExpr->getLocation());
         }
     }
 
@@ -393,9 +397,12 @@ std::vector<const Expr*> Expr::getSubExprs() const {
 
 llvm::StringRef CallExpr::getFunctionName() const {
     switch (getCallee().getKind()) {
-        case ExprKind::VarExpr: return llvm::cast<VarExpr>(getCallee()).getIdentifier();
-        case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(getCallee()).getMemberName();
-        default: return "(anonymous function)";
+        case ExprKind::VarExpr:
+            return llvm::cast<VarExpr>(getCallee()).getIdentifier();
+        case ExprKind::MemberExpr:
+            return llvm::cast<MemberExpr>(getCallee()).getMemberName();
+        default:
+            return "(anonymous function)";
     }
 }
 
@@ -435,10 +442,14 @@ int64_t PrefixExpr::getConstantIntegerValue() const {
     auto operand = getOperand().getConstantIntegerValue();
 
     switch (getOperator()) {
-        case Token::Plus: return operand;
-        case Token::Minus: return -operand;
-        case Token::Tilde: return ~operand;
-        default: llvm_unreachable("invalid constant integer prefix operator");
+        case Token::Plus:
+            return operand;
+        case Token::Minus:
+            return -operand;
+        case Token::Tilde:
+            return ~operand;
+        default:
+            llvm_unreachable("invalid constant integer prefix operator");
     }
 }
 
@@ -458,27 +469,37 @@ int64_t BinaryExpr::getConstantIntegerValue() const {
     auto rhs = getRHS().getConstantIntegerValue();
 
     switch (getOperator()) {
-        case Token::Plus: return lhs + rhs;
-        case Token::Minus: return lhs - rhs;
-        case Token::Star: return lhs * rhs;
-        case Token::Slash: return lhs / rhs;
-        case Token::Modulo: return lhs % rhs;
-        case Token::And: return lhs & rhs;
-        case Token::Or: return lhs | rhs;
-        case Token::Xor: return lhs ^ rhs;
-        case Token::LeftShift: return lhs << rhs;
-        case Token::RightShift: return lhs >> rhs;
-        default: llvm_unreachable("invalid constant integer binary operator");
+        case Token::Plus:
+            return lhs + rhs;
+        case Token::Minus:
+            return lhs - rhs;
+        case Token::Star:
+            return lhs * rhs;
+        case Token::Slash:
+            return lhs / rhs;
+        case Token::Modulo:
+            return lhs % rhs;
+        case Token::And:
+            return lhs & rhs;
+        case Token::Or:
+            return lhs | rhs;
+        case Token::Xor:
+            return lhs ^ rhs;
+        case Token::LeftShift:
+            return lhs << rhs;
+        case Token::RightShift:
+            return lhs >> rhs;
+        default:
+            llvm_unreachable("invalid constant integer binary operator");
     }
 }
 
 std::unique_ptr<FunctionDecl> LambdaExpr::lower(Module& module) const {
     static uint64_t nameCounter = 0;
 
-    FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::vector<ParamDecl>(params),
-                        body->getType(), false, false);
-    auto functionDecl = llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(),
-                                                        module, getLocation());
+    FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::vector<ParamDecl>(params), body->getType(),
+                        false, false);
+    auto functionDecl = llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), module, getLocation());
     std::vector<std::unique_ptr<Stmt>> body;
     auto returnValue = getBody()->instantiate({});
     body.push_back(llvm::make_unique<ReturnStmt>(std::move(returnValue), getBody()->getLocation()));

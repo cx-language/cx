@@ -29,19 +29,15 @@ static void cloneGitRepository(const std::string& repositoryUrl, const std::stri
     auto gitPath = getGitPath();
 
     const char* args[] = {
-        gitPath.c_str(),
-        "clone",
-        repositoryUrl.c_str(),
-        path.c_str(),
-        nullptr
+        gitPath.c_str(), "clone", repositoryUrl.c_str(), path.c_str(), nullptr,
     };
 
     std::string error;
     int status = llvm::sys::ExecuteAndWait(gitPath, args, nullptr, nullptr, 0, 0, &error);
 
     if (status != 0 || !error.empty()) {
-        printErrorAndExit("'git clone ", repositoryUrl, " ", path, "' failed with exit status ",
-                          status, error.empty() ? "" : ": ", error);
+        if (!error.empty()) error.insert(0, ": ");
+        printErrorAndExit("'git clone ", repositoryUrl, " ", path, "' failed with exit status ", status, error);
     }
 }
 
@@ -51,21 +47,15 @@ static void checkoutGitRevision(const std::string& path, const std::string& revi
     auto workTree = "--work-tree=" + path;
 
     const char* args[] = {
-        gitPath.c_str(),
-        gitDir.c_str(),
-        workTree.c_str(),
-        "checkout",
-        revision.c_str(),
-        "--quiet",
-        nullptr
+        gitPath.c_str(), gitDir.c_str(), workTree.c_str(), "checkout", revision.c_str(), "--quiet", nullptr,
     };
 
     std::string error;
     int status = llvm::sys::ExecuteAndWait(gitPath, args, nullptr, nullptr, 0, 0, &error);
 
     if (status != 0 || !error.empty()) {
-        printErrorAndExit("'git checkout ", revision, "' failed with exit status ",
-                          status, error.empty() ? "" : ": ", error);
+        if (!error.empty()) error.insert(0, ": ");
+        printErrorAndExit("'git checkout ", revision, "' failed with exit status ", status, error);
     }
 }
 
@@ -86,8 +76,7 @@ std::vector<std::string> delta::getSourceFiles(llvm::StringRef packageRoot) {
     std::vector<std::string> sourceFiles;
     std::error_code error;
 
-    for (llvm::sys::fs::recursive_directory_iterator it(packageRoot, error), end;
-         it != end; it.increment(error)) {
+    for (llvm::sys::fs::recursive_directory_iterator it(packageRoot, error), end; it != end; it.increment(error)) {
         if (error) {
             llvm::errs() << error.message() << '\n';
             break;

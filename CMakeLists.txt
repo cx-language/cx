@@ -109,5 +109,4 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     endif()
 endif()
 
-add_custom_target(fmt COMMAND uncrustify -c ${PROJECT_SOURCE_DIR}/.uncrustify.cfg --no-backup
-    ${PROJECT_SOURCE_DIR}/src/**/*.h ${PROJECT_SOURCE_DIR}/src/**/*.cpp)
+add_custom_target(fmt COMMAND ${PROJECT_SOURCE_DIR}/scripts/format.sh)

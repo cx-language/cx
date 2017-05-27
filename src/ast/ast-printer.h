@@ -4,7 +4,8 @@
 #include <ostream>
 
 namespace llvm {
-template<typename T> class ArrayRef;
+template<typename T>
+class ArrayRef;
 }
 
 namespace delta {

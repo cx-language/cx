@@ -29,8 +29,8 @@
 
 using namespace delta;
 
-void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs,
-                             llvm::StringRef name, SourceLocation location);
+void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name,
+                             SourceLocation location);
 
 void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
     auto* returnValue = stmt.getReturnValue();
@@ -61,9 +61,8 @@ void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
         }
     }
 
-    if (localVariableType
-        && functionReturnType.removeOptional().isPointerType()
-        && functionReturnType.removeOptional().getPointee() == localVariableType) {
+    if (localVariableType && functionReturnType.removeOptional().isPointerType() &&
+        functionReturnType.removeOptional().getPointee() == localVariableType) {
         warning(returnValue->getLocation(), "returning pointer to local variable ",
                 "(local variables will not exist after the function returns)");
     }
@@ -72,8 +71,7 @@ void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
 void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     if (!stmt.getReturnValue()) {
         if (!functionReturnType.isVoid()) {
-            error(stmt.getLocation(), "expected return statement to return a value of type '",
-                  functionReturnType, "'");
+            error(stmt.getLocation(), "expected return statement to return a value of type '", functionReturnType, "'");
         }
         return;
     }
@@ -82,8 +80,8 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     Type convertedType;
 
     if (!isImplicitlyConvertible(stmt.getReturnValue(), returnValueType, functionReturnType, &convertedType)) {
-        error(stmt.getLocation(), "mismatching return type '", returnValueType, "', expected '",
-              functionReturnType, "'");
+        error(stmt.getLocation(), "mismatching return type '", returnValueType, "', expected '", functionReturnType,
+              "'");
     }
 
     stmt.getReturnValue()->setType(convertedType ? convertedType : returnValueType);
@@ -263,9 +261,8 @@ void Typechecker::markFieldAsInitialized(Expr& expr) {
                 auto* varExpr = llvm::cast<VarExpr>(&expr);
 
                 if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
-                    auto it = llvm::find_if(currentFieldDecls, [&](std::pair<FieldDecl*, bool>& p) {
-                        return p.first == fieldDecl;
-                    });
+                    auto it = llvm::find_if(currentFieldDecls,
+                                            [&](std::pair<FieldDecl*, bool>& p) { return p.first == fieldDecl; });
 
                     if (it != currentFieldDecls.end()) {
                         it->second = true; // Mark member variable as initialized.
@@ -299,17 +296,23 @@ void Typechecker::markFieldAsInitialized(Expr& expr) {
 
 static const Expr& getIfOrWhileCondition(const Stmt& ifOrWhileStmt) {
     switch (ifOrWhileStmt.getKind()) {
-        case StmtKind::IfStmt: return llvm::cast<IfStmt>(ifOrWhileStmt).getCondition();
-        case StmtKind::WhileStmt: return llvm::cast<WhileStmt>(ifOrWhileStmt).getCondition();
-        default: llvm_unreachable("should be IfStmt or WhileStmt");
+        case StmtKind::IfStmt:
+            return llvm::cast<IfStmt>(ifOrWhileStmt).getCondition();
+        case StmtKind::WhileStmt:
+            return llvm::cast<WhileStmt>(ifOrWhileStmt).getCondition();
+        default:
+            llvm_unreachable("should be IfStmt or WhileStmt");
     }
 }
 
 static llvm::ArrayRef<std::unique_ptr<Stmt>> getIfOrWhileThenBody(const Stmt& ifOrWhileStmt) {
     switch (ifOrWhileStmt.getKind()) {
-        case StmtKind::IfStmt: return llvm::cast<IfStmt>(ifOrWhileStmt).getThenBody();
-        case StmtKind::WhileStmt: return llvm::cast<WhileStmt>(ifOrWhileStmt).getBody();
-        default: llvm_unreachable("should be IfStmt or WhileStmt");
+        case StmtKind::IfStmt:
+            return llvm::cast<IfStmt>(ifOrWhileStmt).getThenBody();
+        case StmtKind::WhileStmt:
+            return llvm::cast<WhileStmt>(ifOrWhileStmt).getBody();
+        default:
+            llvm_unreachable("should be IfStmt or WhileStmt");
     }
 }
 
@@ -473,8 +476,8 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
             switch (var.getKind()) {
                 case ExprKind::VarExpr:
                     if (auto* lhsVarExpr = llvm::dyn_cast<VarExpr>(assignStmt.getLHS())) {
-                        return lhsVarExpr->getDecl() == llvm::cast<VarExpr>(var).getDecl()
-                            && assignStmt.getRHS()->getType().isOptionalType();
+                        return lhsVarExpr->getDecl() == llvm::cast<VarExpr>(var).getDecl() &&
+                               assignStmt.getRHS()->getType().isOptionalType();
                     }
                     return llvm::None;
 
@@ -521,20 +524,48 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var,
 
 void Typechecker::typecheckStmt(Stmt& stmt) {
     switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt: typecheckReturnStmt(llvm::cast<ReturnStmt>(stmt)); break;
-        case StmtKind::VarStmt: typecheckVarStmt(llvm::cast<VarStmt>(stmt)); break;
-        case StmtKind::IncrementStmt: typecheckIncrementStmt(llvm::cast<IncrementStmt>(stmt)); break;
-        case StmtKind::DecrementStmt: typecheckDecrementStmt(llvm::cast<DecrementStmt>(stmt)); break;
-        case StmtKind::ExprStmt: typecheckExpr(llvm::cast<ExprStmt>(stmt).getExpr()); break;
-        case StmtKind::DeferStmt: typecheckExpr(llvm::cast<DeferStmt>(stmt).getExpr()); break;
-        case StmtKind::IfStmt: typecheckIfStmt(llvm::cast<IfStmt>(stmt)); break;
-        case StmtKind::SwitchStmt: typecheckSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
-        case StmtKind::WhileStmt: typecheckWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
-        case StmtKind::ForStmt: llvm_unreachable("ForStmt should be lowered into a WhileStmt"); break;
-        case StmtKind::BreakStmt: typecheckBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
-        case StmtKind::ContinueStmt: typecheckContinueStmt(llvm::cast<ContinueStmt>(stmt)); break;
-        case StmtKind::AssignStmt: typecheckAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
-        case StmtKind::CompoundStmt: typecheckCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
+        case StmtKind::ReturnStmt:
+            typecheckReturnStmt(llvm::cast<ReturnStmt>(stmt));
+            break;
+        case StmtKind::VarStmt:
+            typecheckVarStmt(llvm::cast<VarStmt>(stmt));
+            break;
+        case StmtKind::IncrementStmt:
+            typecheckIncrementStmt(llvm::cast<IncrementStmt>(stmt));
+            break;
+        case StmtKind::DecrementStmt:
+            typecheckDecrementStmt(llvm::cast<DecrementStmt>(stmt));
+            break;
+        case StmtKind::ExprStmt:
+            typecheckExpr(llvm::cast<ExprStmt>(stmt).getExpr());
+            break;
+        case StmtKind::DeferStmt:
+            typecheckExpr(llvm::cast<DeferStmt>(stmt).getExpr());
+            break;
+        case StmtKind::IfStmt:
+            typecheckIfStmt(llvm::cast<IfStmt>(stmt));
+            break;
+        case StmtKind::SwitchStmt:
+            typecheckSwitchStmt(llvm::cast<SwitchStmt>(stmt));
+            break;
+        case StmtKind::WhileStmt:
+            typecheckWhileStmt(llvm::cast<WhileStmt>(stmt));
+            break;
+        case StmtKind::ForStmt:
+            llvm_unreachable("ForStmt should be lowered into a WhileStmt");
+            break;
+        case StmtKind::BreakStmt:
+            typecheckBreakStmt(llvm::cast<BreakStmt>(stmt));
+            break;
+        case StmtKind::ContinueStmt:
+            typecheckContinueStmt(llvm::cast<ContinueStmt>(stmt));
+            break;
+        case StmtKind::AssignStmt:
+            typecheckAssignStmt(llvm::cast<AssignStmt>(stmt));
+            break;
+        case StmtKind::CompoundStmt:
+            typecheckCompoundStmt(llvm::cast<CompoundStmt>(stmt));
+            break;
     }
 }
 
@@ -552,8 +583,7 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
                 typecheckType(genericArg, location);
             }
 
-            auto decls = getCurrentModule()->findDecls(mangleTypeDecl(basicType->getName(),
-                                                                      basicType->getGenericArgs()),
+            auto decls = getCurrentModule()->findDecls(mangleTypeDecl(basicType->getName(), basicType->getGenericArgs()),
                                                        currentSourceFile, currentFunction);
 
             if (decls.empty()) {
@@ -600,12 +630,12 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
             break;
         case TypeKind::PointerType: {
             if (type.getPointee().isArrayWithRuntimeSize()) {
-                if (getCurrentModule()->findDecls(mangleTypeDecl("ArrayRef", type.getPointee().getElementType()),
-                                                  currentSourceFile, currentFunction).empty()) {
+                auto mangledTypeDecl = mangleTypeDecl("ArrayRef", type.getPointee().getElementType());
+                if (getCurrentModule()->findDecls(mangledTypeDecl, currentSourceFile, currentFunction).empty()) {
                     auto& arrayRefDecl = getCurrentModule()->findDecl("ArrayRef", SourceLocation::invalid(),
                                                                       currentSourceFile, currentFieldDecls);
                     auto& arrayRef = llvm::cast<TypeTemplate>(arrayRefDecl);
-                    auto* instantiation = arrayRef.instantiate({type.getPointee().getElementType()});
+                    auto* instantiation = arrayRef.instantiate({ type.getPointee().getElementType() });
                     getCurrentModule()->addToSymbolTable(*instantiation);
                     declsToTypecheck.push_back(instantiation);
                 }
@@ -645,9 +675,8 @@ bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
         }
         case StmtKind::SwitchStmt: {
             auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-            return llvm::all_of(switchStmt.getCases(),
-                                [](const SwitchCase& c) { return allPathsReturn(c.getStmts()); })
-                   && allPathsReturn(switchStmt.getDefaultStmts());
+            return llvm::all_of(switchStmt.getCases(), [](const SwitchCase& c) { return allPathsReturn(c.getStmts()); }) &&
+                   allPathsReturn(switchStmt.getDefaultStmts());
         }
         default:
             return false;
@@ -697,7 +726,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             }
 
             Type thisType = receiverTypeDecl->getTypeForPassing(decl.isMutating());
-            getCurrentModule()->addToSymbolTable(VarDecl(thisType, "this", nullptr, &decl, *getCurrentModule(), decl.getLocation()));
+            getCurrentModule()->addToSymbolTable(
+                VarDecl(thisType, "this", nullptr, &decl, *getCurrentModule(), decl.getLocation()));
         }
 
         bool delegatedInit = false;
@@ -732,8 +762,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     getCurrentModule()->getSymbolTable().popScope();
 
-    if ((!receiverTypeDecl || !receiverTypeDecl->isInterface())
-        && !decl.getReturnType().isVoid() && !allPathsReturn(decl.getBody())) {
+    if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() &&
+        !allPathsReturn(decl.getBody())) {
         error(decl.getLocation(), "'", decl.getName(), "' is missing a return statement");
     }
 
@@ -755,7 +785,7 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
                         auto& methodDecl = llvm::cast<MethodDecl>(*method);
 
                         if (methodDecl.hasBody()) {
-                            auto copy = methodDecl.instantiate({{ "This", decl.getType() }}, decl);
+                            auto copy = methodDecl.instantiate({ { "This", decl.getType() } }, decl);
                             getCurrentModule()->addToSymbolTable(*copy);
                             decl.addMethod(std::move(copy));
                         }
@@ -772,7 +802,7 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
     std::unique_ptr<TypeDecl> thisTypeResolved;
 
     if (decl.isInterface()) {
-        thisTypeResolved = llvm::cast<TypeDecl>(decl.instantiate({{ "This", decl.getType() }}, {}));
+        thisTypeResolved = llvm::cast<TypeDecl>(decl.instantiate({ { "This", decl.getType() } }, {}));
         realDecl = thisTypeResolved.get();
     } else {
         realDecl = &decl;
@@ -796,13 +826,11 @@ void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     std::vector<const EnumCase*> cases = map(decl.getCases(), [](const EnumCase& c) { return &c; });
 
-    std::sort(cases.begin(), cases.end(), [](const EnumCase* a, const EnumCase* b) {
-        return a->getName() < b->getName();
-    });
+    std::sort(cases.begin(), cases.end(),
+              [](const EnumCase* a, const EnumCase* b) { return a->getName() < b->getName(); });
 
-    auto it = std::adjacent_find(cases.begin(), cases.end(), [](const EnumCase* a, const EnumCase* b) {
-        return a->getName() == b->getName();
-    });
+    auto it = std::adjacent_find(cases.begin(), cases.end(),
+                                 [](const EnumCase* a, const EnumCase* b) { return a->getName() == b->getName(); });
 
     if (it != cases.end()) {
         error((*it)->getLocation(), "duplicate enum case '", (*it)->getName(), "'");
@@ -820,8 +848,8 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
         return typeDecl;
     }
 
-    auto decls = getCurrentModule()->findDecls(mangleTypeDecl(type.getName(), type.getGenericArgs()),
-                                               currentSourceFile, currentFunction);
+    auto decls = getCurrentModule()->findDecls(mangleTypeDecl(type.getName(), type.getGenericArgs()), currentSourceFile,
+                                               currentFunction);
 
     if (!decls.empty()) {
         ASSERT(decls.size() == 1);
@@ -912,8 +940,7 @@ static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef direct
     return error;
 }
 
-llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer,
-                                                            const PackageManifest* manifest,
+llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
                                                             llvm::ArrayRef<std::string> importSearchPaths,
                                                             llvm::ArrayRef<std::string> frameworkSearchPaths,
                                                             llvm::StringRef moduleExternalName,
@@ -932,8 +959,8 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     if (manifest) {
         for (auto& dependency : manifest->getDeclaredDependencies()) {
             if (dependency.getPackageIdentifier() == moduleInternalName) {
-                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module,
-                                                           importSearchPaths, frameworkSearchPaths);
+                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, importSearchPaths,
+                                                           frameworkSearchPaths);
                 goto done;
             }
         }
@@ -946,8 +973,7 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
             if (!llvm::sys::fs::is_directory(it->path())) continue;
             if (llvm::sys::path::filename(it->path()) != moduleExternalName) continue;
 
-            error = parseSourcesInDirectoryRecursively(it->path(), *module,
-                                                       importSearchPaths, frameworkSearchPaths);
+            error = parseSourcesInDirectoryRecursively(it->path(), *module, importSearchPaths, frameworkSearchPaths);
             goto done;
         }
     }
@@ -959,8 +985,8 @@ done:
 
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->getName()] = module;
-    typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr,
-                    importSearchPaths, frameworkSearchPaths);
+    typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr, importSearchPaths,
+                    frameworkSearchPaths);
     return *module;
 }
 
@@ -980,20 +1006,39 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
                                         llvm::ArrayRef<std::string> importSearchPaths,
                                         llvm::ArrayRef<std::string> frameworkSearchPaths) {
     switch (decl.getKind()) {
-        case DeclKind::ParamDecl: llvm_unreachable("no top-level parameter declarations");
-        case DeclKind::FunctionDecl: typecheckFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
-        case DeclKind::MethodDecl: llvm_unreachable("no top-level method declarations");
-        case DeclKind::GenericParamDecl: llvm_unreachable("no top-level parameter declarations");
-        case DeclKind::InitDecl: llvm_unreachable("no top-level initializer declarations");
-        case DeclKind::DeinitDecl: llvm_unreachable("no top-level deinitializer declarations");
-        case DeclKind::FunctionTemplate: typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl)); break;
-        case DeclKind::TypeDecl: typecheckTypeDecl(llvm::cast<TypeDecl>(decl)); break;
-        case DeclKind::TypeTemplate: typecheckTypeTemplate(llvm::cast<TypeTemplate>(decl)); break;
-        case DeclKind::EnumDecl: typecheckEnumDecl(llvm::cast<EnumDecl>(decl)); break;
-        case DeclKind::VarDecl: typecheckVarDecl(llvm::cast<VarDecl>(decl), true); break;
-        case DeclKind::FieldDecl: llvm_unreachable("no top-level field declarations");
-        case DeclKind::ImportDecl: typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest,
-                                                       importSearchPaths, frameworkSearchPaths); break;
+        case DeclKind::ParamDecl:
+            llvm_unreachable("no top-level parameter declarations");
+        case DeclKind::FunctionDecl:
+            typecheckFunctionDecl(llvm::cast<FunctionDecl>(decl));
+            break;
+        case DeclKind::MethodDecl:
+            llvm_unreachable("no top-level method declarations");
+        case DeclKind::GenericParamDecl:
+            llvm_unreachable("no top-level parameter declarations");
+        case DeclKind::InitDecl:
+            llvm_unreachable("no top-level initializer declarations");
+        case DeclKind::DeinitDecl:
+            llvm_unreachable("no top-level deinitializer declarations");
+        case DeclKind::FunctionTemplate:
+            typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl));
+            break;
+        case DeclKind::TypeDecl:
+            typecheckTypeDecl(llvm::cast<TypeDecl>(decl));
+            break;
+        case DeclKind::TypeTemplate:
+            typecheckTypeTemplate(llvm::cast<TypeTemplate>(decl));
+            break;
+        case DeclKind::EnumDecl:
+            typecheckEnumDecl(llvm::cast<EnumDecl>(decl));
+            break;
+        case DeclKind::VarDecl:
+            typecheckVarDecl(llvm::cast<VarDecl>(decl), true);
+            break;
+        case DeclKind::FieldDecl:
+            llvm_unreachable("no top-level field declarations");
+        case DeclKind::ImportDecl:
+            typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest, importSearchPaths, frameworkSearchPaths);
+            break;
     }
 }
 
@@ -1001,10 +1046,17 @@ void Typechecker::typecheckMemberDecl(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::MethodDecl:
         case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl: typecheckFunctionDecl(llvm::cast<MethodDecl>(decl)); break;
-        case DeclKind::FieldDecl: typecheckFieldDecl(llvm::cast<FieldDecl>(decl)); break;
-        case DeclKind::FunctionTemplate: typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl)); break;
-        default: llvm_unreachable("invalid member declaration kind");
+        case DeclKind::DeinitDecl:
+            typecheckFunctionDecl(llvm::cast<MethodDecl>(decl));
+            break;
+        case DeclKind::FieldDecl:
+            typecheckFieldDecl(llvm::cast<FieldDecl>(decl));
+            break;
+        case DeclKind::FunctionTemplate:
+            typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl));
+            break;
+        default:
+            llvm_unreachable("invalid member declaration kind");
     }
 }
 
@@ -1071,7 +1123,6 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
 
         postProcess();
     }
-
 
     for (auto& sourceFile : module.getSourceFiles()) {
         for (auto& decl : sourceFile.getTopLevelDecls()) {

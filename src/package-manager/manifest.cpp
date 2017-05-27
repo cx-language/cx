@@ -34,7 +34,6 @@ PackageManifest::PackageManifest(const std::string& packageRoot) {
     }
 
     for (auto dependency : root["dependencies"]) {
-        declaredDependencies.emplace_back(dependency.first.as<std::string>(),
-                                          dependency.second.as<std::string>());
+        declaredDependencies.emplace_back(dependency.first.as<std::string>(), dependency.second.as<std::string>());
     }
 }

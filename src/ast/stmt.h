@@ -76,8 +76,7 @@ private:
 
 class VarStmt : public Stmt {
 public:
-    VarStmt(std::unique_ptr<VarDecl> decl)
-    : Stmt(StmtKind::VarStmt), decl(std::move(decl)) {}
+    VarStmt(std::unique_ptr<VarDecl> decl) : Stmt(StmtKind::VarStmt), decl(std::move(decl)) {}
     VarDecl& getDecl() const { return *decl; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::VarStmt; }
 
@@ -114,8 +113,7 @@ private:
 /// A statement that consists of the evaluation of a single expression.
 class ExprStmt : public Stmt {
 public:
-    ExprStmt(std::unique_ptr<Expr> expr)
-    : Stmt(StmtKind::ExprStmt), expr(std::move(expr)) {}
+    ExprStmt(std::unique_ptr<Expr> expr) : Stmt(StmtKind::ExprStmt), expr(std::move(expr)) {}
     Expr& getExpr() const { return *expr; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ExprStmt; }
 
@@ -125,8 +123,7 @@ private:
 
 class DeferStmt : public Stmt {
 public:
-    DeferStmt(std::unique_ptr<Expr> expr)
-    : Stmt(StmtKind::DeferStmt), expr(std::move(expr)) {}
+    DeferStmt(std::unique_ptr<Expr> expr) : Stmt(StmtKind::DeferStmt), expr(std::move(expr)) {}
     Expr& getExpr() const { return *expr; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DeferStmt; }
 
@@ -138,8 +135,8 @@ class IfStmt : public Stmt {
 public:
     IfStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& thenBody,
            std::vector<std::unique_ptr<Stmt>>&& elseBody)
-    : Stmt(StmtKind::IfStmt), condition(std::move(condition)),
-      thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) {}
+    : Stmt(StmtKind::IfStmt), condition(std::move(condition)), thenBody(std::move(thenBody)),
+      elseBody(std::move(elseBody)) {}
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getThenBody() const { return thenBody; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getElseBody() const { return elseBody; }
@@ -167,8 +164,8 @@ class SwitchStmt : public Stmt {
 public:
     SwitchStmt(std::unique_ptr<Expr> condition, std::vector<SwitchCase>&& cases,
                std::vector<std::unique_ptr<Stmt>>&& defaultStmts)
-    : Stmt(StmtKind::SwitchStmt), condition(std::move(condition)),
-      cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) {}
+    : Stmt(StmtKind::SwitchStmt), condition(std::move(condition)), cases(std::move(cases)),
+      defaultStmts(std::move(defaultStmts)) {}
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<SwitchCase> getCases() const { return cases; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getDefaultStmts() const { return defaultStmts; }
@@ -195,10 +192,10 @@ private:
 
 class ForStmt : public Stmt {
 public:
-    ForStmt(std::unique_ptr<VarDecl> variable, std::unique_ptr<Expr> range,
-            std::vector<std::unique_ptr<Stmt>>&& body, SourceLocation location)
-    : Stmt(StmtKind::ForStmt), variable(std::move(variable)), range(std::move(range)),
-      body(std::move(body)), location(location) {}
+    ForStmt(std::unique_ptr<VarDecl> variable, std::unique_ptr<Expr> range, std::vector<std::unique_ptr<Stmt>>&& body,
+            SourceLocation location)
+    : Stmt(StmtKind::ForStmt), variable(std::move(variable)), range(std::move(range)), body(std::move(body)),
+      location(location) {}
     VarDecl* getVariable() const { return variable.get(); }
     Expr& getRangeExpr() const { return *range; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
@@ -237,10 +234,9 @@ private:
 /// Also used to represent compound assignments, e.g. `a += b`, desugared as `a = a + b`.
 class AssignStmt : public Stmt {
 public:
-    AssignStmt(std::shared_ptr<Expr>&& lhs, std::unique_ptr<Expr> rhs, bool isCompoundAssignment,
-               SourceLocation location)
-    : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)),
-      isCompound(isCompoundAssignment), location(location) {}
+    AssignStmt(std::shared_ptr<Expr>&& lhs, std::unique_ptr<Expr> rhs, bool isCompoundAssignment, SourceLocation location)
+    : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)), isCompound(isCompoundAssignment),
+      location(location) {}
     const Expr* getLHS() const { return lhs.get(); }
     const Expr* getRHS() const { return rhs.get(); }
     Expr* getLHS() { return lhs.get(); }
@@ -258,8 +254,7 @@ private:
 
 class CompoundStmt : public Stmt {
 public:
-    CompoundStmt(std::vector<std::unique_ptr<Stmt>>&& body)
-    : Stmt(StmtKind::CompoundStmt), body(std::move(body)) {}
+    CompoundStmt(std::vector<std::unique_ptr<Stmt>>&& body) : Stmt(StmtKind::CompoundStmt), body(std::move(body)) {}
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::CompoundStmt; }
 

@@ -5,15 +5,22 @@ using namespace delta;
 
 bool Stmt::isBreakable() const {
     switch (getKind()) {
-        case StmtKind::WhileStmt: case StmtKind::ForStmt: case StmtKind::SwitchStmt: return true;
-        default: return false;
+        case StmtKind::WhileStmt:
+        case StmtKind::ForStmt:
+        case StmtKind::SwitchStmt:
+            return true;
+        default:
+            return false;
     }
 }
 
 bool Stmt::isContinuable() const {
     switch (getKind()) {
-        case StmtKind::WhileStmt: case StmtKind::ForStmt: return true;
-        default: return false;
+        case StmtKind::WhileStmt:
+        case StmtKind::ForStmt:
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -21,7 +28,8 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
     switch (getKind()) {
         case StmtKind::ReturnStmt: {
             auto* returnStmt = llvm::cast<ReturnStmt>(this);
-            auto returnValue = returnStmt->getReturnValue() ? returnStmt->getReturnValue()->instantiate(genericArgs) : nullptr;
+            auto returnValue = returnStmt->getReturnValue() ? returnStmt->getReturnValue()->instantiate(genericArgs)
+                                                            : nullptr;
             return llvm::make_unique<ReturnStmt>(std::move(returnValue), returnStmt->getLocation());
         }
         case StmtKind::VarStmt: {
@@ -52,8 +60,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
             auto condition = ifStmt->getCondition().instantiate(genericArgs);
             auto thenBody = ::instantiate(ifStmt->getThenBody(), genericArgs);
             auto elseBody = ::instantiate(ifStmt->getElseBody(), genericArgs);
-            return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenBody),
-                                             std::move(elseBody));
+            return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenBody), std::move(elseBody));
         }
         case StmtKind::SwitchStmt: {
             auto* switchStmt = llvm::cast<SwitchStmt>(this);
@@ -64,8 +71,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
                 return SwitchCase(std::move(value), std::move(stmts));
             });
             auto defaultStmts = ::instantiate(switchStmt->getDefaultStmts(), genericArgs);
-            return llvm::make_unique<SwitchStmt>(std::move(condition), std::move(cases),
-                                                 std::move(defaultStmts));
+            return llvm::make_unique<SwitchStmt>(std::move(condition), std::move(cases), std::move(defaultStmts));
         }
         case StmtKind::WhileStmt: {
             auto* whileStmt = llvm::cast<WhileStmt>(this);
@@ -79,8 +85,8 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
             auto variable = llvm::cast<VarDecl>(forStmt->getVariable()->instantiate(genericArgs, {}));
             auto range = forStmt->getRangeExpr().instantiate(genericArgs);
             auto body = ::instantiate(forStmt->getBody(), genericArgs);
-            return llvm::make_unique<ForStmt>(std::move(variable), std::move(range),
-                                              std::move(body), forStmt->getLocation());
+            return llvm::make_unique<ForStmt>(std::move(variable), std::move(range), std::move(body),
+                                              forStmt->getLocation());
         }
         case StmtKind::BreakStmt: {
             auto* breakStmt = llvm::cast<BreakStmt>(this);
@@ -94,8 +100,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
             auto* assignStmt = llvm::cast<AssignStmt>(this);
             auto lhs = assignStmt->getLHS()->instantiate(genericArgs);
             auto rhs = assignStmt->getRHS() ? assignStmt->getRHS()->instantiate(genericArgs) : nullptr;
-            return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs),
-                                                 assignStmt->isCompoundAssignment(),
+            return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs), assignStmt->isCompoundAssignment(),
                                                  assignStmt->getLocation());
         }
         case StmtKind::CompoundStmt: {
