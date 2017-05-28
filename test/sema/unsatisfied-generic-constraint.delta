@@ -1,0 +1,22 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+interface Fooable {
+    func foo()
+}
+
+struct F { }
+
+func F::foo() -> int {
+    return 1
+}
+
+func main() {
+    F f = uninitialized;
+
+    // CHECK: 17:8: error: type 'F' doesn't implement interface 'Fooable'
+    bar(f);
+}
+
+func bar<T: Fooable>(T t) {
+    t.foo()
+}

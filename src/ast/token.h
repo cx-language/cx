@@ -30,6 +30,7 @@ enum TokenKind {
     IMPORT,
     IN,
     INIT,
+    INTERFACE,
     MUTABLE,
     MUTATING,
     NULL_LITERAL,

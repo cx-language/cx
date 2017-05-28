@@ -20,6 +20,15 @@ const FuncType* FuncDecl::getFuncType() const {
     return &llvm::cast<FuncType>(*FuncType::get(returnType, mapToTypes(params)));
 }
 
+bool FuncDecl::signatureMatches(const FuncDecl& other, bool matchReceiver) const {
+    if (name != other.name) return false;
+    if (matchReceiver && receiverType != other.receiverType) return false;
+    if (mutating != other.mutating) return false;
+    if (returnType != other.returnType) return false;
+    if (params != other.params) return false;
+    return true;
+}
+
 llvm::StringRef InitDecl::getTypeName() const {
     return type.which() ? boost::get<TypeDecl*>(type)->name : boost::get<std::string>(type);
 }

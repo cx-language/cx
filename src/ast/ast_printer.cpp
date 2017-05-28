@@ -261,6 +261,7 @@ std::ostream& operator<<(std::ostream& out, const TypeDecl& decl) {
     switch (decl.tag) {
         case TypeTag::Struct: out << "struct "; break;
         case TypeTag::Class: out << "class "; break;
+        case TypeTag::Interface: out << "interface "; break;
     }
     out << decl.name;
     indentLevel++;

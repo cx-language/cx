@@ -26,7 +26,7 @@ public:
 
 protected:
     TypeBase(TypeKind kind) : kind(kind) { }
-    
+
 private:
     const TypeKind kind;
 };

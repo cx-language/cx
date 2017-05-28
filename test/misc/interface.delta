@@ -1,0 +1,18 @@
+// RUN: %delta -o=stdout %s
+
+interface Fooable {
+    func foo()
+}
+
+struct F { }
+
+func F::foo() { }
+
+func main() {
+    F f = uninitialized;
+    bar(f);
+}
+
+func bar<T: Fooable>(T t) {
+    t.foo()
+}

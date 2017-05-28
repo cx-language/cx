@@ -98,7 +98,7 @@ llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
     if (decl.getName().empty()) return llvm::None;
-    TypeDecl typeDecl(TypeTag::Struct, decl.getNameAsString(), {}, SrcLoc::invalid());
+    TypeDecl typeDecl(TypeTag::Struct, decl.getNameAsString(), {}, {}, SrcLoc::invalid());
     typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field)) {
@@ -107,7 +107,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
             return llvm::None;
         }
     }
-    return typeDecl;
+    return std::move(typeDecl);
 }
 
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value) {

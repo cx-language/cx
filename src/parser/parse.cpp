@@ -727,6 +727,13 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
         while (true) {
             auto genericParamName = parse(IDENTIFIER);
             genericParams->emplace_back(genericParamName.string, genericParamName.getLoc());
+
+            if (currentToken() == COLON) { // Generic type constraint.
+                consumeToken();
+                genericParams->back().constraints.emplace_back(parse(IDENTIFIER).string);
+                // TODO: Add support for multiple generic type constraints.
+            }
+
             if (currentToken() == GT) break;
             parse(COMMA);
         }
@@ -751,11 +758,14 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
 }
 
 /// func-decl ::= func-proto '{' stmt* '}'
-std::unique_ptr<FuncDecl> parseFuncDecl(std::vector<GenericParamDecl>* genericParams = nullptr) {
+std::unique_ptr<FuncDecl> parseFuncDecl(std::vector<GenericParamDecl>* genericParams = nullptr,
+                                        bool requireBody = true) {
     auto decl = parseFuncProto(genericParams);
-    parse(LBRACE);
-    decl->body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
-    parse(RBRACE);
+    if (requireBody || currentToken() == LBRACE) {
+        parse(LBRACE);
+        decl->body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
+        parse(RBRACE);
+    }
     return decl;
 }
 
@@ -811,17 +821,32 @@ FieldDecl parseFieldDecl() {
     return FieldDecl(type, std::move(name.string), name.getLoc());
 }
 
-/// type-decl ::= ('class' | 'struct') id '{' field-decl* '}'
+/// type-decl ::= ('class' | 'struct' | 'interface') id '{' field-decl* '}'
 std::unique_ptr<TypeDecl> parseTypeDecl() {
-    assert(currentToken() == CLASS || currentToken() == STRUCT);
-    auto tag = consumeToken() == CLASS ? TypeTag::Class : TypeTag::Struct;
+    TypeTag tag;
+    switch (consumeToken()) {
+        case CLASS: tag = TypeTag::Class; break;
+        case STRUCT: tag = TypeTag::Struct; break;
+        case INTERFACE: tag = TypeTag::Interface; break;
+        default: llvm_unreachable("invalid token");
+    }
+
     auto name = parse(IDENTIFIER);
     parse(LBRACE);
     std::vector<FieldDecl> fields;
-    while (currentToken() != RBRACE)
-        fields.emplace_back(parseFieldDecl());
+    std::vector<std::unique_ptr<FuncDecl>> memberFuncs;
+
+    while (currentToken() != RBRACE) {
+        if (tag == TypeTag::Interface && currentToken().is(FUNC, MUTATING)) {
+            memberFuncs.emplace_back(parseFuncDecl(nullptr, /* requireBody: */ false));
+        } else {
+            fields.emplace_back(parseFieldDecl());
+        }
+    }
+
     consumeToken();
-    return llvm::make_unique<TypeDecl>(tag, std::move(name.string), std::move(fields), name.getLoc());
+    return llvm::make_unique<TypeDecl>(tag, std::move(name.string), std::move(fields),
+                                       std::move(memberFuncs), name.getLoc());
 }
 
 /// import-decl ::= 'import' string-literal ('\n' | ';')
@@ -883,7 +908,7 @@ std::unique_ptr<Decl> parseDecl() {
             addToSymbolTable(*decl);
             return std::move(decl);
         }
-        case CLASS: case STRUCT: {
+        case CLASS: case STRUCT: case INTERFACE: {
             auto decl = parseTypeDecl();
             addToSymbolTable(*decl);
             return std::move(decl);

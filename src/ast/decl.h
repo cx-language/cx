@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <boost/variant.hpp>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Casting.h>
 #include "expr.h"
 #include "stmt.h"
@@ -68,12 +69,16 @@ public:
     ParamDecl(Type type, std::string&& name, SrcLoc srcLoc)
     : Decl(DeclKind::ParamDecl), type(type), name(std::move(name)), srcLoc(srcLoc) { }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
+    bool operator==(const ParamDecl& other) const {
+        return type == other.type && name == other.name;
+    }
 };
 
 class GenericParamDecl : public Decl {
 public:
     std::string name;
     SrcLoc srcLoc;
+    llvm::SmallVector<std::string, 1> constraints;
 
     GenericParamDecl(std::string&& name, SrcLoc srcLoc)
     : Decl(DeclKind::GenericParamDecl), name(std::move(name)), srcLoc(srcLoc) { }
@@ -100,6 +105,7 @@ public:
     bool isMutating() const { return mutating; }
     void setMutating(bool m) { mutating = m; }
     const FuncType* getFuncType() const;
+    bool signatureMatches(const FuncDecl& other, bool matchReceiver = true) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FuncDecl; }
 };
 
@@ -150,23 +156,26 @@ public:
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 };
 
-enum class TypeTag { Struct, Class };
+enum class TypeTag { Struct, Class, Interface };
 
 class TypeDecl : public Decl {
 public:
     TypeTag tag;
     std::string name;
     std::vector<FieldDecl> fields;
+    std::vector<std::unique_ptr<FuncDecl>> memberFuncs; // Only used by interfaces.
     SrcLoc srcLoc;
 
-    TypeDecl(TypeTag tag, std::string&& name, std::vector<FieldDecl>&& fields, SrcLoc srcLoc)
+    TypeDecl(TypeTag tag, std::string&& name, std::vector<FieldDecl>&& fields,
+             std::vector<std::unique_ptr<FuncDecl>>&& memberFuncs, SrcLoc srcLoc)
     : Decl(DeclKind::TypeDecl), tag(tag), name(std::move(name)), fields(std::move(fields)),
-      srcLoc(srcLoc) { }
+      memberFuncs(std::move(memberFuncs)), srcLoc(srcLoc) { }
     Type getType(bool isMutable = false) const;
     Type getTypeForPassing(bool isMutable = false) const; /// 'T&' if this is class, or plain 'T' otherwise.
     bool passByValue() const { return isStruct(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isClass() const { return tag == TypeTag::Class; }
+    bool isInterface() const { return tag == TypeTag::Interface; }
     unsigned getFieldIndex(llvm::StringRef fieldName) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::TypeDecl; }
 };

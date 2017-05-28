@@ -218,6 +218,38 @@ Type resolve(Type type) {
     return it->second;
 }
 
+bool isInterface(Type type) {
+    return type.isBasicType() && !type.isBuiltinType() && !type.isVoid()
+        && getTypeDecl(llvm::cast<BasicType>(*type))->isInterface();
+}
+
+bool hasField(TypeDecl& type, FieldDecl& field) {
+    return llvm::any_of(type.fields, [&](FieldDecl& ownField) {
+        return ownField.name == field.name && ownField.type == field.type;
+    });
+}
+
+bool hasMemberFunc(TypeDecl& type, FuncDecl& func) {
+    llvm::ArrayRef<Decl*> decls = findInSymbolTable(mangleFuncDecl(type.name, func.name));
+    for (Decl* decl : decls) {
+        if (!decl->isFuncDecl()) continue;
+        if (decl->getFuncDecl().receiverType != type.name) continue;
+        if (!decl->getFuncDecl().signatureMatches(func, /* matchReceiver: */ false)) continue;
+        return true;
+    }
+    return false;
+}
+
+bool implementsInterface(TypeDecl& type, TypeDecl& interface) {
+    for (auto& fieldRequirement : interface.fields) {
+        if (!hasField(type, fieldRequirement)) return false;
+    }
+    for (auto& memberFuncRequirement : interface.memberFuncs) {
+        if (!hasMemberFunc(type, *memberFuncRequirement)) return false;
+    }
+    return true;
+}
+
 bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget) {
     Type source = resolve(unresolvedSource);
     Type target = resolve(unresolvedTarget);
@@ -229,6 +261,13 @@ bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget)
         }
     }
     if (source.isImplicitlyConvertibleTo(target)) return true;
+
+    // Check compatibility with interface type.
+    if (isInterface(target) && source.isBasicType()) {
+        if (implementsInterface(*getTypeDecl(llvm::cast<BasicType>(*source)),
+                                *getTypeDecl(llvm::cast<BasicType>(*target))))
+            return true;
+    }
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
     if (expr.isIntLiteralExpr() && target.isBasicType()) {
@@ -292,6 +331,20 @@ void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
 
     auto genericArg = call.genericArgs.begin();
     for (const GenericParamDecl& genericParam : decl.genericParams) {
+        if (!genericParam.constraints.empty()) {
+            assert(genericParam.constraints.size() == 1
+                   && "cannot have multiple generic constraints yet");
+
+            llvm::ArrayRef<Decl*> interfaces = findInSymbolTable(genericParam.constraints[0]);
+            assert(interfaces.size() == 1);
+
+            if (genericArg->isBasicType()
+            && !implementsInterface(*getTypeDecl(llvm::cast<BasicType>(**genericArg)),
+                                    interfaces[0]->getTypeDecl())) {
+                error(call.srcLoc, "type '", *genericArg, "' doesn't implement interface '",
+                      genericParam.constraints[0], "'");
+            }
+        }
         currentGenericArgs.insert({genericParam.name, *genericArg++});
     }
 }
