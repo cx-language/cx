@@ -1,10 +1,12 @@
-# Tested on Ubuntu 17.04.
+# Tested on Ubuntu 17.04 and Windows Subsystem for Linux (running Ubuntu 16.04).
 
 set -x
 
 cd "$(dirname "$0")"
 mkdir -p build
 cd build
+
+sudo apt-get update
 
 # The libclang packages in apt don't contain ClangConfig.cmake
 # which we need so download a tarball from llvm.org instead.
