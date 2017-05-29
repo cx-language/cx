@@ -19,9 +19,6 @@ sudo apt install cmake
 sudo apt install ninja-build
 sudo apt install libboost-dev
 sudo apt install python-pip
-
-# For some reason lit cannot be invoked after installing it like this.
-# TODO: Figure out what's going on.
-pip install lit
+sudo pip install lit
 
 cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$PWD/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10"
