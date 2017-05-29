@@ -156,7 +156,7 @@ int main(int argc, char** argv) {
     if (compileOnly || emitAssembly) return 0;
 
     // Link the output.
-    int ccExitStatus = std::system(("cc " + outputFile).c_str());
+    int ccExitStatus = std::system(("cc -static " + outputFile).c_str());
     std::remove(outputFile.c_str());
     return ccExitStatus;
 }
