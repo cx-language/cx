@@ -9,6 +9,7 @@
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Program.h>
 #include "utility.h"
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
@@ -156,7 +157,14 @@ int main(int argc, char** argv) {
     if (compileOnly || emitAssembly) return 0;
 
     // Link the output.
-    int ccExitStatus = std::system(("cc -static " + outputFile).c_str());
+
+    llvm::ErrorOr<std::string> ccPath = llvm::sys::findProgramByName("cc");
+    if (!ccPath) {
+        printErrorAndExit("couldn't find C compiler");
+    }
+
+    const char* ccArgs[] = { ccPath->c_str(), "-static", outputFile.c_str(), nullptr };
+    int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs);
     std::remove(outputFile.c_str());
     return ccExitStatus;
 }
