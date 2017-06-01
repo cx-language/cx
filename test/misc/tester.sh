@@ -10,3 +10,4 @@ path_to_delta=$1
 source "../helpers.sh"
 
 test_all inputs/*.delta
+test_all inputs/*/*.delta

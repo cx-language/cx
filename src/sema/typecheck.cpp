@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <cstdlib>
+#include <system_error>
 #include <boost/numeric/conversion/cast.hpp>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/Optional.h>
@@ -11,6 +12,9 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/iterator_range.h>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
+#include <llvm/Support/ErrorOr.h>
 #include "typecheck.h"
 #include "c-import.h"
 #include "../ast/type.h"
@@ -19,6 +23,7 @@
 #include "../ast/module.h"
 #include "../ast/token.h"
 #include "../ast/mangle.h"
+#include "../parser/parse.h"
 #include "../driver/utility.h"
 
 using namespace delta;
@@ -81,6 +86,8 @@ std::unordered_map<std::string, Type> currentGenericArgs;
 Type funcReturnType = nullptr;
 bool inInitializer = false;
 int breakableBlocks = 0;
+
+std::vector<Module> importedModules;
 bool importingC = false;
 llvm::ArrayRef<llvm::StringRef> includePaths;
 
@@ -88,6 +95,7 @@ Type typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
 void typecheck(GenericFuncDecl& decl);
 Type typecheck(CallExpr& expr);
+void typecheck(Decl& decl);
 
 Type typecheck(VariableExpr& expr) {
     Decl& decl = findInSymbolTable(expr.identifier, expr.srcLoc);
@@ -1023,9 +1031,46 @@ void typecheck(VarDecl& decl, bool isGlobal) {
 void typecheck(FieldDecl&) {
 }
 
+llvm::ErrorOr<Module> importDeltaModule(llvm::StringRef moduleName) {
+    Module module;
+    std::error_code error;
+
+    for (llvm::StringRef importPath : includePaths) {
+        llvm::sys::fs::directory_iterator it(importPath, error), end;
+        for (; it != end; it.increment(error)) {
+            if (error) return error;
+            if (!llvm::sys::fs::is_directory(it->path())) continue;
+            if (llvm::sys::path::filename(it->path()) != moduleName) continue;
+
+            it = llvm::sys::fs::directory_iterator(it->path(), error);
+            for (; it != end; it.increment(error)) {
+                if (error) return error;
+                if (llvm::sys::path::extension(it->path()) == ".delta") {
+                    module.addFileUnit(parse(it->path()));
+                }
+            }
+            goto done;
+        }
+    }
+
+done:
+    if (error || module.getFileUnits().empty()) return error;
+    return std::move(module);
+}
+
 void typecheck(ImportDecl& decl) {
+    llvm::ErrorOr<Module> module = importDeltaModule(decl.target);
+    if (module) {
+        typecheck(*module, ::includePaths);
+        importedModules.push_back(std::move(*module));
+        return;
+    }
+
     importingC = true;
-    importCHeader(decl.target, includePaths);
+    if (!importCHeader(decl.target, includePaths)) {
+        llvm::errs() << "error: couldn't find module or C header '" << decl.target << "'\n";
+        abort();
+    }
     importingC = false;
 }
 
@@ -1045,6 +1090,10 @@ void typecheck(Decl& decl) {
 }
 
 } // anonymous namespace
+
+llvm::ArrayRef<Module> delta::getImportedModules() {
+    return importedModules;
+}
 
 void delta::typecheck(Module& module, const std::vector<llvm::StringRef>& includePaths) {
     ::includePaths = includePaths;

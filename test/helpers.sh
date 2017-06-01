@@ -1,7 +1,7 @@
 #!/bin/bash
 
 compile_successfully() {
-    compiler_stdout=$($path_to_delta inputs/$1 "${@:2}")
+    compiler_stdout=$($path_to_delta $1 "${@:2}")
 
     if [ $? -ne 0 ]; then
         echo "FAILED: $1"
@@ -42,7 +42,7 @@ compile_and_run_and_check_output() {
 }
 
 check_error() {
-    source_file=inputs/$1
+    source_file=$1
     line_number=$(echo $2 | sed 's/:.*//')
     column=$(echo $2 | sed 's/.*://')
     line_content=$(sed -n "${line_number}p" $source_file)
@@ -60,8 +60,8 @@ diff_output() {
 }
 
 validate_ast() {
-    source_file=inputs/$1
-    ast_file=inputs/$1-ast
+    source_file=$1
+    ast_file=$1-ast
     diff_output "$source_file -print-ast" $ast_file
 
     if [ $? -ne 0 ]; then
@@ -75,7 +75,7 @@ test_all() {
     for file in $@; do
         first_line=$(head -n 1 $file)
         if [[ $first_line =~ $regex ]]; then
-            eval ${BASH_REMATCH[1]} $(basename $file) ${BASH_REMATCH[2]}
+            eval ${BASH_REMATCH[1]} "$file" ${BASH_REMATCH[2]}
         else
             echo "ERROR: No test command specified in $file."
             exit 1

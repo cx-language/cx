@@ -169,9 +169,9 @@ class MacroImporter : public clang::PPCallbacks {
 
 } // anonymous namespace
 
-void delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::StringRef> includePaths) {
+bool delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::StringRef> includePaths) {
     static llvm::StringSet<> importedHeaders;
-    if (!importedHeaders.insert(headerName).second) return; // Already imported?
+    if (!importedHeaders.insert(headerName).second) return true; // Already imported?
 
     clang::CompilerInstance ci;
     clang::DiagnosticOptions diagnosticOptions;
@@ -185,9 +185,6 @@ void delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::Strin
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
 
-    extern const char* currentFileName;
-    llvm::StringRef importerDir = llvm::sys::path::parent_path(currentFileName);
-    ci.getHeaderSearchOpts().AddPath(importerDir,          clang::frontend::Quoted, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath(CLANG_BUILTIN_INCLUDE_PATH, clang::frontend::System, false, false);
@@ -206,14 +203,12 @@ void delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::Strin
     const clang::DirectoryLookup* curDir = nullptr;
     const clang::FileEntry* pFile = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(
         headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr);
-    if (!pFile) {
-        llvm::errs() << "error: couldn't find header '" << headerName << "'\n";
-        abort();
-    }
+    if (!pFile) return false;
 
     ci.getSourceManager().setMainFileID(ci.getSourceManager().createFileID(
         pFile, clang::SourceLocation(), clang::SrcMgr::C_System));
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(), &ci.getPreprocessor());
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext());
     ci.getDiagnosticClient().EndSourceFile();
+    return true;
 }

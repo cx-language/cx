@@ -1,0 +1,9 @@
+// compile_and_run_and_check_output $'foo!!!\nbar!!!'
+// RUN: %delta -typecheck ./a.delta ./b.delta | %FileCheck -allow-empty %s
+
+import "mod"
+
+func main() {
+  foo()
+  bar()
+}

@@ -1,9 +1,13 @@
 #pragma once
 
+namespace llvm {
+    class StringRef;
+}
+
 namespace delta {
 
 class FileUnit;
 
-FileUnit parse(const char* filePath);
+FileUnit parse(llvm::StringRef filePath);
 
 }

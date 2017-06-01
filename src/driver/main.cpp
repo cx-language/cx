@@ -10,6 +10,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Program.h>
+#include <llvm/Support/Path.h>
 #include "utility.h"
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
@@ -19,10 +20,6 @@
 #include "../irgen/irgen.h"
 
 using namespace delta;
-
-namespace delta {
-extern const char* currentFileName;
-}
 
 namespace {
 
@@ -112,7 +109,8 @@ int main(int argc, char** argv) {
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
-    const std::vector<llvm::StringRef> includePaths = collectStringOptionValues("-I", args);
+    std::vector<llvm::StringRef> includePaths = collectStringOptionValues("-I", args);
+    includePaths.push_back(".");
 
     for (llvm::StringRef arg : args) {
         if (arg.startswith("-")) {
@@ -127,8 +125,8 @@ int main(int argc, char** argv) {
     Module module;
 
     for (llvm::StringRef filePath : args) {
-        currentFileName = filePath.data();
-        module.addFileUnit(parse(currentFileName));
+        module.addFileUnit(parse(filePath));
+        includePaths.push_back(llvm::sys::path::parent_path(filePath)); // TODO: Don't add duplicates.
     }
 
     if (printAST) {
@@ -143,6 +141,9 @@ int main(int argc, char** argv) {
     if (typecheckFlag) return 0;
 
     auto& irModule = irgen::compile(module);
+    for (auto& importedModule : getImportedModules()) {
+        irgen::compile(importedModule); // These are imported into the above `irModule`.
+    }
 
     if (outputToStdout) {
         irModule.print(llvm::outs(), nullptr);

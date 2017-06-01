@@ -1,6 +1,7 @@
 #include <vector>
 #include <sstream>
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #include "parse.h"
@@ -927,7 +928,7 @@ std::unique_ptr<Decl> parseDecl() {
 
 }
 
-FileUnit delta::parse(const char* filePath) {
+FileUnit delta::parse(llvm::StringRef filePath) {
     initLexer(filePath);
     tokenBuffer.clear();
     currentTokenIndex = 0;

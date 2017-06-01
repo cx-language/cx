@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 
@@ -19,7 +20,7 @@ public:
     llvm::StringRef getFilePath() const { return filePath; }
 
 private:
-    llvm::StringRef filePath;
+    std::string filePath;
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
 };
 

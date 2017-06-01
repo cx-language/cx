@@ -20,13 +20,16 @@ const char* currentFilePosition;
 
 namespace delta {
 
+extern std::string currentFilePath;
 extern SrcLoc firstLoc;
 extern SrcLoc lastLoc;
 
-void initLexer(const char* filePath) {
-    std::FILE* inputFile = std::fopen(filePath, "rb");
+void initLexer(llvm::StringRef filePath) {
+    currentFilePath = filePath;
+
+    std::FILE* inputFile = std::fopen(currentFilePath.c_str(), "rb");
     if (!inputFile) {
-        printErrorAndExit("no such file: '", filePath, "'");
+        printErrorAndExit("no such file: '", currentFilePath.c_str(), "'");
     }
 
     std::string contents;
@@ -38,8 +41,8 @@ void initLexer(const char* filePath) {
     fileBuffers.emplace_back(std::move(contents));
     currentFilePosition = fileBuffers.back().data() - 1;
 
-    firstLoc = SrcLoc(filePath, 1, 0);
-    lastLoc = SrcLoc(filePath, 1, 0);
+    firstLoc = SrcLoc(currentFilePath.c_str(), 1, 0);
+    lastLoc = SrcLoc(currentFilePath.c_str(), 1, 0);
 }
 
 }

@@ -1,0 +1,7 @@
+// RUN: true
+
+import "stdio.h"
+
+func foo() {
+  puts("foo!!!")
+}
