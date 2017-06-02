@@ -704,7 +704,7 @@ void typecheck(SwitchStmt& stmt) {
     breakableBlocks++;
     for (SwitchCase& switchCase : stmt.cases) {
         Type caseType = typecheck(*switchCase.value);
-        if (caseType != conditionType) {
+        if (!caseType.isImplicitlyConvertibleTo(conditionType)) {
             error(switchCase.value->getSrcLoc(), "case value type '", caseType,
                   "' doesn't match switch condition type '", conditionType, "'");
         }
