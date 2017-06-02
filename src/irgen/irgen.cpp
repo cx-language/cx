@@ -183,6 +183,7 @@ llvm::Type* toIR(Type type) {
 llvm::Value* codegen(const VariableExpr& expr) {
     auto* value = findValue(expr.identifier);
     if (auto* arg = llvm::dyn_cast<llvm::Argument>(value)) return arg;
+    if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) return constant;
     return builder.CreateLoad(value, expr.identifier);
 }
 
@@ -976,11 +977,17 @@ void codegen(const TypeDecl& decl) {
 void codegen(const VarDecl& decl) {
     assert(decl.initializer && "global variables must have initializers");
     if (globalScope().localValues.find(decl.name) != globalScope().localValues.end()) return;
-    auto value = new llvm::GlobalVariable(module, toIR(decl.getType()),
-                                          !decl.getType().isMutable(),
-                                          llvm::GlobalValue::PrivateLinkage,
-                                          llvm::cast<llvm::Constant>(codegen(*decl.initializer)),
-                                          decl.name);
+
+    llvm::Value* value = codegen(*decl.initializer);
+
+    if (decl.getType().isMutable() /* || decl.isPublic() */) {
+        value = new llvm::GlobalVariable(module, toIR(decl.getType()),
+                                         !decl.getType().isMutable(),
+                                         llvm::GlobalValue::PrivateLinkage,
+                                         llvm::cast<llvm::Constant>(value),
+                                         decl.name);
+    }
+
     globalScope().localValues.emplace(decl.name, value);
 }
 

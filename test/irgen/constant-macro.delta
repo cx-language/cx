@@ -1,0 +1,10 @@
+// RUN: %delta -o=stdout %s | %FileCheck %s
+
+import "constant-macro.h"
+
+func foo(int i) {
+    switch (i) {
+        // CHECK: i32 42
+        case FOO: return
+    }
+}

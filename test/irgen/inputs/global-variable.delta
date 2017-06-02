@@ -2,7 +2,7 @@ var foo = 42;
 int baz = 42;
 mutable int qux = 42;
 
-func a() { var b = foo; }
+func a() { foo = 43; }
 func c() { var d = bar; }
 
 const bar = 42;
