@@ -2,7 +2,10 @@
 
 #include <vector>
 
-namespace llvm { class StringRef; }
+namespace llvm {
+    class StringRef;
+    template<typename T> class ArrayRef;
+}
 
 namespace delta {
 
@@ -28,6 +31,6 @@ void addToSymbolTable(VarDecl&& decl);
 Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc);
 llvm::ArrayRef<Decl*> findInSymbolTable(llvm::StringRef name);
 llvm::ArrayRef<Module> getImportedModules();
-void typecheck(Module& module, const std::vector<llvm::StringRef>& includePaths);
+void typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths);
 
 }

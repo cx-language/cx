@@ -1,14 +1,10 @@
 #pragma once
 
-namespace llvm {
-    class StringRef;
-}
-
 namespace delta {
 
 struct Token;
 
-void initLexer(llvm::StringRef filePath);
+void initLexer(const char* filePath);
 Token lex();
 
 }

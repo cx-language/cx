@@ -19,6 +19,8 @@ namespace {
 std::vector<Token> tokenBuffer;
 size_t currentTokenIndex;
 
+std::vector<std::string> filePaths;
+
 Token currentToken() {
     assert(currentTokenIndex < tokenBuffer.size());
     return tokenBuffer[currentTokenIndex];
@@ -929,7 +931,9 @@ std::unique_ptr<Decl> parseDecl() {
 }
 
 FileUnit delta::parse(llvm::StringRef filePath) {
-    initLexer(filePath);
+    filePaths.push_back(filePath);
+
+    initLexer(filePaths.back().c_str());
     tokenBuffer.clear();
     currentTokenIndex = 0;
     tokenBuffer.emplace_back(lex());
@@ -937,5 +941,5 @@ FileUnit delta::parse(llvm::StringRef filePath) {
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
     while (currentToken() != NO_TOKEN)
         topLevelDecls.emplace_back(parseDecl());
-    return FileUnit(filePath, std::move(topLevelDecls));
+    return FileUnit(filePaths.back(), std::move(topLevelDecls));
 }

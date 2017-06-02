@@ -1031,6 +1031,7 @@ llvm::Module& irgen::compile(const Module& sourceModule) {
         assert(!llvm::verifyFunction(*instantiation.func, &llvm::errs()));
         currentGenericArgs.clear();
     }
+    genericFuncInstantiations.clear();
 
     assert(!llvm::verifyModule(module, &llvm::errs()));
     return module;

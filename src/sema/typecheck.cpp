@@ -1031,8 +1031,14 @@ void typecheck(VarDecl& decl, bool isGlobal) {
 void typecheck(FieldDecl&) {
 }
 
-llvm::ErrorOr<Module> importDeltaModule(llvm::StringRef moduleName) {
-    Module module;
+llvm::ErrorOr<const Module&> importDeltaModule(llvm::StringRef moduleName) {
+    for (const Module& importedModule : getImportedModules()) {
+        if (importedModule.getName() == moduleName) { // Already imported?
+            return importedModule;
+        }
+    }
+
+    Module module(moduleName);
     std::error_code error;
 
     for (llvm::StringRef importPath : includePaths) {
@@ -1055,16 +1061,14 @@ llvm::ErrorOr<Module> importDeltaModule(llvm::StringRef moduleName) {
 
 done:
     if (error || module.getFileUnits().empty()) return error;
-    return std::move(module);
+
+    importedModules.push_back(std::move(module));
+    typecheck(importedModules.back(), includePaths);
+    return importedModules.back();
 }
 
 void typecheck(ImportDecl& decl) {
-    llvm::ErrorOr<Module> module = importDeltaModule(decl.target);
-    if (module) {
-        typecheck(*module, ::includePaths);
-        importedModules.push_back(std::move(*module));
-        return;
-    }
+    if (importDeltaModule(decl.target)) return;
 
     importingC = true;
     if (!importCHeader(decl.target, includePaths)) {
@@ -1095,8 +1099,12 @@ llvm::ArrayRef<Module> delta::getImportedModules() {
     return importedModules;
 }
 
-void delta::typecheck(Module& module, const std::vector<llvm::StringRef>& includePaths) {
+void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths) {
     ::includePaths = includePaths;
+
+    if (!importDeltaModule("stdlib")) {
+        printErrorAndExit("couldn't import the standard library");
+    }
 
     // Infer the types of global variables for use before their declaration.
     for (VarDecl* var : globalVariables) {

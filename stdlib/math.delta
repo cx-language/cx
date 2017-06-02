@@ -1,0 +1,7 @@
+func abs<T>(T value) -> T {
+    if (value < 0) {
+        return -value
+    } else {
+        return value
+    }
+}

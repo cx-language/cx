@@ -27,10 +27,13 @@ private:
 /// Container for the AST of a whole module, comprised of one or more FileUnits.
 class Module {
 public:
+    Module(llvm::StringRef name) : name(name) { }
     void addFileUnit(FileUnit&& fileUnit) { fileUnits.emplace_back(std::move(fileUnit)); }
     llvm::ArrayRef<FileUnit> getFileUnits() const { return fileUnits; }
+    llvm::StringRef getName() const { return name; }
 
 private:
+    std::string name;
     std::vector<FileUnit> fileUnits;
 };
 

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cerrno>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
 
 using namespace delta;
@@ -37,13 +38,13 @@ PrecedenceGroup getPrecedenceGroup(TokenKind tokenKind) {
 }
 
 namespace delta {
-std::string currentFilePath;
+const char* currentFilePath;
 SrcLoc firstLoc(nullptr, 1, 0);
 SrcLoc lastLoc(nullptr, 1, 0);
 }
 
 Token::Token(TokenKind kind, llvm::StringRef string)
-: kind(kind), string(string), srcLoc(currentFilePath.c_str(), firstLoc.line, firstLoc.column) {
+: kind(kind), string(string), srcLoc(currentFilePath, firstLoc.line, firstLoc.column) {
     assert(!string.empty() || kind == NO_TOKEN || kind >= BREAK);
     assert(srcLoc.isValid());
 #ifndef NDEBUG
