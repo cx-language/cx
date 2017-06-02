@@ -156,7 +156,7 @@ public:
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 };
 
-enum class TypeTag { Struct, Class, Interface };
+enum class TypeTag { Struct, Class, Interface, Union };
 
 class TypeDecl : public Decl {
 public:
@@ -172,10 +172,11 @@ public:
       memberFuncs(std::move(memberFuncs)), srcLoc(srcLoc) { }
     Type getType(bool isMutable = false) const;
     Type getTypeForPassing(bool isMutable = false) const; /// 'T&' if this is class, or plain 'T' otherwise.
-    bool passByValue() const { return isStruct(); }
+    bool passByValue() const { return isStruct() || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isClass() const { return tag == TypeTag::Class; }
     bool isInterface() const { return tag == TypeTag::Interface; }
+    bool isUnion() const { return tag == TypeTag::Union; }
     unsigned getFieldIndex(llvm::StringRef fieldName) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::TypeDecl; }
 };

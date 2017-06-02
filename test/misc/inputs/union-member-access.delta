@@ -1,0 +1,13 @@
+// compile_and_run_and_check_exit_status 42
+
+import "union-member-access.h"
+
+func foo(U u) -> int {
+    return u.b
+}
+
+func main() -> int {
+    mutable U u = uninitialized
+    u.a = 21
+    return foo(u) + u.b
+}

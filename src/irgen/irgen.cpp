@@ -490,10 +490,16 @@ llvm::Value* codegenLvalue(const MemberExpr& expr) {
             baseType = baseType->getPointerElementType();
             value = builder.CreateLoad(value);
         }
-        auto index = structs.find(baseType->getStructName())->second.second->getFieldIndex(expr.member);
-        return builder.CreateStructGEP(nullptr, value, index);
+        auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
+        auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(expr.member);
+        auto* gep = builder.CreateStructGEP(nullptr, value, index);
+        if (baseTypeDecl.isUnion()) {
+            return builder.CreateBitCast(gep, toIR(expr.getType())->getPointerTo(), expr.member);
+        }
+        return gep;
     } else {
-        auto index = structs.find(baseType->getStructName())->second.second->getFieldIndex(expr.member);
+        auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
+        auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(expr.member);
         return builder.CreateExtractValue(value, index);
     }
 }
