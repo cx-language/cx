@@ -73,7 +73,7 @@ target_link_libraries(not PRIVATE ${NOT_NEEDED_LIBS})
 add_dependencies(check FileCheck not)
 
 # Add 'coverage' target for code coverage report generation.
-file(DOWNLOAD https://github.com/bilke/cmake-modules/raw/master/CodeCoverage.cmake
+file(DOWNLOAD https://github.com/bilke/cmake-modules/raw/9dc1ac2dfb7ed7b0be80eec17127d857d702b2ed/CodeCoverage.cmake
     ${CMAKE_BINARY_DIR}/cmake-modules/CodeCoverage.cmake)
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/cmake-modules)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
