@@ -46,7 +46,8 @@ std::vector<llvm::StringRef> collectStringOptionValues(llvm::StringRef flagPrefi
 }
 
 void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
-                     llvm::TargetMachine::CodeGenFileType fileType) {
+                     llvm::TargetMachine::CodeGenFileType fileType,
+                     llvm::Reloc::Model relocModel) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
@@ -60,7 +61,7 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
 
     llvm::TargetOptions options;
     auto* targetMachine = target->createTargetMachine(targetTriple, "generic", "", options,
-                                                      llvm::Optional<llvm::Reloc::Model>());
+                                                      relocModel);
     module.setDataLayout(targetMachine->createDataLayout());
 
     std::error_code error;
@@ -85,6 +86,7 @@ void printHelp() {
         "OPTIONS:\n"
         "  -c                    - Compile only, generating an .o file; don't link\n"
         "  -emit-assembly        - Emit assembly code\n"
+        "  -fPIC                 - Emit position-independent code\n"
         "  -parse                - Perform parsing\n"
         "  -typecheck            - Perform parsing and type checking\n"
         "  -help                 - Display this help\n"
@@ -109,6 +111,7 @@ int main(int argc, char** argv) {
     const bool printAST = checkFlag("-print-ast", args);
     const bool outputToStdout = checkFlag("-o=stdout", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
+    const bool emitPositionIndependentCode = checkFlag("-fPIC", args);
     std::vector<llvm::StringRef> includePaths = collectStringOptionValues("-I", args);
     includePaths.push_back(".");
 
@@ -153,7 +156,9 @@ int main(int argc, char** argv) {
     std::string outputFile = emitAssembly ? "output.s" : "output.o";
     auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
                                  : llvm::TargetMachine::CGFT_ObjectFile;
-    emitMachineCode(irModule, outputFile, fileType);
+    auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_
+                                                  : llvm::Reloc::Model::Static;
+    emitMachineCode(irModule, outputFile, fileType, relocModel);
 
     if (compileOnly || emitAssembly) return 0;
 
