@@ -1,4 +1,5 @@
 #include <vector>
+#include <forward_list>
 #include <sstream>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
@@ -19,7 +20,7 @@ namespace {
 std::vector<Token> tokenBuffer;
 size_t currentTokenIndex;
 
-std::vector<std::string> filePaths;
+std::forward_list<std::string> filePaths;
 
 Token currentToken() {
     assert(currentTokenIndex < tokenBuffer.size());
@@ -931,9 +932,9 @@ std::unique_ptr<Decl> parseDecl() {
 }
 
 FileUnit delta::parse(llvm::StringRef filePath) {
-    filePaths.push_back(filePath);
+    filePaths.emplace_front(filePath);
 
-    initLexer(filePaths.back().c_str());
+    initLexer(filePaths.front().c_str());
     tokenBuffer.clear();
     currentTokenIndex = 0;
     tokenBuffer.emplace_back(lex());
@@ -941,5 +942,5 @@ FileUnit delta::parse(llvm::StringRef filePath) {
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
     while (currentToken() != NO_TOKEN)
         topLevelDecls.emplace_back(parseDecl());
-    return FileUnit(filePaths.back(), std::move(topLevelDecls));
+    return FileUnit(filePaths.front(), std::move(topLevelDecls));
 }
