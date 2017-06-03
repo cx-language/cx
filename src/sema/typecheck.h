@@ -26,7 +26,7 @@ void addToSymbolTable(InitDecl& decl);
 void addToSymbolTable(DeinitDecl& decl);
 void addToSymbolTable(TypeDecl& decl);
 void addToSymbolTable(TypeDecl&& decl);
-void addToSymbolTable(VarDecl& decl);
+void addToSymbolTable(VarDecl& decl, bool isGlobal);
 void addToSymbolTable(VarDecl&& decl);
 Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc);
 llvm::ArrayRef<Decl*> findInSymbolTable(llvm::StringRef name);

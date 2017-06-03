@@ -849,12 +849,12 @@ void delta::addToSymbolTable(TypeDecl& decl) {
     symbolTable.add(decl.name, &decl);
 }
 
-void delta::addToSymbolTable(VarDecl& decl) {
+void delta::addToSymbolTable(VarDecl& decl, bool isGlobal) {
     if (!importingC && symbolTable.contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     symbolTable.add(decl.name, &decl);
-    globalVariables.push_back(&decl);
+    if (isGlobal) globalVariables.push_back(&decl);
 }
 
 void delta::addToSymbolTable(FuncDecl&& decl) {
@@ -1025,7 +1025,7 @@ void typecheck(VarDecl& decl, bool isGlobal) {
         decl.type = initType;
     }
 
-    if (!isGlobal) addToSymbolTable(decl);
+    if (!isGlobal) addToSymbolTable(decl, isGlobal);
 }
 
 void typecheck(FieldDecl&) {

@@ -908,7 +908,7 @@ std::unique_ptr<Decl> parseDecl() {
             // fallthrough
         case MUTABLE: {
             auto decl = parseVarDeclFromId(parseType());
-            addToSymbolTable(*decl);
+            addToSymbolTable(*decl, /*isGlobal*/ true);
             return std::move(decl);
         }
         case CLASS: case STRUCT: case INTERFACE: {
@@ -918,7 +918,7 @@ std::unique_ptr<Decl> parseDecl() {
         }
         case VAR: case CONST: {
             auto decl = parseVarDeclFromId(Type(nullptr, consumeToken() == VAR));
-            addToSymbolTable(*decl);
+            addToSymbolTable(*decl, /*isGlobal*/ true);
             return std::move(decl);
         }
         case IMPORT:
