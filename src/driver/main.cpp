@@ -11,6 +11,7 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Program.h>
 #include <llvm/Support/Path.h>
+#include "repl.h"
 #include "utility.h"
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
@@ -97,7 +98,9 @@ void printHelp() {
 
 } // anonymous namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) try {
+    if (argc == 1) return replMain();
+
     std::vector<llvm::StringRef> args(argv + 1, argv + argc);
 
     if (checkFlag("-help", args) || checkFlag("--help", args) || checkFlag("-h", args)) {
@@ -174,4 +177,7 @@ int main(int argc, char** argv) {
     int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs);
     std::remove(outputFile.c_str());
     return ccExitStatus;
+} catch (const CompileError& error) {
+    error.print();
+    exit(1);
 }

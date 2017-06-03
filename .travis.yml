@@ -9,15 +9,15 @@ compiler:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -y libboost-all-dev g++-multilib lcov
-    - wget http://releases.llvm.org/3.9.0/clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
-    - tar -xvf clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+    - sudo apt-get install -y libboost-all-dev libedit-dev g++-multilib lcov
+    - wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+    - tar -xvf clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
     - pip install --user lit cpp-coveralls
 
 script:
     - set -e # Error out immediately if any of the following commands fails.
     - cmake -G "Unix Makefiles"
-      -DCMAKE_PREFIX_PATH=$PWD/clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04
+      -DCMAKE_PREFIX_PATH=$PWD/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04
       -DCMAKE_CXX_FLAGS="-coverage" -DCMAKE_BUILD_TYPE=Debug .
     - make
     - make check
@@ -27,5 +27,5 @@ script:
 
 after_success:
     - if [ $CC != "clang" ]; then
-          coveralls --exclude clang+llvm-3.9.0-x86_64-linux-gnu-ubuntu-14.04 --exclude CMakeFiles;
+          coveralls --exclude clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04 --exclude CMakeFiles;
       fi

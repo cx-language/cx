@@ -1,10 +1,10 @@
 #include "lex.h"
 #include <vector>
 #include <string>
-#include <cstdio>
 #include <unordered_map>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include "parse.h"
 #include "../ast/token.h"
 #include "../driver/utility.h"
@@ -13,7 +13,7 @@ using namespace delta;
 
 namespace {
 
-std::vector<std::string> fileBuffers;
+std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
 const char* currentFilePosition;
 
 }
@@ -24,24 +24,13 @@ extern const char* currentFilePath;
 extern SrcLoc firstLoc;
 extern SrcLoc lastLoc;
 
-void initLexer(const char* filePath) {
-    currentFilePath = filePath;
-    std::FILE* inputFile = std::fopen(filePath, "rb");
-    if (!inputFile) {
-        printErrorAndExit("no such file: '", filePath, "'");
-    }
+void initLexer(std::unique_ptr<llvm::MemoryBuffer> input) {
+    currentFilePath = input->getBufferIdentifier().data();
+    fileBuffers.emplace_back(std::move(input));
+    currentFilePosition = fileBuffers.back()->getBufferStart() - 1;
 
-    std::string contents;
-    std::fseek(inputFile, 0, SEEK_END);
-    contents.resize(std::ftell(inputFile));
-    std::rewind(inputFile);
-    std::fread(&contents[0], 1, contents.size(), inputFile);
-    std::fclose(inputFile);
-    fileBuffers.emplace_back(std::move(contents));
-    currentFilePosition = fileBuffers.back().data() - 1;
-
-    firstLoc = SrcLoc(filePath, 1, 0);
-    lastLoc = SrcLoc(filePath, 1, 0);
+    firstLoc = SrcLoc(currentFilePath, 1, 0);
+    lastLoc = SrcLoc(currentFilePath, 1, 0);
 }
 
 }

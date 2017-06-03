@@ -21,7 +21,9 @@ using namespace delta;
 
 namespace {
 
-llvm::Value* codegen(const Expr& expr);
+using irgen::codegen;
+using irgen::toIR;
+
 llvm::Value* codegen(const CallExpr& expr);
 llvm::Value* codegenLvalue(const Expr& expr);
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
@@ -129,7 +131,9 @@ std::vector<To> map(const std::vector<From>& from, To (&func)(const From&)) {
 
 void codegen(const TypeDecl& decl);
 
-llvm::Type* toIR(Type type) {
+} // anonymous namespace
+
+llvm::Type* irgen::toIR(Type type) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
             llvm::StringRef name = type.getName();
@@ -154,7 +158,7 @@ llvm::Type* toIR(Type type) {
                 if (genericArg != currentGenericArgs.end()) return genericArg->second;
 
                 // Custom type that has not been declared yet, search for it in the symbol table.
-                codegen(findInSymbolTable(name, SrcLoc::invalid()).getTypeDecl());
+                ::codegen(findInSymbolTable(name, SrcLoc::invalid()).getTypeDecl());
                 it = structs.find(name);
             }
             return it->second.first;
@@ -179,6 +183,8 @@ llvm::Type* toIR(Type type) {
     }
     llvm_unreachable("all cases handled");
 }
+
+namespace {
 
 llvm::Value* codegen(const VariableExpr& expr) {
     auto* value = findValue(expr.identifier);
@@ -530,25 +536,29 @@ llvm::Value* codegen(const UnwrapExpr& expr) {
     return codegen(*expr.operand);
 }
 
-llvm::Value* codegen(const Expr& expr) {
+} // anonymous namespace
+
+llvm::Value* irgen::codegen(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr:    return codegen(expr.getVariableExpr());
-        case ExprKind::StrLiteralExpr:  return codegen(expr.getStrLiteralExpr());
-        case ExprKind::IntLiteralExpr:  return codegen(expr.getIntLiteralExpr());
-        case ExprKind::FloatLiteralExpr:return codegen(expr.getFloatLiteralExpr());
-        case ExprKind::BoolLiteralExpr: return codegen(expr.getBoolLiteralExpr());
-        case ExprKind::NullLiteralExpr: return codegen(expr.getNullLiteralExpr());
-        case ExprKind::ArrayLiteralExpr:return codegen(expr.getArrayLiteralExpr());
-        case ExprKind::PrefixExpr:      return codegen(expr.getPrefixExpr());
-        case ExprKind::BinaryExpr:      return codegen(expr.getBinaryExpr());
-        case ExprKind::CallExpr:        return codegen(expr.getCallExpr());
-        case ExprKind::CastExpr:        return codegen(expr.getCastExpr());
-        case ExprKind::MemberExpr:      return codegen(expr.getMemberExpr());
-        case ExprKind::SubscriptExpr:   return codegen(expr.getSubscriptExpr());
-        case ExprKind::UnwrapExpr:      return codegen(expr.getUnwrapExpr());
+        case ExprKind::VariableExpr:    return ::codegen(expr.getVariableExpr());
+        case ExprKind::StrLiteralExpr:  return ::codegen(expr.getStrLiteralExpr());
+        case ExprKind::IntLiteralExpr:  return ::codegen(expr.getIntLiteralExpr());
+        case ExprKind::FloatLiteralExpr:return ::codegen(expr.getFloatLiteralExpr());
+        case ExprKind::BoolLiteralExpr: return ::codegen(expr.getBoolLiteralExpr());
+        case ExprKind::NullLiteralExpr: return ::codegen(expr.getNullLiteralExpr());
+        case ExprKind::ArrayLiteralExpr:return ::codegen(expr.getArrayLiteralExpr());
+        case ExprKind::PrefixExpr:      return ::codegen(expr.getPrefixExpr());
+        case ExprKind::BinaryExpr:      return ::codegen(expr.getBinaryExpr());
+        case ExprKind::CallExpr:        return ::codegen(expr.getCallExpr());
+        case ExprKind::CastExpr:        return ::codegen(expr.getCastExpr());
+        case ExprKind::MemberExpr:      return ::codegen(expr.getMemberExpr());
+        case ExprKind::SubscriptExpr:   return ::codegen(expr.getSubscriptExpr());
+        case ExprKind::UnwrapExpr:      return ::codegen(expr.getUnwrapExpr());
     }
     llvm_unreachable("all cases handled");
 }
+
+namespace {
 
 llvm::Value* codegenLvalue(const Expr& expr) {
     switch (expr.getKind()) {
@@ -1029,7 +1039,7 @@ llvm::Module& irgen::compile(const Module& sourceModule) {
     for (const auto& fileUnit : sourceModule.getFileUnits()) {
         for (const auto& decl : fileUnit.getTopLevelDecls()) {
             currentDecl = decl.get();
-            codegen(*decl);
+            ::codegen(*decl);
         }
     }
 
@@ -1046,4 +1056,16 @@ llvm::Module& irgen::compile(const Module& sourceModule) {
 
     assert(!llvm::verifyModule(module, &llvm::errs()));
     return module;
+}
+
+llvm::Module& irgen::getIRModule() {
+    return module;
+}
+
+llvm::IRBuilder<>& irgen::getBuilder() {
+    return builder;
+}
+
+llvm::LLVMContext& irgen::getContext() {
+    return ctx;
 }

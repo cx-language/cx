@@ -5,6 +5,7 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include "parse.h"
 #include "lex.h"
 #include "../ast/token.h"
@@ -19,8 +20,6 @@ namespace {
 
 std::vector<Token> tokenBuffer;
 size_t currentTokenIndex;
-
-std::forward_list<std::string> filePaths;
 
 Token currentToken() {
     assert(currentTokenIndex < tokenBuffer.size());
@@ -929,18 +928,31 @@ std::unique_ptr<Decl> parseDecl() {
     }
 }
 
-}
-
-FileUnit delta::parse(llvm::StringRef filePath) {
-    filePaths.emplace_front(filePath);
-
-    initLexer(filePaths.front().c_str());
+void initParser(std::unique_ptr<llvm::MemoryBuffer> input) {
+    initLexer(std::move(input));
     tokenBuffer.clear();
     currentTokenIndex = 0;
     tokenBuffer.emplace_back(lex());
+}
 
+FileUnit parse(std::unique_ptr<llvm::MemoryBuffer> input) {
+    std::string identifier = input->getBufferIdentifier();
+    initParser(std::move(input));
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
     while (currentToken() != NO_TOKEN)
         topLevelDecls.emplace_back(parseDecl());
-    return FileUnit(filePaths.front(), std::move(topLevelDecls));
+    return FileUnit(identifier, std::move(topLevelDecls));
+}
+
+}
+
+FileUnit delta::parse(llvm::StringRef filePath) {
+    auto buffer = llvm::MemoryBuffer::getFile(filePath);
+    if (!buffer) printErrorAndExit("no such file: '", filePath, "'");
+    return ::parse(std::move(*buffer));
+}
+
+std::unique_ptr<Expr> delta::parseExpr(std::unique_ptr<llvm::MemoryBuffer> input) {
+    initParser(std::move(input));
+    return ::parseExpr();
 }

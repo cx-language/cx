@@ -1,10 +1,16 @@
 #pragma once
 
+#include <memory>
+
+namespace llvm {
+    class MemoryBuffer;
+}
+
 namespace delta {
 
 struct Token;
 
-void initLexer(const char* filePath);
+void initLexer(std::unique_ptr<llvm::MemoryBuffer> input);
 Token lex();
 
 }

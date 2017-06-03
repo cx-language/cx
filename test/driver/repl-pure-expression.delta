@@ -1,0 +1,10 @@
+// RUN: cat %s | %delta | %FileCheck %s
+
+// CHECK: 42
+6 * 7
+
+// CHECK: false
+1 == 0
+
+// CHECK: 2.1
+4.2 / 2.0

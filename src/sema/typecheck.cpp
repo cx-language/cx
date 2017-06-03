@@ -27,6 +27,7 @@
 #include "../driver/utility.h"
 
 using namespace delta;
+// using delta::typecheck;
 
 namespace {
 
@@ -91,7 +92,6 @@ std::vector<Module> importedModules;
 bool importingC = false;
 llvm::ArrayRef<llvm::StringRef> includePaths;
 
-Type typecheck(Expr& expr);
 void typecheck(Stmt& stmt);
 void typecheck(GenericFuncDecl& decl);
 Type typecheck(CallExpr& expr);
@@ -612,28 +612,32 @@ Type typecheck(UnwrapExpr& expr) {
     return PtrType::get(type.getPointee(), true);
 }
 
-Type typecheck(Expr& expr) {
+} // anonymous namespace
+
+Type delta::typecheck(Expr& expr) {
     llvm::Optional<Type> type;
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr:    type = typecheck(expr.getVariableExpr()); break;
-        case ExprKind::StrLiteralExpr:  type = typecheck(expr.getStrLiteralExpr()); break;
-        case ExprKind::IntLiteralExpr:  type = typecheck(expr.getIntLiteralExpr()); break;
-        case ExprKind::FloatLiteralExpr:type = typecheck(expr.getFloatLiteralExpr()); break;
-        case ExprKind::BoolLiteralExpr: type = typecheck(expr.getBoolLiteralExpr()); break;
-        case ExprKind::NullLiteralExpr: type = typecheck(expr.getNullLiteralExpr()); break;
-        case ExprKind::ArrayLiteralExpr:type = typecheck(expr.getArrayLiteralExpr()); break;
-        case ExprKind::PrefixExpr:      type = typecheck(expr.getPrefixExpr()); break;
-        case ExprKind::BinaryExpr:      type = typecheck(expr.getBinaryExpr()); break;
-        case ExprKind::CallExpr:        type = typecheck(expr.getCallExpr()); break;
-        case ExprKind::CastExpr:        type = typecheck(expr.getCastExpr()); break;
-        case ExprKind::MemberExpr:      type = typecheck(expr.getMemberExpr()); break;
-        case ExprKind::SubscriptExpr:   type = typecheck(expr.getSubscriptExpr()); break;
-        case ExprKind::UnwrapExpr:      type = typecheck(expr.getUnwrapExpr()); break;
+        case ExprKind::VariableExpr:    type = ::typecheck(expr.getVariableExpr()); break;
+        case ExprKind::StrLiteralExpr:  type = ::typecheck(expr.getStrLiteralExpr()); break;
+        case ExprKind::IntLiteralExpr:  type = ::typecheck(expr.getIntLiteralExpr()); break;
+        case ExprKind::FloatLiteralExpr:type = ::typecheck(expr.getFloatLiteralExpr()); break;
+        case ExprKind::BoolLiteralExpr: type = ::typecheck(expr.getBoolLiteralExpr()); break;
+        case ExprKind::NullLiteralExpr: type = ::typecheck(expr.getNullLiteralExpr()); break;
+        case ExprKind::ArrayLiteralExpr:type = ::typecheck(expr.getArrayLiteralExpr()); break;
+        case ExprKind::PrefixExpr:      type = ::typecheck(expr.getPrefixExpr()); break;
+        case ExprKind::BinaryExpr:      type = ::typecheck(expr.getBinaryExpr()); break;
+        case ExprKind::CallExpr:        type = ::typecheck(expr.getCallExpr()); break;
+        case ExprKind::CastExpr:        type = ::typecheck(expr.getCastExpr()); break;
+        case ExprKind::MemberExpr:      type = ::typecheck(expr.getMemberExpr()); break;
+        case ExprKind::SubscriptExpr:   type = ::typecheck(expr.getSubscriptExpr()); break;
+        case ExprKind::UnwrapExpr:      type = ::typecheck(expr.getUnwrapExpr()); break;
     }
     assert(*type);
     expr.setType(resolve(*type));
     return expr.getType();
 }
+
+namespace {
 
 bool isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source, Type target) {
     if (!source.isTupleType()) {
@@ -786,8 +790,8 @@ void typecheck(Stmt& stmt) {
         case StmtKind::VariableStmt:  typecheck(stmt.getVariableStmt()); break;
         case StmtKind::IncrementStmt: typecheck(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: typecheck(stmt.getDecrementStmt()); break;
-        case StmtKind::ExprStmt:      typecheck(*stmt.getExprStmt().expr); break;
-        case StmtKind::DeferStmt:     typecheck(*stmt.getDeferStmt().expr); break;
+        case StmtKind::ExprStmt:      delta::typecheck(*stmt.getExprStmt().expr); break;
+        case StmtKind::DeferStmt:     delta::typecheck(*stmt.getDeferStmt().expr); break;
         case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
         case StmtKind::SwitchStmt:    typecheck(stmt.getSwitchStmt()); break;
         case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;

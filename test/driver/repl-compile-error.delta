@@ -1,0 +1,10 @@
+// RUN: cat %s | %delta | %FileCheck %s
+
+// CHECK: error: invalid operands to binary expression ('int' and 'bool')
+42 == true
+
+// CHECK: error: unknown identifier 'foo'
+foo
+
+// CHECK: error: unknown token '?'
+?

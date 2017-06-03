@@ -8,10 +8,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "--system-header-prefix=llvm --system-header-prefix=clang ${CMAKE_CXX_FLAGS}")
 endif()
 
-find_package(LLVM 4.0)
-if(NOT LLVM_FOUND)
-    find_package(LLVM 3.9 REQUIRED)
-endif()
+find_package(LLVM 4.0 REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
@@ -26,6 +23,9 @@ find_package(Clang REQUIRED)
 add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_INSTALL_PREFIX}/lib/clang/${LLVM_VERSION}/include")
 
 find_package(Boost REQUIRED)
+
+find_package(PkgConfig)
+pkg_check_modules(LIBEDIT REQUIRED libedit)
 
 enable_testing()
 

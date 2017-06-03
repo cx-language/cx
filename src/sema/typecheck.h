@@ -18,6 +18,8 @@ class TypeDecl;
 class VarDecl;
 class Module;
 struct SrcLoc;
+struct Type;
+class Expr;
 
 void addToSymbolTable(FuncDecl& decl);
 void addToSymbolTable(FuncDecl&& decl);
@@ -32,5 +34,6 @@ Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc);
 llvm::ArrayRef<Decl*> findInSymbolTable(llvm::StringRef name);
 llvm::ArrayRef<Module> getImportedModules();
 void typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths);
+Type typecheck(Expr& expr);
 
 }

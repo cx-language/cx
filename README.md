@@ -14,9 +14,10 @@ You can try out the language online at the [Delta Sandbox](https://delta-lang.gi
 
 Building Delta from source requires the following dependencies:
 a C++11 compiler, [CMake](https://cmake.org), [Boost](http://www.boost.org),
-and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries.
-To run the test suite, you also need [lit](http://llvm.org/docs/CommandGuide/lit.html),
-which you can get with `pip install lit`.
+[libedit](http://thrysoee.dk/editline/), and the [LLVM](http://llvm.org) and
+[Clang](http://clang.llvm.org) libraries (version 4.0.0). To run the test suite,
+you also need [lit](http://llvm.org/docs/CommandGuide/lit.html), which you can
+get with `pip install lit`.
 
 I recommend using [Ninja](https://ninja-build.org/) instead of Make, because it
 has cleaner output, and runs builds in parallel by default. It can be installed
