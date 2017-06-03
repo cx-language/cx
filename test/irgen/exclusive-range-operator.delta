@@ -1,0 +1,6 @@
+// RUN: %delta -o=stdout %s | %FileCheck %s
+
+func main() {
+    // CHECK: icmp slt i32 %i1, 3
+    for (i in 0..3) { }
+}

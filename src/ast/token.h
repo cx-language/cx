@@ -85,6 +85,7 @@ enum TokenKind {
     LBRACE,
     RBRACE,
     DOT,
+    DOTDOT,
     DOTDOTDOT,
     COMMA,
     COLON,

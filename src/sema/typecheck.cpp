@@ -200,7 +200,8 @@ Type typecheck(BinaryExpr& expr) {
         error(expr.srcLoc, "invalid operands to binary expression ('", leftType, "' and '", rightType, "')");
     }
 
-    if (expr.op == DOTDOTDOT) return RangeType::get(leftType);
+    if (expr.op == DOTDOT) return RangeType::get(leftType, /*hasExclusiveUpperBound*/ true);
+    if (expr.op == DOTDOTDOT) return RangeType::get(leftType, /*hasExclusiveUpperBound*/ false);
 
     return expr.op.isComparisonOperator() ? Type::getBool() : leftType;
 }

@@ -329,6 +329,7 @@ Token delta::lex() {
                     char ch = readChar();
                     if (ch == '.') return DOTDOTDOT;
                     unreadChar(ch);
+                    return DOTDOT;
                 }
                 unreadChar(ch);
                 return DOT;

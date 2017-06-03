@@ -160,12 +160,16 @@ class RangeType : public TypeBase {
 public:
     Type elementType;
 
-    static Type get(Type elementType, bool isMutable = false);
+    bool isExclusive() const { return hasExclusiveUpperBound; }
+    static Type get(Type elementType, bool hasExclusiveUpperBound, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::RangeType; }
 
 private:
-    RangeType(Type elementType)
-    : TypeBase(TypeKind::RangeType), elementType(elementType) { }
+    RangeType(Type elementType, bool hasExclusiveUpperBound)
+    : TypeBase(TypeKind::RangeType), elementType(elementType),
+      hasExclusiveUpperBound(hasExclusiveUpperBound) { }
+
+    bool hasExclusiveUpperBound;
 };
 
 class TupleType : public TypeBase {

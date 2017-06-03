@@ -757,10 +757,21 @@ void codegen(const ForStmt& forStmt) {
 
     builder.SetInsertPoint(cond);
     auto* counter = builder.CreateLoad(counterAlloca, forStmt.id);
-    if (range.getLHS().getType().isSigned())
-        builder.CreateCondBr(builder.CreateICmpSLE(counter, lastValue), body, end);
-    else
-        builder.CreateCondBr(builder.CreateICmpULE(counter, lastValue), body, end);
+
+    llvm::Value* cmp;
+    if (llvm::cast<RangeType>(*forStmt.range->getType()).isExclusive()) {
+        if (range.getLHS().getType().isSigned())
+            cmp = builder.CreateICmpSLT(counter, lastValue);
+        else
+            cmp = builder.CreateICmpULT(counter, lastValue);
+    } else {
+        if (range.getLHS().getType().isSigned())
+            cmp = builder.CreateICmpSLE(counter, lastValue);
+        else
+            cmp = builder.CreateICmpULE(counter, lastValue);
+    }
+    builder.CreateCondBr(cmp, body, end);
+
     codegenBlock(forStmt.body, body, cond);
 
     builder.SetInsertPoint(&builder.GetInsertBlock()->back());

@@ -24,7 +24,7 @@ PrecedenceGroup getPrecedenceGroup(TokenKind tokenKind) {
     switch (tokenKind) {
         case EQ: case NE: return PrecedenceGroup::Comparison;
         case LT: case LE: case GT: case GE: return PrecedenceGroup::Comparison;
-        case DOTDOTDOT: return PrecedenceGroup::Range;
+        case DOTDOT: case DOTDOTDOT: return PrecedenceGroup::Range;
         case PLUS: case MINUS: return PrecedenceGroup::AddSub;
         case STAR: case SLASH: case MOD: return PrecedenceGroup::MulDiv;
         case AND_AND: return PrecedenceGroup::LogicalAnd;
@@ -58,7 +58,7 @@ bool Token::isBinaryOperator() const {
         case EQ: case NE: case LT: case LE: case GT: case GE: case PLUS:
         case MINUS: case STAR: case SLASH: case MOD: case AND: case AND_AND:
         case OR: case OR_OR: case XOR: case LSHIFT: case RSHIFT:
-        case DOTDOTDOT: return true;
+        case DOTDOT: case DOTDOTDOT: return true;
         default: return false;
     }
 }
@@ -128,7 +128,7 @@ const char* delta::toString(TokenKind tokenKind) {
         "_", "==", "!=", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",
         "/", "/=", "%", "%=", "++", "--", "!", "&", "&=", "&&", "&&=", "|", "|=", "||", "||=",
         "^", "^=", "~", "<<", "<<=", ">>", ">>=", "=", "(", ")", "[", "]", "{", "}",
-        ".", "...", ",", ":", "::", ";", "->",
+        ".", "..", "...", ",", ":", "::", ";", "->",
     };
     static_assert(llvm::array_lengthof(tokenStrings) == TOKEN_COUNT,
                   "tokenStrings array not up-to-date");

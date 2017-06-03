@@ -93,9 +93,10 @@ Type ArrayType::get(Type elementType, int64_t size, bool isMutable) {
         t->elementType == elementType && t->size == size, elementType, size);
 }
 
-Type RangeType::get(Type elementType, bool isMutable) {
+Type RangeType::get(Type elementType, bool hasExclusiveUpperBound, bool isMutable) {
     FETCH_AND_RETURN_TYPE(RangeType, rangeTypes,
-        t->elementType == elementType, elementType);
+        t->elementType == elementType && t->hasExclusiveUpperBound == hasExclusiveUpperBound,
+        elementType, hasExclusiveUpperBound);
 }
 
 Type TupleType::get(std::vector<Type>&& subtypes, bool isMutable) {
