@@ -229,6 +229,12 @@ llvm::Value* codegen(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* codegen(const NullLiteralExpr& expr) {
+    if (expr.getType().getPointee().isUnsizedArrayType()) {
+        return llvm::ConstantStruct::getAnon({
+            llvm::ConstantPointerNull::get(toIR(expr.getType().getPointee().getElementType())->getPointerTo()),
+            llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(ctx), 0)
+        });
+    }
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
 }
 
