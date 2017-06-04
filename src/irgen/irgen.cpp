@@ -480,6 +480,9 @@ llvm::Value* codegen(const CastExpr& expr) {
     if (value->getType()->isIntegerTy() && type->isIntegerTy()) {
         return builder.CreateIntCast(value, type, expr.expr->getType().isSigned());
     }
+    if (expr.expr->getType().isPtrType() && expr.expr->getType().getPointee().isUnsizedArrayType()) {
+        value = builder.CreateExtractValue(value, 0);
+    }
     return builder.CreateBitOrPointerCast(value, type);
 }
 
