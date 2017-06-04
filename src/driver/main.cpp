@@ -132,7 +132,7 @@ int main(int argc, char** argv) try {
     Module module("main");
 
     for (llvm::StringRef filePath : args) {
-        module.addFileUnit(parse(filePath));
+        parse(filePath, module);
         includePaths.push_back(llvm::sys::path::parent_path(filePath)); // TODO: Don't add duplicates.
     }
 
@@ -149,7 +149,7 @@ int main(int argc, char** argv) try {
 
     auto& irModule = irgen::compile(module);
     for (auto& importedModule : getImportedModules()) {
-        irgen::compile(importedModule); // These are imported into the above `irModule`.
+        irgen::compile(*importedModule); // These are imported into the above `irModule`.
     }
 
     if (outputToStdout) {

@@ -20,6 +20,7 @@ namespace {
 
 std::vector<Token> tokenBuffer;
 size_t currentTokenIndex;
+Module* currentModule;
 
 Token currentToken() {
     assert(currentTokenIndex < tokenBuffer.size());
@@ -462,7 +463,7 @@ std::unique_ptr<VarDecl> parseVarDeclFromId(Type type) {
     if (!initializer) consumeToken();
     parseStmtTerminator();
     return llvm::make_unique<VarDecl>(type, std::move(name.string),
-                                      std::move(initializer), name.getLoc());
+                                      std::move(initializer), currentModule, name.getLoc());
 }
 
 std::unique_ptr<VariableStmt> parseVarStmtFromId(Type type) {
@@ -757,7 +758,7 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
 
     return llvm::make_unique<FuncDecl>(std::move(name), std::move(params),
                                        std::move(returnType), std::move(receiverType),
-                                       nameLoc);
+                                       currentModule, nameLoc);
 }
 
 /// func-decl ::= func-proto '{' stmt* '}'
@@ -849,7 +850,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
 
     consumeToken();
     return llvm::make_unique<TypeDecl>(tag, std::move(name.string), std::move(fields),
-                                       std::move(memberFuncs), name.getLoc());
+                                       std::move(memberFuncs), currentModule, name.getLoc());
 }
 
 /// import-decl ::= 'import' string-literal ('\n' | ';')
@@ -946,10 +947,12 @@ FileUnit parse(std::unique_ptr<llvm::MemoryBuffer> input) {
 
 }
 
-FileUnit delta::parse(llvm::StringRef filePath) {
+void delta::parse(llvm::StringRef filePath, Module& module) {
     auto buffer = llvm::MemoryBuffer::getFile(filePath);
     if (!buffer) printErrorAndExit("no such file: '", filePath, "'");
-    return ::parse(std::move(*buffer));
+
+    currentModule = &module;
+    module.addFileUnit(::parse(std::move(*buffer)));
 }
 
 std::unique_ptr<Expr> delta::parseExpr(std::unique_ptr<llvm::MemoryBuffer> input) {

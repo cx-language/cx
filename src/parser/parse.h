@@ -9,10 +9,10 @@ namespace llvm {
 
 namespace delta {
 
-class FileUnit;
+class Module;
 class Expr;
 
-FileUnit parse(llvm::StringRef filePath);
+void parse(llvm::StringRef filePath, Module& module);
 std::unique_ptr<Expr> parseExpr(std::unique_ptr<llvm::MemoryBuffer> input);
 
 }

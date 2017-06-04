@@ -1,5 +1,6 @@
 #include <algorithm> // std::equal
 #include <limits>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 #include <cstdlib>
@@ -27,7 +28,11 @@
 #include "../driver/utility.h"
 
 using namespace delta;
-// using delta::typecheck;
+
+namespace delta {
+    std::vector<std::unique_ptr<Module>> importedModules;
+    Module* currentModule;
+}
 
 namespace {
 
@@ -88,7 +93,6 @@ Type funcReturnType = nullptr;
 bool inInitializer = false;
 int breakableBlocks = 0;
 
-std::vector<Module> importedModules;
 bool importingC = false;
 llvm::ArrayRef<llvm::StringRef> includePaths;
 
@@ -434,8 +438,14 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
             } else {
                 error(expr.func->getSrcLoc(), "'", callee, "' is not a function");
             }
-        default: error(expr.func->getSrcLoc(), "ambiguous reference to '", callee,
-                       isInitCall ? ".init'" : "'");
+        default:
+            for (Decl* match : matches) {
+                if (match->getModule() && match->getModule()->getName() == "std") {
+                    return *match;
+                }
+            }
+            error(expr.func->getSrcLoc(), "ambiguous reference to '", callee,
+                  isInitCall ? ".init'" : "'");
     }
 }
 
@@ -741,7 +751,7 @@ void typecheck(ForStmt& forStmt) {
 
     symbolTable.pushScope();
     addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.id),
-                             nullptr, forStmt.srcLoc));
+                             nullptr, currentModule, forStmt.srcLoc));
     breakableBlocks++;
     for (auto& stmt : forStmt.body) typecheck(*stmt);
     breakableBlocks--;
@@ -942,7 +952,7 @@ void typecheckMemberFunc(FuncDecl& decl) {
     Decl& receiverType = findInSymbolTable(decl.receiverType, decl.srcLoc);
     if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
     addToSymbolTable(VarDecl(receiverType.getTypeDecl().getTypeForPassing(decl.isMutating()),
-                             "this", nullptr, SrcLoc::invalid()));
+                             "this", nullptr, currentModule, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
 
     auto funcReturnTypeBackup = funcReturnType;
@@ -974,7 +984,7 @@ void typecheck(InitDecl& decl) {
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
     addToSymbolTable(VarDecl(typeDecl.getTypeDecl().getType(true),
-                             "this", nullptr, SrcLoc::invalid()));
+                             "this", nullptr, currentModule, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;
     for (auto& stmt : *decl.body) typecheck(*stmt);
@@ -985,7 +995,7 @@ void typecheck(InitDecl& decl) {
 void typecheck(DeinitDecl& decl) {
     Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
     FuncDecl funcDecl(mangle(decl), {}, typeDecl.getTypeDecl().getType(),
-                      std::string(decl.getTypeName()), SrcLoc::invalid());
+                      std::string(decl.getTypeName()), currentModule, SrcLoc::invalid());
     funcDecl.body = decl.body;
     decl.type = &typeDecl.getTypeDecl();
     typecheckMemberFunc(funcDecl);
@@ -1036,28 +1046,33 @@ void typecheck(VarDecl& decl, bool isGlobal) {
 void typecheck(FieldDecl&) {
 }
 
-llvm::ErrorOr<const Module&> importDeltaModule(llvm::StringRef moduleName) {
-    for (const Module& importedModule : getImportedModules()) {
-        if (importedModule.getName() == moduleName) { // Already imported?
-            return importedModule;
+llvm::ErrorOr<const Module&> importDeltaModule(llvm::StringRef moduleExternalName,
+                                               llvm::StringRef moduleInternalName = "") {
+    if (moduleInternalName.empty()) moduleInternalName = moduleExternalName;
+
+    for (auto& importedModule : getImportedModules()) {
+        if (importedModule->getName() == moduleInternalName) { // Already imported?
+            return *importedModule;
         }
     }
 
-    Module module(moduleName);
+    auto module = llvm::make_unique<Module>(moduleInternalName);
+    auto previousModule = currentModule;
+    currentModule = module.get();
     std::error_code error;
 
     for (llvm::StringRef importPath : includePaths) {
         llvm::sys::fs::directory_iterator it(importPath, error), end;
         for (; it != end; it.increment(error)) {
-            if (error) return error;
+            if (error) goto done;
             if (!llvm::sys::fs::is_directory(it->path())) continue;
-            if (llvm::sys::path::filename(it->path()) != moduleName) continue;
+            if (llvm::sys::path::filename(it->path()) != moduleExternalName) continue;
 
             it = llvm::sys::fs::directory_iterator(it->path(), error);
             for (; it != end; it.increment(error)) {
-                if (error) return error;
+                if (error) goto done;
                 if (llvm::sys::path::extension(it->path()) == ".delta") {
-                    module.addFileUnit(parse(it->path()));
+                    parse(it->path(), *module);
                 }
             }
             goto done;
@@ -1065,11 +1080,15 @@ llvm::ErrorOr<const Module&> importDeltaModule(llvm::StringRef moduleName) {
     }
 
 done:
-    if (error || module.getFileUnits().empty()) return error;
+    if (error || module->getFileUnits().empty()) {
+        currentModule = previousModule;
+        return error;
+    }
 
     importedModules.push_back(std::move(module));
-    typecheck(importedModules.back(), includePaths);
-    return importedModules.back();
+    typecheck(*importedModules.back(), includePaths);
+    currentModule = previousModule;
+    return *importedModules.back();
 }
 
 void typecheck(ImportDecl& decl) {
@@ -1100,16 +1119,19 @@ void typecheck(Decl& decl) {
 
 } // anonymous namespace
 
-llvm::ArrayRef<Module> delta::getImportedModules() {
+llvm::ArrayRef<std::unique_ptr<Module>> delta::getImportedModules() {
     return importedModules;
 }
 
 void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths) {
     ::includePaths = includePaths;
 
-    if (!importDeltaModule("stdlib")) {
+    if (!importDeltaModule("stdlib", "std")) {
         printErrorAndExit("couldn't import the standard library");
     }
+
+    auto previousModule = currentModule;
+    currentModule = &module;
 
     // Infer the types of global variables for use before their declaration.
     for (VarDecl* var : globalVariables) {
@@ -1123,4 +1145,6 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePat
             }
         }
     }
+
+    currentModule = previousModule;
 }

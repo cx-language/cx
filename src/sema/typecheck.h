@@ -32,7 +32,7 @@ void addToSymbolTable(VarDecl& decl, bool isGlobal);
 void addToSymbolTable(VarDecl&& decl);
 Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc);
 llvm::ArrayRef<Decl*> findInSymbolTable(llvm::StringRef name);
-llvm::ArrayRef<Module> getImportedModules();
+llvm::ArrayRef<std::unique_ptr<Module>> getImportedModules();
 void typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths);
 Type typecheck(Expr& expr);
 

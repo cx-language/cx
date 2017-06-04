@@ -1,3 +1,5 @@
+#include <vector>
+#include <memory>
 #include <cstdlib>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/Support/Path.h>
@@ -15,8 +17,14 @@
 #include "typecheck.h"
 #include "../ast/type.h"
 #include "../ast/decl.h"
+#include "../ast/module.h"
 
 using namespace delta;
+
+namespace delta {
+    extern std::vector<std::unique_ptr<Module>> importedModules;
+    extern Module* currentModule;
+}
 
 namespace {
 
@@ -88,7 +96,7 @@ FuncDecl toDelta(const clang::FunctionDecl& decl) {
                             SrcLoc::invalid());
     }
     return FuncDecl(decl.getNameAsString(), std::move(params),
-                    toDelta(decl.getReturnType()), "", SrcLoc::invalid());
+                    toDelta(decl.getReturnType()), "", currentModule, SrcLoc::invalid());
 }
 
 llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {
@@ -100,7 +108,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
     if (decl.getName().empty()) return llvm::None;
 
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
-                      decl.getNameAsString(), {}, {}, SrcLoc::invalid());
+                      decl.getNameAsString(), {}, {}, currentModule, SrcLoc::invalid());
     typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field)) {
@@ -115,13 +123,13 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SrcLoc::invalid());
     initializer->setType(Type::getInt());
-    addToSymbolTable(VarDecl(initializer->getType(), name, initializer, SrcLoc::invalid()));
+    addToSymbolTable(VarDecl(initializer->getType(), name, initializer, currentModule, SrcLoc::invalid()));
 }
 
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value) {
     auto initializer = std::make_shared<FloatLiteralExpr>(value, SrcLoc::invalid());
     initializer->setType(Type::getFloat64());
-    addToSymbolTable(VarDecl(initializer->getType(), name, initializer, SrcLoc::invalid()));
+    addToSymbolTable(VarDecl(initializer->getType(), name, initializer, currentModule, SrcLoc::invalid()));
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {
@@ -175,6 +183,10 @@ bool delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::Strin
     static llvm::StringSet<> importedHeaders;
     if (!importedHeaders.insert(headerName).second) return true; // Already imported?
 
+    auto module = llvm::make_unique<Module>(headerName);
+    auto previousModule = currentModule;
+    currentModule = module.get();
+
     clang::CompilerInstance ci;
     clang::DiagnosticOptions diagnosticOptions;
     ci.createDiagnostics();
@@ -212,5 +224,9 @@ bool delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::Strin
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(), &ci.getPreprocessor());
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext());
     ci.getDiagnosticClient().EndSourceFile();
+
+
+    importedModules.push_back(std::move(module));
+    currentModule = previousModule;
     return true;
 }

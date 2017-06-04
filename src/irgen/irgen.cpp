@@ -884,12 +884,12 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl, std::string&& mangledName
 
 llvm::Function* codegenInitializerProto(const InitDecl& decl) {
     FuncDecl funcDecl(mangle(decl), std::vector<ParamDecl>(decl.params),
-                      decl.getTypeDecl().getType(), "", SrcLoc::invalid());
+                      decl.getTypeDecl().getType(), "", nullptr, SrcLoc::invalid());
     return codegenFuncProto(funcDecl, mangle(decl));
 }
 
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl) {
-    FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName().str(), decl.srcLoc);
+    FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName().str(), nullptr, decl.srcLoc);
     return codegenFuncProto(funcDecl);
 }
 
@@ -984,7 +984,7 @@ void codegen(const InitDecl& decl) {
 }
 
 void codegen(const DeinitDecl& decl) {
-    FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName().str(), decl.srcLoc);
+    FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName().str(), nullptr, decl.srcLoc);
     funcDecl.body = decl.body;
     auto it = funcs.find(mangle(decl));
     llvm::Function* func = it == funcs.end() ? codegenFuncProto(funcDecl) : it->second;

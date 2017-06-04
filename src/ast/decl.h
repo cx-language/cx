@@ -15,6 +15,8 @@ namespace llvm { class StringRef; }
 
 namespace delta {
 
+class Module;
+
 enum class DeclKind {
     ParamDecl,
     FuncDecl,
@@ -49,13 +51,15 @@ public:
 #undef DEFINE_DECL_IS_AND_GET
 
     DeclKind getKind() const { return kind; }
+    Module* getModule() const { return module; }
     SrcLoc getSrcLoc() const;
 
 protected:
-    Decl(DeclKind kind) : kind(kind) { }
+    Decl(DeclKind kind, Module* module) : kind(kind), module(module) { }
 
 private:
     const DeclKind kind;
+    Module* module;
 };
 
 inline Decl::~Decl() { }
@@ -67,7 +71,7 @@ public:
     SrcLoc srcLoc;
 
     ParamDecl(Type type, std::string&& name, SrcLoc srcLoc)
-    : Decl(DeclKind::ParamDecl), type(type), name(std::move(name)), srcLoc(srcLoc) { }
+    : Decl(DeclKind::ParamDecl, nullptr), type(type), name(std::move(name)), srcLoc(srcLoc) { }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
     bool operator==(const ParamDecl& other) const {
         return type == other.type && name == other.name;
@@ -81,7 +85,7 @@ public:
     llvm::SmallVector<std::string, 1> constraints;
 
     GenericParamDecl(std::string&& name, SrcLoc srcLoc)
-    : Decl(DeclKind::GenericParamDecl), name(std::move(name)), srcLoc(srcLoc) { }
+    : Decl(DeclKind::GenericParamDecl, nullptr), name(std::move(name)), srcLoc(srcLoc) { }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::GenericParamDecl; }
 };
 
@@ -96,8 +100,8 @@ public:
     SrcLoc srcLoc;
 
     FuncDecl(std::string&& name, std::vector<ParamDecl>&& params, Type returnType,
-             std::string&& receiverType, SrcLoc srcLoc)
-    : Decl(DeclKind::FuncDecl), name(std::move(name)), params(std::move(params)),
+             std::string&& receiverType, Module* module, SrcLoc srcLoc)
+    : Decl(DeclKind::FuncDecl, module), name(std::move(name)), params(std::move(params)),
       returnType(returnType), receiverType(std::move(receiverType)), mutating(false),
       srcLoc(srcLoc) { }
     bool isExtern() const { return body == nullptr; };
@@ -116,7 +120,7 @@ public:
 
     GenericFuncDecl(std::shared_ptr<FuncDecl>&& func,
                     std::vector<GenericParamDecl>&& genericParams)
-    : Decl(DeclKind::GenericFuncDecl), func(std::move(func)),
+    : Decl(DeclKind::GenericFuncDecl, func->getModule()), func(std::move(func)),
       genericParams(std::move(genericParams)) { }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::GenericFuncDecl; }
 };
@@ -132,7 +136,7 @@ public:
 
     InitDecl(std::string&& type, std::vector<ParamDecl>&& params,
              std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body, SrcLoc srcLoc)
-    : Decl(DeclKind::InitDecl), type(std::move(type)), params(std::move(params)),
+    : Decl(DeclKind::InitDecl, nullptr), type(std::move(type)), params(std::move(params)),
       body(std::move(body)), srcLoc(srcLoc) { }
     TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
     llvm::StringRef getTypeName() const;
@@ -149,7 +153,7 @@ public:
 
     DeinitDecl(std::string&& type,
                std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body, SrcLoc srcLoc)
-    : Decl(DeclKind::DeinitDecl), type(std::move(type)), body(std::move(body)),
+    : Decl(DeclKind::DeinitDecl, nullptr), type(std::move(type)), body(std::move(body)),
       srcLoc(srcLoc) { }
     TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
     llvm::StringRef getTypeName() const;
@@ -167,8 +171,8 @@ public:
     SrcLoc srcLoc;
 
     TypeDecl(TypeTag tag, std::string&& name, std::vector<FieldDecl>&& fields,
-             std::vector<std::unique_ptr<FuncDecl>>&& memberFuncs, SrcLoc srcLoc)
-    : Decl(DeclKind::TypeDecl), tag(tag), name(std::move(name)), fields(std::move(fields)),
+             std::vector<std::unique_ptr<FuncDecl>>&& memberFuncs, Module* module, SrcLoc srcLoc)
+    : Decl(DeclKind::TypeDecl, module), tag(tag), name(std::move(name)), fields(std::move(fields)),
       memberFuncs(std::move(memberFuncs)), srcLoc(srcLoc) { }
     Type getType(bool isMutable = false) const;
     Type getTypeForPassing(bool isMutable = false) const; /// 'T&' if this is class, or plain 'T' otherwise.
@@ -188,8 +192,9 @@ public:
     std::shared_ptr<Expr> initializer; /// Null if the initializer is 'uninitialized'.
     SrcLoc srcLoc;
 
-    VarDecl(Type type, std::string&& name, std::shared_ptr<Expr>&& initializer, SrcLoc srcLoc)
-    : Decl(DeclKind::VarDecl), type(type), name(std::move(name)),
+    VarDecl(Type type, std::string&& name, std::shared_ptr<Expr>&& initializer,
+            Module* module, SrcLoc srcLoc)
+    : Decl(DeclKind::VarDecl, module), type(type), name(std::move(name)),
       initializer(std::move(initializer)), srcLoc(srcLoc) { }
     Type getType() const { return type; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }
@@ -202,7 +207,7 @@ public:
     SrcLoc srcLoc;
 
     FieldDecl(Type type, std::string&& name, SrcLoc srcLoc)
-    : Decl(DeclKind::FieldDecl), type(type), name(std::move(name)), srcLoc(srcLoc) { }
+    : Decl(DeclKind::FieldDecl, nullptr), type(type), name(std::move(name)), srcLoc(srcLoc) { }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }
 };
 
@@ -212,7 +217,7 @@ public:
     SrcLoc srcLoc;
 
     ImportDecl(std::string&& target, SrcLoc srcLoc)
-    : Decl(DeclKind::ImportDecl), target(std::move(target)), srcLoc(srcLoc) { }
+    : Decl(DeclKind::ImportDecl, nullptr), target(std::move(target)), srcLoc(srcLoc) { }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ImportDecl; }
 };
 
