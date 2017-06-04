@@ -857,9 +857,10 @@ void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
     }
 }
 
-llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName) {
+llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) {
     auto structTypeAndDecl = structs.find(typeName)->second;
-    if (structTypeAndDecl.second->passByValue()) {
+
+    if (!isMutating && structTypeAndDecl.second->passByValue()) {
         return structTypeAndDecl.first;
     } else {
         return llvm::PointerType::get(structTypeAndDecl.first, 0);
@@ -875,7 +876,9 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl, std::string&& mangledName
     if (decl.name == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
-    if (decl.isMemberFunc()) paramTypes.emplace_back(getLLVMTypeForPassing(decl.receiverType));
+    if (decl.isMemberFunc()) {
+        paramTypes.emplace_back(getLLVMTypeForPassing(decl.receiverType, decl.isMutating()));
+    }
     for (const auto& t : funcType->paramTypes) paramTypes.emplace_back(toIR(t));
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);

@@ -1,0 +1,12 @@
+// RUN: %delta -o=stdout %s | %FileCheck %s
+
+struct S {
+    mutable int i
+}
+
+// CHECK: define void @S.s(%S* %this)
+mutating func S::s() {
+    // CHECK: %1 = getelementptr inbounds %S, %S* %this, i32 0, i32 0
+    // CHECK: store i32 2, i32* %1
+    this.i = 2
+}
