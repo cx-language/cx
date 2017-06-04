@@ -225,7 +225,11 @@ Token delta::lex() {
                 ch = readChar();
                 if (ch == '/') {
                     // comment until end of line
-                    while (readChar() != '\n') { }
+                    while (true) {
+                        char ch = readChar();
+                        if (ch == '\n') break;
+                        if (ch == '\0') goto end;
+                    }
                 } else if (ch == '=') {
                     return SLASH_EQ;
                 } else {
