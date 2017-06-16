@@ -143,7 +143,7 @@ int main(int argc, char** argv) try {
 
     if (parseFlag) return 0;
 
-    typecheck(module, includePaths);
+    typecheck(module, includePaths, parse);
 
     if (typecheckFlag) return 0;
 

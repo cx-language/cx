@@ -24,7 +24,6 @@
 #include "../ast/module.h"
 #include "../ast/token.h"
 #include "../ast/mangle.h"
-#include "../parser/parse.h"
 #include "../driver/utility.h"
 
 using namespace delta;
@@ -99,7 +98,7 @@ llvm::ArrayRef<llvm::StringRef> includePaths;
 void typecheck(Stmt& stmt);
 void typecheck(GenericFuncDecl& decl);
 Type typecheck(CallExpr& expr);
-void typecheck(Decl& decl);
+void typecheck(Decl& decl, ParserFunction& parse);
 
 Type typecheck(VariableExpr& expr) {
     Decl& decl = findInSymbolTable(expr.identifier, expr.srcLoc);
@@ -1046,7 +1045,8 @@ void typecheck(VarDecl& decl, bool isGlobal) {
 void typecheck(FieldDecl&) {
 }
 
-llvm::ErrorOr<const Module&> importDeltaModule(llvm::StringRef moduleExternalName,
+llvm::ErrorOr<const Module&> importDeltaModule(ParserFunction& parse,
+                                               llvm::StringRef moduleExternalName,
                                                llvm::StringRef moduleInternalName = "") {
     if (moduleInternalName.empty()) moduleInternalName = moduleExternalName;
 
@@ -1086,13 +1086,13 @@ done:
     }
 
     importedModules.push_back(std::move(module));
-    typecheck(*importedModules.back(), includePaths);
+    typecheck(*importedModules.back(), includePaths, parse);
     currentModule = previousModule;
     return *importedModules.back();
 }
 
-void typecheck(ImportDecl& decl) {
-    if (importDeltaModule(decl.target)) return;
+void typecheck(ImportDecl& decl, ParserFunction& parse) {
+    if (importDeltaModule(parse, decl.target)) return;
 
     importingC = true;
     if (!importCHeader(decl.target, includePaths)) {
@@ -1102,7 +1102,7 @@ void typecheck(ImportDecl& decl) {
     importingC = false;
 }
 
-void typecheck(Decl& decl) {
+void typecheck(Decl& decl, ParserFunction& parse) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
@@ -1113,7 +1113,7 @@ void typecheck(Decl& decl) {
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   typecheck(decl.getVarDecl(), true); break;
         case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;
-        case DeclKind::ImportDecl:typecheck(decl.getImportDecl()); break;
+        case DeclKind::ImportDecl:typecheck(decl.getImportDecl(), parse); break;
     }
 }
 
@@ -1123,10 +1123,11 @@ llvm::ArrayRef<std::unique_ptr<Module>> delta::getImportedModules() {
     return importedModules;
 }
 
-void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths) {
+void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths,
+                      ParserFunction& parse) {
     ::includePaths = includePaths;
 
-    if (!importDeltaModule("stdlib", "std")) {
+    if (!importDeltaModule(parse, "stdlib", "std")) {
         printErrorAndExit("couldn't import the standard library");
     }
 
@@ -1141,7 +1142,7 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePat
     for (auto& fileUnit : module.getFileUnits()) {
         for (auto& decl : fileUnit.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
-                ::typecheck(*decl);
+                ::typecheck(*decl, parse);
             }
         }
     }

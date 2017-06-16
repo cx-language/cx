@@ -21,6 +21,8 @@ struct SrcLoc;
 struct Type;
 class Expr;
 
+using ParserFunction = void(llvm::StringRef filePath, Module& module);
+
 void addToSymbolTable(FuncDecl& decl);
 void addToSymbolTable(FuncDecl&& decl);
 void addToSymbolTable(GenericFuncDecl& decl);
@@ -33,7 +35,8 @@ void addToSymbolTable(VarDecl&& decl);
 Decl& findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc);
 llvm::ArrayRef<Decl*> findInSymbolTable(llvm::StringRef name);
 llvm::ArrayRef<std::unique_ptr<Module>> getImportedModules();
-void typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths);
+void typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths,
+               ParserFunction& parse);
 Type typecheck(Expr& expr);
 
 }
