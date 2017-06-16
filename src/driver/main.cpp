@@ -173,7 +173,7 @@ int main(int argc, char** argv) try {
         printErrorAndExit("couldn't find C compiler");
     }
 
-    const char* ccArgs[] = { ccPath->c_str(), "-static", outputFile.c_str(), nullptr };
+    const char* ccArgs[] = { ccPath->c_str(), outputFile.c_str(), nullptr };
     int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs);
     std::remove(outputFile.c_str());
     return ccExitStatus;
