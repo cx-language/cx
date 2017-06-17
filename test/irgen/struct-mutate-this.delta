@@ -1,4 +1,4 @@
-// RUN: %delta -o=stdout %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s
 
 struct S {
     var i: int

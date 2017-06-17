@@ -10,7 +10,7 @@ path_to_delta=$1
 source "../helpers.sh"
 
 for file in inputs/*.delta; do
-    diff_output "$file -o=stdout" ${file%.delta}.ll $'\n'
+    diff_output "$file -print-ir" ${file%.delta}.ll $'\n'
 
     if [ $? -ne 0 ]; then
         echo "FAILED: IR of '$file' doesn't match expected IR '${file%.delta}.ll'"

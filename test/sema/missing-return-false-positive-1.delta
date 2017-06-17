@@ -1,4 +1,4 @@
-// RUN: %delta -o=stdout %s
+// RUN: %delta -print-ir %s
 
 func foo(b: bool) -> int {
     if (b) {

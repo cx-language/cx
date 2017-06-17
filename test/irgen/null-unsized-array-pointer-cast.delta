@@ -1,4 +1,4 @@
-// RUN: %delta -o=stdout %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s
 
 func main() {
     // CHECK: %a = alloca { i64*, i32 }

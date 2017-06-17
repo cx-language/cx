@@ -1,4 +1,4 @@
-// RUN: %delta -o=stdout %s
+// RUN: %delta -print-ir %s
 
 struct Foo { }
 Foo::init(a: int) { }

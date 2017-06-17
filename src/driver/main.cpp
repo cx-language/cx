@@ -92,8 +92,8 @@ void printHelp() {
         "  -typecheck            - Perform parsing and type checking\n"
         "  -help                 - Display this help\n"
         "  -I<directory>         - Add a search path for module and C header import\n"
-        "  -o=stdout             - Print the generated LLVM IR to stdout\n"
-        "  -print-ast            - Print the abstract syntax tree to stdout\n";
+        "  -print-ast            - Print the abstract syntax tree to stdout\n"
+        "  -print-ir             - Print the generated LLVM IR to stdout\n";
 }
 
 } // anonymous namespace
@@ -112,7 +112,7 @@ int main(int argc, char** argv) try {
     const bool typecheckFlag = checkFlag("-typecheck", args);
     const bool compileOnly = checkFlag("-c", args);
     const bool printAST = checkFlag("-print-ast", args);
-    const bool outputToStdout = checkFlag("-o=stdout", args);
+    const bool printIR = checkFlag("-print-ir", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
     const bool emitPositionIndependentCode = checkFlag("-fPIC", args);
     std::vector<llvm::StringRef> includePaths = collectStringOptionValues("-I", args);
@@ -155,7 +155,7 @@ int main(int argc, char** argv) try {
     }
     auto& irModule = irgen::compile(module);
 
-    if (outputToStdout) {
+    if (printIR) {
         irModule.print(llvm::outs(), nullptr);
         return 0;
     }
