@@ -7,7 +7,10 @@ namespace llvm {
 
 namespace delta {
 
+class FileUnit;
+
 /// Returns true if the header was found and successfully imported.
-bool importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::StringRef> includePaths);
+bool importCHeader(FileUnit& importer, llvm::StringRef headerName,
+                   llvm::ArrayRef<llvm::StringRef> includePaths);
 
 }

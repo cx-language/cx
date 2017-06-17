@@ -951,11 +951,14 @@ void delta::parse(llvm::StringRef filePath, Module& module) {
     auto buffer = llvm::MemoryBuffer::getFile(filePath);
     if (!buffer) printErrorAndExit("no such file: '", filePath, "'");
 
+    setCurrentModule(module);
     currentModule = &module;
     module.addFileUnit(::parse(std::move(*buffer)));
 }
 
-std::unique_ptr<Expr> delta::parseExpr(std::unique_ptr<llvm::MemoryBuffer> input) {
+std::unique_ptr<Expr> delta::parseExpr(std::unique_ptr<llvm::MemoryBuffer> input,
+                                       Module& module) {
     initParser(std::move(input));
+    setCurrentModule(module);
     return ::parseExpr();
 }

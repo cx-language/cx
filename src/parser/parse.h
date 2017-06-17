@@ -13,6 +13,6 @@ class Module;
 class Expr;
 
 void parse(llvm::StringRef filePath, Module& module);
-std::unique_ptr<Expr> parseExpr(std::unique_ptr<llvm::MemoryBuffer> input);
+std::unique_ptr<Expr> parseExpr(std::unique_ptr<llvm::MemoryBuffer> input, Module& module);
 
 }

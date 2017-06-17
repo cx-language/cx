@@ -1,4 +1,5 @@
 #include <algorithm> // std::equal
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <unordered_map>
@@ -29,59 +30,20 @@
 using namespace delta;
 
 namespace delta {
-    std::vector<std::unique_ptr<Module>> importedModules;
+    std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
     Module* currentModule;
+    FileUnit* currentFileUnit;
+}
+
+void delta::setCurrentModule(Module& module) {
+    currentModule = &module;
+}
+
+void delta::setCurrentFileUnit(FileUnit& fileUnit) {
+    currentFileUnit = &fileUnit;
 }
 
 namespace {
-
-class SymbolTable {
-public:
-    SymbolTable() {
-        pushScope(); // The global scope.
-    }
-
-    void pushScope() {
-        scopes.emplace_back();
-    }
-
-    void popScope() {
-        scopes.pop_back();
-    }
-
-    llvm::ArrayRef<Decl*> find(const std::string& name) const {
-        for (const auto& scope : llvm::reverse(scopes)) {
-            auto it = scope.find(name);
-            if (it != scope.end()) return it->second;
-        }
-        return {};
-    }
-
-    template<typename T>
-    T* findWithMatchingParams(const T& toFind) const {
-        for (Decl* decl : find(mangle(toFind))) {
-            T* t = llvm::dyn_cast<T>(decl);
-            if (!t || t->params.size() != toFind.params.size()) continue;
-            if (std::equal(toFind.params.begin(), toFind.params.end(), t->params.begin(),
-                           [](const ParamDecl& a, const ParamDecl& b) { return a.name == b.name; }))
-                return t;
-        }
-        return nullptr;
-    }
-
-    bool contains(const std::string& name) const {
-        return !find(name).empty();
-    }
-
-    void add(std::string name, Decl* decl) {
-        scopes.back()[std::move(name)].push_back(decl);
-    }
-
-private:
-    std::vector<std::unordered_map<std::string, llvm::SmallVector<Decl*, 1>>> scopes;
-};
-
-SymbolTable symbolTable;
 
 /// Storage for Decls that are not in the AST but are referenced by the symbol table.
 std::vector<std::unique_ptr<Decl>> nonASTDecls;
@@ -101,7 +63,7 @@ Type typecheck(CallExpr& expr);
 void typecheck(Decl& decl, ParserFunction& parse);
 
 Type typecheck(VariableExpr& expr) {
-    Decl& decl = findInSymbolTable(expr.identifier, expr.srcLoc);
+    Decl& decl = findDecl(expr.identifier, expr.srcLoc);
 
     switch (decl.getKind()) {
         case DeclKind::VarDecl: return decl.getVarDecl().getType();
@@ -242,7 +204,7 @@ bool hasField(TypeDecl& type, FieldDecl& field) {
 }
 
 bool hasMemberFunc(TypeDecl& type, FuncDecl& func) {
-    llvm::ArrayRef<Decl*> decls = findInSymbolTable(mangleFuncDecl(type.name, func.name));
+    auto decls = findDecls(mangleFuncDecl(type.name, func.name));
     for (Decl* decl : decls) {
         if (!decl->isFuncDecl()) continue;
         if (decl->getFuncDecl().receiverType != type.name) continue;
@@ -347,7 +309,7 @@ void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
             assert(genericParam.constraints.size() == 1
                    && "cannot have multiple generic constraints yet");
 
-            llvm::ArrayRef<Decl*> interfaces = findInSymbolTable(genericParam.constraints[0]);
+            auto interfaces = findDecls(genericParam.constraints[0]);
             assert(interfaces.size() == 1);
 
             if (genericArg->isBasicType()
@@ -380,7 +342,7 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
     llvm::SmallVector<Decl*, 1> matches;
     bool isInitCall = false;
     bool atLeastOneFunction = false;
-    llvm::ArrayRef<Decl*> decls = findInSymbolTable(callee);
+    auto decls = findDecls(callee);
 
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
@@ -408,7 +370,8 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
                 break;
             case DeclKind::TypeDecl: {
                 isInitCall = true;
-                auto initDecls = symbolTable.find(mangleInitDecl(decl->getTypeDecl().name));
+                auto initDecls = currentModule->getSymbolTable().find(mangleInitDecl(decl->getTypeDecl().name));
+
                 for (Decl* initDecl : initDecls) {
                     if (initDecls.size() == 1) {
                         validateArgs(expr.args, initDecl->getInitDecl().params,
@@ -574,7 +537,7 @@ Type typecheck(MemberExpr& expr) {
         return Type::getInt();
     }
 
-    Decl& typeDecl = findInSymbolTable(baseType.getName(), SrcLoc::invalid());
+    Decl& typeDecl = findDecl(baseType.getName(), SrcLoc::invalid());
 
     for (const FieldDecl& field : typeDecl.getTypeDecl().fields) {
         if (field.name == expr.member) {
@@ -739,7 +702,7 @@ void typecheck(WhileStmt& whileStmt) {
 }
 
 void typecheck(ForStmt& forStmt) {
-    if (symbolTable.contains(forStmt.id)) {
+    if (currentModule->getSymbolTable().contains(forStmt.id)) {
         error(forStmt.srcLoc, "redefinition of '", forStmt.id, "'");
     }
 
@@ -748,13 +711,13 @@ void typecheck(ForStmt& forStmt) {
         error(forStmt.range->getSrcLoc(), "'for' range expression is not an 'Iterable'");
     }
 
-    symbolTable.pushScope();
+    currentModule->getSymbolTable().pushScope();
     addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.id),
                              nullptr, currentModule, forStmt.srcLoc));
     breakableBlocks++;
     for (auto& stmt : forStmt.body) typecheck(*stmt);
     breakableBlocks--;
-    symbolTable.popScope();
+    currentModule->getSymbolTable().popScope();
 }
 
 void typecheck(BreakStmt& breakStmt) {
@@ -812,92 +775,155 @@ void typecheck(Stmt& stmt) {
 }
 
 void typecheck(ParamDecl& decl) {
-    if (symbolTable.contains(decl.name)) {
+    if (currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.add(decl.name, &decl);
+    currentModule->getSymbolTable().add(decl.name, &decl);
 }
 
 } // anonymous namespace
 
 void delta::addToSymbolTable(FuncDecl& decl) {
-    if (!importingC && symbolTable.findWithMatchingParams(decl)) {
+    if (!importingC && currentModule->getSymbolTable().findWithMatchingParams(decl)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.add(mangle(decl), &decl);
+    currentModule->getSymbolTable().add(mangle(decl), &decl);
 }
 
 void delta::addToSymbolTable(GenericFuncDecl& decl) {
-    if (symbolTable.contains(decl.func->name)) {
+    if (currentModule->getSymbolTable().contains(decl.func->name)) {
         error(decl.func->srcLoc, "redefinition of '", decl.func->name, "'");
     }
-    symbolTable.add(decl.func->name, &decl);
+    currentModule->getSymbolTable().add(decl.func->name, &decl);
 }
 
 void delta::addToSymbolTable(InitDecl& decl) {
-    if (symbolTable.findWithMatchingParams(decl)) {
+    if (currentModule->getSymbolTable().findWithMatchingParams(decl)) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
     }
-    Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
+    Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.add(mangle(decl), &decl);
+    currentModule->getSymbolTable().add(mangle(decl), &decl);
 }
 
 void delta::addToSymbolTable(DeinitDecl& decl) {
-    if (symbolTable.contains(mangle(decl))) {
+    if (currentModule->getSymbolTable().contains(mangle(decl))) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' deinitializer");
     }
-    Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
+    Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
 
-    symbolTable.add(mangle(decl), &decl);
+    currentModule->getSymbolTable().add(mangle(decl), &decl);
 }
 
 void delta::addToSymbolTable(TypeDecl& decl) {
-    if (!importingC && symbolTable.contains(decl.name)) {
+    if (!importingC && currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.add(decl.name, &decl);
+    currentModule->getSymbolTable().add(decl.name, &decl);
 }
 
 void delta::addToSymbolTable(VarDecl& decl, bool isGlobal) {
-    if (!importingC && symbolTable.contains(decl.name)) {
+    if (!importingC && currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
-    symbolTable.add(decl.name, &decl);
+    currentModule->getSymbolTable().add(decl.name, &decl);
     if (isGlobal) globalVariables.push_back(&decl);
 }
 
 void delta::addToSymbolTable(FuncDecl&& decl) {
     std::string name = decl.name;
     nonASTDecls.push_back(llvm::make_unique<FuncDecl>(std::move(decl)));
-    symbolTable.add(std::move(name), nonASTDecls.back().get());
+    currentModule->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
 }
 
 void delta::addToSymbolTable(TypeDecl&& decl) {
     std::string name = decl.name;
     nonASTDecls.push_back(llvm::make_unique<TypeDecl>(std::move(decl)));
-    symbolTable.add(std::move(name), nonASTDecls.back().get());
+    currentModule->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
 }
 
 void delta::addToSymbolTable(VarDecl&& decl) {
     std::string name = decl.name;
     nonASTDecls.push_back(llvm::make_unique<VarDecl>(std::move(decl)));
-    symbolTable.add(std::move(name), nonASTDecls.back().get());
+    currentModule->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
 }
 
-Decl& delta::findInSymbolTable(llvm::StringRef name, SrcLoc srcLoc) {
-    llvm::ArrayRef<Decl*> decls = findInSymbolTable(name);
-    if (decls.empty()) error(srcLoc, "unknown identifier '", name, "'");
-    if (decls.size() > 1) error(srcLoc, "ambiguous reference to '", name, "'");
-    return *decls[0];
+template<typename ModuleContainer>
+static llvm::SmallVector<Decl*, 1> findDeclsInModules(llvm::StringRef name,
+                                                      const ModuleContainer& modules) {
+    llvm::SmallVector<Decl*, 1> decls;
+
+    for (auto& module : modules) {
+        llvm::ArrayRef<Decl*> matches = module->getSymbolTable().find(name);
+        decls.append(matches.begin(), matches.end());
+    }
+
+    return decls;
 }
 
-llvm::ArrayRef<Decl*> delta::findInSymbolTable(llvm::StringRef name) {
-    return symbolTable.find(name);
+template<typename ModuleContainer>
+static Decl* findDeclInModules(llvm::StringRef name, SrcLoc srcLoc, const ModuleContainer& modules) {
+    auto decls = findDeclsInModules(name, modules);
+
+    switch (decls.size()) {
+        case 1: return decls[0];
+        case 0: return nullptr;
+        default: error(srcLoc, "ambiguous reference to '", name, "'");
+    }
+}
+
+llvm::ArrayRef<std::shared_ptr<Module>> getStdlibModules() {
+    auto it = allImportedModules.find("std");
+    if (it == allImportedModules.end()) return {};
+    return it->second;
+}
+
+Decl& delta::findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere) {
+    if (Decl* match = findDeclInModules(name, srcLoc, llvm::makeArrayRef(currentModule))) {
+        return *match;
+    }
+
+    if (Decl* match = findDeclInModules(name, srcLoc, getStdlibModules())) {
+        return *match;
+    }
+
+    if (everywhere) {
+        if (Decl* match = findDeclInModules(name, srcLoc, currentModule->getImportedModules())) {
+            return *match;
+        }
+    } else {
+        if (Decl* match = findDeclInModules(name, srcLoc, currentFileUnit->getImportedModules())) {
+            return *match;
+        }
+    }
+
+    error(srcLoc, "unknown identifier '", name, "'");
+}
+
+llvm::SmallVector<Decl*, 1> delta::findDecls(llvm::StringRef name, bool everywhere) {
+    auto decls0 = findDeclsInModules(name, llvm::makeArrayRef(currentModule));
+    auto decls1 = findDeclsInModules(name, getStdlibModules());
+    auto decls2 = everywhere ? findDeclsInModules(name, currentModule->getImportedModules())
+                             : findDeclsInModules(name, currentFileUnit->getImportedModules());
+
+    int combinedSize = 0;
+
+    for (llvm::ArrayRef<Decl*> d : { decls0, decls1, decls2 }) {
+        combinedSize += d.size();
+    }
+
+    llvm::SmallVector<Decl*, 1> decls;
+    decls.reserve(combinedSize);
+
+    for (llvm::ArrayRef<Decl*> d : { decls0, decls1, decls2 }) {
+        decls.append(d.begin(), d.end());
+    }
+
+    return decls;
 }
 
 namespace {
@@ -927,7 +953,8 @@ void typecheck(FuncDecl& decl) {
     if (!decl.receiverType.empty()) return typecheckMemberFunc(decl);
     if (decl.isExtern()) return;
 
-    symbolTable.pushScope();
+    currentModule->getSymbolTable().pushScope();
+
     for (ParamDecl& param : decl.params) {
         if (param.type.isMutable()) error(param.srcLoc, "parameter types cannot be 'mutable'");
         typecheck(param);
@@ -939,7 +966,7 @@ void typecheck(FuncDecl& decl) {
     for (auto& stmt : *decl.body) typecheck(*stmt);
     funcReturnType = funcReturnTypeBackup;
 
-    symbolTable.popScope();
+    currentModule->getSymbolTable().popScope();
 
     if (!decl.returnType.isVoid() && (decl.body->empty() || !returns(*decl.body->back()))) {
         error(decl.srcLoc, "'", decl.name, "' is missing a return statement");
@@ -947,8 +974,9 @@ void typecheck(FuncDecl& decl) {
 }
 
 void typecheckMemberFunc(FuncDecl& decl) {
-    symbolTable.pushScope();
-    Decl& receiverType = findInSymbolTable(decl.receiverType, decl.srcLoc);
+    currentModule->getSymbolTable().pushScope();
+
+    Decl& receiverType = findDecl(decl.receiverType, decl.srcLoc);
     if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
     addToSymbolTable(VarDecl(receiverType.getTypeDecl().getTypeForPassing(decl.isMutating()),
                              "this", nullptr, currentModule, SrcLoc::invalid()));
@@ -959,11 +987,11 @@ void typecheckMemberFunc(FuncDecl& decl) {
     for (auto& stmt : *decl.body) typecheck(*stmt);
     funcReturnType = funcReturnTypeBackup;
 
-    symbolTable.popScope();
+    currentModule->getSymbolTable().popScope();
 }
 
 void typecheck(GenericParamDecl& decl) {
-    if (symbolTable.contains(decl.name)) {
+    if (currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
 }
@@ -978,8 +1006,8 @@ void typecheck(GenericFuncDecl& decl) {
 }
 
 void typecheck(InitDecl& decl) {
-    symbolTable.pushScope();
-    Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
+    currentModule->getSymbolTable().pushScope();
+    Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
     decl.type = &typeDecl.getTypeDecl();
     addToSymbolTable(VarDecl(typeDecl.getTypeDecl().getType(true),
@@ -988,15 +1016,15 @@ void typecheck(InitDecl& decl) {
     inInitializer = true;
     for (auto& stmt : *decl.body) typecheck(*stmt);
     inInitializer = false;
-    symbolTable.popScope();
+    currentModule->getSymbolTable().popScope();
 }
 
 void typecheck(DeinitDecl& decl) {
-    Decl& typeDecl = findInSymbolTable(decl.getTypeName(), decl.srcLoc);
-    FuncDecl funcDecl(mangle(decl), {}, typeDecl.getTypeDecl().getType(),
+    TypeDecl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc).getTypeDecl();
+    FuncDecl funcDecl(mangle(decl), {}, typeDecl.getType(),
                       std::string(decl.getTypeName()), currentModule, SrcLoc::invalid());
     funcDecl.body = decl.body;
-    decl.type = &typeDecl.getTypeDecl();
+    decl.type = &typeDecl;
     typecheckMemberFunc(funcDecl);
 }
 
@@ -1005,14 +1033,14 @@ void typecheck(TypeDecl&) {
 }
 
 TypeDecl* getTypeDecl(const BasicType& type) {
-    llvm::ArrayRef<Decl*> decls = findInSymbolTable(type.name);
+    auto decls = findDecls(type.name);
     if (decls.empty()) return nullptr;
     assert(decls.size() == 1);
     return &decls[0]->getTypeDecl();
 }
 
 void typecheck(VarDecl& decl, bool isGlobal) {
-    if (!isGlobal && symbolTable.contains(decl.name)) {
+    if (!isGlobal && currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     Type initType = nullptr;
@@ -1045,18 +1073,18 @@ void typecheck(VarDecl& decl, bool isGlobal) {
 void typecheck(FieldDecl&) {
 }
 
-llvm::ErrorOr<const Module&> importDeltaModule(ParserFunction& parse,
+llvm::ErrorOr<const Module&> importDeltaModule(FileUnit* importer, ParserFunction& parse,
                                                llvm::StringRef moduleExternalName,
                                                llvm::StringRef moduleInternalName = "") {
     if (moduleInternalName.empty()) moduleInternalName = moduleExternalName;
 
-    for (auto& importedModule : getImportedModules()) {
-        if (importedModule->getName() == moduleInternalName) { // Already imported?
-            return *importedModule;
-        }
+    auto it = allImportedModules.find(moduleInternalName);
+    if (it != allImportedModules.end()) {
+        if (importer) importer->addImportedModule(it->second);
+        return *it->second;
     }
 
-    auto module = llvm::make_unique<Module>(moduleInternalName);
+    auto module = std::make_shared<Module>(moduleInternalName);
     auto previousModule = currentModule;
     currentModule = module.get();
     std::error_code error;
@@ -1085,17 +1113,18 @@ done:
         return error;
     }
 
-    importedModules.push_back(std::move(module));
-    typecheck(*importedModules.back(), includePaths, parse);
+    if (importer) importer->addImportedModule(module);
+    allImportedModules[module->getName()] = module;
+    typecheck(*module, includePaths, parse);
     currentModule = previousModule;
-    return *importedModules.back();
+    return *module;
 }
 
 void typecheck(ImportDecl& decl, ParserFunction& parse) {
-    if (importDeltaModule(parse, decl.target)) return;
+    if (importDeltaModule(currentFileUnit, parse, decl.target)) return;
 
     importingC = true;
-    if (!importCHeader(decl.target, includePaths)) {
+    if (!importCHeader(*currentFileUnit, decl.target, includePaths)) {
         llvm::errs() << "error: couldn't find module or C header '" << decl.target << "'\n";
         abort();
     }
@@ -1119,27 +1148,32 @@ void typecheck(Decl& decl, ParserFunction& parse) {
 
 } // anonymous namespace
 
-llvm::ArrayRef<std::unique_ptr<Module>> delta::getImportedModules() {
-    return importedModules;
-}
-
 void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths,
                       ParserFunction& parse) {
     ::includePaths = includePaths;
 
-    if (!importDeltaModule(parse, "stdlib", "std")) {
+    if (!importDeltaModule(nullptr, parse, "stdlib", "std")) {
         printErrorAndExit("couldn't import the standard library");
     }
 
+    auto previousFileUnit = currentFileUnit;
     auto previousModule = currentModule;
     currentModule = &module;
 
     // Infer the types of global variables for use before their declaration.
-    for (VarDecl* var : globalVariables) {
-        ::typecheck(*var, true);
+    for (auto& fileUnit : module.getFileUnits()) {
+        setCurrentFileUnit(fileUnit);
+
+        for (auto& decl : fileUnit.getTopLevelDecls()) {
+            if (decl->isVarDecl()) {
+                ::typecheck(decl->getVarDecl(), true);
+            }
+        }
     }
 
     for (auto& fileUnit : module.getFileUnits()) {
+        setCurrentFileUnit(fileUnit);
+
         for (auto& decl : fileUnit.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
                 ::typecheck(*decl, parse);
@@ -1147,5 +1181,6 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePat
         }
     }
 
+    currentFileUnit = previousFileUnit;
     currentModule = previousModule;
 }

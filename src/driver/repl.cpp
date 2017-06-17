@@ -11,6 +11,7 @@
 #include <llvm/ExecutionEngine/Interpreter.h>
 #include "utility.h"
 #include "../ast/expr.h"
+#include "../ast/module.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
 #include "../irgen/irgen.h"
@@ -20,9 +21,13 @@ using namespace delta;
 namespace {
 
 void evaluate(llvm::StringRef line) {
+    Module module("main");
+    module.addFileUnit(FileUnit(llvm::StringRef(), {}));
+    setCurrentFileUnit(module.getFileUnits().front());
+
     std::unique_ptr<Expr> expr;
     try {
-        expr = parseExpr(llvm::MemoryBuffer::getMemBuffer(line, "", false));
+        expr = parseExpr(llvm::MemoryBuffer::getMemBuffer(line, "", false), module);
         typecheck(*expr);
     } catch (const CompileError& error) {
         llvm::StringRef trimmed = line.ltrim();
@@ -32,19 +37,19 @@ void evaluate(llvm::StringRef line) {
     }
 
     llvm::InitializeNativeTarget();
-    auto module = llvm::make_unique<llvm::Module>("deltajit", irgen::getContext());
-    auto& moduleRef = *module;
+    auto irModule = llvm::make_unique<llvm::Module>("deltajit", irgen::getContext());
+    auto& irModuleRef = *irModule;
 
     std::string error;
-    llvm::ExecutionEngine* engine = llvm::EngineBuilder(std::move(module)).setErrorStr(&error).create();
+    llvm::ExecutionEngine* engine = llvm::EngineBuilder(std::move(irModule)).setErrorStr(&error).create();
     if (!error.empty()) llvm::outs() << error << '\n';
 
     llvm::FunctionType* functionType = llvm::FunctionType::get(irgen::toIR(expr->getType()), {}, false);
     llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage,
-                                                      "__anon_expr", &moduleRef);
+                                                      "__anon_expr", &irModuleRef);
     irgen::getBuilder().SetInsertPoint(llvm::BasicBlock::Create(irgen::getContext(), "", function));
     irgen::getBuilder().CreateRet(irgen::codegen(*expr));
-    assert(!llvm::verifyModule(moduleRef, &llvm::errs()));
+    assert(!llvm::verifyModule(irModuleRef, &llvm::errs()));
 
     llvm::GenericValue result = engine->runFunction(function, {});
 

@@ -1,6 +1,7 @@
 #include <vector>
 #include <memory>
 #include <cstdlib>
+#include <unordered_map>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -22,7 +23,7 @@
 using namespace delta;
 
 namespace delta {
-    extern std::vector<std::unique_ptr<Module>> importedModules;
+    extern std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
     extern Module* currentModule;
 }
 
@@ -179,11 +180,15 @@ class MacroImporter : public clang::PPCallbacks {
 
 } // anonymous namespace
 
-bool delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::StringRef> includePaths) {
-    static llvm::StringSet<> importedHeaders;
-    if (!importedHeaders.insert(headerName).second) return true; // Already imported?
+bool delta::importCHeader(FileUnit& importer, llvm::StringRef headerName,
+                          llvm::ArrayRef<llvm::StringRef> includePaths) {
+    auto it = allImportedModules.find(headerName);
+    if (it != allImportedModules.end()) {
+        importer.addImportedModule(it->second);
+        return true;
+    }
 
-    auto module = llvm::make_unique<Module>(headerName);
+    auto module = std::make_shared<Module>(headerName);
     auto previousModule = currentModule;
     currentModule = module.get();
 
@@ -225,8 +230,8 @@ bool delta::importCHeader(llvm::StringRef headerName, llvm::ArrayRef<llvm::Strin
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext());
     ci.getDiagnosticClient().EndSourceFile();
 
-
-    importedModules.push_back(std::move(module));
+    importer.addImportedModule(module);
+    allImportedModules[module->getName()] = module;
     currentModule = previousModule;
     return true;
 }

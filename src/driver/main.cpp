@@ -143,14 +143,17 @@ int main(int argc, char** argv) try {
 
     if (parseFlag) return 0;
 
+    for (auto& importedModule : module.getImportedModules()) {
+        typecheck(*importedModule, includePaths, parse);
+    }
     typecheck(module, includePaths, parse);
 
     if (typecheckFlag) return 0;
 
-    auto& irModule = irgen::compile(module);
-    for (auto& importedModule : getImportedModules()) {
-        irgen::compile(*importedModule); // These are imported into the above `irModule`.
+    for (auto& importedModule : module.getImportedModules()) {
+        irgen::compile(*importedModule);
     }
+    auto& irModule = irgen::compile(module);
 
     if (outputToStdout) {
         irModule.print(llvm::outs(), nullptr);

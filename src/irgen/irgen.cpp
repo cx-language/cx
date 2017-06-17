@@ -81,7 +81,7 @@ llvm::Function* getDeinitializerFor(Type type) {
     std::string mangledName = mangleDeinitDecl(type.getName());
     auto it = funcs.find(mangledName);
     if (it == funcs.end()) {
-        llvm::ArrayRef<Decl*> decls = findInSymbolTable(mangledName);
+        auto decls = findDecls(mangledName, /*everywhere*/ true);
         if (!decls.empty())
             return codegenDeinitializerProto(decls[0]->getDeinitDecl());
         return nullptr;
@@ -115,7 +115,7 @@ llvm::Value* findValue(llvm::StringRef name) {
 
     if (value == nullptr) {
         // FIXME: It would probably be better to not access the symbol table here.
-        codegen(findInSymbolTable(name, SrcLoc::invalid()));
+        codegen(findDecl(name, SrcLoc::invalid(), /*everywhere*/ true));
         return globalScope().localValues.find(name)->second;
     }
     return value;
@@ -158,7 +158,7 @@ llvm::Type* irgen::toIR(Type type) {
                 if (genericArg != currentGenericArgs.end()) return genericArg->second;
 
                 // Custom type that has not been declared yet, search for it in the symbol table.
-                ::codegen(findInSymbolTable(name, SrcLoc::invalid()).getTypeDecl());
+                ::codegen(findDecl(name, SrcLoc::invalid(), /*everywhere*/ true).getTypeDecl());
                 it = structs.find(name);
             }
             return it->second.first;

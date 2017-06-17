@@ -1,0 +1,5 @@
+// RUN: not %delta -typecheck -I%p/inputs/imported-c-header-has-file-scope %s %p/inputs/imported-c-header-has-file-scope/second-file.delta | %FileCheck %s
+
+import "a.h"
+
+// CHECK: second-file.delta:2:5: error: unknown identifier 'foo'
