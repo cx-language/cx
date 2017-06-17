@@ -32,15 +32,15 @@ using namespace delta;
 namespace delta {
     std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
     Module* currentModule;
-    FileUnit* currentFileUnit;
+    SourceFile* currentSourceFile;
 }
 
 void delta::setCurrentModule(Module& module) {
     currentModule = &module;
 }
 
-void delta::setCurrentFileUnit(FileUnit& fileUnit) {
-    currentFileUnit = &fileUnit;
+void delta::setCurrentSourceFile(SourceFile& sourceFile) {
+    currentSourceFile = &sourceFile;
 }
 
 namespace {
@@ -896,7 +896,7 @@ Decl& delta::findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere) {
             return *match;
         }
     } else {
-        if (Decl* match = findDeclInModules(name, srcLoc, currentFileUnit->getImportedModules())) {
+        if (Decl* match = findDeclInModules(name, srcLoc, currentSourceFile->getImportedModules())) {
             return *match;
         }
     }
@@ -908,7 +908,7 @@ llvm::SmallVector<Decl*, 1> delta::findDecls(llvm::StringRef name, bool everywhe
     auto decls0 = findDeclsInModules(name, llvm::makeArrayRef(currentModule));
     auto decls1 = findDeclsInModules(name, getStdlibModules());
     auto decls2 = everywhere ? findDeclsInModules(name, currentModule->getImportedModules())
-                             : findDeclsInModules(name, currentFileUnit->getImportedModules());
+                             : findDeclsInModules(name, currentSourceFile->getImportedModules());
 
     int combinedSize = 0;
 
@@ -1073,7 +1073,7 @@ void typecheck(VarDecl& decl, bool isGlobal) {
 void typecheck(FieldDecl&) {
 }
 
-llvm::ErrorOr<const Module&> importDeltaModule(FileUnit* importer, ParserFunction& parse,
+llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, ParserFunction& parse,
                                                llvm::StringRef moduleExternalName,
                                                llvm::StringRef moduleInternalName = "") {
     if (moduleInternalName.empty()) moduleInternalName = moduleExternalName;
@@ -1108,7 +1108,7 @@ llvm::ErrorOr<const Module&> importDeltaModule(FileUnit* importer, ParserFunctio
     }
 
 done:
-    if (error || module->getFileUnits().empty()) {
+    if (error || module->getSourceFiles().empty()) {
         currentModule = previousModule;
         return error;
     }
@@ -1121,10 +1121,10 @@ done:
 }
 
 void typecheck(ImportDecl& decl, ParserFunction& parse) {
-    if (importDeltaModule(currentFileUnit, parse, decl.target)) return;
+    if (importDeltaModule(currentSourceFile, parse, decl.target)) return;
 
     importingC = true;
-    if (!importCHeader(*currentFileUnit, decl.target, includePaths)) {
+    if (!importCHeader(*currentSourceFile, decl.target, includePaths)) {
         llvm::errs() << "error: couldn't find module or C header '" << decl.target << "'\n";
         abort();
     }
@@ -1156,31 +1156,31 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePat
         printErrorAndExit("couldn't import the standard library");
     }
 
-    auto previousFileUnit = currentFileUnit;
+    auto previousSourceFile = currentSourceFile;
     auto previousModule = currentModule;
     currentModule = &module;
 
     // Infer the types of global variables for use before their declaration.
-    for (auto& fileUnit : module.getFileUnits()) {
-        setCurrentFileUnit(fileUnit);
+    for (auto& sourceFile : module.getSourceFiles()) {
+        setCurrentSourceFile(sourceFile);
 
-        for (auto& decl : fileUnit.getTopLevelDecls()) {
+        for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (decl->isVarDecl()) {
                 ::typecheck(decl->getVarDecl(), true);
             }
         }
     }
 
-    for (auto& fileUnit : module.getFileUnits()) {
-        setCurrentFileUnit(fileUnit);
+    for (auto& sourceFile : module.getSourceFiles()) {
+        setCurrentSourceFile(sourceFile);
 
-        for (auto& decl : fileUnit.getTopLevelDecls()) {
+        for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
                 ::typecheck(*decl, parse);
             }
         }
     }
 
-    currentFileUnit = previousFileUnit;
+    currentSourceFile = previousSourceFile;
     currentModule = previousModule;
 }

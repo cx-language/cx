@@ -15,14 +15,14 @@ namespace delta {
 class Module;
 
 /// Container for the AST of a single file.
-class FileUnit {
+class SourceFile {
 public:
-    explicit FileUnit(llvm::StringRef filePath,
-                      std::vector<std::unique_ptr<Decl>>&& topLevelDecls)
+    explicit SourceFile(llvm::StringRef filePath,
+                        std::vector<std::unique_ptr<Decl>>&& topLevelDecls)
     : filePath(filePath), topLevelDecls(std::move(topLevelDecls)) { }
     llvm::ArrayRef<std::unique_ptr<Decl>> getTopLevelDecls() const { return topLevelDecls; }
     llvm::StringRef getFilePath() const { return filePath; }
-    llvm::ArrayRef<std::shared_ptr<Module>> getImportedModules()  const { return importedModules; }
+    llvm::ArrayRef<std::shared_ptr<Module>> getImportedModules() const { return importedModules; }
 
     void addImportedModule(std::shared_ptr<Module> module) {
         if (!llvm::is_contained(importedModules, module)) {
@@ -68,21 +68,21 @@ private:
     std::vector<std::unordered_map<std::string, llvm::SmallVector<Decl*, 1>>> scopes;
 };
 
-/// Container for the AST of a whole module, comprised of one or more FileUnits.
+/// Container for the AST of a whole module, comprised of one or more SourceFiles.
 class Module {
 public:
     Module(llvm::StringRef name) : name(name) { }
-    void addFileUnit(FileUnit&& fileUnit) { fileUnits.emplace_back(std::move(fileUnit)); }
-    llvm::ArrayRef<FileUnit> getFileUnits() const { return fileUnits; }
-    llvm::MutableArrayRef<FileUnit> getFileUnits() { return fileUnits; }
+    void addSourceFile(SourceFile&& file) { sourceFiles.emplace_back(std::move(file)); }
+    llvm::ArrayRef<SourceFile> getSourceFiles() const { return sourceFiles; }
+    llvm::MutableArrayRef<SourceFile> getSourceFiles() { return sourceFiles; }
     llvm::StringRef getName() const { return name; }
     const SymbolTable& getSymbolTable() const { return symbolTable; }
     SymbolTable& getSymbolTable() { return symbolTable; }
 
-    std::vector<Module*> getImportedModules()  const {
+    std::vector<Module*> getImportedModules() const {
         std::vector<Module*> importedModules;
-        for (auto& fileUnit : getFileUnits()) {
-            for (auto& importedModule : fileUnit.getImportedModules()) {
+        for (auto& sourceFile : getSourceFiles()) {
+            for (auto& importedModule : sourceFile.getImportedModules()) {
                 importedModules.push_back(importedModule.get());
             }
         }
@@ -91,7 +91,7 @@ public:
 
 private:
     std::string name;
-    std::vector<FileUnit> fileUnits;
+    std::vector<SourceFile> sourceFiles;
     SymbolTable symbolTable;
 };
 

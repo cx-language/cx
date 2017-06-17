@@ -18,7 +18,7 @@ class DeinitDecl;
 class TypeDecl;
 class VarDecl;
 class Module;
-class FileUnit;
+class SourceFile;
 struct SrcLoc;
 struct Type;
 class Expr;
@@ -26,7 +26,7 @@ class Expr;
 using ParserFunction = void(llvm::StringRef filePath, Module& module);
 
 void setCurrentModule(Module& module);
-void setCurrentFileUnit(FileUnit& fileUnit);
+void setCurrentSourceFile(SourceFile& sourceFile);
 void addToSymbolTable(FuncDecl& decl);
 void addToSymbolTable(FuncDecl&& decl);
 void addToSymbolTable(GenericFuncDecl& decl);

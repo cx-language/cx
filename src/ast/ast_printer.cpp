@@ -300,10 +300,10 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
 } // anonymous namespace
 
 std::ostream& delta::operator<<(std::ostream& out, const Module& module) {
-    for (const auto& fileUnit : module.getFileUnits()) {
-        out << "(source-file " << fileUnit.getFilePath();
+    for (const auto& sourceFile : module.getSourceFiles()) {
+        out << "(source-file " << sourceFile.getFilePath();
         indentLevel++;
-        for (const auto& decl : fileUnit.getTopLevelDecls()) {
+        for (const auto& decl : sourceFile.getTopLevelDecls()) {
             ::operator<<(out, *decl);
         }
         indentLevel--;

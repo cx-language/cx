@@ -1048,8 +1048,8 @@ void codegen(const Decl& decl) {
 } // anonymous namespace
 
 llvm::Module& irgen::compile(const Module& sourceModule) {
-    for (const auto& fileUnit : sourceModule.getFileUnits()) {
-        for (const auto& decl : fileUnit.getTopLevelDecls()) {
+    for (const auto& sourceFile : sourceModule.getSourceFiles()) {
+        for (const auto& decl : sourceFile.getTopLevelDecls()) {
             currentDecl = decl.get();
             ::codegen(*decl);
         }

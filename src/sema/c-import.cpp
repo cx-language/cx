@@ -180,7 +180,7 @@ class MacroImporter : public clang::PPCallbacks {
 
 } // anonymous namespace
 
-bool delta::importCHeader(FileUnit& importer, llvm::StringRef headerName,
+bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
                           llvm::ArrayRef<llvm::StringRef> includePaths) {
     auto it = allImportedModules.find(headerName);
     if (it != allImportedModules.end()) {

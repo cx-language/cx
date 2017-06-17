@@ -936,13 +936,13 @@ void initParser(std::unique_ptr<llvm::MemoryBuffer> input) {
     tokenBuffer.emplace_back(lex());
 }
 
-FileUnit parse(std::unique_ptr<llvm::MemoryBuffer> input) {
+SourceFile parse(std::unique_ptr<llvm::MemoryBuffer> input) {
     std::string identifier = input->getBufferIdentifier();
     initParser(std::move(input));
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
     while (currentToken() != NO_TOKEN)
         topLevelDecls.emplace_back(parseDecl());
-    return FileUnit(identifier, std::move(topLevelDecls));
+    return SourceFile(identifier, std::move(topLevelDecls));
 }
 
 }
@@ -953,7 +953,7 @@ void delta::parse(llvm::StringRef filePath, Module& module) {
 
     setCurrentModule(module);
     currentModule = &module;
-    module.addFileUnit(::parse(std::move(*buffer)));
+    module.addSourceFile(::parse(std::move(*buffer)));
 }
 
 std::unique_ptr<Expr> delta::parseExpr(std::unique_ptr<llvm::MemoryBuffer> input,

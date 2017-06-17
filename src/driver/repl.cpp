@@ -22,8 +22,8 @@ namespace {
 
 void evaluate(llvm::StringRef line) {
     Module module("main");
-    module.addFileUnit(FileUnit(llvm::StringRef(), {}));
-    setCurrentFileUnit(module.getFileUnits().front());
+    module.addSourceFile(SourceFile(llvm::StringRef(), {}));
+    setCurrentSourceFile(module.getSourceFiles().front());
 
     std::unique_ptr<Expr> expr;
     try {
