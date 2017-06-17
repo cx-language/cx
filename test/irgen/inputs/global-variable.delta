@@ -1,6 +1,6 @@
 var foo = 42;
-int baz = 42;
-mutable int qux = 42;
+const baz = 42;
+var qux: int = 42;
 
 func a() { foo = 43; }
 func c() { var d = bar; }

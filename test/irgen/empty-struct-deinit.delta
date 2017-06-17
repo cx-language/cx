@@ -3,5 +3,5 @@
 struct Foo { }
 Foo::deinit() {}
 func main() {
-    Foo foo = uninitialized;
+    const foo: Foo = uninitialized;
 }

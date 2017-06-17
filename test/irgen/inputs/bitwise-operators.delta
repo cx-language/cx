@@ -1,21 +1,21 @@
-func and(int a, int b) -> int {
+func and(a: int, b: int) -> int {
     return a & b;
 }
-func or(int a, int b) -> int {
+func or(a: int, b: int) -> int {
     return a | b;
 }
-func xor(int a, int b) -> int {
+func xor(a: int, b: int) -> int {
     return a ^ b;
 }
-func shl(int a, int b) -> int {
+func shl(a: int, b: int) -> int {
     return a << b;
 }
-func ashr(int a, int b) -> int {
+func ashr(a: int, b: int) -> int {
     return a >> b;
 }
-func lshr(uint a, uint b) -> uint {
+func lshr(a: uint, b: uint) -> uint {
     return a >> b;
 }
-func compl(int a) -> int {
+func compl(a: int) -> int {
     return ~a;
 }

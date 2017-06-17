@@ -1,2 +1,2 @@
 // check_error 2:5 "expected identifier, got number"
-int 1
+var 1

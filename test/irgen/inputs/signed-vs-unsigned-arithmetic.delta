@@ -1,4 +1,4 @@
-func foo(int i, uint u) {
+func foo(i: int, u: uint) {
     var a = i < i;
     a = u < u;
     a = i > i;

@@ -1,4 +1,4 @@
-class Foo { int i; }
-class Bar { int i; }
+class Foo { const i: int; }
+class Bar { const i: int; }
 func Foo::doStuff() { }
 func Bar::doStuff() { }

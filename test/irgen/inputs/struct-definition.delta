@@ -1,9 +1,9 @@
 struct Foo {
-    mutable int a;
-    bool b;
+    var a: int;
+    const b: bool;
 }
 
-Foo::init(int a, bool b) {
+Foo::init(a: int, b: bool) {
     this.a = a;
     this.b = b;
     this.a++;

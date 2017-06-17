@@ -8,4 +8,4 @@ func main() -> int {
     return 0;
 }
 
-extern func putchar(int ch) -> int;
+extern func putchar(ch: int) -> int;

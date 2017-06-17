@@ -1,9 +1,9 @@
 // check_error 8:9 "cannot access member through pointer 'Foo*', pointer may be null"
 struct Foo {
-    int i;
+    const i: int;
 }
 
 func main() {
-    Foo* p = null;
+    const p: Foo* = null;
     _ = p.i;
 }

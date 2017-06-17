@@ -1,5 +1,5 @@
 // check_error 5:20 "illegal cast from 'void*' to 'mutable int*'"
-extern func malloc(uint64 n) -> void*;
+extern func malloc(n: uint64) -> void*;
 
 func main() {
     const buffer = cast<mutable int*>(malloc(1));

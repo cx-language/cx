@@ -1,6 +1,6 @@
-class Foo { int i; }
+class Foo { const i: int; }
 func main() {
-    Foo f = uninitialized;
-    Foo& rf = f;
-    Foo* pf = f;
+    const f: Foo = uninitialized;
+    const rf: Foo& = f;
+    const pf: Foo* = f;
 }

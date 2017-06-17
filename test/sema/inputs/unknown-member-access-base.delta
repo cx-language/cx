@@ -1,6 +1,6 @@
 // check_error 9:15 "unknown identifier 'foo'"
 class Foo {
-    int qux;
+    const qux: int;
 }
 
 Foo::init() { }

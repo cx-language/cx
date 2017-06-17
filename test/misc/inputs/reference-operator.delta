@@ -1,9 +1,9 @@
 // compile_and_run_and_check_output "Bar"
 
-extern func puts(uint8* s);
+extern func puts(s: uint8*);
 
 func main() {
-    mutable uint8[4] buffer = uninitialized;
+    var buffer: uint8[4] = uninitialized;
     const ptr = &buffer;
     ptr[0] = 66;
     ptr[1] = 0x61;

@@ -1,1 +1,1 @@
-int b = foo;
+const b = foo;

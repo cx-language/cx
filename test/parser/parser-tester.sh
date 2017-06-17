@@ -23,7 +23,7 @@ fi
 
 # Multifile test with error.
 actual_output=$($path_to_delta -typecheck inputs/multifile-error/*.delta)
-expected_output=$'inputs/multifile-error/b.delta:1:9: error: unknown identifier \'foo\'\nint b = foo;\n        ^'
+expected_output=$'inputs/multifile-error/b.delta:1:11: error: unknown identifier \'foo\'\nconst b = foo;\n          ^'
 validate_output
 
 if [ $? -ne 0 ]; then

@@ -1,8 +1,8 @@
 // compile_and_run_and_check_exit_status 0
 
-extern func malloc(uint64 n) -> void*;
-extern func realloc(void* p, uint64 n) -> void*;
-extern func free(void* p);
+extern func malloc(n: uint64) -> void*;
+extern func realloc(p: void*, n: uint64) -> void*;
+extern func free(p: void*);
 
 func main() {
     var buffer = malloc(1);

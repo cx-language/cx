@@ -2,7 +2,7 @@
 
 import "constant-macro.h"
 
-func foo(int i) {
+func foo(i: int) {
     switch (i) {
         // CHECK: i32 42
         case FOO: return

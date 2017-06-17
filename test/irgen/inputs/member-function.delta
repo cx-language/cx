@@ -1,5 +1,5 @@
 struct Foo {
-    int baz;
+    const baz: int;
 }
 
 Foo::init() { this.baz = 42; }

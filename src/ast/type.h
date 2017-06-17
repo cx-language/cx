@@ -35,8 +35,7 @@ inline TypeBase::~TypeBase() { }
 
 struct Type {
 public:
-    Type() = default;
-    Type(const TypeBase* typeBase, bool isMutable = false)
+    Type(const TypeBase* typeBase = nullptr, bool isMutable = false)
     : typeBase(typeBase), mutableFlag(isMutable) { }
     const TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
@@ -84,9 +83,9 @@ public:
     bool isSigned() const;
     bool isUnsigned() const;
     bool isMutable() const { return mutableFlag; }
-    void setMutable(bool m) { mutableFlag = m; }
-    Type asMutable() const { return Type(typeBase, true); }
-    Type asImmutable() const { return Type(typeBase, false); }
+    void setMutable(bool isMutable);
+    Type asMutable(bool isMutable = true) const { return Type(typeBase, isMutable); }
+    Type asImmutable() const { return asMutable(false); }
     TypeKind getKind() const { return typeBase->getKind(); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
     std::string toString() const;

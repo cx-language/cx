@@ -1,17 +1,17 @@
 // RUN: %delta -o=stdout %s | %FileCheck %s
 
 struct vec2 {
-    int x
-    int y
+    const x: int
+    const y: int
 }
 
-vec2::init(int x, int y) {
+vec2::init(x: int, y: int) {
     this.x = x
     this.y = y
 }
 
 // CHECK: define %vec2 @"*"(%vec2 %a, %vec2 %b)
-func *(vec2 a, vec2 b) -> vec2 {
+func *(a: vec2, b: vec2) -> vec2 {
     return vec2(a.x * b.x, a.y * b.y)
 }
 
@@ -26,6 +26,6 @@ func main() {
 }
 
 // CHECK-DAG: define i1 @"==<mutable vec2, vec2>"(%vec2 %a, %vec2 %b)
-func ==<T, U>(T a, U b) -> bool {
+func ==<T, U>(a: T, b: U) -> bool {
     return a.x == b.x;
 }

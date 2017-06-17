@@ -1,8 +1,8 @@
-extern func foo(uint8 a);
+extern func foo(a: uint8);
 
 func main() {
     foo(1);
-    mutable uint64 b = 42;
+    var b: uint64 = 42;
     b--;
     b = b + 1;
 }

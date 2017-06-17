@@ -2,12 +2,12 @@
 
 import "union-member-access.h"
 
-func foo(U u) -> int {
+func foo(u: U) -> int {
     return u.b
 }
 
 func main() -> int {
-    mutable U u = uninitialized
+    var u: U = uninitialized
     u.a = 21
     return foo(u) + u.b
 }

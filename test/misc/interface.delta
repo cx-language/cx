@@ -9,10 +9,10 @@ struct F { }
 func F::foo() { }
 
 func main() {
-    F f = uninitialized;
+    const f: F = uninitialized;
     bar(f);
 }
 
-func bar<T: Fooable>(T t) {
+func bar<T: Fooable>(t: T) {
     t.foo()
 }

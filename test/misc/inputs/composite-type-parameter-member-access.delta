@@ -1,21 +1,21 @@
 // compile_and_run_and_check_exit_status 15
 
 struct vec2 {
-    mutable int x;
-    mutable int y;
+    var x: int;
+    var y: int;
 }
 
-vec2::init(int x, int y) {
+vec2::init(x: int, y: int) {
     this.x = x;
     this.y = y;
 }
 
-func vec2::add(vec2 that) -> vec2 {
+func vec2::add(that: vec2) -> vec2 {
     return vec2(this.x + that.x, this.y + that.y);
 }
 
 func main() -> int {
-    vec2 foo = vec2(5, 8);
-    vec2 foo2 = foo.add(vec2(3, -1));
+    const foo = vec2(5, 8);
+    const foo2 = foo.add(vec2(3, -1));
     return foo2.x + foo2.y;
 }

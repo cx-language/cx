@@ -3,4 +3,4 @@ func main() {
     const a = Foo(qux: 4);
 }
 struct Foo { }
-Foo::init(int qux) { }
+Foo::init(qux: int) { }

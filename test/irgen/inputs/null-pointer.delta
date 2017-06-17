@@ -4,5 +4,5 @@ func main() {
     var isNull = foo() == null;
     var isNonNull = foo() != null;
     var ptr = foo();
-    bool* ptr2 = null;
+    const ptr2: bool* = null;
 }

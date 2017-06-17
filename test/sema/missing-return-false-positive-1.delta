@@ -1,6 +1,6 @@
 // RUN: %delta -o=stdout %s
 
-func foo(bool b) -> int {
+func foo(b: bool) -> int {
     if (b) {
         return 1;
     } else {

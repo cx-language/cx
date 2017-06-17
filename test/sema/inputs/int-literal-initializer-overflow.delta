@@ -1,4 +1,4 @@
-// check_error 3:14 "128 is out of range for type 'int8'"
+// check_error 3:21 "128 is out of range for type 'int8'"
 func main() {
-    int8 b = 128;
+    const b: int8 = 128;
 }

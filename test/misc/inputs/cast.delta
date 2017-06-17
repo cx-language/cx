@@ -1,6 +1,6 @@
 // compile_and_run_and_check_exit_status 1
 
-extern func calloc(uint64 count, uint64 size) -> void*;
+extern func calloc(count: uint64, size: uint64) -> void*;
 
 func main() -> int {
     var byteptr = cast<uint8*>(calloc(1, 1));

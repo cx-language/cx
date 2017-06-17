@@ -1,5 +1,5 @@
 // check_error 5:17 "invalid argument #1 type 'bool' to 'foo', expected 'int'"
-func foo(int a) -> int { return a; }
+func foo(a: int) -> int { return a; }
 func main() {
     var f = false;
     var z = foo(f);

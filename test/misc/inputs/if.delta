@@ -20,4 +20,4 @@ func main() {
     }
 }
 
-extern func puts(char* s);
+extern func puts(s: char*);

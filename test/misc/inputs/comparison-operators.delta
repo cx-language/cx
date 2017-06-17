@@ -15,4 +15,4 @@ func main() {
     if (0 >= 1) { puts("l"); }
 }
 
-extern func puts(char* s);
+extern func puts(s: char*);

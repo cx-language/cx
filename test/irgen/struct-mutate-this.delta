@@ -1,7 +1,7 @@
 // RUN: %delta -o=stdout %s | %FileCheck %s
 
 struct S {
-    mutable int i
+    var i: int
 }
 
 // CHECK: define void @S.s(%S* %this)

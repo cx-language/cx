@@ -3,7 +3,7 @@ import "foo.h";
 
 func main() {
     puts("foo bar");
-    mutable Foo f = uninitialized;
+    var f: Foo = uninitialized;
     f.bar = MAGIC_NUMBER + ANSWER;
     f.baz = "foo";
     const bar = getBar(&f);

@@ -1,4 +1,4 @@
 func main() { var f = Foo(5); }
-struct Foo { float f; }
-Foo::init(int i) { }
+struct Foo { const f: float; }
+Foo::init(i: int) { }
 Foo::deinit() { }

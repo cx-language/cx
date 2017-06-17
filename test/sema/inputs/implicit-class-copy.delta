@@ -1,7 +1,7 @@
-// check_error 6:14 "implicit copying of class instances is disallowed"
+// check_error 6:21 "implicit copying of class instances is disallowed"
 class Foo { }
 
 func main() {
-    Foo f = uninitialized;
-    Foo f2 = f;
+    const f: Foo = uninitialized;
+    const f2: Foo = f;
 }

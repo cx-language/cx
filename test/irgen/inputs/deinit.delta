@@ -1,15 +1,15 @@
-class Foo { int i; }
+class Foo { const i: int; }
 Foo::deinit() { }
-struct Bar { int i; }
+struct Bar { const i: int; }
 Bar::deinit() { }
 func main() {
-    Foo f = uninitialized;
+    const f: Foo = uninitialized;
     if (false) {
-        Foo f2 = uninitialized;
+        const f2: Foo = uninitialized;
     }
-    Bar b = uninitialized;
+    const b: Bar = uninitialized;
     while (false) {
-        Bar b2 = uninitialized;
+        const b2: Bar = uninitialized;
         return;
     }
     var i = 1;

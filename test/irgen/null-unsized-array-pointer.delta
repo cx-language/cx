@@ -1,4 +1,4 @@
 // RUN: %delta -o=stdout %s | %FileCheck %s
 
 // CHECK: @a = private global { i8*, i32 } zeroinitializer
-mutable(int8[]*) a = null
+var a: int8[]* = null

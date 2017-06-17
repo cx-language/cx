@@ -1,4 +1,4 @@
-func foo(int a, bool b) -> uint {
+func foo(a: int, b: bool) -> uint {
     var aa = a;
     var bb = b;
     return 0;

@@ -7,4 +7,4 @@ func main() -> int {
     return 0;
 }
 
-extern func puts(char* str) -> int;
+extern func puts(str: char*) -> int;

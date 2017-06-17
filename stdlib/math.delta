@@ -1,4 +1,4 @@
-func abs<T>(T value) -> T {
+func abs<T>(value: T) -> T {
     if (value < 0) {
         return -value
     } else {

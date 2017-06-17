@@ -1,5 +1,5 @@
 // compile_and_run_and_check_exit_status 2
 
 func main() -> int { return 2; }
-func foo(Foo a) { }
-class Foo { int i; }
+func foo(a: Foo) { }
+class Foo { const i: int; }

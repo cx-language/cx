@@ -1,2 +1,2 @@
-// check_error 2:26 "mismatching return type 'int', expected 'void'"
-func foo(int a, int b) { return a * b; }
+// check_error 2:28 "mismatching return type 'int', expected 'void'"
+func foo(a: int, b: int) { return a * b; }

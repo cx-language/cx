@@ -1,10 +1,10 @@
-class Foo { int i; }
+class Foo { const i: int; }
 func Foo::foo() { }
 
-struct Bar { int i; }
+struct Bar { const i: int; }
 func Bar::bar() { }
 
-func qux(Foo& f, Bar& b) {
+func qux(f: Foo&, b: Bar&) {
     f.foo();
     b.bar();
 }

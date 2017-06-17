@@ -4,14 +4,14 @@ struct Foo { }
 class Bar { }
 
 struct X {
-    int a;
+    const a: int;
 }
 
 class Y {
-    char* y;
+    const y: char*;
 }
 
-X::init(int a) {
+X::init(a: int) {
     this.a = a;
 }
 

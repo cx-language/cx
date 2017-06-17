@@ -1,6 +1,6 @@
 // compile_successfully
 
-func foo<T>(T t) -> bool {
+func foo<T>(t: T) -> bool {
     return t < 0;
 }
 

@@ -1,5 +1,5 @@
 // check_error 6:13 "cannot assign to immutable expression"
-extern func calloc(uint64 count, uint64 size) -> void*;
+extern func calloc(count: uint64, size: uint64) -> void*;
 
 func main() {
     var buffer = cast<int*>(calloc(1, 8));

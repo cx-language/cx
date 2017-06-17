@@ -1,4 +1,4 @@
-func foo(uint16 i) {
+func foo(i: uint16) {
     const f = float32(i);
     const u = int64(f);
 }

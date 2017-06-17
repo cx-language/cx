@@ -1,7 +1,7 @@
 // compile_successfully -typecheck
 
-func foo(uint a) { }
-func bar(uint8 a) { }
+func foo(a: uint) { }
+func bar(a: uint8) { }
 func baz() -> uint { return 0; }
 func qux() -> uint, uint8 { return 0, 0; }
 
@@ -10,10 +10,10 @@ func main() {
     foo(1);
     bar(0);
     bar(255);
-    uint a = 0;
-    mutable uint b = 1;
-    uint8 c = 0;
-    mutable uint8 d = 255;
+    const a: uint = 0;
+    var b: uint = 1;
+    const c: uint8 = 0;
+    var d: uint8 = 255;
     b = 2;
     d = 0;
     if (a == 0) { }

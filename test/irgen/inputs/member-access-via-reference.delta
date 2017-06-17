@@ -1,13 +1,13 @@
 class Foo {
-    int i;
+    const i: int;
 }
 
-func get(Foo& f) {
+func get(f: Foo&) {
     var m = f.i;
 }
 
 func main() {
-    Foo f = uninitialized;
-    Foo& rf = f;
+    const f: Foo = uninitialized;
+    const rf: Foo& = f;
     var n = rf.i;
 }

@@ -1,7 +1,7 @@
 // compile_and_run_and_check_exit_status 3
 
 func main() -> int {
-    mutable int m = 4;
+    var m: int = 4;
     m--;
     return m;
 }

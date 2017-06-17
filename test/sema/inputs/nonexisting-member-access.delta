@@ -1,6 +1,6 @@
 // check_error 10:19 "no member named 'bar' in 'Foo'"
 class Foo {
-    int qux;
+    const qux: int;
 }
 
 Foo::init() { }

@@ -1,4 +1,4 @@
 func main() {
-    bool b = false;
+    const b = false;
     const c = b == true;
 }

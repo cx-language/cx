@@ -259,8 +259,9 @@ contain an associated getter and/or setter, that are called when the member
 variable is accessed or assigned to, respectively. The syntax of a member
 variable definition is as follows:
 
-> _member-variable-declaration_ → _member-variable-type_ _member-variable-name_ `;`<br>
-> _member-variable-declaration_ → _member-variable-type_ _member-variable-name_ `{` _getter-setter-definitions_ `}`<br>
+> _var-or-const_ → `var` | `const`<br>
+> _member-variable-declaration_ → _var-or-const_ _member-variable-name_ `:` _type_ `;`<br>
+> _member-variable-declaration_ → _var-or-const_ _member-variable-name_ `:` _type_ `{` _getter-setter-definitions_ `}`<br>
 > _getter-setter-definitions_ → _getter-definition_ | _setter-definition_ | _getter-definition_ _setter-definition__<br>
 > _getter-definition_ → `get` `{` _getter-body_ `}`<br>
 > _setter-definition_ → `set` `{` _setter-body_ `}`<br>
@@ -350,25 +351,25 @@ _variable-list_ is a comma-separated list of one or more variable names.
 Variable declarations introduce a new variable into the enclosing scope. The
 syntax is as follows:
 
-> _initializing-immutable-variable-definition_ → `const` _variable-name_ `=` _initializer_ `;`<br>
-> _initializing-mutable-variable-definition_ → `var` _variable-name_ `=` _initializer_ `;`<br>
-> _initializing-typed-variable-definition_ → _type_ _variable-name_ `=` _initializer_ `;`<br>
+> _immutable-variable-declaration → `const` _variable-name_ `:` _type_ `;`<br>
+> _mutable-variable-declaration → `var` _variable-name_ `:` _type_ `;`<br>
+> _immutable-variable-definition_ → `const` _variable-name_ (`:` _type_)<sub>opt</sub> `=` _initializer_ `;`<br>
+> _mutable-variable-definition_ → `var` _variable-name_ (`:` _type_)<sub>opt</sub> `=` _initializer_ `;`<br>
 
-In the first two forms, the type of the variable will be inferred from the
-_initializer_, which is an expression that returns the initial value for the new
-variable. If the explicit type is given before the variable name, the compiler
-ensures that _initializer_ is of that type. No implicit conversions are allowed.
+In the first two forms, the variable is declared but not initialized. This
+allows delayed initialization, which causes the compiler to enforce that the
+variable is always initialized properly before its value is accessed.
 
-_initializer_ may also be the keyword `uninitialized`, in which case the
-variable is not initialized and all use-before-initialization warnings for the
-variable will be suppressed. Reading from an uninitialized variable causes
-undefined behavior.
+If _type_ is present, the variable has the specified type. The compiler ensures
+that the given _initializer_ is compatible with this type. If no _type_ is
+given, the compiler will infer the type of the variable from the _initializer_.
+The _initializer_ is an expression that provides the initial value for the
+variable.
 
-> _variable-definition-with-delayed-initialization_ → _type_ _variable-name_ `;`<br>
-
-This form may be used to declare the variable in an outer scope and initialize
-it in one or more inner scopes. The compiler checks that all paths that read
-from the variable assign to it before the read.
+If _type_ has been specified, _initializer_ may also be the keyword
+`uninitialized`, in which case the variable is not initialized and all
+use-before-initialization warnings for the variable will be suppressed. Reading
+from an uninitialized variable causes undefined behavior.
 
 ### Functions
 

@@ -1,7 +1,7 @@
 // check_error 6:9 "cannot implicitly pass value types by reference, add explicit '&'"
-struct Foo { int i; }
-func foo(Foo* ref_f) { }
+struct Foo { const i: int; }
+func foo(ref_f: Foo*) { }
 func main() {
-    Foo f = uninitialized;
+    const f: Foo = uninitialized;
     foo(f);
 }

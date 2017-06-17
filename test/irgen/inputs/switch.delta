@@ -1,4 +1,4 @@
-func foo(int i) {
+func foo(i: int) {
     switch (i) {
         case 0:
             break;

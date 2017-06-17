@@ -154,6 +154,15 @@ bool Type::isUnsigned() const {
     return name == "uint" || name == "uint8" || name == "uint16" || name == "uint32" || name == "uint64";
 }
 
+void Type::setMutable(bool isMutable) {
+    if (typeBase && isArrayType()) {
+        auto& array = llvm::cast<ArrayType>(*typeBase);
+        *this = ArrayType::get(array.elementType.asMutable(isMutable), array.size, isMutable);
+    } else {
+        mutableFlag = isMutable;
+    }
+}
+
 llvm::StringRef Type::getName() const { return llvm::cast<BasicType>(typeBase)->name; }
 Type Type::getElementType() const { return llvm::cast<ArrayType>(typeBase)->elementType; }
 int Type::getArraySize() const { return llvm::cast<ArrayType>(typeBase)->size; }

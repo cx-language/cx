@@ -8,4 +8,4 @@ func main() {
     }
 }
 
-extern func puts(char* str);
+extern func puts(str: char*);

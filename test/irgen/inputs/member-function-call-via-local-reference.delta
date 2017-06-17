@@ -1,7 +1,7 @@
-class Foo { int i; }
+class Foo { const i: int; }
 func Foo::bar() { }
 func main() {
-    Foo f = uninitialized;
-    Foo& rf = f;
+    const f: Foo = uninitialized;
+    const rf: Foo& = f;
     rf.bar();
 }

@@ -1,6 +1,6 @@
 // check_error 3:6 "'foo' is missing a return statement"
 
-func foo(bool b) -> int {
+func foo(b: bool) -> int {
     if (b) {
         return 42;
     }

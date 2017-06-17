@@ -1,9 +1,9 @@
 // check_error 12:8 "cannot decrement immutable value"
 struct X {
-    int a;
+    const a: int;
 }
 
-X::init(int a) {
+X::init(a: int) {
     this.a = a;
 }
 

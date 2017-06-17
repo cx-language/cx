@@ -1,8 +1,8 @@
 // validate_ast
 import "math.h";
 func foo1() { }
-func foo2(int a) { }
-func foo3(int a, int b) { }
+func foo2(a: int) { }
+func foo3(a: int, b: int) { }
 func foo4() -> int { return 42; }
 func foo5() -> int, bool { return 42, false; }
 func foo6() -> int { const answer = 42; return answer; }
@@ -12,15 +12,15 @@ func foo9() -> int { return (0 - -0xC) / (0o4 + 0b11 * 2); }
 var foo10 = 42;
 const foo11 = 42;
 struct S1 {
-    uint a;
-    char* b;
+    const a: uint;
+    const b: char*;
 }
 class C1 {
-    int8 a;
-    bool* b;
+    const a: int8;
+    const b: bool*;
 }
-func foo12(int* a, int b) -> bool { return *a == b; }
-func foo13(int a) {
+func foo12(a: int*, b: int) -> bool { return *a == b; }
+func foo13(a: int) {
     defer foo13(a);
     var i = [1, 2, 3];
     switch (a) {

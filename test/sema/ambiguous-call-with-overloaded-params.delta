@@ -1,7 +1,7 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func foo(int a) { }
-func foo(int b) { }
+func foo(a: int) { }
+func foo(b: int) { }
 
 func main() {
     // CHECK: 8:5: error: ambiguous reference to 'foo'

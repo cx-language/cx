@@ -1,6 +1,6 @@
 // compile_successfully -typecheck
 
-func qux<T>(T t) -> T {
+func qux<T>(t: T) -> T {
     if (t < 0) { return -t; }
     return t;
 }

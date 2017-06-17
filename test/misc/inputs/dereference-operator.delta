@@ -1,6 +1,6 @@
 // compile_and_run_and_check_exit_status 42
 
-extern func calloc(uint64 count, uint64 size) -> mutable void*;
+extern func calloc(count: uint64, size: uint64) -> mutable void*;
 
 func main() -> int {
     const buffer = cast<mutable int*>(calloc(1, 8));

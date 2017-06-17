@@ -217,7 +217,7 @@ Type parseSimpleType(bool isMutable) {
     return ArrayType::get(type, arraySize);
 }
 
-/// type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '&' | type '*'
+// type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '&' | type '*'
 Type parseType() {
     Type type;
     switch (currentToken()) {
@@ -453,11 +453,24 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
     return llvm::make_unique<ReturnStmt>(std::move(returnValues), location);
 }
 
-/// var-stmt ::= type-specifier id '=' initializer ('\n' | ';')
-/// type-specifier ::= type | 'var' | 'const'
+/// var-decl ::= mutability-specifier id type-specifier? '=' initializer ('\n' | ';')
+/// mutability-specifier ::= 'var' | 'const'
+/// type-specifier ::= ':' type
 /// initializer ::= expr | 'uninitialized'
-std::unique_ptr<VarDecl> parseVarDeclFromId(Type type) {
+std::unique_ptr<VarDecl> parseVarDecl() {
+    assert(currentToken().is(VAR, CONST));
+    bool isMutable = consumeToken() == VAR;
     auto name = parse(IDENTIFIER);
+
+    Type type;
+    if (currentToken() == COLON) {
+        consumeToken();
+        auto typeLoc = currentLoc();
+        type = parseType();
+        if (type.isMutable()) error(typeLoc, "type specifier cannot specify mutability");
+    }
+    type.setMutable(isMutable);
+
     parse(ASSIGN);
     auto initializer = currentToken() != UNINITIALIZED ? parseExpr() : nullptr;
     if (!initializer) consumeToken();
@@ -466,8 +479,9 @@ std::unique_ptr<VarDecl> parseVarDeclFromId(Type type) {
                                       std::move(initializer), currentModule, name.getLoc());
 }
 
-std::unique_ptr<VariableStmt> parseVarStmtFromId(Type type) {
-    return llvm::make_unique<VariableStmt>(parseVarDeclFromId(type));
+/// var-stmt ::= var-decl
+std::unique_ptr<VariableStmt> parseVarStmt() {
+    return llvm::make_unique<VariableStmt>(parseVarDecl());
 }
 
 /// call-stmt ::= call-expr ('\n' | ';')
@@ -615,22 +629,8 @@ std::unique_ptr<BreakStmt> parseBreakStmt() {
 ///          if-stmt | switch-stmt | while-stmt | for-stmt | break-stmt
 std::unique_ptr<Stmt> parseStmt() {
     switch (currentToken()) {
-        case IDENTIFIER:
-            if (lookAhead(1).is(IDENTIFIER, AND, STAR))
-                return parseVarStmtFromId(parseType());
-
-            if (lookAhead(1) == LBRACKET && lookAhead(2) == INT_LITERAL
-            &&  lookAhead(3) == RBRACKET && lookAhead(4).is(IDENTIFIER, AND, STAR))
-                return parseVarStmtFromId(parseType());
-
-            if (lookAhead(1) == LBRACKET
-            &&  lookAhead(2) == RBRACKET && lookAhead(3).is(IDENTIFIER, AND, STAR))
-                return parseVarStmtFromId(parseType());
-
-            break;
         case RETURN: return parseReturnStmt();
-        case VAR: case CONST: return parseVarStmtFromId(Type(nullptr, consumeToken() == VAR));
-        case MUTABLE: return parseVarStmtFromId(parseType());
+        case VAR: case CONST: return parseVarStmt();
         case DEFER: return parseDeferStmt();
         case IF: return parseIfStmt();
         case WHILE: return parseWhileStmt();
@@ -678,10 +678,11 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, 
     return stmts;
 }
 
-/// param-decl ::= type id
+/// param-decl ::= id ':' type
 ParamDecl parseParam() {
-    auto type = parseType();
     auto name = parse(IDENTIFIER);
+    parse(COLON);
+    auto type = parseType();
     return ParamDecl(std::move(type), std::move(name.string), name.getLoc());
 }
 
@@ -810,17 +811,26 @@ std::unique_ptr<DeinitDecl> parseDeinitDecl() {
     parse(COLON_COLON);
     parse(DEINIT);
     parse(LPAREN);
-    if (consumeToken() != RPAREN) error(currentLoc(), "deinitializers cannot have parameters");
+    auto expectedRParenLoc = currentLoc();
+    if (consumeToken() != RPAREN) error(expectedRParenLoc, "deinitializers cannot have parameters");
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
     return llvm::make_unique<DeinitDecl>(std::move(type.string), std::move(body), type.getLoc());
 }
 
-/// field-decl ::= type id ('\n' | ';')
+/// field-decl ::= ('var' | 'const') id ':' type ('\n' | ';')
 FieldDecl parseFieldDecl() {
-    auto type = parseType();
+    expect({ VAR, CONST }, "in field declaration");
+    bool isMutable = consumeToken() == VAR;
     auto name = parse(IDENTIFIER);
+
+    parse(COLON);
+    auto typeLoc = currentLoc();
+    Type type = parseType();
+    if (type.isMutable()) error(typeLoc, "type specifier cannot specify mutability");
+    type.setMutable(isMutable);
+
     parseStmtTerminator();
     return FieldDecl(type, std::move(name.string), name.getLoc());
 }
@@ -905,20 +915,16 @@ std::unique_ptr<Decl> parseDecl() {
                     }
                     default: unexpectedToken(lookAhead(2), { INIT, DEINIT });
                 }
+            } else {
+                unexpectedToken(lookAhead(1));
             }
-            // fallthrough
-        case MUTABLE: {
-            auto decl = parseVarDeclFromId(parseType());
-            addToSymbolTable(*decl, /*isGlobal*/ true);
-            return std::move(decl);
-        }
         case CLASS: case STRUCT: case INTERFACE: {
             auto decl = parseTypeDecl();
             addToSymbolTable(*decl);
             return std::move(decl);
         }
         case VAR: case CONST: {
-            auto decl = parseVarDeclFromId(Type(nullptr, consumeToken() == VAR));
+            auto decl = parseVarDecl();
             addToSymbolTable(*decl, /*isGlobal*/ true);
             return std::move(decl);
         }

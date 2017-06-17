@@ -1,5 +1,5 @@
 func main() {
-    int i = 42;
+    const i = 42;
     var j = 0 + 0b01;
-    mutable int k = 0xf * 0o7;
+    var k: int = 0xf * 0o7;
 }

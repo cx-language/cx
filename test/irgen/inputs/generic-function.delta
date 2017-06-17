@@ -1,6 +1,6 @@
-func foo<T>(T t) { }
-func bar<T>(T t) -> T { return t; }
-func qux<T>(T t) -> T {
+func foo<T>(t: T) { }
+func bar<T>(t: T) -> T { return t; }
+func qux<T>(t: T) -> T {
     if (t < 0) { return -t; }
     return t;
 }

@@ -4,12 +4,12 @@ func main() -> int {
     return "abc".count + foo("quux");
 }
 
-func foo(string x) -> int {
+func foo(x: string) -> int {
     var s = x;
     s = bar(x);
     return x.count + bar(s).count;
 }
 
-func bar(string z) -> string {
+func bar(z: string) -> string {
     return z;
 }
