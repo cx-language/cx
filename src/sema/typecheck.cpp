@@ -58,7 +58,7 @@ bool importingC = false;
 void typecheck(Stmt& stmt);
 void typecheck(GenericFuncDecl& decl);
 Type typecheck(CallExpr& expr);
-void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> includePaths, ParserFunction& parse);
+void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths, ParserFunction& parse);
 
 Type typecheck(VariableExpr& expr) {
     Decl& decl = findDecl(expr.identifier, expr.srcLoc);
@@ -1059,7 +1059,7 @@ void typecheck(FieldDecl&) {
 }
 
 llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
-                                               llvm::ArrayRef<llvm::StringRef> includePaths,
+                                               llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                                                ParserFunction& parse,
                                                llvm::StringRef moduleExternalName,
                                                llvm::StringRef moduleInternalName = "") {
@@ -1076,7 +1076,7 @@ llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
     currentModule = module.get();
     std::error_code error;
 
-    for (llvm::StringRef importPath : includePaths) {
+    for (llvm::StringRef importPath : importSearchPaths) {
         llvm::sys::fs::directory_iterator it(importPath, error), end;
         for (; it != end; it.increment(error)) {
             if (error) goto done;
@@ -1102,24 +1102,24 @@ done:
 
     if (importer) importer->addImportedModule(module);
     allImportedModules[module->getName()] = module;
-    typecheck(*module, includePaths, parse);
+    typecheck(*module, importSearchPaths, parse);
     currentModule = previousModule;
     return *module;
 }
 
-void typecheck(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> includePaths,
+void typecheck(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                ParserFunction& parse) {
-    if (importDeltaModule(currentSourceFile, includePaths, parse, decl.target)) return;
+    if (importDeltaModule(currentSourceFile, importSearchPaths, parse, decl.target)) return;
 
     importingC = true;
-    if (!importCHeader(*currentSourceFile, decl.target, includePaths)) {
+    if (!importCHeader(*currentSourceFile, decl.target, importSearchPaths)) {
         llvm::errs() << "error: couldn't find module or C header '" << decl.target << "'\n";
         abort();
     }
     importingC = false;
 }
 
-void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> includePaths,
+void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                ParserFunction& parse) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
@@ -1131,15 +1131,15 @@ void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> includePaths,
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   typecheck(decl.getVarDecl(), true); break;
         case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;
-        case DeclKind::ImportDecl:typecheck(decl.getImportDecl(), includePaths, parse); break;
+        case DeclKind::ImportDecl:typecheck(decl.getImportDecl(), importSearchPaths, parse); break;
     }
 }
 
 } // anonymous namespace
 
-void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths,
+void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                       ParserFunction& parse) {
-    if (!importDeltaModule(nullptr, includePaths, parse, "stdlib", "std")) {
+    if (!importDeltaModule(nullptr, importSearchPaths, parse, "stdlib", "std")) {
         printErrorAndExit("couldn't import the standard library");
     }
 
@@ -1163,7 +1163,7 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePat
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
-                ::typecheck(*decl, includePaths, parse);
+                ::typecheck(*decl, importSearchPaths, parse);
             }
         }
     }
@@ -1171,3 +1171,4 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePat
     currentSourceFile = previousSourceFile;
     currentModule = previousModule;
 }
+

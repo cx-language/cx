@@ -181,7 +181,7 @@ class MacroImporter : public clang::PPCallbacks {
 } // anonymous namespace
 
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
-                          llvm::ArrayRef<llvm::StringRef> includePaths) {
+                          llvm::ArrayRef<llvm::StringRef> importSearchPaths) {
     auto it = allImportedModules.find(headerName);
     if (it != allImportedModules.end()) {
         importer.addImportedModule(it->second);
@@ -207,7 +207,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath(CLANG_BUILTIN_INCLUDE_PATH, clang::frontend::System, false, false);
-    for (llvm::StringRef includePath : includePaths) {
+    for (llvm::StringRef includePath : importSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(includePath,      clang::frontend::System, false, false);
     }
 

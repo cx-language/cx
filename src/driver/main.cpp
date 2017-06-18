@@ -115,9 +115,9 @@ int main(int argc, char** argv) try {
     const bool printIR = checkFlag("-print-ir", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
     const bool emitPositionIndependentCode = checkFlag("-fPIC", args);
-    std::vector<llvm::StringRef> includePaths = collectStringOptionValues("-I", args);
-    includePaths.push_back(".");
-    includePaths.push_back(DELTA_ROOT_DIR); // For development.
+    std::vector<llvm::StringRef> importSearchPaths = collectStringOptionValues("-I", args);
+    importSearchPaths.push_back(".");
+    importSearchPaths.push_back(DELTA_ROOT_DIR); // For development.
 
     for (llvm::StringRef arg : args) {
         if (arg.startswith("-")) {
@@ -133,7 +133,7 @@ int main(int argc, char** argv) try {
 
     for (llvm::StringRef filePath : args) {
         parse(filePath, module);
-        includePaths.push_back(llvm::sys::path::parent_path(filePath)); // TODO: Don't add duplicates.
+        importSearchPaths.push_back(llvm::sys::path::parent_path(filePath)); // TODO: Don't add duplicates.
     }
 
     if (printAST) {
@@ -144,9 +144,9 @@ int main(int argc, char** argv) try {
     if (parseFlag) return 0;
 
     for (auto& importedModule : module.getImportedModules()) {
-        typecheck(*importedModule, includePaths, parse);
+        typecheck(*importedModule, importSearchPaths, parse);
     }
-    typecheck(module, includePaths, parse);
+    typecheck(module, importSearchPaths, parse);
 
     if (typecheckFlag) return 0;
 
