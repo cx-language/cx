@@ -6,7 +6,7 @@
 using namespace delta;
 
 const FuncType* FuncDecl::getFuncType() const {
-    auto paramTypes = map(params, *[](const ParamDecl& p) { return p.type; });
+    auto paramTypes = map(params, *[](const ParamDecl& p) -> Type { return p.type; });
     return &llvm::cast<FuncType>(*FuncType::get(returnType, std::move(paramTypes)));
 }
 
