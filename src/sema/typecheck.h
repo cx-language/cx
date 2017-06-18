@@ -34,7 +34,7 @@ void addToSymbolTable(InitDecl& decl);
 void addToSymbolTable(DeinitDecl& decl);
 void addToSymbolTable(TypeDecl& decl);
 void addToSymbolTable(TypeDecl&& decl);
-void addToSymbolTable(VarDecl& decl, bool isGlobal);
+void addToSymbolTable(VarDecl& decl);
 void addToSymbolTable(VarDecl&& decl);
 Decl& findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere = false);
 llvm::SmallVector<Decl*, 1> findDecls(llvm::StringRef name, bool everywhere = false);

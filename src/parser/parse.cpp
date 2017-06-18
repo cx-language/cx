@@ -915,7 +915,7 @@ std::unique_ptr<Decl> parseDecl() {
         }
         case VAR: case CONST: {
             auto decl = parseVarDecl();
-            addToSymbolTable(*decl, /*isGlobal*/ true);
+            addToSymbolTable(*decl);
             return std::move(decl);
         }
         case IMPORT:

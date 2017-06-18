@@ -48,7 +48,6 @@ namespace {
 /// Storage for Decls that are not in the AST but are referenced by the symbol table.
 std::vector<std::unique_ptr<Decl>> nonASTDecls;
 
-std::vector<VarDecl*> globalVariables;
 std::unordered_map<std::string, Type> currentGenericArgs;
 Type funcReturnType = nullptr;
 bool inInitializer = false;
@@ -823,12 +822,11 @@ void delta::addToSymbolTable(TypeDecl& decl) {
     currentModule->getSymbolTable().add(decl.name, &decl);
 }
 
-void delta::addToSymbolTable(VarDecl& decl, bool isGlobal) {
+void delta::addToSymbolTable(VarDecl& decl) {
     if (currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     currentModule->getSymbolTable().add(decl.name, &decl);
-    if (isGlobal) globalVariables.push_back(&decl);
 }
 
 void delta::addToSymbolTable(FuncDecl&& decl) {
@@ -1051,7 +1049,7 @@ void typecheck(VarDecl& decl, bool isGlobal) {
         decl.type = initType;
     }
 
-    if (!isGlobal) addToSymbolTable(decl, isGlobal);
+    if (!isGlobal) addToSymbolTable(decl);
 }
 
 void typecheck(FieldDecl&) {
