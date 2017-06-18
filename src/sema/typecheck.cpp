@@ -53,7 +53,6 @@ std::unordered_map<std::string, Type> currentGenericArgs;
 Type funcReturnType = nullptr;
 bool inInitializer = false;
 int breakableBlocks = 0;
-bool importingC = false;
 
 void typecheck(Stmt& stmt);
 void typecheck(GenericFuncDecl& decl);
@@ -782,7 +781,7 @@ void typecheck(ParamDecl& decl) {
 } // anonymous namespace
 
 void delta::addToSymbolTable(FuncDecl& decl) {
-    if (!importingC && currentModule->getSymbolTable().findWithMatchingParams(decl)) {
+    if (currentModule->getSymbolTable().findWithMatchingParams(decl)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     currentModule->getSymbolTable().add(mangle(decl), &decl);
@@ -818,14 +817,14 @@ void delta::addToSymbolTable(DeinitDecl& decl) {
 }
 
 void delta::addToSymbolTable(TypeDecl& decl) {
-    if (!importingC && currentModule->getSymbolTable().contains(decl.name)) {
+    if (currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     currentModule->getSymbolTable().add(decl.name, &decl);
 }
 
 void delta::addToSymbolTable(VarDecl& decl, bool isGlobal) {
-    if (!importingC && currentModule->getSymbolTable().contains(decl.name)) {
+    if (currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     currentModule->getSymbolTable().add(decl.name, &decl);
@@ -1111,12 +1110,10 @@ void typecheck(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPat
                ParserFunction& parse) {
     if (importDeltaModule(currentSourceFile, importSearchPaths, parse, decl.target)) return;
 
-    importingC = true;
     if (!importCHeader(*currentSourceFile, decl.target, importSearchPaths)) {
         llvm::errs() << "error: couldn't find module or C header '" << decl.target << "'\n";
         abort();
     }
-    importingC = false;
 }
 
 void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
