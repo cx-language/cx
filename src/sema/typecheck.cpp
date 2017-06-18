@@ -25,7 +25,7 @@
 #include "../ast/module.h"
 #include "../ast/token.h"
 #include "../ast/mangle.h"
-#include "../driver/utility.h"
+#include "../support/utility.h"
 
 using namespace delta;
 

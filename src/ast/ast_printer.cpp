@@ -5,7 +5,7 @@
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
 #include "../ast/module.h"
-#include "../driver/utility.h"
+#include "../support/utility.h"
 
 using namespace delta;
 

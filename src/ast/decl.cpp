@@ -1,23 +1,13 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #include "decl.h"
-#include "../driver/utility.h"
+#include "../support/utility.h"
 
 using namespace delta;
 
-namespace {
-
-std::vector<Type> mapToTypes(const std::vector<ParamDecl>& params) {
-    std::vector<Type> paramTypes;
-    paramTypes.reserve(params.size());
-    for (const auto& param : params) paramTypes.emplace_back(param.type);
-    return paramTypes;
-}
-
-} // anonymous namespace
-
 const FuncType* FuncDecl::getFuncType() const {
-    return &llvm::cast<FuncType>(*FuncType::get(returnType, mapToTypes(params)));
+    auto paramTypes = map(params, *[](const ParamDecl& p) { return p.type; });
+    return &llvm::cast<FuncType>(*FuncType::get(returnType, std::move(paramTypes)));
 }
 
 bool FuncDecl::signatureMatches(const FuncDecl& other, bool matchReceiver) const {

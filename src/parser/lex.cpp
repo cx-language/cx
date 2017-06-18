@@ -7,7 +7,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 #include "parse.h"
 #include "../ast/token.h"
-#include "../driver/utility.h"
+#include "../support/utility.h"
 
 using namespace delta;
 

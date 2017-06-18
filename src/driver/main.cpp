@@ -12,13 +12,13 @@
 #include <llvm/Support/Program.h>
 #include <llvm/Support/Path.h>
 #include "repl.h"
-#include "utility.h"
 #include "../ast/ast_printer.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
+#include "../irgen/irgen.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
-#include "../irgen/irgen.h"
+#include "../support/utility.h"
 
 using namespace delta;
 

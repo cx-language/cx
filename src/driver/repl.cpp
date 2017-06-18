@@ -9,12 +9,12 @@
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/ExecutionEngine/Interpreter.h>
-#include "utility.h"
 #include "../ast/expr.h"
 #include "../ast/module.h"
+#include "../irgen/irgen.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
-#include "../irgen/irgen.h"
+#include "../support/utility.h"
 
 using namespace delta;
 

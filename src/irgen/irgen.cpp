@@ -15,7 +15,7 @@
 #include "../ast/module.h"
 #include "../ast/token.h"
 #include "../sema/typecheck.h"
-#include "../driver/utility.h"
+#include "../support/utility.h"
 
 using namespace delta;
 
@@ -119,14 +119,6 @@ llvm::Value* findValue(llvm::StringRef name) {
         return globalScope().localValues.find(name)->second;
     }
     return value;
-}
-
-template<typename From, typename To>
-std::vector<To> map(const std::vector<From>& from, To (&func)(const From&)) {
-    std::vector<To> to;
-    to.reserve(from.size());
-    for (const auto& e : from) to.emplace_back(func(e));
-    return to;
 }
 
 void codegen(const TypeDecl& decl);

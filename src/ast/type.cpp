@@ -3,7 +3,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #include "type.h"
-#include "../driver/utility.h"
+#include "../support/utility.h"
 
 using namespace delta;
 

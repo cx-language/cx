@@ -12,7 +12,7 @@
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../sema/typecheck.h"
-#include "../driver/utility.h"
+#include "../support/utility.h"
 
 using namespace delta;
 
@@ -57,23 +57,13 @@ std::string quote(TokenKind tokenKind) {
     return stream.str();
 }
 
-std::string toString(llvm::ArrayRef<TokenKind> expected) {
-    std::string string;
-    for (const TokenKind& tokenKind : expected) {
-        string += quote(tokenKind);
-        if (expected.size() > 2) string += ',';
-        if (&tokenKind == expected.end() - 2) string += " or ";
-    }
-    return string;
-}
-
 [[noreturn]] void unexpectedToken(Token token, llvm::ArrayRef<TokenKind> expected = {},
                                   const char* contextInfo = nullptr) {
     if (expected.size() == 0) {
         error(token.getLoc(), "unexpected ", quote(token),
               contextInfo ? " " : "", contextInfo ? contextInfo : "");
     } else {
-        error(token.getLoc(), "expected ", toString(expected),
+        error(token.getLoc(), "expected ", toDisjunctiveList(expected, quote),
               contextInfo ? " " : "", contextInfo ? contextInfo : "",
               ", got ", quote(token));
     }
