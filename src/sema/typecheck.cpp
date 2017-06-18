@@ -53,14 +53,12 @@ std::unordered_map<std::string, Type> currentGenericArgs;
 Type funcReturnType = nullptr;
 bool inInitializer = false;
 int breakableBlocks = 0;
-
 bool importingC = false;
-llvm::ArrayRef<llvm::StringRef> includePaths;
 
 void typecheck(Stmt& stmt);
 void typecheck(GenericFuncDecl& decl);
 Type typecheck(CallExpr& expr);
-void typecheck(Decl& decl, ParserFunction& parse);
+void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> includePaths, ParserFunction& parse);
 
 Type typecheck(VariableExpr& expr) {
     Decl& decl = findDecl(expr.identifier, expr.srcLoc);
@@ -1060,7 +1058,9 @@ void typecheck(VarDecl& decl, bool isGlobal) {
 void typecheck(FieldDecl&) {
 }
 
-llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, ParserFunction& parse,
+llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
+                                               llvm::ArrayRef<llvm::StringRef> includePaths,
+                                               ParserFunction& parse,
                                                llvm::StringRef moduleExternalName,
                                                llvm::StringRef moduleInternalName = "") {
     if (moduleInternalName.empty()) moduleInternalName = moduleExternalName;
@@ -1107,8 +1107,9 @@ done:
     return *module;
 }
 
-void typecheck(ImportDecl& decl, ParserFunction& parse) {
-    if (importDeltaModule(currentSourceFile, parse, decl.target)) return;
+void typecheck(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> includePaths,
+               ParserFunction& parse) {
+    if (importDeltaModule(currentSourceFile, includePaths, parse, decl.target)) return;
 
     importingC = true;
     if (!importCHeader(*currentSourceFile, decl.target, includePaths)) {
@@ -1118,7 +1119,8 @@ void typecheck(ImportDecl& decl, ParserFunction& parse) {
     importingC = false;
 }
 
-void typecheck(Decl& decl, ParserFunction& parse) {
+void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> includePaths,
+               ParserFunction& parse) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
@@ -1129,7 +1131,7 @@ void typecheck(Decl& decl, ParserFunction& parse) {
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
         case DeclKind::VarDecl:   typecheck(decl.getVarDecl(), true); break;
         case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;
-        case DeclKind::ImportDecl:typecheck(decl.getImportDecl(), parse); break;
+        case DeclKind::ImportDecl:typecheck(decl.getImportDecl(), includePaths, parse); break;
     }
 }
 
@@ -1137,9 +1139,7 @@ void typecheck(Decl& decl, ParserFunction& parse) {
 
 void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePaths,
                       ParserFunction& parse) {
-    ::includePaths = includePaths;
-
-    if (!importDeltaModule(nullptr, parse, "stdlib", "std")) {
+    if (!importDeltaModule(nullptr, includePaths, parse, "stdlib", "std")) {
         printErrorAndExit("couldn't import the standard library");
     }
 
@@ -1163,7 +1163,7 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> includePat
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
-                ::typecheck(*decl, parse);
+                ::typecheck(*decl, includePaths, parse);
             }
         }
     }
