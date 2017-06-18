@@ -18,10 +18,10 @@ var foo = 42;
 
 This declares a mutable variable.
 
-If we want, we can also specify the type of the variable explicitly:
+We can also specify the type of the variable explicitly:
 
 ```
-int foo = 42;
+const foo: int8 = 42;
 ```
 
 ## Assignment

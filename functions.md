@@ -9,13 +9,13 @@ func foo() { }
 Parameters go inside the parentheses, like so:
 
 ```
-func foo(int a, int b) { }
+func foo(a: int, b: int) { }
 ```
 
 If the function has a return type, it is specified after the parameter list:
 
 ```
-func foo(int a, int b) -> int {
+func foo(a: int, b: int) -> int {
     return a + b;
 }
 ```
@@ -92,7 +92,7 @@ func foo() -> int, bool {
 Parameters can be declared to have a default value:
 
 ```
-func foo(int i = 42) {
+func foo(i: int = 42) {
     // ...
 }
 ```
