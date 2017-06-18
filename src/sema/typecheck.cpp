@@ -905,24 +905,11 @@ Decl& delta::findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere) {
 }
 
 llvm::SmallVector<Decl*, 1> delta::findDecls(llvm::StringRef name, bool everywhere) {
-    auto decls0 = findDeclsInModules(name, llvm::makeArrayRef(currentModule));
-    auto decls1 = findDeclsInModules(name, getStdlibModules());
-    auto decls2 = everywhere ? findDeclsInModules(name, currentModule->getImportedModules())
-                             : findDeclsInModules(name, currentSourceFile->getImportedModules());
-
-    int combinedSize = 0;
-
-    for (llvm::ArrayRef<Decl*> d : { decls0, decls1, decls2 }) {
-        combinedSize += d.size();
-    }
-
     llvm::SmallVector<Decl*, 1> decls;
-    decls.reserve(combinedSize);
-
-    for (llvm::ArrayRef<Decl*> d : { decls0, decls1, decls2 }) {
-        decls.append(d.begin(), d.end());
-    }
-
+    append(decls, findDeclsInModules(name, llvm::makeArrayRef(currentModule)));
+    append(decls, findDeclsInModules(name, getStdlibModules()));
+    append(decls, everywhere ? findDeclsInModules(name, currentModule->getImportedModules())
+                             : findDeclsInModules(name, currentSourceFile->getImportedModules()));
     return decls;
 }
 

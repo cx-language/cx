@@ -26,6 +26,12 @@ std::vector<T> map(const SourceContainer& source,
     return result;
 }
 
+/// Appends the elements of `target` to `source`.
+template<typename TargetContainer, typename SourceContainer>
+static void append(TargetContainer& target, const SourceContainer& source) {
+    target.append(source.begin(), source.end());
+}
+
 template<typename T>
 std::string toDisjunctiveList(llvm::ArrayRef<T> values, std::string (& stringifier)(T)) {
     std::string string;
