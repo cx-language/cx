@@ -123,26 +123,38 @@ llvm::Value* findValue(llvm::StringRef name) {
 
 void codegen(const TypeDecl& decl);
 
+const std::unordered_map<std::string, llvm::Type*> builtinTypes = {
+    { "void", llvm::Type::getVoidTy(ctx) },
+    { "bool", llvm::Type::getInt1Ty(ctx) },
+    { "char", llvm::Type::getInt8Ty(ctx) },
+    { "int", llvm::Type::getInt32Ty(ctx) },
+    { "int8", llvm::Type::getInt8Ty(ctx) },
+    { "int16", llvm::Type::getInt16Ty(ctx) },
+    { "int32", llvm::Type::getInt32Ty(ctx) },
+    { "int64", llvm::Type::getInt64Ty(ctx) },
+    { "uint", llvm::Type::getInt32Ty(ctx) },
+    { "uint8", llvm::Type::getInt8Ty(ctx) },
+    { "uint16", llvm::Type::getInt16Ty(ctx) },
+    { "uint32", llvm::Type::getInt32Ty(ctx) },
+    { "uint64", llvm::Type::getInt64Ty(ctx) },
+    { "float", llvm::Type::getFloatTy(ctx) },
+    { "float32", llvm::Type::getFloatTy(ctx) },
+    { "float64", llvm::Type::getDoubleTy(ctx) },
+    { "float80", llvm::Type::getX86_FP80Ty(ctx) },
+    { "string", llvm::StructType::get(llvm::Type::getInt8PtrTy(ctx),
+                                      llvm::Type::getInt32Ty(ctx), nullptr) },
+};
+
 } // anonymous namespace
 
 llvm::Type* irgen::toIR(Type type) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
             llvm::StringRef name = type.getName();
-            if (name == "string") return llvm::StructType::get(llvm::Type::getInt8PtrTy(ctx),
-                                                               llvm::Type::getInt32Ty(ctx),
-                                                               NULL);
-            if (name == "void") return llvm::Type::getVoidTy(ctx);
-            if (name == "bool") return llvm::Type::getInt1Ty(ctx);
-            if (name == "char") return llvm::Type::getInt8Ty(ctx);
-            if (name == "int" || name == "uint") return llvm::Type::getInt32Ty(ctx);
-            if (name == "int8" || name == "uint8") return llvm::Type::getInt8Ty(ctx);
-            if (name == "int16" || name == "uint16") return llvm::Type::getInt16Ty(ctx);
-            if (name == "int32" || name == "uint32") return llvm::Type::getInt32Ty(ctx);
-            if (name == "int64" || name == "uint64") return llvm::Type::getInt64Ty(ctx);
-            if (name == "float32" || name == "float") return llvm::Type::getFloatTy(ctx);
-            if (name == "float64") return llvm::Type::getDoubleTy(ctx);
-            if (name == "float80") return llvm::Type::getX86_FP80Ty(ctx);
+
+            auto builtinType = builtinTypes.find(name);
+            if (builtinType != builtinTypes.end()) return builtinType->second;
+
             auto it = structs.find(name);
             if (it == structs.end()) {
                 // Is it a generic parameter?
