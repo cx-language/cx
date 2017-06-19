@@ -35,6 +35,10 @@ namespace delta {
     SourceFile* currentSourceFile;
 }
 
+const std::unordered_map<std::string, std::shared_ptr<Module>>& delta::getAllImportedModules() {
+    return allImportedModules;
+}
+
 void delta::setCurrentModule(Module& module) {
     currentModule = &module;
 }

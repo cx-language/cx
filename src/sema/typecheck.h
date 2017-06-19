@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace llvm {
@@ -25,6 +28,7 @@ class Expr;
 
 using ParserFunction = void(llvm::StringRef filePath, Module& module);
 
+const std::unordered_map<std::string, std::shared_ptr<Module>>& getAllImportedModules();
 void setCurrentModule(Module& module);
 void setCurrentSourceFile(SourceFile& sourceFile);
 void addToSymbolTable(FuncDecl& decl);
