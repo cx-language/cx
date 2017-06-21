@@ -9,7 +9,7 @@ using namespace delta;
 
 #define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
 Type Type::get##TYPE(bool isMutable) { \
-    static BasicType type(#NAME); \
+    static BasicType type(#NAME, /*genericArgs*/ {}); \
     return Type(&type, isMutable); \
 } \
 bool Type::is##TYPE() const { \
@@ -84,8 +84,9 @@ namespace {
     CACHE.emplace_back(new TYPE(__VA_ARGS__)); \
     return Type(CACHE.back().get(), isMutable);
 
-Type BasicType::get(llvm::StringRef name, bool isMutable) {
-    FETCH_AND_RETURN_TYPE(BasicType, basicTypes, t->name == name, name)
+Type BasicType::get(llvm::StringRef name, std::vector<Type>&& genericArgs, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(BasicType, basicTypes,
+        t->name == name && t->genericArgs == genericArgs, name, std::move(genericArgs));
 }
 
 Type ArrayType::get(Type elementType, int64_t size, bool isMutable) {
@@ -120,7 +121,8 @@ Type PtrType::get(Type pointeeType, bool isReference, bool isMutable) {
 bool Type::isImplicitlyConvertibleTo(Type type) const {
     switch (typeBase->getKind()) {
         case TypeKind::BasicType:
-            return type.isBasicType() && getName() == type.getName();
+            return type.isBasicType() && getName() == type.getName()
+                                      && getGenericArgs() == type.getGenericArgs();
         case TypeKind::ArrayType:
             return type.isArrayType()
             && (getArraySize() == type.getArraySize() || type.isUnsizedArrayType())
@@ -167,6 +169,7 @@ llvm::StringRef Type::getName() const { return llvm::cast<BasicType>(typeBase)->
 Type Type::getElementType() const { return llvm::cast<ArrayType>(typeBase)->elementType; }
 int Type::getArraySize() const { return llvm::cast<ArrayType>(typeBase)->size; }
 llvm::ArrayRef<Type> Type::getSubtypes() const { return llvm::cast<TupleType>(typeBase)->subtypes; }
+llvm::ArrayRef<Type> Type::getGenericArgs() const { return llvm::cast<BasicType>(typeBase)->getGenericArgs(); }
 Type Type::getReturnType() const { return llvm::cast<FuncType>(typeBase)->returnType; }
 llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FuncType>(typeBase)->paramTypes; }
 Type Type::getPointee() const { return llvm::cast<PtrType>(typeBase)->pointeeType; }
@@ -183,7 +186,8 @@ bool delta::operator==(Type lhs, Type rhs) {
     if (lhs.isMutable() != rhs.isMutable()) return false;
     switch (lhs.getKind()) {
         case TypeKind::BasicType:
-            return rhs.isBasicType() && lhs.getName() == rhs.getName();
+            return rhs.isBasicType() && lhs.getName() == rhs.getName()
+                                     && lhs.getGenericArgs() == rhs.getGenericArgs();
         case TypeKind::ArrayType:
             return rhs.isArrayType() && lhs.getElementType() == rhs.getElementType()
                                      && lhs.getArraySize() == rhs.getArraySize();
@@ -207,10 +211,22 @@ bool delta::operator!=(Type lhs, Type rhs) {
 
 void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
     switch (typeBase->getKind()) {
-        case TypeKind::BasicType:
+        case TypeKind::BasicType: {
             if (isMutable() && !omitTopLevelMutable) stream << "mutable ";
             stream << getName();
+
+            auto genericArgs = llvm::cast<BasicType>(typeBase)->getGenericArgs();
+            if (!genericArgs.empty()) {
+                stream << "<";
+                for (auto& type : genericArgs) {
+                    type.printTo(stream, false);
+                    if (&type != &genericArgs.back()) stream << ", ";
+                }
+                stream << ">";
+            }
+
             break;
+        }
         case TypeKind::ArrayType:
             getElementType().printTo(stream, omitTopLevelMutable);
             stream << "[";

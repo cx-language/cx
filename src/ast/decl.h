@@ -168,19 +168,24 @@ public:
     std::string name;
     std::vector<FieldDecl> fields;
     std::vector<std::unique_ptr<FuncDecl>> memberFuncs; // Only used by interfaces.
+    std::vector<GenericParamDecl> genericParams;
     SrcLoc srcLoc;
 
     TypeDecl(TypeTag tag, std::string&& name, std::vector<FieldDecl>&& fields,
-             std::vector<std::unique_ptr<FuncDecl>>&& memberFuncs, Module* module, SrcLoc srcLoc)
-    : Decl(DeclKind::TypeDecl, module), tag(tag), name(std::move(name)), fields(std::move(fields)),
-      memberFuncs(std::move(memberFuncs)), srcLoc(srcLoc) { }
-    Type getType(bool isMutable = false) const;
+             std::vector<std::unique_ptr<FuncDecl>>&& memberFuncs,
+             std::vector<GenericParamDecl>&& genericParams, Module* module, SrcLoc srcLoc)
+    : Decl(DeclKind::TypeDecl, module), tag(tag), name(std::move(name)),
+      fields(std::move(fields)), memberFuncs(std::move(memberFuncs)),
+      genericParams(std::move(genericParams)), srcLoc(srcLoc) { }
+
+    Type getType(bool isMutable = false, std::vector<Type>&& genericArgs = {}) const;
     Type getTypeForPassing(bool isMutable = false) const; /// 'T&' if this is class, or plain 'T' otherwise.
     bool passByValue() const { return isStruct() || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isClass() const { return tag == TypeTag::Class; }
     bool isInterface() const { return tag == TypeTag::Interface; }
     bool isUnion() const { return tag == TypeTag::Union; }
+    bool isGeneric() const { return !genericParams.empty(); }
     unsigned getFieldIndex(llvm::StringRef fieldName) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::TypeDecl; }
 };

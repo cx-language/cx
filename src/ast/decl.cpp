@@ -27,8 +27,9 @@ llvm::StringRef DeinitDecl::getTypeName() const {
     return type.which() ? boost::get<TypeDecl*>(type)->name : boost::get<std::string>(type);
 }
 
-Type TypeDecl::getType(bool isMutable) const {
-    return BasicType::get(name, isMutable);
+Type TypeDecl::getType(bool isMutable, std::vector<Type>&& genericArgs) const {
+    assert(genericArgs.size() == genericParams.size());
+    return BasicType::get(name, std::move(genericArgs), isMutable);
 }
 
 Type TypeDecl::getTypeForPassing(bool isMutable) const {

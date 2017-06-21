@@ -96,6 +96,7 @@ std::unique_ptr<Expr> parsePreOrPostfixExpr();
 std::vector<std::unique_ptr<Expr>> parseExprList();
 std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end);
 std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3);
+Type parseType();
 
 /// arg-list ::= '(' ')' | '(' nonempty-arg-list ')'
 /// nonempty-arg-list ::= arg | nonempty-arg-list ',' arg
@@ -187,13 +188,42 @@ std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral() {
     return llvm::make_unique<ArrayLiteralExpr>(std::move(elements), location);
 }
 
-/// simple-type ::= id | id '[' int-literal? ']'
+/// generic-arg-list ::= '<' generic-args '>'
+/// generic-args ::= type | type ',' generic-args
+std::vector<Type> parseGenericArgList() {
+    assert(currentToken() == LT);
+    consumeToken();
+    std::vector<Type> genericArgs;
+
+    while (true) {
+        genericArgs.emplace_back(parseType());
+        if (currentToken() == GT) break;
+        parse(COMMA);
+    }
+
+    consumeToken();
+    return genericArgs;
+}
+
+/// simple-type ::= id | id generic-arg-list | id '[' int-literal? ']'
 Type parseSimpleType(bool isMutable) {
     assert(currentToken() == IDENTIFIER);
-    auto type = BasicType::get(currentToken().string, isMutable);
-    consumeToken();
-    if (currentToken() != LBRACKET) return type;
-    consumeToken();
+    llvm::StringRef id = consumeToken().string;
+
+    Type type;
+    std::vector<Type> genericArgs;
+
+    switch (currentToken()) {
+        case LT:
+            genericArgs = parseGenericArgList();
+            // fallthrough
+        default:
+            return BasicType::get(id, std::move(genericArgs), isMutable);
+        case LBRACKET:
+            consumeToken();
+            type = BasicType::get(id, {}, isMutable);
+            break;
+    }
 
     int64_t arraySize;
     if (currentToken() == RBRACKET)
@@ -279,18 +309,10 @@ std::unique_ptr<UnwrapExpr> parseUnwrapExpr(std::unique_ptr<Expr> operand) {
 }
 
 /// call-expr ::= expr generic-arg-list? '(' args ')'
-/// generic-arg-list ::= '<' generic-args '>'
-/// generic-args ::= type | type ',' generic-args
 std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> func) {
     std::vector<Type> genericArgs;
     if (currentToken() == LT) {
-        consumeToken();
-        while (true) {
-            genericArgs.emplace_back(parseType());
-            if (currentToken() == GT) break;
-            parse(COMMA);
-        }
-        consumeToken();
+        genericArgs = parseGenericArgList();
     }
     auto location = currentLoc();
     auto args = parseArgList();
@@ -690,6 +712,24 @@ std::vector<ParamDecl> parseParamList() {
     return params;
 }
 
+void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
+    parse(LT);
+    while (true) {
+        auto genericParamName = parse(IDENTIFIER);
+        genericParams.emplace_back(genericParamName.string, genericParamName.getLoc());
+
+        if (currentToken() == COLON) { // Generic type constraint.
+            consumeToken();
+            genericParams.back().constraints.emplace_back(parse(IDENTIFIER).string);
+            // TODO: Add support for multiple generic type constraints.
+        }
+
+        if (currentToken() == GT) break;
+        parse(COMMA);
+    }
+    parse(GT);
+}
+
 /// func-proto ::= 'func' (id '::')? id param-list ('->' type)?
 /// generic-func-proto ::= 'func' (id '::')? id generic-param-list param-list ('->' type)?
 /// generic-param-list ::= '<' generic-param-decls '>'
@@ -718,21 +758,7 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
     }
 
     if (genericParams) {
-        parse(LT);
-        while (true) {
-            auto genericParamName = parse(IDENTIFIER);
-            genericParams->emplace_back(genericParamName.string, genericParamName.getLoc());
-
-            if (currentToken() == COLON) { // Generic type constraint.
-                consumeToken();
-                genericParams->back().constraints.emplace_back(parse(IDENTIFIER).string);
-                // TODO: Add support for multiple generic type constraints.
-            }
-
-            if (currentToken() == GT) break;
-            parse(COMMA);
-        }
-        parse(GT);
+        parseGenericParamList(*genericParams);
     }
 
     auto params = parseParamList();
@@ -825,7 +851,7 @@ FieldDecl parseFieldDecl() {
     return FieldDecl(type, std::move(name.string), name.getLoc());
 }
 
-/// type-decl ::= ('class' | 'struct' | 'interface') id '{' field-decl* '}'
+/// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' field-decl* '}'
 std::unique_ptr<TypeDecl> parseTypeDecl() {
     TypeTag tag;
     switch (consumeToken()) {
@@ -836,6 +862,12 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
     }
 
     auto name = parse(IDENTIFIER);
+
+    std::vector<GenericParamDecl> genericParams;
+    if (currentToken() == LT) {
+        parseGenericParamList(genericParams);
+    }
+
     parse(LBRACE);
     std::vector<FieldDecl> fields;
     std::vector<std::unique_ptr<FuncDecl>> memberFuncs;
@@ -850,7 +882,8 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
 
     consumeToken();
     return llvm::make_unique<TypeDecl>(tag, std::move(name.string), std::move(fields),
-                                       std::move(memberFuncs), currentModule, name.getLoc());
+                                       std::move(memberFuncs), std::move(genericParams),
+                                       currentModule, name.getLoc());
 }
 
 /// import-decl ::= 'import' string-literal ('\n' | ';')

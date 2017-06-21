@@ -1,0 +1,17 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: %"A<int>" = type { i32 }
+// CHECK: %"A<A<A<bool>>>" = type { %"A<A<bool>>" }
+// CHECK: %"A<A<bool>>" = type { %"A<bool>" }
+// CHECK: %"A<bool>" = type { i1 }
+class A<T> {
+    const a: T
+}
+
+func main() {
+    // CHECK: %a = alloca %"A<int>"
+    const a: A<int> = uninitialized
+    
+    // CHECK: %aaa = alloca %"A<A<A<bool>>>"
+    const aaa: A<A<A<bool> > > = uninitialized
+}

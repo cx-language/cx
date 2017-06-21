@@ -27,6 +27,7 @@ using irgen::toIR;
 llvm::Value* codegen(const CallExpr& expr);
 llvm::Value* codegenLvalue(const Expr& expr);
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
+llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
 void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
 void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
 
@@ -160,6 +161,13 @@ llvm::Type* irgen::toIR(Type type) {
                 // Is it a generic parameter?
                 auto genericArg = currentGenericArgs.find(name);
                 if (genericArg != currentGenericArgs.end()) return genericArg->second;
+
+                // Is it a generic type?
+                auto genericArgs = llvm::cast<BasicType>(*type).getGenericArgs();
+                if (!genericArgs.empty()) {
+                    auto& decl = findDecl(name, SrcLoc::invalid(), /*everywhere*/ true).getTypeDecl();
+                    return codegenGenericTypeInstantiation(decl, genericArgs);
+                }
 
                 // Custom type that has not been declared yet, search for it in the symbol table.
                 ::codegen(findDecl(name, SrcLoc::invalid(), /*everywhere*/ true).getTypeDecl());
@@ -1009,12 +1017,34 @@ void codegen(const DeinitDecl& decl) {
 }
 
 void codegen(const TypeDecl& decl) {
+    if (decl.isGeneric()) return;
+
     if (decl.fields.empty()) {
         structs.emplace(decl.name, std::make_pair(llvm::StructType::get(ctx), &decl));
         return;
     }
+
     auto elements = map(decl.fields, *[](const FieldDecl& f) { return toIR(f.type); });
     structs.emplace(decl.name, std::make_pair(llvm::StructType::create(elements, decl.name), &decl));
+}
+
+llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs) {
+    auto name = mangle(decl, genericArgs);
+
+    if (decl.fields.empty()) {
+        auto value = std::make_pair(llvm::StructType::get(ctx), &decl);
+        return structs.emplace(name, std::move(value)).first->second.first;
+    }
+
+    for (auto paramAndArg : llvm::zip_first(decl.genericParams, genericArgs)) {
+        currentGenericArgs.emplace(std::get<0>(paramAndArg).name, toIR(std::get<1>(paramAndArg)));
+    }
+
+    auto elements = map(decl.fields, *[](const FieldDecl& f) { return toIR(f.type); });
+    currentGenericArgs.clear();
+
+    auto value = std::make_pair(llvm::StructType::create(elements, name), &decl);
+    return structs.emplace(name, std::move(value)).first->second.first;
 }
 
 void codegen(const VarDecl& decl) {

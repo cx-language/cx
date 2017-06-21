@@ -94,6 +94,7 @@ public:
     Type getElementType() const;
     int getArraySize() const;
     llvm::ArrayRef<Type> getSubtypes() const;
+    llvm::ArrayRef<Type> getGenericArgs() const;
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
     Type getPointee() const;
@@ -131,13 +132,18 @@ private:
 class BasicType : public TypeBase {
 public:
     std::string name;
-    static Type get(llvm::StringRef name, bool isMutable = false);
+
+    llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
+    static Type get(llvm::StringRef name, std::vector<Type>&& genericArgs,
+                    bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::BasicType; }
 
 private:
     friend Type;
-    BasicType(llvm::StringRef name)
-    : TypeBase(TypeKind::BasicType), name(name) { }
+    BasicType(llvm::StringRef name, std::vector<Type>&& genericArgs)
+    : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)) { }
+
+    std::vector<Type> genericArgs;
 };
 
 class ArrayType : public TypeBase {

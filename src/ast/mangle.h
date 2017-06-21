@@ -15,6 +15,7 @@ namespace delta {
     class DeinitDecl;
     class ParamDecl;
     class Arg;
+    class TypeDecl;
 
     std::string mangle(const FuncDecl& decl);
     std::string mangleFuncDecl(llvm::StringRef receiverType, llvm::StringRef funcName);
@@ -23,4 +24,5 @@ namespace delta {
     std::string mangleInitDecl(llvm::StringRef typeName);
     std::string mangle(const DeinitDecl& decl);
     std::string mangleDeinitDecl(llvm::StringRef typeName);
+    std::string mangle(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
 }

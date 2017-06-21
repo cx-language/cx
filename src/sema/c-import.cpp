@@ -84,7 +84,8 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Elaborated:
             return toDelta(llvm::cast<clang::ElaboratedType>(type).getNamedType());
         case clang::Type::Record:
-            return BasicType::get(llvm::cast<clang::RecordType>(type).getDecl()->getName(), isMutable);
+            return BasicType::get(llvm::cast<clang::RecordType>(type).getDecl()->getName(),
+                                  {}, isMutable);
         default:
             return Type::getInt(isMutable); // FIXME: Dummy.
     }
@@ -109,7 +110,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
     if (decl.getName().empty()) return llvm::None;
 
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
-                      decl.getNameAsString(), {}, {}, currentModule, SrcLoc::invalid());
+                      decl.getNameAsString(), {}, {}, {}, currentModule, SrcLoc::invalid());
     typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field)) {

@@ -180,7 +180,7 @@ bool checkRange(Expr& expr, int64_t value, llvm::StringRef param) {
     } catch (...) {
         error(expr.getSrcLoc(), value, " is out of range for type '", param, "'");
     }
-    expr.setType(BasicType::get(param.str()));
+    expr.setType(BasicType::get(param.str(), {}));
     return true;
 }
 
@@ -287,24 +287,24 @@ bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params);
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
                   const std::string& funcName, SrcLoc srcLoc);
 
-void setCurrentGenericArgs(GenericFuncDecl& decl, CallExpr& call) {
+void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call) {
     if (call.genericArgs.empty()) {
-        call.genericArgs.reserve(decl.genericParams.size());
+        call.genericArgs.reserve(genericParams.size());
         // FIXME: The args will also be typechecked by validateArgs()
         // after this function. Get rid of this duplicated typechecking.
         for (auto& arg : call.args) call.genericArgs.emplace_back(typecheck(*arg.value));
     }
-    else if (call.genericArgs.size() < decl.genericParams.size()) {
+    else if (call.genericArgs.size() < genericParams.size()) {
         error(call.srcLoc, "too few generic arguments to '", call.getFuncName(),
-              "', expected ", decl.genericParams.size());
+              "', expected ", genericParams.size());
     }
-    else if (call.genericArgs.size() > decl.genericParams.size()) {
+    else if (call.genericArgs.size() > genericParams.size()) {
         error(call.srcLoc, "too many generic arguments to '", call.getFuncName(),
-              "', expected ", decl.genericParams.size());
+              "', expected ", genericParams.size());
     }
 
     auto genericArg = call.genericArgs.begin();
-    for (const GenericParamDecl& genericParam : decl.genericParams) {
+    for (const GenericParamDecl& genericParam : genericParams) {
         if (!genericParam.constraints.empty()) {
             assert(genericParam.constraints.size() == 1
                    && "cannot have multiple generic constraints yet");
@@ -334,7 +334,7 @@ Type typecheckBuiltinConversion(CallExpr& expr) {
         error(expr.srcLoc, "expected unnamed argument to converting initializer");
     }
     typecheck(*expr.args.front().value);
-    expr.setType(BasicType::get(expr.getFuncName()));
+    expr.setType(BasicType::get(expr.getFuncName(), {}));
     return expr.getType();
 }
 
@@ -357,7 +357,7 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
                 }
                 break;
             case DeclKind::GenericFuncDecl:
-                setCurrentGenericArgs(decl->getGenericFuncDecl(), expr);
+                setCurrentGenericArgs(decl->getGenericFuncDecl().genericParams, expr);
                 if (decls.size() == 1) {
                     validateArgs(expr.args, decl->getGenericFuncDecl().func->params,
                                  callee, expr.func->getSrcLoc());
@@ -439,7 +439,7 @@ Type typecheck(CallExpr& expr) {
     } else if (decl->isInitDecl()) {
         return decl->getInitDecl().getTypeDecl().getType();
     } else if (decl->isGenericFuncDecl()) {
-        setCurrentGenericArgs(decl->getGenericFuncDecl(), expr);
+        setCurrentGenericArgs(decl->getGenericFuncDecl().genericParams, expr);
         typecheck(decl->getGenericFuncDecl());
         Type returnType = resolve(decl->getGenericFuncDecl().func->getFuncType()->returnType);
         currentGenericArgs.clear();
