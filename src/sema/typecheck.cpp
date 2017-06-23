@@ -58,7 +58,7 @@ bool inInitializer = false;
 int breakableBlocks = 0;
 
 void typecheck(Stmt& stmt);
-void typecheck(GenericFuncDecl& decl);
+void typecheck(FuncDecl& decl);
 Type typecheck(CallExpr& expr);
 void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths, ParserFunction& parse);
 
@@ -70,7 +70,6 @@ Type typecheck(VariableExpr& expr) {
         case DeclKind::ParamDecl: return decl.getParamDecl().type;
         case DeclKind::FuncDecl: return decl.getFuncDecl().getFuncType();
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot refer to generic parameters yet");
-        case DeclKind::GenericFuncDecl: llvm_unreachable("cannot refer to generic functions yet");
         case DeclKind::InitDecl: llvm_unreachable("cannot refer to initializers yet");
         case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.srcLoc, "'", expr.identifier, "' is not a variable");
@@ -288,6 +287,8 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
                   const std::string& funcName, SrcLoc srcLoc);
 
 void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call) {
+    if (genericParams.empty()) return;
+
     if (call.genericArgs.empty()) {
         call.genericArgs.reserve(genericParams.size());
         // FIXME: The args will also be typechecked by validateArgs()
@@ -347,6 +348,8 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
             case DeclKind::FuncDecl:
+                setCurrentGenericArgs(decl->getFuncDecl().getGenericParams(), expr);
+
                 if (decls.size() == 1) {
                     validateArgs(expr.args, decl->getFuncDecl().params,
                                  callee, expr.func->getSrcLoc());
@@ -355,22 +358,14 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
                 if (matchArgs(expr.args, decl->getFuncDecl().params)) {
                     matches.push_back(decl);
                 }
-                break;
-            case DeclKind::GenericFuncDecl:
-                setCurrentGenericArgs(decl->getGenericFuncDecl().genericParams, expr);
-                if (decls.size() == 1) {
-                    validateArgs(expr.args, decl->getGenericFuncDecl().func->params,
-                                 callee, expr.func->getSrcLoc());
-                    return *decl;
-                }
-                if (matchArgs(expr.args, decl->getGenericFuncDecl().func->params)) {
-                    matches.push_back(decl);
-                }
+
                 currentGenericArgs.clear();
                 break;
+
             case DeclKind::TypeDecl: {
                 isInitCall = true;
-                auto initDecls = currentModule->getSymbolTable().find(mangleInitDecl(decl->getTypeDecl().name));
+                auto mangledName = mangleInitDecl(decl->getTypeDecl().name);
+                auto initDecls = currentModule->getSymbolTable().find(mangledName);
 
                 for (Decl* initDecl : initDecls) {
                     if (initDecls.size() == 1) {
@@ -434,19 +429,21 @@ Type typecheck(CallExpr& expr) {
 
     expr.setCalleeDecl(decl);
 
-    if (decl->isFuncDecl()) {
-        return decl->getFuncDecl().getFuncType()->returnType;
+    if (auto* funcDecl = llvm::dyn_cast<FuncDecl>(decl)) {
+        if (funcDecl->getGenericParams().empty()) {
+            return funcDecl->getFuncType()->returnType;
+        } else {
+            setCurrentGenericArgs(funcDecl->genericParams, expr);
+            // TODO: Don't typecheck more than once with the same generic arguments.
+            typecheck(*funcDecl);
+            Type returnType = resolve(funcDecl->getFuncType()->returnType);
+            currentGenericArgs.clear();
+            return returnType;
+        }
     } else if (decl->isInitDecl()) {
         return decl->getInitDecl().getTypeDecl().getType();
-    } else if (decl->isGenericFuncDecl()) {
-        setCurrentGenericArgs(decl->getGenericFuncDecl().genericParams, expr);
-        typecheck(decl->getGenericFuncDecl());
-        Type returnType = resolve(decl->getGenericFuncDecl().func->getFuncType()->returnType);
-        currentGenericArgs.clear();
-        return returnType;
-    } else {
-        llvm_unreachable("all cases handled");
     }
+    llvm_unreachable("all cases handled");
 }
 
 bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params) {
@@ -790,13 +787,6 @@ void delta::addToSymbolTable(FuncDecl& decl) {
     currentModule->getSymbolTable().add(mangle(decl), &decl);
 }
 
-void delta::addToSymbolTable(GenericFuncDecl& decl) {
-    if (currentModule->getSymbolTable().contains(decl.func->name)) {
-        error(decl.func->srcLoc, "redefinition of '", decl.func->name, "'");
-    }
-    currentModule->getSymbolTable().add(decl.func->name, &decl);
-}
-
 void delta::addToSymbolTable(InitDecl& decl) {
     if (currentModule->getSymbolTable().findWithMatchingParams(decl)) {
         error(decl.srcLoc, "redefinition of '", decl.getTypeName(), "' initializer");
@@ -935,9 +925,22 @@ bool returns(const Stmt& stmt) {
 
 void typecheckMemberFunc(FuncDecl& decl);
 
+void typecheck(llvm::ArrayRef<GenericParamDecl> genericParams) {
+    for (auto& genericParam : genericParams) {
+        if (currentModule->getSymbolTable().contains(genericParam.name)) {
+            error(genericParam.srcLoc, "redefinition of '", genericParam.name, "'");
+        }
+    }
+}
+
 void typecheck(FuncDecl& decl) {
     if (!decl.receiverType.empty()) return typecheckMemberFunc(decl);
     if (decl.isExtern()) return;
+
+    if (decl.isGeneric() && currentGenericArgs.empty()) {
+        typecheck(decl.genericParams);
+        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
+    }
 
     currentModule->getSymbolTable().pushScope();
 
@@ -976,21 +979,6 @@ void typecheckMemberFunc(FuncDecl& decl) {
     currentModule->getSymbolTable().popScope();
 }
 
-void typecheck(GenericParamDecl& decl) {
-    if (currentModule->getSymbolTable().contains(decl.name)) {
-        error(decl.srcLoc, "redefinition of '", decl.name, "'");
-    }
-}
-
-void typecheck(GenericFuncDecl& decl) {
-    if (currentGenericArgs.empty()) {
-        for (auto& genericParam : decl.genericParams)
-            typecheck(genericParam);
-        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
-    }
-    typecheck(*decl.func);
-}
-
 void typecheck(InitDecl& decl) {
     currentModule->getSymbolTable().pushScope();
     Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
@@ -1007,8 +995,8 @@ void typecheck(InitDecl& decl) {
 
 void typecheck(DeinitDecl& decl) {
     TypeDecl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc).getTypeDecl();
-    FuncDecl funcDecl(mangle(decl), {}, typeDecl.getType(),
-                      std::string(decl.getTypeName()), currentModule, SrcLoc::invalid());
+    FuncDecl funcDecl(mangle(decl), {}, typeDecl.getType(), decl.getTypeName(),
+                      /* genericParams */ {}, currentModule, SrcLoc::invalid());
     funcDecl.body = decl.body;
     decl.type = &typeDecl;
     typecheckMemberFunc(funcDecl);
@@ -1124,7 +1112,6 @@ void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
         case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
         case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
         case DeclKind::GenericParamDecl: typecheck(decl.getGenericParamDecl()); break;
-        case DeclKind::GenericFuncDecl: typecheck(decl.getGenericFuncDecl()); break;
         case DeclKind::InitDecl:  typecheck(decl.getInitDecl()); break;
         case DeclKind::DeinitDecl:typecheck(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;

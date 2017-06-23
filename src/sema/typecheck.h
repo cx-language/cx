@@ -15,7 +15,6 @@ namespace delta {
 
 class Decl;
 class FuncDecl;
-class GenericFuncDecl;
 class InitDecl;
 class DeinitDecl;
 class TypeDecl;
@@ -33,7 +32,6 @@ void setCurrentModule(Module& module);
 void setCurrentSourceFile(SourceFile& sourceFile);
 void addToSymbolTable(FuncDecl& decl);
 void addToSymbolTable(FuncDecl&& decl);
-void addToSymbolTable(GenericFuncDecl& decl);
 void addToSymbolTable(InitDecl& decl);
 void addToSymbolTable(DeinitDecl& decl);
 void addToSymbolTable(TypeDecl& decl);

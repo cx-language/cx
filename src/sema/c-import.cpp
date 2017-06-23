@@ -97,8 +97,8 @@ FuncDecl toDelta(const clang::FunctionDecl& decl) {
         params.emplace_back(toDelta(param->getType()), param->getNameAsString(),
                             SrcLoc::invalid());
     }
-    return FuncDecl(decl.getNameAsString(), std::move(params),
-                    toDelta(decl.getReturnType()), "", currentModule, SrcLoc::invalid());
+    return FuncDecl(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
+                    "", /* genericParams */ {}, currentModule, SrcLoc::invalid());
 }
 
 llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {

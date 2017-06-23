@@ -162,6 +162,8 @@ public:
     Expr* getReceiver() const;
     Decl* getCalleeDecl() const { return calleeDecl; }
     void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
+    llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
+
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::CallExpr; }
 
 protected:

@@ -734,7 +734,7 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
 /// generic-func-proto ::= 'func' (id '::')? id generic-param-list param-list ('->' type)?
 /// generic-param-list ::= '<' generic-param-decls '>'
 /// generic-param-decls ::= id | id ',' generic-param-decls
-std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericParams = nullptr) {
+std::unique_ptr<FuncDecl> parseFuncProto() {
     assert(currentToken() == FUNC);
     consumeToken();
 
@@ -757,8 +757,9 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
         name = toString(consumeToken().kind);
     }
 
-    if (genericParams) {
-        parseGenericParamList(*genericParams);
+    std::vector<GenericParamDecl> genericParams;
+    if (currentToken() == LT) {
+        parseGenericParamList(genericParams);
     }
 
     auto params = parseParamList();
@@ -775,26 +776,18 @@ std::unique_ptr<FuncDecl> parseFuncProto(std::vector<GenericParamDecl>* genericP
 
     return llvm::make_unique<FuncDecl>(std::move(name), std::move(params),
                                        std::move(returnType), std::move(receiverType),
-                                       currentModule, nameLoc);
+                                       std::move(genericParams), currentModule, nameLoc);
 }
 
 /// func-decl ::= func-proto '{' stmt* '}'
-std::unique_ptr<FuncDecl> parseFuncDecl(std::vector<GenericParamDecl>* genericParams = nullptr,
-                                        bool requireBody = true) {
-    auto decl = parseFuncProto(genericParams);
+std::unique_ptr<FuncDecl> parseFuncDecl(bool requireBody = true) {
+    auto decl = parseFuncProto();
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
         decl->body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
         parse(RBRACE);
     }
     return decl;
-}
-
-/// generic-func-decl ::= generic-func-proto '{' stmt* '}'
-std::unique_ptr<GenericFuncDecl> parseGenericFuncDecl() {
-    std::vector<GenericParamDecl> genericParams;
-    auto func = parseFuncDecl(&genericParams);
-    return llvm::make_unique<GenericFuncDecl>(std::move(func), std::move(genericParams));
 }
 
 /// extern-func-decl ::= 'extern' func-proto ('\n' | ';')
@@ -874,7 +867,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
 
     while (currentToken() != RBRACE) {
         if (tag == TypeTag::Interface && currentToken().is(FUNC, MUTATING)) {
-            memberFuncs.emplace_back(parseFuncDecl(nullptr, /* requireBody: */ false));
+            memberFuncs.emplace_back(parseFuncDecl(/* requireBody */ false));
         } else {
             fields.emplace_back(parseFieldDecl());
         }
@@ -906,17 +899,10 @@ std::unique_ptr<Decl> parseDecl() {
             // fallthrough
         case FUNC: {
             bool isMutating = lookAhead(-1) == MUTATING;
-            if (lookAhead(2) != LT) {
-                auto decl = parseFuncDecl();
-                decl->setMutating(isMutating);
-                addToSymbolTable(*decl);
-                return std::move(decl);
-            } else {
-                auto decl = parseGenericFuncDecl();
-                decl->func->setMutating(isMutating);
-                addToSymbolTable(*decl);
-                return std::move(decl);
-            }
+            auto decl = parseFuncDecl();
+            decl->setMutating(isMutating);
+            addToSymbolTable(*decl);
+            return std::move(decl);
         }
         case EXTERN: {
             auto decl = parseExternFuncDecl();

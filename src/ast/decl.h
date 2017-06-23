@@ -21,7 +21,6 @@ enum class DeclKind {
     ParamDecl,
     FuncDecl,
     GenericParamDecl,
-    GenericFuncDecl,
     InitDecl, /// A struct or class initializer declaration.
     DeinitDecl, /// A struct or class deinitializer declaration.
     TypeDecl,
@@ -41,7 +40,6 @@ public:
     DEFINE_DECL_IS_AND_GET(ParamDecl)
     DEFINE_DECL_IS_AND_GET(FuncDecl)
     DEFINE_DECL_IS_AND_GET(GenericParamDecl)
-    DEFINE_DECL_IS_AND_GET(GenericFuncDecl)
     DEFINE_DECL_IS_AND_GET(InitDecl)
     DEFINE_DECL_IS_AND_GET(DeinitDecl)
     DEFINE_DECL_IS_AND_GET(TypeDecl)
@@ -96,33 +94,26 @@ public:
     Type returnType;
     std::string receiverType; /// Empty if non-member function.
     bool mutating;
+    std::vector<GenericParamDecl> genericParams;
     std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
     SrcLoc srcLoc;
 
     FuncDecl(std::string&& name, std::vector<ParamDecl>&& params, Type returnType,
-             std::string&& receiverType, Module* module, SrcLoc srcLoc)
+             std::string&& receiverType, std::vector<GenericParamDecl>&& genericParams,
+             Module* module, SrcLoc srcLoc)
     : Decl(DeclKind::FuncDecl, module), name(std::move(name)), params(std::move(params)),
       returnType(returnType), receiverType(std::move(receiverType)), mutating(false),
-      srcLoc(srcLoc) { }
+      genericParams(std::move(genericParams)), srcLoc(srcLoc) { }
+
     bool isExtern() const { return body == nullptr; };
+    bool isGeneric() const { return !genericParams.empty(); }
     bool isMemberFunc() const { return !receiverType.empty(); }
     bool isMutating() const { return mutating; }
     void setMutating(bool m) { mutating = m; }
+    llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
     const FuncType* getFuncType() const;
     bool signatureMatches(const FuncDecl& other, bool matchReceiver = true) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FuncDecl; }
-};
-
-class GenericFuncDecl : public Decl {
-public:
-    std::shared_ptr<FuncDecl> func;
-    std::vector<GenericParamDecl> genericParams;
-
-    GenericFuncDecl(std::shared_ptr<FuncDecl>&& func,
-                    std::vector<GenericParamDecl>&& genericParams)
-    : Decl(DeclKind::GenericFuncDecl, func->getModule()), func(std::move(func)),
-      genericParams(std::move(genericParams)) { }
-    static bool classof(const Decl* d) { return d->getKind() == DeclKind::GenericFuncDecl; }
 };
 
 class InitDecl : public Decl {
