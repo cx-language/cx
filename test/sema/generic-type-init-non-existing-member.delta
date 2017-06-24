@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+class A<T> { }
+// CHECK: 5:18: error: no member named 'd' in 'A<int>'
+A::init() { this.d = 3 }
+func main() { var a = A<int>() }

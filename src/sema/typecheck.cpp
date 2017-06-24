@@ -59,6 +59,7 @@ int breakableBlocks = 0;
 
 void typecheckStmt(Stmt& stmt);
 void typecheckFuncDecl(FuncDecl& decl);
+void typecheckInitDecl(InitDecl& decl);
 Type typecheckCallExpr(CallExpr& expr);
 void typecheckDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths, ParserFunction& parse);
 
@@ -442,6 +443,12 @@ Type typecheckCallExpr(CallExpr& expr) {
             return returnType;
         }
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
+        if (initDecl->getTypeDecl().isGeneric()) {
+            setCurrentGenericArgs(initDecl->getTypeDecl().genericParams, expr);
+            // TODO: Don't typecheck more than once with the same generic arguments.
+            typecheckInitDecl(*initDecl);
+            currentGenericArgs.clear();
+        }
         return initDecl->getTypeDecl().getType(expr.genericArgs);
     }
     llvm_unreachable("all cases handled");
