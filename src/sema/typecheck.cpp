@@ -57,12 +57,12 @@ Type funcReturnType = nullptr;
 bool inInitializer = false;
 int breakableBlocks = 0;
 
-void typecheck(Stmt& stmt);
-void typecheck(FuncDecl& decl);
-Type typecheck(CallExpr& expr);
-void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths, ParserFunction& parse);
+void typecheckStmt(Stmt& stmt);
+void typecheckFuncDecl(FuncDecl& decl);
+Type typecheckCallExpr(CallExpr& expr);
+void typecheckDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths, ParserFunction& parse);
 
-Type typecheck(VariableExpr& expr) {
+Type typecheckVarExpr(VariableExpr& expr) {
     Decl& decl = findDecl(expr.identifier, expr.srcLoc);
 
     switch (decl.getKind()) {
@@ -79,11 +79,11 @@ Type typecheck(VariableExpr& expr) {
     abort();
 }
 
-Type typecheck(StrLiteralExpr&) {
+Type typecheckStrLiteralExpr(StrLiteralExpr&) {
     return Type::getString();
 }
 
-Type typecheck(IntLiteralExpr& expr) {
+Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
     if (expr.value >= std::numeric_limits<int32_t>::min()
     &&  expr.value <= std::numeric_limits<int32_t>::max())
         return Type::getInt();
@@ -95,22 +95,22 @@ Type typecheck(IntLiteralExpr& expr) {
         error(expr.srcLoc, "integer literal is too large");
 }
 
-Type typecheck(FloatLiteralExpr&) {
+Type typecheckFloatLiteralExpr(FloatLiteralExpr&) {
     return Type::getFloat64();
 }
 
-Type typecheck(BoolLiteralExpr&) {
+Type typecheckBoolLiteralExpr(BoolLiteralExpr&) {
     return Type::getBool();
 }
 
-Type typecheck(NullLiteralExpr&) {
+Type typecheckNullLiteralExpr(NullLiteralExpr&) {
     return Type::getNull();
 }
 
-Type typecheck(ArrayLiteralExpr& array) {
-    Type firstType = typecheck(*array.elements[0]);
+Type typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
+    Type firstType = typecheckExpr(*array.elements[0]);
     for (auto& element : llvm::drop_begin(array.elements, 1)) {
-        Type type = typecheck(*element);
+        Type type = typecheckExpr(*element);
         if (type != firstType) {
             error(element->getSrcLoc(), "mixed element types in array literal (expected '",
                   firstType, "', found '", type, "')");
@@ -119,8 +119,8 @@ Type typecheck(ArrayLiteralExpr& array) {
     return ArrayType::get(firstType, int64_t(array.elements.size()));
 }
 
-Type typecheck(PrefixExpr& expr) {
-    Type operandType = typecheck(expr.getOperand());
+Type typecheckPrefixExpr(PrefixExpr& expr) {
+    Type operandType = typecheckExpr(expr.getOperand());
 
     if (expr.op == NOT) {
         if (!operandType.isBool()) {
@@ -142,11 +142,11 @@ Type typecheck(PrefixExpr& expr) {
 
 bool isValidConversion(Expr&, Type, Type);
 
-Type typecheck(BinaryExpr& expr) {
-    Type leftType = typecheck(expr.getLHS());
-    Type rightType = typecheck(expr.getRHS());
+Type typecheckBinaryExpr(BinaryExpr& expr) {
+    Type leftType = typecheckExpr(expr.getLHS());
+    Type rightType = typecheckExpr(expr.getRHS());
 
-    if (!expr.isBuiltinOp()) return typecheck((CallExpr&) expr);
+    if (!expr.isBuiltinOp()) return typecheckCallExpr((CallExpr&) expr);
 
     if (expr.op == AND_AND || expr.op == OR_OR) {
         if (leftType.isBool() && rightType.isBool()) {
@@ -293,7 +293,7 @@ void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallE
         call.genericArgs.reserve(genericParams.size());
         // FIXME: The args will also be typechecked by validateArgs()
         // after this function. Get rid of this duplicated typechecking.
-        for (auto& arg : call.args) call.genericArgs.emplace_back(typecheck(*arg.value));
+        for (auto& arg : call.args) call.genericArgs.emplace_back(typecheckExpr(*arg.value));
     }
     else if (call.genericArgs.size() < genericParams.size()) {
         error(call.srcLoc, "too few generic arguments to '", call.getFuncName(),
@@ -334,7 +334,7 @@ Type typecheckBuiltinConversion(CallExpr& expr) {
     if (!expr.args.front().name.empty()) {
         error(expr.srcLoc, "expected unnamed argument to converting initializer");
     }
-    typecheck(*expr.args.front().value);
+    typecheckExpr(*expr.args.front().value);
     expr.setType(BasicType::get(expr.getFuncName(), {}));
     return expr.getType();
 }
@@ -406,7 +406,7 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
     }
 }
 
-Type typecheck(CallExpr& expr) {
+Type typecheckCallExpr(CallExpr& expr) {
     if (!expr.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
 
     if (Type::isBuiltinScalar(expr.getFuncName()))
@@ -415,7 +415,7 @@ Type typecheck(CallExpr& expr) {
     Decl* decl;
 
     if (expr.isMemberFuncCall()) {
-        typecheck(*expr.getReceiver());
+        typecheckExpr(*expr.getReceiver());
         decl = &resolveOverload(expr, expr.getMangledFuncName());
 
         Type receiverType = expr.getReceiver()->getType();
@@ -435,7 +435,7 @@ Type typecheck(CallExpr& expr) {
         } else {
             setCurrentGenericArgs(funcDecl->genericParams, expr);
             // TODO: Don't typecheck more than once with the same generic arguments.
-            typecheck(*funcDecl);
+            typecheckFuncDecl(*funcDecl);
             Type returnType = resolve(funcDecl->getFuncType()->returnType);
             currentGenericArgs.clear();
             return returnType;
@@ -454,7 +454,7 @@ bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params) {
         const ParamDecl& param = params[i];
 
         if (!arg.name.empty() && arg.name != param.name) return false;
-        auto argType = typecheck(*arg.value);
+        auto argType = typecheckExpr(*arg.value);
         if (!isValidConversion(*arg.value, argType, param.type)) return false;
     }
     return true;
@@ -477,7 +477,7 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
             error(arg.srcLoc, "invalid argument name '", arg.name,
                   "' for parameter '", param.name, "'");
         }
-        auto argType = typecheck(*arg.value);
+        auto argType = typecheckExpr(*arg.value);
         if (!isValidConversion(*arg.value, argType, param.type)) {
             error(arg.srcLoc, "invalid argument #", i + 1, " type '", argType,
                   "' to '", funcName, "', expected '", param.type, "'");
@@ -485,8 +485,8 @@ void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& pa
     }
 }
 
-Type typecheck(CastExpr& expr) {
-    Type sourceType = typecheck(*expr.expr);
+Type typecheckCastExpr(CastExpr& expr) {
+    Type sourceType = typecheckExpr(*expr.expr);
     Type targetType = expr.type;
 
     switch (sourceType.getKind()) {
@@ -517,8 +517,8 @@ Type typecheck(CastExpr& expr) {
     error(expr.srcLoc, "illegal cast from '", sourceType, "' to '", targetType, "'");
 }
 
-Type typecheck(MemberExpr& expr) {
-    Type baseType = typecheck(*expr.base);
+Type typecheckMemberExpr(MemberExpr& expr) {
+    Type baseType = typecheckExpr(*expr.base);
 
     if (baseType.isPtrType()) {
         if (!baseType.isRef()) {
@@ -548,8 +548,8 @@ Type typecheck(MemberExpr& expr) {
     error(expr.srcLoc, "no member named '", expr.member, "' in '", baseType, "'");
 }
 
-Type typecheck(SubscriptExpr& expr) {
-    Type lhsType = typecheck(*expr.array);
+Type typecheckSubscriptExpr(SubscriptExpr& expr) {
+    Type lhsType = typecheckExpr(*expr.array);
     const ArrayType* arrayType;
 
     if (lhsType.isArrayType()) {
@@ -560,7 +560,7 @@ Type typecheck(SubscriptExpr& expr) {
         error(expr.array->getSrcLoc(), "cannot subscript '", lhsType, "', expected array or reference-to-array");
     }
 
-    Type indexType = typecheck(*expr.index);
+    Type indexType = typecheckExpr(*expr.index);
     if (!isValidConversion(*expr.index, indexType, Type::getInt())) {
         error(expr.index->getSrcLoc(), "illegal subscript index type '", indexType, "', expected 'int'");
     }
@@ -574,8 +574,8 @@ Type typecheck(SubscriptExpr& expr) {
     return arrayType->elementType;
 }
 
-Type typecheck(UnwrapExpr& expr) {
-    Type type = typecheck(*expr.operand);
+Type typecheckUnwrapExpr(UnwrapExpr& expr) {
+    Type type = typecheckExpr(*expr.operand);
     if (!type.isNullablePointer())
         error(expr.srcLoc, "cannot unwrap non-pointer type '", type, "'");
     return PtrType::get(type.getPointee(), true);
@@ -583,23 +583,23 @@ Type typecheck(UnwrapExpr& expr) {
 
 } // anonymous namespace
 
-Type delta::typecheck(Expr& expr) {
+Type delta::typecheckExpr(Expr& expr) {
     llvm::Optional<Type> type;
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr:    type = ::typecheck(expr.getVariableExpr()); break;
-        case ExprKind::StrLiteralExpr:  type = ::typecheck(expr.getStrLiteralExpr()); break;
-        case ExprKind::IntLiteralExpr:  type = ::typecheck(expr.getIntLiteralExpr()); break;
-        case ExprKind::FloatLiteralExpr:type = ::typecheck(expr.getFloatLiteralExpr()); break;
-        case ExprKind::BoolLiteralExpr: type = ::typecheck(expr.getBoolLiteralExpr()); break;
-        case ExprKind::NullLiteralExpr: type = ::typecheck(expr.getNullLiteralExpr()); break;
-        case ExprKind::ArrayLiteralExpr:type = ::typecheck(expr.getArrayLiteralExpr()); break;
-        case ExprKind::PrefixExpr:      type = ::typecheck(expr.getPrefixExpr()); break;
-        case ExprKind::BinaryExpr:      type = ::typecheck(expr.getBinaryExpr()); break;
-        case ExprKind::CallExpr:        type = ::typecheck(expr.getCallExpr()); break;
-        case ExprKind::CastExpr:        type = ::typecheck(expr.getCastExpr()); break;
-        case ExprKind::MemberExpr:      type = ::typecheck(expr.getMemberExpr()); break;
-        case ExprKind::SubscriptExpr:   type = ::typecheck(expr.getSubscriptExpr()); break;
-        case ExprKind::UnwrapExpr:      type = ::typecheck(expr.getUnwrapExpr()); break;
+        case ExprKind::VariableExpr: type = typecheckVarExpr(expr.getVariableExpr()); break;
+        case ExprKind::StrLiteralExpr: type = typecheckStrLiteralExpr(expr.getStrLiteralExpr()); break;
+        case ExprKind::IntLiteralExpr: type = typecheckIntLiteralExpr(expr.getIntLiteralExpr()); break;
+        case ExprKind::FloatLiteralExpr: type = typecheckFloatLiteralExpr(expr.getFloatLiteralExpr()); break;
+        case ExprKind::BoolLiteralExpr: type = typecheckBoolLiteralExpr(expr.getBoolLiteralExpr()); break;
+        case ExprKind::NullLiteralExpr: type = typecheckNullLiteralExpr(expr.getNullLiteralExpr()); break;
+        case ExprKind::ArrayLiteralExpr: type = typecheckArrayLiteralExpr(expr.getArrayLiteralExpr()); break;
+        case ExprKind::PrefixExpr: type = typecheckPrefixExpr(expr.getPrefixExpr()); break;
+        case ExprKind::BinaryExpr: type = typecheckBinaryExpr(expr.getBinaryExpr()); break;
+        case ExprKind::CallExpr: type = typecheckCallExpr(expr.getCallExpr()); break;
+        case ExprKind::CastExpr: type = typecheckCastExpr(expr.getCastExpr()); break;
+        case ExprKind::MemberExpr: type = typecheckMemberExpr(expr.getMemberExpr()); break;
+        case ExprKind::SubscriptExpr: type = typecheckSubscriptExpr(expr.getSubscriptExpr()); break;
+        case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(expr.getUnwrapExpr()); break;
     }
     assert(*type);
     expr.setType(resolve(*type));
@@ -624,7 +624,7 @@ bool isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source, T
     return true;
 }
 
-void typecheck(ReturnStmt& stmt) {
+void typecheckReturnStmt(ReturnStmt& stmt) {
     if (stmt.values.empty()) {
         if (!funcReturnType.isVoid()) {
             error(stmt.srcLoc, "expected return statement to return a value of type '", funcReturnType, "'");
@@ -633,7 +633,7 @@ void typecheck(ReturnStmt& stmt) {
     }
     std::vector<Type> returnValueTypes;
     for (auto& expr : stmt.values) {
-        returnValueTypes.push_back(typecheck(*expr));
+        returnValueTypes.push_back(typecheckExpr(*expr));
     }
     Type returnType = returnValueTypes.size() > 1
         ? TupleType::get(std::move(returnValueTypes)) : returnValueTypes[0];
@@ -642,68 +642,68 @@ void typecheck(ReturnStmt& stmt) {
     }
 }
 
-void typecheck(VarDecl& decl, bool isGlobal);
+void typecheckVarDecl(VarDecl& decl, bool isGlobal);
 
-void typecheck(VariableStmt& stmt) {
-    typecheck(*stmt.decl, false);
+void typecheckVarStmt(VariableStmt& stmt) {
+    typecheckVarDecl(*stmt.decl, false);
 }
 
-void typecheck(IncrementStmt& stmt) {
-    auto type = typecheck(*stmt.operand);
+void typecheckIncrementStmt(IncrementStmt& stmt) {
+    auto type = typecheckExpr(*stmt.operand);
     if (!type.isMutable()) {
         error(stmt.srcLoc, "cannot increment immutable value");
     }
     // TODO: check that operand supports increment operation.
 }
 
-void typecheck(DecrementStmt& stmt) {
-    auto type = typecheck(*stmt.operand);
+void typecheckDecrementStmt(DecrementStmt& stmt) {
+    auto type = typecheckExpr(*stmt.operand);
     if (!type.isMutable()) {
         error(stmt.srcLoc, "cannot decrement immutable value");
     }
     // TODO: check that operand supports decrement operation.
 }
 
-void typecheck(IfStmt& ifStmt) {
-    Type conditionType = typecheck(*ifStmt.condition);
+void typecheckIfStmt(IfStmt& ifStmt) {
+    Type conditionType = typecheckExpr(*ifStmt.condition);
     if (!conditionType.isBool()) {
         error(ifStmt.condition->getSrcLoc(), "'if' condition must have type 'bool'");
     }
-    for (auto& stmt : ifStmt.thenBody) typecheck(*stmt);
-    for (auto& stmt : ifStmt.elseBody) typecheck(*stmt);
+    for (auto& stmt : ifStmt.thenBody) typecheckStmt(*stmt);
+    for (auto& stmt : ifStmt.elseBody) typecheckStmt(*stmt);
 }
 
-void typecheck(SwitchStmt& stmt) {
-    Type conditionType = typecheck(*stmt.condition);
+void typecheckSwitchStmt(SwitchStmt& stmt) {
+    Type conditionType = typecheckExpr(*stmt.condition);
     breakableBlocks++;
     for (SwitchCase& switchCase : stmt.cases) {
-        Type caseType = typecheck(*switchCase.value);
+        Type caseType = typecheckExpr(*switchCase.value);
         if (!caseType.isImplicitlyConvertibleTo(conditionType)) {
             error(switchCase.value->getSrcLoc(), "case value type '", caseType,
                   "' doesn't match switch condition type '", conditionType, "'");
         }
-        for (auto& caseStmt : switchCase.stmts) typecheck(*caseStmt);
+        for (auto& caseStmt : switchCase.stmts) typecheckStmt(*caseStmt);
     }
-    for (auto& defaultStmt : stmt.defaultStmts) typecheck(*defaultStmt);
+    for (auto& defaultStmt : stmt.defaultStmts) typecheckStmt(*defaultStmt);
     breakableBlocks--;
 }
 
-void typecheck(WhileStmt& whileStmt) {
-    Type conditionType = typecheck(*whileStmt.condition);
+void typecheckWhileStmt(WhileStmt& whileStmt) {
+    Type conditionType = typecheckExpr(*whileStmt.condition);
     if (!conditionType.isBool()) {
         error(whileStmt.condition->getSrcLoc(), "'while' condition must have type 'bool'");
     }
     breakableBlocks++;
-    for (auto& stmt : whileStmt.body) typecheck(*stmt);
+    for (auto& stmt : whileStmt.body) typecheckStmt(*stmt);
     breakableBlocks--;
 }
 
-void typecheck(ForStmt& forStmt) {
+void typecheckForStmt(ForStmt& forStmt) {
     if (currentModule->getSymbolTable().contains(forStmt.id)) {
         error(forStmt.srcLoc, "redefinition of '", forStmt.id, "'");
     }
 
-    Type rangeType = typecheck(*forStmt.range);
+    Type rangeType = typecheckExpr(*forStmt.range);
     if (!rangeType.isIterable()) {
         error(forStmt.range->getSrcLoc(), "'for' range expression is not an 'Iterable'");
     }
@@ -712,21 +712,21 @@ void typecheck(ForStmt& forStmt) {
     addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.id),
                              nullptr, currentModule, forStmt.srcLoc));
     breakableBlocks++;
-    for (auto& stmt : forStmt.body) typecheck(*stmt);
+    for (auto& stmt : forStmt.body) typecheckStmt(*stmt);
     breakableBlocks--;
     currentModule->getSymbolTable().popScope();
 }
 
-void typecheck(BreakStmt& breakStmt) {
+void typecheckBreakStmt(BreakStmt& breakStmt) {
     if (breakableBlocks == 0) {
         error(breakStmt.srcLoc, "'break' is only allowed inside 'while' and 'switch' statements");
     }
 }
 
 void typecheckAssignment(Expr& lhs, Expr& rhs, SrcLoc srcLoc) {
-    Type lhsType = typecheck(lhs);
+    Type lhsType = typecheckExpr(lhs);
     if (lhsType.isFuncType()) error(srcLoc, "cannot assign to function");
-    Type rhsType = typecheck(rhs);
+    Type rhsType = typecheckExpr(rhs);
     if (!isValidConversion(rhs, rhsType, lhsType)) {
         error(rhs.getSrcLoc(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
@@ -740,11 +740,11 @@ void typecheckAssignment(Expr& lhs, Expr& rhs, SrcLoc srcLoc) {
     }
 }
 
-void typecheck(AssignStmt& stmt) {
+void typecheckAssignStmt(AssignStmt& stmt) {
     typecheckAssignment(*stmt.lhs, *stmt.rhs, stmt.srcLoc);
 }
 
-void typecheck(AugAssignStmt& stmt) {
+void typecheckAugAssignStmt(AugAssignStmt& stmt) {
     // FIXME: Don't create temporary BinaryExpr.
     BinaryExpr expr(stmt.op, std::unique_ptr<Expr>(stmt.lhs.get()),
                     std::unique_ptr<Expr>(stmt.rhs.get()), stmt.srcLoc);
@@ -753,25 +753,25 @@ void typecheck(AugAssignStmt& stmt) {
     expr.args[1].value.release();
 }
 
-void typecheck(Stmt& stmt) {
+void typecheckStmt(Stmt& stmt) {
     switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt:    typecheck(stmt.getReturnStmt()); break;
-        case StmtKind::VariableStmt:  typecheck(stmt.getVariableStmt()); break;
-        case StmtKind::IncrementStmt: typecheck(stmt.getIncrementStmt()); break;
-        case StmtKind::DecrementStmt: typecheck(stmt.getDecrementStmt()); break;
-        case StmtKind::ExprStmt:      delta::typecheck(*stmt.getExprStmt().expr); break;
-        case StmtKind::DeferStmt:     delta::typecheck(*stmt.getDeferStmt().expr); break;
-        case StmtKind::IfStmt:        typecheck(stmt.getIfStmt()); break;
-        case StmtKind::SwitchStmt:    typecheck(stmt.getSwitchStmt()); break;
-        case StmtKind::WhileStmt:     typecheck(stmt.getWhileStmt()); break;
-        case StmtKind::ForStmt:       typecheck(stmt.getForStmt()); break;
-        case StmtKind::BreakStmt:     typecheck(stmt.getBreakStmt()); break;
-        case StmtKind::AssignStmt:    typecheck(stmt.getAssignStmt()); break;
-        case StmtKind::AugAssignStmt: typecheck(stmt.getAugAssignStmt()); break;
+        case StmtKind::ReturnStmt: typecheckReturnStmt(stmt.getReturnStmt()); break;
+        case StmtKind::VariableStmt: typecheckVarStmt(stmt.getVariableStmt()); break;
+        case StmtKind::IncrementStmt: typecheckIncrementStmt(stmt.getIncrementStmt()); break;
+        case StmtKind::DecrementStmt: typecheckDecrementStmt(stmt.getDecrementStmt()); break;
+        case StmtKind::ExprStmt: typecheckExpr(*stmt.getExprStmt().expr); break;
+        case StmtKind::DeferStmt: typecheckExpr(*stmt.getDeferStmt().expr); break;
+        case StmtKind::IfStmt: typecheckIfStmt(stmt.getIfStmt()); break;
+        case StmtKind::SwitchStmt: typecheckSwitchStmt(stmt.getSwitchStmt()); break;
+        case StmtKind::WhileStmt: typecheckWhileStmt(stmt.getWhileStmt()); break;
+        case StmtKind::ForStmt: typecheckForStmt(stmt.getForStmt()); break;
+        case StmtKind::BreakStmt: typecheckBreakStmt(stmt.getBreakStmt()); break;
+        case StmtKind::AssignStmt: typecheckAssignStmt(stmt.getAssignStmt()); break;
+        case StmtKind::AugAssignStmt: typecheckAugAssignStmt(stmt.getAugAssignStmt()); break;
     }
 }
 
-void typecheck(ParamDecl& decl) {
+void typecheckParamDecl(ParamDecl& decl) {
     if (currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
@@ -927,7 +927,7 @@ bool returns(const Stmt& stmt) {
 
 void typecheckMemberFunc(FuncDecl& decl);
 
-void typecheck(llvm::ArrayRef<GenericParamDecl> genericParams) {
+void typecheckGenericParamDecl(llvm::ArrayRef<GenericParamDecl> genericParams) {
     for (auto& genericParam : genericParams) {
         if (currentModule->getSymbolTable().contains(genericParam.name)) {
             error(genericParam.srcLoc, "redefinition of '", genericParam.name, "'");
@@ -935,12 +935,12 @@ void typecheck(llvm::ArrayRef<GenericParamDecl> genericParams) {
     }
 }
 
-void typecheck(FuncDecl& decl) {
+void typecheckFuncDecl(FuncDecl& decl) {
     if (!decl.getReceiverTypeName().empty()) return typecheckMemberFunc(decl);
     if (decl.isExtern()) return;
 
     if (decl.isGeneric() && currentGenericArgs.empty()) {
-        typecheck(decl.genericParams);
+        typecheckGenericParamDecl(decl.genericParams);
         return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 
@@ -948,13 +948,13 @@ void typecheck(FuncDecl& decl) {
 
     for (ParamDecl& param : decl.params) {
         if (param.type.isMutable()) error(param.srcLoc, "parameter types cannot be 'mutable'");
-        typecheck(param);
+        typecheckParamDecl(param);
     }
     if (decl.returnType.isMutable()) error(decl.srcLoc, "return types cannot be 'mutable'");
 
     auto funcReturnTypeBackup = funcReturnType;
     funcReturnType = decl.returnType;
-    for (auto& stmt : *decl.body) typecheck(*stmt);
+    for (auto& stmt : *decl.body) typecheckStmt(*stmt);
     funcReturnType = funcReturnTypeBackup;
 
     currentModule->getSymbolTable().popScope();
@@ -986,17 +986,17 @@ void typecheckMemberFunc(FuncDecl& decl) {
     Type thisType = receiverType.getTypeDecl().getTypeForPassing(getGenericArgsAsArray(),
                                                                  decl.isMutating());
     addToSymbolTable(VarDecl(thisType, "this", nullptr, currentModule, SrcLoc::invalid()));
-    for (ParamDecl& param : decl.params) typecheck(param);
+    for (ParamDecl& param : decl.params) typecheckParamDecl(param);
 
     auto funcReturnTypeBackup = funcReturnType;
     funcReturnType = decl.returnType;
-    for (auto& stmt : *decl.body) typecheck(*stmt);
+    for (auto& stmt : *decl.body) typecheckStmt(*stmt);
     funcReturnType = funcReturnTypeBackup;
 
     currentModule->getSymbolTable().popScope();
 }
 
-void typecheck(InitDecl& decl) {
+void typecheckInitDecl(InitDecl& decl) {
     currentModule->getSymbolTable().pushScope();
     Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
@@ -1008,14 +1008,14 @@ void typecheck(InitDecl& decl) {
     decl.type = &typeDecl.getTypeDecl();
     addToSymbolTable(VarDecl(typeDecl.getTypeDecl().getType(getGenericArgsAsArray(), true),
                              "this", nullptr, currentModule, SrcLoc::invalid()));
-    for (ParamDecl& param : decl.params) typecheck(param);
+    for (ParamDecl& param : decl.params) typecheckParamDecl(param);
     inInitializer = true;
-    for (auto& stmt : *decl.body) typecheck(*stmt);
+    for (auto& stmt : *decl.body) typecheckStmt(*stmt);
     inInitializer = false;
     currentModule->getSymbolTable().popScope();
 }
 
-void typecheck(DeinitDecl& decl) {
+void typecheckDeinitDecl(DeinitDecl& decl) {
     TypeDecl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc).getTypeDecl();
 
     if (typeDecl.isGeneric() && currentGenericArgs.empty()) {
@@ -1030,7 +1030,7 @@ void typecheck(DeinitDecl& decl) {
     typecheckMemberFunc(funcDecl);
 }
 
-void typecheck(TypeDecl&) {
+void typecheckTypeDecl(TypeDecl&) {
     // TODO
 }
 
@@ -1041,13 +1041,13 @@ TypeDecl* getTypeDecl(const BasicType& type) {
     return &decls[0]->getTypeDecl();
 }
 
-void typecheck(VarDecl& decl, bool isGlobal) {
+void typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     if (!isGlobal && currentModule->getSymbolTable().contains(decl.name)) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     Type initType = nullptr;
     if (decl.initializer) {
-        initType = typecheck(*decl.initializer);
+        initType = typecheckExpr(*decl.initializer);
         if (initType.isFuncType()) {
             error(decl.initializer->getSrcLoc(), "function pointers not implemented yet");
         }
@@ -1072,7 +1072,7 @@ void typecheck(VarDecl& decl, bool isGlobal) {
     if (!isGlobal) addToSymbolTable(decl);
 }
 
-void typecheck(FieldDecl&) {
+void typecheckFieldDecl(FieldDecl&) {
 }
 
 llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
@@ -1119,13 +1119,13 @@ done:
 
     if (importer) importer->addImportedModule(module);
     allImportedModules[module->getName()] = module;
-    typecheck(*module, importSearchPaths, parse);
+    typecheckModule(*module, importSearchPaths, parse);
     currentModule = previousModule;
     return *module;
 }
 
-void typecheck(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
-               ParserFunction& parse) {
+void typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                         ParserFunction& parse) {
     if (importDeltaModule(currentSourceFile, importSearchPaths, parse, decl.target)) return;
 
     if (!importCHeader(*currentSourceFile, decl.target, importSearchPaths)) {
@@ -1134,25 +1134,25 @@ void typecheck(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPat
     }
 }
 
-void typecheck(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
-               ParserFunction& parse) {
+void typecheckDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                   ParserFunction& parse) {
     switch (decl.getKind()) {
-        case DeclKind::ParamDecl: typecheck(decl.getParamDecl()); break;
-        case DeclKind::FuncDecl:  typecheck(decl.getFuncDecl()); break;
-        case DeclKind::GenericParamDecl: typecheck(decl.getGenericParamDecl()); break;
-        case DeclKind::InitDecl:  typecheck(decl.getInitDecl()); break;
-        case DeclKind::DeinitDecl:typecheck(decl.getDeinitDecl()); break;
-        case DeclKind::TypeDecl:  typecheck(decl.getTypeDecl()); break;
-        case DeclKind::VarDecl:   typecheck(decl.getVarDecl(), true); break;
-        case DeclKind::FieldDecl: typecheck(decl.getFieldDecl()); break;
-        case DeclKind::ImportDecl:typecheck(decl.getImportDecl(), importSearchPaths, parse); break;
+        case DeclKind::ParamDecl: typecheckParamDecl(decl.getParamDecl()); break;
+        case DeclKind::FuncDecl: typecheckFuncDecl(decl.getFuncDecl()); break;
+        case DeclKind::GenericParamDecl: typecheckGenericParamDecl(decl.getGenericParamDecl()); break;
+        case DeclKind::InitDecl: typecheckInitDecl(decl.getInitDecl()); break;
+        case DeclKind::DeinitDecl: typecheckDeinitDecl(decl.getDeinitDecl()); break;
+        case DeclKind::TypeDecl: typecheckTypeDecl(decl.getTypeDecl()); break;
+        case DeclKind::VarDecl: typecheckVarDecl(decl.getVarDecl(), true); break;
+        case DeclKind::FieldDecl: typecheckFieldDecl(decl.getFieldDecl()); break;
+        case DeclKind::ImportDecl: typecheckImportDecl(decl.getImportDecl(), importSearchPaths, parse); break;
     }
 }
 
 } // anonymous namespace
 
-void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
-                      ParserFunction& parse) {
+void delta::typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                            ParserFunction& parse) {
     if (!importDeltaModule(nullptr, importSearchPaths, parse, "stdlib", "std")) {
         printErrorAndExit("couldn't import the standard library");
     }
@@ -1167,7 +1167,7 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> importSear
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (decl->isVarDecl()) {
-                ::typecheck(decl->getVarDecl(), true);
+                typecheckVarDecl(decl->getVarDecl(), true);
             }
         }
     }
@@ -1177,7 +1177,7 @@ void delta::typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> importSear
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
-                ::typecheck(*decl, importSearchPaths, parse);
+                typecheckDecl(*decl, importSearchPaths, parse);
             }
         }
     }

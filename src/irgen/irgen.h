@@ -10,7 +10,7 @@ struct Type;
 
 namespace irgen {
     llvm::Module& compile(const Module& module);
-    llvm::Value* codegen(const Expr& expr);
+    llvm::Value* codegenExpr(const Expr& expr);
     llvm::Type* toIR(Type type);
     llvm::Module& getIRModule();
     llvm::IRBuilder<>& getBuilder();

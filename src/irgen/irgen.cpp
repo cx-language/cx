@@ -21,12 +21,12 @@ using namespace delta;
 
 namespace {
 
-using irgen::codegen;
+using irgen::codegenExpr;
 using irgen::toIR;
 
-llvm::Value* codegen(const CallExpr& expr);
-llvm::Value* codegenLvalue(const Expr& expr);
-void codegen(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
+llvm::Value* codegenCallExpr(const CallExpr& expr);
+llvm::Value* codegenLvalueExpr(const Expr& expr);
+void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
 llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
 void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
@@ -38,7 +38,7 @@ struct Scope {
     std::unordered_map<std::string, llvm::Value*> localValues;
 
     void onScopeEnd() {
-        for (const Expr* expr : llvm::reverse(deferredExprs)) codegen(*expr);
+        for (const Expr* expr : llvm::reverse(deferredExprs)) codegenExpr(*expr);
         for (auto& p : llvm::reverse(deinitsToCall)) createDeinitCall(p.first, p.second);
     }
 
@@ -63,7 +63,7 @@ llvm::Module module("", ctx);
 template<typename T>
 std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
                              llvm::ArrayRef<Type> funcGenericArgs = {}) {
-    std::string result = ::mangle(decl, typeGenericArgs, funcGenericArgs);
+    std::string result = mangle(decl, typeGenericArgs, funcGenericArgs);
     for (const ParamDecl& param : decl.params) result.append("$").append(param.name);
     return result;
 }
@@ -103,7 +103,7 @@ void setLocalValue(Type type, std::string name, llvm::Value* value) {
     }
 }
 
-void codegen(const Decl& decl);
+void codegenDecl(const Decl& decl);
 
 llvm::Value* findValue(llvm::StringRef name) {
     llvm::Value* value = nullptr;
@@ -117,13 +117,13 @@ llvm::Value* findValue(llvm::StringRef name) {
 
     if (value == nullptr) {
         // FIXME: It would probably be better to not access the symbol table here.
-        codegen(findDecl(name, SrcLoc::invalid(), /*everywhere*/ true));
+        codegenDecl(findDecl(name, SrcLoc::invalid(), /*everywhere*/ true));
         return globalScope().localValues.find(name)->second;
     }
     return value;
 }
 
-void codegen(const TypeDecl& decl);
+void codegenTypeDecl(const TypeDecl& decl);
 
 const std::unordered_map<std::string, llvm::Type*> builtinTypes = {
     { "void", llvm::Type::getVoidTy(ctx) },
@@ -171,7 +171,7 @@ llvm::Type* irgen::toIR(Type type) {
                 }
 
                 // Custom type that has not been declared yet, search for it in the symbol table.
-                ::codegen(findDecl(name, SrcLoc::invalid(), /*everywhere*/ true).getTypeDecl());
+                codegenTypeDecl(findDecl(name, SrcLoc::invalid(), /*everywhere*/ true).getTypeDecl());
                 it = structs.find(name);
             }
             return it->second.first;
@@ -199,18 +199,18 @@ llvm::Type* irgen::toIR(Type type) {
 
 namespace {
 
-llvm::Value* codegen(const VariableExpr& expr) {
+llvm::Value* codegenVarExpr(const VariableExpr& expr) {
     auto* value = findValue(expr.identifier);
     if (auto* arg = llvm::dyn_cast<llvm::Argument>(value)) return arg;
     if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) return constant;
     return builder.CreateLoad(value, expr.identifier);
 }
 
-llvm::Value* codegenLvalue(const VariableExpr& expr) {
+llvm::Value* codegenLvalueVarExpr(const VariableExpr& expr) {
     return findValue(expr.identifier);
 }
 
-llvm::Value* codegen(const StrLiteralExpr& expr) {
+llvm::Value* codegenStrLiteralExpr(const StrLiteralExpr& expr) {
     if (expr.getType().isString()) {
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.value);
         auto* string = builder.CreateInsertValue(llvm::UndefValue::get(toIR(Type::getString())),
@@ -223,7 +223,7 @@ llvm::Value* codegen(const StrLiteralExpr& expr) {
     }
 }
 
-llvm::Value* codegen(const IntLiteralExpr& expr) {
+llvm::Value* codegenIntLiteralExpr(const IntLiteralExpr& expr) {
     // Integer literals may be typed as floating-point when used in a context
     // that requires a floating-point value. It might make sense to combine
     // IntLiteralExpr and FloatLiteralExpr into a single class.
@@ -233,15 +233,15 @@ llvm::Value* codegen(const IntLiteralExpr& expr) {
     return llvm::ConstantInt::getSigned(toIR(expr.getType()), expr.value);
 }
 
-llvm::Value* codegen(const FloatLiteralExpr& expr) {
+llvm::Value* codegenFloatLiteralExpr(const FloatLiteralExpr& expr) {
     return llvm::ConstantFP::get(toIR(expr.getType()), expr.value);
 }
 
-llvm::Value* codegen(const BoolLiteralExpr& expr) {
+llvm::Value* codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
     return expr.value ? llvm::ConstantInt::getTrue(ctx) : llvm::ConstantInt::getFalse(ctx);
 }
 
-llvm::Value* codegen(const NullLiteralExpr& expr) {
+llvm::Value* codegenNullLiteralExpr(const NullLiteralExpr& expr) {
     if (expr.getType().getPointee().isUnsizedArrayType()) {
         return llvm::ConstantStruct::getAnon({
             llvm::ConstantPointerNull::get(toIR(expr.getType().getPointee().getElementType())->getPointerTo()),
@@ -251,12 +251,12 @@ llvm::Value* codegen(const NullLiteralExpr& expr) {
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
 }
 
-llvm::Value* codegen(const ArrayLiteralExpr& expr) {
+llvm::Value* codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) {
     auto* arrayType = llvm::ArrayType::get(toIR(expr.elements[0]->getType()), expr.elements.size());
     std::vector<llvm::Constant*> values;
     values.reserve(expr.elements.size());
     for (auto& e : expr.elements)
-        values.emplace_back(llvm::cast<llvm::Constant>(codegen(*e)));
+        values.emplace_back(llvm::cast<llvm::Constant>(codegenExpr(*e)));
     return llvm::ConstantArray::get(arrayType, values);
 }
 
@@ -266,30 +266,30 @@ using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Va
 using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
 
 llvm::Value* codegenNot(const PrefixExpr& expr) {
-    return builder.CreateNot(codegen(expr.getOperand()), "");
+    return builder.CreateNot(codegenExpr(expr.getOperand()), "");
 }
 
-llvm::Value* codegen(const PrefixExpr& expr) {
+llvm::Value* codegenPrefixExpr(const PrefixExpr& expr) {
     switch (expr.op) {
-        case PLUS:  return codegen(expr.getOperand());
+        case PLUS: return codegenExpr(expr.getOperand());
         case MINUS:
             if (expr.getOperand().getType().isFloatingPoint()) {
-                return builder.CreateFNeg(codegen(expr.getOperand()));
+                return builder.CreateFNeg(codegenExpr(expr.getOperand()));
             } else {
-                return builder.CreateNeg(codegen(expr.getOperand()));
+                return builder.CreateNeg(codegenExpr(expr.getOperand()));
             }
-        case STAR:  return builder.CreateLoad(codegen(expr.getOperand()));
-        case AND:   return codegenLvalue(expr.getOperand());
-        case NOT:   return codegenNot(expr);
+        case STAR: return builder.CreateLoad(codegenExpr(expr.getOperand()));
+        case AND: return codegenLvalueExpr(expr.getOperand());
+        case NOT: return codegenNot(expr);
         case COMPL: return codegenNot(expr);
-        default:    llvm_unreachable("invalid prefix operator");
+        default: llvm_unreachable("invalid prefix operator");
     }
 }
 
-llvm::Value* codegenLvalue(const PrefixExpr& expr) {
+llvm::Value* codegenLvaluePrefixExpr(const PrefixExpr& expr) {
     switch (expr.op) {
-        case STAR:  return codegen(expr.getOperand());
-        default:    llvm_unreachable("invalid lvalue prefix operator");
+        case STAR: return codegenExpr(expr.getOperand());
+        default: llvm_unreachable("invalid lvalue prefix operator");
     }
 }
 
@@ -310,11 +310,11 @@ llvm::Value* codegenLogicalAnd(const Expr& left, const Expr& right) {
     auto* rhsBlock = llvm::BasicBlock::Create(ctx, "andRHS", builder.GetInsertBlock()->getParent());
     auto* endBlock = llvm::BasicBlock::Create(ctx, "andEnd", builder.GetInsertBlock()->getParent());
 
-    llvm::Value* lhs = codegen(left);
+    llvm::Value* lhs = codegenExpr(left);
     builder.CreateCondBr(lhs, rhsBlock, endBlock);
 
     builder.SetInsertPoint(rhsBlock);
-    llvm::Value* rhs = codegen(right);
+    llvm::Value* rhs = codegenExpr(right);
     builder.CreateBr(endBlock);
 
     builder.SetInsertPoint(endBlock);
@@ -329,11 +329,11 @@ llvm::Value* codegenLogicalOr(const Expr& left, const Expr& right) {
     auto* rhsBlock = llvm::BasicBlock::Create(ctx, "orRHS", builder.GetInsertBlock()->getParent());
     auto* endBlock = llvm::BasicBlock::Create(ctx, "orEnd", builder.GetInsertBlock()->getParent());
 
-    llvm::Value* lhs = codegen(left);
+    llvm::Value* lhs = codegenExpr(left);
     builder.CreateCondBr(lhs, endBlock, rhsBlock);
 
     builder.SetInsertPoint(rhsBlock);
-    llvm::Value* rhs = codegen(right);
+    llvm::Value* rhs = codegenExpr(right);
     builder.CreateBr(endBlock);
 
     builder.SetInsertPoint(endBlock);
@@ -404,8 +404,8 @@ llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, con
     }
 }
 
-llvm::Value* codegen(const BinaryExpr& expr) {
-    if (!expr.isBuiltinOp()) return codegen((const CallExpr&) expr);
+llvm::Value* codegenBinaryExpr(const BinaryExpr& expr) {
+    if (!expr.isBuiltinOp()) return codegenCallExpr((const CallExpr&) expr);
 
     assert(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType())
         || expr.getRHS().getType().isImplicitlyConvertibleTo(expr.getLHS().getType()));
@@ -414,8 +414,8 @@ llvm::Value* codegen(const BinaryExpr& expr) {
         case AND_AND: case OR_OR:
             return codegenShortCircuitBinaryOp(expr.op, expr.getLHS(), expr.getRHS());
         default:
-            llvm::Value* lhs = codegen(expr.getLHS());
-            llvm::Value* rhs = codegen(expr.getRHS());
+            llvm::Value* lhs = codegenExpr(expr.getLHS());
+            llvm::Value* rhs = codegenExpr(expr.getRHS());
             return codegenBinaryOp(expr.op, lhs, rhs, expr.getLHS());
     }
 }
@@ -429,10 +429,10 @@ bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* target
         && targetType->getStructElementType(1)->isIntegerTy(32);
 }
 
-llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType) {
+llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
     if (isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
         assert(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
-        auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegen(expr), 0, 0);
+        auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegenExpr(expr), 0, 0);
         auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(targetType),
                                                    elementPtr, 0);
         auto size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx),
@@ -444,36 +444,36 @@ llvm::Value* codegenForPassing(const Expr& expr, llvm::Type* targetType) {
     if (exprType.isPtrType()) exprType = exprType.getPointee();
 
     if (expr.isRvalue() || !exprType.isBasicType())
-        return codegen(expr);
+        return codegenExpr(expr);
 
     auto it = structs.find(exprType.getName());
     if (it == structs.end() || it->second.second->passByValue()) {
         if (expr.getType().isPtrType() && !targetType->isPointerTy()) {
-            return builder.CreateLoad(codegen(expr));
+            return builder.CreateLoad(codegenExpr(expr));
         }
     } else if (!expr.getType().isPtrType()) {
-        return codegenLvalue(expr);
+        return codegenLvalueExpr(expr);
     }
-    return codegen(expr);
+    return codegenExpr(expr);
 }
 
 llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type) {
     if (expr.getType().isUnsigned() && type.isInteger()) {
-        return builder.CreateZExtOrTrunc(codegen(expr), toIR(type));
+        return builder.CreateZExtOrTrunc(codegenExpr(expr), toIR(type));
     } else if (expr.getType().isSigned() && type.isInteger()) {
-        return builder.CreateSExtOrTrunc(codegen(expr), toIR(type));
+        return builder.CreateSExtOrTrunc(codegenExpr(expr), toIR(type));
     } else if (expr.getType().isFloatingPoint()) {
-        if (type.isSigned()) return builder.CreateFPToSI(codegen(expr), toIR(type));
-        if (type.isUnsigned()) return builder.CreateFPToUI(codegen(expr), toIR(type));
-        if (type.isFloatingPoint()) return builder.CreateFPCast(codegen(expr), toIR(type));
+        if (type.isSigned()) return builder.CreateFPToSI(codegenExpr(expr), toIR(type));
+        if (type.isUnsigned()) return builder.CreateFPToUI(codegenExpr(expr), toIR(type));
+        if (type.isFloatingPoint()) return builder.CreateFPCast(codegenExpr(expr), toIR(type));
     } else if (type.isFloatingPoint()) {
-        if (expr.getType().isSigned()) return builder.CreateSIToFP(codegen(expr), toIR(type));
-        if (expr.getType().isUnsigned()) return builder.CreateUIToFP(codegen(expr), toIR(type));
+        if (expr.getType().isSigned()) return builder.CreateSIToFP(codegenExpr(expr), toIR(type));
+        if (expr.getType().isUnsigned()) return builder.CreateUIToFP(codegenExpr(expr), toIR(type));
     }
     error(expr.getSrcLoc(), "conversion from '", expr.getType(), "' to '", type, "' not supported");
 }
 
-llvm::Value* codegen(const CallExpr& expr) {
+llvm::Value* codegenCallExpr(const CallExpr& expr) {
     if (expr.isBuiltinConversion())
         return codegenBuiltinConversion(*expr.args.front().value, expr.getType());
 
@@ -481,14 +481,14 @@ llvm::Value* codegen(const CallExpr& expr) {
     assert(func);
     auto param = func->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
-    if (expr.isMemberFuncCall()) args.emplace_back(codegenForPassing(*expr.getReceiver(), param++->getType()));
-    for (const auto& arg : expr.args) args.emplace_back(codegenForPassing(*arg.value, param++->getType()));
+    if (expr.isMemberFuncCall()) args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param++->getType()));
+    for (const auto& arg : expr.args) args.emplace_back(codegenExprForPassing(*arg.value, param++->getType()));
 
     return builder.CreateCall(func, args);
 }
 
-llvm::Value* codegen(const CastExpr& expr) {
-    auto* value = codegen(*expr.expr);
+llvm::Value* codegenCastExpr(const CastExpr& expr) {
+    auto* value = codegenExpr(*expr.expr);
     auto* type = toIR(expr.type);
     if (value->getType()->isIntegerTy() && type->isIntegerTy()) {
         return builder.CreateIntCast(value, type, expr.expr->getType().isSigned());
@@ -499,18 +499,18 @@ llvm::Value* codegen(const CastExpr& expr) {
     return builder.CreateBitOrPointerCast(value, type);
 }
 
-llvm::Value* codegenLvalue(const MemberExpr& expr) {
+llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr) {
     Type base = expr.base->getType();
     if (base.isPtrType() && base.isRef()) base = base.getPointee();
     if (base.isArrayType() || base.isString()) {
         assert(expr.member == "count");
         if (base.isUnsizedArrayType() || base.isString())
-            return builder.CreateExtractValue(codegen(*expr.base), 1, "count");
+            return builder.CreateExtractValue(codegenExpr(*expr.base), 1, "count");
         else
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), base.getArraySize());
     }
 
-    auto* value = codegenLvalue(*expr.base);
+    auto* value = codegenLvalueExpr(*expr.base);
     auto baseType = value->getType();
     if (baseType->isPointerTy()) {
         baseType = baseType->getPointerElementType();
@@ -532,72 +532,72 @@ llvm::Value* codegenLvalue(const MemberExpr& expr) {
     }
 }
 
-llvm::Value* codegen(const MemberExpr& expr) {
-    auto* value = codegenLvalue(expr);
+llvm::Value* codegenMemberExpr(const MemberExpr& expr) {
+    auto* value = codegenLvalueMemberExpr(expr);
     return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;
 }
 
-llvm::Value* codegenLvalue(const SubscriptExpr& expr) {
-    auto* value = codegenLvalue(*expr.array);
+llvm::Value* codegenLvalueSubscriptExpr(const SubscriptExpr& expr) {
+    auto* value = codegenLvalueExpr(*expr.array);
 
     if (expr.array->getType().isPtrType()
     && expr.array->getType().getPointee().isUnsizedArrayType())
-        return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegen(*expr.index));
+        return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegenExpr(*expr.index));
 
     if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
     return builder.CreateGEP(value,
-                             {llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegen(*expr.index)});
+                             {llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegenExpr(*expr.index)});
 }
 
-llvm::Value* codegen(const SubscriptExpr& expr) {
-    return builder.CreateLoad(codegenLvalue(expr));
+llvm::Value* codegenSubscriptExpr(const SubscriptExpr& expr) {
+    return builder.CreateLoad(codegenLvalueSubscriptExpr(expr));
 }
 
-llvm::Value* codegen(const UnwrapExpr& expr) {
+llvm::Value* codegenUnwrapExpr(const UnwrapExpr& expr) {
     // TODO: Assert that the operand is non-null.
-    return codegen(*expr.operand);
+    return codegenExpr(*expr.operand);
 }
 
 } // anonymous namespace
 
-llvm::Value* irgen::codegen(const Expr& expr) {
+llvm::Value* irgen::codegenExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr:    return ::codegen(expr.getVariableExpr());
-        case ExprKind::StrLiteralExpr:  return ::codegen(expr.getStrLiteralExpr());
-        case ExprKind::IntLiteralExpr:  return ::codegen(expr.getIntLiteralExpr());
-        case ExprKind::FloatLiteralExpr:return ::codegen(expr.getFloatLiteralExpr());
-        case ExprKind::BoolLiteralExpr: return ::codegen(expr.getBoolLiteralExpr());
-        case ExprKind::NullLiteralExpr: return ::codegen(expr.getNullLiteralExpr());
-        case ExprKind::ArrayLiteralExpr:return ::codegen(expr.getArrayLiteralExpr());
-        case ExprKind::PrefixExpr:      return ::codegen(expr.getPrefixExpr());
-        case ExprKind::BinaryExpr:      return ::codegen(expr.getBinaryExpr());
-        case ExprKind::CallExpr:        return ::codegen(expr.getCallExpr());
-        case ExprKind::CastExpr:        return ::codegen(expr.getCastExpr());
-        case ExprKind::MemberExpr:      return ::codegen(expr.getMemberExpr());
-        case ExprKind::SubscriptExpr:   return ::codegen(expr.getSubscriptExpr());
-        case ExprKind::UnwrapExpr:      return ::codegen(expr.getUnwrapExpr());
+        case ExprKind::VariableExpr: return codegenVarExpr(expr.getVariableExpr());
+        case ExprKind::StrLiteralExpr: return codegenStrLiteralExpr(expr.getStrLiteralExpr());
+        case ExprKind::IntLiteralExpr: return codegenIntLiteralExpr(expr.getIntLiteralExpr());
+        case ExprKind::FloatLiteralExpr: return codegenFloatLiteralExpr(expr.getFloatLiteralExpr());
+        case ExprKind::BoolLiteralExpr: return codegenBoolLiteralExpr(expr.getBoolLiteralExpr());
+        case ExprKind::NullLiteralExpr: return codegenNullLiteralExpr(expr.getNullLiteralExpr());
+        case ExprKind::ArrayLiteralExpr: return codegenArrayLiteralExpr(expr.getArrayLiteralExpr());
+        case ExprKind::PrefixExpr: return codegenPrefixExpr(expr.getPrefixExpr());
+        case ExprKind::BinaryExpr: return codegenBinaryExpr(expr.getBinaryExpr());
+        case ExprKind::CallExpr: return codegenCallExpr(expr.getCallExpr());
+        case ExprKind::CastExpr: return codegenCastExpr(expr.getCastExpr());
+        case ExprKind::MemberExpr: return codegenMemberExpr(expr.getMemberExpr());
+        case ExprKind::SubscriptExpr: return codegenSubscriptExpr(expr.getSubscriptExpr());
+        case ExprKind::UnwrapExpr: return codegenUnwrapExpr(expr.getUnwrapExpr());
     }
     llvm_unreachable("all cases handled");
 }
 
 namespace {
 
-llvm::Value* codegenLvalue(const Expr& expr) {
+llvm::Value* codegenLvalueExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr:    return codegenLvalue(expr.getVariableExpr());
-        case ExprKind::StrLiteralExpr:  llvm_unreachable("no lvalue string literals");
-        case ExprKind::IntLiteralExpr:  llvm_unreachable("no lvalue integer literals");
-        case ExprKind::FloatLiteralExpr:llvm_unreachable("no lvalue float literals");
+        case ExprKind::VariableExpr: return codegenLvalueVarExpr(expr.getVariableExpr());
+        case ExprKind::StrLiteralExpr: llvm_unreachable("no lvalue string literals");
+        case ExprKind::IntLiteralExpr: llvm_unreachable("no lvalue integer literals");
+        case ExprKind::FloatLiteralExpr: llvm_unreachable("no lvalue float literals");
         case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");
         case ExprKind::NullLiteralExpr: llvm_unreachable("no lvalue null literals");
-        case ExprKind::ArrayLiteralExpr:llvm_unreachable("no lvalue array literals");
-        case ExprKind::PrefixExpr:      return codegenLvalue(expr.getPrefixExpr());
-        case ExprKind::BinaryExpr:      llvm_unreachable("no lvalue binary expressions");
-        case ExprKind::CallExpr:        llvm_unreachable("IRGen doesn't support lvalue call expressions yet");
-        case ExprKind::CastExpr:        llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
-        case ExprKind::MemberExpr:      return codegenLvalue(expr.getMemberExpr());
-        case ExprKind::SubscriptExpr:   return codegenLvalue(expr.getSubscriptExpr());
-        case ExprKind::UnwrapExpr:      return codegen(expr.getUnwrapExpr());
+        case ExprKind::ArrayLiteralExpr: llvm_unreachable("no lvalue array literals");
+        case ExprKind::PrefixExpr: return codegenLvaluePrefixExpr(expr.getPrefixExpr());
+        case ExprKind::BinaryExpr: llvm_unreachable("no lvalue binary expressions");
+        case ExprKind::CallExpr: llvm_unreachable("IRGen doesn't support lvalue call expressions yet");
+        case ExprKind::CastExpr: llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
+        case ExprKind::MemberExpr: return codegenLvalueMemberExpr(expr.getMemberExpr());
+        case ExprKind::SubscriptExpr: return codegenLvalueSubscriptExpr(expr.getSubscriptExpr());
+        case ExprKind::UnwrapExpr: return codegenUnwrapExpr(expr.getUnwrapExpr());
     }
     llvm_unreachable("all cases handled");
 }
@@ -624,7 +624,7 @@ void codegenDeferredExprsAndDeinitCallsForReturn() {
     scopes.back().clear();
 }
 
-void codegen(const ReturnStmt& stmt) {
+void codegenReturnStmt(const ReturnStmt& stmt) {
     assert(stmt.values.size() < 2 && "IRGen doesn't support multiple return values yet");
 
     codegenDeferredExprsAndDeinitCallsForReturn();
@@ -633,7 +633,7 @@ void codegen(const ReturnStmt& stmt) {
         if (currentDecl->getFuncDecl().name != "main") builder.CreateRetVoid();
         else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
     } else {
-        builder.CreateRet(codegen(*stmt.values[0]));
+        builder.CreateRet(codegenExpr(*stmt.values[0]));
     }
 }
 
@@ -656,28 +656,28 @@ llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nul
     return alloca;
 }
 
-void codegen(const VariableStmt& stmt) {
+void codegenVarStmt(const VariableStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.decl->getType(), nullptr, stmt.decl->name);
     if (auto initializer = stmt.decl->initializer) {
-        builder.CreateStore(codegenForPassing(*initializer, alloca->getAllocatedType()), alloca);
+        builder.CreateStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
     }
 }
 
-void codegen(const IncrementStmt& stmt) {
-    auto* alloca = codegenLvalue(*stmt.operand);
+void codegenIncrementStmt(const IncrementStmt& stmt) {
+    auto* alloca = codegenLvalueExpr(*stmt.operand);
     auto* value = builder.CreateLoad(alloca);
     auto* result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
     builder.CreateStore(result, alloca);
 }
 
-void codegen(const DecrementStmt& stmt) {
-    auto* alloca = codegenLvalue(*stmt.operand);
+void codegenDecrementStmt(const DecrementStmt& stmt) {
+    auto* alloca = codegenLvalueExpr(*stmt.operand);
     auto* value = builder.CreateLoad(alloca);
     auto* result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
     builder.CreateStore(result, alloca);
 }
 
-void codegen(const Stmt& stmt);
+void codegenStmt(const Stmt& stmt);
 
 void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
                   llvm::BasicBlock* destination, llvm::BasicBlock* continuation) {
@@ -685,7 +685,7 @@ void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
 
     beginScope();
     for (const auto& stmt : stmts) {
-        codegen(*stmt);
+        codegenStmt(*stmt);
         if (stmt->isReturnStmt() || stmt->isBreakStmt()) break;
     }
     endScope();
@@ -696,8 +696,8 @@ void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
         builder.CreateBr(continuation);
 }
 
-void codegen(const IfStmt& ifStmt) {
-    auto* condition = codegen(*ifStmt.condition);
+void codegenIfStmt(const IfStmt& ifStmt) {
+    auto* condition = codegenExpr(*ifStmt.condition);
     auto* func = builder.GetInsertBlock()->getParent();
     auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", func);
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", func);
@@ -708,14 +708,14 @@ void codegen(const IfStmt& ifStmt) {
     builder.SetInsertPoint(endIfBlock);
 }
 
-void codegen(const SwitchStmt& switchStmt) {
-    auto* condition = codegen(*switchStmt.condition);
+void codegenSwitchStmt(const SwitchStmt& switchStmt) {
+    auto* condition = codegenExpr(*switchStmt.condition);
     auto* func = builder.GetInsertBlock()->getParent();
     auto* insertBlockBackup = builder.GetInsertBlock();
 
     std::vector<std::pair<llvm::ConstantInt*, llvm::BasicBlock*>> cases;
     for (const SwitchCase& switchCase : switchStmt.cases) {
-        auto* value = llvm::cast<llvm::ConstantInt>(codegen(*switchCase.value));
+        auto* value = llvm::cast<llvm::ConstantInt>(codegenExpr(*switchCase.value));
         auto* block = llvm::BasicBlock::Create(ctx, "", func);
         cases.emplace_back(value, block);
     }
@@ -740,7 +740,7 @@ void codegen(const SwitchStmt& switchStmt) {
     builder.SetInsertPoint(end);
 }
 
-void codegen(const WhileStmt& whileStmt) {
+void codegenWhileStmt(const WhileStmt& whileStmt) {
     auto* func = builder.GetInsertBlock()->getParent();
     auto* cond = llvm::BasicBlock::Create(ctx, "while", func);
     auto* body = llvm::BasicBlock::Create(ctx, "body", func);
@@ -749,7 +749,7 @@ void codegen(const WhileStmt& whileStmt) {
     builder.CreateBr(cond);
 
     builder.SetInsertPoint(cond);
-    builder.CreateCondBr(codegen(*whileStmt.condition), body, end);
+    builder.CreateCondBr(codegenExpr(*whileStmt.condition), body, end);
     codegenBlock(whileStmt.body, body, cond);
 
     breakTargets.pop_back();
@@ -764,7 +764,7 @@ void codegen(const WhileStmt& whileStmt) {
 //      ...
 //      counter++;
 //  }
-void codegen(const ForStmt& forStmt) {
+void codegenForStmt(const ForStmt& forStmt) {
     if (!forStmt.range->getType().isRangeType())
         error(forStmt.range->getSrcLoc(),
               "IRGen doesn't support 'for'-loops over non-range iterables yet");
@@ -777,8 +777,8 @@ void codegen(const ForStmt& forStmt) {
     auto& range = forStmt.range->getBinaryExpr();
     auto* counterAlloca = createEntryBlockAlloca(forStmt.range->getType().getIterableElementType(),
                                                  nullptr, forStmt.id);
-    builder.CreateStore(codegen(range.getLHS()), counterAlloca);
-    auto* lastValue = codegen(range.getRHS());
+    builder.CreateStore(codegenExpr(range.getLHS()), counterAlloca);
+    auto* lastValue = codegenExpr(range.getRHS());
 
     auto* func = builder.GetInsertBlock()->getParent();
     auto* cond = llvm::BasicBlock::Create(ctx, "for", func);
@@ -815,43 +815,43 @@ void codegen(const ForStmt& forStmt) {
     endScope();
 }
 
-void codegen(const BreakStmt&) {
+void codegenBreakStmt(const BreakStmt&) {
     assert(!breakTargets.empty());
     builder.CreateBr(breakTargets.back());
 }
 
-void codegen(const AssignStmt& stmt) {
-    auto* lhs = codegenLvalue(*stmt.lhs);
-    builder.CreateStore(codegen(*stmt.rhs), lhs);
+void codegenAssignStmt(const AssignStmt& stmt) {
+    auto* lhs = codegenLvalueExpr(*stmt.lhs);
+    builder.CreateStore(codegenExpr(*stmt.rhs), lhs);
 }
 
-void codegen(const AugAssignStmt& stmt) {
+void codegenAugAssignStmt(const AugAssignStmt& stmt) {
     switch (stmt.op) {
         case AND_AND: fatalError("'&&=' not implemented yet");
         case OR_OR:   fatalError("'||=' not implemented yet");
         default:      break;
     }
-    auto* lhs = codegenLvalue(*stmt.lhs);
-    auto* rhs = codegen(*stmt.rhs);
+    auto* lhs = codegenLvalueExpr(*stmt.lhs);
+    auto* rhs = codegenExpr(*stmt.rhs);
     auto* result = codegenBinaryOp(stmt.op, builder.CreateLoad(lhs), rhs, *stmt.lhs);
     builder.CreateStore(result, lhs);
 }
 
-void codegen(const Stmt& stmt) {
+void codegenStmt(const Stmt& stmt) {
     switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt:    codegen(stmt.getReturnStmt()); break;
-        case StmtKind::VariableStmt:  codegen(stmt.getVariableStmt()); break;
-        case StmtKind::IncrementStmt: codegen(stmt.getIncrementStmt()); break;
-        case StmtKind::DecrementStmt: codegen(stmt.getDecrementStmt()); break;
-        case StmtKind::ExprStmt:      codegen(*stmt.getExprStmt().expr); break;
-        case StmtKind::DeferStmt:     deferEvaluationOf(*stmt.getDeferStmt().expr); break;
-        case StmtKind::IfStmt:        codegen(stmt.getIfStmt()); break;
-        case StmtKind::SwitchStmt:    codegen(stmt.getSwitchStmt()); break;
-        case StmtKind::WhileStmt:     codegen(stmt.getWhileStmt()); break;
-        case StmtKind::ForStmt:       codegen(stmt.getForStmt()); break;
-        case StmtKind::BreakStmt:     codegen(stmt.getBreakStmt()); break;
-        case StmtKind::AssignStmt:    codegen(stmt.getAssignStmt()); break;
-        case StmtKind::AugAssignStmt: codegen(stmt.getAugAssignStmt()); break;
+        case StmtKind::ReturnStmt: codegenReturnStmt(stmt.getReturnStmt()); break;
+        case StmtKind::VariableStmt: codegenVarStmt(stmt.getVariableStmt()); break;
+        case StmtKind::IncrementStmt: codegenIncrementStmt(stmt.getIncrementStmt()); break;
+        case StmtKind::DecrementStmt: codegenDecrementStmt(stmt.getDecrementStmt()); break;
+        case StmtKind::ExprStmt: codegenExpr(*stmt.getExprStmt().expr); break;
+        case StmtKind::DeferStmt: deferEvaluationOf(*stmt.getDeferStmt().expr); break;
+        case StmtKind::IfStmt: codegenIfStmt(stmt.getIfStmt()); break;
+        case StmtKind::SwitchStmt: codegenSwitchStmt(stmt.getSwitchStmt()); break;
+        case StmtKind::WhileStmt: codegenWhileStmt(stmt.getWhileStmt()); break;
+        case StmtKind::ForStmt: codegenForStmt(stmt.getForStmt()); break;
+        case StmtKind::BreakStmt: codegenBreakStmt(stmt.getBreakStmt()); break;
+        case StmtKind::AssignStmt: codegenAssignStmt(stmt.getAssignStmt()); break;
+        case StmtKind::AugAssignStmt: codegenAugAssignStmt(stmt.getAugAssignStmt()); break;
     }
 }
 
@@ -970,7 +970,7 @@ llvm::Function* getFuncForCall(const CallExpr& call) {
         llvm::Function* func = getInitProto(*initDecl, call.genericArgs);
         if (func->empty() && !call.genericArgs.empty()) {
             auto backup = builder.GetInsertBlock();
-            codegen(*initDecl, call.genericArgs);
+            codegenInitDecl(*initDecl, call.genericArgs);
             builder.SetInsertPoint(backup);
         }
         return func;
@@ -986,7 +986,7 @@ void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
     auto arg = func.arg_begin();
     if (decl.isMemberFunc()) setLocalValue(nullptr, "this", &*arg++);
     for (const auto& param : decl.params) setLocalValue(param.type, param.name, &*arg++);
-    for (const auto& stmt : *decl.body) codegen(*stmt);
+    for (const auto& stmt : *decl.body) codegenStmt(*stmt);
     endScope();
 
     auto* insertBlock = builder.GetInsertBlock();
@@ -1004,7 +1004,7 @@ void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
     }
 }
 
-void codegen(const FuncDecl& decl) {
+void codegenFuncDecl(const FuncDecl& decl) {
     if (decl.isGeneric()) return;
 
     if (!decl.getReceiverTypeName().empty()) {
@@ -1019,7 +1019,7 @@ void codegen(const FuncDecl& decl) {
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 
-void codegen(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
+void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
     if (decl.getTypeDecl().isGeneric() && typeGenericArgs.empty()) return;
 
     llvm::Function* func = getInitProto(decl, typeGenericArgs);
@@ -1033,14 +1033,14 @@ void codegen(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
     setLocalValue(nullptr, "this", alloca);
     auto param = decl.params.begin();
     for (auto& arg : func->args()) setLocalValue(param++->type, arg.getName(), &arg);
-    for (const auto& stmt : *decl.body) codegen(*stmt);
+    for (const auto& stmt : *decl.body) codegenStmt(*stmt);
     builder.CreateRet(builder.CreateLoad(alloca));
     endScope();
 
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 
-void codegen(const DeinitDecl& decl) {
+void codegenDeinitDecl(const DeinitDecl& decl) {
     if (decl.getTypeDecl().isGeneric()) return;
 
     FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName(),
@@ -1052,7 +1052,7 @@ void codegen(const DeinitDecl& decl) {
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 
-void codegen(const TypeDecl& decl) {
+void codegenTypeDecl(const TypeDecl& decl) {
     if (decl.isGeneric()) return;
 
     if (decl.fields.empty()) {
@@ -1080,11 +1080,11 @@ llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef
     return structs.emplace(name, std::move(value)).first->second.first;
 }
 
-void codegen(const VarDecl& decl) {
+void codegenVarDecl(const VarDecl& decl) {
     assert(decl.initializer && "global variables must have initializers");
     if (globalScope().localValues.find(decl.name) != globalScope().localValues.end()) return;
 
-    llvm::Value* value = codegen(*decl.initializer);
+    llvm::Value* value = codegenExpr(*decl.initializer);
 
     if (decl.getType().isMutable() /* || decl.isPublic() */) {
         value = new llvm::GlobalVariable(module, toIR(decl.getType()),
@@ -1097,15 +1097,15 @@ void codegen(const VarDecl& decl) {
     globalScope().localValues.emplace(decl.name, value);
 }
 
-void codegen(const Decl& decl) {
+void codegenDecl(const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: llvm_unreachable("handled via FuncDecl");
-        case DeclKind::FuncDecl:  codegen(decl.getFuncDecl()); break;
+        case DeclKind::FuncDecl: codegenFuncDecl(decl.getFuncDecl()); break;
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot codegen generic parameter declaration");
-        case DeclKind::InitDecl:  codegen(decl.getInitDecl()); break;
-        case DeclKind::DeinitDecl:codegen(decl.getDeinitDecl()); break;
-        case DeclKind::TypeDecl:  codegen(decl.getTypeDecl()); break;
-        case DeclKind::VarDecl:   codegen(decl.getVarDecl()); break;
+        case DeclKind::InitDecl: codegenInitDecl(decl.getInitDecl()); break;
+        case DeclKind::DeinitDecl: codegenDeinitDecl(decl.getDeinitDecl()); break;
+        case DeclKind::TypeDecl: codegenTypeDecl(decl.getTypeDecl()); break;
+        case DeclKind::VarDecl: codegenVarDecl(decl.getVarDecl()); break;
         case DeclKind::FieldDecl: llvm_unreachable("handled via TypeDecl");
         case DeclKind::ImportDecl: break;
     }
@@ -1117,7 +1117,7 @@ llvm::Module& irgen::compile(const Module& sourceModule) {
     for (const auto& sourceFile : sourceModule.getSourceFiles()) {
         for (const auto& decl : sourceFile.getTopLevelDecls()) {
             currentDecl = decl.get();
-            ::codegen(*decl);
+            codegenDecl(*decl);
         }
     }
 

@@ -40,8 +40,8 @@ void addToSymbolTable(VarDecl& decl);
 void addToSymbolTable(VarDecl&& decl);
 Decl& findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere = false);
 llvm::SmallVector<Decl*, 1> findDecls(llvm::StringRef name, bool everywhere = false);
-void typecheck(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
-               ParserFunction& parse);
-Type typecheck(Expr& expr);
+void typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                     ParserFunction& parse);
+Type typecheckExpr(Expr& expr);
 
 }

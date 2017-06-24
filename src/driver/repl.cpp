@@ -28,7 +28,7 @@ void evaluate(llvm::StringRef line) {
     std::unique_ptr<Expr> expr;
     try {
         expr = parseExpr(llvm::MemoryBuffer::getMemBuffer(line, "", false), module);
-        typecheck(*expr);
+        typecheckExpr(*expr);
     } catch (const CompileError& error) {
         llvm::StringRef trimmed = line.ltrim();
         bool isComment = trimmed.size() >= 2 && trimmed[0] == '/' && trimmed[1] == '/';
@@ -48,7 +48,7 @@ void evaluate(llvm::StringRef line) {
     llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage,
                                                       "__anon_expr", &irModuleRef);
     irgen::getBuilder().SetInsertPoint(llvm::BasicBlock::Create(irgen::getContext(), "", function));
-    irgen::getBuilder().CreateRet(irgen::codegen(*expr));
+    irgen::getBuilder().CreateRet(irgen::codegenExpr(*expr));
     assert(!llvm::verifyModule(irModuleRef, &llvm::errs()));
 
     llvm::GenericValue result = engine->runFunction(function, {});

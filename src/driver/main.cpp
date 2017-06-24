@@ -144,9 +144,9 @@ int main(int argc, char** argv) try {
     if (parseFlag) return 0;
 
     for (auto& importedModule : module.getImportedModules()) {
-        typecheck(*importedModule, importSearchPaths, parse);
+        typecheckModule(*importedModule, importSearchPaths, parse);
     }
-    typecheck(module, importSearchPaths, parse);
+    typecheckModule(module, importSearchPaths, parse);
 
     if (typecheckFlag) return 0;
 
