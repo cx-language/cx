@@ -44,5 +44,6 @@ bool CallExpr::isInitCall() const {
 }
 
 Expr* CallExpr::getReceiver() const {
+    if (!isMemberFuncCall()) return nullptr;
     return llvm::cast<MemberExpr>(*func).base.get();
 }

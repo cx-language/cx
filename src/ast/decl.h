@@ -92,7 +92,6 @@ public:
     std::string name;
     std::vector<ParamDecl> params;
     Type returnType;
-    std::string receiverType; /// Empty if non-member function.
     bool mutating;
     std::vector<GenericParamDecl> genericParams;
     std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
@@ -102,8 +101,8 @@ public:
              std::string&& receiverType, std::vector<GenericParamDecl>&& genericParams,
              Module* module, SrcLoc srcLoc)
     : Decl(DeclKind::FuncDecl, module), name(std::move(name)), params(std::move(params)),
-      returnType(returnType), receiverType(std::move(receiverType)), mutating(false),
-      genericParams(std::move(genericParams)), srcLoc(srcLoc) { }
+      returnType(returnType), mutating(false), genericParams(std::move(genericParams)),
+      srcLoc(srcLoc), receiverType(std::move(receiverType)) { }
 
     bool isExtern() const { return body == nullptr; };
     bool isGeneric() const { return !genericParams.empty(); }
@@ -111,9 +110,13 @@ public:
     bool isMutating() const { return mutating; }
     void setMutating(bool m) { mutating = m; }
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
+    std::string getReceiverTypeName() const { return receiverType; }
     const FuncType* getFuncType() const;
     bool signatureMatches(const FuncDecl& other, bool matchReceiver = true) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FuncDecl; }
+
+private:
+    std::string receiverType; /// Empty if non-member function.
 };
 
 class InitDecl : public Decl {
@@ -169,8 +172,9 @@ public:
       fields(std::move(fields)), memberFuncs(std::move(memberFuncs)),
       genericParams(std::move(genericParams)), srcLoc(srcLoc) { }
 
-    Type getType(bool isMutable = false, std::vector<Type>&& genericArgs = {}) const;
-    Type getTypeForPassing(bool isMutable = false) const; /// 'T&' if this is class, or plain 'T' otherwise.
+    Type getType(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
+    /// 'T&' if this is class, or plain 'T' otherwise.
+    Type getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
     bool passByValue() const { return isStruct() || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isClass() const { return tag == TypeTag::Class; }

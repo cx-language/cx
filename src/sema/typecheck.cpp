@@ -206,7 +206,7 @@ bool hasMemberFunc(TypeDecl& type, FuncDecl& func) {
     auto decls = findDecls(mangleFuncDecl(type.name, func.name));
     for (Decl* decl : decls) {
         if (!decl->isFuncDecl()) continue;
-        if (decl->getFuncDecl().receiverType != type.name) continue;
+        if (decl->getFuncDecl().getReceiverTypeName() != type.name) continue;
         if (!decl->getFuncDecl().signatureMatches(func, /* matchReceiver: */ false)) continue;
         return true;
     }
@@ -440,8 +440,8 @@ Type typecheck(CallExpr& expr) {
             currentGenericArgs.clear();
             return returnType;
         }
-    } else if (decl->isInitDecl()) {
-        return decl->getInitDecl().getTypeDecl().getType();
+    } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
+        return initDecl->getTypeDecl().getType(expr.genericArgs);
     }
     llvm_unreachable("all cases handled");
 }
@@ -872,6 +872,8 @@ llvm::ArrayRef<std::shared_ptr<Module>> getStdlibModules() {
 }
 
 Decl& delta::findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere) {
+    assert(!name.empty());
+
     if (Decl* match = findDeclInModules(name, srcLoc, llvm::makeArrayRef(currentModule))) {
         return *match;
     }
@@ -934,7 +936,7 @@ void typecheck(llvm::ArrayRef<GenericParamDecl> genericParams) {
 }
 
 void typecheck(FuncDecl& decl) {
-    if (!decl.receiverType.empty()) return typecheckMemberFunc(decl);
+    if (!decl.getReceiverTypeName().empty()) return typecheckMemberFunc(decl);
     if (decl.isExtern()) return;
 
     if (decl.isGeneric() && currentGenericArgs.empty()) {
@@ -962,13 +964,28 @@ void typecheck(FuncDecl& decl) {
     }
 }
 
+std::vector<Type> getGenericArgsAsArray() {
+    std::vector<Type> genericArgs;
+    genericArgs.reserve(currentGenericArgs.size());
+    for (auto& p : currentGenericArgs) genericArgs.emplace_back(p.second);
+    return genericArgs;
+}
+
 void typecheckMemberFunc(FuncDecl& decl) {
+    Decl& receiverType = findDecl(decl.getReceiverTypeName(), decl.srcLoc);
+    if (!receiverType.isTypeDecl()) {
+        error(decl.srcLoc, "'", decl.getReceiverTypeName(), "' is not a class or struct");
+    }
+
+    if (receiverType.getTypeDecl().isGeneric() && currentGenericArgs.empty()) {
+        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
+    }
+
     currentModule->getSymbolTable().pushScope();
 
-    Decl& receiverType = findDecl(decl.receiverType, decl.srcLoc);
-    if (!receiverType.isTypeDecl()) error(decl.srcLoc, "'", decl.receiverType, "' is not a class or struct");
-    addToSymbolTable(VarDecl(receiverType.getTypeDecl().getTypeForPassing(decl.isMutating()),
-                             "this", nullptr, currentModule, SrcLoc::invalid()));
+    Type thisType = receiverType.getTypeDecl().getTypeForPassing(getGenericArgsAsArray(),
+                                                                 decl.isMutating());
+    addToSymbolTable(VarDecl(thisType, "this", nullptr, currentModule, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
 
     auto funcReturnTypeBackup = funcReturnType;
@@ -983,8 +1000,13 @@ void typecheck(InitDecl& decl) {
     currentModule->getSymbolTable().pushScope();
     Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
+
+    if (typeDecl.getTypeDecl().isGeneric() && currentGenericArgs.empty()) {
+        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
+    }
+
     decl.type = &typeDecl.getTypeDecl();
-    addToSymbolTable(VarDecl(typeDecl.getTypeDecl().getType(true),
+    addToSymbolTable(VarDecl(typeDecl.getTypeDecl().getType(getGenericArgsAsArray(), true),
                              "this", nullptr, currentModule, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheck(param);
     inInitializer = true;
@@ -995,8 +1017,14 @@ void typecheck(InitDecl& decl) {
 
 void typecheck(DeinitDecl& decl) {
     TypeDecl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc).getTypeDecl();
-    FuncDecl funcDecl(mangle(decl), {}, typeDecl.getType(), decl.getTypeName(),
-                      /* genericParams */ {}, currentModule, SrcLoc::invalid());
+
+    if (typeDecl.isGeneric() && currentGenericArgs.empty()) {
+        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
+    }
+
+    FuncDecl funcDecl(mangle(decl), {}, typeDecl.getType(getGenericArgsAsArray()),
+                      decl.getTypeName(), /* genericParams */ {}, currentModule,
+                      SrcLoc::invalid());
     funcDecl.body = decl.body;
     decl.type = &typeDecl;
     typecheckMemberFunc(funcDecl);

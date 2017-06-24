@@ -1,0 +1,26 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=UNUSED
+
+// CHECK: %"F<int, bool>" = type { i32, i1 }
+struct F<T, U> {
+    var a: T
+    var b: U
+}
+
+func main() {
+    // CHECK: %f = alloca %"F<int, bool>"
+    // CHECK: %1 = call %"F<int, bool>" @"F<int, bool>.init"()
+    const f = F<int, bool>()
+
+    // CHECK: call void @"F<int, bool>.foo"(%"F<int, bool>" %f1)
+    f.foo()
+}
+
+// CHECK-DAG: define %"F<int, bool>" @"F<int, bool>.init"()
+F::init() { }
+
+// CHECK-DAG: define void @"F<int, bool>.foo"(%"F<int, bool>" %this)
+func F::foo() { }
+
+// UNUSED-NOT: unused
+func F::unused() { }

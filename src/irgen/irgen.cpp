@@ -26,6 +26,7 @@ using irgen::toIR;
 
 llvm::Value* codegen(const CallExpr& expr);
 llvm::Value* codegenLvalue(const Expr& expr);
+void codegen(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
 llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
 void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
@@ -60,8 +61,9 @@ llvm::Module module("", ctx);
 
 /// Helper for storing parameter name info in 'funcs' key strings.
 template<typename T>
-std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> genericArgs = {}) {
-    std::string result = ::mangle(decl, genericArgs);
+std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
+                             llvm::ArrayRef<Type> funcGenericArgs = {}) {
+    std::string result = ::mangle(decl, typeGenericArgs, funcGenericArgs);
     for (const ParamDecl& param : decl.params) result.append("$").append(param.name);
     return result;
 }
@@ -869,6 +871,7 @@ void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
 }
 
 llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) {
+    assert(structs.count(typeName));
     auto structTypeAndDecl = structs.find(typeName)->second;
 
     if (!isMutating && structTypeAndDecl.second->passByValue()) {
@@ -885,9 +888,17 @@ void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
     }
 }
 
-llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::ArrayRef<Type> genericArgs = {},
-                                 std::string&& mangledName = {}, bool addToFuncs = true) {
-    setCurrentGenericArgs(decl.genericParams, genericArgs);
+llvm::Function* getFuncProto(const FuncDecl& decl, llvm::ArrayRef<Type> funcGenericArgs = {},
+                             Expr* receiver = nullptr, std::string&& mangledName = {}) {
+    std::vector<Type> receiverTypeGenericArgs;
+    if (receiver) {
+        receiverTypeGenericArgs = llvm::cast<BasicType>(*receiver->getType().removePtr()).getGenericArgs();
+    }
+
+    auto it = funcInstantiations.find(mangleWithParams(decl, receiverTypeGenericArgs, funcGenericArgs));
+    if (it != funcInstantiations.end()) return it->second.func;
+
+    setCurrentGenericArgs(decl.genericParams, funcGenericArgs);
 
     auto* funcType = decl.getFuncType();
 
@@ -896,13 +907,27 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::ArrayRef<Type> gene
     if (decl.name == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
+
     if (decl.isMemberFunc()) {
-        paramTypes.emplace_back(getLLVMTypeForPassing(decl.receiverType, decl.isMutating()));
+        auto& receiverTypeDecl = findDecl(decl.getReceiverTypeName(), SrcLoc::invalid()).getTypeDecl();
+        std::string receiverTypeName;
+
+        if (receiverTypeDecl.isGeneric()) {
+            receiverTypeName = mangle(receiverTypeDecl, receiverTypeGenericArgs);
+            if (structs.count(receiverTypeName) == 0) {
+                codegenGenericTypeInstantiation(receiverTypeDecl, receiverTypeGenericArgs);
+            }
+            mangledName = mangle(decl, receiverTypeGenericArgs, funcGenericArgs);
+        } else {
+            receiverTypeName = decl.getReceiverTypeName();
+        }
+        paramTypes.emplace_back(getLLVMTypeForPassing(receiverTypeName, decl.isMutating()));
     }
+
     for (const auto& t : funcType->paramTypes) paramTypes.emplace_back(toIR(t));
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);
-    if (mangledName.empty()) mangledName = mangle(decl, genericArgs);
+    if (mangledName.empty()) mangledName = mangle(decl, receiverTypeGenericArgs, funcGenericArgs);
     auto* func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage,
                                         mangledName, &module);
 
@@ -910,24 +935,28 @@ llvm::Function* codegenFuncProto(const FuncDecl& decl, llvm::ArrayRef<Type> gene
     if (decl.isMemberFunc()) arg++->setName("this");
     for (auto param = decl.params.begin(); arg != argsEnd; ++param, ++arg) arg->setName(param->name);
 
-    if (addToFuncs) {
-        funcInstantiations.emplace(mangleWithParams(decl, genericArgs), FuncInstantiation{decl, genericArgs, func});
-    }
     currentGenericArgs.clear();
-    return func;
+
+    auto mangled = mangleWithParams(decl, receiverTypeGenericArgs, funcGenericArgs);
+    FuncInstantiation funcInstantiation{decl, funcGenericArgs, func};
+    return funcInstantiations.emplace(std::move(mangled), std::move(funcInstantiation)).first->second.func;
 }
 
-llvm::Function* codegenInitializerProto(const InitDecl& decl) {
-    FuncDecl funcDecl(mangle(decl), std::vector<ParamDecl>(decl.params),
-                      decl.getTypeDecl().getType(), "", /* genericParams */ {},
-                      nullptr, SrcLoc::invalid());
-    return codegenFuncProto(funcDecl);
+llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
+                             llvm::ArrayRef<Type> funcGenericArgs = {}) {
+    auto it = funcInstantiations.find(mangleWithParams(decl, typeGenericArgs, funcGenericArgs));
+    if (it != funcInstantiations.end()) return it->second.func;
+
+    FuncDecl funcDecl(mangle(decl, typeGenericArgs), std::vector<ParamDecl>(decl.params),
+                      decl.getTypeDecl().getType(typeGenericArgs), "",
+                      /* genericParams */ {}, nullptr, decl.srcLoc);
+    return getFuncProto(funcDecl, funcGenericArgs, nullptr);
 }
 
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl) {
     FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName().str(),
                       /* genericParams */ {}, nullptr, decl.srcLoc);
-    return codegenFuncProto(funcDecl);
+    return getFuncProto(funcDecl);
 }
 
 llvm::Function* getFuncForCall(const CallExpr& call) {
@@ -935,16 +964,19 @@ llvm::Function* getFuncForCall(const CallExpr& call) {
 
     const Decl& decl = *call.getCalleeDecl();
 
-    if (auto* funcDecl = llvm::dyn_cast<FuncDecl>(&decl)){
-        auto it = funcInstantiations.find(mangleWithParams(*funcDecl, call.genericArgs));
-        if (it != funcInstantiations.end()) return it->second.func;
-        return codegenFuncProto(*funcDecl, call.genericArgs);
-    } else if (decl.isInitDecl()) {
-        auto it = funcInstantiations.find(mangleWithParams(decl.getInitDecl()));
-        if (it != funcInstantiations.end()) return it->second.func;
-        return codegenInitializerProto(decl.getInitDecl());
+    if (auto* funcDecl = llvm::dyn_cast<FuncDecl>(&decl)) {
+        return getFuncProto(*funcDecl, call.genericArgs, call.getReceiver());
+    } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(&decl)) {
+        llvm::Function* func = getInitProto(*initDecl, call.genericArgs);
+        if (func->empty() && !call.genericArgs.empty()) {
+            auto backup = builder.GetInsertBlock();
+            codegen(*initDecl, call.genericArgs);
+            builder.SetInsertPoint(backup);
+        }
+        return func;
+    } else {
+        llvm_unreachable("invalid callee decl");
     }
-    llvm_unreachable("invalid callee decl");
 }
 
 void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
@@ -975,18 +1007,26 @@ void codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
 void codegen(const FuncDecl& decl) {
     if (decl.isGeneric()) return;
 
-    auto it = funcInstantiations.find(mangleWithParams(decl));
-    auto* func = it == funcInstantiations.end() ? codegenFuncProto(decl) : it->second.func;
+    if (!decl.getReceiverTypeName().empty()) {
+        auto& receiverTypeDecl = findDecl(decl.getReceiverTypeName(), SrcLoc::invalid()).getTypeDecl();
+        if (receiverTypeDecl.isGeneric()) {
+            return;
+        }
+    }
+
+    llvm::Function* func = getFuncProto(decl);
     if (!decl.isExtern()) codegenFuncBody(decl, *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 
-void codegen(const InitDecl& decl) {
-    auto it = funcInstantiations.find(mangleWithParams(decl));
-    auto* func = it == funcInstantiations.end() ? codegenInitializerProto(decl) : it->second.func;
+void codegen(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
+    if (decl.getTypeDecl().isGeneric() && typeGenericArgs.empty()) return;
+
+    llvm::Function* func = getInitProto(decl, typeGenericArgs);
+
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", func));
 
-    auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl().getType()));
+    auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl().getType(typeGenericArgs)));
     auto* alloca = builder.CreateAlloca(type);
 
     beginScope();
@@ -1001,11 +1041,13 @@ void codegen(const InitDecl& decl) {
 }
 
 void codegen(const DeinitDecl& decl) {
-    FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName().str(),
+    if (decl.getTypeDecl().isGeneric()) return;
+
+    FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName(),
                       /* genericParams */ {}, nullptr, decl.srcLoc);
     funcDecl.body = decl.body;
-    auto it = funcInstantiations.find(mangle(decl));
-    llvm::Function* func = it == funcInstantiations.end() ? codegenFuncProto(funcDecl) : it->second.func;
+
+    llvm::Function* func = getFuncProto(funcDecl);
     codegenFuncBody(funcDecl, *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
@@ -1080,7 +1122,7 @@ llvm::Module& irgen::compile(const Module& sourceModule) {
     }
 
     for (auto& p : funcInstantiations) {
-        if (p.second.genericArgs.empty()) continue;
+        if (p.second.decl.isExtern() || !p.second.func->empty()) continue;
 
         setCurrentGenericArgs(p.second.decl.genericParams, p.second.genericArgs);
         codegenFuncBody(p.second.decl, *p.second.func);

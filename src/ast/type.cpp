@@ -84,9 +84,9 @@ namespace {
     CACHE.emplace_back(new TYPE(__VA_ARGS__)); \
     return Type(CACHE.back().get(), isMutable);
 
-Type BasicType::get(llvm::StringRef name, std::vector<Type>&& genericArgs, bool isMutable) {
+Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable) {
     FETCH_AND_RETURN_TYPE(BasicType, basicTypes,
-        t->name == name && t->genericArgs == genericArgs, name, std::move(genericArgs));
+        t->name == name && t->getGenericArgs() == genericArgs, name, genericArgs);
 }
 
 Type ArrayType::get(Type elementType, int64_t size, bool isMutable) {

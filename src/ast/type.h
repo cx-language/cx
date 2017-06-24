@@ -86,6 +86,7 @@ public:
     void setMutable(bool isMutable);
     Type asMutable(bool isMutable = true) const { return Type(typeBase, isMutable); }
     Type asImmutable() const { return asMutable(false); }
+    Type removePtr() const { return isPtrType() ? getPointee() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
     std::string toString() const;
@@ -134,7 +135,7 @@ public:
     std::string name;
 
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
-    static Type get(llvm::StringRef name, std::vector<Type>&& genericArgs,
+    static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs,
                     bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::BasicType; }
 

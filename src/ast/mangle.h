@@ -16,11 +16,14 @@ namespace delta {
     class Arg;
     class TypeDecl;
 
-    std::string mangle(const FuncDecl& decl, llvm::ArrayRef<Type> genericArgs = {});
+    std::string mangle(const FuncDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
+                       llvm::ArrayRef<Type> funcGenericArgs = {});
     std::string mangleFuncDecl(llvm::StringRef receiverType, llvm::StringRef funcName,
                                llvm::ArrayRef<Type> genericArgs = {});
-    std::string mangle(const InitDecl& decl, llvm::ArrayRef<Type> genericArgs = {});
-    std::string mangleInitDecl(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs = {});
+    std::string mangle(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
+                       llvm::ArrayRef<Type> funcGenericArgs = {});
+    std::string mangleInitDecl(llvm::StringRef typeName,
+                               llvm::ArrayRef<Type> genericArgs = {});
     std::string mangle(const DeinitDecl& decl);
     std::string mangleDeinitDecl(llvm::StringRef typeName);
     std::string mangle(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);

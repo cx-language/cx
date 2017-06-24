@@ -27,13 +27,18 @@ llvm::StringRef DeinitDecl::getTypeName() const {
     return type.which() ? boost::get<TypeDecl*>(type)->name : boost::get<std::string>(type);
 }
 
-Type TypeDecl::getType(bool isMutable, std::vector<Type>&& genericArgs) const {
+Type TypeDecl::getType(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {
     assert(genericArgs.size() == genericParams.size());
-    return BasicType::get(name, std::move(genericArgs), isMutable);
+    return BasicType::get(name, genericArgs, isMutable);
 }
 
-Type TypeDecl::getTypeForPassing(bool isMutable) const {
-    return tag == TypeTag::Struct ? getType(isMutable) : PtrType::get(getType(isMutable), true);
+Type TypeDecl::getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {
+    switch (tag) {
+        case TypeTag::Struct: case TypeTag::Union:
+            return getType(genericArgs, isMutable);
+        case TypeTag::Class: case TypeTag::Interface:
+            return PtrType::get(getType(genericArgs, isMutable), true);
+    }
 }
 
 unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
