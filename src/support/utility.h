@@ -17,9 +17,8 @@ inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
 }
 
-template<typename SourceContainer, typename T>
-std::vector<T> map(const SourceContainer& source,
-                   T (& mapper)(const typename SourceContainer::value_type&)) {
+template<typename SourceContainer, typename T, typename Param>
+std::vector<T> map(const SourceContainer& source, T (& mapper)(Param)) {
     std::vector<T> result;
     result.reserve(source.size());
     for (const auto& element : source) result.emplace_back(mapper(element));

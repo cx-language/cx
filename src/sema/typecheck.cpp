@@ -185,10 +185,26 @@ bool checkRange(Expr& expr, int64_t value, Type type) {
 
 /// Resolves generic parameters to their corresponding types, returns other types as is.
 Type resolve(Type type) {
-    if (!type.isBasicType()) return type;
-    auto it = currentGenericArgs.find(type.getName());
-    if (it == currentGenericArgs.end()) return type;
-    return it->second;
+    switch (type.getKind()) {
+        case TypeKind::BasicType: {
+            auto it = currentGenericArgs.find(type.getName());
+            if (it == currentGenericArgs.end()) return type;
+            return it->second;
+        }
+        case TypeKind::PtrType:
+            return PtrType::get(resolve(type.getPointee()), type.isRef(), type.isMutable());
+        case TypeKind::ArrayType:
+            return ArrayType::get(resolve(type.getElementType()),
+                                  type.getArraySize(), type.isMutable());
+        case TypeKind::RangeType:
+            return RangeType::get(resolve(type.getIterableElementType()),
+                                  llvm::cast<RangeType>(*type).isExclusive(), type.isMutable());
+        case TypeKind::FuncType:
+            return FuncType::get(resolve(type.getReturnType()),
+                                 map(type.getParamTypes(), resolve), type.isMutable());
+        default:
+            fatalError(("resolve() not implemented for type '" + type.toString() + "'").c_str());
+    }
 }
 
 bool isInterface(Type type) {

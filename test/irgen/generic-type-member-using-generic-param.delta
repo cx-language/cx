@@ -1,0 +1,5 @@
+// RUN: %delta -print-ir %s
+
+class A<T> { var a: T* }
+A::init() { this.a = null }
+func main() { var a = A<int>() }
