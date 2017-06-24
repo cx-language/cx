@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cassert>
 #include <string>
 #include <memory>
 #include <vector>
-#include <boost/variant.hpp>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Casting.h>
 #include "expr.h"
@@ -121,36 +121,38 @@ private:
 
 class InitDecl : public Decl {
 public:
-    /// The name of the struct or class this initializer initializes, or (after
-    /// type checking) a pointer to the corresponding type declaration.
-    boost::variant<std::string, TypeDecl*> type;
+    std::string typeName;
+    TypeDecl* typeDecl;
     std::vector<ParamDecl> params;
     std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
     SrcLoc srcLoc;
 
-    InitDecl(std::string&& type, std::vector<ParamDecl>&& params,
+    InitDecl(std::string&& typeName, std::vector<ParamDecl>&& params,
              std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body, SrcLoc srcLoc)
-    : Decl(DeclKind::InitDecl, nullptr), type(std::move(type)), params(std::move(params)),
-      body(std::move(body)), srcLoc(srcLoc) { }
-    TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
-    llvm::StringRef getTypeName() const;
+    : Decl(DeclKind::InitDecl, nullptr), typeName(std::move(typeName)),
+      params(std::move(params)), body(std::move(body)), srcLoc(srcLoc) { }
+
+    TypeDecl& getTypeDecl() const { assert(typeDecl); return *typeDecl; }
+    llvm::StringRef getTypeName() const { return typeName; }
+
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }
 };
 
 class DeinitDecl : public Decl {
 public:
-    /// The name of the struct or class this deinitializer deinitializes, or (after
-    /// type checking) a pointer to the corresponding type declaration.
-    boost::variant<std::string, TypeDecl*> type;
+    std::string typeName;
+    TypeDecl* typeDecl;
     std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
     SrcLoc srcLoc;
 
-    DeinitDecl(std::string&& type,
+    DeinitDecl(std::string&& typeName,
                std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body, SrcLoc srcLoc)
-    : Decl(DeclKind::DeinitDecl, nullptr), type(std::move(type)), body(std::move(body)),
-      srcLoc(srcLoc) { }
-    TypeDecl& getTypeDecl() const { return *boost::get<TypeDecl*>(type); }
-    llvm::StringRef getTypeName() const;
+    : Decl(DeclKind::DeinitDecl, nullptr), typeName(std::move(typeName)),
+      body(std::move(body)), srcLoc(srcLoc) { }
+
+    TypeDecl& getTypeDecl() const { assert(typeDecl); return *typeDecl; }
+    llvm::StringRef getTypeName() const { return typeName; }
+
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 };
 

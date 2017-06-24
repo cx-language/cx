@@ -6,7 +6,7 @@
 #include <vector>
 #include <cstdlib>
 #include <system_error>
-#include <boost/numeric/conversion/cast.hpp>
+#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
@@ -172,14 +172,13 @@ Type typecheckBinaryExpr(BinaryExpr& expr) {
 
 TypeDecl* getTypeDecl(const BasicType& type);
 
-template<typename IntType>
-bool checkRange(Expr& expr, int64_t value, llvm::StringRef param) {
-    try {
-        boost::numeric_cast<IntType>(value);
-    } catch (...) {
-        error(expr.getSrcLoc(), value, " is out of range for type '", param, "'");
+template<int bitWidth, bool isSigned>
+bool checkRange(Expr& expr, int64_t value, Type type) {
+    if ((isSigned && !llvm::APSInt::get(value).isSignedIntN(bitWidth)) ||
+        (!isSigned && !llvm::APSInt::get(value).isIntN(bitWidth))) {
+        error(expr.getSrcLoc(), value, " is out of range for type '", type, "'");
     }
-    expr.setType(BasicType::get(param.str(), {}));
+    expr.setType(type);
     return true;
 }
 
@@ -245,19 +244,21 @@ bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget)
     // Autocast integer literals to parameter type if within range, error out if not within range.
     if (expr.isIntLiteralExpr() && target.isBasicType()) {
         int64_t value{expr.getIntLiteralExpr().value};
-        llvm::StringRef targetTypeName = target.getName();
-        if (targetTypeName == "int") return checkRange<int>(expr, value, targetTypeName);
-        if (targetTypeName == "uint") return checkRange<unsigned>(expr, value, targetTypeName);
-        if (targetTypeName == "int8") return checkRange<int8_t>(expr, value, targetTypeName);
-        if (targetTypeName == "int16") return checkRange<int16_t>(expr, value, targetTypeName);
-        if (targetTypeName == "int32") return checkRange<int32_t>(expr, value, targetTypeName);
-        if (targetTypeName == "int64") return checkRange<int64_t>(expr, value, targetTypeName);
-        if (targetTypeName == "uint8") return checkRange<uint8_t>(expr, value, targetTypeName);
-        if (targetTypeName == "uint16") return checkRange<uint16_t>(expr, value, targetTypeName);
-        if (targetTypeName == "uint32") return checkRange<uint32_t>(expr, value, targetTypeName);
-        if (targetTypeName == "uint64") return checkRange<uint64_t>(expr, value, targetTypeName);
-        if (targetTypeName == "float" || targetTypeName == "float32"
-        ||  targetTypeName == "float64" || targetTypeName == "float80") {
+
+        if (target.isInteger()) {
+            if (target.isInt()) return checkRange<32, true>(expr, value, target);
+            if (target.isUInt()) return checkRange<32, false>(expr, value, target);
+            if (target.isInt8()) return checkRange<8, true>(expr, value, target);
+            if (target.isInt16()) return checkRange<16, true>(expr, value, target);
+            if (target.isInt32()) return checkRange<32, true>(expr, value, target);
+            if (target.isInt64()) return checkRange<64, true>(expr, value, target);
+            if (target.isUInt8()) return checkRange<8, false>(expr, value, target);
+            if (target.isUInt16()) return checkRange<16, false>(expr, value, target);
+            if (target.isUInt32()) return checkRange<32, false>(expr, value, target);
+            if (target.isUInt64()) return checkRange<64, false>(expr, value, target);
+        }
+
+        if (target.isFloatingPoint()) {
             // TODO: Check that the integer value is losslessly convertible to the target type?
             expr.setType(target);
             return true;
@@ -793,7 +794,7 @@ void delta::addToSymbolTable(InitDecl& decl) {
     }
     Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
-    decl.type = &typeDecl.getTypeDecl();
+    decl.typeDecl = &typeDecl.getTypeDecl();
 
     currentModule->getSymbolTable().add(mangle(decl), &decl);
 }
@@ -804,7 +805,7 @@ void delta::addToSymbolTable(DeinitDecl& decl) {
     }
     Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
-    decl.type = &typeDecl.getTypeDecl();
+    decl.typeDecl = &typeDecl.getTypeDecl();
 
     currentModule->getSymbolTable().add(mangle(decl), &decl);
 }
@@ -1005,7 +1006,7 @@ void typecheckInitDecl(InitDecl& decl) {
         return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 
-    decl.type = &typeDecl.getTypeDecl();
+    decl.typeDecl = &typeDecl.getTypeDecl();
     addToSymbolTable(VarDecl(typeDecl.getTypeDecl().getType(getGenericArgsAsArray(), true),
                              "this", nullptr, currentModule, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheckParamDecl(param);
@@ -1026,7 +1027,7 @@ void typecheckDeinitDecl(DeinitDecl& decl) {
                       decl.getTypeName(), /* genericParams */ {}, currentModule,
                       SrcLoc::invalid());
     funcDecl.body = decl.body;
-    decl.type = &typeDecl;
+    decl.typeDecl = &typeDecl;
     typecheckMemberFunc(funcDecl);
 }
 

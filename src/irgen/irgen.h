@@ -12,6 +12,7 @@ namespace irgen {
     llvm::Module& compile(const Module& module);
     llvm::Value* codegenExpr(const Expr& expr);
     llvm::Type* toIR(Type type);
+    llvm::Type* getBuiltinType(llvm::StringRef typeName);
     llvm::Module& getIRModule();
     llvm::IRBuilder<>& getBuilder();
     llvm::LLVMContext& getContext();

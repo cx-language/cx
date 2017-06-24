@@ -1,7 +1,6 @@
 file(GLOB SOURCES *.h *.cpp)
 add_executable(delta ${SOURCES})
 target_link_libraries(delta deltaParser deltaSema deltaIRGen deltaSupport)
-target_include_directories(delta SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 llvm_map_components_to_libnames(LLVM_LIBS native mc lineeditor executionengine interpreter)
-target_link_libraries(delta ${LLVM_LIBS} ${Boost_LIBRARIES})
+target_link_libraries(delta ${LLVM_LIBS})
 add_definitions(-DDELTA_ROOT_DIR="${PROJECT_SOURCE_DIR}")

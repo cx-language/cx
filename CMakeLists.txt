@@ -22,8 +22,6 @@ find_package(Clang REQUIRED)
 # CLANG_INSTALL_PREFIX is defined by ClangConfig.cmake during the above find_package(Clang) call.
 add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_INSTALL_PREFIX}/lib/clang/${LLVM_VERSION}/include")
 
-find_package(Boost REQUIRED)
-
 find_package(PkgConfig)
 pkg_check_modules(LIBEDIT REQUIRED libedit)
 

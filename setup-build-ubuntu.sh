@@ -19,7 +19,6 @@ sudo apt install libtinfo-dev
 
 sudo apt install cmake
 sudo apt install ninja-build
-sudo apt install libboost-dev
 sudo apt install libedit-dev
 sudo apt install python-pip
 sudo pip install lit

@@ -19,14 +19,6 @@ bool FuncDecl::signatureMatches(const FuncDecl& other, bool matchReceiver) const
     return true;
 }
 
-llvm::StringRef InitDecl::getTypeName() const {
-    return type.which() ? boost::get<TypeDecl*>(type)->name : boost::get<std::string>(type);
-}
-
-llvm::StringRef DeinitDecl::getTypeName() const {
-    return type.which() ? boost::get<TypeDecl*>(type)->name : boost::get<std::string>(type);
-}
-
 Type TypeDecl::getType(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {
     assert(genericArgs.size() == genericParams.size());
     return BasicType::get(name, genericArgs, isMutable);
