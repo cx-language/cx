@@ -199,14 +199,14 @@ llvm::Type* irgen::toIR(Type type) {
 
 namespace {
 
-llvm::Value* codegenVarExpr(const VariableExpr& expr) {
+llvm::Value* codegenVarExpr(const VarExpr& expr) {
     auto* value = findValue(expr.identifier);
     if (auto* arg = llvm::dyn_cast<llvm::Argument>(value)) return arg;
     if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) return constant;
     return builder.CreateLoad(value, expr.identifier);
 }
 
-llvm::Value* codegenLvalueVarExpr(const VariableExpr& expr) {
+llvm::Value* codegenLvalueVarExpr(const VarExpr& expr) {
     return findValue(expr.identifier);
 }
 
@@ -562,7 +562,7 @@ llvm::Value* codegenUnwrapExpr(const UnwrapExpr& expr) {
 
 llvm::Value* irgen::codegenExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr: return codegenVarExpr(expr.getVariableExpr());
+        case ExprKind::VarExpr: return codegenVarExpr(expr.getVarExpr());
         case ExprKind::StrLiteralExpr: return codegenStrLiteralExpr(expr.getStrLiteralExpr());
         case ExprKind::IntLiteralExpr: return codegenIntLiteralExpr(expr.getIntLiteralExpr());
         case ExprKind::FloatLiteralExpr: return codegenFloatLiteralExpr(expr.getFloatLiteralExpr());
@@ -584,7 +584,7 @@ namespace {
 
 llvm::Value* codegenLvalueExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr: return codegenLvalueVarExpr(expr.getVariableExpr());
+        case ExprKind::VarExpr: return codegenLvalueVarExpr(expr.getVarExpr());
         case ExprKind::StrLiteralExpr: llvm_unreachable("no lvalue string literals");
         case ExprKind::IntLiteralExpr: llvm_unreachable("no lvalue integer literals");
         case ExprKind::FloatLiteralExpr: llvm_unreachable("no lvalue float literals");
@@ -656,7 +656,7 @@ llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nul
     return alloca;
 }
 
-void codegenVarStmt(const VariableStmt& stmt) {
+void codegenVarStmt(const VarStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.decl->getType(), nullptr, stmt.decl->name);
     if (auto initializer = stmt.decl->initializer) {
         builder.CreateStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
@@ -840,7 +840,7 @@ void codegenAugAssignStmt(const AugAssignStmt& stmt) {
 void codegenStmt(const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt: codegenReturnStmt(stmt.getReturnStmt()); break;
-        case StmtKind::VariableStmt: codegenVarStmt(stmt.getVariableStmt()); break;
+        case StmtKind::VarStmt: codegenVarStmt(stmt.getVarStmt()); break;
         case StmtKind::IncrementStmt: codegenIncrementStmt(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: codegenDecrementStmt(stmt.getDecrementStmt()); break;
         case StmtKind::ExprStmt: codegenExpr(*stmt.getExprStmt().expr); break;

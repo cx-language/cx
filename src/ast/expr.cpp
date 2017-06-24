@@ -8,7 +8,7 @@ using namespace delta;
 
 bool Expr::isLvalue() const {
     switch (getKind()) {
-        case ExprKind::VariableExpr: case ExprKind::StrLiteralExpr: case ExprKind::ArrayLiteralExpr:
+        case ExprKind::VarExpr: case ExprKind::StrLiteralExpr: case ExprKind::ArrayLiteralExpr:
         case ExprKind::MemberExpr: case ExprKind::SubscriptExpr:
             return true;
         case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr:
@@ -23,7 +23,7 @@ bool Expr::isLvalue() const {
 
 llvm::StringRef CallExpr::getFuncName() const {
     switch (func->getKind()) {
-        case ExprKind::VariableExpr: return llvm::cast<VariableExpr>(*func).identifier;
+        case ExprKind::VarExpr: return llvm::cast<VarExpr>(*func).identifier;
         case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(*func).member;
         default: return "(anonymous function)";
     }

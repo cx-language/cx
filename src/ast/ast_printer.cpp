@@ -21,7 +21,7 @@ std::ostream& br(std::ostream& out) {
 std::ostream& operator<<(std::ostream& out, const Expr& expr);
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt);
 
-std::ostream& operator<<(std::ostream& out, const VariableExpr& expr) {
+std::ostream& operator<<(std::ostream& out, const VarExpr& expr) {
     return out << expr.identifier;
 }
 
@@ -85,7 +85,7 @@ std::ostream& operator<<(std::ostream& out, const UnwrapExpr& expr) {
 
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr:   return out << expr.getVariableExpr();
+        case ExprKind::VarExpr:        return out << expr.getVarExpr();
         case ExprKind::StrLiteralExpr: return out << expr.getStrLiteralExpr();
         case ExprKind::IntLiteralExpr: return out << expr.getIntLiteralExpr();
         case ExprKind::FloatLiteralExpr:return out << expr.getFloatLiteralExpr();
@@ -121,7 +121,7 @@ std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
     return out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const VariableStmt& stmt) {
+std::ostream& operator<<(std::ostream& out, const VarStmt& stmt) {
     out << br << "(var-stmt " << stmt.decl->name << " ";
     if (stmt.decl->initializer) out << *stmt.decl->initializer;
     else out << "uninitialized";
@@ -191,7 +191,7 @@ std::ostream& operator<<(std::ostream& out, const AugAssignStmt& stmt) {
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt:    return out << stmt.getReturnStmt();
-        case StmtKind::VariableStmt:  return out << stmt.getVariableStmt();
+        case StmtKind::VarStmt:       return out << stmt.getVarStmt();
         case StmtKind::IncrementStmt: return out << stmt.getIncrementStmt();
         case StmtKind::DecrementStmt: return out << stmt.getDecrementStmt();
         case StmtKind::ExprStmt:      return out << br << *stmt.getExprStmt().expr;

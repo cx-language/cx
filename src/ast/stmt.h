@@ -11,7 +11,7 @@ class VarDecl;
 
 enum class StmtKind {
     ReturnStmt,
-    VariableStmt,
+    VarStmt,
     IncrementStmt,
     DecrementStmt,
     ExprStmt,
@@ -34,7 +34,7 @@ public:
     class KIND& get##KIND() { return llvm::cast<class KIND>(*this); } \
     const class KIND& get##KIND() const { return llvm::cast<class KIND>(*this); }
     DEFINE_STMT_IS_AND_GET(ReturnStmt)
-    DEFINE_STMT_IS_AND_GET(VariableStmt)
+    DEFINE_STMT_IS_AND_GET(VarStmt)
     DEFINE_STMT_IS_AND_GET(IncrementStmt)
     DEFINE_STMT_IS_AND_GET(DecrementStmt)
     DEFINE_STMT_IS_AND_GET(ExprStmt)
@@ -69,13 +69,13 @@ public:
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ReturnStmt; }
 };
 
-class VariableStmt : public Stmt {
+class VarStmt : public Stmt {
 public:
     std::unique_ptr<VarDecl> decl;
 
-    VariableStmt(std::unique_ptr<VarDecl> decl)
-    : Stmt(StmtKind::VariableStmt), decl(std::move(decl)) { }
-    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::VariableStmt; }
+    VarStmt(std::unique_ptr<VarDecl> decl)
+    : Stmt(StmtKind::VarStmt), decl(std::move(decl)) { }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::VarStmt; }
 };
 
 class IncrementStmt : public Stmt {

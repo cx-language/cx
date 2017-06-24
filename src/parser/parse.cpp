@@ -123,15 +123,15 @@ std::vector<Arg> parseArgList() {
 }
 
 /// var-expr ::= id
-std::unique_ptr<VariableExpr> parseVariableExpr() {
+std::unique_ptr<VarExpr> parseVarExpr() {
     assert(currentToken() == IDENTIFIER);
     auto id = parse(IDENTIFIER);
-    return llvm::make_unique<VariableExpr>(std::move(id.string), id.getLoc());
+    return llvm::make_unique<VarExpr>(std::move(id.string), id.getLoc());
 }
 
-std::unique_ptr<VariableExpr> parseThis() {
+std::unique_ptr<VarExpr> parseThis() {
     assert(currentToken() == THIS);
-    auto expr = llvm::make_unique<VariableExpr>("this", currentLoc());
+    auto expr = llvm::make_unique<VarExpr>("this", currentLoc());
     consumeToken();
     return expr;
 }
@@ -346,14 +346,14 @@ std::unique_ptr<Expr> parsePostfixExpr() {
     switch (currentToken()) {
         case IDENTIFIER:
             switch (lookAhead(1)) {
-                case LPAREN: expr = parseCallExpr(parseVariableExpr()); break;
+                case LPAREN: expr = parseCallExpr(parseVarExpr()); break;
                 case LT:
                     if (shouldParseGenericArgList()) {
-                        expr = parseCallExpr(parseVariableExpr());
+                        expr = parseCallExpr(parseVarExpr());
                         break;
                     }
                     // fallthrough
-                default: expr = parseVariableExpr(); break;
+                default: expr = parseVarExpr(); break;
             }
             break;
         case STRING_LITERAL: expr = parseStrLiteral(); break;
@@ -492,8 +492,8 @@ std::unique_ptr<VarDecl> parseVarDecl() {
 }
 
 /// var-stmt ::= var-decl
-std::unique_ptr<VariableStmt> parseVarStmt() {
-    return llvm::make_unique<VariableStmt>(parseVarDecl());
+std::unique_ptr<VarStmt> parseVarStmt() {
+    return llvm::make_unique<VarStmt>(parseVarDecl());
 }
 
 /// call-stmt ::= call-expr ('\n' | ';')
@@ -525,7 +525,7 @@ std::unique_ptr<DeferStmt> parseDeferStmt() {
     assert(currentToken() == DEFER);
     consumeToken();
     // FIXME: Doesn't have to be a variable expression.
-    auto stmt = llvm::make_unique<DeferStmt>(parseCallExpr(parseVariableExpr()));
+    auto stmt = llvm::make_unique<DeferStmt>(parseCallExpr(parseVarExpr()));
     parseStmtTerminator();
     return stmt;
 }

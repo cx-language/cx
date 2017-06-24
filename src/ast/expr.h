@@ -14,7 +14,7 @@ namespace delta {
 class Decl;
 
 enum class ExprKind {
-    VariableExpr,
+    VarExpr,
     StrLiteralExpr,
     IntLiteralExpr,
     FloatLiteralExpr,
@@ -39,7 +39,7 @@ public:
     class KIND& get##KIND() { return llvm::cast<class  KIND>(*this); } \
     const class KIND& get##KIND() const { return llvm::cast<class KIND>(*this); }
 
-    DEFINE_EXPR_IS_AND_GET(VariableExpr)
+    DEFINE_EXPR_IS_AND_GET(VarExpr)
     DEFINE_EXPR_IS_AND_GET(StrLiteralExpr)
     DEFINE_EXPR_IS_AND_GET(IntLiteralExpr)
     DEFINE_EXPR_IS_AND_GET(FloatLiteralExpr)
@@ -75,13 +75,13 @@ public:
 
 inline Expr::~Expr() { }
 
-class VariableExpr : public Expr {
+class VarExpr : public Expr {
 public:
     std::string identifier;
 
-    VariableExpr(std::string&& identifier, SrcLoc srcLoc)
-    : Expr(ExprKind::VariableExpr, srcLoc), identifier(std::move(identifier)) { }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::VariableExpr; }
+    VarExpr(std::string&& identifier, SrcLoc srcLoc)
+    : Expr(ExprKind::VarExpr, srcLoc), identifier(std::move(identifier)) { }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::VarExpr; }
 };
 
 class StrLiteralExpr : public Expr {
@@ -153,7 +153,7 @@ public:
              std::vector<Type>&& genericArgs, SrcLoc srcLoc)
     : Expr(ExprKind::CallExpr, srcLoc), func(std::move(func)), args(std::move(args)),
       genericArgs(std::move(genericArgs)) { }
-    bool callsNamedFunc() const { return func->isVariableExpr() || func->isMemberExpr(); }
+    bool callsNamedFunc() const { return func->isVarExpr() || func->isMemberExpr(); }
     llvm::StringRef getFuncName() const;
     std::string getMangledFuncName() const;
     bool isMemberFuncCall() const { return func->isMemberExpr(); }
@@ -185,7 +185,7 @@ public:
 
     PrefixExpr(PrefixOperator op, std::unique_ptr<Expr> operand, SrcLoc srcLoc)
     : CallExpr(ExprKind::PrefixExpr,
-               llvm::make_unique<VariableExpr>(toString(op.kind), srcLoc),
+               llvm::make_unique<VarExpr>(toString(op.kind), srcLoc),
                addArg({}, std::move(operand)), srcLoc), op(op) { }
     Expr& getOperand() const { return *args[0].value; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::PrefixExpr; }
@@ -197,7 +197,7 @@ public:
 
     BinaryExpr(BinaryOperator op, std::unique_ptr<Expr> left, std::unique_ptr<Expr> right,
                SrcLoc srcLoc)
-    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VariableExpr>(toString(op.kind), srcLoc),
+    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(toString(op.kind), srcLoc),
                addArg(addArg({}, std::move(left)), std::move(right)), srcLoc), op(op) { }
     Expr& getLHS() const { return *args[0].value; }
     Expr& getRHS() const { return *args[1].value; }

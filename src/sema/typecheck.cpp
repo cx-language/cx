@@ -62,7 +62,7 @@ void typecheckFuncDecl(FuncDecl& decl);
 Type typecheckCallExpr(CallExpr& expr);
 void typecheckDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths, ParserFunction& parse);
 
-Type typecheckVarExpr(VariableExpr& expr) {
+Type typecheckVarExpr(VarExpr& expr) {
     Decl& decl = findDecl(expr.identifier, expr.srcLoc);
 
     switch (decl.getKind()) {
@@ -586,7 +586,7 @@ Type typecheckUnwrapExpr(UnwrapExpr& expr) {
 Type delta::typecheckExpr(Expr& expr) {
     llvm::Optional<Type> type;
     switch (expr.getKind()) {
-        case ExprKind::VariableExpr: type = typecheckVarExpr(expr.getVariableExpr()); break;
+        case ExprKind::VarExpr: type = typecheckVarExpr(expr.getVarExpr()); break;
         case ExprKind::StrLiteralExpr: type = typecheckStrLiteralExpr(expr.getStrLiteralExpr()); break;
         case ExprKind::IntLiteralExpr: type = typecheckIntLiteralExpr(expr.getIntLiteralExpr()); break;
         case ExprKind::FloatLiteralExpr: type = typecheckFloatLiteralExpr(expr.getFloatLiteralExpr()); break;
@@ -644,7 +644,7 @@ void typecheckReturnStmt(ReturnStmt& stmt) {
 
 void typecheckVarDecl(VarDecl& decl, bool isGlobal);
 
-void typecheckVarStmt(VariableStmt& stmt) {
+void typecheckVarStmt(VarStmt& stmt) {
     typecheckVarDecl(*stmt.decl, false);
 }
 
@@ -731,9 +731,9 @@ void typecheckAssignment(Expr& lhs, Expr& rhs, SrcLoc srcLoc) {
         error(rhs.getSrcLoc(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
     if (!lhsType.isMutable() && !inInitializer) {
-        if (lhs.isVariableExpr()) {
+        if (lhs.isVarExpr()) {
             error(srcLoc, "cannot assign to immutable variable '",
-                  lhs.getVariableExpr().identifier, "'");
+                  lhs.getVarExpr().identifier, "'");
         } else {
             error(srcLoc, "cannot assign to immutable expression");
         }
@@ -756,7 +756,7 @@ void typecheckAugAssignStmt(AugAssignStmt& stmt) {
 void typecheckStmt(Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt: typecheckReturnStmt(stmt.getReturnStmt()); break;
-        case StmtKind::VariableStmt: typecheckVarStmt(stmt.getVariableStmt()); break;
+        case StmtKind::VarStmt: typecheckVarStmt(stmt.getVarStmt()); break;
         case StmtKind::IncrementStmt: typecheckIncrementStmt(stmt.getIncrementStmt()); break;
         case StmtKind::DecrementStmt: typecheckDecrementStmt(stmt.getDecrementStmt()); break;
         case StmtKind::ExprStmt: typecheckExpr(*stmt.getExprStmt().expr); break;
