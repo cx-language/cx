@@ -383,7 +383,7 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
             case DeclKind::TypeDecl: {
                 isInitCall = true;
                 auto mangledName = mangleInitDecl(decl->getTypeDecl().name);
-                auto initDecls = currentModule->getSymbolTable().find(mangledName);
+                auto initDecls = findDecls(mangledName);
 
                 for (Decl* initDecl : initDecls) {
                     if (initDecls.size() == 1) {

@@ -1,0 +1,9 @@
+// RUN: %delta -print-ir %s -I%p/inputs | %FileCheck %s
+
+import "imported_generic_type_init"
+
+func main() {
+    // CHECK: %a = alloca %"A<int>"
+    // CHECK: call %"A<int>" @"A<int>.init"()
+    var a = A<int>()
+}
