@@ -1,0 +1,5 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func foo<T>() { }
+// CHECK: 5:18: error: couldn't infer generic parameter 'T'
+func main() { foo() }

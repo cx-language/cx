@@ -304,14 +304,50 @@ bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params);
 void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
                   const std::string& funcName, SrcLoc srcLoc);
 
-void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call) {
+std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
+                                   const CallExpr& call, llvm::ArrayRef<ParamDecl> params) {
+    std::vector<Type> genericArgs;
+    genericArgs.reserve(genericParams.size());
+
+    assert(call.args.size() == params.size());
+
+    for (auto& genericParam : genericParams) {
+        Type genericArg;
+
+        for (auto tuple : llvm::zip_first(params, call.args)) {
+            Type paramType = std::get<0>(tuple).getType();
+            if (paramType.isBasicType() && paramType.getName() == genericParam.name) {
+                // FIXME: The args will also be typechecked by validateArgs()
+                // after this function. Get rid of this duplicated typechecking.
+                Type argType = typecheckExpr(*std::get<1>(tuple).value);
+
+                if (!genericArg) {
+                    genericArg = argType;
+                } else if (!argType.isImplicitlyConvertibleTo(genericArg)) {
+                    error(std::get<1>(tuple).srcLoc, "couldn't infer generic parameter '",
+                          genericParam.name, "' because of conflicting argument types '",
+                          genericArg, "' and '", argType, "'");
+                }
+            }
+        }
+
+        if (genericArg) {
+            genericArgs.emplace_back(genericArg);
+        } else {
+            error(call.getSrcLoc(), "couldn't infer generic parameter '", genericParam.name, "'");
+        }
+    }
+
+    return genericArgs;
+}
+
+void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
+                           CallExpr& call, llvm::ArrayRef<ParamDecl> params) {
     if (genericParams.empty()) return;
 
     if (call.genericArgs.empty()) {
-        call.genericArgs.reserve(genericParams.size());
-        // FIXME: The args will also be typechecked by validateArgs()
-        // after this function. Get rid of this duplicated typechecking.
-        for (auto& arg : call.args) call.genericArgs.emplace_back(typecheckExpr(*arg.value));
+        call.genericArgs = inferGenericArgs(genericParams, call, params);
+        assert(call.genericArgs.size() == genericParams.size());
     }
     else if (call.genericArgs.size() < genericParams.size()) {
         error(call.srcLoc, "too few generic arguments to '", call.getFuncName(),
@@ -366,7 +402,8 @@ Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) {
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
             case DeclKind::FuncDecl:
-                setCurrentGenericArgs(decl->getFuncDecl().getGenericParams(), expr);
+                setCurrentGenericArgs(decl->getFuncDecl().getGenericParams(), expr,
+                                      decl->getFuncDecl().getParams());
 
                 if (decls.size() == 1) {
                     validateArgs(expr.args, decl->getFuncDecl().params,
@@ -451,7 +488,8 @@ Type typecheckCallExpr(CallExpr& expr) {
         if (funcDecl->getGenericParams().empty()) {
             return funcDecl->getFuncType()->returnType;
         } else {
-            setCurrentGenericArgs(funcDecl->genericParams, expr);
+            setCurrentGenericArgs(funcDecl->getGenericParams(), expr,
+                                  funcDecl->getParams());
             // TODO: Don't typecheck more than once with the same generic arguments.
             typecheckFuncDecl(*funcDecl);
             Type returnType = resolve(funcDecl->getFuncType()->returnType);
@@ -460,7 +498,8 @@ Type typecheckCallExpr(CallExpr& expr) {
         }
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
         if (initDecl->getTypeDecl().isGeneric()) {
-            setCurrentGenericArgs(initDecl->getTypeDecl().genericParams, expr);
+            setCurrentGenericArgs(initDecl->getTypeDecl().genericParams, expr,
+                                  initDecl->getParams());
             // TODO: Don't typecheck more than once with the same generic arguments.
             typecheckInitDecl(*initDecl);
             currentGenericArgs.clear();

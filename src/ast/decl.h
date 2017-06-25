@@ -70,6 +70,9 @@ public:
 
     ParamDecl(Type type, std::string&& name, SrcLoc srcLoc)
     : Decl(DeclKind::ParamDecl, nullptr), type(type), name(std::move(name)), srcLoc(srcLoc) { }
+
+    Type getType() const { return type; }
+
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
     bool operator==(const ParamDecl& other) const {
         return type == other.type && name == other.name;
@@ -109,6 +112,7 @@ public:
     bool isMemberFunc() const { return !receiverType.empty(); }
     bool isMutating() const { return mutating; }
     void setMutating(bool m) { mutating = m; }
+    llvm::ArrayRef<ParamDecl> getParams() const { return params; }
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
     std::string getReceiverTypeName() const { return receiverType; }
     const FuncType* getFuncType() const;
@@ -133,6 +137,7 @@ public:
       params(std::move(params)), body(std::move(body)), srcLoc(srcLoc) { }
 
     TypeDecl& getTypeDecl() const { assert(typeDecl); return *typeDecl; }
+    llvm::ArrayRef<ParamDecl> getParams() const { return params; }
     llvm::StringRef getTypeName() const { return typeName; }
 
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }

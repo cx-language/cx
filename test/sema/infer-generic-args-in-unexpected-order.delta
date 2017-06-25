@@ -1,0 +1,5 @@
+// RUN: %delta -typecheck %s
+
+func foo<A, B, C>(c: C, b: B, a: A) { }
+
+func main() { foo(5, false, "bar") }
