@@ -31,6 +31,7 @@ Type TypeDecl::getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutabl
         case TypeTag::Class: case TypeTag::Interface:
             return PtrType::get(getType(genericArgs, isMutable), true);
     }
+    llvm_unreachable("invalid type tag");
 }
 
 unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
