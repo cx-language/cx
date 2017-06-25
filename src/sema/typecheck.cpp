@@ -1253,8 +1253,9 @@ void typecheckMemberDecl(Decl& decl) {
 
 void delta::typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                             ParserFunction& parse) {
-    if (!importDeltaModule(nullptr, importSearchPaths, parse, "stdlib", "std")) {
-        printErrorAndExit("couldn't import the standard library");
+    auto stdlibModule = importDeltaModule(nullptr, importSearchPaths, parse, "stdlib", "std");
+    if (!stdlibModule) {
+        printErrorAndExit("couldn't import the standard library: ", stdlibModule.getError().message());
     }
 
     auto previousSourceFile = currentSourceFile;
