@@ -26,57 +26,6 @@ To call the function and assign its return value to a variable:
 const result = foo(1, 2);
 ```
 
-## Member Functions
-
-You can declare member functions for any type. Member functions are just like
-non-member functions, except that they receive a `this` parameter (aka the
-receiver) which is passed using the dot notation.
-
-To declare a member function for type `Foo`:
-
-```
-func Foo::bar() {
-    // ...
-}
-```
-
-To call the member function on a `Foo` instance:
-
-```
-foo.bar();
-```
-
-Inside member functions, the receiver and its member variables must be accessed
-via `this`.
-
-## Mutating Member Functions
-
-To declare a member function that can mutate its receiver, the function has to
-be declared `mutating`:
-
-```
-mutating func Foo::bar() {
-    // ...
-}
-```
-
-## Static Member Functions
-
-Member functions that are scoped to a type, but that are not called on a
-receiver, can be declared with the `static` keyword:
-
-```
-static func Foo::bar() {
-    // ...
-}
-```
-
-They are called as follows:
-
-```
-Foo::bar();
-```
-
 ## Multiple Return Values
 
 Functions can return more than one value (not fully implemented yet):
