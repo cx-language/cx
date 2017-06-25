@@ -1051,29 +1051,37 @@ void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs)
 void codegenDeinitDecl(const DeinitDecl& decl) {
     if (decl.getTypeDecl().isGeneric()) return;
 
-    FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName(),
-                      /* genericParams */ {}, nullptr, decl.srcLoc);
-    funcDecl.body = decl.body;
+    auto helperDecl = llvm::make_unique<FuncDecl>("deinit", std::vector<ParamDecl>(),
+                                                  Type::getVoid(), decl.getTypeName(),
+                                                  std::vector<GenericParamDecl>(),
+                                                  nullptr, decl.srcLoc);
+    helperDecl->body = decl.body;
+    helperDecls.emplace_back(std::move(helperDecl));
 
-    llvm::Function* func = getFuncProto(funcDecl);
-    codegenFuncBody(funcDecl, *func);
+    llvm::Function* func = getFuncProto(*helperDecls.back());
+    codegenFuncBody(*helperDecls.back(), *func);
     assert(!llvm::verifyFunction(*func, &llvm::errs()));
 }
 
 void codegenTypeDecl(const TypeDecl& decl) {
     if (decl.isGeneric()) return;
+    if (structs.count(decl.name)) return;
 
     if (decl.fields.empty()) {
         structs.emplace(decl.name, std::make_pair(llvm::StructType::get(ctx), &decl));
-        return;
+    } else {
+        auto elements = map(decl.fields, *[](const FieldDecl& f) { return toIR(f.type); });
+        structs.emplace(decl.name, std::make_pair(llvm::StructType::create(elements, decl.name), &decl));
     }
 
-    auto elements = map(decl.fields, *[](const FieldDecl& f) { return toIR(f.type); });
-    structs.emplace(decl.name, std::make_pair(llvm::StructType::create(elements, decl.name), &decl));
+    auto insertBlockBackup = builder.GetInsertBlock();
+    auto insertPointBackup = builder.GetInsertPoint();
 
     for (auto& memberDecl : decl.getMemberDecls()) {
         codegenDecl(*memberDecl);
     }
+
+    if (insertBlockBackup) builder.SetInsertPoint(insertBlockBackup, insertPointBackup);
 }
 
 llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs) {

@@ -1,26 +1,27 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=UNUSED
 
 // CHECK: %"F<int, bool>" = type { i32, i1 }
 struct F<T, U> {
     var a: T
     var b: U
+
+    // CHECK-DAG: define %"F<int, bool>" @"F<int, bool>.init"()
+    init() { }
+
+    // CHECK-DAG: define void @"F<int, bool>.foo"(%"F<int, bool>" %this)
+    func foo() { }
+
+    // UNUSED-NOT: unused
+    func unused() { }
 }
 
 func main() {
-    // CHECK: %f = alloca %"F<int, bool>"
-    // CHECK: %1 = call %"F<int, bool>" @"F<int, bool>.init"()
+    // CHECK-MAIN: %f = alloca %"F<int, bool>"
+    // CHECK-MAIN: %1 = call %"F<int, bool>" @"F<int, bool>.init"()
     const f = F<int, bool>()
 
-    // CHECK: call void @"F<int, bool>.foo"(%"F<int, bool>" %f1)
+    // CHECK-MAIN: call void @"F<int, bool>.foo"(%"F<int, bool>" %f1)
     f.foo()
 }
-
-// CHECK-DAG: define %"F<int, bool>" @"F<int, bool>.init"()
-F::init() { }
-
-// CHECK-DAG: define void @"F<int, bool>.foo"(%"F<int, bool>" %this)
-func F::foo() { }
-
-// UNUSED-NOT: unused
-func F::unused() { }

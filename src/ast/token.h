@@ -89,7 +89,6 @@ enum TokenKind {
     DOTDOTDOT,
     COMMA,
     COLON,
-    COLON_COLON,
     SEMICOLON,
     RARROW,
     TOKEN_COUNT

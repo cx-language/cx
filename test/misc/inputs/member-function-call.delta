@@ -2,14 +2,14 @@
 
 class Foo {
     var i: int;
-}
 
-Foo::init() {
-    this.i = 0;
-}
+    init() {
+        this.i = 0;
+    }
 
-mutating func Foo::add(amount: int) {
-    this.i = this.i + amount;
+    mutating func add(amount: int) {
+        this.i = this.i + amount;
+    }
 }
 
 func main() -> int {

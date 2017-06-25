@@ -1,6 +1,6 @@
 // RUN: not %delta -parse %s | %FileCheck %s
 
-struct Foo { }
-
-// CHECK: 6:11: error: operator functions must be non-member functions
-func Foo::==(f: Foo) -> bool { return false }
+struct Foo {
+    // CHECK: 5:10: error: operator functions must be non-member functions
+    func ==(f: Foo) -> bool { return false }
+}

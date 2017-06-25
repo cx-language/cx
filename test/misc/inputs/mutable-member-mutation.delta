@@ -2,10 +2,10 @@
 
 struct X {
     var a: int;
-}
 
-X::init(a: int) {
-    this.a = a;
+    init(a: int) {
+        this.a = a;
+    }
 }
 
 func main() -> int {

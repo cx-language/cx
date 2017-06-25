@@ -1,4 +1,6 @@
 // compile_successfully -typecheck
 
-class Foo { const i: int; }
-mutating func Foo::bar() { const f: mutable Foo& = this; }
+class Foo {
+    const i: int;
+    mutating func bar() { const f: mutable Foo& = this; }
+}

@@ -1,10 +1,11 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct Foo { }
-Foo::init(a: int) { }
-Foo::init(b: int) { }
+struct Foo {
+    init(a: int) { }
+    init(b: int) { }
+}
 
 func main() {
-    // CHECK: 9:9: error: ambiguous reference to 'Foo.init'
+    // CHECK: 10:9: error: ambiguous reference to 'Foo.init'
     _ = Foo(1)
 }

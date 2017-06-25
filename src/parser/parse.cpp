@@ -730,18 +730,13 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
     parse(GT);
 }
 
-/// func-proto ::= 'func' (id '::')? id param-list ('->' type)?
-/// generic-func-proto ::= 'func' (id '::')? id generic-param-list param-list ('->' type)?
+/// func-proto ::= 'func' id param-list ('->' type)?
+/// generic-func-proto ::= 'func' id generic-param-list param-list ('->' type)?
 /// generic-param-list ::= '<' generic-param-decls '>'
 /// generic-param-decls ::= id | id ',' generic-param-decls
 std::unique_ptr<FuncDecl> parseFuncProto(std::string receiverType) {
     assert(currentToken() == FUNC);
     consumeToken();
-
-    if (receiverType.empty() && lookAhead(1) == COLON_COLON) {
-        receiverType = parse(IDENTIFIER).string;
-        parse(COLON_COLON);
-    }
 
     if (currentToken() != IDENTIFIER && !currentToken().isOverloadable())
         unexpectedToken(currentToken(), {}, "as function name");
@@ -798,13 +793,8 @@ std::unique_ptr<FuncDecl> parseExternFuncDecl() {
     return decl;
 }
 
-/// init-decl ::= (id '::')? 'init' param-list '{' stmt* '}'
-std::unique_ptr<InitDecl> parseInitDecl(std::string typeName = "") {
-    if (typeName.empty()) {
-        typeName = parse(IDENTIFIER).string;
-        parse(COLON_COLON);
-    }
-
+/// init-decl ::= 'init' param-list '{' stmt* '}'
+std::unique_ptr<InitDecl> parseInitDecl(std::string typeName) {
     auto initLoc = parse(INIT).getLoc();
     auto params = parseParamList();
     parse(LBRACE);
@@ -814,13 +804,8 @@ std::unique_ptr<InitDecl> parseInitDecl(std::string typeName = "") {
                                        std::move(body), initLoc);
 }
 
-/// deinit-decl ::= (id '::')? 'deinit' '(' ')' '{' stmt* '}'
-std::unique_ptr<DeinitDecl> parseDeinitDecl(std::string typeName = "") {
-    if (typeName.empty()) {
-        typeName = parse(IDENTIFIER).string;
-        parse(COLON_COLON);
-    }
-
+/// deinit-decl ::= 'deinit' '(' ')' '{' stmt* '}'
+std::unique_ptr<DeinitDecl> parseDeinitDecl(std::string typeName) {
     auto deinitLoc = parse(DEINIT).getLoc();
     parse(LPAREN);
     auto expectedRParenLoc = currentLoc();
@@ -913,18 +898,11 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
     return llvm::make_unique<ImportDecl>(std::move(target->value), target->getSrcLoc());
 }
 
-/// decl ::= func-decl | generic-func-decl | extern-func-decl | init-decl | deinit-decl |
-///          type-decl | import-decl | var-decl
-std::unique_ptr<Decl> parseDecl() {
+/// top-level-decl ::= func-decl | extern-func-decl | type-decl | import-decl | var-decl
+std::unique_ptr<Decl> parseTopLevelDecl() {
     switch (currentToken()) {
-        case MUTATING:
-            consumeToken();
-            expect(FUNC, "after 'mutating'");
-            // fallthrough
         case FUNC: {
-            bool isMutating = lookAhead(-1) == MUTATING;
             auto decl = parseFuncDecl(/* receiverType */ "");
-            decl->setMutating(isMutating);
             addToSymbolTable(*decl);
             return std::move(decl);
         }
@@ -933,24 +911,6 @@ std::unique_ptr<Decl> parseDecl() {
             addToSymbolTable(*decl);
             return std::move(decl);
         }
-        case IDENTIFIER:
-            if (lookAhead(1) == COLON_COLON) {
-                switch (lookAhead(2)) {
-                    case INIT: {
-                        auto decl = parseInitDecl();
-                        addToSymbolTable(*decl);
-                        return std::move(decl);
-                    }
-                    case DEINIT: {
-                        auto decl = parseDeinitDecl();
-                        addToSymbolTable(*decl);
-                        return std::move(decl);
-                    }
-                    default: unexpectedToken(lookAhead(2), { INIT, DEINIT });
-                }
-            } else {
-                unexpectedToken(lookAhead(1));
-            }
         case CLASS: case STRUCT: case INTERFACE: {
             auto decl = parseTypeDecl();
             addToSymbolTable(*decl);
@@ -980,7 +940,7 @@ SourceFile parse(std::unique_ptr<llvm::MemoryBuffer> input) {
     initParser(std::move(input));
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
     while (currentToken() != NO_TOKEN)
-        topLevelDecls.emplace_back(parseDecl());
+        topLevelDecls.emplace_back(parseTopLevelDecl());
     return SourceFile(identifier, std::move(topLevelDecls));
 }
 

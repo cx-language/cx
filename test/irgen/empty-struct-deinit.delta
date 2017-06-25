@@ -1,7 +1,9 @@
 // RUN: %delta -print-ir %s
 
-struct Foo { }
-Foo::deinit() {}
+struct Foo {
+    deinit() { }
+}
+
 func main() {
     const foo: Foo = uninitialized;
 }

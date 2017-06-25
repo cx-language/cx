@@ -328,11 +328,7 @@ Token delta::lex() {
                 return DOT;
             case ',': return COMMA;
             case ';': return SEMICOLON;
-            case ':':
-                ch = readChar();
-                if (ch == ':') return COLON_COLON;
-                unreadChar(ch);
-                return COLON;
+            case ':': return COLON;
             case '\0':
                 goto end;
             case '0': case '1': case '2': case '3': case '4':

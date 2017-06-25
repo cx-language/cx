@@ -1,10 +1,10 @@
 // check_error 12:8 "cannot decrement immutable value"
 struct X {
     const a: int;
-}
 
-X::init(a: int) {
-    this.a = a;
+    init(a: int) {
+        this.a = a;
+    }
 }
 
 func main() {

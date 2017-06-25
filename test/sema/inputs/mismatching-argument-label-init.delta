@@ -1,7 +1,9 @@
-// check_error 6:15 "invalid argument name 'bar' for parameter 'a'"
+// check_error 8:15 "invalid argument name 'bar' for parameter 'a'"
 
-struct X { }
-X::init(a: int) { }
+struct X {
+    init(a: int) { }
+}
+
 func main() {
     var x = X(bar: 5);
 }

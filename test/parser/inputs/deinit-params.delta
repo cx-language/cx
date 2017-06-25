@@ -1,3 +1,4 @@
-// check_error 3:13 "deinitializers cannot have parameters"
-struct Foo { }
-Foo::deinit(i: int) { }
+// check_error 3:12 "deinitializers cannot have parameters"
+struct Foo {
+    deinit(i: int) { }
+}

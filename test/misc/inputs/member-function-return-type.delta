@@ -2,14 +2,14 @@
 
 struct Foo {
     const value: int;
-}
 
-Foo::init(value: int) {
-    this.value = value;
-}
+    init(value: int) {
+        this.value = value;
+    }
 
-func Foo::add(number: int) -> int {
-    return this.value + number;
+    func add(number: int) -> int {
+        return this.value + number;
+    }
 }
 
 func main() -> int {

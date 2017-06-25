@@ -1,12 +1,9 @@
 class Foo {
     var baz: int;
+    init() { this.baz = 42; }
+    mutating func bar() { this.baz++; }
+    func qux() -> int { return this.baz; }
 }
-
-Foo::init() { this.baz = 42; }
-
-mutating func Foo::bar() { this.baz++; }
-
-func Foo::qux() -> int { return this.baz; }
 
 func main() {
     var foo = Foo();

@@ -1,7 +1,13 @@
-class Foo { const i: int; }
-Foo::deinit() { }
-struct Bar { const i: int; }
-Bar::deinit() { }
+class Foo {
+    const i: int;
+    deinit() { }
+}
+
+struct Bar {
+    const i: int;
+    deinit() { }
+}
+
 func main() {
     const f: Foo = uninitialized;
     if (false) {

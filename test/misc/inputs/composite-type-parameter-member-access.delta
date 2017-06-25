@@ -3,15 +3,15 @@
 struct vec2 {
     var x: int;
     var y: int;
-}
 
-vec2::init(x: int, y: int) {
-    this.x = x;
-    this.y = y;
-}
+    init(x: int, y: int) {
+        this.x = x;
+        this.y = y;
+    }
 
-func vec2::add(that: vec2) -> vec2 {
-    return vec2(this.x + that.x, this.y + that.y);
+    func add(that: vec2) -> vec2 {
+        return vec2(this.x + that.x, this.y + that.y);
+    }
 }
 
 func main() -> int {

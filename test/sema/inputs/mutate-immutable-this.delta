@@ -1,4 +1,6 @@
-// check_error 4:25 "cannot increment immutable value"
+// check_error 5:24 "cannot increment immutable value"
 
-class Foo { const i: int; }
-func Foo::bar() { this.i++; }
+class Foo {
+    const i: int;
+    func bar() { this.i++; }
+}

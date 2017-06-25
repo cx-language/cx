@@ -3,11 +3,11 @@
 struct vec2 {
     const x: int
     const y: int
-}
 
-vec2::init(x: int, y: int) {
-    this.x = x
-    this.y = y
+    init(x: int, y: int) {
+        this.x = x
+        this.y = y
+    }
 }
 
 // CHECK: define %vec2 @"*"(%vec2 %a, %vec2 %b)

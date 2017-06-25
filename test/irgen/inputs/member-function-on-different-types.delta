@@ -1,4 +1,9 @@
-class Foo { const i: int; }
-class Bar { const i: int; }
-func Foo::doStuff() { }
-func Bar::doStuff() { }
+class Foo {
+    const i: int;
+    func doStuff() { }
+}
+
+class Bar {
+    const i: int;
+    func doStuff() { }
+}

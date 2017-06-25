@@ -1,8 +1,10 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct Foo { const o: int }
-Foo::init() { }
-Foo::init(i: int) { }
+struct Foo {
+    const o: int
+    init() { }
+    init(i: int) { }
+}
 
 func main() {
     // CHECK: no matching initializer for 'Foo'

@@ -1,9 +1,8 @@
-// check_error 10:19 "no member named 'bar' in 'Foo'"
+// check_error 9:19 "no member named 'bar' in 'Foo'"
 class Foo {
     const qux: int;
+    init() { }
 }
-
-Foo::init() { }
 
 func main() {
     var foo = Foo();

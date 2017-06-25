@@ -2,5 +2,6 @@
 func main() {
     const a = Foo(qux: 4);
 }
-struct Foo { }
-Foo::init(qux: int) { }
+struct Foo {
+    init(qux: int) { }
+}

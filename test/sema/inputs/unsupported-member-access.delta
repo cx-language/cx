@@ -1,9 +1,8 @@
-// check_error 9:15 "'Foo' is not a variable"
+// check_error 8:15 "'Foo' is not a variable"
 class Foo {
     const bar: int;
+    init() { }
 }
-
-Foo::init() { }
 
 func main() {
     var bar = Foo.bar;

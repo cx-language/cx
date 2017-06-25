@@ -2,11 +2,11 @@
 
 struct S {
     var i: int
-}
 
-// CHECK: define void @S.s(%S* %this)
-mutating func S::s() {
-    // CHECK: %1 = getelementptr inbounds %S, %S* %this, i32 0, i32 0
-    // CHECK: store i32 2, i32* %1
-    this.i = 2
+    // CHECK: define void @S.s(%S* %this)
+    mutating func s() {
+        // CHECK: %1 = getelementptr inbounds %S, %S* %this, i32 0, i32 0
+        // CHECK: store i32 2, i32* %1
+        this.i = 2
+    }
 }

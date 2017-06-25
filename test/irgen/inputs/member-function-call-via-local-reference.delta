@@ -1,5 +1,8 @@
-class Foo { const i: int; }
-func Foo::bar() { }
+class Foo {
+    const i: int;
+    func bar() { }
+}
+
 func main() {
     const f: Foo = uninitialized;
     const rf: Foo& = f;

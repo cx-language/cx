@@ -1,4 +1,0 @@
-func main() { var f = Foo(5); }
-struct Foo { const f: float; }
-Foo::init(i: int) { }
-Foo::deinit() { }

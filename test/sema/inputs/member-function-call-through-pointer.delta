@@ -1,7 +1,9 @@
-// check_error 8:5 "cannot call member function through pointer 'Foo*', pointer may be null"
-struct Foo { const i: int; }
+// check_error 10:5 "cannot call member function through pointer 'Foo*', pointer may be null"
 
-func Foo::bar() { }
+struct Foo {
+    const i: int;
+    func bar() { }
+}
 
 func main() {
     const f: Foo* = null;

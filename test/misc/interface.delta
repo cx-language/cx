@@ -4,9 +4,9 @@ interface Fooable {
     func foo()
 }
 
-struct F { }
-
-func F::foo() { }
+struct F {
+    func foo() { }
+}
 
 func main() {
     const f: F = uninitialized;

@@ -1,12 +1,12 @@
 struct Foo {
     var a: int;
     const b: bool;
-}
 
-Foo::init(a: int, b: bool) {
-    this.a = a;
-    this.b = b;
-    this.a++;
+    init(a: int, b: bool) {
+        this.a = a;
+        this.b = b;
+        this.a++;
+    }
 }
 
 func main() {

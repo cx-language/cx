@@ -5,14 +5,14 @@ class Bar { }
 
 struct X {
     const a: int;
+
+    init(a: int) {
+        this.a = a;
+    }
 }
 
 class Y {
     const y: char*;
-}
-
-X::init(a: int) {
-    this.a = a;
 }
 
 func main() -> int {

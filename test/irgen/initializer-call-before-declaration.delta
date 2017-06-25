@@ -1,0 +1,17 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
+
+func main() {
+    // CHECK-MAIN: %1 = call %Foo @Foo.init(i32 5)
+    var f = Foo(5);
+    // CHECK-MAIN: call void @Foo.deinit(%Foo %2)
+}
+
+// CHECK-DAG: %Foo = type { float }
+struct Foo {
+    const f: float;
+    // CHECK-DAG: define %Foo @Foo.init(i32 %i)
+    init(i: int) { }
+    // CHECK-DAG: define void @Foo.deinit(%Foo %this)
+    deinit() { }
+}

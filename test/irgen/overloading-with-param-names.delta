@@ -1,21 +1,23 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class Foo { const i: int }
+class Foo {
+    const i: int
 
-// CHECK: define %Foo @Foo.init(i32 %i)
-Foo::init(i: int) { }
+    // CHECK: define %Foo @Foo.init(i32 %i)
+    init(i: int) { }
 
-// CHECK: define %Foo @Foo.init.1(i32 %qux)
-Foo::init(qux: int) { }
+    // CHECK: define %Foo @Foo.init.1(i32 %qux)
+    init(qux: int) { }
+
+    // CHECK: define void @Foo.foo(%Foo* %this, i32 %i)
+    func foo(i: int) { }
+
+    // CHECK: define void @Foo.foo.2(%Foo* %this, i32 %qux)
+    func foo(qux: int) { }
+}
 
 // CHECK: define void @foo(i32 %i)
 func foo(i: int) { }
 
-// CHECK: define void @foo.2(i32 %qux)
+// CHECK: define void @foo.3(i32 %qux)
 func foo(qux: int) { }
-
-// CHECK: define void @Foo.foo(%Foo* %this, i32 %i)
-func Foo::foo(i: int) { }
-
-// CHECK: define void @Foo.foo.3(%Foo* %this, i32 %qux)
-func Foo::foo(qux: int) { }
