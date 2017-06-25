@@ -1,0 +1,25 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: %A = type { i32 }
+class A {
+    var i: int
+    // CHECK: define %A @A.init()
+    init() { }
+    // CHECK: define void @A.deinit(%A* %this)
+    deinit() { }
+    // CHECK: define void @A.foo(%A* %this)
+    func foo() { }
+    // CHECK: define void @A.mutate(%A* %this)
+    mutating func mutate() { }
+}
+
+func main() {
+    // CHECK: %a = alloca %A
+    // CHECK: %1 = call %A @A.init()
+    var a = A()
+    // CHECK: call void @A.foo(%A* %a)
+    a.foo()
+    // CHECK: call void @A.mutate(%A* %a)
+    a.mutate()
+    // CHECK: call void @A.deinit(%A* %a)
+}

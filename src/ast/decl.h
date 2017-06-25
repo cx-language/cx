@@ -168,17 +168,18 @@ public:
     TypeTag tag;
     std::string name;
     std::vector<FieldDecl> fields;
-    std::vector<std::unique_ptr<FuncDecl>> memberFuncs; // Only used by interfaces.
+    std::vector<std::unique_ptr<Decl>> memberFuncs; ///< FuncDecls, InitDecls, and DeinitDecls
     std::vector<GenericParamDecl> genericParams;
     SrcLoc srcLoc;
 
     TypeDecl(TypeTag tag, std::string&& name, std::vector<FieldDecl>&& fields,
-             std::vector<std::unique_ptr<FuncDecl>>&& memberFuncs,
+             std::vector<std::unique_ptr<Decl>>&& memberFuncs,
              std::vector<GenericParamDecl>&& genericParams, Module* module, SrcLoc srcLoc)
     : Decl(DeclKind::TypeDecl, module), tag(tag), name(std::move(name)),
       fields(std::move(fields)), memberFuncs(std::move(memberFuncs)),
       genericParams(std::move(genericParams)), srcLoc(srcLoc) { }
 
+    llvm::ArrayRef<std::unique_ptr<Decl>> getMemberDecls() const { return memberFuncs; }
     Type getType(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
     /// 'T&' if this is class, or plain 'T' otherwise.
     Type getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;

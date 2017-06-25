@@ -734,12 +734,11 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
 /// generic-func-proto ::= 'func' (id '::')? id generic-param-list param-list ('->' type)?
 /// generic-param-list ::= '<' generic-param-decls '>'
 /// generic-param-decls ::= id | id ',' generic-param-decls
-std::unique_ptr<FuncDecl> parseFuncProto() {
+std::unique_ptr<FuncDecl> parseFuncProto(std::string receiverType) {
     assert(currentToken() == FUNC);
     consumeToken();
 
-    std::string receiverType;
-    if (lookAhead(1) == COLON_COLON) {
+    if (receiverType.empty() && lookAhead(1) == COLON_COLON) {
         receiverType = parse(IDENTIFIER).string;
         parse(COLON_COLON);
     }
@@ -780,8 +779,8 @@ std::unique_ptr<FuncDecl> parseFuncProto() {
 }
 
 /// func-decl ::= func-proto '{' stmt* '}'
-std::unique_ptr<FuncDecl> parseFuncDecl(bool requireBody = true) {
-    auto decl = parseFuncProto();
+std::unique_ptr<FuncDecl> parseFuncDecl(std::string receiverType, bool requireBody = true) {
+    auto decl = parseFuncProto(std::move(receiverType));
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
         decl->body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
@@ -794,38 +793,42 @@ std::unique_ptr<FuncDecl> parseFuncDecl(bool requireBody = true) {
 std::unique_ptr<FuncDecl> parseExternFuncDecl() {
     assert(currentToken() == EXTERN);
     consumeToken();
-    auto decl = parseFuncProto();
+    auto decl = parseFuncProto(/* receiverType */ "");
     parseStmtTerminator();
     return decl;
 }
 
-/// init-decl ::= id '::' 'init' param-list '{' stmt* '}'
-std::unique_ptr<InitDecl> parseInitDecl() {
-    assert(currentToken() == IDENTIFIER);
-    auto type = parse(IDENTIFIER);
-    parse(COLON_COLON);
-    parse(INIT);
+/// init-decl ::= (id '::')? 'init' param-list '{' stmt* '}'
+std::unique_ptr<InitDecl> parseInitDecl(std::string typeName = "") {
+    if (typeName.empty()) {
+        typeName = parse(IDENTIFIER).string;
+        parse(COLON_COLON);
+    }
+
+    auto initLoc = parse(INIT).getLoc();
     auto params = parseParamList();
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
-    return llvm::make_unique<InitDecl>(std::move(type.string), std::move(params),
-                                       std::move(body), type.getLoc());
+    return llvm::make_unique<InitDecl>(std::move(typeName), std::move(params),
+                                       std::move(body), initLoc);
 }
 
-/// deinit-decl ::= id '::' 'deinit' '(' ')' '{' stmt* '}'
-std::unique_ptr<DeinitDecl> parseDeinitDecl() {
-    assert(currentToken() == IDENTIFIER);
-    auto type = parse(IDENTIFIER);
-    parse(COLON_COLON);
-    parse(DEINIT);
+/// deinit-decl ::= (id '::')? 'deinit' '(' ')' '{' stmt* '}'
+std::unique_ptr<DeinitDecl> parseDeinitDecl(std::string typeName = "") {
+    if (typeName.empty()) {
+        typeName = parse(IDENTIFIER).string;
+        parse(COLON_COLON);
+    }
+
+    auto deinitLoc = parse(DEINIT).getLoc();
     parse(LPAREN);
     auto expectedRParenLoc = currentLoc();
     if (consumeToken() != RPAREN) error(expectedRParenLoc, "deinitializers cannot have parameters");
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
-    return llvm::make_unique<DeinitDecl>(std::move(type.string), std::move(body), type.getLoc());
+    return llvm::make_unique<DeinitDecl>(std::move(typeName), std::move(body), deinitLoc);
 }
 
 /// field-decl ::= ('var' | 'const') id ':' type ('\n' | ';')
@@ -844,7 +847,8 @@ FieldDecl parseFieldDecl() {
     return FieldDecl(type, std::move(name.string), name.getLoc());
 }
 
-/// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' field-decl* '}'
+/// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
+/// member-decl ::= field-decl | func-decl
 std::unique_ptr<TypeDecl> parseTypeDecl() {
     TypeTag tag;
     switch (consumeToken()) {
@@ -863,13 +867,33 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
 
     parse(LBRACE);
     std::vector<FieldDecl> fields;
-    std::vector<std::unique_ptr<FuncDecl>> memberFuncs;
+    std::vector<std::unique_ptr<Decl>> memberFuncs;
 
     while (currentToken() != RBRACE) {
-        if (tag == TypeTag::Interface && currentToken().is(FUNC, MUTATING)) {
-            memberFuncs.emplace_back(parseFuncDecl(/* requireBody */ false));
-        } else {
-            fields.emplace_back(parseFieldDecl());
+        switch (currentToken()) {
+            case MUTATING:
+                consumeToken();
+                expect(FUNC, "after 'mutating'");
+                // fallthrough
+            case FUNC: {
+                bool isMutating = lookAhead(-1) == MUTATING;
+                auto requireBody = tag != TypeTag::Interface;
+                auto funcDecl = parseFuncDecl(name.string, requireBody);
+                funcDecl->setMutating(isMutating);
+                memberFuncs.emplace_back(std::move(funcDecl));
+                break;
+            }
+            case INIT:
+                memberFuncs.emplace_back(parseInitDecl(name.string));
+                break;
+            case DEINIT:
+                memberFuncs.emplace_back(parseDeinitDecl(name.string));
+                break;
+            case VAR: case CONST:
+                fields.emplace_back(parseFieldDecl());
+                break;
+            default:
+                unexpectedToken(currentToken());
         }
     }
 
@@ -899,7 +923,7 @@ std::unique_ptr<Decl> parseDecl() {
             // fallthrough
         case FUNC: {
             bool isMutating = lookAhead(-1) == MUTATING;
-            auto decl = parseFuncDecl();
+            auto decl = parseFuncDecl(/* receiverType */ "");
             decl->setMutating(isMutating);
             addToSymbolTable(*decl);
             return std::move(decl);

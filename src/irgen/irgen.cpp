@@ -69,6 +69,7 @@ std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> typeGenericArgs
 }
 
 std::unordered_map<std::string, FuncInstantiation> funcInstantiations;
+std::vector<std::unique_ptr<FuncDecl>> helperDecls;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
 const Decl* currentDecl;
@@ -883,6 +884,7 @@ llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) {
 
 void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                            llvm::ArrayRef<Type> genericArgs) {
+    assert(genericParams.size() == genericArgs.size());
     for (auto tuple : llvm::zip_first(genericParams, genericArgs)) {
         currentGenericArgs.emplace(std::get<0>(tuple).name, toIR(std::get<1>(tuple)));
     }
@@ -947,16 +949,22 @@ llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGene
     auto it = funcInstantiations.find(mangleWithParams(decl, typeGenericArgs, funcGenericArgs));
     if (it != funcInstantiations.end()) return it->second.func;
 
-    FuncDecl funcDecl(mangle(decl, typeGenericArgs), std::vector<ParamDecl>(decl.params),
-                      decl.getTypeDecl().getType(typeGenericArgs), "",
-                      /* genericParams */ {}, nullptr, decl.srcLoc);
-    return getFuncProto(funcDecl, funcGenericArgs, nullptr);
+    auto helperDecl = llvm::make_unique<FuncDecl>(mangle(decl, typeGenericArgs),
+                                                  std::vector<ParamDecl>(decl.params),
+                                                  decl.getTypeDecl().getType(typeGenericArgs),
+                                                  "", llvm::ArrayRef<GenericParamDecl>(),
+                                                  nullptr, decl.srcLoc);
+    helperDecls.emplace_back(std::move(helperDecl));
+    return getFuncProto(*helperDecls.back(), funcGenericArgs, nullptr);
 }
 
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl) {
-    FuncDecl funcDecl("deinit", {}, Type::getVoid(), decl.getTypeName().str(),
-                      /* genericParams */ {}, nullptr, decl.srcLoc);
-    return getFuncProto(funcDecl);
+    auto helperDecl = llvm::make_unique<FuncDecl>("deinit", std::vector<ParamDecl>(),
+                                                  Type::getVoid(), decl.getTypeName().str(),
+                                                  llvm::ArrayRef<GenericParamDecl>(),
+                                                  nullptr, decl.srcLoc);
+    helperDecls.emplace_back(std::move(helperDecl));
+    return getFuncProto(*helperDecls.back());
 }
 
 llvm::Function* getFuncForCall(const CallExpr& call) {
@@ -1062,6 +1070,10 @@ void codegenTypeDecl(const TypeDecl& decl) {
 
     auto elements = map(decl.fields, *[](const FieldDecl& f) { return toIR(f.type); });
     structs.emplace(decl.name, std::make_pair(llvm::StructType::create(elements, decl.name), &decl));
+
+    for (auto& memberDecl : decl.getMemberDecls()) {
+        codegenDecl(*memberDecl);
+    }
 }
 
 llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs) {

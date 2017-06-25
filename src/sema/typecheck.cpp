@@ -61,7 +61,9 @@ void typecheckStmt(Stmt& stmt);
 void typecheckFuncDecl(FuncDecl& decl);
 void typecheckInitDecl(InitDecl& decl);
 Type typecheckCallExpr(CallExpr& expr);
-void typecheckDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths, ParserFunction& parse);
+void typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                           ParserFunction& parse);
+void typecheckMemberDecl(Decl& decl);
 
 Type typecheckVarExpr(VarExpr& expr) {
     Decl& decl = findDecl(expr.identifier, expr.srcLoc);
@@ -234,7 +236,10 @@ bool implementsInterface(TypeDecl& type, TypeDecl& interface) {
         if (!hasField(type, fieldRequirement)) return false;
     }
     for (auto& memberFuncRequirement : interface.memberFuncs) {
-        if (!hasMemberFunc(type, *memberFuncRequirement)) return false;
+        if (!memberFuncRequirement->isFuncDecl()) {
+            fatalError("non-function interface member requirements are not supported yet");
+        }
+        if (!hasMemberFunc(type, memberFuncRequirement->getFuncDecl())) return false;
     }
     return true;
 }
@@ -877,6 +882,22 @@ void delta::addToSymbolTable(TypeDecl& decl) {
         error(decl.srcLoc, "redefinition of '", decl.name, "'");
     }
     currentModule->getSymbolTable().add(decl.name, &decl);
+
+    for (auto& memberDecl : decl.getMemberDecls()) {
+        switch (memberDecl->getKind()) {
+            case DeclKind::FuncDecl:
+                addToSymbolTable(memberDecl->getFuncDecl());
+                break;
+            case DeclKind::InitDecl:
+                addToSymbolTable(memberDecl->getInitDecl());
+                break;
+            case DeclKind::DeinitDecl:
+                addToSymbolTable(memberDecl->getDeinitDecl());
+                break;
+            default:
+                llvm_unreachable("invalid member declaration kind");
+        }
+    }
 }
 
 void delta::addToSymbolTable(VarDecl& decl) {
@@ -1051,10 +1072,12 @@ void typecheckMemberFunc(FuncDecl& decl) {
     addToSymbolTable(VarDecl(thisType, "this", nullptr, currentModule, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheckParamDecl(param);
 
-    auto funcReturnTypeBackup = funcReturnType;
-    funcReturnType = decl.returnType;
-    for (auto& stmt : *decl.body) typecheckStmt(*stmt);
-    funcReturnType = funcReturnTypeBackup;
+    if (decl.body) {
+        auto funcReturnTypeBackup = funcReturnType;
+        funcReturnType = decl.returnType;
+        for (auto& stmt : *decl.body) typecheckStmt(*stmt);
+        funcReturnType = funcReturnTypeBackup;
+    }
 
     currentModule->getSymbolTable().popScope();
 }
@@ -1093,8 +1116,10 @@ void typecheckDeinitDecl(DeinitDecl& decl) {
     typecheckMemberFunc(funcDecl);
 }
 
-void typecheckTypeDecl(TypeDecl&) {
-    // TODO
+void typecheckTypeDecl(TypeDecl& decl) {
+    for (auto& memberDecl : decl.getMemberDecls()) {
+        typecheckMemberDecl(*memberDecl);
+    }
 }
 
 TypeDecl* getTypeDecl(const BasicType& type) {
@@ -1197,8 +1222,8 @@ void typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> impor
     }
 }
 
-void typecheckDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
-                   ParserFunction& parse) {
+void typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                           ParserFunction& parse) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheckParamDecl(decl.getParamDecl()); break;
         case DeclKind::FuncDecl: typecheckFuncDecl(decl.getFuncDecl()); break;
@@ -1209,6 +1234,18 @@ void typecheckDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths
         case DeclKind::VarDecl: typecheckVarDecl(decl.getVarDecl(), true); break;
         case DeclKind::FieldDecl: typecheckFieldDecl(decl.getFieldDecl()); break;
         case DeclKind::ImportDecl: typecheckImportDecl(decl.getImportDecl(), importSearchPaths, parse); break;
+    }
+}
+
+void typecheckMemberDecl(Decl& decl) {
+    switch (decl.getKind()) {
+        case DeclKind::FuncDecl: typecheckFuncDecl(decl.getFuncDecl()); break;
+        case DeclKind::InitDecl: typecheckInitDecl(decl.getInitDecl()); break;
+        case DeclKind::DeinitDecl: typecheckDeinitDecl(decl.getDeinitDecl()); break;
+        case DeclKind::TypeDecl: typecheckTypeDecl(decl.getTypeDecl()); break;
+        case DeclKind::VarDecl: typecheckVarDecl(decl.getVarDecl(), true); break;
+        case DeclKind::FieldDecl: typecheckFieldDecl(decl.getFieldDecl()); break;
+        default: llvm_unreachable("invalid member declaration kind");
     }
 }
 
@@ -1240,7 +1277,7 @@ void delta::typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> impo
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
-                typecheckDecl(*decl, importSearchPaths, parse);
+                typecheckTopLevelDecl(*decl, importSearchPaths, parse);
             }
         }
     }
