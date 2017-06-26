@@ -1,0 +1,45 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+func foo(i: int) {
+    // CHECK:      switch i32 %i, label %default [
+    // CHECK-NEXT:   i32 0, label %1
+    // CHECK-NEXT:   i32 -1, label %2
+    // CHECK-NEXT:   i32 42, label %3
+    // CHECK-NEXT: ]
+    switch (i) {
+        case 0:
+            // CHECK: ; <label>:1: ; preds = %0
+            // CHECK-NEXT: br label %endswitch
+            break;
+        case -1:
+            // CHECK: ; <label>:2: ; preds = %0
+            // CHECK-NEXT: call void @foo(i32 %i)
+            foo(i);
+            // CHECK-NEXT: call void @foo(i32 %i)
+            foo(i);
+            // CHECK-NEXT: br label %endswitch
+        case 42:
+            // CHECK: ; <label>:3: ; preds = %0
+            // CHECK-NEXT: br label %endswitch
+            break;
+        // CHECK: default: ; preds = %0
+        // CHECK-NEXT: br label %endswitch
+    }
+    // CHECK: endswitch: ; preds = %default, %3, %2, %1
+    // CHECK-NEXT: switch i32 %i, label %default1 [
+    // CHECK-NEXT:   i32 0, label %4
+    // CHECK-NEXT: ]
+    switch (i) {
+        case 0:
+            // CHECK: ; <label>:4: ; preds = %endswitch
+            // CHECK-NEXT: br label %endswitch2
+            break;
+        default:
+            // CHECK: default1: ; preds = %endswitch
+            // CHECK-NEXT: call void @foo(i32 %i)
+            // CHECK-NEXT: br label %endswitch2
+            foo(i);
+    }
+    // CHECK: endswitch2: ; preds = %default1, %4
+    // CHECK-NEXT: ret void
+}

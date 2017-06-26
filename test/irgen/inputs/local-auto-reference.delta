@@ -1,6 +1,0 @@
-class Foo { const i: int; }
-func main() {
-    const f: Foo = uninitialized;
-    const rf: Foo& = f;
-    const pf: Foo* = f;
-}

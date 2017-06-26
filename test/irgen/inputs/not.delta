@@ -1,4 +1,0 @@
-func main() {
-    var b = !!false;
-    b = !b;
-}

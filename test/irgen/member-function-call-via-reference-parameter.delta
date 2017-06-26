@@ -1,0 +1,19 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class Foo {
+    const i: int;
+    func foo() { }
+}
+
+struct Bar {
+    const i: int;
+    func bar() { }
+}
+
+func qux(f: Foo&, b: Bar&) {
+    // CHECK: call void @Foo.foo(%Foo* %f)
+    f.foo();
+    // CHECK-NEXT: %1 = load %Bar, %Bar* %b
+    // CHECK-NEXT: call void @Bar.bar(%Bar %1)
+    b.bar();
+}

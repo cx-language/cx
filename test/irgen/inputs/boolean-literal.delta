@@ -1,4 +1,0 @@
-func main() {
-    const b = false;
-    const c = b == true;
-}

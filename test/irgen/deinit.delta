@@ -1,0 +1,44 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class Foo {
+    const i: int;
+
+    // CHECK: define void @Foo.deinit(%Foo* %this)
+    // CHECK-NEXT: ret void
+    deinit() { }
+}
+
+struct Bar {
+    const i: int;
+
+    // CHECK: define void @Bar.deinit(%Bar %this)
+    // CHECK-NEXT: ret void
+    deinit() { }
+}
+
+func main() {
+    const f: Foo = uninitialized;
+    if (false) {
+        const f2: Foo = uninitialized;
+        // CHECK: then:                                             ; preds = %0
+        // CHECK-NEXT: call void @Foo.deinit(%Foo* %f2)
+        // CHECK-NEXT: br label %endif
+    }
+    const b: Bar = uninitialized;
+    while (false) {
+        const b2: Bar = uninitialized;
+        // CHECK: %1 = load %Bar, %Bar* %b2
+        // CHECK-NEXT: call void @Bar.deinit(%Bar %1)
+        // CHECK-NEXT: %2 = load %Bar, %Bar* %b
+        // CHECK-NEXT: call void @Bar.deinit(%Bar %2)
+        // CHECK-NEXT: call void @Foo.deinit(%Foo* %f)
+        // CHECK-NEXT: ret i32 0
+        return;
+    }
+    var i = 1;
+    // CHECK: store i32 1, i32* %i
+    // CHECK-NEXT: %3 = load %Bar, %Bar* %b
+    // CHECK-NEXT: call void @Bar.deinit(%Bar %3)
+    // CHECK-NEXT: call void @Foo.deinit(%Foo* %f)
+    // CHECK-NEXT: ret i32 0
+}

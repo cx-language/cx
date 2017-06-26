@@ -1,0 +1,35 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+func and() {
+    var a = true;
+    var b = false;
+    var c = a && b;
+
+    // CHECK:        %a1 = load i1, i1* %a
+    // CHECK-NEXT:   br i1 %a1, label %andRHS, label %andEnd
+
+    // CHECK:      andRHS:                                           ; preds = %0
+    // CHECK-NEXT:   %b2 = load i1, i1* %b
+    // CHECK-NEXT:   br label %andEnd
+
+    // CHECK:      andEnd:                                           ; preds = %andRHS, %0
+    // CHECK-NEXT:   %and = phi i1 [ %a1, %0 ], [ %b2, %andRHS ]
+    // CHECK-NEXT:   store i1 %and, i1* %c
+}
+
+func or() {
+    var a = true;
+    var b = false;
+    var c = a || b;
+
+    // CHECK:        %a1 = load i1, i1* %a
+    // CHECK-NEXT:   br i1 %a1, label %orEnd, label %orRHS
+
+    // CHECK:      orRHS:                                            ; preds = %0
+    // CHECK-NEXT:   %b2 = load i1, i1* %b
+    // CHECK-NEXT:   br label %orEnd
+
+    // CHECK:      orEnd:                                            ; preds = %orRHS, %0
+    // CHECK-NEXT:   %or = phi i1 [ %a1, %0 ], [ %b2, %orRHS ]
+    // CHECK-NEXT:   store i1 %or, i1* %c
+}

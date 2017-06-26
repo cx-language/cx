@@ -1,7 +1,0 @@
-func main() {
-    bar();
-}
-
-func foo() { }
-
-extern func bar();

@@ -1,0 +1,43 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class Foo {
+    var baz: int;
+
+    // CHECK: define %Foo @Foo.init()
+    // CHECK-NEXT: %1 = alloca %Foo
+    // CHECK-NEXT: %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
+    // CHECK-NEXT: store i32 42, i32* %2
+    // CHECK-NEXT: %3 = load %Foo, %Foo* %1
+    // CHECK-NEXT: ret %Foo %3
+    init() { this.baz = 42; }
+
+    // CHECK: define void @Foo.bar(%Foo* %this)
+    // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
+    // CHECK-NEXT: %2 = load i32, i32* %1
+    // CHECK-NEXT: %3 = add i32 %2, 1
+    // CHECK-NEXT: store i32 %3, i32* %1
+    // CHECK-NEXT: ret void
+    mutating func bar() { this.baz++; }
+
+    // CHECK: define i32 @Foo.qux(%Foo* %this)
+    // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
+    // CHECK-NEXT: %2 = load i32, i32* %1
+    // CHECK-NEXT: ret i32 %2
+    func qux() -> int { return this.baz; }
+}
+
+func main() {
+    // CHECK: %foo = alloca %Foo
+    // CHECK-NEXT: %i = alloca i32
+
+    // CHECK-NEXT: %1 = call %Foo @Foo.init()
+    // CHECK-NEXT: store %Foo %1, %Foo* %foo
+    var foo = Foo();
+
+    // CHECK-NEXT: call void @Foo.bar(%Foo* %foo)
+    foo.bar();
+
+    // CHECK-NEXT: %2 = call i32 @Foo.qux(%Foo* %foo)
+    // CHECK-NEXT: store i32 %2, i32* %i
+    var i = foo.qux();
+}

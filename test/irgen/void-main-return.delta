@@ -1,0 +1,4 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define i32 @main()
+func main() { return; } // CHECK-NEXT: ret i32 0

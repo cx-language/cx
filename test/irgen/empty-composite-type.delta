@@ -1,0 +1,12 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct S { }
+class C { }
+
+func main() {
+    // CHECK: %s = alloca {}
+    const s: S = uninitialized;
+    // CHECK-NEXT: %c = alloca {}
+    const c: C = uninitialized;
+    // CHECK-NEXT: ret
+}

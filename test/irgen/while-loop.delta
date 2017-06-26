@@ -1,0 +1,18 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+extern func foo() -> bool;
+
+func main() {
+    // CHECK: br label %while
+    // CHECK: while: ; preds = %body, %0
+    // CHECK-NEXT: %1 = call i1 @foo()
+    // CHECK-NEXT: br i1 %1, label %body, label %endwhile
+    while (foo()) {
+        // CHECK: body: ; preds = %while
+        // CHECK-NEXT: %2 = call i1 @foo()
+        foo();
+        // CHECK-NEXT: br label %while
+    }
+    // CHECK: endwhile: ; preds = %while
+    // CHECK-NEXT: ret
+}

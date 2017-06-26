@@ -1,8 +1,0 @@
-extern func foo(a: uint8);
-
-func main() {
-    foo(1);
-    var b: uint64 = 42;
-    b--;
-    b = b + 1;
-}

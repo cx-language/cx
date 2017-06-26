@@ -1,0 +1,14 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class Foo {
+    const i: int;
+    func bar() { }
+}
+
+func main() {
+    const f: Foo = uninitialized;
+    const rf: Foo& = f;
+    // CHECK: %rf1 = load %Foo*, %Foo** %rf
+    // CHECK-NEXT: call void @Foo.bar(%Foo* %rf1)
+    rf.bar();
+}

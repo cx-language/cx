@@ -1,8 +1,0 @@
-class Foo { const i: int; }
-func ref(r: Foo&) { }
-func ptr(p: Foo*) { }
-func main() {
-    const f: Foo = uninitialized;
-    ref(f);
-    ptr(f);
-}

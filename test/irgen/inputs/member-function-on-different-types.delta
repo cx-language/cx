@@ -1,9 +1,0 @@
-class Foo {
-    const i: int;
-    func doStuff() { }
-}
-
-class Bar {
-    const i: int;
-    func doStuff() { }
-}

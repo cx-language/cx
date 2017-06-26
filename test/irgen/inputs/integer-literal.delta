@@ -1,5 +1,0 @@
-func main() {
-    const i = 42;
-    var j = 0 + 0b01;
-    var k: int = 0xf * 0o7;
-}

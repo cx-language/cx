@@ -1,0 +1,14 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+extern func foo(a: uint8);
+
+func main() {
+    // CHECK: call void @foo(i8 1)
+    foo(1);
+    // CHECK: store i64 42, i64* %b
+    var b: uint64 = 42;
+    // CHECK: %b1 = load i64, i64* %b
+    // CHECK-NEXT: %1 = add i64 %b1, 1
+    // CHECK-NEXT: store i64 %1, i64* %b
+    b = b + 1;
+}

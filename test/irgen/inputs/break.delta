@@ -1,9 +1,0 @@
-func main() {
-    while (true) {
-        if (true) { break; const a = 1; }
-        break;
-    }
-    switch (1) {
-        default: break; const b = 1;
-    }
-}

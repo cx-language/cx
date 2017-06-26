@@ -1,6 +1,0 @@
-extern func malloc(n: uint64) -> mutable void*;
-func main() {
-    const byte: mutable uint8& = cast<mutable uint8*>(malloc(1))!;
-    const ptr: mutable uint8[1]* = cast<mutable uint8[1]*>(malloc(1));
-    ptr![0] = 1;
-}

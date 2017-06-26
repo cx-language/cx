@@ -1,7 +1,0 @@
-struct S { }
-class C { }
-
-func main() {
-    const s: S = uninitialized;
-    const c: C = uninitialized;
-}

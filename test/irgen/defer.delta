@@ -1,0 +1,43 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+extern func foo();
+extern func bar();
+
+func main() {
+    defer foo();
+    if (false) {
+        defer bar();
+        // CHECK: call void @bar()
+        // CHECK-NEXT: call void @foo()
+        // CHECK-NEXT ret i32 0
+        return;
+    }
+    if (false) {
+        defer bar();
+        // CHECK: call void @bar()
+        // CHECK-NEXT: br label %endif3
+    }
+    while (false) {
+        defer foo();
+        // CHECK: call void @bar()
+        bar();
+        // CHECK-NEXT: call void @foo()
+        // CHECK-NEXT: br label %while
+    }
+    defer bar();
+    if (true) {
+        // CHECK: call void @bar()
+        // CHECK-NEXT: call void @foo()
+        // CHECK-NEXT: ret i32 0
+        return;
+    }
+    foo();
+    // CHECK: call void @foo()
+    // CHECK-NEXT: call void @bar()
+    // CHECK-NEXT: call void @foo()
+    // CHECK-NEXT: ret i32 0
+}
+
+// CHECK: define void @shouldBeEmpty()
+// CHECK-NEXT: ret void
+func shouldBeEmpty() { }

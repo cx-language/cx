@@ -1,0 +1,30 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class Foo {
+    const i: int;
+}
+
+// CHECK-LABEL: @get
+func get(f: Foo&) {
+    // CHECK-NEXT: %m = alloca i32
+    // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
+    // CHECK-NEXT: %2 = load i32, i32* %1
+    // CHECK-NEXT: store i32 %2, i32* %m
+    var m = f.i;
+    // CHECK-NEXT: ret void
+}
+
+// CHECK-LABEL: @main
+func main() {
+    // CHECK: %f = alloca %Foo
+    // CHECK-NEXT: %rf = alloca %Foo*
+    // CHECK-NEXT: %n = alloca i32
+    const f: Foo = uninitialized;
+    // CHECK-NEXT: store %Foo* %f, %Foo** %rf
+    const rf: Foo& = f;
+    // CHECK-NEXT: %1 = load %Foo*, %Foo** %rf
+    // CHECK-NEXT: %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
+    // CHECK-NEXT: %3 = load i32, i32* %2
+    // CHECK-NEXT: store i32 %3, i32* %n
+    var n = rf.i;
+}

@@ -1,0 +1,14 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: @foo = private global i32 42
+var foo = 42;
+// CHECK-NOT: @baz = private global i32 42
+const baz = 42;
+// CHECK: @qux = private global i32 42
+var qux: int = 42;
+
+func a() { foo = 43; } // CHECK: store i32 43, i32* @foo
+func c() { var d = bar; } // CHECK: store i32 42, i32* %d
+
+// CHECK-NOT: @bar = private global i32 42
+const bar = 42;

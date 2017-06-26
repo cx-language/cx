@@ -1,0 +1,28 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+extern func foo() -> bool;
+
+func bar() {
+    if (foo()) {
+        return; // CHECK: ret void
+    } else {
+        return; // CHECK: ret void
+    }
+
+    if (foo()) {
+        return; // CHECK: ret void
+        var i = 4; // CHECK-NOT: %i
+    } else {
+        return; // CHECK: ret void
+        var j = 4; // CHECK-NOT: %j
+    }
+
+    while (foo()) {
+        return; // CHECK: ret void
+    }
+
+    while (foo()) {
+        return; // CHECK: ret void
+        var k = 4; // CHECK-NOT: %k
+    }
+}

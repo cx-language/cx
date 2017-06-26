@@ -1,3 +1,0 @@
-func foo(ints: mutable int[2]& ) {
-    const ptr: int[2]* = ints;
-}

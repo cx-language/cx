@@ -1,8 +1,0 @@
-func foo() -> int* { return null; }
-
-func main() {
-    var isNull = foo() == null;
-    var isNonNull = foo() != null;
-    var ptr = foo();
-    const ptr2: bool* = null;
-}
