@@ -998,22 +998,24 @@ llvm::SmallVector<Decl*, 1> delta::findDecls(llvm::StringRef name, bool everywhe
 
 namespace {
 
-bool returns(const Stmt& stmt) {
-    switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt: return true;
-        case StmtKind::IfStmt:
-            if (stmt.getIfStmt().thenBody.empty()) return false;
-            if (stmt.getIfStmt().elseBody.empty()) return false;
-            if (!returns(*stmt.getIfStmt().thenBody.back())) return false;
-            if (!returns(*stmt.getIfStmt().elseBody.back())) return false;
+bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
+    if (block.empty()) return false;
+
+    switch (block.back()->getKind()) {
+        case StmtKind::ReturnStmt:
             return true;
-        case StmtKind::SwitchStmt:
-            for (auto& switchCase : stmt.getSwitchStmt().cases) {
-                if (!returns(*switchCase.stmts.back())) return false;
-            }
-            if (!returns(*stmt.getSwitchStmt().defaultStmts.back())) return false;
-            return true;
-        default: return false;
+        case StmtKind::IfStmt: {
+            auto& ifStmt = block.back()->getIfStmt();
+            return allPathsReturn(ifStmt.thenBody) && allPathsReturn(ifStmt.elseBody);
+        }
+        case StmtKind::SwitchStmt: {
+            auto& switchStmt = block.back()->getSwitchStmt();
+            return llvm::all_of(switchStmt.cases,
+                                [](const SwitchCase& c) { return allPathsReturn(c.stmts); })
+                && allPathsReturn(switchStmt.defaultStmts);
+        }
+        default:
+            return false;
     }
 }
 
@@ -1079,7 +1081,7 @@ void typecheckFuncDecl(FuncDecl& decl) {
 
     currentModule->getSymbolTable().popScope();
 
-    if (!decl.returnType.isVoid() && (decl.body->empty() || !returns(*decl.body->back()))) {
+    if (!decl.returnType.isVoid() && !allPathsReturn(*decl.body)) {
         error(decl.srcLoc, "'", decl.name, "' is missing a return statement");
     }
 }
