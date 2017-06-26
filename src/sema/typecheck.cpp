@@ -53,6 +53,7 @@ namespace {
 std::vector<std::unique_ptr<Decl>> nonASTDecls;
 
 std::unordered_map<std::string, Type> currentGenericArgs;
+llvm::MutableArrayRef<FieldDecl> currentFieldDecls;
 Type funcReturnType = nullptr;
 bool inInitializer = false;
 int breakableBlocks = 0;
@@ -67,6 +68,7 @@ void typecheckMemberDecl(Decl& decl);
 
 Type typecheckVarExpr(VarExpr& expr) {
     Decl& decl = findDecl(expr.identifier, expr.srcLoc);
+    expr.setDecl(&decl);
 
     switch (decl.getKind()) {
         case DeclKind::VarDecl: return decl.getVarDecl().getType();
@@ -962,6 +964,12 @@ Decl& delta::findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere) {
         return *match;
     }
 
+    for (auto& field : currentFieldDecls) {
+        if (field.name == name) {
+            return field;
+        }
+    }
+
     if (Decl* match = findDeclInModules(name, srcLoc, getStdlibModules())) {
         return *match;
     }
@@ -1075,7 +1083,12 @@ void typecheckMemberFunc(FuncDecl& decl) {
     if (decl.body) {
         auto funcReturnTypeBackup = funcReturnType;
         funcReturnType = decl.returnType;
+        auto currentFieldDeclsBackup = currentFieldDecls;
+        currentFieldDecls = receiverType.getTypeDecl().fields;
+
         for (auto& stmt : *decl.body) typecheckStmt(*stmt);
+
+        currentFieldDecls = currentFieldDeclsBackup;
         funcReturnType = funcReturnTypeBackup;
     }
 
@@ -1095,9 +1108,14 @@ void typecheckInitDecl(InitDecl& decl) {
     addToSymbolTable(VarDecl(typeDecl.getTypeDecl().getType(getGenericArgsAsArray(), true),
                              "this", nullptr, currentModule, SrcLoc::invalid()));
     for (ParamDecl& param : decl.params) typecheckParamDecl(param);
+
     inInitializer = true;
+    auto currentFieldDeclsBackup = currentFieldDecls;
+    currentFieldDecls = typeDecl.getTypeDecl().fields;
     for (auto& stmt : *decl.body) typecheckStmt(*stmt);
+    currentFieldDecls = currentFieldDeclsBackup;
     inInitializer = false;
+
     currentModule->getSymbolTable().popScope();
 }
 

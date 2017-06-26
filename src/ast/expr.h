@@ -76,11 +76,14 @@ public:
 inline Expr::~Expr() { }
 
 class VarExpr : public Expr {
+    Decl* decl;
 public:
     std::string identifier;
 
     VarExpr(std::string&& identifier, SrcLoc srcLoc)
-    : Expr(ExprKind::VarExpr, srcLoc), identifier(std::move(identifier)) { }
+    : Expr(ExprKind::VarExpr, srcLoc), decl(nullptr), identifier(std::move(identifier)) { }
+    Decl* getDecl() const { return decl; }
+    void setDecl(Decl* newDecl) { decl = newDecl; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::VarExpr; }
 };
 

@@ -1,0 +1,35 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class A {
+    var i: int
+    var j: int
+
+    init() {
+        j = 42 // CHECK: getelementptr inbounds %A, %A* %1, i32 0, i32 1
+    }
+
+    func foo() {
+        _ = j // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
+    }
+
+    mutating func bar() {
+        j = 1 // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
+    }
+}
+
+struct B {
+    var i: int
+    var j: int
+
+    init() {
+        j = 42 // CHECK: getelementptr inbounds %B, %B* %1, i32 0, i32 1
+    }
+
+    func foo() {
+        _ = j // CHECK: extractvalue %B %this, 1
+    }
+
+    mutating func bar() {
+        j = 1 // CHECK: getelementptr inbounds %B, %B* %this, i32 0, i32 1
+    }
+}

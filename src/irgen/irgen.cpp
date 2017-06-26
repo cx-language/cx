@@ -26,6 +26,7 @@ using irgen::toIR;
 
 llvm::Value* codegenCallExpr(const CallExpr& expr);
 llvm::Value* codegenLvalueExpr(const Expr& expr);
+llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
 void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
 llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
 llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
@@ -106,7 +107,7 @@ void setLocalValue(Type type, std::string name, llvm::Value* value) {
 
 void codegenDecl(const Decl& decl);
 
-llvm::Value* findValue(llvm::StringRef name) {
+llvm::Value* findValue(llvm::StringRef name, const Decl* decl) {
     llvm::Value* value = nullptr;
 
     for (const auto& scope : llvm::reverse(scopes)) {
@@ -116,9 +117,12 @@ llvm::Value* findValue(llvm::StringRef name) {
         break;
     }
 
-    if (value == nullptr) {
-        // FIXME: It would probably be better to not access the symbol table here.
-        codegenDecl(findDecl(name, SrcLoc::invalid(), /*everywhere*/ true));
+    if (!value) {
+        assert(decl);
+        if (auto fieldDecl = llvm::dyn_cast<FieldDecl>(decl)) {
+            return codegenMemberAccess(findValue("this", nullptr), fieldDecl->type, fieldDecl->name);
+        }
+        codegenDecl(*decl);
         return globalScope().localValues.find(name)->second;
     }
     return value;
@@ -201,14 +205,15 @@ llvm::Type* irgen::toIR(Type type) {
 namespace {
 
 llvm::Value* codegenVarExpr(const VarExpr& expr) {
-    auto* value = findValue(expr.identifier);
+    auto* value = findValue(expr.identifier, expr.getDecl());
     if (auto* arg = llvm::dyn_cast<llvm::Argument>(value)) return arg;
     if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) return constant;
-    return builder.CreateLoad(value, expr.identifier);
+    if (value->getType()->isPointerTy()) return builder.CreateLoad(value, expr.identifier);
+    return value;
 }
 
 llvm::Value* codegenLvalueVarExpr(const VarExpr& expr) {
-    return findValue(expr.identifier);
+    return findValue(expr.identifier, expr.getDecl());
 }
 
 llvm::Value* codegenStrLiteralExpr(const StrLiteralExpr& expr) {
@@ -500,6 +505,28 @@ llvm::Value* codegenCastExpr(const CastExpr& expr) {
     return builder.CreateBitOrPointerCast(value, type);
 }
 
+llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName) {
+    auto baseType = baseValue->getType();
+    if (baseType->isPointerTy()) {
+        baseType = baseType->getPointerElementType();
+        if (baseType->isPointerTy()) {
+            baseType = baseType->getPointerElementType();
+            baseValue = builder.CreateLoad(baseValue);
+        }
+        auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
+        auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(memberName);
+        auto* gep = builder.CreateStructGEP(nullptr, baseValue, index);
+        if (baseTypeDecl.isUnion()) {
+            return builder.CreateBitCast(gep, toIR(memberType)->getPointerTo(), memberName);
+        }
+        return gep;
+    } else {
+        auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
+        auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(memberName);
+        return builder.CreateExtractValue(baseValue, index);
+    }
+}
+
 llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr) {
     Type base = expr.base->getType();
     if (base.isPtrType() && base.isRef()) base = base.getPointee();
@@ -510,27 +537,7 @@ llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr) {
         else
             return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), base.getArraySize());
     }
-
-    auto* value = codegenLvalueExpr(*expr.base);
-    auto baseType = value->getType();
-    if (baseType->isPointerTy()) {
-        baseType = baseType->getPointerElementType();
-        if (baseType->isPointerTy()) {
-            baseType = baseType->getPointerElementType();
-            value = builder.CreateLoad(value);
-        }
-        auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
-        auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(expr.member);
-        auto* gep = builder.CreateStructGEP(nullptr, value, index);
-        if (baseTypeDecl.isUnion()) {
-            return builder.CreateBitCast(gep, toIR(expr.getType())->getPointerTo(), expr.member);
-        }
-        return gep;
-    } else {
-        auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
-        auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(expr.member);
-        return builder.CreateExtractValue(value, index);
-    }
+    return codegenMemberAccess(codegenLvalueExpr(*expr.base), expr.getType(), expr.member);
 }
 
 llvm::Value* codegenMemberExpr(const MemberExpr& expr) {
