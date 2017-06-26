@@ -1017,42 +1017,11 @@ bool returns(const Stmt& stmt) {
     }
 }
 
-void typecheckMemberFunc(FuncDecl& decl);
-
 void typecheckGenericParamDecl(llvm::ArrayRef<GenericParamDecl> genericParams) {
     for (auto& genericParam : genericParams) {
         if (currentModule->getSymbolTable().contains(genericParam.name)) {
             error(genericParam.srcLoc, "redefinition of '", genericParam.name, "'");
         }
-    }
-}
-
-void typecheckFuncDecl(FuncDecl& decl) {
-    if (!decl.getReceiverTypeName().empty()) return typecheckMemberFunc(decl);
-    if (decl.isExtern()) return;
-
-    if (decl.isGeneric() && currentGenericArgs.empty()) {
-        typecheckGenericParamDecl(decl.genericParams);
-        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
-    }
-
-    currentModule->getSymbolTable().pushScope();
-
-    for (ParamDecl& param : decl.params) {
-        if (param.type.isMutable()) error(param.srcLoc, "parameter types cannot be 'mutable'");
-        typecheckParamDecl(param);
-    }
-    if (decl.returnType.isMutable()) error(decl.srcLoc, "return types cannot be 'mutable'");
-
-    auto funcReturnTypeBackup = funcReturnType;
-    funcReturnType = decl.returnType;
-    for (auto& stmt : *decl.body) typecheckStmt(*stmt);
-    funcReturnType = funcReturnTypeBackup;
-
-    currentModule->getSymbolTable().popScope();
-
-    if (!decl.returnType.isVoid() && (decl.body->empty() || !returns(*decl.body->back()))) {
-        error(decl.srcLoc, "'", decl.name, "' is missing a return statement");
     }
 }
 
@@ -1063,36 +1032,56 @@ std::vector<Type> getGenericArgsAsArray() {
     return genericArgs;
 }
 
-void typecheckMemberFunc(FuncDecl& decl) {
-    Decl& receiverType = findDecl(decl.getReceiverTypeName(), decl.srcLoc);
-    if (!receiverType.isTypeDecl()) {
-        error(decl.srcLoc, "'", decl.getReceiverTypeName(), "' is not a class or struct");
+void typecheckFuncDecl(FuncDecl& decl) {
+    if (decl.isExtern()) return;
+
+    if (decl.isGeneric() && currentGenericArgs.empty()) {
+        typecheckGenericParamDecl(decl.genericParams);
+        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 
-    if (receiverType.getTypeDecl().isGeneric() && currentGenericArgs.empty()) {
-        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
+    TypeDecl* receiverTypeDecl;
+    if (decl.isMemberFunc()) {
+        receiverTypeDecl = &findDecl(decl.getReceiverTypeName(), decl.srcLoc).getTypeDecl();
+        if (receiverTypeDecl->isGeneric() && currentGenericArgs.empty()) {
+            return; // Partial type-checking of uninstantiated generic functions not implemented yet.
+        }
+    } else {
+        receiverTypeDecl = nullptr;
     }
 
     currentModule->getSymbolTable().pushScope();
 
-    Type thisType = receiverType.getTypeDecl().getTypeForPassing(getGenericArgsAsArray(),
-                                                                 decl.isMutating());
-    addToSymbolTable(VarDecl(thisType, "this", nullptr, currentModule, SrcLoc::invalid()));
-    for (ParamDecl& param : decl.params) typecheckParamDecl(param);
+    for (ParamDecl& param : decl.params) {
+        if (param.type.isMutable()) error(param.srcLoc, "parameter types cannot be 'mutable'");
+        typecheckParamDecl(param);
+    }
+    if (decl.returnType.isMutable()) error(decl.srcLoc, "return types cannot be 'mutable'");
 
     if (decl.body) {
         auto funcReturnTypeBackup = funcReturnType;
         funcReturnType = decl.returnType;
-        auto currentFieldDeclsBackup = currentFieldDecls;
-        currentFieldDecls = receiverType.getTypeDecl().fields;
+        llvm::MutableArrayRef<FieldDecl> currentFieldDeclsBackup;
+        if (receiverTypeDecl) {
+            currentFieldDeclsBackup = currentFieldDecls;
+            currentFieldDecls = receiverTypeDecl->fields;
+            Type thisType = receiverTypeDecl->getTypeForPassing(getGenericArgsAsArray(), decl.isMutating());
+            addToSymbolTable(VarDecl(thisType, "this", nullptr, currentModule, SrcLoc::invalid()));
+        }
 
         for (auto& stmt : *decl.body) typecheckStmt(*stmt);
 
-        currentFieldDecls = currentFieldDeclsBackup;
+        if (receiverTypeDecl) {
+            currentFieldDecls = currentFieldDeclsBackup;
+        }
         funcReturnType = funcReturnTypeBackup;
     }
 
     currentModule->getSymbolTable().popScope();
+
+    if (!decl.returnType.isVoid() && (decl.body->empty() || !returns(*decl.body->back()))) {
+        error(decl.srcLoc, "'", decl.name, "' is missing a return statement");
+    }
 }
 
 void typecheckInitDecl(InitDecl& decl) {
@@ -1126,12 +1115,11 @@ void typecheckDeinitDecl(DeinitDecl& decl) {
         return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 
-    FuncDecl funcDecl(mangle(decl), {}, typeDecl.getType(getGenericArgsAsArray()),
-                      decl.getTypeName(), /* genericParams */ {}, currentModule,
-                      SrcLoc::invalid());
+    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), decl.getTypeName(),
+                      {}, currentModule, decl.getSrcLoc());
     funcDecl.body = decl.body;
     decl.typeDecl = &typeDecl;
-    typecheckMemberFunc(funcDecl);
+    typecheckFuncDecl(funcDecl);
 }
 
 void typecheckTypeDecl(TypeDecl& decl) {
