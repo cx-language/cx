@@ -927,6 +927,10 @@ void delta::addToSymbolTable(VarDecl&& decl) {
     currentModule->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
 }
 
+void delta::addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) {
+    currentModule->getSymbolTable().addIdentifierReplacement(source, target);
+}
+
 template<typename ModuleContainer>
 static llvm::SmallVector<Decl*, 1> findDeclsInModules(llvm::StringRef name,
                                                       const ModuleContainer& modules) {

@@ -42,11 +42,17 @@ public:
     void pushScope() { scopes.emplace_back(); }
     void popScope() { scopes.pop_back(); }
     void add(llvm::StringRef name, Decl* decl) { scopes.back()[name].push_back(decl); }
+    void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) {
+        assert(identifierReplacements.count(name) == 0);
+        identifierReplacements.emplace(name, replacement);
+    }
     bool contains(const std::string& name) const { return !find(name).empty(); }
 
     llvm::ArrayRef<Decl*> find(const std::string& name) const {
+        auto realName = applyIdentifierReplacements(name);
+
         for (const auto& scope : llvm::reverse(scopes)) {
-            auto it = scope.find(name);
+            auto it = scope.find(realName);
             if (it != scope.end()) return it->second;
         }
         return {};
@@ -65,7 +71,14 @@ public:
     }
 
 private:
+    llvm::StringRef applyIdentifierReplacements(llvm::StringRef name) const {
+        auto it = identifierReplacements.find(name);
+        if (it == identifierReplacements.end()) return name;
+        return applyIdentifierReplacements(it->second);
+    }
+
     std::vector<std::unordered_map<std::string, llvm::SmallVector<Decl*, 1>>> scopes;
+    std::unordered_map<std::string, std::string> identifierReplacements;
 };
 
 /// Container for the AST of a whole module, comprised of one or more SourceFiles.

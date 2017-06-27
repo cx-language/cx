@@ -153,6 +153,14 @@ public:
                         auto value = enumerator->getInitVal().getExtValue();
                         addIntegerConstantToSymbolTable(enumerator->getName(), value);
                     }
+                    break;
+                }
+                case clang::Decl::Typedef: {
+                    auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
+                    if (auto* baseTypeId = typedefDecl.getUnderlyingType().getBaseTypeIdentifier()) {
+                        addIdentifierReplacement(typedefDecl.getName(), baseTypeId->getName());
+                    }
+                    break;
                 }
                 default:
                     break;
@@ -166,15 +174,24 @@ class MacroImporter : public clang::PPCallbacks {
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) final override {
         if (macro->getMacroInfo()->getNumTokens() != 1) return;
         auto& token = macro->getMacroInfo()->getReplacementToken(0);
-        if (token.isNot(clang::tok::numeric_constant)) return;
 
-        llvm::StringRef text(token.getLiteralData(), token.getLength());
-        if (text.find_first_of(".eE") == llvm::StringRef::npos) {
-            long long value = strtoll(text.data(), nullptr, 0);
-            addIntegerConstantToSymbolTable(name.getIdentifierInfo()->getName(), value);
-        } else {
-            long double value = strtold(text.data(), nullptr);
-            addFloatConstantToSymbolTable(name.getIdentifierInfo()->getName(), value);
+        switch (token.getKind()) {
+            case clang::tok::identifier:
+                addIdentifierReplacement(name.getIdentifierInfo()->getName(),
+                                         token.getIdentifierInfo()->getName());
+                return;
+            case clang::tok::numeric_constant: {
+                llvm::StringRef text(token.getLiteralData(), token.getLength());
+                if (text.find_first_of(".eE") == llvm::StringRef::npos) {
+                    long long value = strtoll(text.data(), nullptr, 0);
+                    addIntegerConstantToSymbolTable(name.getIdentifierInfo()->getName(), value);
+                } else {
+                    long double value = strtold(text.data(), nullptr);
+                    addFloatConstantToSymbolTable(name.getIdentifierInfo()->getName(), value);
+                }
+            }
+            default:
+                return;
         }
     }
 };
