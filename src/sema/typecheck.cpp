@@ -35,8 +35,11 @@ namespace delta {
     SourceFile* currentSourceFile;
 }
 
-const std::unordered_map<std::string, std::shared_ptr<Module>>& delta::getAllImportedModules() {
-    return allImportedModules;
+std::vector<Module*> delta::getAllImportedModules() {
+    std::vector<Module*> modules;
+    modules.reserve(allImportedModules.size());
+    for (auto& p : allImportedModules) modules.emplace_back(p.second.get());
+    return modules;
 }
 
 void delta::setCurrentModule(Module& module) {
@@ -979,7 +982,7 @@ Decl& delta::findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere) {
     }
 
     if (everywhere) {
-        if (Decl* match = findDeclInModules(name, srcLoc, currentModule->getImportedModules())) {
+        if (Decl* match = findDeclInModules(name, srcLoc, getAllImportedModules())) {
             return *match;
         }
     } else {

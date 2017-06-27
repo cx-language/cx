@@ -150,8 +150,8 @@ int main(int argc, char** argv) try {
 
     if (typecheckFlag) return 0;
 
-    for (auto& nameAndModule : getAllImportedModules()) {
-        irgen::compile(*nameAndModule.second);
+    for (auto& module : getAllImportedModules()) {
+        irgen::compile(*module);
     }
     auto& irModule = irgen::compile(module);
 
