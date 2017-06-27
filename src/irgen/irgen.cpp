@@ -24,6 +24,9 @@ namespace {
 using irgen::codegenExpr;
 using irgen::toIR;
 
+
+llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nullptr,
+                                         const llvm::Twine& name = "");
 llvm::Value* codegenCallExpr(const CallExpr& expr);
 llvm::Value* codegenLvalueExpr(const Expr& expr);
 llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
@@ -527,20 +530,41 @@ llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::
     }
 }
 
-llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr) {
-    Type base = expr.base->getType();
-    if (base.isPtrType() && base.isRef()) base = base.getPointee();
-    if (base.isArrayType() || base.isString()) {
-        assert(expr.member == "count");
-        if (base.isUnsizedArrayType() || base.isString())
-            return builder.CreateExtractValue(codegenExpr(*expr.base), 1, "count");
-        else
-            return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), base.getArraySize());
+llvm::Value* getArrayOrStringDataPtr(const Expr& object, Type objectType) {
+    if (objectType.isUnsizedArrayType() || objectType.isString()) {
+        return builder.CreateExtractValue(codegenExpr(object), 0, "data");
+    } else {
+        llvm::Value* objectValue = codegenExpr(object);
+        if (objectValue->getType()->isPointerTy()) {
+            auto* zeroConstant = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0);
+            return builder.CreateGEP(objectValue, { zeroConstant, zeroConstant });
+        } else {
+            auto* alloca = createEntryBlockAlloca(objectType);
+            builder.CreateStore(objectValue, alloca);
+            return alloca;
+        }
     }
+}
+
+llvm::Value* getArrayOrStringLength(const Expr& object, Type objectType) {
+    if (objectType.isUnsizedArrayType() || objectType.isString()) {
+        return builder.CreateExtractValue(codegenExpr(object), 1, "count");
+    } else {
+        return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), objectType.getArraySize());
+    }
+}
+
+llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr) {
     return codegenMemberAccess(codegenLvalueExpr(*expr.base), expr.getType(), expr.member);
 }
 
 llvm::Value* codegenMemberExpr(const MemberExpr& expr) {
+    Type baseType = expr.base->getType();
+    if (baseType.isRef()) baseType = baseType.getPointee();
+    if (baseType.isArrayType() || baseType.isString()) {
+        if (expr.member == "data") return getArrayOrStringDataPtr(*expr.base, baseType);
+        if (expr.member == "count") return getArrayOrStringLength(*expr.base, baseType);
+    }
     auto* value = codegenLvalueMemberExpr(expr);
     return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;
 }
@@ -645,8 +669,7 @@ void codegenReturnStmt(const ReturnStmt& stmt) {
     }
 }
 
-llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nullptr,
-                                         const llvm::Twine& name = "") {
+llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize, const llvm::Twine& name) {
     auto* insertBlock = builder.GetInsertBlock();
     if (lastAlloca == llvm::BasicBlock::iterator()) {
         if (insertBlock->getParent()->getEntryBlock().empty()) {

@@ -599,9 +599,9 @@ Type typecheckMemberExpr(MemberExpr& expr) {
     }
 
     if (baseType.isArrayType() || baseType.isString()) {
-        if (expr.member != "count")
-            error(expr.srcLoc, "no member named '", expr.member, "' in '", baseType, "'");
-        return Type::getInt();
+        if (expr.member == "data") return PtrType::get(Type::getChar(), true);
+        if (expr.member == "count") return Type::getInt();
+        error(expr.srcLoc, "no member named '", expr.member, "' in '", baseType, "'");
     }
 
     Decl& typeDecl = findDecl(baseType.getName(), SrcLoc::invalid());
