@@ -174,7 +174,7 @@ Type Type::getReturnType() const { return llvm::cast<FuncType>(typeBase)->return
 llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FuncType>(typeBase)->paramTypes; }
 Type Type::getPointee() const { return llvm::cast<PtrType>(typeBase)->pointeeType; }
 Type Type::getReferee() const { assert(isRef()); return getPointee(); }
-bool Type::isRef() const { return llvm::cast<PtrType>(typeBase)->ref; }
+bool Type::isRef() const { return isPtrType() && llvm::cast<PtrType>(typeBase)->ref; }
 
 Type Type::getIterableElementType() const {
     assert(isIterable());
