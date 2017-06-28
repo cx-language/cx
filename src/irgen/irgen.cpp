@@ -224,6 +224,7 @@ llvm::Value* codegenLvalueVarExpr(const VarExpr& expr) {
 
 llvm::Value* codegenStrLiteralExpr(const StrLiteralExpr& expr) {
     if (expr.getType().isString()) {
+        assert(builder.GetInsertBlock() && "CreateGlobalStringPtr requires block to insert into");
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.value);
         auto* string = builder.CreateInsertValue(llvm::UndefValue::get(toIR(Type::getString())),
                                                  stringPtr, 0);

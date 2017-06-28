@@ -1,4 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-// CHECK: private unnamed_addr constant [3 x i8] c"\5Cn\00"
-var a = "\\n"
+func main() {
+    // CHECK: private unnamed_addr constant [3 x i8] c"\5Cn\00"
+    _ = "\\n"
+}
