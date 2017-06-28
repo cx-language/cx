@@ -43,7 +43,6 @@ public:
     void popScope() { scopes.pop_back(); }
     void add(llvm::StringRef name, Decl* decl) { scopes.back()[name].push_back(decl); }
     void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) {
-        assert(identifierReplacements.count(name) == 0);
         identifierReplacements.emplace(name, replacement);
     }
     bool contains(const std::string& name) const { return !find(name).empty(); }
