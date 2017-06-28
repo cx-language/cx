@@ -122,6 +122,10 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl) {
     return std::move(typeDecl);
 }
 
+VarDecl toDelta(const clang::VarDecl& decl) {
+    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, currentModule, SrcLoc::invalid());
+}
+
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SrcLoc::invalid());
     initializer->setType(Type::getInt());
@@ -155,6 +159,9 @@ public:
                     }
                     break;
                 }
+                case clang::Decl::Var:
+                    addToSymbolTable(toDelta(llvm::cast<clang::VarDecl>(*decl)));
+                    break;
                 case clang::Decl::Typedef: {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
                     if (auto* baseTypeId = typedefDecl.getUnderlyingType().getBaseTypeIdentifier()) {

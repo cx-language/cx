@@ -126,6 +126,7 @@ llvm::Value* findValue(llvm::StringRef name, const Decl* decl) {
             return codegenMemberAccess(findValue("this", nullptr), fieldDecl->type, fieldDecl->name);
         }
         codegenDecl(*decl);
+        if (decl->isVarDecl()) name = decl->getVarDecl().name;
         return globalScope().localValues.find(name)->second;
     }
     return value;
@@ -1133,17 +1134,15 @@ llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef
 }
 
 void codegenVarDecl(const VarDecl& decl) {
-    assert(decl.initializer && "global variables must have initializers");
     if (globalScope().localValues.find(decl.name) != globalScope().localValues.end()) return;
 
-    llvm::Value* value = codegenExpr(*decl.initializer);
+    llvm::Value* value = decl.initializer ? codegenExpr(*decl.initializer) : nullptr;
 
-    if (decl.getType().isMutable() /* || decl.isPublic() */) {
-        value = new llvm::GlobalVariable(module, toIR(decl.getType()),
-                                         !decl.getType().isMutable(),
-                                         llvm::GlobalValue::PrivateLinkage,
-                                         llvm::cast<llvm::Constant>(value),
-                                         decl.name);
+    if (!value || decl.getType().isMutable() /* || decl.isPublic() */) {
+        auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
+        auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
+        value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(), 
+                                         linkage, initializer, decl.name);
     }
 
     globalScope().localValues.emplace(decl.name, value);
