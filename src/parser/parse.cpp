@@ -136,10 +136,39 @@ std::unique_ptr<VarExpr> parseThis() {
     return expr;
 }
 
+std::string replaceEscapeChars(llvm::StringRef literalContent, SrcLoc literalStartLoc) {
+    std::string result;
+    result.reserve(literalContent.size());
+
+    for (auto it = literalContent.begin(), end = literalContent.end(); it != end; ++it) {
+        if (*it == '\\') {
+            ++it;
+            assert(it != end);
+            switch (*it) {
+                case 'a': result += '\a'; break;
+                case 'b': result += '\b'; break;
+                case 'n': result += '\n'; break;
+                case 'r': result += '\r'; break;
+                case 't': result += '\t'; break;
+                case 'v': result += '\v'; break;
+                case '"': result += '"'; break;
+                case '\\': result += '\\'; break;
+                default:
+                    auto itColumn = literalStartLoc.column + 1 + (it - literalContent.begin());
+                    SrcLoc itLoc(literalStartLoc.file, literalStartLoc.line, itColumn);
+                    error(itLoc, "unknown escape character '\\", *it, "'");
+            }
+            continue;
+        }
+        result += *it;
+    }
+    return result;
+}
+
 std::unique_ptr<StrLiteralExpr> parseStrLiteral() {
     assert(currentToken() == STRING_LITERAL);
-    llvm::StringRef content = currentToken().string.drop_back().drop_front();
-    auto expr = llvm::make_unique<StrLiteralExpr>(content, currentLoc());
+    auto content = replaceEscapeChars(currentToken().string.drop_back().drop_front(), currentLoc());
+    auto expr = llvm::make_unique<StrLiteralExpr>(std::move(content), currentLoc());
     consumeToken();
     return expr;
 }

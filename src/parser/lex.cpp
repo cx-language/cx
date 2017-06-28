@@ -357,8 +357,12 @@ Token delta::lex() {
             case '"': {
                 const char* begin = currentFilePosition;
                 const char* end = begin + 2;
-                while ((ch = readChar()) != '"') {
-                    if (ch == '\n') error(firstLoc, "newline inside string literal");
+                while ((ch = readChar()) != '"' || *(end - 2) == '\\') {
+                    if (ch == '\n') {
+                        SrcLoc newlineLoc = firstLoc;
+                        newlineLoc.column += end - begin - 1;
+                        error(newlineLoc, "newline inside string literal");
+                    }
                     end++;
                 }
                 return Token(STRING_LITERAL, llvm::StringRef(begin, end - begin));
