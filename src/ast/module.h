@@ -71,9 +71,13 @@ public:
 
 private:
     llvm::StringRef applyIdentifierReplacements(llvm::StringRef name) const {
-        auto it = identifierReplacements.find(name);
-        if (it == identifierReplacements.end()) return name;
-        return applyIdentifierReplacements(it->second);
+        llvm::StringRef initialName = name;
+        while (true) {
+            auto it = identifierReplacements.find(name);
+            if (it == identifierReplacements.end()) return name;
+            if (it->second == initialName) return name; // Break replacement cycle.
+            name = it->second;
+        }
     }
 
     std::vector<std::unordered_map<std::string, llvm::SmallVector<Decl*, 1>>> scopes;
