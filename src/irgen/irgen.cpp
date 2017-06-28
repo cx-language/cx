@@ -209,10 +209,12 @@ namespace {
 
 llvm::Value* codegenVarExpr(const VarExpr& expr) {
     auto* value = findValue(expr.identifier, expr.getDecl());
-    if (auto* arg = llvm::dyn_cast<llvm::Argument>(value)) return arg;
-    if (auto* constant = llvm::dyn_cast<llvm::Constant>(value)) return constant;
-    if (value->getType()->isPointerTy()) return builder.CreateLoad(value, expr.identifier);
-    return value;
+
+    if (llvm::isa<llvm::Argument>(value) || !value->getType()->isPointerTy()) {
+        return value;
+    } else {
+        return builder.CreateLoad(value, expr.identifier);
+    }
 }
 
 llvm::Value* codegenLvalueVarExpr(const VarExpr& expr) {
