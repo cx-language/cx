@@ -575,11 +575,14 @@ llvm::Value* codegenMemberExpr(const MemberExpr& expr) {
 
 llvm::Value* codegenLvalueSubscriptExpr(const SubscriptExpr& expr) {
     auto* value = codegenLvalueExpr(*expr.array);
+    Type lhsType = expr.array->getType();
 
-    if (expr.array->getType().isPtrType()
-    && expr.array->getType().getPointee().isUnsizedArrayType())
+    if (lhsType.isPtrType() && lhsType.getPointee().isUnsizedArrayType()) {
+        if (value->getType()->isPointerTy()) {
+            value = builder.CreateLoad(value);
+        }
         return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegenExpr(*expr.index));
-
+    }
     if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
     return builder.CreateGEP(value,
                              {llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegenExpr(*expr.index)});
