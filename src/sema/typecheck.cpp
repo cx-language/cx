@@ -290,7 +290,7 @@ bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget)
             expr.setType(target);
             return true;
         }
-    } else if (expr.isNullLiteralExpr() && target.isPtrType() && !target.isRef()) {
+    } else if (expr.isNullLiteralExpr() && target.isNullablePointer()) {
         expr.setType(target);
         return true;
     } else if (expr.isStrLiteralExpr() && target.isPtrType()
@@ -484,7 +484,7 @@ Type typecheckCallExpr(CallExpr& expr) {
         decl = &resolveOverload(expr, expr.getMangledFuncName());
 
         Type receiverType = expr.getReceiver()->getType();
-        if (receiverType.isPtrType() && !receiverType.isRef()) {
+        if (receiverType.isNullablePointer()) {
             error(expr.getReceiver()->getSrcLoc(), "cannot call member function through pointer '",
                   receiverType, "', pointer may be null");
         }
