@@ -1,10 +1,13 @@
-// compile_and_run_and_check_output "Hello, World!"
+// compile_and_run_and_check_output $'foo\nbar\nbaz\nqux'
 
-func getMessage() -> char& { return "Hello, World!"; }
+import "stdio.h"
 
-func main() -> int {
-    puts(getMessage());
-    return 0;
+func foo() -> char& { return "foo" }
+func bar() -> string { return "bar" }
+
+func main() {
+    puts(foo())
+    print(bar())
+    puts("baz")
+    print("qux")
 }
-
-extern func puts(str: char*) -> int;
