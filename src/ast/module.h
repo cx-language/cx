@@ -17,12 +17,11 @@ class Module;
 /// Container for the AST of a single file.
 class SourceFile {
 public:
-    explicit SourceFile(llvm::StringRef filePath,
-                        std::vector<std::unique_ptr<Decl>>&& topLevelDecls)
-    : filePath(filePath), topLevelDecls(std::move(topLevelDecls)) { }
+    explicit SourceFile(llvm::StringRef filePath) : filePath(filePath) { }
     llvm::ArrayRef<std::unique_ptr<Decl>> getTopLevelDecls() const { return topLevelDecls; }
     llvm::StringRef getFilePath() const { return filePath; }
     llvm::ArrayRef<std::shared_ptr<Module>> getImportedModules() const { return importedModules; }
+    void setDecls(std::vector<std::unique_ptr<Decl>>&& decls) { topLevelDecls = std::move(decls); }
 
     void addImportedModule(std::shared_ptr<Module> module) {
         if (!llvm::is_contained(importedModules, module)) {

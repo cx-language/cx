@@ -22,13 +22,13 @@ namespace {
 
 void evaluate(llvm::StringRef line) {
     Module module("main");
-    module.addSourceFile(SourceFile(llvm::StringRef(), {}));
-    setCurrentSourceFile(module.getSourceFiles().front());
+    module.addSourceFile(SourceFile(llvm::StringRef()));
+    TypeChecker typeChecker(&module, &module.getSourceFiles().front());
 
     std::unique_ptr<Expr> expr;
     try {
         expr = parseExpr(llvm::MemoryBuffer::getMemBuffer(line, "", false), module);
-        typecheckExpr(*expr);
+        typeChecker.typecheckExpr(*expr);
     } catch (const CompileError& error) {
         llvm::StringRef trimmed = line.ltrim();
         bool isComment = trimmed.size() >= 2 && trimmed[0] == '/' && trimmed[1] == '/';
@@ -44,11 +44,12 @@ void evaluate(llvm::StringRef line) {
     llvm::ExecutionEngine* engine = llvm::EngineBuilder(std::move(irModule)).setErrorStr(&error).create();
     if (!error.empty()) llvm::outs() << error << '\n';
 
-    llvm::FunctionType* functionType = llvm::FunctionType::get(irgen::toIR(expr->getType()), {}, false);
+    IRGenerator irGenerator(&typeChecker);
+    llvm::FunctionType* functionType = llvm::FunctionType::get(irGenerator.toIR(expr->getType()), {}, false);
     llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage,
                                                       "__anon_expr", &irModuleRef);
     irgen::getBuilder().SetInsertPoint(llvm::BasicBlock::Create(irgen::getContext(), "", function));
-    irgen::getBuilder().CreateRet(irgen::codegenExpr(*expr));
+    irgen::getBuilder().CreateRet(irGenerator.codegenExpr(*expr));
     assert(!llvm::verifyModule(irModuleRef, &llvm::errs()));
 
     llvm::GenericValue result = engine->runFunction(function, {});

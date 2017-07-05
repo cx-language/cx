@@ -928,26 +928,26 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
 }
 
 /// top-level-decl ::= func-decl | extern-func-decl | type-decl | import-decl | var-decl
-std::unique_ptr<Decl> parseTopLevelDecl() {
+std::unique_ptr<Decl> parseTopLevelDecl(const TypeChecker& typeChecker) {
     switch (currentToken()) {
         case FUNC: {
             auto decl = parseFuncDecl(/* receiverType */ "");
-            addToSymbolTable(*decl);
+            typeChecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
         case EXTERN: {
             auto decl = parseExternFuncDecl();
-            addToSymbolTable(*decl);
+            typeChecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
         case CLASS: case STRUCT: case INTERFACE: {
             auto decl = parseTypeDecl();
-            addToSymbolTable(*decl);
+            typeChecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
         case VAR: case CONST: {
             auto decl = parseVarDecl();
-            addToSymbolTable(*decl);
+            typeChecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
         case IMPORT:
@@ -964,13 +964,19 @@ void initParser(std::unique_ptr<llvm::MemoryBuffer> input) {
     tokenBuffer.emplace_back(lex());
 }
 
-SourceFile parse(std::unique_ptr<llvm::MemoryBuffer> input) {
+SourceFile parse(std::unique_ptr<llvm::MemoryBuffer> input, Module& module) {
     std::string identifier = input->getBufferIdentifier();
     initParser(std::move(input));
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
-    while (currentToken() != NO_TOKEN)
-        topLevelDecls.emplace_back(parseTopLevelDecl());
-    return SourceFile(identifier, std::move(topLevelDecls));
+    SourceFile sourceFile(identifier);
+    TypeChecker typeChecker(&module, &sourceFile);
+
+    while (currentToken() != NO_TOKEN) {
+        topLevelDecls.emplace_back(parseTopLevelDecl(typeChecker));
+    }
+
+    sourceFile.setDecls(std::move(topLevelDecls));
+    return sourceFile;
 }
 
 }
@@ -979,14 +985,13 @@ void delta::parse(llvm::StringRef filePath, Module& module) {
     auto buffer = llvm::MemoryBuffer::getFile(filePath);
     if (!buffer) printErrorAndExit("no such file: '", filePath, "'");
 
-    setCurrentModule(module);
     currentModule = &module;
-    module.addSourceFile(::parse(std::move(*buffer)));
+    module.addSourceFile(::parse(std::move(*buffer), module));
 }
 
 std::unique_ptr<Expr> delta::parseExpr(std::unique_ptr<llvm::MemoryBuffer> input,
                                        Module& module) {
     initParser(std::move(input));
-    setCurrentModule(module);
+    currentModule = &module;
     return ::parseExpr();
 }

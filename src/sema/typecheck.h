@@ -4,6 +4,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "../ast/expr.h"
+#include "../ast/decl.h"
+#include "../ast/stmt.h"
 
 namespace llvm {
     class StringRef;
@@ -13,36 +16,97 @@ namespace llvm {
 
 namespace delta {
 
-class Decl;
-class FuncDecl;
-class InitDecl;
-class DeinitDecl;
-class TypeDecl;
-class VarDecl;
 class Module;
 class SourceFile;
 struct SrcLoc;
 struct Type;
-class Expr;
 
 using ParserFunction = void(llvm::StringRef filePath, Module& module);
 
 std::vector<Module*> getAllImportedModules();
-void setCurrentModule(Module& module);
-void setCurrentSourceFile(SourceFile& sourceFile);
-void addToSymbolTable(FuncDecl& decl);
-void addToSymbolTable(FuncDecl&& decl);
-void addToSymbolTable(InitDecl& decl);
-void addToSymbolTable(DeinitDecl& decl);
-void addToSymbolTable(TypeDecl& decl);
-void addToSymbolTable(TypeDecl&& decl);
-void addToSymbolTable(VarDecl& decl);
-void addToSymbolTable(VarDecl&& decl);
-void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
-Decl& findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere = false);
-llvm::SmallVector<Decl*, 1> findDecls(llvm::StringRef name, bool everywhere = false);
 void typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                      ParserFunction& parse);
-Type typecheckExpr(Expr& expr);
+
+class TypeChecker {
+public:
+    explicit TypeChecker(Module* currentModule, SourceFile* currentSourceFile)
+    : currentModule(currentModule), currentSourceFile(currentSourceFile) { }
+
+    Module* getCurrentModule() const { return currentModule; }
+    const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
+
+    Decl& findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere = false) const;
+    llvm::SmallVector<Decl*, 1> findDecls(llvm::StringRef name, bool everywhere = false) const;
+
+    void addToSymbolTable(FuncDecl& decl) const;
+    void addToSymbolTable(FuncDecl&& decl) const;
+    void addToSymbolTable(InitDecl& decl) const;
+    void addToSymbolTable(DeinitDecl& decl) const;
+    void addToSymbolTable(TypeDecl& decl) const;
+    void addToSymbolTable(TypeDecl&& decl) const;
+    void addToSymbolTable(VarDecl& decl) const;
+    void addToSymbolTable(VarDecl&& decl) const;
+    void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) const;
+
+    Type typecheckExpr(Expr& expr) const;
+    void typecheckVarDecl(VarDecl& decl, bool isGlobal) const;
+    void typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                               ParserFunction& parse) const;
+
+private:
+    void typecheckFuncDecl(FuncDecl& decl) const;
+    void typecheckInitDecl(InitDecl& decl) const;
+    void typecheckMemberDecl(Decl& decl) const;
+
+    void typecheckStmt(Stmt& stmt) const;
+    void typecheckAssignStmt(AssignStmt& stmt) const;
+    void typecheckAugAssignStmt(AugAssignStmt& stmt) const;
+    void typecheckReturnStmt(ReturnStmt& stmt) const;
+    void typecheckVarStmt(VarStmt& stmt) const;
+    void typecheckIncrementStmt(IncrementStmt& stmt) const;
+    void typecheckDecrementStmt(DecrementStmt& stmt) const;
+    void typecheckIfStmt(IfStmt& ifStmt) const;
+    void typecheckSwitchStmt(SwitchStmt& stmt) const;
+    void typecheckWhileStmt(WhileStmt& whileStmt) const;
+    void typecheckForStmt(ForStmt& forStmt) const;
+    void typecheckBreakStmt(BreakStmt& breakStmt) const;
+    void typecheckAssignment(Expr& lhs, Expr& rhs, SrcLoc srcLoc) const;
+    void typecheckParamDecl(ParamDecl& decl) const;
+    void typecheckGenericParamDecl(llvm::ArrayRef<GenericParamDecl> genericParams) const;
+    void typecheckDeinitDecl(DeinitDecl& decl) const;
+    void typecheckTypeDecl(TypeDecl& decl) const;
+    void typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                             ParserFunction& parse) const;
+
+    Type typecheckVarExpr(VarExpr& expr) const;
+    Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr) const;
+    Type typecheckPrefixExpr(PrefixExpr& expr) const;
+    Type typecheckBinaryExpr(BinaryExpr& expr) const;
+    Type typecheckCallExpr(CallExpr& expr) const;
+    Type typecheckBuiltinConversion(CallExpr& expr) const;
+    Type typecheckCastExpr(CastExpr& expr) const;
+    Type typecheckMemberExpr(MemberExpr& expr) const;
+    Type typecheckSubscriptExpr(SubscriptExpr& expr) const;
+    Type typecheckUnwrapExpr(UnwrapExpr& expr) const;
+
+    bool isInterface(Type type) const;
+    bool hasMemberFunc(TypeDecl& type, FuncDecl& func) const;
+    bool implementsInterface(TypeDecl& type, TypeDecl& interface) const;
+    bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget) const;
+    bool isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source, Type target) const;
+    void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
+                               CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
+    Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
+    std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
+                                       const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
+    bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params) const;
+    void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
+                      const std::string& funcName, SrcLoc srcLoc) const;
+    TypeDecl* getTypeDecl(const BasicType& type) const;
+
+private:
+    Module* const currentModule;
+    SourceFile* const currentSourceFile;
+};
 
 }
