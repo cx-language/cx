@@ -150,7 +150,12 @@ public:
                 case clang::Decl::Record: {
                     if (!decl->isFirstDecl()) break;
                     auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl), typeChecker.getCurrentModule());
-                    if (typeDecl) typeChecker.addToSymbolTable(std::move(*typeDecl));
+                    if (typeDecl) {
+                        // Skip redefinitions caused by different modules including the same headers.
+                        if (typeChecker.findDecls(typeDecl->name, true).empty()) {
+                            typeChecker.addToSymbolTable(std::move(*typeDecl));
+                        }
+                    }
                     break;
                 }
                 case clang::Decl::Enum: {

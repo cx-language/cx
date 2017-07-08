@@ -1,0 +1,7 @@
+// RUN: %delta -print-ir -Iinputs %s
+
+import "header.h"
+
+func main() {
+    print("foo")
+}

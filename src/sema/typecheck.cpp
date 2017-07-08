@@ -966,7 +966,7 @@ llvm::SmallVector<Decl*, 1> TypeChecker::findDecls(llvm::StringRef name, bool ev
     llvm::SmallVector<Decl*, 1> decls;
     append(decls, findDeclsInModules(name, llvm::makeArrayRef(getCurrentModule())));
     append(decls, findDeclsInModules(name, getStdlibModules()));
-    append(decls, everywhere ? findDeclsInModules(name, getCurrentModule()->getImportedModules())
+    append(decls, everywhere ? findDeclsInModules(name, getAllImportedModules())
                              : findDeclsInModules(name, getCurrentSourceFile()->getImportedModules()));
     return decls;
 }
