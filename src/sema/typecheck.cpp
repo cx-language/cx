@@ -65,7 +65,14 @@ Type TypeChecker::typecheckVarExpr(VarExpr& expr) const {
         case DeclKind::InitDecl: llvm_unreachable("cannot refer to initializers yet");
         case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.srcLoc, "'", expr.identifier, "' is not a variable");
-        case DeclKind::FieldDecl: return decl.getFieldDecl().type;
+        case DeclKind::FieldDecl:
+            assert(currentFunc);
+            if ((currentFunc->isFuncDecl() && currentFunc->getFuncDecl().isMutating()) ||
+                currentFunc->isInitDecl()) {
+                return decl.getFieldDecl().type;
+            } else {
+                return decl.getFieldDecl().type.asImmutable();
+            }
         case DeclKind::ImportDecl: llvm_unreachable("import statement validation not implemented yet");
     }
     abort();
@@ -1037,6 +1044,8 @@ void TypeChecker::typecheckFuncDecl(FuncDecl& decl) const {
     }
 
     getCurrentModule()->getSymbolTable().pushScope();
+    auto* previousFunc = currentFunc;
+    currentFunc = &decl;
 
     for (ParamDecl& param : decl.params) {
         if (param.type.isMutable()) error(param.srcLoc, "parameter types cannot be 'mutable'");
@@ -1063,6 +1072,7 @@ void TypeChecker::typecheckFuncDecl(FuncDecl& decl) const {
         funcReturnType = funcReturnTypeBackup;
     }
 
+    currentFunc = previousFunc;
     getCurrentModule()->getSymbolTable().popScope();
 
     if (!decl.returnType.isVoid() && !allPathsReturn(*decl.body)) {
@@ -1072,6 +1082,9 @@ void TypeChecker::typecheckFuncDecl(FuncDecl& decl) const {
 
 void TypeChecker::typecheckInitDecl(InitDecl& decl) const {
     getCurrentModule()->getSymbolTable().pushScope();
+    auto* previousFunc = currentFunc;
+    currentFunc = &decl;
+
     Decl& typeDecl = findDecl(decl.getTypeName(), decl.srcLoc);
     if (!typeDecl.isTypeDecl()) error(decl.srcLoc, "'", decl.getTypeName(), "' is not a class or struct");
 
@@ -1091,6 +1104,7 @@ void TypeChecker::typecheckInitDecl(InitDecl& decl) const {
     currentFieldDecls = currentFieldDeclsBackup;
     inInitializer = false;
 
+    currentFunc = previousFunc;
     getCurrentModule()->getSymbolTable().popScope();
 }
 
