@@ -105,8 +105,8 @@ private:
     TypeDecl* getTypeDecl(const BasicType& type) const;
 
 private:
-    Module* const currentModule;
-    SourceFile* const currentSourceFile;
+    Module* currentModule;
+    SourceFile* currentSourceFile;
 };
 
 }

@@ -150,10 +150,11 @@ int main(int argc, char** argv) try {
 
     if (typecheckFlag) return 0;
 
+    IRGenerator irGenerator;
     for (auto& module : getAllImportedModules()) {
-        irgen::compile(*module);
+        irGenerator.compile(*module);
     }
-    auto& irModule = irgen::compile(module);
+    auto& irModule = irGenerator.compile(module);
 
     if (printIR) {
         irModule.print(llvm::outs(), nullptr);

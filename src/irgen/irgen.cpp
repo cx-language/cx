@@ -21,16 +21,7 @@ using namespace delta;
 
 namespace {
 
-class FuncInstantiation {
-public:
-    const FuncDecl& decl;
-    llvm::ArrayRef<Type> genericArgs;
-    llvm::Function* func;
-};
-
 llvm::LLVMContext ctx;
-llvm::IRBuilder<> builder(ctx);
-llvm::Module module("", ctx);
 
 /// Helper for storing parameter name info in 'funcs' key strings.
 template<typename T>
@@ -40,15 +31,6 @@ std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> typeGenericArgs
     for (const ParamDecl& param : decl.params) result.append("$").append(param.name);
     return result;
 }
-
-std::unordered_map<std::string, FuncInstantiation> funcInstantiations;
-std::vector<std::unique_ptr<FuncDecl>> helperDecls;
-std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
-std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
-const Decl* currentDecl;
-
-/// The basic blocks to branch to on a 'break' statement, one element per scope.
-llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
 
 } // anonymous namespace
 
@@ -62,8 +44,8 @@ void Scope::clear() {
     deinitsToCall.clear();
 }
 
-IRGenerator::IRGenerator(const TypeChecker* typeChecker)
-: currentTypeChecker(typeChecker) {
+IRGenerator::IRGenerator()
+: builder(ctx), module("", ctx) {
     scopes.push_back(Scope(*this));
 }
 
@@ -879,7 +861,7 @@ void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToD
     }
 }
 
-llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) {
+llvm::Type* IRGenerator::getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) const {
     assert(structs.count(typeName));
     auto structTypeAndDecl = structs.find(typeName)->second;
 
@@ -1147,39 +1129,31 @@ void IRGenerator::codegenDecl(const Decl& decl) {
     }
 }
 
-llvm::Module& irgen::compile(const Module& sourceModule) {
+llvm::Module& IRGenerator::compile(const Module& sourceModule) {
     for (const auto& sourceFile : sourceModule.getSourceFiles()) {
-        TypeChecker typeChecker(const_cast<Module*>(&sourceModule), const_cast<SourceFile*>(&sourceFile));
-        IRGenerator irGenerator(&typeChecker);
+        setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule),
+                                   const_cast<SourceFile*>(&sourceFile)));
 
         for (const auto& decl : sourceFile.getTopLevelDecls()) {
-            currentDecl = decl.get();
-            irGenerator.codegenDecl(*decl);
+            setCurrentDecl(decl.get());
+            codegenDecl(*decl);
         }
+
+        setCurrentDecl(nullptr);
     }
 
     for (auto& p : funcInstantiations) {
         if (p.second.decl.isExtern() || !p.second.func->empty()) continue;
 
-        TypeChecker typeChecker(const_cast<Module*>(&sourceModule), nullptr);
-        IRGenerator irGenerator(&typeChecker);
-
-        irGenerator.setCurrentGenericArgs(p.second.decl.genericParams, p.second.genericArgs);
-        irGenerator.codegenFuncBody(p.second.decl, *p.second.func);
+        setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
+        setCurrentGenericArgs(p.second.decl.genericParams, p.second.genericArgs);
+        codegenFuncBody(p.second.decl, *p.second.func);
         currentGenericArgs.clear();
         assert(!llvm::verifyFunction(*p.second.func, &llvm::errs()));
     }
 
     assert(!llvm::verifyModule(module, &llvm::errs()));
     return module;
-}
-
-llvm::Module& irgen::getIRModule() {
-    return module;
-}
-
-llvm::IRBuilder<>& irgen::getBuilder() {
-    return builder;
 }
 
 llvm::LLVMContext& irgen::getContext() {

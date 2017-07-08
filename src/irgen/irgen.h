@@ -4,6 +4,7 @@
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
+#include "../sema/typecheck.h"
 
 namespace delta {
 
@@ -13,10 +14,7 @@ class TypeChecker;
 class IRGenerator;
 
 namespace irgen {
-    llvm::Module& compile(const Module& module);
     llvm::Type* getBuiltinType(llvm::StringRef typeName);
-    llvm::Module& getIRModule();
-    llvm::IRBuilder<>& getBuilder();
     llvm::LLVMContext& getContext();
 }
 
@@ -29,28 +27,36 @@ struct Scope {
 
     void onScopeEnd();
     void clear();
-    
+
 private:
     IRGenerator& irGenerator;
 };
 
 class IRGenerator {
 public:
-    IRGenerator(const TypeChecker* typeChecker);
+    IRGenerator();
 
-    void codegenDecl(const Decl& decl);
+    const TypeChecker& getTypeChecker() const { return *currentTypeChecker; }
+    void setTypeChecker(TypeChecker&& typeChecker) { currentTypeChecker = std::move(typeChecker); }
+    llvm::Module& compile(const Module& sourceModule);
     llvm::Value* codegenExpr(const Expr& expr);
-    void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
-                               llvm::ArrayRef<Type> genericArgs);
-    void codegenFuncBody(const FuncDecl& decl, llvm::Function& func);
-    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
     llvm::Type* toIR(Type type);
+    llvm::IRBuilder<>& getBuilder() { return builder; }
 
 private:
+    friend struct Scope;
+
     using UnaryCreate = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, const llvm::Twine&, bool, bool);
     using BinaryCreate0 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&);
     using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool);
     using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
+
+    void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
+                               llvm::ArrayRef<Type> genericArgs);
+    void codegenFuncBody(const FuncDecl& decl, llvm::Function& func);
+    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
+    void setCurrentDecl(Decl* decl) { currentDecl = decl; }
+    llvm::Module& getIRModule() { return module; }
 
     llvm::Function* getDeinitializerFor(Type type);
     /// @param type The Delta type of the variable, or null if the variable is 'this'.
@@ -103,6 +109,8 @@ private:
     void codegenAssignStmt(const AssignStmt& stmt);
     void codegenAugAssignStmt(const AugAssignStmt& stmt);
     void codegenStmt(const Stmt& stmt);
+
+    void codegenDecl(const Decl& decl);
     void codegenFuncDecl(const FuncDecl& decl);
     void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
     void codegenDeinitDecl(const DeinitDecl& decl);
@@ -118,6 +126,7 @@ private:
     llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
+    llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) const;
     llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
     llvm::Value* getArrayOrStringDataPtr(const Expr& object, Type objectType);
     llvm::Value* getArrayOrStringLength(const Expr& object, Type objectType);
@@ -129,8 +138,28 @@ private:
     Scope& globalScope() { return scopes.front(); }
 
 private:
-    const TypeChecker* const currentTypeChecker;
+    class FuncInstantiation {
+    public:
+        const FuncDecl& decl;
+        llvm::ArrayRef<Type> genericArgs;
+        llvm::Function* func;
+    };
+
+private:
+    llvm::Optional<TypeChecker> currentTypeChecker;
     llvm::SmallVector<Scope, 4> scopes;
+
+    llvm::IRBuilder<> builder;
+    llvm::Module module;
+
+    std::unordered_map<std::string, FuncInstantiation> funcInstantiations;
+    std::vector<std::unique_ptr<FuncDecl>> helperDecls;
+    std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
+    std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
+    const Decl* currentDecl;
+
+    /// The basic blocks to branch to on a 'break' statement, one element per scope.
+    llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
 };
 
 }
