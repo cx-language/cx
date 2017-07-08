@@ -893,11 +893,6 @@ llvm::Function* IRGenerator::getFuncProto(const FuncDecl& decl, llvm::ArrayRef<T
     setCurrentGenericArgs(decl.genericParams, funcGenericArgs);
 
     auto* funcType = decl.getFuncType();
-
-    assert(!funcType->returnType.isTupleType() && "IRGen doesn't support tuple return values yet");
-    auto* returnType = toIR(funcType->returnType);
-    if (decl.name == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
-
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
     if (decl.isMemberFunc()) {
@@ -911,6 +906,7 @@ llvm::Function* IRGenerator::getFuncProto(const FuncDecl& decl, llvm::ArrayRef<T
                 codegenGenericTypeInstantiation(receiverTypeDecl, receiverTypeGenericArgs);
             }
             mangledName = mangle(decl, receiverTypeGenericArgs, funcGenericArgs);
+            setCurrentGenericArgs(receiverTypeDecl.genericParams, receiverTypeGenericArgs);
         } else {
             receiverTypeName = decl.getReceiverTypeName();
         }
@@ -918,6 +914,10 @@ llvm::Function* IRGenerator::getFuncProto(const FuncDecl& decl, llvm::ArrayRef<T
     }
 
     for (const auto& t : funcType->paramTypes) paramTypes.emplace_back(toIR(t));
+
+    assert(!funcType->returnType.isTupleType() && "IRGen doesn't support tuple return values yet");
+    auto* returnType = toIR(funcType->returnType);
+    if (decl.name == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);
     if (mangledName.empty()) mangledName = mangle(decl, receiverTypeGenericArgs, funcGenericArgs);

@@ -194,7 +194,8 @@ Type resolve(Type type) {
     }
 }
 
-bool TypeChecker::isInterface(Type type) const {
+bool TypeChecker::isInterface(Type unresolvedType) const {
+    auto type = resolve(unresolvedType);
     return type.isBasicType() && !type.isBuiltinType() && !type.isVoid()
         && getTypeDecl(llvm::cast<BasicType>(*type))->isInterface();
 }
@@ -388,6 +389,17 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
             case DeclKind::FuncDecl:
+                if (expr.isMemberFuncCall()) {
+                    Type receiverType = expr.getReceiver()->getType().removePtr();
+                    if (receiverType.isBasicType() && !receiverType.getGenericArgs().empty()) {
+                        TypeDecl* typeDecl = getTypeDecl(llvm::cast<BasicType>(*receiverType));
+                        assert(typeDecl->genericParams.size() == receiverType.getGenericArgs().size());
+                        for (auto t : llvm::zip_first(typeDecl->genericParams, receiverType.getGenericArgs())) {
+                            currentGenericArgs.emplace(std::get<0>(t).name, std::get<1>(t));
+                        }
+                    }
+                }
+
                 setCurrentGenericArgs(decl->getFuncDecl().getGenericParams(), expr,
                                       decl->getFuncDecl().getParams());
 
@@ -456,10 +468,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     Decl* decl;
 
     if (expr.isMemberFuncCall()) {
-        typecheckExpr(*expr.getReceiver());
+        Type receiverType = typecheckExpr(*expr.getReceiver());
         decl = &resolveOverload(expr, expr.getMangledFuncName());
 
-        Type receiverType = expr.getReceiver()->getType();
         if (receiverType.isNullablePointer()) {
             error(expr.getReceiver()->getSrcLoc(), "cannot call member function through pointer '",
                   receiverType, "', pointer may be null");

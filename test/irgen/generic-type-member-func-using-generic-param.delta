@@ -1,0 +1,14 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct A<E> {
+    init() { }
+
+    // CHECK-DAG: define void @"A<int>.a"({} %this, i32 %n)
+    func a(n: E) { }
+}
+
+func main() {
+    var a = A<int>()
+    // CHECK-DAG: call void @"A<int>.a"({} %a{{[0-9]*}}, i32 5)
+    a.a(5)
+}
