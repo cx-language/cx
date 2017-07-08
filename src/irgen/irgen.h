@@ -82,7 +82,8 @@ private:
     llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr);
     llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, const Expr& rhs);
     llvm::Value* codegenBinaryExpr(const BinaryExpr& expr);
-    llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType);
+    llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType,
+                                       bool forceByReference = false);
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
     llvm::Value* codegenCallExpr(const CallExpr& expr);
     llvm::Value* codegenCastExpr(const CastExpr& expr);

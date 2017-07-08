@@ -396,7 +396,8 @@ bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* target
         && targetType->getStructElementType(1)->isIntegerTy(32);
 }
 
-llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
+llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType,
+                                                bool forceByReference) {
     if (isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
         assert(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
         auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegenExpr(expr), 0, 0);
@@ -414,7 +415,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         return codegenExpr(expr);
 
     auto it = structs.find(exprType.getName());
-    if (it == structs.end() || it->second.second->passByValue()) {
+    if ((it == structs.end() || it->second.second->passByValue()) && !forceByReference) {
         if (expr.getType().isPtrType() && !targetType->isPointerTy()) {
             return builder.CreateLoad(codegenExpr(expr));
         }
@@ -448,7 +449,11 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     assert(func);
     auto param = func->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
-    if (expr.isMemberFuncCall()) args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param++->getType()));
+    if (expr.isMemberFuncCall()) {
+        auto* calleeDecl = expr.getCalleeDecl();
+        bool forceByReference = calleeDecl->isFuncDecl() && calleeDecl->getFuncDecl().isMutating();
+        args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param++->getType(), forceByReference));
+    }
     for (const auto& arg : expr.args) args.emplace_back(codegenExprForPassing(*arg.value, param++->getType()));
 
     return builder.CreateCall(func, args);
