@@ -64,8 +64,8 @@ template<typename... Args>
 [[noreturn]] void printErrorAndExit(Args&&... args) {
     printColored("error: ", llvm::raw_ostream::RED);
     using expander = int[];
-    (void)expander{0, (void(printColored(std::forward<Args>(args),
-                                         llvm::raw_ostream::SAVEDCOLOR)), 0)...};
+    (void)expander{0, (void(void(printColored(std::forward<Args>(args),
+                                              llvm::raw_ostream::SAVEDCOLOR))), 0)...};
     llvm::outs() << '\n';
     exit(1);
 }
@@ -75,7 +75,7 @@ template<typename... Args>
     std::string message;
     llvm::raw_string_ostream messageStream(message);
     using expander = int[];
-    (void)expander{0, (void(messageStream << std::forward<Args>(args)), 0)...};
+    (void)expander{0, (void(void(messageStream << std::forward<Args>(args))), 0)...};
     throw CompileError(srcLoc, std::move(messageStream.str()));
 }
 
