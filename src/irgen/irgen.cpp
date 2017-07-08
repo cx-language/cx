@@ -46,7 +46,6 @@ std::vector<std::unique_ptr<FuncDecl>> helperDecls;
 std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
 std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
 const Decl* currentDecl;
-llvm::BasicBlock::iterator lastAlloca;
 
 /// The basic blocks to branch to on a 'break' statement, one element per scope.
 llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
@@ -647,16 +646,20 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
 
 llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, llvm::Value* arraySize,
                                                       const llvm::Twine& name) {
+    static llvm::BasicBlock::iterator lastAlloca;
     auto* insertBlock = builder.GetInsertBlock();
-    if (lastAlloca == llvm::BasicBlock::iterator()) {
-        if (insertBlock->getParent()->getEntryBlock().empty()) {
-            builder.SetInsertPoint(&insertBlock->getParent()->getEntryBlock());
+    auto* entryBlock = &insertBlock->getParent()->getEntryBlock();
+
+    if (lastAlloca == llvm::BasicBlock::iterator() || lastAlloca->getParent() != entryBlock) {
+        if (entryBlock->empty()) {
+            builder.SetInsertPoint(entryBlock);
         } else {
-            builder.SetInsertPoint(&insertBlock->getParent()->getEntryBlock().front());
+            builder.SetInsertPoint(&entryBlock->front());
         }
     } else {
-        builder.SetInsertPoint(&insertBlock->getParent()->getEntryBlock(), std::next(lastAlloca));
+        builder.SetInsertPoint(entryBlock, std::next(lastAlloca));
     }
+
     auto* alloca = builder.CreateAlloca(toIR(type), arraySize, name);
     lastAlloca = alloca->getIterator();
     setLocalValue(type, name.str(), alloca);
@@ -994,7 +997,6 @@ llvm::Function* IRGenerator::getFuncForCall(const CallExpr& call) {
 }
 
 void IRGenerator::codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
-    lastAlloca = llvm::BasicBlock::iterator();
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &func));
     beginScope();
     auto arg = func.arg_begin();

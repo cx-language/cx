@@ -1,0 +1,11 @@
+// RUN: %delta -print-ir %s
+
+struct S {
+    init() {
+        var i = 4;
+    }
+
+    init(foo: int) {
+        var j = 5;
+    }
+}
