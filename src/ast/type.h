@@ -93,7 +93,7 @@ public:
 
     llvm::StringRef getName() const;
     Type getElementType() const;
-    int getArraySize() const;
+    int64_t getArraySize() const;
     llvm::ArrayRef<Type> getSubtypes() const;
     llvm::ArrayRef<Type> getGenericArgs() const;
     Type getReturnType() const;
