@@ -72,7 +72,7 @@ private:
     void typecheckBreakStmt(BreakStmt& breakStmt) const;
     void typecheckAssignment(Expr& lhs, Expr& rhs, SrcLoc srcLoc) const;
     void typecheckParamDecl(ParamDecl& decl) const;
-    void typecheckGenericParamDecl(llvm::ArrayRef<GenericParamDecl> genericParams) const;
+    void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const;
     void typecheckDeinitDecl(DeinitDecl& decl) const;
     void typecheckTypeDecl(TypeDecl& decl) const;
     void typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,

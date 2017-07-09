@@ -1010,7 +1010,7 @@ bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
     }
 }
 
-void TypeChecker::typecheckGenericParamDecl(llvm::ArrayRef<GenericParamDecl> genericParams) const {
+void TypeChecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const {
     for (auto& genericParam : genericParams) {
         if (getCurrentModule()->getSymbolTable().contains(genericParam.name)) {
             error(genericParam.srcLoc, "redefinition of '", genericParam.name, "'");
@@ -1029,7 +1029,7 @@ void TypeChecker::typecheckFuncDecl(FuncDecl& decl) const {
     if (decl.isExtern()) return;
 
     if (decl.isGeneric() && currentGenericArgs.empty()) {
-        typecheckGenericParamDecl(decl.genericParams);
+        typecheckGenericParamDecls(decl.genericParams);
         return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 
@@ -1229,7 +1229,7 @@ void TypeChecker::typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<llvm::StringR
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: typecheckParamDecl(decl.getParamDecl()); break;
         case DeclKind::FuncDecl: typecheckFuncDecl(decl.getFuncDecl()); break;
-        case DeclKind::GenericParamDecl: typecheckGenericParamDecl(decl.getGenericParamDecl()); break;
+        case DeclKind::GenericParamDecl: typecheckGenericParamDecls(decl.getGenericParamDecl()); break;
         case DeclKind::InitDecl: typecheckInitDecl(decl.getInitDecl()); break;
         case DeclKind::DeinitDecl: typecheckDeinitDecl(decl.getDeinitDecl()); break;
         case DeclKind::TypeDecl: typecheckTypeDecl(decl.getTypeDecl()); break;
