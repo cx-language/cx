@@ -1,5 +1,0 @@
-// check_error 4:13 "function pointers not implemented yet"
-func foo() { }
-func main() {
-    var f = foo;
-}
