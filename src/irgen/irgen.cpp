@@ -445,6 +445,10 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     if (expr.isBuiltinConversion())
         return codegenBuiltinConversion(*expr.args.front().value, expr.getType());
 
+    if (expr.getFuncName() == "sizeOf") {
+        return llvm::ConstantExpr::getSizeOf(toIR(expr.getGenericArgs().front()));
+    }
+
     llvm::Function* func = getFuncForCall(expr);
     assert(func);
     auto param = func->arg_begin();

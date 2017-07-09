@@ -336,6 +336,16 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
     return genericArgs;
 }
 
+static void validateGenericArgCount(size_t genericParamCount, const CallExpr& call) {
+    if (call.genericArgs.size() < genericParamCount) {
+        error(call.srcLoc, "too few generic arguments to '", call.getFuncName(),
+              "', expected ", genericParamCount);
+    } else if (call.genericArgs.size() > genericParamCount) {
+        error(call.srcLoc, "too many generic arguments to '", call.getFuncName(),
+              "', expected ", genericParamCount);
+    }
+}
+
 void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                         CallExpr& call, llvm::ArrayRef<ParamDecl> params) const {
     if (genericParams.empty()) return;
@@ -343,14 +353,8 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
     if (call.genericArgs.empty()) {
         call.genericArgs = inferGenericArgs(genericParams, call, params);
         assert(call.genericArgs.size() == genericParams.size());
-    }
-    else if (call.genericArgs.size() < genericParams.size()) {
-        error(call.srcLoc, "too few generic arguments to '", call.getFuncName(),
-              "', expected ", genericParams.size());
-    }
-    else if (call.genericArgs.size() > genericParams.size()) {
-        error(call.srcLoc, "too many generic arguments to '", call.getFuncName(),
-              "', expected ", genericParams.size());
+    } else {
+        validateGenericArgCount(genericParams.size(), call);
     }
 
     auto genericArg = call.genericArgs.begin();
@@ -472,6 +476,12 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
 
     if (Type::isBuiltinScalar(expr.getFuncName()))
         return typecheckBuiltinConversion(expr);
+
+    if (expr.getFuncName() == "sizeOf") {
+        validateArgs(expr.args, {}, expr.getFuncName(), expr.getSrcLoc());
+        validateGenericArgCount(1, expr);
+        return Type::getUInt64();
+    }
 
     Decl* decl;
 
