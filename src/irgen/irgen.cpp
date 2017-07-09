@@ -901,8 +901,7 @@ llvm::Function* IRGenerator::getFuncProto(const FuncDecl& decl, llvm::ArrayRef<T
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
     if (decl.isMemberFunc()) {
-        auto& receiverTypeDecl = currentTypeChecker->findDecl(decl.getReceiverTypeName(),
-                                                              SrcLoc::invalid()).getTypeDecl();
+        auto& receiverTypeDecl = *decl.getReceiverTypeDecl();
         std::string receiverTypeName;
 
         if (receiverTypeDecl.isGeneric()) {
@@ -913,7 +912,7 @@ llvm::Function* IRGenerator::getFuncProto(const FuncDecl& decl, llvm::ArrayRef<T
             mangledName = mangle(decl, receiverTypeGenericArgs, funcGenericArgs);
             setCurrentGenericArgs(receiverTypeDecl.genericParams, receiverTypeGenericArgs);
         } else {
-            receiverTypeName = decl.getReceiverTypeName();
+            receiverTypeName = receiverTypeDecl.name;
         }
         paramTypes.emplace_back(getLLVMTypeForPassing(receiverTypeName, decl.isMutating()));
     }
@@ -948,7 +947,7 @@ llvm::Function* IRGenerator::getInitProto(const InitDecl& decl, llvm::ArrayRef<T
     auto helperDecl = llvm::make_unique<FuncDecl>(mangle(decl, typeGenericArgs),
                                                   std::vector<ParamDecl>(decl.params),
                                                   decl.getTypeDecl().getType(typeGenericArgs),
-                                                  "", llvm::ArrayRef<GenericParamDecl>(),
+                                                  nullptr, llvm::ArrayRef<GenericParamDecl>(),
                                                   nullptr, decl.srcLoc);
     helperDecls.emplace_back(std::move(helperDecl));
     return getFuncProto(*helperDecls.back(), funcGenericArgs, nullptr);
@@ -956,7 +955,7 @@ llvm::Function* IRGenerator::getInitProto(const InitDecl& decl, llvm::ArrayRef<T
 
 llvm::Function* IRGenerator::codegenDeinitializerProto(const DeinitDecl& decl) {
     auto helperDecl = llvm::make_unique<FuncDecl>("deinit", std::vector<ParamDecl>(),
-                                                  Type::getVoid(), decl.getTypeName().str(),
+                                                  Type::getVoid(), &decl.getTypeDecl(),
                                                   llvm::ArrayRef<GenericParamDecl>(),
                                                   nullptr, decl.srcLoc);
     helperDecls.emplace_back(std::move(helperDecl));
@@ -1009,14 +1008,7 @@ void IRGenerator::codegenFuncBody(const FuncDecl& decl, llvm::Function& func) {
 
 void IRGenerator::codegenFuncDecl(const FuncDecl& decl) {
     if (decl.isGeneric()) return;
-
-    if (!decl.getReceiverTypeName().empty()) {
-        auto& receiverTypeDecl = currentTypeChecker->findDecl(decl.getReceiverTypeName(),
-                                                              SrcLoc::invalid()).getTypeDecl();
-        if (receiverTypeDecl.isGeneric()) {
-            return;
-        }
-    }
+    if (decl.getReceiverTypeDecl() && decl.getReceiverTypeDecl()->isGeneric()) return;
 
     llvm::Function* func = getFuncProto(decl);
     if (!decl.isExtern()) codegenFuncBody(decl, *func);
@@ -1048,7 +1040,7 @@ void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl) {
     if (decl.getTypeDecl().isGeneric()) return;
 
     auto helperDecl = llvm::make_unique<FuncDecl>("deinit", std::vector<ParamDecl>(),
-                                                  Type::getVoid(), decl.getTypeName(),
+                                                  Type::getVoid(), &decl.getTypeDecl(),
                                                   std::vector<GenericParamDecl>(),
                                                   nullptr, decl.srcLoc);
     helperDecl->body = decl.body;

@@ -12,11 +12,20 @@ const FuncType* FuncDecl::getFuncType() const {
 
 bool FuncDecl::signatureMatches(const FuncDecl& other, bool matchReceiver) const {
     if (name != other.name) return false;
-    if (matchReceiver && receiverType != other.receiverType) return false;
+    if (matchReceiver && getReceiverTypeDecl() != other.getReceiverTypeDecl()) return false;
     if (mutating != other.mutating) return false;
     if (returnType != other.returnType) return false;
     if (params != other.params) return false;
     return true;
+}
+
+void TypeDecl::addField(FieldDecl&& field) {
+    fields.emplace_back(std::move(field));
+}
+
+void TypeDecl::addMemberFunc(std::unique_ptr<Decl> decl) {
+    assert(decl->isFuncDecl() || decl->isInitDecl() || decl->isDeinitDecl());
+    memberFuncs.emplace_back(std::move(decl));
 }
 
 Type TypeDecl::getType(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {

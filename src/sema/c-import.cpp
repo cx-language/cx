@@ -97,7 +97,7 @@ FuncDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
                             SrcLoc::invalid());
     }
     return FuncDecl(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
-                    "", /* genericParams */ {}, currentModule, SrcLoc::invalid());
+                    nullptr, /* genericParams */ {}, currentModule, SrcLoc::invalid());
 }
 
 llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {
@@ -109,7 +109,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
     if (decl.getName().empty()) return llvm::None;
 
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
-                      decl.getNameAsString(), {}, {}, {}, currentModule, SrcLoc::invalid());
+                      decl.getNameAsString(), {}, currentModule, SrcLoc::invalid());
     typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field)) {

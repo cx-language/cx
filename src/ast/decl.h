@@ -101,26 +101,26 @@ public:
     SrcLoc srcLoc;
 
     FuncDecl(std::string&& name, std::vector<ParamDecl>&& params, Type returnType,
-             std::string&& receiverType, std::vector<GenericParamDecl>&& genericParams,
+             TypeDecl* receiverTypeDecl, std::vector<GenericParamDecl>&& genericParams,
              Module* module, SrcLoc srcLoc)
     : Decl(DeclKind::FuncDecl, module), name(std::move(name)), params(std::move(params)),
       returnType(returnType), mutating(false), genericParams(std::move(genericParams)),
-      srcLoc(srcLoc), receiverType(std::move(receiverType)) { }
+      srcLoc(srcLoc), receiverTypeDecl(receiverTypeDecl) { }
 
     bool isExtern() const { return body == nullptr; };
     bool isGeneric() const { return !genericParams.empty(); }
-    bool isMemberFunc() const { return !receiverType.empty(); }
+    bool isMemberFunc() const { return receiverTypeDecl != nullptr; }
     bool isMutating() const { return mutating; }
     void setMutating(bool m) { mutating = m; }
     llvm::ArrayRef<ParamDecl> getParams() const { return params; }
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
-    std::string getReceiverTypeName() const { return receiverType; }
+    TypeDecl* getReceiverTypeDecl() const { return receiverTypeDecl; }
     const FuncType* getFuncType() const;
     bool signatureMatches(const FuncDecl& other, bool matchReceiver = true) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FuncDecl; }
 
 private:
-    std::string receiverType; /// Empty if non-member function.
+    TypeDecl* receiverTypeDecl;
 };
 
 class InitDecl : public Decl {
@@ -172,13 +172,13 @@ public:
     std::vector<GenericParamDecl> genericParams;
     SrcLoc srcLoc;
 
-    TypeDecl(TypeTag tag, std::string&& name, std::vector<FieldDecl>&& fields,
-             std::vector<std::unique_ptr<Decl>>&& memberFuncs,
-             std::vector<GenericParamDecl>&& genericParams, Module* module, SrcLoc srcLoc)
+    TypeDecl(TypeTag tag, std::string&& name, std::vector<GenericParamDecl>&& genericParams,
+             Module* module, SrcLoc srcLoc)
     : Decl(DeclKind::TypeDecl, module), tag(tag), name(std::move(name)),
-      fields(std::move(fields)), memberFuncs(std::move(memberFuncs)),
       genericParams(std::move(genericParams)), srcLoc(srcLoc) { }
 
+    void addField(FieldDecl&& field);
+    void addMemberFunc(std::unique_ptr<Decl> decl);
     llvm::ArrayRef<std::unique_ptr<Decl>> getMemberDecls() const { return memberFuncs; }
     Type getType(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
     /// 'T&' if this is class, or plain 'T' otherwise.

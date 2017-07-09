@@ -217,7 +217,8 @@ bool TypeChecker::hasMemberFunc(TypeDecl& type, FuncDecl& func) const {
     auto decls = findDecls(mangleFuncDecl(type.name, func.name));
     for (Decl* decl : decls) {
         if (!decl->isFuncDecl()) continue;
-        if (decl->getFuncDecl().getReceiverTypeName() != type.name) continue;
+        if (!decl->getFuncDecl().getReceiverTypeDecl()) continue;
+        if (decl->getFuncDecl().getReceiverTypeDecl()->name != type.name) continue;
         if (!decl->getFuncDecl().signatureMatches(func, /* matchReceiver: */ false)) continue;
         return true;
     }
@@ -1033,14 +1034,9 @@ void TypeChecker::typecheckFuncDecl(FuncDecl& decl) const {
         return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 
-    TypeDecl* receiverTypeDecl;
-    if (decl.isMemberFunc()) {
-        receiverTypeDecl = &findDecl(decl.getReceiverTypeName(), decl.srcLoc).getTypeDecl();
-        if (receiverTypeDecl->isGeneric() && currentGenericArgs.empty()) {
-            return; // Partial type-checking of uninstantiated generic functions not implemented yet.
-        }
-    } else {
-        receiverTypeDecl = nullptr;
+    TypeDecl* receiverTypeDecl = decl.getReceiverTypeDecl();
+    if (decl.isMemberFunc() && receiverTypeDecl->isGeneric() && currentGenericArgs.empty()) {
+        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 
     getCurrentModule()->getSymbolTable().pushScope();
@@ -1115,7 +1111,7 @@ void TypeChecker::typecheckDeinitDecl(DeinitDecl& decl) const {
         return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 
-    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), decl.getTypeName(),
+    FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), &typeDecl,
                       {}, getCurrentModule(), decl.getSrcLoc());
     funcDecl.body = decl.body;
     decl.typeDecl = &typeDecl;
