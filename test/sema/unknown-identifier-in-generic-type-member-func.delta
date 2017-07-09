@@ -1,0 +1,12 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+struct S<T> {
+    func foo() {
+        // CHECK: [[@LINE+1]]:9: error: unknown identifier 'x'
+        x++
+    }
+}
+
+func bar(s: S<int>) {
+    s.foo()
+}

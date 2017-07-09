@@ -490,7 +490,10 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     expr.setCalleeDecl(decl);
 
     if (auto* funcDecl = llvm::dyn_cast<FuncDecl>(decl)) {
-        if (funcDecl->getGenericParams().empty()) {
+        bool hasGenericReceiverType = funcDecl->getReceiverTypeDecl() &&
+                                      funcDecl->getReceiverTypeDecl()->isGeneric();
+
+        if (!funcDecl->isGeneric() && !hasGenericReceiverType) {
             return funcDecl->getFuncType()->returnType;
         } else {
             setCurrentGenericArgs(funcDecl->getGenericParams(), expr,
