@@ -89,6 +89,7 @@ private:
     Type typecheckSubscriptExpr(SubscriptExpr& expr) const;
     Type typecheckUnwrapExpr(UnwrapExpr& expr) const;
 
+    Type resolve(Type type) const;
     bool isInterface(Type type) const;
     bool hasMemberFunc(TypeDecl& type, FuncDecl& func) const;
     bool implementsInterface(TypeDecl& type, TypeDecl& interface) const;
@@ -96,6 +97,7 @@ private:
     bool isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source, Type target) const;
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
+    std::vector<Type> getGenericArgsAsArray() const;
     Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
@@ -108,6 +110,7 @@ private:
     Module* currentModule;
     SourceFile* currentSourceFile;
     mutable Decl* currentFunc;
+    mutable std::unordered_map<std::string, Type> currentGenericArgs;
 };
 
 }
