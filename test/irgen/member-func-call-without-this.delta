@@ -1,4 +1,5 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 
 struct S {
     // CHECK: define void @S.foo({}* %this)
@@ -10,4 +11,23 @@ struct S {
 
     // CHECK: define void @S.bar({} %this)
     func bar() { }
+}
+
+class T<U> {
+    init() { }
+
+    // CHECK: define void @"T<int>.baz"({}* %this)
+    // CHECK-NEXT: call void @"T<int>.qux"({}* %this)
+    mutating func baz() {
+        qux()
+    }
+
+    // CHECK: define void @"T<int>.qux"({}* %this)
+    func qux() { }
+}
+
+func main() {
+    const t = T<int>()
+    // CHECK-MAIN: call void @"T<int>.baz"({}* %t)
+    t.baz()
 }

@@ -120,7 +120,7 @@ private:
 
     llvm::Function* getFuncForCall(const CallExpr& call);
     llvm::Function* getFuncProto(const FuncDecl& decl, llvm::ArrayRef<Type> funcGenericArgs = {},
-                                 Expr* receiver = nullptr, std::string&& mangledName = {});
+                                 Type receiverType = nullptr, std::string&& mangledName = {});
     llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
                                  llvm::ArrayRef<Type> funcGenericArgs = {});
     llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);

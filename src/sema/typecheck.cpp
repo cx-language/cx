@@ -475,8 +475,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
 
     Decl* decl;
 
-    if (expr.isMemberFuncCall()) {
+    if (expr.func->isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
+        expr.setReceiverType(receiverType);
         decl = &resolveOverload(expr, expr.getMangledFuncName());
 
         if (receiverType.isNullablePointer()) {
@@ -485,6 +486,10 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         }
     } else {
         decl = &resolveOverload(expr, expr.getFuncName());
+
+        if (decl->isFuncDecl() && decl->getFuncDecl().isMemberFunc()) {
+            expr.setReceiverType(findDecl("this", expr.func->getSrcLoc()).getVarDecl().getType());
+        }
     }
 
     expr.setCalleeDecl(decl);

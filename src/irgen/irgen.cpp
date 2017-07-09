@@ -898,10 +898,10 @@ void IRGenerator::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
 }
 
 llvm::Function* IRGenerator::getFuncProto(const FuncDecl& decl, llvm::ArrayRef<Type> funcGenericArgs,
-                                          Expr* receiver, std::string&& mangledName) {
+                                          Type receiverType, std::string&& mangledName) {
     std::vector<Type> receiverTypeGenericArgs;
-    if (receiver) {
-        receiverTypeGenericArgs = llvm::cast<BasicType>(*receiver->getType().removePtr()).getGenericArgs();
+    if (receiverType) {
+        receiverTypeGenericArgs = llvm::cast<BasicType>(*receiverType.removePtr()).getGenericArgs();
     }
 
     auto it = funcInstantiations.find(mangleWithParams(decl, receiverTypeGenericArgs, funcGenericArgs));
@@ -980,7 +980,13 @@ llvm::Function* IRGenerator::getFuncForCall(const CallExpr& call) {
     const Decl& decl = *call.getCalleeDecl();
 
     if (auto* funcDecl = llvm::dyn_cast<FuncDecl>(&decl)) {
-        return getFuncProto(*funcDecl, call.genericArgs, call.getReceiver());
+        llvm::Function* func = getFuncProto(*funcDecl, call.genericArgs, call.getReceiverType());
+//        if (func->empty() && !call.genericArgs.empty()) {
+//            auto backup = builder.GetInsertBlock();
+//            codegenInitDecl(*initDecl, call.genericArgs);
+//            builder.SetInsertPoint(backup);
+//        }
+        return func;
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(&decl)) {
         llvm::Function* func = getInitProto(*initDecl, call.genericArgs);
         if (func->empty() && !call.genericArgs.empty()) {
@@ -1151,14 +1157,20 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
         setCurrentDecl(nullptr);
     }
 
-    for (auto& p : funcInstantiations) {
-        if (p.second.decl.isExtern() || !p.second.func->empty()) continue;
+    while (true) {
+        auto currentFuncInstantiations = funcInstantiations;
 
-        setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
-        setCurrentGenericArgs(p.second.decl.genericParams, p.second.genericArgs);
-        codegenFuncBody(p.second.decl, *p.second.func);
-        currentGenericArgs.clear();
-        assert(!llvm::verifyFunction(*p.second.func, &llvm::errs()));
+        for (auto& p : currentFuncInstantiations) {
+            if (p.second.decl.isExtern() || !p.second.func->empty()) continue;
+
+            setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
+            setCurrentGenericArgs(p.second.decl.genericParams, p.second.genericArgs);
+            codegenFuncBody(p.second.decl, *p.second.func);
+            currentGenericArgs.clear();
+            assert(!llvm::verifyFunction(*p.second.func, &llvm::errs()));
+        }
+
+        if (funcInstantiations.size() == currentFuncInstantiations.size()) break;
     }
 
     assert(!llvm::verifyModule(module, &llvm::errs()));

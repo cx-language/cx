@@ -163,6 +163,8 @@ public:
     bool isInitCall() const;
     bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFuncName()); }
     Expr* getReceiver() const;
+    Type getReceiverType() const { return receiverType; }
+    void setReceiverType(Type type) { receiverType = type; }
     Decl* getCalleeDecl() const { return calleeDecl; }
     void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
@@ -174,6 +176,7 @@ protected:
     : Expr(kind, srcLoc), func(std::move(func)), args(std::move(args)) { }
 
 private:
+    Type receiverType;
     Decl* calleeDecl;
 };
 
