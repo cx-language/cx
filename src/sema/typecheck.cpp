@@ -986,6 +986,15 @@ Decl& TypeChecker::findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere
 
 llvm::SmallVector<Decl*, 1> TypeChecker::findDecls(llvm::StringRef name, bool everywhere) const {
     llvm::SmallVector<Decl*, 1> decls;
+
+    if (currentFunc && currentFunc->isFuncDecl() && currentFunc->getFuncDecl().isMemberFunc()) {
+        for (auto& decl : currentFunc->getFuncDecl().getReceiverTypeDecl()->getMemberDecls()) {
+            if (decl->isFuncDecl() && decl->getFuncDecl().name == name) {
+                decls.emplace_back(decl.get());
+            }
+        }
+    }
+
     append(decls, findDeclsInModules(name, llvm::makeArrayRef(getCurrentModule())));
     append(decls, findDeclsInModules(name, getStdlibModules()));
     append(decls, everywhere ? findDeclsInModules(name, getAllImportedModules())

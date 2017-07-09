@@ -1,0 +1,13 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct S {
+    // CHECK: define void @S.foo({}* %this)
+    // CHECK-NEXT: %this1 = load {}, {}* %this
+    // CHECK-NEXT: call void @S.bar({} %this1)
+    mutating func foo() {
+        bar()
+    }
+
+    // CHECK: define void @S.bar({} %this)
+    func bar() { }
+}

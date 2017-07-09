@@ -449,11 +449,23 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     assert(func);
     auto param = func->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
-    if (expr.isMemberFuncCall()) {
-        auto* calleeDecl = expr.getCalleeDecl();
+
+    auto* calleeDecl = expr.getCalleeDecl();
+    if ((calleeDecl->isFuncDecl() && calleeDecl->getFuncDecl().isMemberFunc()) || calleeDecl->isDeinitDecl()) {
         bool forceByReference = calleeDecl->isFuncDecl() && calleeDecl->getFuncDecl().isMutating();
-        args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param++->getType(), forceByReference));
+
+        if (expr.getReceiver()) {
+            args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param->getType(), forceByReference));
+        } else {
+            auto* thisValue = findValue("this", nullptr);
+            if (thisValue->getType()->isPointerTy() && !param->getType()->isPointerTy()) {
+                thisValue = builder.CreateLoad(thisValue, thisValue->getName());
+            }
+            args.emplace_back(thisValue);
+        }
+        ++param;
     }
+
     for (const auto& arg : expr.args) args.emplace_back(codegenExprForPassing(*arg.value, param++->getType()));
 
     return builder.CreateCall(func, args);
