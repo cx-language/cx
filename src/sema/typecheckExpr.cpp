@@ -389,7 +389,7 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
     llvm::SmallVector<Decl*, 1> matches;
     bool isInitCall = false;
     bool atLeastOneFunction = false;
-    auto decls = findDecls(callee);
+    auto decls = findDecls(callee, typecheckingGenericFunc);
 
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
@@ -509,7 +509,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         } else {
             setCurrentGenericArgs(funcDecl->getGenericParams(), expr, funcDecl->getParams());
             // TODO: Don't typecheck more than once with the same generic arguments.
+            typecheckingGenericFunc = true;
             typecheckFuncDecl(*funcDecl);
+            typecheckingGenericFunc = false;
             Type returnType = resolve(funcDecl->getFuncType()->returnType);
             currentGenericArgs.clear();
             return returnType;

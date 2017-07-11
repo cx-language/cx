@@ -1,0 +1,7 @@
+// RUN: %delta -typecheck -Iinputs %s
+
+import "inputs"
+
+func main() {
+    A<int>().f()
+}

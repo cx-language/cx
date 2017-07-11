@@ -111,6 +111,7 @@ private:
     SourceFile* currentSourceFile;
     mutable Decl* currentFunc;
     mutable std::unordered_map<std::string, Type> currentGenericArgs;
+    mutable bool typecheckingGenericFunc;
 };
 
 }
