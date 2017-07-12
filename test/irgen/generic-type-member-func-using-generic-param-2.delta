@@ -1,0 +1,23 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+import "stdlib.h"
+
+struct C<T> {
+    init() { }
+
+    // CHECK: define void @"C<bool>.f"({} %this)
+    func f() {
+        // CHECK-NEXT: call void @"C<bool>.g"({} %this)
+        g()
+    }
+
+    // CHECK: define void @"C<bool>.g"({} %this)
+    func g() {
+        var a = sizeOf<T>()
+    }
+}
+
+func main() {
+    var c = C<bool>()
+    c.f()
+}

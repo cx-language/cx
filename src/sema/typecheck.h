@@ -30,7 +30,8 @@ void typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearc
 class TypeChecker {
 public:
     explicit TypeChecker(Module* currentModule, SourceFile* currentSourceFile)
-    : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunc(nullptr) { }
+    : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunc(nullptr),
+      typecheckingGenericFunc(false) { }
 
     Module* getCurrentModule() const { return currentModule; }
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }

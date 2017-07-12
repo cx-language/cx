@@ -393,7 +393,9 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
 
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
-            case DeclKind::FuncDecl:
+            case DeclKind::FuncDecl: {
+                auto previousGenericArgs = std::move(currentGenericArgs);
+
                 if (expr.isMemberFuncCall()) {
                     Type receiverType = expr.getReceiver()->getType().removePtr();
                     if (receiverType.isBasicType() && !receiverType.getGenericArgs().empty()) {
@@ -417,9 +419,9 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                     matches.push_back(decl);
                 }
 
-                currentGenericArgs.clear();
+                currentGenericArgs = std::move(previousGenericArgs);
                 break;
-
+            }
             case DeclKind::TypeDecl: {
                 isInitCall = true;
                 auto mangledName = mangleInitDecl(decl->getTypeDecl().name);
@@ -476,7 +478,8 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     if (expr.getFuncName() == "sizeOf") {
         validateArgs(expr.args, {}, expr.getFuncName(), expr.getSrcLoc());
         validateGenericArgCount(1, expr);
-        return Type::getUInt64();
+        expr.setType(Type::getUInt64());
+        return expr.getType();
     }
 
     Decl* decl;
@@ -501,28 +504,39 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     expr.setCalleeDecl(decl);
 
     if (auto* funcDecl = llvm::dyn_cast<FuncDecl>(decl)) {
-        bool hasGenericReceiverType =
-            funcDecl->getReceiverTypeDecl() && funcDecl->getReceiverTypeDecl()->isGeneric();
+        auto* receiverTypeDecl = funcDecl->getReceiverTypeDecl();
+        bool hasGenericReceiverType = receiverTypeDecl && receiverTypeDecl->isGeneric();
 
         if (!funcDecl->isGeneric() && !hasGenericReceiverType) {
             return funcDecl->getFuncType()->returnType;
         } else {
             setCurrentGenericArgs(funcDecl->getGenericParams(), expr, funcDecl->getParams());
+            if (hasGenericReceiverType) {
+                assert(receiverTypeDecl->genericParams.size() ==
+                       expr.getReceiverType().removePtr().getGenericArgs().size());
+                for (auto t : llvm::zip_first(receiverTypeDecl->genericParams,
+                                              expr.getReceiverType().removePtr().getGenericArgs())) {
+                    currentGenericArgs.emplace(std::get<0>(t).name, std::get<1>(t));
+                }
+            }
+
             // TODO: Don't typecheck more than once with the same generic arguments.
+            auto wasTypecheckingGenericFunc = typecheckingGenericFunc;
             typecheckingGenericFunc = true;
             typecheckFuncDecl(*funcDecl);
-            typecheckingGenericFunc = false;
+            typecheckingGenericFunc = wasTypecheckingGenericFunc;
             Type returnType = resolve(funcDecl->getFuncType()->returnType);
             currentGenericArgs.clear();
             return returnType;
         }
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
         if (initDecl->getTypeDecl().isGeneric()) {
+            auto previousGenericArgs = std::move(currentGenericArgs);
             setCurrentGenericArgs(initDecl->getTypeDecl().genericParams, expr,
                                   initDecl->getParams());
             // TODO: Don't typecheck more than once with the same generic arguments.
             typecheckInitDecl(*initDecl);
-            currentGenericArgs.clear();
+            currentGenericArgs = std::move(previousGenericArgs);
         }
         return initDecl->getTypeDecl().getType(expr.genericArgs);
     }

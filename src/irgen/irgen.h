@@ -142,6 +142,7 @@ private:
     class FuncInstantiation {
     public:
         const FuncDecl& decl;
+        llvm::ArrayRef<Type> receiverTypeGenericArgs;
         llvm::ArrayRef<Type> genericArgs;
         llvm::Function* func;
     };

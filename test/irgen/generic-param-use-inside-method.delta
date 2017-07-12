@@ -1,0 +1,21 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct S<T> {
+    init() {}
+
+    // CHECK: define void @"S<int>.f"({} %this)
+    func f() {
+        // CHECK: %t = alloca i32
+        g()
+        var t: T = uninitialized
+    }
+
+    func g() {
+        var t2: T = uninitialized
+    }
+}
+
+func main() {
+    var s = S<int>()
+    s.f()
+}
