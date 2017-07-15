@@ -799,7 +799,7 @@ std::unique_ptr<FuncDecl> parseFuncProto(TypeDecl* receiverTypeDecl) {
 
     return llvm::make_unique<FuncDecl>(std::move(name), std::move(params),
                                        std::move(returnType), receiverTypeDecl,
-                                       std::move(genericParams), currentModule, nameLoc);
+                                       std::move(genericParams), false, currentModule, nameLoc);
 }
 
 /// func-decl ::= func-proto '{' stmt* '}'

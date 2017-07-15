@@ -102,12 +102,13 @@ public:
 
     FuncDecl(std::string&& name, std::vector<ParamDecl>&& params, Type returnType,
              TypeDecl* receiverTypeDecl, std::vector<GenericParamDecl>&& genericParams,
-             Module* module, SrcLoc srcLoc)
+             bool isVarArg, Module* module, SrcLoc srcLoc)
     : Decl(DeclKind::FuncDecl, module), name(std::move(name)), params(std::move(params)),
       returnType(returnType), mutating(false), genericParams(std::move(genericParams)),
-      srcLoc(srcLoc), receiverTypeDecl(receiverTypeDecl) { }
+      srcLoc(srcLoc), receiverTypeDecl(receiverTypeDecl), isVarArg(isVarArg) { }
 
-    bool isExtern() const { return body == nullptr; };
+    bool isExtern() const { return body == nullptr; }
+    bool isVariadic() const { return isVarArg; }
     bool isGeneric() const { return !genericParams.empty(); }
     bool isMemberFunc() const { return receiverTypeDecl != nullptr; }
     bool isMutating() const { return mutating; }
@@ -121,6 +122,7 @@ public:
 
 private:
     TypeDecl* receiverTypeDecl;
+    bool isVarArg;
 };
 
 class InitDecl : public Decl {

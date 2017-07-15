@@ -480,7 +480,7 @@ void TypeChecker::typecheckDeinitDecl(DeinitDecl& decl) const {
     }
 
     FuncDecl funcDecl(mangle(decl), {}, Type::getVoid(), &typeDecl,
-                      {}, getCurrentModule(), decl.getSrcLoc());
+                      {}, false, getCurrentModule(), decl.getSrcLoc());
     funcDecl.body = decl.body;
     decl.typeDecl = &typeDecl;
     typecheckFuncDecl(funcDecl);

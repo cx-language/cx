@@ -102,9 +102,9 @@ private:
     Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
-    bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params) const;
+    bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params, bool isVariadic) const;
     void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
-                      const std::string& funcName, SrcLoc srcLoc) const;
+                      const std::string& funcName, bool isVariadic, SrcLoc srcLoc) const;
     TypeDecl* getTypeDecl(const BasicType& type) const;
 
 private:

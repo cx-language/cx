@@ -1,0 +1,8 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+import "stdio.h"
+
+func main() {
+    // CHECK: [[@LINE+1]]:5: error: too few arguments to 'printf', expected at least 1
+    printf()
+}

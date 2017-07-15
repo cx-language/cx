@@ -950,7 +950,7 @@ llvm::Function* IRGenerator::getFuncProto(const FuncDecl& decl, llvm::ArrayRef<T
     auto* returnType = toIR(funcType->returnType);
     if (decl.name == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
-    auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, false);
+    auto* llvmFuncType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
     if (mangledName.empty()) mangledName = mangle(decl, receiverTypeGenericArgs, funcGenericArgs);
     auto* func = llvm::Function::Create(llvmFuncType, llvm::Function::ExternalLinkage,
                                         mangledName, &module);
@@ -975,7 +975,7 @@ llvm::Function* IRGenerator::getInitProto(const InitDecl& decl, llvm::ArrayRef<T
                                                   std::vector<ParamDecl>(decl.params),
                                                   decl.getTypeDecl().getType(typeGenericArgs),
                                                   nullptr, llvm::ArrayRef<GenericParamDecl>(),
-                                                  nullptr, decl.srcLoc);
+                                                  false, nullptr, decl.srcLoc);
     helperDecls.emplace_back(std::move(helperDecl));
     return getFuncProto(*helperDecls.back(), funcGenericArgs, nullptr);
 }
@@ -983,7 +983,7 @@ llvm::Function* IRGenerator::getInitProto(const InitDecl& decl, llvm::ArrayRef<T
 llvm::Function* IRGenerator::codegenDeinitializerProto(const DeinitDecl& decl) {
     auto helperDecl = llvm::make_unique<FuncDecl>("deinit", std::vector<ParamDecl>(),
                                                   Type::getVoid(), &decl.getTypeDecl(),
-                                                  llvm::ArrayRef<GenericParamDecl>(),
+                                                  llvm::ArrayRef<GenericParamDecl>(), false,
                                                   nullptr, decl.srcLoc);
     helperDecls.emplace_back(std::move(helperDecl));
     return getFuncProto(*helperDecls.back());
@@ -1074,7 +1074,7 @@ void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl) {
 
     auto helperDecl = llvm::make_unique<FuncDecl>("deinit", std::vector<ParamDecl>(),
                                                   Type::getVoid(), &decl.getTypeDecl(),
-                                                  std::vector<GenericParamDecl>(),
+                                                  std::vector<GenericParamDecl>(), false,
                                                   nullptr, decl.srcLoc);
     helperDecl->body = decl.body;
     helperDecls.emplace_back(std::move(helperDecl));

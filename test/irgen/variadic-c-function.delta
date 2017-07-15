@@ -1,0 +1,9 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK-DAG: declare i32 @printf(i8*, ...)
+import "stdio.h"
+
+func main() {
+    // CHECK-DAG: call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i32 -3, double 4.200000e+00)
+    printf("%d %f", -3, 4.2)
+}

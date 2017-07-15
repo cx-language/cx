@@ -412,10 +412,10 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
 
                 if (decls.size() == 1) {
                     validateArgs(expr.args, decl->getFuncDecl().params, callee,
-                                 expr.func->getSrcLoc());
+                                 decl->getFuncDecl().isVariadic(), expr.func->getSrcLoc());
                     return *decl;
                 }
-                if (matchArgs(expr.args, decl->getFuncDecl().params)) {
+                if (matchArgs(expr.args, decl->getFuncDecl().params, decl->getFuncDecl().isVariadic())) {
                     matches.push_back(decl);
                 }
 
@@ -429,11 +429,11 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
 
                 for (Decl* initDecl : initDecls) {
                     if (initDecls.size() == 1) {
-                        validateArgs(expr.args, initDecl->getInitDecl().params, callee,
+                        validateArgs(expr.args, initDecl->getInitDecl().params, callee, false,
                                      expr.func->getSrcLoc());
                         return *initDecl;
                     }
-                    if (matchArgs(expr.args, initDecl->getInitDecl().params)) {
+                    if (matchArgs(expr.args, initDecl->getInitDecl().params, false)) {
                         matches.push_back(initDecl);
                     }
                 }
@@ -476,7 +476,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     }
 
     if (expr.getFuncName() == "sizeOf") {
-        validateArgs(expr.args, {}, expr.getFuncName(), expr.getSrcLoc());
+        validateArgs(expr.args, {}, expr.getFuncName(), false, expr.getSrcLoc());
         validateGenericArgCount(1, expr);
         expr.setType(Type::getUInt64());
         return expr.getType();
@@ -490,7 +490,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
 
         if (receiverType.isPtrType() && expr.getFuncName() == "offsetUnsafely") {
             validateArgs(expr.args, {ParamDecl(Type::getInt64(), "pointer", SrcLoc::invalid())},
-                         expr.getFuncName(), expr.getSrcLoc());
+                         expr.getFuncName(), false, expr.getSrcLoc());
             validateGenericArgCount(0, expr);
             expr.setType(receiverType);
             return expr.getType();
@@ -552,40 +552,46 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     llvm_unreachable("all cases handled");
 }
 
-bool TypeChecker::matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params) const {
-    if (args.size() != params.size()) return false;
+bool TypeChecker::matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params,
+                            bool isVariadic) const {
+    if (isVariadic) {
+        if (args.size() < params.size()) return false;
+    } else {
+        if (args.size() != params.size()) return false;
+    }
 
-    for (size_t i = 0; i < params.size(); ++i) {
+    for (size_t i = 0; i < args.size(); ++i) {
         const Arg& arg = args[i];
-        const ParamDecl& param = params[i];
+        const ParamDecl* param = i < params.size() ? &params[i] : nullptr;
 
-        if (!arg.name.empty() && arg.name != param.name) return false;
+        if (!arg.name.empty() && (!param || arg.name != param->name)) return false;
         auto argType = typecheckExpr(*arg.value);
-        if (!isValidConversion(*arg.value, argType, param.type)) return false;
+        if (param && !isValidConversion(*arg.value, argType, param->type)) return false;
     }
     return true;
 }
 
 void TypeChecker::validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
-                               const std::string& funcName, SrcLoc srcLoc) const {
+                               const std::string& funcName, bool isVariadic, SrcLoc srcLoc) const {
     if (args.size() < params.size()) {
-        error(srcLoc, "too few arguments to '", funcName, "', expected ", params.size());
+        error(srcLoc, "too few arguments to '", funcName, "', expected ",
+              isVariadic ? "at least " : "", params.size());
     }
-    if (args.size() > params.size()) {
+    if (!isVariadic && args.size() > params.size()) {
         error(srcLoc, "too many arguments to '", funcName, "', expected ", params.size());
     }
 
-    for (size_t i = 0; i < params.size(); ++i) {
+    for (size_t i = 0; i < args.size(); ++i) {
         const Arg& arg = args[i];
-        const ParamDecl& param = params[i];
+        const ParamDecl* param = i < params.size() ? &params[i] : nullptr;
 
-        if (!arg.name.empty() && arg.name != param.name) {
-            error(arg.srcLoc, "invalid argument name '", arg.name, "' for parameter '", param.name, "'");
+        if (!arg.name.empty() && (!param || arg.name != param->name)) {
+            error(arg.srcLoc, "invalid argument name '", arg.name, "' for parameter '", param->name, "'");
         }
         auto argType = typecheckExpr(*arg.value);
-        if (!isValidConversion(*arg.value, argType, param.type)) {
+        if (param && !isValidConversion(*arg.value, argType, param->type)) {
             error(arg.srcLoc, "invalid argument #", i + 1, " type '", argType, "' to '", funcName,
-                  "', expected '", param.type, "'");
+                  "', expected '", param->type, "'");
         }
     }
 }
