@@ -154,7 +154,7 @@ llvm::Type* IRGenerator::toIR(Type type) {
         case TypeKind::TupleType:
             llvm_unreachable("IRGen doesn't support tuple types yet");
         case TypeKind::FuncType:
-            llvm_unreachable("IRGen doesn't support function types yet");
+            return llvm::IntegerType::getInt8Ty(ctx)->getPointerTo(); // FIXME: Temporary.
         case TypeKind::PtrType: {
             if (type.getPointee().isUnsizedArrayType())
                 return llvm::StructType::get(toIR(type.getPointee().getElementType())->getPointerTo(),

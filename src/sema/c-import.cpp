@@ -19,6 +19,7 @@
 #include "../ast/type.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
+#include "../support/utility.h"
 
 using namespace delta;
 
@@ -85,8 +86,40 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Record:
             return BasicType::get(llvm::cast<clang::RecordType>(type).getDecl()->getName(),
                                   {}, isMutable);
+        case clang::Type::Paren:
+            return toDelta(llvm::cast<clang::ParenType>(type).getInnerType());
+        case clang::Type::FunctionProto: {
+            auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
+            std::vector<Type> paramTypes;
+            paramTypes.reserve(functionProtoType.getParamTypes().size());
+            for (clang::QualType qualType : functionProtoType.getParamTypes()) {
+                paramTypes.emplace_back(toDelta(qualType));
+            }
+            return FuncType::get(toDelta(functionProtoType.getReturnType()),
+                                 std::move(paramTypes), isMutable);
+        }
+        case clang::Type::ConstantArray: {
+            auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
+            if (!constantArrayType.getSize().isIntN(64)) {
+                fatalError("array is too large");
+            }
+            return ArrayType::get(toDelta(constantArrayType.getElementType()),
+                                  constantArrayType.getSize().getLimitedValue(), isMutable);
+        }
+        case clang::Type::IncompleteArray:
+            return ArrayType::get(toDelta(llvm::cast<clang::IncompleteArrayType>(type).getElementType()),
+                                  ArrayType::unsized);
+        case clang::Type::Attributed:
+            return toDelta(llvm::cast<clang::AttributedType>(type).getEquivalentType());
+        case clang::Type::Decayed:
+            return toDelta(llvm::cast<clang::DecayedType>(type).getDecayedType());
+        case clang::Type::Enum:
+        case clang::Type::Vector:
+            return Type::getInt(); // FIXME: Temporary.
         default:
-            return Type::getInt(isMutable); // FIXME: Dummy.
+            auto errorMessage = std::string("unhandled type class '") +
+                type.getTypeClassName() + "' (importing type '" + qualtype.getAsString() + "')";
+            fatalError(errorMessage.c_str());
     }
 }
 
