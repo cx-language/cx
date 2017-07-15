@@ -447,6 +447,8 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
 
     if (expr.getFuncName() == "sizeOf") {
         return llvm::ConstantExpr::getSizeOf(toIR(expr.getGenericArgs().front()));
+    } else if (expr.getFuncName() == "offsetUnsafely") {
+        return codegenOffsetUnsafely(expr);
     }
 
     llvm::Function* func = getFuncForCall(expr);
@@ -455,8 +457,10 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     llvm::SmallVector<llvm::Value*, 16> args;
 
     auto* calleeDecl = expr.getCalleeDecl();
-    if ((calleeDecl->isFuncDecl() && calleeDecl->getFuncDecl().isMemberFunc()) || calleeDecl->isDeinitDecl()) {
-        bool forceByReference = calleeDecl->isFuncDecl() && calleeDecl->getFuncDecl().isMutating();
+
+    if ((calleeDecl && ((calleeDecl->isFuncDecl() && calleeDecl->getFuncDecl().isMemberFunc()) ||
+                       calleeDecl->isDeinitDecl())) || (!calleeDecl && func->getName() == "offsetUnsafely")) {
+        bool forceByReference = calleeDecl && calleeDecl->isFuncDecl() && calleeDecl->getFuncDecl().isMutating();
 
         if (expr.getReceiver()) {
             args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param->getType(), forceByReference));
@@ -531,6 +535,12 @@ llvm::Value* IRGenerator::getArrayOrStringLength(const Expr& object, Type object
     } else {
         return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), objectType.getArraySize());
     }
+}
+
+llvm::Value* IRGenerator::codegenOffsetUnsafely(const CallExpr& call) {
+    auto* pointer = codegenExpr(*call.getReceiver());
+    auto* offset = codegenExpr(*call.args.front().value);
+    return builder.CreateGEP(pointer, offset);
 }
 
 llvm::Value* IRGenerator::codegenLvalueMemberExpr(const MemberExpr& expr) {
@@ -982,9 +992,9 @@ llvm::Function* IRGenerator::codegenDeinitializerProto(const DeinitDecl& decl) {
 llvm::Function* IRGenerator::getFuncForCall(const CallExpr& call) {
     if (!call.callsNamedFunc()) fatalError("anonymous function calls not implemented yet");
 
-    const Decl& decl = *call.getCalleeDecl();
+    const Decl* decl = call.getCalleeDecl();
 
-    if (auto* funcDecl = llvm::dyn_cast<FuncDecl>(&decl)) {
+    if (auto* funcDecl = llvm::dyn_cast<FuncDecl>(decl)) {
         llvm::Function* func = getFuncProto(*funcDecl, call.genericArgs, call.getReceiverType());
 //        if (func->empty() && !call.genericArgs.empty()) {
 //            auto backup = builder.GetInsertBlock();
@@ -992,7 +1002,7 @@ llvm::Function* IRGenerator::getFuncForCall(const CallExpr& call) {
 //            builder.SetInsertPoint(backup);
 //        }
         return func;
-    } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(&decl)) {
+    } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
         llvm::Function* func = getInitProto(*initDecl, call.genericArgs);
         if (func->empty() && !call.genericArgs.empty()) {
             auto backup = builder.GetInsertBlock();

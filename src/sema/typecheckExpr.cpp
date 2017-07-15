@@ -487,6 +487,15 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     if (expr.func->isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
         expr.setReceiverType(receiverType);
+
+        if (receiverType.isPtrType() && expr.getFuncName() == "offsetUnsafely") {
+            validateArgs(expr.args, {ParamDecl(Type::getInt64(), "pointer", SrcLoc::invalid())},
+                         expr.getFuncName(), expr.getSrcLoc());
+            validateGenericArgCount(0, expr);
+            expr.setType(receiverType);
+            return expr.getType();
+        }
+
         decl = &resolveOverload(expr, expr.getMangledFuncName());
 
         if (receiverType.isNullablePointer()) {

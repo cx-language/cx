@@ -131,6 +131,7 @@ private:
     llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
     llvm::Value* getArrayOrStringDataPtr(const Expr& object, Type objectType);
     llvm::Value* getArrayOrStringLength(const Expr& object, Type objectType);
+    llvm::Value* codegenOffsetUnsafely(const CallExpr& call);
 
     void beginScope();
     void endScope();
