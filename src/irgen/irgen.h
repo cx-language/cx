@@ -53,7 +53,7 @@ private:
 
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                llvm::ArrayRef<Type> genericArgs);
-    void codegenFuncBody(const FuncDecl& decl, llvm::Function& func);
+    void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
     void setCurrentDecl(Decl* decl) { currentDecl = decl; }
     llvm::Module& getIRModule() { return module; }
@@ -65,7 +65,7 @@ private:
 
     llvm::Value* codegenVarExpr(const VarExpr& expr);
     llvm::Value* codegenLvalueVarExpr(const VarExpr& expr);
-    llvm::Value* codegenStrLiteralExpr(const StrLiteralExpr& expr);
+    llvm::Value* codegenStringLiteralExpr(const StringLiteralExpr& expr);
     llvm::Value* codegenIntLiteralExpr(const IntLiteralExpr& expr);
     llvm::Value* codegenFloatLiteralExpr(const FloatLiteralExpr& expr);
     llvm::Value* codegenBoolLiteralExpr(const BoolLiteralExpr& expr);
@@ -112,24 +112,24 @@ private:
     void codegenStmt(const Stmt& stmt);
 
     void codegenDecl(const Decl& decl);
-    void codegenFuncDecl(const FuncDecl& decl);
+    void codegenFunctionDecl(const FunctionDecl& decl);
     void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
     void codegenDeinitDecl(const DeinitDecl& decl);
     void codegenTypeDecl(const TypeDecl& decl);
     void codegenVarDecl(const VarDecl& decl);
 
-    llvm::Function* getFuncForCall(const CallExpr& call);
-    llvm::Function* getFuncProto(const FuncDecl& decl, llvm::ArrayRef<Type> funcGenericArgs = {},
+    llvm::Function* getFunctionForCall(const CallExpr& call);
+    llvm::Function* getFunctionProto(const FunctionDecl& decl, llvm::ArrayRef<Type> functionGenericArgs = {},
                                  Type receiverType = nullptr, std::string&& mangledName = {});
     llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
-                                 llvm::ArrayRef<Type> funcGenericArgs = {});
+                                 llvm::ArrayRef<Type> functionGenericArgs = {});
     llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
     llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) const;
     llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
-    llvm::Value* getArrayOrStringDataPtr(const Expr& object, Type objectType);
+    llvm::Value* getArrayOrStringDataPointer(const Expr& object, Type objectType);
     llvm::Value* getArrayOrStringLength(const Expr& object, Type objectType);
     llvm::Value* codegenOffsetUnsafely(const CallExpr& call);
 
@@ -140,12 +140,12 @@ private:
     Scope& globalScope() { return scopes.front(); }
 
 private:
-    class FuncInstantiation {
+    class FunctionInstantiation {
     public:
-        const FuncDecl& decl;
+        const FunctionDecl& decl;
         llvm::ArrayRef<Type> receiverTypeGenericArgs;
         llvm::ArrayRef<Type> genericArgs;
-        llvm::Function* func;
+        llvm::Function* function;
     };
 
 private:
@@ -155,8 +155,8 @@ private:
     llvm::IRBuilder<> builder;
     llvm::Module module;
 
-    std::unordered_map<std::string, FuncInstantiation> funcInstantiations;
-    std::vector<std::unique_ptr<FuncDecl>> helperDecls;
+    std::unordered_map<std::string, FunctionInstantiation> functionInstantiations;
+    std::vector<std::unique_ptr<FunctionDecl>> helperDecls;
     std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
     std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
     const Decl* currentDecl;

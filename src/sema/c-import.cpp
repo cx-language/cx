@@ -72,7 +72,7 @@ Type toDelta(clang::QualType qualtype) {
     switch (type.getTypeClass()) {
         case clang::Type::Pointer: {
             auto pointeeType = llvm::cast<clang::PointerType>(type).getPointeeType();
-            return PtrType::get(toDelta(pointeeType), false, isMutable);
+            return PointerType::get(toDelta(pointeeType), false, isMutable);
         }
         case clang::Type::Builtin: {
             Type deltaType = toDelta(llvm::cast<clang::BuiltinType>(type));
@@ -95,8 +95,8 @@ Type toDelta(clang::QualType qualtype) {
             for (clang::QualType qualType : functionProtoType.getParamTypes()) {
                 paramTypes.emplace_back(toDelta(qualType));
             }
-            return FuncType::get(toDelta(functionProtoType.getReturnType()),
-                                 std::move(paramTypes), isMutable);
+            return FunctionType::get(toDelta(functionProtoType.getReturnType()),
+                                     std::move(paramTypes), isMutable);
         }
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
@@ -123,28 +123,28 @@ Type toDelta(clang::QualType qualtype) {
     }
 }
 
-FuncDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
+FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
     std::vector<ParamDecl> params;
     for (auto* param : decl.parameters()) {
         params.emplace_back(toDelta(param->getType()), param->getNameAsString(),
-                            SrcLoc::invalid());
+                            SourceLocation::invalid());
     }
 
-    return FuncDecl(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
-                    nullptr, /* genericParams */ {}, decl.isVariadic(), currentModule,
-                    SrcLoc::invalid());
+    return FunctionDecl(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
+                        nullptr, /* genericParams */ {}, decl.isVariadic(), currentModule,
+                        SourceLocation::invalid());
 }
 
 llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {
     if (decl.getName().empty()) return llvm::None;
-    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), SrcLoc::invalid());
+    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), SourceLocation::invalid());
 }
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     if (decl.getName().empty()) return llvm::None;
 
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
-                      decl.getNameAsString(), {}, currentModule, SrcLoc::invalid());
+                      decl.getNameAsString(), {}, currentModule, SourceLocation::invalid());
     typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field)) {
@@ -157,19 +157,21 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
 }
 
 VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, currentModule, SrcLoc::invalid());
+    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, currentModule, SourceLocation::invalid());
 }
 
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, const TypeChecker& typeChecker) {
-    auto initializer = std::make_shared<IntLiteralExpr>(value, SrcLoc::invalid());
+    auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getInt());
-    typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, typeChecker.getCurrentModule(), SrcLoc::invalid()));
+    typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer,
+                                         typeChecker.getCurrentModule(), SourceLocation::invalid()));
 }
 
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, const TypeChecker& typeChecker) {
-    auto initializer = std::make_shared<FloatLiteralExpr>(value, SrcLoc::invalid());
+    auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getFloat64());
-    typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, typeChecker.getCurrentModule(), SrcLoc::invalid()));
+    typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer,
+                                         typeChecker.getCurrentModule(), SourceLocation::invalid()));
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {
@@ -180,11 +182,13 @@ public:
         for (clang::Decl* decl : declGroup) {
             switch (decl->getKind()) {
                 case clang::Decl::Function:
-                    typeChecker.addToSymbolTable(toDelta(llvm::cast<clang::FunctionDecl>(*decl), typeChecker.getCurrentModule()));
+                    typeChecker.addToSymbolTable(toDelta(llvm::cast<clang::FunctionDecl>(*decl),
+                                                         typeChecker.getCurrentModule()));
                     break;
                 case clang::Decl::Record: {
                     if (!decl->isFirstDecl()) break;
-                    auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl), typeChecker.getCurrentModule());
+                    auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl),
+                                            typeChecker.getCurrentModule());
                     if (typeDecl) {
                         // Skip redefinitions caused by different modules including the same headers.
                         if (typeChecker.findDecls(typeDecl->name, true).empty()) {
@@ -201,7 +205,8 @@ public:
                     break;
                 }
                 case clang::Decl::Var:
-                    typeChecker.addToSymbolTable(toDelta(llvm::cast<clang::VarDecl>(*decl), typeChecker.getCurrentModule()));
+                    typeChecker.addToSymbolTable(toDelta(llvm::cast<clang::VarDecl>(*decl),
+                                                         typeChecker.getCurrentModule()));
                     break;
                 case clang::Decl::Typedef: {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);

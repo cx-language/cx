@@ -39,14 +39,14 @@ PrecedenceGroup getPrecedenceGroup(TokenKind tokenKind) {
 
 namespace delta {
 const char* currentFilePath;
-SrcLoc firstLoc(nullptr, 1, 0);
-SrcLoc lastLoc(nullptr, 1, 0);
+SourceLocation firstLocation(nullptr, 1, 0);
+SourceLocation lastLocation(nullptr, 1, 0);
 }
 
 Token::Token(TokenKind kind, llvm::StringRef string)
-: kind(kind), string(string), srcLoc(currentFilePath, firstLoc.line, firstLoc.column) {
+: kind(kind), string(string), location(currentFilePath, firstLocation.line, firstLocation.column) {
     assert(!string.empty() || kind == NO_TOKEN || kind >= BREAK);
-    assert(srcLoc.isValid());
+    assert(location.isValid());
 #ifndef NDEBUG
     if (kind == INT_LITERAL) (void) getIntegerValue(); // Validate the integer value.
     if (kind == FLOAT_LITERAL) (void) getFloatingPointValue(); // Validate the FP value.

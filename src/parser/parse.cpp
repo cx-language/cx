@@ -27,8 +27,8 @@ Token currentToken() {
     return tokenBuffer[currentTokenIndex];
 }
 
-SrcLoc currentLoc() {
-    return currentToken().getLoc();
+SourceLocation getCurrentLocation() {
+    return currentToken().getLocation();
 }
 
 Token lookAhead(int offset) {
@@ -60,10 +60,10 @@ std::string quote(TokenKind tokenKind) {
 [[noreturn]] void unexpectedToken(Token token, llvm::ArrayRef<TokenKind> expected = {},
                                   const char* contextInfo = nullptr) {
     if (expected.size() == 0) {
-        error(token.getLoc(), "unexpected ", quote(token),
+        error(token.getLocation(), "unexpected ", quote(token),
               contextInfo ? " " : "", contextInfo ? contextInfo : "");
     } else {
-        error(token.getLoc(), "expected ", toDisjunctiveList(expected, quote),
+        error(token.getLocation(), "expected ", toDisjunctiveList(expected, quote),
               contextInfo ? " " : "", contextInfo ? contextInfo : "",
               ", got ", quote(token));
     }
@@ -81,7 +81,7 @@ Token parse(llvm::ArrayRef<TokenKind> expected, const char* contextInfo = nullpt
 }
 
 void parseStmtTerminator(const char* contextInfo = nullptr) {
-    if (currentLoc().line != lookAhead(-1).getLoc().line)
+    if (getCurrentLocation().line != lookAhead(-1).getLocation().line)
         return; // Ends with a newline.
 
     switch (currentToken()) {
@@ -98,23 +98,23 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end);
 std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3);
 Type parseType();
 
-/// arg-list ::= '(' ')' | '(' nonempty-arg-list ')'
-/// nonempty-arg-list ::= arg | nonempty-arg-list ',' arg
-/// arg ::= (id ':')? expr
-std::vector<Arg> parseArgList() {
+/// argument-list ::= '(' ')' | '(' nonempty-argument-list ')'
+/// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
+/// argument ::= (id ':')? expr
+std::vector<Argument> parseArgumentList() {
     parse(LPAREN);
-    std::vector<Arg> args;
+    std::vector<Argument> args;
     while (currentToken() != RPAREN) {
         std::string name;
-        SrcLoc location = SrcLoc::invalid();
+        SourceLocation location = SourceLocation::invalid();
         if (lookAhead(1) == COLON) {
             auto result = parse(IDENTIFIER);
             name = std::move(result.string);
-            location = result.getLoc();
+            location = result.getLocation();
             consumeToken();
         }
         auto value = parseExpr();
-        if (!location.isValid()) location = value->getSrcLoc();
+        if (!location.isValid()) location = value->getLocation();
         args.push_back({ std::move(name), std::move(value), location });
         if (currentToken() != RPAREN) parse(COMMA);
     }
@@ -126,17 +126,17 @@ std::vector<Arg> parseArgList() {
 std::unique_ptr<VarExpr> parseVarExpr() {
     assert(currentToken() == IDENTIFIER);
     auto id = parse(IDENTIFIER);
-    return llvm::make_unique<VarExpr>(std::move(id.string), id.getLoc());
+    return llvm::make_unique<VarExpr>(std::move(id.string), id.getLocation());
 }
 
 std::unique_ptr<VarExpr> parseThis() {
     assert(currentToken() == THIS);
-    auto expr = llvm::make_unique<VarExpr>("this", currentLoc());
+    auto expr = llvm::make_unique<VarExpr>("this", getCurrentLocation());
     consumeToken();
     return expr;
 }
 
-std::string replaceEscapeChars(llvm::StringRef literalContent, SrcLoc literalStartLoc) {
+std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLocation literalStartLocation) {
     std::string result;
     result.reserve(literalContent.size());
 
@@ -154,9 +154,9 @@ std::string replaceEscapeChars(llvm::StringRef literalContent, SrcLoc literalSta
                 case '"': result += '"'; break;
                 case '\\': result += '\\'; break;
                 default:
-                    auto itColumn = literalStartLoc.column + 1 + (it - literalContent.begin());
-                    SrcLoc itLoc(literalStartLoc.file, literalStartLoc.line, itColumn);
-                    error(itLoc, "unknown escape character '\\", *it, "'");
+                    auto itColumn = literalStartLocation.column + 1 + (it - literalContent.begin());
+                    SourceLocation itLocation(literalStartLocation.file, literalStartLocation.line, itColumn);
+                    error(itLocation, "unknown escape character '\\", *it, "'");
             }
             continue;
         }
@@ -165,10 +165,10 @@ std::string replaceEscapeChars(llvm::StringRef literalContent, SrcLoc literalSta
     return result;
 }
 
-std::unique_ptr<StrLiteralExpr> parseStrLiteral() {
+std::unique_ptr<StringLiteralExpr> parseStringLiteral() {
     assert(currentToken() == STRING_LITERAL);
-    auto content = replaceEscapeChars(currentToken().string.drop_back().drop_front(), currentLoc());
-    auto expr = llvm::make_unique<StrLiteralExpr>(std::move(content), currentLoc());
+    auto content = replaceEscapeChars(currentToken().string.drop_back().drop_front(), getCurrentLocation());
+    auto expr = llvm::make_unique<StringLiteralExpr>(std::move(content), getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -176,7 +176,7 @@ std::unique_ptr<StrLiteralExpr> parseStrLiteral() {
 std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
     assert(currentToken() == INT_LITERAL);
     auto expr = llvm::make_unique<IntLiteralExpr>(currentToken().getIntegerValue(),
-                                                  currentLoc());
+                                                  getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -184,7 +184,7 @@ std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
 std::unique_ptr<FloatLiteralExpr> parseFloatLiteral() {
     assert(currentToken() == FLOAT_LITERAL);
     auto expr = llvm::make_unique<FloatLiteralExpr>(currentToken().getFloatingPointValue(),
-                                                    currentLoc());
+                                                    getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -192,8 +192,8 @@ std::unique_ptr<FloatLiteralExpr> parseFloatLiteral() {
 std::unique_ptr<BoolLiteralExpr> parseBoolLiteral() {
     std::unique_ptr<BoolLiteralExpr> expr;
     switch (currentToken()) {
-        case TRUE: expr = llvm::make_unique<BoolLiteralExpr>(true, currentLoc()); break;
-        case FALSE: expr = llvm::make_unique<BoolLiteralExpr>(false, currentLoc()); break;
+        case TRUE: expr = llvm::make_unique<BoolLiteralExpr>(true, getCurrentLocation()); break;
+        case FALSE: expr = llvm::make_unique<BoolLiteralExpr>(false, getCurrentLocation()); break;
         default: llvm_unreachable("all cases handled");
     }
     consumeToken();
@@ -202,7 +202,7 @@ std::unique_ptr<BoolLiteralExpr> parseBoolLiteral() {
 
 std::unique_ptr<NullLiteralExpr> parseNullLiteral() {
     assert(currentToken() == NULL_LITERAL);
-    auto expr = llvm::make_unique<NullLiteralExpr>(currentLoc());
+    auto expr = llvm::make_unique<NullLiteralExpr>(getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -210,16 +210,16 @@ std::unique_ptr<NullLiteralExpr> parseNullLiteral() {
 /// array-literal ::= '[' expr-list ']'
 std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral() {
     assert(currentToken() == LBRACKET);
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     consumeToken();
     auto elements = parseExprList();
     parse(RBRACKET);
     return llvm::make_unique<ArrayLiteralExpr>(std::move(elements), location);
 }
 
-/// generic-arg-list ::= '<' generic-args '>'
-/// generic-args ::= type | type ',' generic-args
-std::vector<Type> parseGenericArgList() {
+/// generic-argument-list ::= '<' generic-arguments '>'
+/// generic-arguments ::= type | type ',' generic-arguments
+std::vector<Type> parseGenericArgumentList() {
     assert(currentToken() == LT);
     consumeToken();
     std::vector<Type> genericArgs;
@@ -234,7 +234,7 @@ std::vector<Type> parseGenericArgList() {
     return genericArgs;
 }
 
-/// simple-type ::= id | id generic-arg-list | id '[' int-literal? ']'
+/// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
 Type parseSimpleType(bool isMutable) {
     assert(currentToken() == IDENTIFIER);
     llvm::StringRef id = consumeToken().string;
@@ -244,7 +244,7 @@ Type parseSimpleType(bool isMutable) {
 
     switch (currentToken()) {
         case LT:
-            genericArgs = parseGenericArgList();
+            genericArgs = parseGenericArgumentList();
             // fallthrough
         default:
             return BasicType::get(id, std::move(genericArgs), isMutable);
@@ -260,7 +260,7 @@ Type parseSimpleType(bool isMutable) {
     else if (currentToken() == INT_LITERAL)
         arraySize = consumeToken().getIntegerValue();
     else
-        error(currentLoc(), "non-literal array bounds not implemented yet");
+        error(getCurrentLocation(), "non-literal array bounds not implemented yet");
 
     parse(RBRACKET);
     return ArrayType::get(type, arraySize);
@@ -290,7 +290,7 @@ Type parseType() {
     while (true) {
         switch (currentToken()) {
             case AND: case STAR:
-                type = PtrType::get(type, currentToken() == AND);
+                type = PointerType::get(type, currentToken() == AND);
                 consumeToken();
                 break;
             default:
@@ -302,7 +302,7 @@ Type parseType() {
 /// cast-expr ::= 'cast' '<' type '>' '(' expr ')'
 std::unique_ptr<CastExpr> parseCastExpr() {
     assert(currentToken() == CAST);
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     consumeToken();
     parse(LT);
     auto type = parseType();
@@ -316,13 +316,13 @@ std::unique_ptr<CastExpr> parseCastExpr() {
 /// member-expr ::= expr '.' id
 std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
     auto member = parse(IDENTIFIER);
-    return llvm::make_unique<MemberExpr>(std::move(lhs), std::move(member.string), member.getLoc());
+    return llvm::make_unique<MemberExpr>(std::move(lhs), std::move(member.string), member.getLocation());
 }
 
 /// subscript-expr ::= expr '[' expr ']'
 std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand) {
     assert(currentToken() == LBRACKET);
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     consumeToken();
     auto index = parseExpr();
     parse(RBRACKET);
@@ -332,20 +332,20 @@ std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand) {
 /// unwrap-expr ::= expr '!'
 std::unique_ptr<UnwrapExpr> parseUnwrapExpr(std::unique_ptr<Expr> operand) {
     assert(currentToken() == NOT);
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     consumeToken();
     return llvm::make_unique<UnwrapExpr>(std::move(operand), location);
 }
 
-/// call-expr ::= expr generic-arg-list? '(' args ')'
-std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> func) {
+/// call-expr ::= expr generic-argument-list? '(' arguments ')'
+std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> callee) {
     std::vector<Type> genericArgs;
     if (currentToken() == LT) {
-        genericArgs = parseGenericArgList();
+        genericArgs = parseGenericArgumentList();
     }
-    auto location = currentLoc();
-    auto args = parseArgList();
-    return llvm::make_unique<CallExpr>(std::move(func), std::move(args),
+    auto location = getCurrentLocation();
+    auto args = parseArgumentList();
+    return llvm::make_unique<CallExpr>(std::move(callee), std::move(args),
                                        std::move(genericArgs), location);
 }
 
@@ -358,12 +358,12 @@ std::unique_ptr<Expr> parseParenExpr() {
     return expr;
 }
 
-bool shouldParseGenericArgList() {
+bool shouldParseGenericArgumentList() {
     // Temporary hack: use spacing to determine whether to parse a generic argument list
     // of a less-than binary expression. Zero spaces on either side of '<' will cause it
     // to be interpreted as a generic argument list, for now.
-    return lookAhead(0).getLoc().column + int(lookAhead(0).string.size()) == lookAhead(1).getLoc().column
-        || lookAhead(1).getLoc().column + 1 == lookAhead(2).getLoc().column;
+    return lookAhead(0).getLocation().column + int(lookAhead(0).string.size()) == lookAhead(1).getLocation().column
+        || lookAhead(1).getLocation().column + 1 == lookAhead(2).getLocation().column;
 }
 
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
@@ -377,7 +377,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
             switch (lookAhead(1)) {
                 case LPAREN: expr = parseCallExpr(parseVarExpr()); break;
                 case LT:
-                    if (shouldParseGenericArgList()) {
+                    if (shouldParseGenericArgumentList()) {
                         expr = parseCallExpr(parseVarExpr());
                         break;
                     }
@@ -385,7 +385,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
                 default: expr = parseVarExpr(); break;
             }
             break;
-        case STRING_LITERAL: expr = parseStrLiteral(); break;
+        case STRING_LITERAL: expr = parseStringLiteral(); break;
         case INT_LITERAL: expr = parseIntLiteral(); break;
         case FLOAT_LITERAL: expr = parseFloatLiteral(); break;
         case TRUE: case FALSE: expr = parseBoolLiteral(); break;
@@ -421,7 +421,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
 std::unique_ptr<PrefixExpr> parsePrefixExpr() {
     assert(currentToken().isPrefixOperator());
     auto op = currentToken();
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     consumeToken();
     return llvm::make_unique<PrefixExpr>(op, parsePreOrPostfixExpr(), location);
 }
@@ -438,7 +438,7 @@ std::unique_ptr<Expr> parseBinaryExpr(std::unique_ptr<Expr> lhs, int minPreceden
         while (currentToken().isBinaryOperator() && currentToken().getPrecedence() > op.getPrecedence()) {
             rhs = parseBinaryExpr(std::move(rhs), currentToken().getPrecedence());
         }
-        lhs = llvm::make_unique<BinaryExpr>(op, std::move(lhs), std::move(rhs), op.getLoc());
+        lhs = llvm::make_unique<BinaryExpr>(op, std::move(lhs), std::move(rhs), op.getLocation());
     }
     return lhs;
 }
@@ -450,21 +450,21 @@ std::unique_ptr<Expr> parseExpr() {
 
 /// assign-stmt ::= expr '=' expr ('\n' | ';')
 std::unique_ptr<AssignStmt> parseAssignStmt(std::unique_ptr<Expr> lhs) {
-    auto loc = currentLoc();
+    auto location = getCurrentLocation();
     parse(ASSIGN);
     auto rhs = parseExpr();
     parseStmtTerminator();
-    return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs), loc);
+    return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs), location);
 }
 
 /// compound-assign-stmt ::= expr compound-assignment-op expr ('\n' | ';')
 std::unique_ptr<AugAssignStmt> parseCompoundAssignStmt(std::unique_ptr<Expr> lhs = nullptr) {
     if (!lhs) lhs = parseExpr();
     auto op = BinaryOperator(consumeToken().withoutCompoundEqSuffix());
-    SrcLoc loc = currentLoc();
+    SourceLocation location = getCurrentLocation();
     auto rhs = parseExpr();
     parseStmtTerminator();
-    return llvm::make_unique<AugAssignStmt>(std::move(lhs), std::move(rhs), op, loc);
+    return llvm::make_unique<AugAssignStmt>(std::move(lhs), std::move(rhs), op, location);
 }
 
 /// expr-list ::= '' | nonempty-expr-list
@@ -487,7 +487,7 @@ std::vector<std::unique_ptr<Expr>> parseExprList() {
 /// return-stmt ::= 'return' expr-list ('\n' | ';')
 std::unique_ptr<ReturnStmt> parseReturnStmt() {
     assert(currentToken() == RETURN);
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     consumeToken();
     auto returnValues = parseExprList();
     parseStmtTerminator();
@@ -506,9 +506,9 @@ std::unique_ptr<VarDecl> parseVarDecl() {
     Type type;
     if (currentToken() == COLON) {
         consumeToken();
-        auto typeLoc = currentLoc();
+        auto typeLocation = getCurrentLocation();
         type = parseType();
-        if (type.isMutable()) error(typeLoc, "type specifier cannot specify mutability");
+        if (type.isMutable()) error(typeLocation, "type specifier cannot specify mutability");
     }
     type.setMutable(isMutable);
 
@@ -517,7 +517,7 @@ std::unique_ptr<VarDecl> parseVarDecl() {
     if (!initializer) consumeToken();
     parseStmtTerminator();
     return llvm::make_unique<VarDecl>(type, std::move(name.string),
-                                      std::move(initializer), currentModule, name.getLoc());
+                                      std::move(initializer), currentModule, name.getLocation());
 }
 
 /// var-stmt ::= var-decl
@@ -535,7 +535,7 @@ std::unique_ptr<ExprStmt> parseCallStmt(std::unique_ptr<Expr> callExpr) {
 
 /// inc-stmt ::= expr '++' ('\n' | ';')
 std::unique_ptr<IncrementStmt> parseIncrementStmt(std::unique_ptr<Expr> operand) {
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     parse(INCREMENT);
     parseStmtTerminator();
     return llvm::make_unique<IncrementStmt>(std::move(operand), location);
@@ -543,7 +543,7 @@ std::unique_ptr<IncrementStmt> parseIncrementStmt(std::unique_ptr<Expr> operand)
 
 /// dec-stmt ::= expr '--' ('\n' | ';')
 std::unique_ptr<DecrementStmt> parseDecrementStmt(std::unique_ptr<Expr> operand) {
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     parse(DECREMENT);
     parseStmtTerminator();
     return llvm::make_unique<DecrementStmt>(std::move(operand), location);
@@ -616,7 +616,7 @@ std::unique_ptr<ForStmt> parseForStmt() {
     auto body = parseStmtsUntil(RBRACE);
     parse(RBRACE);
     return llvm::make_unique<ForStmt>(std::string(id.string), std::move(range),
-                                      std::move(body), id.getLoc());
+                                      std::move(body), id.getLocation());
 }
 
 /// switch-stmt ::= 'switch' '(' expr ')' '{' cases default-case? '}'
@@ -642,13 +642,13 @@ std::unique_ptr<SwitchStmt> parseSwitchStmt() {
             cases.push_back({ std::move(value), std::move(stmts) });
         } else if (currentToken() == DEFAULT) {
             if (defaultSeen)
-                error(currentLoc(), "switch-statement may only contain one 'default' case");
+                error(getCurrentLocation(), "switch-statement may only contain one 'default' case");
             consumeToken();
             parse(COLON);
             defaultStmts = parseStmtsUntilOneOf(CASE, DEFAULT, RBRACE);
             defaultSeen = true;
         } else {
-            error(currentLoc(), "expected 'case' or 'default'");
+            error(getCurrentLocation(), "expected 'case' or 'default'");
         }
         if (currentToken() == RBRACE) break;
     }
@@ -659,7 +659,7 @@ std::unique_ptr<SwitchStmt> parseSwitchStmt() {
 
 /// break-stmt ::= 'break' ('\n' | ';')
 std::unique_ptr<BreakStmt> parseBreakStmt() {
-    auto location = currentLoc();
+    auto location = getCurrentLocation();
     consumeToken();
     parseStmtTerminator();
     return llvm::make_unique<BreakStmt>(location);
@@ -724,7 +724,7 @@ ParamDecl parseParam() {
     auto name = parse(IDENTIFIER);
     parse(COLON);
     auto type = parseType();
-    return ParamDecl(std::move(type), std::move(name.string), name.getLoc());
+    return ParamDecl(std::move(type), std::move(name.string), name.getLocation());
 }
 
 /// param-list ::= '(' params ')'
@@ -745,7 +745,7 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
     parse(LT);
     while (true) {
         auto genericParamName = parse(IDENTIFIER);
-        genericParams.emplace_back(genericParamName.string, genericParamName.getLoc());
+        genericParams.emplace_back(genericParamName.string, genericParamName.getLocation());
 
         if (currentToken() == COLON) { // Generic type constraint.
             consumeToken();
@@ -759,23 +759,23 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
     parse(GT);
 }
 
-/// func-proto ::= 'func' id param-list ('->' type)?
-/// generic-func-proto ::= 'func' id generic-param-list param-list ('->' type)?
+/// function-proto ::= 'func' id param-list ('->' type)?
+/// generic-function-proto ::= 'func' id generic-param-list param-list ('->' type)?
 /// generic-param-list ::= '<' generic-param-decls '>'
 /// generic-param-decls ::= id | id ',' generic-param-decls
-std::unique_ptr<FuncDecl> parseFuncProto(TypeDecl* receiverTypeDecl) {
+std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
     assert(currentToken() == FUNC);
     consumeToken();
 
     if (currentToken() != IDENTIFIER && !currentToken().isOverloadable())
         unexpectedToken(currentToken(), {}, "as function name");
 
-    SrcLoc nameLoc = currentLoc();
+    SourceLocation nameLocation = getCurrentLocation();
     llvm::StringRef name;
     if (currentToken() == IDENTIFIER) {
         name = consumeToken().string;
     } else if (receiverTypeDecl) {
-        error(nameLoc, "operator functions must be non-member functions");
+        error(nameLocation, "operator functions must be non-member functions");
     } else {
         name = toString(consumeToken().kind);
     }
@@ -797,14 +797,14 @@ std::unique_ptr<FuncDecl> parseFuncProto(TypeDecl* receiverTypeDecl) {
         }
     }
 
-    return llvm::make_unique<FuncDecl>(std::move(name), std::move(params),
+    return llvm::make_unique<FunctionDecl>(std::move(name), std::move(params),
                                        std::move(returnType), receiverTypeDecl,
-                                       std::move(genericParams), false, currentModule, nameLoc);
+                                       std::move(genericParams), false, currentModule, nameLocation);
 }
 
-/// func-decl ::= func-proto '{' stmt* '}'
-std::unique_ptr<FuncDecl> parseFuncDecl(TypeDecl* receiverTypeDecl, bool requireBody = true) {
-    auto decl = parseFuncProto(receiverTypeDecl);
+/// function-decl ::= function-proto '{' stmt* '}'
+std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool requireBody = true) {
+    auto decl = parseFunctionProto(receiverTypeDecl);
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
         decl->body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
@@ -813,36 +813,36 @@ std::unique_ptr<FuncDecl> parseFuncDecl(TypeDecl* receiverTypeDecl, bool require
     return decl;
 }
 
-/// extern-func-decl ::= 'extern' func-proto ('\n' | ';')
-std::unique_ptr<FuncDecl> parseExternFuncDecl() {
+/// extern-function-decl ::= 'extern' function-proto ('\n' | ';')
+std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
     assert(currentToken() == EXTERN);
     consumeToken();
-    auto decl = parseFuncProto(/* receiverTypeDecl */ nullptr);
+    auto decl = parseFunctionProto(/* receiverTypeDecl */ nullptr);
     parseStmtTerminator();
     return decl;
 }
 
 /// init-decl ::= 'init' param-list '{' stmt* '}'
 std::unique_ptr<InitDecl> parseInitDecl(std::string typeName) {
-    auto initLoc = parse(INIT).getLoc();
+    auto initLocation = parse(INIT).getLocation();
     auto params = parseParamList();
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
     return llvm::make_unique<InitDecl>(std::move(typeName), std::move(params),
-                                       std::move(body), initLoc);
+                                       std::move(body), initLocation);
 }
 
 /// deinit-decl ::= 'deinit' '(' ')' '{' stmt* '}'
 std::unique_ptr<DeinitDecl> parseDeinitDecl(std::string typeName) {
-    auto deinitLoc = parse(DEINIT).getLoc();
+    auto deinitLocation = parse(DEINIT).getLocation();
     parse(LPAREN);
-    auto expectedRParenLoc = currentLoc();
-    if (consumeToken() != RPAREN) error(expectedRParenLoc, "deinitializers cannot have parameters");
+    auto expectedRParenLocation = getCurrentLocation();
+    if (consumeToken() != RPAREN) error(expectedRParenLocation, "deinitializers cannot have parameters");
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
-    return llvm::make_unique<DeinitDecl>(std::move(typeName), std::move(body), deinitLoc);
+    return llvm::make_unique<DeinitDecl>(std::move(typeName), std::move(body), deinitLocation);
 }
 
 /// field-decl ::= ('var' | 'const') id ':' type ('\n' | ';')
@@ -852,17 +852,17 @@ FieldDecl parseFieldDecl() {
     auto name = parse(IDENTIFIER);
 
     parse(COLON);
-    auto typeLoc = currentLoc();
+    auto typeLocation = getCurrentLocation();
     Type type = parseType();
-    if (type.isMutable()) error(typeLoc, "type specifier cannot specify mutability");
+    if (type.isMutable()) error(typeLocation, "type specifier cannot specify mutability");
     type.setMutable(isMutable);
 
     parseStmtTerminator();
-    return FieldDecl(type, std::move(name.string), name.getLoc());
+    return FieldDecl(type, std::move(name.string), name.getLocation());
 }
 
 /// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
-/// member-decl ::= field-decl | func-decl
+/// member-decl ::= field-decl | function-decl
 std::unique_ptr<TypeDecl> parseTypeDecl() {
     TypeTag tag;
     switch (consumeToken()) {
@@ -880,7 +880,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
     }
 
     auto typeDecl = llvm::make_unique<TypeDecl>(tag, std::move(name.string), std::move(genericParams),
-                                                currentModule, name.getLoc());
+                                                currentModule, name.getLocation());
     parse(LBRACE);
 
     while (currentToken() != RBRACE) {
@@ -892,16 +892,16 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
             case FUNC: {
                 bool isMutating = lookAhead(-1) == MUTATING;
                 auto requireBody = tag != TypeTag::Interface;
-                auto funcDecl = parseFuncDecl(typeDecl.get(), requireBody);
-                funcDecl->setMutating(isMutating);
-                typeDecl->addMemberFunc(std::move(funcDecl));
+                auto functionDecl = parseFunctionDecl(typeDecl.get(), requireBody);
+                functionDecl->setMutating(isMutating);
+                typeDecl->addMethod(std::move(functionDecl));
                 break;
             }
             case INIT:
-                typeDecl->addMemberFunc(parseInitDecl(name.string));
+                typeDecl->addMethod(parseInitDecl(name.string));
                 break;
             case DEINIT:
-                typeDecl->addMemberFunc(parseDeinitDecl(name.string));
+                typeDecl->addMethod(parseDeinitDecl(name.string));
                 break;
             case VAR: case CONST:
                 typeDecl->addField(parseFieldDecl());
@@ -920,21 +920,21 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
     assert(currentToken() == IMPORT);
     consumeToken();
     expect(STRING_LITERAL, "after 'import'");
-    auto target = parseStrLiteral();
+    auto target = parseStringLiteral();
     parseStmtTerminator("after 'import' declaration");
-    return llvm::make_unique<ImportDecl>(std::move(target->value), target->getSrcLoc());
+    return llvm::make_unique<ImportDecl>(std::move(target->value), target->getLocation());
 }
 
-/// top-level-decl ::= func-decl | extern-func-decl | type-decl | import-decl | var-decl
+/// top-level-decl ::= function-decl | extern-function-decl | type-decl | import-decl | var-decl
 std::unique_ptr<Decl> parseTopLevelDecl(const TypeChecker& typeChecker) {
     switch (currentToken()) {
         case FUNC: {
-            auto decl = parseFuncDecl(/* receiverTypeDecl */ nullptr);
+            auto decl = parseFunctionDecl(/* receiverTypeDecl */ nullptr);
             typeChecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
         case EXTERN: {
-            auto decl = parseExternFuncDecl();
+            auto decl = parseExternFunctionDecl();
             typeChecker.addToSymbolTable(*decl);
             return std::move(decl);
         }

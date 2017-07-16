@@ -46,7 +46,7 @@ bool Type::isUnsizedArrayType() const {
 }
 
 bool Type::isNullablePointer() const {
-    return isPtrType() && !llvm::cast<PtrType>(typeBase)->ref;
+    return isPointerType() && !llvm::cast<PointerType>(typeBase)->isReference();
 }
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
@@ -74,8 +74,8 @@ namespace {
     std::vector<std::unique_ptr<ArrayType>> arrayTypes;
     std::vector<std::unique_ptr<RangeType>> rangeTypes;
     std::vector<std::unique_ptr<TupleType>> tupleTypes;
-    std::vector<std::unique_ptr<FuncType>> funcTypes;
-    std::vector<std::unique_ptr<PtrType>> ptrTypes;
+    std::vector<std::unique_ptr<FunctionType>> functionTypes;
+    std::vector<std::unique_ptr<PointerType>> ptrTypes;
 }
 
 #define FETCH_AND_RETURN_TYPE(TYPE, CACHE, EQUALS, ...) \
@@ -105,15 +105,15 @@ Type TupleType::get(std::vector<Type>&& subtypes, bool isMutable) {
         t->subtypes == subtypes, std::move(subtypes));
 }
 
-Type FuncType::get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable) {
-    FETCH_AND_RETURN_TYPE(FuncType, funcTypes,
+Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(FunctionType, functionTypes,
         t->returnType == returnType && t->paramTypes == paramTypes,
         returnType, std::move(paramTypes));
 }
 
-Type PtrType::get(Type pointeeType, bool isReference, bool isMutable) {
-    FETCH_AND_RETURN_TYPE(PtrType, ptrTypes,
-        t->pointeeType == pointeeType && t->ref == isReference, pointeeType, isReference);
+Type PointerType::get(Type pointeeType, bool isReference, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(PointerType, ptrTypes,
+        t->pointeeType == pointeeType && t->isReference() == isReference, pointeeType, isReference);
 }
 
 #undef FETCH_AND_RETURN_TYPE
@@ -132,12 +132,12 @@ bool Type::isImplicitlyConvertibleTo(Type type) const {
                                       == llvm::cast<RangeType>(type.typeBase)->elementType;
         case TypeKind::TupleType:
             return type.isTupleType() && getSubtypes() == type.getSubtypes();
-        case TypeKind::FuncType:
-            return type.isFuncType() && getReturnType() == type.getReturnType()
+        case TypeKind::FunctionType:
+            return type.isFunctionType() && getReturnType() == type.getReturnType()
                                      && getParamTypes() == type.getParamTypes();
-        case TypeKind::PtrType:
-            return type.isPtrType()
-            && (isRef() || !type.isRef())
+        case TypeKind::PointerType:
+            return type.isPointerType()
+            && (isReference() || !type.isReference())
             && (getPointee().isMutable() || !type.getPointee().isMutable())
             && getPointee().isImplicitlyConvertibleTo(type.getPointee());
     }
@@ -170,11 +170,11 @@ Type Type::getElementType() const { return llvm::cast<ArrayType>(typeBase)->elem
 int64_t Type::getArraySize() const { return llvm::cast<ArrayType>(typeBase)->size; }
 llvm::ArrayRef<Type> Type::getSubtypes() const { return llvm::cast<TupleType>(typeBase)->subtypes; }
 llvm::ArrayRef<Type> Type::getGenericArgs() const { return llvm::cast<BasicType>(typeBase)->getGenericArgs(); }
-Type Type::getReturnType() const { return llvm::cast<FuncType>(typeBase)->returnType; }
-llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FuncType>(typeBase)->paramTypes; }
-Type Type::getPointee() const { return llvm::cast<PtrType>(typeBase)->pointeeType; }
-Type Type::getReferee() const { assert(isRef()); return getPointee(); }
-bool Type::isRef() const { return isPtrType() && llvm::cast<PtrType>(typeBase)->ref; }
+Type Type::getReturnType() const { return llvm::cast<FunctionType>(typeBase)->returnType; }
+llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FunctionType>(typeBase)->paramTypes; }
+Type Type::getPointee() const { return llvm::cast<PointerType>(typeBase)->pointeeType; }
+Type Type::getReferee() const { assert(isReference()); return getPointee(); }
+bool Type::isReference() const { return isPointerType() && llvm::cast<PointerType>(typeBase)->isReference(); }
 
 Type Type::getIterableElementType() const {
     assert(isIterable());
@@ -196,11 +196,11 @@ bool delta::operator==(Type lhs, Type rhs) {
                                      == llvm::cast<RangeType>(rhs.get())->elementType;
         case TypeKind::TupleType:
             return rhs.isTupleType() && lhs.getSubtypes() == rhs.getSubtypes();
-        case TypeKind::FuncType:
-            return rhs.isFuncType() && lhs.getReturnType() == rhs.getReturnType()
+        case TypeKind::FunctionType:
+            return rhs.isFunctionType() && lhs.getReturnType() == rhs.getReturnType()
                                     && lhs.getParamTypes() == rhs.getParamTypes();
-        case TypeKind::PtrType:
-            return rhs.isPtrType() && lhs.isRef() == rhs.isRef() && lhs.getPointee() == rhs.getPointee();
+        case TypeKind::PointerType:
+            return rhs.isPointerType() && lhs.isReference() == rhs.isReference() && lhs.getPointee() == rhs.getPointee();
     }
     llvm_unreachable("all cases handled");
 }
@@ -246,7 +246,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             }
             stream << ")";
             break;
-        case TypeKind::FuncType:
+        case TypeKind::FunctionType:
             stream << "func(";
             for (const Type& paramType : getParamTypes()) {
                 stream << paramType;
@@ -255,14 +255,14 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             stream << ") -> ";
             getReturnType().printTo(stream, true);
             break;
-        case TypeKind::PtrType:
+        case TypeKind::PointerType:
             if (isMutable() && !omitTopLevelMutable) {
                 stream << "mutable(";
                 getPointee().printTo(stream, false);
-                stream << (isRef() ? '&' : '*') << ')';
+                stream << (isReference() ? '&' : '*') << ')';
             } else {
                 getPointee().printTo(stream, false);
-                stream << (isRef() ? '&' : '*');
+                stream << (isReference() ? '&' : '*');
             }
             break;
     }

@@ -62,11 +62,14 @@ inline Stmt::~Stmt() { }
 class ReturnStmt : public Stmt {
 public:
     std::vector<std::unique_ptr<Expr>> values;
-    SrcLoc srcLoc;
 
-    ReturnStmt(std::vector<std::unique_ptr<Expr>>&& values, SrcLoc srcLoc)
-    : Stmt(StmtKind::ReturnStmt), values(std::move(values)), srcLoc(srcLoc) { }
+    ReturnStmt(std::vector<std::unique_ptr<Expr>>&& values, SourceLocation location)
+    : Stmt(StmtKind::ReturnStmt), values(std::move(values)), location(location) { }
+    SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ReturnStmt; }
+
+private:
+    SourceLocation location;
 };
 
 class VarStmt : public Stmt {
@@ -81,21 +84,27 @@ public:
 class IncrementStmt : public Stmt {
 public:
     std::unique_ptr<Expr> operand;
-    SrcLoc srcLoc; // Location of '++'.
 
-    IncrementStmt(std::unique_ptr<Expr> operand, SrcLoc srcLoc)
-    : Stmt(StmtKind::IncrementStmt), operand(std::move(operand)), srcLoc(srcLoc) { }
+    IncrementStmt(std::unique_ptr<Expr> operand, SourceLocation location)
+    : Stmt(StmtKind::IncrementStmt), operand(std::move(operand)), location(location) { }
+    SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IncrementStmt; }
+
+private:
+    SourceLocation location; // Location of '++'.
 };
 
 class DecrementStmt : public Stmt {
 public:
     std::unique_ptr<Expr> operand;
-    SrcLoc srcLoc; // Location of '--'.
 
-    DecrementStmt(std::unique_ptr<Expr> operand, SrcLoc srcLoc)
-    : Stmt(StmtKind::DecrementStmt), operand(std::move(operand)), srcLoc(srcLoc) { }
+    DecrementStmt(std::unique_ptr<Expr> operand, SourceLocation location)
+    : Stmt(StmtKind::DecrementStmt), operand(std::move(operand)), location(location) { }
+    SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DecrementStmt; }
+
+private:
+    SourceLocation location; // Location of '--'.
 };
 
 /// A statement that consists of the evaluation of a single expression.
@@ -164,32 +173,40 @@ public:
     std::string id;
     std::unique_ptr<Expr> range;
     std::vector<std::unique_ptr<Stmt>> body;
-    SrcLoc srcLoc; // Location of 'id'.
 
     ForStmt(std::string&& id, std::unique_ptr<Expr> range,
-            std::vector<std::unique_ptr<Stmt>>&& body, SrcLoc srcLoc)
+            std::vector<std::unique_ptr<Stmt>>&& body, SourceLocation location)
     : Stmt(StmtKind::ForStmt), id(std::move(id)), range(std::move(range)),
-      body(std::move(body)), srcLoc(srcLoc) { }
+      body(std::move(body)), location(location) { }
+    SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
+
+private:
+    SourceLocation location; // Location of 'id'.
 };
 
 class BreakStmt : public Stmt {
 public:
-    SrcLoc srcLoc;
-
-    BreakStmt(SrcLoc srcLoc) : Stmt(StmtKind::BreakStmt), srcLoc(srcLoc) { }
+    BreakStmt(SourceLocation location) : Stmt(StmtKind::BreakStmt), location(location) { }
+    SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::BreakStmt; }
+
+private:
+    SourceLocation location;
 };
 
 class AssignStmt : public Stmt {
 public:
     std::unique_ptr<Expr> lhs;
     std::unique_ptr<Expr> rhs;
-    SrcLoc srcLoc; // Location of '='.
 
-    AssignStmt(std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, SrcLoc srcLoc)
-    : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)), srcLoc(srcLoc) { }
+    AssignStmt(std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, SourceLocation location)
+    : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)), location(location) { }
+    SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AssignStmt; }
+
+private:
+    SourceLocation location; // Location of '='.
 };
 
 /// An augmented assignment (a.k.a. compound assignment) statement.
@@ -198,13 +215,16 @@ public:
     std::unique_ptr<Expr> lhs;
     std::unique_ptr<Expr> rhs;
     BinaryOperator op;
-    SrcLoc srcLoc; // Location of operator symbol.
 
     AugAssignStmt(std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs,
-                  BinaryOperator op, SrcLoc srcLoc)
+                  BinaryOperator op, SourceLocation location)
     : Stmt(StmtKind::AugAssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)),
-      op(op), srcLoc(srcLoc) { }
+      op(op), location(location) { }
+    SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AugAssignStmt; }
+
+private:
+    SourceLocation location; // Location of operator symbol.
 };
 
 }

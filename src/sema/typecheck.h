@@ -18,7 +18,7 @@ namespace delta {
 
 class Module;
 class SourceFile;
-struct SrcLoc;
+struct SourceLocation;
 struct Type;
 
 using ParserFunction = void(llvm::StringRef filePath, Module& module);
@@ -30,17 +30,17 @@ void typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearc
 class TypeChecker {
 public:
     explicit TypeChecker(Module* currentModule, SourceFile* currentSourceFile)
-    : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunc(nullptr),
-      typecheckingGenericFunc(false) { }
+    : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunction(nullptr),
+      typecheckingGenericFunction(false) { }
 
     Module* getCurrentModule() const { return currentModule; }
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
 
-    Decl& findDecl(llvm::StringRef name, SrcLoc srcLoc, bool everywhere = false) const;
+    Decl& findDecl(llvm::StringRef name, SourceLocation location, bool everywhere = false) const;
     llvm::SmallVector<Decl*, 1> findDecls(llvm::StringRef name, bool everywhere = false) const;
 
-    void addToSymbolTable(FuncDecl& decl) const;
-    void addToSymbolTable(FuncDecl&& decl) const;
+    void addToSymbolTable(FunctionDecl& decl) const;
+    void addToSymbolTable(FunctionDecl&& decl) const;
     void addToSymbolTable(InitDecl& decl) const;
     void addToSymbolTable(DeinitDecl& decl) const;
     void addToSymbolTable(TypeDecl& decl) const;
@@ -55,7 +55,7 @@ public:
                                ParserFunction& parse) const;
 
 private:
-    void typecheckFuncDecl(FuncDecl& decl) const;
+    void typecheckFunctionDecl(FunctionDecl& decl) const;
     void typecheckInitDecl(InitDecl& decl) const;
     void typecheckMemberDecl(Decl& decl) const;
 
@@ -71,7 +71,7 @@ private:
     void typecheckWhileStmt(WhileStmt& whileStmt) const;
     void typecheckForStmt(ForStmt& forStmt) const;
     void typecheckBreakStmt(BreakStmt& breakStmt) const;
-    void typecheckAssignment(Expr& lhs, Expr& rhs, SrcLoc srcLoc) const;
+    void typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location) const;
     void typecheckParamDecl(ParamDecl& decl) const;
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const;
     void typecheckDeinitDecl(DeinitDecl& decl) const;
@@ -92,7 +92,7 @@ private:
 
     Type resolve(Type type) const;
     bool isInterface(Type type) const;
-    bool hasMemberFunc(TypeDecl& type, FuncDecl& func) const;
+    bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool implementsInterface(TypeDecl& type, TypeDecl& interface) const;
     bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget) const;
     bool isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source, Type target) const;
@@ -102,17 +102,17 @@ private:
     Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
-    bool matchArgs(llvm::ArrayRef<Arg> args, llvm::ArrayRef<ParamDecl> params, bool isVariadic) const;
-    void validateArgs(const std::vector<Arg>& args, const std::vector<ParamDecl>& params,
-                      const std::string& funcName, bool isVariadic, SrcLoc srcLoc) const;
+    bool matchArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamDecl> params, bool isVariadic) const;
+    void validateArgs(const std::vector<Argument>& args, const std::vector<ParamDecl>& params,
+                      const std::string& functionName, bool isVariadic, SourceLocation location) const;
     TypeDecl* getTypeDecl(const BasicType& type) const;
 
 private:
     Module* currentModule;
     SourceFile* currentSourceFile;
-    mutable Decl* currentFunc;
+    mutable Decl* currentFunction;
     mutable std::unordered_map<std::string, Type> currentGenericArgs;
-    mutable bool typecheckingGenericFunc;
+    mutable bool typecheckingGenericFunction;
 };
 
 }

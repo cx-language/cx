@@ -25,7 +25,7 @@ std::ostream& operator<<(std::ostream& out, const VarExpr& expr) {
     return out << expr.identifier;
 }
 
-std::ostream& operator<<(std::ostream& out, const StrLiteralExpr& expr) {
+std::ostream& operator<<(std::ostream& out, const StringLiteralExpr& expr) {
     return out << '"' << expr.value << '"';
 }
 
@@ -60,9 +60,9 @@ std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
-    out << "(call " << *expr.func;
-    for (const Arg& arg : expr.args) {
-        out << " " << *arg.value;
+    out << "(call " << expr.getCallee();
+    for (const Argument& arg : expr.getArgs()) {
+        out << " " << *arg.getValue();
     }
     return out << ")";
 }
@@ -86,7 +86,7 @@ std::ostream& operator<<(std::ostream& out, const UnwrapExpr& expr) {
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr:        return out << expr.getVarExpr();
-        case ExprKind::StrLiteralExpr: return out << expr.getStrLiteralExpr();
+        case ExprKind::StringLiteralExpr: return out << expr.getStringLiteralExpr();
         case ExprKind::IntLiteralExpr: return out << expr.getIntLiteralExpr();
         case ExprKind::FloatLiteralExpr:return out << expr.getFloatLiteralExpr();
         case ExprKind::BoolLiteralExpr:return out << expr.getBoolLiteralExpr();
@@ -211,8 +211,8 @@ std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {
     return out << "(" << decl.type << " " << decl.name << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const FuncDecl& decl) {
-    out << br << (decl.isExtern() ? "(extern-func-decl " : "(func-decl ");
+std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
+    out << br << (decl.isExtern() ? "(extern-function-decl " : "(function-decl ");
     out << decl.name;
 
     if (!decl.genericParams.empty()) {
@@ -280,8 +280,8 @@ std::ostream& operator<<(std::ostream& out, const ImportDecl& decl) {
 std::ostream& operator<<(std::ostream& out, const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: return out << decl.getParamDecl();
-        case DeclKind::FuncDecl:  return out << decl.getFuncDecl();
-        case DeclKind::GenericParamDecl: llvm_unreachable("handled via FuncDecl");
+        case DeclKind::FunctionDecl:  return out << decl.getFunctionDecl();
+        case DeclKind::GenericParamDecl: llvm_unreachable("handled via FunctionDecl");
         case DeclKind::InitDecl:  return out << decl.getInitDecl();
         case DeclKind::DeinitDecl:return out << decl.getDeinitDecl();
         case DeclKind::TypeDecl:  return out << decl.getTypeDecl();

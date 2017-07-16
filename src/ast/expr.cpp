@@ -8,7 +8,7 @@ using namespace delta;
 
 bool Expr::isLvalue() const {
     switch (getKind()) {
-        case ExprKind::VarExpr: case ExprKind::StrLiteralExpr: case ExprKind::ArrayLiteralExpr:
+        case ExprKind::VarExpr: case ExprKind::StringLiteralExpr: case ExprKind::ArrayLiteralExpr:
         case ExprKind::MemberExpr: case ExprKind::SubscriptExpr:
             return true;
         case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr:
@@ -21,22 +21,22 @@ bool Expr::isLvalue() const {
     llvm_unreachable("all cases handled");
 }
 
-llvm::StringRef CallExpr::getFuncName() const {
-    switch (func->getKind()) {
-        case ExprKind::VarExpr: return llvm::cast<VarExpr>(*func).identifier;
-        case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(*func).member;
+llvm::StringRef CallExpr::getFunctionName() const {
+    switch (getCallee().getKind()) {
+        case ExprKind::VarExpr: return llvm::cast<VarExpr>(getCallee()).identifier;
+        case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(getCallee()).member;
         default: return "(anonymous function)";
     }
 }
 
-std::string CallExpr::getMangledFuncName() const {
-    if (func->isMemberExpr()) {
+std::string CallExpr::getMangledFunctionName() const {
+    if (getCallee().isMemberExpr()) {
         Type receiverType = getReceiver()->getType();
-        if (receiverType.isPtrType()) receiverType = receiverType.getPointee();
-        return mangleFuncDecl(receiverType.getName(), getFuncName(), genericArgs);
+        if (receiverType.isPointerType()) receiverType = receiverType.getPointee();
+        return mangleFunctionDecl(receiverType.getName(), getFunctionName(), genericArgs);
     }
-    if (isInitCall()) return mangleInitDecl(getFuncName());
-    return mangleFuncDecl("", getFuncName(), genericArgs);
+    if (isInitCall()) return mangleInitDecl(getFunctionName());
+    return mangleFunctionDecl("", getFunctionName(), genericArgs);
 }
 
 bool CallExpr::isInitCall() const {
@@ -44,6 +44,6 @@ bool CallExpr::isInitCall() const {
 }
 
 Expr* CallExpr::getReceiver() const {
-    if (!isMemberFuncCall()) return nullptr;
-    return llvm::cast<MemberExpr>(*func).base.get();
+    if (!isMethodCall()) return nullptr;
+    return llvm::cast<MemberExpr>(getCallee()).base.get();
 }

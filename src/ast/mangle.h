@@ -9,19 +9,19 @@ namespace llvm {
 
 namespace delta {
     struct Type;
-    class FuncDecl;
+    class FunctionDecl;
     class InitDecl;
     class DeinitDecl;
     class ParamDecl;
-    class Arg;
+    class Argument;
     class TypeDecl;
 
-    std::string mangle(const FuncDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
-                       llvm::ArrayRef<Type> funcGenericArgs = {});
-    std::string mangleFuncDecl(llvm::StringRef receiverType, llvm::StringRef funcName,
-                               llvm::ArrayRef<Type> genericArgs = {});
+    std::string mangle(const FunctionDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
+                       llvm::ArrayRef<Type> functionGenericArgs = {});
+    std::string mangleFunctionDecl(llvm::StringRef receiverType, llvm::StringRef functionName,
+                                   llvm::ArrayRef<Type> genericArgs = {});
     std::string mangle(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
-                       llvm::ArrayRef<Type> funcGenericArgs = {});
+                       llvm::ArrayRef<Type> functionGenericArgs = {});
     std::string mangleInitDecl(llvm::StringRef typeName,
                                llvm::ArrayRef<Type> genericArgs = {});
     std::string mangle(const DeinitDecl& decl);

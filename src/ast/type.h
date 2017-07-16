@@ -15,8 +15,8 @@ enum class TypeKind {
     ArrayType,
     RangeType,
     TupleType,
-    FuncType,
-    PtrType,
+    FunctionType,
+    PointerType,
 };
 
 class TypeBase {
@@ -45,10 +45,10 @@ public:
     bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
     bool isRangeType() const { return getKind() == TypeKind::RangeType; }
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
-    bool isFuncType() const { return getKind() == TypeKind::FuncType; }
-    bool isPtrType() const { return getKind() == TypeKind::PtrType; }
+    bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
+    bool isPointerType() const { return getKind() == TypeKind::PointerType; }
     bool isBuiltinType() const {
-        return (isBasicType() && isBuiltinScalar(getName())) || isPtrType() || isNull();
+        return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull();
     }
     bool isSizedArrayType() const;
     bool isUnsizedArrayType() const;
@@ -86,7 +86,7 @@ public:
     void setMutable(bool isMutable);
     Type asMutable(bool isMutable = true) const { return Type(typeBase, isMutable); }
     Type asImmutable() const { return asMutable(false); }
-    Type removePtr() const { return isPtrType() ? getPointee() : *this; }
+    Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
     std::string toString() const;
@@ -100,7 +100,7 @@ public:
     llvm::ArrayRef<Type> getParamTypes() const;
     Type getPointee() const;
     Type getReferee() const;
-    bool isRef() const;
+    bool isReference() const;
     Type getIterableElementType() const;
 
     static Type getVoid(bool isMutable = false);
@@ -191,27 +191,31 @@ private:
     }
 };
 
-class FuncType : public TypeBase {
+class FunctionType : public TypeBase {
 public:
     Type returnType;
     std::vector<Type> paramTypes;
     static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable = false);
-    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::FuncType; }
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::FunctionType; }
 
 private:
-    FuncType(Type returnType, std::vector<Type>&& paramTypes)
-    : TypeBase(TypeKind::FuncType), returnType(returnType), paramTypes(std::move(paramTypes)) { }
+    FunctionType(Type returnType, std::vector<Type>&& paramTypes)
+    : TypeBase(TypeKind::FunctionType), returnType(returnType), paramTypes(std::move(paramTypes)) { }
 };
 
-class PtrType : public TypeBase {
+class PointerType : public TypeBase {
 public:
     Type pointeeType;
-    bool ref;
+
+    bool isReference() const { return reference; }
     static Type get(Type pointeeType, bool isReference, bool isMutable = false);
-    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PtrType; }
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PointerType; }
 
 private:
-    PtrType(Type type, bool ref) : TypeBase(TypeKind::PtrType), pointeeType(type), ref(ref) { }
+    PointerType(Type pointeeType, bool isReference)
+    : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), reference(isReference) { }
+
+    bool reference;
 };
 
 bool operator==(Type, Type);

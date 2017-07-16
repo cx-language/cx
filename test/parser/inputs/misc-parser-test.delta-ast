@@ -1,24 +1,24 @@
 (source-file inputs/misc-parser-test.delta
     (import-decl "math.h")
-    (func-decl foo1 () void)
-    (func-decl foo2 ((int a)) void)
-    (func-decl foo3 ((int a) (int b)) void)
-    (func-decl foo4 () int
+    (function-decl foo1 () void)
+    (function-decl foo2 ((int a)) void)
+    (function-decl foo3 ((int a) (int b)) void)
+    (function-decl foo4 () int
         (return-stmt 42))
-    (func-decl foo5 () (int, bool)
+    (function-decl foo5 () (int, bool)
         (return-stmt 42 false))
-    (func-decl foo6 () int
+    (function-decl foo6 () int
         (var-stmt answer 42)
         (return-stmt answer))
-    (func-decl foo7 () int
+    (function-decl foo7 () int
         (var-stmt answer 41)
         (inc-stmt answer)
         (return-stmt answer))
-    (func-decl foo8 () int
+    (function-decl foo8 () int
         (var-stmt answer 43)
         (dec-stmt answer)
         (return-stmt answer))
-    (func-decl foo9 () int
+    (function-decl foo9 () int
         (return-stmt ((0 - (-12)) / (4 + (3 * 2)))))
     (var-decl foo10 42)
     (var-decl foo11 42)
@@ -28,9 +28,9 @@
     (type-decl class C1
         (field-decl int8 a)
         (field-decl bool* b))
-    (func-decl foo12 ((int* a) (int b)) bool
+    (function-decl foo12 ((int* a) (int b)) bool
         (return-stmt ((*a) == b)))
-    (func-decl foo13 ((int a)) void
+    (function-decl foo13 ((int a)) void
         (defer-stmt (call foo13 a))
         (var-stmt i (array-literal 1 2 3))
         (switch-stmt a

@@ -7,18 +7,20 @@ void CompileError::print() const {
         llvm::outs().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
     }
 
-    if (srcLoc.file && *srcLoc.file) {
-        llvm::outs() << srcLoc.file;
-        if (srcLoc.isValid()) llvm::outs() << ':' << srcLoc.line << ':' << srcLoc.column;
+    if (location.file && *location.file) {
+        llvm::outs() << location.file;
+        if (location.isValid()) {
+            llvm::outs() << ':' << location.line << ':' << location.column;
+        }
         llvm::outs() << ": ";
     }
 
     printColored("error: ", llvm::raw_ostream::RED);
     printColored(message, llvm::raw_ostream::SAVEDCOLOR);
 
-    if (srcLoc.file && *srcLoc.file && srcLoc.isValid()) {
-        std::ifstream file(srcLoc.file);
-        for (auto line = srcLoc.line; --line;) {
+    if (location.file && *location.file && location.isValid()) {
+        std::ifstream file(location.file);
+        for (auto line = location.line; --line;) {
             file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
@@ -26,7 +28,7 @@ void CompileError::print() const {
         std::getline(file, line);
         llvm::outs() << '\n' << line << '\n';
 
-        for (char ch : line.substr(0, srcLoc.column - 1)) {
+        for (char ch : line.substr(0, location.column - 1)) {
             llvm::outs() << (ch != '\t' ? ' ' : '\t');
         }
         printColored('^', llvm::raw_ostream::GREEN);

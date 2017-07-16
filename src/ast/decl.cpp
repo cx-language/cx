@@ -5,12 +5,12 @@
 
 using namespace delta;
 
-const FuncType* FuncDecl::getFuncType() const {
+const FunctionType* FunctionDecl::getFunctionType() const {
     auto paramTypes = map(params, *[](const ParamDecl& p) -> Type { return p.type; });
-    return &llvm::cast<FuncType>(*FuncType::get(returnType, std::move(paramTypes)));
+    return &llvm::cast<FunctionType>(*FunctionType::get(returnType, std::move(paramTypes)));
 }
 
-bool FuncDecl::signatureMatches(const FuncDecl& other, bool matchReceiver) const {
+bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceiver) const {
     if (name != other.name) return false;
     if (matchReceiver && getReceiverTypeDecl() != other.getReceiverTypeDecl()) return false;
     if (mutating != other.mutating) return false;
@@ -23,9 +23,9 @@ void TypeDecl::addField(FieldDecl&& field) {
     fields.emplace_back(std::move(field));
 }
 
-void TypeDecl::addMemberFunc(std::unique_ptr<Decl> decl) {
-    assert(decl->isFuncDecl() || decl->isInitDecl() || decl->isDeinitDecl());
-    memberFuncs.emplace_back(std::move(decl));
+void TypeDecl::addMethod(std::unique_ptr<Decl> decl) {
+    assert(decl->isFunctionDecl() || decl->isInitDecl() || decl->isDeinitDecl());
+    methods.emplace_back(std::move(decl));
 }
 
 Type TypeDecl::getType(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {
@@ -38,7 +38,7 @@ Type TypeDecl::getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutabl
         case TypeTag::Struct: case TypeTag::Union:
             return getType(genericArgs, isMutable);
         case TypeTag::Class: case TypeTag::Interface:
-            return PtrType::get(getType(genericArgs, isMutable), true);
+            return PointerType::get(getType(genericArgs, isMutable), true);
     }
     llvm_unreachable("invalid type tag");
 }
@@ -52,17 +52,17 @@ unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
     fatalError("unknown field");
 }
 
-SrcLoc Decl::getSrcLoc() const {
+SourceLocation Decl::getLocation() const {
     switch (getKind()) {
-        case DeclKind::ParamDecl:  return getParamDecl().srcLoc;
-        case DeclKind::FuncDecl:   return getFuncDecl().srcLoc;
-        case DeclKind::GenericParamDecl: return getGenericParamDecl().srcLoc;
-        case DeclKind::InitDecl:   return getInitDecl().srcLoc;
-        case DeclKind::DeinitDecl: return getDeinitDecl().srcLoc;
-        case DeclKind::TypeDecl:   return getTypeDecl().srcLoc;
-        case DeclKind::VarDecl:    return getVarDecl().srcLoc;
-        case DeclKind::FieldDecl:  return getFieldDecl().srcLoc;
-        case DeclKind::ImportDecl: return getImportDecl().srcLoc;
+        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(*this).location;
+        case DeclKind::FunctionDecl: return llvm::cast<FunctionDecl>(*this).location;
+        case DeclKind::GenericParamDecl: return llvm::cast<GenericParamDecl>(*this).location;
+        case DeclKind::InitDecl: return llvm::cast<InitDecl>(*this).location;
+        case DeclKind::DeinitDecl: return llvm::cast<DeinitDecl>(*this).location;
+        case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(*this).location;
+        case DeclKind::VarDecl: return llvm::cast<VarDecl>(*this).location;
+        case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(*this).location;
+        case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(*this).location;
     }
     llvm_unreachable("all cases handled");
 }

@@ -21,16 +21,16 @@ const char* currentFilePosition;
 namespace delta {
 
 extern const char* currentFilePath;
-extern SrcLoc firstLoc;
-extern SrcLoc lastLoc;
+extern SourceLocation firstLocation;
+extern SourceLocation lastLocation;
 
 void initLexer(std::unique_ptr<llvm::MemoryBuffer> input) {
     currentFilePath = input->getBufferIdentifier().data();
     fileBuffers.emplace_back(std::move(input));
     currentFilePosition = fileBuffers.back()->getBufferStart() - 1;
 
-    firstLoc = SrcLoc(currentFilePath, 1, 0);
-    lastLoc = SrcLoc(currentFilePath, 1, 0);
+    firstLocation = SourceLocation(currentFilePath, 1, 0);
+    lastLocation = SourceLocation(currentFilePath, 1, 0);
 }
 
 }
@@ -40,20 +40,20 @@ namespace {
 inline char readChar() {
     char ch = *++currentFilePosition;
     if (ch != '\n') {
-        lastLoc.column++;
+        lastLocation.column++;
     } else {
-        lastLoc.line++;
-        lastLoc.column = 0;
+        lastLocation.line++;
+        lastLocation.column = 0;
     }
     return ch;
 }
 
 inline void unreadChar(char ch) {
     if (ch != '\n') {
-        lastLoc.column--;
+        lastLocation.column--;
     } else {
-        lastLoc.line--;
-        // lastLoc.column can be left as is because the next readChar() call will reset it anyways.
+        lastLocation.line--;
+        // lastLocation.column can be left as is because the next readChar() call will reset it anyways.
     }
     currentFilePosition--;
 }
@@ -75,9 +75,9 @@ inline Token readNumber() {
                         break;
                     default:
                         if (std::isalnum(ch))
-                            error(lastLoc, "invalid digit '", ch, "' in binary literal");
+                            error(lastLocation, "invalid digit '", ch, "' in binary literal");
                         if (end == begin + 2)
-                            error(firstLoc, "binary literal must have at least one digit after '0b'");
+                            error(firstLocation, "binary literal must have at least one digit after '0b'");
                         goto end;
                 }
             }
@@ -93,9 +93,9 @@ inline Token readNumber() {
                         break;
                     default:
                         if (std::isalnum(ch))
-                            error(lastLoc, "invalid digit '", ch, "' in octal literal");
+                            error(lastLocation, "invalid digit '", ch, "' in octal literal");
                         if (end == begin + 2)
-                            error(firstLoc, "octal literal must have at least one digit after '0o'");
+                            error(firstLocation, "octal literal must have at least one digit after '0o'");
                         goto end;
                 }
             }
@@ -103,7 +103,7 @@ inline Token readNumber() {
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
             if (begin[0] == '0')
-                error(firstLoc, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
+                error(firstLocation, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
             // fallthrough
         default:
             while (true) {
@@ -133,20 +133,20 @@ inline Token readNumber() {
                         end++;
                         break;
                     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                        if (lettercase < 0) error(lastLoc, "mixed letter case in hex literal");
+                        if (lettercase < 0) error(lastLocation, "mixed letter case in hex literal");
                         end++;
                         lettercase = 1;
                         break;
                     case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-                        if (lettercase > 0) error(lastLoc, "mixed letter case in hex literal");
+                        if (lettercase > 0) error(lastLocation, "mixed letter case in hex literal");
                         end++;
                         lettercase = -1;
                         break;
                     default:
                         if (std::isalnum(ch))
-                            error(lastLoc, "invalid digit '", ch, "' in hex literal");
+                            error(lastLocation, "invalid digit '", ch, "' in hex literal");
                         if (end == begin + 2)
-                            error(firstLoc, "hex literal must have at least one digit after '0x'");
+                            error(firstLocation, "hex literal must have at least one digit after '0x'");
                         goto end;
                 }
             }
@@ -204,8 +204,8 @@ const std::unordered_map<std::string, TokenKind> keywords = {
 Token delta::lex() {
     while (true) {
         char ch = readChar();
-        firstLoc.line = lastLoc.line;
-        firstLoc.column = lastLoc.column;
+        firstLocation.line = lastLocation.line;
+        firstLocation.column = lastLocation.column;
 
         switch (ch) {
             case ' ': case '\t': case '\r': case '\n':
@@ -359,16 +359,16 @@ Token delta::lex() {
                 const char* end = begin + 2;
                 while ((ch = readChar()) != '"' || *(end - 2) == '\\') {
                     if (ch == '\n') {
-                        SrcLoc newlineLoc = firstLoc;
-                        newlineLoc.column += end - begin - 1;
-                        error(newlineLoc, "newline inside string literal");
+                        SourceLocation newlineLocation = firstLocation;
+                        newlineLocation.column += end - begin - 1;
+                        error(newlineLocation, "newline inside string literal");
                     }
                     end++;
                 }
                 return Token(STRING_LITERAL, llvm::StringRef(begin, end - begin));
             }
             default:
-                error(firstLoc, "unknown token '", (char) ch, "'");
+                error(firstLocation, "unknown token '", (char) ch, "'");
         }
     }
 

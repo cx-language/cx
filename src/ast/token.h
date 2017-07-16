@@ -2,7 +2,7 @@
 
 #include <ostream>
 #include <llvm/ADT/StringRef.h>
-#include "../ast/srcloc.h"
+#include "../ast/location.h"
 
 namespace delta {
 
@@ -100,7 +100,7 @@ struct Token {
 
     Token(TokenKind kind, llvm::StringRef string = {});
     operator TokenKind() const { return kind; }
-    SrcLoc getLoc() const { return srcLoc; }
+    SourceLocation getLocation() const { return location; }
     bool is(TokenKind kind) const { return this->kind == kind; }
     template<typename... T>
     bool is(TokenKind kind, T... kinds) const { return is(kind) || is(kinds...); }
@@ -116,7 +116,7 @@ struct Token {
     Token withoutCompoundEqSuffix() const { return Token(TokenKind(kind - 1)); }
 
 private:
-    const SrcLoc srcLoc;
+    const SourceLocation location;
 };
 
 struct PrefixOperator {

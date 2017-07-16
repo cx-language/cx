@@ -9,7 +9,7 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/raw_ostream.h>
-#include "../ast/srcloc.h"
+#include "../ast/location.h"
 
 namespace delta {
 
@@ -44,12 +44,12 @@ std::string toDisjunctiveList(llvm::ArrayRef<T> values, std::string (& stringifi
 
 class CompileError {
 public:
-    CompileError(SrcLoc srcLoc, std::string&& message)
-    : srcLoc(srcLoc), message(std::move(message)) { }
+    CompileError(SourceLocation location, std::string&& message)
+    : location(location), message(std::move(message)) { }
     void print() const;
 
 private:
-    SrcLoc srcLoc;
+    SourceLocation location;
     std::string message;
 };
 
@@ -71,12 +71,12 @@ template<typename... Args>
 }
 
 template<typename... Args>
-[[noreturn]] void error(SrcLoc srcLoc, Args&&... args) {
+[[noreturn]] void error(SourceLocation location, Args&&... args) {
     std::string message;
     llvm::raw_string_ostream messageStream(message);
     using expander = int[];
     (void)expander{0, (void(void(messageStream << std::forward<Args>(args))), 0)...};
-    throw CompileError(srcLoc, std::move(messageStream.str()));
+    throw CompileError(location, std::move(messageStream.str()));
 }
 
 [[noreturn]] inline void fatalError(const char* message) {
