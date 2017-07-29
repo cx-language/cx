@@ -1,0 +1,58 @@
+import "stdlib.h"
+
+struct Array<Element> {
+    var bufferPointer: mutable void*;
+    var size: int;
+    var capacity: int;
+
+    /// Initializes an empty array.
+    init() {
+        bufferPointer = null;
+        size = 0;
+        capacity = 0;
+    }
+
+    /// Returns the number of elements in the array.
+    func size() -> int {
+        return size;
+    }
+
+    /// Returns the number of elements the array can store without allocating more memory.
+    func capacity() -> int {
+        return capacity;
+    }
+
+    /// Returns a reference to the element at the given index.
+    func at(index: int) -> Element& {
+        return cast<Element&>(bufferPointer).offsetUnsafely(int64(index))
+    }
+
+    /// Adds the given element to the end of the array.
+    mutating func append(newElement: Element) {
+        reserve(size + 1);
+        *cast<mutable Element*>(bufferPointer).offsetUnsafely(int64(size)) = newElement;
+        size++;
+    }
+
+    /// Ensures that the capacity is large enough to store the given number of elements.
+    mutating func reserve(minimumCapacity: int) {
+        if (minimumCapacity > capacity) {
+            if (capacity == 0) {
+                capacity = 1;
+            } else {
+                capacity *= 2;
+            }
+
+            let newBufferPointer = malloc(sizeOf<Element>() * uint64(capacity));
+
+            for (index in 0..size) {
+                let source = cast<Element*>(bufferPointer).offsetUnsafely(int64(index));
+                let target = cast<mutable Element*>(newBufferPointer).offsetUnsafely(int64(index));
+                *target = *source;
+            }
+
+            free(bufferPointer);
+            bufferPointer = newBufferPointer;
+        }
+    }
+}
