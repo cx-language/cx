@@ -170,10 +170,10 @@ llvm::Type* IRGenerator::toIR(Type type) {
 llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
     auto* value = findValue(expr.identifier, expr.getDecl());
 
-    if (llvm::isa<llvm::Argument>(value) || !value->getType()->isPointerTy()) {
-        return value;
-    } else {
+    if (llvm::isa<llvm::AllocaInst>(value) || llvm::isa<llvm::GlobalValue>(value)) {
         return builder.CreateLoad(value, expr.identifier);
+    } else {
+        return value;
     }
 }
 
