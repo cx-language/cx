@@ -17,4 +17,4 @@ delta
 *.a
 
 # Generated documentation
-doc/html/
+docs/html/

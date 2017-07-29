@@ -1,9 +1,9 @@
 PROJECT_NAME = delta
-INPUT = . doc src/ast src/driver src/irgen src/parser src/sema src/support
+INPUT = . docs src/ast src/driver src/irgen src/parser src/sema src/support
 USE_MDFILE_AS_MAINPAGE = README.md
 EXTRACT_ALL = YES
 EXCLUDE_SYMBOLS = llvm clang
-OUTPUT_DIRECTORY = doc
+OUTPUT_DIRECTORY = docs
 GENERATE_LATEX = NO
 HAVE_DOT = YES
 DOT_IMAGE_FORMAT = svg

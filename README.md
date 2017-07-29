@@ -5,7 +5,7 @@
 
 Delta is a general-purpose programming language intended as an alternative to
 C++, C, and Rust. The project is currently in very early stages of development.
-See the (incomplete) [specification document](doc/spec.md) for a detailed
+See the (incomplete) [specification document](docs/spec.md) for a detailed
 description of the language, or the more learning-oriented (and equally
 incomplete) [Delta Book](https://delta-lang.gitbooks.io/delta-book/content/).
 
@@ -45,9 +45,9 @@ After this, the following commands can be invoked from the `build` directory:
 
 Auto-generated API documentation for the compiler is available at https://delta-lang.github.io/delta/doc.
 
-To generate HTML for the API documentation locally, run `doxygen doc/doxyfile`
-in the project root directory. The output is generated under `doc/html` and can be
-viewed by opening `doc/html/index.html` in a browser.
+To generate HTML for the API documentation locally, run `doxygen docs/doxyfile`
+in the project root directory. The output is generated under `docs/html` and can be
+viewed by opening `docs/html/index.html` in a browser.
 
 ## Usage
 
