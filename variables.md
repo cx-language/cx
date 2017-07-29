@@ -5,10 +5,10 @@
 A simple variable declaration looks like this:
 
 ```
-const foo = 42;
+let foo = 42;
 ```
 
-Because this declaration uses the `const` keyword, the variable is immutable.
+Because this declaration uses the `let` keyword, the variable is immutable.
 
 We can also declare variables using the `var` keyword:
 
@@ -21,7 +21,7 @@ This declares a mutable variable.
 We can also specify the type of the variable explicitly:
 
 ```
-const foo: int8 = 42;
+let foo: int8 = 42;
 ```
 
 ## Assignment

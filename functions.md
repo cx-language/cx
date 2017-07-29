@@ -23,7 +23,7 @@ func foo(a: int, b: int) -> int {
 To call the function and assign its return value to a variable:
 
 ```
-const result = foo(1, 2);
+let result = foo(1, 2);
 ```
 
 ## Multiple Return Values
