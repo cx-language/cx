@@ -62,7 +62,8 @@ Run `delta -help` for more options.
 
 Delta is an open-source language. Contributions are welcome and encouraged! See the
 current [projects](https://github.com/delta-lang/delta/projects) for things that
-need to be done.
+need to be done. All contributors are expected to follow the Delta
+[code of conduct](docs/CODE_OF_CONDUCT.md).
 
 ## License
 
