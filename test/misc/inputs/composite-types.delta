@@ -4,7 +4,7 @@ struct Foo { }
 class Bar { }
 
 struct X {
-    const a: int;
+    let a: int;
 
     init(a: int) {
         this.a = a;
@@ -12,7 +12,7 @@ struct X {
 }
 
 class Y {
-    const y: char*;
+    let y: char*;
 }
 
 func main() -> int {

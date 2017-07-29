@@ -4,10 +4,10 @@ func main() {
     // CHECK:      %b = alloca i1
     // CHECK-NEXT: %c = alloca i1
     // CHECK-NEXT: store i1 false, i1* %b
-    const b = false;
+    let b = false;
 
     // CHECK-NEXT: %b1 = load i1, i1* %b
     // CHECK-NEXT: %1 = icmp eq i1 %b1, true
     // CHECK-NEXT: store i1 %1, i1* %c
-    const c = b == true;
+    let c = b == true;
 }

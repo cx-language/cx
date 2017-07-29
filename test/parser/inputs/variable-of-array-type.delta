@@ -1,7 +1,7 @@
 // validate_ast
-const foo: int[3] = [0, 1, 2];
+let foo: int[3] = [0, 1, 2];
 func main() {
-    const qux: int[1] = [42];
+    let qux: int[1] = [42];
     foo[0] = 3;
     foo[1].bar();
 }

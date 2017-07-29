@@ -1,7 +1,7 @@
-// check_error 6:17 "illegal subscript index type 'bool', expected 'int'"
+// check_error 6:15 "illegal subscript index type 'bool', expected 'int'"
 extern func foo() -> int[5]&;
 
 func main() {
-    const p = foo();
-    const e = p[false];
+    let p = foo();
+    let e = p[false];
 }

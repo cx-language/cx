@@ -1,2 +1,2 @@
-// check_error 2:14 "expected identifier, got ';'"
-const pi = 3.;
+// check_error 2:12 "expected identifier, got ';'"
+let pi = 3.;

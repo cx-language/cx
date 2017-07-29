@@ -1,6 +1,6 @@
 // check_error 9:19 "no member named 'bar' in 'Foo'"
 class Foo {
-    const qux: int;
+    let qux: int;
     init() { }
 }
 

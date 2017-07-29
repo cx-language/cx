@@ -5,13 +5,13 @@
 // CHECK: %"A<A<bool>>" = type { %"A<bool>" }
 // CHECK: %"A<bool>" = type { i1 }
 class A<T> {
-    const a: T
+    let a: T
 }
 
 func main() {
     // CHECK: %a = alloca %"A<int>"
-    const a: A<int> = uninitialized
+    let a: A<int> = uninitialized
     
     // CHECK: %aaa = alloca %"A<A<A<bool>>>"
-    const aaa: A<A<A<bool> > > = uninitialized
+    let aaa: A<A<A<bool> > > = uninitialized
 }

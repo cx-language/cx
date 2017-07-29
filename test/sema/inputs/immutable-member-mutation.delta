@@ -1,6 +1,6 @@
 // check_error 12:8 "cannot decrement immutable value"
 struct X {
-    const a: int;
+    let a: int;
 
     init(a: int) {
         this.a = a;

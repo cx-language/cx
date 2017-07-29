@@ -6,5 +6,5 @@ struct Foo {
 }
 
 func main() {
-    const f = Foo(1)
+    let f = Foo(1)
 }

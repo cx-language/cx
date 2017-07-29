@@ -68,6 +68,7 @@ The following keywords are reserved and can't be used as identifiers.
     init
     inout
     interface
+    let
     move
     mutable
     mutating
@@ -259,9 +260,9 @@ contain an associated getter and/or setter, that are called when the member
 variable is accessed or assigned to, respectively. The syntax of a member
 variable definition is as follows:
 
-> _var-or-const_ → `var` | `const`<br>
-> _member-variable-declaration_ → _var-or-const_ _member-variable-name_ `:` _type_ `;`<br>
-> _member-variable-declaration_ → _var-or-const_ _member-variable-name_ `:` _type_ `{` _getter-setter-definitions_ `}`<br>
+> _let-or-var_ → `let` | `var`<br>
+> _member-variable-declaration_ → _let-or-var_ _member-variable-name_ `:` _type_ `;`<br>
+> _member-variable-declaration_ → _let-or-var_ _member-variable-name_ `:` _type_ `{` _getter-setter-definitions_ `}`<br>
 > _getter-setter-definitions_ → _getter-definition_ | _setter-definition_ | _getter-definition_ _setter-definition__<br>
 > _getter-definition_ → `get` `{` _getter-body_ `}`<br>
 > _setter-definition_ → `set` `{` _setter-body_ `}`<br>
@@ -351,9 +352,9 @@ _variable-list_ is a comma-separated list of one or more variable names.
 Variable declarations introduce a new variable into the enclosing scope. The
 syntax is as follows:
 
-> _immutable-variable-declaration → `const` _variable-name_ `:` _type_ `;`<br>
+> _immutable-variable-declaration → `let` _variable-name_ `:` _type_ `;`<br>
 > _mutable-variable-declaration → `var` _variable-name_ `:` _type_ `;`<br>
-> _immutable-variable-definition_ → `const` _variable-name_ (`:` _type_)<sub>opt</sub> `=` _initializer_ `;`<br>
+> _immutable-variable-definition_ → `let` _variable-name_ (`:` _type_)<sub>opt</sub> `=` _initializer_ `;`<br>
 > _mutable-variable-definition_ → `var` _variable-name_ (`:` _type_)<sub>opt</sub> `=` _initializer_ `;`<br>
 
 In the first two forms, the variable is declared but not initialized. This

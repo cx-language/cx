@@ -1,2 +1,2 @@
-// check_error 2:14 "unexpected '.'"
-const half = .5;
+// check_error 2:12 "unexpected '.'"
+let half = .5;

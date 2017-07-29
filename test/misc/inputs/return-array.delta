@@ -12,6 +12,6 @@ func foo() -> uint8[4] {
 }
 
 func main() {
-    const array = foo();
+    let array = foo();
     puts(&array[0]);
 }

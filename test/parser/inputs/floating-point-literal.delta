@@ -1,2 +1,2 @@
 // validate_ast
-const a = 0.009;
+let a = 0.009;

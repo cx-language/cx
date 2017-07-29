@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 class Foo {
-    const i: int;
+    let i: int;
 
     // CHECK: define void @Foo.deinit(%Foo* %this)
     // CHECK-NEXT: ret void
@@ -9,7 +9,7 @@ class Foo {
 }
 
 struct Bar {
-    const i: int;
+    let i: int;
 
     // CHECK: define void @Bar.deinit(%Bar %this)
     // CHECK-NEXT: ret void
@@ -17,16 +17,16 @@ struct Bar {
 }
 
 func main() {
-    const f: Foo = uninitialized;
+    let f: Foo = uninitialized;
     if (false) {
-        const f2: Foo = uninitialized;
+        let f2: Foo = uninitialized;
         // CHECK: then:                                             ; preds = %0
         // CHECK-NEXT: call void @Foo.deinit(%Foo* %f2)
         // CHECK-NEXT: br label %endif
     }
-    const b: Bar = uninitialized;
+    let b: Bar = uninitialized;
     while (false) {
-        const b2: Bar = uninitialized;
+        let b2: Bar = uninitialized;
         // CHECK: %1 = load %Bar, %Bar* %b2
         // CHECK-NEXT: call void @Bar.deinit(%Bar %1)
         // CHECK-NEXT: %2 = load %Bar, %Bar* %b

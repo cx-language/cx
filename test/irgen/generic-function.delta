@@ -24,5 +24,5 @@ func main() {
     // CHECK-NEXT: %1 = call { i8*, i32 } @"bar<string>"
     var b = bar("bar");
     // CHECK: %2 = call i32 @"qux<int>"(i32 -5)
-    const five = qux(-5);
+    let five = qux(-5);
 }

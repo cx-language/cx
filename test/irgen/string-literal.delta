@@ -5,6 +5,6 @@
 func main() {
     // CHECK: %s = alloca { i8*, i32 }
     // CHECK-NEXT: store { i8*, i32 } { i8* getelementptr inbounds ([4 x i8], [4 x i8]* @[[ID]], i32 0, i32 0), i32 3 }, { i8*, i32 }* %s
-    const s = "foo";
+    let s = "foo";
     // CHECK-NEXT: ret
 }

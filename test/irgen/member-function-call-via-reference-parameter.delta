@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 class Foo {
-    const i: int;
+    let i: int;
     func foo() { }
 }
 
 struct Bar {
-    const i: int;
+    let i: int;
     func bar() { }
 }
 

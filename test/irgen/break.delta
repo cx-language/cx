@@ -9,7 +9,7 @@ func main() {
             // CHECK-NOT: %a
             // CHECK-NOT: alloca
             // CHECK-NOT: 1
-            const a = 1;
+            let a = 1;
         }
         // CHECK:      endif:
         // CHECK-NEXT:   br label %endwhile
@@ -23,6 +23,6 @@ func main() {
             // CHECK-NOT: %b
             // CHECK-NOT: alloca
             // CHECK-NOT: 1
-            const b = 1;
+            let b = 1;
     }
 }

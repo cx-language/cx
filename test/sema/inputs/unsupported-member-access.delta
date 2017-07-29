@@ -1,6 +1,6 @@
 // check_error 8:15 "'Foo' is not a variable"
 class Foo {
-    const bar: int;
+    let bar: int;
     init() { }
 }
 

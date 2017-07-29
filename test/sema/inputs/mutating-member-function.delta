@@ -1,6 +1,6 @@
 // compile_successfully -typecheck
 
 class Foo {
-    const i: int;
-    mutating func bar() { const f: mutable Foo& = this; }
+    let i: int;
+    mutating func bar() { let f: mutable Foo& = this; }
 }

@@ -10,9 +10,9 @@ func main() {
     foo(1);
     bar(0);
     bar(255);
-    const a: uint = 0;
+    let a: uint = 0;
     var b: uint = 1;
-    const c: uint8 = 0;
+    let c: uint8 = 0;
     var d: uint8 = 255;
     b = 2;
     d = 0;

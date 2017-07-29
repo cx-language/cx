@@ -9,7 +9,7 @@ struct F {
 }
 
 func main() {
-    const f: F = uninitialized;
+    let f: F = uninitialized;
 
     // CHECK: 15:8: error: type 'F' doesn't implement interface 'Fooable'
     bar(f);

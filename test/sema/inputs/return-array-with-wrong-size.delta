@@ -1,5 +1,5 @@
 // check_error 4:5 "mismatching return type 'int[2]', expected 'int[1]'"
 func foo() -> int[1] {
-    const buffer: int[2] = uninitialized;
+    let buffer: int[2] = uninitialized;
     return buffer;
 }

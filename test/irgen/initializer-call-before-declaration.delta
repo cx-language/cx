@@ -9,7 +9,7 @@ func main() {
 
 // CHECK-DAG: %Foo = type { float }
 struct Foo {
-    const f: float;
+    let f: float;
     // CHECK-DAG: define %Foo @Foo.init(i32 %i)
     init(i: int) { }
     // CHECK-DAG: define void @Foo.deinit(%Foo %this)

@@ -1,7 +1,7 @@
-// check_error 6:17 "accessing array out-of-bounds with index 5, array size is 5"
+// check_error 6:15 "accessing array out-of-bounds with index 5, array size is 5"
 extern func foo() -> int[5]&;
 
 func main() {
-    const p = foo();
-    const e = p[5];
+    let p = foo();
+    let e = p[5];
 }

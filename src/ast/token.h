@@ -31,6 +31,7 @@ enum TokenKind {
     IN,
     INIT,
     INTERFACE,
+    LET,
     MUTABLE,
     MUTATING,
     NULL_LITERAL,

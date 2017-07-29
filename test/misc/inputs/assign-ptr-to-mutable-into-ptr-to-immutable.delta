@@ -3,5 +3,5 @@
 extern func foo() -> mutable int*;
 
 func main() {
-    const p: int* = foo();
+    let p: int* = foo();
 }

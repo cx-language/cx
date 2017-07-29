@@ -15,7 +15,7 @@ struct vec2 {
 }
 
 func main() -> int {
-    const foo = vec2(5, 8);
-    const foo2 = foo.add(vec2(3, -1));
+    let foo = vec2(5, 8);
+    let foo2 = foo.add(vec2(3, -1));
     return foo2.x + foo2.y;
 }

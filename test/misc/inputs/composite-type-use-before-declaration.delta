@@ -2,4 +2,4 @@
 
 func main() -> int { return 2; }
 func foo(a: Foo) { }
-class Foo { const i: int; }
+class Foo { let i: int; }

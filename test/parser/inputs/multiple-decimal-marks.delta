@@ -1,2 +1,2 @@
-// check_error 2:16 "expected identifier, got number"
-const pi = 3.1.4;
+// check_error 2:14 "expected identifier, got number"
+let pi = 3.1.4;

@@ -1,11 +1,11 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class Foo { const i: int; }
+class Foo { let i: int; }
 func main() {
    // CHECK: %f = alloca %Foo
    // CHECK-NEXT: %rf = alloca %Foo*
    // CHECK-NEXT: %pf = alloca %Foo*
-    const f: Foo = uninitialized;
-    const rf: Foo& = f; // CHECK-NEXT: store %Foo* %f, %Foo** %rf
-    const pf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %pf
+    let f: Foo = uninitialized;
+    let rf: Foo& = f; // CHECK-NEXT: store %Foo* %f, %Foo** %rf
+    let pf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %pf
 }

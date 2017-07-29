@@ -1,2 +1,2 @@
-// check_error 2:18 "invalid digit '8' in octal literal"
-const a = 0o000378;
+// check_error 2:16 "invalid digit '8' in octal literal"
+let a = 0o000378;

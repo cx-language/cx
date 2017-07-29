@@ -1,6 +1,6 @@
 // check_error 5:24 "cannot increment immutable value"
 
 class Foo {
-    const i: int;
+    let i: int;
     func bar() { this.i++; }
 }

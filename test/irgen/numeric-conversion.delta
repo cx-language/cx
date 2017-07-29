@@ -5,10 +5,10 @@ func foo(i: uint16) {
     // CHECK-NEXT: %u = alloca i64
     // CHECK-NEXT: %1 = uitofp i16 %i to float
     // CHECK-NEXT: store float %1, float* %f
-    const f = float32(i);
+    let f = float32(i);
     // CHECK-NEXT: %f1 = load float, float* %f
     // CHECK-NEXT: %2 = fptosi float %f1 to i64
     // CHECK-NEXT: store i64 %2, i64* %u
-    const u = int64(f);
+    let u = int64(f);
     // CHECK-NEXT: ret void
 }

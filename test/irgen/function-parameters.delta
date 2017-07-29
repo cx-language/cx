@@ -12,7 +12,7 @@ func foo(a: int, b: bool) -> uint {
 }
 
 func main() {
-    const value = 42;
+    let value = 42;
     // CHECK: %value1 = load i32, i32* %value
     // CHECK-NEXT: %1 = call i32 @foo(i32 %value1, i1 true)
     var result = foo(value, true);

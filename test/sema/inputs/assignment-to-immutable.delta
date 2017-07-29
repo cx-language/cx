@@ -1,5 +1,5 @@
 // check_error 4:7 "cannot assign to immutable variable 'i'"
 func main() {
-    const i = 2;
+    let i = 2;
     i = 1;
 }

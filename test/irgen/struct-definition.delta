@@ -3,7 +3,7 @@
 // CHECK: %Foo = type { i32, i1 }
 struct Foo {
     var a: int;
-    const b: bool;
+    let b: bool;
 
     // CHECK: define %Foo @Foo.init(i32 %a, i1 %b)
     init(a: int, b: bool) {

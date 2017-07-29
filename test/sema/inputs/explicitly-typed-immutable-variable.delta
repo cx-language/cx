@@ -1,5 +1,5 @@
 // check_error 4:6 "cannot decrement immutable value"
 func main() {
-    const m: int = 4;
+    let m: int = 4;
     m--;
 }

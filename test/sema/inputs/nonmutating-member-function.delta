@@ -1,6 +1,6 @@
-// check_error 5:42 "cannot initialize variable of type 'mutable Foo&' with 'Foo&'"
+// check_error 5:40 "cannot initialize variable of type 'mutable Foo&' with 'Foo&'"
 
 class Foo {
-    const i: int;
-    func bar() { const f: mutable Foo& = this; }
+    let i: int;
+    func bar() { let f: mutable Foo& = this; }
 }

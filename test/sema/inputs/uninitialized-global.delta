@@ -1,2 +1,2 @@
-// check_error 2:7 "global variables cannot be uninitialized"
-const i: int = uninitialized;
+// check_error 2:5 "global variables cannot be uninitialized"
+let i: int = uninitialized;

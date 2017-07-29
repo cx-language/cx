@@ -1,6 +1,6 @@
 // check_error 5:11 "invalid operands to binary expression ('int&' and 'null')"
 func main() {
-    const i = 42;
-    const p: int& = &i;
+    let i = 42;
+    let p: int& = &i;
     if (p == null) { }
 }

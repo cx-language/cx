@@ -1,2 +1,2 @@
 // validate_ast
-const foo = 0.bar();
+let foo = 0.bar();

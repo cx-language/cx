@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 class Foo {
-    const i: int
+    let i: int
 
     // CHECK: define %Foo @Foo.init(i32 %i)
     init(i: int) { }

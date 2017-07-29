@@ -1,7 +1,7 @@
 // check_error 9:15 "unknown identifier 'foo'"
 
 class Foo {
-    const qux: int;
+    let qux: int;
     init() { }
 }
 

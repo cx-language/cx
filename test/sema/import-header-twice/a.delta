@@ -2,4 +2,4 @@
 
 import "header.h"
 
-const a = 42
+let a = 42

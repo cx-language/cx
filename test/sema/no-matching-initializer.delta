@@ -1,7 +1,7 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct Foo {
-    const o: int
+    let o: int
     init() { }
     init(i: int) { }
 }

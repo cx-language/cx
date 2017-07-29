@@ -495,11 +495,11 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
 }
 
 /// var-decl ::= mutability-specifier id type-specifier? '=' initializer ('\n' | ';')
-/// mutability-specifier ::= 'var' | 'const'
+/// mutability-specifier ::= 'let' | 'var'
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'uninitialized'
 std::unique_ptr<VarDecl> parseVarDecl() {
-    assert(currentToken().is(VAR, CONST));
+    assert(currentToken().is(LET, VAR));
     bool isMutable = consumeToken() == VAR;
     auto name = parse(IDENTIFIER);
 
@@ -671,7 +671,7 @@ std::unique_ptr<BreakStmt> parseBreakStmt() {
 std::unique_ptr<Stmt> parseStmt() {
     switch (currentToken()) {
         case RETURN: return parseReturnStmt();
-        case VAR: case CONST: return parseVarStmt();
+        case LET: case VAR: return parseVarStmt();
         case DEFER: return parseDeferStmt();
         case IF: return parseIfStmt();
         case WHILE: return parseWhileStmt();
@@ -845,9 +845,9 @@ std::unique_ptr<DeinitDecl> parseDeinitDecl(std::string typeName) {
     return llvm::make_unique<DeinitDecl>(std::move(typeName), std::move(body), deinitLocation);
 }
 
-/// field-decl ::= ('var' | 'const') id ':' type ('\n' | ';')
+/// field-decl ::= ('let' | 'var') id ':' type ('\n' | ';')
 FieldDecl parseFieldDecl() {
-    expect({ VAR, CONST }, "in field declaration");
+    expect({ LET, VAR }, "in field declaration");
     bool isMutable = consumeToken() == VAR;
     auto name = parse(IDENTIFIER);
 
@@ -903,7 +903,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
             case DEINIT:
                 typeDecl->addMethod(parseDeinitDecl(name.string));
                 break;
-            case VAR: case CONST:
+             case LET: case VAR:
                 typeDecl->addField(parseFieldDecl());
                 break;
             default:
@@ -943,7 +943,7 @@ std::unique_ptr<Decl> parseTopLevelDecl(const TypeChecker& typeChecker) {
             typeChecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
-        case VAR: case CONST: {
+        case LET: case VAR: {
             auto decl = parseVarDecl();
             typeChecker.addToSymbolTable(*decl);
             return std::move(decl);

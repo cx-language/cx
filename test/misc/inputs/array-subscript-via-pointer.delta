@@ -4,7 +4,7 @@ extern func malloc(n: uint64) -> mutable void*;
 extern func puts(s: char*);
 
 func main() {
-    const buffer = &*cast<mutable uint8[4]*>(malloc(4));
+    let buffer = &*cast<mutable uint8[4]*>(malloc(4));
     buffer[0] = 70;
     buffer[1] = 0x6f;
     buffer[2] = 0o157;

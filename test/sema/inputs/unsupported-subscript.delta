@@ -2,6 +2,6 @@
 extern func malloc(n: uint64) -> mutable void*;
 
 func main() {
-    const p = cast<mutable uint8*>(malloc(8));
+    let p = cast<mutable uint8*>(malloc(8));
     p[0] = 64;
 }
