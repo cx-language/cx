@@ -1,4 +1,5 @@
-// check_error 6:19 "implicit copying of class instances is disallowed"
+// RUN: %delta -typecheck %s
+
 class Foo { }
 
 func main() {

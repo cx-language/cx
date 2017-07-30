@@ -28,6 +28,15 @@ void TypeDecl::addMethod(std::unique_ptr<Decl> decl) {
     methods.emplace_back(std::move(decl));
 }
 
+DeinitDecl* TypeDecl::getDeinitializer() const {
+    for (auto& decl : getMemberDecls()) {
+        if (auto* deinitDecl = llvm::dyn_cast<DeinitDecl>(decl.get())) {
+            return deinitDecl;
+        }
+    }
+    return nullptr;
+}
+
 Type TypeDecl::getType(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {
     assert(genericArgs.size() == genericParams.size());
     return BasicType::get(name, genericArgs, isMutable);

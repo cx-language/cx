@@ -230,8 +230,9 @@ bool TypeChecker::isValidConversion(Expr& expr, Type unresolvedSource,
 
     if (expr.isLvalue() && source.isBasicType()) {
         TypeDecl* typeDecl = getTypeDecl(llvm::cast<BasicType>(*source));
-        if (typeDecl && !typeDecl->passByValue() && !target.isPointerType()) {
-            error(expr.getLocation(), "implicit copying of class instances is disallowed");
+        if (typeDecl && !typeDecl->passByValue() && !target.isPointerType() &&
+            typeDecl->getDeinitializer()) {
+            error(expr.getLocation(), "move semantics not yet implemented for classes with deinitializers");
         }
     }
 

@@ -182,6 +182,7 @@ public:
     void addField(FieldDecl&& field);
     void addMethod(std::unique_ptr<Decl> decl);
     llvm::ArrayRef<std::unique_ptr<Decl>> getMemberDecls() const { return methods; }
+    DeinitDecl* getDeinitializer() const;
     Type getType(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
     /// 'T&' if this is class, or plain 'T' otherwise.
     Type getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
