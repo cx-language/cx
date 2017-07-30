@@ -1,0 +1,15 @@
+// RUN: %delta -typecheck %s
+
+struct S<T> {
+    init() { }
+
+    func f(t: T) {
+        let p: mutable T* = null;
+        *p = t;
+    }
+}
+
+func main() {
+    let s = S<int>();
+    s.f(1);
+}

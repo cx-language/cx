@@ -158,7 +158,7 @@ Type TypeChecker::resolve(Type type) const {
         case TypeKind::BasicType: {
             auto it = currentGenericArgs.find(type.getName());
             if (it == currentGenericArgs.end()) return type;
-            return it->second;
+            return it->second.asMutable(type.isMutable());
         }
         case TypeKind::PointerType:
             return PointerType::get(resolve(type.getPointee()), type.isReference(), type.isMutable());
