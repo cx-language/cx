@@ -1,0 +1,8 @@
+// RUN: %delta -typecheck %s
+
+import "a.h"
+
+func main() {
+    var a = Array<int>()
+    a.append(1)
+}

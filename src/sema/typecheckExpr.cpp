@@ -456,6 +456,13 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                 error(expr.getCallee().getLocation(), "'", callee, "' is not a function");
             }
         default:
+            bool allMatchesAreFromC = llvm::all_of(matches, [](Decl* match) {
+                return match->getModule() && match->getModule()->getName().endswith_lower(".h");
+            });
+            if (allMatchesAreFromC) {
+                return *matches.front();
+            }
+
             for (Decl* match : matches) {
                 if (match->getModule() && match->getModule()->getName() == "std") {
                     return *match;
