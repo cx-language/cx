@@ -54,8 +54,11 @@ llvm::Function* IRGenerator::getDeinitializerFor(Type type) {
     auto it = functionInstantiations.find(mangledName);
     if (it == functionInstantiations.end()) {
         auto decls = currentTypeChecker->findDecls(mangledName, /*everywhere*/ true);
-        if (!decls.empty())
-            return codegenDeinitializerProto(decls[0]->getDeinitDecl());
+        if (!decls.empty()) {
+            auto* deinitializerProto = codegenDeinitializerProto(decls[0]->getDeinitDecl(), type);
+            codegenDeinitDecl(decls[0]->getDeinitDecl(), type.getGenericArgs());
+            return deinitializerProto;
+        }
         return nullptr;
     }
     return it->second.function;
@@ -986,13 +989,13 @@ llvm::Function* IRGenerator::getInitProto(const InitDecl& decl, llvm::ArrayRef<T
     return getFunctionProto(*helperDecls.back(), functionGenericArgs, nullptr);
 }
 
-llvm::Function* IRGenerator::codegenDeinitializerProto(const DeinitDecl& decl) {
+llvm::Function* IRGenerator::codegenDeinitializerProto(const DeinitDecl& decl, Type receiverType) {
     auto helperDecl = llvm::make_unique<FunctionDecl>("deinit", std::vector<ParamDecl>(),
                                                       Type::getVoid(), &decl.getTypeDecl(),
                                                       llvm::ArrayRef<GenericParamDecl>(), false,
                                                       nullptr, decl.getLocation());
     helperDecls.emplace_back(std::move(helperDecl));
-    return getFunctionProto(*helperDecls.back());
+    return getFunctionProto(*helperDecls.back(), {}, receiverType);
 }
 
 llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
@@ -1075,8 +1078,8 @@ void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typ
     assert(!llvm::verifyFunction(*function, &llvm::errs()));
 }
 
-void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl) {
-    if (decl.getTypeDecl().isGeneric()) return;
+void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
+    if (decl.getTypeDecl().isGeneric() && typeGenericArgs.empty()) return;
 
     auto helperDecl = llvm::make_unique<FunctionDecl>("deinit", std::vector<ParamDecl>(),
                                                       Type::getVoid(), &decl.getTypeDecl(),
@@ -1085,7 +1088,8 @@ void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl) {
     helperDecl->body = decl.body;
     helperDecls.emplace_back(std::move(helperDecl));
 
-    llvm::Function* function = getFunctionProto(*helperDecls.back());
+    llvm::Function* function = getFunctionProto(*helperDecls.back(), {},
+                                                decl.getTypeDecl().getType(typeGenericArgs));
     codegenFunctionBody(*helperDecls.back(), *function);
     assert(!llvm::verifyFunction(*function, &llvm::errs()));
 }

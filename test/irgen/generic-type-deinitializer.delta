@@ -1,0 +1,17 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-CALL
+
+class C<T> {
+    init() { }
+
+    // CHECK: define void @"C<int>.deinit"({}* %this)
+    // CHECK: define void @"C<bool>.deinit"({}* %this)
+    deinit() { }
+}
+
+func main() {
+    let i = C<int>()
+    let b = C<bool>()
+    // CHECK-CALL: call void @"C<bool>.deinit"({}* %b)
+    // CHECK-CALL-NEXT: call void @"C<int>.deinit"({}* %i)
+}

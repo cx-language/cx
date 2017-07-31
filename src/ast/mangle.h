@@ -24,7 +24,7 @@ namespace delta {
                        llvm::ArrayRef<Type> functionGenericArgs = {});
     std::string mangleInitDecl(llvm::StringRef typeName,
                                llvm::ArrayRef<Type> genericArgs = {});
-    std::string mangle(const DeinitDecl& decl);
+    std::string mangle(const DeinitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
     std::string mangleDeinitDecl(llvm::StringRef typeName);
     std::string mangle(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
 }

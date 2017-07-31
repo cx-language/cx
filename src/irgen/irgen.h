@@ -114,7 +114,7 @@ private:
     void codegenDecl(const Decl& decl);
     void codegenFunctionDecl(const FunctionDecl& decl);
     void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
-    void codegenDeinitDecl(const DeinitDecl& decl);
+    void codegenDeinitDecl(const DeinitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
     void codegenTypeDecl(const TypeDecl& decl);
     void codegenVarDecl(const VarDecl& decl);
 
@@ -123,7 +123,7 @@ private:
                                  Type receiverType = nullptr, std::string&& mangledName = {});
     llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
                                  llvm::ArrayRef<Type> functionGenericArgs = {});
-    llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl);
+    llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl, Type receiverType);
     llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
