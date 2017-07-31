@@ -397,7 +397,7 @@ bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* target
 
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType,
                                                 bool forceByReference) {
-    if (isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
+    if (targetType && isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
         assert(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
         auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegenExpr(expr), 0, 0);
         auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(targetType),
@@ -415,7 +415,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
 
     auto it = structs.find(exprType.getName());
     if ((it == structs.end() || it->second.second->passByValue()) && !forceByReference) {
-        if (expr.getType().isPointerType() && !targetType->isPointerTy()) {
+        if (expr.getType().isPointerType() && targetType && !targetType->isPointerTy()) {
             return builder.CreateLoad(codegenExpr(expr));
         }
     } else if (!expr.getType().isPointerType()) {
@@ -473,7 +473,10 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
         ++param;
     }
 
-    for (const auto& arg : expr.args) args.emplace_back(codegenExprForPassing(*arg.value, param++->getType()));
+    for (const auto& arg : expr.args) {
+        auto* paramType = param != function->arg_end() ? param++->getType() : nullptr;
+        args.emplace_back(codegenExprForPassing(*arg.value, paramType));
+    }
 
     return builder.CreateCall(function, args);
 }
