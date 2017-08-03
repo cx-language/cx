@@ -16,6 +16,8 @@ namespace llvm { class StringRef; }
 namespace delta {
 
 class Module;
+class TypeDecl;
+class FieldDecl;
 
 enum class DeclKind {
     ParamDecl,
@@ -33,20 +35,15 @@ class Decl {
 public:
     virtual ~Decl() = 0;
 
-#define DEFINE_DECL_IS_AND_GET(KIND) \
-    bool is##KIND() const { return getKind() == DeclKind::KIND; } \
-    class KIND& get##KIND() { return llvm::cast<class KIND>(*this); } \
-    const class KIND& get##KIND() const { return llvm::cast<class KIND>(*this); }
-    DEFINE_DECL_IS_AND_GET(ParamDecl)
-    DEFINE_DECL_IS_AND_GET(FunctionDecl)
-    DEFINE_DECL_IS_AND_GET(GenericParamDecl)
-    DEFINE_DECL_IS_AND_GET(InitDecl)
-    DEFINE_DECL_IS_AND_GET(DeinitDecl)
-    DEFINE_DECL_IS_AND_GET(TypeDecl)
-    DEFINE_DECL_IS_AND_GET(VarDecl)
-    DEFINE_DECL_IS_AND_GET(FieldDecl)
-    DEFINE_DECL_IS_AND_GET(ImportDecl)
-#undef DEFINE_DECL_IS_AND_GET
+    bool isParamDecl() const { return getKind() == DeclKind::ParamDecl; }
+    bool isFunctionDecl() const { return getKind() == DeclKind::FunctionDecl; }
+    bool isGenericParamDecl() const { return getKind() == DeclKind::GenericParamDecl; }
+    bool isInitDecl() const { return getKind() == DeclKind::InitDecl; }
+    bool isDeinitDecl() const { return getKind() == DeclKind::DeinitDecl; }
+    bool isTypeDecl() const { return getKind() == DeclKind::TypeDecl; }
+    bool isVarDecl() const { return getKind() == DeclKind::VarDecl; }
+    bool isFieldDecl() const { return getKind() == DeclKind::FieldDecl; }
+    bool isImportDecl() const { return getKind() == DeclKind::ImportDecl; }
 
     DeclKind getKind() const { return kind; }
     Module* getModule() const { return module; }

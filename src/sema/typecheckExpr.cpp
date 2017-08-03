@@ -21,20 +21,20 @@ Type TypeChecker::typecheckVarExpr(VarExpr& expr) const {
     expr.setDecl(&decl);
 
     switch (decl.getKind()) {
-        case DeclKind::VarDecl: return decl.getVarDecl().getType();
-        case DeclKind::ParamDecl: return decl.getParamDecl().type;
-        case DeclKind::FunctionDecl: return decl.getFunctionDecl().getFunctionType();
+        case DeclKind::VarDecl: return llvm::cast<VarDecl>(decl).getType();
+        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(decl).type;
+        case DeclKind::FunctionDecl: return llvm::cast<FunctionDecl>(decl).getFunctionType();
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot refer to generic parameters yet");
         case DeclKind::InitDecl: llvm_unreachable("cannot refer to initializers yet");
         case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.getLocation(), "'", expr.identifier, "' is not a variable");
         case DeclKind::FieldDecl:
             assert(currentFunction);
-            if ((currentFunction->isFunctionDecl() && currentFunction->getFunctionDecl().isMutating()) ||
-                currentFunction->isInitDecl()) {
-                return decl.getFieldDecl().type;
+            if (currentFunction->isInitDecl() || (currentFunction->isFunctionDecl() &&
+                 llvm::cast<FunctionDecl>(currentFunction)->isMutating())) {
+                return llvm::cast<FieldDecl>(decl).type;
             } else {
-                return decl.getFieldDecl().type.asImmutable();
+                return llvm::cast<FieldDecl>(decl).type.asImmutable();
             }
         case DeclKind::ImportDecl:
             llvm_unreachable("import statement validation not implemented yet");
@@ -198,9 +198,9 @@ bool TypeChecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     auto decls = findDecls(mangleFunctionDecl(type.name, functionDecl.name));
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
-        if (!decl->getFunctionDecl().getReceiverTypeDecl()) continue;
-        if (decl->getFunctionDecl().getReceiverTypeDecl()->name != type.name) continue;
-        if (!decl->getFunctionDecl().signatureMatches(functionDecl, /* matchReceiver: */ false)) continue;
+        if (!llvm::cast<FunctionDecl>(decl)->getReceiverTypeDecl()) continue;
+        if (llvm::cast<FunctionDecl>(decl)->getReceiverTypeDecl()->name != type.name) continue;
+        if (!llvm::cast<FunctionDecl>(decl)->signatureMatches(functionDecl, /* matchReceiver: */ false)) continue;
         return true;
     }
     return false;
@@ -213,11 +213,12 @@ bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface) const
         }
     }
     for (auto& requiredMethod : interface.methods) {
-        if (!requiredMethod->isFunctionDecl()) {
+        if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod.get())) {
+            if (!hasMethod(type, *functionDecl)) {
+                return false;
+            }
+        } else {
             fatalError("non-function interface member requirements are not supported yet");
-        }
-        if (!hasMethod(type, requiredMethod->getFunctionDecl())) {
-            return false;
         }
     }
     return true;
@@ -250,7 +251,7 @@ bool TypeChecker::isValidConversion(Expr& expr, Type unresolvedSource,
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
     if (expr.isIntLiteralExpr() && target.isBasicType()) {
-        int64_t value{expr.getIntLiteralExpr().value};
+        auto value = llvm::cast<IntLiteralExpr>(expr).value;
 
         if (target.isInteger()) {
             if (target.isInt()) return checkRange<32, true>(expr, value, target);
@@ -362,7 +363,7 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
 
             if (genericArg->isBasicType() &&
                 !implementsInterface(*getTypeDecl(llvm::cast<BasicType>(**genericArg)),
-                                     interfaces[0]->getTypeDecl())) {
+                                     llvm::cast<TypeDecl>(*interfaces[0]))) {
                 error(call.getLocation(), "type '", *genericArg, "' doesn't implement interface '",
                       genericParam.constraints[0], "'");
             }
@@ -408,15 +409,15 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                     }
                 }
 
-                setCurrentGenericArgs(decl->getFunctionDecl().getGenericParams(), expr,
-                                      decl->getFunctionDecl().getParams());
+                setCurrentGenericArgs(llvm::cast<FunctionDecl>(decl)->getGenericParams(), expr,
+                                      llvm::cast<FunctionDecl>(decl)->getParams());
 
                 if (decls.size() == 1) {
-                    validateArgs(expr.args, decl->getFunctionDecl().params, callee,
-                                 decl->getFunctionDecl().isVariadic(), expr.getCallee().getLocation());
+                    validateArgs(expr.args, llvm::cast<FunctionDecl>(decl)->params, callee,
+                                 llvm::cast<FunctionDecl>(decl)->isVariadic(), expr.getCallee().getLocation());
                     return *decl;
                 }
-                if (matchArgs(expr.args, decl->getFunctionDecl().params, decl->getFunctionDecl().isVariadic())) {
+                if (matchArgs(expr.args, llvm::cast<FunctionDecl>(decl)->params, llvm::cast<FunctionDecl>(decl)->isVariadic())) {
                     matches.push_back(decl);
                 }
 
@@ -425,17 +426,19 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
             }
             case DeclKind::TypeDecl: {
                 isInitCall = true;
-                auto mangledName = mangleInitDecl(decl->getTypeDecl().name);
+                auto mangledName = mangleInitDecl(llvm::cast<TypeDecl>(decl)->name);
                 auto initDecls = findDecls(mangledName);
 
-                for (Decl* initDecl : initDecls) {
+                for (Decl* decl : initDecls) {
+                    InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
+
                     if (initDecls.size() == 1) {
-                        validateArgs(expr.args, initDecl->getInitDecl().params, callee, false,
+                        validateArgs(expr.args, initDecl.params, callee, false,
                                      expr.getCallee().getLocation());
-                        return *initDecl;
+                        return initDecl;
                     }
-                    if (matchArgs(expr.args, initDecl->getInitDecl().params, false)) {
-                        matches.push_back(initDecl);
+                    if (matchArgs(expr.args, initDecl.params, false)) {
+                        matches.push_back(&initDecl);
                     }
                 }
                 break;
@@ -513,8 +516,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     } else {
         decl = &resolveOverload(expr, expr.getFunctionName());
 
-        if (decl->isFunctionDecl() && decl->getFunctionDecl().isMethod()) {
-            expr.setReceiverType(findDecl("this", expr.getCallee().getLocation()).getVarDecl().getType());
+        if (decl->isFunctionDecl() && llvm::cast<FunctionDecl>(decl)->isMethod()) {
+            auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
+            expr.setReceiverType(varDecl.getType());
         }
     }
 
@@ -655,7 +659,7 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
 
     Decl& typeDecl = findDecl(baseType.getName(), SourceLocation::invalid());
 
-    for (const FieldDecl& field : typeDecl.getTypeDecl().fields) {
+    for (const FieldDecl& field : llvm::cast<TypeDecl>(typeDecl).fields) {
         if (field.name == expr.member) {
             if (baseType.isMutable()) {
                 return field.type;
@@ -686,10 +690,13 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
               "', expected 'int'");
     }
 
-    if (!arrayType->isUnsized() && expr.index->isIntLiteralExpr() &&
-        expr.index->getIntLiteralExpr().value >= arrayType->size) {
-        error(expr.index->getLocation(), "accessing array out-of-bounds with index ",
-              expr.index->getIntLiteralExpr().value, ", array size is ", arrayType->size);
+    if (!arrayType->isUnsized()) {
+        if (auto* intLiteralExpr = llvm::dyn_cast<IntLiteralExpr>(expr.index.get())) {
+            if (intLiteralExpr->value >= arrayType->size) {
+                error(intLiteralExpr->getLocation(), "accessing array out-of-bounds with index ",
+                      intLiteralExpr->value, ", array size is ", arrayType->size);
+            }
+        }
     }
 
     return arrayType->elementType;
@@ -706,20 +713,20 @@ Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) const {
 Type TypeChecker::typecheckExpr(Expr& expr) const {
     llvm::Optional<Type> type;
     switch (expr.getKind()) {
-        case ExprKind::VarExpr: type = typecheckVarExpr(expr.getVarExpr()); break;
-        case ExprKind::StringLiteralExpr: type = typecheckStringLiteralExpr(expr.getStringLiteralExpr()); break;
-        case ExprKind::IntLiteralExpr: type = typecheckIntLiteralExpr(expr.getIntLiteralExpr()); break;
-        case ExprKind::FloatLiteralExpr: type = typecheckFloatLiteralExpr(expr.getFloatLiteralExpr()); break;
-        case ExprKind::BoolLiteralExpr: type = typecheckBoolLiteralExpr(expr.getBoolLiteralExpr()); break;
-        case ExprKind::NullLiteralExpr: type = typecheckNullLiteralExpr(expr.getNullLiteralExpr()); break;
-        case ExprKind::ArrayLiteralExpr: type = typecheckArrayLiteralExpr(expr.getArrayLiteralExpr()); break;
-        case ExprKind::PrefixExpr: type = typecheckPrefixExpr(expr.getPrefixExpr()); break;
-        case ExprKind::BinaryExpr: type = typecheckBinaryExpr(expr.getBinaryExpr()); break;
-        case ExprKind::CallExpr: type = typecheckCallExpr(expr.getCallExpr()); break;
-        case ExprKind::CastExpr: type = typecheckCastExpr(expr.getCastExpr()); break;
-        case ExprKind::MemberExpr: type = typecheckMemberExpr(expr.getMemberExpr()); break;
-        case ExprKind::SubscriptExpr: type = typecheckSubscriptExpr(expr.getSubscriptExpr()); break;
-        case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(expr.getUnwrapExpr()); break;
+        case ExprKind::VarExpr: type = typecheckVarExpr(llvm::cast<VarExpr>(expr)); break;
+        case ExprKind::StringLiteralExpr: type = typecheckStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr)); break;
+        case ExprKind::IntLiteralExpr: type = typecheckIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr)); break;
+        case ExprKind::FloatLiteralExpr: type = typecheckFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr)); break;
+        case ExprKind::BoolLiteralExpr: type = typecheckBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr)); break;
+        case ExprKind::NullLiteralExpr: type = typecheckNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr)); break;
+        case ExprKind::ArrayLiteralExpr: type = typecheckArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr)); break;
+        case ExprKind::PrefixExpr: type = typecheckPrefixExpr(llvm::cast<PrefixExpr>(expr)); break;
+        case ExprKind::BinaryExpr: type = typecheckBinaryExpr(llvm::cast<BinaryExpr>(expr)); break;
+        case ExprKind::CallExpr: type = typecheckCallExpr(llvm::cast<CallExpr>(expr)); break;
+        case ExprKind::CastExpr: type = typecheckCastExpr(llvm::cast<CastExpr>(expr)); break;
+        case ExprKind::MemberExpr: type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr)); break;
+        case ExprKind::SubscriptExpr: type = typecheckSubscriptExpr(llvm::cast<SubscriptExpr>(expr)); break;
+        case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;
     }
     assert(*type);
     expr.setType(resolve(*type));

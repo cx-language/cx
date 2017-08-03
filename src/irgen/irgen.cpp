@@ -55,8 +55,9 @@ llvm::Function* IRGenerator::getDeinitializerFor(Type type) {
     if (it == functionInstantiations.end()) {
         auto decls = currentTypeChecker->findDecls(mangledName, /*everywhere*/ true);
         if (!decls.empty()) {
-            auto* deinitializerProto = codegenDeinitializerProto(decls[0]->getDeinitDecl(), type);
-            codegenDeinitDecl(decls[0]->getDeinitDecl(), type.getGenericArgs());
+            auto& deinitDecl = llvm::cast<DeinitDecl>(*decls[0]);
+            auto* deinitializerProto = codegenDeinitializerProto(deinitDecl, type);
+            codegenDeinitDecl(deinitDecl, type.getGenericArgs());
             return deinitializerProto;
         }
         return nullptr;
@@ -92,7 +93,9 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
             return codegenMemberAccess(findValue("this", nullptr), fieldDecl->type, fieldDecl->name);
         }
         codegenDecl(*decl);
-        if (decl->isVarDecl()) name = decl->getVarDecl().name;
+        if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+            name = varDecl->name;
+        }
         return globalScope().localValues.find(name)->second;
     }
     return value;
@@ -134,17 +137,17 @@ llvm::Type* IRGenerator::toIR(Type type) {
                 auto genericArg = currentGenericArgs.find(name);
                 if (genericArg != currentGenericArgs.end()) return genericArg->second;
 
+                auto& decl = currentTypeChecker->findDecl(name, SourceLocation::invalid(),
+                                                          /* everywhere */ true);
+
                 // Is it a generic type?
                 auto genericArgs = llvm::cast<BasicType>(*type).getGenericArgs();
                 if (!genericArgs.empty()) {
-                    auto& decl = currentTypeChecker->findDecl(name, SourceLocation::invalid(),
-                                                              /* everywhere */ true).getTypeDecl();
-                    return codegenGenericTypeInstantiation(decl, genericArgs);
+                    return codegenGenericTypeInstantiation(llvm::cast<TypeDecl>(decl), genericArgs);
                 }
 
-                // Custom type that has not been declared yet, search for it in the symbol table.
-                codegenTypeDecl(currentTypeChecker->findDecl(name, SourceLocation::invalid(),
-                                                             /* everywhere */ true).getTypeDecl());
+                // Custom type that has not been defined yet.
+                codegenTypeDecl(llvm::cast<TypeDecl>(decl));
                 it = structs.find(name);
             }
             return it->second.first;
@@ -460,9 +463,9 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
 
     auto* calleeDecl = expr.getCalleeDecl();
 
-    if ((calleeDecl && ((calleeDecl->isFunctionDecl() && calleeDecl->getFunctionDecl().isMethod()) ||
+    if ((calleeDecl && ((calleeDecl->isFunctionDecl() && llvm::cast<FunctionDecl>(calleeDecl)->isMethod()) ||
                         calleeDecl->isDeinitDecl())) || (!calleeDecl && function->getName() == "offsetUnsafely")) {
-        bool forceByReference = calleeDecl && calleeDecl->isFunctionDecl() && calleeDecl->getFunctionDecl().isMutating();
+        bool forceByReference = calleeDecl && calleeDecl->isFunctionDecl() && llvm::cast<FunctionDecl>(calleeDecl)->isMutating();
 
         if (expr.getReceiver()) {
             args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param->getType(), forceByReference));
@@ -589,40 +592,40 @@ llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {
 
 llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VarExpr: return codegenVarExpr(expr.getVarExpr());
-        case ExprKind::StringLiteralExpr: return codegenStringLiteralExpr(expr.getStringLiteralExpr());
-        case ExprKind::IntLiteralExpr: return codegenIntLiteralExpr(expr.getIntLiteralExpr());
-        case ExprKind::FloatLiteralExpr: return codegenFloatLiteralExpr(expr.getFloatLiteralExpr());
-        case ExprKind::BoolLiteralExpr: return codegenBoolLiteralExpr(expr.getBoolLiteralExpr());
-        case ExprKind::NullLiteralExpr: return codegenNullLiteralExpr(expr.getNullLiteralExpr());
-        case ExprKind::ArrayLiteralExpr: return codegenArrayLiteralExpr(expr.getArrayLiteralExpr());
-        case ExprKind::PrefixExpr: return codegenPrefixExpr(expr.getPrefixExpr());
-        case ExprKind::BinaryExpr: return codegenBinaryExpr(expr.getBinaryExpr());
-        case ExprKind::CallExpr: return codegenCallExpr(expr.getCallExpr());
-        case ExprKind::CastExpr: return codegenCastExpr(expr.getCastExpr());
-        case ExprKind::MemberExpr: return codegenMemberExpr(expr.getMemberExpr());
-        case ExprKind::SubscriptExpr: return codegenSubscriptExpr(expr.getSubscriptExpr());
-        case ExprKind::UnwrapExpr: return codegenUnwrapExpr(expr.getUnwrapExpr());
+        case ExprKind::VarExpr: return codegenVarExpr(llvm::cast<VarExpr>(expr));
+        case ExprKind::StringLiteralExpr: return codegenStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
+        case ExprKind::IntLiteralExpr: return codegenIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr));
+        case ExprKind::FloatLiteralExpr: return codegenFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr));
+        case ExprKind::BoolLiteralExpr: return codegenBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
+        case ExprKind::NullLiteralExpr: return codegenNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
+        case ExprKind::ArrayLiteralExpr: return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
+        case ExprKind::PrefixExpr: return codegenPrefixExpr(llvm::cast<PrefixExpr>(expr));
+        case ExprKind::BinaryExpr: return codegenBinaryExpr(llvm::cast<BinaryExpr>(expr));
+        case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));
+        case ExprKind::CastExpr: return codegenCastExpr(llvm::cast<CastExpr>(expr));
+        case ExprKind::MemberExpr: return codegenMemberExpr(llvm::cast<MemberExpr>(expr));
+        case ExprKind::SubscriptExpr: return codegenSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
+        case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }
 
 llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VarExpr: return codegenLvalueVarExpr(expr.getVarExpr());
+        case ExprKind::VarExpr: return codegenLvalueVarExpr(llvm::cast<VarExpr>(expr));
         case ExprKind::StringLiteralExpr: llvm_unreachable("no lvalue string literals");
         case ExprKind::IntLiteralExpr: llvm_unreachable("no lvalue integer literals");
         case ExprKind::FloatLiteralExpr: llvm_unreachable("no lvalue float literals");
         case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");
         case ExprKind::NullLiteralExpr: llvm_unreachable("no lvalue null literals");
         case ExprKind::ArrayLiteralExpr: llvm_unreachable("no lvalue array literals");
-        case ExprKind::PrefixExpr: return codegenLvaluePrefixExpr(expr.getPrefixExpr());
+        case ExprKind::PrefixExpr: return codegenLvaluePrefixExpr(llvm::cast<PrefixExpr>(expr));
         case ExprKind::BinaryExpr: llvm_unreachable("no lvalue binary expressions");
         case ExprKind::CallExpr: llvm_unreachable("IRGen doesn't support lvalue call expressions yet");
         case ExprKind::CastExpr: llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
-        case ExprKind::MemberExpr: return codegenLvalueMemberExpr(expr.getMemberExpr());
-        case ExprKind::SubscriptExpr: return codegenLvalueSubscriptExpr(expr.getSubscriptExpr());
-        case ExprKind::UnwrapExpr: return codegenUnwrapExpr(expr.getUnwrapExpr());
+        case ExprKind::MemberExpr: return codegenLvalueMemberExpr(llvm::cast<MemberExpr>(expr));
+        case ExprKind::SubscriptExpr: return codegenLvalueSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
+        case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }
@@ -655,7 +658,7 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
     codegenDeferredExprsAndDeinitCallsForReturn();
 
     if (stmt.values.empty()) {
-        if (currentDecl->getFunctionDecl().name != "main") builder.CreateRetVoid();
+        if (llvm::cast<FunctionDecl>(currentDecl)->name != "main") builder.CreateRetVoid();
         else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
     } else {
         builder.CreateRet(codegenExpr(*stmt.values[0]));
@@ -803,7 +806,7 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     }
 
     beginScope();
-    auto& range = forStmt.range->getBinaryExpr();
+    auto& range = llvm::cast<BinaryExpr>(*forStmt.range);
     auto* counterAlloca = createEntryBlockAlloca(forStmt.range->getType().getIterableElementType(),
                                                  nullptr, forStmt.id);
     builder.CreateStore(codegenExpr(range.getLHS()), counterAlloca);
@@ -868,19 +871,19 @@ void IRGenerator::codegenAugAssignStmt(const AugAssignStmt& stmt) {
 
 void IRGenerator::codegenStmt(const Stmt& stmt) {
     switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt: codegenReturnStmt(stmt.getReturnStmt()); break;
-        case StmtKind::VarStmt: codegenVarStmt(stmt.getVarStmt()); break;
-        case StmtKind::IncrementStmt: codegenIncrementStmt(stmt.getIncrementStmt()); break;
-        case StmtKind::DecrementStmt: codegenDecrementStmt(stmt.getDecrementStmt()); break;
-        case StmtKind::ExprStmt: codegenExpr(*stmt.getExprStmt().expr); break;
-        case StmtKind::DeferStmt: deferEvaluationOf(*stmt.getDeferStmt().expr); break;
-        case StmtKind::IfStmt: codegenIfStmt(stmt.getIfStmt()); break;
-        case StmtKind::SwitchStmt: codegenSwitchStmt(stmt.getSwitchStmt()); break;
-        case StmtKind::WhileStmt: codegenWhileStmt(stmt.getWhileStmt()); break;
-        case StmtKind::ForStmt: codegenForStmt(stmt.getForStmt()); break;
-        case StmtKind::BreakStmt: codegenBreakStmt(stmt.getBreakStmt()); break;
-        case StmtKind::AssignStmt: codegenAssignStmt(stmt.getAssignStmt()); break;
-        case StmtKind::AugAssignStmt: codegenAugAssignStmt(stmt.getAugAssignStmt()); break;
+        case StmtKind::ReturnStmt: codegenReturnStmt(llvm::cast<ReturnStmt>(stmt)); break;
+        case StmtKind::VarStmt: codegenVarStmt(llvm::cast<VarStmt>(stmt)); break;
+        case StmtKind::IncrementStmt: codegenIncrementStmt(llvm::cast<IncrementStmt>(stmt)); break;
+        case StmtKind::DecrementStmt: codegenDecrementStmt(llvm::cast<DecrementStmt>(stmt)); break;
+        case StmtKind::ExprStmt: codegenExpr(*llvm::cast<ExprStmt>(stmt).expr); break;
+        case StmtKind::DeferStmt: deferEvaluationOf(*llvm::cast<DeferStmt>(stmt).expr); break;
+        case StmtKind::IfStmt: codegenIfStmt(llvm::cast<IfStmt>(stmt)); break;
+        case StmtKind::SwitchStmt: codegenSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
+        case StmtKind::WhileStmt: codegenWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
+        case StmtKind::ForStmt: codegenForStmt(llvm::cast<ForStmt>(stmt)); break;
+        case StmtKind::BreakStmt: codegenBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
+        case StmtKind::AssignStmt: codegenAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
+        case StmtKind::AugAssignStmt: codegenAugAssignStmt(llvm::cast<AugAssignStmt>(stmt)); break;
     }
 }
 
@@ -1149,7 +1152,7 @@ void IRGenerator::codegenVarDecl(const VarDecl& decl) {
     if (!value || decl.getType().isMutable() /* || decl.isPublic() */) {
         auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
         auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
-        value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(), 
+        value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(),
                                          linkage, initializer, decl.name);
     }
 
@@ -1159,12 +1162,12 @@ void IRGenerator::codegenVarDecl(const VarDecl& decl) {
 void IRGenerator::codegenDecl(const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: llvm_unreachable("handled via FunctionDecl");
-        case DeclKind::FunctionDecl: codegenFunctionDecl(decl.getFunctionDecl()); break;
+        case DeclKind::FunctionDecl: codegenFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot codegen generic parameter declaration");
-        case DeclKind::InitDecl: codegenInitDecl(decl.getInitDecl()); break;
-        case DeclKind::DeinitDecl: codegenDeinitDecl(decl.getDeinitDecl()); break;
-        case DeclKind::TypeDecl: codegenTypeDecl(decl.getTypeDecl()); break;
-        case DeclKind::VarDecl: codegenVarDecl(decl.getVarDecl()); break;
+        case DeclKind::InitDecl: codegenInitDecl(llvm::cast<InitDecl>(decl)); break;
+        case DeclKind::DeinitDecl: codegenDeinitDecl(llvm::cast<DeinitDecl>(decl)); break;
+        case DeclKind::TypeDecl: codegenTypeDecl(llvm::cast<TypeDecl>(decl)); break;
+        case DeclKind::VarDecl: codegenVarDecl(llvm::cast<VarDecl>(decl)); break;
         case DeclKind::FieldDecl: llvm_unreachable("handled via TypeDecl");
         case DeclKind::ImportDecl: break;
     }

@@ -29,24 +29,19 @@ class Stmt {
 public:
     virtual ~Stmt() = 0;
 
-#define DEFINE_STMT_IS_AND_GET(KIND) \
-    bool is##KIND() const { return getKind() == StmtKind::KIND; } \
-    class KIND& get##KIND() { return llvm::cast<class KIND>(*this); } \
-    const class KIND& get##KIND() const { return llvm::cast<class KIND>(*this); }
-    DEFINE_STMT_IS_AND_GET(ReturnStmt)
-    DEFINE_STMT_IS_AND_GET(VarStmt)
-    DEFINE_STMT_IS_AND_GET(IncrementStmt)
-    DEFINE_STMT_IS_AND_GET(DecrementStmt)
-    DEFINE_STMT_IS_AND_GET(ExprStmt)
-    DEFINE_STMT_IS_AND_GET(DeferStmt)
-    DEFINE_STMT_IS_AND_GET(IfStmt)
-    DEFINE_STMT_IS_AND_GET(SwitchStmt)
-    DEFINE_STMT_IS_AND_GET(WhileStmt)
-    DEFINE_STMT_IS_AND_GET(ForStmt)
-    DEFINE_STMT_IS_AND_GET(BreakStmt)
-    DEFINE_STMT_IS_AND_GET(AssignStmt)
-    DEFINE_STMT_IS_AND_GET(AugAssignStmt)
-#undef DEFINE_STMT_IS_AND_GET
+    bool isReturnStmt() const { return getKind() == StmtKind::ReturnStmt; }
+    bool isVarStmt() const { return getKind() == StmtKind::VarStmt; }
+    bool isIncrementStmt() const { return getKind() == StmtKind::IncrementStmt; }
+    bool isDecrementStmt() const { return getKind() == StmtKind::DecrementStmt; }
+    bool isExprStmt() const { return getKind() == StmtKind::ExprStmt; }
+    bool isDeferStmt() const { return getKind() == StmtKind::DeferStmt; }
+    bool isIfStmt() const { return getKind() == StmtKind::IfStmt; }
+    bool isSwitchStmt() const { return getKind() == StmtKind::SwitchStmt; }
+    bool isWhileStmt() const { return getKind() == StmtKind::WhileStmt; }
+    bool isForStmt() const { return getKind() == StmtKind::ForStmt; }
+    bool isBreakStmt() const { return getKind() == StmtKind::BreakStmt; }
+    bool isAssignStmt() const { return getKind() == StmtKind::AssignStmt; }
+    bool isAugAssignStmt() const { return getKind() == StmtKind::AugAssignStmt; }
 
     StmtKind getKind() const { return kind; }
 

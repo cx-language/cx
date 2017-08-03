@@ -16,7 +16,7 @@ bool Expr::isLvalue() const {
         case ExprKind::NullLiteralExpr: case ExprKind::BinaryExpr: case ExprKind::CallExpr:
             return false;
         case ExprKind::PrefixExpr:
-            return getPrefixExpr().op == STAR;
+            return llvm::cast<PrefixExpr>(this)->op == STAR;
     }
     llvm_unreachable("all cases handled");
 }

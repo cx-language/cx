@@ -34,26 +34,20 @@ class Expr {
 public:
     virtual ~Expr() = 0;
 
-#define DEFINE_EXPR_IS_AND_GET(KIND) \
-    bool is##KIND() const { return getKind() == ExprKind::KIND; } \
-    class KIND& get##KIND() { return llvm::cast<class  KIND>(*this); } \
-    const class KIND& get##KIND() const { return llvm::cast<class KIND>(*this); }
-
-    DEFINE_EXPR_IS_AND_GET(VarExpr)
-    DEFINE_EXPR_IS_AND_GET(StringLiteralExpr)
-    DEFINE_EXPR_IS_AND_GET(IntLiteralExpr)
-    DEFINE_EXPR_IS_AND_GET(FloatLiteralExpr)
-    DEFINE_EXPR_IS_AND_GET(BoolLiteralExpr)
-    DEFINE_EXPR_IS_AND_GET(NullLiteralExpr)
-    DEFINE_EXPR_IS_AND_GET(ArrayLiteralExpr)
-    DEFINE_EXPR_IS_AND_GET(PrefixExpr)
-    DEFINE_EXPR_IS_AND_GET(BinaryExpr)
-    DEFINE_EXPR_IS_AND_GET(CallExpr)
-    DEFINE_EXPR_IS_AND_GET(CastExpr)
-    DEFINE_EXPR_IS_AND_GET(MemberExpr)
-    DEFINE_EXPR_IS_AND_GET(SubscriptExpr)
-    DEFINE_EXPR_IS_AND_GET(UnwrapExpr)
-#undef DEFINE_EXPR_IS_AND_GET
+    bool isVarExpr() const { return getKind() == ExprKind::VarExpr; }
+    bool isStringLiteralExpr() const { return getKind() == ExprKind::StringLiteralExpr; }
+    bool isIntLiteralExpr() const { return getKind() == ExprKind::IntLiteralExpr; }
+    bool isFloatLiteralExpr() const { return getKind() == ExprKind::FloatLiteralExpr; }
+    bool isBoolLiteralExpr() const { return getKind() == ExprKind::BoolLiteralExpr; }
+    bool isNullLiteralExpr() const { return getKind() == ExprKind::NullLiteralExpr; }
+    bool isArrayLiteralExpr() const { return getKind() == ExprKind::ArrayLiteralExpr; }
+    bool isPrefixExpr() const { return getKind() == ExprKind::PrefixExpr; }
+    bool isBinaryExpr() const { return getKind() == ExprKind::BinaryExpr; }
+    bool isCallExpr() const { return getKind() == ExprKind::CallExpr; }
+    bool isCastExpr() const { return getKind() == ExprKind::CastExpr; }
+    bool isMemberExpr() const { return getKind() == ExprKind::MemberExpr; }
+    bool isSubscriptExpr() const { return getKind() == ExprKind::SubscriptExpr; }
+    bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
 
     ExprKind getKind() const { return kind; }
     Type getType() const { return type; }
