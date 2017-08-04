@@ -61,7 +61,6 @@ private:
 
     void typecheckStmt(Stmt& stmt) const;
     void typecheckAssignStmt(AssignStmt& stmt) const;
-    void typecheckAugAssignStmt(AugAssignStmt& stmt) const;
     void typecheckReturnStmt(ReturnStmt& stmt) const;
     void typecheckVarStmt(VarStmt& stmt) const;
     void typecheckIncrementStmt(IncrementStmt& stmt) const;
@@ -71,7 +70,6 @@ private:
     void typecheckWhileStmt(WhileStmt& whileStmt) const;
     void typecheckForStmt(ForStmt& forStmt) const;
     void typecheckBreakStmt(BreakStmt& breakStmt) const;
-    void typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location) const;
     void typecheckParamDecl(ParamDecl& decl) const;
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const;
     void typecheckDeinitDecl(DeinitDecl& decl) const;

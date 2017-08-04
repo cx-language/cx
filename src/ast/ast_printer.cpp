@@ -181,11 +181,13 @@ std::ostream& operator<<(std::ostream& out, const BreakStmt&) {
 }
 
 std::ostream& operator<<(std::ostream& out, const AssignStmt& stmt) {
-    return out << br << "(assign-stmt " << *stmt.lhs << " " << *stmt.rhs << ")";
-}
-
-std::ostream& operator<<(std::ostream& out, const AugAssignStmt& stmt) {
-    return out << br << "(comp-assign-stmt " << stmt.op << " " << *stmt.lhs << " " << *stmt.rhs << ")";
+    if (stmt.isCompoundAssignment()) {
+        auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.rhs);
+        return out << br << "(compound-assign-stmt " << binaryExpr.op << " "
+                   << binaryExpr.getLHS() << " " << binaryExpr.getRHS() << ")";
+    } else {
+        return out << br << "(assign-stmt " << *stmt.lhs << " " << *stmt.rhs << ")";
+    }
 }
 
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
@@ -202,7 +204,6 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::ForStmt: return out << llvm::cast<ForStmt>(stmt);
         case StmtKind::BreakStmt: return out << llvm::cast<BreakStmt>(stmt);
         case StmtKind::AssignStmt: return out << llvm::cast<AssignStmt>(stmt);
-        case StmtKind::AugAssignStmt: return out << llvm::cast<AugAssignStmt>(stmt);
     }
     llvm_unreachable("all cases handled");
 }

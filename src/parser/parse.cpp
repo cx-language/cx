@@ -454,17 +454,23 @@ std::unique_ptr<AssignStmt> parseAssignStmt(std::unique_ptr<Expr> lhs) {
     parse(ASSIGN);
     auto rhs = parseExpr();
     parseStmtTerminator();
-    return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs), location);
+    return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs),
+                                         /* isCompoundAssignment */ false, location);
 }
 
 /// compound-assign-stmt ::= expr compound-assignment-op expr ('\n' | ';')
-std::unique_ptr<AugAssignStmt> parseCompoundAssignStmt(std::unique_ptr<Expr> lhs = nullptr) {
+std::unique_ptr<AssignStmt> parseCompoundAssignStmt(std::unique_ptr<Expr> lhs = nullptr) {
     if (!lhs) lhs = parseExpr();
-    auto op = BinaryOperator(consumeToken().withoutCompoundEqSuffix());
     SourceLocation location = getCurrentLocation();
+    auto op = BinaryOperator(consumeToken().withoutCompoundEqSuffix());
     auto rhs = parseExpr();
     parseStmtTerminator();
-    return llvm::make_unique<AugAssignStmt>(std::move(lhs), std::move(rhs), op, location);
+
+    std::shared_ptr<Expr> sharedLHS = std::move(lhs);
+    auto binaryExpr = llvm::make_unique<BinaryExpr>(op, std::shared_ptr<Expr>(sharedLHS),
+                                                    std::move(rhs), location);
+    return llvm::make_unique<AssignStmt>(std::move(sharedLHS), std::move(binaryExpr),
+                                         /* isCompoundAssignment */ true, location);
 }
 
 /// expr-list ::= '' | nonempty-expr-list

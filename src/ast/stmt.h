@@ -22,7 +22,6 @@ enum class StmtKind {
     ForStmt,
     BreakStmt,
     AssignStmt,
-    AugAssignStmt,
 };
 
 class Stmt {
@@ -41,7 +40,6 @@ public:
     bool isForStmt() const { return getKind() == StmtKind::ForStmt; }
     bool isBreakStmt() const { return getKind() == StmtKind::BreakStmt; }
     bool isAssignStmt() const { return getKind() == StmtKind::AssignStmt; }
-    bool isAugAssignStmt() const { return getKind() == StmtKind::AugAssignStmt; }
 
     StmtKind getKind() const { return kind; }
 
@@ -190,35 +188,23 @@ private:
     SourceLocation location;
 };
 
+/// An assignment statement, e.g. `a = b`.
+/// Also used to represent compound assignments, e.g. `a += b`, desugared as `a = a + b`.
 class AssignStmt : public Stmt {
 public:
-    std::unique_ptr<Expr> lhs;
+    std::shared_ptr<Expr> lhs; // shared_ptr to support compound assignments.
     std::unique_ptr<Expr> rhs;
 
-    AssignStmt(std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, SourceLocation location)
-    : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)), location(location) { }
+    AssignStmt(std::shared_ptr<Expr>&& lhs, std::unique_ptr<Expr> rhs, bool isCompoundAssignment,
+               SourceLocation location)
+    : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)),
+      isCompound(isCompoundAssignment), location(location) { }
+    bool isCompoundAssignment() const { return isCompound; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AssignStmt; }
 
 private:
-    SourceLocation location; // Location of '='.
-};
-
-/// An augmented assignment (a.k.a. compound assignment) statement.
-class AugAssignStmt : public Stmt {
-public:
-    std::unique_ptr<Expr> lhs;
-    std::unique_ptr<Expr> rhs;
-    BinaryOperator op;
-
-    AugAssignStmt(std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs,
-                  BinaryOperator op, SourceLocation location)
-    : Stmt(StmtKind::AugAssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)),
-      op(op), location(location) { }
-    SourceLocation getLocation() const { return location; }
-    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AugAssignStmt; }
-
-private:
+    bool isCompound;
     SourceLocation location; // Location of operator symbol.
 };
 

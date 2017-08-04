@@ -1,0 +1,7 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    let i = 1
+    // CHECK: [[@LINE+1]]:7: error: cannot assign to immutable variable 'i'
+    i += 1
+}

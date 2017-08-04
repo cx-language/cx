@@ -137,10 +137,10 @@ public:
 class Argument {
 public:
     std::string name; // Empty if no name specified.
-    std::unique_ptr<Expr> value;
+    std::shared_ptr<Expr> value;
     SourceLocation location;
 
-    Argument(std::string&& name, std::unique_ptr<Expr> value, SourceLocation location)
+    Argument(std::string&& name, std::shared_ptr<Expr>&& value, SourceLocation location)
     : name(std::move(name)), value(std::move(value)), location(location) { }
     llvm::StringRef getName() const { return name; }
     Expr* getValue() const { return value.get(); }
@@ -184,7 +184,7 @@ private:
     Decl* calleeDecl;
 };
 
-inline std::vector<Argument> addArg(std::vector<Argument>&& args, std::unique_ptr<Expr> arg) {
+inline std::vector<Argument> addArg(std::vector<Argument>&& args, std::shared_ptr<Expr>&& arg) {
     args.push_back({ "", std::move(arg), SourceLocation::invalid() });
     return std::move(args);
 }
@@ -205,7 +205,7 @@ class BinaryExpr : public CallExpr {
 public:
     BinaryOperator op;
 
-    BinaryExpr(BinaryOperator op, std::unique_ptr<Expr> left, std::unique_ptr<Expr> right,
+    BinaryExpr(BinaryOperator op, std::shared_ptr<Expr>&& left, std::unique_ptr<Expr> right,
                SourceLocation location)
     : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(toString(op.kind), location),
                addArg(addArg({}, std::move(left)), std::move(right)), location), op(op) { }

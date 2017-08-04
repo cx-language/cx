@@ -853,20 +853,23 @@ void IRGenerator::codegenBreakStmt(const BreakStmt&) {
 }
 
 void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
-    auto* lhs = codegenLvalueExpr(*stmt.lhs);
-    builder.CreateStore(codegenExpr(*stmt.rhs), lhs);
-}
+    auto* lhsLvalue = codegenLvalueExpr(*stmt.lhs);
 
-void IRGenerator::codegenAugAssignStmt(const AugAssignStmt& stmt) {
-    switch (stmt.op) {
-        case AND_AND: fatalError("'&&=' not implemented yet");
-        case OR_OR:   fatalError("'||=' not implemented yet");
-        default:      break;
+    if (stmt.isCompoundAssignment()) {
+        auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.rhs);
+
+        switch (binaryExpr.op) {
+            case AND_AND: fatalError("'&&=' not implemented yet");
+            case OR_OR: fatalError("'||=' not implemented yet");
+            default: break;
+        }
+
+        auto* lhsValue = builder.CreateLoad(lhsLvalue);
+        auto* rhsValue = codegenExpr(binaryExpr.getRHS());
+        builder.CreateStore(codegenBinaryOp(binaryExpr.op, lhsValue, rhsValue, *stmt.lhs), lhsLvalue);
+    } else {
+        builder.CreateStore(codegenExpr(*stmt.rhs), lhsLvalue);
     }
-    auto* lhs = codegenLvalueExpr(*stmt.lhs);
-    auto* rhs = codegenExpr(*stmt.rhs);
-    auto* result = codegenBinaryOp(stmt.op, builder.CreateLoad(lhs), rhs, *stmt.lhs);
-    builder.CreateStore(result, lhs);
 }
 
 void IRGenerator::codegenStmt(const Stmt& stmt) {
@@ -883,7 +886,6 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
         case StmtKind::ForStmt: codegenForStmt(llvm::cast<ForStmt>(stmt)); break;
         case StmtKind::BreakStmt: codegenBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
         case StmtKind::AssignStmt: codegenAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
-        case StmtKind::AugAssignStmt: codegenAugAssignStmt(llvm::cast<AugAssignStmt>(stmt)); break;
     }
 }
 

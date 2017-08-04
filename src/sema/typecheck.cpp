@@ -146,33 +146,20 @@ void TypeChecker::typecheckBreakStmt(BreakStmt& breakStmt) const {
     }
 }
 
-void TypeChecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location) const {
-    Type lhsType = typecheckExpr(lhs);
-    if (lhsType.isFunctionType()) error(location, "cannot assign to function");
-    Type rhsType = typecheckExpr(rhs);
-    if (!isValidConversion(rhs, rhsType, lhsType)) {
-        error(rhs.getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
+    Type lhsType = typecheckExpr(*stmt.lhs);
+    if (lhsType.isFunctionType()) error(stmt.getLocation(), "cannot assign to function");
+    Type rhsType = typecheckExpr(*stmt.rhs);
+    if (!isValidConversion(*stmt.rhs, rhsType, lhsType)) {
+        error(stmt.rhs->getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
     if (!lhsType.isMutable() && !inInitializer) {
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(&lhs)) {
-            error(location, "cannot assign to immutable variable '", varExpr->identifier, "'");
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.lhs.get())) {
+            error(stmt.getLocation(), "cannot assign to immutable variable '", varExpr->identifier, "'");
         } else {
-            error(location, "cannot assign to immutable expression");
+            error(stmt.getLocation(), "cannot assign to immutable expression");
         }
     }
-}
-
-void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
-    typecheckAssignment(*stmt.lhs, *stmt.rhs, stmt.getLocation());
-}
-
-void TypeChecker::typecheckAugAssignStmt(AugAssignStmt& stmt) const {
-    // FIXME: Don't create temporary BinaryExpr.
-    BinaryExpr expr(stmt.op, std::unique_ptr<Expr>(stmt.lhs.get()),
-                    std::unique_ptr<Expr>(stmt.rhs.get()), stmt.getLocation());
-    typecheckAssignment(*stmt.lhs, expr, stmt.getLocation());
-    expr.args[0].value.release();
-    expr.args[1].value.release();
 }
 
 void TypeChecker::typecheckStmt(Stmt& stmt) const {
@@ -189,7 +176,6 @@ void TypeChecker::typecheckStmt(Stmt& stmt) const {
         case StmtKind::ForStmt: typecheckForStmt(llvm::cast<ForStmt>(stmt)); break;
         case StmtKind::BreakStmt: typecheckBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
         case StmtKind::AssignStmt: typecheckAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
-        case StmtKind::AugAssignStmt: typecheckAugAssignStmt(llvm::cast<AugAssignStmt>(stmt)); break;
     }
 }
 

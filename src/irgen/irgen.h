@@ -108,7 +108,6 @@ private:
     void codegenForStmt(const ForStmt& forStmt);
     void codegenBreakStmt(const BreakStmt&);
     void codegenAssignStmt(const AssignStmt& stmt);
-    void codegenAugAssignStmt(const AugAssignStmt& stmt);
     void codegenStmt(const Stmt& stmt);
 
     void codegenDecl(const Decl& decl);
