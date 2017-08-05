@@ -23,15 +23,15 @@ Type TypeChecker::typecheckVarExpr(VarExpr& expr) const {
     switch (decl.getKind()) {
         case DeclKind::VarDecl: return llvm::cast<VarDecl>(decl).getType();
         case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(decl).type;
-        case DeclKind::FunctionDecl: return llvm::cast<FunctionDecl>(decl).getFunctionType();
+        case DeclKind::FunctionDecl:
+        case DeclKind::MethodDecl: return llvm::cast<FunctionDecl>(decl).getFunctionType();
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot refer to generic parameters yet");
         case DeclKind::InitDecl: llvm_unreachable("cannot refer to initializers yet");
         case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.getLocation(), "'", expr.identifier, "' is not a variable");
         case DeclKind::FieldDecl:
             assert(currentFunction);
-            if (currentFunction->isInitDecl() || (currentFunction->isFunctionDecl() &&
-                 llvm::cast<FunctionDecl>(currentFunction)->isMutating())) {
+            if (currentFunction->isMutating() || currentFunction->isInitDecl()) {
                 return llvm::cast<FieldDecl>(decl).type;
             } else {
                 return llvm::cast<FieldDecl>(decl).type.asImmutable();
@@ -195,11 +195,11 @@ bool hasField(TypeDecl& type, FieldDecl& field) {
 }
 
 bool TypeChecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
-    auto decls = findDecls(mangleFunctionDecl(type.name, functionDecl.name));
+    auto decls = findDecls(mangleFunctionDecl(type.name, functionDecl.getName()));
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
-        if (!llvm::cast<FunctionDecl>(decl)->getReceiverTypeDecl()) continue;
-        if (llvm::cast<FunctionDecl>(decl)->getReceiverTypeDecl()->name != type.name) continue;
+        if (!llvm::cast<FunctionDecl>(decl)->getTypeDecl()) continue;
+        if (llvm::cast<FunctionDecl>(decl)->getTypeDecl()->name != type.name) continue;
         if (!llvm::cast<FunctionDecl>(decl)->signatureMatches(functionDecl, /* matchReceiver: */ false)) continue;
         return true;
     }
@@ -395,7 +395,8 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
 
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
-            case DeclKind::FunctionDecl: {
+            case DeclKind::FunctionDecl: case DeclKind::MethodDecl: {
+                auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
                 auto previousGenericArgs = std::move(currentGenericArgs);
 
                 if (expr.isMethodCall()) {
@@ -409,15 +410,14 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                     }
                 }
 
-                setCurrentGenericArgs(llvm::cast<FunctionDecl>(decl)->getGenericParams(), expr,
-                                      llvm::cast<FunctionDecl>(decl)->getParams());
+                setCurrentGenericArgs(functionDecl.getGenericParams(), expr, functionDecl.getParams());
 
                 if (decls.size() == 1) {
-                    validateArgs(expr.args, llvm::cast<FunctionDecl>(decl)->params, callee,
-                                 llvm::cast<FunctionDecl>(decl)->isVariadic(), expr.getCallee().getLocation());
+                    validateArgs(expr.args, functionDecl.getParams(), callee,
+                                 functionDecl.isVariadic(), expr.getCallee().getLocation());
                     return *decl;
                 }
-                if (matchArgs(expr.args, llvm::cast<FunctionDecl>(decl)->params, llvm::cast<FunctionDecl>(decl)->isVariadic())) {
+                if (matchArgs(expr.args, functionDecl.getParams(), functionDecl.isVariadic())) {
                     matches.push_back(decl);
                 }
 
@@ -433,11 +433,11 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                     InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
 
                     if (initDecls.size() == 1) {
-                        validateArgs(expr.args, initDecl.params, callee, false,
+                        validateArgs(expr.args, initDecl.getParams(), callee, false,
                                      expr.getCallee().getLocation());
                         return initDecl;
                     }
-                    if (matchArgs(expr.args, initDecl.params, false)) {
+                    if (matchArgs(expr.args, initDecl.getParams(), false)) {
                         matches.push_back(&initDecl);
                     }
                 }
@@ -516,7 +516,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     } else {
         decl = &resolveOverload(expr, expr.getFunctionName());
 
-        if (decl->isFunctionDecl() && llvm::cast<FunctionDecl>(decl)->isMethod()) {
+        if (decl->isMethodDecl() && !decl->isInitDecl()) {
             auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
             expr.setReceiverType(varDecl.getType());
         }
@@ -525,7 +525,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     expr.setCalleeDecl(decl);
 
     if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
-        auto* receiverTypeDecl = functionDecl->getReceiverTypeDecl();
+        auto* receiverTypeDecl = functionDecl->getTypeDecl();
         bool hasGenericReceiverType = receiverTypeDecl && receiverTypeDecl->isGeneric();
 
         if (!functionDecl->isGeneric() && !hasGenericReceiverType) {
@@ -544,22 +544,22 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             // TODO: Don't typecheck more than once with the same generic arguments.
             auto wasTypecheckingGenericFunction = typecheckingGenericFunction;
             typecheckingGenericFunction = true;
-            typecheckFunctionDecl(*functionDecl);
+            typecheckFunctionLikeDecl(*functionDecl);
             typecheckingGenericFunction = wasTypecheckingGenericFunction;
             Type returnType = resolve(functionDecl->getFunctionType()->returnType);
             currentGenericArgs.clear();
             return returnType;
         }
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
-        if (initDecl->getTypeDecl().isGeneric()) {
+        if (initDecl->getTypeDecl()->isGeneric()) {
             auto previousGenericArgs = std::move(currentGenericArgs);
-            setCurrentGenericArgs(initDecl->getTypeDecl().genericParams, expr,
+            setCurrentGenericArgs(initDecl->getTypeDecl()->genericParams, expr,
                                   initDecl->getParams());
             // TODO: Don't typecheck more than once with the same generic arguments.
             typecheckInitDecl(*initDecl);
             currentGenericArgs = std::move(previousGenericArgs);
         }
-        return initDecl->getTypeDecl().getType(expr.getGenericArgs());
+        return initDecl->getTypeDecl()->getType(expr.getGenericArgs());
     }
     llvm_unreachable("all cases handled");
 }

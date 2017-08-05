@@ -2,6 +2,7 @@
 
 #include <cstdlib> // std::abort
 #include <fstream>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -9,12 +10,18 @@
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/Casting.h>
 #include "../ast/location.h"
 
 namespace delta {
 
 inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
+}
+
+template<typename T, typename U>
+std::unique_ptr<T> cast_unique_ptr(std::unique_ptr<U> ptr) {
+    return std::unique_ptr<T>(llvm::cast<T>(ptr.release()));
 }
 
 template<typename SourceContainer, typename T, typename Param>

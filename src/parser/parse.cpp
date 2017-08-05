@@ -803,9 +803,15 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
         }
     }
 
-    return llvm::make_unique<FunctionDecl>(std::move(name), std::move(params),
-                                       std::move(returnType), receiverTypeDecl,
-                                       std::move(genericParams), false, currentModule, nameLocation);
+    FunctionProto proto(std::move(name), std::move(params), std::move(returnType),
+                        std::move(genericParams), false);
+
+    if (receiverTypeDecl) {
+        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl,
+                                             currentModule, nameLocation);
+    } else {
+        return llvm::make_unique<FunctionDecl>(std::move(proto), currentModule, nameLocation);
+    }
 }
 
 /// function-decl ::= function-proto '{' stmt* '}'
@@ -829,18 +835,18 @@ std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
 }
 
 /// init-decl ::= 'init' param-list '{' stmt* '}'
-std::unique_ptr<InitDecl> parseInitDecl(std::string typeName) {
+std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl) {
     auto initLocation = parse(INIT).getLocation();
     auto params = parseParamList();
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
-    return llvm::make_unique<InitDecl>(std::move(typeName), std::move(params),
-                                       std::move(body), initLocation);
+    return llvm::make_unique<InitDecl>(receiverTypeDecl, std::move(params), std::move(body),
+                                       initLocation);
 }
 
 /// deinit-decl ::= 'deinit' '(' ')' '{' stmt* '}'
-std::unique_ptr<DeinitDecl> parseDeinitDecl(std::string typeName) {
+std::unique_ptr<DeinitDecl> parseDeinitDecl(TypeDecl& receiverTypeDecl) {
     auto deinitLocation = parse(DEINIT).getLocation();
     parse(LPAREN);
     auto expectedRParenLocation = getCurrentLocation();
@@ -848,7 +854,7 @@ std::unique_ptr<DeinitDecl> parseDeinitDecl(std::string typeName) {
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
-    return llvm::make_unique<DeinitDecl>(std::move(typeName), std::move(body), deinitLocation);
+    return llvm::make_unique<DeinitDecl>(receiverTypeDecl, std::move(body), deinitLocation);
 }
 
 /// field-decl ::= ('let' | 'var') id ':' type ('\n' | ';')
@@ -898,16 +904,16 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
             case FUNC: {
                 bool isMutating = lookAhead(-1) == MUTATING;
                 auto requireBody = tag != TypeTag::Interface;
-                auto functionDecl = parseFunctionDecl(typeDecl.get(), requireBody);
-                functionDecl->setMutating(isMutating);
-                typeDecl->addMethod(std::move(functionDecl));
+                auto methodDecl = cast_unique_ptr<MethodDecl>(parseFunctionDecl(typeDecl.get(), requireBody));
+                methodDecl->setMutating(isMutating);
+                typeDecl->addMethod(std::move(methodDecl));
                 break;
             }
             case INIT:
-                typeDecl->addMethod(parseInitDecl(name.string));
+                typeDecl->addMethod(parseInitDecl(*typeDecl));
                 break;
             case DEINIT:
-                typeDecl->addMethod(parseDeinitDecl(name.string));
+                typeDecl->addMethod(parseDeinitDecl(*typeDecl));
                 break;
              case LET: case VAR:
                 typeDecl->addField(parseFieldDecl());

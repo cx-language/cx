@@ -1,4 +1,5 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 
 class Foo {
     var baz: int;
@@ -27,17 +28,17 @@ class Foo {
 }
 
 func main() {
-    // CHECK: %foo = alloca %Foo
-    // CHECK-NEXT: %i = alloca i32
+    // CHECK-MAIN: %foo = alloca %Foo
+    // CHECK-MAIN-NEXT: %i = alloca i32
 
-    // CHECK-NEXT: %1 = call %Foo @Foo.init()
-    // CHECK-NEXT: store %Foo %1, %Foo* %foo
+    // CHECK-MAIN-NEXT: %1 = call %Foo @Foo.init()
+    // CHECK-MAIN-NEXT: store %Foo %1, %Foo* %foo
     var foo = Foo();
 
-    // CHECK-NEXT: call void @Foo.bar(%Foo* %foo)
+    // CHECK-MAIN-NEXT: call void @Foo.bar(%Foo* %foo)
     foo.bar();
 
-    // CHECK-NEXT: %2 = call i32 @Foo.qux(%Foo* %foo)
-    // CHECK-NEXT: store i32 %2, i32* %i
+    // CHECK-MAIN-NEXT: %2 = call i32 @Foo.qux(%Foo* %foo)
+    // CHECK-MAIN-NEXT: store i32 %2, i32* %i
     var i = foo.qux();
 }

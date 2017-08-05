@@ -55,7 +55,7 @@ public:
                                ParserFunction& parse) const;
 
 private:
-    void typecheckFunctionDecl(FunctionDecl& decl) const;
+    void typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const;
     void typecheckInitDecl(InitDecl& decl) const;
     void typecheckMemberDecl(Decl& decl) const;
 
@@ -108,7 +108,7 @@ private:
 private:
     Module* currentModule;
     SourceFile* currentSourceFile;
-    mutable Decl* currentFunction;
+    mutable FunctionLikeDecl* currentFunction;
     mutable std::unordered_map<std::string, Type> currentGenericArgs;
     mutable bool typecheckingGenericFunction;
 };

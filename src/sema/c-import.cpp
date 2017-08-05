@@ -130,9 +130,9 @@ FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
                             SourceLocation::invalid());
     }
 
-    return FunctionDecl(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
-                        nullptr, /* genericParams */ {}, decl.isVariadic(), currentModule,
-                        SourceLocation::invalid());
+    FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
+                        /* genericParams */ {}, decl.isVariadic());
+    return FunctionDecl(std::move(proto), currentModule, SourceLocation::invalid());
 }
 
 llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {

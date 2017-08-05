@@ -60,8 +60,8 @@ public:
     T* findWithMatchingParams(const T& toFind) const {
         for (Decl* decl : find(mangle(toFind))) {
             T* t = llvm::dyn_cast<T>(decl);
-            if (!t || t->params.size() != toFind.params.size()) continue;
-            if (std::equal(toFind.params.begin(), toFind.params.end(), t->params.begin(),
+            if (!t || t->getParams().size() != toFind.getParams().size()) continue;
+            if (std::equal(toFind.getParams().begin(), toFind.getParams().end(), t->getParams().begin(),
                            [](const ParamDecl& a, const ParamDecl& b) { return a.name == b.name; }))
                 return t;
         }

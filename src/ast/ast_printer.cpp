@@ -214,39 +214,39 @@ std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {
 
 std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
     out << br << (decl.isExtern() ? "(extern-function-decl " : "(function-decl ");
-    out << decl.name;
+    delta::operator<<(out, decl.getName());
 
-    if (!decl.genericParams.empty()) {
+    if (!decl.getGenericParams().empty()) {
         out << " (generic-params ";
-        for (const GenericParamDecl& genericParam : decl.genericParams) {
+        for (const GenericParamDecl& genericParam : decl.getGenericParams()) {
             out << genericParam.name;
-            if (&genericParam != &decl.genericParams.back()) out << " ";
+            if (&genericParam != &decl.getGenericParams().back()) out << " ";
         }
         out << ")";
     }
 
     out << " (";
-    for (const ParamDecl& param : decl.params) {
+    for (const ParamDecl& param : decl.getParams()) {
         out << param;
-        if (&param != &decl.params.back()) out << " ";
+        if (&param != &decl.getParams().back()) out << " ";
     }
-    out << ") " << decl.returnType;
+    out << ") " << decl.getReturnType();
 
     if (!decl.isExtern()) out << *decl.body;
     return out << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
-    out << br << "(init-decl " << decl.getTypeDecl().name << " (";
-    for (const ParamDecl& param : decl.params) {
+    out << br << "(init-decl " << decl.getTypeDecl()->name << " (";
+    for (const ParamDecl& param : decl.getParams()) {
         out << param;
-        if (&param != &decl.params.back()) out << " ";
+        if (&param != &decl.getParams().back()) out << " ";
     }
     return out << ")" << *decl.body << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const DeinitDecl& decl) {
-    return out << br << "(deinit-decl " << decl.getTypeDecl().name << *decl.body << ")";
+    return out << br << "(deinit-decl " << decl.getTypeDecl()->name << *decl.body << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldDecl& decl) {
@@ -281,7 +281,8 @@ std::ostream& operator<<(std::ostream& out, const ImportDecl& decl) {
 std::ostream& operator<<(std::ostream& out, const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: return out << llvm::cast<ParamDecl>(decl);
-        case DeclKind::FunctionDecl: return out << llvm::cast<FunctionDecl>(decl);
+        case DeclKind::FunctionDecl:
+        case DeclKind::MethodDecl: return out << llvm::cast<FunctionDecl>(decl);
         case DeclKind::GenericParamDecl: llvm_unreachable("handled via FunctionDecl");
         case DeclKind::InitDecl: return out << llvm::cast<InitDecl>(decl);
         case DeclKind::DeinitDecl: return out << llvm::cast<DeinitDecl>(decl);

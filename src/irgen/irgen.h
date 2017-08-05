@@ -53,7 +53,7 @@ private:
 
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                llvm::ArrayRef<Type> genericArgs);
-    void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
+    void codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
     void setCurrentDecl(Decl* decl) { currentDecl = decl; }
     llvm::Module& getIRModule() { return module; }
@@ -118,7 +118,7 @@ private:
     void codegenVarDecl(const VarDecl& decl);
 
     llvm::Function* getFunctionForCall(const CallExpr& call);
-    llvm::Function* getFunctionProto(const FunctionDecl& decl, llvm::ArrayRef<Type> functionGenericArgs = {},
+    llvm::Function* getFunctionProto(const FunctionLikeDecl& decl, llvm::ArrayRef<Type> functionGenericArgs = {},
                                  Type receiverType = nullptr, std::string&& mangledName = {});
     llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
                                  llvm::ArrayRef<Type> functionGenericArgs = {});
@@ -141,7 +141,7 @@ private:
 private:
     class FunctionInstantiation {
     public:
-        const FunctionDecl& decl;
+        const FunctionLikeDecl& decl;
         llvm::ArrayRef<Type> receiverTypeGenericArgs;
         llvm::ArrayRef<Type> genericArgs;
         llvm::Function* function;
