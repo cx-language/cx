@@ -12,6 +12,10 @@ struct Array<Element> {
         capacity = 0;
     }
 
+    deinit() {
+        free(bufferPointer);
+    }
+
     /// Returns the number of elements in the array.
     func size() -> int {
         return size;
