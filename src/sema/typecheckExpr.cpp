@@ -557,6 +557,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
                                   initDecl->getParams());
             // TODO: Don't typecheck more than once with the same generic arguments.
             typecheckInitDecl(*initDecl);
+            if (auto* deinitDecl = initDecl->getTypeDecl()->getDeinitializer()) {
+                typecheckDeinitDecl(*deinitDecl);
+            }
             currentGenericArgs = std::move(previousGenericArgs);
         }
         return initDecl->getTypeDecl()->getType(expr.getGenericArgs());

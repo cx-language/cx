@@ -1,0 +1,14 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+class C<T> {
+    init() { }
+
+    deinit() {
+        // CHECK: [[@LINE+1]]:17: error: unknown identifier 'b'
+        let a = b
+    }
+}
+
+func main() {
+    let c = C<int>()
+}
