@@ -1,6 +1,7 @@
 #pragma once
 
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
