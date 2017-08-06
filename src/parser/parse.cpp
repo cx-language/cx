@@ -245,7 +245,7 @@ Type parseSimpleType(bool isMutable) {
     switch (currentToken()) {
         case LT:
             genericArgs = parseGenericArgumentList();
-            // fallthrough
+            LLVM_FALLTHROUGH;
         default:
             return BasicType::get(id, std::move(genericArgs), isMutable);
         case LBRACKET:
@@ -381,7 +381,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
                         expr = parseCallExpr(parseVarExpr());
                         break;
                     }
-                    // fallthrough
+                    LLVM_FALLTHROUGH;
                 default: expr = parseVarExpr(); break;
             }
             break;
@@ -900,7 +900,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
             case MUTATING:
                 consumeToken();
                 expect(FUNC, "after 'mutating'");
-                // fallthrough
+                LLVM_FALLTHROUGH;
             case FUNC: {
                 bool isMutating = lookAhead(-1) == MUTATING;
                 auto requireBody = tag != TypeTag::Interface;

@@ -104,14 +104,14 @@ inline Token readNumber() {
         case '5': case '6': case '7': case '8': case '9':
             if (begin[0] == '0')
                 error(firstLocation, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
-            // fallthrough
+            LLVM_FALLTHROUGH;
         default:
             while (true) {
                 switch (ch) {
                     case '.':
                         if (isFloat) goto end;
                         isFloat = true;
-                        // fallthrough
+                        LLVM_FALLTHROUGH;
                     case '0': case '1': case '2': case '3': case '4':
                     case '5': case '6': case '7': case '8': case '9':
                         end++;
