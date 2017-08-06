@@ -384,7 +384,7 @@ void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
     }
 
     TypeDecl* receiverTypeDecl = decl.getTypeDecl();
-    if (decl.isMethodDecl() && receiverTypeDecl->isGeneric() && currentGenericArgs.empty()) {
+    if (receiverTypeDecl && receiverTypeDecl->isGeneric() && currentGenericArgs.empty()) {
         return; // Partial type-checking of uninstantiated generic functions not implemented yet.
     }
 

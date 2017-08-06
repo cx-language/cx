@@ -1,7 +1,13 @@
 import "header.h"
 
 struct A<E> {
-    init() { }
+    init() {
+        foo()
+    }
+
+    deinit() {
+        foo()
+    }
 
     func f() {
         foo()

@@ -1019,7 +1019,7 @@ void IRGenerator::codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Functi
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &function));
     beginScope();
     auto arg = function.arg_begin();
-    if (decl.isMethodDecl()) setLocalValue(nullptr, "this", &*arg++);
+    if (decl.getTypeDecl() != nullptr) setLocalValue(nullptr, "this", &*arg++);
     for (const auto& param : decl.getParams()) setLocalValue(param.type, param.name, &*arg++);
     for (const auto& stmt : *decl.body) codegenStmt(*stmt);
     endScope();
@@ -1176,7 +1176,7 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
             setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
             auto previousGenericArgs = std::move(currentGenericArgs);
             setCurrentGenericArgs(p.second.decl.getGenericParams(), p.second.genericArgs);
-            if (p.second.decl.isMethodDecl()) {
+            if (p.second.decl.getTypeDecl() != nullptr) {
                 auto& receiverTypeDecl = *p.second.decl.getTypeDecl();
                 setCurrentGenericArgs(receiverTypeDecl.genericParams,
                                       p.second.receiverTypeGenericArgs);
