@@ -3,7 +3,7 @@
 #include <memory>
 
 namespace llvm {
-    class MemoryBuffer;
+class MemoryBuffer;
 }
 
 namespace delta {

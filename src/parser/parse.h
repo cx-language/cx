@@ -4,7 +4,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 
 namespace llvm {
-    class StringRef;
+class StringRef;
 }
 
 namespace delta {

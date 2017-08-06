@@ -52,7 +52,7 @@ std::string toDisjunctiveList(llvm::ArrayRef<T> values, std::string (& stringifi
 class CompileError {
 public:
     CompileError(SourceLocation location, std::string&& message)
-    : location(location), message(std::move(message)) { }
+    : location(location), message(std::move(message)) {}
     void print() const;
 
 private:

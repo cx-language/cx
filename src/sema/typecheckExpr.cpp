@@ -175,7 +175,7 @@ Type TypeChecker::resolve(Type type) const {
                 resolvedParamTypes.emplace_back(resolve(type));
             }
             return FunctionType::get(resolve(type.getReturnType()), std::move(resolvedParamTypes),
-                                 type.isMutable());
+                                     type.isMutable());
         }
         default:
             fatalError(("resolve() not implemented for type '" + type.toString() + "'").c_str());

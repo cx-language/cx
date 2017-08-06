@@ -363,7 +363,7 @@ bool shouldParseGenericArgumentList() {
     // of a less-than binary expression. Zero spaces on either side of '<' will cause it
     // to be interpreted as a generic argument list, for now.
     return lookAhead(0).getLocation().column + int(lookAhead(0).string.size()) == lookAhead(1).getLocation().column
-        || lookAhead(1).getLocation().column + 1 == lookAhead(2).getLocation().column;
+           || lookAhead(1).getLocation().column + 1 == lookAhead(2).getLocation().column;
 }
 
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
@@ -915,7 +915,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
             case DEINIT:
                 typeDecl->addMethod(parseDeinitDecl(*typeDecl));
                 break;
-             case LET: case VAR:
+            case LET: case VAR:
                 typeDecl->addField(parseFieldDecl());
                 break;
             default:

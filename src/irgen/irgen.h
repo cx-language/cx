@@ -15,12 +15,12 @@ class TypeChecker;
 class IRGenerator;
 
 namespace irgen {
-    llvm::Type* getBuiltinType(llvm::StringRef typeName);
-    llvm::LLVMContext& getContext();
+llvm::Type* getBuiltinType(llvm::StringRef typeName);
+llvm::LLVMContext& getContext();
 }
 
 struct Scope {
-    Scope(IRGenerator& irGenerator) : irGenerator(irGenerator) { }
+    Scope(IRGenerator& irGenerator) : irGenerator(irGenerator) {}
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
     llvm::SmallVector<std::pair<llvm::Function*, llvm::Value*>, 8> deinitsToCall;
@@ -120,7 +120,7 @@ private:
 
     llvm::Function* getFunctionForCall(const CallExpr& call);
     llvm::Function* getFunctionProto(const FunctionLikeDecl& decl, llvm::ArrayRef<Type> functionGenericArgs = {},
-                                 Type receiverType = nullptr, std::string&& mangledName = {});
+                                     Type receiverType = nullptr, std::string&& mangledName = {});
     llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
                                  llvm::ArrayRef<Type> functionGenericArgs = {});
     llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl, Type receiverType);

@@ -25,7 +25,7 @@
 using namespace delta;
 
 namespace delta {
-    std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
+std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
 }
 
 std::vector<Module*> delta::getAllImportedModules() {
@@ -60,7 +60,7 @@ void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
         returnValueTypes.push_back(typecheckExpr(*expr));
     }
     Type returnType = returnValueTypes.size() > 1
-        ? TupleType::get(std::move(returnValueTypes)) : returnValueTypes[0];
+                      ? TupleType::get(std::move(returnValueTypes)) : returnValueTypes[0];
     if (!isValidConversion(stmt.values, returnType, functionReturnType)) {
         error(stmt.getLocation(), "mismatching return type '", returnType, "', expected '",
               functionReturnType, "'");
@@ -355,7 +355,7 @@ bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
             auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
             return llvm::all_of(switchStmt.cases,
                                 [](const SwitchCase& c) { return allPathsReturn(c.stmts); })
-                && allPathsReturn(switchStmt.defaultStmts);
+                   && allPathsReturn(switchStmt.defaultStmts);
         }
         default:
             return false;
@@ -488,7 +488,7 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
     if (auto declaredType = decl.getType()) {
         if (initType && !isValidConversion(*decl.initializer, initType, declaredType)) {
             error(decl.initializer->getLocation(), "cannot initialize variable of type '", declaredType,
-                "' with '", initType, "'");
+                  "' with '", initType, "'");
         }
     } else {
         if (initType.isNull()) {
@@ -502,8 +502,7 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
     if (!isGlobal) addToSymbolTable(decl);
 }
 
-void typecheckFieldDecl(FieldDecl&) {
-}
+void typecheckFieldDecl(FieldDecl&) {}
 
 llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
                                                llvm::ArrayRef<llvm::StringRef> importSearchPaths,

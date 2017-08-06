@@ -20,7 +20,7 @@
 using namespace delta;
 
 namespace delta {
-    llvm::LLVMContext ctx;
+llvm::LLVMContext ctx;
 }
 
 namespace {
@@ -267,7 +267,7 @@ void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
 
     llvm::BasicBlock* insertBlock = builder.GetInsertBlock();
     if (insertBlock->empty() || (!llvm::isa<llvm::ReturnInst>(insertBlock->back())
-                              && !llvm::isa<llvm::BranchInst>(insertBlock->back())))
+                                 && !llvm::isa<llvm::BranchInst>(insertBlock->back())))
         builder.CreateBr(continuation);
 }
 

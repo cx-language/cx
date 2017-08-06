@@ -24,7 +24,7 @@
 using namespace delta;
 
 namespace delta {
-    extern std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
+extern std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
 }
 
 namespace {
@@ -118,7 +118,7 @@ Type toDelta(clang::QualType qualtype) {
             return Type::getInt(); // FIXME: Temporary.
         default:
             auto errorMessage = std::string("unhandled type class '") +
-                type.getTypeClassName() + "' (importing type '" + qualtype.getAsString() + "')";
+                                type.getTypeClassName() + "' (importing type '" + qualtype.getAsString() + "')";
             fatalError(errorMessage.c_str());
     }
 }
@@ -176,7 +176,7 @@ void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, cons
 
 class CToDeltaConverter : public clang::ASTConsumer {
 public:
-    CToDeltaConverter(const TypeChecker& typeChecker) : typeChecker(typeChecker) { }
+    CToDeltaConverter(const TypeChecker& typeChecker) : typeChecker(typeChecker) {}
 
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
         for (clang::Decl* decl : declGroup) {
@@ -228,7 +228,7 @@ private:
 
 class MacroImporter : public clang::PPCallbacks {
 public:
-    MacroImporter(const TypeChecker& typeChecker) : typeChecker(typeChecker) { }
+    MacroImporter(const TypeChecker& typeChecker) : typeChecker(typeChecker) {}
 
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) final override {
         if (macro->getMacroInfo()->getNumTokens() != 1) return;
@@ -301,12 +301,13 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     ci.createASTContext();
 
     const clang::DirectoryLookup* curDir = nullptr;
-    const clang::FileEntry* pFile = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(
+    const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(
         headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr);
-    if (!pFile) return false;
+    if (!fileEntry) return false;
 
-    ci.getSourceManager().setMainFileID(ci.getSourceManager().createFileID(
-        pFile, clang::SourceLocation(), clang::SrcMgr::C_System));
+    auto fileID = ci.getSourceManager().createFileID(fileEntry, clang::SourceLocation(),
+                                                     clang::SrcMgr::C_System);
+    ci.getSourceManager().setMainFileID(fileID);
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(), &ci.getPreprocessor());
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext());
     ci.getDiagnosticClient().EndSourceFile();

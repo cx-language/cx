@@ -44,20 +44,20 @@ public:
     StmtKind getKind() const { return kind; }
 
 protected:
-    Stmt(StmtKind kind) : kind(kind) { }
+    Stmt(StmtKind kind) : kind(kind) {}
 
 private:
     const StmtKind kind;
 };
 
-inline Stmt::~Stmt() { }
+inline Stmt::~Stmt() {}
 
 class ReturnStmt : public Stmt {
 public:
     std::vector<std::unique_ptr<Expr>> values;
 
     ReturnStmt(std::vector<std::unique_ptr<Expr>>&& values, SourceLocation location)
-    : Stmt(StmtKind::ReturnStmt), values(std::move(values)), location(location) { }
+    : Stmt(StmtKind::ReturnStmt), values(std::move(values)), location(location) {}
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ReturnStmt; }
 
@@ -70,7 +70,7 @@ public:
     std::unique_ptr<VarDecl> decl;
 
     VarStmt(std::unique_ptr<VarDecl> decl)
-    : Stmt(StmtKind::VarStmt), decl(std::move(decl)) { }
+    : Stmt(StmtKind::VarStmt), decl(std::move(decl)) {}
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::VarStmt; }
 };
 
@@ -79,7 +79,7 @@ public:
     std::unique_ptr<Expr> operand;
 
     IncrementStmt(std::unique_ptr<Expr> operand, SourceLocation location)
-    : Stmt(StmtKind::IncrementStmt), operand(std::move(operand)), location(location) { }
+    : Stmt(StmtKind::IncrementStmt), operand(std::move(operand)), location(location) {}
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IncrementStmt; }
 
@@ -92,7 +92,7 @@ public:
     std::unique_ptr<Expr> operand;
 
     DecrementStmt(std::unique_ptr<Expr> operand, SourceLocation location)
-    : Stmt(StmtKind::DecrementStmt), operand(std::move(operand)), location(location) { }
+    : Stmt(StmtKind::DecrementStmt), operand(std::move(operand)), location(location) {}
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DecrementStmt; }
 
@@ -106,7 +106,7 @@ public:
     std::unique_ptr<Expr> expr;
 
     ExprStmt(std::unique_ptr<Expr> expr)
-    : Stmt(StmtKind::ExprStmt), expr(std::move(expr)) { }
+    : Stmt(StmtKind::ExprStmt), expr(std::move(expr)) {}
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ExprStmt; }
 };
 
@@ -115,7 +115,7 @@ public:
     std::unique_ptr<Expr> expr;
 
     DeferStmt(std::unique_ptr<Expr> expr)
-    : Stmt(StmtKind::DeferStmt), expr(std::move(expr)) { }
+    : Stmt(StmtKind::DeferStmt), expr(std::move(expr)) {}
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DeferStmt; }
 };
 
@@ -128,7 +128,7 @@ public:
     IfStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& thenBody,
            std::vector<std::unique_ptr<Stmt>>&& elseBody)
     : Stmt(StmtKind::IfStmt), condition(std::move(condition)),
-      thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) { }
+      thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) {}
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IfStmt; }
 };
 
@@ -147,7 +147,7 @@ public:
     SwitchStmt(std::unique_ptr<Expr> condition, std::vector<SwitchCase>&& cases,
                std::vector<std::unique_ptr<Stmt>>&& defaultStmts)
     : Stmt(StmtKind::SwitchStmt), condition(std::move(condition)),
-      cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) { }
+      cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) {}
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::SwitchStmt; }
 };
 
@@ -157,7 +157,7 @@ public:
     std::vector<std::unique_ptr<Stmt>> body;
 
     WhileStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& body)
-    : Stmt(StmtKind::WhileStmt), condition(std::move(condition)), body(std::move(body)) { }
+    : Stmt(StmtKind::WhileStmt), condition(std::move(condition)), body(std::move(body)) {}
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::WhileStmt; }
 };
 
@@ -170,7 +170,7 @@ public:
     ForStmt(std::string&& id, std::unique_ptr<Expr> range,
             std::vector<std::unique_ptr<Stmt>>&& body, SourceLocation location)
     : Stmt(StmtKind::ForStmt), id(std::move(id)), range(std::move(range)),
-      body(std::move(body)), location(location) { }
+      body(std::move(body)), location(location) {}
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
 
@@ -180,7 +180,7 @@ private:
 
 class BreakStmt : public Stmt {
 public:
-    BreakStmt(SourceLocation location) : Stmt(StmtKind::BreakStmt), location(location) { }
+    BreakStmt(SourceLocation location) : Stmt(StmtKind::BreakStmt), location(location) {}
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::BreakStmt; }
 
@@ -198,7 +198,7 @@ public:
     AssignStmt(std::shared_ptr<Expr>&& lhs, std::unique_ptr<Expr> rhs, bool isCompoundAssignment,
                SourceLocation location)
     : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)),
-      isCompound(isCompoundAssignment), location(location) { }
+      isCompound(isCompoundAssignment), location(location) {}
     bool isCompoundAssignment() const { return isCompound; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AssignStmt; }

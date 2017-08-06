@@ -25,18 +25,18 @@ public:
     TypeKind getKind() const { return kind; }
 
 protected:
-    TypeBase(TypeKind kind) : kind(kind) { }
+    TypeBase(TypeKind kind) : kind(kind) {}
 
 private:
     const TypeKind kind;
 };
 
-inline TypeBase::~TypeBase() { }
+inline TypeBase::~TypeBase() {}
 
 struct Type {
 public:
     Type(const TypeBase* typeBase = nullptr, bool isMutable = false)
-    : typeBase(typeBase), mutableFlag(isMutable) { }
+    : typeBase(typeBase), mutableFlag(isMutable) {}
     const TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
     const TypeBase* get() const { return typeBase; }
@@ -142,7 +142,7 @@ public:
 private:
     friend Type;
     BasicType(llvm::StringRef name, std::vector<Type>&& genericArgs)
-    : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)) { }
+    : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)) {}
 
     std::vector<Type> genericArgs;
 };
@@ -159,7 +159,7 @@ public:
 
 private:
     ArrayType(Type type, int64_t size)
-    : TypeBase(TypeKind::ArrayType), elementType(type), size(size) { }
+    : TypeBase(TypeKind::ArrayType), elementType(type), size(size) {}
 };
 
 class RangeType : public TypeBase {
@@ -173,7 +173,7 @@ public:
 private:
     RangeType(Type elementType, bool hasExclusiveUpperBound)
     : TypeBase(TypeKind::RangeType), elementType(elementType),
-      hasExclusiveUpperBound(hasExclusiveUpperBound) { }
+      hasExclusiveUpperBound(hasExclusiveUpperBound) {}
 
     bool hasExclusiveUpperBound;
 };
@@ -200,7 +200,7 @@ public:
 
 private:
     FunctionType(Type returnType, std::vector<Type>&& paramTypes)
-    : TypeBase(TypeKind::FunctionType), returnType(returnType), paramTypes(std::move(paramTypes)) { }
+    : TypeBase(TypeKind::FunctionType), returnType(returnType), paramTypes(std::move(paramTypes)) {}
 };
 
 class PointerType : public TypeBase {
@@ -213,7 +213,7 @@ public:
 
 private:
     PointerType(Type pointeeType, bool isReference)
-    : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), reference(isReference) { }
+    : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), reference(isReference) {}
 
     bool reference;
 };

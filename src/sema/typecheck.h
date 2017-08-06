@@ -9,9 +9,9 @@
 #include "../ast/stmt.h"
 
 namespace llvm {
-    class StringRef;
-    template<typename T> class ArrayRef;
-    template<typename T, unsigned N> class SmallVector;
+class StringRef;
+template<typename T> class ArrayRef;
+template<typename T, unsigned N> class SmallVector;
 }
 
 namespace delta {
@@ -31,7 +31,7 @@ class TypeChecker {
 public:
     explicit TypeChecker(Module* currentModule, SourceFile* currentSourceFile)
     : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunction(nullptr),
-      typecheckingGenericFunction(false) { }
+      typecheckingGenericFunction(false) {}
 
     Module* getCurrentModule() const { return currentModule; }
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }

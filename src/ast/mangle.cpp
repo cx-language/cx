@@ -6,7 +6,7 @@ using namespace delta;
 
 static void appendGenericArgs(std::string& mangled, llvm::ArrayRef<Type> genericArgs) {
     if (genericArgs.empty()) return;
-    
+
     mangled += '<';
     for (const Type& genericArg : genericArgs) {
         mangled += genericArg.toString();
