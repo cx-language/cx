@@ -1,0 +1,9 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+extern func foo() -> int[5]&;
+
+func main() {
+    let p = foo();
+    // CHECK: [[@LINE+1]]:15: error: illegal subscript index type 'bool', expected 'int'
+    let e = p[false];
+}

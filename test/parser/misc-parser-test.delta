@@ -1,0 +1,70 @@
+// RUN: %delta -print-ast %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK:(source-file {{.*}}misc-parser-test.delta
+
+import "math.h"; // CHECK-NEXT:    (import-decl "math.h")
+
+func foo1() { } // CHECK-NEXT:    (function-decl foo1 () void)
+
+func foo2(a: int) { } // CHECK-NEXT:    (function-decl foo2 ((int a)) void)
+
+func foo3(a: int, b: int) { } // CHECK-NEXT:    (function-decl foo3 ((int a) (int b)) void)
+
+func foo4() -> int { // CHECK-NEXT:    (function-decl foo4 () int
+    return 42;       // CHECK-NEXT:        (return-stmt 42))
+}
+
+func foo5() -> int, bool { // CHECK-NEXT:    (function-decl foo5 () (int, bool)
+    return 42, false;      // CHECK-NEXT:        (return-stmt 42 false))
+}
+
+func foo6() -> int { // CHECK-NEXT:    (function-decl foo6 () int
+    let answer = 42; // CHECK-NEXT:        (var-stmt answer 42)
+    return answer;   // CHECK-NEXT:        (return-stmt answer))
+}
+
+func foo7() -> int { // CHECK-NEXT:    (function-decl foo7 () int
+    var answer = 41; // CHECK-NEXT:        (var-stmt answer 41)
+    answer++;        // CHECK-NEXT:        (inc-stmt answer)
+    return answer;   // CHECK-NEXT:        (return-stmt answer))
+}
+
+func foo8() -> int { // CHECK-NEXT:    (function-decl foo8 () int
+    var answer = 43; // CHECK-NEXT:        (var-stmt answer 43)
+    answer--;        // CHECK-NEXT:        (dec-stmt answer)
+    return answer;   // CHECK-NEXT:        (return-stmt answer))
+}
+
+func foo9() -> int {                      // CHECK-NEXT:    (function-decl foo9 () int
+    return (0 - -0xC) / (0o4 + 0b11 * 2); // CHECK-NEXT:        (return-stmt ((0 - (-12)) / (4 + (3 * 2)))))
+}
+
+var foo10 = 42; // CHECK-NEXT:    (var-decl foo10 42)
+
+let foo11 = 42; // CHECK-NEXT:    (var-decl foo11 42)
+
+struct S1 {       // CHECK-NEXT:    (type-decl struct S1
+    let a: uint;  // CHECK-NEXT:        (field-decl uint a)
+    let b: char*; // CHECK-NEXT:        (field-decl char* b))
+}
+
+class C1 {        // CHECK-NEXT:    (type-decl class C1
+    let a: int8;  // CHECK-NEXT:        (field-decl int8 a)
+    let b: bool*; // CHECK-NEXT:        (field-decl bool* b))
+}
+
+func foo12(a: int*, b: int) -> bool { // CHECK-NEXT:    (function-decl foo12 ((int* a) (int b)) bool
+    return *a == b;                   // CHECK-NEXT:        (return-stmt ((*a) == b)))
+}
+
+func foo13(a: int) {   // CHECK-NEXT:    (function-decl foo13 ((int a)) void
+    defer foo13(a);    // CHECK-NEXT:        (defer-stmt (call foo13 a))
+    var i = [1, 2, 3]; // CHECK-NEXT:        (var-stmt i (array-literal 1 2 3))
+    switch (a) {       // CHECK-NEXT:        (switch-stmt a
+        case -1:       // CHECK-NEXT:            (case (-1)
+            break;     // CHECK-NEXT:                (break-stmt))
+        case 0:        // CHECK-NEXT:            (case 0
+            foo13(42); // CHECK-NEXT:                (call foo13 42)
+            foo13(42); // CHECK-NEXT:                (call foo13 42)))))
+    }
+}

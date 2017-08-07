@@ -1,8 +1,0 @@
-// compile_and_run_and_check_output $'foo!!!\nbar!!!'
-
-import "mod"
-
-func main() {
-  foo()
-  bar()
-}

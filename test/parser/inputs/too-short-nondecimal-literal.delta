@@ -1,2 +1,0 @@
-// check_error 2:9 "hex literal must have at least one digit after '0x'"
-let a = 0x;

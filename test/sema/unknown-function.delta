@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func fooz() -> int { return 42; }
+
+// CHECK: [[@LINE+1]]:23: error: unknown identifier 'foo'
+func main() { var i = foo(); }

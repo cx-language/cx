@@ -1,6 +1,0 @@
-// check_error 5:22 "invalid argument name 'qux' for parameter 'bar'"
-
-func f(foo: int, bar: bool) -> int { return foo; }
-func main() -> int {
-    return f(foo: 5, qux: false);
-}

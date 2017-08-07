@@ -1,4 +1,0 @@
-// check_error 3:15 "unknown identifier 'unknown'"
-func main() {
-    var foo = unknown;
-}

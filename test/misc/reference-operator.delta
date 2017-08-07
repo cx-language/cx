@@ -1,0 +1,14 @@
+// RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:Bar
+
+extern func puts(s: uint8*);
+
+func main() {
+    var buffer: uint8[4] = uninitialized;
+    let ptr = &buffer;
+    ptr[0] = 66;
+    ptr[1] = 0x61;
+    ptr[2] = 0o162;
+    ptr[3] = 0b0;
+    puts(&buffer[0]);
+}

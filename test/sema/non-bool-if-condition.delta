@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    // CHECK: [[@LINE+1]]:9: error: 'if' condition must have type 'bool'
+    if (0) {
+        puts("a");
+    } else {
+        puts("b");
+    }
+}

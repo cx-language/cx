@@ -1,0 +1,5 @@
+// RUN: check_exit_status 2 %delta run %s
+
+func main() -> int { return 2; }
+func foo(a: Foo) { }
+class Foo { let i: int; }

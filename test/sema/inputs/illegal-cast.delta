@@ -1,4 +1,0 @@
-// check_error 3:13 "illegal cast from 'bool' to 'int**'"
-func main() {
-    var i = cast<int**>(false);
-}

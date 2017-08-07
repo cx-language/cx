@@ -1,0 +1,4 @@
+// RUN: %delta -typecheck %s
+
+func main() { foo(); }
+func foo() { }

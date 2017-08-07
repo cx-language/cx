@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    // CHECK: [[@LINE+1]]:18: error: cannot initialize variable of type 'int' with 'bool'
+    let i: int = false;
+}

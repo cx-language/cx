@@ -1,0 +1,9 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+extern func malloc(n: uint64) -> mutable void*;
+
+func main() {
+    let p = cast<mutable uint8*>(malloc(8));
+    // CHECK: [[@LINE+1]]:5: error: cannot subscript 'mutable uint8*', expected array or reference-to-array
+    p[0] = 64;
+}

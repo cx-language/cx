@@ -1,9 +1,0 @@
-// check_error 8:11 "cannot assign to immutable expression"
-
-struct Foo {
-    var a: int
-}
-
-func bar(foo: Foo&) {
-    foo.a = 42
-}

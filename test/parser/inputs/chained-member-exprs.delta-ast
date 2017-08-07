@@ -1,3 +1,0 @@
-(source-file inputs/chained-member-exprs.delta
-    (function-decl main () void
-        (compound-assign-stmt + (member-expr (member-expr (member-expr a b) c) d) (member-expr (member-expr (member-expr e f) g) h))))

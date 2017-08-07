@@ -1,4 +1,0 @@
-// check_error 3:12 "deinitializers cannot have parameters"
-struct Foo {
-    deinit(i: int) { }
-}

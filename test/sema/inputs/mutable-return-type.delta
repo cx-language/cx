@@ -1,2 +1,0 @@
-// check_error 2:6 "return types cannot be 'mutable'"
-func foo() -> mutable int { return 42; }

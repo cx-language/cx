@@ -1,0 +1,5 @@
+// RUN: %delta -print-ast %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK:(source-file {{.*}}floating-point-literal.delta
+
+let a = 0.009; // CHECK-NEXT:    (var-decl a 0.009))

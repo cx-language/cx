@@ -1,9 +1,0 @@
-// check_error 8:15 "invalid argument name 'bar' for parameter 'a'"
-
-struct X {
-    init(a: int) { }
-}
-
-func main() {
-    var x = X(bar: 5);
-}

@@ -1,0 +1,18 @@
+// RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:Bar
+
+extern func puts(s: uint8*);
+
+func foo() -> uint8[4] {
+    var buffer: uint8[4] = uninitialized;
+    buffer[0] = 66;
+    buffer[1] = 0x61;
+    buffer[2] = 0o162;
+    buffer[3] = 0b0;
+    return buffer;
+}
+
+func main() {
+    let array = foo();
+    puts(&array[0]);
+}

@@ -1,4 +1,0 @@
-// check_error 3:17 "invalid operands to binary expression ('int' and 'bool')"
-func main() {
-    var foo = 4 + false;
-}

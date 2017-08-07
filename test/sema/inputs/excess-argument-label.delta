@@ -1,6 +1,0 @@
-// check_error 5:7 "invalid argument name 'foo' for parameter 'a'"
-
-func f(a: int) { }
-func main() {
-    f(foo: 0);
-}

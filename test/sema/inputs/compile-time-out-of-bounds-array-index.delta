@@ -1,7 +1,0 @@
-// check_error 6:15 "accessing array out-of-bounds with index 5, array size is 5"
-extern func foo() -> int[5]&;
-
-func main() {
-    let p = foo();
-    let e = p[5];
-}

@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+struct X {
+    init(a: int) { }
+}
+
+func main() {
+    // CHECK: [[@LINE+1]]:15: error: invalid argument name 'bar' for parameter 'a'
+    var x = X(bar: 5);
+}

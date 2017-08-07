@@ -1,0 +1,18 @@
+// RUN: check_exit_status 21 %delta run %s
+
+struct Foo {
+    let value: int;
+
+    init(value: int) {
+        this.value = value;
+    }
+
+    func add(number: int) -> int {
+        return this.value + number;
+    }
+}
+
+func main() -> int {
+    let foo = Foo(42);
+    return foo.add(-21);
+}

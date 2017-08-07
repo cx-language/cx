@@ -1,0 +1,3 @@
+// RUN: %delta -parse %s
+
+// line comment

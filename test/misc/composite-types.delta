@@ -1,0 +1,21 @@
+// RUN: check_exit_status 5 %delta run %s
+
+struct Foo { }
+class Bar { }
+
+struct X {
+    let a: int;
+
+    init(a: int) {
+        this.a = a;
+    }
+}
+
+class Y {
+    let y: char*;
+}
+
+func main() -> int {
+    var x = X(5);
+    return x.a;
+}

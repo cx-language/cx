@@ -1,5 +1,0 @@
-// compile_successfully -typecheck
-
-func foo() {
-    return;
-}

@@ -1,7 +1,0 @@
-// validate_ast
-let foo: int[3] = [0, 1, 2];
-func main() {
-    let qux: int[1] = [42];
-    foo[0] = 3;
-    foo[1].bar();
-}

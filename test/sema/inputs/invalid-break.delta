@@ -1,6 +1,0 @@
-// check_error 4:9 "'break' is only allowed inside 'while' and 'switch' statements"
-func main() {
-    if (false) {
-        break;
-    }
-}

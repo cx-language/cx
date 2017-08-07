@@ -1,0 +1,6 @@
+// RUN: not %delta -parse %s | %FileCheck %s
+
+struct Foo {
+    // CHECK: [[@LINE+1]]:12: error: deinitializers cannot have parameters
+    deinit(i: int) { }
+}

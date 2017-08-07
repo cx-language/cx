@@ -1,3 +1,0 @@
-// check_error 3:36 "too many generic arguments to 'foo', expected 1"
-func foo<T>(a: T, b: T) -> T { return b; }
-func main() { var f = foo<int, int>(1, 2); }

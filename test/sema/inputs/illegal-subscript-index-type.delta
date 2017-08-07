@@ -1,7 +1,0 @@
-// check_error 6:15 "illegal subscript index type 'bool', expected 'int'"
-extern func foo() -> int[5]&;
-
-func main() {
-    let p = foo();
-    let e = p[false];
-}

@@ -1,0 +1,11 @@
+// RUN: check_exit_status 0 %delta run %s
+
+extern func malloc(n: uint64) -> void*;
+extern func realloc(p: void*, n: uint64) -> void*;
+extern func free(p: void*);
+
+func main() {
+    var buffer = malloc(1);
+    buffer = realloc(buffer, 4);
+    free(buffer);
+}

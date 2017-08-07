@@ -1,9 +1,0 @@
-// check_error 8:15 "'Foo' is not a variable"
-class Foo {
-    let bar: int;
-    init() { }
-}
-
-func main() {
-    var bar = Foo.bar;
-}

@@ -1,5 +1,0 @@
-// check_error 4:9 "invalid argument #1 type 'int' to 'foo', expected 'uint'"
-func foo(a: uint) { }
-func main() {
-    foo(-1);
-}

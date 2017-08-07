@@ -1,0 +1,8 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func f(foo: int, bar: bool) -> int { return foo; }
+
+func main() -> int {
+    // CHECK: [[@LINE+1]]:22: error: invalid argument name 'qux' for parameter 'bar'
+    return f(foo: 5, qux: false);
+}

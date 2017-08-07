@@ -1,0 +1,9 @@
+// RUN: %delta -typecheck %s
+
+func main() {
+    while (false) {
+        while (false) {
+        }
+        break;
+    }
+}

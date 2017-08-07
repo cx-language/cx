@@ -1,4 +1,0 @@
-// check_error 3:19 "cannot initialize variable of type 'int&' with 'null'"
-func main() {
-    let p: int& = null;
-}

@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func foo() { }
+
+// CHECK: [[@LINE+1]]:6: error: redefinition of 'foo'
+func foo() { }

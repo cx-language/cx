@@ -1,6 +1,0 @@
-// check_error 5:40 "cannot initialize variable of type 'mutable Foo&' with 'Foo&'"
-
-class Foo {
-    let i: int;
-    func bar() { let f: mutable Foo& = this; }
-}

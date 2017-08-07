@@ -1,7 +1,0 @@
-// compile_and_run_and_check_output "foo bar"
-
-import "stdio.h";
-
-func main() {
-    printf("foo bar");
-}

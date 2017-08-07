@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    // CHECK: [[@LINE+1]]:17: error: invalid operands to binary expression ('float64' and 'float64')
+    let a = 5.0 & 2.0;
+}

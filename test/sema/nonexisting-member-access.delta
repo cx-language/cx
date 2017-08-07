@@ -1,0 +1,12 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+class Foo {
+    let qux: int;
+    init() { }
+}
+
+func main() {
+    var foo = Foo();
+    // CHECK: [[@LINE+1]]:19: error: no member named 'bar' in 'Foo'
+    var bar = foo.bar;
+}

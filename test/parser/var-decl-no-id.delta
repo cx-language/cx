@@ -1,0 +1,4 @@
+// RUN: not %delta -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:5: error: expected identifier, got number
+var 1

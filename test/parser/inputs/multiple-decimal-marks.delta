@@ -1,2 +1,0 @@
-// check_error 2:14 "expected identifier, got number"
-let pi = 3.1.4;

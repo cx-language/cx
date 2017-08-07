@@ -1,0 +1,15 @@
+// RUN: check_exit_status 11 %delta run %s
+
+func main() -> int {
+    return "abc".count + foo("quux");
+}
+
+func foo(x: string) -> int {
+    var s = x;
+    s = bar(x);
+    return x.count + bar(s).count;
+}
+
+func bar(z: string) -> string {
+    return z;
+}

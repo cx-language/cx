@@ -1,6 +1,0 @@
-// compile_successfully -typecheck
-
-class Foo {
-    let i: int;
-    mutating func bar() { let f: mutable Foo& = this; }
-}

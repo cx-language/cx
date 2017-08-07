@@ -1,0 +1,12 @@
+// RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:foo
+
+func main() -> int {
+    putchar(102);
+    putchar(111);
+    putchar(111);
+    putchar(10);
+    return 0;
+}
+
+extern func putchar(ch: int) -> int;

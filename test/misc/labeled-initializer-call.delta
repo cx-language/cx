@@ -1,0 +1,7 @@
+// RUN: %delta -print-ir %s
+func main() {
+    let a = Foo(qux: 4);
+}
+struct Foo {
+    init(qux: int) { }
+}

@@ -1,0 +1,8 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    if (false) {
+        // CHECK: [[@LINE+1]]:9: error: 'break' is only allowed inside 'while' and 'switch' statements
+        break;
+    }
+}

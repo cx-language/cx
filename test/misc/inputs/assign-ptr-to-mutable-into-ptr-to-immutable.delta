@@ -1,7 +1,0 @@
-// compile_successfully -typecheck
-
-extern func foo() -> mutable int*;
-
-func main() {
-    let p: int* = foo();
-}

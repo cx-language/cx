@@ -1,0 +1,9 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func foo(ref_i: int&) { }
+
+func main() {
+    let i = 42;
+    // CHECK: [[@LINE+1]]:9: error: cannot implicitly pass value types by reference, add explicit '&'
+    foo(i);
+}

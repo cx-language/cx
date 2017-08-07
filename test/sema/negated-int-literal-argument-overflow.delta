@@ -1,0 +1,8 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func foo(a: uint) { }
+
+func main() {
+    // CHECK: [[@LINE+1]]:9: error: invalid argument #1 type 'int' to 'foo', expected 'uint'
+    foo(-1);
+}

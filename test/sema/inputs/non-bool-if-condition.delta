@@ -1,8 +1,0 @@
-// check_error 3:9 "'if' condition must have type 'bool'"
-func main() {
-    if (0) {
-        puts("a");
-    } else {
-        puts("b");
-    }
-}

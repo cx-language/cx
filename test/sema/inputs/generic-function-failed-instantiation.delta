@@ -1,9 +1,0 @@
-// check_error 4:14 "invalid operands to binary expression ('bool' and 'int')"
-
-func foo<T>(t: T) -> bool {
-    return t < 3;
-}
-
-func main() {
-    _ = foo(false);
-}

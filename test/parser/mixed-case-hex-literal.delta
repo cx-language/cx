@@ -1,0 +1,6 @@
+// RUN: not %delta -parse %s | %FileCheck %s
+
+func main() {
+    // CHECK: [[@LINE+1]]:16: error: mixed letter case in hex literal
+    var i = 0xfF;
+}

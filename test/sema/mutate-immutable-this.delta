@@ -1,0 +1,7 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+class Foo {
+    let i: int;
+    // CHECK: [[@LINE+1]]:24: error: cannot increment immutable value
+    func bar() { this.i++; }
+}

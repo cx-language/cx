@@ -1,2 +1,0 @@
-// check_error 2:10 "parameter types cannot be 'mutable'"
-func foo(i: mutable int) { }

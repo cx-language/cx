@@ -1,0 +1,4 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:28: error: mismatching return type 'int', expected 'void'
+func foo(a: int, b: int) { return a * b; }

@@ -1,3 +1,0 @@
-// check_error 3:6 "redefinition of 'foo'"
-func foo() { }
-func foo() { }

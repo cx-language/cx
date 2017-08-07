@@ -1,4 +1,0 @@
-// check_error 3:19 "128 is out of range for type 'int8'"
-func main() {
-    let b: int8 = 128;
-}

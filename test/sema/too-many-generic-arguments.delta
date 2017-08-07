@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func foo<T>(a: T, b: T) -> T { return b; }
+
+// CHECK: [[@LINE+1]]:36: error: too many generic arguments to 'foo', expected 1
+func main() { var f = foo<int, int>(1, 2); }

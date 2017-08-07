@@ -1,6 +1,0 @@
-// check_error 5:11 "invalid operands to binary expression ('int&' and 'null')"
-func main() {
-    let i = 42;
-    let p: int& = &i;
-    if (p == null) { }
-}

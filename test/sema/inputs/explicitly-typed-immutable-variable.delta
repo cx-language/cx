@@ -1,5 +1,0 @@
-// check_error 4:6 "cannot decrement immutable value"
-func main() {
-    let m: int = 4;
-    m--;
-}

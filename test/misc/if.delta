@@ -1,0 +1,26 @@
+// RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:a
+// CHECK-NEXT:c
+// CHECK-NEXT:e
+
+func main() {
+    if (true) {
+        puts("a");
+    }
+
+    if (false) {
+        puts("b");
+    } else {
+        puts("c");
+    }
+
+    if (false) {
+        puts("d");
+    } else if (true) {
+        puts("e");
+    } else {
+        puts("d");
+    }
+}
+
+extern func puts(s: char*);

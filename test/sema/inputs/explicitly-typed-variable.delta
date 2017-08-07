@@ -1,4 +1,0 @@
-// check_error 3:18 "cannot initialize variable of type 'int' with 'bool'"
-func main() {
-    let i: int = false;
-}

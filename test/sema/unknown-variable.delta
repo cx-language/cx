@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    // CHECK: [[@LINE+1]]:15: error: unknown identifier 'unknown'
+    var foo = unknown;
+}

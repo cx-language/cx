@@ -1,0 +1,8 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:6: error: 'foo' is missing a return statement
+func foo(b: bool) -> int {
+    if (b) {
+        return 42;
+    }
+}

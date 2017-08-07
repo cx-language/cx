@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    // CHECK: [[@LINE+1]]:23: error: mixed element types in array literal (expected 'int', found 'null')
+    var a = [1, 2, 3, null];
+}

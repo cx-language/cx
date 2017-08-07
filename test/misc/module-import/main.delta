@@ -1,0 +1,10 @@
+// RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:foo!!!
+// CHECK-NEXT:bar!!!
+
+import "mod"
+
+func main() {
+  foo()
+  bar()
+}

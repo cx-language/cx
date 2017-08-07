@@ -1,2 +1,0 @@
-// check_error 2:23 "expected ')', got ';'"
-var p: mutable(int&*&*;

@@ -1,0 +1,7 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    var b = false;
+    // CHECK: [[@LINE+1]]:9: error: cannot assign 'int' to variable of type 'bool'
+    b = 1;
+}

@@ -1,2 +1,0 @@
-(source-file inputs/numeric-literal-member-func-call.delta
-    (var-decl foo (call (member-expr 0 bar))))

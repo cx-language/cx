@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func main() {
+    // CHECK: [[@LINE+1]]:19: error: 128 is out of range for type 'int8'
+    let b: int8 = 128;
+}

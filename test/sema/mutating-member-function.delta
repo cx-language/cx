@@ -1,0 +1,6 @@
+// RUN: %delta -typecheck %s
+
+class Foo {
+    let i: int;
+    mutating func bar() { let f: mutable Foo& = this; }
+}

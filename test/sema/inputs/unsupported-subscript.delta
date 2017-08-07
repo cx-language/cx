@@ -1,7 +1,0 @@
-// check_error 6:5 "cannot subscript 'mutable uint8*', expected array or reference-to-array"
-extern func malloc(n: uint64) -> mutable void*;
-
-func main() {
-    let p = cast<mutable uint8*>(malloc(8));
-    p[0] = 64;
-}

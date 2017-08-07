@@ -1,5 +1,0 @@
-// check_error 3:15 "newline inside string literal"
-func main() {
-    var i = "a
-    ";
-}

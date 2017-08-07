@@ -1,2 +1,0 @@
-// validate_ast
-let foo = 0.bar();

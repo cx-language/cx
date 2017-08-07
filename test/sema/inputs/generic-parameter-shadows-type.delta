@@ -1,3 +1,0 @@
-// check_error 3:10 "redefinition of 'Foo'"
-struct Foo { }
-func bar<Foo>() { }

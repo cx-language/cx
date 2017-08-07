@@ -1,4 +1,0 @@
-// compile_successfully -typecheck
-
-func main() { foo(); }
-func foo() { }

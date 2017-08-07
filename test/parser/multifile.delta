@@ -1,0 +1,2 @@
+// RUN: %delta -print-ast %p/inputs/multifile/a.delta %p/inputs/multifile/b.delta | %FileCheck -match-full-lines -strict-whitespace %p/inputs/multifile/a.delta
+// RUN: %delta -print-ast %p/inputs/multifile/a.delta %p/inputs/multifile/b.delta | %FileCheck -match-full-lines -strict-whitespace %p/inputs/multifile/b.delta

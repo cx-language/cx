@@ -1,0 +1,21 @@
+// RUN: check_exit_status 15 %delta run %s
+
+struct vec2 {
+    var x: int;
+    var y: int;
+
+    init(x: int, y: int) {
+        this.x = x;
+        this.y = y;
+    }
+
+    func add(that: vec2) -> vec2 {
+        return vec2(this.x + that.x, this.y + that.y);
+    }
+}
+
+func main() -> int {
+    let foo = vec2(5, 8);
+    let foo2 = foo.add(vec2(3, -1));
+    return foo2.x + foo2.y;
+}

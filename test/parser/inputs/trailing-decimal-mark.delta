@@ -1,2 +1,0 @@
-// check_error 2:12 "expected identifier, got ';'"
-let pi = 3.;

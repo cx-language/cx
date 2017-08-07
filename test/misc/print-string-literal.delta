@@ -1,0 +1,17 @@
+// RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:foo
+// CHECK-NEXT:bar
+// CHECK-NEXT:baz
+// CHECK-NEXT:qux
+
+import "stdio.h"
+
+func foo() -> char& { return "foo" }
+func bar() -> string { return "bar" }
+
+func main() {
+    puts(foo())
+    print(bar())
+    puts("baz")
+    print("qux")
+}

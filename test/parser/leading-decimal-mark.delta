@@ -1,0 +1,4 @@
+// RUN: not %delta -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:12: error: unexpected '.'
+let half = .5;

@@ -1,4 +1,0 @@
-// check_error 3:23 "mixed element types in array literal (expected 'int', found 'null')"
-func main() {
-    var a = [1, 2, 3, null];
-}

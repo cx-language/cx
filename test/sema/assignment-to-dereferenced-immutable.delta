@@ -1,0 +1,9 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+extern func calloc(count: uint64, size: uint64) -> void*;
+
+func main() {
+    var buffer = cast<int*>(calloc(1, 8));
+    // CHECK: [[@LINE+1]]:13: error: cannot assign to immutable expression
+    *buffer = 41;
+}

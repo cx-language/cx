@@ -1,4 +1,0 @@
-// check_error 3:13 "numbers cannot start with 0[0-9], use 0o prefix for octal literal"
-func main() {
-    var i = 0666;
-}

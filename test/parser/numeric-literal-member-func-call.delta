@@ -1,0 +1,5 @@
+// RUN: %delta -print-ast %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK:(source-file {{.*}}numeric-literal-member-func-call.delta
+
+let foo = 0.bar(); // CHECK-NEXT:    (var-decl foo (call (member-expr 0 bar))))

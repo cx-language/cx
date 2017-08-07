@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+struct Foo { }
+
+// CHECK: [[@LINE+1]]:7: error: redefinition of 'Foo'
+class Foo { }

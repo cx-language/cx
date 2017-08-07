@@ -1,0 +1,14 @@
+// RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:foo
+// CHECK-NEXT:foo
+// CHECK-NEXT:foo
+
+func main() {
+    var i = 0;
+    while (i < 3) {
+        puts("foo");
+        i++;
+    }
+}
+
+extern func puts(str: char*);

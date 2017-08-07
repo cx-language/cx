@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+struct Foo {
+    var a: int
+}
+
+func bar(foo: Foo&) {
+    // CHECK: [[@LINE+1]]:11: error: cannot assign to immutable expression
+    foo.a = 42
+}

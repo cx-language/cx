@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func foo<T>(t: T) -> bool {
+    // CHECK: [[@LINE+1]]:14: error: invalid operands to binary expression ('bool' and 'int')
+    return t < 3;
+}
+
+func main() {
+    _ = foo(false);
+}

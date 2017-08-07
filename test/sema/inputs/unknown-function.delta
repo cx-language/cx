@@ -1,4 +1,0 @@
-// check_error 4:23 "unknown identifier 'foo'"
-
-func fooz() -> int { return 42; }
-func main() { var i = foo(); }

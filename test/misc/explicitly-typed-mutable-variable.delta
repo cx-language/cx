@@ -1,0 +1,7 @@
+// RUN: check_exit_status 3 %delta run %s
+
+func main() -> int {
+    var m: int = 4;
+    m--;
+    return m;
+}
