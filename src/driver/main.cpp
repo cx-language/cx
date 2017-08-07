@@ -101,6 +101,12 @@ void printHelp() {
 int main(int argc, char** argv) try {
     if (argc == 1) return replMain();
 
+    bool run = strcmp(argv[1], "run") == 0;
+    if (run) {
+        ++argv;
+        --argc;
+    }
+
     std::vector<llvm::StringRef> args(argv + 1, argv + argc);
 
     if (checkFlag("-help", args) || checkFlag("--help", args) || checkFlag("-h", args)) {
@@ -180,7 +186,10 @@ int main(int argc, char** argv) try {
     const char* ccArgs[] = { ccPath->c_str(), outputFile.c_str(), nullptr };
     int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs);
     std::remove(outputFile.c_str());
-    return ccExitStatus;
+    if (!run) return ccExitStatus;
+
+    const char* programArgs[] = { "a.out", nullptr };
+    return llvm::sys::ExecuteAndWait(programArgs[0], programArgs);
 } catch (const CompileError& error) {
     error.print();
     exit(1);
