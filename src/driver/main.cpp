@@ -167,14 +167,26 @@ int main(int argc, char** argv) try {
         return 0;
     }
 
-    std::string outputFile = emitAssembly ? "output.s" : "output.o";
+    llvm::SmallString<128> temporaryOutputFilePath;
+    auto* outputFileExtension = emitAssembly ? "s" : "o";
+    if (auto error = llvm::sys::fs::createTemporaryFile("delta", outputFileExtension,
+                                                        temporaryOutputFilePath)) {
+        printErrorAndExit(error.message());
+    }
+
     auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile
                                  : llvm::TargetMachine::CGFT_ObjectFile;
     auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_
                                                   : llvm::Reloc::Model::Static;
-    emitMachineCode(irModule, outputFile, fileType, relocModel);
+    emitMachineCode(irModule, temporaryOutputFilePath, fileType, relocModel);
 
-    if (compileOnly || emitAssembly) return 0;
+    if (compileOnly || emitAssembly) {
+        if (auto error = llvm::sys::fs::rename(temporaryOutputFilePath,
+                                               llvm::Twine("output.") + outputFileExtension)) {
+            printErrorAndExit(error.message());
+        }
+        return 0;
+    }
 
     // Link the output.
 
@@ -183,13 +195,34 @@ int main(int argc, char** argv) try {
         printErrorAndExit("couldn't find C compiler");
     }
 
-    const char* ccArgs[] = { ccPath->c_str(), outputFile.c_str(), nullptr };
-    int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs);
-    std::remove(outputFile.c_str());
-    if (!run) return ccExitStatus;
+    llvm::SmallString<128> temporaryExecutablePath;
+    if (auto error = llvm::sys::fs::createUniqueFile("delta-%%%%%%%%.out", temporaryExecutablePath)) {
+        printErrorAndExit(error.message());
+    }
 
-    const char* programArgs[] = { "a.out", nullptr };
-    return llvm::sys::ExecuteAndWait(programArgs[0], programArgs);
+    const char* ccArgs[] = {
+        ccPath->c_str(),
+        temporaryOutputFilePath.c_str(),
+        "-o",
+        temporaryExecutablePath.c_str(),
+        nullptr
+    };
+
+    int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs);
+    std::remove(temporaryOutputFilePath.c_str());
+    if (ccExitStatus != 0) return ccExitStatus;
+
+    if (run) {
+        const char* executableArgs[] = { temporaryExecutablePath.c_str(), nullptr };
+        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs);
+        std::remove(temporaryExecutablePath.c_str());
+        return executableExitStatus;
+    }
+
+    if (auto error = llvm::sys::fs::rename(temporaryExecutablePath, "a.out")) {
+        printErrorAndExit(error.message());
+    }
+    return 0;
 } catch (const CompileError& error) {
     error.print();
     exit(1);
