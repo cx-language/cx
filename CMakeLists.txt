@@ -33,13 +33,12 @@ add_subdirectory(src/irgen)
 add_subdirectory(src/parser)
 add_subdirectory(src/sema)
 add_subdirectory(src/support)
-add_subdirectory(test)
 
-if(CMAKE_CONFIGURATION_TYPES)
-    set(BUILD_CONFIG --build-config $<CONFIGURATION>)
-endif()
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
-    --force-new-ctest-process --output-on-failure ${BUILD_CONFIG} USES_TERMINAL)
+add_custom_target(check COMMAND lit --verbose ${PROJECT_SOURCE_DIR}/test
+    -Ddelta_path="$<TARGET_FILE:delta>"
+    -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
+    -Dnot_path="$<TARGET_FILE:not>"
+    -Dcheck_exit_status_path="${PROJECT_SOURCE_DIR}/test/check_exit_status.sh")
 
 # Download the LLVM FileCheck utility for tests.
 set(FILECHECK_SRC_URL "https://raw.githubusercontent.com/llvm-mirror/llvm/release_${LLVM_VERSION_MAJOR}${LLVM_VERSION_MINOR}/utils/FileCheck/FileCheck.cpp")
@@ -75,7 +74,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     include(CodeCoverage)
     set(LCOV_REMOVE_EXTRA '*/v1/*')
     if(LCOV_PATH)
-        setup_target_for_coverage(coverage ctest coverage)
+        setup_target_for_coverage(coverage "cmake --build ${CMAKE_BINARY_DIR} --target check" coverage)
     else()
         message(STATUS "lcov not found! Skipping 'coverage' target...")
     endif()
