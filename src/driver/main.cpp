@@ -114,8 +114,8 @@ int main(int argc, char** argv) try {
         return 0;
     }
 
-    const bool parseFlag = checkFlag("-parse", args);
-    const bool typecheckFlag = checkFlag("-typecheck", args);
+    const bool parse = checkFlag("-parse", args);
+    const bool typecheck = checkFlag("-typecheck", args);
     const bool compileOnly = checkFlag("-c", args);
     const bool printAST = checkFlag("-print-ast", args);
     const bool printIR = checkFlag("-print-ir", args);
@@ -138,7 +138,7 @@ int main(int argc, char** argv) try {
     Module module("main");
 
     for (llvm::StringRef filePath : args) {
-        parse(filePath, module);
+        ::parse(filePath, module);
         importSearchPaths.push_back(llvm::sys::path::parent_path(filePath)); // TODO: Don't add duplicates.
     }
 
@@ -147,14 +147,14 @@ int main(int argc, char** argv) try {
         return 0;
     }
 
-    if (parseFlag) return 0;
+    if (parse) return 0;
 
     for (auto& importedModule : module.getImportedModules()) {
-        typecheckModule(*importedModule, importSearchPaths, parse);
+        typecheckModule(*importedModule, importSearchPaths, ::parse);
     }
-    typecheckModule(module, importSearchPaths, parse);
+    typecheckModule(module, importSearchPaths, ::parse);
 
-    if (typecheckFlag) return 0;
+    if (typecheck) return 0;
 
     IRGenerator irGenerator;
     for (auto& module : getAllImportedModules()) {
