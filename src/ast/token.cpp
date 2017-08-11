@@ -1,10 +1,10 @@
 #include "token.h"
 #include <ostream>
-#include <cassert>
 #include <cerrno>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
+#include "../support/utility.h"
 
 using namespace delta;
 
@@ -45,8 +45,8 @@ SourceLocation lastLocation(nullptr, 1, 0);
 
 Token::Token(TokenKind kind, llvm::StringRef string)
 : kind(kind), string(string), location(currentFilePath, firstLocation.line, firstLocation.column) {
-    assert(!string.empty() || kind == NO_TOKEN || kind >= BREAK);
-    assert(location.isValid());
+    ASSERT(!string.empty() || kind == NO_TOKEN || kind >= BREAK);
+    ASSERT(location.isValid());
 #ifndef NDEBUG
     if (kind == INT_LITERAL) (void) getIntegerValue(); // Validate the integer value.
     if (kind == FLOAT_LITERAL) (void) getFloatingPointValue(); // Validate the FP value.
@@ -84,23 +84,22 @@ int Token::getPrecedence() const {
 int64_t Token::getIntegerValue() const {
     int64_t value;
     bool fail = string.getAsInteger(0, value);
-    (void) fail;
-    assert(!fail && "invalid integer literal");
+    ASSERT(!fail, "invalid integer literal");
     return value;
 }
 
 long double Token::getFloatingPointValue() const {
     long double value = std::strtold(string.str().c_str(), nullptr);
-    assert(errno != ERANGE && "invalid floating-point literal");
+    ASSERT(errno != ERANGE, "invalid floating-point literal");
     return value;
 }
 
 PrefixOperator::PrefixOperator(Token token) : kind(token) {
-    assert(token.isPrefixOperator());
+    ASSERT(token.isPrefixOperator());
 }
 
 BinaryOperator::BinaryOperator(Token token) : kind(token) {
-    assert(token.isBinaryOperator());
+    ASSERT(token.isBinaryOperator());
 }
 
 bool BinaryOperator::isComparisonOperator() const {

@@ -24,7 +24,7 @@ llvm::Value* IRGenerator::codegenLvalueVarExpr(const VarExpr& expr) {
 
 llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr) {
     if (expr.getType().isString()) {
-        assert(builder.GetInsertBlock() && "CreateGlobalStringPtr requires block to insert into");
+        ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.value);
         auto* string = builder.CreateInsertValue(llvm::UndefValue::get(toIR(Type::getString())),
                                                  stringPtr, 0);
@@ -215,7 +215,7 @@ llvm::Value* IRGenerator::codegenShortCircuitBinaryOp(BinaryOperator op, const E
 llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
     if (!expr.isBuiltinOp()) return codegenCallExpr((const CallExpr&) expr);
 
-    assert(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType())
+    ASSERT(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType())
            || expr.getRHS().getType().isImplicitlyConvertibleTo(expr.getLHS().getType()));
 
     switch (expr.op) {
@@ -238,7 +238,7 @@ bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* target
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType,
                                                 bool forceByReference) {
     if (targetType && isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
-        assert(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
+        ASSERT(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
         auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegenExpr(expr), 0, 0);
         auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(targetType),
                                                    elementPtr, 0);
@@ -291,7 +291,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     }
 
     llvm::Function* function = getFunctionForCall(expr);
-    assert(function);
+    ASSERT(function);
     auto param = function->arg_begin();
     llvm::SmallVector<llvm::Value*, 16> args;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstdlib> // std::abort
 #include <fstream>
 #include <memory>
@@ -12,6 +13,13 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/Casting.h>
 #include "../ast/location.h"
+
+#ifndef NDEBUG
+#define ASSERT(condition, ...) assert(condition)
+#else
+// Prevent unused variable warnings without evaluating the condition value:
+#define ASSERT(condition, ...) ((void) sizeof(condition))
+#endif
 
 namespace delta {
 

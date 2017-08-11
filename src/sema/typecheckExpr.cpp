@@ -30,7 +30,7 @@ Type TypeChecker::typecheckVarExpr(VarExpr& expr) const {
         case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.getLocation(), "'", expr.identifier, "' is not a variable");
         case DeclKind::FieldDecl:
-            assert(currentFunction);
+            ASSERT(currentFunction);
             if (currentFunction->isMutating() || currentFunction->isInitDecl()) {
                 return llvm::cast<FieldDecl>(decl).type;
             } else {
@@ -299,7 +299,7 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
     std::vector<Type> genericArgs;
     genericArgs.reserve(genericParams.size());
 
-    assert(call.args.size() == params.size());
+    ASSERT(call.args.size() == params.size());
 
     for (auto& genericParam : genericParams) {
         Type genericArg;
@@ -347,7 +347,7 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
 
     if (call.getGenericArgs().empty()) {
         call.setGenericArgs(inferGenericArgs(genericParams, call, params));
-        assert(call.getGenericArgs().size() == genericParams.size());
+        ASSERT(call.getGenericArgs().size() == genericParams.size());
     } else {
         validateGenericArgCount(genericParams.size(), call);
     }
@@ -355,11 +355,10 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
     auto genericArg = call.getGenericArgs().begin();
     for (const GenericParamDecl& genericParam : genericParams) {
         if (!genericParam.constraints.empty()) {
-            assert(genericParam.constraints.size() == 1 &&
-                   "cannot have multiple generic constraints yet");
+            ASSERT(genericParam.constraints.size() == 1, "cannot have multiple generic constraints yet");
 
             auto interfaces = findDecls(genericParam.constraints[0]);
-            assert(interfaces.size() == 1);
+            ASSERT(interfaces.size() == 1);
 
             if (genericArg->isBasicType() &&
                 !implementsInterface(*getTypeDecl(llvm::cast<BasicType>(**genericArg)),
@@ -403,7 +402,7 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                     Type receiverType = expr.getReceiver()->getType().removePointer();
                     if (receiverType.isBasicType() && !receiverType.getGenericArgs().empty()) {
                         TypeDecl* typeDecl = getTypeDecl(llvm::cast<BasicType>(*receiverType));
-                        assert(typeDecl->genericParams.size() == receiverType.getGenericArgs().size());
+                        ASSERT(typeDecl->genericParams.size() == receiverType.getGenericArgs().size());
                         for (auto t : llvm::zip_first(typeDecl->genericParams, receiverType.getGenericArgs())) {
                             currentGenericArgs.emplace(std::get<0>(t).name, std::get<1>(t));
                         }
@@ -533,7 +532,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         } else {
             setCurrentGenericArgs(functionDecl->getGenericParams(), expr, functionDecl->getParams());
             if (hasGenericReceiverType) {
-                assert(receiverTypeDecl->genericParams.size() ==
+                ASSERT(receiverTypeDecl->genericParams.size() ==
                        expr.getReceiverType().removePointer().getGenericArgs().size());
                 for (auto t : llvm::zip_first(receiverTypeDecl->genericParams,
                                               expr.getReceiverType().removePointer().getGenericArgs())) {
@@ -734,7 +733,7 @@ Type TypeChecker::typecheckExpr(Expr& expr) const {
         case ExprKind::SubscriptExpr: type = typecheckSubscriptExpr(llvm::cast<SubscriptExpr>(expr)); break;
         case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;
     }
-    assert(*type);
+    ASSERT(*type);
     expr.setType(resolve(*type));
     return expr.getType();
 }
@@ -742,11 +741,11 @@ Type TypeChecker::typecheckExpr(Expr& expr) const {
 bool TypeChecker::isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source,
                                     Type target) const {
     if (!source.isTupleType()) {
-        assert(!target.isTupleType());
-        assert(exprs.size() == 1);
+        ASSERT(!target.isTupleType());
+        ASSERT(exprs.size() == 1);
         return isValidConversion(*exprs[0], source, target);
     }
-    assert(target.isTupleType());
+    ASSERT(target.isTupleType());
 
     for (size_t i = 0; i < exprs.size(); ++i) {
         if (!isValidConversion(*exprs[i], source.getSubtypes()[i], target.getSubtypes()[i])) {

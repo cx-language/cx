@@ -1,7 +1,6 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
-#include <cassert>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/IR/IRBuilder.h>
@@ -69,9 +68,8 @@ llvm::Function* IRGenerator::getDeinitializerFor(Type type) {
 
 /// @param type The Delta type of the variable, or null if the variable is 'this'.
 void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value) {
-    bool wasInserted = scopes.back().localValues.emplace(std::move(name), value).second;
-    (void) wasInserted;
-    assert(wasInserted);
+    bool didInsert = scopes.back().localValues.emplace(std::move(name), value).second;
+    ASSERT(didInsert);
 
     if (type && type.isBasicType()) {
         llvm::Function* deinit = getDeinitializerFor(type);
@@ -90,7 +88,7 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
     }
 
     if (!value) {
-        assert(decl);
+        ASSERT(decl);
         if (auto fieldDecl = llvm::dyn_cast<FieldDecl>(decl)) {
             return codegenMemberAccess(findValue("this", nullptr), fieldDecl->type, fieldDecl->name);
         }
@@ -155,7 +153,7 @@ llvm::Type* IRGenerator::toIR(Type type) {
             return it->second.first;
         }
         case TypeKind::ArrayType:
-            assert(type.getArraySize() != ArrayType::unsized && "unimplemented");
+            ASSERT(type.getArraySize() != ArrayType::unsized, "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType()), type.getArraySize());
         case TypeKind::RangeType:
             llvm_unreachable("IRGen doesn't support range types yet");
@@ -198,7 +196,7 @@ void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
 }
 
 void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
-    assert(stmt.values.size() < 2 && "IRGen doesn't support multiple return values yet");
+    ASSERT(stmt.values.size() < 2, "IRGen doesn't support multiple return values yet");
 
     codegenDeferredExprsAndDeinitCallsForReturn();
 
@@ -393,7 +391,7 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
 }
 
 void IRGenerator::codegenBreakStmt(const BreakStmt&) {
-    assert(!breakTargets.empty());
+    ASSERT(!breakTargets.empty());
     builder.CreateBr(breakTargets.back());
 }
 
@@ -450,7 +448,7 @@ void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToD
 }
 
 llvm::Type* IRGenerator::getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) const {
-    assert(structs.count(typeName));
+    ASSERT(structs.count(typeName));
     auto structTypeAndDecl = structs.find(typeName)->second;
 
     if (!isMutating && structTypeAndDecl.second->passByValue()) {
@@ -462,7 +460,7 @@ llvm::Type* IRGenerator::getLLVMTypeForPassing(llvm::StringRef typeName, bool is
 
 void IRGenerator::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                         llvm::ArrayRef<Type> genericArgs) {
-    assert(genericParams.size() == genericArgs.size());
+    ASSERT(genericParams.size() == genericArgs.size());
     for (auto tuple : llvm::zip_first(genericParams, genericArgs)) {
         currentGenericArgs.emplace(std::get<0>(tuple).name, toIR(std::get<1>(tuple)));
     }
@@ -504,7 +502,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
 
     for (const auto& t : functionType->paramTypes) paramTypes.emplace_back(toIR(t));
 
-    assert(!functionType->returnType.isTupleType() && "IRGen doesn't support tuple return values yet");
+    ASSERT(!functionType->returnType.isTupleType(), "IRGen doesn't support tuple return values yet");
     auto* returnType = toIR(decl.isInitDecl() ? receiverType : functionType->returnType);
     if (decl.getName() == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
@@ -590,7 +588,7 @@ void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
 
     llvm::Function* function = getFunctionProto(decl);
     if (!decl.isExtern()) codegenFunctionBody(decl, *function);
-    assert(!llvm::verifyFunction(*function, &llvm::errs()));
+    ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
 }
 
 void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
@@ -611,7 +609,7 @@ void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typ
     builder.CreateRet(builder.CreateLoad(alloca));
     endScope();
 
-    assert(!llvm::verifyFunction(*function, &llvm::errs()));
+    ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
 }
 
 void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
@@ -619,7 +617,7 @@ void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl, llvm::ArrayRef<Type>
 
     llvm::Function* function = getFunctionProto(decl, {}, decl.getTypeDecl()->getType(typeGenericArgs));
     codegenFunctionBody(decl, *function);
-    assert(!llvm::verifyFunction(*function, &llvm::errs()));
+    ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
 }
 
 std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
@@ -728,13 +726,13 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
             }
             codegenFunctionBody(p.second.decl, *p.second.function);
             currentGenericArgs = std::move(previousGenericArgs);
-            assert(!llvm::verifyFunction(*p.second.function, &llvm::errs()));
+            ASSERT(!llvm::verifyFunction(*p.second.function, &llvm::errs()));
         }
 
         if (functionInstantiations.size() == currentFunctionInstantiations.size()) break;
     }
 
-    assert(!llvm::verifyModule(module, &llvm::errs()));
+    ASSERT(!llvm::verifyModule(module, &llvm::errs()));
     return module;
 }
 

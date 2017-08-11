@@ -23,7 +23,7 @@ size_t currentTokenIndex;
 Module* currentModule;
 
 Token currentToken() {
-    assert(currentTokenIndex < tokenBuffer.size());
+    ASSERT(currentTokenIndex < tokenBuffer.size());
     return tokenBuffer[currentTokenIndex];
 }
 
@@ -124,13 +124,13 @@ std::vector<Argument> parseArgumentList() {
 
 /// var-expr ::= id
 std::unique_ptr<VarExpr> parseVarExpr() {
-    assert(currentToken() == IDENTIFIER);
+    ASSERT(currentToken() == IDENTIFIER);
     auto id = parse(IDENTIFIER);
     return llvm::make_unique<VarExpr>(std::move(id.string), id.getLocation());
 }
 
 std::unique_ptr<VarExpr> parseThis() {
-    assert(currentToken() == THIS);
+    ASSERT(currentToken() == THIS);
     auto expr = llvm::make_unique<VarExpr>("this", getCurrentLocation());
     consumeToken();
     return expr;
@@ -143,7 +143,7 @@ std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLocation li
     for (auto it = literalContent.begin(), end = literalContent.end(); it != end; ++it) {
         if (*it == '\\') {
             ++it;
-            assert(it != end);
+            ASSERT(it != end);
             switch (*it) {
                 case 'a': result += '\a'; break;
                 case 'b': result += '\b'; break;
@@ -166,7 +166,7 @@ std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLocation li
 }
 
 std::unique_ptr<StringLiteralExpr> parseStringLiteral() {
-    assert(currentToken() == STRING_LITERAL);
+    ASSERT(currentToken() == STRING_LITERAL);
     auto content = replaceEscapeChars(currentToken().string.drop_back().drop_front(), getCurrentLocation());
     auto expr = llvm::make_unique<StringLiteralExpr>(std::move(content), getCurrentLocation());
     consumeToken();
@@ -174,7 +174,7 @@ std::unique_ptr<StringLiteralExpr> parseStringLiteral() {
 }
 
 std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
-    assert(currentToken() == INT_LITERAL);
+    ASSERT(currentToken() == INT_LITERAL);
     auto expr = llvm::make_unique<IntLiteralExpr>(currentToken().getIntegerValue(),
                                                   getCurrentLocation());
     consumeToken();
@@ -182,7 +182,7 @@ std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
 }
 
 std::unique_ptr<FloatLiteralExpr> parseFloatLiteral() {
-    assert(currentToken() == FLOAT_LITERAL);
+    ASSERT(currentToken() == FLOAT_LITERAL);
     auto expr = llvm::make_unique<FloatLiteralExpr>(currentToken().getFloatingPointValue(),
                                                     getCurrentLocation());
     consumeToken();
@@ -201,7 +201,7 @@ std::unique_ptr<BoolLiteralExpr> parseBoolLiteral() {
 }
 
 std::unique_ptr<NullLiteralExpr> parseNullLiteral() {
-    assert(currentToken() == NULL_LITERAL);
+    ASSERT(currentToken() == NULL_LITERAL);
     auto expr = llvm::make_unique<NullLiteralExpr>(getCurrentLocation());
     consumeToken();
     return expr;
@@ -209,7 +209,7 @@ std::unique_ptr<NullLiteralExpr> parseNullLiteral() {
 
 /// array-literal ::= '[' expr-list ']'
 std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral() {
-    assert(currentToken() == LBRACKET);
+    ASSERT(currentToken() == LBRACKET);
     auto location = getCurrentLocation();
     consumeToken();
     auto elements = parseExprList();
@@ -220,7 +220,7 @@ std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral() {
 /// generic-argument-list ::= '<' generic-arguments '>'
 /// generic-arguments ::= type | type ',' generic-arguments
 std::vector<Type> parseGenericArgumentList() {
-    assert(currentToken() == LT);
+    ASSERT(currentToken() == LT);
     consumeToken();
     std::vector<Type> genericArgs;
 
@@ -236,7 +236,7 @@ std::vector<Type> parseGenericArgumentList() {
 
 /// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
 Type parseSimpleType(bool isMutable) {
-    assert(currentToken() == IDENTIFIER);
+    ASSERT(currentToken() == IDENTIFIER);
     llvm::StringRef id = consumeToken().string;
 
     Type type;
@@ -301,7 +301,7 @@ Type parseType() {
 
 /// cast-expr ::= 'cast' '<' type '>' '(' expr ')'
 std::unique_ptr<CastExpr> parseCastExpr() {
-    assert(currentToken() == CAST);
+    ASSERT(currentToken() == CAST);
     auto location = getCurrentLocation();
     consumeToken();
     parse(LT);
@@ -321,7 +321,7 @@ std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
 
 /// subscript-expr ::= expr '[' expr ']'
 std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand) {
-    assert(currentToken() == LBRACKET);
+    ASSERT(currentToken() == LBRACKET);
     auto location = getCurrentLocation();
     consumeToken();
     auto index = parseExpr();
@@ -331,7 +331,7 @@ std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand) {
 
 /// unwrap-expr ::= expr '!'
 std::unique_ptr<UnwrapExpr> parseUnwrapExpr(std::unique_ptr<Expr> operand) {
-    assert(currentToken() == NOT);
+    ASSERT(currentToken() == NOT);
     auto location = getCurrentLocation();
     consumeToken();
     return llvm::make_unique<UnwrapExpr>(std::move(operand), location);
@@ -351,7 +351,7 @@ std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> callee) {
 
 /// paren-expr ::= '(' expr ')'
 std::unique_ptr<Expr> parseParenExpr() {
-    assert(currentToken() == LPAREN);
+    ASSERT(currentToken() == LPAREN);
     consumeToken();
     auto expr = parseExpr();
     parse(RPAREN);
@@ -419,7 +419,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
 
 /// prefix-expr ::= prefix-operator (prefix-expr | postfix-expr)
 std::unique_ptr<PrefixExpr> parsePrefixExpr() {
-    assert(currentToken().isPrefixOperator());
+    ASSERT(currentToken().isPrefixOperator());
     auto op = currentToken();
     auto location = getCurrentLocation();
     consumeToken();
@@ -492,7 +492,7 @@ std::vector<std::unique_ptr<Expr>> parseExprList() {
 
 /// return-stmt ::= 'return' expr-list ('\n' | ';')
 std::unique_ptr<ReturnStmt> parseReturnStmt() {
-    assert(currentToken() == RETURN);
+    ASSERT(currentToken() == RETURN);
     auto location = getCurrentLocation();
     consumeToken();
     auto returnValues = parseExprList();
@@ -505,7 +505,7 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'uninitialized'
 std::unique_ptr<VarDecl> parseVarDecl() {
-    assert(currentToken().is(LET, VAR));
+    ASSERT(currentToken().is(LET, VAR));
     bool isMutable = consumeToken() == VAR;
     auto name = parse(IDENTIFIER);
 
@@ -533,7 +533,7 @@ std::unique_ptr<VarStmt> parseVarStmt() {
 
 /// call-stmt ::= call-expr ('\n' | ';')
 std::unique_ptr<ExprStmt> parseCallStmt(std::unique_ptr<Expr> callExpr) {
-    assert(callExpr->isCallExpr());
+    ASSERT(callExpr->isCallExpr());
     auto stmt = llvm::make_unique<ExprStmt>(std::move(callExpr));
     parseStmtTerminator();
     return stmt;
@@ -557,7 +557,7 @@ std::unique_ptr<DecrementStmt> parseDecrementStmt(std::unique_ptr<Expr> operand)
 
 /// defer-stmt ::= 'defer' call-expr ('\n' | ';')
 std::unique_ptr<DeferStmt> parseDeferStmt() {
-    assert(currentToken() == DEFER);
+    ASSERT(currentToken() == DEFER);
     consumeToken();
     // FIXME: Doesn't have to be a variable expression.
     auto stmt = llvm::make_unique<DeferStmt>(parseCallExpr(parseVarExpr()));
@@ -568,7 +568,7 @@ std::unique_ptr<DeferStmt> parseDeferStmt() {
 /// if-stmt ::= 'if' '(' expr ')' '{' stmt* '}' ('else' else-branch)?
 /// else-branch ::= if-stmt | '{' stmt* '}'
 std::unique_ptr<IfStmt> parseIfStmt() {
-    assert(currentToken() == IF);
+    ASSERT(currentToken() == IF);
     consumeToken();
     parse(LPAREN);
     auto condition = parseExpr();
@@ -598,7 +598,7 @@ std::unique_ptr<IfStmt> parseIfStmt() {
 
 /// while-stmt ::= 'while' '(' expr ')' '{' stmt* '}'
 std::unique_ptr<WhileStmt> parseWhileStmt() {
-    assert(currentToken() == WHILE);
+    ASSERT(currentToken() == WHILE);
     consumeToken();
     parse(LPAREN);
     auto condition = parseExpr();
@@ -611,7 +611,7 @@ std::unique_ptr<WhileStmt> parseWhileStmt() {
 
 /// for-stmt ::= 'for' '(' id 'in' expr ')' '{' stmt* '}'
 std::unique_ptr<ForStmt> parseForStmt() {
-    assert(currentToken() == FOR);
+    ASSERT(currentToken() == FOR);
     consumeToken();
     parse(LPAREN);
     auto id = parse(IDENTIFIER);
@@ -630,7 +630,7 @@ std::unique_ptr<ForStmt> parseForStmt() {
 /// case ::= 'case' expr ':' stmt+
 /// default-case ::= 'default' ':' stmt+
 std::unique_ptr<SwitchStmt> parseSwitchStmt() {
-    assert(currentToken() == SWITCH);
+    ASSERT(currentToken() == SWITCH);
     consumeToken();
     parse(LPAREN);
     auto condition = parseExpr();
@@ -770,7 +770,7 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
 /// generic-param-list ::= '<' generic-param-decls '>'
 /// generic-param-decls ::= id | id ',' generic-param-decls
 std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
-    assert(currentToken() == FUNC);
+    ASSERT(currentToken() == FUNC);
     consumeToken();
 
     if (currentToken() != IDENTIFIER && !currentToken().isOverloadable())
@@ -826,7 +826,7 @@ std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool
 
 /// extern-function-decl ::= 'extern' function-proto ('\n' | ';')
 std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
-    assert(currentToken() == EXTERN);
+    ASSERT(currentToken() == EXTERN);
     consumeToken();
     auto decl = parseFunctionProto(/* receiverTypeDecl */ nullptr);
     parseStmtTerminator();
@@ -928,7 +928,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
 
 /// import-decl ::= 'import' string-literal ('\n' | ';')
 std::unique_ptr<ImportDecl> parseImportDecl() {
-    assert(currentToken() == IMPORT);
+    ASSERT(currentToken() == IMPORT);
     consumeToken();
     expect(STRING_LITERAL, "after 'import'");
     auto target = parseStringLiteral();

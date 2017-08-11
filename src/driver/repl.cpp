@@ -51,7 +51,7 @@ void evaluate(llvm::StringRef line) {
                                                       "__anon_expr", &irModuleRef);
     irGenerator.getBuilder().SetInsertPoint(llvm::BasicBlock::Create(irgen::getContext(), "", function));
     irGenerator.getBuilder().CreateRet(irGenerator.codegenExpr(*expr));
-    assert(!llvm::verifyModule(irModuleRef, &llvm::errs()));
+    ASSERT(!llvm::verifyModule(irModuleRef, &llvm::errs()));
 
     llvm::GenericValue result = engine->runFunction(function, {});
 

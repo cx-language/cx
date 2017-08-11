@@ -156,7 +156,7 @@ inline Token readNumber() {
 end:
     unreadChar(ch);
 
-    assert(begin != end);
+    ASSERT(begin != end);
     if (end[-1] == '.') {
         unreadChar('.'); // Lex the '.' as a Token::DOT.
         isFloat = false;

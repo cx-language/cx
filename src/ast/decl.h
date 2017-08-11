@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <string>
 #include <memory>
 #include <vector>
@@ -10,6 +9,7 @@
 #include "stmt.h"
 #include "type.h"
 #include "location.h"
+#include "../support/utility.h"
 
 namespace llvm { class StringRef; }
 
@@ -72,7 +72,7 @@ public:
     : Decl(DeclKind::ParamDecl), type(type), name(std::move(name)), location(location),
       parent(nullptr) {}
     Type getType() const { return type; }
-    FunctionLikeDecl* getParent() const { assert(parent); return parent; }
+    FunctionLikeDecl* getParent() const { ASSERT(parent); return parent; }
     void setParent(FunctionLikeDecl* parent) { this->parent = parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
     bool operator==(const ParamDecl& other) const {
@@ -92,7 +92,7 @@ public:
     GenericParamDecl(std::string&& name, SourceLocation location)
     : Decl(DeclKind::GenericParamDecl), name(std::move(name)), location(location),
       parent(nullptr) {}
-    Decl* getParent() const { assert(parent); return parent; }
+    Decl* getParent() const { ASSERT(parent); return parent; }
     void setParent(Decl* parent) { this->parent = parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::GenericParamDecl; }
 

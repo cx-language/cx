@@ -290,7 +290,7 @@ llvm::ArrayRef<std::shared_ptr<Module>> getStdlibModules() {
 }
 
 Decl& TypeChecker::findDecl(llvm::StringRef name, SourceLocation location, bool everywhere) const {
-    assert(!name.empty());
+    ASSERT(!name.empty());
 
     if (Decl* match = findDeclInModules(name, location, llvm::makeArrayRef(getCurrentModule()))) {
         return *match;
@@ -467,7 +467,7 @@ void TypeChecker::typecheckTypeDecl(TypeDecl& decl) const {
 TypeDecl* TypeChecker::getTypeDecl(const BasicType& type) const {
     auto decls = findDecls(type.name);
     if (decls.empty()) return nullptr;
-    assert(decls.size() == 1);
+    ASSERT(decls.size() == 1);
     return llvm::cast<TypeDecl>(decls[0]);
 }
 

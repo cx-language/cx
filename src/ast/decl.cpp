@@ -44,7 +44,7 @@ void TypeDecl::addField(FieldDecl&& field) {
 }
 
 void TypeDecl::addMethod(std::unique_ptr<FunctionLikeDecl> decl) {
-    assert(decl->isMethodDecl() || decl->isInitDecl() || decl->isDeinitDecl());
+    ASSERT(decl->isMethodDecl() || decl->isInitDecl() || decl->isDeinitDecl());
     methods.emplace_back(std::move(decl));
 }
 
@@ -58,7 +58,7 @@ DeinitDecl* TypeDecl::getDeinitializer() const {
 }
 
 Type TypeDecl::getType(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {
-    assert(genericArgs.size() == genericParams.size());
+    ASSERT(genericArgs.size() == genericParams.size());
     return BasicType::get(name, genericArgs, isMutable);
 }
 

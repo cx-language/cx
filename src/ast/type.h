@@ -7,6 +7,7 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_ostream.h>
+#include "../support/utility.h"
 
 namespace delta {
 
@@ -187,7 +188,7 @@ public:
 private:
     TupleType(std::vector<Type>&& subtypes)
     : TypeBase(TypeKind::TupleType), subtypes(std::move(subtypes)) {
-        assert(this->subtypes.size() != 1);
+        ASSERT(this->subtypes.size() != 1);
     }
 };
 

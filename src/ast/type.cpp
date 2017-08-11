@@ -145,13 +145,13 @@ bool Type::isImplicitlyConvertibleTo(Type type) const {
 }
 
 bool Type::isSigned() const {
-    assert(isBasicType());
+    ASSERT(isBasicType());
     llvm::StringRef name = getName();
     return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
 }
 
 bool Type::isUnsigned() const {
-    assert(isBasicType());
+    ASSERT(isBasicType());
     llvm::StringRef name = getName();
     return name == "uint" || name == "uint8" || name == "uint16" || name == "uint32" || name == "uint64";
 }
@@ -173,12 +173,12 @@ llvm::ArrayRef<Type> Type::getGenericArgs() const { return llvm::cast<BasicType>
 Type Type::getReturnType() const { return llvm::cast<FunctionType>(typeBase)->returnType; }
 llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FunctionType>(typeBase)->paramTypes; }
 Type Type::getPointee() const { return llvm::cast<PointerType>(typeBase)->pointeeType; }
-Type Type::getReferee() const { assert(isReference()); return getPointee(); }
+Type Type::getReferee() const { ASSERT(isReference()); return getPointee(); }
 bool Type::isReference() const { return isPointerType() && llvm::cast<PointerType>(typeBase)->isReference(); }
 
 Type Type::getIterableElementType() const {
-    assert(isIterable());
-    assert(isRangeType() && "non-range iterables not supported yet");
+    ASSERT(isIterable());
+    ASSERT(isRangeType(), "non-range iterables not supported yet");
     return llvm::cast<RangeType>(typeBase)->elementType;
 }
 
