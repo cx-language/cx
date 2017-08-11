@@ -133,7 +133,7 @@ void TypeChecker::typecheckForStmt(ForStmt& forStmt) const {
 
     getCurrentModule()->getSymbolTable().pushScope();
     addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.id),
-                             nullptr, getCurrentModule(), forStmt.getLocation()));
+                             nullptr, *getCurrentModule(), forStmt.getLocation()));
     breakableBlocks++;
     for (auto& stmt : forStmt.body) typecheckStmt(*stmt);
     breakableBlocks--;
@@ -408,7 +408,7 @@ void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
             currentFieldDeclsBackup = currentFieldDecls;
             currentFieldDecls = receiverTypeDecl->fields;
             Type thisType = receiverTypeDecl->getTypeForPassing(getGenericArgsAsArray(), decl.isMutating());
-            addToSymbolTable(VarDecl(thisType, "this", nullptr, getCurrentModule(), SourceLocation::invalid()));
+            addToSymbolTable(VarDecl(thisType, "this", nullptr, *getCurrentModule(), SourceLocation::invalid()));
         }
 
         for (auto& stmt : *decl.body) typecheckStmt(*stmt);
@@ -437,7 +437,7 @@ void TypeChecker::typecheckInitDecl(InitDecl& decl) const {
     }
 
     addToSymbolTable(VarDecl(decl.getTypeDecl()->getType(getGenericArgsAsArray(), true),
-                             "this", nullptr, getCurrentModule(), SourceLocation::invalid()));
+                             "this", nullptr, *getCurrentModule(), SourceLocation::invalid()));
     for (ParamDecl& param : decl.getParams()) typecheckParamDecl(param);
 
     inInitializer = true;

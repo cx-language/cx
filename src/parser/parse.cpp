@@ -523,7 +523,7 @@ std::unique_ptr<VarDecl> parseVarDecl() {
     if (!initializer) consumeToken();
     parseStmtTerminator();
     return llvm::make_unique<VarDecl>(type, std::move(name.string),
-                                      std::move(initializer), currentModule, name.getLocation());
+                                      std::move(initializer), *currentModule, name.getLocation());
 }
 
 /// var-stmt ::= var-decl
@@ -807,10 +807,9 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
                         std::move(genericParams), false);
 
     if (receiverTypeDecl) {
-        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl,
-                                             currentModule, nameLocation);
+        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, nameLocation);
     } else {
-        return llvm::make_unique<FunctionDecl>(std::move(proto), currentModule, nameLocation);
+        return llvm::make_unique<FunctionDecl>(std::move(proto), *currentModule, nameLocation);
     }
 }
 
@@ -858,7 +857,7 @@ std::unique_ptr<DeinitDecl> parseDeinitDecl(TypeDecl& receiverTypeDecl) {
 }
 
 /// field-decl ::= ('let' | 'var') id ':' type ('\n' | ';')
-FieldDecl parseFieldDecl() {
+FieldDecl parseFieldDecl(TypeDecl& typeDecl) {
     expect({ LET, VAR }, "in field declaration");
     bool isMutable = consumeToken() == VAR;
     auto name = parse(IDENTIFIER);
@@ -870,7 +869,7 @@ FieldDecl parseFieldDecl() {
     type.setMutable(isMutable);
 
     parseStmtTerminator();
-    return FieldDecl(type, std::move(name.string), name.getLocation());
+    return FieldDecl(type, std::move(name.string), typeDecl, name.getLocation());
 }
 
 /// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
@@ -892,7 +891,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
     }
 
     auto typeDecl = llvm::make_unique<TypeDecl>(tag, std::move(name.string), std::move(genericParams),
-                                                currentModule, name.getLocation());
+                                                *currentModule, name.getLocation());
     parse(LBRACE);
 
     while (currentToken() != RBRACE) {
@@ -916,7 +915,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
                 typeDecl->addMethod(parseDeinitDecl(*typeDecl));
                 break;
             case LET: case VAR:
-                typeDecl->addField(parseFieldDecl());
+                typeDecl->addField(parseFieldDecl(*typeDecl));
                 break;
             default:
                 unexpectedToken(currentToken());
@@ -934,7 +933,7 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
     expect(STRING_LITERAL, "after 'import'");
     auto target = parseStringLiteral();
     parseStmtTerminator("after 'import' declaration");
-    return llvm::make_unique<ImportDecl>(std::move(target->value), target->getLocation());
+    return llvm::make_unique<ImportDecl>(std::move(target->value), *currentModule, target->getLocation());
 }
 
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | import-decl | var-decl

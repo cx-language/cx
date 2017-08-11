@@ -132,22 +132,23 @@ FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
 
     FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
                         /* genericParams */ {}, decl.isVariadic());
-    return FunctionDecl(std::move(proto), currentModule, SourceLocation::invalid());
+    return FunctionDecl(std::move(proto), *currentModule, SourceLocation::invalid());
 }
 
-llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl) {
+llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
     if (decl.getName().empty()) return llvm::None;
-    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), SourceLocation::invalid());
+    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), typeDecl,
+                     SourceLocation::invalid());
 }
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     if (decl.getName().empty()) return llvm::None;
 
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
-                      decl.getNameAsString(), {}, currentModule, SourceLocation::invalid());
+                      decl.getNameAsString(), {}, *currentModule, SourceLocation::invalid());
     typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
-        if (auto fieldDecl = toDelta(*field)) {
+        if (auto fieldDecl = toDelta(*field, typeDecl)) {
             typeDecl.fields.emplace_back(std::move(*fieldDecl));
         } else {
             return llvm::None;
@@ -157,21 +158,21 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
 }
 
 VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, currentModule, SourceLocation::invalid());
+    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, *currentModule, SourceLocation::invalid());
 }
 
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, const TypeChecker& typeChecker) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getInt());
     typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer,
-                                         typeChecker.getCurrentModule(), SourceLocation::invalid()));
+                                         *typeChecker.getCurrentModule(), SourceLocation::invalid()));
 }
 
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, const TypeChecker& typeChecker) {
     auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getFloat64());
     typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer,
-                                         typeChecker.getCurrentModule(), SourceLocation::invalid()));
+                                         *typeChecker.getCurrentModule(), SourceLocation::invalid()));
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {

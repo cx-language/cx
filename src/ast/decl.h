@@ -18,6 +18,7 @@ namespace delta {
 class Module;
 class TypeDecl;
 class FieldDecl;
+class FunctionLikeDecl;
 
 enum class DeclKind {
     ParamDecl,
@@ -49,15 +50,14 @@ public:
     bool isImportDecl() const { return getKind() == DeclKind::ImportDecl; }
 
     DeclKind getKind() const { return kind; }
-    Module* getModule() const { return module; }
+    Module* getModule() const;
     SourceLocation getLocation() const;
 
 protected:
-    Decl(DeclKind kind, Module* module) : kind(kind), module(module) {}
+    Decl(DeclKind kind) : kind(kind) {}
 
 private:
     const DeclKind kind;
-    Module* module;
 };
 
 inline Decl::~Decl() {}
@@ -69,14 +69,18 @@ public:
     SourceLocation location;
 
     ParamDecl(Type type, std::string&& name, SourceLocation location)
-    : Decl(DeclKind::ParamDecl, nullptr), type(type), name(std::move(name)), location(location) {}
-
+    : Decl(DeclKind::ParamDecl), type(type), name(std::move(name)), location(location),
+      parent(nullptr) {}
     Type getType() const { return type; }
-
+    FunctionLikeDecl* getParent() const { assert(parent); return parent; }
+    void setParent(FunctionLikeDecl* parent) { this->parent = parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
     bool operator==(const ParamDecl& other) const {
         return type == other.type && name == other.name;
     }
+
+private:
+    FunctionLikeDecl* parent;
 };
 
 class GenericParamDecl : public Decl {
@@ -86,8 +90,14 @@ public:
     llvm::SmallVector<std::string, 1> constraints;
 
     GenericParamDecl(std::string&& name, SourceLocation location)
-    : Decl(DeclKind::GenericParamDecl, nullptr), name(std::move(name)), location(location) {}
+    : Decl(DeclKind::GenericParamDecl), name(std::move(name)), location(location),
+      parent(nullptr) {}
+    Decl* getParent() const { assert(parent); return parent; }
+    void setParent(Decl* parent) { this->parent = parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::GenericParamDecl; }
+
+private:
+    Decl* parent;
 };
 
 class FunctionProto {
@@ -123,9 +133,9 @@ public:
     static bool classof(const Decl* d) { return d->isFunctionLikeDecl(); }
 
 protected:
-    FunctionLikeDecl(DeclKind kind, FunctionProto&& proto, Module* module, SourceLocation location,
+    FunctionLikeDecl(DeclKind kind, FunctionProto&& proto, SourceLocation location,
                      std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body = nullptr)
-    : Decl(kind, module), proto(std::move(proto)), body(std::move(body)), location(location) {}
+    : Decl(kind), proto(std::move(proto)), body(std::move(body)), location(location) {}
 
 private:
     FunctionProto proto;
@@ -137,20 +147,24 @@ public:
 
 class FunctionDecl : public FunctionLikeDecl {
 public:
-    FunctionDecl(FunctionProto&& proto, Module* module, SourceLocation location)
+    FunctionDecl(FunctionProto&& proto, Module& module, SourceLocation location)
     : FunctionDecl(DeclKind::FunctionDecl, std::move(proto), module, location) {}
     bool signatureMatches(const FunctionDecl& other, bool matchReceiver = true) const;
+    Module* getModule() const { return &module; }
     static bool classof(const Decl* d) { return d->isFunctionDecl(); }
 
 protected:
-    FunctionDecl(DeclKind kind, FunctionProto&& proto, Module* module, SourceLocation location)
-    : FunctionLikeDecl(kind, std::move(proto), module, location) {}
+    FunctionDecl(DeclKind kind, FunctionProto&& proto, Module& module, SourceLocation location)
+    : FunctionLikeDecl(kind, std::move(proto), location), module(module) {}
+
+private:
+    Module& module;
 };
 
 class MethodDecl : public FunctionDecl {
 public:
-    MethodDecl(FunctionProto proto, TypeDecl& receiverTypeDecl, Module* module, SourceLocation location)
-    : MethodDecl(DeclKind::MethodDecl, std::move(proto), receiverTypeDecl, module, location) {}
+    MethodDecl(FunctionProto proto, TypeDecl& receiverTypeDecl, SourceLocation location)
+    : MethodDecl(DeclKind::MethodDecl, std::move(proto), receiverTypeDecl, location) {}
 
     bool isMutating() const override { return mutating; }
     void setMutating(bool mutating) { this->mutating = mutating; }
@@ -158,8 +172,7 @@ public:
     static bool classof(const Decl* d) { return d->isMethodDecl(); }
 
 protected:
-    MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, Module* module, SourceLocation location)
-    : FunctionDecl(kind, std::move(proto), module, location), typeDecl(&typeDecl), mutating(false) {}
+    MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, SourceLocation location);
 
 private:
     TypeDecl* typeDecl;
@@ -171,7 +184,7 @@ public:
     InitDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params,
              std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body, SourceLocation location)
     : FunctionLikeDecl(DeclKind::InitDecl, FunctionProto("init", std::move(params), Type::getVoid(), {}, false),
-                       nullptr, location, std::move(body)), typeDecl(&receiverTypeDecl) {}
+                       location, std::move(body)), typeDecl(&receiverTypeDecl) {}
     TypeDecl* getTypeDecl() const override { return typeDecl; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }
 
@@ -184,7 +197,7 @@ public:
     DeinitDecl(TypeDecl& receiverTypeDecl, std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body,
                SourceLocation location)
     : FunctionLikeDecl(DeclKind::DeinitDecl, FunctionProto("deinit", {}, Type::getVoid(), {}, false),
-                       nullptr, location, std::move(body)), typeDecl(&receiverTypeDecl) {}
+                       location, std::move(body)), typeDecl(&receiverTypeDecl) {}
     TypeDecl* getTypeDecl() const override { return typeDecl; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 
@@ -204,9 +217,9 @@ public:
     SourceLocation location;
 
     TypeDecl(TypeTag tag, std::string&& name, std::vector<GenericParamDecl>&& genericParams,
-             Module* module, SourceLocation location)
-    : Decl(DeclKind::TypeDecl, module), tag(tag), name(std::move(name)),
-      genericParams(std::move(genericParams)), location(location) {}
+             Module& module, SourceLocation location)
+    : Decl(DeclKind::TypeDecl), tag(tag), name(std::move(name)),
+      genericParams(std::move(genericParams)), location(location), module(module) {}
 
     void addField(FieldDecl&& field);
     void addMethod(std::unique_ptr<FunctionLikeDecl> decl);
@@ -222,7 +235,11 @@ public:
     bool isUnion() const { return tag == TypeTag::Union; }
     bool isGeneric() const { return !genericParams.empty(); }
     unsigned getFieldIndex(llvm::StringRef fieldName) const;
+    Module* getModule() const { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::TypeDecl; }
+
+private:
+    Module& module;
 };
 
 class VarDecl : public Decl {
@@ -233,11 +250,15 @@ public:
     SourceLocation location;
 
     VarDecl(Type type, std::string&& name, std::shared_ptr<Expr>&& initializer,
-            Module* module, SourceLocation location)
-    : Decl(DeclKind::VarDecl, module), type(type), name(std::move(name)),
-      initializer(std::move(initializer)), location(location) {}
+            Module& module, SourceLocation location)
+    : Decl(DeclKind::VarDecl), type(type), name(std::move(name)),
+      initializer(std::move(initializer)), location(location), module(module) {}
     Type getType() const { return type; }
+    Module* getModule() const { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }
+
+private:
+    Module& module;
 };
 
 class FieldDecl : public Decl {
@@ -246,9 +267,14 @@ public:
     std::string name;
     SourceLocation location;
 
-    FieldDecl(Type type, std::string&& name, SourceLocation location)
-    : Decl(DeclKind::FieldDecl, nullptr), type(type), name(std::move(name)), location(location) {}
+    FieldDecl(Type type, std::string&& name, TypeDecl& parent, SourceLocation location)
+    : Decl(DeclKind::FieldDecl), type(type), name(std::move(name)), location(location),
+      parent(parent) {}
+    TypeDecl* getParent() const { return &parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }
+
+private:
+    TypeDecl& parent;
 };
 
 class ImportDecl : public Decl {
@@ -256,9 +282,13 @@ public:
     std::string target;
     SourceLocation location;
 
-    ImportDecl(std::string&& target, SourceLocation location)
-    : Decl(DeclKind::ImportDecl, nullptr), target(std::move(target)), location(location) {}
+    ImportDecl(std::string&& target, Module& module, SourceLocation location)
+    : Decl(DeclKind::ImportDecl), target(std::move(target)), location(location), module(module) {}
+    Module* getModule() const { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ImportDecl; }
+
+private:
+    Module& module;
 };
 
 }

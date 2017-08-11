@@ -5,6 +5,21 @@
 
 using namespace delta;
 
+Module* Decl::getModule() const {
+    switch (getKind()) {
+        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(this)->getParent()->getModule();
+        case DeclKind::GenericParamDecl: return llvm::cast<GenericParamDecl>(this)->getParent()->getModule();
+        case DeclKind::FunctionDecl: return llvm::cast<FunctionDecl>(this)->getModule();
+        case DeclKind::MethodDecl: return llvm::cast<MethodDecl>(this)->getTypeDecl()->getModule();
+        case DeclKind::InitDecl: return llvm::cast<InitDecl>(this)->getTypeDecl()->getModule();
+        case DeclKind::DeinitDecl: return llvm::cast<DeinitDecl>(this)->getTypeDecl()->getModule();
+        case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(this)->getModule();
+        case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->getModule();
+        case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(this)->getParent()->getModule();
+        case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(this)->getModule();
+    }
+}
+
 const FunctionType* FunctionLikeDecl::getFunctionType() const {
     auto paramTypes = map(getParams(), *[](const ParamDecl& p) -> Type { return p.type; });
     return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes)));
@@ -18,6 +33,11 @@ bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceive
     if (getParams() != other.getParams()) return false;
     return true;
 }
+
+MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl,
+                       SourceLocation location)
+: FunctionDecl(kind, std::move(proto), *typeDecl.getModule(), location), typeDecl(&typeDecl),
+  mutating(false) {}
 
 void TypeDecl::addField(FieldDecl&& field) {
     fields.emplace_back(std::move(field));
