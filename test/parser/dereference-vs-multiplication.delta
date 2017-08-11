@@ -1,0 +1,12 @@
+// RUN: %delta -print-ast %s | %FileCheck %s
+
+func f() {
+    // CHECK: (var-stmt m (call g))
+    // CHECK-NEXT: (assign-stmt (*a) b)
+    let m = g()
+    *a = b
+
+    // CHECK-NEXT: (var-stmt m ((call g) * a))
+    let m = g()
+    *a
+}

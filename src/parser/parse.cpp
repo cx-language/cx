@@ -433,12 +433,20 @@ std::unique_ptr<Expr> parsePreOrPostfixExpr() {
 /// binary-expr ::= expr op expr
 std::unique_ptr<Expr> parseBinaryExpr(std::unique_ptr<Expr> lhs, int minPrecedence) {
     while (currentToken().isBinaryOperator() && currentToken().getPrecedence() >= minPrecedence) {
+        auto backtrackLocation = currentTokenIndex;
         auto op = consumeToken();
-        auto rhs = parsePreOrPostfixExpr();
-        while (currentToken().isBinaryOperator() && currentToken().getPrecedence() > op.getPrecedence()) {
-            rhs = parseBinaryExpr(std::move(rhs), currentToken().getPrecedence());
+        auto expr = parsePreOrPostfixExpr();
+        if (currentToken().isAssignmentOperator()) {
+            currentTokenIndex = backtrackLocation;
+            break;
         }
-        lhs = llvm::make_unique<BinaryExpr>(op, std::move(lhs), std::move(rhs), op.getLocation());
+
+        while (currentToken().isBinaryOperator() && currentToken().getPrecedence() > op.getPrecedence()) {
+            auto token = consumeToken();
+            expr = llvm::make_unique<BinaryExpr>(token, std::move(expr), parsePreOrPostfixExpr(),
+                                                 token.getLocation());
+        }
+        lhs = llvm::make_unique<BinaryExpr>(op, std::move(lhs), std::move(expr), op.getLocation());
     }
     return lhs;
 }
@@ -701,11 +709,11 @@ std::unique_ptr<Stmt> parseStmt() {
         case INCREMENT: return parseIncrementStmt(std::move(expr));
         case DECREMENT: return parseDecrementStmt(std::move(expr));
         case ASSIGN: return parseAssignStmt(std::move(expr));
-        case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ: case MOD_EQ:
-        case AND_EQ: case AND_AND_EQ: case OR_EQ: case OR_OR_EQ:
-        case XOR_EQ: case LSHIFT_EQ: case RSHIFT_EQ:
-            return parseCompoundAssignStmt(std::move(expr));
         default:
+            if (currentToken().isCompoundAssignmentOperator()) {
+                return parseCompoundAssignStmt(std::move(expr));
+            }
+
             if (!expr->isCallExpr()) unexpectedToken(currentToken());
             return parseCallStmt(std::move(expr));
     }

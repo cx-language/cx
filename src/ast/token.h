@@ -107,6 +107,8 @@ struct Token {
     bool is(TokenKind kind, T... kinds) const { return is(kind) || is(kinds...); }
     bool isBinaryOperator() const;
     bool isPrefixOperator() const;
+    bool isAssignmentOperator() const;
+    bool isCompoundAssignmentOperator() const;
     bool isOverloadable() const;
     int getPrecedence() const;
     int64_t getIntegerValue() const;

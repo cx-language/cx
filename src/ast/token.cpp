@@ -70,6 +70,19 @@ bool Token::isPrefixOperator() const {
     }
 }
 
+bool Token::isAssignmentOperator() const {
+    return kind == ASSIGN || isCompoundAssignmentOperator();
+}
+
+bool Token::isCompoundAssignmentOperator() const {
+    switch (kind) {
+        case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ: case MOD_EQ:
+        case AND_EQ: case AND_AND_EQ: case OR_EQ: case OR_OR_EQ:
+        case XOR_EQ: case LSHIFT_EQ: case RSHIFT_EQ: return true;
+        default: return false;
+    }
+}
+
 bool Token::isOverloadable() const {
     switch (kind) {
         case EQ: case LT: case PLUS: case MINUS: case STAR: case SLASH: case MOD: return true;
