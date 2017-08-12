@@ -57,6 +57,25 @@ std::string toDisjunctiveList(llvm::ArrayRef<T> values, std::string (& stringifi
     return string;
 }
 
+template<typename T>
+struct StateSaver {
+    StateSaver(T& state) : state(state), savedState(std::move(state)) {}
+    ~StateSaver() { state = std::move(savedState); }
+
+private:
+    T& state;
+    T savedState;
+};
+
+template<typename T>
+StateSaver<T> makeStateSaver(T& state) {
+    return StateSaver<T>(state);
+}
+
+#define CONCAT_IMPL(a, b) a##b
+#define CONCAT(a, b) CONCAT_IMPL(a, b)
+#define SAVE_STATE(state) const auto CONCAT(stateSaver, __COUNTER__) = makeStateSaver(state)
+
 class CompileError {
 public:
     CompileError(SourceLocation location, std::string&& message)

@@ -396,7 +396,7 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
         switch (decl->getKind()) {
             case DeclKind::FunctionDecl: case DeclKind::MethodDecl: {
                 auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
-                auto previousGenericArgs = std::move(currentGenericArgs);
+                SAVE_STATE(currentGenericArgs);
 
                 if (expr.isMethodCall()) {
                     Type receiverType = expr.getReceiver()->getType().removePointer();
@@ -419,8 +419,6 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                 if (matchArgs(expr.args, functionDecl.getParams(), functionDecl.isVariadic())) {
                     matches.push_back(decl);
                 }
-
-                currentGenericArgs = std::move(previousGenericArgs);
                 break;
             }
             case DeclKind::TypeDecl: {
@@ -541,28 +539,25 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             }
 
             // TODO: Don't typecheck more than once with the same generic arguments.
-            auto wasTypecheckingGenericFunction = typecheckingGenericFunction;
+            SAVE_STATE(typecheckingGenericFunction);
             typecheckingGenericFunction = true;
             typecheckFunctionLikeDecl(*functionDecl);
-            typecheckingGenericFunction = wasTypecheckingGenericFunction;
             Type returnType = resolve(functionDecl->getFunctionType()->returnType);
             currentGenericArgs.clear();
             return returnType;
         }
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
         if (initDecl->getTypeDecl()->isGeneric()) {
-            auto previousGenericArgs = std::move(currentGenericArgs);
+            SAVE_STATE(currentGenericArgs);
             setCurrentGenericArgs(initDecl->getTypeDecl()->genericParams, expr,
                                   initDecl->getParams());
             // TODO: Don't typecheck more than once with the same generic arguments.
-            auto wasTypecheckingGenericFunction = typecheckingGenericFunction;
+            SAVE_STATE(typecheckingGenericFunction);
             typecheckingGenericFunction = true;
             typecheckInitDecl(*initDecl);
             if (auto* deinitDecl = initDecl->getTypeDecl()->getDeinitializer()) {
                 typecheckDeinitDecl(*deinitDecl);
             }
-            typecheckingGenericFunction = wasTypecheckingGenericFunction;
-            currentGenericArgs = std::move(previousGenericArgs);
         }
         return initDecl->getTypeDecl()->getType(expr.getGenericArgs());
     }

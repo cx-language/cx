@@ -189,16 +189,14 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
         if (!decls.empty()) {
             auto& typeDecl = llvm::cast<TypeDecl>(*decls[0]);
             if (auto* deinitDecl = typeDecl.getDeinitializer()) {
-                auto previousGenericArgs = std::move(currentGenericArgs);
+                SAVE_STATE(currentGenericArgs);
                 ASSERT(basicType->getGenericArgs().size() == typeDecl.genericParams.size());
                 for (auto t : llvm::zip_first(typeDecl.genericParams, basicType->getGenericArgs())) {
                     currentGenericArgs.emplace(std::get<0>(t).name, std::get<1>(t));
                 }
-                auto wasTypecheckingGenericFunction = typecheckingGenericFunction;
+                SAVE_STATE(typecheckingGenericFunction);
                 typecheckingGenericFunction = true;
                 typecheckDeinitDecl(*deinitDecl);
-                typecheckingGenericFunction = wasTypecheckingGenericFunction;
-                currentGenericArgs = std::move(previousGenericArgs);
             }
         }
     }
@@ -411,7 +409,7 @@ void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
     }
 
     getCurrentModule()->getSymbolTable().pushScope();
-    auto* previousFunction = currentFunction;
+    SAVE_STATE(currentFunction);
     currentFunction = &decl;
 
     for (ParamDecl& param : decl.getParams()) {
@@ -421,25 +419,18 @@ void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
     if (decl.getReturnType().isMutable()) error(decl.getLocation(), "return types cannot be 'mutable'");
 
     if (decl.body) {
-        auto functionReturnTypeBackup = functionReturnType;
+        SAVE_STATE(functionReturnType);
         functionReturnType = decl.getReturnType();
-        llvm::MutableArrayRef<FieldDecl> currentFieldDeclsBackup;
+        SAVE_STATE(currentFieldDecls);
         if (receiverTypeDecl) {
-            currentFieldDeclsBackup = currentFieldDecls;
             currentFieldDecls = receiverTypeDecl->fields;
             Type thisType = receiverTypeDecl->getTypeForPassing(getGenericArgsAsArray(), decl.isMutating());
             addToSymbolTable(VarDecl(thisType, "this", nullptr, *getCurrentModule(), SourceLocation::invalid()));
         }
 
         for (auto& stmt : *decl.body) typecheckStmt(*stmt);
-
-        if (receiverTypeDecl) {
-            currentFieldDecls = currentFieldDeclsBackup;
-        }
-        functionReturnType = functionReturnTypeBackup;
     }
 
-    currentFunction = previousFunction;
     getCurrentModule()->getSymbolTable().popScope();
 
     if (!decl.getReturnType().isVoid() && !allPathsReturn(*decl.body)) {
@@ -449,7 +440,7 @@ void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
 
 void TypeChecker::typecheckInitDecl(InitDecl& decl) const {
     getCurrentModule()->getSymbolTable().pushScope();
-    auto* previousFunction = currentFunction;
+    SAVE_STATE(currentFunction);
     currentFunction = &decl;
 
     if (decl.getTypeDecl()->isGeneric() && currentGenericArgs.empty()) {
@@ -460,14 +451,12 @@ void TypeChecker::typecheckInitDecl(InitDecl& decl) const {
                              "this", nullptr, *getCurrentModule(), SourceLocation::invalid()));
     for (ParamDecl& param : decl.getParams()) typecheckParamDecl(param);
 
+    SAVE_STATE(inInitializer);
     inInitializer = true;
-    auto currentFieldDeclsBackup = currentFieldDecls;
+    SAVE_STATE(currentFieldDecls);
     currentFieldDecls = decl.getTypeDecl()->fields;
     for (auto& stmt : *decl.body) typecheckStmt(*stmt);
-    currentFieldDecls = currentFieldDeclsBackup;
-    inInitializer = false;
 
-    currentFunction = previousFunction;
     getCurrentModule()->getSymbolTable().popScope();
 }
 

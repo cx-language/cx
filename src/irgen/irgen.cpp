@@ -475,7 +475,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
     auto it = functionInstantiations.find(mangleWithParams(decl, receiverTypeGenericArgs, functionGenericArgs));
     if (it != functionInstantiations.end()) return it->second.function;
 
-    auto previousGenericArgs = std::move(currentGenericArgs);
+    SAVE_STATE(currentGenericArgs);
     setCurrentGenericArgs(decl.getGenericParams(), functionGenericArgs);
 
     auto* functionType = decl.getFunctionType();
@@ -512,8 +512,6 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
     if (decl.isMethodDecl() || decl.isDeinitDecl()) arg++->setName("this");
     for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) arg->setName(param->name);
-
-    currentGenericArgs = std::move(previousGenericArgs);
 
     auto mangled = mangleWithParams(decl, receiverTypeGenericArgs, functionGenericArgs);
     FunctionInstantiation functionInstantiation{decl, receiverTypeGenericArgs, functionGenericArgs, function};
@@ -656,10 +654,9 @@ llvm::Type* IRGenerator::codegenGenericTypeInstantiation(const TypeDecl& decl, l
         return structs.emplace(name, std::move(value)).first->second.first;
     }
 
-    auto previousGenericArgs = std::move(currentGenericArgs);
+    SAVE_STATE(currentGenericArgs);
     setCurrentGenericArgs(decl.genericParams, genericArgs);
     auto elements = getFieldTypes(decl);
-    currentGenericArgs = std::move(previousGenericArgs);
 
     auto value = std::make_pair(llvm::StructType::create(elements, name), &decl);
     return structs.emplace(name, std::move(value)).first->second.first;
@@ -715,7 +712,8 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
             if (p.second.decl.isExtern() || !p.second.function->empty()) continue;
 
             setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
-            auto previousGenericArgs = std::move(currentGenericArgs);
+
+            SAVE_STATE(currentGenericArgs);
             setCurrentGenericArgs(p.second.decl.getGenericParams(), p.second.genericArgs);
             if (p.second.decl.getTypeDecl() != nullptr) {
                 auto& receiverTypeDecl = *p.second.decl.getTypeDecl();
@@ -723,7 +721,6 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
                                       p.second.receiverTypeGenericArgs);
             }
             codegenFunctionBody(p.second.decl, *p.second.function);
-            currentGenericArgs = std::move(previousGenericArgs);
             ASSERT(!llvm::verifyFunction(*p.second.function, &llvm::errs()));
         }
 
