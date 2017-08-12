@@ -57,9 +57,7 @@ llvm::Function* IRGenerator::getDeinitializerFor(Type type) {
         auto decls = currentTypeChecker->findDecls(mangledName, /*everywhere*/ true);
         if (!decls.empty()) {
             auto& deinitDecl = llvm::cast<DeinitDecl>(*decls[0]);
-            auto* deinitializerProto = codegenDeinitializerProto(deinitDecl, type);
-            codegenDeinitDecl(deinitDecl, type.getGenericArgs());
-            return deinitializerProto;
+            return codegenDeinitializerProto(deinitDecl, type);
         }
         return nullptr;
     }

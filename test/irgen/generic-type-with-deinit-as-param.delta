@@ -1,0 +1,10 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-DEINIT
+
+// CHECK: define void @foo(%"Array<int>" %a)
+func foo(a: Array<int>) {
+    // CHECK-NEXT: call void @"Array<int>.deinit"(%"Array<int>" %a)
+    // CHECK-NEXT: ret void
+}
+
+// CHECK-DEINIT: define void @"Array<int>.deinit"(%"Array<int>" %this)

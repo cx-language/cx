@@ -183,6 +183,26 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
     if (getCurrentModule()->getSymbolTable().contains(decl.name)) {
         error(decl.getLocation(), "redefinition of '", decl.name, "'");
     }
+
+    if (auto* basicType = llvm::dyn_cast<BasicType>(decl.getType().get())) {
+        auto decls = findDecls(basicType->name);
+        if (!decls.empty()) {
+            auto& typeDecl = llvm::cast<TypeDecl>(*decls[0]);
+            if (auto* deinitDecl = typeDecl.getDeinitializer()) {
+                auto previousGenericArgs = std::move(currentGenericArgs);
+                ASSERT(basicType->getGenericArgs().size() == typeDecl.genericParams.size());
+                for (auto t : llvm::zip_first(typeDecl.genericParams, basicType->getGenericArgs())) {
+                    currentGenericArgs.emplace(std::get<0>(t).name, std::get<1>(t));
+                }
+                auto wasTypecheckingGenericFunction = typecheckingGenericFunction;
+                typecheckingGenericFunction = true;
+                typecheckDeinitDecl(*deinitDecl);
+                typecheckingGenericFunction = wasTypecheckingGenericFunction;
+                currentGenericArgs = std::move(previousGenericArgs);
+            }
+        }
+    }
+
     getCurrentModule()->getSymbolTable().add(decl.name, &decl);
 }
 
