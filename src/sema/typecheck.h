@@ -106,6 +106,11 @@ private:
                       bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type) const;
+    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name) const;
+    template<typename DeclT>
+    void addToSymbolTableCheckParams(DeclT& decl) const;
+    template<typename DeclT>
+    void addToSymbolTableNonAST(DeclT& decl) const;
 
 private:
     Module* currentModule;

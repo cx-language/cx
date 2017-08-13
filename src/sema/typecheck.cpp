@@ -216,32 +216,35 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
     getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 }
 
-void TypeChecker::addToSymbolTable(FunctionDecl& decl) const {
+void TypeChecker::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) const {
+    if (getCurrentModule()->getSymbolTable().contains(name)) {
+        error(decl.getLocation(), "redefinition of '", name, "'");
+    }
+    getCurrentModule()->getSymbolTable().add(name, &decl);
+}
+
+template<typename DeclT>
+void TypeChecker::addToSymbolTableCheckParams(DeclT& decl) const {
     if (getCurrentModule()->getSymbolTable().findWithMatchingParams(decl)) {
-        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
+        error(decl.getLocation(), "redefinition of '", mangle(decl), "'");
     }
     getCurrentModule()->getSymbolTable().add(mangle(decl), &decl);
+}
+
+void TypeChecker::addToSymbolTable(FunctionDecl& decl) const {
+    addToSymbolTableCheckParams(decl);
 }
 
 void TypeChecker::addToSymbolTable(InitDecl& decl) const {
-    if (getCurrentModule()->getSymbolTable().findWithMatchingParams(decl)) {
-        error(decl.getLocation(), "redefinition of '", decl.getTypeDecl()->getName(), "' initializer");
-    }
-    getCurrentModule()->getSymbolTable().add(mangle(decl), &decl);
+    addToSymbolTableCheckParams(decl);
 }
 
 void TypeChecker::addToSymbolTable(DeinitDecl& decl) const {
-    if (getCurrentModule()->getSymbolTable().contains(mangle(decl))) {
-        error(decl.getLocation(), "redefinition of '", decl.getTypeDecl()->getName(), "' deinitializer");
-    }
-    getCurrentModule()->getSymbolTable().add(mangle(decl), &decl);
+    addToSymbolTableWithName(decl, mangle(decl));
 }
 
 void TypeChecker::addToSymbolTable(TypeDecl& decl) const {
-    if (getCurrentModule()->getSymbolTable().contains(decl.getName())) {
-        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
-    }
-    getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
+    addToSymbolTableWithName(decl, decl.getName());
 
     for (auto& memberDecl : decl.getMemberDecls()) {
         switch (memberDecl->getKind()) {
@@ -261,28 +264,26 @@ void TypeChecker::addToSymbolTable(TypeDecl& decl) const {
 }
 
 void TypeChecker::addToSymbolTable(VarDecl& decl) const {
-    if (getCurrentModule()->getSymbolTable().contains(decl.getName())) {
-        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
-    }
-    getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
+    addToSymbolTableWithName(decl, decl.getName());
+}
+
+template<typename DeclT>
+void TypeChecker::addToSymbolTableNonAST(DeclT& decl) const {
+    std::string name = decl.getName();
+    nonASTDecls.push_back(llvm::make_unique<DeclT>(std::move(decl)));
+    getCurrentModule()->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
 }
 
 void TypeChecker::addToSymbolTable(FunctionDecl&& decl) const {
-    std::string name = decl.getName();
-    nonASTDecls.push_back(llvm::make_unique<FunctionDecl>(std::move(decl)));
-    getCurrentModule()->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
+    addToSymbolTableNonAST(decl);
 }
 
 void TypeChecker::addToSymbolTable(TypeDecl&& decl) const {
-    std::string name = decl.getName();
-    nonASTDecls.push_back(llvm::make_unique<TypeDecl>(std::move(decl)));
-    getCurrentModule()->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
+    addToSymbolTableNonAST(decl);
 }
 
 void TypeChecker::addToSymbolTable(VarDecl&& decl) const {
-    std::string name = decl.getName();
-    nonASTDecls.push_back(llvm::make_unique<VarDecl>(std::move(decl)));
-    getCurrentModule()->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
+    addToSymbolTableNonAST(decl);
 }
 
 void TypeChecker::addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) const {
