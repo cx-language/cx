@@ -589,15 +589,15 @@ void TypeChecker::typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::Str
 void TypeChecker::typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                                         ParserFunction& parse) const {
     switch (decl.getKind()) {
-        case DeclKind::ParamDecl: typecheckParamDecl(llvm::cast<ParamDecl>(decl)); break;
+        case DeclKind::ParamDecl: llvm_unreachable("no top-level parameter declarations");
         case DeclKind::FunctionDecl: typecheckFunctionLikeDecl(llvm::cast<FunctionDecl>(decl)); break;
         case DeclKind::MethodDecl: llvm_unreachable("no top-level method declarations");
-        case DeclKind::GenericParamDecl: typecheckGenericParamDecls(llvm::cast<GenericParamDecl>(decl)); break;
-        case DeclKind::InitDecl: typecheckInitDecl(llvm::cast<InitDecl>(decl)); break;
-        case DeclKind::DeinitDecl: typecheckDeinitDecl(llvm::cast<DeinitDecl>(decl)); break;
+        case DeclKind::GenericParamDecl: llvm_unreachable("no top-level parameter declarations");
+        case DeclKind::InitDecl: llvm_unreachable("no top-level initializer declarations");
+        case DeclKind::DeinitDecl: llvm_unreachable("no top-level deinitializer declarations");
         case DeclKind::TypeDecl: typecheckTypeDecl(llvm::cast<TypeDecl>(decl)); break;
         case DeclKind::VarDecl: typecheckVarDecl(llvm::cast<VarDecl>(decl), true); break;
-        case DeclKind::FieldDecl: typecheckFieldDecl(llvm::cast<FieldDecl>(decl)); break;
+        case DeclKind::FieldDecl: llvm_unreachable("no top-level field declarations");
         case DeclKind::ImportDecl: typecheckImportDecl(llvm::cast<ImportDecl>(decl), importSearchPaths, parse); break;
     }
 }
@@ -607,8 +607,6 @@ void TypeChecker::typecheckMemberDecl(Decl& decl) const {
         case DeclKind::MethodDecl: typecheckFunctionLikeDecl(llvm::cast<MethodDecl>(decl)); break;
         case DeclKind::InitDecl: typecheckInitDecl(llvm::cast<InitDecl>(decl)); break;
         case DeclKind::DeinitDecl: typecheckDeinitDecl(llvm::cast<DeinitDecl>(decl)); break;
-        case DeclKind::TypeDecl: typecheckTypeDecl(llvm::cast<TypeDecl>(decl)); break;
-        case DeclKind::VarDecl: typecheckVarDecl(llvm::cast<VarDecl>(decl), true); break;
         case DeclKind::FieldDecl: typecheckFieldDecl(llvm::cast<FieldDecl>(decl)); break;
         default: llvm_unreachable("invalid member declaration kind");
     }
