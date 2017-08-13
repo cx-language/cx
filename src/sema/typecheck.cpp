@@ -48,7 +48,7 @@ int breakableBlocks = 0;
 }
 
 void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
-    if (stmt.values.empty()) {
+    if (stmt.getValues().empty()) {
         if (!functionReturnType.isVoid()) {
             error(stmt.getLocation(), "expected return statement to return a value of type '",
                   functionReturnType, "'");
@@ -56,23 +56,23 @@ void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
         return;
     }
     std::vector<Type> returnValueTypes;
-    for (auto& expr : stmt.values) {
+    for (auto& expr : stmt.getValues()) {
         returnValueTypes.push_back(typecheckExpr(*expr));
     }
     Type returnType = returnValueTypes.size() > 1
                       ? TupleType::get(std::move(returnValueTypes)) : returnValueTypes[0];
-    if (!isValidConversion(stmt.values, returnType, functionReturnType)) {
+    if (!isValidConversion(stmt.getValues(), returnType, functionReturnType)) {
         error(stmt.getLocation(), "mismatching return type '", returnType, "', expected '",
               functionReturnType, "'");
     }
 }
 
 void TypeChecker::typecheckVarStmt(VarStmt& stmt) const {
-    typecheckVarDecl(*stmt.decl, false);
+    typecheckVarDecl(stmt.getDecl(), false);
 }
 
 void TypeChecker::typecheckIncrementStmt(IncrementStmt& stmt) const {
-    auto type = typecheckExpr(*stmt.operand);
+    auto type = typecheckExpr(stmt.getOperand());
     if (!type.isMutable()) {
         error(stmt.getLocation(), "cannot increment immutable value");
     }
@@ -80,7 +80,7 @@ void TypeChecker::typecheckIncrementStmt(IncrementStmt& stmt) const {
 }
 
 void TypeChecker::typecheckDecrementStmt(DecrementStmt& stmt) const {
-    auto type = typecheckExpr(*stmt.operand);
+    auto type = typecheckExpr(stmt.getOperand());
     if (!type.isMutable()) {
         error(stmt.getLocation(), "cannot decrement immutable value");
     }
@@ -88,54 +88,66 @@ void TypeChecker::typecheckDecrementStmt(DecrementStmt& stmt) const {
 }
 
 void TypeChecker::typecheckIfStmt(IfStmt& ifStmt) const {
-    Type conditionType = typecheckExpr(*ifStmt.condition);
+    Type conditionType = typecheckExpr(ifStmt.getCondition());
     if (!conditionType.isBool()) {
-        error(ifStmt.condition->getLocation(), "'if' condition must have type 'bool'");
+        error(ifStmt.getCondition().getLocation(), "'if' condition must have type 'bool'");
     }
-    for (auto& stmt : ifStmt.thenBody) typecheckStmt(*stmt);
-    for (auto& stmt : ifStmt.elseBody) typecheckStmt(*stmt);
+    for (auto& stmt : ifStmt.getThenBody()) {
+        typecheckStmt(*stmt);
+    }
+    for (auto& stmt : ifStmt.getElseBody()) {
+        typecheckStmt(*stmt);
+    }
 }
 
 void TypeChecker::typecheckSwitchStmt(SwitchStmt& stmt) const {
-    Type conditionType = typecheckExpr(*stmt.condition);
+    Type conditionType = typecheckExpr(stmt.getCondition());
     breakableBlocks++;
-    for (SwitchCase& switchCase : stmt.cases) {
-        Type caseType = typecheckExpr(*switchCase.value);
+    for (auto& switchCase : stmt.getCases()) {
+        Type caseType = typecheckExpr(*switchCase.getValue());
         if (!caseType.isImplicitlyConvertibleTo(conditionType)) {
-            error(switchCase.value->getLocation(), "case value type '", caseType,
+            error(switchCase.getValue()->getLocation(), "case value type '", caseType,
                   "' doesn't match switch condition type '", conditionType, "'");
         }
-        for (auto& caseStmt : switchCase.stmts) typecheckStmt(*caseStmt);
+        for (auto& caseStmt : switchCase.getStmts()) {
+            typecheckStmt(*caseStmt);
+        }
     }
-    for (auto& defaultStmt : stmt.defaultStmts) typecheckStmt(*defaultStmt);
+    for (auto& defaultStmt : stmt.getDefaultStmts()) {
+        typecheckStmt(*defaultStmt);
+    }
     breakableBlocks--;
 }
 
 void TypeChecker::typecheckWhileStmt(WhileStmt& whileStmt) const {
-    Type conditionType = typecheckExpr(*whileStmt.condition);
+    Type conditionType = typecheckExpr(whileStmt.getCondition());
     if (!conditionType.isBool()) {
-        error(whileStmt.condition->getLocation(), "'while' condition must have type 'bool'");
+        error(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool'");
     }
     breakableBlocks++;
-    for (auto& stmt : whileStmt.body) typecheckStmt(*stmt);
+    for (auto& stmt : whileStmt.getBody()) {
+        typecheckStmt(*stmt);
+    }
     breakableBlocks--;
 }
 
 void TypeChecker::typecheckForStmt(ForStmt& forStmt) const {
-    if (getCurrentModule()->getSymbolTable().contains(forStmt.id)) {
-        error(forStmt.getLocation(), "redefinition of '", forStmt.id, "'");
+    if (getCurrentModule()->getSymbolTable().contains(forStmt.getLoopVariableName())) {
+        error(forStmt.getLocation(), "redefinition of '", forStmt.getLoopVariableName(), "'");
     }
 
-    Type rangeType = typecheckExpr(*forStmt.range);
+    Type rangeType = typecheckExpr(forStmt.getRangeExpr());
     if (!rangeType.isIterable()) {
-        error(forStmt.range->getLocation(), "'for' range expression is not an 'Iterable'");
+        error(forStmt.getRangeExpr().getLocation(), "'for' range expression is not an 'Iterable'");
     }
 
     getCurrentModule()->getSymbolTable().pushScope();
-    addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.id),
+    addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.getLoopVariableName()),
                              nullptr, *getCurrentModule(), forStmt.getLocation()));
     breakableBlocks++;
-    for (auto& stmt : forStmt.body) typecheckStmt(*stmt);
+    for (auto& stmt : forStmt.getBody()) {
+        typecheckStmt(*stmt);
+    }
     breakableBlocks--;
     getCurrentModule()->getSymbolTable().popScope();
 }
@@ -147,15 +159,15 @@ void TypeChecker::typecheckBreakStmt(BreakStmt& breakStmt) const {
 }
 
 void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
-    Type lhsType = typecheckExpr(*stmt.lhs);
+    Type lhsType = typecheckExpr(*stmt.getLHS());
     if (lhsType.isFunctionType()) error(stmt.getLocation(), "cannot assign to function");
-    Type rhsType = typecheckExpr(*stmt.rhs);
-    if (!isValidConversion(*stmt.rhs, rhsType, lhsType)) {
-        error(stmt.rhs->getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+    Type rhsType = typecheckExpr(*stmt.getRHS());
+    if (!isValidConversion(*stmt.getRHS(), rhsType, lhsType)) {
+        error(stmt.getRHS()->getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
     if (!lhsType.isMutable() && !inInitializer) {
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.lhs.get())) {
-            error(stmt.getLocation(), "cannot assign to immutable variable '", varExpr->identifier, "'");
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.getLHS())) {
+            error(stmt.getLocation(), "cannot assign to immutable variable '", varExpr->getIdentifier(), "'");
         } else {
             error(stmt.getLocation(), "cannot assign to immutable expression");
         }
@@ -168,8 +180,8 @@ void TypeChecker::typecheckStmt(Stmt& stmt) const {
         case StmtKind::VarStmt: typecheckVarStmt(llvm::cast<VarStmt>(stmt)); break;
         case StmtKind::IncrementStmt: typecheckIncrementStmt(llvm::cast<IncrementStmt>(stmt)); break;
         case StmtKind::DecrementStmt: typecheckDecrementStmt(llvm::cast<DecrementStmt>(stmt)); break;
-        case StmtKind::ExprStmt: typecheckExpr(*llvm::cast<ExprStmt>(stmt).expr); break;
-        case StmtKind::DeferStmt: typecheckExpr(*llvm::cast<DeferStmt>(stmt).expr); break;
+        case StmtKind::ExprStmt: typecheckExpr(llvm::cast<ExprStmt>(stmt).getExpr()); break;
+        case StmtKind::DeferStmt: typecheckExpr(llvm::cast<DeferStmt>(stmt).getExpr()); break;
         case StmtKind::IfStmt: typecheckIfStmt(llvm::cast<IfStmt>(stmt)); break;
         case StmtKind::SwitchStmt: typecheckSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
         case StmtKind::WhileStmt: typecheckWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
@@ -180,19 +192,19 @@ void TypeChecker::typecheckStmt(Stmt& stmt) const {
 }
 
 void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
-    if (getCurrentModule()->getSymbolTable().contains(decl.name)) {
-        error(decl.getLocation(), "redefinition of '", decl.name, "'");
+    if (getCurrentModule()->getSymbolTable().contains(decl.getName())) {
+        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
 
     if (auto* basicType = llvm::dyn_cast<BasicType>(decl.getType().get())) {
-        auto decls = findDecls(basicType->name);
+        auto decls = findDecls(basicType->getName());
         if (!decls.empty()) {
             auto& typeDecl = llvm::cast<TypeDecl>(*decls[0]);
             if (auto* deinitDecl = typeDecl.getDeinitializer()) {
                 SAVE_STATE(currentGenericArgs);
-                ASSERT(basicType->getGenericArgs().size() == typeDecl.genericParams.size());
-                for (auto t : llvm::zip_first(typeDecl.genericParams, basicType->getGenericArgs())) {
-                    currentGenericArgs.emplace(std::get<0>(t).name, std::get<1>(t));
+                ASSERT(basicType->getGenericArgs().size() == typeDecl.getGenericParams().size());
+                for (auto t : llvm::zip_first(typeDecl.getGenericParams(), basicType->getGenericArgs())) {
+                    currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
                 }
                 SAVE_STATE(typecheckingGenericFunction);
                 typecheckingGenericFunction = true;
@@ -201,7 +213,7 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
         }
     }
 
-    getCurrentModule()->getSymbolTable().add(decl.name, &decl);
+    getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 }
 
 void TypeChecker::addToSymbolTable(FunctionDecl& decl) const {
@@ -213,23 +225,23 @@ void TypeChecker::addToSymbolTable(FunctionDecl& decl) const {
 
 void TypeChecker::addToSymbolTable(InitDecl& decl) const {
     if (getCurrentModule()->getSymbolTable().findWithMatchingParams(decl)) {
-        error(decl.getLocation(), "redefinition of '", decl.getTypeDecl()->name, "' initializer");
+        error(decl.getLocation(), "redefinition of '", decl.getTypeDecl()->getName(), "' initializer");
     }
     getCurrentModule()->getSymbolTable().add(mangle(decl), &decl);
 }
 
 void TypeChecker::addToSymbolTable(DeinitDecl& decl) const {
     if (getCurrentModule()->getSymbolTable().contains(mangle(decl))) {
-        error(decl.getLocation(), "redefinition of '", decl.getTypeDecl()->name, "' deinitializer");
+        error(decl.getLocation(), "redefinition of '", decl.getTypeDecl()->getName(), "' deinitializer");
     }
     getCurrentModule()->getSymbolTable().add(mangle(decl), &decl);
 }
 
 void TypeChecker::addToSymbolTable(TypeDecl& decl) const {
-    if (getCurrentModule()->getSymbolTable().contains(decl.name)) {
-        error(decl.getLocation(), "redefinition of '", decl.name, "'");
+    if (getCurrentModule()->getSymbolTable().contains(decl.getName())) {
+        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
-    getCurrentModule()->getSymbolTable().add(decl.name, &decl);
+    getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 
     for (auto& memberDecl : decl.getMemberDecls()) {
         switch (memberDecl->getKind()) {
@@ -249,10 +261,10 @@ void TypeChecker::addToSymbolTable(TypeDecl& decl) const {
 }
 
 void TypeChecker::addToSymbolTable(VarDecl& decl) const {
-    if (getCurrentModule()->getSymbolTable().contains(decl.name)) {
-        error(decl.getLocation(), "redefinition of '", decl.name, "'");
+    if (getCurrentModule()->getSymbolTable().contains(decl.getName())) {
+        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
-    getCurrentModule()->getSymbolTable().add(decl.name, &decl);
+    getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 }
 
 void TypeChecker::addToSymbolTable(FunctionDecl&& decl) const {
@@ -262,13 +274,13 @@ void TypeChecker::addToSymbolTable(FunctionDecl&& decl) const {
 }
 
 void TypeChecker::addToSymbolTable(TypeDecl&& decl) const {
-    std::string name = decl.name;
+    std::string name = decl.getName();
     nonASTDecls.push_back(llvm::make_unique<TypeDecl>(std::move(decl)));
     getCurrentModule()->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
 }
 
 void TypeChecker::addToSymbolTable(VarDecl&& decl) const {
-    std::string name = decl.name;
+    std::string name = decl.getName();
     nonASTDecls.push_back(llvm::make_unique<VarDecl>(std::move(decl)));
     getCurrentModule()->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
 }
@@ -315,7 +327,7 @@ Decl& TypeChecker::findDecl(llvm::StringRef name, SourceLocation location, bool 
     }
 
     for (auto& field : currentFieldDecls) {
-        if (field.name == name) {
+        if (field.getName() == name) {
             return field;
         }
     }
@@ -367,13 +379,13 @@ bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
             return true;
         case StmtKind::IfStmt: {
             auto& ifStmt = llvm::cast<IfStmt>(*block.back());
-            return allPathsReturn(ifStmt.thenBody) && allPathsReturn(ifStmt.elseBody);
+            return allPathsReturn(ifStmt.getThenBody()) && allPathsReturn(ifStmt.getElseBody());
         }
         case StmtKind::SwitchStmt: {
             auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-            return llvm::all_of(switchStmt.cases,
-                                [](const SwitchCase& c) { return allPathsReturn(c.stmts); })
-                   && allPathsReturn(switchStmt.defaultStmts);
+            return llvm::all_of(switchStmt.getCases(),
+                                [](const SwitchCase& c) { return allPathsReturn(c.getStmts()); })
+                   && allPathsReturn(switchStmt.getDefaultStmts());
         }
         default:
             return false;
@@ -382,8 +394,8 @@ bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
 
 void TypeChecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const {
     for (auto& genericParam : genericParams) {
-        if (getCurrentModule()->getSymbolTable().contains(genericParam.name)) {
-            error(genericParam.getLocation(), "redefinition of '", genericParam.name, "'");
+        if (getCurrentModule()->getSymbolTable().contains(genericParam.getName())) {
+            error(genericParam.getLocation(), "redefinition of '", genericParam.getName(), "'");
         }
     }
 }
@@ -413,27 +425,31 @@ void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
     currentFunction = &decl;
 
     for (ParamDecl& param : decl.getParams()) {
-        if (param.type.isMutable()) error(param.getLocation(), "parameter types cannot be 'mutable'");
+        if (param.getType().isMutable()) {
+            error(param.getLocation(), "parameter types cannot be 'mutable'");
+        }
         typecheckParamDecl(param);
     }
     if (decl.getReturnType().isMutable()) error(decl.getLocation(), "return types cannot be 'mutable'");
 
-    if (decl.body) {
+    if (decl.getBody()) {
         SAVE_STATE(functionReturnType);
         functionReturnType = decl.getReturnType();
         SAVE_STATE(currentFieldDecls);
         if (receiverTypeDecl) {
-            currentFieldDecls = receiverTypeDecl->fields;
+            currentFieldDecls = receiverTypeDecl->getFields();
             Type thisType = receiverTypeDecl->getTypeForPassing(getGenericArgsAsArray(), decl.isMutating());
             addToSymbolTable(VarDecl(thisType, "this", nullptr, *getCurrentModule(), SourceLocation::invalid()));
         }
 
-        for (auto& stmt : *decl.body) typecheckStmt(*stmt);
+        for (auto& stmt : *decl.getBody()) {
+            typecheckStmt(*stmt);
+        }
     }
 
     getCurrentModule()->getSymbolTable().popScope();
 
-    if (!decl.getReturnType().isVoid() && !allPathsReturn(*decl.body)) {
+    if (!decl.getReturnType().isVoid() && !allPathsReturn(*decl.getBody())) {
         error(decl.getLocation(), "'", decl.getName(), "' is missing a return statement");
     }
 }
@@ -454,8 +470,10 @@ void TypeChecker::typecheckInitDecl(InitDecl& decl) const {
     SAVE_STATE(inInitializer);
     inInitializer = true;
     SAVE_STATE(currentFieldDecls);
-    currentFieldDecls = decl.getTypeDecl()->fields;
-    for (auto& stmt : *decl.body) typecheckStmt(*stmt);
+    currentFieldDecls = decl.getTypeDecl()->getFields();
+    for (auto& stmt : *decl.getBody()) {
+        typecheckStmt(*stmt);
+    }
 
     getCurrentModule()->getSymbolTable().popScope();
 }
@@ -474,38 +492,38 @@ void TypeChecker::typecheckTypeDecl(TypeDecl& decl) const {
 }
 
 TypeDecl* TypeChecker::getTypeDecl(const BasicType& type) const {
-    auto decls = findDecls(type.name);
+    auto decls = findDecls(type.getName());
     if (decls.empty()) return nullptr;
     ASSERT(decls.size() == 1);
     return llvm::cast<TypeDecl>(decls[0]);
 }
 
 void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
-    if (!isGlobal && getCurrentModule()->getSymbolTable().contains(decl.name)) {
-        error(decl.getLocation(), "redefinition of '", decl.name, "'");
+    if (!isGlobal && getCurrentModule()->getSymbolTable().contains(decl.getName())) {
+        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
     Type initType = nullptr;
-    if (decl.initializer) {
-        initType = typecheckExpr(*decl.initializer);
+    if (decl.getInitializer()) {
+        initType = typecheckExpr(*decl.getInitializer());
         if (initType.isFunctionType()) {
-            error(decl.initializer->getLocation(), "function pointers not implemented yet");
+            error(decl.getInitializer()->getLocation(), "function pointers not implemented yet");
         }
     } else if (isGlobal) {
         error(decl.getLocation(), "global variables cannot be uninitialized");
     }
 
     if (auto declaredType = decl.getType()) {
-        if (initType && !isValidConversion(*decl.initializer, initType, declaredType)) {
-            error(decl.initializer->getLocation(), "cannot initialize variable of type '", declaredType,
+        if (initType && !isValidConversion(*decl.getInitializer(), initType, declaredType)) {
+            error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType,
                   "' with '", initType, "'");
         }
     } else {
         if (initType.isNull()) {
-            error(decl.getLocation(), "couldn't infer type of '", decl.name, "', add a type annotation");
+            error(decl.getLocation(), "couldn't infer type of '", decl.getName(), "', add a type annotation");
         }
 
         initType.setMutable(decl.getType().isMutable());
-        decl.type = initType;
+        decl.setType(initType);
     }
 
     if (!isGlobal) addToSymbolTable(decl);
@@ -560,10 +578,10 @@ done:
 
 void TypeChecker::typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                                       ParserFunction& parse) const {
-    if (importDeltaModule(currentSourceFile, importSearchPaths, parse, decl.target)) return;
+    if (importDeltaModule(currentSourceFile, importSearchPaths, parse, decl.getTarget())) return;
 
-    if (!importCHeader(*currentSourceFile, decl.target, importSearchPaths)) {
-        llvm::errs() << "error: couldn't find module or C header '" << decl.target << "'\n";
+    if (!importCHeader(*currentSourceFile, decl.getTarget(), importSearchPaths)) {
+        llvm::errs() << "error: couldn't find module or C header '" << decl.getTarget() << "'\n";
         abort();
     }
 }

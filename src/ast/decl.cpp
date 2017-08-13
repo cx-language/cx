@@ -21,7 +21,7 @@ Module* Decl::getModule() const {
 }
 
 const FunctionType* FunctionLikeDecl::getFunctionType() const {
-    auto paramTypes = map(getParams(), *[](const ParamDecl& p) -> Type { return p.type; });
+    auto paramTypes = map(getParams(), *[](const ParamDecl& p) -> Type { return p.getType(); });
     return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes)));
 }
 
@@ -74,7 +74,7 @@ Type TypeDecl::getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutabl
 
 unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
     for (auto p : llvm::enumerate(fields)) {
-        if (p.Value.name == fieldName) {
+        if (p.Value.getName() == fieldName) {
             return static_cast<unsigned>(p.Index);
         }
     }
@@ -83,16 +83,16 @@ unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
 
 SourceLocation Decl::getLocation() const {
     switch (getKind()) {
-        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(*this).location;
+        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(this)->getLocation();
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
         case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl: return llvm::cast<FunctionLikeDecl>(*this).location;
-        case DeclKind::GenericParamDecl: return llvm::cast<GenericParamDecl>(*this).location;
-        case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(*this).location;
-        case DeclKind::VarDecl: return llvm::cast<VarDecl>(*this).location;
-        case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(*this).location;
-        case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(*this).location;
+        case DeclKind::DeinitDecl: return llvm::cast<FunctionLikeDecl>(this)->getLocation();
+        case DeclKind::GenericParamDecl: return llvm::cast<GenericParamDecl>(this)->getLocation();
+        case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(this)->getLocation();
+        case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->getLocation();
+        case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(this)->getLocation();
+        case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(this)->getLocation();
     }
     llvm_unreachable("all cases handled");
 }

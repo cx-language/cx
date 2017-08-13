@@ -62,7 +62,7 @@ public:
             T* t = llvm::dyn_cast<T>(decl);
             if (!t || t->getParams().size() != toFind.getParams().size()) continue;
             if (std::equal(toFind.getParams().begin(), toFind.getParams().end(), t->getParams().begin(),
-                           [](const ParamDecl& a, const ParamDecl& b) { return a.name == b.name; }))
+                           [](const ParamDecl& a, const ParamDecl& b) { return a.getName() == b.getName(); }))
                 return t;
         }
         return nullptr;

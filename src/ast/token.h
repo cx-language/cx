@@ -96,11 +96,10 @@ enum TokenKind {
 };
 
 struct Token {
-    const TokenKind kind;
-    llvm::StringRef string; ///< The substring in the source code representing this token.
-
     Token(TokenKind kind, llvm::StringRef string = {});
+    TokenKind getKind() const { return kind; }
     operator TokenKind() const { return kind; }
+    llvm::StringRef getString() const { return string; }
     SourceLocation getLocation() const { return location; }
     bool is(TokenKind kind) const { return this->kind == kind; }
     template<typename... T>
@@ -119,20 +118,28 @@ struct Token {
     Token withoutCompoundEqSuffix() const { return Token(TokenKind(kind - 1)); }
 
 private:
+    const TokenKind kind;
+    llvm::StringRef string; ///< The substring in the source code representing this token.
     const SourceLocation location;
 };
 
 struct PrefixOperator {
     PrefixOperator(Token token);
+    TokenKind getKind() const { return kind; }
     operator TokenKind() const { return kind; }
+
+private:
     TokenKind kind;
 };
 
 struct BinaryOperator {
     BinaryOperator(Token token);
+    TokenKind getKind() const { return kind; }
     operator TokenKind() const { return kind; }
     bool isComparisonOperator() const;
     bool isBitwiseOperator() const;
+
+private:
     TokenKind kind;
 };
 

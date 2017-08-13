@@ -8,31 +8,31 @@ extern llvm::LLVMContext ctx;
 }
 
 llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
-    auto* value = findValue(expr.identifier, expr.getDecl());
+    auto* value = findValue(expr.getIdentifier(), expr.getDecl());
 
     if (llvm::isa<llvm::AllocaInst>(value) || llvm::isa<llvm::GlobalValue>(value) ||
         llvm::isa<llvm::GetElementPtrInst>(value)) {
-        return builder.CreateLoad(value, expr.identifier);
+        return builder.CreateLoad(value, expr.getIdentifier());
     } else {
         return value;
     }
 }
 
 llvm::Value* IRGenerator::codegenLvalueVarExpr(const VarExpr& expr) {
-    return findValue(expr.identifier, expr.getDecl());
+    return findValue(expr.getIdentifier(), expr.getDecl());
 }
 
 llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr) {
     if (expr.getType().isString()) {
         ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
-        auto* stringPtr = builder.CreateGlobalStringPtr(expr.value);
+        auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* string = builder.CreateInsertValue(llvm::UndefValue::get(toIR(Type::getString())),
                                                  stringPtr, 0);
-        auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.value.size());
+        auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
         return builder.CreateInsertValue(string, size, 1);
     } else {
         // Passing as C-string, i.e. char pointer.
-        return builder.CreateGlobalStringPtr(expr.value);
+        return builder.CreateGlobalStringPtr(expr.getValue());
     }
 }
 
@@ -41,17 +41,17 @@ llvm::Value* IRGenerator::codegenIntLiteralExpr(const IntLiteralExpr& expr) {
     // that requires a floating-point value. It might make sense to combine
     // IntLiteralExpr and FloatLiteralExpr into a single class.
     if (expr.getType().isFloatingPoint())
-        return llvm::ConstantFP::get(toIR(expr.getType()), expr.value);
+        return llvm::ConstantFP::get(toIR(expr.getType()), expr.getValue());
 
-    return llvm::ConstantInt::getSigned(toIR(expr.getType()), expr.value);
+    return llvm::ConstantInt::getSigned(toIR(expr.getType()), expr.getValue());
 }
 
 llvm::Value* IRGenerator::codegenFloatLiteralExpr(const FloatLiteralExpr& expr) {
-    return llvm::ConstantFP::get(toIR(expr.getType()), expr.value);
+    return llvm::ConstantFP::get(toIR(expr.getType()), expr.getValue());
 }
 
 llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
-    return expr.value ? llvm::ConstantInt::getTrue(ctx) : llvm::ConstantInt::getFalse(ctx);
+    return expr.getValue() ? llvm::ConstantInt::getTrue(ctx) : llvm::ConstantInt::getFalse(ctx);
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
@@ -65,10 +65,10 @@ llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) {
-    auto* arrayType = llvm::ArrayType::get(toIR(expr.elements[0]->getType()), expr.elements.size());
+    auto* arrayType = llvm::ArrayType::get(toIR(expr.getElements()[0]->getType()), expr.getElements().size());
     std::vector<llvm::Constant*> values;
-    values.reserve(expr.elements.size());
-    for (auto& e : expr.elements)
+    values.reserve(expr.getElements().size());
+    for (auto& e : expr.getElements())
         values.emplace_back(llvm::cast<llvm::Constant>(codegenExpr(*e)));
     return llvm::ConstantArray::get(arrayType, values);
 }
@@ -78,7 +78,7 @@ llvm::Value* IRGenerator::codegenNot(const PrefixExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
-    switch (expr.op) {
+    switch (expr.getOperator()) {
         case PLUS: return codegenExpr(expr.getOperand());
         case MINUS:
             if (expr.getOperand().getType().isFloatingPoint()) {
@@ -95,7 +95,7 @@ llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenLvaluePrefixExpr(const PrefixExpr& expr) {
-    switch (expr.op) {
+    switch (expr.getOperator()) {
         case STAR: return codegenExpr(expr.getOperand());
         default: llvm_unreachable("invalid lvalue prefix operator");
     }
@@ -218,13 +218,13 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
     ASSERT(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType())
            || expr.getRHS().getType().isImplicitlyConvertibleTo(expr.getLHS().getType()));
 
-    switch (expr.op) {
+    switch (expr.getOperator()) {
         case AND_AND: case OR_OR:
-            return codegenShortCircuitBinaryOp(expr.op, expr.getLHS(), expr.getRHS());
+            return codegenShortCircuitBinaryOp(expr.getOperator(), expr.getLHS(), expr.getRHS());
         default:
             llvm::Value* lhs = codegenExpr(expr.getLHS());
             llvm::Value* rhs = codegenExpr(expr.getRHS());
-            return codegenBinaryOp(expr.op, lhs, rhs, expr.getLHS());
+            return codegenBinaryOp(expr.getOperator(), lhs, rhs, expr.getLHS());
     }
 }
 
@@ -282,7 +282,7 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
 
 llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     if (expr.isBuiltinConversion())
-        return codegenBuiltinConversion(*expr.args.front().value, expr.getType());
+        return codegenBuiltinConversion(*expr.getArgs().front().getValue(), expr.getType());
 
     if (expr.getFunctionName() == "sizeOf") {
         return llvm::ConstantExpr::getSizeOf(toIR(expr.getGenericArgs().front()));
@@ -313,21 +313,21 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
         ++param;
     }
 
-    for (const auto& arg : expr.args) {
+    for (const auto& arg : expr.getArgs()) {
         auto* paramType = param != function->arg_end() ? param++->getType() : nullptr;
-        args.emplace_back(codegenExprForPassing(*arg.value, paramType));
+        args.emplace_back(codegenExprForPassing(*arg.getValue(), paramType));
     }
 
     return builder.CreateCall(function, args);
 }
 
 llvm::Value* IRGenerator::codegenCastExpr(const CastExpr& expr) {
-    auto* value = codegenExpr(*expr.expr);
-    auto* type = toIR(expr.type);
+    auto* value = codegenExpr(expr.getExpr());
+    auto* type = toIR(expr.getTargetType());
     if (value->getType()->isIntegerTy() && type->isIntegerTy()) {
-        return builder.CreateIntCast(value, type, expr.expr->getType().isSigned());
+        return builder.CreateIntCast(value, type, expr.getExpr().getType().isSigned());
     }
-    if (expr.expr->getType().isPointerType() && expr.expr->getType().getPointee().isUnsizedArrayType()) {
+    if (expr.getExpr().getType().isPointerType() && expr.getExpr().getType().getPointee().isUnsizedArrayType()) {
         value = builder.CreateExtractValue(value, 0);
     }
     return builder.CreateBitOrPointerCast(value, type);
@@ -381,38 +381,41 @@ llvm::Value* IRGenerator::getArrayOrStringLength(const Expr& object, Type object
 
 llvm::Value* IRGenerator::codegenOffsetUnsafely(const CallExpr& call) {
     auto* pointer = codegenExpr(*call.getReceiver());
-    auto* offset = codegenExpr(*call.args.front().value);
+    auto* offset = codegenExpr(*call.getArgs().front().getValue());
     return builder.CreateGEP(pointer, offset);
 }
 
 llvm::Value* IRGenerator::codegenLvalueMemberExpr(const MemberExpr& expr) {
-    return codegenMemberAccess(codegenLvalueExpr(*expr.base), expr.getType(), expr.member);
+    return codegenMemberAccess(codegenLvalueExpr(*expr.getBaseExpr()), expr.getType(), expr.getMemberName());
 }
 
 llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
-    Type baseType = expr.base->getType();
+    Type baseType = expr.getBaseExpr()->getType();
     if (baseType.isReference()) baseType = baseType.getPointee();
     if (baseType.isArrayType() || baseType.isString()) {
-        if (expr.member == "data") return getArrayOrStringDataPointer(*expr.base, baseType);
-        if (expr.member == "count") return getArrayOrStringLength(*expr.base, baseType);
+        if (expr.getMemberName() == "data") return getArrayOrStringDataPointer(*expr.getBaseExpr(), baseType);
+        if (expr.getMemberName() == "count") return getArrayOrStringLength(*expr.getBaseExpr(), baseType);
     }
     auto* value = codegenLvalueMemberExpr(expr);
     return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;
 }
 
 llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) {
-    auto* value = codegenLvalueExpr(*expr.array);
-    Type lhsType = expr.array->getType();
+    auto* value = codegenLvalueExpr(*expr.getBaseExpr());
+    Type lhsType = expr.getBaseExpr()->getType();
 
     if (lhsType.isPointerType() && lhsType.getPointee().isUnsizedArrayType()) {
         if (value->getType()->isPointerTy()) {
             value = builder.CreateLoad(value);
         }
-        return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegenExpr(*expr.index));
+        return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegenExpr(*expr.getIndexExpr()));
     }
     if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
-    return builder.CreateGEP(value,
-                             {llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegenExpr(*expr.index)});
+
+    return builder.CreateGEP(value, {
+        llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0),
+        codegenExpr(*expr.getIndexExpr())
+    });
 }
 
 llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
@@ -421,7 +424,7 @@ llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
 
 llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {
     // TODO: Assert that the operand is non-null.
-    return codegenExpr(*expr.operand);
+    return codegenExpr(expr.getOperand());
 }
 
 llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {

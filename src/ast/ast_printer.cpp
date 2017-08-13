@@ -18,27 +18,31 @@ std::ostream& br(std::ostream& out) {
     return out << '\n' << std::string(indentLevel * 4, ' ');
 }
 
+inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
+    return stream.write(string.data(), string.size());
+}
+
 std::ostream& operator<<(std::ostream& out, const Expr& expr);
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt);
 
 std::ostream& operator<<(std::ostream& out, const VarExpr& expr) {
-    return out << expr.identifier;
+    return out << expr.getIdentifier();
 }
 
 std::ostream& operator<<(std::ostream& out, const StringLiteralExpr& expr) {
-    return out << '"' << expr.value << '"';
+    return out << '"' << expr.getValue() << '"';
 }
 
 std::ostream& operator<<(std::ostream& out, const IntLiteralExpr& expr) {
-    return out << expr.value;
+    return out << expr.getValue();
 }
 
 std::ostream& operator<<(std::ostream& out, const FloatLiteralExpr& expr) {
-    return out << expr.value;
+    return out << expr.getValue();
 }
 
 std::ostream& operator<<(std::ostream& out, const BoolLiteralExpr& expr) {
-    return out << (expr.value ? "true" : "false");
+    return out << (expr.getValue() ? "true" : "false");
 }
 
 std::ostream& operator<<(std::ostream& out, const NullLiteralExpr&) {
@@ -47,16 +51,16 @@ std::ostream& operator<<(std::ostream& out, const NullLiteralExpr&) {
 
 std::ostream& operator<<(std::ostream& out, const ArrayLiteralExpr& expr) {
     out << "(array-literal";
-    for (auto& e : expr.elements) out << " " << *e;
+    for (auto& e : expr.getElements()) out << " " << *e;
     return out << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const PrefixExpr& expr) {
-    return out << "(" << expr.op << expr.getOperand() << ")";
+    return out << "(" << expr.getOperator() << expr.getOperand() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
-    return out << "(" << expr.getLHS() << " " << expr.op << " " << expr.getRHS() << ")";
+    return out << "(" << expr.getLHS() << " " << expr.getOperator() << " " << expr.getRHS() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
@@ -68,19 +72,19 @@ std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
 }
 
 std::ostream& operator<<(std::ostream& out, const CastExpr& expr) {
-    return out << "(cast " << *expr.expr << " " << expr.type << ")";
+    return out << "(cast " << expr.getExpr() << " " << expr.getType() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const MemberExpr& expr) {
-    return out << "(member-expr " << *expr.base << " " << expr.member << ")";
+    return out << "(member-expr " << *expr.getBaseExpr() << " " << expr.getMemberName() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const SubscriptExpr& expr) {
-    return out << "(subscript " << *expr.array << " " << *expr.index << ")";
+    return out << "(subscript " << *expr.getBaseExpr() << " " << *expr.getIndexExpr() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const UnwrapExpr& expr) {
-    return out << "(unwrap " << *expr.operand << ")";
+    return out << "(unwrap " << expr.getOperand() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
@@ -114,40 +118,40 @@ std::ostream& operator<<(std::ostream& out, llvm::ArrayRef<std::unique_ptr<Stmt>
 
 std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
     out << br << "(return-stmt ";
-    for (const auto& value : stmt.values) {
+    for (const auto& value : stmt.getValues()) {
         out << *value;
-        if (&value != &stmt.values.back()) out << " ";
+        if (&value != &stmt.getValues().back()) out << " ";
     }
     return out << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const VarStmt& stmt) {
-    out << br << "(var-stmt " << stmt.decl->name << " ";
-    if (stmt.decl->initializer) out << *stmt.decl->initializer;
+    out << br << "(var-stmt " << stmt.getDecl().getName() << " ";
+    if (stmt.getDecl().getInitializer()) out << *stmt.getDecl().getInitializer();
     else out << "uninitialized";
     return out << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const IncrementStmt& stmt) {
-    return out << br << "(inc-stmt " << *stmt.operand << ")";
+    return out << br << "(inc-stmt " << stmt.getOperand() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const DecrementStmt& stmt) {
-    return out << br << "(dec-stmt " << *stmt.operand << ")";
+    return out << br << "(dec-stmt " << stmt.getOperand() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const DeferStmt& stmt) {
-    return out << br << "(defer-stmt " << *stmt.expr << ")";
+    return out << br << "(defer-stmt " << stmt.getExpr() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
-    out << br << "(if-stmt " << *stmt.condition;
+    out << br << "(if-stmt " << stmt.getCondition();
     indentLevel++;
-    out << br << "(then" << stmt.thenBody << ")";
-    if (!stmt.elseBody.empty()) {
+    out << br << "(then" << stmt.getThenBody() << ")";
+    if (!stmt.getElseBody().empty()) {
         out << br << "(else";
         indentLevel++;
-        for (const auto& substmt : stmt.elseBody) {
+        for (const auto& substmt : stmt.getElseBody()) {
             if (!substmt->isIfStmt()) out << br;
             out << *substmt;
         }
@@ -159,21 +163,21 @@ std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
-    out << br << "(switch-stmt " << *stmt.condition;
+    out << br << "(switch-stmt " << stmt.getCondition();
     indentLevel++;
-    for (const SwitchCase& switchCase : stmt.cases) {
-        out << br << "(case " << *switchCase.value << switchCase.stmts << ")";
+    for (const SwitchCase& switchCase : stmt.getCases()) {
+        out << br << "(case " << *switchCase.getValue() << switchCase.getStmts() << ")";
     }
     indentLevel--;
     return out << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
-    return out << br << "(while-stmt " << *stmt.condition << stmt.body << ")";
+    return out << br << "(while-stmt " << stmt.getCondition() << stmt.getBody() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const ForStmt& stmt) {
-    return out << br << "(for-stmt " << stmt.id << " " << *stmt.range << stmt.body << ")";
+    return out << br << "(for-stmt " << stmt.getLoopVariableName() << " " << stmt.getRangeExpr() << stmt.getBody() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const BreakStmt&) {
@@ -182,11 +186,11 @@ std::ostream& operator<<(std::ostream& out, const BreakStmt&) {
 
 std::ostream& operator<<(std::ostream& out, const AssignStmt& stmt) {
     if (stmt.isCompoundAssignment()) {
-        auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.rhs);
-        return out << br << "(compound-assign-stmt " << binaryExpr.op << " "
+        auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.getRHS());
+        return out << br << "(compound-assign-stmt " << binaryExpr.getOperator() << " "
                    << binaryExpr.getLHS() << " " << binaryExpr.getRHS() << ")";
     } else {
-        return out << br << "(assign-stmt " << *stmt.lhs << " " << *stmt.rhs << ")";
+        return out << br << "(assign-stmt " << *stmt.getLHS() << " " << *stmt.getRHS() << ")";
     }
 }
 
@@ -196,7 +200,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::VarStmt: return out << llvm::cast<VarStmt>(stmt);
         case StmtKind::IncrementStmt: return out << llvm::cast<IncrementStmt>(stmt);
         case StmtKind::DecrementStmt: return out << llvm::cast<DecrementStmt>(stmt);
-        case StmtKind::ExprStmt: return out << br << *llvm::cast<ExprStmt>(stmt).expr;
+        case StmtKind::ExprStmt: return out << br << llvm::cast<ExprStmt>(stmt).getExpr();
         case StmtKind::DeferStmt: return out << llvm::cast<DeferStmt>(stmt);
         case StmtKind::IfStmt: return out << llvm::cast<IfStmt>(stmt);
         case StmtKind::SwitchStmt: return out << llvm::cast<SwitchStmt>(stmt);
@@ -209,7 +213,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {
-    return out << "(" << decl.type << " " << decl.name << ")";
+    return out << "(" << decl.getType() << " " << decl.getName() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
@@ -219,7 +223,7 @@ std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
     if (!decl.getGenericParams().empty()) {
         out << " (generic-params ";
         for (const GenericParamDecl& genericParam : decl.getGenericParams()) {
-            out << genericParam.name;
+            out << genericParam.getName();
             if (&genericParam != &decl.getGenericParams().back()) out << " ";
         }
         out << ")";
@@ -232,38 +236,38 @@ std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
     }
     out << ") " << decl.getReturnType();
 
-    if (!decl.isExtern()) out << *decl.body;
+    if (!decl.isExtern()) out << *decl.getBody();
     return out << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
-    out << br << "(init-decl " << decl.getTypeDecl()->name << " (";
+    out << br << "(init-decl " << decl.getTypeDecl()->getName() << " (";
     for (const ParamDecl& param : decl.getParams()) {
         out << param;
         if (&param != &decl.getParams().back()) out << " ";
     }
-    return out << ")" << *decl.body << ")";
+    return out << ")" << *decl.getBody() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const DeinitDecl& decl) {
-    return out << br << "(deinit-decl " << decl.getTypeDecl()->name << *decl.body << ")";
+    return out << br << "(deinit-decl " << decl.getTypeDecl()->getName() << *decl.getBody() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldDecl& decl) {
-    return out << br << "(field-decl " << decl.type << " " << decl.name << ")";
+    return out << br << "(field-decl " << decl.getType() << " " << decl.getName() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const TypeDecl& decl) {
     out << br << "(type-decl ";
-    switch (decl.tag) {
+    switch (decl.getTag()) {
         case TypeTag::Struct: out << "struct "; break;
         case TypeTag::Class: out << "class "; break;
         case TypeTag::Interface: out << "interface "; break;
         case TypeTag::Union: out << "union "; break;
     }
-    out << decl.name;
+    out << decl.getName();
     indentLevel++;
-    for (const FieldDecl& field : decl.fields) {
+    for (const FieldDecl& field : decl.getFields()) {
         out << field;
     }
     indentLevel--;
@@ -271,11 +275,11 @@ std::ostream& operator<<(std::ostream& out, const TypeDecl& decl) {
 }
 
 std::ostream& operator<<(std::ostream& out, const VarDecl& decl) {
-    return out << br << "(var-decl " << decl.name << " " << *decl.initializer << ")";
+    return out << br << "(var-decl " << decl.getName() << " " << *decl.getInitializer() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const ImportDecl& decl) {
-    return out << br << "(import-decl \"" << decl.target << "\")";
+    return out << br << "(import-decl \"" << decl.getTarget() << "\")";
 }
 
 std::ostream& operator<<(std::ostream& out, const Decl& decl) {

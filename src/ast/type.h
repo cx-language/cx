@@ -133,9 +133,8 @@ private:
 
 class BasicType : public TypeBase {
 public:
-    std::string name;
-
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
+    llvm::StringRef getName() const { return name; }
     static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs,
                     bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::BasicType; }
@@ -145,14 +144,15 @@ private:
     BasicType(llvm::StringRef name, std::vector<Type>&& genericArgs)
     : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)) {}
 
+private:
+    std::string name;
     std::vector<Type> genericArgs;
 };
 
 class ArrayType : public TypeBase {
 public:
-    Type elementType;
-    int64_t size; ///< Equal to ArrayType::unsized if this is an unsized array type.
-
+    Type getElementType() const { return elementType; }
+    int64_t getSize() const { return size; }
     bool isUnsized() const { return size == unsized; }
     static const int64_t unsized = -1;
     static Type get(Type type, int64_t size, bool isMutable = false);
@@ -161,12 +161,15 @@ public:
 private:
     ArrayType(Type type, int64_t size)
     : TypeBase(TypeKind::ArrayType), elementType(type), size(size) {}
+
+private:
+    Type elementType;
+    int64_t size; ///< Equal to ArrayType::unsized if this is an unsized array type.
 };
 
 class RangeType : public TypeBase {
 public:
-    Type elementType;
-
+    Type getElementType() const { return elementType; }
     bool isExclusive() const { return hasExclusiveUpperBound; }
     static Type get(Type elementType, bool hasExclusiveUpperBound, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::RangeType; }
@@ -176,38 +179,46 @@ private:
     : TypeBase(TypeKind::RangeType), elementType(elementType),
       hasExclusiveUpperBound(hasExclusiveUpperBound) {}
 
+private:
+    Type elementType;
     bool hasExclusiveUpperBound;
 };
 
 class TupleType : public TypeBase {
 public:
-    std::vector<Type> subtypes;
+    llvm::ArrayRef<Type> getSubtypes() const { return subtypes; }
     static Type get(std::vector<Type>&& subtypes, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
 
 private:
     TupleType(std::vector<Type>&& subtypes)
     : TypeBase(TypeKind::TupleType), subtypes(std::move(subtypes)) {
-        ASSERT(this->subtypes.size() != 1);
+        ASSERT(getSubtypes().size() != 1);
     }
+
+private:
+    std::vector<Type> subtypes;
 };
 
 class FunctionType : public TypeBase {
 public:
-    Type returnType;
-    std::vector<Type> paramTypes;
+    Type getReturnType() const { return returnType; }
+    llvm::ArrayRef<Type> getParamTypes() const { return paramTypes; }
     static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::FunctionType; }
 
 private:
     FunctionType(Type returnType, std::vector<Type>&& paramTypes)
     : TypeBase(TypeKind::FunctionType), returnType(returnType), paramTypes(std::move(paramTypes)) {}
+
+private:
+    Type returnType;
+    std::vector<Type> paramTypes;
 };
 
 class PointerType : public TypeBase {
 public:
-    Type pointeeType;
-
+    Type getPointeeType() const { return pointeeType; }
     bool isReference() const { return reference; }
     static Type get(Type pointeeType, bool isReference, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PointerType; }
@@ -216,6 +227,8 @@ private:
     PointerType(Type pointeeType, bool isReference)
     : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), reference(isReference) {}
 
+private:
+    Type pointeeType;
     bool reference;
 };
 

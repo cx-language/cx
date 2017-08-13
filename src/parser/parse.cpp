@@ -109,7 +109,7 @@ std::vector<Argument> parseArgumentList() {
         SourceLocation location = SourceLocation::invalid();
         if (lookAhead(1) == COLON) {
             auto result = parse(IDENTIFIER);
-            name = std::move(result.string);
+            name = std::move(result.getString());
             location = result.getLocation();
             consumeToken();
         }
@@ -126,7 +126,7 @@ std::vector<Argument> parseArgumentList() {
 std::unique_ptr<VarExpr> parseVarExpr() {
     ASSERT(currentToken() == IDENTIFIER);
     auto id = parse(IDENTIFIER);
-    return llvm::make_unique<VarExpr>(std::move(id.string), id.getLocation());
+    return llvm::make_unique<VarExpr>(id.getString(), id.getLocation());
 }
 
 std::unique_ptr<VarExpr> parseThis() {
@@ -167,7 +167,7 @@ std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLocation li
 
 std::unique_ptr<StringLiteralExpr> parseStringLiteral() {
     ASSERT(currentToken() == STRING_LITERAL);
-    auto content = replaceEscapeChars(currentToken().string.drop_back().drop_front(), getCurrentLocation());
+    auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
     auto expr = llvm::make_unique<StringLiteralExpr>(std::move(content), getCurrentLocation());
     consumeToken();
     return expr;
@@ -237,7 +237,7 @@ std::vector<Type> parseGenericArgumentList() {
 /// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
 Type parseSimpleType(bool isMutable) {
     ASSERT(currentToken() == IDENTIFIER);
-    llvm::StringRef id = consumeToken().string;
+    llvm::StringRef id = consumeToken().getString();
 
     Type type;
     std::vector<Type> genericArgs;
@@ -316,7 +316,7 @@ std::unique_ptr<CastExpr> parseCastExpr() {
 /// member-expr ::= expr '.' id
 std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
     auto member = parse(IDENTIFIER);
-    return llvm::make_unique<MemberExpr>(std::move(lhs), std::move(member.string), member.getLocation());
+    return llvm::make_unique<MemberExpr>(std::move(lhs), member.getString(), member.getLocation());
 }
 
 /// subscript-expr ::= expr '[' expr ']'
@@ -362,7 +362,7 @@ bool shouldParseGenericArgumentList() {
     // Temporary hack: use spacing to determine whether to parse a generic argument list
     // of a less-than binary expression. Zero spaces on either side of '<' will cause it
     // to be interpreted as a generic argument list, for now.
-    return lookAhead(0).getLocation().column + int(lookAhead(0).string.size()) == lookAhead(1).getLocation().column
+    return lookAhead(0).getLocation().column + int(lookAhead(0).getString().size()) == lookAhead(1).getLocation().column
            || lookAhead(1).getLocation().column + 1 == lookAhead(2).getLocation().column;
 }
 
@@ -530,8 +530,8 @@ std::unique_ptr<VarDecl> parseVarDecl() {
     auto initializer = currentToken() != UNINITIALIZED ? parseExpr() : nullptr;
     if (!initializer) consumeToken();
     parseStmtTerminator();
-    return llvm::make_unique<VarDecl>(type, std::move(name.string),
-                                      std::move(initializer), *currentModule, name.getLocation());
+    return llvm::make_unique<VarDecl>(type, name.getString(), std::move(initializer),
+                                      *currentModule, name.getLocation());
 }
 
 /// var-stmt ::= var-decl
@@ -629,7 +629,7 @@ std::unique_ptr<ForStmt> parseForStmt() {
     parse(LBRACE);
     auto body = parseStmtsUntil(RBRACE);
     parse(RBRACE);
-    return llvm::make_unique<ForStmt>(std::string(id.string), std::move(range),
+    return llvm::make_unique<ForStmt>(std::string(id.getString()), std::move(range),
                                       std::move(body), id.getLocation());
 }
 
@@ -738,7 +738,7 @@ ParamDecl parseParam() {
     auto name = parse(IDENTIFIER);
     parse(COLON);
     auto type = parseType();
-    return ParamDecl(std::move(type), std::move(name.string), name.getLocation());
+    return ParamDecl(std::move(type), std::move(name.getString()), name.getLocation());
 }
 
 /// param-list ::= '(' params ')'
@@ -759,11 +759,11 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
     parse(LT);
     while (true) {
         auto genericParamName = parse(IDENTIFIER);
-        genericParams.emplace_back(genericParamName.string, genericParamName.getLocation());
+        genericParams.emplace_back(genericParamName.getString(), genericParamName.getLocation());
 
         if (currentToken() == COLON) { // Generic type constraint.
             consumeToken();
-            genericParams.back().constraints.emplace_back(parse(IDENTIFIER).string);
+            genericParams.back().addConstraint(parse(IDENTIFIER).getString());
             // TODO: Add support for multiple generic type constraints.
         }
 
@@ -787,11 +787,11 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
     SourceLocation nameLocation = getCurrentLocation();
     llvm::StringRef name;
     if (currentToken() == IDENTIFIER) {
-        name = consumeToken().string;
+        name = consumeToken().getString();
     } else if (receiverTypeDecl) {
         error(nameLocation, "operator functions must be non-member functions");
     } else {
-        name = toString(consumeToken().kind);
+        name = toString(consumeToken().getKind());
     }
 
     std::vector<GenericParamDecl> genericParams;
@@ -826,7 +826,7 @@ std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool
     auto decl = parseFunctionProto(receiverTypeDecl);
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
-        decl->body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
+        decl->setBody(std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE)));
         parse(RBRACE);
     }
     return decl;
@@ -877,7 +877,7 @@ FieldDecl parseFieldDecl(TypeDecl& typeDecl) {
     type.setMutable(isMutable);
 
     parseStmtTerminator();
-    return FieldDecl(type, std::move(name.string), typeDecl, name.getLocation());
+    return FieldDecl(type, std::move(name.getString()), typeDecl, name.getLocation());
 }
 
 /// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
@@ -898,7 +898,7 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
         parseGenericParamList(genericParams);
     }
 
-    auto typeDecl = llvm::make_unique<TypeDecl>(tag, std::move(name.string), std::move(genericParams),
+    auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::move(genericParams),
                                                 *currentModule, name.getLocation());
     parse(LBRACE);
 
@@ -941,7 +941,7 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
     expect(STRING_LITERAL, "after 'import'");
     auto target = parseStringLiteral();
     parseStmtTerminator("after 'import' declaration");
-    return llvm::make_unique<ImportDecl>(std::move(target->value), *currentModule, target->getLocation());
+    return llvm::make_unique<ImportDecl>(target->getValue(), *currentModule, target->getLocation());
 }
 
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | import-decl | var-decl

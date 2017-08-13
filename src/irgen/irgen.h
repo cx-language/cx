@@ -21,15 +21,22 @@ llvm::LLVMContext& getContext();
 
 struct Scope {
     Scope(IRGenerator& irGenerator) : irGenerator(irGenerator) {}
-
-    llvm::SmallVector<const Expr*, 8> deferredExprs;
-    llvm::SmallVector<std::pair<llvm::Function*, llvm::Value*>, 8> deinitsToCall;
-    std::unordered_map<std::string, llvm::Value*> localValues;
-
+    void addDeferredExpr(const Expr& expr) { deferredExprs.emplace_back(&expr); }
+    void addDeinitToCall(llvm::Function* deinit, llvm::Value* value) {
+        deinitsToCall.emplace_back(deinit, value);
+    }
+    void addLocalValue(std::string&& name, llvm::Value* value) {
+        bool didInsert = localValues.emplace(std::move(name), value).second;
+        ASSERT(didInsert);
+    }
+    const std::unordered_map<std::string, llvm::Value*>& getLocalValues() const { return localValues; }
     void onScopeEnd();
     void clear();
 
 private:
+    llvm::SmallVector<const Expr*, 8> deferredExprs;
+    llvm::SmallVector<std::pair<llvm::Function*, llvm::Value*>, 8> deinitsToCall;
+    std::unordered_map<std::string, llvm::Value*> localValues;
     IRGenerator& irGenerator;
 };
 
@@ -142,6 +149,16 @@ private:
 private:
     class FunctionInstantiation {
     public:
+        FunctionInstantiation(const FunctionLikeDecl& decl, llvm::ArrayRef<Type> receiverTypeGenericArgs,
+                              llvm::ArrayRef<Type> genericArgs, llvm::Function* function)
+        : decl(decl), receiverTypeGenericArgs(receiverTypeGenericArgs), genericArgs(genericArgs),
+          function(function) {}
+        const FunctionLikeDecl& getDecl() const { return decl; }
+        llvm::ArrayRef<Type> getReceiverTypeGenericArgs() const { return receiverTypeGenericArgs; }
+        llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
+        llvm::Function* getFunction() const { return function; }
+
+    private:
         const FunctionLikeDecl& decl;
         llvm::ArrayRef<Type> receiverTypeGenericArgs;
         llvm::ArrayRef<Type> genericArgs;

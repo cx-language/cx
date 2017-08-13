@@ -17,7 +17,7 @@ static void appendGenericArgs(std::string& mangled, llvm::ArrayRef<Type> generic
 
 std::string delta::mangle(const FunctionLikeDecl& decl, llvm::ArrayRef<Type> typeGenericArgs,
                           llvm::ArrayRef<Type> functionGenericArgs) {
-    auto receiverTypeName = decl.getTypeDecl() ? decl.getTypeDecl()->name : "";
+    std::string receiverTypeName = decl.getTypeDecl() ? decl.getTypeDecl()->getName() : "";
     appendGenericArgs(receiverTypeName, typeGenericArgs);
     return mangleFunctionDecl(receiverTypeName, decl.getName(), functionGenericArgs);
 }
@@ -36,7 +36,7 @@ std::string delta::mangleFunctionDecl(llvm::StringRef receiverType, llvm::String
 
 std::string delta::mangle(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs,
                           llvm::ArrayRef<Type> functionGenericArgs) {
-    std::string typeName = decl.getTypeDecl()->name;
+    std::string typeName = decl.getTypeDecl()->getName();
     appendGenericArgs(typeName, typeGenericArgs);
     return mangleInitDecl(typeName, functionGenericArgs);
 }
@@ -48,7 +48,7 @@ std::string delta::mangleInitDecl(llvm::StringRef typeName, llvm::ArrayRef<Type>
 }
 
 std::string delta::mangle(const DeinitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
-    std::string typeName = decl.getTypeDecl()->name;
+    std::string typeName = decl.getTypeDecl()->getName();
     appendGenericArgs(typeName, typeGenericArgs);
     return mangleDeinitDecl(typeName);
 }
@@ -58,7 +58,7 @@ std::string delta::mangleDeinitDecl(llvm::StringRef typeName) {
 }
 
 std::string delta::mangle(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs) {
-    auto mangled = decl.name;
+    std::string mangled = decl.getName();
     appendGenericArgs(mangled, genericArgs);
     return mangled;
 }

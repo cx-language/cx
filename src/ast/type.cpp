@@ -64,7 +64,7 @@ void Type::appendType(Type type) {
     if (!isTupleType())
         subtypes.push_back(*this);
     else
-        subtypes = llvm::cast<TupleType>(*typeBase).subtypes;
+        subtypes = llvm::cast<TupleType>(*typeBase).getSubtypes();
     subtypes.push_back(type);
     typeBase = TupleType::get(std::move(subtypes)).get();
 }
@@ -86,34 +86,35 @@ std::vector<std::unique_ptr<PointerType>> ptrTypes;
 
 Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable) {
     FETCH_AND_RETURN_TYPE(BasicType, basicTypes,
-                          t->name == name && t->getGenericArgs() == genericArgs, name, genericArgs);
+                          t->getName() == name && t->getGenericArgs() == genericArgs, name, genericArgs);
 }
 
 Type ArrayType::get(Type elementType, int64_t size, bool isMutable) {
     FETCH_AND_RETURN_TYPE(ArrayType, arrayTypes,
-                          t->elementType == elementType && t->size == size, elementType, size);
+                          t->getElementType() == elementType && t->getSize() == size, elementType, size);
 }
 
 Type RangeType::get(Type elementType, bool hasExclusiveUpperBound, bool isMutable) {
     FETCH_AND_RETURN_TYPE(RangeType, rangeTypes,
-                          t->elementType == elementType && t->hasExclusiveUpperBound == hasExclusiveUpperBound,
+                          t->getElementType() == elementType && t->hasExclusiveUpperBound == hasExclusiveUpperBound,
                           elementType, hasExclusiveUpperBound);
 }
 
 Type TupleType::get(std::vector<Type>&& subtypes, bool isMutable) {
     FETCH_AND_RETURN_TYPE(TupleType, tupleTypes,
-                          t->subtypes == subtypes, std::move(subtypes));
+                          t->getSubtypes() == llvm::makeArrayRef(subtypes), std::move(subtypes));
 }
 
 Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable) {
     FETCH_AND_RETURN_TYPE(FunctionType, functionTypes,
-                          t->returnType == returnType && t->paramTypes == paramTypes,
+                          t->getReturnType() == returnType && t->getParamTypes() == llvm::makeArrayRef(paramTypes),
                           returnType, std::move(paramTypes));
 }
 
 Type PointerType::get(Type pointeeType, bool isReference, bool isMutable) {
     FETCH_AND_RETURN_TYPE(PointerType, ptrTypes,
-                          t->pointeeType == pointeeType && t->isReference() == isReference, pointeeType, isReference);
+                          t->getPointeeType() == pointeeType && t->isReference() == isReference,
+                          pointeeType, isReference);
 }
 
 #undef FETCH_AND_RETURN_TYPE
@@ -128,8 +129,8 @@ bool Type::isImplicitlyConvertibleTo(Type type) const {
                    && (getArraySize() == type.getArraySize() || type.isUnsizedArrayType())
                    && getElementType().isImplicitlyConvertibleTo(type.getElementType());
         case TypeKind::RangeType:
-            return type.isRangeType() && llvm::cast<RangeType>(typeBase)->elementType
-                   == llvm::cast<RangeType>(type.typeBase)->elementType;
+            return type.isRangeType() && llvm::cast<RangeType>(typeBase)->getElementType()
+                   == llvm::cast<RangeType>(type.get())->getElementType();
         case TypeKind::TupleType:
             return type.isTupleType() && getSubtypes() == type.getSubtypes();
         case TypeKind::FunctionType:
@@ -159,27 +160,27 @@ bool Type::isUnsigned() const {
 void Type::setMutable(bool isMutable) {
     if (typeBase && isArrayType()) {
         auto& array = llvm::cast<ArrayType>(*typeBase);
-        *this = ArrayType::get(array.elementType.asMutable(isMutable), array.size, isMutable);
+        *this = ArrayType::get(array.getElementType().asMutable(isMutable), array.getSize(), isMutable);
     } else {
         mutableFlag = isMutable;
     }
 }
 
-llvm::StringRef Type::getName() const { return llvm::cast<BasicType>(typeBase)->name; }
-Type Type::getElementType() const { return llvm::cast<ArrayType>(typeBase)->elementType; }
-int64_t Type::getArraySize() const { return llvm::cast<ArrayType>(typeBase)->size; }
-llvm::ArrayRef<Type> Type::getSubtypes() const { return llvm::cast<TupleType>(typeBase)->subtypes; }
+llvm::StringRef Type::getName() const { return llvm::cast<BasicType>(typeBase)->getName(); }
+Type Type::getElementType() const { return llvm::cast<ArrayType>(typeBase)->getElementType(); }
+int64_t Type::getArraySize() const { return llvm::cast<ArrayType>(typeBase)->getSize(); }
+llvm::ArrayRef<Type> Type::getSubtypes() const { return llvm::cast<TupleType>(typeBase)->getSubtypes(); }
 llvm::ArrayRef<Type> Type::getGenericArgs() const { return llvm::cast<BasicType>(typeBase)->getGenericArgs(); }
-Type Type::getReturnType() const { return llvm::cast<FunctionType>(typeBase)->returnType; }
-llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FunctionType>(typeBase)->paramTypes; }
-Type Type::getPointee() const { return llvm::cast<PointerType>(typeBase)->pointeeType; }
+Type Type::getReturnType() const { return llvm::cast<FunctionType>(typeBase)->getReturnType(); }
+llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FunctionType>(typeBase)->getParamTypes(); }
+Type Type::getPointee() const { return llvm::cast<PointerType>(typeBase)->getPointeeType(); }
 Type Type::getReferee() const { ASSERT(isReference()); return getPointee(); }
 bool Type::isReference() const { return isPointerType() && llvm::cast<PointerType>(typeBase)->isReference(); }
 
 Type Type::getIterableElementType() const {
     ASSERT(isIterable());
     ASSERT(isRangeType(), "non-range iterables not supported yet");
-    return llvm::cast<RangeType>(typeBase)->elementType;
+    return llvm::cast<RangeType>(typeBase)->getElementType();
 }
 
 bool delta::operator==(Type lhs, Type rhs) {
@@ -192,8 +193,8 @@ bool delta::operator==(Type lhs, Type rhs) {
             return rhs.isArrayType() && lhs.getElementType() == rhs.getElementType()
                    && lhs.getArraySize() == rhs.getArraySize();
         case TypeKind::RangeType:
-            return rhs.isRangeType() && llvm::cast<RangeType>(lhs.get())->elementType
-                   == llvm::cast<RangeType>(rhs.get())->elementType;
+            return rhs.isRangeType() && llvm::cast<RangeType>(lhs.get())->getElementType()
+                   == llvm::cast<RangeType>(rhs.get())->getElementType();
         case TypeKind::TupleType:
             return rhs.isTupleType() && lhs.getSubtypes() == rhs.getSubtypes();
         case TypeKind::FunctionType:
@@ -235,7 +236,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             break;
         case TypeKind::RangeType:
             stream << "Range<";
-            llvm::cast<RangeType>(typeBase)->elementType.printTo(stream, true);
+            llvm::cast<RangeType>(typeBase)->getElementType().printTo(stream, true);
             stream << ">";
             break;
         case TypeKind::TupleType:

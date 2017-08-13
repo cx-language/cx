@@ -54,127 +54,152 @@ inline Stmt::~Stmt() {}
 
 class ReturnStmt : public Stmt {
 public:
-    std::vector<std::unique_ptr<Expr>> values;
-
     ReturnStmt(std::vector<std::unique_ptr<Expr>>&& values, SourceLocation location)
     : Stmt(StmtKind::ReturnStmt), values(std::move(values)), location(location) {}
+    llvm::ArrayRef<std::unique_ptr<Expr>> getValues() const { return values; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ReturnStmt; }
 
 private:
+    std::vector<std::unique_ptr<Expr>> values;
     SourceLocation location;
 };
 
 class VarStmt : public Stmt {
 public:
-    std::unique_ptr<VarDecl> decl;
-
     VarStmt(std::unique_ptr<VarDecl> decl)
     : Stmt(StmtKind::VarStmt), decl(std::move(decl)) {}
+    VarDecl& getDecl() const { return *decl; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::VarStmt; }
+
+private:
+    std::unique_ptr<VarDecl> decl;
 };
 
 class IncrementStmt : public Stmt {
 public:
-    std::unique_ptr<Expr> operand;
-
     IncrementStmt(std::unique_ptr<Expr> operand, SourceLocation location)
     : Stmt(StmtKind::IncrementStmt), operand(std::move(operand)), location(location) {}
+    Expr& getOperand() const { return *operand; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IncrementStmt; }
 
 private:
+    std::unique_ptr<Expr> operand;
     SourceLocation location; // Location of '++'.
 };
 
 class DecrementStmt : public Stmt {
 public:
-    std::unique_ptr<Expr> operand;
-
     DecrementStmt(std::unique_ptr<Expr> operand, SourceLocation location)
     : Stmt(StmtKind::DecrementStmt), operand(std::move(operand)), location(location) {}
+    Expr& getOperand() const { return *operand; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DecrementStmt; }
 
 private:
+    std::unique_ptr<Expr> operand;
     SourceLocation location; // Location of '--'.
 };
 
 /// A statement that consists of the evaluation of a single expression.
 class ExprStmt : public Stmt {
 public:
-    std::unique_ptr<Expr> expr;
-
     ExprStmt(std::unique_ptr<Expr> expr)
     : Stmt(StmtKind::ExprStmt), expr(std::move(expr)) {}
+    Expr& getExpr() const { return *expr; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ExprStmt; }
+
+private:
+    std::unique_ptr<Expr> expr;
 };
 
 class DeferStmt : public Stmt {
 public:
-    std::unique_ptr<Expr> expr;
-
     DeferStmt(std::unique_ptr<Expr> expr)
     : Stmt(StmtKind::DeferStmt), expr(std::move(expr)) {}
+    Expr& getExpr() const { return *expr; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DeferStmt; }
+
+private:
+    std::unique_ptr<Expr> expr;
 };
 
 class IfStmt : public Stmt {
 public:
-    std::unique_ptr<Expr> condition;
-    std::vector<std::unique_ptr<Stmt>> thenBody;
-    std::vector<std::unique_ptr<Stmt>> elseBody;
-
     IfStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& thenBody,
            std::vector<std::unique_ptr<Stmt>>&& elseBody)
     : Stmt(StmtKind::IfStmt), condition(std::move(condition)),
       thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) {}
+    Expr& getCondition() const { return *condition; }
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getThenBody() const { return thenBody; }
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getElseBody() const { return elseBody; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IfStmt; }
+
+private:
+    std::unique_ptr<Expr> condition;
+    std::vector<std::unique_ptr<Stmt>> thenBody;
+    std::vector<std::unique_ptr<Stmt>> elseBody;
 };
 
 class SwitchCase {
 public:
+    SwitchCase(std::unique_ptr<Expr> value, std::vector<std::unique_ptr<Stmt>>&& stmts)
+    : value(std::move(value)), stmts(std::move(stmts)) {}
+    Expr* getValue() const { return value.get(); }
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getStmts() const { return stmts; }
+
+private:
     std::unique_ptr<Expr> value;
     std::vector<std::unique_ptr<Stmt>> stmts;
 };
 
 class SwitchStmt : public Stmt {
 public:
-    std::unique_ptr<Expr> condition;
-    std::vector<SwitchCase> cases;
-    std::vector<std::unique_ptr<Stmt>> defaultStmts;
-
     SwitchStmt(std::unique_ptr<Expr> condition, std::vector<SwitchCase>&& cases,
                std::vector<std::unique_ptr<Stmt>>&& defaultStmts)
     : Stmt(StmtKind::SwitchStmt), condition(std::move(condition)),
       cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) {}
+    Expr& getCondition() const { return *condition; }
+    llvm::ArrayRef<SwitchCase> getCases() const { return cases; }
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getDefaultStmts() const { return defaultStmts; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::SwitchStmt; }
+
+private:
+    std::unique_ptr<Expr> condition;
+    std::vector<SwitchCase> cases;
+    std::vector<std::unique_ptr<Stmt>> defaultStmts;
 };
 
 class WhileStmt : public Stmt {
 public:
-    std::unique_ptr<Expr> condition;
-    std::vector<std::unique_ptr<Stmt>> body;
-
     WhileStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& body)
     : Stmt(StmtKind::WhileStmt), condition(std::move(condition)), body(std::move(body)) {}
+    Expr& getCondition() const { return *condition; }
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::WhileStmt; }
+
+private:
+    std::unique_ptr<Expr> condition;
+    std::vector<std::unique_ptr<Stmt>> body;
 };
 
 class ForStmt : public Stmt {
 public:
-    std::string id;
-    std::unique_ptr<Expr> range;
-    std::vector<std::unique_ptr<Stmt>> body;
-
     ForStmt(std::string&& id, std::unique_ptr<Expr> range,
             std::vector<std::unique_ptr<Stmt>>&& body, SourceLocation location)
     : Stmt(StmtKind::ForStmt), id(std::move(id)), range(std::move(range)),
       body(std::move(body)), location(location) {}
+    llvm::StringRef getLoopVariableName() const { return id; }
+    Expr& getRangeExpr() const { return *range; }
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
 
 private:
+    std::string id;
+    std::unique_ptr<Expr> range;
+    std::vector<std::unique_ptr<Stmt>> body;
     SourceLocation location; // Location of 'id'.
 };
 
@@ -192,18 +217,19 @@ private:
 /// Also used to represent compound assignments, e.g. `a += b`, desugared as `a = a + b`.
 class AssignStmt : public Stmt {
 public:
-    std::shared_ptr<Expr> lhs; // shared_ptr to support compound assignments.
-    std::unique_ptr<Expr> rhs;
-
     AssignStmt(std::shared_ptr<Expr>&& lhs, std::unique_ptr<Expr> rhs, bool isCompoundAssignment,
                SourceLocation location)
     : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)),
       isCompound(isCompoundAssignment), location(location) {}
+    Expr* getLHS() const { return lhs.get(); }
+    Expr* getRHS() const { return rhs.get(); }
     bool isCompoundAssignment() const { return isCompound; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AssignStmt; }
 
 private:
+    std::shared_ptr<Expr> lhs; // shared_ptr to support compound assignments.
+    std::unique_ptr<Expr> rhs;
     bool isCompound;
     SourceLocation location; // Location of operator symbol.
 };

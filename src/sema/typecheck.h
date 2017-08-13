@@ -93,7 +93,7 @@ private:
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool implementsInterface(TypeDecl& type, TypeDecl& interface) const;
     bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget) const;
-    bool isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source, Type target) const;
+    bool isValidConversion(llvm::ArrayRef<std::unique_ptr<Expr>> exprs, Type source, Type target) const;
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     std::vector<Type> getGenericArgsAsArray() const;

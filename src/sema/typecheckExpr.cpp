@@ -17,24 +17,24 @@
 using namespace delta;
 
 Type TypeChecker::typecheckVarExpr(VarExpr& expr) const {
-    Decl& decl = findDecl(expr.identifier, expr.getLocation());
+    Decl& decl = findDecl(expr.getIdentifier(), expr.getLocation());
     expr.setDecl(&decl);
 
     switch (decl.getKind()) {
         case DeclKind::VarDecl: return llvm::cast<VarDecl>(decl).getType();
-        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(decl).type;
+        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(decl).getType();
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl: return llvm::cast<FunctionDecl>(decl).getFunctionType();
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot refer to generic parameters yet");
         case DeclKind::InitDecl: llvm_unreachable("cannot refer to initializers yet");
         case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
-        case DeclKind::TypeDecl: error(expr.getLocation(), "'", expr.identifier, "' is not a variable");
+        case DeclKind::TypeDecl: error(expr.getLocation(), "'", expr.getIdentifier(), "' is not a variable");
         case DeclKind::FieldDecl:
             ASSERT(currentFunction);
             if (currentFunction->isMutating() || currentFunction->isInitDecl()) {
-                return llvm::cast<FieldDecl>(decl).type;
+                return llvm::cast<FieldDecl>(decl).getType();
             } else {
-                return llvm::cast<FieldDecl>(decl).type.asImmutable();
+                return llvm::cast<FieldDecl>(decl).getType().asImmutable();
             }
         case DeclKind::ImportDecl:
             llvm_unreachable("import statement validation not implemented yet");
@@ -47,11 +47,11 @@ Type typecheckStringLiteralExpr(StringLiteralExpr&) {
 }
 
 Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
-    if (expr.value >= std::numeric_limits<int32_t>::min() &&
-        expr.value <= std::numeric_limits<int32_t>::max()) {
+    if (expr.getValue() >= std::numeric_limits<int32_t>::min() &&
+        expr.getValue() <= std::numeric_limits<int32_t>::max()) {
         return Type::getInt();
-    } else if (expr.value >= std::numeric_limits<int64_t>::min() &&
-               expr.value <= std::numeric_limits<int64_t>::max()) {
+    } else if (expr.getValue() >= std::numeric_limits<int64_t>::min() &&
+               expr.getValue() <= std::numeric_limits<int64_t>::max()) {
         return Type::getInt64();
     }
     error(expr.getLocation(), "integer literal is too large");
@@ -70,35 +70,35 @@ Type typecheckNullLiteralExpr(NullLiteralExpr&) {
 }
 
 Type TypeChecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) const {
-    Type firstType = typecheckExpr(*array.elements[0]);
-    for (auto& element : llvm::drop_begin(array.elements, 1)) {
+    Type firstType = typecheckExpr(*array.getElements()[0]);
+    for (auto& element : llvm::drop_begin(array.getElements(), 1)) {
         Type type = typecheckExpr(*element);
         if (type != firstType) {
             error(element->getLocation(), "mixed element types in array literal (expected '",
                   firstType, "', found '", type, "')");
         }
     }
-    return ArrayType::get(firstType, int64_t(array.elements.size()));
+    return ArrayType::get(firstType, int64_t(array.getElements().size()));
 }
 
 Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) const {
     Type operandType = typecheckExpr(expr.getOperand());
 
-    if (expr.op == NOT) {
+    if (expr.getOperator() == NOT) {
         if (!operandType.isBool()) {
             error(expr.getOperand().getLocation(), "invalid operand type '", operandType,
                   "' to logical not");
         }
         return operandType;
     }
-    if (expr.op == STAR) { // Dereference operation
+    if (expr.getOperator() == STAR) { // Dereference operation
         if (!operandType.isPointerType()) {
             error(expr.getOperand().getLocation(), "cannot dereference non-pointer type '",
                   operandType, "'");
         }
         return operandType.getPointee();
     }
-    if (expr.op == AND) { // Address-of operation
+    if (expr.getOperator() == AND) { // Address-of operation
         return PointerType::get(operandType, true);
     }
     return operandType;
@@ -112,7 +112,7 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
         return typecheckCallExpr((CallExpr&) expr);
     }
 
-    if (expr.op == AND_AND || expr.op == OR_OR) {
+    if (expr.getOperator() == AND_AND || expr.getOperator() == OR_OR) {
         if (leftType.isBool() && rightType.isBool()) {
             return Type::getBool();
         }
@@ -120,7 +120,7 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
               rightType, "')");
     }
 
-    if (expr.op.isBitwiseOperator() &&
+    if (expr.getOperator().isBitwiseOperator() &&
         (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
         error(expr.getLocation(), "invalid operands to binary expression ('", leftType, "' and '",
               rightType, "')");
@@ -132,14 +132,14 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
               rightType, "')");
     }
 
-    if (expr.op == DOTDOT) {
+    if (expr.getOperator() == DOTDOT) {
         return RangeType::get(leftType, /* hasExclusiveUpperBound */ true);
     }
-    if (expr.op == DOTDOTDOT) {
+    if (expr.getOperator() == DOTDOTDOT) {
         return RangeType::get(leftType, /* hasExclusiveUpperBound */ false);
     }
 
-    return expr.op.isComparisonOperator() ? Type::getBool() : leftType;
+    return expr.getOperator().isComparisonOperator() ? Type::getBool() : leftType;
 }
 
 template<int bitWidth, bool isSigned>
@@ -188,18 +188,18 @@ bool TypeChecker::isInterface(Type unresolvedType) const {
            getTypeDecl(llvm::cast<BasicType>(*type))->isInterface();
 }
 
-bool hasField(TypeDecl& type, FieldDecl& field) {
-    return llvm::any_of(type.fields, [&](FieldDecl& ownField) {
-        return ownField.name == field.name && ownField.type == field.type;
+static bool hasField(TypeDecl& type, const FieldDecl& field) {
+    return llvm::any_of(type.getFields(), [&](const FieldDecl& ownField) {
+        return ownField.getName() == field.getName() && ownField.getType() == field.getType();
     });
 }
 
 bool TypeChecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
-    auto decls = findDecls(mangleFunctionDecl(type.name, functionDecl.getName()));
+    auto decls = findDecls(mangleFunctionDecl(type.getName(), functionDecl.getName()));
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
         if (!llvm::cast<FunctionDecl>(decl)->getTypeDecl()) continue;
-        if (llvm::cast<FunctionDecl>(decl)->getTypeDecl()->name != type.name) continue;
+        if (llvm::cast<FunctionDecl>(decl)->getTypeDecl()->getName() != type.getName()) continue;
         if (!llvm::cast<FunctionDecl>(decl)->signatureMatches(functionDecl, /* matchReceiver: */ false)) continue;
         return true;
     }
@@ -207,12 +207,12 @@ bool TypeChecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
 }
 
 bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface) const {
-    for (auto& fieldRequirement : interface.fields) {
+    for (auto& fieldRequirement : interface.getFields()) {
         if (!hasField(type, fieldRequirement)) {
             return false;
         }
     }
-    for (auto& requiredMethod : interface.methods) {
+    for (auto& requiredMethod : interface.getMethods()) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod.get())) {
             if (!hasMethod(type, *functionDecl)) {
                 return false;
@@ -251,7 +251,7 @@ bool TypeChecker::isValidConversion(Expr& expr, Type unresolvedSource,
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
     if (expr.isIntLiteralExpr() && target.isBasicType()) {
-        auto value = llvm::cast<IntLiteralExpr>(expr).value;
+        auto value = llvm::cast<IntLiteralExpr>(expr).getValue();
 
         if (target.isInteger()) {
             if (target.isInt()) return checkRange<32, true>(expr, value, target);
@@ -299,14 +299,14 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
     std::vector<Type> genericArgs;
     genericArgs.reserve(genericParams.size());
 
-    ASSERT(call.args.size() == params.size());
+    ASSERT(call.getArgs().size() == params.size());
 
     for (auto& genericParam : genericParams) {
         Type genericArg;
 
-        for (auto tuple : llvm::zip_first(params, call.args)) {
+        for (auto tuple : llvm::zip_first(params, call.getArgs())) {
             Type paramType = std::get<0>(tuple).getType();
-            if (paramType.isBasicType() && paramType.getName() == genericParam.name) {
+            if (paramType.isBasicType() && paramType.getName() == genericParam.getName()) {
                 // FIXME: The args will also be typechecked by validateArgs()
                 // after this function. Get rid of this duplicated typechecking.
                 Type argType = typecheckExpr(*std::get<1>(tuple).getValue());
@@ -315,7 +315,7 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
                     genericArg = argType;
                 } else if (!argType.isImplicitlyConvertibleTo(genericArg)) {
                     error(std::get<1>(tuple).getLocation(), "couldn't infer generic parameter '",
-                          genericParam.name, "' because of conflicting argument types '",
+                          genericParam.getName(), "' because of conflicting argument types '",
                           genericArg, "' and '", argType, "'");
                 }
             }
@@ -324,7 +324,7 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
         if (genericArg) {
             genericArgs.emplace_back(genericArg);
         } else {
-            error(call.getLocation(), "couldn't infer generic parameter '", genericParam.name, "'");
+            error(call.getLocation(), "couldn't infer generic parameter '", genericParam.getName(), "'");
         }
     }
 
@@ -354,34 +354,34 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
 
     auto genericArg = call.getGenericArgs().begin();
     for (const GenericParamDecl& genericParam : genericParams) {
-        if (!genericParam.constraints.empty()) {
-            ASSERT(genericParam.constraints.size() == 1, "cannot have multiple generic constraints yet");
+        if (!genericParam.getConstraints().empty()) {
+            ASSERT(genericParam.getConstraints().size() == 1, "cannot have multiple generic constraints yet");
 
-            auto interfaces = findDecls(genericParam.constraints[0]);
+            auto interfaces = findDecls(genericParam.getConstraints()[0]);
             ASSERT(interfaces.size() == 1);
 
             if (genericArg->isBasicType() &&
                 !implementsInterface(*getTypeDecl(llvm::cast<BasicType>(**genericArg)),
                                      llvm::cast<TypeDecl>(*interfaces[0]))) {
                 error(call.getLocation(), "type '", *genericArg, "' doesn't implement interface '",
-                      genericParam.constraints[0], "'");
+                      genericParam.getConstraints()[0], "'");
             }
         }
-        currentGenericArgs.insert({genericParam.name, *genericArg++});
+        currentGenericArgs.insert({genericParam.getName(), *genericArg++});
     }
 }
 
 Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
-    if (expr.args.size() != 1) {
+    if (expr.getArgs().size() != 1) {
         error(expr.getLocation(), "expected single argument to converting initializer");
     }
     if (!expr.getGenericArgs().empty()) {
         error(expr.getLocation(), "expected no generic arguments to converting initializer");
     }
-    if (!expr.args.front().getName().empty()) {
+    if (!expr.getArgs().front().getName().empty()) {
         error(expr.getLocation(), "expected unnamed argument to converting initializer");
     }
-    typecheckExpr(*expr.args.front().getValue());
+    typecheckExpr(*expr.getArgs().front().getValue());
     expr.setType(BasicType::get(expr.getFunctionName(), {}));
     return expr.getType();
 }
@@ -402,9 +402,9 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                     Type receiverType = expr.getReceiver()->getType().removePointer();
                     if (receiverType.isBasicType() && !receiverType.getGenericArgs().empty()) {
                         TypeDecl* typeDecl = getTypeDecl(llvm::cast<BasicType>(*receiverType));
-                        ASSERT(typeDecl->genericParams.size() == receiverType.getGenericArgs().size());
-                        for (auto t : llvm::zip_first(typeDecl->genericParams, receiverType.getGenericArgs())) {
-                            currentGenericArgs.emplace(std::get<0>(t).name, std::get<1>(t));
+                        ASSERT(typeDecl->getGenericParams().size() == receiverType.getGenericArgs().size());
+                        for (auto t : llvm::zip_first(typeDecl->getGenericParams(), receiverType.getGenericArgs())) {
+                            currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
                         }
                     }
                 }
@@ -412,29 +412,29 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                 setCurrentGenericArgs(functionDecl.getGenericParams(), expr, functionDecl.getParams());
 
                 if (decls.size() == 1) {
-                    validateArgs(expr.args, functionDecl.getParams(), callee,
+                    validateArgs(expr.getArgs(), functionDecl.getParams(), callee,
                                  functionDecl.isVariadic(), expr.getCallee().getLocation());
                     return *decl;
                 }
-                if (matchArgs(expr.args, functionDecl.getParams(), functionDecl.isVariadic())) {
+                if (matchArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic())) {
                     matches.push_back(decl);
                 }
                 break;
             }
             case DeclKind::TypeDecl: {
                 isInitCall = true;
-                auto mangledName = mangleInitDecl(llvm::cast<TypeDecl>(decl)->name);
+                auto mangledName = mangleInitDecl(llvm::cast<TypeDecl>(decl)->getName());
                 auto initDecls = findDecls(mangledName);
 
                 for (Decl* decl : initDecls) {
                     InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
 
                     if (initDecls.size() == 1) {
-                        validateArgs(expr.args, initDecl.getParams(), callee, false,
+                        validateArgs(expr.getArgs(), initDecl.getParams(), callee, false,
                                      expr.getCallee().getLocation());
                         return initDecl;
                     }
-                    if (matchArgs(expr.args, initDecl.getParams(), false)) {
+                    if (matchArgs(expr.getArgs(), initDecl.getParams(), false)) {
                         matches.push_back(&initDecl);
                     }
                 }
@@ -484,7 +484,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     }
 
     if (expr.getFunctionName() == "sizeOf") {
-        validateArgs(expr.args, {}, expr.getFunctionName(), false, expr.getLocation());
+        validateArgs(expr.getArgs(), {}, expr.getFunctionName(), false, expr.getLocation());
         validateGenericArgCount(1, expr);
         expr.setType(Type::getUInt64());
         return expr.getType();
@@ -497,7 +497,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         expr.setReceiverType(receiverType);
 
         if (receiverType.isPointerType() && expr.getFunctionName() == "offsetUnsafely") {
-            validateArgs(expr.args, {ParamDecl(Type::getInt64(), "pointer", SourceLocation::invalid())},
+            validateArgs(expr.getArgs(), {ParamDecl(Type::getInt64(), "pointer", SourceLocation::invalid())},
                          expr.getFunctionName(), false, expr.getLocation());
             validateGenericArgCount(0, expr);
             expr.setType(receiverType);
@@ -526,15 +526,15 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         bool hasGenericReceiverType = receiverTypeDecl && receiverTypeDecl->isGeneric();
 
         if (!functionDecl->isGeneric() && !hasGenericReceiverType) {
-            return functionDecl->getFunctionType()->returnType;
+            return functionDecl->getFunctionType()->getReturnType();
         } else {
             setCurrentGenericArgs(functionDecl->getGenericParams(), expr, functionDecl->getParams());
             if (hasGenericReceiverType) {
-                ASSERT(receiverTypeDecl->genericParams.size() ==
+                ASSERT(receiverTypeDecl->getGenericParams().size() ==
                        expr.getReceiverType().removePointer().getGenericArgs().size());
-                for (auto t : llvm::zip_first(receiverTypeDecl->genericParams,
+                for (auto t : llvm::zip_first(receiverTypeDecl->getGenericParams(),
                                               expr.getReceiverType().removePointer().getGenericArgs())) {
-                    currentGenericArgs.emplace(std::get<0>(t).name, std::get<1>(t));
+                    currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
                 }
             }
 
@@ -542,14 +542,14 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             SAVE_STATE(typecheckingGenericFunction);
             typecheckingGenericFunction = true;
             typecheckFunctionLikeDecl(*functionDecl);
-            Type returnType = resolve(functionDecl->getFunctionType()->returnType);
+            Type returnType = resolve(functionDecl->getFunctionType()->getReturnType());
             currentGenericArgs.clear();
             return returnType;
         }
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
         if (initDecl->getTypeDecl()->isGeneric()) {
             SAVE_STATE(currentGenericArgs);
-            setCurrentGenericArgs(initDecl->getTypeDecl()->genericParams, expr,
+            setCurrentGenericArgs(initDecl->getTypeDecl()->getGenericParams(), expr,
                                   initDecl->getParams());
             // TODO: Don't typecheck more than once with the same generic arguments.
             SAVE_STATE(typecheckingGenericFunction);
@@ -576,9 +576,9 @@ bool TypeChecker::matchArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamD
         const Argument& arg = args[i];
         const ParamDecl* param = i < params.size() ? &params[i] : nullptr;
 
-        if (!arg.name.empty() && (!param || arg.name != param->name)) return false;
-        auto argType = typecheckExpr(*arg.value);
-        if (param && !isValidConversion(*arg.value, argType, param->type)) return false;
+        if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) return false;
+        auto argType = typecheckExpr(*arg.getValue());
+        if (param && !isValidConversion(*arg.getValue(), argType, param->getType())) return false;
     }
     return true;
 }
@@ -597,20 +597,20 @@ void TypeChecker::validateArgs(const std::vector<Argument>& args, const std::vec
         const Argument& arg = args[i];
         const ParamDecl* param = i < params.size() ? &params[i] : nullptr;
 
-        if (!arg.name.empty() && (!param || arg.name != param->name)) {
-            error(arg.getLocation(), "invalid argument name '", arg.name, "' for parameter '", param->name, "'");
+        if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
+            error(arg.getLocation(), "invalid argument name '", arg.getName(), "' for parameter '", param->getName(), "'");
         }
-        auto argType = typecheckExpr(*arg.value);
-        if (param && !isValidConversion(*arg.value, argType, param->type)) {
+        auto argType = typecheckExpr(*arg.getValue());
+        if (param && !isValidConversion(*arg.getValue(), argType, param->getType())) {
             error(arg.getLocation(), "invalid argument #", i + 1, " type '", argType, "' to '", functionName,
-                  "', expected '", param->type, "'");
+                  "', expected '", param->getType(), "'");
         }
     }
 }
 
 Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
-    Type sourceType = typecheckExpr(*expr.expr);
-    Type targetType = expr.type;
+    Type sourceType = typecheckExpr(expr.getExpr());
+    Type targetType = expr.getTargetType();
 
     switch (sourceType.getKind()) {
         case TypeKind::BasicType:
@@ -641,38 +641,38 @@ Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
 }
 
 Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
-    Type baseType = typecheckExpr(*expr.base);
+    Type baseType = typecheckExpr(*expr.getBaseExpr());
 
     if (baseType.isPointerType()) {
         if (!baseType.isReference()) {
-            error(expr.base->location, "cannot access member through pointer '", baseType,
+            error(expr.getBaseExpr()->location, "cannot access member through pointer '", baseType,
                   "', pointer may be null");
         }
         baseType = baseType.getPointee();
     }
 
     if (baseType.isArrayType() || baseType.isString()) {
-        if (expr.member == "data") return PointerType::get(Type::getChar(), true);
-        if (expr.member == "count") return Type::getInt();
-        error(expr.getLocation(), "no member named '", expr.member, "' in '", baseType, "'");
+        if (expr.getMemberName() == "data") return PointerType::get(Type::getChar(), true);
+        if (expr.getMemberName() == "count") return Type::getInt();
+        error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");
     }
 
     Decl& typeDecl = findDecl(baseType.getName(), SourceLocation::invalid());
 
-    for (const FieldDecl& field : llvm::cast<TypeDecl>(typeDecl).fields) {
-        if (field.name == expr.member) {
+    for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
+        if (field.getName() == expr.getMemberName()) {
             if (baseType.isMutable()) {
-                return field.type;
+                return field.getType();
             } else {
-                return field.type.asImmutable();
+                return field.getType().asImmutable();
             }
         }
     }
-    error(expr.getLocation(), "no member named '", expr.member, "' in '", baseType, "'");
+    error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");
 }
 
 Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
-    Type lhsType = typecheckExpr(*expr.array);
+    Type lhsType = typecheckExpr(*expr.getBaseExpr());
     const ArrayType* arrayType;
 
     if (lhsType.isArrayType()) {
@@ -680,30 +680,30 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
     } else if (lhsType.isReference() && lhsType.getReferee().isArrayType()) {
         arrayType = &llvm::cast<ArrayType>(*lhsType.getReferee());
     } else {
-        error(expr.array->getLocation(), "cannot subscript '", lhsType,
+        error(expr.getBaseExpr()->getLocation(), "cannot subscript '", lhsType,
               "', expected array or reference-to-array");
     }
 
-    Type indexType = typecheckExpr(*expr.index);
-    if (!isValidConversion(*expr.index, indexType, Type::getInt())) {
-        error(expr.index->getLocation(), "illegal subscript index type '", indexType,
+    Type indexType = typecheckExpr(*expr.getIndexExpr());
+    if (!isValidConversion(*expr.getIndexExpr(), indexType, Type::getInt())) {
+        error(expr.getIndexExpr()->getLocation(), "illegal subscript index type '", indexType,
               "', expected 'int'");
     }
 
     if (!arrayType->isUnsized()) {
-        if (auto* intLiteralExpr = llvm::dyn_cast<IntLiteralExpr>(expr.index.get())) {
-            if (intLiteralExpr->value >= arrayType->size) {
+        if (auto* intLiteralExpr = llvm::dyn_cast<IntLiteralExpr>(expr.getIndexExpr())) {
+            if (intLiteralExpr->getValue() >= arrayType->getSize()) {
                 error(intLiteralExpr->getLocation(), "accessing array out-of-bounds with index ",
-                      intLiteralExpr->value, ", array size is ", arrayType->size);
+                      intLiteralExpr->getValue(), ", array size is ", arrayType->getSize());
             }
         }
     }
 
-    return arrayType->elementType;
+    return arrayType->getElementType();
 }
 
 Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) const {
-    Type type = typecheckExpr(*expr.operand);
+    Type type = typecheckExpr(expr.getOperand());
     if (!type.isNullablePointer()) {
         error(expr.getLocation(), "cannot unwrap non-pointer type '", type, "'");
     }
@@ -733,7 +733,7 @@ Type TypeChecker::typecheckExpr(Expr& expr) const {
     return expr.getType();
 }
 
-bool TypeChecker::isValidConversion(std::vector<std::unique_ptr<Expr>>& exprs, Type source,
+bool TypeChecker::isValidConversion(llvm::ArrayRef<std::unique_ptr<Expr>> exprs, Type source,
                                     Type target) const {
     if (!source.isTupleType()) {
         ASSERT(!target.isTupleType());

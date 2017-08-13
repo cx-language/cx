@@ -16,15 +16,15 @@ bool Expr::isLvalue() const {
         case ExprKind::NullLiteralExpr: case ExprKind::BinaryExpr: case ExprKind::CallExpr:
             return false;
         case ExprKind::PrefixExpr:
-            return llvm::cast<PrefixExpr>(this)->op == STAR;
+            return llvm::cast<PrefixExpr>(this)->getOperator() == STAR;
     }
     llvm_unreachable("all cases handled");
 }
 
 llvm::StringRef CallExpr::getFunctionName() const {
     switch (getCallee().getKind()) {
-        case ExprKind::VarExpr: return llvm::cast<VarExpr>(getCallee()).identifier;
-        case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(getCallee()).member;
+        case ExprKind::VarExpr: return llvm::cast<VarExpr>(getCallee()).getIdentifier();
+        case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(getCallee()).getMemberName();
         default: return "(anonymous function)";
     }
 }
@@ -45,5 +45,5 @@ bool CallExpr::isInitCall() const {
 
 Expr* CallExpr::getReceiver() const {
     if (!isMethodCall()) return nullptr;
-    return llvm::cast<MemberExpr>(getCallee()).base.get();
+    return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
 }

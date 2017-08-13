@@ -29,7 +29,9 @@ template<typename T>
 std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
                              llvm::ArrayRef<Type> functionGenericArgs = {}) {
     std::string result = mangle(decl, typeGenericArgs, functionGenericArgs);
-    for (const ParamDecl& param : decl.getParams()) result.append("$").append(param.name);
+    for (auto& param : decl.getParams()) {
+        result.append("$").append(param.getName());
+    }
     return result;
 }
 
@@ -61,13 +63,12 @@ llvm::Function* IRGenerator::getDeinitializerFor(Type type) {
         }
         return nullptr;
     }
-    return it->second.function;
+    return it->second.getFunction();
 }
 
 /// @param type The Delta type of the variable, or null if the variable is 'this'.
 void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value) {
-    bool didInsert = scopes.back().localValues.emplace(std::move(name), value).second;
-    ASSERT(didInsert);
+    scopes.back().addLocalValue(std::move(name), value);
 
     if (type && type.isBasicType()) {
         llvm::Function* deinit = getDeinitializerFor(type);
@@ -79,8 +80,8 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
     llvm::Value* value = nullptr;
 
     for (const auto& scope : llvm::reverse(scopes)) {
-        auto it = scope.localValues.find(name);
-        if (it == scope.localValues.end()) continue;
+        auto it = scope.getLocalValues().find(name);
+        if (it == scope.getLocalValues().end()) continue;
         value = it->second;
         break;
     }
@@ -88,13 +89,13 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
     if (!value) {
         ASSERT(decl);
         if (auto fieldDecl = llvm::dyn_cast<FieldDecl>(decl)) {
-            return codegenMemberAccess(findValue("this", nullptr), fieldDecl->type, fieldDecl->name);
+            return codegenMemberAccess(findValue("this", nullptr), fieldDecl->getType(), fieldDecl->getName());
         }
         codegenDecl(*decl);
         if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
-            name = varDecl->name;
+            name = varDecl->getName();
         }
-        return globalScope().localValues.find(name)->second;
+        return globalScope().getLocalValues().find(name)->second;
     }
     return value;
 }
@@ -181,11 +182,11 @@ void IRGenerator::endScope() {
 }
 
 void IRGenerator::deferEvaluationOf(const Expr& expr) {
-    scopes.back().deferredExprs.emplace_back(&expr);
+    scopes.back().addDeferredExpr(expr);
 }
 
 void IRGenerator::deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
-    scopes.back().deinitsToCall.emplace_back(deinit, valueToDeinit);
+    scopes.back().addDeinitToCall(deinit, valueToDeinit);
 }
 
 void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
@@ -194,15 +195,15 @@ void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
 }
 
 void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
-    ASSERT(stmt.values.size() < 2, "IRGen doesn't support multiple return values yet");
+    ASSERT(stmt.getValues().size() < 2, "IRGen doesn't support multiple return values yet");
 
     codegenDeferredExprsAndDeinitCallsForReturn();
 
-    if (stmt.values.empty()) {
+    if (stmt.getValues().empty()) {
         if (llvm::cast<FunctionDecl>(currentDecl)->getName() != "main") builder.CreateRetVoid();
         else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
     } else {
-        builder.CreateRet(codegenExpr(*stmt.values[0]));
+        builder.CreateRet(codegenExpr(*stmt.getValues()[0]));
     }
 }
 
@@ -230,21 +231,21 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, llvm::Value* ar
 }
 
 void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(stmt.decl->getType(), nullptr, stmt.decl->name);
-    if (auto initializer = stmt.decl->initializer) {
+    auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), nullptr, stmt.getDecl().getName());
+    if (auto initializer = stmt.getDecl().getInitializer()) {
         builder.CreateStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
     }
 }
 
 void IRGenerator::codegenIncrementStmt(const IncrementStmt& stmt) {
-    auto* alloca = codegenLvalueExpr(*stmt.operand);
+    auto* alloca = codegenLvalueExpr(stmt.getOperand());
     auto* value = builder.CreateLoad(alloca);
     auto* result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
     builder.CreateStore(result, alloca);
 }
 
 void IRGenerator::codegenDecrementStmt(const DecrementStmt& stmt) {
-    auto* alloca = codegenLvalueExpr(*stmt.operand);
+    auto* alloca = codegenLvalueExpr(stmt.getOperand());
     auto* value = builder.CreateLoad(alloca);
     auto* result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
     builder.CreateStore(result, alloca);
@@ -268,25 +269,25 @@ void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
 }
 
 void IRGenerator::codegenIfStmt(const IfStmt& ifStmt) {
-    auto* condition = codegenExpr(*ifStmt.condition);
+    auto* condition = codegenExpr(ifStmt.getCondition());
     auto* function = builder.GetInsertBlock()->getParent();
     auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", function);
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", function);
     auto* endIfBlock = llvm::BasicBlock::Create(ctx, "endif", function);
     builder.CreateCondBr(condition, thenBlock, elseBlock);
-    codegenBlock(ifStmt.thenBody, thenBlock, endIfBlock);
-    codegenBlock(ifStmt.elseBody, elseBlock, endIfBlock);
+    codegenBlock(ifStmt.getThenBody(), thenBlock, endIfBlock);
+    codegenBlock(ifStmt.getElseBody(), elseBlock, endIfBlock);
     builder.SetInsertPoint(endIfBlock);
 }
 
 void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
-    auto* condition = codegenExpr(*switchStmt.condition);
+    auto* condition = codegenExpr(switchStmt.getCondition());
     auto* function = builder.GetInsertBlock()->getParent();
     auto* insertBlockBackup = builder.GetInsertBlock();
 
     std::vector<std::pair<llvm::ConstantInt*, llvm::BasicBlock*>> cases;
-    for (const SwitchCase& switchCase : switchStmt.cases) {
-        auto* value = llvm::cast<llvm::ConstantInt>(codegenExpr(*switchCase.value));
+    for (auto& switchCase : switchStmt.getCases()) {
+        auto* value = llvm::cast<llvm::ConstantInt>(codegenExpr(*switchCase.getValue()));
         auto* block = llvm::BasicBlock::Create(ctx, "", function);
         cases.emplace_back(value, block);
     }
@@ -298,15 +299,15 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
     auto* switchInst = builder.CreateSwitch(condition, defaultBlock);
 
     auto casesIterator = cases.begin();
-    for (const SwitchCase& switchCase : switchStmt.cases) {
+    for (auto& switchCase : switchStmt.getCases()) {
         auto* value = casesIterator->first;
         auto* block = casesIterator->second;
-        codegenBlock(switchCase.stmts, block, end);
+        codegenBlock(switchCase.getStmts(), block, end);
         switchInst->addCase(value, block);
         ++casesIterator;
     }
 
-    codegenBlock(switchStmt.defaultStmts, defaultBlock, end);
+    codegenBlock(switchStmt.getDefaultStmts(), defaultBlock, end);
     breakTargets.pop_back();
     builder.SetInsertPoint(end);
 }
@@ -320,8 +321,8 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
     builder.CreateBr(condition);
 
     builder.SetInsertPoint(condition);
-    builder.CreateCondBr(codegenExpr(*whileStmt.condition), body, end);
-    codegenBlock(whileStmt.body, body, condition);
+    builder.CreateCondBr(codegenExpr(whileStmt.getCondition()), body, end);
+    codegenBlock(whileStmt.getBody(), body, condition);
 
     breakTargets.pop_back();
     builder.SetInsertPoint(end);
@@ -336,20 +337,20 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
 //      counter++;
 //  }
 void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
-    if (!forStmt.range->getType().isRangeType()) {
-        error(forStmt.range->getLocation(),
+    if (!forStmt.getRangeExpr().getType().isRangeType()) {
+        error(forStmt.getRangeExpr().getLocation(),
               "IRGen doesn't support 'for'-loops over non-range iterables yet");
     }
 
-    if (!forStmt.range->getType().getIterableElementType().isInteger()) {
-        error(forStmt.range->getLocation(),
+    if (!forStmt.getRangeExpr().getType().getIterableElementType().isInteger()) {
+        error(forStmt.getRangeExpr().getLocation(),
               "IRGen doesn't support 'for'-loops over non-integer ranges yet");
     }
 
     beginScope();
-    auto& range = llvm::cast<BinaryExpr>(*forStmt.range);
-    auto* counterAlloca = createEntryBlockAlloca(forStmt.range->getType().getIterableElementType(),
-                                                 nullptr, forStmt.id);
+    auto& range = llvm::cast<BinaryExpr>(forStmt.getRangeExpr());
+    auto* counterAlloca = createEntryBlockAlloca(forStmt.getRangeExpr().getType().getIterableElementType(),
+                                                 nullptr, forStmt.getLoopVariableName());
     builder.CreateStore(codegenExpr(range.getLHS()), counterAlloca);
     auto* lastValue = codegenExpr(range.getRHS());
 
@@ -361,10 +362,10 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     builder.CreateBr(condition);
 
     builder.SetInsertPoint(condition);
-    auto* counter = builder.CreateLoad(counterAlloca, forStmt.id);
+    auto* counter = builder.CreateLoad(counterAlloca, forStmt.getLoopVariableName());
 
     llvm::Value* cmp;
-    if (llvm::cast<RangeType>(*forStmt.range->getType()).isExclusive()) {
+    if (llvm::cast<RangeType>(*forStmt.getRangeExpr().getType()).isExclusive()) {
         if (range.getLHS().getType().isSigned())
             cmp = builder.CreateICmpSLT(counter, lastValue);
         else
@@ -377,7 +378,7 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     }
     builder.CreateCondBr(cmp, body, end);
 
-    codegenBlock(forStmt.body, body, condition);
+    codegenBlock(forStmt.getBody(), body, condition);
 
     builder.SetInsertPoint(&builder.GetInsertBlock()->back());
     auto* newCounter = builder.CreateAdd(counter, llvm::ConstantInt::get(counter->getType(), 1));
@@ -394,12 +395,12 @@ void IRGenerator::codegenBreakStmt(const BreakStmt&) {
 }
 
 void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
-    auto* lhsLvalue = codegenLvalueExpr(*stmt.lhs);
+    auto* lhsLvalue = codegenLvalueExpr(*stmt.getLHS());
 
     if (stmt.isCompoundAssignment()) {
-        auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.rhs);
+        auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.getRHS());
 
-        switch (binaryExpr.op) {
+        switch (binaryExpr.getOperator()) {
             case AND_AND: fatalError("'&&=' not implemented yet");
             case OR_OR: fatalError("'||=' not implemented yet");
             default: break;
@@ -407,9 +408,9 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
 
         auto* lhsValue = builder.CreateLoad(lhsLvalue);
         auto* rhsValue = codegenExpr(binaryExpr.getRHS());
-        builder.CreateStore(codegenBinaryOp(binaryExpr.op, lhsValue, rhsValue, *stmt.lhs), lhsLvalue);
+        builder.CreateStore(codegenBinaryOp(binaryExpr.getOperator(), lhsValue, rhsValue, *stmt.getLHS()), lhsLvalue);
     } else {
-        builder.CreateStore(codegenExpr(*stmt.rhs), lhsLvalue);
+        builder.CreateStore(codegenExpr(*stmt.getRHS()), lhsLvalue);
     }
 }
 
@@ -419,8 +420,8 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
         case StmtKind::VarStmt: codegenVarStmt(llvm::cast<VarStmt>(stmt)); break;
         case StmtKind::IncrementStmt: codegenIncrementStmt(llvm::cast<IncrementStmt>(stmt)); break;
         case StmtKind::DecrementStmt: codegenDecrementStmt(llvm::cast<DecrementStmt>(stmt)); break;
-        case StmtKind::ExprStmt: codegenExpr(*llvm::cast<ExprStmt>(stmt).expr); break;
-        case StmtKind::DeferStmt: deferEvaluationOf(*llvm::cast<DeferStmt>(stmt).expr); break;
+        case StmtKind::ExprStmt: codegenExpr(llvm::cast<ExprStmt>(stmt).getExpr()); break;
+        case StmtKind::DeferStmt: deferEvaluationOf(llvm::cast<DeferStmt>(stmt).getExpr()); break;
         case StmtKind::IfStmt: codegenIfStmt(llvm::cast<IfStmt>(stmt)); break;
         case StmtKind::SwitchStmt: codegenSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
         case StmtKind::WhileStmt: codegenWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
@@ -460,7 +461,7 @@ void IRGenerator::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
                                         llvm::ArrayRef<Type> genericArgs) {
     ASSERT(genericParams.size() == genericArgs.size());
     for (auto tuple : llvm::zip_first(genericParams, genericArgs)) {
-        currentGenericArgs.emplace(std::get<0>(tuple).name, toIR(std::get<1>(tuple)));
+        currentGenericArgs.emplace(std::get<0>(tuple).getName(), toIR(std::get<1>(tuple)));
     }
 }
 
@@ -473,7 +474,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
     }
 
     auto it = functionInstantiations.find(mangleWithParams(decl, receiverTypeGenericArgs, functionGenericArgs));
-    if (it != functionInstantiations.end()) return it->second.function;
+    if (it != functionInstantiations.end()) return it->second.getFunction();
 
     SAVE_STATE(currentGenericArgs);
     setCurrentGenericArgs(decl.getGenericParams(), functionGenericArgs);
@@ -491,17 +492,19 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
                 codegenGenericTypeInstantiation(*receiverTypeDecl, receiverTypeGenericArgs);
             }
             mangledName = mangle(decl, receiverTypeGenericArgs, functionGenericArgs);
-            setCurrentGenericArgs(receiverTypeDecl->genericParams, receiverTypeGenericArgs);
+            setCurrentGenericArgs(receiverTypeDecl->getGenericParams(), receiverTypeGenericArgs);
         } else {
-            receiverTypeName = receiverTypeDecl->name;
+            receiverTypeName = receiverTypeDecl->getName();
         }
         paramTypes.emplace_back(getLLVMTypeForPassing(receiverTypeName, decl.isMutating()));
     }
 
-    for (const auto& t : functionType->paramTypes) paramTypes.emplace_back(toIR(t));
+    for (auto& paramType : functionType->getParamTypes()) {
+        paramTypes.emplace_back(toIR(paramType));
+    }
 
-    ASSERT(!functionType->returnType.isTupleType(), "IRGen doesn't support tuple return values yet");
-    auto* returnType = toIR(decl.isInitDecl() ? receiverType : functionType->returnType);
+    ASSERT(!functionType->getReturnType().isTupleType(), "IRGen doesn't support tuple return values yet");
+    auto* returnType = toIR(decl.isInitDecl() ? receiverType : functionType->getReturnType());
     if (decl.getName() == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
@@ -511,12 +514,14 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
     if (decl.isMethodDecl() || decl.isDeinitDecl()) arg++->setName("this");
-    for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) arg->setName(param->name);
+    for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) {
+        arg->setName(param->getName());
+    }
 
     auto mangled = mangleWithParams(decl, receiverTypeGenericArgs, functionGenericArgs);
     FunctionInstantiation functionInstantiation{decl, receiverTypeGenericArgs, functionGenericArgs, function};
     return functionInstantiations.emplace(std::move(mangled),
-                                          std::move(functionInstantiation)).first->second.function;
+                                          std::move(functionInstantiation)).first->second.getFunction();
 }
 
 llvm::Function* IRGenerator::getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs,
@@ -534,18 +539,12 @@ llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
     const Decl* decl = call.getCalleeDecl();
 
     if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
-        llvm::Function* function = getFunctionProto(*functionDecl, call.genericArgs, call.getReceiverType());
-//        if (function->empty() && !call.getGenericArgs().empty()) {
-//            auto backup = builder.GetInsertBlock();
-//            codegenInitDecl(*initDecl, call.genericArgs);
-//            builder.SetInsertPoint(backup);
-//        }
-        return function;
+        return getFunctionProto(*functionDecl, call.getGenericArgs(), call.getReceiverType());
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
-        llvm::Function* function = getInitProto(*initDecl, call.genericArgs);
+        llvm::Function* function = getInitProto(*initDecl, call.getGenericArgs());
         if (function->empty() && !call.getGenericArgs().empty()) {
             auto backup = builder.GetInsertBlock();
-            codegenInitDecl(*initDecl, call.genericArgs);
+            codegenInitDecl(*initDecl, call.getGenericArgs());
             builder.SetInsertPoint(backup);
         }
         return function;
@@ -559,8 +558,12 @@ void IRGenerator::codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Functi
     beginScope();
     auto arg = function.arg_begin();
     if (decl.getTypeDecl() != nullptr) setLocalValue(nullptr, "this", &*arg++);
-    for (const auto& param : decl.getParams()) setLocalValue(param.type, param.name, &*arg++);
-    for (const auto& stmt : *decl.body) codegenStmt(*stmt);
+    for (auto& param : decl.getParams()) {
+        setLocalValue(param.getType(), param.getName(), &*arg++);
+    }
+    for (auto& stmt : *decl.getBody()) {
+        codegenStmt(*stmt);
+    }
     endScope();
 
     auto* insertBlock = builder.GetInsertBlock();
@@ -600,8 +603,12 @@ void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typ
     beginScope();
     setLocalValue(nullptr, "this", alloca);
     auto param = decl.getParams().begin();
-    for (auto& arg : function->args()) setLocalValue(param++->type, arg.getName(), &arg);
-    for (const auto& stmt : *decl.body) codegenStmt(*stmt);
+    for (auto& arg : function->args()) {
+        setLocalValue(param++->getType(), arg.getName(), &arg);
+    }
+    for (auto& stmt : *decl.getBody()) {
+        codegenStmt(*stmt);
+    }
     builder.CreateRet(builder.CreateLoad(alloca));
     endScope();
 
@@ -618,22 +625,22 @@ void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl, llvm::ArrayRef<Type>
 
 std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
     std::vector<llvm::Type*> fieldTypes;
-    fieldTypes.reserve(decl.fields.size());
-    for (const auto& field : decl.fields) {
-        fieldTypes.emplace_back(toIR(field.type));
+    fieldTypes.reserve(decl.getFields().size());
+    for (auto& field : decl.getFields()) {
+        fieldTypes.emplace_back(toIR(field.getType()));
     }
     return fieldTypes;
 }
 
 void IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
     if (decl.isGeneric()) return;
-    if (structs.count(decl.name)) return;
+    if (structs.count(decl.getName())) return;
 
-    if (decl.fields.empty()) {
-        structs.emplace(decl.name, std::make_pair(llvm::StructType::get(ctx), &decl));
+    if (decl.getFields().empty()) {
+        structs.emplace(decl.getName(), std::make_pair(llvm::StructType::get(ctx), &decl));
     } else {
-        structs.emplace(decl.name, std::make_pair(llvm::StructType::create(getFieldTypes(decl),
-                                                                           decl.name), &decl));
+        structs.emplace(decl.getName(), std::make_pair(llvm::StructType::create(getFieldTypes(decl),
+                                                                                decl.getName()), &decl));
     }
 
     auto insertBlockBackup = builder.GetInsertBlock();
@@ -649,13 +656,13 @@ void IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
 llvm::Type* IRGenerator::codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs) {
     auto name = mangle(decl, genericArgs);
 
-    if (decl.fields.empty()) {
+    if (decl.getFields().empty()) {
         auto value = std::make_pair(llvm::StructType::get(ctx), &decl);
         return structs.emplace(name, std::move(value)).first->second.first;
     }
 
     SAVE_STATE(currentGenericArgs);
-    setCurrentGenericArgs(decl.genericParams, genericArgs);
+    setCurrentGenericArgs(decl.getGenericParams(), genericArgs);
     auto elements = getFieldTypes(decl);
 
     auto value = std::make_pair(llvm::StructType::create(elements, name), &decl);
@@ -663,18 +670,18 @@ llvm::Type* IRGenerator::codegenGenericTypeInstantiation(const TypeDecl& decl, l
 }
 
 void IRGenerator::codegenVarDecl(const VarDecl& decl) {
-    if (globalScope().localValues.find(decl.name) != globalScope().localValues.end()) return;
+    if (globalScope().getLocalValues().find(decl.getName()) != globalScope().getLocalValues().end()) return;
 
-    llvm::Value* value = decl.initializer ? codegenExpr(*decl.initializer) : nullptr;
+    llvm::Value* value = decl.getInitializer() ? codegenExpr(*decl.getInitializer()) : nullptr;
 
     if (!value || decl.getType().isMutable() /* || decl.isPublic() */) {
         auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
         auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
         value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(),
-                                         linkage, initializer, decl.name);
+                                         linkage, initializer, decl.getName());
     }
 
-    globalScope().localValues.emplace(decl.name, value);
+    globalScope().addLocalValue(decl.getName(), value);
 }
 
 void IRGenerator::codegenDecl(const Decl& decl) {
@@ -709,19 +716,18 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
         auto currentFunctionInstantiations = functionInstantiations;
 
         for (auto& p : currentFunctionInstantiations) {
-            if (p.second.decl.isExtern() || !p.second.function->empty()) continue;
+            if (p.second.getDecl().isExtern() || !p.second.getFunction()->empty()) continue;
 
             setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
 
             SAVE_STATE(currentGenericArgs);
-            setCurrentGenericArgs(p.second.decl.getGenericParams(), p.second.genericArgs);
-            if (p.second.decl.getTypeDecl() != nullptr) {
-                auto& receiverTypeDecl = *p.second.decl.getTypeDecl();
-                setCurrentGenericArgs(receiverTypeDecl.genericParams,
-                                      p.second.receiverTypeGenericArgs);
+            setCurrentGenericArgs(p.second.getDecl().getGenericParams(), p.second.getGenericArgs());
+            if (p.second.getDecl().getTypeDecl() != nullptr) {
+                setCurrentGenericArgs(p.second.getDecl().getTypeDecl()->getGenericParams(),
+                                      p.second.getReceiverTypeGenericArgs());
             }
-            codegenFunctionBody(p.second.decl, *p.second.function);
-            ASSERT(!llvm::verifyFunction(*p.second.function, &llvm::errs()));
+            codegenFunctionBody(p.second.getDecl(), *p.second.getFunction());
+            ASSERT(!llvm::verifyFunction(*p.second.getFunction(), &llvm::errs()));
         }
 
         if (functionInstantiations.size() == currentFunctionInstantiations.size()) break;

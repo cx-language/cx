@@ -146,10 +146,10 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
 
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
                       decl.getNameAsString(), {}, *currentModule, SourceLocation::invalid());
-    typeDecl.fields.reserve(16); // TODO: Reserve based on the field count of `decl`.
+    typeDecl.getFields().reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, typeDecl)) {
-            typeDecl.fields.emplace_back(std::move(*fieldDecl));
+            typeDecl.getFields().emplace_back(std::move(*fieldDecl));
         } else {
             return llvm::None;
         }
@@ -192,7 +192,7 @@ public:
                                             typeChecker.getCurrentModule());
                     if (typeDecl) {
                         // Skip redefinitions caused by different modules including the same headers.
-                        if (typeChecker.findDecls(typeDecl->name, true).empty()) {
+                        if (typeChecker.findDecls(typeDecl->getName(), true).empty()) {
                             typeChecker.addToSymbolTable(std::move(*typeDecl));
                         }
                     }
