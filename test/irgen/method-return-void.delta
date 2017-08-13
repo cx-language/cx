@@ -1,0 +1,7 @@
+// RUN: %delta -print-ir %s
+
+class C {
+    func f() {
+        return
+    }
+}

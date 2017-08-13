@@ -200,7 +200,7 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
     codegenDeferredExprsAndDeinitCallsForReturn();
 
     if (stmt.getValues().empty()) {
-        if (llvm::cast<FunctionDecl>(currentDecl)->getName() != "main") builder.CreateRetVoid();
+        if (llvm::cast<FunctionLikeDecl>(currentDecl)->getName() != "main") builder.CreateRetVoid();
         else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
     } else {
         builder.CreateRet(codegenExpr(*stmt.getValues()[0]));
@@ -685,6 +685,9 @@ void IRGenerator::codegenVarDecl(const VarDecl& decl) {
 }
 
 void IRGenerator::codegenDecl(const Decl& decl) {
+    SAVE_STATE(currentDecl);
+    currentDecl = &decl;
+
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: llvm_unreachable("handled via FunctionDecl");
         case DeclKind::FunctionDecl:
@@ -705,11 +708,8 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
                                    const_cast<SourceFile*>(&sourceFile)));
 
         for (const auto& decl : sourceFile.getTopLevelDecls()) {
-            setCurrentDecl(decl.get());
             codegenDecl(*decl);
         }
-
-        setCurrentDecl(nullptr);
     }
 
     while (true) {

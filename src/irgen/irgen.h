@@ -63,7 +63,6 @@ private:
                                llvm::ArrayRef<Type> genericArgs);
     void codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
-    void setCurrentDecl(Decl* decl) { currentDecl = decl; }
     llvm::Module& getIRModule() { return module; }
 
     llvm::Function* getDeinitializerFor(Type type);
