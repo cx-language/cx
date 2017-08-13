@@ -614,6 +614,22 @@ void TypeChecker::typecheckMemberDecl(Decl& decl) const {
     }
 }
 
+void TypeChecker::postProcess() {
+    SAVE_STATE(typecheckingGenericFunction);
+    typecheckingGenericFunction = true;
+
+    while (!genericFunctionInstantiationsToTypecheck.empty()) {
+        auto genericFunctionInstantiations = std::move(genericFunctionInstantiationsToTypecheck);
+        for (auto functionDeclAndCallExpr : genericFunctionInstantiations) {
+            setCurrentGenericArgsForGenericFunction(functionDeclAndCallExpr.first,
+                                                    functionDeclAndCallExpr.second);
+            // TODO: Don't typecheck more than once with the same generic arguments.
+            typecheckFunctionLikeDecl(functionDeclAndCallExpr.first);
+            currentGenericArgs.clear();
+        }
+    }
+}
+
 void delta::typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                             ParserFunction& parse) {
     auto stdlibModule = importDeltaModule(nullptr, importSearchPaths, parse, "stdlib", "std");
@@ -630,6 +646,8 @@ void delta::typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> impo
                 typeChecker.typecheckVarDecl(*varDecl, true);
             }
         }
+
+        typeChecker.postProcess();
     }
 
     for (auto& sourceFile : module.getSourceFiles()) {
@@ -640,5 +658,7 @@ void delta::typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> impo
                 typeChecker.typecheckTopLevelDecl(*decl, importSearchPaths, parse);
             }
         }
+
+        typeChecker.postProcess();
     }
 }

@@ -1,0 +1,10 @@
+// RUN: %delta -typecheck %s
+
+func a() {
+    let i = 1
+    b<int>()
+}
+
+func b<T>() {
+    let i = 1
+}

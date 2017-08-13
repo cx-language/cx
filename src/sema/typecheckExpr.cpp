@@ -371,6 +371,22 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
     }
 }
 
+void TypeChecker::setCurrentGenericArgsForGenericFunction(FunctionLikeDecl& functionDecl,
+                                                          CallExpr& callExpr) const {
+    auto* typeDecl = functionDecl.getTypeDecl();
+
+    if (typeDecl && typeDecl->isGeneric()) {
+        ASSERT(typeDecl->getGenericParams().size() ==
+               callExpr.getReceiverType().removePointer().getGenericArgs().size());
+        for (auto t : llvm::zip_first(typeDecl->getGenericParams(),
+                                      callExpr.getReceiverType().removePointer().getGenericArgs())) {
+            currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
+        }
+    }
+
+    setCurrentGenericArgs(functionDecl.getGenericParams(), callExpr, functionDecl.getParams());
+}
+
 Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
     if (expr.getArgs().size() != 1) {
         error(expr.getLocation(), "expected single argument to converting initializer");
@@ -528,20 +544,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         if (!functionDecl->isGeneric() && !hasGenericReceiverType) {
             return functionDecl->getFunctionType()->getReturnType();
         } else {
-            setCurrentGenericArgs(functionDecl->getGenericParams(), expr, functionDecl->getParams());
-            if (hasGenericReceiverType) {
-                ASSERT(receiverTypeDecl->getGenericParams().size() ==
-                       expr.getReceiverType().removePointer().getGenericArgs().size());
-                for (auto t : llvm::zip_first(receiverTypeDecl->getGenericParams(),
-                                              expr.getReceiverType().removePointer().getGenericArgs())) {
-                    currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
-                }
-            }
-
+            setCurrentGenericArgsForGenericFunction(*functionDecl, expr);
             // TODO: Don't typecheck more than once with the same generic arguments.
-            SAVE_STATE(typecheckingGenericFunction);
-            typecheckingGenericFunction = true;
-            typecheckFunctionLikeDecl(*functionDecl);
+            genericFunctionInstantiationsToTypecheck.emplace_back(*functionDecl, expr);
             Type returnType = resolve(functionDecl->getFunctionType()->getReturnType());
             currentGenericArgs.clear();
             return returnType;

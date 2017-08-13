@@ -53,6 +53,7 @@ public:
     void typecheckVarDecl(VarDecl& decl, bool isGlobal) const;
     void typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                                ParserFunction& parse) const;
+    void postProcess();
 
 private:
     void typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const;
@@ -96,6 +97,7 @@ private:
     bool isValidConversion(llvm::ArrayRef<std::unique_ptr<Expr>> exprs, Type source, Type target) const;
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
+    void setCurrentGenericArgsForGenericFunction(FunctionLikeDecl& functionDecl, CallExpr& callExpr) const;
     std::vector<Type> getGenericArgsAsArray() const;
     Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
@@ -111,6 +113,7 @@ private:
     mutable FunctionLikeDecl* currentFunction;
     mutable std::unordered_map<std::string, Type> currentGenericArgs;
     mutable bool typecheckingGenericFunction;
+    mutable std::vector<std::pair<FunctionDecl&, CallExpr&>> genericFunctionInstantiationsToTypecheck;
 };
 
 }
