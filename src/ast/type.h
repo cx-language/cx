@@ -11,6 +11,8 @@
 
 namespace delta {
 
+class TypeResolver;
+
 enum class TypeKind {
     BasicType,
     ArrayType,

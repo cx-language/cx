@@ -1,0 +1,14 @@
+// RUN: %delta -print-ir %s
+
+struct S<T> {
+    init() {}
+
+    func f(t: T) {
+        let v = t
+    }
+}
+
+func main() {
+    S<int>().f(1)
+    S<bool>().f(false)
+}

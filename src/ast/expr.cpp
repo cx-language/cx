@@ -3,6 +3,7 @@
 #include "decl.h"
 #include "token.h"
 #include "mangle.h"
+#include "type-resolver.h"
 
 using namespace delta;
 
@@ -29,9 +30,9 @@ llvm::StringRef CallExpr::getFunctionName() const {
     }
 }
 
-std::string CallExpr::getMangledFunctionName() const {
+std::string CallExpr::getMangledFunctionName(const TypeResolver& resolver) const {
     if (getCallee().isMemberExpr()) {
-        Type receiverType = getReceiver()->getType();
+        Type receiverType = resolver.resolve(getReceiver()->getType());
         if (receiverType.isPointerType()) receiverType = receiverType.getPointee();
         return mangleFunctionDecl(receiverType.getName(), getFunctionName(), genericArgs);
     }
@@ -46,4 +47,9 @@ bool CallExpr::isInitCall() const {
 Expr* CallExpr::getReceiver() const {
     if (!isMethodCall()) return nullptr;
     return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
+}
+
+bool BinaryExpr::isBuiltinOp(const TypeResolver& resolver) const {
+    return resolver.resolve(getLHS().getType()).isBuiltinType()
+        && resolver.resolve(getRHS().getType()).isBuiltinType();
 }

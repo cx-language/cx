@@ -40,7 +40,7 @@ private:
     IRGenerator& irGenerator;
 };
 
-class IRGenerator {
+class IRGenerator : public TypeResolver {
 public:
     IRGenerator();
 
@@ -50,6 +50,7 @@ public:
     llvm::Value* codegenExpr(const Expr& expr);
     llvm::Type* toIR(Type type);
     llvm::IRBuilder<>& getBuilder() { return builder; }
+    Type resolveTypePlaceholder(llvm::StringRef name) const override;
 
 private:
     friend struct Scope;
@@ -174,7 +175,7 @@ private:
     std::unordered_map<std::string, FunctionInstantiation> functionInstantiations;
     std::vector<std::unique_ptr<FunctionDecl>> helperDecls;
     std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
-    std::unordered_map<std::string, llvm::Type*> currentGenericArgs;
+    std::unordered_map<std::string, Type> currentGenericArgs;
     const Decl* currentDecl;
 
     /// The basic blocks to branch to on a 'break' statement, one element per scope.

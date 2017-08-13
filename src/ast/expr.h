@@ -12,6 +12,7 @@
 namespace delta {
 
 class Decl;
+class TypeResolver;
 
 enum class ExprKind {
     VarExpr,
@@ -167,7 +168,7 @@ public:
       genericArgs(std::move(genericArgs)) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
-    std::string getMangledFunctionName() const;
+    std::string getMangledFunctionName(const TypeResolver& resolver) const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
     bool isInitCall() const;
     bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFunctionName()); }
@@ -223,9 +224,7 @@ public:
     BinaryOperator getOperator() const { return op; }
     Expr& getLHS() const { return *getArgs()[0].getValue(); }
     Expr& getRHS() const { return *getArgs()[1].getValue(); }
-    bool isBuiltinOp() const {
-        return getLHS().getType().isBuiltinType() && getRHS().getType().isBuiltinType();
-    }
+    bool isBuiltinOp(const TypeResolver& resolver) const;
     Decl* getCalleeDecl() const { return calleeDecl; }
     void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }

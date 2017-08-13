@@ -7,6 +7,7 @@
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
+#include "../ast/type-resolver.h"
 
 namespace llvm {
 class StringRef;
@@ -27,7 +28,7 @@ std::vector<Module*> getAllImportedModules();
 void typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
                      ParserFunction& parse);
 
-class TypeChecker {
+class TypeChecker : public TypeResolver {
 public:
     explicit TypeChecker(Module* currentModule, SourceFile* currentSourceFile)
     : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunction(nullptr),
@@ -89,7 +90,7 @@ private:
     Type typecheckSubscriptExpr(SubscriptExpr& expr) const;
     Type typecheckUnwrapExpr(UnwrapExpr& expr) const;
 
-    Type resolve(Type type) const;
+    Type resolveTypePlaceholder(llvm::StringRef name) const override;
     bool isInterface(Type type) const;
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool implementsInterface(TypeDecl& type, TypeDecl& interface) const;

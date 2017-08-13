@@ -134,7 +134,7 @@ llvm::Type* IRGenerator::toIR(Type type) {
             if (it == structs.end()) {
                 // Is it a generic parameter?
                 auto genericArg = currentGenericArgs.find(name);
-                if (genericArg != currentGenericArgs.end()) return genericArg->second;
+                if (genericArg != currentGenericArgs.end()) return toIR(genericArg->second);
 
                 auto& decl = currentTypeChecker->findDecl(name, SourceLocation::invalid(),
                                                           /* everywhere */ true);
@@ -170,6 +170,12 @@ llvm::Type* IRGenerator::toIR(Type type) {
         }
     }
     llvm_unreachable("all cases handled");
+}
+
+Type IRGenerator::resolveTypePlaceholder(llvm::StringRef name) const {
+    auto it = currentGenericArgs.find(name);
+    if (it == currentGenericArgs.end()) return nullptr;
+    return it->second;
 }
 
 void IRGenerator::beginScope() {
@@ -461,7 +467,7 @@ void IRGenerator::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
                                         llvm::ArrayRef<Type> genericArgs) {
     ASSERT(genericParams.size() == genericArgs.size());
     for (auto tuple : llvm::zip_first(genericParams, genericArgs)) {
-        currentGenericArgs.emplace(std::get<0>(tuple).getName(), toIR(std::get<1>(tuple)));
+        currentGenericArgs.emplace(std::get<0>(tuple).getName(), std::get<1>(tuple));
     }
 }
 

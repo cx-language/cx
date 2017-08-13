@@ -105,10 +105,10 @@ Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) const {
 }
 
 Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
-    Type leftType = typecheckExpr(expr.getLHS());
-    Type rightType = typecheckExpr(expr.getRHS());
+    Type leftType = resolve(typecheckExpr(expr.getLHS()));
+    Type rightType = resolve(typecheckExpr(expr.getRHS()));
 
-    if (!expr.isBuiltinOp()) {
+    if (!expr.isBuiltinOp(*this)) {
         return typecheckCallExpr((CallExpr&) expr);
     }
 
@@ -152,34 +152,10 @@ bool checkRange(Expr& expr, int64_t value, Type type) {
     return true;
 }
 
-/// Resolves generic parameters to their corresponding types, returns other types as is.
-Type TypeChecker::resolve(Type type) const {
-    switch (type.getKind()) {
-        case TypeKind::BasicType: {
-            auto it = currentGenericArgs.find(type.getName());
-            if (it == currentGenericArgs.end()) return type;
-            return it->second.asMutable(type.isMutable());
-        }
-        case TypeKind::PointerType:
-            return PointerType::get(resolve(type.getPointee()), type.isReference(), type.isMutable());
-        case TypeKind::ArrayType:
-            return ArrayType::get(resolve(type.getElementType()), type.getArraySize(),
-                                  type.isMutable());
-        case TypeKind::RangeType:
-            return RangeType::get(resolve(type.getIterableElementType()),
-                                  llvm::cast<RangeType>(*type).isExclusive(), type.isMutable());
-        case TypeKind::FunctionType: {
-            std::vector<Type> resolvedParamTypes;
-            resolvedParamTypes.reserve(type.getParamTypes().size());
-            for (Type type : type.getParamTypes()) {
-                resolvedParamTypes.emplace_back(resolve(type));
-            }
-            return FunctionType::get(resolve(type.getReturnType()), std::move(resolvedParamTypes),
-                                     type.isMutable());
-        }
-        default:
-            fatalError(("resolve() not implemented for type '" + type.toString() + "'").c_str());
-    }
+Type TypeChecker::resolveTypePlaceholder(llvm::StringRef name) const {
+    auto it = currentGenericArgs.find(name);
+    if (it == currentGenericArgs.end()) return nullptr;
+    return it->second;
 }
 
 bool TypeChecker::isInterface(Type unresolvedType) const {
@@ -520,7 +496,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             return expr.getType();
         }
 
-        decl = &resolveOverload(expr, expr.getMangledFunctionName());
+        decl = &resolveOverload(expr, expr.getMangledFunctionName(*this));
 
         if (receiverType.isNullablePointer()) {
             error(expr.getReceiver()->getLocation(), "cannot call member function through pointer '",
@@ -636,7 +612,7 @@ Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
 }
 
 Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
-    Type baseType = typecheckExpr(*expr.getBaseExpr());
+    Type baseType = resolve(typecheckExpr(*expr.getBaseExpr()));
 
     if (baseType.isPointerType()) {
         if (!baseType.isReference()) {
@@ -724,7 +700,7 @@ Type TypeChecker::typecheckExpr(Expr& expr) const {
         case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;
     }
     ASSERT(*type);
-    expr.setType(resolve(*type));
+    expr.setType(*type);
     return expr.getType();
 }
 

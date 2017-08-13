@@ -213,10 +213,15 @@ llvm::Value* IRGenerator::codegenShortCircuitBinaryOp(BinaryOperator op, const E
 }
 
 llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
-    if (!expr.isBuiltinOp()) return codegenCallExpr((const CallExpr&) expr);
+    if (!expr.isBuiltinOp(*this)) {
+        return codegenCallExpr((const CallExpr&) expr);
+    }
 
-    ASSERT(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType())
-           || expr.getRHS().getType().isImplicitlyConvertibleTo(expr.getLHS().getType()));
+    Type resolvedLHSType = resolve(expr.getLHS().getType());
+    Type resolvedRHSType = resolve(expr.getRHS().getType());
+
+    ASSERT(resolvedLHSType.isImplicitlyConvertibleTo(resolvedRHSType) ||
+           resolvedRHSType.isImplicitlyConvertibleTo(resolvedLHSType));
 
     switch (expr.getOperator()) {
         case AND_AND: case OR_OR:
