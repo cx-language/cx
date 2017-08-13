@@ -428,11 +428,11 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                 setCurrentGenericArgs(functionDecl.getGenericParams(), expr, functionDecl.getParams());
 
                 if (decls.size() == 1) {
-                    validateArgs(expr.getArgs(), functionDecl.getParams(), callee,
-                                 functionDecl.isVariadic(), expr.getCallee().getLocation());
+                    validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic(),
+                                 callee, expr.getCallee().getLocation());
                     return *decl;
                 }
-                if (matchArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic())) {
+                if (validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic())) {
                     matches.push_back(decl);
                 }
                 break;
@@ -446,11 +446,11 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                     InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
 
                     if (initDecls.size() == 1) {
-                        validateArgs(expr.getArgs(), initDecl.getParams(), callee, false,
+                        validateArgs(expr.getArgs(), initDecl.getParams(), false, callee,
                                      expr.getCallee().getLocation());
                         return initDecl;
                     }
-                    if (matchArgs(expr.getArgs(), initDecl.getParams(), false)) {
+                    if (validateArgs(expr.getArgs(), initDecl.getParams(), false)) {
                         matches.push_back(&initDecl);
                     }
                 }
@@ -500,7 +500,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     }
 
     if (expr.getFunctionName() == "sizeOf") {
-        validateArgs(expr.getArgs(), {}, expr.getFunctionName(), false, expr.getLocation());
+        validateArgs(expr.getArgs(), {}, false, expr.getFunctionName(), expr.getLocation());
         validateGenericArgCount(1, expr);
         expr.setType(Type::getUInt64());
         return expr.getType();
@@ -514,7 +514,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
 
         if (receiverType.isPointerType() && expr.getFunctionName() == "offsetUnsafely") {
             validateArgs(expr.getArgs(), {ParamDecl(Type::getInt64(), "pointer", SourceLocation::invalid())},
-                         expr.getFunctionName(), false, expr.getLocation());
+                         false, expr.getFunctionName(), expr.getLocation());
             validateGenericArgCount(0, expr);
             expr.setType(receiverType);
             return expr.getType();
@@ -569,32 +569,18 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     llvm_unreachable("all cases handled");
 }
 
-bool TypeChecker::matchArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamDecl> params,
-                            bool isVariadic) const {
-    if (isVariadic) {
-        if (args.size() < params.size()) return false;
-    } else {
-        if (args.size() != params.size()) return false;
-    }
+bool TypeChecker::validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamDecl> params,
+                               bool isVariadic, llvm::StringRef functionName,
+                               SourceLocation location) const {
+    bool returnOnError = functionName.empty();
 
-    for (size_t i = 0; i < args.size(); ++i) {
-        const Argument& arg = args[i];
-        const ParamDecl* param = i < params.size() ? &params[i] : nullptr;
-
-        if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) return false;
-        auto argType = typecheckExpr(*arg.getValue());
-        if (param && !isValidConversion(*arg.getValue(), argType, param->getType())) return false;
-    }
-    return true;
-}
-
-void TypeChecker::validateArgs(const std::vector<Argument>& args, const std::vector<ParamDecl>& params,
-                               const std::string& functionName, bool isVariadic, SourceLocation location) const {
     if (args.size() < params.size()) {
+        if (returnOnError) return false;
         error(location, "too few arguments to '", functionName, "', expected ",
               isVariadic ? "at least " : "", params.size());
     }
     if (!isVariadic && args.size() > params.size()) {
+        if (returnOnError) return false;
         error(location, "too many arguments to '", functionName, "', expected ", params.size());
     }
 
@@ -603,14 +589,18 @@ void TypeChecker::validateArgs(const std::vector<Argument>& args, const std::vec
         const ParamDecl* param = i < params.size() ? &params[i] : nullptr;
 
         if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
+            if (returnOnError) return false;
             error(arg.getLocation(), "invalid argument name '", arg.getName(), "' for parameter '", param->getName(), "'");
         }
         auto argType = typecheckExpr(*arg.getValue());
         if (param && !isValidConversion(*arg.getValue(), argType, param->getType())) {
+            if (returnOnError) return false;
             error(arg.getLocation(), "invalid argument #", i + 1, " type '", argType, "' to '", functionName,
                   "', expected '", param->getType(), "'");
         }
     }
+
+    return true;
 }
 
 Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
