@@ -59,4 +59,13 @@ struct Array<Element> {
             bufferPointer = newBufferPointer;
         }
     }
+
+    mutating func removeAt(index: int) {
+        for (i in (index + 1)..size) {
+            let source = cast<Element*>(bufferPointer).offsetUnsafely(int64(i));
+            let target = cast<mutable Element*>(bufferPointer).offsetUnsafely(int64(i - 1));
+            *target = *source;
+        }
+        size--;
+    }
 }
