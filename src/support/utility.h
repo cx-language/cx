@@ -32,9 +32,9 @@ std::unique_ptr<T> cast_unique_ptr(std::unique_ptr<U> ptr) {
     return std::unique_ptr<T>(llvm::cast<T>(ptr.release()));
 }
 
-template<typename SourceContainer, typename T, typename Param>
-std::vector<T> map(const SourceContainer& source, T (& mapper)(Param)) {
-    std::vector<T> result;
+template<typename SourceContainer, typename Mapper>
+auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(mapper(*source.begin()))> {
+    std::vector<decltype(mapper(*source.begin()))> result;
     result.reserve(source.size());
     for (const auto& element : source) result.emplace_back(mapper(element));
     return result;

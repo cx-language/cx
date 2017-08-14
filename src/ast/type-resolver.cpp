@@ -18,11 +18,7 @@ Type TypeResolver::resolve(Type type) const {
             return RangeType::get(resolve(type.getIterableElementType()),
                                   llvm::cast<RangeType>(*type).isExclusive(), type.isMutable());
         case TypeKind::FunctionType: {
-            std::vector<Type> resolvedParamTypes;
-            resolvedParamTypes.reserve(type.getParamTypes().size());
-            for (Type type : type.getParamTypes()) {
-                resolvedParamTypes.emplace_back(resolve(type));
-            }
+            auto resolvedParamTypes = map(type.getParamTypes(), [&](Type type) { return resolve(type); });
             return FunctionType::get(resolve(type.getReturnType()), std::move(resolvedParamTypes),
                                      type.isMutable());
         }

@@ -272,12 +272,8 @@ bool TypeChecker::isValidConversion(Expr& expr, Type unresolvedSource,
 std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 const CallExpr& call,
                                                 llvm::ArrayRef<ParamDecl> params) const {
-    std::vector<Type> genericArgs;
-    genericArgs.reserve(genericParams.size());
-
     ASSERT(call.getArgs().size() == params.size());
-
-    for (auto& genericParam : genericParams) {
+    return map(genericParams, [&](const GenericParamDecl& genericParam) {
         Type genericArg;
 
         for (auto tuple : llvm::zip_first(params, call.getArgs())) {
@@ -298,13 +294,11 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
         }
 
         if (genericArg) {
-            genericArgs.emplace_back(genericArg);
+            return genericArg;
         } else {
             error(call.getLocation(), "couldn't infer generic parameter '", genericParam.getName(), "'");
         }
-    }
-
-    return genericArgs;
+    });
 }
 
 static void validateGenericArgCount(size_t genericParamCount, const CallExpr& call) {

@@ -90,11 +90,8 @@ Type toDelta(clang::QualType qualtype) {
             return toDelta(llvm::cast<clang::ParenType>(type).getInnerType());
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
-            std::vector<Type> paramTypes;
-            paramTypes.reserve(functionProtoType.getParamTypes().size());
-            for (clang::QualType qualType : functionProtoType.getParamTypes()) {
-                paramTypes.emplace_back(toDelta(qualType));
-            }
+            auto paramTypes = map(functionProtoType.getParamTypes(),
+                                  [](clang::QualType qualType) { return toDelta(qualType); });
             return FunctionType::get(toDelta(functionProtoType.getReturnType()),
                                      std::move(paramTypes), isMutable);
         }
@@ -124,12 +121,9 @@ Type toDelta(clang::QualType qualtype) {
 }
 
 FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
-    std::vector<ParamDecl> params;
-    for (auto* param : decl.parameters()) {
-        params.emplace_back(toDelta(param->getType()), param->getNameAsString(),
-                            SourceLocation::invalid());
-    }
-
+    auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
+        return ParamDecl(toDelta(param->getType()), param->getNameAsString(), SourceLocation::invalid());
+    });
     FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()),
                         /* genericParams */ {}, decl.isVariadic());
     return FunctionDecl(std::move(proto), *currentModule, SourceLocation::invalid());

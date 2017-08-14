@@ -291,12 +291,11 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
     auto* function = builder.GetInsertBlock()->getParent();
     auto* insertBlockBackup = builder.GetInsertBlock();
 
-    std::vector<std::pair<llvm::ConstantInt*, llvm::BasicBlock*>> cases;
-    for (auto& switchCase : switchStmt.getCases()) {
+    auto cases = map(switchStmt.getCases(), [&](const SwitchCase& switchCase) {
         auto* value = llvm::cast<llvm::ConstantInt>(codegenExpr(*switchCase.getValue()));
         auto* block = llvm::BasicBlock::Create(ctx, "", function);
-        cases.emplace_back(value, block);
-    }
+        return std::make_pair(value, block);
+    });
 
     builder.SetInsertPoint(insertBlockBackup);
     auto* defaultBlock = llvm::BasicBlock::Create(ctx, "default", function);
@@ -630,12 +629,7 @@ void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl, llvm::ArrayRef<Type>
 }
 
 std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
-    std::vector<llvm::Type*> fieldTypes;
-    fieldTypes.reserve(decl.getFields().size());
-    for (auto& field : decl.getFields()) {
-        fieldTypes.emplace_back(toIR(field.getType()));
-    }
-    return fieldTypes;
+    return map(decl.getFields(), [&](const FieldDecl& field) { return toIR(field.getType()); });
 }
 
 void IRGenerator::codegenTypeDecl(const TypeDecl& decl) {

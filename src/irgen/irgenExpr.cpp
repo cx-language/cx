@@ -66,10 +66,9 @@ llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
 
 llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) {
     auto* arrayType = llvm::ArrayType::get(toIR(expr.getElements()[0]->getType()), expr.getElements().size());
-    std::vector<llvm::Constant*> values;
-    values.reserve(expr.getElements().size());
-    for (auto& e : expr.getElements())
-        values.emplace_back(llvm::cast<llvm::Constant>(codegenExpr(*e)));
+    auto values = map(expr.getElements(), [&](const std::unique_ptr<Expr>& elementExpr) {
+        return llvm::cast<llvm::Constant>(codegenExpr(*elementExpr));
+    });
     return llvm::ConstantArray::get(arrayType, values);
 }
 

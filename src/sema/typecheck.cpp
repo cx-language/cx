@@ -29,10 +29,8 @@ std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
 }
 
 std::vector<Module*> delta::getAllImportedModules() {
-    std::vector<Module*> modules;
-    modules.reserve(allImportedModules.size());
-    for (auto& p : allImportedModules) modules.emplace_back(p.second.get());
-    return modules;
+    return map(allImportedModules,
+               [](const std::pair<std::string, std::shared_ptr<Module>>& p) { return p.second.get(); });
 }
 
 namespace {
@@ -55,10 +53,10 @@ void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
         }
         return;
     }
-    std::vector<Type> returnValueTypes;
-    for (auto& expr : stmt.getValues()) {
-        returnValueTypes.push_back(typecheckExpr(*expr));
-    }
+
+    auto returnValueTypes = map(stmt.getValues(),
+                                [&](const std::unique_ptr<Expr>& value) { return typecheckExpr(*value); });
+
     Type returnType = returnValueTypes.size() > 1
                       ? TupleType::get(std::move(returnValueTypes)) : returnValueTypes[0];
     if (!isValidConversion(stmt.getValues(), returnType, functionReturnType)) {
@@ -402,10 +400,7 @@ void TypeChecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
 }
 
 std::vector<Type> TypeChecker::getGenericArgsAsArray() const {
-    std::vector<Type> genericArgs;
-    genericArgs.reserve(currentGenericArgs.size());
-    for (auto& p : currentGenericArgs) genericArgs.emplace_back(p.second);
-    return genericArgs;
+    return map(currentGenericArgs, [](const std::pair<std::string, Type>& p) { return p.second; });
 }
 
 void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
