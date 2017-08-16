@@ -80,7 +80,7 @@ llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
     switch (expr.getOperator()) {
         case PLUS: return codegenExpr(expr.getOperand());
         case MINUS:
-            if (expr.getOperand().getType().isFloatingPoint()) {
+            if (resolve(expr.getOperand().getType()).isFloatingPoint()) {
                 return builder.CreateFNeg(codegenExpr(expr.getOperand()));
             } else {
                 return builder.CreateNeg(codegenExpr(expr.getOperand()));
