@@ -102,11 +102,11 @@ Binary arithmetic operators:
 
 Binary comparison operators:
 
-    ==  !=  <   >   <=  =>
+    ==  !=  <   >   <=  >=
 
 Miscellaneous binary operators:
 
-    =   ... ..<
+    =   ..  ...
 
 Unary prefix operators:
 
@@ -177,6 +177,21 @@ Floating-point literals have the form `[1-9][0-9]*\.[0-9]+` or `0\.[0-9]+`:
 where _elements_ is a comma-separated list of zero or more expressions of the
 same type.
 
+#### Object literal
+
+> _object-literal_ → `(` _elements_ `)`<br>
+
+where _elements_ is a comma-separated list of zero or more
+_object-literal-elements_:
+
+> _object-literal-element_ → _identifier_ `:` _expression_<br>
+> _object-literal-element_ → _identifier_<br>
+
+The second form is a shorthand for object-literal-elements of the form `x: x`.
+
+Initializing a non-type-annotated variable with an object-literal causes the
+variable's type to be the tuple type corresponding to the object-literal.
+
 ### Identifiers
 
 > _identifier-head_ → upper- or lowercase letter `A` through `Z`<br>
@@ -220,7 +235,8 @@ type aliases for `float32` and `float64`, respectively.
 ### Reference types
 
 References are values that refer to other values. They can be reassigned to
-refer to another value, but they must always refer to some value.
+refer to another value, but they must always refer to some value. References
+referring to array types (see below) may be subscripted to access the array.
 
 > _reference-type_ → _referenced-type_ `&`<br>
 
@@ -231,8 +247,8 @@ denote that they don't currently point to a valid value.
 
 > _pointer-type_ → _referenced-type_ `*`<br>
 
-There's no pointer arithmetic by default. Pointers that point to array types
-(see below), like `int[]*`, may be subscripted to access the array.
+Pointer arithmetic can be performed by calling the `.offset(int64)` method on
+pointers. The method returns the offset pointer.
 
 ### Array types
 
@@ -309,26 +325,22 @@ polymorphism. Like classes and structs, interfaces may be generic.
 >
 > — C. A. R. Hoare
 
-An object of the optional type `optional<T>` (where `T` is an arbitrary type)
-may contain a value of type `T` or `null`.
+An object of the optional type `T?` (where `T` is an arbitrary type) may contain
+a value of type `T` or the value `null`.
 
 ### Function types
 
 Function types are written out as follows:
 
-> _function-type_ → `func` `(` _parameter-type-list_ `)` `->` _return-type_<br>
+> _function-type_ → `(` _parameter-type-list_ `)` `->` _return-type_<br>
 
 where _parameter-type-list_ is a comma-separated list of parameter types.
-
-### Ranges
-
-???
 
 ### Tuple types
 
 > _tuple-type_ → `(`<sub>opt</sub> _tuple-element-list_ `)`<sub>opt</sub><br>
 > _tuple-element-list_ → comma-separated list of one or more _tuple-elements_<br>
-> _tuple-element_ → _type_ _name_<br>
+> _tuple-element_ → _name_ `:` _type_<br>
 
 Tuples behave like structs, but they're defined inline. Tuples are intended as
 a lightweight alternative for situations where defining a whole new struct feels
@@ -341,9 +353,19 @@ The elements of a tuple value may be unpacked into individual variables as follo
 
 > _tuple-unpack-statement_ → _variable-list_ `=` _tuple-expression_ `;`<br>
 
-_variable-list_ is a comma-separated list of one or more variable names.
+_variable-list_ is a comma-separated list of one or more variable names. The
+variable names must match the element names of the _tuple-expression_, and be in
+the same order.
 
 ???
+
+### Range types
+
+The standard library defines the following two generic structs to represent
+range types:
+
+- `Range<T>` for ranges with an exclusive upper bound
+- `ClosedRange<T>` for ranges with an inclusive upper bound
 
 ## Declarations
 
@@ -383,7 +405,7 @@ The return type of the first version is `void`. The ___parameter-list___ is a
 comma-separated list of parameter declarations. A parameter declaration has one
 of the following syntaxes:
 
-> _parameter-type_ _parameter-name_<br>
+> _parameter-name_ `:` _parameter-type_<br>
 
 ___parameter-name___ is an identifier specifying the name of the parameter. A
 function cannot have multiple parameters with the same name.
@@ -480,11 +502,9 @@ where _generic-parameter-list_ is a comma separated list of one or more generic
 parameters. A generic parameter is one of the following:
 
 > _generic-type-parameter_ → _identifier_<br>
-> _generic-nontype-parameter_ → _type_ _identifier_<br>
 
 The identifier of a _generic-type-parameter_ serves as a placeholder for types
-used to instantiate the generic class. A _generic-nontype-parameter_ can be used
-to instantiate generic classes based on a constant value of any type.
+used to instantiate the generic class.
 
 ### Structs
 
@@ -582,13 +602,11 @@ is enforced by the compiler.
 
 The `defer` statement has the following syntax:
 
-> _defer-statement_ → `defer` _expression_ `;`<br>
+> _defer-statement_ → `defer` _block_<br>
 
-The _expression_ will be evaluated when leaving the scope where the
-_defer-statement_ is located. Multiple deferred expressions are evaluated in
-the reverse of the order they were declared in.
-
-???: Allow increment/decrement statements and assignments in `defer` body?
+The _block_ will be executed when leaving the scope where the _defer-statement_
+is located. Multiple deferred blocks are executed in the reverse of the order
+they were declared in. Return statements are disallowed inside the defer block.
 
 ## Expressions
 
@@ -643,14 +661,21 @@ argument _expression_ is being assigned to.
 
 ### Range expression
 
-> _exclusive-range-expression_ → _lower-bound_ `..<` _upper-bound_<br>
+> _exclusive-range-expression_ → _lower-bound_ `..` _upper-bound_<br>
 > _inclusive-range-expression_ → _lower-bound_ `...` _upper-bound_<br>
 
 ### Closure expression
 
-> _closure-expression_ → _parameter-list_ `->` _expression_<br>
-> _closure-expression_ → _parameter-list_ `->` `{` _expression_<sub>opt</sub> `}`<br>
-> _closure-expression_ → `{` _expression_<sub>opt</sub> `}`<br>
+> _closure-expression_ → `(` _parameter-list_ `)` `->` _expression_<br>
+> _closure-expression_ → `(` _parameter-list_ `)` `->` _block_<br>
+> _closure-expression_ → _block_<br>
+
+Specifying the type for parameters in a closure _parameter-list_ is optional.
+Omitting the type (and the corresponding colon) causes the type for that
+parameter to be inferred from the context.
+
+If the closure _parameter-list_ only contains one parameter, the enclosing
+parentheses may be omitted.
 
 ## Error handling
 
