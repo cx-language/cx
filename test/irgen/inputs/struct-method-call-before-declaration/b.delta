@@ -1,0 +1,4 @@
+struct B {
+    init() {}
+    func f() {}
+}

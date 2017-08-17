@@ -134,7 +134,8 @@ private:
     llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
-    llvm::Type* getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) const;
+    llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, llvm::ArrayRef<Type> genericArgs,
+                                      bool isMutating);
     llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
     llvm::Value* getArrayOrStringDataPointer(const Expr& object, Type objectType);
     llvm::Value* getArrayOrStringLength(const Expr& object, Type objectType);

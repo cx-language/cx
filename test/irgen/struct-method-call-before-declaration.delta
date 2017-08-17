@@ -1,0 +1,1 @@
+// RUN: %delta -print-ir %s %p/inputs/struct-method-call-before-declaration/a.delta %p/inputs/struct-method-call-before-declaration/b.delta

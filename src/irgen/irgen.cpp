@@ -451,7 +451,22 @@ void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToD
     }
 }
 
-llvm::Type* IRGenerator::getLLVMTypeForPassing(llvm::StringRef typeName, bool isMutating) const {
+llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, llvm::ArrayRef<Type> genericArgs,
+                                               bool isMutating) {
+    std::string typeName;
+
+    if (typeDecl.isGeneric()) {
+        typeName = mangle(typeDecl, genericArgs);
+        if (structs.count(typeName) == 0) {
+            codegenGenericTypeInstantiation(typeDecl, genericArgs);
+        }
+    } else {
+        typeName = typeDecl.getName();
+        if (structs.count(typeName) == 0) {
+            codegenTypeDecl(typeDecl);
+        }
+    }
+
     ASSERT(structs.count(typeName));
     auto structTypeAndDecl = structs.find(typeName)->second;
 
@@ -489,19 +504,12 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
 
     if (decl.isMethodDecl() || decl.isDeinitDecl()) {
         auto* receiverTypeDecl = decl.getTypeDecl();
-        std::string receiverTypeName;
-
         if (receiverTypeDecl->isGeneric()) {
-            receiverTypeName = mangle(*receiverTypeDecl, receiverTypeGenericArgs);
-            if (structs.count(receiverTypeName) == 0) {
-                codegenGenericTypeInstantiation(*receiverTypeDecl, receiverTypeGenericArgs);
-            }
             mangledName = mangle(decl, receiverTypeGenericArgs, functionGenericArgs);
             setCurrentGenericArgs(receiverTypeDecl->getGenericParams(), receiverTypeGenericArgs);
-        } else {
-            receiverTypeName = receiverTypeDecl->getName();
         }
-        paramTypes.emplace_back(getLLVMTypeForPassing(receiverTypeName, decl.isMutating()));
+        paramTypes.emplace_back(getLLVMTypeForPassing(*receiverTypeDecl, receiverTypeGenericArgs,
+                                                      decl.isMutating()));
     }
 
     for (auto& paramType : functionType->getParamTypes()) {
