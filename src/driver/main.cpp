@@ -12,7 +12,7 @@
 #include <llvm/Support/Program.h>
 #include <llvm/Support/Path.h>
 #include "repl.h"
-#include "../ast/ast_printer.h"
+#include "../ast/ast-printer.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../irgen/irgen.h"

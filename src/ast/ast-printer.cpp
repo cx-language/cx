@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <llvm/Support/ErrorHandling.h>
-#include "ast_printer.h"
+#include "ast-printer.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
 #include "../ast/module.h"
