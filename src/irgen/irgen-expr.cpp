@@ -55,13 +55,15 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
-    if (expr.getType().getPointee().isUnsizedArrayType()) {
+    auto type = resolve(expr.getType());
+
+    if (type.getPointee().isUnsizedArrayType()) {
         return llvm::ConstantStruct::getAnon({
-            llvm::ConstantPointerNull::get(toIR(expr.getType().getPointee().getElementType())->getPointerTo()),
+            llvm::ConstantPointerNull::get(toIR(type.getPointee().getElementType())->getPointerTo()),
             llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(ctx), 0)
         });
     }
-    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
+    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(type)));
 }
 
 llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) {

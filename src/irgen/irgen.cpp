@@ -605,6 +605,8 @@ void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
 
 void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
     if (decl.getTypeDecl()->isGeneric() && typeGenericArgs.empty()) return;
+    SAVE_STATE(currentGenericArgs);
+    setCurrentGenericArgs(decl.getTypeDecl()->getGenericParams(), typeGenericArgs);
 
     llvm::Function* function = getInitProto(decl, typeGenericArgs);
 

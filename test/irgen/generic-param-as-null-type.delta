@@ -1,0 +1,16 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct S<T> {
+    var p: T*
+
+    init() {
+        p = null
+    }
+}
+
+func main() {
+    // CHECK: call %"S<int>" @"S<int>.init"()
+    _ = S<int>()
+    // CHECK-NEXT: call %"S<bool>" @"S<bool>.init"()
+    _ = S<bool>()
+}

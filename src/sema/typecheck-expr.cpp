@@ -248,7 +248,7 @@ bool TypeChecker::isValidConversion(Expr& expr, Type unresolvedSource,
             return true;
         }
     } else if (expr.isNullLiteralExpr() && target.isNullablePointer()) {
-        expr.setType(target);
+        expr.setType(unresolvedTarget);
         return true;
     } else if (expr.isStringLiteralExpr() && target.isPointerType() && target.getPointee().isChar() &&
                !target.getPointee().isMutable()) {
