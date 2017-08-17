@@ -1,7 +1,7 @@
 import "stdlib.h"
 
 struct Array<Element> {
-    var bufferPointer: mutable void*;
+    var bufferPointer: mutable Element*;
     var size: int;
     var capacity: int;
 
@@ -13,7 +13,7 @@ struct Array<Element> {
     }
 
     deinit() {
-        free(bufferPointer);
+        free(cast<mutable void*>(bufferPointer));
     }
 
     /// Returns the number of elements in the array.
@@ -28,13 +28,13 @@ struct Array<Element> {
 
     /// Returns a reference to the element at the given index.
     func at(index: int) -> Element& {
-        return cast<Element&>(bufferPointer).offsetUnsafely(int64(index))
+        return bufferPointer.offsetUnsafely(int64(index))!
     }
 
     /// Adds the given element to the end of the array.
     mutating func append(newElement: Element) {
         reserve(size + 1);
-        *cast<mutable Element*>(bufferPointer).offsetUnsafely(int64(size)) = newElement;
+        *bufferPointer.offsetUnsafely(int64(size)) = newElement;
         size++;
     }
 
@@ -47,23 +47,23 @@ struct Array<Element> {
                 capacity *= 2;
             }
 
-            let newBufferPointer = malloc(sizeOf<Element>() * uint64(capacity));
+            let newBufferPointer = cast<mutable Element*>(malloc(sizeOf<Element>() * uint64(capacity)));
 
             for (index in 0..size) {
-                let source = cast<Element*>(bufferPointer).offsetUnsafely(int64(index));
-                let target = cast<mutable Element*>(newBufferPointer).offsetUnsafely(int64(index));
+                let source = bufferPointer.offsetUnsafely(int64(index));
+                let target = newBufferPointer.offsetUnsafely(int64(index));
                 *target = *source;
             }
 
-            free(bufferPointer);
+            free(cast<mutable void*>(bufferPointer));
             bufferPointer = newBufferPointer;
         }
     }
 
     mutating func removeAt(index: int) {
         for (i in (index + 1)..size) {
-            let source = cast<Element*>(bufferPointer).offsetUnsafely(int64(i));
-            let target = cast<mutable Element*>(bufferPointer).offsetUnsafely(int64(i - 1));
+            let source = bufferPointer.offsetUnsafely(int64(i));
+            let target = bufferPointer.offsetUnsafely(int64(i - 1));
             *target = *source;
         }
         size--;
