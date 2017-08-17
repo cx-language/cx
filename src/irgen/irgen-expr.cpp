@@ -26,10 +26,14 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
     if (expr.getType().isString()) {
         ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
-        auto* string = builder.CreateInsertValue(llvm::UndefValue::get(toIR(Type::getString())),
-                                                 stringPtr, 0);
+        auto* charArrayRefType = llvm::StructType::get(llvm::Type::getInt8PtrTy(ctx),
+                                                       llvm::Type::getInt32Ty(ctx), nullptr);
+        auto* charArrayRef = builder.CreateInsertValue(llvm::UndefValue::get(charArrayRefType),
+                                                       stringPtr, 0);
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
-        return builder.CreateInsertValue(string, size, 1);
+        charArrayRef = builder.CreateInsertValue(charArrayRef, size, 1);
+        auto* initializer = functionInstantiations.at("string.init$stringLiteral").getFunction();
+        return builder.CreateCall(initializer, charArrayRef);
     } else {
         // Passing as C-string, i.e. char pointer.
         return builder.CreateGlobalStringPtr(expr.getValue());
@@ -361,7 +365,7 @@ llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type membe
     }
 }
 
-llvm::Value* IRGenerator::getArrayOrStringDataPointer(const Expr& object, Type objectType) {
+llvm::Value* IRGenerator::getArrayDataPointer(const Expr& object, Type objectType) {
     if (objectType.isUnsizedArrayType() || objectType.isString()) {
         return builder.CreateExtractValue(codegenExpr(object), 0, "data");
     } else {
@@ -377,7 +381,7 @@ llvm::Value* IRGenerator::getArrayOrStringDataPointer(const Expr& object, Type o
     }
 }
 
-llvm::Value* IRGenerator::getArrayOrStringLength(const Expr& object, Type objectType) {
+llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
     if (objectType.isUnsizedArrayType() || objectType.isString()) {
         return builder.CreateExtractValue(codegenExpr(object), 1, "count");
     } else {
@@ -398,9 +402,9 @@ llvm::Value* IRGenerator::codegenLvalueMemberExpr(const MemberExpr& expr) {
 llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
     Type baseType = expr.getBaseExpr()->getType();
     if (baseType.isReference()) baseType = baseType.getPointee();
-    if (baseType.isArrayType() || baseType.isString()) {
-        if (expr.getMemberName() == "data") return getArrayOrStringDataPointer(*expr.getBaseExpr(), baseType);
-        if (expr.getMemberName() == "count") return getArrayOrStringLength(*expr.getBaseExpr(), baseType);
+    if (baseType.isArrayType()) {
+        if (expr.getMemberName() == "data") return getArrayDataPointer(*expr.getBaseExpr(), baseType);
+        if (expr.getMemberName() == "count") return getArrayLength(*expr.getBaseExpr(), baseType);
     }
     auto* value = codegenLvalueMemberExpr(expr);
     return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;

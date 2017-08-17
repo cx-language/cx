@@ -118,8 +118,6 @@ static const std::unordered_map<std::string, llvm::Type*> builtinTypes = {
     { "float32", llvm::Type::getFloatTy(ctx) },
     { "float64", llvm::Type::getDoubleTy(ctx) },
     { "float80", llvm::Type::getX86_FP80Ty(ctx) },
-    { "string", llvm::StructType::get(llvm::Type::getInt8PtrTy(ctx),
-                                      llvm::Type::getInt32Ty(ctx), nullptr) },
 };
 
 llvm::Type* IRGenerator::toIR(Type type) {

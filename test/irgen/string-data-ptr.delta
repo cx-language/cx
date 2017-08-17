@@ -1,7 +1,0 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-
-func foo(a: string) {
-    // CHECK: %data = extractvalue { i8*, i32 } %a, 0
-    // CHECK-NOT: load
-    _ = a.data
-}

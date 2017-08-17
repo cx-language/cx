@@ -1,0 +1,22 @@
+import "stdlib.h" // FIXME: Removing this breaks CI tests.
+
+struct string {
+    var characters: Array<char>
+
+    init(stringLiteral: char[]&) {
+        characters = Array<char>()
+        characters.reserve(stringLiteral.count)
+
+        for (index in 0..stringLiteral.count) {
+            characters.append(stringLiteral[index])
+        }
+    }
+
+    func size() -> int {
+        return characters.size()
+    }
+
+    func data() -> char* {
+        return characters.at(0)
+    }
+}

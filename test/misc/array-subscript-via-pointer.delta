@@ -1,8 +1,8 @@
 // RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:Foo
 
-extern func malloc(n: uint64) -> mutable void*;
-extern func puts(s: char*);
+import "stdlib.h"
+import "stdio.h"
 
 func main() {
     let buffer = &*cast<mutable uint8[4]*>(malloc(4));

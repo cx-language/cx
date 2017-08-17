@@ -615,7 +615,7 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
         baseType = baseType.getPointee();
     }
 
-    if (baseType.isArrayType() || baseType.isString()) {
+    if (baseType.isArrayType()) {
         if (expr.getMemberName() == "data") return PointerType::get(Type::getChar(), true);
         if (expr.getMemberName() == "count") return Type::getInt();
         error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");

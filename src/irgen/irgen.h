@@ -137,8 +137,8 @@ private:
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, llvm::ArrayRef<Type> genericArgs,
                                       bool isMutating);
     llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
-    llvm::Value* getArrayOrStringDataPointer(const Expr& object, Type objectType);
-    llvm::Value* getArrayOrStringLength(const Expr& object, Type objectType);
+    llvm::Value* getArrayDataPointer(const Expr& object, Type objectType);
+    llvm::Value* getArrayLength(const Expr& object, Type objectType);
     llvm::Value* codegenOffsetUnsafely(const CallExpr& call);
 
     void beginScope();

@@ -5,7 +5,7 @@
 // INSTANTIATIONS-DAG: define void @"foo<bool>"(i1 %t)
 func foo<T>(t: T) { }
 
-// INSTANTIATIONS-DAG: define { i8*, i32 } @"bar<string>"({ i8*, i32 } %t)
+// INSTANTIATIONS-DAG: define %string @"bar<string>"(%string %t)
 func bar<T>(t: T) -> T { return t; }
 
 // INSTANTIATIONS-DAG: define i32 @"qux<int>"(i32 %t)
@@ -21,8 +21,9 @@ func main() {
     foo<bool>(false);
     // CHECK-NEXT: call void @"foo<bool>"(i1 true)
     foo<bool>(true);
-    // CHECK-NEXT: %1 = call { i8*, i32 } @"bar<string>"
+    // CHECK-NEXT: call %string @string.init
+    // CHECK-NEXT: call %string @"bar<string>"
     var b = bar("bar");
-    // CHECK: %2 = call i32 @"qux<int>"(i32 -5)
+    // CHECK: call i32 @"qux<int>"(i32 -5)
     let five = qux(-5);
 }

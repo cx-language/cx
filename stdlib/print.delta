@@ -1,6 +1,6 @@
 import "stdio.h"
 
 func print(text: string) {
-    fwrite(cast<void*>(text.data), 1, uint64(text.count), stdout)
-    fwrite(cast<void*>("\n".data), 1, 1, stdout)
+    fwrite(cast<void*>(text.data()), 1, uint64(text.size()), stdout)
+    fwrite(cast<void*>("\n".data()), 1, 1, stdout)
 }

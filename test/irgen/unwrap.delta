@@ -1,15 +1,15 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern func malloc(n: uint64) -> mutable void*;
+extern func f() -> mutable void*;
 
 func main() {
-    // CHECK: %1 = call i8* @malloc(i64 1)
+    // CHECK: %1 = call i8* @f()
     // CHECK-NEXT: store i8* %1, i8** %byte
-    let byte: mutable uint8& = cast<mutable uint8*>(malloc(1))!;
-    // CHECK-NEXT: %2 = call i8* @malloc(i64 1)
+    let byte: mutable uint8& = cast<mutable uint8*>(f())!;
+    // CHECK-NEXT: %2 = call i8* @f()
     // CHECK-NEXT: %3 = bitcast i8* %2 to [1 x i8]*
     // CHECK-NEXT: store [1 x i8]* %3, [1 x i8]** %ptr
-    let ptr: mutable uint8[1]* = cast<mutable uint8[1]*>(malloc(1));
+    let ptr: mutable uint8[1]* = cast<mutable uint8[1]*>(f());
     // CHECK-NEXT: %ptr1 = load [1 x i8]*, [1 x i8]** %ptr
     // CHECK-NEXT: %4 = getelementptr [1 x i8], [1 x i8]* %ptr1, i32 0, i32 0
     // CHECK-NEXT: store i8 1, i8* %4
