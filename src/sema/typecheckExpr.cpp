@@ -500,8 +500,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         decl = &resolveOverload(expr, expr.getFunctionName());
 
         if (decl->isMethodDecl() && !decl->isInitDecl()) {
-            auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
-            expr.setReceiverType(varDecl.getType());
+            expr.setReceiverType(llvm::cast<MethodDecl>(decl)->getThisType());
         }
     }
 

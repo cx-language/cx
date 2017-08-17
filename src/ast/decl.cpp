@@ -39,6 +39,14 @@ MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl,
 : FunctionDecl(kind, std::move(proto), *typeDecl.getModule(), location), typeDecl(&typeDecl),
   mutating(false) {}
 
+Type MethodDecl::getThisType() const {
+    if (getTypeDecl()->passByValue() && !isMutating()) {
+        return getTypeDecl()->getUnresolvedType(isMutating());
+    } else {
+        return PointerType::get(getTypeDecl()->getUnresolvedType(isMutating()), true);
+    }
+}
+
 void TypeDecl::addField(FieldDecl&& field) {
     fields.emplace_back(std::move(field));
 }
@@ -62,6 +70,11 @@ Type TypeDecl::getType(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {
     return BasicType::get(name, genericArgs, isMutable);
 }
 
+Type TypeDecl::getUnresolvedType(bool isMutable) const {
+    auto genericArgs = map(getGenericParams(),
+                           [](const GenericParamDecl& p) { return BasicType::get(p.getName(), {}); });
+    return BasicType::get(name, std::move(genericArgs), isMutable);
+}
 Type TypeDecl::getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutable) const {
     switch (tag) {
         case TypeTag::Struct: case TypeTag::Union:

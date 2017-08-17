@@ -1,0 +1,19 @@
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=A
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=B
+
+struct S<T> {
+    init() {}
+
+    // A: define void @"S<int>.f"({} %this)
+    // A-NEXT: call void @"S<int>.g"({} %this)
+    // B: define void @"S<float>.f"({} %this)
+    // B-NEXT: call void @"S<float>.g"({} %this)
+    func f() { g() }
+
+    func g() {}
+}
+
+func main() {
+    S<int>().f()
+    S<float>().f()
+}

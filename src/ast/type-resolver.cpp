@@ -4,12 +4,17 @@
 using namespace delta;
 
 Type TypeResolver::resolve(Type type) const {
+    if (!type) return type;
+
     switch (type.getKind()) {
-        case TypeKind::BasicType:
+        case TypeKind::BasicType: {
             if (Type resolvedType = resolveTypePlaceholder(type.getName())) {
+                // TODO: Handle generic arguments for type placeholders.
                 return resolvedType.asMutable(type.isMutable());
             }
-            return type;
+            auto genericArgs = map(type.getGenericArgs(), [&](Type type) { return resolve(type); });
+            return BasicType::get(type.getName(), std::move(genericArgs), type.isMutable());
+        }
         case TypeKind::PointerType:
             return PointerType::get(resolve(type.getPointee()), type.isReference(), type.isMutable());
         case TypeKind::ArrayType:

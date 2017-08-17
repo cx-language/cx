@@ -544,7 +544,7 @@ llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
     const Decl* decl = call.getCalleeDecl();
 
     if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
-        return getFunctionProto(*functionDecl, call.getGenericArgs(), call.getReceiverType());
+        return getFunctionProto(*functionDecl, call.getGenericArgs(), resolve(call.getReceiverType()));
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
         llvm::Function* function = getInitProto(*initDecl, call.getGenericArgs());
         if (function->empty() && !call.getGenericArgs().empty()) {

@@ -178,6 +178,7 @@ public:
     bool isMutating() const override { return mutating; }
     void setMutating(bool mutating) { this->mutating = mutating; }
     TypeDecl* getTypeDecl() const override { return typeDecl; }
+    Type getThisType() const;
     static bool classof(const Decl* d) { return d->isMethodDecl(); }
 
 protected:
@@ -234,6 +235,7 @@ public:
     llvm::ArrayRef<std::unique_ptr<FunctionLikeDecl>> getMemberDecls() const { return methods; }
     DeinitDecl* getDeinitializer() const;
     Type getType(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
+    Type getUnresolvedType(bool isMutable) const;
     /// 'T&' if this is class, or plain 'T' otherwise.
     Type getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
     bool passByValue() const { return isStruct() || isUnion(); }
