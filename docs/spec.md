@@ -166,9 +166,14 @@ Floating-point literals have the form `[1-9][0-9]*\.[0-9]+` or `0\.[0-9]+`:
 
 > _boolean-literal_ → `true` | `false`<br>
 
+#### Null literal
+
+> _null-literal_ → `null`<br>
+
 #### String literal
 
-> _string-literal_ → `"` _character_* `"`<br>
+> _string-literal_ → `"` (_character_ | _interpolated-expression_)* `"`<br>
+> _interpolated-expression_ → `${` _expression_ `}`<br>
 
 #### Array literal
 
@@ -238,14 +243,28 @@ References are values that refer to other values. They can be reassigned to
 refer to another value, but they must always refer to some value. References
 referring to array types (see below) may be subscripted to access the array.
 
-> _reference-type_ → _referenced-type_ `&`<br>
+> _reference-type_ → _pointee-type_ `&`<br>
+> _reference-type_ → `mutable` _pointee-type_ `&`<br>
+> _reference-type_ → `mutable` `(` _pointee-type_ `&` `)`<br>
+> _reference-type_ → `mutable` `(` `mutable` _pointee-type_ `&` `)`<br>
+
+Prefixing the _pointee-type_ with `mutable` makes the _pointee-type_ mutable.
+Enclosing the _reference-type_ in parentheses and prefixing the parentheses with
+`mutable` makes the _reference-type_ itself mutable.
 
 ### Pointer types
 
 Pointers are like references, but may additionally store the value `null` to
 denote that they don't currently point to a valid value.
 
-> _pointer-type_ → _referenced-type_ `*`<br>
+> _pointer-type_ → _pointee-type_ `*`<br>
+> _pointer-type_ → `mutable` _pointee-type_ `*`<br>
+> _pointer-type_ → `mutable` `(` _pointee-type_ `*` `)`<br>
+> _pointer-type_ → `mutable` `(` `mutable` _pointee-type_ `*` `)`<br>
+
+Prefixing the _pointee-type_ with `mutable` makes the _pointee-type_ mutable.
+Enclosing the _pointer-type_ in parentheses and prefixing the parentheses with
+`mutable` makes the _pointer-type_ itself mutable.
 
 Pointer arithmetic can be performed by calling the `.offset(int64)` method on
 pointers. The method returns the offset pointer.
