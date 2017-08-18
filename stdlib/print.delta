@@ -4,3 +4,15 @@ func print(text: string) {
     fwrite(cast<void*>(text.data()), 1, uint64(text.size()), stdout)
     fwrite(cast<void*>("\n".data()), 1, 1, stdout)
 }
+
+func readLine() -> string {
+    var line = ""
+    while (true) {
+        let character = getchar()
+        // TODO: use newline character literal instead of 0xa
+        // TODO: handle EOF
+        if (character == 0xa) { break }
+        line.append(char(character))
+    }
+    return line
+}

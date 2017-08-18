@@ -19,4 +19,8 @@ struct string {
     func data() -> char* {
         return characters.at(0)
     }
+
+    mutating func append(character: char) {
+        characters.append(character)
+    }
 }

@@ -4,7 +4,7 @@ class Foo {
     let i: int;
 }
 
-// CHECK-LABEL: @get
+// CHECK-LABEL: define void @get
 func get(f: Foo&) {
     // CHECK-NEXT: %m = alloca i32
     // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
@@ -14,7 +14,7 @@ func get(f: Foo&) {
     // CHECK-NEXT: ret void
 }
 
-// CHECK-LABEL: @main
+// CHECK-LABEL: define i32 @main
 func main() {
     // CHECK: %f = alloca %Foo
     // CHECK-NEXT: %rf = alloca %Foo*
