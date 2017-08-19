@@ -27,7 +27,7 @@ class T<U> {
 }
 
 func main() {
-    let t = T<int>()
+    var t = T<int>()
     // CHECK-MAIN: call void @"T<int>.baz"({}* %t)
     t.baz()
 }

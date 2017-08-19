@@ -13,7 +13,7 @@ class Foo {
 }
 
 func main() -> int {
-    let f = Foo();
+    var f = Foo();
     f.add(21);
     f.add(21);
     return f.i;

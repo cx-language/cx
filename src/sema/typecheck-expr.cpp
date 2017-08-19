@@ -372,8 +372,8 @@ Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
     return expr.getType();
 }
 
-Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const {
-    llvm::SmallVector<Decl*, 1> matches;
+FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const {
+    llvm::SmallVector<FunctionLikeDecl*, 1> matches;
     bool isInitCall = false;
     bool atLeastOneFunction = false;
     auto decls = findDecls(callee, typecheckingGenericFunction);
@@ -400,10 +400,10 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                 if (decls.size() == 1) {
                     validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic(),
                                  callee, expr.getCallee().getLocation());
-                    return *decl;
+                    return llvm::cast<FunctionLikeDecl>(*decl);
                 }
                 if (validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic())) {
-                    matches.push_back(decl);
+                    matches.push_back(llvm::cast<FunctionLikeDecl>(decl));
                 }
                 break;
             }
@@ -450,7 +450,7 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                 return *matches.front();
             }
 
-            for (Decl* match : matches) {
+            for (auto* match : matches) {
                 if (match->getModule() && match->getModule()->getName() == "std") {
                     return *match;
                 }
@@ -476,7 +476,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         return expr.getType();
     }
 
-    Decl* decl;
+    FunctionLikeDecl* decl;
 
     if (expr.getCallee().isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
@@ -500,8 +500,17 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         decl = &resolveOverload(expr, expr.getFunctionName());
 
         if (decl->isMethodDecl() && !decl->isInitDecl()) {
-            expr.setReceiverType(llvm::cast<MethodDecl>(decl)->getThisType());
+            auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
+            expr.setReceiverType(varDecl.getType());
         }
+    }
+
+    if (decl->isMethodDecl() || decl->isDeinitDecl()) {
+        ASSERT(expr.getReceiverType());
+    }
+
+    if (decl->isMethodDecl() && !expr.getReceiverType().removePointer().isMutable() && decl->isMutating()) {
+        error(expr.getCallee().getLocation(), "cannot call mutating function with immutable 'this'");
     }
 
     expr.setCalleeDecl(decl);

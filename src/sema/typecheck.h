@@ -100,7 +100,8 @@ private:
                                CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     void setCurrentGenericArgsForGenericFunction(FunctionLikeDecl& functionDecl, CallExpr& callExpr) const;
     std::vector<Type> getGenericArgsAsArray() const;
-    Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
+    std::vector<Type> getUnresolvedGenericArgs() const;
+    FunctionLikeDecl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     bool validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamDecl> params,

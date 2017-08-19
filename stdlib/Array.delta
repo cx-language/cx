@@ -27,7 +27,7 @@ struct Array<Element> {
     }
 
     /// Returns a reference to the element at the given index.
-    func at(index: int) -> Element& {
+    func at(index: int) -> mutable Element& {
         return bufferPointer.offsetUnsafely(int64(index))!
     }
 

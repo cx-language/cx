@@ -403,6 +403,12 @@ std::vector<Type> TypeChecker::getGenericArgsAsArray() const {
     return map(currentGenericArgs, [](const std::pair<std::string, Type>& p) { return p.second; });
 }
 
+std::vector<Type> TypeChecker::getUnresolvedGenericArgs() const {
+    return map(currentGenericArgs, [](const std::pair<std::string, Type>& p) {
+        return BasicType::get(p.first, {});
+    });
+}
+
 void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
     if (decl.isExtern()) return;
 
@@ -434,7 +440,7 @@ void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
         SAVE_STATE(currentFieldDecls);
         if (receiverTypeDecl) {
             currentFieldDecls = receiverTypeDecl->getFields();
-            Type thisType = receiverTypeDecl->getTypeForPassing(getGenericArgsAsArray(), decl.isMutating());
+            Type thisType = receiverTypeDecl->getTypeForPassing(getUnresolvedGenericArgs(), decl.isMutating());
             addToSymbolTable(VarDecl(thisType, "this", nullptr, *getCurrentModule(), SourceLocation::invalid()));
         }
 
