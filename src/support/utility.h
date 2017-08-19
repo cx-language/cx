@@ -76,6 +76,11 @@ StateSaver<T> makeStateSaver(T& state) {
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 #define SAVE_STATE(state) const auto CONCAT(stateSaver, __COUNTER__) = makeStateSaver(state)
 
+
+std::string readLineFromFile(SourceLocation location);
+void printDiagnostic(SourceLocation location, llvm::StringRef type,
+                     llvm::raw_ostream::Colors color, llvm::StringRef message);
+
 class CompileError {
 public:
     CompileError(SourceLocation location, std::string&& message)
@@ -111,6 +116,15 @@ template<typename... Args>
     using expander = int[];
     (void)expander{0, (void(void(messageStream << std::forward<Args>(args))), 0)...};
     throw CompileError(location, std::move(messageStream.str()));
+}
+
+template<typename... Args>
+void warning(SourceLocation location, Args&&... args) {
+    std::string message;
+    llvm::raw_string_ostream messageStream(message);
+    using expander = int[];
+    (void)expander{0, (void(void(messageStream << std::forward<Args>(args))), 0)...};
+    printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, messageStream.str());
 }
 
 [[noreturn]] inline void fatalError(const char* message) {

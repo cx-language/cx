@@ -16,6 +16,10 @@
 
 using namespace delta;
 
+namespace delta {
+extern const char* currentFilePath;
+}
+
 namespace {
 
 std::vector<Token> tokenBuffer;
@@ -80,14 +84,49 @@ Token parse(llvm::ArrayRef<TokenKind> expected, const char* contextInfo = nullpt
     return consumeToken();
 }
 
+static void checkStmtTerminatorConsistency(TokenKind currentTerminator,
+                                           llvm::function_ref<SourceLocation()> getLocation) {
+    static TokenKind previousTerminator = NO_TOKEN;
+    static const char* filePath = nullptr;
+
+    if (filePath != delta::currentFilePath) {
+        filePath = delta::currentFilePath;
+        previousTerminator = NO_TOKEN;
+    }
+
+    if (previousTerminator == NO_TOKEN) {
+        previousTerminator = currentTerminator;
+    } else if (previousTerminator != currentTerminator) {
+        warning(getLocation(), "inconsistent statement terminator, expected ", quote(previousTerminator));
+    }
+}
+
 void parseStmtTerminator(const char* contextInfo = nullptr) {
-    if (getCurrentLocation().line != lookAhead(-1).getLocation().line)
-        return; // Ends with a newline.
+    if (getCurrentLocation().line != lookAhead(-1).getLocation().line) {
+        checkStmtTerminatorConsistency(NEWLINE, [] {
+            // TODO: Use pre-existing buffer instead of reading from file here.
+            readLineFromFile(lookAhead(-1).getLocation());
+            std::ifstream file(getCurrentLocation().file);
+            for (auto line = lookAhead(-1).getLocation().line; --line;) {
+                file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            }
+            std::string line;
+            std::getline(file, line);
+            return SourceLocation(getCurrentLocation().file, lookAhead(-1).getLocation().line, line.size() + 1);
+        });
+        return;
+    }
 
     switch (currentToken()) {
-        case RBRACE: return; // Allow 'if (x) { stmt }'.
-        case SEMICOLON: consumeToken(); return;
-        default: unexpectedToken(currentToken(), { NEWLINE, SEMICOLON }, contextInfo);
+        case RBRACE:
+            checkStmtTerminatorConsistency(NEWLINE, getCurrentLocation);
+            return;
+        case SEMICOLON:
+            checkStmtTerminatorConsistency(SEMICOLON, getCurrentLocation);
+            consumeToken();
+            return;
+        default:
+            unexpectedToken(currentToken(), { NEWLINE, SEMICOLON }, contextInfo);
     }
 }
 
