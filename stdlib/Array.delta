@@ -60,6 +60,20 @@ struct Array<Element> {
         }
     }
 
+    /// Removes the first element from the array.
+    /// Other elements are moved towards the beginning of the array by one index.
+    mutating func removeFirst() {
+        removeAt(0);
+    }
+
+    /// Removes the last element from the array.
+    mutating func removeLast() {
+        // TODO: Call deinitializer of removed element.
+        size--;
+    }
+
+    /// Removes the element at the given index from the array.
+    /// Elements following the removed element are moved towards the beginning of the array by one index.
     mutating func removeAt(index: int) {
         for (i in (index + 1)..size) {
             let source = bufferPointer.offsetUnsafely(int64(i));

@@ -5,15 +5,24 @@ struct string {
 
     init(stringLiteral: char[]&) {
         characters = Array<char>()
-        characters.reserve(stringLiteral.count)
+        characters.reserve(stringLiteral.count + 1)
 
         for (index in 0..stringLiteral.count) {
             characters.append(stringLiteral[index])
         }
+
+        // TODO: Use null character literal instead of converting 0 to char.
+        characters.append(char(0))
     }
 
     func size() -> int {
-        return characters.size()
+        return characters.size() - 1
+    }
+
+    /// Returns the string as a C-style, i.e. null-terminated, string.
+    /// Modifying `this` after calling this function invalidates the returned pointer.
+    func cString() -> char* {
+        return data()
     }
 
     func data() -> char* {
@@ -21,6 +30,19 @@ struct string {
     }
 
     mutating func append(character: char) {
-        characters.append(character)
+        *characters.at(size()) = character
+        // TODO: Use null character literal instead of converting 0 to char.
+        characters.append(char(0))
+    }
+
+    /// Removes the first character from the string.
+    /// Other characters are moved towards the beginning of the string by one index.
+    mutating func removeFirst() {
+        characters.removeFirst()
+    }
+
+    /// Removes the last character from the string.
+    mutating func removeLast() {
+        characters.removeAt(characters.size() - 2)
     }
 }
