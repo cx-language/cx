@@ -647,8 +647,9 @@ void IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
     if (decl.getFields().empty()) {
         structs.emplace(decl.getName(), std::make_pair(llvm::StructType::get(ctx), &decl));
     } else {
-        structs.emplace(decl.getName(), std::make_pair(llvm::StructType::create(getFieldTypes(decl),
-                                                                                decl.getName()), &decl));
+        auto* structType = llvm::StructType::create(ctx, decl.getName());
+        structs.emplace(decl.getName(), std::make_pair(structType, &decl));
+        structType->setBody(getFieldTypes(decl));
     }
 
     auto insertBlockBackup = builder.GetInsertBlock();

@@ -1,0 +1,8 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: %S = type { %S* }
+struct S {
+    let next: S*
+}
+
+func f(s: S) {}
