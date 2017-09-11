@@ -297,7 +297,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
 
     const clang::DirectoryLookup* curDir = nullptr;
     const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(
-        headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr);
+        headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (!fileEntry) return false;
 
     auto fileID = ci.getSourceManager().createFileID(fileEntry, clang::SourceLocation(),

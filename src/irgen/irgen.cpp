@@ -161,7 +161,7 @@ llvm::Type* IRGenerator::toIR(Type type) {
         case TypeKind::PointerType: {
             if (type.getPointee().isUnsizedArrayType())
                 return llvm::StructType::get(toIR(type.getPointee().getElementType())->getPointerTo(),
-                                             llvm::Type::getInt32Ty(ctx), NULL);
+                                             llvm::Type::getInt32Ty(ctx));
             auto* pointeeType = toIR(type.getPointee());
             if (!pointeeType->isVoidTy()) return llvm::PointerType::get(pointeeType, 0);
             else return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0);

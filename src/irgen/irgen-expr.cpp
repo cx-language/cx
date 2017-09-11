@@ -27,7 +27,7 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* charArrayRefType = llvm::StructType::get(llvm::Type::getInt8PtrTy(ctx),
-                                                       llvm::Type::getInt32Ty(ctx), nullptr);
+                                                       llvm::Type::getInt32Ty(ctx));
         auto* charArrayRef = builder.CreateInsertValue(llvm::UndefValue::get(charArrayRefType),
                                                        stringPtr, 0);
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());

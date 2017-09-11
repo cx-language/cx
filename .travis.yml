@@ -20,14 +20,14 @@ before_install:
           sudo apt-get install -y clang-3.9;
           export CXX="clang++-3.9" CC="clang-3.9";
       fi
-    - wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
-    - tar -xvf clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04.tar.xz
+    - wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+    - tar -xvf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
     - pip install --user lit cpp-coveralls
 
 script:
     - set -e # Error out immediately if any of the following commands fails.
     - cmake -G "Unix Makefiles"
-      -DCMAKE_PREFIX_PATH=$PWD/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04
+      -DCMAKE_PREFIX_PATH=$PWD/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04
       -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_BUILD_TYPE=Debug .
     - make
     - make check
@@ -37,5 +37,5 @@ script:
 
 after_success:
     - if [ $CXX == "g++-5" ]; then
-          coveralls --exclude clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-14.04 --exclude CMakeFiles;
+          coveralls --exclude clang+llvm-5.0.0-linux-x86_64-ubuntu14.04 --exclude CMakeFiles;
       fi

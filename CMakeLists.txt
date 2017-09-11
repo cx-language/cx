@@ -8,7 +8,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "--system-header-prefix=llvm --system-header-prefix=clang ${CMAKE_CXX_FLAGS}")
 endif()
 
-find_package(LLVM 4.0 REQUIRED)
+find_package(LLVM 5.0 REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
@@ -19,8 +19,8 @@ find_package(Clang REQUIRED)
 # Define the include path of the Clang builtin headers, to be used by the compiler to avoid errors
 # about missing C headers when importing C headers from Delta code. For more information, see e.g.
 # http://clang.llvm.org/docs/FAQ.html#i-get-errors-about-some-headers-being-missing-stddef-h-stdarg-h
-# CLANG_INSTALL_PREFIX is defined by ClangConfig.cmake during the above find_package(Clang) call.
-add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_INSTALL_PREFIX}/lib/clang/${LLVM_VERSION}/include")
+# CLANG_CMAKE_DIR is defined by ClangConfig.cmake during the above find_package(Clang) call.
+add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_CMAKE_DIR}/../../clang/${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}/include")
 
 find_package(PkgConfig)
 pkg_check_modules(LIBEDIT REQUIRED libedit)

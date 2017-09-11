@@ -87,8 +87,8 @@ Type TypeDecl::getTypeForPassing(llvm::ArrayRef<Type> genericArgs, bool isMutabl
 
 unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
     for (auto p : llvm::enumerate(fields)) {
-        if (p.Value.getName() == fieldName) {
-            return static_cast<unsigned>(p.Index);
+        if (p.value().getName() == fieldName) {
+            return static_cast<unsigned>(p.index());
         }
     }
     fatalError("unknown field");
