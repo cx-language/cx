@@ -19,6 +19,11 @@ struct string {
         return characters.size() - 1
     }
 
+    /// Returns the character at the given index.
+    func at(index: int) -> char {
+        return *characters.at(index)
+    }
+
     /// Returns the string as a C-style, i.e. null-terminated, string.
     /// Modifying `this` after calling this function invalidates the returned pointer.
     func cString() -> char* {
@@ -45,4 +50,12 @@ struct string {
     mutating func removeLast() {
         characters.removeAt(characters.size() - 2)
     }
+}
+
+func +(a: string, b: string) -> string {
+    var result = a
+    for (index in 0..b.size()) {
+        result.append(b.at(index))
+    }
+    return result
 }
