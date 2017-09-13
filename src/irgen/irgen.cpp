@@ -403,6 +403,11 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
     if (stmt.isCompoundAssignment()) {
         auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.getRHS());
 
+        if (!binaryExpr.isBuiltinOp(*this)) {
+            builder.CreateStore(codegenCallExpr((const CallExpr&) binaryExpr), lhsLvalue);
+            return;
+        }
+
         switch (binaryExpr.getOperator()) {
             case AND_AND: fatalError("'&&=' not implemented yet");
             case OR_OR: fatalError("'||=' not implemented yet");
