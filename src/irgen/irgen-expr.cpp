@@ -32,7 +32,7 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
                                                        stringPtr, 0);
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
         charArrayRef = builder.CreateInsertValue(charArrayRef, size, 1);
-        auto* initializer = functionInstantiations.at("string.init$stringLiteral").getFunction();
+        auto* initializer = functionInstantiations.at("string.init$stringLiteral:char[]&").getFunction();
         return builder.CreateCall(initializer, charArrayRef);
     } else {
         // Passing as C-string, i.e. char pointer.

@@ -31,6 +31,7 @@ std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> typeGenericArgs
     std::string result = mangle(decl, typeGenericArgs, functionGenericArgs);
     for (auto& param : decl.getParams()) {
         result.append("$").append(param.getName());
+        result.append(":").append(param.getType().toString());
     }
     return result;
 }

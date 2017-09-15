@@ -1,0 +1,42 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct S {
+    let i: int
+    init() {}
+}
+
+struct T {
+    let i: int
+    init() {}
+}
+
+// CHECK: define void @f(%S %a)
+func f(a: S) {}
+
+// CHECK: define void @f.1(%T %a)
+func f(a: T) {}
+
+// CHECK: define void @"+.[[S:[0-9]+]]"(%S %a, %S %b)
+func +(a: S, b: S) {}
+
+// CHECK: define void @"+.[[T:[0-9]+]]"(%T %a, %T %b)
+func +(a: T, b: T) {}
+
+func main() {
+    let s = S()
+    let t = T()
+
+    // CHECK: call void @f(%S %s{{[0-9]+}})
+    f(s)
+
+    // CHECK: call void @f.1(%T %t{{[0-9]+}})
+    f(t)
+
+    // CHECK: call void @"+.[[S]]"(%S %s{{[0-9]+}}, %S %s{{[0-9]+}})
+    _ = s + s
+
+    // CHECK: call void @"+.[[T]]"(%T %t{{[0-9]+}}, %T %t{{[0-9]+}})
+    _ = t + t
+
+    _ = 1 + 1
+}
