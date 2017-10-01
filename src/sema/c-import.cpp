@@ -2,9 +2,10 @@
 #include <memory>
 #include <cstdlib>
 #include <unordered_map>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringSet.h>
-#include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/Program.h>
 #include <clang/Basic/TargetInfo.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Lex/Preprocessor.h>
@@ -257,6 +258,17 @@ private:
 
 } // anonymous namespace
 
+static void addHeaderSearchPathsFromEnvVar(clang::CompilerInstance& ci, const char* name) {
+    if (const char* pathList = std::getenv(name)) {
+        llvm::SmallVector<llvm::StringRef, 1> paths;
+        llvm::StringRef(pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
+
+        for (llvm::StringRef path : paths) {
+            ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
+        }
+    }
+}
+
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
                           llvm::ArrayRef<llvm::StringRef> importSearchPaths) {
     auto it = allImportedModules.find(headerName);
@@ -283,6 +295,8 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath(CLANG_BUILTIN_INCLUDE_PATH, clang::frontend::System, false, false);
+    addHeaderSearchPathsFromEnvVar(ci, "CPATH");
+    addHeaderSearchPathsFromEnvVar(ci, "C_INCLUDE_PATH");
     for (llvm::StringRef includePath : importSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(includePath,      clang::frontend::System, false, false);
     }
