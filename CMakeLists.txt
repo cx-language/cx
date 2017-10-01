@@ -28,9 +28,11 @@ pkg_check_modules(LIBEDIT REQUIRED libedit)
 enable_testing()
 
 add_subdirectory(src/ast)
+add_subdirectory(src/delta)
 add_subdirectory(src/driver)
 add_subdirectory(src/irgen)
 add_subdirectory(src/parser)
+add_subdirectory(src/package-manager)
 add_subdirectory(src/sema)
 add_subdirectory(src/support)
 

@@ -534,7 +534,7 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
 void typecheckFieldDecl(FieldDecl&) {}
 
 llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
-                                               llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+                                               llvm::ArrayRef<std::string> importSearchPaths,
                                                ParserFunction& parse,
                                                llvm::StringRef moduleExternalName,
                                                llvm::StringRef moduleInternalName = "") {
@@ -578,7 +578,7 @@ done:
     return *module;
 }
 
-void TypeChecker::typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+void TypeChecker::typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<std::string> importSearchPaths,
                                       ParserFunction& parse) const {
     if (importDeltaModule(currentSourceFile, importSearchPaths, parse, decl.getTarget())) return;
 
@@ -588,7 +588,7 @@ void TypeChecker::typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::Str
     }
 }
 
-void TypeChecker::typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+void TypeChecker::typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<std::string> importSearchPaths,
                                         ParserFunction& parse) const {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: llvm_unreachable("no top-level parameter declarations");
@@ -630,7 +630,7 @@ void TypeChecker::postProcess() {
     }
 }
 
-void delta::typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+void delta::typecheckModule(Module& module, llvm::ArrayRef<std::string> importSearchPaths,
                             ParserFunction& parse) {
     auto stdlibModule = importDeltaModule(nullptr, importSearchPaths, parse, "stdlib", "std");
     if (!stdlibModule) {

@@ -40,7 +40,7 @@ auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(m
     return result;
 }
 
-/// Appends the elements of `target` to `source`.
+/// Appends the elements of `source` to `target`.
 template<typename TargetContainer, typename SourceContainer>
 static void append(TargetContainer& target, const SourceContainer& source) {
     target.append(source.begin(), source.end());
@@ -77,6 +77,8 @@ StateSaver<T> makeStateSaver(T& state) {
 #define SAVE_STATE(state) const auto CONCAT(stateSaver, __COUNTER__) = makeStateSaver(state)
 
 
+void skipWhitespace(llvm::StringRef& string);
+llvm::StringRef readWord(llvm::StringRef& string);
 std::string readLineFromFile(SourceLocation location);
 void printDiagnostic(SourceLocation location, llvm::StringRef type,
                      llvm::raw_ostream::Colors color, llvm::StringRef message);

@@ -1,40 +1,43 @@
 #include <iostream>
-#include <cstdio>
+#include <string>
+#include <system_error>
 #include <vector>
-#include <algorithm>
 #include <llvm/ADT/StringRef.h>
-#include <llvm/IR/Module.h>
+#include <llvm/ADT/StringSet.h>
 #include <llvm/IR/LegacyPassManager.h>
-#include <llvm/Target/TargetMachine.h>
+#include <llvm/IR/Module.h>
+#include <llvm/Support/CodeGen.h>
+#include <llvm/Support/ErrorOr.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
+#include <llvm/Support/Program.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/FileSystem.h>
-#include <llvm/Support/Program.h>
-#include <llvm/Support/Path.h>
-#include "repl.h"
+#include <llvm/Target/TargetMachine.h>
+#include "driver.h"
 #include "../ast/ast-printer.h"
-#include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../irgen/irgen.h"
+#include "../support/utility.h"
+#include "../package-manager/package-manager.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
-#include "../support/utility.h"
 
 using namespace delta;
 
-namespace {
-
-/// If `args` contains `flag`, removes it and returns true, otherwise returns false.
-bool checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) {
+bool delta::checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) {
     const auto it = std::find(args.begin(), args.end(), flag);
     const bool contains = it != args.end();
     if (contains) args.erase(it);
     return contains;
 }
 
-std::vector<llvm::StringRef> collectStringOptionValues(llvm::StringRef flagPrefix,
-                                                       std::vector<llvm::StringRef>& args) {
-    std::vector<llvm::StringRef> values;
+namespace {
+
+std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix,
+                                                   std::vector<llvm::StringRef>& args) {
+    std::vector<std::string> values;
     for (auto arg = args.begin(); arg != args.end();) {
         if (arg->startswith(flagPrefix)) {
             values.push_back(arg->substr(flagPrefix.size()));
@@ -78,42 +81,16 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
     file.flush();
 }
 
-void printHelp() {
-    llvm::outs() <<
-        "OVERVIEW: Delta compiler\n"
-        "\n"
-        "USAGE: delta [options] <inputs>\n"
-        "\n"
-        "OPTIONS:\n"
-        "  -c                    - Compile only, generating an .o file; don't link\n"
-        "  -emit-assembly        - Emit assembly code\n"
-        "  -fPIC                 - Emit position-independent code\n"
-        "  -parse                - Perform parsing\n"
-        "  -typecheck            - Perform parsing and type checking\n"
-        "  -help                 - Display this help\n"
-        "  -I<directory>         - Add a search path for module and C header import\n"
-        "  -print-ast            - Print the abstract syntax tree to stdout\n"
-        "  -print-ir             - Print the generated LLVM IR to stdout\n";
-}
-
 } // anonymous namespace
 
-int main(int argc, char** argv) try {
-    if (argc == 1) return replMain();
+int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args, bool run) {
+    auto sourceFiles = getSourceFiles(packageRoot);
 
-    bool run = strcmp(argv[1], "run") == 0;
-    if (run) {
-        ++argv;
-        --argc;
-    }
+    // TODO: Add support for library packages.
+    return buildExecutable(sourceFiles, args, run);
+}
 
-    std::vector<llvm::StringRef> args(argv + 1, argv + argc);
-
-    if (checkFlag("-help", args) || checkFlag("--help", args) || checkFlag("-h", args)) {
-        printHelp();
-        return 0;
-    }
-
+int delta::buildExecutable(llvm::ArrayRef<std::string> files, std::vector<llvm::StringRef>& args, bool run) {
     const bool parse = checkFlag("-parse", args);
     const bool typecheck = checkFlag("-typecheck", args);
     const bool compileOnly = checkFlag("-c", args);
@@ -121,8 +98,7 @@ int main(int argc, char** argv) try {
     const bool printIR = checkFlag("-print-ir", args);
     const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
     const bool emitPositionIndependentCode = checkFlag("-fPIC", args);
-    std::vector<llvm::StringRef> importSearchPaths = collectStringOptionValues("-I", args);
-    importSearchPaths.push_back(".");
+    auto importSearchPaths = collectStringOptionValues("-I", args);
     importSearchPaths.push_back(DELTA_ROOT_DIR); // For development.
 
     for (llvm::StringRef arg : args) {
@@ -131,15 +107,23 @@ int main(int argc, char** argv) try {
         }
     }
 
-    if (args.empty()) {
+    if (files.empty()) {
         printErrorAndExit("no input files");
     }
 
     Module module("main");
+    llvm::StringSet<> relativeImportSearchPaths;
 
-    for (llvm::StringRef filePath : args) {
+    for (llvm::StringRef filePath : files) {
         ::parse(filePath, module);
-        importSearchPaths.push_back(llvm::sys::path::parent_path(filePath)); // TODO: Don't add duplicates.
+
+        auto directoryPath = llvm::sys::path::parent_path(filePath);
+        if (directoryPath.empty()) directoryPath = ".";
+        relativeImportSearchPaths.insert(directoryPath);
+    }
+
+    for (auto& keyValue : relativeImportSearchPaths) {
+        importSearchPaths.push_back(keyValue.getKey());
     }
 
     if (printAST) {
@@ -222,8 +206,6 @@ int main(int argc, char** argv) try {
     if (auto error = llvm::sys::fs::rename(temporaryExecutablePath, "a.out")) {
         printErrorAndExit(error.message());
     }
+
     return 0;
-} catch (const CompileError& error) {
-    error.print();
-    exit(1);
 }

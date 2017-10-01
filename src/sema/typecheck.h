@@ -25,7 +25,7 @@ struct Type;
 using ParserFunction = void(llvm::StringRef filePath, Module& module);
 
 std::vector<Module*> getAllImportedModules();
-void typecheckModule(Module& module, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+void typecheckModule(Module& module, llvm::ArrayRef<std::string> importSearchPaths,
                      ParserFunction& parse);
 
 class TypeChecker : public TypeResolver {
@@ -52,7 +52,7 @@ public:
 
     Type typecheckExpr(Expr& expr) const;
     void typecheckVarDecl(VarDecl& decl, bool isGlobal) const;
-    void typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+    void typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<std::string> importSearchPaths,
                                ParserFunction& parse) const;
     void postProcess();
 
@@ -76,7 +76,7 @@ private:
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const;
     void typecheckDeinitDecl(DeinitDecl& decl) const;
     void typecheckTypeDecl(TypeDecl& decl) const;
-    void typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<llvm::StringRef> importSearchPaths,
+    void typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<std::string> importSearchPaths,
                              ParserFunction& parse) const;
 
     Type typecheckVarExpr(VarExpr& expr) const;

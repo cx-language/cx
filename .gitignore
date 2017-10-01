@@ -14,6 +14,7 @@ rules.ninja
 # Build products
 build/
 delta
+!delta/
 *.a
 
 # Generated documentation

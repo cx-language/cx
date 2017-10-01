@@ -270,7 +270,7 @@ static void addHeaderSearchPathsFromEnvVar(clang::CompilerInstance& ci, const ch
 }
 
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
-                          llvm::ArrayRef<llvm::StringRef> importSearchPaths) {
+                          llvm::ArrayRef<std::string> importSearchPaths) {
     auto it = allImportedModules.find(headerName);
     if (it != allImportedModules.end()) {
         importer.addImportedModule(it->second);
