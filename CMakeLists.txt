@@ -25,6 +25,11 @@ add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_CMAKE_DIR}/../../clang/${L
 find_package(PkgConfig)
 pkg_check_modules(LIBEDIT REQUIRED libedit)
 
+set(YAML_CPP_BUILD_TOOLS OFF)
+set(YAML_CPP_BUILD_CONTRIB OFF)
+add_subdirectory(src/yaml-cpp)
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/src/yaml-cpp/include)
+
 enable_testing()
 
 add_subdirectory(src/ast)
@@ -84,5 +89,5 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     endif()
 endif()
 
-add_custom_target(format COMMAND uncrustify -c ${PROJECT_SOURCE_DIR}/.uncrustify.cfg --no-backup
+add_custom_target(fmt COMMAND uncrustify -c ${PROJECT_SOURCE_DIR}/.uncrustify.cfg --no-backup
     ${PROJECT_SOURCE_DIR}/src/**/*.h ${PROJECT_SOURCE_DIR}/src/**/*.cpp)

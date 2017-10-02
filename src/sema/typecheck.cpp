@@ -20,6 +20,7 @@
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../ast/mangle.h"
+#include "../package-manager/manifest.h"
 #include "../support/utility.h"
 
 using namespace delta;
@@ -533,7 +534,24 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
 
 void typecheckFieldDecl(FieldDecl&) {}
 
+std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module,
+                                                   ParserFunction& parse) {
+    std::error_code error;
+    llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end;
+
+    for (; it != end; it.increment(error)) {
+        if (error) break;
+
+        if (llvm::sys::path::extension(it->path()) == ".delta") {
+            parse(it->path(), module);
+        }
+    }
+
+    return error;
+}
+
 llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
+                                               const PackageManifest* manifest,
                                                llvm::ArrayRef<std::string> importSearchPaths,
                                                ParserFunction& parse,
                                                llvm::StringRef moduleExternalName,
@@ -549,6 +567,15 @@ llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
     auto module = std::make_shared<Module>(moduleInternalName);
     std::error_code error;
 
+    if (manifest) {
+        for (auto& dependency : manifest->getDeclaredDependencies()) {
+            if (dependency.getPackageIdentifier() == moduleInternalName) {
+                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, parse);
+                goto done;
+            }
+        }
+    }
+
     for (llvm::StringRef importPath : importSearchPaths) {
         llvm::sys::fs::directory_iterator it(importPath, error), end;
         for (; it != end; it.increment(error)) {
@@ -556,13 +583,7 @@ llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
             if (!llvm::sys::fs::is_directory(it->path())) continue;
             if (llvm::sys::path::filename(it->path()) != moduleExternalName) continue;
 
-            it = llvm::sys::fs::directory_iterator(it->path(), error);
-            for (; it != end; it.increment(error)) {
-                if (error) goto done;
-                if (llvm::sys::path::extension(it->path()) == ".delta") {
-                    parse(it->path(), *module);
-                }
-            }
+            error = parseSourcesInDirectoryRecursively(it->path(), *module, parse);
             goto done;
         }
     }
@@ -574,13 +595,17 @@ done:
 
     if (importer) importer->addImportedModule(module);
     allImportedModules[module->getName()] = module;
-    typecheckModule(*module, importSearchPaths, parse);
+    typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr,
+                    importSearchPaths, parse);
     return *module;
 }
 
-void TypeChecker::typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<std::string> importSearchPaths,
+void TypeChecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
+                                      llvm::ArrayRef<std::string> importSearchPaths,
                                       ParserFunction& parse) const {
-    if (importDeltaModule(currentSourceFile, importSearchPaths, parse, decl.getTarget())) return;
+    if (importDeltaModule(currentSourceFile, manifest, importSearchPaths, parse, decl.getTarget())) {
+        return;
+    }
 
     if (!importCHeader(*currentSourceFile, decl.getTarget(), importSearchPaths)) {
         llvm::errs() << "error: couldn't find module or C header '" << decl.getTarget() << "'\n";
@@ -588,7 +613,8 @@ void TypeChecker::typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<std::stri
     }
 }
 
-void TypeChecker::typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<std::string> importSearchPaths,
+void TypeChecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
+                                        llvm::ArrayRef<std::string> importSearchPaths,
                                         ParserFunction& parse) const {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: llvm_unreachable("no top-level parameter declarations");
@@ -600,7 +626,8 @@ void TypeChecker::typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<std::string> 
         case DeclKind::TypeDecl: typecheckTypeDecl(llvm::cast<TypeDecl>(decl)); break;
         case DeclKind::VarDecl: typecheckVarDecl(llvm::cast<VarDecl>(decl), true); break;
         case DeclKind::FieldDecl: llvm_unreachable("no top-level field declarations");
-        case DeclKind::ImportDecl: typecheckImportDecl(llvm::cast<ImportDecl>(decl), importSearchPaths, parse); break;
+        case DeclKind::ImportDecl: typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest,
+                                                       importSearchPaths, parse); break;
     }
 }
 
@@ -630,9 +657,10 @@ void TypeChecker::postProcess() {
     }
 }
 
-void delta::typecheckModule(Module& module, llvm::ArrayRef<std::string> importSearchPaths,
+void delta::typecheckModule(Module& module, const PackageManifest* manifest,
+                            llvm::ArrayRef<std::string> importSearchPaths,
                             ParserFunction& parse) {
-    auto stdlibModule = importDeltaModule(nullptr, importSearchPaths, parse, "stdlib", "std");
+    auto stdlibModule = importDeltaModule(nullptr, nullptr, importSearchPaths, parse, "stdlib", "std");
     if (!stdlibModule) {
         printErrorAndExit("couldn't import the standard library: ", stdlibModule.getError().message());
     }
@@ -655,7 +683,7 @@ void delta::typecheckModule(Module& module, llvm::ArrayRef<std::string> importSe
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
-                typeChecker.typecheckTopLevelDecl(*decl, importSearchPaths, parse);
+                typeChecker.typecheckTopLevelDecl(*decl, manifest, importSearchPaths, parse);
             }
         }
 

@@ -79,6 +79,7 @@ StateSaver<T> makeStateSaver(T& state) {
 
 void skipWhitespace(llvm::StringRef& string);
 llvm::StringRef readWord(llvm::StringRef& string);
+llvm::StringRef readLine(llvm::StringRef& string);
 std::string readLineFromFile(SourceLocation location);
 void printDiagnostic(SourceLocation location, llvm::StringRef type,
                      llvm::raw_ostream::Colors color, llvm::StringRef message);

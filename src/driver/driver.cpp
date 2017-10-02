@@ -20,6 +20,7 @@
 #include "../ast/module.h"
 #include "../irgen/irgen.h"
 #include "../support/utility.h"
+#include "../package-manager/manifest.h"
 #include "../package-manager/package-manager.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
@@ -84,13 +85,16 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
 } // anonymous namespace
 
 int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args, bool run) {
+    PackageManifest manifest(packageRoot);
+    fetchDependencies(packageRoot);
     auto sourceFiles = getSourceFiles(packageRoot);
 
     // TODO: Add support for library packages.
-    return buildExecutable(sourceFiles, args, run);
+    return buildExecutable(sourceFiles, &manifest, args, run);
 }
 
-int delta::buildExecutable(llvm::ArrayRef<std::string> files, std::vector<llvm::StringRef>& args, bool run) {
+int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest,
+                           std::vector<llvm::StringRef>& args, bool run) {
     const bool parse = checkFlag("-parse", args);
     const bool typecheck = checkFlag("-typecheck", args);
     const bool compileOnly = checkFlag("-c", args);
@@ -134,9 +138,10 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, std::vector<llvm::
     if (parse) return 0;
 
     for (auto& importedModule : module.getImportedModules()) {
-        typecheckModule(*importedModule, importSearchPaths, ::parse);
+        typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr,
+                        importSearchPaths, ::parse);
     }
-    typecheckModule(module, importSearchPaths, ::parse);
+    typecheckModule(module, manifest, importSearchPaths, ::parse);
 
     if (typecheck) return 0;
 

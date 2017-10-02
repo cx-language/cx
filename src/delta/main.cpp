@@ -63,7 +63,7 @@ int main(int argc, const char** argv) {
             if (files.empty()) {
                 return buildPackage(".", args, /* run */ true);
             } else {
-                return buildExecutable(files, args, /* run */ true);
+                return buildExecutable(files, /* manifest */ nullptr, args, /* run */ true);
             }
         } else {
             std::vector<llvm::StringRef> args(argv, argv + argc);
@@ -74,7 +74,7 @@ int main(int argc, const char** argv) {
             }
 
             auto files = removeFileArgs(args);
-            return buildExecutable(files, args, /* run */ false);
+            return buildExecutable(files, /* manifest */ nullptr, args, /* run */ false);
         }
     } catch (const CompileError& error) {
         error.print();

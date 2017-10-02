@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cctype>
 #include "utility.h"
 
@@ -10,6 +11,12 @@ void delta::skipWhitespace(llvm::StringRef& string) {
 llvm::StringRef delta::readWord(llvm::StringRef& string) {
     auto word = string.take_while([](unsigned char c) { return std::isgraph(c); });
     string = string.drop_front(word.size());
+    return word;
+}
+
+llvm::StringRef delta::readLine(llvm::StringRef& string) {
+    auto word = string.take_while([](unsigned char c) { return c != '\n'; });
+    string = string.drop_front(std::min(word.size() + 1, string.size()));
     return word;
 }
 

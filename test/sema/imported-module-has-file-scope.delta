@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck -I%p/inputs/imported-module-has-file-scope %s %p/inputs/imported-module-has-file-scope/second-file.delta | %FileCheck %s
+// RUN: not %delta -typecheck %s %p/inputs/imported-module-has-file-scope/second-file.delta | %FileCheck %s
 
 import "foo"
 

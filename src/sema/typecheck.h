@@ -18,6 +18,7 @@ template<typename T, unsigned N> class SmallVector;
 namespace delta {
 
 class Module;
+class PackageManifest;
 class SourceFile;
 struct SourceLocation;
 struct Type;
@@ -25,8 +26,8 @@ struct Type;
 using ParserFunction = void(llvm::StringRef filePath, Module& module);
 
 std::vector<Module*> getAllImportedModules();
-void typecheckModule(Module& module, llvm::ArrayRef<std::string> importSearchPaths,
-                     ParserFunction& parse);
+void typecheckModule(Module& module, const PackageManifest* manifest,
+                     llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse);
 
 class TypeChecker : public TypeResolver {
 public:
@@ -52,7 +53,8 @@ public:
 
     Type typecheckExpr(Expr& expr) const;
     void typecheckVarDecl(VarDecl& decl, bool isGlobal) const;
-    void typecheckTopLevelDecl(Decl& decl, llvm::ArrayRef<std::string> importSearchPaths,
+    void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
+                               llvm::ArrayRef<std::string> importSearchPaths,
                                ParserFunction& parse) const;
     void postProcess();
 
@@ -76,8 +78,8 @@ private:
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const;
     void typecheckDeinitDecl(DeinitDecl& decl) const;
     void typecheckTypeDecl(TypeDecl& decl) const;
-    void typecheckImportDecl(ImportDecl& decl, llvm::ArrayRef<std::string> importSearchPaths,
-                             ParserFunction& parse) const;
+    void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
+                             llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse) const;
 
     Type typecheckVarExpr(VarExpr& expr) const;
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr) const;
