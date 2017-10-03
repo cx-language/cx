@@ -37,5 +37,5 @@ script:
 
 after_success:
     - if [ $CXX == "g++-5" ]; then
-          coveralls --exclude clang+llvm-5.0.0-linux-x86_64-ubuntu14.04 --exclude CMakeFiles;
+          coveralls --exclude clang+llvm-5.0.0-linux-x86_64-ubuntu14.04 --exclude CMakeFiles --exclude src/yaml-cpp;
       fi
