@@ -95,13 +95,13 @@ int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef
 
 int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest,
                            std::vector<llvm::StringRef>& args, bool run) {
-    const bool parse = checkFlag("-parse", args);
-    const bool typecheck = checkFlag("-typecheck", args);
-    const bool compileOnly = checkFlag("-c", args);
-    const bool printAST = checkFlag("-print-ast", args);
-    const bool printIR = checkFlag("-print-ir", args);
-    const bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
-    const bool emitPositionIndependentCode = checkFlag("-fPIC", args);
+    bool parse = checkFlag("-parse", args);
+    bool typecheck = checkFlag("-typecheck", args);
+    bool compileOnly = checkFlag("-c", args);
+    bool printAST = checkFlag("-print-ast", args);
+    bool printIR = checkFlag("-print-ir", args);
+    bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
+    bool emitPositionIndependentCode = checkFlag("-fPIC", args);
     auto importSearchPaths = collectStringOptionValues("-I", args);
     importSearchPaths.push_back(DELTA_ROOT_DIR); // For development.
 
@@ -142,6 +142,11 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
                         importSearchPaths, ::parse);
     }
     typecheckModule(module, manifest, importSearchPaths, ::parse);
+
+    bool treatAsLibrary = !module.getSymbolTable().contains("main") && !run;
+    if (treatAsLibrary) {
+        compileOnly = true;
+    }
 
     if (typecheck) return 0;
 
