@@ -652,9 +652,10 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
         arrayType = &llvm::cast<ArrayType>(*lhsType);
     } else if (lhsType.isReference() && lhsType.getReferee().isArrayType()) {
         arrayType = &llvm::cast<ArrayType>(*lhsType.getReferee());
+    } else if (lhsType.removePointer().isBuiltinType()) {
+        error(expr.getLocation(), "'", lhsType, "' doesn't provide a subscript operator");
     } else {
-        error(expr.getBaseExpr()->getLocation(), "cannot subscript '", lhsType,
-              "', expected array or reference-to-array");
+        return typecheckCallExpr(expr);
     }
 
     Type indexType = typecheckExpr(*expr.getIndexExpr());

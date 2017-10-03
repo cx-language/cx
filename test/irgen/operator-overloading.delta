@@ -8,6 +8,11 @@ struct vec2 {
         this.x = x
         this.y = y
     }
+
+    // CHECK: define i32 @"vec2.[]"(%vec2 %this, i32 %index)
+    func [](index: int) -> int {
+        return index
+    }
 }
 
 // CHECK: define %vec2 @"*"(%vec2 %a, %vec2 %b)
@@ -23,6 +28,11 @@ func main() {
 
     // CHECK: call i1 @"==<mutable vec2, vec2>"(%vec2 %v2, %vec2 %4)
     _ = v == vec2(-1, 3)
+
+    // CHECK: call i32 @"vec2.[]"(%vec2 %{{[[:alnum:]_]+}}, i32 %{{[[:alnum:]_]+}})
+    _ = v[v.x]
+
+    // CHECK-NEXT: ret
 }
 
 // CHECK-DAG: define i1 @"==<mutable vec2, vec2>"(%vec2 %a, %vec2 %b)

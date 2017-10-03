@@ -20,8 +20,8 @@ struct string {
     }
 
     /// Returns the character at the given index.
-    func at(index: int) -> char {
-        return *characters.at(index)
+    func [](index: int) -> char {
+        return *characters[index]
     }
 
     /// Returns the string as a C-style, i.e. null-terminated, string.
@@ -31,11 +31,11 @@ struct string {
     }
 
     func data() -> char* {
-        return characters.at(0)
+        return characters[0]
     }
 
     mutating func append(character: char) {
-        *characters.at(size()) = character
+        *characters[size()] = character
         // TODO: Use null character literal instead of converting 0 to char.
         characters.append(char(0))
     }
@@ -55,7 +55,7 @@ struct string {
 func +(a: string, b: string) -> string {
     var result = a
     for (index in 0..b.size()) {
-        result.append(b.at(index))
+        result.append(b[index])
     }
     return result
 }
