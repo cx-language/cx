@@ -512,7 +512,8 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     }
 
     if (decl->isMethodDecl() && !expr.getReceiverType().removePointer().isMutable() && decl->isMutating()) {
-        error(expr.getCallee().getLocation(), "cannot call mutating function with immutable 'this'");
+        error(expr.getCallee().getLocation(), "cannot call mutating function '",
+              decl->getTypeDecl()->getName(), ".", decl->getName(), "' on immutable receiver");
     }
 
     expr.setCalleeDecl(decl);
