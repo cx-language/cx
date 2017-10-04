@@ -351,11 +351,15 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     }
 
     beginScope();
-    auto& range = llvm::cast<BinaryExpr>(forStmt.getRangeExpr());
+
+    Type elementType = forStmt.getRangeExpr().getType().getIterableElementType();
+    auto* rangeExpr = codegenExpr(forStmt.getRangeExpr());
+    auto* firstValue = codegenMemberAccess(rangeExpr, elementType, "start");
+    auto* lastValue = codegenMemberAccess(rangeExpr, elementType, "end");
+
     auto* counterAlloca = createEntryBlockAlloca(forStmt.getRangeExpr().getType().getIterableElementType(),
                                                  nullptr, forStmt.getLoopVariableName());
-    builder.CreateStore(codegenExpr(range.getLHS()), counterAlloca);
-    auto* lastValue = codegenExpr(range.getRHS());
+    builder.CreateStore(firstValue, counterAlloca);
 
     auto* function = builder.GetInsertBlock()->getParent();
     auto* condition = llvm::BasicBlock::Create(ctx, "for", function);
@@ -369,14 +373,14 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
 
     llvm::Value* cmp;
     if (llvm::cast<BasicType>(*forStmt.getRangeExpr().getType()).getName() == "Range") {
-        if (range.getLHS().getType().isSigned())
+        if (elementType.isSigned())
             cmp = builder.CreateICmpSLT(counter, lastValue);
         else
             cmp = builder.CreateICmpULT(counter, lastValue);
     } else {
         ASSERT(llvm::cast<BasicType>(*forStmt.getRangeExpr().getType()).getName() == "ClosedRange");
 
-        if (range.getLHS().getType().isSigned())
+        if (elementType.isSigned())
             cmp = builder.CreateICmpSLE(counter, lastValue);
         else
             cmp = builder.CreateICmpULE(counter, lastValue);
