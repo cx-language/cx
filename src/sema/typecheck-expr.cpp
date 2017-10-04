@@ -414,6 +414,8 @@ FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef c
 
                 for (Decl* decl : initDecls) {
                     InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
+                    SAVE_STATE(currentGenericArgs);
+                    setCurrentGenericArgs(initDecl.getTypeDecl()->getGenericParams(), expr, initDecl.getParams());
 
                     if (initDecls.size() == 1) {
                         validateArgs(expr.getArgs(), initDecl.getParams(), false, callee,

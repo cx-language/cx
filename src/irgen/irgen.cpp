@@ -1,3 +1,4 @@
+#include <iterator>
 #include <unordered_map>
 #include <vector>
 #include <memory>
@@ -506,14 +507,17 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
     auto* functionType = decl.getFunctionType();
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
-    if (decl.isMethodDecl() || decl.isDeinitDecl()) {
+    if (decl.isMethodDecl() || decl.isDeinitDecl() || decl.isInitDecl()) {
         auto* receiverTypeDecl = decl.getTypeDecl();
         if (receiverTypeDecl->isGeneric()) {
             mangledName = mangle(decl, receiverTypeGenericArgs, functionGenericArgs);
             setCurrentGenericArgs(receiverTypeDecl->getGenericParams(), receiverTypeGenericArgs);
         }
-        paramTypes.emplace_back(getLLVMTypeForPassing(*receiverTypeDecl, receiverTypeGenericArgs,
-                                                      decl.isMutating()));
+
+        if (!decl.isInitDecl()) {
+            paramTypes.emplace_back(getLLVMTypeForPassing(*receiverTypeDecl, receiverTypeGenericArgs,
+                                                          decl.isMutating()));
+        }
     }
 
     for (auto& paramType : functionType->getParamTypes()) {
@@ -531,6 +535,8 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
     if (decl.isMethodDecl() || decl.isDeinitDecl()) arg++->setName("this");
+
+    ASSERT(decl.getParams().size() == size_t(std::distance(arg, argsEnd)));
     for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) {
         arg->setName(param->getName());
     }
