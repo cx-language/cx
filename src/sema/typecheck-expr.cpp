@@ -133,10 +133,10 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
     }
 
     if (expr.getOperator() == DOTDOT) {
-        return RangeType::get(leftType, /* hasExclusiveUpperBound */ true);
+        return BasicType::get("Range", leftType);
     }
     if (expr.getOperator() == DOTDOTDOT) {
-        return RangeType::get(leftType, /* hasExclusiveUpperBound */ false);
+        return BasicType::get("ClosedRange", leftType);
     }
 
     return expr.getOperator().isComparisonOperator() ? Type::getBool() : leftType;
@@ -414,6 +414,8 @@ FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef c
 
                 for (Decl* decl : initDecls) {
                     InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
+                    SAVE_STATE(currentGenericArgs);
+                    setCurrentGenericArgs(initDecl.getTypeDecl()->getGenericParams(), expr, initDecl.getParams());
 
                     if (initDecls.size() == 1) {
                         validateArgs(expr.getArgs(), initDecl.getParams(), false, callee,
@@ -510,7 +512,8 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     }
 
     if (decl->isMethodDecl() && !expr.getReceiverType().removePointer().isMutable() && decl->isMutating()) {
-        error(expr.getCallee().getLocation(), "cannot call mutating function with immutable 'this'");
+        error(expr.getCallee().getLocation(), "cannot call mutating function '",
+              decl->getTypeDecl()->getName(), ".", decl->getName(), "' on immutable receiver");
     }
 
     expr.setCalleeDecl(decl);
@@ -542,6 +545,8 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
                 typecheckDeinitDecl(*deinitDecl);
             }
         }
+
+        validateGenericArgCount(initDecl->getTypeDecl()->getGenericParams().size(), expr);
         return initDecl->getTypeDecl()->getType(expr.getGenericArgs());
     }
     llvm_unreachable("all cases handled");
@@ -591,7 +596,6 @@ Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
                 return targetType; // bool -> int
             }
         case TypeKind::ArrayType:
-        case TypeKind::RangeType:
         case TypeKind::TupleType:
         case TypeKind::FunctionType:
             break;
@@ -652,9 +656,10 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
         arrayType = &llvm::cast<ArrayType>(*lhsType);
     } else if (lhsType.isReference() && lhsType.getReferee().isArrayType()) {
         arrayType = &llvm::cast<ArrayType>(*lhsType.getReferee());
+    } else if (lhsType.removePointer().isBuiltinType()) {
+        error(expr.getLocation(), "'", lhsType, "' doesn't provide a subscript operator");
     } else {
-        error(expr.getBaseExpr()->getLocation(), "cannot subscript '", lhsType,
-              "', expected array or reference-to-array");
+        return typecheckCallExpr(expr);
     }
 
     Type indexType = typecheckExpr(*expr.getIndexExpr());

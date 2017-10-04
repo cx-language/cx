@@ -1,6 +1,10 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 func main() {
-    // CHECK: icmp slt i32 %i1, 3
+    // CHECK: [[RANGE:%[a-z0-9]+]] = call %"Range<int>" @"Range<int>.init"(i32 0, i32 3)
+    // CHECK-NEXT: [[START:%[a-z0-9]+]] = extractvalue %"Range<int>" [[RANGE]], 0
+    // CHECK-NEXT: [[END:%[a-z0-9]+]] = extractvalue %"Range<int>" [[RANGE]], 1
+
+    // CHECK: icmp slt i32 %i1, [[END]]
     for (i in 0..3) { }
 }

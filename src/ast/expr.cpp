@@ -50,6 +50,7 @@ Expr* CallExpr::getReceiver() const {
 }
 
 bool BinaryExpr::isBuiltinOp(const TypeResolver& resolver) const {
+    if (op == DOTDOT || op == DOTDOTDOT) return false;
     return resolver.resolve(getLHS().getType()).isBuiltinType()
         && resolver.resolve(getRHS().getType()).isBuiltinType();
 }

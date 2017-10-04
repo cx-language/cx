@@ -4,6 +4,6 @@ extern func malloc(n: uint64) -> mutable void*;
 
 func main() {
     let p = cast<mutable uint8*>(malloc(8));
-    // CHECK: [[@LINE+1]]:5: error: cannot subscript 'mutable uint8*', expected array or reference-to-array
+    // CHECK: [[@LINE+1]]:6: error: 'mutable uint8*' doesn't provide a subscript operator
     p[0] = 64;
 }

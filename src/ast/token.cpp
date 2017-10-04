@@ -130,6 +130,14 @@ bool BinaryOperator::isBitwiseOperator() const {
     }
 }
 
+std::string BinaryOperator::getFunctionName() const {
+    switch (kind) {
+        case DOTDOT: return "Range";
+        case DOTDOTDOT: return "ClosedRange";
+        default: return toString(kind);
+    }
+}
+
 const char* delta::toString(TokenKind tokenKind) {
     static const char* const tokenStrings[] = {
         "end-of-file", "newline", "identifier", "number", "float literal", "string literal",

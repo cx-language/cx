@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+class C {
+    init() {}
+}
+
+func main() {
+    // CHECK: [[@LINE+1]]:15: error: too many generic arguments to 'C', expected 0
+    _ = C<int>();
+}

@@ -1,3 +1,4 @@
+#include <iterator>
 #include <unordered_map>
 #include <vector>
 #include <memory>
@@ -153,8 +154,6 @@ llvm::Type* IRGenerator::toIR(Type type) {
         case TypeKind::ArrayType:
             ASSERT(type.getArraySize() != ArrayType::unsized, "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType()), type.getArraySize());
-        case TypeKind::RangeType:
-            llvm_unreachable("IRGen doesn't support range types yet");
         case TypeKind::TupleType:
             llvm_unreachable("IRGen doesn't support tuple types yet");
         case TypeKind::FunctionType:
@@ -352,11 +351,15 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     }
 
     beginScope();
-    auto& range = llvm::cast<BinaryExpr>(forStmt.getRangeExpr());
+
+    Type elementType = forStmt.getRangeExpr().getType().getIterableElementType();
+    auto* rangeExpr = codegenExpr(forStmt.getRangeExpr());
+    auto* firstValue = codegenMemberAccess(rangeExpr, elementType, "start");
+    auto* lastValue = codegenMemberAccess(rangeExpr, elementType, "end");
+
     auto* counterAlloca = createEntryBlockAlloca(forStmt.getRangeExpr().getType().getIterableElementType(),
                                                  nullptr, forStmt.getLoopVariableName());
-    builder.CreateStore(codegenExpr(range.getLHS()), counterAlloca);
-    auto* lastValue = codegenExpr(range.getRHS());
+    builder.CreateStore(firstValue, counterAlloca);
 
     auto* function = builder.GetInsertBlock()->getParent();
     auto* condition = llvm::BasicBlock::Create(ctx, "for", function);
@@ -369,13 +372,15 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     auto* counter = builder.CreateLoad(counterAlloca, forStmt.getLoopVariableName());
 
     llvm::Value* cmp;
-    if (llvm::cast<RangeType>(*forStmt.getRangeExpr().getType()).isExclusive()) {
-        if (range.getLHS().getType().isSigned())
+    if (llvm::cast<BasicType>(*forStmt.getRangeExpr().getType()).getName() == "Range") {
+        if (elementType.isSigned())
             cmp = builder.CreateICmpSLT(counter, lastValue);
         else
             cmp = builder.CreateICmpULT(counter, lastValue);
     } else {
-        if (range.getLHS().getType().isSigned())
+        ASSERT(llvm::cast<BasicType>(*forStmt.getRangeExpr().getType()).getName() == "ClosedRange");
+
+        if (elementType.isSigned())
             cmp = builder.CreateICmpSLE(counter, lastValue);
         else
             cmp = builder.CreateICmpULE(counter, lastValue);
@@ -506,14 +511,17 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
     auto* functionType = decl.getFunctionType();
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
-    if (decl.isMethodDecl() || decl.isDeinitDecl()) {
+    if (decl.isMethodDecl() || decl.isDeinitDecl() || decl.isInitDecl()) {
         auto* receiverTypeDecl = decl.getTypeDecl();
         if (receiverTypeDecl->isGeneric()) {
             mangledName = mangle(decl, receiverTypeGenericArgs, functionGenericArgs);
             setCurrentGenericArgs(receiverTypeDecl->getGenericParams(), receiverTypeGenericArgs);
         }
-        paramTypes.emplace_back(getLLVMTypeForPassing(*receiverTypeDecl, receiverTypeGenericArgs,
-                                                      decl.isMutating()));
+
+        if (!decl.isInitDecl()) {
+            paramTypes.emplace_back(getLLVMTypeForPassing(*receiverTypeDecl, receiverTypeGenericArgs,
+                                                          decl.isMutating()));
+        }
     }
 
     for (auto& paramType : functionType->getParamTypes()) {
@@ -531,6 +539,8 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
     if (decl.isMethodDecl() || decl.isDeinitDecl()) arg++->setName("this");
+
+    ASSERT(decl.getParams().size() == size_t(std::distance(arg, argsEnd)));
     for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) {
         arg->setName(param->getName());
     }

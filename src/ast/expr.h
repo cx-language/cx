@@ -148,8 +148,10 @@ private:
 
 class Argument {
 public:
-    Argument(std::string&& name, std::shared_ptr<Expr>&& value, SourceLocation location)
-    : name(std::move(name)), value(std::move(value)), location(location) {}
+    Argument(std::string&& name, std::shared_ptr<Expr>&& value,
+             SourceLocation location = SourceLocation::invalid())
+    : name(std::move(name)), value(std::move(value)),
+      location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
     Expr* getValue() const { return value.get(); }
     SourceLocation getLocation() const { return location; }
@@ -165,7 +167,7 @@ public:
     CallExpr(std::unique_ptr<Expr> callee, std::vector<Argument>&& args,
              std::vector<Type>&& genericArgs, SourceLocation location)
     : Expr(ExprKind::CallExpr, location), callee(std::move(callee)), args(std::move(args)),
-      genericArgs(std::move(genericArgs)) {}
+      genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
     std::string getMangledFunctionName(const TypeResolver& resolver) const;
@@ -181,12 +183,22 @@ public:
     llvm::ArrayRef<Argument> getArgs() const { return args; }
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     void setGenericArgs(std::vector<Type>&& types) { genericArgs = std::move(types); }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::CallExpr; }
+    static bool classof(const Expr* e) {
+        switch (e->getKind()) {
+            case ExprKind::CallExpr:
+            case ExprKind::PrefixExpr:
+            case ExprKind::BinaryExpr:
+            case ExprKind::SubscriptExpr:
+                return true;
+            default:
+                return false;
+        }
+    }
 
 protected:
     CallExpr(ExprKind kind, std::unique_ptr<Expr> callee, std::vector<Argument>&& args,
              SourceLocation location)
-    : Expr(kind, location), callee(std::move(callee)), args(std::move(args)) {}
+    : Expr(kind, location), callee(std::move(callee)), args(std::move(args)), calleeDecl(nullptr) {}
 
 private:
     std::unique_ptr<Expr> callee;
@@ -219,7 +231,7 @@ class BinaryExpr : public CallExpr {
 public:
     BinaryExpr(BinaryOperator op, std::shared_ptr<Expr>&& left, std::unique_ptr<Expr> right,
                SourceLocation location)
-    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(toString(op.getKind()), location),
+    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(op.getFunctionName(), location),
                addArg(addArg({}, std::move(left)), std::move(right)), location), op(op) {}
     BinaryOperator getOperator() const { return op; }
     Expr& getLHS() const { return *getArgs()[0].getValue(); }
@@ -263,17 +275,14 @@ private:
 };
 
 /// An array element access expression using the element's index in brackets, e.g. 'array[index]'.
-class SubscriptExpr : public Expr {
+class SubscriptExpr : public CallExpr {
 public:
     SubscriptExpr(std::unique_ptr<Expr> array, std::unique_ptr<Expr> index, SourceLocation location)
-    : Expr(ExprKind::SubscriptExpr, location), array(std::move(array)), index(std::move(index)) {}
-    Expr* getBaseExpr() const { return array.get(); }
-    Expr* getIndexExpr() const { return index.get(); }
+    : CallExpr(ExprKind::SubscriptExpr, llvm::make_unique<MemberExpr>(std::move(array), "[]", location),
+               { Argument("", std::move(index)) }, location) {}
+    Expr* getBaseExpr() const { return getReceiver(); }
+    Expr* getIndexExpr() const { return getArgs()[0].getValue(); }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::SubscriptExpr; }
-
-private:
-    std::unique_ptr<Expr> array;
-    std::unique_ptr<Expr> index;
 };
 
 /// A postfix expression that unwraps a non-null pointer, yielding a reference to its
