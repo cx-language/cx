@@ -413,6 +413,10 @@ llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) {
+    if (!expr.getBaseExpr()->getType().removePointer().isArrayType()) {
+        return codegenCallExpr(expr);
+    }
+
     auto* value = codegenLvalueExpr(*expr.getBaseExpr());
     Type lhsType = expr.getBaseExpr()->getType();
 
@@ -431,6 +435,10 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
 }
 
 llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
+    if (!expr.getBaseExpr()->getType().removePointer().isArrayType()) {
+        return codegenCallExpr(expr);
+    }
+
     return builder.CreateLoad(codegenLvalueSubscriptExpr(expr));
 }
 

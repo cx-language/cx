@@ -820,15 +820,24 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
     ASSERT(currentToken() == FUNC);
     consumeToken();
 
-    if (currentToken() != IDENTIFIER && !currentToken().isOverloadable())
+    bool isValidFunctionName =
+        currentToken() == IDENTIFIER ||
+        currentToken().isOverloadable() ||
+        (currentToken() == LBRACKET && lookAhead(1) == RBRACKET);
+
+    if (!isValidFunctionName)
         unexpectedToken(currentToken(), {}, "as function name");
 
     SourceLocation nameLocation = getCurrentLocation();
     llvm::StringRef name;
     if (currentToken() == IDENTIFIER) {
         name = consumeToken().getString();
+    } else if (currentToken() == LBRACKET) {
+        consumeToken();
+        parse(RBRACKET);
+        name = "[]";
     } else if (receiverTypeDecl) {
-        error(nameLocation, "operator functions must be non-member functions");
+        error(nameLocation, "operator functions other than subscript must be non-member functions");
     } else {
         name = toString(consumeToken().getKind());
     }
