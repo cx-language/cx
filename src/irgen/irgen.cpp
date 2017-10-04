@@ -154,8 +154,6 @@ llvm::Type* IRGenerator::toIR(Type type) {
         case TypeKind::ArrayType:
             ASSERT(type.getArraySize() != ArrayType::unsized, "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType()), type.getArraySize());
-        case TypeKind::RangeType:
-            llvm_unreachable("IRGen doesn't support range types yet");
         case TypeKind::TupleType:
             llvm_unreachable("IRGen doesn't support tuple types yet");
         case TypeKind::FunctionType:
@@ -370,12 +368,14 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     auto* counter = builder.CreateLoad(counterAlloca, forStmt.getLoopVariableName());
 
     llvm::Value* cmp;
-    if (llvm::cast<RangeType>(*forStmt.getRangeExpr().getType()).isExclusive()) {
+    if (llvm::cast<BasicType>(*forStmt.getRangeExpr().getType()).getName() == "Range") {
         if (range.getLHS().getType().isSigned())
             cmp = builder.CreateICmpSLT(counter, lastValue);
         else
             cmp = builder.CreateICmpULT(counter, lastValue);
     } else {
+        ASSERT(llvm::cast<BasicType>(*forStmt.getRangeExpr().getType()).getName() == "ClosedRange");
+
         if (range.getLHS().getType().isSigned())
             cmp = builder.CreateICmpSLE(counter, lastValue);
         else

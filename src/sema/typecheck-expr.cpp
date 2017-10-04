@@ -133,10 +133,10 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
     }
 
     if (expr.getOperator() == DOTDOT) {
-        return RangeType::get(leftType, /* hasExclusiveUpperBound */ true);
+        return BasicType::get("Range", leftType);
     }
     if (expr.getOperator() == DOTDOTDOT) {
-        return RangeType::get(leftType, /* hasExclusiveUpperBound */ false);
+        return BasicType::get("ClosedRange", leftType);
     }
 
     return expr.getOperator().isComparisonOperator() ? Type::getBool() : leftType;
@@ -595,7 +595,6 @@ Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
                 return targetType; // bool -> int
             }
         case TypeKind::ArrayType:
-        case TypeKind::RangeType:
         case TypeKind::TupleType:
         case TypeKind::FunctionType:
             break;
