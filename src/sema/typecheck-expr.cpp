@@ -544,6 +544,8 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
                 typecheckDeinitDecl(*deinitDecl);
             }
         }
+
+        validateGenericArgCount(initDecl->getTypeDecl()->getGenericParams().size(), expr);
         return initDecl->getTypeDecl()->getType(expr.getGenericArgs());
     }
     llvm_unreachable("all cases handled");
