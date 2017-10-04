@@ -138,6 +138,7 @@ struct BinaryOperator {
     operator TokenKind() const { return kind; }
     bool isComparisonOperator() const;
     bool isBitwiseOperator() const;
+    std::string getFunctionName() const;
 
 private:
     TokenKind kind;

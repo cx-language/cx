@@ -19,9 +19,6 @@ Type TypeResolver::resolve(Type type) const {
             return PointerType::get(resolve(type.getPointee()), type.isReference(), type.isMutable());
         case TypeKind::ArrayType:
             return ArrayType::get(resolve(type.getElementType()), type.getArraySize(), type.isMutable());
-        case TypeKind::RangeType:
-            return RangeType::get(resolve(type.getIterableElementType()),
-                                  llvm::cast<RangeType>(*type).isExclusive(), type.isMutable());
         case TypeKind::FunctionType: {
             auto resolvedParamTypes = map(type.getParamTypes(), [&](Type type) { return resolve(type); });
             return FunctionType::get(resolve(type.getReturnType()), std::move(resolvedParamTypes),

@@ -16,7 +16,6 @@ class TypeResolver;
 enum class TypeKind {
     BasicType,
     ArrayType,
-    RangeType,
     TupleType,
     FunctionType,
     PointerType,
@@ -46,7 +45,7 @@ public:
 
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
     bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
-    bool isRangeType() const { return getKind() == TypeKind::RangeType; }
+    bool isRangeType() const { return isBasicType() && (getName() == "Range" || getName() == "ClosedRange"); }
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
@@ -167,23 +166,6 @@ private:
 private:
     Type elementType;
     int64_t size; ///< Equal to ArrayType::unsized if this is an unsized array type.
-};
-
-class RangeType : public TypeBase {
-public:
-    Type getElementType() const { return elementType; }
-    bool isExclusive() const { return hasExclusiveUpperBound; }
-    static Type get(Type elementType, bool hasExclusiveUpperBound, bool isMutable = false);
-    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::RangeType; }
-
-private:
-    RangeType(Type elementType, bool hasExclusiveUpperBound)
-    : TypeBase(TypeKind::RangeType), elementType(elementType),
-      hasExclusiveUpperBound(hasExclusiveUpperBound) {}
-
-private:
-    Type elementType;
-    bool hasExclusiveUpperBound;
 };
 
 class TupleType : public TypeBase {

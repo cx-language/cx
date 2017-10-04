@@ -167,7 +167,7 @@ public:
     CallExpr(std::unique_ptr<Expr> callee, std::vector<Argument>&& args,
              std::vector<Type>&& genericArgs, SourceLocation location)
     : Expr(ExprKind::CallExpr, location), callee(std::move(callee)), args(std::move(args)),
-      genericArgs(std::move(genericArgs)) {}
+      genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
     std::string getMangledFunctionName(const TypeResolver& resolver) const;
@@ -198,7 +198,7 @@ public:
 protected:
     CallExpr(ExprKind kind, std::unique_ptr<Expr> callee, std::vector<Argument>&& args,
              SourceLocation location)
-    : Expr(kind, location), callee(std::move(callee)), args(std::move(args)) {}
+    : Expr(kind, location), callee(std::move(callee)), args(std::move(args)), calleeDecl(nullptr) {}
 
 private:
     std::unique_ptr<Expr> callee;
@@ -231,7 +231,7 @@ class BinaryExpr : public CallExpr {
 public:
     BinaryExpr(BinaryOperator op, std::shared_ptr<Expr>&& left, std::unique_ptr<Expr> right,
                SourceLocation location)
-    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(toString(op.getKind()), location),
+    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(op.getFunctionName(), location),
                addArg(addArg({}, std::move(left)), std::move(right)), location), op(op) {}
     BinaryOperator getOperator() const { return op; }
     Expr& getLHS() const { return *getArgs()[0].getValue(); }

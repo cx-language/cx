@@ -73,7 +73,6 @@ void Type::appendType(Type type) {
 namespace {
 std::vector<std::unique_ptr<BasicType>> basicTypes;
 std::vector<std::unique_ptr<ArrayType>> arrayTypes;
-std::vector<std::unique_ptr<RangeType>> rangeTypes;
 std::vector<std::unique_ptr<TupleType>> tupleTypes;
 std::vector<std::unique_ptr<FunctionType>> functionTypes;
 std::vector<std::unique_ptr<PointerType>> ptrTypes;
@@ -93,12 +92,6 @@ Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool
 Type ArrayType::get(Type elementType, int64_t size, bool isMutable) {
     FETCH_AND_RETURN_TYPE(ArrayType, arrayTypes,
                           t->getElementType() == elementType && t->getSize() == size, elementType, size);
-}
-
-Type RangeType::get(Type elementType, bool hasExclusiveUpperBound, bool isMutable) {
-    FETCH_AND_RETURN_TYPE(RangeType, rangeTypes,
-                          t->getElementType() == elementType && t->hasExclusiveUpperBound == hasExclusiveUpperBound,
-                          elementType, hasExclusiveUpperBound);
 }
 
 Type TupleType::get(std::vector<Type>&& subtypes, bool isMutable) {
@@ -129,9 +122,6 @@ bool Type::isImplicitlyConvertibleTo(Type type) const {
             return type.isArrayType()
                    && (getArraySize() == type.getArraySize() || type.isUnsizedArrayType())
                    && getElementType().isImplicitlyConvertibleTo(type.getElementType());
-        case TypeKind::RangeType:
-            return type.isRangeType() && llvm::cast<RangeType>(typeBase)->getElementType()
-                   == llvm::cast<RangeType>(type.get())->getElementType();
         case TypeKind::TupleType:
             return type.isTupleType() && getSubtypes() == type.getSubtypes();
         case TypeKind::FunctionType:
@@ -181,7 +171,7 @@ bool Type::isReference() const { return isPointerType() && llvm::cast<PointerTyp
 Type Type::getIterableElementType() const {
     ASSERT(isIterable());
     ASSERT(isRangeType(), "non-range iterables not supported yet");
-    return llvm::cast<RangeType>(typeBase)->getElementType();
+    return llvm::cast<BasicType>(typeBase)->getGenericArgs()[0];
 }
 
 bool delta::operator==(Type lhs, Type rhs) {
@@ -193,9 +183,6 @@ bool delta::operator==(Type lhs, Type rhs) {
         case TypeKind::ArrayType:
             return rhs.isArrayType() && lhs.getElementType() == rhs.getElementType()
                    && lhs.getArraySize() == rhs.getArraySize();
-        case TypeKind::RangeType:
-            return rhs.isRangeType() && llvm::cast<RangeType>(lhs.get())->getElementType()
-                   == llvm::cast<RangeType>(rhs.get())->getElementType();
         case TypeKind::TupleType:
             return rhs.isTupleType() && lhs.getSubtypes() == rhs.getSubtypes();
         case TypeKind::FunctionType:
@@ -234,11 +221,6 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             stream << "[";
             if (!isUnsizedArrayType()) stream << getArraySize();
             stream << "]";
-            break;
-        case TypeKind::RangeType:
-            stream << "Range<";
-            llvm::cast<RangeType>(typeBase)->getElementType().printTo(stream, true);
-            stream << ">";
             break;
         case TypeKind::TupleType:
             stream << "(";
