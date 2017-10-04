@@ -1,0 +1,7 @@
+// RUN: check_exit_status 0 %delta run %s test-support.delta
+
+func main() {
+    assert("abc" == "abc", "equals")
+    assert(!("abc" == "not"), "not equals")
+    assert("abc" < "bcd", "less")
+}
