@@ -1,0 +1,11 @@
+// RUN: check_exit_status 1 %delta run %s
+func main() -> int {
+    let a = "not"
+    let b = "abc"
+    if (a == b) {
+        return 0
+    } 
+    return 1
+}
+
+
