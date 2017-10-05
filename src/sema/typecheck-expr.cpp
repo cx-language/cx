@@ -268,6 +268,66 @@ bool TypeChecker::isValidConversion(Expr& expr, Type unresolvedSource,
     return false;
 }
 
+static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
+    switch (type.getKind()) {
+        case TypeKind::BasicType:
+            for (Type genericArg : type.getGenericArgs()) {
+                if (containsGenericParam(genericArg, genericParam)) {
+                    return true;
+                }
+            }
+            return type.getName() == genericParam;
+        case TypeKind::ArrayType:
+            return containsGenericParam(type.getElementType(), genericParam);
+        case TypeKind::TupleType:
+            llvm_unreachable("unimplemented");
+        case TypeKind::FunctionType:
+            llvm_unreachable("unimplemented");
+        case TypeKind::PointerType:
+            return containsGenericParam(type.getPointee(), genericParam);
+    }
+}
+
+static Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam) {
+    if (paramType.isBasicType() && paramType.getName() == genericParam) {
+        return argType;
+    }
+
+    switch (argType.getKind()) {
+        case TypeKind::BasicType:
+            if (!argType.getGenericArgs().empty() && paramType.isBasicType()
+                && paramType.getName() == argType.getName()) {
+                ASSERT(argType.getGenericArgs().size() == paramType.getGenericArgs().size());
+                for (auto t : llvm::zip_first(argType.getGenericArgs(), paramType.getGenericArgs())) {
+                    if (Type type = findGenericArg(std::get<0>(t), std::get<1>(t), genericParam)) {
+                        return type;
+                    }
+                }
+            }
+            return nullptr;
+        case TypeKind::ArrayType:
+            if (paramType.isArrayType()) {
+                return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam);
+            }
+            return nullptr;
+        case TypeKind::TupleType:
+            llvm_unreachable("unimplemented");
+        case TypeKind::FunctionType:
+            llvm_unreachable("unimplemented");
+        case TypeKind::PointerType:
+            if (paramType.isNullablePointer()) {
+                if (paramType.isNullablePointer()) {
+                    return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
+                }
+            } else {
+                if (!paramType.isNullablePointer()) {
+                    return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
+                }
+            }
+            return nullptr;
+    }
+}
+
 std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 const CallExpr& call,
                                                 llvm::ArrayRef<ParamDecl> params) const {
@@ -280,17 +340,20 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
 
         for (auto tuple : llvm::zip_first(params, call.getArgs())) {
             Type paramType = std::get<0>(tuple).getType();
-            if (paramType.isBasicType() && paramType.getName() == genericParam.getName()) {
+
+            if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateArgs()
                 // after this function. Get rid of this duplicated typechecking.
                 Type argType = typecheckExpr(*std::get<1>(tuple).getValue());
+                Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
+                if (!maybeGenericArg) continue;
 
                 if (!genericArg) {
-                    genericArg = argType;
-                } else if (!argType.isImplicitlyConvertibleTo(genericArg)) {
+                    genericArg = maybeGenericArg;
+                } else if (!maybeGenericArg.isImplicitlyConvertibleTo(genericArg)) {
                     error(std::get<1>(tuple).getLocation(), "couldn't infer generic parameter '",
                           genericParam.getName(), "' because of conflicting argument types '",
-                          genericArg, "' and '", argType, "'");
+                          genericArg, "' and '", maybeGenericArg, "'");
                 }
             }
         }
