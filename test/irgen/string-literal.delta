@@ -3,9 +3,9 @@
 // CHECK: @[[ID:[0-9]+]] = private unnamed_addr constant [4 x i8] c"foo\00"
 
 func main() {
-    // CHECK: %s = alloca %string
-    // CHECK-NEXT: %1 = call %string @string.init({ i8*, i32 } { i8* getelementptr inbounds ([4 x i8], [4 x i8]* @[[ID]], i32 0, i32 0), i32 3 })
-    // CHECK-NEXT: store %string %1, %string* %s
+    // CHECK: %s = alloca %String
+    // CHECK-NEXT: %1 = call %String @String.init({ i8*, i32 } { i8* getelementptr inbounds ([4 x i8], [4 x i8]* @[[ID]], i32 0, i32 0), i32 3 })
+    // CHECK-NEXT: store %String %1, %String* %s
     let s = "foo";
     // CHECK-NEXT: ret
 }

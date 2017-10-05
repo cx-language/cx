@@ -7,7 +7,7 @@
 import "stdio.h"
 
 func foo() -> char& { return "foo" }
-func bar() -> string { return "bar" }
+func bar() -> String { return "bar" }
 
 func main() {
     puts(foo())

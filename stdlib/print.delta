@@ -1,11 +1,11 @@
 import "stdio.h"
 
-func print(text: string) {
+func print(text: String) {
     fwrite(cast<void*>(text.data()), 1, uint64(text.size()), stdout)
     fwrite(cast<void*>("\n".data()), 1, 1, stdout)
 }
 
-func readLine() -> string {
+func readLine() -> String {
     var line = ""
     while (true) {
         let character = getchar()

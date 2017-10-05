@@ -1,6 +1,6 @@
 import "stdlib.h" // FIXME: Removing this breaks CI tests.
 
-struct string {
+struct String {
     var characters: Array<char>
 
     init(stringLiteral: char[]&) {
@@ -52,7 +52,7 @@ struct string {
     }
 }
 
-func +(a: string, b: string) -> string {
+func +(a: String, b: String) -> String {
     var result = a
     for (index in 0..b.size()) {
         result.append(b[index])
@@ -60,7 +60,7 @@ func +(a: string, b: string) -> string {
     return result
 }
 
-func ==(a: string, b: string) -> bool {
+func ==(a: String, b: String) -> bool {
 
     if (a.size() != b.size()) {
         return false
@@ -75,7 +75,7 @@ func ==(a: string, b: string) -> bool {
     return true
 }
 
-func <(a: string, b: string) -> bool {
+func <(a: String, b: String) -> bool {
 
     if (a.size() != b.size()) {
         return a.size() < b.size()
