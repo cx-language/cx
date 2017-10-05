@@ -23,6 +23,23 @@ standalone statements, not inside arbitrary expressions.
 
 The language might provide an exponentiation operator `**` in the future.
 
+## Range Operators
+
+The binary operators `..` and `...` create objects of type `Range` and
+`ClosedRange`, respectively. `Range` has an exclusive upper bound, while
+`ClosedRange` has an inclusive upper bound. These can be used e.g. in a
+for-loop:
+
+```
+for (i in 0..5) {
+    // iterates from 0 to 4
+}
+
+for (i in 0...5) {
+    // iterates from 0 to 5
+}
+```
+
 ## Unwrap Operator
 
 The unwrap operator, written as a postfix `!`, converts a pointer to a
