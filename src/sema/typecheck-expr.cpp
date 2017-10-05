@@ -258,8 +258,7 @@ bool TypeChecker::isValidConversion(Expr& expr, Type unresolvedSource,
     } else if (expr.isLvalue() && source.isBasicType() && target.isPointerType()) {
         auto typeDecl = getTypeDecl(llvm::cast<BasicType>(*source));
         if (!typeDecl || typeDecl->passByValue()) {
-            error(expr.getLocation(),
-                  "cannot implicitly pass value types by reference, add explicit '&'");
+            return false;
         }
         if (source.isImplicitlyConvertibleTo(target.getPointee())) {
             return true;
@@ -273,7 +272,10 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
                                                 const CallExpr& call,
                                                 llvm::ArrayRef<ParamDecl> params) const {
     ASSERT(call.getArgs().size() == params.size());
-    return map(genericParams, [&](const GenericParamDecl& genericParam) {
+
+    std::vector<Type> inferredGenericArgs;
+
+    for (auto& genericParam : genericParams) {
         Type genericArg;
 
         for (auto tuple : llvm::zip_first(params, call.getArgs())) {
@@ -294,11 +296,13 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
         }
 
         if (genericArg) {
-            return genericArg;
+            inferredGenericArgs.push_back(genericArg);
         } else {
-            error(call.getLocation(), "couldn't infer generic parameter '", genericParam.getName(), "'");
+            return {};
         }
-    });
+    }
+
+    return inferredGenericArgs;
 }
 
 static void validateGenericArgCount(size_t genericParamCount, const CallExpr& call) {
@@ -316,7 +320,13 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
     if (genericParams.empty()) return;
 
     if (call.getGenericArgs().empty()) {
-        call.setGenericArgs(inferGenericArgs(genericParams, call, params));
+        if (call.getArgs().empty()) {
+            error(call.getLocation(), "can't infer generic parameters without function arguments");
+        }
+
+        auto inferredGenericArgs = inferGenericArgs(genericParams, call, params);
+        if (inferredGenericArgs.empty()) return;
+        call.setGenericArgs(std::move(inferredGenericArgs));
         ASSERT(call.getGenericArgs().size() == genericParams.size());
     } else {
         validateGenericArgCount(genericParams.size(), call);

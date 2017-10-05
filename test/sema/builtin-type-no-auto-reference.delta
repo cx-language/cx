@@ -4,6 +4,6 @@ func foo(ref_i: int&) { }
 
 func main() {
     let i = 42;
-    // CHECK: [[@LINE+1]]:9: error: cannot implicitly pass value types by reference, add explicit '&'
+    // CHECK: [[@LINE+1]]:9: error: invalid argument #1 type 'int' to 'foo', expected 'int&'
     foo(i);
 }
