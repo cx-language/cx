@@ -340,24 +340,26 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
 //      counter++;
 //  }
 void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
-    if (!forStmt.getRangeExpr().getType().isRangeType()) {
+    auto rangeType = forStmt.getRangeExpr().getType();
+
+    if (!rangeType.isRangeType()) {
         error(forStmt.getRangeExpr().getLocation(),
               "IRGen doesn't support 'for'-loops over non-range iterables yet");
     }
 
-    if (!forStmt.getRangeExpr().getType().getIterableElementType().isInteger()) {
+    if (!rangeType.getIterableElementType().isInteger()) {
         error(forStmt.getRangeExpr().getLocation(),
               "IRGen doesn't support 'for'-loops over non-integer ranges yet");
     }
 
     beginScope();
 
-    Type elementType = forStmt.getRangeExpr().getType().getIterableElementType();
+    Type elementType = rangeType.getIterableElementType();
     auto* rangeExpr = codegenExpr(forStmt.getRangeExpr());
     auto* firstValue = codegenMemberAccess(rangeExpr, elementType, "start");
     auto* lastValue = codegenMemberAccess(rangeExpr, elementType, "end");
 
-    auto* counterAlloca = createEntryBlockAlloca(forStmt.getRangeExpr().getType().getIterableElementType(),
+    auto* counterAlloca = createEntryBlockAlloca(rangeType.getIterableElementType(),
                                                  nullptr, forStmt.getLoopVariableName());
     builder.CreateStore(firstValue, counterAlloca);
 
@@ -372,13 +374,13 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     auto* counter = builder.CreateLoad(counterAlloca, forStmt.getLoopVariableName());
 
     llvm::Value* cmp;
-    if (llvm::cast<BasicType>(*forStmt.getRangeExpr().getType()).getName() == "Range") {
+    if (rangeType.getName() == "Range") {
         if (elementType.isSigned())
             cmp = builder.CreateICmpSLT(counter, lastValue);
         else
             cmp = builder.CreateICmpULT(counter, lastValue);
     } else {
-        ASSERT(llvm::cast<BasicType>(*forStmt.getRangeExpr().getType()).getName() == "ClosedRange");
+        ASSERT(rangeType.getName() == "ClosedRange");
 
         if (elementType.isSigned())
             cmp = builder.CreateICmpSLE(counter, lastValue);
