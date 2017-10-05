@@ -59,3 +59,35 @@ func +(a: string, b: string) -> string {
     }
     return result
 }
+
+func ==(a: string, b: string) -> bool {
+
+    if (a.size() != b.size()) {
+        return false
+    }
+
+    for (index in 0..a.size()) {
+        if (a[index] != b[index]) {
+            return false
+        }
+    }
+
+    return true
+}
+
+func <(a: string, b: string) -> bool {
+
+    if (a.size() != b.size()) {
+        return a.size() < b.size()
+    }
+
+    for (index in 0..a.size()) {
+        if (a[index] < b[index]) {
+            return true
+        }
+        if (a[index] > b[index]) {
+            return false
+        }
+    }
+    return false
+}

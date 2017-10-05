@@ -1,0 +1,9 @@
+import "stdio.h"
+import "stdlib.h"
+
+func assert(condition: bool, testName: string) {
+    if (!condition) {
+        printf("Test '%s' failed\n", testName.cString())
+        exit(1)
+    }
+}
