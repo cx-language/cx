@@ -3,12 +3,17 @@ import "stdlib.h" // FIXME: Removing this breaks CI tests.
 struct String {
     var characters: Array<char>
 
-    init(stringLiteral: char[]&) {
+    /// Initializes an empty string.
+    init() {
         characters = Array<char>()
-        characters.reserve(stringLiteral.count + 1)
+    }
 
-        for (index in 0..stringLiteral.count) {
-            characters.append(stringLiteral[index])
+    init(string: StringRef) {
+        characters = Array<char>()
+        characters.reserve(string.size() + 1)
+
+        for (index in 0..string.size()) {
+            characters.append(string[index])
         }
 
         // TODO: Use null character literal instead of converting 0 to char.
@@ -52,7 +57,21 @@ struct String {
     }
 }
 
-func +(a: String, b: String) -> String {
+func +(a: StringRef, b: StringRef) -> String {
+    var result = String()
+
+    for (index in 0..a.size()) {
+        result.append(a[index])
+    }
+
+    for (index in 0..b.size()) {
+        result.append(b[index])
+    }
+
+    return result
+}
+
+func +(a: String, b: StringRef) -> String {
     var result = a
     for (index in 0..b.size()) {
         result.append(b[index])
@@ -60,7 +79,7 @@ func +(a: String, b: String) -> String {
     return result
 }
 
-func ==(a: String, b: String) -> bool {
+func ==(a: StringRef, b: StringRef) -> bool {
 
     if (a.size() != b.size()) {
         return false
@@ -75,7 +94,7 @@ func ==(a: String, b: String) -> bool {
     return true
 }
 
-func <(a: String, b: String) -> bool {
+func <(a: StringRef, b: StringRef) -> bool {
 
     if (a.size() != b.size()) {
         return a.size() < b.size()

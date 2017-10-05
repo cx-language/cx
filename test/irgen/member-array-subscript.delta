@@ -5,8 +5,8 @@ class C {
 
     func foo() {
         // CHECK: %[[A:[[:alnum:]_]+]] = getelementptr inbounds %C, %C* %this, i32 0, i32 0
-        // CHECK-NEXT: %[[B:[[:alnum:]_]+]] = load { i32*, i32 }, { i32*, i32 }* %[[A]]
-        // CHECK-NEXT: %[[C:[[:alnum:]_]+]] = extractvalue { i32*, i32 } %[[B]], 0
+        // CHECK-NEXT: %[[B:[[:alnum:]_]+]] = load %"ArrayRef<int>", %"ArrayRef<int>"* %[[A]]
+        // CHECK-NEXT: %[[C:[[:alnum:]_]+]] = extractvalue %"ArrayRef<int>" %[[B]], 0
         // CHECK-NEXT: %[[D:[[:alnum:]_]+]] = getelementptr i32, i32* %[[C]], i32 4
         // CHECK-NEXT: %{{[[:alnum:]_]+}} = load i32, i32* %[[D]]
         // CHECK-NEXT: ret void

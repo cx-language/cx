@@ -159,9 +159,9 @@ llvm::Type* IRGenerator::toIR(Type type) {
         case TypeKind::FunctionType:
             return llvm::IntegerType::getInt8Ty(ctx)->getPointerTo(); // FIXME: Temporary.
         case TypeKind::PointerType: {
-            if (type.getPointee().isUnsizedArrayType())
-                return llvm::StructType::get(toIR(type.getPointee().getElementType())->getPointerTo(),
-                                             llvm::Type::getInt32Ty(ctx));
+            if (type.getPointee().isUnsizedArrayType()) {
+                return toIR(BasicType::get("ArrayRef", type.getPointee().getElementType()));
+            }
             auto* pointeeType = toIR(type.getPointee());
             if (!pointeeType->isVoidTy()) return llvm::PointerType::get(pointeeType, 0);
             else return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0);
@@ -681,6 +681,13 @@ void IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
 }
 
 llvm::Type* IRGenerator::codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs) {
+    std::vector<Type> resolvedGenericArgs;
+    resolvedGenericArgs.reserve(genericArgs.size());
+    for (Type type : genericArgs) {
+        resolvedGenericArgs.push_back(resolve(type));
+    }
+    genericArgs = resolvedGenericArgs;
+
     auto name = mangle(decl, genericArgs);
 
     if (decl.getFields().empty()) {

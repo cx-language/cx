@@ -3,7 +3,7 @@
 // CHECK-LABEL: define i32 @main()
 func main() -> int {
     // TODO(optimize): ret i32 0
-    // CHECK: call %String @String.init
-    // CHECK-NEXT: call i32 @String.size
+    // CHECK: call %StringRef @StringRef.init
+    // CHECK-NEXT: call i32 @StringRef.size
     return "".size()
 }

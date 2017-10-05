@@ -1,0 +1,31 @@
+struct ArrayRef<Element> {
+    var data: Element*;
+    var size: int;
+
+    /// Initializes an ArrayRef referring to an empty array.
+    init() {
+        data = null;
+        size = 0;
+    }
+
+    /// Initializes an ArrayRef referring to an array of the given size located at the given memory
+    /// address.
+    init(data: Element*, size: int) {
+        this.data = data;
+        this.size = size;
+    }
+
+    /// Returns the number of elements in the array.
+    func size() -> int {
+        return size;
+    }
+
+    /// Returns a reference to the element at the given index.
+    func [](index: int) -> Element& {
+        return data.offsetUnsafely(int64(index))!;
+    }
+
+    func data() -> Element* {
+        return data;
+    }
+}

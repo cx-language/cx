@@ -43,7 +43,7 @@ Type TypeChecker::typecheckVarExpr(VarExpr& expr) const {
 }
 
 Type typecheckStringLiteralExpr(StringLiteralExpr&) {
-    return Type::getString();
+    return BasicType::get("StringRef", {});
 }
 
 Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {

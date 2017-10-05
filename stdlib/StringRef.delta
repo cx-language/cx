@@ -1,0 +1,20 @@
+struct StringRef {
+    var characters: ArrayRef<char>;
+
+    init(pointer: char*, length: int) {
+        characters = ArrayRef<char>(pointer, length);
+    }
+
+    func size() -> int {
+        return characters.size();
+    }
+
+    /// Returns the character at the given index.
+    func [](index: int) -> char {
+        return *characters[index];
+    }
+
+    func data() -> char* {
+        return characters.data();
+    }
+}

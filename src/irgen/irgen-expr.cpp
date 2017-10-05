@@ -23,19 +23,15 @@ llvm::Value* IRGenerator::codegenLvalueVarExpr(const VarExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr) {
-    if (expr.getType().isString()) {
+    if (expr.getType().isBasicType() && expr.getType().getName() == "StringRef") {
         ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
-        auto* charArrayRefType = llvm::StructType::get(llvm::Type::getInt8PtrTy(ctx),
-                                                       llvm::Type::getInt32Ty(ctx));
-        auto* charArrayRef = builder.CreateInsertValue(llvm::UndefValue::get(charArrayRefType),
-                                                       stringPtr, 0);
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
-        charArrayRef = builder.CreateInsertValue(charArrayRef, size, 1);
-        auto* initializer = functionInstantiations.at("String.init$stringLiteral:char[]&").getFunction();
-        return builder.CreateCall(initializer, charArrayRef);
+        auto* initializer = functionInstantiations.at("StringRef.init$pointer:char*$length:int").getFunction();
+        return builder.CreateCall(initializer, {stringPtr, size});
     } else {
         // Passing as C-string, i.e. char pointer.
+        ASSERT(expr.getType().isPointerType() && expr.getType().getPointee().isChar());
         return builder.CreateGlobalStringPtr(expr.getValue());
     }
 }

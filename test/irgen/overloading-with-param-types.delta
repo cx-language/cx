@@ -13,7 +13,7 @@ struct T {
 // CHECK: define void @f(%S %a)
 func f(a: S) {}
 
-// CHECK: define void @f.1(%T %a)
+// CHECK: define void [[F2:@f[\.0-9]*]](%T %a)
 func f(a: T) {}
 
 // CHECK: define void @"+.[[S:[0-9]+]]"(%S %a, %S %b)
@@ -29,7 +29,7 @@ func main() {
     // CHECK: call void @f(%S %s{{[0-9]+}})
     f(s)
 
-    // CHECK: call void @f.1(%T %t{{[0-9]+}})
+    // CHECK: call void [[F2]](%T %t{{[0-9]+}})
     f(t)
 
     // CHECK: call void @"+.[[S]]"(%S %s{{[0-9]+}}, %S %s{{[0-9]+}})

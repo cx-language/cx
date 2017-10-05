@@ -1,9 +1,9 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 func main() {
-    var a = ""
+    var a = String()
 
-    // CHECK: %[[A:[[:alnum:]_]+]] = call %String @"+"(%String %a{{[0-9]*}}, %String %{{[[:alnum:]_]+}})
+    // CHECK: %[[A:[[:alnum:]_]+]] = call %String @"+{{[\.0-9]*}}"(%String %a{{[0-9]*}}, %StringRef %{{[[:alnum:]_]+}})
     // CHECK-NEXT: store %String %[[A]], %String* %a
     a += ""
 }
