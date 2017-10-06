@@ -22,7 +22,7 @@ Module* Decl::getModule() const {
 }
 
 const FunctionType* FunctionLikeDecl::getFunctionType() const {
-    auto paramTypes = map(getParams(), *[](const ParamDecl& p) -> Type { return p.getType(); });
+    auto paramTypes = map(getParams(), [](const ParamDecl& p) -> Type { return p.getType(); });
     return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes)));
 }
 
