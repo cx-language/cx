@@ -18,6 +18,7 @@ Module* Decl::getModule() const {
         case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(this)->getParent()->getModule();
         case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(this)->getModule();
     }
+    llvm_unreachable("all cases handled");
 }
 
 const FunctionType* FunctionLikeDecl::getFunctionType() const {

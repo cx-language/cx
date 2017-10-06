@@ -286,6 +286,7 @@ static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
         case TypeKind::PointerType:
             return containsGenericParam(type.getPointee(), genericParam);
     }
+    llvm_unreachable("all cases handled");
 }
 
 static Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam) {
@@ -326,6 +327,7 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
             }
             return nullptr;
     }
+    llvm_unreachable("all cases handled");
 }
 
 std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
