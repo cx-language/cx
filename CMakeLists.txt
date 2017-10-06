@@ -23,7 +23,7 @@ find_package(Clang REQUIRED)
 add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_CMAKE_DIR}/../../clang/${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}/include")
 
 find_package(PkgConfig)
-pkg_check_modules(LIBEDIT REQUIRED libedit)
+pkg_check_modules(LIBEDIT libedit)
 
 set(YAML_CPP_BUILD_TOOLS OFF)
 set(YAML_CPP_BUILD_CONTRIB OFF)
