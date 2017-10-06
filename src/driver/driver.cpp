@@ -184,18 +184,14 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     // Link the output.
 
-    llvm::ErrorOr<std::string> ccPath = llvm::sys::findProgramByName("cc");
-    if (!ccPath) {
-        printErrorAndExit("couldn't find C compiler");
-    }
-
     llvm::SmallString<128> temporaryExecutablePath;
     if (auto error = llvm::sys::fs::createUniqueFile("delta-%%%%%%%%.out", temporaryExecutablePath)) {
         printErrorAndExit(error.message());
     }
 
+    auto ccPath = getCCompilerPath();
     const char* ccArgs[] = {
-        ccPath->c_str(),
+        ccPath.c_str(),
         temporaryOutputFilePath.c_str(),
         "-o",
         temporaryExecutablePath.c_str(),

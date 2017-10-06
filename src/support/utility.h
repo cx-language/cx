@@ -135,4 +135,6 @@ void warning(SourceLocation location, Args&&... args) {
     abort();
 }
 
+std::string getCCompilerPath();
+
 }

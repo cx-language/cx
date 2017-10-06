@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cctype>
+#include <llvm/Support/ErrorOr.h>
+#include <llvm/Support/Program.h>
 #include "utility.h"
 
 using namespace delta;
@@ -65,4 +67,13 @@ void delta::printDiagnostic(SourceLocation location, llvm::StringRef type,
 
 void CompileError::print() const {
     printDiagnostic(location, "error", llvm::raw_ostream::RED, message);
+}
+
+std::string delta::getCCompilerPath() {
+    for (const char* compiler : { "cc", "gcc", "clang" }) {
+        if (auto path = llvm::sys::findProgramByName(compiler)) {
+            return std::move(*path);
+        }
+    }
+    printErrorAndExit("couldn't find C compiler");
 }

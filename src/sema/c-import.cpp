@@ -1,10 +1,14 @@
+#include <cstdio>
 #include <vector>
 #include <memory>
 #include <cstdlib>
+#include <string>
 #include <unordered_map>
 #include <llvm/ADT/SmallVector.h>
-#include <llvm/ADT/StringSet.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Program.h>
 #include <clang/Basic/TargetInfo.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -269,6 +273,29 @@ static void addHeaderSearchPathsFromEnvVar(clang::CompilerInstance& ci, const ch
     }
 }
 
+static void addHeaderSearchPathsFromCCompilerOutput(clang::CompilerInstance& ci) {
+    std::string command = "echo | " + getCCompilerPath() + " -E -v - 2>&1 | grep '^ /'";
+    std::shared_ptr<FILE> process(popen(command.c_str(), "r"), pclose);
+
+    while (!std::feof(process.get())) {
+        std::string path;
+
+        while (true) {
+            int ch = std::fgetc(process.get());
+
+            if (ch == EOF || ch == '\n') {
+                break;
+            } else if (!path.empty() || ch != ' ') {
+                path += (char) ch;
+            }
+        }
+
+        if (llvm::sys::fs::is_directory(path)) {
+            ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
+        }
+    }
+}
+
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
                           llvm::ArrayRef<std::string> importSearchPaths) {
     auto it = allImportedModules.find(headerName);
@@ -292,6 +319,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
 
+    addHeaderSearchPathsFromCCompilerOutput(ci);
     ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
     ci.getHeaderSearchOpts().AddPath(CLANG_BUILTIN_INCLUDE_PATH, clang::frontend::System, false, false);

@@ -40,7 +40,10 @@ directory of the repository:
 After this, the following commands can be invoked from the `build` directory:
 
 - `ninja` builds the project.
-- `ninja check` runs the test suite and reports errors in case of failure. Note: if your checks fail, try `export C_INCLUDE_PATH=/usr/include/x86_64-linux-gnu/`
+- `ninja check` runs the test suite and reports errors in case of failure. Note:
+  if your checks fail because of not finding C standard library headers, you can
+  tell Delta where to find them with the `C_INCLUDE_PATH` or `CPATH` environment
+  variable: e.g. `export C_INCLUDE_PATH=/usr/include/x86_64-linux-gnu/`.
 - `ninja coverage` generates a test coverage report under `coverage/`.
 
 ## Documentation
