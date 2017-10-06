@@ -2,27 +2,34 @@
 
 extern func foo() -> bool;
 
+// CHECK: define void @bar()
 func bar() {
     if (foo()) {
-        return; // CHECK: ret void
+        // CHECK: then:
+        return; // CHECK-NEXT: ret void
     } else {
-        return; // CHECK: ret void
+        // CHECK: else:
+        return; // CHECK-NEXT: ret void
     }
 
     if (foo()) {
-        return; // CHECK: ret void
+        // CHECK: then1:
+        return; // CHECK-NEXT: ret void
         var i = 4; // CHECK-NOT: %i
     } else {
-        return; // CHECK: ret void
+        // CHECK: else2:
+        return; // CHECK-NEXT: ret void
         var j = 4; // CHECK-NOT: %j
     }
 
     while (foo()) {
-        return; // CHECK: ret void
+        // CHECK: body:
+        return; // CHECK-NEXT: ret void
     }
 
     while (foo()) {
-        return; // CHECK: ret void
+        // CHECK: body5:
+        return; // CHECK-NEXT: ret void
         var k = 4; // CHECK-NOT: %k
     }
 }
