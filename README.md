@@ -9,8 +9,6 @@ See the (incomplete) [specification document](docs/spec.md) for a detailed
 description of the language, or the more learning-oriented (and equally
 incomplete) [Delta Book](https://delta-lang.gitbooks.io/delta-book/content/).
 
-You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/delta-sandbox).
-
 ## Building from source
 
 Clone the repository including its submodules:
