@@ -3,6 +3,7 @@
 func foo(i: uint16) {
     // CHECK: %f = alloca float
     // CHECK-NEXT: %u = alloca i64
+    // CHECK-NEXT: %s = alloca i32
     // CHECK-NEXT: %1 = uitofp i16 %i to float
     // CHECK-NEXT: store float %1, float* %f
     let f = float32(i);
@@ -10,5 +11,7 @@ func foo(i: uint16) {
     // CHECK-NEXT: %2 = fptosi float %f1 to i64
     // CHECK-NEXT: store i64 %2, i64* %u
     let u = int64(f);
+    // CHECK-NEXT: store i32 1, i32* %s
+    let s = uint(true);
     // CHECK-NEXT: ret void
 }

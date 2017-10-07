@@ -735,9 +735,6 @@ Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
 
     switch (sourceType.getKind()) {
         case TypeKind::BasicType:
-            if (sourceType.isBool() && targetType.isInt()) {
-                return targetType; // bool -> int
-            }
         case TypeKind::ArrayType:
         case TypeKind::TupleType:
         case TypeKind::FunctionType:

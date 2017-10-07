@@ -275,7 +275,8 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
         return builder.CreateZExtOrTrunc(codegenExpr(expr), toIR(type));
     } else if (expr.getType().isSigned() && type.isInteger()) {
         return builder.CreateSExtOrTrunc(codegenExpr(expr), toIR(type));
-    } else if (expr.getType().isInteger() && (type.isInteger() || type.isChar())) {
+    } else if ((expr.getType().isInteger() || expr.getType().isChar() || expr.getType().isBool())
+               && (type.isInteger() || type.isChar())) {
         return builder.CreateIntCast(codegenExpr(expr), toIR(type), expr.getType().isSigned());
     } else if (expr.getType().isFloatingPoint()) {
         if (type.isSigned()) return builder.CreateFPToSI(codegenExpr(expr), toIR(type));
