@@ -393,8 +393,6 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
         if (inferredGenericArgs.empty()) return;
         call.setGenericArgs(std::move(inferredGenericArgs));
         ASSERT(call.getGenericArgs().size() == genericParams.size());
-    } else {
-        validateGenericArgCount(genericParams.size(), call);
     }
 
     auto genericArg = call.getGenericArgs().begin();
@@ -457,6 +455,15 @@ FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef c
         switch (decl->getKind()) {
             case DeclKind::FunctionDecl: case DeclKind::MethodDecl: {
                 auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
+
+                if (!expr.getGenericArgs().empty()
+                    && expr.getGenericArgs().size() != functionDecl.getGenericParams().size()) {
+                    if (decls.size() == 1) {
+                        validateGenericArgCount(functionDecl.getGenericParams().size(), expr);
+                    }
+                    continue;
+                }
+
                 SAVE_STATE(currentGenericArgs);
 
                 if (expr.isMethodCall()) {
