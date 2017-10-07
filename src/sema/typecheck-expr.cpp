@@ -16,13 +16,31 @@
 
 using namespace delta;
 
+static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
+    const Movable* movable;
+
+    switch (decl.getKind()) {
+        case DeclKind::ParamDecl: movable = &llvm::cast<ParamDecl>(decl); break;
+        case DeclKind::VarDecl: movable = &llvm::cast<VarDecl>(decl); break;
+        default: return;
+    }
+
+    if (movable->isMoved()) {
+        error(expr.getLocation(), "use of moved value");
+    }
+}
+
 Type TypeChecker::typecheckVarExpr(VarExpr& expr) const {
     Decl& decl = findDecl(expr.getIdentifier(), expr.getLocation());
     expr.setDecl(&decl);
 
     switch (decl.getKind()) {
-        case DeclKind::VarDecl: return llvm::cast<VarDecl>(decl).getType();
-        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(decl).getType();
+        case DeclKind::VarDecl:
+            checkNotMoved(decl, expr);
+            return llvm::cast<VarDecl>(decl).getType();
+        case DeclKind::ParamDecl:
+            checkNotMoved(decl, expr);
+            return llvm::cast<ParamDecl>(decl).getType();
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl: return llvm::cast<FunctionDecl>(decl).getFunctionType();
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot refer to generic parameters yet");
@@ -634,6 +652,27 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     llvm_unreachable("all cases handled");
 }
 
+bool TypeChecker::isImplicitlyCopyable(Type type) const {
+    switch (type.getKind()) {
+        case TypeKind::BasicType:
+            if (auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(*type))) {
+                return typeDecl->passByValue();
+            }
+            return true;
+        case TypeKind::ArrayType:
+            return false;
+        case TypeKind::TupleType:
+            return llvm::all_of(llvm::cast<TupleType>(*type).getSubtypes(), [&](Type type) {
+                return isImplicitlyCopyable(type);
+            });
+        case TypeKind::FunctionType:
+            llvm_unreachable("unimplemented");
+        case TypeKind::PointerType:
+            return true;
+    }
+    llvm_unreachable("all cases handled");
+}
+
 bool TypeChecker::validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamDecl> params,
                                bool isVariadic, llvm::StringRef functionName,
                                SourceLocation location) const {
@@ -662,6 +701,16 @@ bool TypeChecker::validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<Par
             if (returnOnError) return false;
             error(arg.getLocation(), "invalid argument #", i + 1, " type '", argType, "' to '", functionName,
                   "', expected '", param->getType(), "'");
+        }
+
+        if (arg.getValue()->isVarExpr() && !isImplicitlyCopyable(param->getType())) {
+            auto* decl = llvm::cast<VarExpr>(arg.getValue())->getDecl();
+
+            switch (decl->getKind()) {
+                case DeclKind::ParamDecl: llvm::cast<ParamDecl>(decl)->setMoved(true); break;
+                case DeclKind::VarDecl: llvm::cast<VarDecl>(decl)->setMoved(true); break;
+                default: break;
+            }
         }
     }
 

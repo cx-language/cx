@@ -1,0 +1,13 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+class T {
+    init() {}
+}
+
+func f(t: T) {}
+
+func g() {
+    let t = T();
+    f(t);
+    f(t); // CHECK: [[@LINE]]:7: error: use of moved value
+}

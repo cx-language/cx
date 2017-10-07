@@ -62,7 +62,16 @@ private:
 
 inline Decl::~Decl() {}
 
-class ParamDecl : public Decl {
+class Movable {
+public:
+    bool isMoved() const { return moved; }
+    void setMoved(bool moved) { this->moved = moved; }
+
+private:
+    bool moved = false;
+};
+
+class ParamDecl : public Decl, public Movable {
 public:
     ParamDecl(Type type, std::string&& name, SourceLocation location)
     : Decl(DeclKind::ParamDecl), type(type), name(std::move(name)), location(location),
@@ -258,7 +267,7 @@ private:
     Module& module;
 };
 
-class VarDecl : public Decl {
+class VarDecl : public Decl, public Movable {
 public:
     VarDecl(Type type, std::string&& name, std::shared_ptr<Expr>&& initializer,
             Module& module, SourceLocation location)

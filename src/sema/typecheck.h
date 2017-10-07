@@ -106,6 +106,7 @@ private:
     FunctionLikeDecl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
+    bool isImplicitlyCopyable(Type type) const;
     bool validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamDecl> params,
                       bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
