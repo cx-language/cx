@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 #include "../ast/expr.h"
@@ -151,8 +152,8 @@ private:
     class FunctionInstantiation {
     public:
         FunctionInstantiation(const FunctionLikeDecl& decl, llvm::ArrayRef<Type> receiverTypeGenericArgs,
-                              llvm::ArrayRef<Type> genericArgs, llvm::Function* function)
-        : decl(decl), receiverTypeGenericArgs(receiverTypeGenericArgs), genericArgs(genericArgs),
+                              std::vector<Type> genericArgs, llvm::Function* function)
+        : decl(decl), receiverTypeGenericArgs(receiverTypeGenericArgs), genericArgs(std::move(genericArgs)),
           function(function) {}
         const FunctionLikeDecl& getDecl() const { return decl; }
         llvm::ArrayRef<Type> getReceiverTypeGenericArgs() const { return receiverTypeGenericArgs; }
@@ -162,7 +163,7 @@ private:
     private:
         const FunctionLikeDecl& decl;
         llvm::ArrayRef<Type> receiverTypeGenericArgs;
-        llvm::ArrayRef<Type> genericArgs;
+        std::vector<Type> genericArgs;
         llvm::Function* function;
     };
 

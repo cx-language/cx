@@ -1,0 +1,21 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define i32 @main()
+// CHECK-NEXT: call void @"g<int>"(i32 42)
+// CHECK-NEXT: call void @"g<bool>"(i1 false)
+func main() {
+    g(42);
+    g(false);
+}
+
+// CHECK: define void @"g<int>"(i32 %t)
+// CHECK-NEXT: call void @"f<int>"(i32 %t)
+// CHECK: define void @"g<bool>"(i1 %t)
+// CHECK-NEXT: call void @"f<bool>"(i1 %t)
+func g<T>(t: T) {
+    f(t);
+}
+
+// CHECK-DAG: define void @"f<int>"(i32 %t)
+// CHECK-DAG: define void @"f<bool>"(i1 %t)
+func f<T>(t: T) {}

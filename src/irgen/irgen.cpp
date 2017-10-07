@@ -499,6 +499,9 @@ void IRGenerator::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
 llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
                                               llvm::ArrayRef<Type> functionGenericArgs,
                                               Type receiverType, std::string&& mangledName) {
+    auto resolvedFunctionGenericArgs = map(functionGenericArgs, [&](Type type) { return resolve(type); });
+    functionGenericArgs = resolvedFunctionGenericArgs;
+
     llvm::ArrayRef<Type> receiverTypeGenericArgs;
     if (receiverType) {
         receiverTypeGenericArgs = llvm::cast<BasicType>(*receiverType.removePointer()).getGenericArgs();
