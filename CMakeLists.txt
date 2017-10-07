@@ -41,7 +41,7 @@ add_subdirectory(src/package-manager)
 add_subdirectory(src/sema)
 add_subdirectory(src/support)
 
-add_custom_target(check COMMAND lit --verbose ${PROJECT_SOURCE_DIR}/test
+add_custom_target(check COMMAND lit --verbose --incremental ${PROJECT_SOURCE_DIR}/test
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dnot_path="$<TARGET_FILE:not>"
