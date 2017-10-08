@@ -39,7 +39,7 @@ public:
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
 
     Decl& findDecl(llvm::StringRef name, SourceLocation location, bool everywhere = false) const;
-    llvm::SmallVector<Decl*, 1> findDecls(llvm::StringRef name, bool everywhere = false) const;
+    std::vector<Decl*> findDecls(llvm::StringRef name, bool everywhere = false) const;
 
     void addToSymbolTable(FunctionDecl& decl) const;
     void addToSymbolTable(FunctionDecl&& decl) const;

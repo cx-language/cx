@@ -43,7 +43,7 @@ auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(m
 /// Appends the elements of `source` to `target`.
 template<typename TargetContainer, typename SourceContainer>
 static void append(TargetContainer& target, const SourceContainer& source) {
-    target.append(source.begin(), source.end());
+    target.insert(target.end(), source.begin(), source.end());
 }
 
 template<typename T>
