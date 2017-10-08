@@ -1,8 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-extern func malloc(n: uint64) -> void*;
-
-func main() {
-    // CHECK: [[@LINE+1]]:18: error: illegal cast from 'void*' to 'mutable int*'
-    let buffer = cast<mutable int*>(malloc(1));
+func f(v: void*) {
+    // CHECK: [[@LINE+1]]:13: error: illegal cast from 'void*' to 'mutable int*'
+    let p = cast<mutable int*>(v);
 }

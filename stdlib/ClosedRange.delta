@@ -1,5 +1,3 @@
-import "stdlib.h";
-
 struct ClosedRange<T> {
     var start: T;
     var end: T;

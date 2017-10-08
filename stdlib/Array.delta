@@ -1,5 +1,3 @@
-import "stdlib.h";
-
 struct Array<Element> {
     var bufferPointer: mutable Element*;
     var size: int;

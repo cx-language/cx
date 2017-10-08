@@ -1,5 +1,3 @@
-import "stdlib.h" // FIXME: Removing this breaks CI tests.
-
 struct String {
     var characters: Array<char>
 

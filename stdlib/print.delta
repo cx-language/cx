@@ -1,5 +1,3 @@
-import "stdio.h"
-
 func print(text: StringRef) {
     printf("%.*s\n", text.size(), text.data())
 }

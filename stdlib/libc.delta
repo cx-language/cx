@@ -1,0 +1,5 @@
+extern func malloc(size: uint64) -> mutable void*;
+extern func free(ptr: mutable void*);
+
+extern func printf(format: char*, ...) -> int;
+extern func getchar() -> int;
