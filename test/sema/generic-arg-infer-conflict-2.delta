@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func f(a: uint) {
+    // CHECK: [[@LINE+1]]:16: error: couldn't infer generic parameter 'T' of 'Range' because of conflicting argument types 'int' and 'uint'
+    for (i in 0..a) {} // TODO: Treat the integer literal here as a uint so the inference succeeds.
+}

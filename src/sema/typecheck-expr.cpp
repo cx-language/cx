@@ -371,8 +371,8 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
                 if (!genericArg) {
                     genericArg = maybeGenericArg;
                 } else if (!maybeGenericArg.isImplicitlyConvertibleTo(genericArg)) {
-                    error(std::get<1>(tuple).getLocation(), "couldn't infer generic parameter '",
-                          genericParam.getName(), "' because of conflicting argument types '",
+                    error(call.getLocation(), "couldn't infer generic parameter '", genericParam.getName(),
+                          "' of '", call.getFunctionName(), "' because of conflicting argument types '",
                           genericArg, "' and '", maybeGenericArg, "'");
                 }
             }
