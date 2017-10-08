@@ -878,11 +878,17 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiv
 /// function-decl ::= function-proto '{' stmt* '}'
 std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool requireBody = true) {
     auto decl = parseFunctionProto(false, receiverTypeDecl);
+
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
         decl->setBody(std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE)));
         parse(RBRACE);
     }
+
+    if (lookAhead(-1) != RBRACE) {
+        parseStmtTerminator();
+    }
+
     return decl;
 }
 
