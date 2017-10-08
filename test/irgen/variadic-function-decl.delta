@@ -1,0 +1,4 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: declare void @f(i32, ...)
+extern func f(i: int, ...);

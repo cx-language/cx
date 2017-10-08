@@ -783,10 +783,15 @@ ParamDecl parseParam() {
 /// param-list ::= '(' params ')'
 /// params ::= '' | non-empty-params
 /// non-empty-params ::= param-decl | param-decl ',' non-empty-params
-std::vector<ParamDecl> parseParamList() {
+std::vector<ParamDecl> parseParamList(bool* isVariadic) {
     parse(LPAREN);
     std::vector<ParamDecl> params;
     while (currentToken() != RPAREN) {
+        if (isVariadic && currentToken() == DOTDOTDOT) {
+            consumeToken();
+            *isVariadic = true;
+            break;
+        }
         params.emplace_back(parseParam());
         if (currentToken() != RPAREN) parse(COMMA);
     }
@@ -816,7 +821,7 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
 /// generic-function-proto ::= 'func' id generic-param-list param-list ('->' type)?
 /// generic-param-list ::= '<' generic-param-decls '>'
 /// generic-param-decls ::= id | id ',' generic-param-decls
-std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
+std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl) {
     ASSERT(currentToken() == FUNC);
     consumeToken();
 
@@ -847,7 +852,8 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
         parseGenericParamList(genericParams);
     }
 
-    auto params = parseParamList();
+    bool isVariadic = false;
+    auto params = parseParamList(isExtern ? &isVariadic : nullptr);
 
     Type returnType = Type::getVoid();
     if (currentToken() == RARROW) {
@@ -860,7 +866,7 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
     }
 
     FunctionProto proto(std::move(name), std::move(params), std::move(returnType),
-                        std::move(genericParams), false);
+                        std::move(genericParams), isVariadic);
 
     if (receiverTypeDecl) {
         return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, nameLocation);
@@ -871,7 +877,7 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(TypeDecl* receiverTypeDecl) {
 
 /// function-decl ::= function-proto '{' stmt* '}'
 std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool requireBody = true) {
-    auto decl = parseFunctionProto(receiverTypeDecl);
+    auto decl = parseFunctionProto(false, receiverTypeDecl);
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
         decl->setBody(std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE)));
@@ -884,7 +890,7 @@ std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool
 std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
     ASSERT(currentToken() == EXTERN);
     consumeToken();
-    auto decl = parseFunctionProto(/* receiverTypeDecl */ nullptr);
+    auto decl = parseFunctionProto(true, nullptr);
     parseStmtTerminator();
     return decl;
 }
@@ -892,7 +898,7 @@ std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
 /// init-decl ::= 'init' param-list '{' stmt* '}'
 std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl) {
     auto initLocation = parse(INIT).getLocation();
-    auto params = parseParamList();
+    auto params = parseParamList(nullptr);
     parse(LBRACE);
     auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
     parse(RBRACE);
