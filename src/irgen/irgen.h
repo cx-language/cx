@@ -23,8 +23,8 @@ llvm::LLVMContext& getContext();
 struct Scope {
     Scope(IRGenerator& irGenerator) : irGenerator(irGenerator) {}
     void addDeferredExpr(const Expr& expr) { deferredExprs.emplace_back(&expr); }
-    void addDeinitToCall(llvm::Function* deinit, llvm::Value* value) {
-        deinitsToCall.emplace_back(deinit, value);
+    void addDeinitToCall(llvm::Function* deinit, llvm::Value* value, Type type) {
+        deinitsToCall.emplace_back(DeferredDeinit{deinit, value, type});
     }
     void addLocalValue(std::string&& name, llvm::Value* value) {
         bool didInsert = localValues.emplace(std::move(name), value).second;
@@ -35,8 +35,14 @@ struct Scope {
     void clear();
 
 private:
+    struct DeferredDeinit {
+        llvm::Function* function;
+        llvm::Value* value;
+        Type type;
+    };
+
     llvm::SmallVector<const Expr*, 8> deferredExprs;
-    llvm::SmallVector<std::pair<llvm::Function*, llvm::Value*>, 8> deinitsToCall;
+    llvm::SmallVector<DeferredDeinit, 8> deinitsToCall;
     std::unordered_map<std::string, llvm::Value*> localValues;
     IRGenerator& irGenerator;
 };
@@ -64,7 +70,7 @@ private:
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                llvm::ArrayRef<Type> genericArgs);
     void codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Function& function);
-    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
+    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type);
     llvm::Module& getIRModule() { return module; }
 
     llvm::Function* getDeinitializerFor(Type type);
@@ -91,8 +97,7 @@ private:
     llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr);
     llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, const Expr& rhs);
     llvm::Value* codegenBinaryExpr(const BinaryExpr& expr);
-    llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType,
-                                       bool forceByReference = false);
+    llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType);
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
     llvm::Value* codegenCallExpr(const CallExpr& expr);
     llvm::Value* codegenCastExpr(const CastExpr& expr);
@@ -145,7 +150,7 @@ private:
     void beginScope();
     void endScope();
     void deferEvaluationOf(const Expr& expr);
-    void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
+    void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type);
     Scope& globalScope() { return scopes.front(); }
 
 private:

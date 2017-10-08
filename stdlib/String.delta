@@ -1,4 +1,4 @@
-struct String {
+class String {
     var characters: Array<char>
 
     /// Initializes an empty string.

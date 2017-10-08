@@ -241,8 +241,7 @@ bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* target
            && targetType->getStructElementType(1)->isIntegerTy(32);
 }
 
-llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType,
-                                                bool forceByReference) {
+llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
     if (targetType && isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
         ASSERT(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
         auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegenExpr(expr), 0, 0);
@@ -259,9 +258,8 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     if (expr.isRvalue() || !exprType.isBasicType())
         return codegenExpr(expr);
 
-    auto it = structs.find(exprType.getName());
-    if ((it == structs.end() || it->second.second->passByValue()) && !forceByReference) {
-        if (expr.getType().isPointerType() && targetType && !targetType->isPointerTy()) {
+    if (!targetType->isPointerTy()) {
+        if (expr.getType().isPointerType()) {
             return builder.CreateLoad(codegenExpr(expr));
         }
     } else if (!expr.getType().isPointerType()) {
@@ -308,10 +306,8 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
 
     if ((calleeDecl && ((calleeDecl->isFunctionDecl() && llvm::cast<FunctionDecl>(calleeDecl)->isMethodDecl()) ||
                         calleeDecl->isDeinitDecl())) || (!calleeDecl && function->getName() == "offsetUnsafely")) {
-        bool forceByReference = calleeDecl && calleeDecl->isFunctionDecl() && llvm::cast<FunctionDecl>(calleeDecl)->isMutating();
-
         if (expr.getReceiver()) {
-            args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param->getType(), forceByReference));
+            args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param->getType()));
         } else {
             auto* thisValue = findValue("this", nullptr);
             if (thisValue->getType()->isPointerTy() && !param->getType()->isPointerTy()) {

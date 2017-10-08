@@ -1,0 +1,26 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+
+class S<E> {
+    // CHECK-DAG: define {} @"S<A>.init"()
+    init() {}
+
+    // CHECK-DAG: define void @"S<A>.s"({}* %this)
+    func s() {}
+}
+
+struct A {
+    // CHECK-DAG: define void @A.h({} %this)
+    func h() {}
+}
+
+// MAIN: define i32 @main()
+func main() {
+    // MAIN-NEXT: %x = alloca {}
+    // MAIN-NEXT: %1 = call {} @"S<A>.init"()
+    // MAIN-NEXT: store {} %1, {}* %x
+    let x = S<A>();
+
+    // MAIN-NEXT: call void @"S<A>.s"({}* %x)
+    x.s();
+}

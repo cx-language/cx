@@ -41,7 +41,7 @@ std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> typeGenericArgs
 
 void Scope::onScopeEnd() {
     for (const Expr* expr : llvm::reverse(deferredExprs)) irGenerator.codegenExpr(*expr);
-    for (auto& p : llvm::reverse(deinitsToCall)) irGenerator.createDeinitCall(p.first, p.second);
+    for (auto& p : llvm::reverse(deinitsToCall)) irGenerator.createDeinitCall(p.function, p.value, p.type);
 }
 
 void Scope::clear() {
@@ -74,7 +74,7 @@ void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value)
 
     if (type && type.isBasicType()) {
         llvm::Function* deinit = getDeinitializerFor(type);
-        if (deinit) deferDeinitCall(deinit, value);
+        if (deinit) deferDeinitCall(deinit, value, type);
     }
 }
 
@@ -189,8 +189,8 @@ void IRGenerator::deferEvaluationOf(const Expr& expr) {
     scopes.back().addDeferredExpr(expr);
 }
 
-void IRGenerator::deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
-    scopes.back().addDeinitToCall(deinit, valueToDeinit);
+void IRGenerator::deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type) {
+    scopes.back().addDeinitToCall(deinit, valueToDeinit, type);
 }
 
 void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
@@ -447,7 +447,7 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
     }
 }
 
-void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
+void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type) {
     // Prevent recursively destroying the argument in struct deinitializers.
     if (llvm::isa<llvm::Argument>(valueToDeinit)
         && builder.GetInsertBlock()->getParent()->getName().endswith(".deinit")) return;
@@ -455,8 +455,9 @@ void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToD
     if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
         builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
     } else if (!valueToDeinit->getType()->isPointerTy() && deinit->arg_begin()->getType()->isPointerTy()) {
-        llvm::errs() << "deinitialization of by-value class parameters not implemented yet\n";
-        abort();
+        auto* alloca = createEntryBlockAlloca(type);
+        builder.CreateStore(valueToDeinit, alloca);
+        builder.CreateCall(deinit, alloca);
     } else {
         builder.CreateCall(deinit, valueToDeinit);
     }

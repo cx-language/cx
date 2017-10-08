@@ -1,4 +1,4 @@
-struct Array<Element> {
+class Array<Element> {
     var bufferPointer: mutable Element*;
     var size: int;
     var capacity: int;
