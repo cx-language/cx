@@ -599,7 +599,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
                   receiverType, "', pointer may be null");
         }
     } else {
-        decl = &resolveOverload(expr, expr.getFunctionName());
+        decl = &resolveOverload(expr, expr.getFunctionName(this));
 
         if (decl->isMethodDecl() && !decl->isInitDecl()) {
             auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));

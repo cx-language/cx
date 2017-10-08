@@ -169,7 +169,7 @@ public:
     : Expr(ExprKind::CallExpr, location), callee(std::move(callee)), args(std::move(args)),
       genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
-    llvm::StringRef getFunctionName() const;
+    llvm::StringRef getFunctionName(const TypeResolver* resolver = nullptr) const;
     std::string getMangledFunctionName(const TypeResolver& resolver) const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
     bool isInitCall() const;

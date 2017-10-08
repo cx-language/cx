@@ -22,9 +22,23 @@ bool Expr::isLvalue() const {
     llvm_unreachable("all cases handled");
 }
 
-llvm::StringRef CallExpr::getFunctionName() const {
+llvm::StringRef CallExpr::getFunctionName(const TypeResolver* resolver) const {
     switch (getCallee().getKind()) {
-        case ExprKind::VarExpr: return llvm::cast<VarExpr>(getCallee()).getIdentifier();
+        case ExprKind::VarExpr: {
+            auto identifier = llvm::cast<VarExpr>(getCallee()).getIdentifier();
+
+            if (resolver) {
+                if (Type type = resolver->resolveTypePlaceholder(identifier)) {
+                    if (type.isBasicType()) {
+                        return type.getName();
+                    } else {
+                        llvm_unreachable("unimplemented");
+                    }
+                }
+            }
+
+            return identifier;
+        }
         case ExprKind::MemberExpr: return llvm::cast<MemberExpr>(getCallee()).getMemberName();
         default: return "(anonymous function)";
     }

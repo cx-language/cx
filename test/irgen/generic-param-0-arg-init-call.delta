@@ -1,0 +1,20 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class C {
+    var i: int;
+    init() {}
+}
+
+class A<T> {
+    // CHECK: define {} @"A<C>.init"()
+    // CHECK-NEXT: %t = alloca %C
+    // CHECK-NEXT: %1 = alloca {}
+    // CHECK-NEXT: %2 = call %C @C.init()
+    init() {
+        let t = T();
+    }
+}
+
+func main() {
+    let a = A<C>();
+}
