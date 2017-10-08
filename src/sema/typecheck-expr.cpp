@@ -482,7 +482,9 @@ FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef c
                     continue;
                 }
 
-                SAVE_STATE(currentGenericArgs);
+                Type receiverType;
+
+                std::unordered_map<std::string, Type> receiverGenericArgs;
 
                 if (expr.isMethodCall()) {
                     Type receiverType = expr.getReceiver()->getType().removePointer();
@@ -490,11 +492,22 @@ FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef c
                         TypeDecl* typeDecl = getTypeDecl(llvm::cast<BasicType>(*receiverType));
                         ASSERT(typeDecl->getGenericParams().size() == receiverType.getGenericArgs().size());
                         for (auto t : llvm::zip_first(typeDecl->getGenericParams(), receiverType.getGenericArgs())) {
-                            currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
+                            receiverGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
+                        }
+                    }
+                } else if (auto* typeDecl = currentFunction ? currentFunction->getTypeDecl() : nullptr) {
+                    for (auto& decl : typeDecl->getMemberDecls()) {
+                        if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl.get())) {
+                            if (functionDecl->getName() == expr.getFunctionName()) {
+                                receiverGenericArgs = currentGenericArgs;
+                            }
                         }
                     }
                 }
 
+                SAVE_STATE(currentGenericArgs);
+
+                currentGenericArgs = std::move(receiverGenericArgs);
                 setCurrentGenericArgs(functionDecl.getGenericParams(), expr, functionDecl.getParams());
 
                 if (decls.size() == 1) {
@@ -567,7 +580,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         fatalError("anonymous function calls not implemented yet");
     }
 
-    if (Type::isBuiltinScalar(expr.getFunctionName())) {
+    if (Type::isBuiltinScalar(expr.getFunctionName(this))) {
         return typecheckBuiltinConversion(expr);
     }
 

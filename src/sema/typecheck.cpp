@@ -352,8 +352,8 @@ Decl& TypeChecker::findDecl(llvm::StringRef name, SourceLocation location, bool 
 std::vector<Decl*> TypeChecker::findDecls(llvm::StringRef name, bool everywhere) const {
     std::vector<Decl*> decls;
 
-    if (auto* methodDecl = llvm::dyn_cast_or_null<MethodDecl>(currentFunction)) {
-        for (auto& decl : methodDecl->getTypeDecl()->getMemberDecls()) {
+    if (auto* typeDecl = currentFunction ? currentFunction->getTypeDecl() : nullptr) {
+        for (auto& decl : typeDecl->getMemberDecls()) {
             if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl.get())) {
                 if (functionDecl->getName() == name) {
                     decls.emplace_back(decl.get());

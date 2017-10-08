@@ -14,7 +14,12 @@ struct S {
 }
 
 class T<U> {
-    init() { }
+    // CHECK: define {} @"T<int>.init"()
+    // CHECK-NEXT: %1 = alloca {}
+    // CHECK-NEXT: call void @"T<int>.baz"({}* %1)
+    init() {
+        baz()
+    }
 
     // CHECK: define void @"T<int>.baz"({}* %this)
     // CHECK-NEXT: call void @"T<int>.qux"({}* %this)
