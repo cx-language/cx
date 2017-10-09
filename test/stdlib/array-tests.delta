@@ -1,0 +1,28 @@
+// RUN: check_exit_status 0 %delta run %s test-support.delta
+
+class C {
+    let i: int;
+
+    init(i: int) {
+        this.i = i;
+    }
+
+    deinit() {}
+}
+
+func main() {
+    var a = Array<C>();
+    assert(a.size() == 0 && a.capacity() >= 0, "initial size and capacity are valid");
+
+    a.append(C(1));
+    assert(a[0].i == 1, "appended element has correct value");
+
+    a.append(C(2));
+    a.append(C(3));
+    a.removeAt(1);
+    assert(a[0].i == 1 && a[1].i == 3, "elements after removed element are shifted towards beginning");
+
+    a.removeLast();
+    a.append(C(4));
+    assert(a.size() == 2 && a.capacity() >= 2, "size and capacity are valid after adding and removing elements");
+}
