@@ -123,7 +123,7 @@ private:
     mutable FunctionLikeDecl* currentFunction;
     mutable std::unordered_map<std::string, Type> currentGenericArgs;
     mutable bool typecheckingGenericFunction;
-    mutable std::vector<std::pair<FunctionDecl&, CallExpr&>> genericFunctionInstantiationsToTypecheck;
+    mutable std::vector<std::pair<FunctionDecl&, std::unordered_map<std::string, Type>>> genericFunctionInstantiationsToTypecheck;
 };
 
 }

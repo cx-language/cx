@@ -642,17 +642,16 @@ void TypeChecker::typecheckMemberDecl(Decl& decl) const {
 }
 
 void TypeChecker::postProcess() {
+    SAVE_STATE(currentGenericArgs);
     SAVE_STATE(typecheckingGenericFunction);
     typecheckingGenericFunction = true;
 
     while (!genericFunctionInstantiationsToTypecheck.empty()) {
         auto genericFunctionInstantiations = std::move(genericFunctionInstantiationsToTypecheck);
-        for (auto functionDeclAndCallExpr : genericFunctionInstantiations) {
-            setCurrentGenericArgsForGenericFunction(functionDeclAndCallExpr.first,
-                                                    functionDeclAndCallExpr.second);
+        for (auto& functionDeclAndGenericArgs : genericFunctionInstantiations) {
+            currentGenericArgs = functionDeclAndGenericArgs.second;
             // TODO: Don't typecheck more than once with the same generic arguments.
-            typecheckFunctionLikeDecl(functionDeclAndCallExpr.first);
-            currentGenericArgs.clear();
+            typecheckFunctionLikeDecl(functionDeclAndGenericArgs.first);
         }
     }
 }

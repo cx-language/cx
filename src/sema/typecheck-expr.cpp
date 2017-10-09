@@ -638,10 +638,21 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         if (!functionDecl->isGeneric() && !hasGenericReceiverType) {
             return functionDecl->getFunctionType()->getReturnType();
         } else {
+            auto previousGenericArgs = currentGenericArgs;
             SAVE_STATE(currentGenericArgs);
             setCurrentGenericArgsForGenericFunction(*functionDecl, expr);
+
+            for (auto& current : currentGenericArgs) {
+                if (auto* basicType = llvm::dyn_cast<BasicType>(&*current.second)) {
+                    auto previous = previousGenericArgs.find(basicType->getName());
+                    if (previous != previousGenericArgs.end()) {
+                        current.second = previous->second;
+                    }
+                }
+            }
+
             // TODO: Don't typecheck more than once with the same generic arguments.
-            genericFunctionInstantiationsToTypecheck.emplace_back(*functionDecl, expr);
+            genericFunctionInstantiationsToTypecheck.emplace_back(*functionDecl, currentGenericArgs);
             return resolve(functionDecl->getFunctionType()->getReturnType());
         }
     } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
