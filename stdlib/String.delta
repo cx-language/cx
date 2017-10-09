@@ -1,110 +1,111 @@
 class String {
-    var characters: Array<char>
+    var characters: Array<char>;
 
     /// Initializes an empty string.
     init() {
-        characters = Array<char>()
+        characters = Array<char>();
     }
 
     init(string: StringRef) {
-        characters = Array<char>()
-        characters.reserve(string.size() + 1)
+        characters = Array<char>();
+        characters.reserve(string.size() + 1);
 
         for (index in 0..string.size()) {
-            characters.append(string[index])
+            characters.append(string[index]);
         }
 
         // TODO: Use null character literal instead of converting 0 to char.
-        characters.append(char(0))
+        characters.append(char(0));
     }
 
     func size() -> int {
-        return characters.size() - 1
+        return characters.size() - 1;
     }
 
     /// Returns the character at the given index.
     func [](index: int) -> char {
-        return *characters[index]
+        return *characters[index];
     }
 
     /// Returns the string as a C-style, i.e. null-terminated, string.
     /// Modifying `this` after calling this function invalidates the returned pointer.
     func cString() -> char* {
-        return data()
+        return data();
     }
 
     func data() -> char* {
-        return characters[0]
+        return characters[0];
     }
 
     mutating func append(character: char) {
-        *characters[size()] = character
+        *characters[size()] = character;
         // TODO: Use null character literal instead of converting 0 to char.
-        characters.append(char(0))
+        characters.append(char(0));
     }
 
     /// Removes the first character from the string.
     /// Other characters are moved towards the beginning of the string by one index.
     mutating func removeFirst() {
-        characters.removeFirst()
+        characters.removeFirst();
     }
 
     /// Removes the last character from the string.
     mutating func removeLast() {
-        characters.removeAt(characters.size() - 2)
+        characters.removeAt(characters.size() - 2);
     }
 }
 
 func +(a: StringRef, b: StringRef) -> String {
-    var result = String()
+    var result = String();
 
     for (index in 0..a.size()) {
-        result.append(a[index])
+        result.append(a[index]);
     }
 
     for (index in 0..b.size()) {
-        result.append(b[index])
+        result.append(b[index]);
     }
 
-    return result
+    return result;
 }
 
 func +(a: String, b: StringRef) -> String {
-    var result = a
+    var result = a;
+
     for (index in 0..b.size()) {
-        result.append(b[index])
+        result.append(b[index]);
     }
-    return result
+
+    return result;
 }
 
 func ==(a: StringRef, b: StringRef) -> bool {
-
     if (a.size() != b.size()) {
-        return false
+        return false;
     }
 
     for (index in 0..a.size()) {
         if (a[index] != b[index]) {
-            return false
+            return false;
         }
     }
 
-    return true
+    return true;
 }
 
 func <(a: StringRef, b: StringRef) -> bool {
-
     if (a.size() != b.size()) {
-        return a.size() < b.size()
+        return a.size() < b.size();
     }
 
     for (index in 0..a.size()) {
         if (a[index] < b[index]) {
-            return true
+            return true;
         }
         if (a[index] > b[index]) {
-            return false
+            return false;
         }
     }
-    return false
+
+    return false;
 }

@@ -1,7 +1,7 @@
 func abs<T>(value: T) -> T {
     if (value < 0) {
-        return -value
+        return -value;
     } else {
-        return value
+        return value;
     }
 }

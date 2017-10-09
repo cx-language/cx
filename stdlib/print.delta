@@ -1,15 +1,17 @@
 func print(text: StringRef) {
-    printf("%.*s\n", text.size(), text.data())
+    printf("%.*s\n", text.size(), text.data());
 }
 
 func readLine() -> String {
-    var line = String()
+    var line = String();
+
     while (true) {
-        let character = getchar()
+        let character = getchar();
         // TODO: use newline character literal instead of 0xa
         // TODO: handle EOF
-        if (character == 0xa) { break }
-        line.append(char(character))
+        if (character == 0xa) { break; }
+        line.append(char(character));
     }
-    return line
+
+    return line;
 }
