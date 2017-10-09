@@ -9,21 +9,6 @@
 
 using namespace delta;
 
-static std::vector<std::string> removeFileArgs(std::vector<llvm::StringRef>& args) {
-    std::vector<std::string> files;
-
-    for (auto arg = args.begin(); arg != args.end();) {
-        if (!arg->startswith("-")) {
-            files.push_back(*arg);
-            arg = args.erase(arg);
-        } else {
-            ++arg;
-        }
-    }
-
-    return files;
-}
-
 static void printHelp() {
     llvm::outs() <<
         "OVERVIEW: Delta compiler\n"
@@ -51,30 +36,35 @@ int main(int argc, const char** argv) {
     }
 
     llvm::StringRef command = argv[0];
+    bool build = command == "build";
+    bool run = command == "run";
+
+    if (build || run) {
+        --argc;
+        ++argv;
+    }
+
+    std::vector<std::string> inputs;
+    std::vector<llvm::StringRef> args;
+
+    for (int i = 0; i < argc; ++i) {
+        llvm::StringRef arg = argv[i];
+
+        if (arg == "help" || arg == "-help" || arg == "--help" || arg == "-h") {
+            printHelp();
+            return 0;
+        } else if (arg.startswith("-")) {
+            args.push_back(arg);
+        } else {
+            inputs.push_back(arg);
+        }
+    }
 
     try {
-        if (command == "build") {
-            std::vector<llvm::StringRef> args(argv + 1, argv + argc);
-            return buildPackage(".", args, /* run */ false);
-        } else if (command == "run") {
-            std::vector<llvm::StringRef> args(argv + 1, argv + argc);
-            auto files = removeFileArgs(args);
-
-            if (files.empty()) {
-                return buildPackage(".", args, /* run */ true);
-            } else {
-                return buildExecutable(files, /* manifest */ nullptr, args, /* run */ true);
-            }
+        if (inputs.empty()) {
+            return buildPackage(".", args, run);
         } else {
-            std::vector<llvm::StringRef> args(argv, argv + argc);
-
-            if (checkFlag("-help", args) || checkFlag("--help", args) || checkFlag("-h", args)) {
-                printHelp();
-                return 0;
-            }
-
-            auto files = removeFileArgs(args);
-            return buildExecutable(files, /* manifest */ nullptr, args, /* run */ false);
+            return buildExecutable(inputs, nullptr, args, run);
         }
     } catch (const CompileError& error) {
         error.print();
