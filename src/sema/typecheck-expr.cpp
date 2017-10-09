@@ -16,7 +16,7 @@
 
 using namespace delta;
 
-static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
+static void checkNotMoved(const Decl& decl, const VarExpr& expr, const TypeResolver& resolver) {
     const Movable* movable;
 
     switch (decl.getKind()) {
@@ -26,20 +26,26 @@ static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
     }
 
     if (movable->isMoved()) {
-        error(expr.getLocation(), "use of moved value");
+        std::string typeInfo;
+
+        if (expr.getType()) {
+            typeInfo = " of type '" + resolver.resolve(expr.getType()).toString() + "'";
+        }
+
+        error(expr.getLocation(), "use of moved value '", expr.getIdentifier(), "'", typeInfo);
     }
 }
 
-Type TypeChecker::typecheckVarExpr(VarExpr& expr) const {
+Type TypeChecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) const {
     Decl& decl = findDecl(expr.getIdentifier(), expr.getLocation());
     expr.setDecl(&decl);
 
     switch (decl.getKind()) {
         case DeclKind::VarDecl:
-            checkNotMoved(decl, expr);
+            if (!useIsWriteOnly) checkNotMoved(decl, expr, *this);
             return llvm::cast<VarDecl>(decl).getType();
         case DeclKind::ParamDecl:
-            checkNotMoved(decl, expr);
+            if (!useIsWriteOnly) checkNotMoved(decl, expr, *this);
             return llvm::cast<ParamDecl>(decl).getType();
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl: return llvm::cast<FunctionDecl>(decl).getFunctionType();
@@ -222,14 +228,6 @@ bool TypeChecker::isValidConversion(Expr& expr, Type unresolvedSource,
                                     Type unresolvedTarget) const {
     Type source = resolve(unresolvedSource);
     Type target = resolve(unresolvedTarget);
-
-    if (expr.isLvalue() && source.isBasicType()) {
-        TypeDecl* typeDecl = getTypeDecl(llvm::cast<BasicType>(*source));
-        if (typeDecl && !typeDecl->passByValue() && !target.isPointerType() &&
-            typeDecl->getDeinitializer()) {
-            error(expr.getLocation(), "move semantics not yet implemented for classes with deinitializers");
-        }
-    }
 
     if (source.isImplicitlyConvertibleTo(target)) {
         return true;
@@ -620,6 +618,14 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         }
     }
 
+    for (auto t : llvm::zip_first(decl->getParams(), expr.getArgs()) ) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(std::get<1>(t).getValue())) {
+            if (!isImplicitlyCopyable(std::get<0>(t).getType())) {
+                varExpr->getDecl()->markAsMoved();
+            }
+        }
+    }
+
     if (decl->isMethodDecl() || decl->isDeinitDecl()) {
         ASSERT(expr.getReceiverType());
     }
@@ -725,16 +731,6 @@ bool TypeChecker::validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<Par
             error(arg.getLocation(), "invalid argument #", i + 1, " type '", argType, "' to '", functionName,
                   "', expected '", param->getType(), "'");
         }
-
-        if (arg.getValue()->isVarExpr() && !isImplicitlyCopyable(param->getType())) {
-            auto* decl = llvm::cast<VarExpr>(arg.getValue())->getDecl();
-
-            switch (decl->getKind()) {
-                case DeclKind::ParamDecl: llvm::cast<ParamDecl>(decl)->setMoved(true); break;
-                case DeclKind::VarDecl: llvm::cast<VarDecl>(decl)->setMoved(true); break;
-                default: break;
-            }
-        }
     }
 
     return true;
@@ -839,10 +835,10 @@ Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) const {
     return PointerType::get(type.getPointee(), true);
 }
 
-Type TypeChecker::typecheckExpr(Expr& expr) const {
+Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
     llvm::Optional<Type> type;
     switch (expr.getKind()) {
-        case ExprKind::VarExpr: type = typecheckVarExpr(llvm::cast<VarExpr>(expr)); break;
+        case ExprKind::VarExpr: type = typecheckVarExpr(llvm::cast<VarExpr>(expr), useIsWriteOnly); break;
         case ExprKind::StringLiteralExpr: type = typecheckStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr)); break;
         case ExprKind::IntLiteralExpr: type = typecheckIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr)); break;
         case ExprKind::FloatLiteralExpr: type = typecheckFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr)); break;

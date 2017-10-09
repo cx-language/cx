@@ -56,6 +56,7 @@ public:
     bool isLvalue() const;
     bool isRvalue() const { return !isLvalue(); }
     SourceLocation getLocation() const { return location; }
+    void markAsMoved();
 
 protected:
     Expr(ExprKind kind, SourceLocation location) : kind(kind), type(nullptr), location(location) {}

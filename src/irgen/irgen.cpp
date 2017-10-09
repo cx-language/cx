@@ -41,7 +41,10 @@ std::string mangleWithParams(const T& decl, llvm::ArrayRef<Type> typeGenericArgs
 
 void Scope::onScopeEnd() {
     for (const Expr* expr : llvm::reverse(deferredExprs)) irGenerator.codegenExpr(*expr);
-    for (auto& p : llvm::reverse(deinitsToCall)) irGenerator.createDeinitCall(p.function, p.value, p.type);
+
+    for (auto& p : llvm::reverse(deinitsToCall)) {
+        irGenerator.createDeinitCall(p.function, p.value, p.type, p.decl);
+    }
 }
 
 void Scope::clear() {
@@ -69,12 +72,12 @@ llvm::Function* IRGenerator::getDeinitializerFor(Type type) {
 }
 
 /// @param type The Delta type of the variable, or null if the variable is 'this'.
-void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value) {
+void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl) {
     scopes.back().addLocalValue(std::move(name), value);
 
     if (type && type.isBasicType()) {
         llvm::Function* deinit = getDeinitializerFor(type);
-        if (deinit) deferDeinitCall(deinit, value, type);
+        if (deinit) deferDeinitCall(deinit, value, type, decl);
     }
 }
 
@@ -189,8 +192,8 @@ void IRGenerator::deferEvaluationOf(const Expr& expr) {
     scopes.back().addDeferredExpr(expr);
 }
 
-void IRGenerator::deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type) {
-    scopes.back().addDeinitToCall(deinit, valueToDeinit, type);
+void IRGenerator::deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl) {
+    scopes.back().addDeinitToCall(deinit, valueToDeinit, type, decl);
 }
 
 void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
@@ -211,7 +214,7 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
     }
 }
 
-llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, llvm::Value* arraySize,
+llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize,
                                                       const llvm::Twine& name) {
     static llvm::BasicBlock::iterator lastAlloca;
     auto* insertBlock = builder.GetInsertBlock();
@@ -229,13 +232,14 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, llvm::Value* ar
 
     auto* alloca = builder.CreateAlloca(toIR(type), arraySize, name);
     lastAlloca = alloca->getIterator();
-    setLocalValue(type, name.str(), alloca);
+    setLocalValue(type, name.str(), alloca, decl);
     builder.SetInsertPoint(insertBlock);
     return alloca;
 }
 
 void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), nullptr, stmt.getDecl().getName());
+    auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), &stmt.getDecl(), nullptr,
+                                          stmt.getDecl().getName());
     if (auto initializer = stmt.getDecl().getInitializer()) {
         builder.CreateStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
     }
@@ -359,7 +363,7 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     auto* firstValue = codegenMemberAccess(rangeExpr, elementType, "start");
     auto* lastValue = codegenMemberAccess(rangeExpr, elementType, "end");
 
-    auto* counterAlloca = createEntryBlockAlloca(rangeType.getIterableElementType(),
+    auto* counterAlloca = createEntryBlockAlloca(rangeType.getIterableElementType(), nullptr,
                                                  nullptr, forStmt.getLoopVariableName());
     builder.CreateStore(firstValue, counterAlloca);
 
@@ -447,7 +451,9 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
     }
 }
 
-void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type) {
+void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl) {
+    if (decl && decl->hasBeenMoved()) return;
+
     // Prevent recursively destroying the argument in struct deinitializers.
     if (llvm::isa<llvm::Argument>(valueToDeinit)
         && builder.GetInsertBlock()->getParent()->getName().endswith(".deinit")) return;
@@ -455,7 +461,7 @@ void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToD
     if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
         builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
     } else if (!valueToDeinit->getType()->isPointerTy() && deinit->arg_begin()->getType()->isPointerTy()) {
-        auto* alloca = createEntryBlockAlloca(type);
+        auto* alloca = createEntryBlockAlloca(type, decl);
         builder.CreateStore(valueToDeinit, alloca);
         builder.CreateCall(deinit, alloca);
     } else {
@@ -590,9 +596,9 @@ void IRGenerator::codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Functi
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &function));
     beginScope();
     auto arg = function.arg_begin();
-    if (decl.getTypeDecl() != nullptr) setLocalValue(nullptr, "this", &*arg++);
+    if (decl.getTypeDecl() != nullptr) setLocalValue(nullptr, "this", &*arg++, nullptr);
     for (auto& param : decl.getParams()) {
-        setLocalValue(param.getType(), param.getName(), &*arg++);
+        setLocalValue(param.getType(), param.getName(), &*arg++, &param);
     }
     for (auto& stmt : *decl.getBody()) {
         codegenStmt(*stmt);
@@ -636,10 +642,11 @@ void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typ
     auto* alloca = builder.CreateAlloca(type);
 
     beginScope();
-    setLocalValue(nullptr, "this", alloca);
+    setLocalValue(nullptr, "this", alloca, nullptr);
     auto param = decl.getParams().begin();
     for (auto& arg : function->args()) {
-        setLocalValue(param++->getType(), arg.getName(), &arg);
+        setLocalValue(param->getType(), arg.getName(), &arg, param);
+        ++param;
     }
     for (auto& stmt : *decl.getBody()) {
         codegenStmt(*stmt);

@@ -23,8 +23,8 @@ llvm::LLVMContext& getContext();
 struct Scope {
     Scope(IRGenerator& irGenerator) : irGenerator(irGenerator) {}
     void addDeferredExpr(const Expr& expr) { deferredExprs.emplace_back(&expr); }
-    void addDeinitToCall(llvm::Function* deinit, llvm::Value* value, Type type) {
-        deinitsToCall.emplace_back(DeferredDeinit{deinit, value, type});
+    void addDeinitToCall(llvm::Function* deinit, llvm::Value* value, Type type, const Decl* decl) {
+        deinitsToCall.emplace_back(DeferredDeinit{deinit, value, type, decl});
     }
     void addLocalValue(std::string&& name, llvm::Value* value) {
         bool didInsert = localValues.emplace(std::move(name), value).second;
@@ -39,6 +39,7 @@ private:
         llvm::Function* function;
         llvm::Value* value;
         Type type;
+        const Decl* decl;
     };
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
@@ -70,12 +71,12 @@ private:
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                llvm::ArrayRef<Type> genericArgs);
     void codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Function& function);
-    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type);
+    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
     llvm::Module& getIRModule() { return module; }
 
     llvm::Function* getDeinitializerFor(Type type);
     /// @param type The Delta type of the variable, or null if the variable is 'this'.
-    void setLocalValue(Type type, std::string name, llvm::Value* value);
+    void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
     llvm::Value* findValue(llvm::StringRef name, const Decl* decl);
 
     llvm::Value* codegenVarExpr(const VarExpr& expr);
@@ -137,7 +138,7 @@ private:
     llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
                                  llvm::ArrayRef<Type> functionGenericArgs = {});
     llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl, Type receiverType);
-    llvm::AllocaInst* createEntryBlockAlloca(Type type, llvm::Value* arraySize = nullptr,
+    llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, llvm::ArrayRef<Type> genericArgs,
@@ -150,7 +151,7 @@ private:
     void beginScope();
     void endScope();
     void deferEvaluationOf(const Expr& expr);
-    void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type);
+    void deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
     Scope& globalScope() { return scopes.front(); }
 
 private:

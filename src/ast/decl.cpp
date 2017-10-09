@@ -110,3 +110,19 @@ SourceLocation Decl::getLocation() const {
     }
     llvm_unreachable("all cases handled");
 }
+
+bool Decl::hasBeenMoved() const {
+    switch (getKind()) {
+        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(this)->isMoved();
+        case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->isMoved();
+        default: return false;
+    }
+}
+
+void Decl::markAsMoved() {
+    switch (getKind()) {
+        case DeclKind::ParamDecl: llvm::cast<ParamDecl>(this)->setMoved(true); break;
+        case DeclKind::VarDecl: llvm::cast<VarDecl>(this)->setMoved(true); break;
+        default: break;
+    }
+}

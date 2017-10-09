@@ -158,17 +158,25 @@ void TypeChecker::typecheckBreakStmt(BreakStmt& breakStmt) const {
 }
 
 void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
-    Type lhsType = typecheckExpr(*stmt.getLHS());
+    Type lhsType = typecheckExpr(*stmt.getLHS(), true);
     if (lhsType.isFunctionType()) error(stmt.getLocation(), "cannot assign to function");
     Type rhsType = typecheckExpr(*stmt.getRHS());
+
     if (!isValidConversion(*stmt.getRHS(), rhsType, lhsType)) {
         error(stmt.getRHS()->getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
+
     if (!lhsType.isMutable() && !inInitializer) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.getLHS())) {
             error(stmt.getLocation(), "cannot assign to immutable variable '", varExpr->getIdentifier(), "'");
         } else {
             error(stmt.getLocation(), "cannot assign to immutable expression");
+        }
+    }
+
+    if (!isImplicitlyCopyable(rhsType)) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.getRHS())) {
+            varExpr->getDecl()->markAsMoved();
         }
     }
 }
@@ -505,9 +513,13 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
     if (!isGlobal && getCurrentModule()->getSymbolTable().contains(decl.getName())) {
         error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
+
+    Type declaredType = decl.getType();
     Type initType = nullptr;
+
     if (decl.getInitializer()) {
         initType = typecheckExpr(*decl.getInitializer());
+
         if (initType.isFunctionType()) {
             error(decl.getInitializer()->getLocation(), "function pointers not implemented yet");
         }
@@ -515,7 +527,7 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
         error(decl.getLocation(), "global variables cannot be uninitialized");
     }
 
-    if (auto declaredType = decl.getType()) {
+    if (declaredType) {
         if (initType && !isValidConversion(*decl.getInitializer(), initType, declaredType)) {
             error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType,
                   "' with '", initType, "'");
@@ -530,6 +542,10 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
     }
 
     if (!isGlobal) addToSymbolTable(decl);
+
+    if (decl.getInitializer() && !isImplicitlyCopyable(decl.getType())) {
+        decl.getInitializer()->markAsMoved();
+    }
 }
 
 void typecheckFieldDecl(FieldDecl&) {}

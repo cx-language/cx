@@ -51,7 +51,7 @@ public:
     void addToSymbolTable(VarDecl&& decl) const;
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) const;
 
-    Type typecheckExpr(Expr& expr) const;
+    Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false) const;
     void typecheckVarDecl(VarDecl& decl, bool isGlobal) const;
     void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
                                llvm::ArrayRef<std::string> importSearchPaths,
@@ -81,7 +81,7 @@ private:
     void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
                              llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse) const;
 
-    Type typecheckVarExpr(VarExpr& expr) const;
+    Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) const;
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr) const;
     Type typecheckPrefixExpr(PrefixExpr& expr) const;
     Type typecheckBinaryExpr(BinaryExpr& expr) const;

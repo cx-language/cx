@@ -1,0 +1,22 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class Y {
+    init() {}
+    deinit() {}
+}
+
+// CHECK: define void @f({} %a, {}* %b)
+func f(a: Y, b: mutable Y*) {
+    // CHECK-NEXT: store {} %a, {}* %b
+    *b = a;
+    // CHECK-NEXT: ret void
+}
+
+// CHECK: define void @g({} %a)
+func g(a: Y) {
+    // CHECK-NEXT: %b = alloca {}
+    // CHECK-NEXT: store {} %a, {}* %b
+    // CHECK-NEXT: call void @Y.deinit({}* %b)
+    let b = a;
+    // CHECK-NEXT: ret void
+}

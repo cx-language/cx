@@ -22,6 +22,12 @@ bool Expr::isLvalue() const {
     llvm_unreachable("all cases handled");
 }
 
+void Expr::markAsMoved() {
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(this)) {
+        varExpr->getDecl()->markAsMoved();
+    }
+}
+
 llvm::StringRef CallExpr::getFunctionName(const TypeResolver* resolver) const {
     switch (getCallee().getKind()) {
         case ExprKind::VarExpr: {

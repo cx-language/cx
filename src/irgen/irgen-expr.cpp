@@ -369,7 +369,7 @@ llvm::Value* IRGenerator::getArrayDataPointer(const Expr& object, Type objectTyp
             auto* zeroConstant = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0);
             return builder.CreateGEP(objectValue, { zeroConstant, zeroConstant });
         } else {
-            auto* alloca = createEntryBlockAlloca(objectType);
+            auto* alloca = createEntryBlockAlloca(objectType, nullptr);
             builder.CreateStore(objectValue, alloca);
             return alloca;
         }

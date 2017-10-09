@@ -52,6 +52,8 @@ public:
     DeclKind getKind() const { return kind; }
     Module* getModule() const;
     SourceLocation getLocation() const;
+    bool hasBeenMoved() const;
+    void markAsMoved();
 
 protected:
     Decl(DeclKind kind) : kind(kind) {}
