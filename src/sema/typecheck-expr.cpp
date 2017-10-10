@@ -626,7 +626,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         }
     }
 
-    if (decl->isMethodDecl() || decl->isDeinitDecl()) {
+    if (decl->isMethodDecl()) {
         ASSERT(expr.getReceiverType());
     }
 
@@ -671,7 +671,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             typecheckingGenericFunction = true;
             typecheckInitDecl(*initDecl);
             if (auto* deinitDecl = initDecl->getTypeDecl()->getDeinitializer()) {
-                typecheckDeinitDecl(*deinitDecl);
+                typecheckFunctionLikeDecl(*deinitDecl);
             }
         }
 

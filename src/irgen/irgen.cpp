@@ -43,6 +43,7 @@ void Scope::onScopeEnd() {
     for (const Expr* expr : llvm::reverse(deferredExprs)) irGenerator.codegenExpr(*expr);
 
     for (auto& p : llvm::reverse(deinitsToCall)) {
+        if (p.decl && p.decl->hasBeenMoved()) continue;
         irGenerator.createDeinitCall(p.function, p.value, p.type, p.decl);
     }
 }
@@ -57,14 +58,15 @@ IRGenerator::IRGenerator()
     scopes.push_back(Scope(*this));
 }
 
-llvm::Function* IRGenerator::getDeinitializerFor(Type type) {
-    std::string mangledName = mangleDeinitDecl(type.getName());
+llvm::Function* IRGenerator::getFunction(Type receiverType, llvm::StringRef functionName,
+                                         llvm::ArrayRef<Type> functionGenericArgs) {
+    auto mangledName = mangleFunctionDecl(receiverType.getName(), functionName);
     auto it = functionInstantiations.find(mangledName);
     if (it == functionInstantiations.end()) {
         auto decls = currentTypeChecker->findDecls(mangledName, /*everywhere*/ true);
         if (!decls.empty()) {
-            auto& deinitDecl = llvm::cast<DeinitDecl>(*decls[0]);
-            return codegenDeinitializerProto(deinitDecl, type);
+            auto& decl = llvm::cast<FunctionLikeDecl>(*decls[0]);
+            return getFunctionProto(decl, functionGenericArgs, receiverType);
         }
         return nullptr;
     }
@@ -76,7 +78,7 @@ void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value,
     scopes.back().addLocalValue(std::move(name), value);
 
     if (type && type.isBasicType()) {
-        llvm::Function* deinit = getDeinitializerFor(type);
+        llvm::Function* deinit = getFunction(type, "deinit", {});
         if (deinit) deferDeinitCall(deinit, value, type, decl);
     }
 }
@@ -452,11 +454,6 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
 }
 
 void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl) {
-    if (decl && decl->hasBeenMoved()) return;
-
-    // Prevent recursively destroying the argument in struct deinitializers.
-    if (llvm::isa<llvm::Argument>(valueToDeinit)
-        && builder.GetInsertBlock()->getParent()->getName().endswith(".deinit")) return;
 
     if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
         builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
@@ -523,7 +520,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
     auto* functionType = decl.getFunctionType();
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
-    if (decl.isMethodDecl() || decl.isDeinitDecl() || decl.isInitDecl()) {
+    if (decl.isMethodDecl() || decl.isInitDecl()) {
         auto* receiverTypeDecl = decl.getTypeDecl();
         if (receiverTypeDecl->isGeneric()) {
             mangledName = mangle(decl, receiverTypeGenericArgs, functionGenericArgs);
@@ -550,7 +547,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
                                             mangledName, &module);
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
-    if (decl.isMethodDecl() || decl.isDeinitDecl()) arg++->setName("this");
+    if (decl.isMethodDecl()) arg++->setName("this");
 
     ASSERT(decl.getParams().size() == size_t(std::distance(arg, argsEnd)));
     for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) {
@@ -566,10 +563,6 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
 llvm::Function* IRGenerator::getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs,
                                           llvm::ArrayRef<Type> functionGenericArgs) {
     return getFunctionProto(decl, functionGenericArgs, decl.getTypeDecl()->getType(typeGenericArgs));
-}
-
-llvm::Function* IRGenerator::codegenDeinitializerProto(const DeinitDecl& decl, Type receiverType) {
-    return getFunctionProto(decl, {}, receiverType);
 }
 
 llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
@@ -657,14 +650,6 @@ void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typ
     ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
 }
 
-void IRGenerator::codegenDeinitDecl(const DeinitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
-    if (decl.getTypeDecl()->isGeneric() && typeGenericArgs.empty()) return;
-
-    llvm::Function* function = getFunctionProto(decl, {}, decl.getTypeDecl()->getType(typeGenericArgs));
-    codegenFunctionBody(decl, *function);
-    ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
-}
-
 std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
     return map(decl.getFields(), [&](const FieldDecl& field) { return toIR(field.getType()); });
 }
@@ -739,7 +724,7 @@ void IRGenerator::codegenDecl(const Decl& decl) {
         case DeclKind::MethodDecl: codegenFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot codegen generic parameter declaration");
         case DeclKind::InitDecl: codegenInitDecl(llvm::cast<InitDecl>(decl)); break;
-        case DeclKind::DeinitDecl: codegenDeinitDecl(llvm::cast<DeinitDecl>(decl)); break;
+        case DeclKind::DeinitDecl: codegenFunctionDecl(llvm::cast<DeinitDecl>(decl)); break;
         case DeclKind::TypeDecl: codegenTypeDecl(llvm::cast<TypeDecl>(decl)); break;
         case DeclKind::VarDecl: codegenVarDecl(llvm::cast<VarDecl>(decl)); break;
         case DeclKind::FieldDecl: llvm_unreachable("handled via TypeDecl");

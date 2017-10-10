@@ -215,7 +215,7 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
                 }
                 SAVE_STATE(typecheckingGenericFunction);
                 typecheckingGenericFunction = true;
-                typecheckDeinitDecl(*deinitDecl);
+                typecheckFunctionLikeDecl(*deinitDecl);
             }
         }
     }
@@ -489,13 +489,6 @@ void TypeChecker::typecheckInitDecl(InitDecl& decl) const {
     getCurrentModule()->getSymbolTable().popScope();
 }
 
-void TypeChecker::typecheckDeinitDecl(DeinitDecl& decl) const {
-    if (decl.getTypeDecl()->isGeneric() && currentGenericArgs.empty()) {
-        return; // Partial type-checking of uninstantiated generic functions not implemented yet.
-    }
-    typecheckFunctionLikeDecl(decl);
-}
-
 void TypeChecker::typecheckTypeDecl(TypeDecl& decl) const {
     for (auto& memberDecl : decl.getMemberDecls()) {
         typecheckMemberDecl(*memberDecl);
@@ -651,7 +644,7 @@ void TypeChecker::typecheckMemberDecl(Decl& decl) const {
     switch (decl.getKind()) {
         case DeclKind::MethodDecl: typecheckFunctionLikeDecl(llvm::cast<MethodDecl>(decl)); break;
         case DeclKind::InitDecl: typecheckInitDecl(llvm::cast<InitDecl>(decl)); break;
-        case DeclKind::DeinitDecl: typecheckDeinitDecl(llvm::cast<DeinitDecl>(decl)); break;
+        case DeclKind::DeinitDecl: typecheckFunctionLikeDecl(llvm::cast<DeinitDecl>(decl)); break;
         case DeclKind::FieldDecl: typecheckFieldDecl(llvm::cast<FieldDecl>(decl)); break;
         default: llvm_unreachable("invalid member declaration kind");
     }

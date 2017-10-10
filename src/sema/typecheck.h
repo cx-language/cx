@@ -76,7 +76,6 @@ private:
     void typecheckBreakStmt(BreakStmt& breakStmt) const;
     void typecheckParamDecl(ParamDecl& decl) const;
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const;
-    void typecheckDeinitDecl(DeinitDecl& decl) const;
     void typecheckTypeDecl(TypeDecl& decl) const;
     void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
                              llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse) const;

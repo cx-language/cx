@@ -40,7 +40,7 @@ public:
     bool isParamDecl() const { return getKind() == DeclKind::ParamDecl; }
     bool isFunctionLikeDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::DeinitDecl; }
     bool isFunctionDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::MethodDecl; }
-    bool isMethodDecl() const { return getKind() == DeclKind::MethodDecl; }
+    bool isMethodDecl() const { return getKind() == DeclKind::MethodDecl || getKind() == DeclKind::DeinitDecl; }
     bool isGenericParamDecl() const { return getKind() == DeclKind::GenericParamDecl; }
     bool isInitDecl() const { return getKind() == DeclKind::InitDecl; }
     bool isDeinitDecl() const { return getKind() == DeclKind::DeinitDecl; }
@@ -213,17 +213,15 @@ private:
     TypeDecl* typeDecl;
 };
 
-class DeinitDecl : public FunctionLikeDecl {
+class DeinitDecl : public MethodDecl {
 public:
     DeinitDecl(TypeDecl& receiverTypeDecl, std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body,
                SourceLocation location)
-    : FunctionLikeDecl(DeclKind::DeinitDecl, FunctionProto("deinit", {}, Type::getVoid(), {}, false),
-                       location, std::move(body)), typeDecl(&receiverTypeDecl) {}
-    TypeDecl* getTypeDecl() const override { return typeDecl; }
+    : MethodDecl(DeclKind::DeinitDecl, FunctionProto("deinit", {}, Type::getVoid(), {}, false),
+                 receiverTypeDecl, location) {
+        setBody(std::move(body));
+    }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
-
-private:
-    TypeDecl* typeDecl;
 };
 
 enum class TypeTag { Struct, Class, Interface, Union };

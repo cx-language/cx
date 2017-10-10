@@ -305,8 +305,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
 
     auto* calleeDecl = expr.getCalleeDecl();
 
-    if ((calleeDecl && ((calleeDecl->isFunctionDecl() && llvm::cast<FunctionDecl>(calleeDecl)->isMethodDecl()) ||
-                        calleeDecl->isDeinitDecl())) || (!calleeDecl && function->getName() == "offsetUnsafely")) {
+    if (calleeDecl && calleeDecl->isMethodDecl()) {
         if (expr.getReceiver()) {
             args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param->getType()));
         } else {

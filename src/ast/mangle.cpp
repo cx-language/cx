@@ -47,16 +47,6 @@ std::string delta::mangleInitDecl(llvm::StringRef typeName, llvm::ArrayRef<Type>
     return mangled;
 }
 
-std::string delta::mangle(const DeinitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs) {
-    std::string typeName = decl.getTypeDecl()->getName();
-    appendGenericArgs(typeName, typeGenericArgs);
-    return mangleDeinitDecl(typeName);
-}
-
-std::string delta::mangleDeinitDecl(llvm::StringRef typeName) {
-    return typeName.str() + ".deinit";
-}
-
 std::string delta::mangle(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs) {
     std::string mangled = decl.getName();
     appendGenericArgs(mangled, genericArgs);

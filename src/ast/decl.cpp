@@ -53,7 +53,7 @@ void TypeDecl::addField(FieldDecl&& field) {
 }
 
 void TypeDecl::addMethod(std::unique_ptr<FunctionLikeDecl> decl) {
-    ASSERT(decl->isMethodDecl() || decl->isInitDecl() || decl->isDeinitDecl());
+    ASSERT(decl->isMethodDecl() || decl->isInitDecl());
     methods.emplace_back(std::move(decl));
 }
 

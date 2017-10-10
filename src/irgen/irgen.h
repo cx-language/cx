@@ -74,7 +74,8 @@ private:
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
     llvm::Module& getIRModule() { return module; }
 
-    llvm::Function* getDeinitializerFor(Type type);
+    llvm::Function* getFunction(Type  receiverType, llvm::StringRef functionName,
+                                llvm::ArrayRef<Type> functionGenericArgs);
     /// @param type The Delta type of the variable, or null if the variable is 'this'.
     void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
     llvm::Value* findValue(llvm::StringRef name, const Decl* decl);
@@ -128,7 +129,6 @@ private:
     void codegenDecl(const Decl& decl);
     void codegenFunctionDecl(const FunctionDecl& decl);
     void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
-    void codegenDeinitDecl(const DeinitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
     void codegenTypeDecl(const TypeDecl& decl);
     void codegenVarDecl(const VarDecl& decl);
 
@@ -137,7 +137,6 @@ private:
                                      Type receiverType = nullptr, std::string&& mangledName = {});
     llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
                                  llvm::ArrayRef<Type> functionGenericArgs = {});
-    llvm::Function* codegenDeinitializerProto(const DeinitDecl& decl, Type receiverType);
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
