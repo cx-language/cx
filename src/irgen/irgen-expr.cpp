@@ -255,8 +255,9 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     Type exprType = expr.getType();
     if (exprType.isPointerType()) exprType = exprType.getPointee();
 
-    if (expr.isRvalue() || !exprType.isBasicType())
+    if (!targetType || expr.isRvalue() || !exprType.isBasicType()) {
         return codegenExpr(expr);
+    }
 
     if (!targetType->isPointerTy()) {
         if (expr.getType().isPointerType()) {
