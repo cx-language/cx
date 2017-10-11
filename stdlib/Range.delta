@@ -12,9 +12,9 @@ struct Range<T> {
         this.end = end;
     }
 
-    // Returns the length of the range
+    // Returns the number of elements this range contains.
     func size() -> T {
-        return end - start - 1;
+        return end - start;
     }
 
     // Alias for size

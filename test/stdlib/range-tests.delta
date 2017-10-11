@@ -1,0 +1,12 @@
+// RUN: check_exit_status 0 %delta run %s test-support.delta
+
+func main() {
+    let a = 1..5;
+    let b = 1...5;
+
+    assert(a.size() == 4, "exclusive range size is correct");
+    assert(b.size() == 5, "inclusive range size is correct");
+
+    assert(a.end() == 5, "exclusive range end is correct");
+    assert(b.end() == 5, "inclusive range end is correct");
+}
