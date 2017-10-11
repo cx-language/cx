@@ -437,7 +437,7 @@ void TypeChecker::setCurrentGenericArgsForGenericFunction(FunctionDecl& function
         auto genericArgs = callExpr.getReceiverType().removePointer().getGenericArgs();
         ASSERT(typeDecl->getGenericParams().size() == genericArgs.size());
         for (auto t : llvm::zip_first(typeDecl->getGenericParams(), genericArgs)) {
-            currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
+            currentGenericArgs.try_emplace(std::get<0>(t).getName(), std::get<1>(t));
         }
     }
 
@@ -480,7 +480,7 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
 
                 Type receiverType;
 
-                std::unordered_map<std::string, Type> receiverGenericArgs;
+                llvm::StringMap<Type> receiverGenericArgs;
 
                 if (expr.isMethodCall()) {
                     Type receiverType = expr.getReceiver()->getType().removePointer();
@@ -488,7 +488,7 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
                         TypeDecl* typeDecl = getTypeDecl(llvm::cast<BasicType>(*receiverType));
                         ASSERT(typeDecl->getGenericParams().size() == receiverType.getGenericArgs().size());
                         for (auto t : llvm::zip_first(typeDecl->getGenericParams(), receiverType.getGenericArgs())) {
-                            receiverGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
+                            receiverGenericArgs.try_emplace(std::get<0>(t).getName(), std::get<1>(t));
                         }
                     }
                 } else if (auto* typeDecl = currentFunction ? currentFunction->getTypeDecl() : nullptr) {

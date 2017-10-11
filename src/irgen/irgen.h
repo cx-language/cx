@@ -27,10 +27,10 @@ struct Scope {
         deinitsToCall.emplace_back(DeferredDeinit{deinit, value, type, decl});
     }
     void addLocalValue(std::string&& name, llvm::Value* value) {
-        bool didInsert = localValues.emplace(std::move(name), value).second;
+        bool didInsert = localValues.try_emplace(std::move(name), value).second;
         ASSERT(didInsert);
     }
-    const std::unordered_map<std::string, llvm::Value*>& getLocalValues() const { return localValues; }
+    const llvm::StringMap<llvm::Value*>& getLocalValues() const { return localValues; }
     void onScopeEnd();
     void clear();
 
@@ -44,7 +44,7 @@ private:
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
     llvm::SmallVector<DeferredDeinit, 8> deinitsToCall;
-    std::unordered_map<std::string, llvm::Value*> localValues;
+    llvm::StringMap<llvm::Value*> localValues;
     IRGenerator& irGenerator;
 };
 
@@ -177,10 +177,10 @@ private:
     llvm::IRBuilder<> builder;
     llvm::Module module;
 
-    std::unordered_map<std::string, FunctionInstantiation> functionInstantiations;
+    llvm::StringMap<FunctionInstantiation> functionInstantiations;
     std::vector<std::unique_ptr<FunctionDecl>> helperDecls;
-    std::unordered_map<std::string, std::pair<llvm::StructType*, const TypeDecl*>> structs;
-    std::unordered_map<std::string, Type> currentGenericArgs;
+    llvm::StringMap<std::pair<llvm::StructType*, const TypeDecl*>> structs;
+    llvm::StringMap<Type> currentGenericArgs;
     const Decl* currentDecl;
 
     /// The basic blocks to branch to on a 'break' statement, one element per scope.

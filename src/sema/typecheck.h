@@ -2,8 +2,8 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
+#include <llvm/ADT/StringMap.h>
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
@@ -115,9 +115,9 @@ private:
     Module* currentModule;
     SourceFile* currentSourceFile;
     mutable FunctionDecl* currentFunction;
-    mutable std::unordered_map<std::string, Type> currentGenericArgs;
+    mutable llvm::StringMap<Type> currentGenericArgs;
     mutable bool typecheckingGenericFunction;
-    mutable std::vector<std::pair<FunctionDecl&, std::unordered_map<std::string, Type>>> genericFunctionInstantiationsToTypecheck;
+    mutable std::vector<std::pair<FunctionDecl&, llvm::StringMap<Type>>> genericFunctionInstantiationsToTypecheck;
 };
 
 }

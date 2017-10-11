@@ -3,8 +3,8 @@
 #include <memory>
 #include <cstdlib>
 #include <string>
-#include <unordered_map>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -29,7 +29,7 @@
 using namespace delta;
 
 namespace delta {
-extern std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
+extern llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
 }
 
 namespace {

@@ -1,8 +1,8 @@
 #include <iterator>
-#include <unordered_map>
 #include <vector>
 #include <memory>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
@@ -107,7 +107,7 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
     return value;
 }
 
-static const std::unordered_map<std::string, llvm::Type*> builtinTypes = {
+static const llvm::StringMap<llvm::Type*> builtinTypes = {
     { "void", llvm::Type::getVoidTy(ctx) },
     { "bool", llvm::Type::getInt1Ty(ctx) },
     { "char", llvm::Type::getInt8Ty(ctx) },
@@ -496,7 +496,7 @@ void IRGenerator::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
                                         llvm::ArrayRef<Type> genericArgs) {
     ASSERT(genericParams.size() == genericArgs.size());
     for (auto tuple : llvm::zip_first(genericParams, genericArgs)) {
-        currentGenericArgs.emplace(std::get<0>(tuple).getName(), std::get<1>(tuple));
+        currentGenericArgs.try_emplace(std::get<0>(tuple).getName(), std::get<1>(tuple));
     }
 }
 
@@ -556,8 +556,8 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl,
 
     auto mangled = mangleWithParams(decl, receiverTypeGenericArgs, functionGenericArgs);
     FunctionInstantiation functionInstantiation{decl, receiverTypeGenericArgs, functionGenericArgs, function};
-    return functionInstantiations.emplace(std::move(mangled),
-                                          std::move(functionInstantiation)).first->second.getFunction();
+    return functionInstantiations.try_emplace(std::move(mangled),
+                                              std::move(functionInstantiation)).first->second.getFunction();
 }
 
 llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
@@ -661,10 +661,10 @@ void IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
     if (structs.count(decl.getName())) return;
 
     if (decl.getFields().empty()) {
-        structs.emplace(decl.getName(), std::make_pair(llvm::StructType::get(ctx), &decl));
+        structs.try_emplace(decl.getName(), std::make_pair(llvm::StructType::get(ctx), &decl));
     } else {
         auto* structType = llvm::StructType::create(ctx, decl.getName());
-        structs.emplace(decl.getName(), std::make_pair(structType, &decl));
+        structs.try_emplace(decl.getName(), std::make_pair(structType, &decl));
         structType->setBody(getFieldTypes(decl));
     }
 
@@ -690,7 +690,7 @@ llvm::Type* IRGenerator::codegenGenericTypeInstantiation(const TypeDecl& decl, l
 
     if (decl.getFields().empty()) {
         auto value = std::make_pair(llvm::StructType::get(ctx), &decl);
-        return structs.emplace(name, std::move(value)).first->second.first;
+        return structs.try_emplace(name, std::move(value)).first->second.first;
     }
 
     SAVE_STATE(currentGenericArgs);
@@ -698,7 +698,7 @@ llvm::Type* IRGenerator::codegenGenericTypeInstantiation(const TypeDecl& decl, l
     auto elements = getFieldTypes(decl);
 
     auto value = std::make_pair(llvm::StructType::create(elements, name), &decl);
-    return structs.emplace(name, std::move(value)).first->second.first;
+    return structs.try_emplace(name, std::move(value)).first->second.first;
 }
 
 void IRGenerator::codegenVarDecl(const VarDecl& decl) {

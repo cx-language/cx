@@ -1,11 +1,11 @@
 #include <iterator>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include <cstdlib>
 #include <system_error>
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/STLExtras.h>
@@ -26,12 +26,12 @@
 using namespace delta;
 
 namespace delta {
-std::unordered_map<std::string, std::shared_ptr<Module>> allImportedModules;
+llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
 }
 
 std::vector<Module*> delta::getAllImportedModules() {
     return map(allImportedModules,
-               [](const std::pair<std::string, std::shared_ptr<Module>>& p) { return p.second.get(); });
+               [](const llvm::StringMapEntry<std::shared_ptr<Module>>& p) { return p.second.get(); });
 }
 
 namespace {
@@ -210,7 +210,7 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
                 SAVE_STATE(currentGenericArgs);
                 ASSERT(basicType->getGenericArgs().size() == typeDecl.getGenericParams().size());
                 for (auto t : llvm::zip_first(typeDecl.getGenericParams(), basicType->getGenericArgs())) {
-                    currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
+                    currentGenericArgs.try_emplace(std::get<0>(t).getName(), std::get<1>(t));
                 }
                 SAVE_STATE(typecheckingGenericFunction);
                 typecheckingGenericFunction = true;
@@ -383,12 +383,12 @@ void TypeChecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
 }
 
 std::vector<Type> TypeChecker::getGenericArgsAsArray() const {
-    return map(currentGenericArgs, [](const std::pair<std::string, Type>& p) { return p.second; });
+    return map(currentGenericArgs, [](const llvm::StringMapEntry<Type>& p) { return p.second; });
 }
 
 std::vector<Type> TypeChecker::getUnresolvedGenericArgs() const {
-    return map(currentGenericArgs, [](const std::pair<std::string, Type>& p) {
-        return BasicType::get(p.first, {});
+    return map(currentGenericArgs, [](const llvm::StringMapEntry<Type>& p) {
+        return BasicType::get(p.first(), {});
     });
 }
 

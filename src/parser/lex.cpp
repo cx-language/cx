@@ -1,7 +1,7 @@
 #include "lex.h"
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -166,7 +166,7 @@ end:
     return Token(isFloat ? FLOAT_LITERAL : INT_LITERAL, llvm::StringRef(begin, end - begin));
 }
 
-const std::unordered_map<std::string, TokenKind> keywords = {
+const llvm::StringMap<TokenKind> keywords = {
     {"break",         BREAK},
     {"case",          CASE},
     {"cast",          CAST},
