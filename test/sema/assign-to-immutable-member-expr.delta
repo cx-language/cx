@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+class F {
+    let i: int;
+
+    mutating func f() {
+        // CHECK: [[@LINE+1]]:16: error: cannot assign to immutable variable 'i'
+        this.i = 0;
+    }
+}

@@ -166,10 +166,15 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     }
 
     if (!lhsType.isMutable()) {
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.getLHS())) {
-            error(stmt.getLocation(), "cannot assign to immutable variable '", varExpr->getIdentifier(), "'");
-        } else {
-            error(stmt.getLocation(), "cannot assign to immutable expression");
+        switch (stmt.getLHS()->getKind()) {
+            case ExprKind::VarExpr:
+                error(stmt.getLocation(), "cannot assign to immutable variable '",
+                      llvm::cast<VarExpr>(stmt.getLHS())->getIdentifier(), "'");
+            case ExprKind::MemberExpr:
+                error(stmt.getLocation(), "cannot assign to immutable variable '",
+                      llvm::cast<MemberExpr>(stmt.getLHS())->getMemberName(), "'");
+            default:
+                error(stmt.getLocation(), "cannot assign to immutable expression");
         }
     }
 

@@ -5,6 +5,6 @@ struct Foo {
 }
 
 func bar(foo: Foo&) {
-    // CHECK: [[@LINE+1]]:11: error: cannot assign to immutable expression
+    // CHECK: [[@LINE+1]]:11: error: cannot assign to immutable variable 'a'
     foo.a = 42
 }
