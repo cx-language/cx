@@ -158,7 +158,7 @@ void Type::setMutable(bool isMutable) {
 }
 
 llvm::StringRef Type::getName() const { return llvm::cast<BasicType>(typeBase)->getName(); }
-Type Type::getElementType() const { return llvm::cast<ArrayType>(typeBase)->getElementType(); }
+Type Type::getElementType() const { return llvm::cast<ArrayType>(typeBase)->getElementType().asMutable(isMutable()); }
 int64_t Type::getArraySize() const { return llvm::cast<ArrayType>(typeBase)->getSize(); }
 llvm::ArrayRef<Type> Type::getSubtypes() const { return llvm::cast<TupleType>(typeBase)->getSubtypes(); }
 llvm::ArrayRef<Type> Type::getGenericArgs() const { return llvm::cast<BasicType>(typeBase)->getGenericArgs(); }

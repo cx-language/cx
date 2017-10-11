@@ -1,0 +1,18 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class F {
+    let v: int;
+    let a: int[1];
+
+    // CHECK: define %F @F.init{{[\.0-9]*}}()
+    init() {
+        // CHECK: store i32 42, i32* %{{[a-z0-9]+}}
+        this.v = 42;
+
+        // CHECK: store i32 43, i32* %{{[a-z0-9]+}}
+        v = 43;
+
+        // CHECK: store i32 44, i32* %{{[a-z0-9]+}}
+        a[0] = 44;
+    }
+}

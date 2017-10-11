@@ -54,7 +54,9 @@ Type TypeChecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) const {
         case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.getLocation(), "'", expr.getIdentifier(), "' is not a variable");
         case DeclKind::FieldDecl:
-            if (currentFunction->isMutating() || currentFunction->isDeinitDecl()) {
+            if (currentFunction->isInitDecl() || currentFunction->isDeinitDecl()) {
+                return llvm::cast<FieldDecl>(decl).getType().asMutable();
+            } else if (currentFunction->isMutating()) {
                 return llvm::cast<FieldDecl>(decl).getType();
             } else {
                 return llvm::cast<FieldDecl>(decl).getType().asImmutable();
@@ -804,12 +806,12 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
 
 Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
     Type lhsType = typecheckExpr(*expr.getBaseExpr());
-    const ArrayType* arrayType;
+    Type arrayType;
 
     if (lhsType.isArrayType()) {
-        arrayType = &llvm::cast<ArrayType>(*lhsType);
+        arrayType = lhsType;
     } else if (lhsType.isReference() && lhsType.getReferee().isArrayType()) {
-        arrayType = &llvm::cast<ArrayType>(*lhsType.getReferee());
+        arrayType = lhsType.getReferee();
     } else if (lhsType.removePointer().isBuiltinType()) {
         error(expr.getLocation(), "'", lhsType, "' doesn't provide a subscript operator");
     } else {
@@ -822,16 +824,16 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
               "', expected 'int'");
     }
 
-    if (!arrayType->isUnsized()) {
+    if (!arrayType.isUnsizedArrayType()) {
         if (auto* intLiteralExpr = llvm::dyn_cast<IntLiteralExpr>(expr.getIndexExpr())) {
-            if (intLiteralExpr->getValue() >= arrayType->getSize()) {
+            if (intLiteralExpr->getValue() >= arrayType.getArraySize()) {
                 error(intLiteralExpr->getLocation(), "accessing array out-of-bounds with index ",
-                      intLiteralExpr->getValue(), ", array size is ", arrayType->getSize());
+                      intLiteralExpr->getValue(), ", array size is ", arrayType.getArraySize());
             }
         }
     }
 
-    return arrayType->getElementType();
+    return arrayType.getElementType();
 }
 
 Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) const {
