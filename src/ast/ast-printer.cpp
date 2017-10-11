@@ -236,7 +236,7 @@ std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
     }
     out << ") " << decl.getReturnType();
 
-    if (!decl.isExtern()) out << *decl.getBody();
+    if (!decl.isExtern()) out << decl.getBody();
     return out << ")";
 }
 
@@ -246,11 +246,11 @@ std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
         out << param;
         if (&param != &decl.getParams().back()) out << " ";
     }
-    return out << ")" << *decl.getBody() << ")";
+    return out << ")" << decl.getBody() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const DeinitDecl& decl) {
-    return out << br << "(deinit-decl " << decl.getTypeDecl()->getName() << *decl.getBody() << ")";
+    return out << br << "(deinit-decl " << decl.getTypeDecl()->getName() << decl.getBody() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldDecl& decl) {

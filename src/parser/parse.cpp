@@ -866,7 +866,7 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiv
     }
 
     FunctionProto proto(std::move(name), std::move(params), std::move(returnType),
-                        std::move(genericParams), isVariadic);
+                        std::move(genericParams), isVariadic, isExtern);
 
     if (receiverTypeDecl) {
         return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, nameLocation);
@@ -881,7 +881,7 @@ std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool
 
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
-        decl->setBody(std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE)));
+        decl->setBody(parseStmtsUntil(RBRACE));
         parse(RBRACE);
     }
 
@@ -906,7 +906,7 @@ std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl) {
     auto initLocation = parse(INIT).getLocation();
     auto params = parseParamList(nullptr);
     parse(LBRACE);
-    auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
+    auto body = parseStmtsUntil(RBRACE);
     parse(RBRACE);
     return llvm::make_unique<InitDecl>(receiverTypeDecl, std::move(params), std::move(body),
                                        initLocation);
@@ -919,7 +919,7 @@ std::unique_ptr<DeinitDecl> parseDeinitDecl(TypeDecl& receiverTypeDecl) {
     auto expectedRParenLocation = getCurrentLocation();
     if (consumeToken() != RPAREN) error(expectedRParenLocation, "deinitializers cannot have parameters");
     parse(LBRACE);
-    auto body = std::make_shared<std::vector<std::unique_ptr<Stmt>>>(parseStmtsUntil(RBRACE));
+    auto body = parseStmtsUntil(RBRACE);
     parse(RBRACE);
     return llvm::make_unique<DeinitDecl>(receiverTypeDecl, std::move(body), deinitLocation);
 }

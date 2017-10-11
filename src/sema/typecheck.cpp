@@ -417,7 +417,7 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
     }
     if (decl.getReturnType().isMutable()) error(decl.getLocation(), "return types cannot be 'mutable'");
 
-    if (decl.getBody()) {
+    if (!decl.isExtern()) {
         SAVE_STATE(functionReturnType);
         functionReturnType = decl.getReturnType();
         SAVE_STATE(currentFieldDecls);
@@ -427,14 +427,14 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
             addToSymbolTable(VarDecl(thisType, "this", nullptr, *getCurrentModule(), decl.getLocation()));
         }
 
-        for (auto& stmt : *decl.getBody()) {
+        for (auto& stmt : decl.getBody()) {
             typecheckStmt(*stmt);
         }
     }
 
     getCurrentModule()->getSymbolTable().popScope();
 
-    if (!decl.getReturnType().isVoid() && !allPathsReturn(*decl.getBody())) {
+    if (!decl.getReturnType().isVoid() && !allPathsReturn(decl.getBody())) {
         error(decl.getLocation(), "'", decl.getName(), "' is missing a return statement");
     }
 }

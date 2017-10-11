@@ -595,7 +595,7 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
     for (auto& param : decl.getParams()) {
         setLocalValue(param.getType(), param.getName(), &*arg++, &param);
     }
-    for (auto& stmt : *decl.getBody()) {
+    for (auto& stmt : decl.getBody()) {
         codegenStmt(*stmt);
     }
     endScope();
@@ -643,7 +643,7 @@ void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typ
         setLocalValue(param->getType(), arg.getName(), &arg, param);
         ++param;
     }
-    for (auto& stmt : *decl.getBody()) {
+    for (auto& stmt : decl.getBody()) {
         codegenStmt(*stmt);
     }
     builder.CreateRet(builder.CreateLoad(alloca));

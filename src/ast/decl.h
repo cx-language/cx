@@ -116,15 +116,16 @@ private:
 class FunctionProto {
 public:
     FunctionProto(std::string&& name, std::vector<ParamDecl>&& params, Type returnType,
-                  std::vector<GenericParamDecl>&& genericParams, bool isVarArg)
+                  std::vector<GenericParamDecl>&& genericParams, bool isVarArg, bool isExtern)
     : name(std::move(name)), params(std::move(params)), returnType(returnType),
-      genericParams(std::move(genericParams)), varArg(isVarArg) {}
+      genericParams(std::move(genericParams)), varArg(isVarArg), external(isExtern) {}
     llvm::StringRef getName() const { return name; }
     llvm::ArrayRef<ParamDecl> getParams() const { return params; }
     llvm::MutableArrayRef<ParamDecl> getParams() { return params; }
     Type getReturnType() const { return returnType; }
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
     bool isVarArg() const { return varArg; }
+    bool isExtern() const { return external; }
 
 private:
     std::string name;
@@ -132,13 +133,14 @@ private:
     Type returnType;
     std::vector<GenericParamDecl> genericParams;
     bool varArg;
+    bool external;
 };
 
 class FunctionDecl : public Decl {
 public:
     FunctionDecl(FunctionProto&& proto, Module& module, SourceLocation location)
     : FunctionDecl(DeclKind::FunctionDecl, std::move(proto), module, location) {}
-    bool isExtern() const { return !getBody(); }
+    bool isExtern() const { return getProto().isExtern(); }
     bool isVariadic() const { return getProto().isVarArg(); }
     bool isGeneric() const { return !getProto().getGenericParams().empty(); }
     llvm::StringRef getName() const { return getProto().getName(); }
@@ -150,8 +152,8 @@ public:
     FunctionProto& getProto() { return proto; }
     virtual TypeDecl* getTypeDecl() const { return nullptr; }
     virtual bool isMutating() const { return false; }
-    std::vector<std::unique_ptr<Stmt>>* getBody() const { return body.get(); }
-    void setBody(std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body) { this->body = body; }
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
+    void setBody(std::vector<std::unique_ptr<Stmt>>&& body) { this->body = std::move(body); }
     SourceLocation getLocation() const { return location; }
     const FunctionType* getFunctionType() const;
     bool signatureMatches(const FunctionDecl& other, bool matchReceiver = true) const;
@@ -164,7 +166,7 @@ protected:
 
 private:
     FunctionProto proto;
-    std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
+    std::vector<std::unique_ptr<Stmt>> body;
     SourceLocation location;
     Module& module;
 };
@@ -190,8 +192,9 @@ private:
 class InitDecl : public MethodDecl {
 public:
     InitDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params,
-             std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body, SourceLocation location)
-    : MethodDecl(DeclKind::InitDecl, FunctionProto("init", std::move(params), Type::getVoid(), {}, false),
+             std::vector<std::unique_ptr<Stmt>>&& body, SourceLocation location)
+    : MethodDecl(DeclKind::InitDecl,
+                 FunctionProto("init", std::move(params), Type::getVoid(), {}, false, false),
                  receiverTypeDecl, location) {
         setBody(std::move(body));
     }
@@ -201,9 +204,10 @@ public:
 
 class DeinitDecl : public MethodDecl {
 public:
-    DeinitDecl(TypeDecl& receiverTypeDecl, std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body,
+    DeinitDecl(TypeDecl& receiverTypeDecl, std::vector<std::unique_ptr<Stmt>>&& body,
                SourceLocation location)
-    : MethodDecl(DeclKind::DeinitDecl, FunctionProto("deinit", {}, Type::getVoid(), {}, false),
+    : MethodDecl(DeclKind::DeinitDecl,
+                 FunctionProto("deinit", {}, Type::getVoid(), {}, false, false),
                  receiverTypeDecl, location) {
         setBody(std::move(body));
     }
