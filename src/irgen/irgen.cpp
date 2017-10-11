@@ -65,7 +65,7 @@ llvm::Function* IRGenerator::getFunction(Type receiverType, llvm::StringRef func
     if (it == functionInstantiations.end()) {
         auto decls = currentTypeChecker->findDecls(mangledName, /*everywhere*/ true);
         if (!decls.empty()) {
-            auto& decl = llvm::cast<FunctionLikeDecl>(*decls[0]);
+            auto& decl = llvm::cast<FunctionDecl>(*decls[0]);
             return getFunctionProto(decl, functionGenericArgs, receiverType);
         }
         return nullptr;
@@ -209,7 +209,7 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
     codegenDeferredExprsAndDeinitCallsForReturn();
 
     if (stmt.getValues().empty()) {
-        if (llvm::cast<FunctionLikeDecl>(currentDecl)->getName() != "main") builder.CreateRetVoid();
+        if (llvm::cast<FunctionDecl>(currentDecl)->getName() != "main") builder.CreateRetVoid();
         else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
     } else {
         builder.CreateRet(codegenExpr(*stmt.getValues()[0]));
@@ -500,7 +500,7 @@ void IRGenerator::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
     }
 }
 
-llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
+llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl,
                                               llvm::ArrayRef<Type> functionGenericArgs,
                                               Type receiverType, std::string&& mangledName) {
     auto resolvedFunctionGenericArgs = map(functionGenericArgs, [&](Type type) { return resolve(type); });
@@ -587,7 +587,7 @@ llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
     }
 }
 
-void IRGenerator::codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Function& function) {
+void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function) {
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &function));
     beginScope();
     auto arg = function.arg_begin();

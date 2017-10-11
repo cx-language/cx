@@ -21,7 +21,7 @@ Module* Decl::getModule() const {
     llvm_unreachable("all cases handled");
 }
 
-const FunctionType* FunctionLikeDecl::getFunctionType() const {
+const FunctionType* FunctionDecl::getFunctionType() const {
     auto paramTypes = map(getParams(), [](const ParamDecl& p) -> Type { return p.getType(); });
     return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes)));
 }
@@ -100,7 +100,7 @@ SourceLocation Decl::getLocation() const {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
         case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl: return llvm::cast<FunctionLikeDecl>(this)->getLocation();
+        case DeclKind::DeinitDecl: return llvm::cast<FunctionDecl>(this)->getLocation();
         case DeclKind::GenericParamDecl: return llvm::cast<GenericParamDecl>(this)->getLocation();
         case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(this)->getLocation();
         case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->getLocation();

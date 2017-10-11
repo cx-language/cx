@@ -18,7 +18,7 @@ namespace delta {
 class Module;
 class TypeDecl;
 class FieldDecl;
-class FunctionLikeDecl;
+class FunctionDecl;
 
 enum class DeclKind {
     ParamDecl,
@@ -38,7 +38,6 @@ public:
     virtual ~Decl() = 0;
 
     bool isParamDecl() const { return getKind() == DeclKind::ParamDecl; }
-    bool isFunctionLikeDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::DeinitDecl; }
     bool isFunctionDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::DeinitDecl; }
     bool isMethodDecl() const { return getKind() >= DeclKind::MethodDecl && getKind() <= DeclKind::DeinitDecl; }
     bool isGenericParamDecl() const { return getKind() == DeclKind::GenericParamDecl; }
@@ -80,8 +79,8 @@ public:
       parent(nullptr) {}
     Type getType() const { return type; }
     llvm::StringRef getName() const { return name; }
-    FunctionLikeDecl* getParent() const { ASSERT(parent); return parent; }
-    void setParent(FunctionLikeDecl* parent) { this->parent = parent; }
+    FunctionDecl* getParent() const { ASSERT(parent); return parent; }
+    void setParent(FunctionDecl* parent) { this->parent = parent; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
     bool operator==(const ParamDecl& other) const {
@@ -92,7 +91,7 @@ private:
     Type type;
     std::string name;
     SourceLocation location;
-    FunctionLikeDecl* parent;
+    FunctionDecl* parent;
 };
 
 class GenericParamDecl : public Decl {
@@ -135,8 +134,10 @@ private:
     bool varArg;
 };
 
-class FunctionLikeDecl : public Decl {
+class FunctionDecl : public Decl {
 public:
+    FunctionDecl(FunctionProto&& proto, Module& module, SourceLocation location)
+    : FunctionDecl(DeclKind::FunctionDecl, std::move(proto), module, location) {}
     bool isExtern() const { return !getBody(); }
     bool isVariadic() const { return getProto().isVarArg(); }
     bool isGeneric() const { return !getProto().getGenericParams().empty(); }
@@ -153,32 +154,18 @@ public:
     void setBody(std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body) { this->body = body; }
     SourceLocation getLocation() const { return location; }
     const FunctionType* getFunctionType() const;
-    static bool classof(const Decl* d) { return d->isFunctionLikeDecl(); }
-
-protected:
-    FunctionLikeDecl(DeclKind kind, FunctionProto&& proto, SourceLocation location,
-                     std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body = nullptr)
-    : Decl(kind), proto(std::move(proto)), body(std::move(body)), location(location) {}
-
-private:
-    FunctionProto proto;
-    std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
-    SourceLocation location;
-};
-
-class FunctionDecl : public FunctionLikeDecl {
-public:
-    FunctionDecl(FunctionProto&& proto, Module& module, SourceLocation location)
-    : FunctionDecl(DeclKind::FunctionDecl, std::move(proto), module, location) {}
     bool signatureMatches(const FunctionDecl& other, bool matchReceiver = true) const;
     Module* getModule() const { return &module; }
     static bool classof(const Decl* d) { return d->isFunctionDecl(); }
 
 protected:
     FunctionDecl(DeclKind kind, FunctionProto&& proto, Module& module, SourceLocation location)
-    : FunctionLikeDecl(kind, std::move(proto), location), module(module) {}
+    : Decl(kind), proto(std::move(proto)), location(location), module(module) {}
 
 private:
+    FunctionProto proto;
+    std::shared_ptr<std::vector<std::unique_ptr<Stmt>>> body;
+    SourceLocation location;
     Module& module;
 };
 

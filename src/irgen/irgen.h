@@ -70,7 +70,7 @@ private:
 
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                llvm::ArrayRef<Type> genericArgs);
-    void codegenFunctionBody(const FunctionLikeDecl& decl, llvm::Function& function);
+    void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
     llvm::Module& getIRModule() { return module; }
 
@@ -133,7 +133,7 @@ private:
     void codegenVarDecl(const VarDecl& decl);
 
     llvm::Function* getFunctionForCall(const CallExpr& call);
-    llvm::Function* getFunctionProto(const FunctionLikeDecl& decl, llvm::ArrayRef<Type> functionGenericArgs = {},
+    llvm::Function* getFunctionProto(const FunctionDecl& decl, llvm::ArrayRef<Type> functionGenericArgs = {},
                                      Type receiverType = nullptr, std::string&& mangledName = {});
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
@@ -154,17 +154,17 @@ private:
 private:
     class FunctionInstantiation {
     public:
-        FunctionInstantiation(const FunctionLikeDecl& decl, llvm::ArrayRef<Type> receiverTypeGenericArgs,
+        FunctionInstantiation(const FunctionDecl& decl, llvm::ArrayRef<Type> receiverTypeGenericArgs,
                               std::vector<Type> genericArgs, llvm::Function* function)
         : decl(decl), receiverTypeGenericArgs(receiverTypeGenericArgs), genericArgs(std::move(genericArgs)),
           function(function) {}
-        const FunctionLikeDecl& getDecl() const { return decl; }
+        const FunctionDecl& getDecl() const { return decl; }
         llvm::ArrayRef<Type> getReceiverTypeGenericArgs() const { return receiverTypeGenericArgs; }
         llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
         llvm::Function* getFunction() const { return function; }
 
     private:
-        const FunctionLikeDecl& decl;
+        const FunctionDecl& decl;
         llvm::ArrayRef<Type> receiverTypeGenericArgs;
         std::vector<Type> genericArgs;
         llvm::Function* function;

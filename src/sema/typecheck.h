@@ -41,7 +41,7 @@ public:
     Decl& findDecl(llvm::StringRef name, SourceLocation location, bool everywhere = false) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, bool everywhere = false) const;
 
-    void addToSymbolTable(FunctionLikeDecl& decl) const;
+    void addToSymbolTable(FunctionDecl& decl) const;
     void addToSymbolTable(FunctionDecl&& decl) const;
     void addToSymbolTable(TypeDecl& decl) const;
     void addToSymbolTable(TypeDecl&& decl) const;
@@ -57,7 +57,7 @@ public:
     void postProcess();
 
 private:
-    void typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const;
+    void typecheckFunctionDecl(FunctionDecl& decl) const;
     void typecheckMemberDecl(Decl& decl) const;
 
     void typecheckStmt(Stmt& stmt) const;
@@ -96,10 +96,10 @@ private:
     bool isValidConversion(llvm::ArrayRef<std::unique_ptr<Expr>> exprs, Type source, Type target) const;
     void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
-    void setCurrentGenericArgsForGenericFunction(FunctionLikeDecl& functionDecl, CallExpr& callExpr) const;
+    void setCurrentGenericArgsForGenericFunction(FunctionDecl& functionDecl, CallExpr& callExpr) const;
     std::vector<Type> getGenericArgsAsArray() const;
     std::vector<Type> getUnresolvedGenericArgs() const;
-    FunctionLikeDecl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
+    FunctionDecl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     bool isImplicitlyCopyable(Type type) const;
@@ -114,7 +114,7 @@ private:
 private:
     Module* currentModule;
     SourceFile* currentSourceFile;
-    mutable FunctionLikeDecl* currentFunction;
+    mutable FunctionDecl* currentFunction;
     mutable std::unordered_map<std::string, Type> currentGenericArgs;
     mutable bool typecheckingGenericFunction;
     mutable std::vector<std::pair<FunctionDecl&, std::unordered_map<std::string, Type>>> genericFunctionInstantiationsToTypecheck;

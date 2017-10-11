@@ -214,7 +214,7 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
                 }
                 SAVE_STATE(typecheckingGenericFunction);
                 typecheckingGenericFunction = true;
-                typecheckFunctionLikeDecl(*deinitDecl);
+                typecheckFunctionDecl(*deinitDecl);
             }
         }
     }
@@ -229,7 +229,7 @@ void TypeChecker::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) con
     getCurrentModule()->getSymbolTable().add(name, &decl);
 }
 
-void TypeChecker::addToSymbolTable(FunctionLikeDecl& decl) const {
+void TypeChecker::addToSymbolTable(FunctionDecl& decl) const {
     if (getCurrentModule()->getSymbolTable().findWithMatchingParams(decl)) {
         error(decl.getLocation(), "redefinition of '", mangle(decl), "'");
     }
@@ -392,7 +392,7 @@ std::vector<Type> TypeChecker::getUnresolvedGenericArgs() const {
     });
 }
 
-void TypeChecker::typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const {
+void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
     if (decl.isExtern()) return;
 
     if (decl.isGeneric() && currentGenericArgs.empty()) {
@@ -577,7 +577,7 @@ void TypeChecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
                                         ParserFunction& parse) const {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: llvm_unreachable("no top-level parameter declarations");
-        case DeclKind::FunctionDecl: typecheckFunctionLikeDecl(llvm::cast<FunctionDecl>(decl)); break;
+        case DeclKind::FunctionDecl: typecheckFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
         case DeclKind::MethodDecl: llvm_unreachable("no top-level method declarations");
         case DeclKind::GenericParamDecl: llvm_unreachable("no top-level parameter declarations");
         case DeclKind::InitDecl: llvm_unreachable("no top-level initializer declarations");
@@ -594,7 +594,7 @@ void TypeChecker::typecheckMemberDecl(Decl& decl) const {
     switch (decl.getKind()) {
         case DeclKind::MethodDecl:
         case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl: typecheckFunctionLikeDecl(llvm::cast<MethodDecl>(decl)); break;
+        case DeclKind::DeinitDecl: typecheckFunctionDecl(llvm::cast<MethodDecl>(decl)); break;
         case DeclKind::FieldDecl: typecheckFieldDecl(llvm::cast<FieldDecl>(decl)); break;
         default: llvm_unreachable("invalid member declaration kind");
     }
@@ -610,7 +610,7 @@ void TypeChecker::postProcess() {
         for (auto& functionDeclAndGenericArgs : genericFunctionInstantiations) {
             currentGenericArgs = functionDeclAndGenericArgs.second;
             // TODO: Don't typecheck more than once with the same generic arguments.
-            typecheckFunctionLikeDecl(functionDeclAndGenericArgs.first);
+            typecheckFunctionDecl(functionDeclAndGenericArgs.first);
         }
     }
 }

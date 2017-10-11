@@ -429,7 +429,7 @@ void TypeChecker::setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> generic
     }
 }
 
-void TypeChecker::setCurrentGenericArgsForGenericFunction(FunctionLikeDecl& functionDecl,
+void TypeChecker::setCurrentGenericArgsForGenericFunction(FunctionDecl& functionDecl,
                                                           CallExpr& callExpr) const {
     auto* typeDecl = functionDecl.getTypeDecl();
 
@@ -459,8 +459,8 @@ Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
     return expr.getType();
 }
 
-FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const {
-    llvm::SmallVector<FunctionLikeDecl*, 1> matches;
+FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const {
+    llvm::SmallVector<FunctionDecl*, 1> matches;
     bool isInitCall = false;
     bool atLeastOneFunction = false;
     auto decls = findDecls(callee, typecheckingGenericFunction);
@@ -509,10 +509,10 @@ FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef c
                 if (decls.size() == 1) {
                     validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic(),
                                  callee, expr.getCallee().getLocation());
-                    return llvm::cast<FunctionLikeDecl>(*decl);
+                    return llvm::cast<FunctionDecl>(*decl);
                 }
                 if (validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic())) {
-                    matches.push_back(llvm::cast<FunctionLikeDecl>(decl));
+                    matches.push_back(llvm::cast<FunctionDecl>(decl));
                 }
                 break;
             }
@@ -587,7 +587,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         return expr.getType();
     }
 
-    FunctionLikeDecl* decl;
+    FunctionDecl* decl;
 
     if (expr.getCallee().isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
@@ -668,9 +668,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             // TODO: Don't typecheck more than once with the same generic arguments.
             SAVE_STATE(typecheckingGenericFunction);
             typecheckingGenericFunction = true;
-            typecheckFunctionLikeDecl(*initDecl);
+            typecheckFunctionDecl(*initDecl);
             if (auto* deinitDecl = initDecl->getTypeDecl()->getDeinitializer()) {
-                typecheckFunctionLikeDecl(*deinitDecl);
+                typecheckFunctionDecl(*deinitDecl);
             }
         }
 
