@@ -52,8 +52,7 @@ void TypeDecl::addField(FieldDecl&& field) {
     fields.emplace_back(std::move(field));
 }
 
-void TypeDecl::addMethod(std::unique_ptr<FunctionLikeDecl> decl) {
-    ASSERT(decl->isMethodDecl() || decl->isInitDecl());
+void TypeDecl::addMethod(std::unique_ptr<MethodDecl> decl) {
     methods.emplace_back(std::move(decl));
 }
 

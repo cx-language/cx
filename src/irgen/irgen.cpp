@@ -520,7 +520,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
     auto* functionType = decl.getFunctionType();
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
-    if (decl.isMethodDecl() || decl.isInitDecl()) {
+    if (decl.isMethodDecl()) {
         auto* receiverTypeDecl = decl.getTypeDecl();
         if (receiverTypeDecl->isGeneric()) {
             mangledName = mangle(decl, receiverTypeGenericArgs, functionGenericArgs);
@@ -547,7 +547,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
                                             mangledName, &module);
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
-    if (decl.isMethodDecl()) arg++->setName("this");
+    if (decl.isMethodDecl() && !decl.isInitDecl()) arg++->setName("this");
 
     ASSERT(decl.getParams().size() == size_t(std::distance(arg, argsEnd)));
     for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) {
@@ -560,28 +560,30 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionLikeDecl& decl,
                                           std::move(functionInstantiation)).first->second.getFunction();
 }
 
-llvm::Function* IRGenerator::getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs,
-                                          llvm::ArrayRef<Type> functionGenericArgs) {
-    return getFunctionProto(decl, functionGenericArgs, decl.getTypeDecl()->getType(typeGenericArgs));
-}
-
 llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
     if (!call.callsNamedFunction()) fatalError("anonymous function calls not implemented yet");
 
     const Decl* decl = call.getCalleeDecl();
 
-    if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
-        return getFunctionProto(*functionDecl, call.getGenericArgs(), resolve(call.getReceiverType()));
-    } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
-        llvm::Function* function = getInitProto(*initDecl, call.getGenericArgs());
-        if (function->empty() && !call.getGenericArgs().empty()) {
-            auto backup = builder.GetInsertBlock();
-            codegenInitDecl(*initDecl, call.getGenericArgs());
-            builder.SetInsertPoint(backup);
+    switch (decl->getKind()) {
+        case DeclKind::FunctionDecl:
+        case DeclKind::MethodDecl: {
+            auto* functionDecl = llvm::cast<FunctionDecl>(decl);
+            return getFunctionProto(*functionDecl, call.getGenericArgs(), resolve(call.getReceiverType()));
         }
-        return function;
-    } else {
-        llvm_unreachable("invalid callee decl");
+        case DeclKind::InitDecl: {
+            auto* initDecl = llvm::cast<InitDecl>(decl);
+            Type receiverType = initDecl->getTypeDecl()->getType(call.getGenericArgs());
+            llvm::Function* function = getFunctionProto(*initDecl, {}, receiverType);
+            if (function->empty() && !call.getGenericArgs().empty()) {
+                auto backup = builder.GetInsertBlock();
+                codegenInitDecl(*initDecl, call.getGenericArgs());
+                builder.SetInsertPoint(backup);
+            }
+            return function;
+        }
+        default:
+            llvm_unreachable("invalid callee decl");
     }
 }
 
@@ -627,7 +629,7 @@ void IRGenerator::codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typ
     SAVE_STATE(currentGenericArgs);
     setCurrentGenericArgs(decl.getTypeDecl()->getGenericParams(), typeGenericArgs);
 
-    llvm::Function* function = getInitProto(decl, typeGenericArgs);
+    llvm::Function* function = getFunctionProto(decl, {}, decl.getTypeDecl()->getType(typeGenericArgs));
 
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", function));
 

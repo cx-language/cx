@@ -41,10 +41,8 @@ public:
     Decl& findDecl(llvm::StringRef name, SourceLocation location, bool everywhere = false) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, bool everywhere = false) const;
 
-    void addToSymbolTable(FunctionDecl& decl) const;
+    void addToSymbolTable(FunctionLikeDecl& decl) const;
     void addToSymbolTable(FunctionDecl&& decl) const;
-    void addToSymbolTable(InitDecl& decl) const;
-    void addToSymbolTable(DeinitDecl& decl) const;
     void addToSymbolTable(TypeDecl& decl) const;
     void addToSymbolTable(TypeDecl&& decl) const;
     void addToSymbolTable(VarDecl& decl) const;
@@ -60,7 +58,6 @@ public:
 
 private:
     void typecheckFunctionLikeDecl(FunctionLikeDecl& decl) const;
-    void typecheckInitDecl(InitDecl& decl) const;
     void typecheckMemberDecl(Decl& decl) const;
 
     void typecheckStmt(Stmt& stmt) const;
@@ -111,8 +108,6 @@ private:
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type) const;
     void addToSymbolTableWithName(Decl& decl, llvm::StringRef name) const;
-    template<typename DeclT>
-    void addToSymbolTableCheckParams(DeclT& decl) const;
     template<typename DeclT>
     void addToSymbolTableNonAST(DeclT& decl) const;
 

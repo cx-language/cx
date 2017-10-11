@@ -54,8 +54,7 @@ Type TypeChecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) const {
         case DeclKind::DeinitDecl: llvm_unreachable("cannot refer to deinitializers yet");
         case DeclKind::TypeDecl: error(expr.getLocation(), "'", expr.getIdentifier(), "' is not a variable");
         case DeclKind::FieldDecl:
-            ASSERT(currentFunction);
-            if (currentFunction->isMutating() || currentFunction->isInitDecl()) {
+            if (currentFunction->isMutating() || currentFunction->isDeinitDecl()) {
                 return llvm::cast<FieldDecl>(decl).getType();
             } else {
                 return llvm::cast<FieldDecl>(decl).getType().asImmutable();
@@ -435,10 +434,9 @@ void TypeChecker::setCurrentGenericArgsForGenericFunction(FunctionLikeDecl& func
     auto* typeDecl = functionDecl.getTypeDecl();
 
     if (typeDecl && typeDecl->isGeneric()) {
-        ASSERT(typeDecl->getGenericParams().size() ==
-               callExpr.getReceiverType().removePointer().getGenericArgs().size());
-        for (auto t : llvm::zip_first(typeDecl->getGenericParams(),
-                                      callExpr.getReceiverType().removePointer().getGenericArgs())) {
+        auto genericArgs = callExpr.getReceiverType().removePointer().getGenericArgs();
+        ASSERT(typeDecl->getGenericParams().size() == genericArgs.size());
+        for (auto t : llvm::zip_first(typeDecl->getGenericParams(), genericArgs)) {
             currentGenericArgs.emplace(std::get<0>(t).getName(), std::get<1>(t));
         }
     }
@@ -520,7 +518,7 @@ FunctionLikeDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef c
             }
             case DeclKind::TypeDecl: {
                 isInitCall = true;
-                auto mangledName = mangleInitDecl(llvm::cast<TypeDecl>(decl)->getName());
+                auto mangledName = mangleFunctionDecl(llvm::cast<TypeDecl>(decl)->getName(), "init");
                 auto initDecls = findDecls(mangledName);
 
                 for (Decl* decl : initDecls) {
@@ -626,18 +624,19 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         }
     }
 
-    if (decl->isMethodDecl()) {
+    if (decl->isMethodDecl() && !decl->isInitDecl()) {
         ASSERT(expr.getReceiverType());
-    }
 
-    if (decl->isMethodDecl() && !expr.getReceiverType().removePointer().isMutable() && decl->isMutating()) {
-        error(expr.getCallee().getLocation(), "cannot call mutating function '",
-              decl->getTypeDecl()->getName(), ".", decl->getName(), "' on immutable receiver");
+        if (!decl->isDeinitDecl() && !expr.getReceiverType().removePointer().isMutable() && decl->isMutating()) {
+            error(expr.getCallee().getLocation(), "cannot call mutating function '",
+                  decl->getTypeDecl()->getName(), ".", decl->getName(), "' on immutable receiver");
+        }
     }
 
     expr.setCalleeDecl(decl);
 
-    if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
+    if (decl->isFunctionDecl() && !decl->isInitDecl()) {
+        auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
         auto* receiverTypeDecl = functionDecl->getTypeDecl();
         bool hasGenericReceiverType = receiverTypeDecl && receiverTypeDecl->isGeneric();
 
@@ -669,7 +668,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             // TODO: Don't typecheck more than once with the same generic arguments.
             SAVE_STATE(typecheckingGenericFunction);
             typecheckingGenericFunction = true;
-            typecheckInitDecl(*initDecl);
+            typecheckFunctionLikeDecl(*initDecl);
             if (auto* deinitDecl = initDecl->getTypeDecl()->getDeinitializer()) {
                 typecheckFunctionLikeDecl(*deinitDecl);
             }
@@ -786,12 +785,20 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
     for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
         if (field.getName() == expr.getMemberName()) {
             if (baseType.isMutable()) {
-                return field.getType();
+                auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr());
+
+                if (varExpr && varExpr->getIdentifier() == "this"
+                    && (currentFunction->isInitDecl() || currentFunction->isDeinitDecl())) {
+                    return field.getType().asMutable(true);
+                } else {
+                    return field.getType();
+                }
             } else {
                 return field.getType().asImmutable();
             }
         }
     }
+
     error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");
 }
 

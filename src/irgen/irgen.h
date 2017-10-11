@@ -135,8 +135,6 @@ private:
     llvm::Function* getFunctionForCall(const CallExpr& call);
     llvm::Function* getFunctionProto(const FunctionLikeDecl& decl, llvm::ArrayRef<Type> functionGenericArgs = {},
                                      Type receiverType = nullptr, std::string&& mangledName = {});
-    llvm::Function* getInitProto(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {},
-                                 llvm::ArrayRef<Type> functionGenericArgs = {});
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);

@@ -305,7 +305,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
 
     auto* calleeDecl = expr.getCalleeDecl();
 
-    if (calleeDecl && calleeDecl->isMethodDecl()) {
+    if (calleeDecl && calleeDecl->isMethodDecl() && !calleeDecl->isInitDecl()) {
         if (expr.getReceiver()) {
             args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param->getType()));
         } else {

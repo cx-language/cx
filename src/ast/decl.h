@@ -39,8 +39,8 @@ public:
 
     bool isParamDecl() const { return getKind() == DeclKind::ParamDecl; }
     bool isFunctionLikeDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::DeinitDecl; }
-    bool isFunctionDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::MethodDecl; }
-    bool isMethodDecl() const { return getKind() == DeclKind::MethodDecl || getKind() == DeclKind::DeinitDecl; }
+    bool isFunctionDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::DeinitDecl; }
+    bool isMethodDecl() const { return getKind() >= DeclKind::MethodDecl && getKind() <= DeclKind::DeinitDecl; }
     bool isGenericParamDecl() const { return getKind() == DeclKind::GenericParamDecl; }
     bool isInitDecl() const { return getKind() == DeclKind::InitDecl; }
     bool isDeinitDecl() const { return getKind() == DeclKind::DeinitDecl; }
@@ -200,17 +200,16 @@ private:
     bool mutating;
 };
 
-class InitDecl : public FunctionLikeDecl {
+class InitDecl : public MethodDecl {
 public:
     InitDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params,
              std::shared_ptr<std::vector<std::unique_ptr<Stmt>>>&& body, SourceLocation location)
-    : FunctionLikeDecl(DeclKind::InitDecl, FunctionProto("init", std::move(params), Type::getVoid(), {}, false),
-                       location, std::move(body)), typeDecl(&receiverTypeDecl) {}
-    TypeDecl* getTypeDecl() const override { return typeDecl; }
+    : MethodDecl(DeclKind::InitDecl, FunctionProto("init", std::move(params), Type::getVoid(), {}, false),
+                 receiverTypeDecl, location) {
+        setBody(std::move(body));
+    }
+    bool isMutating() const override { return true; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }
-
-private:
-    TypeDecl* typeDecl;
 };
 
 class DeinitDecl : public MethodDecl {
@@ -236,12 +235,12 @@ public:
     llvm::StringRef getName() const { return name; }
     llvm::ArrayRef<FieldDecl> getFields() const { return fields; }
     std::vector<FieldDecl>& getFields() { return fields; }
-    llvm::ArrayRef<std::unique_ptr<FunctionLikeDecl>> getMethods() const { return methods; }
+    llvm::ArrayRef<std::unique_ptr<MethodDecl>> getMethods() const { return methods; }
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
     SourceLocation getLocation() const { return location; }
     void addField(FieldDecl&& field);
-    void addMethod(std::unique_ptr<FunctionLikeDecl> decl);
-    llvm::ArrayRef<std::unique_ptr<FunctionLikeDecl>> getMemberDecls() const { return methods; }
+    void addMethod(std::unique_ptr<MethodDecl> decl);
+    llvm::ArrayRef<std::unique_ptr<MethodDecl>> getMemberDecls() const { return methods; }
     DeinitDecl* getDeinitializer() const;
     Type getType(llvm::ArrayRef<Type> genericArgs, bool isMutable = false) const;
     Type getUnresolvedType(bool isMutable) const;
@@ -261,7 +260,7 @@ private:
     TypeTag tag;
     std::string name;
     std::vector<FieldDecl> fields;
-    std::vector<std::unique_ptr<FunctionLikeDecl>> methods; ///< MethodDecls, InitDecls, and DeinitDecls
+    std::vector<std::unique_ptr<MethodDecl>> methods;
     std::vector<GenericParamDecl> genericParams;
     SourceLocation location;
     Module& module;

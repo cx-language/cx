@@ -51,13 +51,13 @@ llvm::StringRef CallExpr::getFunctionName(const TypeResolver* resolver) const {
 }
 
 std::string CallExpr::getMangledFunctionName(const TypeResolver& resolver) const {
+    std::string receiverTypeName;
+
     if (getCallee().isMemberExpr()) {
-        Type receiverType = resolver.resolve(getReceiver()->getType());
-        if (receiverType.isPointerType()) receiverType = receiverType.getPointee();
-        return mangleFunctionDecl(receiverType.getName(), getFunctionName(), genericArgs);
+        receiverTypeName = resolver.resolve(getReceiver()->getType()).removePointer().getName();
     }
-    if (isInitCall()) return mangleInitDecl(getFunctionName());
-    return mangleFunctionDecl("", getFunctionName(), genericArgs);
+
+    return mangleFunctionDecl(receiverTypeName, getFunctionName(), genericArgs);
 }
 
 bool CallExpr::isInitCall() const {

@@ -19,8 +19,9 @@ struct Foo {
         // CHECK-NEXT: %5 = load i32, i32* %4
         // CHECK-NEXT: %6 = add i32 %5, 1
         // CHECK-NEXT: store i32 %6, i32* %4
-        // CHECK-NEXT: %7 = load %Foo, %Foo* %1
         this.a++;
+
+        // CHECK-NEXT: %7 = load %Foo, %Foo* %1
         // CHECK-NEXT: ret %Foo %7
     }
 }
