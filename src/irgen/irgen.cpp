@@ -657,6 +657,7 @@ std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
 }
 
 void IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
+    if (decl.isInterface()) return;
     if (decl.isGeneric()) return;
     if (structs.count(decl.getName())) return;
 

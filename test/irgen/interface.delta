@@ -1,0 +1,7 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+interface I {
+    // CHECK-NOT: define void @{{(I\.)?}}f(
+    // CHECK-NOT: declare void @{{(I\.)?}}f(
+    func f();
+}
