@@ -48,7 +48,7 @@ private:
     IRGenerator& irGenerator;
 };
 
-class IRGenerator : public TypeResolver {
+class IRGenerator {
 public:
     IRGenerator();
 
@@ -56,9 +56,8 @@ public:
     void setTypeChecker(TypeChecker&& typeChecker) { currentTypeChecker = std::move(typeChecker); }
     llvm::Module& compile(const Module& sourceModule);
     llvm::Value* codegenExpr(const Expr& expr);
-    llvm::Type* toIR(Type type);
+    llvm::Type* toIR(Type type, SourceLocation location = SourceLocation::invalid());
     llvm::IRBuilder<>& getBuilder() { return builder; }
-    Type resolveTypePlaceholder(llvm::StringRef name) const override;
 
 private:
     friend struct Scope;
@@ -68,14 +67,11 @@ private:
     using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool);
     using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*)(llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
 
-    void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
-                               llvm::ArrayRef<Type> genericArgs);
     void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
     llvm::Module& getIRModule() { return module; }
 
-    llvm::Function* getFunction(Type  receiverType, llvm::StringRef functionName,
-                                llvm::ArrayRef<Type> functionGenericArgs);
+    llvm::Function* getFunction(Type  receiverType, llvm::StringRef functionName);
     /// @param type The Delta type of the variable, or null if the variable is 'this'.
     void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
     llvm::Value* findValue(llvm::StringRef name, const Decl* decl);
@@ -128,19 +124,17 @@ private:
 
     void codegenDecl(const Decl& decl);
     void codegenFunctionDecl(const FunctionDecl& decl);
-    void codegenInitDecl(const InitDecl& decl, llvm::ArrayRef<Type> typeGenericArgs = {});
-    void codegenTypeDecl(const TypeDecl& decl);
+    void codegenInitDecl(const InitDecl& decl);
+    llvm::StructType* codegenTypeDecl(const TypeDecl& decl);
     void codegenVarDecl(const VarDecl& decl);
 
     llvm::Function* getFunctionForCall(const CallExpr& call);
-    llvm::Function* getFunctionProto(const FunctionDecl& decl, llvm::ArrayRef<Type> functionGenericArgs = {},
-                                     Type receiverType = nullptr, std::string&& mangledName = {});
+    llvm::Function* getFunctionProto(const FunctionDecl& decl, Type receiverType = nullptr,
+                                     std::string&& mangledName = {});
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
-    llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, llvm::ArrayRef<Type> genericArgs,
-                                      bool isMutating);
-    llvm::Type* codegenGenericTypeInstantiation(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs);
+    llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating);
     llvm::Value* getArrayDataPointer(const Expr& object, Type objectType);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
     llvm::Value* codegenOffsetUnsafely(const CallExpr& call);
@@ -154,19 +148,13 @@ private:
 private:
     class FunctionInstantiation {
     public:
-        FunctionInstantiation(const FunctionDecl& decl, llvm::ArrayRef<Type> receiverTypeGenericArgs,
-                              std::vector<Type> genericArgs, llvm::Function* function)
-        : decl(decl), receiverTypeGenericArgs(receiverTypeGenericArgs), genericArgs(std::move(genericArgs)),
-          function(function) {}
+        FunctionInstantiation(const FunctionDecl& decl, llvm::Function* function)
+        : decl(decl), function(function) {}
         const FunctionDecl& getDecl() const { return decl; }
-        llvm::ArrayRef<Type> getReceiverTypeGenericArgs() const { return receiverTypeGenericArgs; }
-        llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
         llvm::Function* getFunction() const { return function; }
 
     private:
         const FunctionDecl& decl;
-        llvm::ArrayRef<Type> receiverTypeGenericArgs;
-        std::vector<Type> genericArgs;
         llvm::Function* function;
     };
 
@@ -180,7 +168,6 @@ private:
     llvm::StringMap<FunctionInstantiation> functionInstantiations;
     std::vector<std::unique_ptr<FunctionDecl>> helperDecls;
     llvm::StringMap<std::pair<llvm::StructType*, const TypeDecl*>> structs;
-    llvm::StringMap<Type> currentGenericArgs;
     const Decl* currentDecl;
 
     /// The basic blocks to branch to on a 'break' statement, one element per scope.

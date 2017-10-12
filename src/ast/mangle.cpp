@@ -15,27 +15,53 @@ static void appendGenericArgs(std::string& mangled, llvm::ArrayRef<Type> generic
     mangled += '>';
 }
 
-std::string delta::mangle(const FunctionDecl& decl, llvm::ArrayRef<Type> typeGenericArgs,
-                          llvm::ArrayRef<Type> functionGenericArgs) {
-    std::string receiverTypeName = decl.getTypeDecl() ? decl.getTypeDecl()->getName() : "";
-    appendGenericArgs(receiverTypeName, typeGenericArgs);
-    return mangleFunctionDecl(receiverTypeName, decl.getName(), functionGenericArgs);
+std::string delta::mangle(const FunctionDecl& decl) {
+    Type receiver = decl.getTypeDecl() ? decl.getTypeDecl()->getType() : nullptr;
+    return mangleFunctionDecl(receiver, decl.getName(), decl.getGenericArgs());
 }
 
-std::string delta::mangleFunctionDecl(llvm::StringRef receiverType, llvm::StringRef functionName,
-                                      llvm::ArrayRef<Type> genericArgs) {
+std::string delta::mangleFunctionDecl(Type receiver, llvm::StringRef name, llvm::ArrayRef<Type> genericArgs) {
     std::string mangled;
-    if (receiverType.empty()) {
-        mangled = functionName.str();
-    } else {
-        mangled = receiverType.str() + "." + functionName.str();
+
+    if (receiver) {
+        mangled = receiver.getName();
+        appendGenericArgs(mangled, receiver.getGenericArgs());
+        mangled += '.';
     }
+
+    mangled += name;
     appendGenericArgs(mangled, genericArgs);
     return mangled;
 }
 
-std::string delta::mangle(const TypeDecl& decl, llvm::ArrayRef<Type> genericArgs) {
-    std::string mangled = decl.getName();
+std::string delta::mangle(const FunctionTemplate& decl) {
+    std::string receiverTypeName;
+
+    if (decl.getFunctionDecl()->getTypeDecl()) {
+        receiverTypeName = decl.getFunctionDecl()->getTypeDecl()->getName();
+    }
+
+    return mangleFunctionTemplate(receiverTypeName, decl.getFunctionDecl()->getName());
+}
+
+std::string delta::mangleFunctionTemplate(llvm::StringRef receiverType, llvm::StringRef functionName) {
+    std::string mangled;
+
+    if (receiverType.empty()) {
+        mangled = functionName;
+    } else {
+        mangled = (receiverType + "." + functionName).str();
+    }
+
+    return mangled;
+}
+
+std::string delta::mangle(const TypeDecl& decl) {
+    return mangleTypeDecl(decl.getName(), decl.getGenericArgs());
+}
+
+std::string delta::mangleTypeDecl(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs) {
+    std::string mangled = typeName;
     appendGenericArgs(mangled, genericArgs);
     return mangled;
 }

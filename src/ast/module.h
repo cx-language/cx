@@ -41,6 +41,7 @@ public:
     void pushScope() { scopes.emplace_back(); }
     void popScope() { scopes.pop_back(); }
     void add(llvm::StringRef name, Decl* decl) { scopes.back()[name].push_back(decl); }
+    void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front()[name].push_back(decl); }
     void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) {
         identifierReplacements.try_emplace(name, replacement);
     }
@@ -81,7 +82,7 @@ private:
         }
     }
 
-    std::vector<llvm::StringMap<llvm::SmallVector<Decl*, 1>>> scopes;
+    std::vector<llvm::StringMap<std::vector<Decl*>>> scopes;
     llvm::StringMap<std::string> identifierReplacements;
 };
 

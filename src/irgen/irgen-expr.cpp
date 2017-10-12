@@ -55,15 +55,13 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
-    auto type = resolve(expr.getType());
-
-    if (type.getPointee().isUnsizedArrayType()) {
+    if (expr.getType().getPointee().isUnsizedArrayType()) {
         return llvm::ConstantStruct::getAnon({
-            llvm::ConstantPointerNull::get(toIR(type.getPointee().getElementType())->getPointerTo()),
+            llvm::ConstantPointerNull::get(toIR(expr.getType().getPointee().getElementType())->getPointerTo()),
             llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(ctx), 0)
         });
     }
-    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(type)));
+    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
 }
 
 llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) {
@@ -82,7 +80,7 @@ llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
     switch (expr.getOperator()) {
         case PLUS: return codegenExpr(expr.getOperand());
         case MINUS:
-            if (resolve(expr.getOperand().getType()).isFloatingPoint()) {
+            if (expr.getOperand().getType().isFloatingPoint()) {
                 return builder.CreateFNeg(codegenExpr(expr.getOperand()));
             } else {
                 return builder.CreateNeg(codegenExpr(expr.getOperand()));
@@ -214,15 +212,12 @@ llvm::Value* IRGenerator::codegenShortCircuitBinaryOp(BinaryOperator op, const E
 }
 
 llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
-    if (!expr.isBuiltinOp(*this)) {
+    if (!expr.isBuiltinOp()) {
         return codegenCallExpr((const CallExpr&) expr);
     }
 
-    Type resolvedLHSType = resolve(expr.getLHS().getType());
-    Type resolvedRHSType = resolve(expr.getRHS().getType());
-
-    ASSERT(resolvedLHSType.isImplicitlyConvertibleTo(resolvedRHSType) ||
-           resolvedRHSType.isImplicitlyConvertibleTo(resolvedLHSType));
+    ASSERT(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType()) ||
+           expr.getRHS().getType().isImplicitlyConvertibleTo(expr.getLHS().getType()));
 
     switch (expr.getOperator()) {
         case AND_AND: case OR_OR:

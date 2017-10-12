@@ -220,15 +220,6 @@ std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
     out << br << (decl.isExtern() ? "(extern-function-decl " : "(function-decl ");
     delta::operator<<(out, decl.getName());
 
-    if (!decl.getGenericParams().empty()) {
-        out << " (generic-params ";
-        for (const GenericParamDecl& genericParam : decl.getGenericParams()) {
-            out << genericParam.getName();
-            if (&genericParam != &decl.getGenericParams().back()) out << " ";
-        }
-        out << ")";
-    }
-
     out << " (";
     for (const ParamDecl& param : decl.getParams()) {
         out << param;
@@ -251,6 +242,15 @@ std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
 
 std::ostream& operator<<(std::ostream& out, const DeinitDecl& decl) {
     return out << br << "(deinit-decl " << decl.getTypeDecl()->getName() << decl.getBody() << ")";
+}
+
+std::ostream& operator<<(std::ostream& out, const FunctionTemplate& decl) {
+    out << br << "(function-template (";
+    for (const GenericParamDecl& genericParam : decl.getGenericParams()) {
+        out << genericParam.getName();
+        if (&genericParam != &decl.getGenericParams().back()) out << " ";
+    }
+    return out << ")" << decl.getFunctionDecl() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldDecl& decl) {
@@ -285,12 +285,14 @@ std::ostream& operator<<(std::ostream& out, const ImportDecl& decl) {
 std::ostream& operator<<(std::ostream& out, const Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: return out << llvm::cast<ParamDecl>(decl);
+        case DeclKind::GenericParamDecl: llvm_unreachable("handled via FunctionTemplate");
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl: return out << llvm::cast<FunctionDecl>(decl);
-        case DeclKind::GenericParamDecl: llvm_unreachable("handled via FunctionDecl");
         case DeclKind::InitDecl: return out << llvm::cast<InitDecl>(decl);
         case DeclKind::DeinitDecl: return out << llvm::cast<DeinitDecl>(decl);
+        case DeclKind::FunctionTemplate: return out << llvm::cast<FunctionTemplate>(decl);
         case DeclKind::TypeDecl: return out << llvm::cast<TypeDecl>(decl);
+        case DeclKind::TypeTemplate: return out << llvm::cast<TypeTemplate>(decl);
         case DeclKind::VarDecl: return out << llvm::cast<VarDecl>(decl);
         case DeclKind::FieldDecl: return out << llvm::cast<FieldDecl>(decl);
         case DeclKind::ImportDecl: return out << llvm::cast<ImportDecl>(decl);

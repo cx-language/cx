@@ -4,14 +4,13 @@
 #include <string>
 #include <ostream>
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_ostream.h>
 #include "../support/utility.h"
 
 namespace delta {
-
-class TypeResolver;
 
 enum class TypeKind {
     BasicType,
@@ -79,6 +78,7 @@ public:
     bool isChar() const;
     bool isNull() const;
 
+    Type resolve(const llvm::StringMap<Type>& replacements) const;
     void appendType(Type);
     bool isImplicitlyConvertibleTo(Type) const;
     bool isInteger() const { return isSigned() || isUnsigned(); }

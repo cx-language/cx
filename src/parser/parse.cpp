@@ -136,6 +136,7 @@ std::vector<std::unique_ptr<Expr>> parseExprList();
 std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end);
 std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3);
 Type parseType();
+std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams);
 
 /// argument-list ::= '(' ')' | '(' nonempty-argument-list ')'
 /// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
@@ -818,10 +819,8 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
 }
 
 /// function-proto ::= 'func' id param-list ('->' type)?
-/// generic-function-proto ::= 'func' id generic-param-list param-list ('->' type)?
-/// generic-param-list ::= '<' generic-param-decls '>'
-/// generic-param-decls ::= id | id ',' generic-param-decls
-std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl) {
+std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl,
+                                                 std::vector<GenericParamDecl>* genericParams) {
     ASSERT(currentToken() == FUNC);
     consumeToken();
 
@@ -847,9 +846,8 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiv
         name = toString(consumeToken().getKind());
     }
 
-    std::vector<GenericParamDecl> genericParams;
     if (currentToken() == LT) {
-        parseGenericParamList(genericParams);
+        parseGenericParamList(*genericParams);
     }
 
     bool isVariadic = false;
@@ -865,19 +863,28 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiv
         }
     }
 
-    FunctionProto proto(std::move(name), std::move(params), std::move(returnType),
-                        std::move(genericParams), isVariadic, isExtern);
+    FunctionProto proto(std::move(name), std::move(params), std::move(returnType), isVariadic, isExtern);
 
     if (receiverTypeDecl) {
         return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, nameLocation);
     } else {
-        return llvm::make_unique<FunctionDecl>(std::move(proto), *currentModule, nameLocation);
+        return llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(),
+                                               *currentModule, nameLocation);
     }
+}
+
+/// function-template-proto ::= 'func' id template-param-list param-list ('->' type)?
+/// template-param-list ::= '<' template-param-decls '>'
+/// template-param-decls ::= id | id ',' template-param-decls
+std::unique_ptr<FunctionTemplate> parseFunctionTemplateProto(TypeDecl* receiverTypeDecl) {
+    std::vector<GenericParamDecl> genericParams;
+    auto decl = parseFunctionProto(false, receiverTypeDecl, &genericParams);
+    return llvm::make_unique<FunctionTemplate>(std::move(genericParams), std::move(decl));
 }
 
 /// function-decl ::= function-proto '{' stmt* '}'
 std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool requireBody = true) {
-    auto decl = parseFunctionProto(false, receiverTypeDecl);
+    auto decl = parseFunctionProto(false, receiverTypeDecl, nullptr);
 
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
@@ -892,11 +899,20 @@ std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool
     return decl;
 }
 
+/// function-template-decl ::= function-template-proto '{' stmt* '}'
+std::unique_ptr<FunctionTemplate> parseFunctionTemplate(TypeDecl* receiverTypeDecl) {
+    auto decl = parseFunctionTemplateProto(receiverTypeDecl);
+    parse(LBRACE);
+    decl->getFunctionDecl()->setBody(parseStmtsUntil(RBRACE));
+    parse(RBRACE);
+    return decl;
+}
+
 /// extern-function-decl ::= 'extern' function-proto ('\n' | ';')
 std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
     ASSERT(currentToken() == EXTERN);
     consumeToken();
-    auto decl = parseFunctionProto(true, nullptr);
+    auto decl = parseFunctionProto(true, nullptr, nullptr);
     parseStmtTerminator();
     return decl;
 }
@@ -940,9 +956,16 @@ FieldDecl parseFieldDecl(TypeDecl& typeDecl) {
     return FieldDecl(type, std::move(name.getString()), typeDecl, name.getLocation());
 }
 
+/// type-template-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
+std::unique_ptr<TypeTemplate> parseTypeTemplate() {
+    std::vector<GenericParamDecl> genericParams;
+    auto typeDecl = parseTypeDecl(&genericParams);
+    return llvm::make_unique<TypeTemplate>(std::move(genericParams), std::move(typeDecl));
+}
+
 /// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
 /// member-decl ::= field-decl | function-decl
-std::unique_ptr<TypeDecl> parseTypeDecl() {
+std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams) {
     TypeTag tag;
     switch (consumeToken()) {
         case CLASS: tag = TypeTag::Class; break;
@@ -953,12 +976,11 @@ std::unique_ptr<TypeDecl> parseTypeDecl() {
 
     auto name = parse(IDENTIFIER);
 
-    std::vector<GenericParamDecl> genericParams;
     if (currentToken() == LT) {
-        parseGenericParamList(genericParams);
+        parseGenericParamList(*genericParams);
     }
 
-    auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::move(genericParams),
+    auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::vector<Type>(),
                                                 *currentModule, name.getLocation());
     parse(LBRACE);
 
@@ -1007,24 +1029,35 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | import-decl | var-decl
 std::unique_ptr<Decl> parseTopLevelDecl(const TypeChecker& typeChecker) {
     switch (currentToken()) {
-        case FUNC: {
-            auto decl = parseFunctionDecl(/* receiverTypeDecl */ nullptr);
-            typeChecker.addToSymbolTable(*decl);
-            return std::move(decl);
-        }
+        case FUNC:
+            if (lookAhead(2) == LT) {
+                auto decl = parseFunctionTemplate(nullptr);
+                typeChecker.addToSymbolTable(*decl);
+                return std::move(decl);
+            } else {
+                auto decl = parseFunctionDecl(nullptr);
+                typeChecker.addToSymbolTable(*decl);
+                return std::move(decl);
+            }
         case EXTERN: {
             auto decl = parseExternFunctionDecl();
             typeChecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
         case CLASS: case STRUCT: case INTERFACE: {
-            auto decl = parseTypeDecl();
-            typeChecker.addToSymbolTable(*decl);
-            return std::move(decl);
+            if (lookAhead(2) == LT) {
+                auto decl = parseTypeTemplate();
+                typeChecker.addToSymbolTable(*decl);
+                return std::move(decl);
+            } else {
+                auto decl = parseTypeDecl(nullptr);
+                typeChecker.addToSymbolTable(*decl);
+                return std::move(decl);
+            }
         }
         case LET: case VAR: {
             auto decl = parseVarDecl();
-            typeChecker.addToSymbolTable(*decl);
+            typeChecker.addToSymbolTable(*decl, true);
             return std::move(decl);
         }
         case IMPORT:

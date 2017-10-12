@@ -43,6 +43,8 @@ public:
 
     StmtKind getKind() const { return kind; }
 
+    std::unique_ptr<Stmt> instantiate(const llvm::StringMap<Type>& genericArgs) const;
+
 protected:
     Stmt(StmtKind kind) : kind(kind) {}
 

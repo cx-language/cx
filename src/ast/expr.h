@@ -12,7 +12,6 @@
 namespace delta {
 
 class Decl;
-class TypeResolver;
 
 enum class ExprKind {
     VarExpr,
@@ -57,6 +56,7 @@ public:
     bool isRvalue() const { return !isLvalue(); }
     SourceLocation getLocation() const { return location; }
     void markAsMoved();
+    std::unique_ptr<Expr> instantiate(const llvm::StringMap<Type>& genericArgs) const;
 
 protected:
     Expr(ExprKind kind, SourceLocation location) : kind(kind), type(nullptr), location(location) {}
@@ -170,8 +170,8 @@ public:
     : Expr(ExprKind::CallExpr, location), callee(std::move(callee)), args(std::move(args)),
       genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
-    llvm::StringRef getFunctionName(const TypeResolver* resolver = nullptr) const;
-    std::string getMangledFunctionName(const TypeResolver& resolver) const;
+    llvm::StringRef getFunctionName() const;
+    std::string getMangledFunctionName() const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
     bool isInitCall() const;
     bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFunctionName()); }
@@ -237,7 +237,7 @@ public:
     BinaryOperator getOperator() const { return op; }
     Expr& getLHS() const { return *getArgs()[0].getValue(); }
     Expr& getRHS() const { return *getArgs()[1].getValue(); }
-    bool isBuiltinOp(const TypeResolver& resolver) const;
+    bool isBuiltinOp() const;
     Decl* getCalleeDecl() const { return calleeDecl; }
     void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }

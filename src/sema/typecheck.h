@@ -7,7 +7,6 @@
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"
-#include "../ast/type-resolver.h"
 
 namespace llvm {
 class StringRef;
@@ -29,11 +28,11 @@ std::vector<Module*> getAllImportedModules();
 void typecheckModule(Module& module, const PackageManifest* manifest,
                      llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse);
 
-class TypeChecker : public TypeResolver {
+class TypeChecker {
 public:
     explicit TypeChecker(Module* currentModule, SourceFile* currentSourceFile)
     : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunction(nullptr),
-      typecheckingGenericFunction(false) {}
+      isPostProcessing(false) {}
 
     Module* getCurrentModule() const { return currentModule; }
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
@@ -41,16 +40,19 @@ public:
     Decl& findDecl(llvm::StringRef name, SourceLocation location, bool everywhere = false) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, bool everywhere = false) const;
 
+    void addToSymbolTable(FunctionTemplate& decl) const;
     void addToSymbolTable(FunctionDecl& decl) const;
     void addToSymbolTable(FunctionDecl&& decl) const;
+    void addToSymbolTable(TypeTemplate& decl) const;
     void addToSymbolTable(TypeDecl& decl) const;
     void addToSymbolTable(TypeDecl&& decl) const;
-    void addToSymbolTable(VarDecl& decl) const;
+    void addToSymbolTable(VarDecl& decl, bool global) const;
     void addToSymbolTable(VarDecl&& decl) const;
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) const;
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false) const;
     void typecheckVarDecl(VarDecl& decl, bool isGlobal) const;
+    void typecheckFieldDecl(FieldDecl& decl) const;
     void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
                                llvm::ArrayRef<std::string> importSearchPaths,
                                ParserFunction& parse) const;
@@ -58,6 +60,7 @@ public:
 
 private:
     void typecheckFunctionDecl(FunctionDecl& decl) const;
+    void typecheckFunctionTemplate(FunctionTemplate& decl) const;
     void typecheckMemberDecl(Decl& decl) const;
 
     void typecheckStmt(Stmt& stmt) const;
@@ -71,9 +74,11 @@ private:
     void typecheckWhileStmt(WhileStmt& whileStmt) const;
     void typecheckForStmt(ForStmt& forStmt) const;
     void typecheckBreakStmt(BreakStmt& breakStmt) const;
+    void typecheckType(Type type) const;
     void typecheckParamDecl(ParamDecl& decl) const;
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const;
     void typecheckTypeDecl(TypeDecl& decl) const;
+    void typecheckTypeTemplate(TypeTemplate& decl) const;
     void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
                              llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse) const;
 
@@ -88,17 +93,13 @@ private:
     Type typecheckSubscriptExpr(SubscriptExpr& expr) const;
     Type typecheckUnwrapExpr(UnwrapExpr& expr) const;
 
-    Type resolveTypePlaceholder(llvm::StringRef name) const override;
     bool isInterface(Type type) const;
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool implementsInterface(TypeDecl& type, TypeDecl& interface) const;
-    bool isValidConversion(Expr& expr, Type unresolvedSource, Type unresolvedTarget) const;
+    bool isValidConversion(Expr& expr, Type source, Type target) const;
     bool isValidConversion(llvm::ArrayRef<std::unique_ptr<Expr>> exprs, Type source, Type target) const;
-    void setCurrentGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
-                               CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
-    void setCurrentGenericArgsForGenericFunction(FunctionDecl& functionDecl, CallExpr& callExpr) const;
-    std::vector<Type> getGenericArgsAsArray() const;
-    std::vector<Type> getUnresolvedGenericArgs() const;
+    llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
+                                                CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     FunctionDecl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
@@ -107,7 +108,7 @@ private:
                       bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type) const;
-    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name) const;
+    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) const;
     template<typename DeclT>
     void addToSymbolTableNonAST(DeclT& decl) const;
 
@@ -115,9 +116,8 @@ private:
     Module* currentModule;
     SourceFile* currentSourceFile;
     mutable FunctionDecl* currentFunction;
-    mutable llvm::StringMap<Type> currentGenericArgs;
-    mutable bool typecheckingGenericFunction;
-    mutable std::vector<std::pair<FunctionDecl&, llvm::StringMap<Type>>> genericFunctionInstantiationsToTypecheck;
+    mutable bool isPostProcessing;
+    mutable std::vector<Decl*> declsToTypecheck;
 };
 
 }

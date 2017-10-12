@@ -1,0 +1,10 @@
+// RUN: %delta -print-ir %s
+
+func f<T>() {
+    var i = 0;
+    i++;
+}
+
+func main() {
+    f<int>();
+}

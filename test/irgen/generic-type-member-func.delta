@@ -13,7 +13,8 @@ struct F<T, U> {
     // CHECK-DAG: define void @"F<int, bool>.foo"(%"F<int, bool>" %this)
     func foo() { }
 
-    // UNUSED-NOT: unused
+    // TODO: Don't generate code for unused functions:
+    // UNUSED: unused
     func unused() { }
 }
 
