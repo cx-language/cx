@@ -1,0 +1,38 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct S {
+    let i: int;
+    init() {}
+    func f() {}
+}
+
+class C {
+    let i: int;
+    init() {}
+    func f() {}
+}
+
+func s() -> S { return S(); }
+func c() -> C { return C(); }
+
+func main() {
+    // CHECK: %1 = call %S @s()
+    // CHECK-NEXT: call void @S.f(%S %1)
+    s().f();
+
+    // CHECK-NEXT: %2 = call %C @c()
+    // CHECK-NEXT: %3 = alloca %C
+    // CHECK-NEXT: store %C %2, %C* %3
+    // CHECK-NEXT: call void @C.f(%C* %3)
+    c().f();
+
+    // CHECK-NEXT: %4 = call %S @S.init()
+    // CHECK-NEXT: call void @S.f(%S %4)
+    S().f();
+
+    // CHECK-NEXT: %5 = call %C @C.init()
+    // CHECK-NEXT: %6 = alloca %C
+    // CHECK-NEXT: store %C %5, %C* %6
+    // CHECK-NEXT: call void @C.f(%C* %6)
+    C().f();
+}

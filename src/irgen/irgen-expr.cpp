@@ -251,7 +251,15 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     if (exprType.isPointerType()) exprType = exprType.getPointee();
 
     if (!targetType || expr.isRvalue() || !exprType.isBasicType()) {
-        return codegenExpr(expr);
+        auto* value = codegenExpr(expr);
+
+        if (targetType && targetType->isPointerTy() && !value->getType()->isPointerTy()) {
+            auto* alloca = builder.CreateAlloca(value->getType());
+            builder.CreateStore(value, alloca);
+            return alloca;
+        } else {
+            return value;
+        }
     }
 
     if (!targetType->isPointerTy()) {
