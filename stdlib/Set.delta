@@ -1,10 +1,10 @@
 class Set<E: Hashable> {
 
     var hashTable: Array<Array<E> >;
-
     var capacity: uint64;
     var size: uint64;
 
+    /// Initializes an empty set
     init() {
         size = 0;
         capacity = 128; // TODO pick good number
@@ -12,7 +12,12 @@ class Set<E: Hashable> {
         increaseTableSize(int(capacity));
     }
 
+    /// Inserts an element into the set. If the element exists already, nothing is done.
     mutating func insert(e: E) {
+        if (this.contains(e)) {
+            return;
+        }
+
         let hashValue = int(e.hash() % capacity);
         hashTable[hashValue].append(e);
         size++;
@@ -22,12 +27,14 @@ class Set<E: Hashable> {
         }
     }
 
+    /// Expands the hash table size, needed when there's too many elements in the set
     mutating func increaseTableSize(newCapacity: int) {
         for(i in 0..int(newCapacity)) {
             hashTable.append(Array<E>());
         }
     }
 
+    /// Resizes the set. This includes copying the old table into a new, bigger one
     mutating func resize() {
         var newTable = Array<Array<E> >();
         let newCapacity = int(capacity * 2);
@@ -47,7 +54,7 @@ class Set<E: Hashable> {
         hashTable = newTable;
     }
 
-
+    /// Checks if e is part of the set.
     func contains(e: E) -> bool {
         let hashValue = int(e.hash() % capacity);
         let slot = hashTable[hashValue];
@@ -65,6 +72,8 @@ class Set<E: Hashable> {
         return false;
     }
 
+    /// Returns the load factor for the set. This is used to increase the set size once
+    /// the load factor gets too big.
     func loadFactor() -> float64 {
         return float64(size) / (float64(capacity) * 1.0);
     }
