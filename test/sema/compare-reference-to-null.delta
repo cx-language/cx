@@ -2,7 +2,7 @@
 
 func main() {
     let i = 42;
-    let p: int& = &i;
+    let p = &i;
     // CHECK: [[@LINE+1]]:11: error: invalid operands to binary expression ('int&' and 'null')
     if (p == null) { }
 }

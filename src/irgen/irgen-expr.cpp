@@ -230,20 +230,26 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
 }
 
 bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* targetType) {
-    return sourceType.isPointerType() && sourceType.getPointee().isSizedArrayType()
-           && targetType->isStructTy() && targetType->getStructNumElements() == 2
-           && targetType->getStructElementType(0)->isPointerTy()
-           && targetType->getStructElementType(1)->isIntegerTy(32);
+    return sourceType.removePointer().isSizedArrayType() && targetType->isStructTy()
+        && targetType->getStructName().startswith("ArrayRef");
 }
 
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
     if (targetType && isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
-        ASSERT(expr.getType().getPointee().getArraySize() != ArrayType::unsized);
-        auto* elementPtr = builder.CreateConstGEP2_32(nullptr, codegenExpr(expr), 0, 0);
+        ASSERT(expr.getType().removePointer().getArraySize() != ArrayType::unsized);
+        llvm::Value* value;
+
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(&expr)) {
+            value = codegenLvalueVarExpr(*varExpr);
+        } else {
+            value = codegenExpr(expr);
+        }
+
+        auto* elementPtr = builder.CreateConstGEP2_32(nullptr, value, 0, 0);
         auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(targetType),
                                                    elementPtr, 0);
         auto size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx),
-                                           expr.getType().getPointee().getArraySize());
+                                           expr.getType().removePointer().getArraySize());
         return builder.CreateInsertValue(arrayRef, size, 1);
     }
 
@@ -251,6 +257,10 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     if (exprType.isPointerType()) exprType = exprType.getPointee();
 
     if (!targetType || expr.isRvalue() || !exprType.isBasicType()) {
+        if (expr.getType().isSizedArrayType() && targetType->isPointerTy()) {
+            return codegenLvalueExpr(expr);
+        }
+
         auto* value = codegenExpr(expr);
 
         if (targetType && targetType->isPointerTy() && !value->getType()->isPointerTy()) {
@@ -267,8 +277,17 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
             return builder.CreateLoad(codegenExpr(expr));
         }
     } else if (!expr.getType().isPointerType()) {
-        return codegenLvalueExpr(expr);
+        auto* value = codegenLvalueExpr(expr);
+
+        if (value->getType()->isPointerTy()) {
+            return value;
+        } else {
+            auto* alloca = builder.CreateAlloca(value->getType());
+            builder.CreateStore(value, alloca);
+            return alloca;
+        }
     }
+
     return codegenExpr(expr);
 }
 
@@ -466,7 +485,7 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
 llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr: return codegenLvalueVarExpr(llvm::cast<VarExpr>(expr));
-        case ExprKind::StringLiteralExpr: llvm_unreachable("no lvalue string literals");
+        case ExprKind::StringLiteralExpr: return codegenStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
         case ExprKind::IntLiteralExpr: llvm_unreachable("no lvalue integer literals");
         case ExprKind::FloatLiteralExpr: llvm_unreachable("no lvalue float literals");
         case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");

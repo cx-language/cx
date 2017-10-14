@@ -1,0 +1,14 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct S {}
+
+// CHECK: define void @f({} %s)
+func f(s: S) {
+    // CHECK-NEXT: %1 = alloca {}
+    // CHECK-NEXT: store {} %s, {}* %1
+    // CHECK-NEXT: call void @g({}* %1)
+    g(s);
+    // CHECK-NEXT: ret void
+}
+
+func g(s: S&) {}

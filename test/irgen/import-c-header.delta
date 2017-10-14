@@ -20,5 +20,5 @@ func main() {
     f.baz = "foo";
     // CHECK-NEXT: %4 = call i32 @getBar(%Foo* %f)
     // CHECK-NEXT: store i32 %4, i32* %bar
-    let bar = getBar(&f);
+    let bar = getBar(f);
 }

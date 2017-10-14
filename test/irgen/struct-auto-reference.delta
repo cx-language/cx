@@ -1,0 +1,12 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct Foo { let i: int; }
+
+func foo(ref_f: Foo*) { }
+
+func main() {
+    // CHECK: %f = alloca %Foo
+    let f: Foo = uninitialized;
+    // CHECK-NEXT: call void @foo(%Foo* %f)
+    foo(f);
+}

@@ -9,5 +9,5 @@ func main() {
     let b = [1, 2, 3];
 
     // CHECK-DAG: call {} @"M<int>.init"(%"ArrayRef<int>" %{{[0-9]+}})
-    _ = M<int>(&b);
+    _ = M<int>(b);
 }

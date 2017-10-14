@@ -11,16 +11,16 @@ func main() {
     // CHECK-NEXT: %2 = insertvalue %"ArrayRef<int>" undef, i32* %1, 0
     // CHECK-NEXT: %3 = insertvalue %"ArrayRef<int>" %2, i32 3, 1
     // CHECK-NEXT: call void @foo(%"ArrayRef<int>" %3)
-    foo(&three);
+    foo(three);
     // CHECK-NEXT: call void @bar([3 x i32]* %three)
-    bar(&three);
+    bar(three);
     // CHECK-NEXT: store i32 3, i32* %b
     let b = three.count;
     // CHECK-NEXT: %4 = getelementptr [3 x i32], [3 x i32]* %three, i32 0, i32 0
     // CHECK-NEXT: %5 = insertvalue %"ArrayRef<int>" undef, i32* %4, 0
     // CHECK-NEXT: %6 = insertvalue %"ArrayRef<int>" %5, i32 3, 1
     // CHECK-NEXT: store %"ArrayRef<int>" %6, %"ArrayRef<int>"* %ref
-    let ref: int[]& = &three;
+    let ref: int[]& = three;
     // CHECK-NEXT: %ref1 = load %"ArrayRef<int>", %"ArrayRef<int>"* %ref
     // CHECK-NEXT: %count = extractvalue %"ArrayRef<int>" %ref1, 1
     // CHECK-NEXT: store i32 %count, i32* %bb

@@ -1,0 +1,41 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct A {
+    let i: int;
+    init() {}
+}
+
+class B {
+    let i: int;
+    init() {}
+}
+
+func f(a: A&) {}
+func f(b: B&) {}
+func f(i: int&) {}
+
+func main() {
+    // CHECK: %a = alloca %A
+    let a: A = uninitialized;
+
+    // CHECK-NEXT: %b = alloca %B
+    let b: B = uninitialized;
+
+    // CHECK-NEXT: %1 = call %A @A.init()
+    // CHECK-NEXT: %2 = alloca %A
+    // CHECK-NEXT: store %A %1, %A* %2
+    // CHECK-NEXT: call void @f(%A* %2)
+    f(A());
+
+    // CHECK-NEXT: %3 = call %B @B.init()
+    // CHECK-NEXT: %4 = alloca %B
+    // CHECK-NEXT: store %B %3, %B* %4
+    // CHECK-NEXT: call void @f{{[\.0-9]+}}(%B* %4)
+
+    f(B());
+
+    // CHECK-NEXT: %5 = alloca i32
+    // CHECK-NEXT: store i32 0, i32* %5
+    // CHECK-NEXT: call void @f{{[\.0-9]+}}(i32* %5)
+    f(0);
+}

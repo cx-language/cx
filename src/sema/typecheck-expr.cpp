@@ -263,14 +263,12 @@ bool TypeChecker::isValidConversion(Expr& expr, Type source, Type target) const 
         // Special case: allow passing string literals as C-strings (const char*).
         expr.setType(target);
         return true;
-    } else if (expr.isLvalue() && source.isBasicType() && target.isPointerType()) {
-        auto typeDecl = getTypeDecl(llvm::cast<BasicType>(*source));
-        if (!typeDecl || typeDecl->passByValue()) {
-            return false;
-        }
-        if (source.isImplicitlyConvertibleTo(target.getPointee())) {
-            return true;
-        }
+    } else if (source.isBasicType() && target.isPointerType()
+               && source.isImplicitlyConvertibleTo(target.getPointee())) {
+        return true;
+    } else if (source.isArrayType() && target.isPointerType() && target.getPointee().isArrayType()
+               && source.getElementType().isImplicitlyConvertibleTo(target.getPointee().getElementType())) {
+        return true;
     }
 
     return false;

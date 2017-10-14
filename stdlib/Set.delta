@@ -28,7 +28,7 @@ class Set<E: Hashable> {
     }
 
     /// Removes an element from the set, if it exists there.
-    mutating func remove(e: E) {
+    mutating func remove(e: E&) {
         let hashValue = int(e.hash() % capacity);
         let slot = hashTable[hashValue];
 
@@ -37,7 +37,7 @@ class Set<E: Hashable> {
         }
 
         for (let i in 0..slot.size()) {
-            if (*slot[i] == e) {
+            if (*slot[i] == *e) {
                 slot.removeAt(i);
                 return;
             }
@@ -72,7 +72,7 @@ class Set<E: Hashable> {
     }
 
     /// Checks if e is part of the set.
-    func contains(e: E) -> bool {
+    func contains(e: E&) -> bool {
         let hashValue = int(e.hash() % capacity);
         let slot = hashTable[hashValue];
 
@@ -81,7 +81,7 @@ class Set<E: Hashable> {
         }
 
         for (let i in 0..slot.size()) {
-            if (*slot[i] == e) {
+            if (*slot[i] == *e) {
                 return true;
             }
         }
