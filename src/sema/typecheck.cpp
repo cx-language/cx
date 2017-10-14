@@ -39,7 +39,7 @@ namespace {
 /// Storage for Decls that are not in the AST but are referenced by the symbol table.
 std::vector<std::unique_ptr<Decl>> nonASTDecls;
 
-llvm::MutableArrayRef<FieldDecl> currentFieldDecls;
+std::vector<std::pair<FieldDecl*, bool>> currentFieldDecls;
 Type functionReturnType = nullptr;
 int breakableBlocks = 0;
 
@@ -181,6 +181,49 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     if (!isImplicitlyCopyable(rhsType)) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.getRHS())) {
             varExpr->getDecl()->markAsMoved();
+        }
+    }
+
+    markFieldAsInitialized(*stmt.getLHS());
+}
+
+void TypeChecker::markFieldAsInitialized(Expr& expr) const {
+    if (currentFunction->isInitDecl()) {
+        switch (expr.getKind()) {
+            case ExprKind::VarExpr: {
+                auto* varExpr = llvm::cast<VarExpr>(&expr);
+
+                if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
+                    auto it = llvm::find_if(currentFieldDecls, [&](std::pair<FieldDecl*, bool>& p) {
+                        return p.first == fieldDecl;
+                    });
+
+                    if (it != currentFieldDecls.end()) {
+                        it->second = true; // Mark member variable as initialized.
+                    }
+                }
+
+                break;
+            }
+            case ExprKind::MemberExpr: {
+                auto* memberExpr = llvm::cast<MemberExpr>(&expr);
+
+                if (auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->getBaseExpr())) {
+                    if (varExpr->getIdentifier() == "this") {
+                        auto it = llvm::find_if(currentFieldDecls, [&](std::pair<FieldDecl*, bool>& p) {
+                            return p.first->getName() == memberExpr->getMemberName();
+                        });
+
+                        if (it != currentFieldDecls.end()) {
+                            it->second = true; // Mark member variable as initialized.
+                        }
+                    }
+                }
+
+                break;
+            }
+            default:
+                break;
         }
     }
 }
@@ -372,8 +415,8 @@ Decl& TypeChecker::findDecl(llvm::StringRef name, SourceLocation location, bool 
     }
 
     for (auto& field : currentFieldDecls) {
-        if (field.getName() == name) {
-            return field;
+        if (field.first->getName() == name) {
+            return *field.first;
         }
     }
 
@@ -467,13 +510,25 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
         functionReturnType = decl.getReturnType();
         SAVE_STATE(currentFieldDecls);
         if (receiverTypeDecl) {
-            currentFieldDecls = receiverTypeDecl->getFields();
+            for (auto& field : receiverTypeDecl->getFields()) {
+                currentFieldDecls.emplace_back(&field, false);
+            }
+
             Type thisType = receiverTypeDecl->getTypeForPassing(decl.isMutating());
             addToSymbolTable(VarDecl(thisType, "this", nullptr, *getCurrentModule(), decl.getLocation()));
         }
 
         for (auto& stmt : decl.getBody()) {
             typecheckStmt(*stmt);
+        }
+
+        if (decl.isInitDecl()) {
+            for (auto& fieldAndInitialized : currentFieldDecls) {
+                if (!fieldAndInitialized.second) {
+                    warning(decl.getLocation(), "initializer doesn't initialize member variable '",
+                            fieldAndInitialized.first->getName(), "'");
+                }
+            }
         }
     }
 
