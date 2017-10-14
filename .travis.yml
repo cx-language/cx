@@ -5,7 +5,8 @@ language: cpp
 
 matrix:
     include:
-        - compiler: clang
+        - os: linux
+          compiler: clang
           addons:
               apt:
                   sources:
@@ -14,7 +15,8 @@ matrix:
                       - clang-3.9
                       - libedit-dev
 
-        - compiler: gcc
+        - os: linux
+          compiler: gcc
           addons:
               apt:
                   sources:
@@ -25,19 +27,33 @@ matrix:
                       - libedit-dev
                       - lcov
 
+        - os: osx
+          compiler: clang
+
 before_install:
-    - if [ $CXX == "clang++" ]; then export CXX="clang++-3.9"; fi
-    - if [ $CXX == "g++" ]; then export CC="gcc-5" CXX="g++-5" CXXFLAGS="-coverage"; fi
+    - if [ $TRAVIS_OS_NAME == "linux" ]; then
+          if [ $CXX == "clang++" ]; then export CXX="clang++-3.9"; fi;
+          if [ $CXX == "g++" ]; then export CC="gcc-5" CXX="g++-5" CXXFLAGS="-coverage"; fi;
+      fi
 
 install:
-    - wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-    - tar -xvf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
-    - pip install --user lit cpp-coveralls
+    - if [ $TRAVIS_OS_NAME == "linux" ]; then
+          wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz;
+          tar -xvf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz;
+          export LLVMDIR="$PWD/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04";
+          pip install --user lit cpp-coveralls;
+      fi
+    - if [ $TRAVIS_OS_NAME == "osx" ]; then
+          brew update;
+          brew install cmake llvm;
+          export LLVMDIR="$(brew --prefix llvm)";
+          pip install lit;
+      fi
 
 script:
     - set -e # Error out immediately if any of the following commands fails.
     - cmake -G "Unix Makefiles"
-      -DCMAKE_PREFIX_PATH=$PWD/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04
+      -DCMAKE_PREFIX_PATH="$LLVMDIR"
       -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_BUILD_TYPE=Debug .
     - make
     - make check
