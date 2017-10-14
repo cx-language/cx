@@ -27,6 +27,23 @@ class Set<E: Hashable> {
         }
     }
 
+    /// Removes an element from the set, if it exists there.
+    mutating func remove(e: E) {
+        let hashValue = int(e.hash() % capacity);
+        let slot = hashTable[hashValue];
+
+        if (slot.size() == 0) {
+            return;
+        }
+
+        for (i in 0..slot.size()) {
+            if (*slot[i] == e) {
+                slot.removeAt(i);
+                return;
+            }
+        }
+    }
+
     /// Expands the hash table size, needed when there's too many elements in the set
     mutating func increaseTableSize(newCapacity: int) {
         for(i in 0..int(newCapacity)) {
