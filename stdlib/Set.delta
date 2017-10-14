@@ -1,0 +1,71 @@
+class Set<E: Hashable> {
+
+    var hashTable: Array<Array<E> >;
+
+    var capacity: uint64;
+    var size: uint64;
+
+    init() {
+        size = 0;
+        capacity = 128; // TODO pick good number
+        hashTable = Array<Array<E> >();
+        increaseTableSize(int(capacity));
+    }
+
+    mutating func insert(e: E) {
+        let hashValue = int(e.hash() % capacity);
+        hashTable[hashValue].append(e);
+        size++;
+
+        if (loadFactor() > 0.66) {
+            resize();
+        }
+    }
+
+    mutating func increaseTableSize(newCapacity: int) {
+        for(i in 0..int(newCapacity)) {
+            hashTable.append(Array<E>());
+        }
+    }
+
+    mutating func resize() {
+        var newTable = Array<Array<E> >();
+        let newCapacity = int(capacity * 2);
+        increaseTableSize(newCapacity);
+
+        for (i in 0..int(capacity)) {
+            let e = hashTable[i];
+            if (e.size() != 0) {
+                for (j in 0..e.size()) {
+                    let el = e[j];
+                    *newTable[int(el.hash()) % newCapacity] = *e;
+                }
+            }
+        }
+
+        capacity = uint64(newCapacity);
+        hashTable = newTable;
+    }
+
+
+    func contains(e: E) -> bool {
+        let hashValue = int(e.hash() % capacity);
+        let slot = hashTable[hashValue];
+
+        if (slot.size() == 0) {
+            return false;
+        }
+
+        for (i in 0..slot.size()) {
+            if (*slot[i] == e) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    func loadFactor() -> float64 {
+        return float64(size) / (float64(capacity) * 1.0);
+    }
+}

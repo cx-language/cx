@@ -53,6 +53,11 @@ class String {
     mutating func removeLast() {
         characters.removeAt(characters.size() - 2);
     }
+
+    /// Supports using strings with sets and dicts
+    func hash() -> uint64 {
+        return StringRef(this).hash();
+    }
 }
 
 func +(a: StringRef, b: StringRef) -> String {
