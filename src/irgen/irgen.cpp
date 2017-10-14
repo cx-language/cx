@@ -464,8 +464,8 @@ llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool is
     }
 }
 
-llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl,
-                                              Type receiverType, std::string&& mangledName) {
+llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, Type receiverType,
+                                              std::string&& mangledName) {
     auto it = functionInstantiations.find(mangleWithParams(decl));
     if (it != functionInstantiations.end()) return it->second.getFunction();
 
@@ -508,23 +508,12 @@ llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
     const Decl* decl = call.getCalleeDecl();
 
     switch (decl->getKind()) {
-        case DeclKind::FunctionTemplate:
-            llvm_unreachable("FunctionTemplate callee decl not replaced with a FunctionDecl");
         case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl: {
-            auto* functionDecl = llvm::cast<FunctionDecl>(decl);
-            return getFunctionProto(*functionDecl, call.getReceiverType());
-        }
+        case DeclKind::MethodDecl:
         case DeclKind::InitDecl: {
-            auto* initDecl = llvm::cast<InitDecl>(decl);
-            Type receiverType = initDecl->getTypeDecl()->getType();
-            llvm::Function* function = getFunctionProto(*initDecl, receiverType);
-            if (function->empty() && !call.getGenericArgs().empty()) {
-                auto backup = builder.GetInsertBlock();
-                codegenInitDecl(*initDecl);
-                builder.SetInsertPoint(backup);
-            }
-            return function;
+            auto* functionDecl = llvm::cast<FunctionDecl>(decl);
+            Type receiver = functionDecl->getTypeDecl() ? functionDecl->getTypeDecl()->getType() : nullptr;
+            return getFunctionProto(*functionDecl, receiver);
         }
         default:
             llvm_unreachable("invalid callee decl");
