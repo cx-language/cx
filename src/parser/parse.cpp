@@ -552,9 +552,8 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
 /// mutability-specifier ::= 'let' | 'var'
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'uninitialized'
-std::unique_ptr<VarDecl> parseVarDecl() {
-    ASSERT(currentToken().is(LET, VAR));
-    bool isMutable = consumeToken() == VAR;
+std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue) {
+    bool isMutable = parse({ LET, VAR }) == VAR;
     auto name = parse(IDENTIFIER);
 
     Type type;
@@ -566,17 +565,22 @@ std::unique_ptr<VarDecl> parseVarDecl() {
     }
     type.setMutable(isMutable);
 
-    parse(ASSIGN);
-    auto initializer = currentToken() != UNINITIALIZED ? parseExpr() : nullptr;
-    if (!initializer) consumeToken();
-    parseStmtTerminator();
+    std::unique_ptr<Expr> initializer;
+
+    if (requireInitialValue) {
+        parse(ASSIGN);
+        initializer = currentToken() != UNINITIALIZED ? parseExpr() : nullptr;
+        if (!initializer) consumeToken();
+        parseStmtTerminator();
+    }
+
     return llvm::make_unique<VarDecl>(type, name.getString(), std::move(initializer),
                                       *currentModule, name.getLocation());
 }
 
 /// var-stmt ::= var-decl
 std::unique_ptr<VarStmt> parseVarStmt() {
-    return llvm::make_unique<VarStmt>(parseVarDecl());
+    return llvm::make_unique<VarStmt>(parseVarDecl(true));
 }
 
 /// call-stmt ::= call-expr ('\n' | ';')
@@ -660,17 +664,17 @@ std::unique_ptr<WhileStmt> parseWhileStmt() {
 /// for-stmt ::= 'for' '(' id 'in' expr ')' '{' stmt* '}'
 std::unique_ptr<ForStmt> parseForStmt() {
     ASSERT(currentToken() == FOR);
+    auto location = getCurrentLocation();
     consumeToken();
     parse(LPAREN);
-    auto id = parse(IDENTIFIER);
+    auto variable = parseVarDecl(false);
     parse(IN);
     auto range = parseExpr();
     parse(RPAREN);
     parse(LBRACE);
     auto body = parseStmtsUntil(RBRACE);
     parse(RBRACE);
-    return llvm::make_unique<ForStmt>(std::string(id.getString()), std::move(range),
-                                      std::move(body), id.getLocation());
+    return llvm::make_unique<ForStmt>(std::move(variable), std::move(range), std::move(body), location);
 }
 
 /// switch-stmt ::= 'switch' '(' expr ')' '{' cases default-case? '}'
@@ -1056,7 +1060,7 @@ std::unique_ptr<Decl> parseTopLevelDecl(const TypeChecker& typeChecker) {
             }
         }
         case LET: case VAR: {
-            auto decl = parseVarDecl();
+            auto decl = parseVarDecl(true);
             typeChecker.addToSymbolTable(*decl, true);
             return std::move(decl);
         }

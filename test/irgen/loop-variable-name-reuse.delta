@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
 func main() {
-    for (i in 0...5) { }
-    for (i in 0...5) { }
+    for (let i in 0...5) { }
+    for (let i in 0...5) { }
 }

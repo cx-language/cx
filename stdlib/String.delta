@@ -10,7 +10,7 @@ class String {
         characters = Array<char>();
         characters.reserve(string.size() + 1);
 
-        for (index in 0..string.size()) {
+        for (let index in 0..string.size()) {
             characters.append(string[index]);
         }
 
@@ -63,11 +63,11 @@ class String {
 func +(a: StringRef, b: StringRef) -> String {
     var result = String();
 
-    for (index in 0..a.size()) {
+    for (let index in 0..a.size()) {
         result.append(a[index]);
     }
 
-    for (index in 0..b.size()) {
+    for (let index in 0..b.size()) {
         result.append(b[index]);
     }
 
@@ -77,7 +77,7 @@ func +(a: StringRef, b: StringRef) -> String {
 func +(a: String, b: StringRef) -> String {
     var result = a;
 
-    for (index in 0..b.size()) {
+    for (let index in 0..b.size()) {
         result.append(b[index]);
     }
 
@@ -89,7 +89,7 @@ func ==(a: StringRef, b: StringRef) -> bool {
         return false;
     }
 
-    for (index in 0..a.size()) {
+    for (let index in 0..a.size()) {
         if (a[index] != b[index]) {
             return false;
         }
@@ -103,7 +103,7 @@ func <(a: StringRef, b: StringRef) -> bool {
         return a.size() < b.size();
     }
 
-    for (index in 0..a.size()) {
+    for (let index in 0..a.size()) {
         if (a[index] < b[index]) {
             return true;
         }

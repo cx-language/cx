@@ -188,18 +188,18 @@ private:
 
 class ForStmt : public Stmt {
 public:
-    ForStmt(std::string&& id, std::unique_ptr<Expr> range,
+    ForStmt(std::unique_ptr<VarDecl> variable, std::unique_ptr<Expr> range,
             std::vector<std::unique_ptr<Stmt>>&& body, SourceLocation location)
-    : Stmt(StmtKind::ForStmt), id(std::move(id)), range(std::move(range)),
+    : Stmt(StmtKind::ForStmt), variable(std::move(variable)), range(std::move(range)),
       body(std::move(body)), location(location) {}
-    llvm::StringRef getLoopVariableName() const { return id; }
+    VarDecl* getVariable() const { return variable.get(); }
     Expr& getRangeExpr() const { return *range; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
 
 private:
-    std::string id;
+    std::unique_ptr<VarDecl> variable;
     std::unique_ptr<Expr> range;
     std::vector<std::unique_ptr<Stmt>> body;
     SourceLocation location; // Location of 'id'.

@@ -6,5 +6,5 @@ func main() {
     // CHECK-NEXT: [[END:%[a-z0-9]+]] = extractvalue %"Range<int>" [[RANGE]], 1
 
     // CHECK: icmp slt i32 %i1, [[END]]
-    for (i in 0..3) { }
+    for (let i in 0..3) { }
 }

@@ -24,6 +24,7 @@ inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
 
 std::ostream& operator<<(std::ostream& out, const Expr& expr);
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt);
+std::ostream& operator<<(std::ostream& out, const Decl& decl);
 
 std::ostream& operator<<(std::ostream& out, const VarExpr& expr) {
     return out << expr.getIdentifier();
@@ -177,7 +178,7 @@ std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
 }
 
 std::ostream& operator<<(std::ostream& out, const ForStmt& stmt) {
-    return out << br << "(for-stmt " << stmt.getLoopVariableName() << " " << stmt.getRangeExpr() << stmt.getBody() << ")";
+    return out << br << "(for-stmt " << *stmt.getVariable() << " " << stmt.getRangeExpr() << stmt.getBody() << ")";
 }
 
 std::ostream& operator<<(std::ostream& out, const BreakStmt&) {

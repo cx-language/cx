@@ -63,9 +63,11 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
         }
         case StmtKind::ForStmt: {
             auto* forStmt = llvm::cast<ForStmt>(this);
+            // The second argument can be empty because VarDecl instantiation doesn't use it. 
+            auto variable = llvm::cast<VarDecl>(forStmt->getVariable()->instantiate(genericArgs, {}));
             auto range = forStmt->getRangeExpr().instantiate(genericArgs);
             auto body = ::instantiate(forStmt->getBody(), genericArgs);
-            return llvm::make_unique<ForStmt>(forStmt->getLoopVariableName(), std::move(range),
+            return llvm::make_unique<ForStmt>(std::move(variable), std::move(range),
                                               std::move(body), forStmt->getLocation());
         }
         case StmtKind::BreakStmt: {

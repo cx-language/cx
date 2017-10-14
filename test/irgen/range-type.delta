@@ -24,7 +24,7 @@ func f(r: Range<int>) {
 
     // CHECK-F:      endfor:                                           ; preds = %for
     // CHECK-F-NEXT:   ret void
-    for (i in r) {}
+    for (let i in r) {}
 }
 
 // CHECK-LABEL: define i32 @main()

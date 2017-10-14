@@ -348,7 +348,7 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     auto* lastValue = codegenMemberAccess(rangeExpr, elementType, "end");
 
     auto* counterAlloca = createEntryBlockAlloca(rangeType.getIterableElementType(), nullptr,
-                                                 nullptr, forStmt.getLoopVariableName());
+                                                 nullptr, forStmt.getVariable()->getName());
     builder.CreateStore(firstValue, counterAlloca);
 
     auto* function = builder.GetInsertBlock()->getParent();
@@ -359,7 +359,7 @@ void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
     builder.CreateBr(condition);
 
     builder.SetInsertPoint(condition);
-    auto* counter = builder.CreateLoad(counterAlloca, forStmt.getLoopVariableName());
+    auto* counter = builder.CreateLoad(counterAlloca, forStmt.getVariable()->getName());
 
     llvm::Value* cmp;
     if (rangeType.getName() == "Range") {

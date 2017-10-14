@@ -130,8 +130,8 @@ void TypeChecker::typecheckWhileStmt(WhileStmt& whileStmt) const {
 }
 
 void TypeChecker::typecheckForStmt(ForStmt& forStmt) const {
-    if (getCurrentModule()->getSymbolTable().contains(forStmt.getLoopVariableName())) {
-        error(forStmt.getLocation(), "redefinition of '", forStmt.getLoopVariableName(), "'");
+    if (getCurrentModule()->getSymbolTable().contains(forStmt.getVariable()->getName())) {
+        error(forStmt.getLocation(), "redefinition of '", forStmt.getVariable()->getName(), "'");
     }
 
     Type rangeType = typecheckExpr(forStmt.getRangeExpr());
@@ -140,7 +140,7 @@ void TypeChecker::typecheckForStmt(ForStmt& forStmt) const {
     }
 
     getCurrentModule()->getSymbolTable().pushScope();
-    addToSymbolTable(VarDecl(rangeType.getIterableElementType(), std::string(forStmt.getLoopVariableName()),
+    addToSymbolTable(VarDecl(rangeType.getIterableElementType(), forStmt.getVariable()->getName(),
                              nullptr, *getCurrentModule(), forStmt.getLocation()));
     breakableBlocks++;
     for (auto& stmt : forStmt.getBody()) {

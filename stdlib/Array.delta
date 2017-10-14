@@ -47,7 +47,7 @@ class Array<Element> {
 
             let newBufferPointer = cast<mutable Element*>(malloc(sizeOf<Element>() * uint64(capacity)));
 
-            for (index in 0..size) {
+            for (let index in 0..size) {
                 let source = bufferPointer.offsetUnsafely(int64(index));
                 let target = newBufferPointer.offsetUnsafely(int64(index));
                 *target = *source;
@@ -73,7 +73,7 @@ class Array<Element> {
     /// Removes the element at the given index from the array.
     /// Elements following the removed element are moved towards the beginning of the array by one index.
     mutating func removeAt(index: int) {
-        for (i in (index + 1)..size) {
+        for (let i in (index + 1)..size) {
             let source = bufferPointer.offsetUnsafely(int64(i));
             let target = bufferPointer.offsetUnsafely(int64(i - 1));
             *target = *source;
