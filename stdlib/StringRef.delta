@@ -5,6 +5,10 @@ struct StringRef {
         characters = ArrayRef<char>(pointer, length);
     }
 
+    init (string: String&) {
+        characters = ArrayRef<char>(string.data(), string.size());
+    }
+
     func size() -> int {
         return characters.size();
     }
@@ -16,5 +20,16 @@ struct StringRef {
 
     func data() -> char* {
         return characters.data();
+    }
+
+    /// Supports using strings with sets and dicts
+    func hash() -> uint64 {
+        var hashValue: uint64 = 5381;
+
+        for (index in 0..characters.size()) {
+            hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
+        }
+
+        return hashValue;
     }
 }

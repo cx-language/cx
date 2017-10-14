@@ -1,0 +1,38 @@
+// RUN: check_exit_status 0 %delta run %s test-support.delta
+
+func main() {
+    testInsert();
+    testRemoval();
+    testDuplicates();
+}
+
+func testInsert() {
+    var s = Set<StringRef>();
+
+    s.insert("ok");
+
+    assert(s.contains("ok"), "Contains ok since it was added");
+    assert(!s.contains("lol"), "Doesn't contain something that isn't there");
+}
+
+
+func testRemoval() {
+    var s = Set<StringRef>();
+
+    s.insert("ok");
+    assert(s.contains("ok"), "Contains ok since it was added");
+
+    s.remove("ok");
+    assert(!s.contains("ok"), "Doesn't contain ok anymore since it was removed");
+}
+
+func testDuplicates() {
+    var s = Set<StringRef>();
+
+    s.insert("ok");
+    s.insert("ok");
+    assert(s.contains("ok"), "Contains ok since it was added");
+
+    s.remove("ok");
+    assert(!s.contains("ok"), "Doesn't contain ok anymore since it was removed, even thogh it was added twice");
+}
