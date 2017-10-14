@@ -19,7 +19,7 @@ class Set<E: Hashable> {
         }
 
         let hashValue = int(e.hash() % capacity);
-        hashTable[hashValue].append(e);
+        hashTable[hashValue].push(e);
         size++;
 
         if (loadFactor() > 0.66) {
@@ -47,7 +47,7 @@ class Set<E: Hashable> {
     /// Expands the hash table size, needed when there's too many elements in the set
     mutating func increaseTableSize(newCapacity: int) {
         for (let i in 0..int(newCapacity)) {
-            hashTable.append(Array<E>());
+            hashTable.push(Array<E>());
         }
     }
 

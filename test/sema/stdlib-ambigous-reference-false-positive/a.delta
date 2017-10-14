@@ -4,5 +4,5 @@ import "a.h"
 
 func main() {
     var a = Array<int>()
-    a.append(1)
+    a.push(1)
 }

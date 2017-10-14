@@ -10,7 +10,7 @@ func readLine() -> String {
         // TODO: use newline character literal instead of 0xa
         // TODO: handle EOF
         if (character == 0xa) { break; }
-        line.append(char(character));
+        line.push(char(character));
     }
 
     return line;

@@ -11,11 +11,11 @@ class String {
         characters.reserve(string.size() + 1);
 
         for (let index in 0..string.size()) {
-            characters.append(string[index]);
+            characters.push(string[index]);
         }
 
         // TODO: Use null character literal instead of converting 0 to char.
-        characters.append(char(0));
+        characters.push(char(0));
     }
 
     func size() -> int {
@@ -37,10 +37,10 @@ class String {
         return characters[0];
     }
 
-    mutating func append(character: char) {
+    mutating func push(character: char) {
         *characters[size()] = character;
         // TODO: Use null character literal instead of converting 0 to char.
-        characters.append(char(0));
+        characters.push(char(0));
     }
 
     /// Removes the first character from the string.
@@ -64,11 +64,11 @@ func +(a: StringRef, b: StringRef) -> String {
     var result = String();
 
     for (let index in 0..a.size()) {
-        result.append(a[index]);
+        result.push(a[index]);
     }
 
     for (let index in 0..b.size()) {
-        result.append(b[index]);
+        result.push(b[index]);
     }
 
     return result;
@@ -78,7 +78,7 @@ func +(a: String, b: StringRef) -> String {
     var result = a;
 
     for (let index in 0..b.size()) {
-        result.append(b[index]);
+        result.push(b[index]);
     }
 
     return result;

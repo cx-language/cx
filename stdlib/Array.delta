@@ -30,7 +30,7 @@ class Array<Element> {
     }
 
     /// Adds the given element to the end of the array.
-    mutating func append(newElement: Element) {
+    mutating func push(newElement: Element) {
         reserve(size + 1);
         *bufferPointer.offsetUnsafely(int64(size)) = newElement;
         size++;
