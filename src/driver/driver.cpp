@@ -195,6 +195,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         temporaryOutputFilePath.c_str(),
         "-o",
         temporaryExecutablePath.c_str(),
+        "-static",
         nullptr
     };
 
