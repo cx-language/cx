@@ -5,9 +5,9 @@
 
 Delta is a general-purpose programming language intended as an alternative to
 C++, C, and Rust. The project is currently in very early stages of development.
-See the (incomplete) [specification document](docs/spec.md) for a detailed
-description of the language, or the more learning-oriented (and equally
-incomplete) [Delta Book](https://delta-lang.gitbooks.io/delta-book/content/).
+See the (incomplete) [design](docs/design.md) and [specification](docs/spec.md)
+documents for a description of the language and its purpose, or the more
+learning-oriented (and equally incomplete) [Delta Book](https://delta-lang.gitbooks.io/delta-book/content/).
 
 You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/delta-sandbox).
 

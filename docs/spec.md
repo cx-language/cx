@@ -3,40 +3,7 @@
 This document describes the syntax and semantics of the Delta programming
 language.
 
-## Introduction
-
-> Within C++, there is a much smaller and cleaner language struggling to get out.
->
-> — Bjarne Stroustrup
-
-Delta is a general-purpose systems programming language, intended as a
-replacement for C++ (and C) for large-scale performance-critical applications.
-The language should support interoperation with C++, and provide an automated
-C++-to-Delta code conversion tool to make gradual adoption as feasible as
-possible. In addition, the language should feel familiar and attractive to C++
-programmers.
-
-### Design principles
-
-- [Progressive disclosure](https://en.wikipedia.org/wiki/Progressive_disclosure)
-  of complexity, i.e. it should be easy to write most of the code (the parts
-  that aren't performance bottlenecks) to perform reasonably efficiently, and
-  the language should provide full control to optimize the bottlenecks.
-- Code compiled in release mode must be as fast as possible on modern hardware.
-- Compilation in debug mode should be as fast as possible to speed up the
-  edit-compile-run cycle during development.
-- Be able to call C++ (and vice versa) without having to write a C wrapper for
-  everything.
-- Safe by default, but allow disabling safety checks (both individually and
-  collectively) easily where necessary. E.g. array access bounds checking,
-  integer overflow detection.
-- The language should be relatively simple, but most of the perceived
-  simplicity should come from the aforementioned progressive disclosure
-  principle. For simple things: "There should be one — and preferably only one
-  — obvious way to do it."
-- Should support large-scale development, e.g. easy greppability of
-  function/type/variable definitions.
-- Should be familiar and attractive to C++ and C developers.
+__Note:__ This document is incomplete.
 
 ## Lexical structure
 
