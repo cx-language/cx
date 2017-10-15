@@ -316,8 +316,8 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
 
     if (expr.getFunctionName() == "sizeOf") {
         return llvm::ConstantExpr::getSizeOf(toIR(expr.getGenericArgs().front()));
-    } else if (expr.getFunctionName() == "offsetUnsafely") {
-        return codegenOffsetUnsafely(expr);
+    } else if (expr.getFunctionName() == "offset") {
+        return codegenPointerOffset(expr);
     }
 
     llvm::Function* function = getFunctionForCall(expr);
@@ -406,7 +406,7 @@ llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
     }
 }
 
-llvm::Value* IRGenerator::codegenOffsetUnsafely(const CallExpr& call) {
+llvm::Value* IRGenerator::codegenPointerOffset(const CallExpr& call) {
     auto* pointer = codegenExpr(*call.getReceiver());
     auto* offset = codegenExpr(*call.getArgs().front().getValue());
     return builder.CreateGEP(pointer, offset);

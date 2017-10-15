@@ -26,13 +26,13 @@ class Array<Element> {
 
     /// Returns a reference to the element at the given index.
     func [](index: int) -> mutable Element& {
-        return bufferPointer.offsetUnsafely(int64(index))!;
+        return bufferPointer.offset(int64(index))!;
     }
 
     /// Adds the given element to the end of the array.
     mutating func push(newElement: Element) {
         reserve(size + 1);
-        *bufferPointer.offsetUnsafely(int64(size)) = newElement;
+        *bufferPointer.offset(int64(size)) = newElement;
         size++;
     }
 
@@ -48,8 +48,8 @@ class Array<Element> {
             let newBufferPointer = cast<mutable Element*>(malloc(sizeOf<Element>() * uint64(capacity)));
 
             for (let index in 0..size) {
-                let source = bufferPointer.offsetUnsafely(int64(index));
-                let target = newBufferPointer.offsetUnsafely(int64(index));
+                let source = bufferPointer.offset(int64(index));
+                let target = newBufferPointer.offset(int64(index));
                 *target = *source;
             }
 
@@ -74,8 +74,8 @@ class Array<Element> {
     /// Elements following the removed element are moved towards the beginning of the array by one index.
     mutating func removeAt(index: int) {
         for (let i in (index + 1)..size) {
-            let source = bufferPointer.offsetUnsafely(int64(i));
-            let target = bufferPointer.offsetUnsafely(int64(i - 1));
+            let source = bufferPointer.offset(int64(i));
+            let target = bufferPointer.offset(int64(i - 1));
             *target = *source;
         }
         size--;
