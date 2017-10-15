@@ -207,9 +207,16 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (ccExitStatus != 0) return ccExitStatus;
 
     if (run) {
+        std::string error;
         const char* executableArgs[] = { temporaryExecutablePath.c_str(), nullptr };
-        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs);
+        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs,
+                                                             nullptr, nullptr, 0, 0, &error);
         std::remove(temporaryExecutablePath.c_str());
+
+        if (!error.empty()) {
+            llvm::outs() << error << '\n';
+        }
+
         return executableExitStatus;
     }
 

@@ -1,0 +1,8 @@
+// RUN: not %delta run %s | %FileCheck %s
+
+func main() {
+    let p: mutable int* = null;
+    *p = 666;
+}
+
+// CHECK: Segmentation fault
