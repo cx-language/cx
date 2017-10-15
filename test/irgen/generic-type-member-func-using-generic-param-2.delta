@@ -13,7 +13,7 @@ struct C<T> {
 
     // CHECK: define void @"C<bool>.g"({} %this)
     func g() {
-        var a = sizeOf<T>()
+        var a = sizeof(T)
     }
 }
 

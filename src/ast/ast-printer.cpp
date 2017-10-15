@@ -76,6 +76,10 @@ std::ostream& operator<<(std::ostream& out, const CastExpr& expr) {
     return out << "(cast " << expr.getExpr() << " " << expr.getType() << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const SizeofExpr& expr) {
+    return out << "(sizeof " << expr.getType() << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const MemberExpr& expr) {
     return out << "(member-expr " << *expr.getBaseExpr() << " " << expr.getMemberName() << ")";
 }
@@ -101,6 +105,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::BinaryExpr: return out << llvm::cast<BinaryExpr>(expr);
         case ExprKind::CallExpr: return out << llvm::cast<CallExpr>(expr);
         case ExprKind::CastExpr: return out << llvm::cast<CastExpr>(expr);
+        case ExprKind::SizeofExpr: return out << llvm::cast<SizeofExpr>(expr);
         case ExprKind::MemberExpr: return out << llvm::cast<MemberExpr>(expr);
         case ExprKind::SubscriptExpr: return out << llvm::cast<SubscriptExpr>(expr);
         case ExprKind::UnwrapExpr: return out << llvm::cast<UnwrapExpr>(expr);

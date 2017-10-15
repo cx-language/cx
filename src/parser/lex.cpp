@@ -190,6 +190,7 @@ const llvm::StringMap<TokenKind> keywords = {
     {"mutating",      MUTATING},
     {"null",          NULL_LITERAL},
     {"return",        RETURN},
+    {"sizeof",        SIZEOF},
     {"struct",        STRUCT},
     {"switch",        SWITCH},
     {"this",          THIS},

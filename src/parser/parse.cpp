@@ -353,6 +353,17 @@ std::unique_ptr<CastExpr> parseCastExpr() {
     return llvm::make_unique<CastExpr>(type, std::move(expr), location);
 }
 
+/// sizeof-expr ::= 'sizeof' '(' type ')'
+std::unique_ptr<SizeofExpr> parseSizeofExpr() {
+   assert(currentToken() == SIZEOF);
+   auto location = getCurrentLocation();
+   consumeToken();
+   parse(LPAREN);
+   auto type = parseType();
+   parse(RPAREN);
+   return llvm::make_unique<SizeofExpr>(type, location);
+}
+
 /// member-expr ::= expr '.' id
 std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
     auto member = parse(IDENTIFIER);
@@ -434,6 +445,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
         case LPAREN: expr = parseParenExpr(); break;
         case LBRACKET: expr = parseArrayLiteral(); break;
         case CAST: expr = parseCastExpr(); break;
+        case SIZEOF: expr = parseSizeofExpr(); break;
         default: unexpectedToken(currentToken()); break;
     }
     while (true) {

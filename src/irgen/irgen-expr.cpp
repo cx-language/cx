@@ -314,9 +314,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     if (expr.isBuiltinConversion())
         return codegenBuiltinConversion(*expr.getArgs().front().getValue(), expr.getType());
 
-    if (expr.getFunctionName() == "sizeOf") {
-        return llvm::ConstantExpr::getSizeOf(toIR(expr.getGenericArgs().front()));
-    } else if (expr.getFunctionName() == "offset") {
+    if (expr.getFunctionName() == "offset") {
         return codegenPointerOffset(expr);
     }
 
@@ -358,6 +356,10 @@ llvm::Value* IRGenerator::codegenCastExpr(const CastExpr& expr) {
         value = builder.CreateExtractValue(value, 0);
     }
     return builder.CreateBitOrPointerCast(value, type);
+}
+
+llvm::Value* IRGenerator::codegenSizeofExpr(const SizeofExpr& expr) {
+    return llvm::ConstantExpr::getSizeOf(toIR(expr.getType()));
 }
 
 llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName) {
@@ -475,6 +477,7 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
         case ExprKind::BinaryExpr: return codegenBinaryExpr(llvm::cast<BinaryExpr>(expr));
         case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));
         case ExprKind::CastExpr: return codegenCastExpr(llvm::cast<CastExpr>(expr));
+        case ExprKind::SizeofExpr: return codegenSizeofExpr(llvm::cast<SizeofExpr>(expr));
         case ExprKind::MemberExpr: return codegenMemberExpr(llvm::cast<MemberExpr>(expr));
         case ExprKind::SubscriptExpr: return codegenSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
         case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
@@ -495,6 +498,7 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
         case ExprKind::BinaryExpr: llvm_unreachable("no lvalue binary expressions");
         case ExprKind::CallExpr: llvm_unreachable("IRGen doesn't support lvalue call expressions yet");
         case ExprKind::CastExpr: llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
+        case ExprKind::SizeofExpr: llvm_unreachable("no lvalue sizeof expressions");
         case ExprKind::MemberExpr: return codegenLvalueMemberExpr(llvm::cast<MemberExpr>(expr));
         case ExprKind::SubscriptExpr: return codegenLvalueSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
         case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));

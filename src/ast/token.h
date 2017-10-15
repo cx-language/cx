@@ -36,6 +36,7 @@ enum TokenKind {
     MUTATING,
     NULL_LITERAL,
     RETURN,
+    SIZEOF,
     STRUCT,
     SWITCH,
     THIS,

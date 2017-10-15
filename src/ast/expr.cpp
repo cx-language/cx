@@ -11,7 +11,7 @@ bool Expr::isLvalue() const {
         case ExprKind::VarExpr: case ExprKind::StringLiteralExpr: case ExprKind::ArrayLiteralExpr:
         case ExprKind::MemberExpr: case ExprKind::SubscriptExpr:
             return true;
-        case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr:
+        case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr: case ExprKind::SizeofExpr:
         case ExprKind::BoolLiteralExpr: case ExprKind::CastExpr: case ExprKind::UnwrapExpr:
         case ExprKind::NullLiteralExpr: case ExprKind::BinaryExpr: case ExprKind::CallExpr:
             return false;
@@ -102,6 +102,11 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             auto targetType = castExpr->getTargetType().resolve(genericArgs);
             auto expr = castExpr->getExpr().instantiate(genericArgs);
             return llvm::make_unique<CastExpr>(targetType, std::move(expr), castExpr->getLocation());
+        }
+        case ExprKind::SizeofExpr: {
+            auto* sizeofExpr = llvm::cast<SizeofExpr>(this);
+            auto type = sizeofExpr->getType().resolve(genericArgs);
+            return llvm::make_unique<SizeofExpr>(type, sizeofExpr->getLocation());
         }
         case ExprKind::MemberExpr: {
             auto* memberExpr = llvm::cast<MemberExpr>(this);

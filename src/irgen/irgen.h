@@ -99,6 +99,7 @@ private:
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
     llvm::Value* codegenCallExpr(const CallExpr& expr);
     llvm::Value* codegenCastExpr(const CastExpr& expr);
+    llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);
     llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
     llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr);
     llvm::Value* codegenMemberExpr(const MemberExpr& expr);

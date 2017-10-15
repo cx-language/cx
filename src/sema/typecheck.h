@@ -89,6 +89,7 @@ private:
     Type typecheckCallExpr(CallExpr& expr) const;
     Type typecheckBuiltinConversion(CallExpr& expr) const;
     Type typecheckCastExpr(CastExpr& expr) const;
+    Type typecheckSizeofExpr(SizeofExpr& expr) const;
     Type typecheckMemberExpr(MemberExpr& expr) const;
     Type typecheckSubscriptExpr(SubscriptExpr& expr) const;
     Type typecheckUnwrapExpr(UnwrapExpr& expr) const;

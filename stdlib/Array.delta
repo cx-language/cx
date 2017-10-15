@@ -45,7 +45,7 @@ class Array<Element> {
                 capacity *= 2;
             }
 
-            let newBufferPointer = cast<mutable Element*>(malloc(sizeOf<Element>() * uint64(capacity)));
+            let newBufferPointer = cast<mutable Element*>(malloc(sizeof(Element) * uint64(capacity)));
 
             for (let index in 0..size) {
                 let source = bufferPointer.offset(int64(index));

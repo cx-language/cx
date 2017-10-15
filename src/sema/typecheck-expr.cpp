@@ -604,13 +604,6 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         return typecheckBuiltinConversion(expr);
     }
 
-    if (expr.getFunctionName() == "sizeOf") {
-        validateArgs(expr.getArgs(), {}, false, expr.getFunctionName(), expr.getLocation());
-        validateGenericArgCount(1, expr);
-        expr.setType(Type::getUInt64());
-        return expr.getType();
-    }
-
     FunctionDecl* decl;
 
     if (expr.getCallee().isMemberExpr()) {
@@ -752,6 +745,10 @@ Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
     error(expr.getLocation(), "illegal cast from '", sourceType, "' to '", targetType, "'");
 }
 
+Type TypeChecker::typecheckSizeofExpr(SizeofExpr&) const {
+    return Type::getUInt64();
+}
+
 Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
     Type baseType = typecheckExpr(*expr.getBaseExpr());
 
@@ -845,6 +842,7 @@ Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
         case ExprKind::BinaryExpr: type = typecheckBinaryExpr(llvm::cast<BinaryExpr>(expr)); break;
         case ExprKind::CallExpr: type = typecheckCallExpr(llvm::cast<CallExpr>(expr)); break;
         case ExprKind::CastExpr: type = typecheckCastExpr(llvm::cast<CastExpr>(expr)); break;
+        case ExprKind::SizeofExpr: type = typecheckSizeofExpr(llvm::cast<SizeofExpr>(expr)); break;
         case ExprKind::MemberExpr: type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr)); break;
         case ExprKind::SubscriptExpr: type = typecheckSubscriptExpr(llvm::cast<SubscriptExpr>(expr)); break;
         case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;

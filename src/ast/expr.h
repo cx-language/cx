@@ -25,6 +25,7 @@ enum class ExprKind {
     BinaryExpr,
     CallExpr,
     CastExpr,
+    SizeofExpr,
     MemberExpr,
     SubscriptExpr,
     UnwrapExpr,
@@ -45,6 +46,7 @@ public:
     bool isBinaryExpr() const { return getKind() == ExprKind::BinaryExpr; }
     bool isCallExpr() const { return getKind() == ExprKind::CallExpr; }
     bool isCastExpr() const { return getKind() == ExprKind::CastExpr; }
+    bool isSizeofExpr() const { return getKind() == ExprKind::SizeofExpr; }
     bool isMemberExpr() const { return getKind() == ExprKind::MemberExpr; }
     bool isSubscriptExpr() const { return getKind() == ExprKind::SubscriptExpr; }
     bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
@@ -259,6 +261,18 @@ public:
 private:
     Type type;
     std::unique_ptr<Expr> expr;
+};
+
+/// A compile-time expression returning the size of a given type in bytes, e.g. 'sizeof(int)'.
+class SizeofExpr : public Expr {
+public:
+    SizeofExpr(Type type, SourceLocation location)
+    : Expr(ExprKind::SizeofExpr, location), type(type) {}
+    Type getType() const { return type; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::SizeofExpr; }
+
+private:
+    Type type;
 };
 
 /// A member access expression using the dot syntax, such as 'a.b'.
