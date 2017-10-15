@@ -1,7 +1,23 @@
 // RUN: check_exit_status 0 %delta run %s test-support.delta
 
 func main() {
-    assert("abc" == "abc", "equals")
-    assert(!("abc" == "not"), "not equals")
-    assert("abc" < "bcd", "less")
+    assert("abc" == "abc", "equals");
+    assert(!("abc" == "not"), "not equals");
+    assert("abc" < "bcd", "less");
+
+    testStringIterator();
+}
+
+func testStringIterator() {
+    var iterator = "xy".iterator();
+
+    // TODO: Change "x"[0] etc. to use character literals when they're added.
+
+    assert(iterator.hasNext(), "testStringIterator: hasNext() - 1");
+    assert(iterator.next() == "x"[0], "testStringIterator: next() - 1");
+
+    assert(iterator.hasNext(), "testStringIterator: hasNext() - 2");
+    assert(iterator.next() == "y"[0], "testStringIterator: next() - 2");
+
+    assert(!iterator.hasNext(), "testStringIterator: hasNext() - 3");
 }

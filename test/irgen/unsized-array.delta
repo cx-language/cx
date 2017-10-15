@@ -1,10 +1,11 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
+// CHECK-LABEL: define i32 @main()
 func main() {
-    // CHECK: %three = alloca [3 x i32]
-    // CHECK-NEXT: %b = alloca i32
-    // CHECK-NEXT: %ref = alloca %"ArrayRef<int>"
-    // CHECK-NEXT: %bb = alloca i32
+    // CHECK-DAG: %three = alloca [3 x i32]
+    // CHECK-DAG: %b = alloca i32
+    // CHECK-DAG: %ref = alloca %"ArrayRef<int>"
+    // CHECK-DAG: %bb = alloca i32
     // CHECK-NEXT: store [3 x i32] [i32 0, i32 42, i32 0], [3 x i32]* %three
     var three = [0, 42, 0];
     // CHECK-NEXT: %1 = getelementptr [3 x i32], [3 x i32]* %three, i32 0, i32 0

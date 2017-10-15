@@ -8,6 +8,12 @@ struct ArrayRef<Element> {
         size = 0;
     }
 
+    /// Initializes an ArrayRef referring to the elements of the given Array.
+    init(array: Array<Element>&) {
+        data = array.data();
+        size = array.size();
+    }
+
     /// Initializes an ArrayRef referring to an array of the given size located at the given memory
     /// address.
     init(data: Element*, size: int) {
@@ -27,5 +33,9 @@ struct ArrayRef<Element> {
 
     func data() -> Element* {
         return data;
+    }
+
+    func iterator() -> ArrayIterator<Element> {
+        return ArrayIterator(this);
     }
 }

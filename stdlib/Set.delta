@@ -60,8 +60,7 @@ class Set<E: Hashable> {
         for (let i in 0..int(capacity)) {
             let e = hashTable[i];
             if (e.size() != 0) {
-                for (let j in 0..e.size()) {
-                    let el = e[j];
+                for (let el in e) {
                     *newTable[int(el.hash()) % newCapacity] = *e;
                 }
             }
@@ -80,8 +79,8 @@ class Set<E: Hashable> {
             return false;
         }
 
-        for (let i in 0..slot.size()) {
-            if (*slot[i] == *e) {
+        for (let element in slot) {
+            if (*element == *e) {
                 return true;
             }
         }

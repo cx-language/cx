@@ -1,28 +1,29 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
+// CHECK-LABEL: define i32 @main()
 func main() {
     var sum = 0;
 
-    // CHECK: %i = alloca i32
+    // CHECK: [[ITERATOR:%__iterator[0-9]*]] = alloca %"ClosedRangeIterator<int>"
+    // CHECK-NEXT: %i = alloca i32
     // CHECK: [[RANGE:%[a-z0-9]+]] = call %"ClosedRange<int>" @"ClosedRange<int>.init"(i32 68, i32 75)
-    // CHECK-NEXT: [[START:%[a-z0-9]+]] = extractvalue %"ClosedRange<int>" [[RANGE]], 0
-    // CHECK-NEXT: [[END:%[a-z0-9]+]] = extractvalue %"ClosedRange<int>" [[RANGE]], 1
-    // CHECK-NEXT: store i32 [[START]], i32* %i
-    // CHECK-NEXT: br label %for
+    // CHECK-NEXT: [[TEMP_ITERATOR:%[a-z0-9]+]] = call %"ClosedRangeIterator<int>" @"ClosedRange<int>.iterator"(%"ClosedRange<int>" [[RANGE]])
+    // CHECK-NEXT: store %"ClosedRangeIterator<int>" [[TEMP_ITERATOR]], %"ClosedRangeIterator<int>"* [[ITERATOR]]
+    // CHECK-NEXT: br label %[[LOOP:(for|while)]]
     for (let i in 68...75) {
-        // CHECK: for: ; preds = %body, %0
-        // CHECK-NEXT: %i1 = load i32, i32* %i
-        // CHECK-NEXT: [[CMP:%[a-z0-9]+]] = icmp sle i32 %i1, [[END]]
-        // CHECK-NEXT: br i1 [[CMP]], label %body, label %endfor
+        // CHECK: [[LOOP]]: ; preds = %body, %0
+        // CHECK-NEXT: [[LOADED_ITERATOR:%[_a-z0-9]+]] = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* [[ITERATOR]]
+        // CHECK-NEXT: [[CMP:%[a-z0-9]+]] = call i1 @"ClosedRangeIterator<int>.hasNext"(%"ClosedRangeIterator<int>" [[LOADED_ITERATOR]])
+        // CHECK-NEXT: br i1 [[CMP]], label %body, label %end[[LOOP]]
 
-        // CHECK: body: ; preds = %for
+        // CHECK: body: ; preds = %[[LOOP]]
+        // CHECK-NEXT: [[NEXT:%[a-z0-9]+]] = call i32 @"ClosedRangeIterator<int>.next"(%"ClosedRangeIterator<int>"* [[ITERATOR]])
+        // CHECK-NEXT: store i32 [[NEXT]], i32* %i
         // CHECK-NEXT: [[LOADED_SUM:%[a-z0-9]+]] = load i32, i32* %sum
         // CHECK-NEXT: %i2 = load i32, i32* %i
         // CHECK-NEXT: [[NEW_SUM:%[a-z0-9]+]] = add i32 [[LOADED_SUM]], %i2
         // CHECK-NEXT: store i32 [[NEW_SUM]], i32* %sum
-        // CHECK-NEXT: [[NEW_I:%[a-z0-9]+]] = add i32 %i1, 1
-        // CHECK-NEXT: store i32 [[NEW_I]], i32* %i
-        // CHECK-NEXT: br label %for
+        // CHECK-NEXT: br label %[[LOOP]]
         sum += i;
     }
 }

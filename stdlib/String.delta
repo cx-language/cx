@@ -10,8 +10,8 @@ class String {
         characters = Array<char>();
         characters.reserve(string.size() + 1);
 
-        for (let index in 0..string.size()) {
-            characters.push(string[index]);
+        for (let ch in string) {
+            characters.push(ch);
         }
 
         // TODO: Use null character literal instead of converting 0 to char.
@@ -58,17 +58,22 @@ class String {
     func hash() -> uint64 {
         return StringRef(this).hash();
     }
+
+    func iterator() -> StringIterator {
+        // TODO: When implicit initializers have been implemented, remove the StringRef() call below.
+        return StringIterator(StringRef(this));
+    }
 }
 
 func +(a: StringRef, b: StringRef) -> String {
     var result = String();
 
-    for (let index in 0..a.size()) {
-        result.push(a[index]);
+    for (let ch in a) {
+        result.push(ch);
     }
 
-    for (let index in 0..b.size()) {
-        result.push(b[index]);
+    for (let ch in b) {
+        result.push(ch);
     }
 
     return result;
@@ -77,8 +82,8 @@ func +(a: StringRef, b: StringRef) -> String {
 func +(a: String, b: StringRef) -> String {
     var result = a;
 
-    for (let index in 0..b.size()) {
-        result.push(b[index]);
+    for (let ch in b) {
+        result.push(ch);
     }
 
     return result;
@@ -89,6 +94,7 @@ func ==(a: StringRef, b: StringRef) -> bool {
         return false;
     }
 
+    // TODO: Change this loop to use zip iterator when it's added.
     for (let index in 0..a.size()) {
         if (a[index] != b[index]) {
             return false;
@@ -103,6 +109,7 @@ func <(a: StringRef, b: StringRef) -> bool {
         return a.size() < b.size();
     }
 
+    // TODO: Change this loop to use zip iterator when it's added.
     for (let index in 0..a.size()) {
         if (a[index] < b[index]) {
             return true;

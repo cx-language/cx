@@ -25,4 +25,18 @@ func main() {
     a.removeLast();
     a.push(C(4));
     assert(a.size() == 2 && a.capacity() >= 2, "size and capacity are valid after adding and removing elements");
+
+    testArrayIterator(a);
+}
+
+func testArrayIterator(array: Array<C>&) {
+    var iterator = array.iterator();
+
+    assert(iterator.hasNext(), "testArrayIterator: hasNext() - 1");
+    assert(iterator.next().i == 1, "testArrayIterator: next() - 1");
+
+    assert(iterator.hasNext(), "testArrayIterator: hasNext() - 2");
+    assert(iterator.next().i == 4, "testArrayIterator: next() - 2");
+
+    assert(!iterator.hasNext(), "testArrayIterator: hasNext() - 3");
 }

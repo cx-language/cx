@@ -200,6 +200,10 @@ std::ostream& operator<<(std::ostream& out, const AssignStmt& stmt) {
     }
 }
 
+std::ostream& operator<<(std::ostream& out, const CompoundStmt& stmt) {
+    return out << br << "(compound-stmt " << stmt.getBody() << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt: return out << llvm::cast<ReturnStmt>(stmt);
@@ -214,6 +218,7 @@ std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
         case StmtKind::ForStmt: return out << llvm::cast<ForStmt>(stmt);
         case StmtKind::BreakStmt: return out << llvm::cast<BreakStmt>(stmt);
         case StmtKind::AssignStmt: return out << llvm::cast<AssignStmt>(stmt);
+        case StmtKind::CompoundStmt: return out << llvm::cast<CompoundStmt>(stmt);
     }
     llvm_unreachable("all cases handled");
 }

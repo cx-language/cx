@@ -1,0 +1,19 @@
+struct StringIterator {
+    var current: char*;
+    let end: char*;
+
+    init(string: StringRef) {
+        current = string.data();
+        end = string.data().offset(int64(string.size()));
+    }
+
+    func hasNext() -> bool {
+        return current != end;
+    }
+
+    mutating func next() -> char {
+        let next = current;
+        current = current.offset(1);
+        return *next;
+    }
+}

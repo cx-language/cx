@@ -32,4 +32,8 @@ struct StringRef {
 
         return hashValue;
     }
+
+    func iterator() -> StringIterator {
+        return StringIterator(this);
+    }
 }

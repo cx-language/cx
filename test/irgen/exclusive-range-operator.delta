@@ -1,10 +1,19 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_exit_status 6 %delta run %s
 
-func main() {
+// CHECK-LABEL: define i32 @main()
+func main() -> int {
+    var p = 9;
+
+    // CHECK: alloca %"RangeIterator<int>"
+    // CHECK-NEXT: %i = alloca i32
     // CHECK: [[RANGE:%[a-z0-9]+]] = call %"Range<int>" @"Range<int>.init"(i32 0, i32 3)
-    // CHECK-NEXT: [[START:%[a-z0-9]+]] = extractvalue %"Range<int>" [[RANGE]], 0
-    // CHECK-NEXT: [[END:%[a-z0-9]+]] = extractvalue %"Range<int>" [[RANGE]], 1
+    // CHECK-NEXT: call %"RangeIterator<int>" @"Range<int>.iterator"(%"Range<int>" [[RANGE]])
+    // CHECK: call i1 @"RangeIterator<int>.hasNext"
+    // CHECK: call i32 @"RangeIterator<int>.next"
+    for (let i in 0..3) {
+        p -= i;
+    }
 
-    // CHECK: icmp slt i32 %i1, [[END]]
-    for (let i in 0..3) { }
+    return p;
 }

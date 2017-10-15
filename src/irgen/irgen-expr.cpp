@@ -496,7 +496,7 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
         case ExprKind::ArrayLiteralExpr: llvm_unreachable("no lvalue array literals");
         case ExprKind::PrefixExpr: return codegenLvaluePrefixExpr(llvm::cast<PrefixExpr>(expr));
         case ExprKind::BinaryExpr: llvm_unreachable("no lvalue binary expressions");
-        case ExprKind::CallExpr: llvm_unreachable("IRGen doesn't support lvalue call expressions yet");
+        case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));
         case ExprKind::CastExpr: llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
         case ExprKind::SizeofExpr: llvm_unreachable("no lvalue sizeof expressions");
         case ExprKind::MemberExpr: return codegenLvalueMemberExpr(llvm::cast<MemberExpr>(expr));

@@ -118,9 +118,9 @@ private:
     void codegenIfStmt(const IfStmt& ifStmt);
     void codegenSwitchStmt(const SwitchStmt& switchStmt);
     void codegenWhileStmt(const WhileStmt& whileStmt);
-    void codegenForStmt(const ForStmt& forStmt);
     void codegenBreakStmt(const BreakStmt&);
     void codegenAssignStmt(const AssignStmt& stmt);
+    void codegenCompoundStmt(const CompoundStmt& stmt);
     void codegenStmt(const Stmt& stmt);
 
     void codegenDecl(const Decl& decl);

@@ -129,27 +129,6 @@ void TypeChecker::typecheckWhileStmt(WhileStmt& whileStmt) const {
     breakableBlocks--;
 }
 
-void TypeChecker::typecheckForStmt(ForStmt& forStmt) const {
-    if (getCurrentModule()->getSymbolTable().contains(forStmt.getVariable()->getName())) {
-        error(forStmt.getLocation(), "redefinition of '", forStmt.getVariable()->getName(), "'");
-    }
-
-    Type rangeType = typecheckExpr(forStmt.getRangeExpr());
-    if (!rangeType.isIterable()) {
-        error(forStmt.getRangeExpr().getLocation(), "'for' range expression is not an 'Iterable'");
-    }
-
-    getCurrentModule()->getSymbolTable().pushScope();
-    addToSymbolTable(VarDecl(rangeType.getIterableElementType(), forStmt.getVariable()->getName(),
-                             nullptr, *getCurrentModule(), forStmt.getLocation()));
-    breakableBlocks++;
-    for (auto& stmt : forStmt.getBody()) {
-        typecheckStmt(*stmt);
-    }
-    breakableBlocks--;
-    getCurrentModule()->getSymbolTable().popScope();
-}
-
 void TypeChecker::typecheckBreakStmt(BreakStmt& breakStmt) const {
     if (breakableBlocks == 0) {
         error(breakStmt.getLocation(), "'break' is only allowed inside 'while' and 'switch' statements");
@@ -185,6 +164,16 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     }
 
     markFieldAsInitialized(*stmt.getLHS());
+}
+
+void TypeChecker::typecheckCompoundStmt(CompoundStmt& stmt) const {
+    getCurrentModule()->getSymbolTable().pushScope();
+
+    for (auto& substmt : stmt.getBody()) {
+        typecheckStmt(*substmt);
+    }
+
+    getCurrentModule()->getSymbolTable().popScope();
 }
 
 void TypeChecker::markFieldAsInitialized(Expr& expr) const {
@@ -239,9 +228,10 @@ void TypeChecker::typecheckStmt(Stmt& stmt) const {
         case StmtKind::IfStmt: typecheckIfStmt(llvm::cast<IfStmt>(stmt)); break;
         case StmtKind::SwitchStmt: typecheckSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
         case StmtKind::WhileStmt: typecheckWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
-        case StmtKind::ForStmt: typecheckForStmt(llvm::cast<ForStmt>(stmt)); break;
+        case StmtKind::ForStmt: llvm_unreachable("ForStmt should be lowered into a WhileStmt"); break;
         case StmtKind::BreakStmt: typecheckBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
         case StmtKind::AssignStmt: typecheckAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
+        case StmtKind::CompoundStmt: typecheckCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
     }
 }
 
@@ -289,10 +279,12 @@ void TypeChecker::typecheckType(Type type) const {
             break;
         case TypeKind::PointerType: {
             if (type.getPointee().isUnsizedArrayType()) {
-                auto& arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation::invalid()));
-                auto* instantiation = arrayRef.instantiate({type.getPointee().getElementType()});
-                addToSymbolTable(*instantiation);
-                typecheckTypeDecl(*instantiation);
+                if (findDecls(mangleTypeDecl("ArrayRef", type.getPointee().getElementType())).empty()) {
+                    auto& arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation::invalid()));
+                    auto* instantiation = arrayRef.instantiate({type.getPointee().getElementType()});
+                    addToSymbolTable(*instantiation);
+                    typecheckTypeDecl(*instantiation);
+                }
             } else {
                 typecheckType(type.getPointee());
             }
@@ -439,7 +431,9 @@ Decl& TypeChecker::findDecl(llvm::StringRef name, SourceLocation location, bool 
 
 std::vector<Decl*> TypeChecker::findDecls(llvm::StringRef name, bool everywhere) const {
     std::vector<Decl*> decls;
-
+    if (name == "RangeIterator<int>.hasNext") {
+        int k=k=4;
+    }
     if (auto* typeDecl = currentFunction ? currentFunction->getTypeDecl() : nullptr) {
         for (auto& decl : typeDecl->getMemberDecls()) {
             if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl.get())) {
@@ -768,9 +762,8 @@ void delta::typecheckModule(Module& module, const PackageManifest* manifest,
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
                 typeChecker.typecheckTopLevelDecl(*decl, manifest, importSearchPaths, parse);
+                typeChecker.postProcess();
             }
         }
-
-        typeChecker.postProcess();
     }
 }

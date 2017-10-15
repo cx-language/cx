@@ -29,6 +29,10 @@ class Array<Element> {
         return bufferPointer.offset(int64(index))!;
     }
 
+    func data() -> Element* {
+        return bufferPointer;
+    }
+
     /// Adds the given element to the end of the array.
     mutating func push(newElement: Element) {
         reserve(size + 1);
@@ -79,5 +83,10 @@ class Array<Element> {
             *target = *source;
         }
         size--;
+    }
+
+    func iterator() -> ArrayIterator<Element> {
+        // TODO: When implicit initializers have been implemented, remove the ArrayRef() call below.
+        return ArrayIterator(ArrayRef(this));
     }
 }

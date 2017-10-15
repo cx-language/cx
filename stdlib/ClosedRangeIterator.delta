@@ -1,0 +1,19 @@
+struct ClosedRangeIterator<T> {
+    var current: T;
+    let end: T;
+
+    init(range: ClosedRange<T>) {
+        current = range.start();
+        end = range.end();
+    }
+
+    func hasNext() -> bool {
+        return current <= end;
+    }
+
+    mutating func next() -> T {
+        let next = current;
+        current++;
+        return next;
+    }
+}

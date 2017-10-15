@@ -319,75 +319,6 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
     builder.SetInsertPoint(end);
 }
 
-// This transforms 'for (id in x...y) { ... }' (where 'x' and 'y' are integers) into:
-//
-//  var counter = x;
-//  while (counter <= y) {
-//      const id = counter;
-//      ...
-//      counter++;
-//  }
-void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
-    auto rangeType = forStmt.getRangeExpr().getType();
-
-    if (!rangeType.isRangeType()) {
-        error(forStmt.getRangeExpr().getLocation(),
-              "IRGen doesn't support 'for'-loops over non-range iterables yet");
-    }
-
-    if (!rangeType.getIterableElementType().isInteger()) {
-        error(forStmt.getRangeExpr().getLocation(),
-              "IRGen doesn't support 'for'-loops over non-integer ranges yet");
-    }
-
-    beginScope();
-
-    Type elementType = rangeType.getIterableElementType();
-    auto* rangeExpr = codegenExpr(forStmt.getRangeExpr());
-    auto* firstValue = codegenMemberAccess(rangeExpr, elementType, "start");
-    auto* lastValue = codegenMemberAccess(rangeExpr, elementType, "end");
-
-    auto* counterAlloca = createEntryBlockAlloca(rangeType.getIterableElementType(), nullptr,
-                                                 nullptr, forStmt.getVariable()->getName());
-    builder.CreateStore(firstValue, counterAlloca);
-
-    auto* function = builder.GetInsertBlock()->getParent();
-    auto* condition = llvm::BasicBlock::Create(ctx, "for", function);
-    auto* body = llvm::BasicBlock::Create(ctx, "body", function);
-    auto* end = llvm::BasicBlock::Create(ctx, "endfor", function);
-    breakTargets.push_back(end);
-    builder.CreateBr(condition);
-
-    builder.SetInsertPoint(condition);
-    auto* counter = builder.CreateLoad(counterAlloca, forStmt.getVariable()->getName());
-
-    llvm::Value* cmp;
-    if (rangeType.getName() == "Range") {
-        if (elementType.isSigned())
-            cmp = builder.CreateICmpSLT(counter, lastValue);
-        else
-            cmp = builder.CreateICmpULT(counter, lastValue);
-    } else {
-        ASSERT(rangeType.getName() == "ClosedRange");
-
-        if (elementType.isSigned())
-            cmp = builder.CreateICmpSLE(counter, lastValue);
-        else
-            cmp = builder.CreateICmpULE(counter, lastValue);
-    }
-    builder.CreateCondBr(cmp, body, end);
-
-    codegenBlock(forStmt.getBody(), body, condition);
-
-    builder.SetInsertPoint(&builder.GetInsertBlock()->back());
-    auto* newCounter = builder.CreateAdd(counter, llvm::ConstantInt::get(counter->getType(), 1));
-    builder.CreateStore(newCounter, counterAlloca);
-
-    breakTargets.pop_back();
-    builder.SetInsertPoint(end);
-    endScope();
-}
-
 void IRGenerator::codegenBreakStmt(const BreakStmt&) {
     ASSERT(!breakTargets.empty());
     builder.CreateBr(breakTargets.back());
@@ -418,6 +349,16 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
     }
 }
 
+void IRGenerator::codegenCompoundStmt(const CompoundStmt& stmt) {
+    beginScope();
+
+    for (auto& substmt : stmt.getBody()) {
+        codegenStmt(*substmt);
+    }
+
+    endScope();
+}
+
 void IRGenerator::codegenStmt(const Stmt& stmt) {
     switch (stmt.getKind()) {
         case StmtKind::ReturnStmt: codegenReturnStmt(llvm::cast<ReturnStmt>(stmt)); break;
@@ -429,9 +370,10 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
         case StmtKind::IfStmt: codegenIfStmt(llvm::cast<IfStmt>(stmt)); break;
         case StmtKind::SwitchStmt: codegenSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
         case StmtKind::WhileStmt: codegenWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
-        case StmtKind::ForStmt: codegenForStmt(llvm::cast<ForStmt>(stmt)); break;
+        case StmtKind::ForStmt: llvm_unreachable("ForStmt should be lowered into a WhileStmt"); break;
         case StmtKind::BreakStmt: codegenBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
         case StmtKind::AssignStmt: codegenAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
+        case StmtKind::CompoundStmt: codegenCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
     }
 }
 

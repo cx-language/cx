@@ -29,4 +29,8 @@ struct Range<T> {
     func end() -> T {
         return end;
     }
+
+    func iterator() -> RangeIterator<T> {
+        return RangeIterator(this);
+    }
 }

@@ -22,6 +22,7 @@ enum class StmtKind {
     ForStmt,
     BreakStmt,
     AssignStmt,
+    CompoundStmt
 };
 
 class Stmt {
@@ -40,6 +41,7 @@ public:
     bool isForStmt() const { return getKind() == StmtKind::ForStmt; }
     bool isBreakStmt() const { return getKind() == StmtKind::BreakStmt; }
     bool isAssignStmt() const { return getKind() == StmtKind::AssignStmt; }
+    bool isCompoundStmt() const { return getKind() == StmtKind::CompoundStmt; }
 
     StmtKind getKind() const { return kind; }
 
@@ -196,13 +198,14 @@ public:
     Expr& getRangeExpr() const { return *range; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
     SourceLocation getLocation() const { return location; }
+    std::unique_ptr<Stmt> lower();
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
 
 private:
     std::unique_ptr<VarDecl> variable;
     std::unique_ptr<Expr> range;
     std::vector<std::unique_ptr<Stmt>> body;
-    SourceLocation location; // Location of 'id'.
+    SourceLocation location;
 };
 
 class BreakStmt : public Stmt {
@@ -234,6 +237,17 @@ private:
     std::unique_ptr<Expr> rhs;
     bool isCompound;
     SourceLocation location; // Location of operator symbol.
+};
+
+class CompoundStmt : public Stmt {
+public:
+    CompoundStmt(std::vector<std::unique_ptr<Stmt>>&& body)
+    : Stmt(StmtKind::CompoundStmt), body(std::move(body)) {}
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::CompoundStmt; }
+
+private:
+    std::vector<std::unique_ptr<Stmt>> body;
 };
 
 }

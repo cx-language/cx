@@ -65,6 +65,7 @@ private:
 
     void typecheckStmt(Stmt& stmt) const;
     void typecheckAssignStmt(AssignStmt& stmt) const;
+    void typecheckCompoundStmt(CompoundStmt& stmt) const;
     void typecheckReturnStmt(ReturnStmt& stmt) const;
     void typecheckVarStmt(VarStmt& stmt) const;
     void typecheckIncrementStmt(IncrementStmt& stmt) const;
@@ -72,7 +73,6 @@ private:
     void typecheckIfStmt(IfStmt& ifStmt) const;
     void typecheckSwitchStmt(SwitchStmt& stmt) const;
     void typecheckWhileStmt(WhileStmt& whileStmt) const;
-    void typecheckForStmt(ForStmt& forStmt) const;
     void typecheckBreakStmt(BreakStmt& breakStmt) const;
     void typecheckType(Type type) const;
     void typecheckParamDecl(ParamDecl& decl) const;

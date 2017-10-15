@@ -82,6 +82,64 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
                                                  assignStmt->isCompoundAssignment(),
                                                  assignStmt->getLocation());
         }
+        case StmtKind::CompoundStmt: {
+            auto* compoundStmt = llvm::cast<CompoundStmt>(this);
+            auto body = ::instantiate(compoundStmt->getBody(), genericArgs);
+            return llvm::make_unique<CompoundStmt>(std::move(body));
+        }
     }
     llvm_unreachable("all cases handled");
+}
+
+// Lowers 'for (let id in range) { ... }' into:
+//
+// {
+//     var __iterator = range.iterator();
+//
+//     while (__iterator.hasNext()) {
+//         let id = __iterator.next();
+//         ...
+//     }
+// }
+std::unique_ptr<Stmt> ForStmt::lower() {
+    static uint64_t iteratorVariableNameCounter = 0;
+    auto iteratorVariableName = "__iterator" + std::to_string(iteratorVariableNameCounter++);
+    auto location = getLocation();
+
+    std::vector<std::unique_ptr<Stmt>> stmts;
+
+    auto iteratorMemberExpr = llvm::make_unique<MemberExpr>(std::move(range), "iterator", location);
+    auto iteratorCallExpr = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<Argument>(),
+                                                        std::vector<Type>(), location);
+    auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true), std::string(iteratorVariableName),
+                                                      std::move(iteratorCallExpr),
+                                                      *variable->getModule(), location);
+    auto iteratorVarStmt = llvm::make_unique<VarStmt>(std::move(iteratorVarDecl));
+    stmts.push_back(std::move(iteratorVarStmt));
+
+    auto iteratorVarExpr = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
+    auto hasNextMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr), "hasNext", location);
+    auto hasNextCallExpr = llvm::make_unique<CallExpr>(std::move(hasNextMemberExpr), std::vector<Argument>(),
+                                                       std::vector<Type>(), location);
+
+    auto iteratorVarExpr2 = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
+    auto nextMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr2), "next", location);
+    auto nextCallExpr = llvm::make_unique<CallExpr>(std::move(nextMemberExpr), std::vector<Argument>(),
+                                                    std::vector<Type>(), location);
+    auto loopVariableVarDecl = llvm::make_unique<VarDecl>(variable->getType(), variable->getName(),
+                                                          std::move(nextCallExpr), *variable->getModule(),
+                                                          variable->getLocation());
+    auto loopVariableVarStmt = llvm::make_unique<VarStmt>(std::move(loopVariableVarDecl));
+
+    std::vector<std::unique_ptr<Stmt>> forStmtBody;
+    forStmtBody.push_back(std::move(loopVariableVarStmt));
+
+    for (auto& stmt : this->body) {
+        forStmtBody.push_back(std::move(stmt));
+    }
+
+    auto whileStmt = llvm::make_unique<WhileStmt>(std::move(hasNextCallExpr), std::move(forStmtBody));
+    stmts.push_back(std::move(whileStmt));
+
+    return llvm::make_unique<CompoundStmt>(std::move(stmts));
 }

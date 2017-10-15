@@ -1,35 +1,27 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-RANGE
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-F
+// RUN: check_exit_status 10 %delta run %s
 
 // CHECK-RANGE: define %"Range<int>" @"Range<int>.init"(i32 %start, i32 %end)
 
-// CHECK-F: define void @f(%"Range<int>" %r)
-func f(r: Range<int>) {
-    // CHECK-F-NEXT:   [[I:%[a-z0-9]+]] = alloca i32
-    // CHECK-F-NEXT:   [[START:%[a-z0-9]+]] = extractvalue %"Range<int>" %r, 0
-    // CHECK-F-NEXT:   [[END:%[a-z0-9]+]] = extractvalue %"Range<int>" %r, 1
-    // CHECK-F-NEXT:   store i32 [[START]], i32* [[I]]
-    // CHECK-F-NEXT:   br label %for
+// CHECK: define i32 @f(%"Range<int>" %r)
+func f(r: Range<int>) -> int {
+    var sum = 0;
 
-    // CHECK-F:      for:                                              ; preds = %body, %0
-    // CHECK-F-NEXT:   [[LOADED_I:%[a-z0-9]+]] = load i32, i32* [[I]]
-    // CHECK-F-NEXT:   [[CMP:%[a-z0-9]+]] = icmp slt i32 [[LOADED_I]], [[END]]
-    // CHECK-F-NEXT:   br i1 [[CMP]], label %body, label %endfor
+    // CHECK: alloca %"RangeIterator<int>"
+    // CHECK: call %"RangeIterator<int>" @"Range<int>.iterator"(%"Range<int>" %r)
+    // CHECK: call i1 @"RangeIterator<int>.hasNext"
+    // CHECK: call i32 @"RangeIterator<int>.next"
+    for (let i in r) {
+        sum += i;
+    }
 
-    // CHECK-F:      body:                                             ; preds = %for
-    // CHECK-F-NEXT:   [[ADD:%[a-z0-9]+]]  = add i32 [[LOADED_I]], 1
-    // CHECK-F-NEXT:   store i32 [[ADD]], i32* [[I]]
-    // CHECK-F-NEXT:   br label %for
-
-    // CHECK-F:      endfor:                                           ; preds = %for
-    // CHECK-F-NEXT:   ret void
-    for (let i in r) {}
+    return sum;
 }
 
 // CHECK-LABEL: define i32 @main()
-func main() {
+func main() -> int {
     // CHECK-NEXT: call %"Range<int>" @"Range<int>.init"(i32 0, i32 5)
-    // CHECK-NEXT: call void @f(%"Range<int>" %{{[0-9]+}})
-    f(0..5);
+    // CHECK-NEXT: call i32 @f(%"Range<int>" %{{[0-9]+}})
+    return f(0..5);
 }

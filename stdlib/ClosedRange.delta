@@ -29,4 +29,8 @@ struct ClosedRange<T> {
     func end() -> T {
         return end;
     }
+
+    func iterator() -> ClosedRangeIterator<T> {
+        return ClosedRangeIterator(this);
+    }
 }

@@ -674,7 +674,7 @@ std::unique_ptr<WhileStmt> parseWhileStmt() {
 }
 
 /// for-stmt ::= 'for' '(' id 'in' expr ')' '{' stmt* '}'
-std::unique_ptr<ForStmt> parseForStmt() {
+std::unique_ptr<Stmt> parseForStmt() {
     ASSERT(currentToken() == FOR);
     auto location = getCurrentLocation();
     consumeToken();
@@ -686,7 +686,7 @@ std::unique_ptr<ForStmt> parseForStmt() {
     parse(LBRACE);
     auto body = parseStmtsUntil(RBRACE);
     parse(RBRACE);
-    return llvm::make_unique<ForStmt>(std::move(variable), std::move(range), std::move(body), location);
+    return ForStmt(std::move(variable), std::move(range), std::move(body), location).lower();
 }
 
 /// switch-stmt ::= 'switch' '(' expr ')' '{' cases default-case? '}'

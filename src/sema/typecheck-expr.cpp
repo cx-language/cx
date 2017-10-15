@@ -339,7 +339,7 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
 std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 const CallExpr& call,
                                                 llvm::ArrayRef<ParamDecl> params) const {
-    ASSERT(call.getArgs().size() == params.size());
+    if (call.getArgs().size() != params.size()) return {};
 
     std::vector<Type> inferredGenericArgs;
 
@@ -535,7 +535,7 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
                     if (decls.empty()) {
                         typeDecl = typeTemplate->instantiate(genericArgs);
                         addToSymbolTable(*typeDecl);
-                        declsToTypecheck.emplace_back(typeDecl);
+                        typecheckTypeDecl(*typeDecl);
                     } else {
                         typeDecl = llvm::cast<TypeDecl>(decls[0]);
                     }
@@ -766,7 +766,8 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
         error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");
     }
 
-    Decl& typeDecl = findDecl(mangleTypeDecl(baseType.getName(), baseType.getGenericArgs()), SourceLocation::invalid());
+    Decl& typeDecl = findDecl(mangleTypeDecl(baseType.getName(), baseType.getGenericArgs()),
+                              expr.getBaseExpr()->getLocation());
 
     for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
         if (field.getName() == expr.getMemberName()) {
