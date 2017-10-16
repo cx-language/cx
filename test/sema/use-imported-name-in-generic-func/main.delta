@@ -2,7 +2,7 @@
 // FIXME
 // XFAIL: *
 
-import "inputs"
+import inputs
 
 func main() {
     A<int>().f()

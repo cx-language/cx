@@ -1032,14 +1032,22 @@ std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericPa
     return typeDecl;
 }
 
-/// import-decl ::= 'import' string-literal ('\n' | ';')
+/// import-decl ::= 'import' (id | string-literal) ('\n' | ';')
 std::unique_ptr<ImportDecl> parseImportDecl() {
     ASSERT(currentToken() == IMPORT);
     consumeToken();
-    expect(STRING_LITERAL, "after 'import'");
-    auto target = parseStringLiteral();
+
+    std::string importTarget;
+    auto location = getCurrentLocation();
+
+    if (currentToken() == STRING_LITERAL) {
+        importTarget = parseStringLiteral()->getValue();
+    } else {
+        importTarget = parse({ IDENTIFIER, STRING_LITERAL }, "after 'import'").getString();
+    }
+
     parseStmtTerminator("after 'import' declaration");
-    return llvm::make_unique<ImportDecl>(target->getValue(), *currentModule, target->getLocation());
+    return llvm::make_unique<ImportDecl>(std::move(importTarget), *currentModule, location);
 }
 
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | import-decl | var-decl
