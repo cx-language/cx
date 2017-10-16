@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run %s test-support.delta
+// RUN: check_exit_status 0 %delta run %s ../test-support.delta
 
 class C {
     let i: int;

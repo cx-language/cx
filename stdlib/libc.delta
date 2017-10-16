@@ -1,5 +1,12 @@
+// stdlib.h
 extern func malloc(size: uint64) -> mutable void*;
 extern func free(ptr: mutable void*);
+extern func abort();
 
+// stdio.h
 extern func printf(format: char*, ...) -> int;
 extern func getchar() -> int;
+
+// execinfo.h
+extern func backtrace(array: mutable (mutable void*)*, size: int) -> int;
+extern func backtrace_symbols(array: mutable void**, size: int) -> mutable (mutable char*)*;

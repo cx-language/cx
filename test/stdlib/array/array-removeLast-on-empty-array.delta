@@ -1,0 +1,9 @@
+// RUN: check_exit_status 254 %delta run %s | %FileCheck %s
+
+func main() {
+    var array = Array<int>();
+    array.removeLast();
+}
+
+// CHECK: Called removeLast() on empty Array
+// CHECK: Abort
