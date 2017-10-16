@@ -1,0 +1,68 @@
+// RUN: check_exit_status 0 %delta run %s test-support.delta
+
+func main() {
+    testInsert();
+    testRemoval();
+    testDuplicates();
+    testGetter();
+    testResize();
+}
+
+func testInsert() {
+    var map = Map<StringRef, int>();
+
+    map.insert("ok", 1);
+
+    assert(map.contains("ok"), "Contains ok since it was added");
+    assert(!map.contains("lol"), "Doesn't contain something that isn't there");
+}
+
+func testGetter() {
+    var map = Map<StringRef, int>();
+
+    map.insert("ok", 42);
+    assert(*map["ok"] == 42, "is as was inserted");
+}
+
+func testResize() {
+    var map = Map<String, int>();
+
+    for (let i in 0..255) {
+        var lol = String();
+
+        for (let j in 0..(i+1)) {
+            lol.push("a"[0]);
+        }
+        printf("%d\n", lol.size());
+
+        map.insert(lol, i);
+    }
+    printf("%d", map.size());
+    assert(map.size() == 255, "Size should be equal to added element count");
+}
+
+
+func testRemoval() {
+    var map = Map<StringRef, int>();
+    assert(map.size() == 0, "size is 0 at first");
+
+    map.insert("ok", 2);
+
+    assert(map.contains("ok"), "Contains ok since it was added");
+    assert(map.size() == 1, "size is now 1");
+
+    map.remove("ok");
+    assert(!map.contains("ok"), "Doesn't contain ok anymore since it was removed");
+    assert(map.size() == 0, "size is 0 again");
+}
+
+func testDuplicates() {
+    var map = Map<StringRef, int>();
+
+    map.insert("ok", 1);
+    map.insert("ok", 2);
+    assert(map.contains("ok"), "Contains ok since it was added");
+
+    map.remove("ok");
+    assert(!map.contains("ok"), "Doesn't contain ok anymore since it was removed, even thogh it was added twice");
+}

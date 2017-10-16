@@ -34,7 +34,7 @@ class String {
     }
 
     func data() -> char* {
-        return characters[0];
+        return characters.data();
     }
 
     mutating func push(character: char) {
@@ -101,6 +101,18 @@ func ==(a: StringRef, b: StringRef) -> bool {
     }
 
     return true;
+}
+
+func ==(a: String&, b: String&) -> bool {
+    return StringRef(a) == StringRef(b);
+}
+
+func ==(a: String&, b: StringRef) -> bool {
+    return StringRef(a) == b;
+}
+
+func ==(a: StringRef, b: String&) -> bool {
+    return a == StringRef(b);
 }
 
 func <(a: StringRef, b: StringRef) -> bool {

@@ -1,0 +1,133 @@
+
+
+
+/// Key-value pair used for storing in the Map
+class KeyValuePair<Key: Hashable, Value> {
+
+    var key: Key;
+    var value: Value;
+
+    init(key: Key, value: Value) {
+        this.key = key;
+        this.value = value;
+    }
+}
+
+
+class Map<Key: Hashable, Value> {
+
+    var hashTable: Array<Array<KeyValuePair<Key, Value> > >;
+    var size: int;
+
+    /// Initializes an empty set
+    init() {
+        size = 0;
+        hashTable = Array<Array<KeyValuePair<Key, Value> > >();
+        increaseTableSize(hashTable, 128);
+    }
+
+    /// Inserts an element into the set. If the element exists already, nothing is done.
+    mutating func insert(key: Key, value: Value) {
+        if (contains(key)) {
+            return;
+        }
+
+        let hashValue = int(key.hash()) % capacity();
+        var pair = KeyValuePair(key, value);
+
+        hashTable[hashValue].push(pair);
+        size++;
+
+        if (loadFactor() > 0.66) {
+            resize();
+        }
+    }
+
+    /// Removes an element from the set, if it exists there.
+    mutating func remove(e: Key&) {
+        let hashValue = int(e.hash()) % capacity();
+        let slot = hashTable[hashValue];
+
+        if (slot.size() == 0) {
+            return;
+        }
+
+        for (let i in 0..slot.size()) {
+            if (slot[i].key == *e) {
+                slot.removeAt(i);
+                size--;
+                return;
+            }
+        }
+    }
+
+    /// Expands the hash table size, needed when there's too many elements in the set
+    mutating func increaseTableSize(newTable: mutable Array<Array<KeyValuePair<Key, Value> > >&, newCapacity: int) {
+        for (let i in 0..newCapacity) {
+            newTable.push(Array<KeyValuePair<Key, Value> >());
+        }
+    }
+
+    func size() -> int {
+        return size;
+    }
+
+    func capacity() -> int {
+        return hashTable.size();
+    }
+
+    /// Resizes the set. This includes copying the old table into a new, bigger one
+    mutating func resize() {
+        print("ok")
+        var newTable = Array<Array<KeyValuePair<Key, Value> > >();
+        let newCapacity = capacity() * 2;
+
+        increaseTableSize(newTable, newCapacity);
+
+        for (let i in 0..capacity()) {
+            let slot = hashTable[i];
+
+            for (let el in slot) {
+                newTable[int(el.key.hash()) % newCapacity].push(*el);
+            }
+        }
+
+        hashTable = newTable;
+    }
+
+    func [](e: Key&) -> Value* {
+        let hashValue = int(e.hash()) % capacity();
+        let slot = hashTable[hashValue];
+
+        for (let element in slot) {
+            if (element.key == *e) {
+                return &element.value;
+            }
+        }
+        return null;
+    }
+
+    /// Checks if e is part of the set.
+    func contains(e: Key&) -> bool {
+        let hashValue = int(e.hash()) % capacity();
+        let slot = hashTable[hashValue];
+
+        if (slot.size() == 0) {
+            return false;
+        }
+
+        for (let element in slot) {
+            if (element.key == *e) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// Returns the load factor for the set. This is used to increase the set size once
+    /// the load factor gets too big.
+    func loadFactor() -> float64 {
+        return float64(size) / (float64(capacity()));
+    }
+}
