@@ -130,7 +130,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             auto builtinType = builtinTypes.find(type.getName());
             if (builtinType != builtinTypes.end()) return builtinType->second;
 
-            llvm::StringRef name = mangleTypeDecl(type.getName(), type.getGenericArgs());
+            auto name = mangleTypeDecl(type.getName(), type.getGenericArgs());
             auto it = structs.find(name);
             if (it != structs.end()) return it->second.first;
 
