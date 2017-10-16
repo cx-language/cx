@@ -58,6 +58,35 @@ inline void unreadChar(char ch) {
     currentFilePosition--;
 }
 
+static void readBlockComment(SourceLocation startLocation) {
+    int nestLevel = 1;
+
+    while (true) {
+        char ch = readChar();
+
+        if (ch == '*') {
+            char next = readChar();
+
+            if (next == '/') {
+                nestLevel--;
+                if (nestLevel == 0) return;
+            } else {
+                unreadChar(next);
+            }
+        } else if (ch == '/') {
+            char next = readChar();
+
+            if (next == '*') {
+                nestLevel++;
+            } else {
+                unreadChar(next);
+            }
+        } else if (ch == '\0') {
+            error(startLocation, "unterminated block comment");
+        }
+    }
+}
+
 inline Token readNumber() {
     const char* const begin = currentFilePosition;
     const char* end = begin + 1;
@@ -221,6 +250,8 @@ Token delta::lex() {
                         if (ch == '\n') break;
                         if (ch == '\0') goto end;
                     }
+                } else if (ch == '*') {
+                    readBlockComment(firstLocation);
                 } else if (ch == '=') {
                     return SLASH_EQ;
                 } else {
