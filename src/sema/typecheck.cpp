@@ -431,9 +431,7 @@ Decl& TypeChecker::findDecl(llvm::StringRef name, SourceLocation location, bool 
 
 std::vector<Decl*> TypeChecker::findDecls(llvm::StringRef name, bool everywhere) const {
     std::vector<Decl*> decls;
-    if (name == "RangeIterator<int>.hasNext") {
-        int k=k=4;
-    }
+
     if (auto* typeDecl = currentFunction ? currentFunction->getTypeDecl() : nullptr) {
         for (auto& decl : typeDecl->getMemberDecls()) {
             if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl.get())) {
