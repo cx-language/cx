@@ -17,4 +17,8 @@ struct ArrayIterator<Element> {
         current = current.offset(1);
         return next!;
     }
+
+    func current() -> Element& {
+        return current!;
+    }
 }

@@ -33,6 +33,22 @@ class Array<Element> {
         return bufferPointer.offset(int64(index))!;
     }
 
+    func first() -> Element& {
+        if (size == 0) {
+            _emptyArrayFirst();
+        }
+
+        return bufferPointer!;
+    }
+
+    func last() -> Element& {
+        if (size == 0) {
+            _emptyArrayLast();
+        }
+
+        return bufferPointer.offset(int64(size))!;
+    }
+
     func data() -> Element* {
         return bufferPointer;
     }
@@ -120,6 +136,16 @@ class Array<Element> {
 
     func _indexOutOfBounds(index: int) {
         printf("Array index %d is out of bounds, size is %d\n", index, size());
+        fatalError();
+    }
+
+    func _emptyArrayFirst() {
+        printf("Called first() on empty Array\n");
+        fatalError();
+    }
+
+    func _emptyArrayLast() {
+        printf("Called last() on empty Array\n");
         fatalError();
     }
 

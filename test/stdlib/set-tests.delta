@@ -4,6 +4,9 @@ func main() {
     testInsert();
     testRemoval();
     testDuplicates();
+    testIterator();
+    testEmptySetIterator();
+    testUnitSetIterator();
 }
 
 func testInsert() {
@@ -35,4 +38,63 @@ func testDuplicates() {
 
     s.remove("ok");
     assert(!s.contains("ok"), "Doesn't contain ok anymore since it was removed, even thogh it was added twice");
+}
+
+func testIterator() {
+    var s = Set<StringRef>();
+
+    s.insert("a");
+    s.insert("ccc");
+    s.insert("bb");
+    s.insert("a");
+    s.insert("ccc");
+    s.insert("ccc");
+
+    var a = false;
+    var bb = false;
+    var ccc = false;
+
+    for (let e in s) {
+        if (*e == "a") {
+            assert(!a, "Set iterator returned element \"a\" twice");
+            a = true;
+        } else if (*e == "bb") {
+            assert(!bb, "Set iterator returned element \"bb\" twice");
+            bb = true;
+        } else if (*e == "ccc") {
+            assert(!ccc, "Set iterator returned element \"ccc\" twice");
+            ccc = true;
+        } else {
+            assert(false, "Set iterator returned an element that should not be in the set");
+        }
+    }
+
+    assert(a, "Set iterator didn't return element \"a\"");
+    assert(bb, "Set iterator didn't return element \"bb\"");
+    assert(ccc, "Set iterator didn't return element \"ccc\"");
+}
+
+func testEmptySetIterator() {
+    var s = Set<StringRef>();
+    s.insert("foo");
+    s.insert("foo");
+    s.remove("foo");
+
+    for (let e in s) {
+        assert(false, "Shouldn't enter for-loop body when the set is empty");
+    }
+}
+
+func testUnitSetIterator() {
+    var s = Set<StringRef>();
+    s.insert("foo");
+    s.insert("foo");
+    var count = 0;
+
+    for (let e in s) {
+        count++;
+        assert(*e == "foo", "Set iterator returned an element that should not be in the set");
+    }
+
+    assert(count == 1, "Should enter for-loop body once when set contains one element");
 }

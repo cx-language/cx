@@ -93,4 +93,8 @@ class Set<E: Hashable> {
     func loadFactor() -> float64 {
         return float64(size) / (float64(capacity) * 1.0);
     }
+
+    func iterator() -> SetIterator<E> {
+        return SetIterator(this);
+    }
 }
