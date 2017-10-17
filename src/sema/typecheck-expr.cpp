@@ -620,12 +620,15 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             return expr.getType();
         }
 
-        decl = &resolveOverload(expr, expr.getMangledFunctionName());
-
         if (receiverType.isNullablePointer()) {
             error(expr.getReceiver()->getLocation(), "cannot call member function through pointer '",
                   receiverType, "', pointer may be null");
+        } else if (receiverType.isArrayType()) {
+            error(expr.getReceiver()->getLocation(), "type '", receiverType, "' has no method '",
+                  expr.getFunctionName(), "'");
         }
+
+        decl = &resolveOverload(expr, expr.getMangledFunctionName());
     } else {
         decl = &resolveOverload(expr, expr.getFunctionName());
 
