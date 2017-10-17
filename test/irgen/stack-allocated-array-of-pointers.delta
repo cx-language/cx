@@ -1,0 +1,12 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define i32 @main()
+func main() {
+    // CHECK-NEXT: %a = alloca [3 x i8*]
+    var a: void*[3] = uninitialized;
+    // CHECK-NEXT: %b = alloca [2 x i32*]
+    var b: mutable int*[2] = uninitialized;
+    // CHECK-NEXT: %c = alloca [1 x float**]
+    var c: mutable (mutable float32*)*[1] = uninitialized;
+    // CHECK-NEXT: ret i32 0
+}

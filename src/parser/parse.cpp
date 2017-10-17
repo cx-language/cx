@@ -274,6 +274,23 @@ std::vector<Type> parseGenericArgumentList() {
     return genericArgs;
 }
 
+int64_t parseArraySizeInBrackets() {
+    ASSERT(currentToken() == LBRACKET);
+    consumeToken();
+    int64_t arraySize;
+
+    if (currentToken() == RBRACKET) {
+        arraySize = ArrayType::unsized;
+    } else if (currentToken() == INT_LITERAL) {
+        arraySize = consumeToken().getIntegerValue();
+    } else {
+        error(getCurrentLocation(), "non-literal array bounds not implemented yet");
+    }
+
+    parse(RBRACKET);
+    return arraySize;
+}
+
 /// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
 Type parseSimpleType(bool isMutable) {
     ASSERT(currentToken() == IDENTIFIER);
@@ -289,21 +306,11 @@ Type parseSimpleType(bool isMutable) {
         default:
             return BasicType::get(id, std::move(genericArgs), isMutable);
         case LBRACKET:
-            consumeToken();
             type = BasicType::get(id, {}, isMutable);
             break;
     }
 
-    int64_t arraySize;
-    if (currentToken() == RBRACKET)
-        arraySize = ArrayType::unsized;
-    else if (currentToken() == INT_LITERAL)
-        arraySize = consumeToken().getIntegerValue();
-    else
-        error(getCurrentLocation(), "non-literal array bounds not implemented yet");
-
-    parse(RBRACKET);
-    return ArrayType::get(type, arraySize);
+    return ArrayType::get(type, parseArraySizeInBrackets());
 }
 
 // type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '&' | type '*'
@@ -332,6 +339,9 @@ Type parseType() {
             case AND: case STAR:
                 type = PointerType::get(type, currentToken() == AND);
                 consumeToken();
+                break;
+            case LBRACKET:
+                type = ArrayType::get(type, parseArraySizeInBrackets());
                 break;
             default:
                 return type;
