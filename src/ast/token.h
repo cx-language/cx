@@ -119,9 +119,9 @@ struct Token {
     Token withoutCompoundEqSuffix() const { return Token(TokenKind(kind - 1)); }
 
 private:
-    const TokenKind kind;
+    TokenKind kind;
     llvm::StringRef string; ///< The substring in the source code representing this token.
-    const SourceLocation location;
+    SourceLocation location;
 };
 
 struct PrefixOperator {

@@ -13,5 +13,5 @@ func main() {
     let a: A<int> = uninitialized
     
     // CHECK: %aaa = alloca %"A<A<A<bool>>>"
-    let aaa: A<A<A<bool> > > = uninitialized
+    let aaa: A<A<A<bool>>> = uninitialized
 }

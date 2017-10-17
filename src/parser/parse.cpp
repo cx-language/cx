@@ -267,6 +267,11 @@ std::vector<Type> parseGenericArgumentList() {
     while (true) {
         genericArgs.emplace_back(parseType());
         if (currentToken() == GT) break;
+        if (currentToken() == RSHIFT) {
+            tokenBuffer[currentTokenIndex] = GT;
+            tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, GT);
+            break;
+        }
         parse(COMMA);
     }
 

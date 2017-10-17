@@ -1,6 +1,6 @@
 class Set<E: Hashable> {
 
-    var hashTable: Array<Array<E> >;
+    var hashTable: Array<Array<E>>;
     var capacity: uint64;
     var size: uint64;
 
@@ -8,7 +8,7 @@ class Set<E: Hashable> {
     init() {
         size = 0;
         capacity = 128; // TODO pick good number
-        hashTable = Array<Array<E> >();
+        hashTable = Array<Array<E>>();
         increaseTableSize(int(capacity));
     }
 
@@ -53,7 +53,7 @@ class Set<E: Hashable> {
 
     /// Resizes the set. This includes copying the old table into a new, bigger one
     mutating func resize() {
-        var newTable = Array<Array<E> >();
+        var newTable = Array<Array<E>>();
         let newCapacity = int(capacity * 2);
         increaseTableSize(newCapacity);
 

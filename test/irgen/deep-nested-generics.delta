@@ -23,7 +23,7 @@ class A<T> {
 }
 
 class S<E: H> {
-    var a: A<A<E> >;
+    var a: A<A<E>>;
 
     init() {}
 
