@@ -74,7 +74,7 @@ private:
     void typecheckSwitchStmt(SwitchStmt& stmt) const;
     void typecheckWhileStmt(WhileStmt& whileStmt) const;
     void typecheckBreakStmt(BreakStmt& breakStmt) const;
-    void typecheckType(Type type) const;
+    void typecheckType(Type type, SourceLocation location) const;
     void typecheckParamDecl(ParamDecl& decl) const;
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) const;
     void typecheckTypeDecl(TypeDecl& decl) const;

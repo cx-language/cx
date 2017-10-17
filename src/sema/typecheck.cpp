@@ -25,6 +25,9 @@
 
 using namespace delta;
 
+void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs,
+                             llvm::StringRef name, SourceLocation location);
+
 namespace delta {
 llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
 }
@@ -235,13 +238,13 @@ void TypeChecker::typecheckStmt(Stmt& stmt) const {
     }
 }
 
-void TypeChecker::typecheckType(Type type) const {
+void TypeChecker::typecheckType(Type type, SourceLocation location) const {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
             auto* basicType = llvm::cast<BasicType>(type.get());
 
             for (auto genericArg : basicType->getGenericArgs()) {
-                typecheckType(genericArg);
+                typecheckType(genericArg, location);
             }
 
             auto decls = findDecls(mangleTypeDecl(basicType->getName(), basicType->getGenericArgs()));
@@ -255,27 +258,36 @@ void TypeChecker::typecheckType(Type type) const {
                     typecheckTypeDecl(*p);
                 }
             } else {
-                auto& typeDecl = llvm::cast<TypeDecl>(*decls[0]);
-                if (auto* deinitDecl = typeDecl.getDeinitializer()) {
-                    typecheckFunctionDecl(*deinitDecl);
+                switch (decls[0]->getKind()) {
+                    case DeclKind::TypeDecl:
+                        if (auto* deinitDecl = llvm::cast<TypeDecl>(decls[0])->getDeinitializer()) {
+                            typecheckFunctionDecl(*deinitDecl);
+                        }
+                        break;
+                    case DeclKind::TypeTemplate:
+                        validateGenericArgCount(llvm::cast<TypeTemplate>(decls[0])->getGenericParams().size(),
+                                                basicType->getGenericArgs(), basicType->getName(), location);
+                        break;
+                    default:
+                        break;
                 }
             }
 
             break;
         }
         case TypeKind::ArrayType:
-            typecheckType(type.getElementType());
+            typecheckType(type.getElementType(), location);
             break;
         case TypeKind::TupleType:
             for (auto subtype : type.getSubtypes()) {
-                typecheckType(subtype);
+                typecheckType(subtype, location);
             }
             break;
         case TypeKind::FunctionType:
             for (auto paramType : type.getParamTypes()) {
-                typecheckType(paramType);
+                typecheckType(paramType, location);
             }
-            typecheckType(type.getReturnType());
+            typecheckType(type.getReturnType(), location);
             break;
         case TypeKind::PointerType: {
             if (type.getPointee().isUnsizedArrayType()) {
@@ -286,7 +298,7 @@ void TypeChecker::typecheckType(Type type) const {
                     typecheckTypeDecl(*instantiation);
                 }
             } else {
-                typecheckType(type.getPointee());
+                typecheckType(type.getPointee(), location);
             }
             break;
         }
@@ -300,7 +312,7 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
         error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
 
-    typecheckType(decl.getType());
+    typecheckType(decl.getType(), decl.getLocation());
     getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 }
 
@@ -495,6 +507,8 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
         }
         typecheckParamDecl(param);
     }
+
+    typecheckType(decl.getReturnType(), decl.getLocation());
     if (decl.getReturnType().isMutable()) error(decl.getLocation(), "return types cannot be 'mutable'");
 
     if (!decl.isExtern()) {
@@ -596,7 +610,7 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
 }
 
 void TypeChecker::typecheckFieldDecl(FieldDecl& decl) const {
-    typecheckType(decl.getType());
+    typecheckType(decl.getType(), decl.getLocation());
 }
 
 std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module,

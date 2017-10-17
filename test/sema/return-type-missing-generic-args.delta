@@ -1,0 +1,7 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+// TODO: Add more location info to show this error on the return type rather than the function name.
+// CHECK: [[@LINE+1]]:6: error: too few generic arguments to 'Array', expected 1
+func f() -> Array {
+    return Array<int>();
+}

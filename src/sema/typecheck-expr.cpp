@@ -376,12 +376,13 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
     return inferredGenericArgs;
 }
 
-static void validateGenericArgCount(size_t genericParamCount, const CallExpr& call) {
-    if (call.getGenericArgs().size() < genericParamCount) {
-        error(call.getLocation(), "too few generic arguments to '", call.getFunctionName(), "', expected ",
+void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs,
+                             llvm::StringRef name, SourceLocation location) {
+    if (genericArgs.size() < genericParamCount) {
+        error(location, "too few generic arguments to '", name, "', expected ",
               genericParamCount);
-    } else if (call.getGenericArgs().size() > genericParamCount) {
-        error(call.getLocation(), "too many generic arguments to '", call.getFunctionName(), "', expected ",
+    } else if (genericArgs.size() > genericParamCount) {
+        error(location, "too many generic arguments to '", name, "', expected ",
               genericParamCount);
     }
 }
@@ -456,7 +457,8 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
                 if (!expr.getGenericArgs().empty()
                     && expr.getGenericArgs().size() != genericParams.size()) {
                     if (decls.size() == 1) {
-                        validateGenericArgCount(genericParams.size(), expr);
+                        validateGenericArgCount(genericParams.size(), expr.getGenericArgs(),
+                                                expr.getFunctionName(), expr.getLocation());
                     }
                     continue;
                 }
@@ -482,7 +484,7 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
                 auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
 
                 if (decls.size() == 1) {
-                    validateGenericArgCount(0, expr);
+                    validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                     validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic(),
                                  callee, expr.getCallee().getLocation());
                     return functionDecl;
@@ -494,7 +496,7 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
             }
             case DeclKind::TypeDecl: {
                 isInitCall = true;
-                validateGenericArgCount(0, expr);
+                validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 auto mangledName = mangleFunctionDecl(llvm::cast<TypeDecl>(decl)->getType(), "init");
                 auto initDecls = findDecls(mangledName);
 
@@ -613,7 +615,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         if (receiverType.isPointerType() && expr.getFunctionName() == "offset") {
             validateArgs(expr.getArgs(), {ParamDecl(Type::getInt64(), "by", SourceLocation::invalid())},
                          false, expr.getFunctionName(), expr.getLocation());
-            validateGenericArgCount(0, expr);
+            validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
             expr.setType(receiverType);
             return expr.getType();
         }
