@@ -136,7 +136,6 @@ private:
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating);
-    llvm::Value* getArrayDataPointer(const Expr& object, Type objectType);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
     llvm::Value* codegenPointerOffset(const CallExpr& call);
 

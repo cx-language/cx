@@ -6,7 +6,7 @@ func fatalError() {
 func printStackTrace() {
     var callstack: mutable void*[128] = undefined;
 
-    let frames = backtrace(&callstack[0], callstack.count);
+    let frames = backtrace(&callstack[0], callstack.size());
     let strings = backtrace_symbols(&callstack[0], frames);
 
     for (let i in 0..frames) {

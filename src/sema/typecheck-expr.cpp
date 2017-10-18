@@ -628,7 +628,13 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             error(expr.getReceiver()->getLocation(),
                   "cannot call member function through value of optional type '", receiverType,
                   "' which may be null");
-        } else if (receiverType.isArrayType()) {
+        } else if (receiverType.removePointer().isArrayType()) {
+            if (expr.getFunctionName() == "size") {
+                validateArgs(expr.getArgs(), {}, false, expr.getFunctionName(), expr.getLocation());
+                validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
+                return Type::getInt();
+            }
+
             error(expr.getReceiver()->getLocation(), "type '", receiverType, "' has no method '",
                   expr.getFunctionName(), "'");
         }
@@ -801,27 +807,31 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
     }
 
     if (baseType.isArrayType()) {
-        if (expr.getMemberName() == "data") return PointerType::get(Type::getChar());
-        if (expr.getMemberName() == "count") return Type::getInt();
-        error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");
+        auto sizeSynonyms = { "count", "length", "size" };
+
+        if (llvm::is_contained(sizeSynonyms, expr.getMemberName())) {
+            error(expr.getLocation(), "use the '.size()' method to get the number of elements in an array");
+        }
     }
 
-    Decl& typeDecl = findDecl(mangleTypeDecl(baseType.getName(), baseType.getGenericArgs()),
-                              expr.getBaseExpr()->getLocation());
+    if (baseType.isBasicType()) {
+        Decl& typeDecl = findDecl(mangleTypeDecl(baseType.getName(), baseType.getGenericArgs()),
+                                  expr.getBaseExpr()->getLocation());
 
-    for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
-        if (field.getName() == expr.getMemberName()) {
-            if (baseType.isMutable()) {
-                auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr());
+        for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
+            if (field.getName() == expr.getMemberName()) {
+                if (baseType.isMutable()) {
+                    auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr());
 
-                if (varExpr && varExpr->getIdentifier() == "this"
-                    && (currentFunction->isInitDecl() || currentFunction->isDeinitDecl())) {
-                    return field.getType().asMutable(true);
+                    if (varExpr && varExpr->getIdentifier() == "this"
+                        && (currentFunction->isInitDecl() || currentFunction->isDeinitDecl())) {
+                        return field.getType().asMutable(true);
+                    } else {
+                        return field.getType();
+                    }
                 } else {
-                    return field.getType();
+                    return field.getType().asImmutable();
                 }
-            } else {
-                return field.getType().asImmutable();
             }
         }
     }

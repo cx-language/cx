@@ -322,6 +322,13 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
         return codegenPointerOffset(expr);
     }
 
+    if (expr.getReceiver() && expr.getReceiverType().removePointer().isArrayType()) {
+        if (expr.getFunctionName() == "size") {
+            return getArrayLength(*expr.getReceiver(), expr.getReceiverType().removePointer());
+        }
+        llvm_unreachable("unknown static array member function");
+    }
+
     llvm::Function* function = getFunctionForCall(expr);
     ASSERT(function);
     auto param = function->arg_begin();
@@ -388,25 +395,9 @@ llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type membe
     }
 }
 
-llvm::Value* IRGenerator::getArrayDataPointer(const Expr& object, Type objectType) {
-    if (objectType.isUnsizedArrayType() || objectType.isString()) {
-        return builder.CreateExtractValue(codegenExpr(object), 0, "data");
-    } else {
-        llvm::Value* objectValue = codegenExpr(object);
-        if (objectValue->getType()->isPointerTy()) {
-            auto* zeroConstant = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0);
-            return builder.CreateGEP(objectValue, { zeroConstant, zeroConstant });
-        } else {
-            auto* alloca = createEntryBlockAlloca(objectType, nullptr);
-            builder.CreateStore(objectValue, alloca);
-            return alloca;
-        }
-    }
-}
-
 llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
     if (objectType.isUnsizedArrayType() || objectType.isString()) {
-        return builder.CreateExtractValue(codegenExpr(object), 1, "count");
+        return builder.CreateExtractValue(codegenExpr(object), 1, "size");
     } else {
         return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), objectType.getArraySize());
     }
@@ -423,17 +414,6 @@ llvm::Value* IRGenerator::codegenLvalueMemberExpr(const MemberExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
-    Type baseType = expr.getBaseExpr()->getType();
-
-    if (baseType.isPointerType()) {
-        baseType = baseType.getPointee();
-    }
-
-    if (baseType.isArrayType()) {
-        if (expr.getMemberName() == "data") return getArrayDataPointer(*expr.getBaseExpr(), baseType);
-        if (expr.getMemberName() == "count") return getArrayLength(*expr.getBaseExpr(), baseType);
-    }
-
     auto* value = codegenLvalueMemberExpr(expr);
     return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;
 }
