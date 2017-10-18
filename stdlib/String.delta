@@ -4,6 +4,7 @@ class String {
     /// Initializes an empty string.
     init() {
         characters = Array<char>();
+        characters.push('\0');
     }
 
     init(string: StringRef) {
@@ -14,8 +15,7 @@ class String {
             characters.push(ch);
         }
 
-        // TODO: Use null character literal instead of converting 0 to char.
-        characters.push(char(0));
+        characters.push('\0');
     }
 
     func size() -> int {
@@ -39,8 +39,7 @@ class String {
 
     mutating func push(character: char) {
         *characters[size()] = character;
-        // TODO: Use null character literal instead of converting 0 to char.
-        characters.push(char(0));
+        characters.push('\0');
     }
 
     /// Removes the first character from the string.

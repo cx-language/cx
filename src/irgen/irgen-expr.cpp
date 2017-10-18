@@ -37,6 +37,10 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
     }
 }
 
+llvm::Value* IRGenerator::codegenCharacterLiteralExpr(const CharacterLiteralExpr& expr) {
+    return llvm::ConstantInt::get(toIR(expr.getType()), expr.getValue());
+}
+
 llvm::Value* IRGenerator::codegenIntLiteralExpr(const IntLiteralExpr& expr) {
     // Integer literals may be typed as floating-point when used in a context
     // that requires a floating-point value. It might make sense to combine
@@ -457,6 +461,7 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr: return codegenVarExpr(llvm::cast<VarExpr>(expr));
         case ExprKind::StringLiteralExpr: return codegenStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
+        case ExprKind::CharacterLiteralExpr: return codegenCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr));
         case ExprKind::IntLiteralExpr: return codegenIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr));
         case ExprKind::FloatLiteralExpr: return codegenFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr));
         case ExprKind::BoolLiteralExpr: return codegenBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
@@ -478,6 +483,7 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr: return codegenLvalueVarExpr(llvm::cast<VarExpr>(expr));
         case ExprKind::StringLiteralExpr: return codegenStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
+        case ExprKind::CharacterLiteralExpr: return codegenCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr));
         case ExprKind::IntLiteralExpr: llvm_unreachable("no lvalue integer literals");
         case ExprKind::FloatLiteralExpr: llvm_unreachable("no lvalue float literals");
         case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");

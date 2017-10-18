@@ -79,6 +79,7 @@ private:
     llvm::Value* codegenVarExpr(const VarExpr& expr);
     llvm::Value* codegenLvalueVarExpr(const VarExpr& expr);
     llvm::Value* codegenStringLiteralExpr(const StringLiteralExpr& expr);
+    llvm::Value* codegenCharacterLiteralExpr(const CharacterLiteralExpr& expr);
     llvm::Value* codegenIntLiteralExpr(const IntLiteralExpr& expr);
     llvm::Value* codegenFloatLiteralExpr(const FloatLiteralExpr& expr);
     llvm::Value* codegenBoolLiteralExpr(const BoolLiteralExpr& expr);

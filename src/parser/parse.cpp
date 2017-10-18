@@ -185,6 +185,7 @@ std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLocation li
             ++it;
             ASSERT(it != end);
             switch (*it) {
+                case '0': result += '\0'; break;
                 case 'a': result += '\a'; break;
                 case 'b': result += '\b'; break;
                 case 'n': result += '\n'; break;
@@ -192,6 +193,7 @@ std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLocation li
                 case 't': result += '\t'; break;
                 case 'v': result += '\v'; break;
                 case '"': result += '"'; break;
+                case '\'': result += '\''; break;
                 case '\\': result += '\\'; break;
                 default:
                     auto itColumn = literalStartLocation.column + 1 + (it - literalContent.begin());
@@ -209,6 +211,15 @@ std::unique_ptr<StringLiteralExpr> parseStringLiteral() {
     ASSERT(currentToken() == STRING_LITERAL);
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
     auto expr = llvm::make_unique<StringLiteralExpr>(std::move(content), getCurrentLocation());
+    consumeToken();
+    return expr;
+}
+
+std::unique_ptr<CharacterLiteralExpr> parseCharacterLiteral() {
+    ASSERT(currentToken() == CHARACTER_LITERAL);
+    auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
+    if (content.size() != 1) error(getCurrentLocation(), "character literal must consist of a single UTF-8 byte");
+    auto expr = llvm::make_unique<CharacterLiteralExpr>(content[0], getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -459,6 +470,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
             }
             break;
         case STRING_LITERAL: expr = parseStringLiteral(); break;
+        case CHARACTER_LITERAL: expr = parseCharacterLiteral(); break;
         case INT_LITERAL: expr = parseIntLiteral(); break;
         case FLOAT_LITERAL: expr = parseFloatLiteral(); break;
         case TRUE: case FALSE: expr = parseBoolLiteral(); break;

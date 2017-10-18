@@ -8,7 +8,8 @@ using namespace delta;
 
 bool Expr::isLvalue() const {
     switch (getKind()) {
-        case ExprKind::VarExpr: case ExprKind::StringLiteralExpr: case ExprKind::ArrayLiteralExpr:
+        case ExprKind::VarExpr: case ExprKind::StringLiteralExpr:
+        case ExprKind::CharacterLiteralExpr: case ExprKind::ArrayLiteralExpr:
         case ExprKind::MemberExpr: case ExprKind::SubscriptExpr:
             return true;
         case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr: case ExprKind::SizeofExpr:
@@ -46,6 +47,11 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             auto* stringLiteralExpr = llvm::cast<StringLiteralExpr>(this);
             return llvm::make_unique<StringLiteralExpr>(stringLiteralExpr->getValue(),
                                                         stringLiteralExpr->getLocation());
+        }
+        case ExprKind::CharacterLiteralExpr: {
+            auto* characterLiteralExpr = llvm::cast<CharacterLiteralExpr>(this);
+            return llvm::make_unique<CharacterLiteralExpr>(characterLiteralExpr->getValue(),
+                                                           characterLiteralExpr->getLocation());
         }
         case ExprKind::IntLiteralExpr: {
             auto* intLiteralExpr = llvm::cast<IntLiteralExpr>(this);

@@ -13,6 +13,7 @@ enum TokenKind {
     INT_LITERAL,
     FLOAT_LITERAL,
     STRING_LITERAL,
+    CHARACTER_LITERAL,
     BREAK, // Keywords...
     CASE,
     CAST,

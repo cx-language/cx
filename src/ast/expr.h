@@ -16,6 +16,7 @@ class Decl;
 enum class ExprKind {
     VarExpr,
     StringLiteralExpr,
+    CharacterLiteralExpr,
     IntLiteralExpr,
     FloatLiteralExpr,
     BoolLiteralExpr,
@@ -37,6 +38,7 @@ public:
 
     bool isVarExpr() const { return getKind() == ExprKind::VarExpr; }
     bool isStringLiteralExpr() const { return getKind() == ExprKind::StringLiteralExpr; }
+    bool isCharacterLiteralExpr() const { return getKind() == ExprKind::CharacterLiteralExpr; }
     bool isIntLiteralExpr() const { return getKind() == ExprKind::IntLiteralExpr; }
     bool isFloatLiteralExpr() const { return getKind() == ExprKind::FloatLiteralExpr; }
     bool isBoolLiteralExpr() const { return getKind() == ExprKind::BoolLiteralExpr; }
@@ -96,6 +98,17 @@ public:
 
 private:
     std::string value;
+};
+
+class CharacterLiteralExpr : public Expr {
+public:
+    CharacterLiteralExpr(char value, SourceLocation location)
+    : Expr(ExprKind::CharacterLiteralExpr, location), value(value) {}
+    char getValue() const { return value; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::CharacterLiteralExpr; }
+
+private:
+    char value;
 };
 
 class IntLiteralExpr : public Expr {

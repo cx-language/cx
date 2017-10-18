@@ -7,9 +7,8 @@ func readLine() -> String {
 
     while (true) {
         let character = getchar();
-        // TODO: use newline character literal instead of 0xa
         // TODO: handle EOF
-        if (character == 0xa) { break; }
+        if (character == '\n') { break; }
         line.push(char(character));
     }
 

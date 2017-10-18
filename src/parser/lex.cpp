@@ -87,6 +87,23 @@ static void readBlockComment(SourceLocation startLocation) {
     }
 }
 
+static Token readQuotedLiteral(char delimiter, TokenKind literalKind) {
+    const char* begin = currentFilePosition;
+    const char* end = begin + 2;
+    int ch;
+
+    while ((ch = readChar()) != delimiter || *(end - 2) == '\\') {
+        if (ch == '\n') {
+            SourceLocation newlineLocation = firstLocation;
+            newlineLocation.column += end - begin - 1;
+            error(newlineLocation, "newline inside ", toString(literalKind));
+        }
+        end++;
+    }
+
+    return Token(literalKind, llvm::StringRef(begin, end - begin));
+}
+
 inline Token readNumber() {
     const char* const begin = currentFilePosition;
     const char* end = begin + 1;
@@ -388,19 +405,10 @@ Token delta::lex() {
 
                 return Token(IDENTIFIER, llvm::StringRef(begin, end - begin));
             }
-            case '"': {
-                const char* begin = currentFilePosition;
-                const char* end = begin + 2;
-                while ((ch = readChar()) != '"' || *(end - 2) == '\\') {
-                    if (ch == '\n') {
-                        SourceLocation newlineLocation = firstLocation;
-                        newlineLocation.column += end - begin - 1;
-                        error(newlineLocation, "newline inside string literal");
-                    }
-                    end++;
-                }
-                return Token(STRING_LITERAL, llvm::StringRef(begin, end - begin));
-            }
+            case '"':
+                return readQuotedLiteral('"', STRING_LITERAL);
+            case '\'':
+                return readQuotedLiteral('\'', CHARACTER_LITERAL);
             default:
                 error(firstLocation, "unknown token '", (char) ch, "'");
         }

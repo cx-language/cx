@@ -73,6 +73,10 @@ Type typecheckStringLiteralExpr(StringLiteralExpr&) {
     return BasicType::get("StringRef", {});
 }
 
+Type typecheckCharacterLiteralExpr(CharacterLiteralExpr&) {
+    return Type::getChar();
+}
+
 Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
     if (expr.getValue() >= std::numeric_limits<int32_t>::min() &&
         expr.getValue() <= std::numeric_limits<int32_t>::max()) {
@@ -234,8 +238,15 @@ bool TypeChecker::isValidConversion(Expr& expr, Type source, Type target) const 
     }
 
     // Autocast integer literals to parameter type if within range, error out if not within range.
-    if (expr.isIntLiteralExpr() && target.isBasicType()) {
-        auto value = llvm::cast<IntLiteralExpr>(expr).getValue();
+    if ((expr.isIntLiteralExpr() || expr.isCharacterLiteralExpr()) && target.isBasicType()) {
+        int64_t value;
+
+        if (auto* intLiteral = llvm::dyn_cast<IntLiteralExpr>(&expr)) {
+            value = intLiteral->getValue();
+        } else {
+            auto* charLiteral = llvm::cast<CharacterLiteralExpr>(&expr);
+            value = static_cast<unsigned char>(charLiteral->getValue());
+        }
 
         if (target.isInteger()) {
             if (target.isInt()) return checkRange<32, true>(expr, value, target);
@@ -250,7 +261,7 @@ bool TypeChecker::isValidConversion(Expr& expr, Type source, Type target) const 
             if (target.isUInt64()) return checkRange<64, false>(expr, value, target);
         }
 
-        if (target.isFloatingPoint()) {
+        if (target.isFloatingPoint() && expr.isIntLiteralExpr()) {
             // TODO: Check that the integer value is losslessly convertible to the target type?
             expr.setType(target);
             return true;
@@ -884,6 +895,7 @@ Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
     switch (expr.getKind()) {
         case ExprKind::VarExpr: type = typecheckVarExpr(llvm::cast<VarExpr>(expr), useIsWriteOnly); break;
         case ExprKind::StringLiteralExpr: type = typecheckStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr)); break;
+        case ExprKind::CharacterLiteralExpr: type = typecheckCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr)); break;
         case ExprKind::IntLiteralExpr: type = typecheckIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr)); break;
         case ExprKind::FloatLiteralExpr: type = typecheckFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr)); break;
         case ExprKind::BoolLiteralExpr: type = typecheckBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr)); break;

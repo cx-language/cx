@@ -11,13 +11,11 @@ func main() {
 func testStringIterator() {
     var iterator = "xy".iterator();
 
-    // TODO: Change "x"[0] etc. to use character literals when they're added.
-
     assert(iterator.hasNext(), "testStringIterator: hasNext() - 1");
-    assert(iterator.next() == "x"[0], "testStringIterator: next() - 1");
+    assert(iterator.next() == 'x', "testStringIterator: next() - 1");
 
     assert(iterator.hasNext(), "testStringIterator: hasNext() - 2");
-    assert(iterator.next() == "y"[0], "testStringIterator: next() - 2");
+    assert(iterator.next() == 'y', "testStringIterator: next() - 2");
 
     assert(!iterator.hasNext(), "testStringIterator: hasNext() - 3");
 }
