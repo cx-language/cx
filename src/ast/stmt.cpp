@@ -112,7 +112,7 @@ std::unique_ptr<Stmt> ForStmt::lower() {
     auto iteratorCallExpr = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<Argument>(),
                                                         std::vector<Type>(), location);
     auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true), std::string(iteratorVariableName),
-                                                      std::move(iteratorCallExpr),
+                                                      std::move(iteratorCallExpr), variable->getParent(),
                                                       *variable->getModule(), location);
     auto iteratorVarStmt = llvm::make_unique<VarStmt>(std::move(iteratorVarDecl));
     stmts.push_back(std::move(iteratorVarStmt));
@@ -127,8 +127,8 @@ std::unique_ptr<Stmt> ForStmt::lower() {
     auto nextCallExpr = llvm::make_unique<CallExpr>(std::move(nextMemberExpr), std::vector<Argument>(),
                                                     std::vector<Type>(), location);
     auto loopVariableVarDecl = llvm::make_unique<VarDecl>(variable->getType(), variable->getName(),
-                                                          std::move(nextCallExpr), *variable->getModule(),
-                                                          variable->getLocation());
+                                                          std::move(nextCallExpr), variable->getParent(),
+                                                          *variable->getModule(), variable->getLocation());
     auto loopVariableVarStmt = llvm::make_unique<VarStmt>(std::move(loopVariableVarDecl));
 
     std::vector<std::unique_ptr<Stmt>> forStmtBody;

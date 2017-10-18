@@ -115,16 +115,14 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, Ty
                 auto type = param.getType().resolve(genericArgs);
                 return ParamDecl(type, param.getName(), param.getLocation());
             });
-            auto body = ::instantiate(initDecl->getBody(), genericArgs);
-            instantiation = llvm::make_unique<InitDecl>(typeDecl, std::move(params), std::move(body),
-                                                        initDecl->getLocation());
+            instantiation = llvm::make_unique<InitDecl>(typeDecl, std::move(params), initDecl->getLocation());
+            instantiation->setBody(::instantiate(initDecl->getBody(), genericArgs));
             break;
         }
         case DeclKind::DeinitDecl: {
             auto* deinitDecl = llvm::cast<DeinitDecl>(this);
-            auto body = ::instantiate(deinitDecl->getBody(), genericArgs);
-            instantiation = llvm::make_unique<DeinitDecl>(typeDecl, std::move(body),
-                                                          deinitDecl->getLocation());
+            instantiation = llvm::make_unique<DeinitDecl>(typeDecl, deinitDecl->getLocation());
+            instantiation->setBody(::instantiate(deinitDecl->getBody(), genericArgs));
             break;
         }
         default:
@@ -278,7 +276,8 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
             auto initializer = varDecl->getInitializer()
                 ? varDecl->getInitializer()->instantiate(genericArgs) : nullptr;
             return llvm::make_unique<VarDecl>(type, varDecl->getName(), std::move(initializer),
-                                              *varDecl->getModule(), varDecl->getLocation());
+                                              varDecl->getParent(), *varDecl->getModule(),
+                                              varDecl->getLocation());
         }
         case DeclKind::FieldDecl:
             llvm_unreachable("handled via TypeDecl");

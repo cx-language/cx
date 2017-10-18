@@ -157,20 +157,21 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
 }
 
 VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, *currentModule, SourceLocation::invalid());
+    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, *currentModule,
+                   SourceLocation::invalid());
 }
 
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, const TypeChecker& typeChecker) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getInt());
-    typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer,
+    typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
                                          *typeChecker.getCurrentModule(), SourceLocation::invalid()));
 }
 
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, const TypeChecker& typeChecker) {
     auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getFloat64());
-    typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer,
+    typeChecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
                                          *typeChecker.getCurrentModule(), SourceLocation::invalid()));
 }
 

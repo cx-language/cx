@@ -1,0 +1,52 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func f0() -> int* {
+    let a = 3;
+    // CHECK: [[@LINE+1]]:13: warning: returning pointer to local variable
+    return &a;
+}
+
+func f1() -> int* {
+    let a = 3;
+    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
+    return a;
+}
+
+struct S {
+    let i: int;
+
+    func f2() -> int* {
+        // CHECK-NOT: [[@LINE+1]]:17: warning: returning pointer to local variable
+        return &i;
+    }
+
+    func f3() -> int* {
+        // CHECK-NOT: [[@LINE+1]]:16: warning: returning pointer to local variable
+        return i;
+    }
+}
+
+func f4(a: int) -> int* {
+    // CHECK: [[@LINE+1]]:13: warning: returning pointer to local variable
+    return &a;
+}
+
+func f5(a: int) -> int* {
+    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
+    return a;
+}
+
+func f6(a: int*) -> int* {
+    // CHECK-NOT: [[@LINE+1]]:12: warning: returning pointer to local variable
+    return a;
+}
+
+func f7(a: int*) -> int** {
+    // CHECK: [[@LINE+1]]:13: warning: returning pointer to local variable
+    return &a;
+}
+
+func f8(a: int*) -> int** {
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int*', expected 'int**'
+    return a;
+}

@@ -220,26 +220,20 @@ private:
 
 class InitDecl : public MethodDecl {
 public:
-    InitDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params,
-             std::vector<std::unique_ptr<Stmt>>&& body, SourceLocation location)
+    InitDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, SourceLocation location)
     : MethodDecl(DeclKind::InitDecl,
                  FunctionProto("init", std::move(params), Type::getVoid(), false, false),
-                 receiverTypeDecl, location) {
-        setBody(std::move(body));
-    }
+                 receiverTypeDecl, location) {}
     bool isMutating() const override { return true; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }
 };
 
 class DeinitDecl : public MethodDecl {
 public:
-    DeinitDecl(TypeDecl& receiverTypeDecl, std::vector<std::unique_ptr<Stmt>>&& body,
-               SourceLocation location)
+    DeinitDecl(TypeDecl& receiverTypeDecl, SourceLocation location)
     : MethodDecl(DeclKind::DeinitDecl,
                  FunctionProto("deinit", {}, Type::getVoid(), false, false),
-                 receiverTypeDecl, location) {
-        setBody(std::move(body));
-    }
+                 receiverTypeDecl, location) {}
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 };
 
@@ -322,14 +316,15 @@ private:
 
 class VarDecl : public Decl, public Movable {
 public:
-    VarDecl(Type type, std::string&& name, std::shared_ptr<Expr>&& initializer,
+    VarDecl(Type type, std::string&& name, std::shared_ptr<Expr>&& initializer, Decl* parent,
             Module& module, SourceLocation location)
     : Decl(DeclKind::VarDecl), type(type), name(std::move(name)),
-      initializer(std::move(initializer)), location(location), module(module) {}
+      initializer(std::move(initializer)), parent(parent), location(location), module(module) {}
     Type getType() const { return type; }
     void setType(Type type) { this->type = type; }
     llvm::StringRef getName() const { return name; }
     Expr* getInitializer() const { return initializer.get(); }
+    Decl* getParent() const { return parent; }
     SourceLocation getLocation() const { return location; }
     Module* getModule() const { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }
@@ -338,6 +333,7 @@ private:
     Type type;
     std::string name;
     std::shared_ptr<Expr> initializer; /// Null if the initializer is 'undefined'.
+    Decl* parent;
     SourceLocation location;
     Module& module;
 };

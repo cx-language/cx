@@ -48,6 +48,45 @@ int breakableBlocks = 0;
 
 }
 
+static void checkReturnPointerToLocal(ReturnStmt& stmt) {
+    if (!functionReturnType.isTupleType()) {
+        auto* returnValue = stmt.getValues()[0].get();
+
+        if (auto* prefixExpr = llvm::dyn_cast<PrefixExpr>(returnValue)) {
+            if (prefixExpr->getOperator() == AND) {
+                returnValue = &prefixExpr->getOperand();
+            }
+        }
+
+        Type localVariableType;
+
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(returnValue)) {
+            switch (varExpr->getDecl()->getKind()) {
+                case delta::DeclKind::VarDecl: {
+                    auto* varDecl = llvm::cast<VarDecl>(varExpr->getDecl());
+                    if (varDecl->getParent() && varDecl->getParent()->isFunctionDecl()) {
+                        localVariableType = varDecl->getType();
+                    }
+                    break;
+                }
+                case delta::DeclKind::ParamDecl:
+                    localVariableType = llvm::cast<ParamDecl>(varExpr->getDecl())->getType();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        if (localVariableType
+            && functionReturnType.removeOptional().isPointerType()
+            && functionReturnType.removeOptional().getPointee() == localVariableType) {
+            warning(returnValue->getLocation(), "returning pointer to local variable ",
+                    "(local variables will not exist after the function returns)");
+        }
+    }
+}
+
 void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
     if (stmt.getValues().empty()) {
         if (!functionReturnType.isVoid()) {
@@ -66,6 +105,8 @@ void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
         error(stmt.getLocation(), "mismatching return type '", returnType, "', expected '",
               functionReturnType, "'");
     }
+
+    checkReturnPointerToLocal(stmt);
 }
 
 void TypeChecker::typecheckVarStmt(VarStmt& stmt) const {
@@ -525,7 +566,7 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
             }
 
             Type thisType = receiverTypeDecl->getTypeForPassing(decl.isMutating());
-            addToSymbolTable(VarDecl(thisType, "this", nullptr, *getCurrentModule(), decl.getLocation()));
+            addToSymbolTable(VarDecl(thisType, "this", nullptr, &decl, *getCurrentModule(), decl.getLocation()));
         }
 
         for (auto& stmt : decl.getBody()) {

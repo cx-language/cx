@@ -133,8 +133,8 @@ void parseStmtTerminator(const char* contextInfo = nullptr) {
 std::unique_ptr<Expr> parseExpr();
 std::unique_ptr<Expr> parsePreOrPostfixExpr();
 std::vector<std::unique_ptr<Expr>> parseExprList();
-std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end);
-std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3);
+std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end, Decl* parent);
+std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3, Decl* parent);
 Type parseType();
 std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams);
 
@@ -587,7 +587,7 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
 /// mutability-specifier ::= 'let' | 'var'
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'undefined'
-std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue) {
+std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue, Decl* parent) {
     bool isMutable = parse({ LET, VAR }) == VAR;
     auto name = parse(IDENTIFIER);
 
@@ -609,13 +609,13 @@ std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue) {
         parseStmtTerminator();
     }
 
-    return llvm::make_unique<VarDecl>(type, name.getString(), std::move(initializer),
+    return llvm::make_unique<VarDecl>(type, name.getString(), std::move(initializer), parent,
                                       *currentModule, name.getLocation());
 }
 
 /// var-stmt ::= var-decl
-std::unique_ptr<VarStmt> parseVarStmt() {
-    return llvm::make_unique<VarStmt>(parseVarDecl(true));
+std::unique_ptr<VarStmt> parseVarStmt(Decl* parent) {
+    return llvm::make_unique<VarStmt>(parseVarDecl(true, parent));
 }
 
 /// call-stmt ::= call-expr ('\n' | ';')
@@ -654,14 +654,14 @@ std::unique_ptr<DeferStmt> parseDeferStmt() {
 
 /// if-stmt ::= 'if' '(' expr ')' '{' stmt* '}' ('else' else-branch)?
 /// else-branch ::= if-stmt | '{' stmt* '}'
-std::unique_ptr<IfStmt> parseIfStmt() {
+std::unique_ptr<IfStmt> parseIfStmt(Decl* parent) {
     ASSERT(currentToken() == IF);
     consumeToken();
     parse(LPAREN);
     auto condition = parseExpr();
     parse(RPAREN);
     parse(LBRACE);
-    auto thenStmts = parseStmtsUntil(RBRACE);
+    auto thenStmts = parseStmtsUntil(RBRACE, parent);
     parse(RBRACE);
     std::vector<std::unique_ptr<Stmt>> elseStmts;
     if (currentToken() != ELSE)
@@ -670,13 +670,13 @@ std::unique_ptr<IfStmt> parseIfStmt() {
     consumeToken();
     if (currentToken() == LBRACE) {
         consumeToken();
-        elseStmts = parseStmtsUntil(RBRACE);
+        elseStmts = parseStmtsUntil(RBRACE, parent);
         parse(RBRACE);
         return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts),
                                          std::move(elseStmts));
     }
     if (currentToken() == IF) {
-        elseStmts.emplace_back(parseIfStmt());
+        elseStmts.emplace_back(parseIfStmt(parent));
         return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts),
                                          std::move(elseStmts));
     }
@@ -684,30 +684,30 @@ std::unique_ptr<IfStmt> parseIfStmt() {
 }
 
 /// while-stmt ::= 'while' '(' expr ')' '{' stmt* '}'
-std::unique_ptr<WhileStmt> parseWhileStmt() {
+std::unique_ptr<WhileStmt> parseWhileStmt(Decl* parent) {
     ASSERT(currentToken() == WHILE);
     consumeToken();
     parse(LPAREN);
     auto condition = parseExpr();
     parse(RPAREN);
     parse(LBRACE);
-    auto body = parseStmtsUntil(RBRACE);
+    auto body = parseStmtsUntil(RBRACE, parent);
     parse(RBRACE);
     return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
 
 /// for-stmt ::= 'for' '(' id 'in' expr ')' '{' stmt* '}'
-std::unique_ptr<Stmt> parseForStmt() {
+std::unique_ptr<Stmt> parseForStmt(Decl* parent) {
     ASSERT(currentToken() == FOR);
     auto location = getCurrentLocation();
     consumeToken();
     parse(LPAREN);
-    auto variable = parseVarDecl(false);
+    auto variable = parseVarDecl(false, parent);
     parse(IN);
     auto range = parseExpr();
     parse(RPAREN);
     parse(LBRACE);
-    auto body = parseStmtsUntil(RBRACE);
+    auto body = parseStmtsUntil(RBRACE, parent);
     parse(RBRACE);
     return ForStmt(std::move(variable), std::move(range), std::move(body), location).lower();
 }
@@ -716,7 +716,7 @@ std::unique_ptr<Stmt> parseForStmt() {
 /// cases ::= case | case cases
 /// case ::= 'case' expr ':' stmt+
 /// default-case ::= 'default' ':' stmt+
-std::unique_ptr<SwitchStmt> parseSwitchStmt() {
+std::unique_ptr<SwitchStmt> parseSwitchStmt(Decl* parent) {
     ASSERT(currentToken() == SWITCH);
     consumeToken();
     parse(LPAREN);
@@ -731,14 +731,14 @@ std::unique_ptr<SwitchStmt> parseSwitchStmt() {
             consumeToken();
             auto value = parseExpr();
             parse(COLON);
-            auto stmts = parseStmtsUntilOneOf(CASE, DEFAULT, RBRACE);
+            auto stmts = parseStmtsUntilOneOf(CASE, DEFAULT, RBRACE, parent);
             cases.push_back({ std::move(value), std::move(stmts) });
         } else if (currentToken() == DEFAULT) {
             if (defaultSeen)
                 error(getCurrentLocation(), "switch-statement may only contain one 'default' case");
             consumeToken();
             parse(COLON);
-            defaultStmts = parseStmtsUntilOneOf(CASE, DEFAULT, RBRACE);
+            defaultStmts = parseStmtsUntilOneOf(CASE, DEFAULT, RBRACE, parent);
             defaultSeen = true;
         } else {
             error(getCurrentLocation(), "expected 'case' or 'default'");
@@ -761,15 +761,15 @@ std::unique_ptr<BreakStmt> parseBreakStmt() {
 /// stmt ::= var-stmt | assign-stmt | compound-assign-stmt | return-stmt |
 ///          inc-stmt | dec-stmt | call-stmt | defer-stmt |
 ///          if-stmt | switch-stmt | while-stmt | for-stmt | break-stmt
-std::unique_ptr<Stmt> parseStmt() {
+std::unique_ptr<Stmt> parseStmt(Decl* parent) {
     switch (currentToken()) {
         case RETURN: return parseReturnStmt();
-        case LET: case VAR: return parseVarStmt();
+        case LET: case VAR: return parseVarStmt(parent);
         case DEFER: return parseDeferStmt();
-        case IF: return parseIfStmt();
-        case WHILE: return parseWhileStmt();
-        case FOR: return parseForStmt();
-        case SWITCH: return parseSwitchStmt();
+        case IF: return parseIfStmt(parent);
+        case WHILE: return parseWhileStmt(parent);
+        case FOR: return parseForStmt(parent);
+        case SWITCH: return parseSwitchStmt(parent);
         case BREAK: return parseBreakStmt();
         case UNDERSCORE: {
             consumeToken();
@@ -798,17 +798,17 @@ std::unique_ptr<Stmt> parseStmt() {
     }
 }
 
-std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end) {
+std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end, Decl* parent) {
     std::vector<std::unique_ptr<Stmt>> stmts;
     while (currentToken() != end)
-        stmts.emplace_back(parseStmt());
+        stmts.emplace_back(parseStmt(parent));
     return stmts;
 }
 
-std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3) {
+std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3, Decl* parent) {
     std::vector<std::unique_ptr<Stmt>> stmts;
     while (currentToken() != end1 && currentToken() != end2  && currentToken() != end3)
-        stmts.emplace_back(parseStmt());
+        stmts.emplace_back(parseStmt(parent));
     return stmts;
 }
 
@@ -927,7 +927,7 @@ std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool
 
     if (requireBody || currentToken() == LBRACE) {
         parse(LBRACE);
-        decl->setBody(parseStmtsUntil(RBRACE));
+        decl->setBody(parseStmtsUntil(RBRACE, decl.get()));
         parse(RBRACE);
     }
 
@@ -942,7 +942,7 @@ std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool
 std::unique_ptr<FunctionTemplate> parseFunctionTemplate(TypeDecl* receiverTypeDecl) {
     auto decl = parseFunctionTemplateProto(receiverTypeDecl);
     parse(LBRACE);
-    decl->getFunctionDecl()->setBody(parseStmtsUntil(RBRACE));
+    decl->getFunctionDecl()->setBody(parseStmtsUntil(RBRACE, decl.get()));
     parse(RBRACE);
     return decl;
 }
@@ -960,11 +960,11 @@ std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
 std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl) {
     auto initLocation = parse(INIT).getLocation();
     auto params = parseParamList(nullptr);
+    auto decl = llvm::make_unique<InitDecl>(receiverTypeDecl, std::move(params), initLocation);
     parse(LBRACE);
-    auto body = parseStmtsUntil(RBRACE);
+    decl->setBody(parseStmtsUntil(RBRACE, decl.get()));
     parse(RBRACE);
-    return llvm::make_unique<InitDecl>(receiverTypeDecl, std::move(params), std::move(body),
-                                       initLocation);
+    return decl;
 }
 
 /// deinit-decl ::= 'deinit' '(' ')' '{' stmt* '}'
@@ -973,10 +973,11 @@ std::unique_ptr<DeinitDecl> parseDeinitDecl(TypeDecl& receiverTypeDecl) {
     parse(LPAREN);
     auto expectedRParenLocation = getCurrentLocation();
     if (consumeToken() != RPAREN) error(expectedRParenLocation, "deinitializers cannot have parameters");
+    auto decl = llvm::make_unique<DeinitDecl>(receiverTypeDecl, deinitLocation);
     parse(LBRACE);
-    auto body = parseStmtsUntil(RBRACE);
+    decl->setBody(parseStmtsUntil(RBRACE, decl.get()));
     parse(RBRACE);
-    return llvm::make_unique<DeinitDecl>(receiverTypeDecl, std::move(body), deinitLocation);
+    return decl;
 }
 
 /// field-decl ::= ('let' | 'var') id ':' type ('\n' | ';')
@@ -1103,7 +1104,7 @@ std::unique_ptr<Decl> parseTopLevelDecl(const TypeChecker& typeChecker) {
             }
         }
         case LET: case VAR: {
-            auto decl = parseVarDecl(true);
+            auto decl = parseVarDecl(true, nullptr);
             typeChecker.addToSymbolTable(*decl, true);
             return std::move(decl);
         }
