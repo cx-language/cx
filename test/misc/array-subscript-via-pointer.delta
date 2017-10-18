@@ -1,11 +1,11 @@
 // RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:Foo
 
-import "stdlib.h"
-import "stdio.h"
+import "stdlib.h";
+import "stdio.h";
 
 func main() {
-    let buffer = &*cast<mutable uint8[4]*>(malloc(4));
+    let buffer = cast<mutable uint8[4]*>(malloc(4)!);
     buffer[0] = 70;
     buffer[1] = 0x6f;
     buffer[2] = 0o157;

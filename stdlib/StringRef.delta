@@ -5,7 +5,7 @@ struct StringRef {
         characters = ArrayRef<char>(pointer, length);
     }
 
-    init (string: String&) {
+    init (string: String*) {
         characters = ArrayRef<char>(string.data(), string.size());
     }
 

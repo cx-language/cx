@@ -29,7 +29,7 @@ func main() {
     testArrayIterator(a);
 }
 
-func testArrayIterator(array: Array<C>&) {
+func testArrayIterator(array: Array<C>* ) {
     var iterator = array.iterator();
 
     assert(iterator.hasNext(), "testArrayIterator: hasNext() - 1");

@@ -18,6 +18,7 @@ enum class TypeKind {
     TupleType,
     FunctionType,
     PointerType,
+    OptionalType
 };
 
 class TypeBase {
@@ -48,12 +49,12 @@ public:
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
+    bool isOptionalType() const { return getKind() == TypeKind::OptionalType; }
     bool isBuiltinType() const {
-        return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull();
+        return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType() || isNull();
     }
     bool isSizedArrayType() const;
     bool isUnsizedArrayType() const;
-    bool isNullablePointer() const;
     bool isFloatingPoint() const {
         return isFloat() || isFloat32() || isFloat64() || isFloat80();
     }
@@ -89,6 +90,7 @@ public:
     Type asMutable(bool isMutable = true) const { return Type(typeBase, isMutable); }
     Type asImmutable() const { return asMutable(false); }
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
+    Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
     std::string toString() const;
@@ -101,8 +103,7 @@ public:
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
     Type getPointee() const;
-    Type getReferee() const;
-    bool isReference() const;
+    Type getWrappedType() const;
     Type getIterableElementType() const;
 
     static Type getVoid(bool isMutable = false);
@@ -203,17 +204,29 @@ private:
 class PointerType : public TypeBase {
 public:
     Type getPointeeType() const { return pointeeType; }
-    bool isReference() const { return reference; }
-    static Type get(Type pointeeType, bool isReference, bool isMutable = false);
+    static Type get(Type pointeeType, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PointerType; }
 
 private:
-    PointerType(Type pointeeType, bool isReference)
-    : TypeBase(TypeKind::PointerType), pointeeType(pointeeType), reference(isReference) {}
+    PointerType(Type pointeeType)
+    : TypeBase(TypeKind::PointerType), pointeeType(pointeeType) {}
 
 private:
     Type pointeeType;
-    bool reference;
+};
+
+class OptionalType : public TypeBase {
+public:
+    Type getWrappedType() const { return wrappedType; }
+    static Type get(Type wrappedType, bool isMutable = false);
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::OptionalType; }
+
+private:
+    OptionalType(Type wrappedType)
+    : TypeBase(TypeKind::OptionalType), wrappedType(wrappedType) {}
+
+private:
+    Type wrappedType;
 };
 
 bool operator==(Type, Type);

@@ -31,7 +31,8 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         return builder.CreateCall(initializer, {stringPtr, size});
     } else {
         // Passing as C-string, i.e. char pointer.
-        ASSERT(expr.getType().isPointerType() && expr.getType().getPointee().isChar());
+        ASSERT(expr.getType().removeOptional().isPointerType() &&
+               expr.getType().removeOptional().getPointee().isChar());
         return builder.CreateGlobalStringPtr(expr.getValue());
     }
 }
@@ -55,12 +56,15 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
-    if (expr.getType().getPointee().isUnsizedArrayType()) {
+    auto pointeeType = expr.getType().getWrappedType().getPointee();
+
+    if (pointeeType.isUnsizedArrayType()) {
         return llvm::ConstantStruct::getAnon({
-            llvm::ConstantPointerNull::get(toIR(expr.getType().getPointee().getElementType())->getPointerTo()),
+            llvm::ConstantPointerNull::get(toIR(pointeeType.getElementType())->getPointerTo()),
             llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(ctx), 0)
         });
     }
+
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
 }
 
@@ -420,11 +424,16 @@ llvm::Value* IRGenerator::codegenLvalueMemberExpr(const MemberExpr& expr) {
 
 llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
     Type baseType = expr.getBaseExpr()->getType();
-    if (baseType.isReference()) baseType = baseType.getPointee();
+
+    if (baseType.isPointerType()) {
+        baseType = baseType.getPointee();
+    }
+
     if (baseType.isArrayType()) {
         if (expr.getMemberName() == "data") return getArrayDataPointer(*expr.getBaseExpr(), baseType);
         if (expr.getMemberName() == "count") return getArrayLength(*expr.getBaseExpr(), baseType);
     }
+
     auto* value = codegenLvalueMemberExpr(expr);
     return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;
 }

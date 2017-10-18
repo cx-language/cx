@@ -21,7 +21,7 @@ func main() {
     // CHECK-NEXT: %5 = insertvalue %"ArrayRef<int>" undef, i32* %4, 0
     // CHECK-NEXT: %6 = insertvalue %"ArrayRef<int>" %5, i32 3, 1
     // CHECK-NEXT: store %"ArrayRef<int>" %6, %"ArrayRef<int>"* %ref
-    let ref: int[]& = three;
+    let ref: int[]* = three;
     // CHECK-NEXT: %ref1 = load %"ArrayRef<int>", %"ArrayRef<int>"* %ref
     // CHECK-NEXT: %count = extractvalue %"ArrayRef<int>" %ref1, 1
     // CHECK-NEXT: store i32 %count, i32* %bb
@@ -30,7 +30,7 @@ func main() {
 }
 
 // CHECK: define void @foo(%"ArrayRef<int>" %ints)
-func foo(ints: int[]&) {
+func foo(ints: int[]*) {
     // CHECK-NEXT: %a = alloca i32
     // CHECK-NEXT: %b = alloca i32
     // CHECK-NEXT: %c = alloca %"ArrayRef<int>"
@@ -48,7 +48,7 @@ func foo(ints: int[]&) {
 }
 
 // CHECK: define void @bar([3 x i32]* %ints)
-func bar(ints: int[3]&) {
+func bar(ints: int[3]*) {
     // CHECK-NEXT: %b = alloca i32
     // CHECK-NEXT: %ref = alloca %"ArrayRef<int>"
     // CHECK-NEXT: store i32 3, i32* %b

@@ -92,7 +92,7 @@ Type MethodDecl::getThisType() const {
     if (getTypeDecl()->passByValue() && !isMutating()) {
         return getTypeDecl()->getType(isMutating());
     } else {
-        return PointerType::get(getTypeDecl()->getType(isMutating()), true);
+        return PointerType::get(getTypeDecl()->getType(isMutating()));
     }
 }
 
@@ -162,7 +162,7 @@ Type TypeDecl::getTypeForPassing(bool isMutable) const {
         case TypeTag::Struct: case TypeTag::Union:
             return getType(isMutable);
         case TypeTag::Class: case TypeTag::Interface:
-            return PointerType::get(getType(isMutable), true);
+            return PointerType::get(getType(isMutable));
     }
     llvm_unreachable("invalid type tag");
 }

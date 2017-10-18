@@ -2,6 +2,9 @@
 
 class Foo {
     let i: int;
-    // CHECK: [[@LINE+1]]:40: error: cannot initialize variable of type 'mutable Foo&' with 'Foo&'
-    func bar() { let f: mutable Foo& = this; }
+
+    func bar() {
+        // CHECK: [[@LINE+1]]:31: error: cannot initialize variable of type 'mutable Foo*' with 'Foo*'
+        let f: mutable Foo* = this;
+    }
 }

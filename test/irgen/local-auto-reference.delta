@@ -6,6 +6,6 @@ func main() {
    // CHECK-NEXT: %rf = alloca %Foo*
    // CHECK-NEXT: %pf = alloca %Foo*
     let f: Foo = uninitialized;
-    let rf: Foo& = f; // CHECK-NEXT: store %Foo* %f, %Foo** %rf
+    let rf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %rf
     let pf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %pf
 }

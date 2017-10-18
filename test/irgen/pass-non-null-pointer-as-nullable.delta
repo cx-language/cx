@@ -1,0 +1,23 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define void @f(i32* %p)
+func f(p: int*?) {}
+
+// CHECK-LABEL: define i32 @main()
+func main() {
+    // CHECK: %i = alloca i32
+    // CHECK-NEXT: %x = alloca i32*
+
+    // CHECK-NEXT: store i32 42, i32* %i
+    let i = 42;
+
+    // CHECK-NEXT: store i32* %i, i32** %x
+    let x = &i;
+
+    // CHECK-NEXT: %x1 = load i32*, i32** %x
+    // CHECK-NEXT: call void @f(i32* %x1)
+    f(x);
+
+    // CHECK-NEXT: call void @f(i32* %i)
+    f(i);
+}

@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func foo(ref_i: int&) { }
+func foo(ref_i: int*) { }
 
 func main() {
     // CHECK: %bar = alloca i32

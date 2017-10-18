@@ -4,8 +4,8 @@ struct S<T> {
     init() { }
 
     func f(t: T) {
-        let p: mutable T* = null;
-        *p = t;
+        let p: mutable T*? = null;
+        *(p!) = t;
     }
 }
 

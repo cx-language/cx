@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: define void @f(%"ArrayRef<int>" %a)
-func f(a: int[]&) {}
+func f(a: int[]*) {}
 
 func g() {
     // CHECK: %a = alloca [3 x i32]
@@ -21,4 +21,4 @@ func g() {
 }
 
 // CHECK: define void @h([3 x i32]* %b)
-func h(b: int[3]&) {}
+func h(b: int[3]*) {}

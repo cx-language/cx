@@ -2,7 +2,7 @@ struct ArrayIterator<Element> {
     var current: Element*;
     let end: Element*;
 
-    // TODO: Fix bug that prevents writing 'Element[]&' here.
+    // TODO: Fix bug that prevents writing 'Element[]*' here.
     init(array: ArrayRef<Element>) {
         current = array.data();
         end = array.data().offset(int64(array.size()));
@@ -12,13 +12,13 @@ struct ArrayIterator<Element> {
         return current != end;
     }
 
-    mutating func next() -> Element& {
+    mutating func next() -> Element* {
         let next = current;
         current = current.offset(1);
-        return next!;
+        return next;
     }
 
-    func current() -> Element& {
-        return current!;
+    func current() -> Element* {
+        return current;
     }
 }

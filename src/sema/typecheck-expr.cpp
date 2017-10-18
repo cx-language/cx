@@ -126,7 +126,7 @@ Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) const {
         return operandType.getPointee();
     }
     if (expr.getOperator() == AND) { // Address-of operation
-        return PointerType::get(operandType, true);
+        return PointerType::get(operandType);
     }
     return operandType;
 }
@@ -255,19 +255,22 @@ bool TypeChecker::isValidConversion(Expr& expr, Type source, Type target) const 
             expr.setType(target);
             return true;
         }
-    } else if (expr.isNullLiteralExpr() && target.isNullablePointer()) {
+    } else if (expr.isNullLiteralExpr() && target.isOptionalType()) {
         expr.setType(target);
         return true;
-    } else if (expr.isStringLiteralExpr() && target.isPointerType() && target.getPointee().isChar() &&
-               !target.getPointee().isMutable()) {
+    } else if (expr.isStringLiteralExpr()
+               && target.removeOptional().isPointerType()
+               && target.removeOptional().getPointee().isChar()
+               && !target.removeOptional().getPointee().isMutable()) {
         // Special case: allow passing string literals as C-strings (const char*).
         expr.setType(target);
         return true;
-    } else if (source.isBasicType() && target.isPointerType()
-               && source.isImplicitlyConvertibleTo(target.getPointee())) {
+    } else if (source.isBasicType() && target.removeOptional().isPointerType()
+               && source.isImplicitlyConvertibleTo(target.removeOptional().getPointee())) {
         return true;
-    } else if (source.isArrayType() && target.isPointerType() && target.getPointee().isArrayType()
-               && source.getElementType().isImplicitlyConvertibleTo(target.getPointee().getElementType())) {
+    } else if (source.isArrayType() && target.removeOptional().isPointerType()
+               && target.removeOptional().getPointee().isArrayType()
+               && source.getElementType().isImplicitlyConvertibleTo(target.removeOptional().getPointee().getElementType())) {
         return true;
     }
 
@@ -291,6 +294,8 @@ static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
             llvm_unreachable("unimplemented");
         case TypeKind::PointerType:
             return containsGenericParam(type.getPointee(), genericParam);
+        case TypeKind::OptionalType:
+            return containsGenericParam(type.getWrappedType(), genericParam);
     }
     llvm_unreachable("all cases handled");
 }
@@ -322,14 +327,13 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
         case TypeKind::FunctionType:
             llvm_unreachable("unimplemented");
         case TypeKind::PointerType:
-            if (paramType.isNullablePointer()) {
-                if (paramType.isNullablePointer()) {
-                    return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
-                }
-            } else {
-                if (!paramType.isNullablePointer()) {
-                    return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
-                }
+            if (paramType.isPointerType()) {
+                return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
+            }
+            return nullptr;
+        case TypeKind::OptionalType:
+            if (paramType.isOptionalType()) {
+                return findGenericArg(argType.getWrappedType(), paramType.getWrappedType(), genericParam);
             }
             return nullptr;
     }
@@ -620,9 +624,10 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             return expr.getType();
         }
 
-        if (receiverType.isNullablePointer()) {
-            error(expr.getReceiver()->getLocation(), "cannot call member function through pointer '",
-                  receiverType, "', pointer may be null");
+        if (receiverType.isOptionalType()) {
+            error(expr.getReceiver()->getLocation(),
+                  "cannot call member function through value of optional type '", receiverType,
+                  "' which may be null");
         } else if (receiverType.isArrayType()) {
             error(expr.getReceiver()->getLocation(), "type '", receiverType, "' has no method '",
                   expr.getFunctionName(), "'");
@@ -684,6 +689,8 @@ bool TypeChecker::isImplicitlyCopyable(Type type) const {
             llvm_unreachable("unimplemented");
         case TypeKind::PointerType:
             return true;
+        case TypeKind::OptionalType:
+            return isImplicitlyCopyable(type.getWrappedType());
     }
     llvm_unreachable("all cases handled");
 }
@@ -722,31 +729,58 @@ bool TypeChecker::validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<Par
     return true;
 }
 
-Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
-    Type sourceType = typecheckExpr(expr.getExpr());
-    Type targetType = expr.getTargetType();
-
+static bool isValidCast(Type sourceType, Type targetType) {
     switch (sourceType.getKind()) {
         case TypeKind::BasicType:
         case TypeKind::ArrayType:
         case TypeKind::TupleType:
         case TypeKind::FunctionType:
-            break;
-        case TypeKind::PointerType:
+            return false;
+
+        case TypeKind::PointerType: {
             Type sourcePointee = sourceType.getPointee();
+
             if (targetType.isPointerType()) {
                 Type targetPointee = targetType.getPointee();
+
                 if (sourcePointee.isVoid() &&
                     (!targetPointee.isMutable() || sourcePointee.isMutable())) {
-                    return targetType; // (mutable) void* -> T* / mutable void* -> mutable T*
+                    return true; // (mutable) void* -> T* / mutable void* -> mutable T*
                 }
+
                 if (targetPointee.isVoid() &&
                     (!targetPointee.isMutable() || sourcePointee.isMutable())) {
-                    return targetType; // (mutable) T* -> void* / mutable T* -> mutable void*
+                    return true; // (mutable) T* -> void* / mutable T* -> mutable void*
                 }
             }
-            break;
+
+            return false;
+        }
+        case TypeKind::OptionalType: {
+            Type sourceWrappedType = sourceType.getWrappedType();
+
+            if (sourceWrappedType.isPointerType() && targetType.isOptionalType()) {
+                Type targetWrappedType = targetType.getWrappedType();
+
+                if (targetWrappedType.isPointerType()
+                    && isValidCast(sourceWrappedType, targetWrappedType)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
+}
+
+Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
+    Type sourceType = typecheckExpr(expr.getExpr());
+    Type targetType = expr.getTargetType();
+
+    if (isValidCast(sourceType, targetType)) {
+        return targetType;
+    }
+
     error(expr.getLocation(), "illegal cast from '", sourceType, "' to '", targetType, "'");
 }
 
@@ -758,15 +792,16 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
     Type baseType = typecheckExpr(*expr.getBaseExpr());
 
     if (baseType.isPointerType()) {
-        if (!baseType.isReference()) {
-            error(expr.getBaseExpr()->location, "cannot access member through pointer '", baseType,
-                  "', pointer may be null");
-        }
         baseType = baseType.getPointee();
     }
 
+    if (baseType.isOptionalType()) {
+        error(expr.getBaseExpr()->getLocation(), "cannot access member through value of optional type '",
+              baseType, "' which may be null");
+    }
+
     if (baseType.isArrayType()) {
-        if (expr.getMemberName() == "data") return PointerType::get(Type::getChar(), true);
+        if (expr.getMemberName() == "data") return PointerType::get(Type::getChar());
         if (expr.getMemberName() == "count") return Type::getInt();
         error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");
     }
@@ -800,8 +835,8 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
 
     if (lhsType.isArrayType()) {
         arrayType = lhsType;
-    } else if (lhsType.isReference() && lhsType.getReferee().isArrayType()) {
-        arrayType = lhsType.getReferee();
+    } else if (lhsType.isPointerType() && lhsType.getPointee().isArrayType()) {
+        arrayType = lhsType.getPointee();
     } else if (lhsType.removePointer().isBuiltinType()) {
         error(expr.getLocation(), "'", lhsType, "' doesn't provide a subscript operator");
     } else {
@@ -828,10 +863,10 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
 
 Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) const {
     Type type = typecheckExpr(expr.getOperand());
-    if (!type.isNullablePointer()) {
-        error(expr.getLocation(), "cannot unwrap non-pointer type '", type, "'");
+    if (!type.isOptionalType()) {
+        error(expr.getLocation(), "cannot unwrap non-optional type '", type, "'");
     }
-    return PointerType::get(type.getPointee(), true);
+    return type.getWrappedType();
 }
 
 Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {

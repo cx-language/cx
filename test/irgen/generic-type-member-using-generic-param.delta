@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s
 
 class A<T> {
-    var a: T*
+    var a: T*?
     init() { this.a = null }
 }
 

@@ -11,4 +11,4 @@ func f(s: S) {
     // CHECK-NEXT: ret void
 }
 
-func g(s: S&) {}
+func g(s: S*) {}

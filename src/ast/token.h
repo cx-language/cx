@@ -93,6 +93,7 @@ enum TokenKind {
     COLON,
     SEMICOLON,
     RARROW,
+    QUESTION_MARK,
     TOKEN_COUNT
 };
 

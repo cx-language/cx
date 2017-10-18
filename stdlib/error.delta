@@ -4,16 +4,10 @@ func fatalError() {
 }
 
 func printStackTrace() {
-    let maxFrames = 128;
+    var callstack: mutable void*[128] = uninitialized;
 
-    // TODO: Use stack-allocated array.
-    var callstack = Array<mutable void*>();
-    for (let i in 0..maxFrames) {
-        callstack.push(null);
-    }
-
-    let frames = backtrace(callstack.mutableData(), callstack.size());
-    let strings = backtrace_symbols(callstack.mutableData(), frames);
+    let frames = backtrace(&callstack[0], callstack.count);
+    let strings = backtrace_symbols(&callstack[0], frames);
 
     for (let i in 0..frames) {
         printf("%s\n", *strings.offset(int64(i)));

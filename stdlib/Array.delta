@@ -1,5 +1,5 @@
 class Array<Element> {
-    var bufferPointer: mutable Element*;
+    var bufferPointer: mutable Element*?;
     var size: int;
     var capacity: int;
 
@@ -11,7 +11,7 @@ class Array<Element> {
     }
 
     deinit() {
-        free(cast<mutable void*>(bufferPointer));
+        free(cast<mutable void*?>(bufferPointer));
     }
 
     /// Returns the number of elements in the array.
@@ -24,16 +24,16 @@ class Array<Element> {
         return capacity;
     }
 
-    /// Returns a reference to the element at the given index.
-    func [](index: int) -> mutable Element& {
+    /// Returns the element at the given index.
+    func [](index: int) -> mutable Element* {
         if (uint(index) >= uint(size)) {
             _indexOutOfBounds(index);
         }
 
-        return bufferPointer.offset(int64(index))!;
+        return bufferPointer!.offset(int64(index));
     }
 
-    func first() -> Element& {
+    func first() -> Element* {
         if (size == 0) {
             _emptyArrayFirst();
         }
@@ -41,27 +41,27 @@ class Array<Element> {
         return bufferPointer!;
     }
 
-    func last() -> Element& {
+    func last() -> Element* {
         if (size == 0) {
             _emptyArrayLast();
         }
 
-        return bufferPointer.offset(int64(size))!;
+        return bufferPointer!.offset(int64(size));
     }
 
     func data() -> Element* {
-        return bufferPointer;
+        return bufferPointer!;
     }
 
     // TODO: Rename this to data() when methods can be overloaded on mutability of 'this'.
     mutating func mutableData() -> mutable Element* {
-        return bufferPointer;
+        return bufferPointer!;
     }
 
     /// Adds the given element to the end of the array.
     mutating func push(newElement: Element) {
         reserve(size + 1);
-        *bufferPointer.offset(int64(size)) = newElement;
+        *bufferPointer!.offset(int64(size)) = newElement;
         size++;
     }
 
@@ -74,15 +74,15 @@ class Array<Element> {
                 capacity *= 2;
             }
 
-            let newBufferPointer = cast<mutable Element*>(malloc(sizeof(Element) * uint64(capacity)));
+            let newBufferPointer = cast<mutable Element*?>(malloc(sizeof(Element) * uint64(capacity)));
 
             for (let index in 0..size) {
-                let source = bufferPointer.offset(int64(index));
-                let target = newBufferPointer.offset(int64(index));
+                let source = bufferPointer!.offset(int64(index));
+                let target = newBufferPointer!.offset(int64(index));
                 *target = *source;
             }
 
-            free(cast<mutable void*>(bufferPointer));
+            free(cast<mutable void*?>(bufferPointer));
             bufferPointer = newBufferPointer;
         }
     }
@@ -121,8 +121,8 @@ class Array<Element> {
         // TODO: Call deinitializer of removed element.
 
         for (let i in (index + 1)..size) {
-            let source = bufferPointer.offset(int64(i));
-            let target = bufferPointer.offset(int64(i - 1));
+            let source = bufferPointer!.offset(int64(i));
+            let target = bufferPointer!.offset(int64(i - 1));
             *target = *source;
         }
 

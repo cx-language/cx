@@ -362,6 +362,7 @@ Token delta::lex() {
             case ',': return COMMA;
             case ';': return SEMICOLON;
             case ':': return COLON;
+            case '?': return QUESTION_MARK;
             case '\0':
                 goto end;
             case '0': case '1': case '2': case '3': case '4':

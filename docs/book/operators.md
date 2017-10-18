@@ -42,6 +42,7 @@ for (i in 0...5) {
 
 ## Unwrap Operator
 
-The unwrap operator, written as a postfix `!`, converts a pointer to a
-reference. The pointer must be non-null, otherwise the program crashes (if
-built in checked mode), or invokes undefined behavior (in unchecked mode).
+The unwrap operator, written as a postfix `!`, takes an operand of an optional
+type, and returns the value wrapped by the operand. The operand must be
+non-null, otherwise the operation triggers a runtime error (by default), or
+invokes undefined behavior (in unchecked mode).

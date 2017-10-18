@@ -2,9 +2,8 @@ struct SetIterator<Element> {
     var hashTableIterator: ArrayIterator<Array<Element>>;
     var current: Element*;
 
-    init(set: Set<Element>&) {
+    init(set: Set<Element>* ) {
         hashTableIterator = set.hashTable.iterator();
-        current = null;
         _skipEmptySlots();
     }
 
@@ -12,7 +11,7 @@ struct SetIterator<Element> {
         return hashTableIterator.hasNext();
     }
 
-    mutating func next() -> Element& {
+    mutating func next() -> Element* {
         let next = current;
         let slot = hashTableIterator.current();
         let slotEnd = slot.data().offset(int64(slot.size()));
@@ -23,7 +22,7 @@ struct SetIterator<Element> {
             _skipEmptySlots();
         }
 
-        return next!;
+        return next;
     }
 
     mutating func _skipEmptySlots() {

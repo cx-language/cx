@@ -5,7 +5,7 @@ class Foo {
 }
 
 // CHECK-LABEL: define void @get
-func get(f: Foo&) {
+func get(f: Foo*) {
     // CHECK-NEXT: %m = alloca i32
     // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
     // CHECK-NEXT: %2 = load i32, i32* %1
@@ -21,7 +21,7 @@ func main() {
     // CHECK-NEXT: %n = alloca i32
     let f: Foo = uninitialized;
     // CHECK-NEXT: store %Foo* %f, %Foo** %rf
-    let rf: Foo& = f;
+    let rf: Foo* = f;
     // CHECK-NEXT: %1 = load %Foo*, %Foo** %rf
     // CHECK-NEXT: %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
     // CHECK-NEXT: %3 = load i32, i32* %2

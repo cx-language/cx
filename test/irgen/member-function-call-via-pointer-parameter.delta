@@ -10,7 +10,7 @@ struct Bar {
     func bar() { }
 }
 
-func qux(f: Foo&, b: Bar&) {
+func qux(f: Foo*, b: Bar*) {
     // CHECK: call void @Foo.foo(%Foo* %f)
     f.foo();
     // CHECK-NEXT: %1 = load %Bar, %Bar* %b

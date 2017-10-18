@@ -204,25 +204,14 @@ There are three built-in floating-point types: `float32`, `float64`, and
 `float80`. The standard library also provides `float` and `double` which are
 type aliases for `float32` and `float64`, respectively.
 
-### Reference types
-
-References are values that refer to other values. They can be reassigned to
-refer to another value, but they must always refer to some value. References
-referring to array types (see below) may be subscripted to access the array.
-
-> _reference-type_ → _pointee-type_ `&`<br>
-> _reference-type_ → `mutable` _pointee-type_ `&`<br>
-> _reference-type_ → `mutable` `(` _pointee-type_ `&` `)`<br>
-> _reference-type_ → `mutable` `(` `mutable` _pointee-type_ `&` `)`<br>
-
-Prefixing the _pointee-type_ with `mutable` makes the _pointee-type_ mutable.
-Enclosing the _reference-type_ in parentheses and prefixing the parentheses with
-`mutable` makes the _reference-type_ itself mutable.
-
 ### Pointer types
 
-Pointers are like references, but may additionally store the value `null` to
-denote that they don't currently point to a valid value.
+Pointers are values that point to other values. They can be reassigned to point
+to another value (if the pointer type itself is declared as `mutable`), but they
+must always refer to some value, i.e. they cannot be null by default (nullable
+pointers can be created using the optional type, see below). Member access,
+method calls, and subscript operations via pointers are allowed: they will be
+forwarded to the pointee value.
 
 > _pointer-type_ → _pointee-type_ `*`<br>
 > _pointer-type_ → `mutable` _pointee-type_ `*`<br>
@@ -313,6 +302,8 @@ polymorphism. Like classes and structs, interfaces may be generic.
 
 An object of the optional type `T?` (where `T` is an arbitrary type) may contain
 a value of type `T` or the value `null`.
+
+> _optional-type_ → _wrapped-type_ `?`<br>
 
 ### Function types
 
@@ -605,10 +596,10 @@ they were declared in. Return statements are disallowed inside the defer block.
 
 > _unwrap-expression_ → _operand_ `!`<br>
 
-The _unwrap expression_ takes an expression of a pointer type as its operand
-and converts the pointer to a reference. If the pointer is null, a runtime
-error will be triggered by default. In unchecked mode the compiler may assume
-that the pointer expression is never null.
+The _unwrap expression_ takes an operand of an optional type, and returns the
+value wrapped by the optional. If the operand is null, a runtime error will be
+triggered, except in unchecked mode, where the compiler may assume that the
+operand is never null.
 
 ### Binary expression
 

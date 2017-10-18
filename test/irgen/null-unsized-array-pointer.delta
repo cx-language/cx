@@ -4,5 +4,5 @@
 
 func main() {
     // CHECK: @a = private global { i8*, i32 } zeroinitializer
-    var a: int8[]* = null
+    var a: int8[]*? = null
 }

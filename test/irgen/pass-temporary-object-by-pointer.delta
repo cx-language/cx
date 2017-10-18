@@ -10,9 +10,9 @@ class B {
     init() {}
 }
 
-func f(a: A&) {}
-func f(b: B&) {}
-func f(i: int&) {}
+func f(a: A*) {}
+func f(b: B*) {}
+func f(i: int*) {}
 
 func main() {
     // CHECK: %a = alloca %A

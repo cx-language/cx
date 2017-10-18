@@ -300,8 +300,8 @@ public:
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::SubscriptExpr; }
 };
 
-/// A postfix expression that unwraps a non-null pointer, yielding a reference to its
-/// pointee, e.g. 'foo!'. If the pointer is null, the operation triggers an assertion
+/// A postfix expression that unwraps an optional (nullable) value, yielding the value wrapped by
+//  the optional, for example 'foo!'. If the optional is null, the operation triggers an assertion
 /// error (by default), or causes undefined behavior (in unchecked mode).
 class UnwrapExpr : public Expr {
 public:

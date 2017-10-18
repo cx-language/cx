@@ -4,12 +4,14 @@ struct ArrayRef<Element> {
 
     /// Initializes an ArrayRef referring to an empty array.
     init() {
-        data = null;
+        // TODO: Remove this temporary variable when 'uninitialized' can be directly assigned in initializers.
+        let data: Element* = uninitialized;
+        this.data = data;
         size = 0;
     }
 
     /// Initializes an ArrayRef referring to the elements of the given Array.
-    init(array: Array<Element>&) {
+    init(array: Array<Element>* ) {
         data = array.data();
         size = array.size();
     }
@@ -27,8 +29,8 @@ struct ArrayRef<Element> {
     }
 
     /// Returns a reference to the element at the given index.
-    func [](index: int) -> Element& {
-        return data.offset(int64(index))!;
+    func [](index: int) -> Element* {
+        return data.offset(int64(index));
     }
 
     func data() -> Element* {

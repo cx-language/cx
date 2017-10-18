@@ -45,10 +45,6 @@ bool Type::isUnsizedArrayType() const {
     return isArrayType() && getArraySize() == ArrayType::unsized;
 }
 
-bool Type::isNullablePointer() const {
-    return isPointerType() && !llvm::cast<PointerType>(typeBase)->isReference();
-}
-
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
     static const char* const builtinTypeNames[] = {
         "int", "int8", "int16", "int32", "int64",
@@ -86,7 +82,9 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
                                      isMutable());
         }
         case TypeKind::PointerType:
-            return PointerType::get(getPointee().resolve(replacements), isReference(), isMutable());
+            return PointerType::get(getPointee().resolve(replacements), isMutable());
+        case TypeKind::OptionalType:
+            return OptionalType::get(getWrappedType().resolve(replacements), isMutable());
     }
     llvm_unreachable("all cases handled");
 }
@@ -107,6 +105,7 @@ std::vector<std::unique_ptr<ArrayType>> arrayTypes;
 std::vector<std::unique_ptr<TupleType>> tupleTypes;
 std::vector<std::unique_ptr<FunctionType>> functionTypes;
 std::vector<std::unique_ptr<PointerType>> ptrTypes;
+std::vector<std::unique_ptr<OptionalType>> optionalTypes;
 }
 
 #define FETCH_AND_RETURN_TYPE(TYPE, CACHE, EQUALS, ...) \
@@ -136,15 +135,21 @@ Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isM
                           returnType, std::move(paramTypes));
 }
 
-Type PointerType::get(Type pointeeType, bool isReference, bool isMutable) {
-    FETCH_AND_RETURN_TYPE(PointerType, ptrTypes,
-                          t->getPointeeType() == pointeeType && t->isReference() == isReference,
-                          pointeeType, isReference);
+Type PointerType::get(Type pointeeType, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(PointerType, ptrTypes, t->getPointeeType() == pointeeType, pointeeType);
+}
+
+Type OptionalType::get(Type wrappedType, bool isMutable) {
+    FETCH_AND_RETURN_TYPE(OptionalType, optionalTypes, t->getWrappedType() == wrappedType, wrappedType);
 }
 
 #undef FETCH_AND_RETURN_TYPE
 
 bool Type::isImplicitlyConvertibleTo(Type type) const {
+    if (type.isOptionalType() && this->isImplicitlyConvertibleTo(type.getWrappedType())) {
+        return true;
+    }
+
     switch (typeBase->getKind()) {
         case TypeKind::BasicType:
             return type.isBasicType() && getName() == type.getName()
@@ -160,9 +165,12 @@ bool Type::isImplicitlyConvertibleTo(Type type) const {
                    && getParamTypes() == type.getParamTypes();
         case TypeKind::PointerType:
             return type.isPointerType()
-                   && (isReference() || !type.isReference())
                    && (getPointee().isMutable() || !type.getPointee().isMutable())
                    && getPointee().isImplicitlyConvertibleTo(type.getPointee());
+        case TypeKind::OptionalType:
+            return type.isOptionalType()
+                   && (getWrappedType().isMutable() || !type.getWrappedType().isMutable())
+                   && getWrappedType().isImplicitlyConvertibleTo(type.getWrappedType());
     }
     llvm_unreachable("all cases handled");
 }
@@ -196,8 +204,7 @@ llvm::ArrayRef<Type> Type::getGenericArgs() const { return llvm::cast<BasicType>
 Type Type::getReturnType() const { return llvm::cast<FunctionType>(typeBase)->getReturnType(); }
 llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FunctionType>(typeBase)->getParamTypes(); }
 Type Type::getPointee() const { return llvm::cast<PointerType>(typeBase)->getPointeeType(); }
-Type Type::getReferee() const { ASSERT(isReference()); return getPointee(); }
-bool Type::isReference() const { return isPointerType() && llvm::cast<PointerType>(typeBase)->isReference(); }
+Type Type::getWrappedType() const { return llvm::cast<OptionalType>(typeBase)->getWrappedType(); }
 
 Type Type::getIterableElementType() const {
     ASSERT(isIterable());
@@ -220,7 +227,9 @@ bool delta::operator==(Type lhs, Type rhs) {
             return rhs.isFunctionType() && lhs.getReturnType() == rhs.getReturnType()
                    && lhs.getParamTypes() == rhs.getParamTypes();
         case TypeKind::PointerType:
-            return rhs.isPointerType() && lhs.isReference() == rhs.isReference() && lhs.getPointee() == rhs.getPointee();
+            return rhs.isPointerType() && lhs.getPointee() == rhs.getPointee();
+        case TypeKind::OptionalType:
+            return rhs.isOptionalType() && lhs.getWrappedType() == rhs.getWrappedType();
     }
     llvm_unreachable("all cases handled");
 }
@@ -274,10 +283,20 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             if (isMutable() && !omitTopLevelMutable) {
                 stream << "mutable(";
                 getPointee().printTo(stream, false);
-                stream << (isReference() ? '&' : '*') << ')';
+                stream << "*)";
             } else {
                 getPointee().printTo(stream, false);
-                stream << (isReference() ? '&' : '*');
+                stream << '*';
+            }
+            break;
+        case TypeKind::OptionalType:
+            if (isMutable() && !omitTopLevelMutable) {
+                stream << "mutable(";
+                getWrappedType().printTo(stream, false);
+                stream << "?)";
+            } else {
+                getWrappedType().printTo(stream, false);
+                stream << '?';
             }
             break;
     }

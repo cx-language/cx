@@ -1,6 +1,6 @@
 // stdlib.h
-extern func malloc(size: uint64) -> mutable void*;
-extern func free(ptr: mutable void*);
+extern func malloc(size: uint64) -> mutable void*?;
+extern func free(ptr: mutable void*?);
 extern func abort();
 
 // stdio.h

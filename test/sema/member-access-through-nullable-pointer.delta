@@ -1,0 +1,11 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+struct Foo {
+    let i: int;
+}
+
+func main() {
+    let p: Foo*? = null;
+    // CHECK: [[@LINE+1]]:9: error: cannot access member through value of optional type 'Foo*?' which may be null
+    _ = p.i;
+}

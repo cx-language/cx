@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck  %s
 
 class C {
-    var a: int[]&
+    var a: int[]*
 
     func foo() {
         // CHECK: %[[A:[[:alnum:]_]+]] = getelementptr inbounds %C, %C* %this, i32 0, i32 0

@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 class Foo { let i: int; }
-func ref(r: Foo&) { } // CHECK: define void @ref(%Foo* %r)
+func ref(r: Foo*) { } // CHECK: define void @ref(%Foo* %r)
 func ptr(p: Foo*) { } // CHECK: define void @ptr(%Foo* %p)
 func main() {
     let f: Foo = uninitialized; // CHECK: %f = alloca %Foo

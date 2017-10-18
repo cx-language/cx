@@ -318,7 +318,7 @@ Type parseSimpleType(bool isMutable) {
     return ArrayType::get(type, parseArraySizeInBrackets());
 }
 
-// type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '&' | type '*'
+// type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '*' | type '?'
 Type parseType() {
     Type type;
     switch (currentToken()) {
@@ -341,13 +341,20 @@ Type parseType() {
     }
     while (true) {
         switch (currentToken()) {
-            case AND: case STAR:
-                type = PointerType::get(type, currentToken() == AND);
+            case STAR:
+                type = PointerType::get(type);
+                consumeToken();
+                break;
+            case QUESTION_MARK:
+                type = OptionalType::get(type);
                 consumeToken();
                 break;
             case LBRACKET:
                 type = ArrayType::get(type, parseArraySizeInBrackets());
                 break;
+            case AND:
+                error(getCurrentLocation(), "Delta doesn't have C++-style references; ",
+                      "use pointers ('*') instead, they are non-null by default");
             default:
                 return type;
         }

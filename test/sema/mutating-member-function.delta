@@ -2,5 +2,5 @@
 
 class Foo {
     let i: int;
-    mutating func bar() { let f: mutable Foo& = this; }
+    mutating func bar() { let f: mutable Foo* = this; }
 }

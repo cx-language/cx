@@ -6,8 +6,8 @@ func main() {
     foo(sp)
 }
 
-var sp: S* = null
+var sp: S*? = null
 
-func foo(p: S*) { }
+func foo(p: S*?) { }
 
 struct S { var i: int }

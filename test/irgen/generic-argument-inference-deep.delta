@@ -19,7 +19,7 @@ func f(c: S<int>, d: S<int>) {
 }
 
 // CHECK-2: define void @f{{[\.0-9]*}}(%"S<bool>"* %c, %"S<bool>"* %d)
-func f(c: S<bool>&, d: S<bool>&) {
+func f(c: S<bool>* , d: S<bool>* ) {
     // CHECK-2: call i1 @"==<bool>"(%"S<bool>" %{{[a-z0-9]+}}, %"S<bool>" %{{[a-z0-9]+}})
     _ = *c == *d;
 }

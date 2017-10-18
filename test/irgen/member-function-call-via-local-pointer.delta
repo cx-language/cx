@@ -7,7 +7,7 @@ class Foo {
 
 func main() {
     let f: Foo = uninitialized;
-    let rf: Foo& = f;
+    let rf: Foo* = f;
     // CHECK: %rf1 = load %Foo*, %Foo** %rf
     // CHECK-NEXT: call void @Foo.bar(%Foo* %rf1)
     rf.bar();

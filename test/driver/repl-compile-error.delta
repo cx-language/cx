@@ -6,5 +6,5 @@
 // CHECK: error: unknown identifier 'foo'
 foo
 
-// CHECK: error: unknown token '?'
+// CHECK: error: unexpected '?'
 ?
