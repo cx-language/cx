@@ -234,7 +234,7 @@ public:
 
 private:
     std::shared_ptr<Expr> lhs; // shared_ptr to support compound assignments.
-    std::unique_ptr<Expr> rhs;
+    std::unique_ptr<Expr> rhs; // Null if the right-hand side is 'undefined'.
     bool isCompound;
     SourceLocation location; // Location of operator symbol.
 };

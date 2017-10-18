@@ -141,9 +141,13 @@ void TypeChecker::typecheckBreakStmt(BreakStmt& breakStmt) const {
 void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     Type lhsType = typecheckExpr(*stmt.getLHS(), true);
     if (lhsType.isFunctionType()) error(stmt.getLocation(), "cannot assign to function");
-    Type rhsType = typecheckExpr(*stmt.getRHS());
+    Type rhsType = stmt.getRHS() ? typecheckExpr(*stmt.getRHS()) : nullptr;
 
-    if (!isValidConversion(*stmt.getRHS(), rhsType, lhsType)) {
+    if (!stmt.getRHS() && !currentFunction->isInitDecl()) {
+        error(stmt.getLocation(), "'undefined' is only allowed as an initial value");
+    }
+
+    if (stmt.getRHS() && !isValidConversion(*stmt.getRHS(), rhsType, lhsType)) {
         error(stmt.getRHS()->getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
 
@@ -160,7 +164,7 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
         }
     }
 
-    if (!isImplicitlyCopyable(rhsType)) {
+    if (rhsType && !isImplicitlyCopyable(rhsType)) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.getRHS())) {
             varExpr->getDecl()->markAsMoved();
         }

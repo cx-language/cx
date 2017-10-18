@@ -4,9 +4,7 @@ struct ArrayRef<Element> {
 
     /// Initializes an ArrayRef referring to an empty array.
     init() {
-        // TODO: Remove this temporary variable when 'undefined' can be directly assigned in initializers.
-        let data: Element* = undefined;
-        this.data = data;
+        data = undefined;
         size = 0;
     }
 

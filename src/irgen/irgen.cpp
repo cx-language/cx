@@ -330,6 +330,8 @@ void IRGenerator::codegenBreakStmt(const BreakStmt&) {
 }
 
 void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
+    if (!stmt.getRHS()) return;
+
     auto* lhsLvalue = codegenLvalueExpr(*stmt.getLHS());
 
     if (stmt.isCompoundAssignment()) {

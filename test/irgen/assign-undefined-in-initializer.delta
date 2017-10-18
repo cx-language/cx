@@ -1,0 +1,13 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class A {
+    var i: int;
+
+    // CHECK: define %A @A.init()
+    init() {
+        // CHECK-NEXT: %1 = alloca %A
+        i = undefined;
+        // CHECK-NEXT: %2 = load %A, %A* %1
+        // CHECK-NEXT: ret %A %2
+    }
+}

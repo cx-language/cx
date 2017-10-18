@@ -534,7 +534,8 @@ std::unique_ptr<Expr> parseExpr() {
 std::unique_ptr<AssignStmt> parseAssignStmt(std::unique_ptr<Expr> lhs) {
     auto location = getCurrentLocation();
     parse(ASSIGN);
-    auto rhs = parseExpr();
+    auto rhs = currentToken() != UNDEFINED ? parseExpr() : nullptr;
+    if (!rhs) consumeToken();
     parseStmtTerminator();
     return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs),
                                          /* isCompoundAssignment */ false, location);
