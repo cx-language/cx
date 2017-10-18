@@ -337,7 +337,7 @@ public:
 private:
     Type type;
     std::string name;
-    std::shared_ptr<Expr> initializer; /// Null if the initializer is 'uninitialized'.
+    std::shared_ptr<Expr> initializer; /// Null if the initializer is 'undefined'.
     SourceLocation location;
     Module& module;
 };

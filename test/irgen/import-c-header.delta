@@ -11,7 +11,7 @@ import "foo.h";
 func main() {
     // CHECK: call i32 @puts(i8*
     puts("foo bar");
-    var f: Foo = uninitialized;
+    var f: Foo = undefined;
     // CHECK-NEXT: %2 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
     // CHECK-NEXT: store i32 47, i32* %2
     f.bar = MAGIC_NUMBER + ANSWER;

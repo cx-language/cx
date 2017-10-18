@@ -52,7 +52,7 @@ The following keywords are reserved and can't be used as identifiers.
     true
     try
     typealias
-    uninitialized
+    undefined
     var
     while
     _
@@ -366,10 +366,10 @@ given, the compiler will infer the type of the variable from the _initializer_.
 The _initializer_ is an expression that provides the initial value for the
 variable.
 
-If _type_ has been specified, _initializer_ may also be the keyword
-`uninitialized`, in which case the variable is not initialized and all
-use-before-initialization warnings for the variable will be suppressed. Reading
-from an uninitialized variable causes undefined behavior.
+If _type_ has been specified, _initializer_ may also be the keyword `undefined`,
+in which case the variable is not initialized and all use-before-initialization
+warnings for the variable will be suppressed. Reading from an uninitialized
+variable causes undefined behavior.
 
 ### Functions
 

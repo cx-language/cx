@@ -585,7 +585,7 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
 /// var-decl ::= mutability-specifier id type-specifier? '=' initializer ('\n' | ';')
 /// mutability-specifier ::= 'let' | 'var'
 /// type-specifier ::= ':' type
-/// initializer ::= expr | 'uninitialized'
+/// initializer ::= expr | 'undefined'
 std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue) {
     bool isMutable = parse({ LET, VAR }) == VAR;
     auto name = parse(IDENTIFIER);
@@ -603,7 +603,7 @@ std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue) {
 
     if (requireInitialValue) {
         parse(ASSIGN);
-        initializer = currentToken() != UNINITIALIZED ? parseExpr() : nullptr;
+        initializer = currentToken() != UNDEFINED ? parseExpr() : nullptr;
         if (!initializer) consumeToken();
         parseStmtTerminator();
     }

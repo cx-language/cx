@@ -134,7 +134,7 @@ std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
 std::ostream& operator<<(std::ostream& out, const VarStmt& stmt) {
     out << br << "(var-stmt " << stmt.getDecl().getName() << " ";
     if (stmt.getDecl().getInitializer()) out << *stmt.getDecl().getInitializer();
-    else out << "uninitialized";
+    else out << "undefined";
     return out << ")";
 }
 

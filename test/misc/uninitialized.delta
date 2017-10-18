@@ -1,13 +1,13 @@
 // RUN: check_exit_status 70 %delta run %s
 
 func main() -> uint8 {
-    var buffer: uint8[4] = uninitialized;
+    var buffer: uint8[4] = undefined;
     buffer[0] = 70;
     buffer[1] = 0x6f;
     buffer[2] = 0o157;
     buffer[3] = 0b0;
 
-    var magic: uint8 = uninitialized;
+    var magic: uint8 = undefined;
     if (buffer[0] == 0) {
         magic = 0;
     } else {

@@ -5,7 +5,7 @@ func main() {
    // CHECK: %f = alloca %Foo
    // CHECK-NEXT: %rf = alloca %Foo*
    // CHECK-NEXT: %pf = alloca %Foo*
-    let f: Foo = uninitialized;
+    let f: Foo = undefined;
     let rf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %rf
     let pf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %pf
 }

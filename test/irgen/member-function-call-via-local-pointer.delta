@@ -6,7 +6,7 @@ class Foo {
 }
 
 func main() {
-    let f: Foo = uninitialized;
+    let f: Foo = undefined;
     let rf: Foo* = f;
     // CHECK: %rf1 = load %Foo*, %Foo** %rf
     // CHECK-NEXT: call void @Foo.bar(%Foo* %rf1)

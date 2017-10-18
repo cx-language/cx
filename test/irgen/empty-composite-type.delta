@@ -5,8 +5,8 @@ class C { }
 
 func main() {
     // CHECK: %s = alloca {}
-    let s: S = uninitialized;
+    let s: S = undefined;
     // CHECK-NEXT: %c = alloca {}
-    let c: C = uninitialized;
+    let c: C = undefined;
     // CHECK-NEXT: ret
 }

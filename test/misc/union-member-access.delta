@@ -7,7 +7,7 @@ func foo(u: U) -> int {
 }
 
 func main() -> int {
-    var u: U = uninitialized
+    var u: U = undefined
     u.a = 21
     return foo(u) + u.b
 }

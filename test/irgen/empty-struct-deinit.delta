@@ -5,5 +5,5 @@ struct Foo {
 }
 
 func main() {
-    let foo: Foo = uninitialized;
+    let foo: Foo = undefined;
 }

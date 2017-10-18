@@ -4,7 +4,7 @@
 extern func puts(s: uint8*);
 
 func foo() -> uint8[4] {
-    var buffer: uint8[4] = uninitialized;
+    var buffer: uint8[4] = undefined;
     buffer[0] = 66;
     buffer[1] = 0x61;
     buffer[2] = 0o162;

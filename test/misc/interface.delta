@@ -9,7 +9,7 @@ struct F {
 }
 
 func main() {
-    let f: F = uninitialized;
+    let f: F = undefined;
     bar(f);
 }
 

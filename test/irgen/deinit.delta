@@ -17,16 +17,16 @@ struct Bar {
 }
 
 func main() {
-    let f: Foo = uninitialized;
+    let f: Foo = undefined;
     if (false) {
-        let f2: Foo = uninitialized;
+        let f2: Foo = undefined;
         // CHECK: then:                                             ; preds = %0
         // CHECK-NEXT: call void @Foo.deinit(%Foo* %f2)
         // CHECK-NEXT: br label %endif
     }
-    let b: Bar = uninitialized;
+    let b: Bar = undefined;
     while (false) {
-        let b2: Bar = uninitialized;
+        let b2: Bar = undefined;
         // CHECK: %1 = load %Bar, %Bar* %b2
         // CHECK-NEXT: call void @Bar.deinit(%Bar %1)
         // CHECK-NEXT: %2 = load %Bar, %Bar* %b

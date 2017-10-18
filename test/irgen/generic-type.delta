@@ -10,8 +10,8 @@ class A<T> {
 
 func main() {
     // CHECK: %a = alloca %"A<int>"
-    let a: A<int> = uninitialized
+    let a: A<int> = undefined
     
     // CHECK: %aaa = alloca %"A<A<A<bool>>>"
-    let aaa: A<A<A<bool>>> = uninitialized
+    let aaa: A<A<A<bool>>> = undefined
 }

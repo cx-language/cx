@@ -7,11 +7,11 @@ struct S<T> {
     func f() {
         // CHECK: %t = alloca i32
         g()
-        var t: T = uninitialized
+        var t: T = undefined
     }
 
     func g() {
-        var t2: T = uninitialized
+        var t2: T = undefined
     }
 }
 

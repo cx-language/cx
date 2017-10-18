@@ -6,7 +6,7 @@ func foo(ref_f: Foo*) { }
 
 func main() {
     // CHECK: %f = alloca %Foo
-    let f: Foo = uninitialized;
+    let f: Foo = undefined;
     // CHECK-NEXT: call void @foo(%Foo* %f)
     foo(f);
 }

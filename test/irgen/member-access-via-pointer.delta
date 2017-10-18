@@ -19,7 +19,7 @@ func main() {
     // CHECK: %f = alloca %Foo
     // CHECK-NEXT: %rf = alloca %Foo*
     // CHECK-NEXT: %n = alloca i32
-    let f: Foo = uninitialized;
+    let f: Foo = undefined;
     // CHECK-NEXT: store %Foo* %f, %Foo** %rf
     let rf: Foo* = f;
     // CHECK-NEXT: %1 = load %Foo*, %Foo** %rf

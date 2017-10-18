@@ -224,7 +224,7 @@ const llvm::StringMap<TokenKind> keywords = {
     {"switch",        SWITCH},
     {"this",          THIS},
     {"true",          TRUE},
-    {"uninitialized", UNINITIALIZED},
+    {"undefined",     UNDEFINED},
     {"var",           VAR},
     {"while",         WHILE},
     {"_",             UNDERSCORE},

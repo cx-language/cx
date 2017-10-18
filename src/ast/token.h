@@ -41,7 +41,7 @@ enum TokenKind {
     SWITCH,
     THIS,
     TRUE,
-    UNINITIALIZED,
+    UNDEFINED,
     VAR,
     WHILE,
     UNDERSCORE,

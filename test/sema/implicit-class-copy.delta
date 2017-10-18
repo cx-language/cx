@@ -3,6 +3,6 @@
 class Foo { }
 
 func main() {
-    let f: Foo = uninitialized;
+    let f: Foo = undefined;
     let f2: Foo = f;
 }
