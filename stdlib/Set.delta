@@ -1,100 +1,36 @@
-class Set<E: Hashable> {
+class Set<Key: Hashable> {
 
-    var hashTable: Array<Array<E>>;
-    var capacity: uint64;
-    var size: uint64;
+    var map: Map<Key, bool>;
 
     /// Initializes an empty set
     init() {
-        size = 0;
-        capacity = 128; // TODO pick good number
-        hashTable = Array<Array<E>>();
-        increaseTableSize(int(capacity));
+        map = Map<Key, bool>();
     }
 
     /// Inserts an element into the set. If the element exists already, nothing is done.
-    mutating func insert(e: E) {
-        if (this.contains(e)) {
-            return;
-        }
-
-        let hashValue = int(e.hash() % capacity);
-        hashTable[hashValue].push(e);
-        size++;
-
-        if (loadFactor() > 0.66) {
-            resize();
-        }
+    mutating func insert(key: Key) {
+        map.insert(key, false);
     }
 
     /// Removes an element from the set, if it exists there.
-    mutating func remove(e: E*) {
-        let hashValue = int(e.hash() % capacity);
-        let slot = hashTable[hashValue];
-
-        if (slot.size() == 0) {
-            return;
-        }
-
-        for (let i in 0..slot.size()) {
-            if (*slot[i] == *e) {
-                slot.removeAt(i);
-                return;
-            }
-        }
-    }
-
-    /// Expands the hash table size, needed when there's too many elements in the set
-    mutating func increaseTableSize(newCapacity: int) {
-        for (let i in 0..int(newCapacity)) {
-            hashTable.push(Array<E>());
-        }
-    }
-
-    /// Resizes the set. This includes copying the old table into a new, bigger one
-    mutating func resize() {
-        var newTable = Array<Array<E>>();
-        let newCapacity = int(capacity * 2);
-        increaseTableSize(newCapacity);
-
-        for (let i in 0..int(capacity)) {
-            let e = hashTable[i];
-            if (e.size() != 0) {
-                for (let el in e) {
-                    *newTable[int(el.hash()) % newCapacity] = *e;
-                }
-            }
-        }
-
-        capacity = uint64(newCapacity);
-        hashTable = newTable;
+    mutating func remove(key: Key*) {
+        map.remove(key);
     }
 
     /// Checks if e is part of the set.
-    func contains(e: E*) -> bool {
-        let hashValue = int(e.hash() % capacity);
-        let slot = hashTable[hashValue];
-
-        if (slot.size() == 0) {
-            return false;
-        }
-
-        for (let element in slot) {
-            if (*element == *e) {
-                return true;
-            }
-        }
-
-        return false;
+    func contains(key: Key*) -> bool {
+        return map.contains(key);
     }
 
-    /// Returns the load factor for the set. This is used to increase the set size once
-    /// the load factor gets too big.
-    func loadFactor() -> float64 {
-        return float64(size) / (float64(capacity) * 1.0);
+    func size() -> uint {
+        return map.size();
     }
 
-    func iterator() -> SetIterator<E> {
+    func isEmpty() -> bool {
+        return map.isEmpty();
+    }
+
+    func iterator() -> SetIterator<Key> {
         return SetIterator(this);
     }
 }

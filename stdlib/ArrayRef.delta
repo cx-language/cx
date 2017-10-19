@@ -1,6 +1,6 @@
 struct ArrayRef<Element> {
     var data: Element*;
-    var size: int;
+    var size: uint;
 
     /// Initializes an ArrayRef referring to an empty array.
     init() {
@@ -16,18 +16,18 @@ struct ArrayRef<Element> {
 
     /// Initializes an ArrayRef referring to an array of the given size located at the given memory
     /// address.
-    init(data: Element*, size: int) {
+    init(data: Element*, size: uint) {
         this.data = data;
         this.size = size;
     }
 
     /// Returns the number of elements in the array.
-    func size() -> int {
+    func size() -> uint {
         return size;
     }
 
     /// Returns a reference to the element at the given index.
-    func [](index: int) -> Element* {
+    func [](index: uint) -> Element* {
         return data.offset(int64(index));
     }
 

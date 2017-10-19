@@ -1,7 +1,7 @@
 struct StringRef {
     var characters: ArrayRef<char>;
 
-    init(pointer: char*, length: int) {
+    init(pointer: char*, length: uint) {
         characters = ArrayRef<char>(pointer, length);
     }
 
@@ -9,12 +9,12 @@ struct StringRef {
         characters = ArrayRef<char>(string.data(), string.size());
     }
 
-    func size() -> int {
+    func size() -> uint {
         return characters.size();
     }
 
     /// Returns the character at the given index.
-    func [](index: int) -> char {
+    func [](index: uint) -> char {
         return *characters[index];
     }
 
@@ -26,7 +26,7 @@ struct StringRef {
     func hash() -> uint64 {
         var hashValue: uint64 = 5381;
 
-        for (let index in 0..characters.size()) {
+        for (let index in uint(0)..characters.size()) {
             hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
         }
 

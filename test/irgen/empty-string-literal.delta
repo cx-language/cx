@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK-LABEL: define i32 @main()
-func main() -> int {
+func main() -> uint {
     // TODO(optimize): ret i32 0
     // CHECK: call %StringRef @StringRef.init
     // CHECK-NEXT: call i32 @StringRef.size

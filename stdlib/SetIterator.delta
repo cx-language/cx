@@ -1,37 +1,15 @@
 struct SetIterator<Element> {
-    var hashTableIterator: ArrayIterator<Array<Element>>;
-    var current: Element*;
+    var iterator: MapIterator<Element, bool>;
 
     init(set: Set<Element>* ) {
-        hashTableIterator = set.hashTable.iterator();
-        _skipEmptySlots();
+        iterator = MapIterator<Element, bool>(set.map);
     }
 
     func hasNext() -> bool {
-        return hashTableIterator.hasNext();
+        return iterator.hasNext();
     }
 
     mutating func next() -> Element* {
-        let next = current;
-        let slot = hashTableIterator.current();
-        let slotEnd = slot.data().offset(int64(slot.size()));
-        current = current.offset(1);
-
-        if (current == slotEnd) {
-            hashTableIterator.next();
-            _skipEmptySlots();
-        }
-
-        return next;
-    }
-
-    mutating func _skipEmptySlots() {
-        while (hashTableIterator.hasNext()) {
-            if (hashTableIterator.current().size() != 0) {
-                current = hashTableIterator.current().data();
-                break;
-            }
-            hashTableIterator.next();
-        }
+        return &iterator.next().key;
     }
 }

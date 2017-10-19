@@ -27,7 +27,7 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
-        auto* initializer = functionInstantiations.find("StringRef.init$pointer:char*$length:int")->second.getFunction();
+        auto* initializer = functionInstantiations.find("StringRef.init$pointer:char*$length:uint")->second.getFunction();
         return builder.CreateCall(initializer, {stringPtr, size});
     } else {
         // Passing as C-string, i.e. char pointer.

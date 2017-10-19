@@ -1,0 +1,141 @@
+// RUN: check_exit_status 0 %delta run %s test-support.delta
+
+func main() {
+    testInsert();
+    testRemoval();
+    testDuplicates();
+    testGetter();
+    testResize();
+    testSize();
+    testIterator();
+    testEmptyMapIterator();
+    testUnitMapIterator();
+}
+
+func testInsert() {
+    var map = Map<StringRef, int>();
+
+    map.insert("ok", 1);
+
+    assert(map.contains("ok"), "Contains ok since it was added");
+    assert(!map.contains("lol"), "Doesn't contain something that isn't there");
+}
+
+func testSize() {
+    var map = Map<StringRef, StringRef>();
+
+    assert(map.size() == 0, "Size should be 0");
+    map.insert("best", "ok");
+    assert(map.size() == 1, "Size should now be 1");
+}
+
+func testGetter() {
+    var map = Map<StringRef, int>();
+
+    map.insert("ok", 42);
+    assert(*(map["ok"]!) == 42, "is as was inserted");
+}
+
+func testResize() {
+    var map = Map<String, int>();
+
+    for (let i in 0..255) {
+        var lol = String();
+
+        for (let j in 0..(i+1)) {
+            lol.push('a');
+        }
+
+        map.insert(lol, i);
+    }
+
+    assert(map.size() == 255, "Size should be equal to added element count");
+}
+
+
+func testRemoval() {
+    var map = Map<StringRef, int>();
+    assert(map.size() == 0, "size is 0 at first");
+
+    map.insert("ok", 2);
+
+    assert(map.contains("ok"), "Contains ok since it was added");
+    assert(map.size() == 1, "size is now 1");
+
+    map.remove("ok");
+    assert(!map.contains("ok"), "Doesn't contain ok anymore since it was removed");
+    assert(map.size() == 0, "size is 0 again");
+}
+
+func testDuplicates() {
+    var map = Map<StringRef, int>();
+
+    map.insert("ok", 1);
+    map.insert("ok", 2);
+    assert(map.contains("ok"), "Contains ok since it was added");
+
+    assert(*(map["ok"]!) == 1, "Second insert did nothing");
+
+    map.remove("ok");
+    assert(!map.contains("ok"), "Doesn't contain ok anymore since it was removed, even thogh it was added twice");
+    assert(map["ok"] == null, "ok was removed, now null");
+}
+
+func testIterator() {
+    var map = Map<StringRef, StringRef>();
+
+    map.insert("a", "a");
+    map.insert("ccc", "ccc");
+    map.insert("bb", "bb");
+    map.insert("a", "a");
+    map.insert("ccc", "ccc");
+    map.insert("ccc", "ccc");
+
+    var a = false;
+    var bb = false;
+    var ccc = false;
+
+    for (let e in map) {
+        if (e.key == "a") {
+            assert(!a, "Map iterator returned element \"a\" twice");
+            a = true;
+        } else if (e.key == "bb") {
+            assert(!bb, "Map iterator returned element \"bb\" twice");
+            bb = true;
+        } else if (e.key == "ccc") {
+            assert(!ccc, "Map iterator returned element \"ccc\" twice");
+            ccc = true;
+        } else {
+            assert(false, "Map iterator returned an element that should not be in the map");
+        }
+    }
+
+    assert(a, "Map iterator didn't return element \"a\"");
+    assert(bb, "Map iterator didn't return element \"bb\"");
+    assert(ccc, "Map iterator didn't return element \"ccc\"");
+}
+
+func testEmptyMapIterator() {
+    var map = Map<StringRef, StringRef>();
+    map.insert("foo", "foo");
+    map.insert("foo", "foo");
+    map.remove("foo");
+
+    for (let e in map) {
+        assert(false, "Shouldn't enter for-loop body when the map is empty");
+    }
+}
+
+func testUnitMapIterator() {
+    var map = Map<StringRef, StringRef>();
+    map.insert("foo", "foo");
+    map.insert("foo", "foo");
+    var count = 0;
+
+    for (let e in map) {
+        count++;
+        assert(e.key == "foo", "Map iterator returned an element that should not be in the map");
+    }
+
+    assert(count == 1, "Should enter for-loop body once when map contains one element");
+}

@@ -1,10 +1,8 @@
-// RUN: check_exit_status 254 %delta run %s | %FileCheck %s
+// RUN: not %delta -typecheck %s | %FileCheck %s
 
 func main() -> int {
     var array = Array<int>();
     array.push(42);
+    // CHECK: [[@LINE+1]]:19: error: invalid argument #1 type 'int' to 'Array<int>.[]', expected 'uint'
     return *array[-1];
 }
-
-// CHECK: Array index -1 is out of bounds, size is 1
-// CHECK: Abort

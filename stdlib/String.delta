@@ -18,12 +18,12 @@ class String {
         characters.push('\0');
     }
 
-    func size() -> int {
+    func size() -> uint {
         return characters.size() - 1;
     }
 
     /// Returns the character at the given index.
-    func [](index: int) -> char {
+    func [](index: uint) -> char {
         return *characters[index];
     }
 
@@ -34,7 +34,7 @@ class String {
     }
 
     func data() -> char* {
-        return characters[0];
+        return characters.data();
     }
 
     mutating func push(character: char) {
@@ -94,7 +94,7 @@ func ==(a: StringRef, b: StringRef) -> bool {
     }
 
     // TODO: Change this loop to use zip iterator when it's added.
-    for (let index in 0..a.size()) {
+    for (let index in uint(0)..a.size()) {
         if (a[index] != b[index]) {
             return false;
         }
@@ -103,13 +103,25 @@ func ==(a: StringRef, b: StringRef) -> bool {
     return true;
 }
 
+func ==(a: String*, b: String*) -> bool {
+    return StringRef(a) == StringRef(b);
+}
+
+func ==(a: String*, b: StringRef) -> bool {
+    return StringRef(a) == b;
+}
+
+func ==(a: StringRef, b: String*) -> bool {
+    return a == StringRef(b);
+}
+
 func <(a: StringRef, b: StringRef) -> bool {
     if (a.size() != b.size()) {
         return a.size() < b.size();
     }
 
     // TODO: Change this loop to use zip iterator when it's added.
-    for (let index in 0..a.size()) {
+    for (let index in uint(0)..a.size()) {
         if (a[index] < b[index]) {
             return true;
         }

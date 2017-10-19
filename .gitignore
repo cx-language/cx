@@ -39,3 +39,6 @@ _book
 *.epub
 *.mobi
 *.pdf
+
+# VSCode
+.vscode
