@@ -2,6 +2,6 @@
 
 func main() {
     var b = false;
-    // CHECK: [[@LINE+1]]:9: error: cannot assign 'int' to variable of type 'bool'
+    // CHECK: [[@LINE+1]]:7: error: cannot assign 'int' to variable of type 'bool'
     b = 1;
 }

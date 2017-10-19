@@ -189,7 +189,7 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     }
 
     if (stmt.getRHS() && !isValidConversion(*stmt.getRHS(), rhsType, lhsType)) {
-        error(stmt.getRHS()->getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+        error(stmt.getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
 
     if (!lhsType.isMutable()) {
@@ -637,8 +637,17 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
 
     if (declaredType) {
         if (initType && !isValidConversion(*decl.getInitializer(), initType, declaredType)) {
+            const char* hint;
+
+            if (initType.isNull()) {
+                ASSERT(!declaredType.isOptionalType());
+                hint = " (add '?' to the type to make it nullable)";
+            } else {
+                hint = "";
+            }
+
             error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType,
-                  "' with '", initType, "'");
+                  "' with '", initType, "'", hint);
         }
     } else {
         if (initType.isNull()) {

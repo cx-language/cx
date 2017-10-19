@@ -3,6 +3,6 @@
 func main() {
     var foo = false;
     var bar = 0;
-    // CHECK: [[@LINE+1]]:13: error: invalid operands to binary expression ('bool' and 'int')
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'bool' and 'int' to '||'
     if (foo || bar) { }
 }

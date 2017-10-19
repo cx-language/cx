@@ -124,7 +124,10 @@ Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) const {
         return operandType;
     }
     if (expr.getOperator() == STAR) { // Dereference operation
-        if (!operandType.isPointerType()) {
+        if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
+            error(expr.getOperand().getLocation(), "cannot dereference possibly-null pointer of type '",
+                  operandType, "' (unwrap the value with '!' to access the pointer anyway)");
+        } else if (!operandType.isPointerType()) {
             error(expr.getOperand().getLocation(), "cannot dereference non-pointer type '",
                   operandType, "'");
         }
@@ -134,6 +137,26 @@ Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) const {
         return PointerType::get(operandType);
     }
     return operandType;
+}
+
+static void invalidOperandsToBinaryExpr(const BinaryExpr& expr) {
+    std::string hint;
+
+    if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr())
+        && (expr.getOperator() == EQ || expr.getOperator() == NE)) {
+        hint += " (non-optional type '";
+        if (expr.getRHS().isNullLiteralExpr()) {
+            hint += expr.getLHS().getType().toString();
+        } else {
+            hint += expr.getRHS().getType().toString();
+        }
+        hint += "' cannot be null)";
+    } else {
+        hint = "";
+    }
+
+    error(expr.getLocation(), "invalid operands '", expr.getLHS().getType(), "' and '",
+          expr.getRHS().getType(), "' to '", expr.getFunctionName(), "'", hint);
 }
 
 Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
@@ -148,8 +171,7 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
         if (leftType.isBool() && rightType.isBool()) {
             return Type::getBool();
         }
-        error(expr.getLocation(), "invalid operands to binary expression ('", leftType, "' and '",
-              rightType, "')");
+        invalidOperandsToBinaryExpr(expr);
     }
 
     if (leftType.isPointerType() && rightType.isInteger() &&
@@ -159,14 +181,12 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
 
     if (expr.getOperator().isBitwiseOperator() &&
         (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
-        error(expr.getLocation(), "invalid operands to binary expression ('", leftType, "' and '",
-              rightType, "')");
+        invalidOperandsToBinaryExpr(expr);
     }
 
     if (!isValidConversion(expr.getLHS(), leftType, rightType) &&
         !isValidConversion(expr.getRHS(), rightType, leftType)) {
-        error(expr.getLocation(), "invalid operands to binary expression ('", leftType, "' and '",
-              rightType, "')");
+        invalidOperandsToBinaryExpr(expr);
     }
 
     return expr.getOperator().isComparisonOperator() ? Type::getBool() : leftType;
@@ -419,7 +439,7 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
 
     llvm::StringMap<Type> genericArgs;
     auto genericArg = call.getGenericArgs().begin();
-    
+
     for (const GenericParamDecl& genericParam : genericParams) {
         if (!genericParam.getConstraints().empty()) {
             ASSERT(genericParam.getConstraints().size() == 1, "cannot have multiple generic constraints yet");
