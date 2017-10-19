@@ -7,6 +7,9 @@ func main() {
     testGetter();
     testResize();
     testSize();
+    testIterator();
+    testEmptyMapIterator();
+    testUnitMapIterator();
 }
 
 func testInsert() {
@@ -94,36 +97,36 @@ func testIterator() {
 
     for (let e in map) {
         if (e.key == "a") {
-            assert(!a, "Set iterator returned element \"a\" twice");
+            assert(!a, "Map iterator returned element \"a\" twice");
             a = true;
         } else if (e.key == "bb") {
-            assert(!bb, "Set iterator returned element \"bb\" twice");
+            assert(!bb, "Map iterator returned element \"bb\" twice");
             bb = true;
         } else if (e.key == "ccc") {
-            assert(!ccc, "Set iterator returned element \"ccc\" twice");
+            assert(!ccc, "Map iterator returned element \"ccc\" twice");
             ccc = true;
         } else {
-            assert(false, "Set iterator returned an element that should not be in the set");
+            assert(false, "Map iterator returned an element that should not be in the map");
         }
     }
 
-    assert(a, "Set iterator didn't return element \"a\"");
-    assert(bb, "Set iterator didn't return element \"bb\"");
-    assert(ccc, "Set iterator didn't return element \"ccc\"");
+    assert(a, "Map iterator didn't return element \"a\"");
+    assert(bb, "Map iterator didn't return element \"bb\"");
+    assert(ccc, "Map iterator didn't return element \"ccc\"");
 }
 
-func testEmptySetIterator() {
+func testEmptyMapIterator() {
     var map = Map<StringRef, StringRef>();
     map.insert("foo", "foo");
     map.insert("foo", "foo");
     map.remove("foo");
 
     for (let e in map) {
-        assert(false, "Shouldn't enter for-loop body when the set is empty");
+        assert(false, "Shouldn't enter for-loop body when the map is empty");
     }
 }
 
-func testUnitSetIterator() {
+func testUnitMapIterator() {
     var map = Map<StringRef, StringRef>();
     map.insert("foo", "foo");
     map.insert("foo", "foo");
@@ -131,8 +134,8 @@ func testUnitSetIterator() {
 
     for (let e in map) {
         count++;
-        assert(e.key == "foo", "Set iterator returned an element that should not be in the set");
+        assert(e.key == "foo", "Map iterator returned an element that should not be in the map");
     }
 
-    assert(count == 1, "Should enter for-loop body once when set contains one element");
+    assert(count == 1, "Should enter for-loop body once when map contains one element");
 }
