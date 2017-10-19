@@ -159,3 +159,17 @@ class Array<Element> {
         fatalError();
     }
 }
+
+func ==<T>(a: ArrayRef<T>, b: ArrayRef<T>) -> bool {
+    if (a.size() != b.size()) {
+        return false;
+    }
+
+    for (let i in uint(0)..a.size()) {
+        if (*a[i] != *b[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
