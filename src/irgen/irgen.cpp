@@ -199,7 +199,8 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
         if (llvm::cast<FunctionDecl>(currentDecl)->getName() != "main") builder.CreateRetVoid();
         else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
     } else {
-        builder.CreateRet(codegenExpr(*stmt.getValues()[0]));
+        auto& returnValue = *stmt.getValues()[0];
+        builder.CreateRet(codegenExprForPassing(returnValue, builder.getCurrentFunctionReturnType()));
     }
 }
 

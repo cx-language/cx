@@ -1,0 +1,30 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+var i = 42;
+
+// CHECK: define i32* @f()
+func f() -> int* {
+    // CHECK-NEXT: ret i32* @i
+    return i;
+}
+
+class A {
+    var b: bool[2];
+
+    // CHECK: define i1* @A.ff(%A* %this) {
+    func ff() -> bool* {
+        // CHECK-NEXT: %1 = getelementptr inbounds %A, %A* %this, i32 0, i32 0
+        // CHECK-NEXT: %2 = getelementptr [2 x i1], [2 x i1]* %1, i32 0, i32 1
+        // CHECK-NEXT: ret i1* %2
+        return b[1];
+    }
+}
+
+struct B {
+    let a: char;
+
+    func gg() -> char* {
+        return a; // TODO: Disallow this? Or always take struct 'this' by reference?
+                  // Currently the generated IR returns a pointer to a local alloca.
+    }
+}
