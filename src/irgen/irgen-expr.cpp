@@ -228,9 +228,6 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
         return codegenPointerOffset(expr);
     }
 
-    ASSERT(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType()) ||
-           expr.getRHS().getType().isImplicitlyConvertibleTo(expr.getLHS().getType()));
-
     switch (expr.getOperator()) {
         case AND_AND: case OR_OR:
             return codegenShortCircuitBinaryOp(expr.getOperator(), expr.getLHS(), expr.getRHS());

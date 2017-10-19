@@ -81,7 +81,6 @@ public:
 
     Type resolve(const llvm::StringMap<Type>& replacements) const;
     void appendType(Type);
-    bool isImplicitlyConvertibleTo(Type) const;
     bool isInteger() const { return isBasicType() && (isSigned() || isUnsigned()); }
     bool isSigned() const;
     bool isUnsigned() const;

@@ -97,12 +97,14 @@ void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
     }
 
     Type returnValueType = typecheckExpr(*stmt.getReturnValue());
+    Type convertedType;
 
-    if (!isValidConversion(*stmt.getReturnValue(), returnValueType, functionReturnType)) {
+    if (!isImplicitlyConvertible(stmt.getReturnValue(), returnValueType, functionReturnType, &convertedType)) {
         error(stmt.getLocation(), "mismatching return type '", returnValueType, "', expected '",
               functionReturnType, "'");
     }
 
+    stmt.getReturnValue()->setType(convertedType ? convertedType : returnValueType);
     checkReturnPointerToLocal(stmt);
 }
 
@@ -144,7 +146,8 @@ void TypeChecker::typecheckSwitchStmt(SwitchStmt& stmt) const {
     breakableBlocks++;
     for (auto& switchCase : stmt.getCases()) {
         Type caseType = typecheckExpr(*switchCase.getValue());
-        if (!caseType.isImplicitlyConvertibleTo(conditionType)) {
+
+        if (!isImplicitlyConvertible(switchCase.getValue(), caseType, conditionType, nullptr)) {
             error(switchCase.getValue()->getLocation(), "case value type '", caseType,
                   "' doesn't match switch condition type '", conditionType, "'");
         }
@@ -185,8 +188,14 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
         error(stmt.getLocation(), "'undefined' is only allowed as an initial value");
     }
 
-    if (stmt.getRHS() && !isValidConversion(*stmt.getRHS(), rhsType, lhsType)) {
-        error(stmt.getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+    if (stmt.getRHS()) {
+        Type convertedType;
+
+        if (isImplicitlyConvertible(stmt.getRHS(), rhsType, lhsType, &convertedType)) {
+            stmt.getRHS()->setType(convertedType ? convertedType : rhsType);
+        } else {
+            error(stmt.getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+        }
     }
 
     if (!lhsType.isMutable()) {
@@ -632,18 +641,24 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
     }
 
     if (declaredType) {
-        if (initType && !isValidConversion(*decl.getInitializer(), initType, declaredType)) {
-            const char* hint;
+        if (initType) {
+            Type convertedType;
 
-            if (initType.isNull()) {
-                ASSERT(!declaredType.isOptionalType());
-                hint = " (add '?' to the type to make it nullable)";
+            if (isImplicitlyConvertible(decl.getInitializer(), initType, declaredType, &convertedType)) {
+                decl.getInitializer()->setType(convertedType ? convertedType : initType);
             } else {
-                hint = "";
-            }
+                const char* hint;
 
-            error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType,
-                  "' with '", initType, "'", hint);
+                if (initType.isNull()) {
+                    ASSERT(!declaredType.isOptionalType());
+                    hint = " (add '?' to the type to make it nullable)";
+                } else {
+                    hint = "";
+                }
+
+                error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType,
+                      "' with '", initType, "'", hint);
+            }
         }
     } else {
         if (initType.isNull()) {

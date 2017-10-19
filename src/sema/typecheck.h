@@ -98,7 +98,7 @@ private:
     bool isInterface(Type type) const;
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool implementsInterface(TypeDecl& type, TypeDecl& interface) const;
-    bool isValidConversion(Expr& expr, Type source, Type target) const;
+    bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     FunctionDecl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;

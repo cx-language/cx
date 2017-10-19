@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %delta -typecheck %s | %FileCheck %s
 
 func f0() -> int* {
     let a = 3;
@@ -47,6 +47,6 @@ func f7(a: int*) -> int** {
 }
 
 func f8(a: int*) -> int** {
-    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int*', expected 'int**'
+    // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
     return a;
 }

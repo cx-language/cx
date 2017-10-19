@@ -145,36 +145,6 @@ Type OptionalType::get(Type wrappedType, bool isMutable) {
 
 #undef FETCH_AND_RETURN_TYPE
 
-bool Type::isImplicitlyConvertibleTo(Type type) const {
-    if (type.isOptionalType() && this->isImplicitlyConvertibleTo(type.getWrappedType())) {
-        return true;
-    }
-
-    switch (typeBase->getKind()) {
-        case TypeKind::BasicType:
-            return type.isBasicType() && getName() == type.getName()
-                   && getGenericArgs() == type.getGenericArgs();
-        case TypeKind::ArrayType:
-            return type.isArrayType()
-                   && (getArraySize() == type.getArraySize() || type.isUnsizedArrayType())
-                   && getElementType().isImplicitlyConvertibleTo(type.getElementType());
-        case TypeKind::TupleType:
-            return type.isTupleType() && getSubtypes() == type.getSubtypes();
-        case TypeKind::FunctionType:
-            return type.isFunctionType() && getReturnType() == type.getReturnType()
-                   && getParamTypes() == type.getParamTypes();
-        case TypeKind::PointerType:
-            return type.isPointerType()
-                   && (getPointee().isMutable() || !type.getPointee().isMutable())
-                   && getPointee().isImplicitlyConvertibleTo(type.getPointee());
-        case TypeKind::OptionalType:
-            return type.isOptionalType()
-                   && (getWrappedType().isMutable() || !type.getWrappedType().isMutable())
-                   && getWrappedType().isImplicitlyConvertibleTo(type.getWrappedType());
-    }
-    llvm_unreachable("all cases handled");
-}
-
 bool Type::isSigned() const {
     ASSERT(isBasicType());
     llvm::StringRef name = getName();

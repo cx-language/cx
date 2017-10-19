@@ -57,7 +57,7 @@ public:
 
     ExprKind getKind() const { return kind; }
     Type getType() const { return type; }
-    void setType(Type t) { type = t; }
+    void setType(Type type) { ASSERT(type); this->type = type; }
     bool isLvalue() const;
     bool isRvalue() const { return !isLvalue(); }
     SourceLocation getLocation() const { return location; }
