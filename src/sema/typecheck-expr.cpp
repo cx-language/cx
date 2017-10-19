@@ -6,6 +6,7 @@
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/iterator_range.h>
 #include <llvm/ADT/Optional.h>
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #include "../ast/decl.h"
 #include "../ast/expr.h"
@@ -592,8 +593,14 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
             if (decls.size() == 0) {
                 error(expr.getCallee().getLocation(), "unknown identifier '", callee, "'");
             } else if (atLeastOneFunction) {
+                auto argTypeStrings = map(expr.getArgs(), [](const Argument& arg) {
+                    auto type = arg.getValue()->getType();
+                    return type ? type.toString() : "???";
+                });
+
                 error(expr.getCallee().getLocation(), "no matching ",
-                      isInitCall ? "initializer for '" : "function for call to '", callee, "'");
+                      isInitCall ? "initializer for '" : "function for call to '", callee,
+                      "' with argument list of type '(", llvm::join(argTypeStrings, ", "), ")'");
             } else {
                 error(expr.getCallee().getLocation(), "'", callee, "' is not a function");
             }
