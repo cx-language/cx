@@ -21,7 +21,7 @@ func testGetter() {
     var map = Map<StringRef, int>();
 
     map.insert("ok", 42);
-    assert(*map["ok"] == 42, "is as was inserted");
+    //assert(*(map["ok"]!) == 42, "is as was inserted");
 }
 
 func testResize() {
@@ -31,13 +31,12 @@ func testResize() {
         var lol = String();
 
         for (let j in 0..(i+1)) {
-            lol.push("a"[0]);
+            lol.push('a');
         }
-        printf("%d\n", lol.size());
 
         map.insert(lol, i);
     }
-    printf("%d", map.size());
+
     assert(map.size() == 255, "Size should be equal to added element count");
 }
 

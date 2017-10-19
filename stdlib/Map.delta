@@ -17,22 +17,22 @@ class KeyValuePair<Key: Hashable, Value> {
 class Map<Key: Hashable, Value> {
 
     var hashTable: Array<Array<KeyValuePair<Key, Value> > >;
-    var size: int;
+    var size: uint;
 
-    /// Initializes an empty set
+    /// Initializes an empty map
     init() {
         size = 0;
         hashTable = Array<Array<KeyValuePair<Key, Value> > >();
         increaseTableSize(hashTable, 128);
     }
 
-    /// Inserts an element into the set. If the element exists already, nothing is done.
+    /// Inserts an element into the map. If the element exists already, nothing is done.
     mutating func insert(key: Key, value: Value) {
         if (contains(key)) {
             return;
         }
 
-        let hashValue = int(key.hash()) % capacity();
+        let hashValue = uint(key.hash()) % capacity();
         var pair = KeyValuePair(key, value);
 
         hashTable[hashValue].push(pair);
@@ -43,16 +43,16 @@ class Map<Key: Hashable, Value> {
         }
     }
 
-    /// Removes an element from the set, if it exists there.
-    mutating func remove(e: Key&) {
-        let hashValue = int(e.hash()) % capacity();
+    /// Removes an element from the map, if it exists there.
+    mutating func remove(e: Key*) {
+        let hashValue = uint(e.hash()) % capacity();
         let slot = hashTable[hashValue];
 
         if (slot.size() == 0) {
             return;
         }
 
-        for (let i in 0..slot.size()) {
+        for (let i in uint(0)..slot.size()) {
             if (slot[i].key == *e) {
                 slot.removeAt(i);
                 size--;
@@ -61,42 +61,41 @@ class Map<Key: Hashable, Value> {
         }
     }
 
-    /// Expands the hash table size, needed when there's too many elements in the set
-    mutating func increaseTableSize(newTable: mutable Array<Array<KeyValuePair<Key, Value> > >&, newCapacity: int) {
-        for (let i in 0..newCapacity) {
+    /// Expands the hash table size, needed when there's too many elements in the map
+    mutating func increaseTableSize(newTable: mutable Array<Array<KeyValuePair<Key, Value> > >*, newCapacity: uint) {
+        for (let i in uint(0)..newCapacity) {
             newTable.push(Array<KeyValuePair<Key, Value> >());
         }
     }
 
-    func size() -> int {
+    func size() -> uint {
         return size;
     }
 
-    func capacity() -> int {
+    func capacity() -> uint {
         return hashTable.size();
     }
 
-    /// Resizes the set. This includes copying the old table into a new, bigger one
+    /// Resizes the map. This includes copying the old table into a new, bigger one
     mutating func resize() {
-        print("ok")
         var newTable = Array<Array<KeyValuePair<Key, Value> > >();
         let newCapacity = capacity() * 2;
 
         increaseTableSize(newTable, newCapacity);
 
-        for (let i in 0..capacity()) {
+        for (let i in uint(0)..capacity()) {
             let slot = hashTable[i];
 
             for (let el in slot) {
-                newTable[int(el.key.hash()) % newCapacity].push(*el);
+                newTable[uint(el.key.hash()) % newCapacity].push(*el);
             }
         }
 
         hashTable = newTable;
     }
 
-    func [](e: Key&) -> Value* {
-        let hashValue = int(e.hash()) % capacity();
+    func [](e: Key*) -> Value*? {
+        let hashValue = uint(e.hash()) % capacity();
         let slot = hashTable[hashValue];
 
         for (let element in slot) {
@@ -107,9 +106,9 @@ class Map<Key: Hashable, Value> {
         return null;
     }
 
-    /// Checks if e is part of the set.
-    func contains(e: Key&) -> bool {
-        let hashValue = int(e.hash()) % capacity();
+    /// Checks if e is part of the map.
+    func contains(e: Key*) -> bool {
+        let hashValue = uint(e.hash()) % capacity();
         let slot = hashTable[hashValue];
 
         if (slot.size() == 0) {
@@ -125,7 +124,11 @@ class Map<Key: Hashable, Value> {
         return false;
     }
 
-    /// Returns the load factor for the set. This is used to increase the set size once
+    func isEmpty() -> bool {
+        return size == 0;
+    }
+
+    /// Returns the load factor for the map. This is used to increase the map size once
     /// the load factor gets too big.
     func loadFactor() -> float64 {
         return float64(size) / (float64(capacity()));

@@ -1,7 +1,7 @@
 class Array<Element> {
     var bufferPointer: mutable Element*?;
-    var size: int;
-    var capacity: int;
+    var size: uint;
+    var capacity: uint;
 
     /// Initializes an empty array.
     init() {
@@ -15,18 +15,18 @@ class Array<Element> {
     }
 
     /// Returns the number of elements in the array.
-    func size() -> int {
+    func size() -> uint {
         return size;
     }
 
     /// Returns the number of elements the array can store without allocating more memory.
-    func capacity() -> int {
+    func capacity() -> uint {
         return capacity;
     }
 
     /// Returns the element at the given index.
-    func [](index: int) -> mutable Element* {
-        if (uint(index) >= uint(size)) {
+    func [](index: uint) -> mutable Element* {
+        if (index >= size) {
             _indexOutOfBounds(index);
         }
 
@@ -66,7 +66,7 @@ class Array<Element> {
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
-    mutating func reserve(minimumCapacity: int) {
+    mutating func reserve(minimumCapacity: uint) {
         if (minimumCapacity > capacity) {
             if (capacity == 0) {
                 capacity = 1;
@@ -76,7 +76,7 @@ class Array<Element> {
 
             let newBufferPointer = cast<mutable Element*?>(malloc(sizeof(Element) * uint64(capacity)));
 
-            for (let index in 0..size) {
+            for (let index in uint(0)..size) {
                 let source = bufferPointer!.offset(int64(index));
                 let target = newBufferPointer!.offset(int64(index));
                 *target = *source;
@@ -109,15 +109,15 @@ class Array<Element> {
 
     /// Removes the element at the given index from the array.
     /// Elements following the removed element are moved towards the beginning of the array by one index.
-    mutating func removeAt(index: int) {
-        if (uint(index) >= uint(size)) {
+    mutating func removeAt(index: uint) {
+        if (index >= size) {
             _indexOutOfBounds(index);
         }
 
         _removeAt(index);
     }
 
-    mutating func _removeAt(index: int) {
+    mutating func _removeAt(index: uint) {
         // TODO: Call deinitializer of removed element.
 
         for (let i in (index + 1)..size) {
@@ -134,7 +134,7 @@ class Array<Element> {
         return ArrayIterator(ArrayRef(this));
     }
 
-    func _indexOutOfBounds(index: int) {
+    func _indexOutOfBounds(index: uint) {
         printf("Array index %d is out of bounds, size is %d\n", index, size());
         fatalError();
     }

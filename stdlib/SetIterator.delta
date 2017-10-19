@@ -1,9 +1,10 @@
 struct SetIterator<Element> {
-    var hashTableIterator: ArrayIterator<Array<Element>>;
-    var current: Element*;
+    var hashTableIterator: ArrayIterator<Array<KeyValuePair<Element, bool>>>;
+    var current: KeyValuePair<Element, bool>*;
 
     init(set: Set<Element>* ) {
-        hashTableIterator = set.hashTable.iterator();
+        hashTableIterator = set.map.hashTable.iterator();
+        current = undefined;
         _skipEmptySlots();
     }
 
@@ -22,7 +23,7 @@ struct SetIterator<Element> {
             _skipEmptySlots();
         }
 
-        return next;
+        return &next.key;
     }
 
     mutating func _skipEmptySlots() {
