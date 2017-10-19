@@ -6,6 +6,7 @@ func main() {
     testDuplicates();
     testGetter();
     testResize();
+    testSize();
 }
 
 func testInsert() {
@@ -17,11 +18,19 @@ func testInsert() {
     assert(!map.contains("lol"), "Doesn't contain something that isn't there");
 }
 
+func testSize() {
+    var map = Map<StringRef, StringRef>();
+
+    assert(map.size() == 0, "Size should be 0");
+    map.insert("best", "ok");
+    assert(map.size() == 1, "Size should now be 1");
+}
+
 func testGetter() {
     var map = Map<StringRef, int>();
 
     map.insert("ok", 42);
-    //assert(*(map["ok"]!) == 42, "is as was inserted");
+    assert(*(map["ok"]!) == 42, "is as was inserted");
 }
 
 func testResize() {
@@ -62,6 +71,68 @@ func testDuplicates() {
     map.insert("ok", 2);
     assert(map.contains("ok"), "Contains ok since it was added");
 
+    assert(*(map["ok"]!) == 1, "Second insert did nothing");
+
     map.remove("ok");
     assert(!map.contains("ok"), "Doesn't contain ok anymore since it was removed, even thogh it was added twice");
+    assert(map["ok"] == null, "ok was removed, now null");
+}
+
+func testIterator() {
+    var map = Map<StringRef, StringRef>();
+
+    map.insert("a", "a");
+    map.insert("ccc", "ccc");
+    map.insert("bb", "bb");
+    map.insert("a", "a");
+    map.insert("ccc", "ccc");
+    map.insert("ccc", "ccc");
+
+    var a = false;
+    var bb = false;
+    var ccc = false;
+
+    for (let e in map) {
+        if (e.key == "a") {
+            assert(!a, "Set iterator returned element \"a\" twice");
+            a = true;
+        } else if (e.key == "bb") {
+            assert(!bb, "Set iterator returned element \"bb\" twice");
+            bb = true;
+        } else if (e.key == "ccc") {
+            assert(!ccc, "Set iterator returned element \"ccc\" twice");
+            ccc = true;
+        } else {
+            assert(false, "Set iterator returned an element that should not be in the set");
+        }
+    }
+
+    assert(a, "Set iterator didn't return element \"a\"");
+    assert(bb, "Set iterator didn't return element \"bb\"");
+    assert(ccc, "Set iterator didn't return element \"ccc\"");
+}
+
+func testEmptySetIterator() {
+    var map = Map<StringRef, StringRef>();
+    map.insert("foo", "foo");
+    map.insert("foo", "foo");
+    map.remove("foo");
+
+    for (let e in map) {
+        assert(false, "Shouldn't enter for-loop body when the set is empty");
+    }
+}
+
+func testUnitSetIterator() {
+    var map = Map<StringRef, StringRef>();
+    map.insert("foo", "foo");
+    map.insert("foo", "foo");
+    var count = 0;
+
+    for (let e in map) {
+        count++;
+        assert(e.key == "foo", "Set iterator returned an element that should not be in the set");
+    }
+
+    assert(count == 1, "Should enter for-loop body once when set contains one element");
 }

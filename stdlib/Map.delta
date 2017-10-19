@@ -133,4 +133,9 @@ class Map<Key: Hashable, Value> {
     func loadFactor() -> float64 {
         return float64(size) / (float64(capacity()));
     }
+
+    /// Iterate over the map
+    func iterator() -> MapIterator<Key, Value> {
+        return MapIterator(this);
+    }
 }
