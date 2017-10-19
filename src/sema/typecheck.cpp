@@ -537,6 +537,7 @@ void TypeChecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
 }
 
 void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
+    if (decl.isTypechecked()) return;
     if (decl.isExtern()) return; // TODO: Typecheck parameters and return type of extern functions.
 
     TypeDecl* receiverTypeDecl = decl.getTypeDecl();
@@ -588,6 +589,8 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
         && !decl.getReturnType().isVoid() && !allPathsReturn(decl.getBody())) {
         error(decl.getLocation(), "'", decl.getName(), "' is missing a return statement");
     }
+
+    decl.setTypechecked(true);
 }
 
 void TypeChecker::typecheckFunctionTemplate(FunctionTemplate& decl) const {

@@ -1,0 +1,21 @@
+// RUN: %delta -typecheck %s
+
+class A {
+    init() {}
+}
+
+func f<T>() {
+    let t = T();
+    let a = t;
+}
+
+func g<T>(t: T) {
+    let a = t;
+}
+
+func main() {
+    f<A>();
+    f<A>();
+    g(A());
+    g(A());
+}

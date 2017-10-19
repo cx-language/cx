@@ -183,13 +183,15 @@ public:
     Module* getModule() const { return &module; }
     std::unique_ptr<FunctionDecl> instantiate(const llvm::StringMap<Type>& genericArgs,
                                               llvm::ArrayRef<Type> genericArgsArray);
+    bool isTypechecked() const { return typechecked; }
+    void setTypechecked(bool typechecked) { this->typechecked = typechecked; }
     static bool classof(const Decl* d) { return d->isFunctionDecl(); }
 
 protected:
     FunctionDecl(DeclKind kind, FunctionProto&& proto, std::vector<Type>&& genericArgs,
                  Module& module, SourceLocation location)
     : Decl(kind), proto(std::move(proto)), genericArgs(std::move(genericArgs)),
-      location(location), module(module) {}
+      location(location), module(module), typechecked(false) {}
 
 private:
     FunctionProto proto;
@@ -197,6 +199,7 @@ private:
     std::vector<std::unique_ptr<Stmt>> body;
     SourceLocation location;
     Module& module;
+    bool typechecked;
 };
 
 class MethodDecl : public FunctionDecl {
