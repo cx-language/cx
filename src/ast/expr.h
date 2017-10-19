@@ -188,7 +188,6 @@ public:
     llvm::StringRef getFunctionName() const;
     std::string getMangledFunctionName() const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
-    bool isInitCall() const;
     bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFunctionName()); }
     Expr* getReceiver() const;
     Type getReceiverType() const { return receiverType; }

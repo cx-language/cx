@@ -206,12 +206,6 @@ llvm::ArrayRef<Type> Type::getParamTypes() const { return llvm::cast<FunctionTyp
 Type Type::getPointee() const { return llvm::cast<PointerType>(typeBase)->getPointeeType(); }
 Type Type::getWrappedType() const { return llvm::cast<OptionalType>(typeBase)->getWrappedType(); }
 
-Type Type::getIterableElementType() const {
-    ASSERT(isIterable());
-    ASSERT(isRangeType(), "non-range iterables not supported yet");
-    return llvm::cast<BasicType>(typeBase)->getGenericArgs()[0];
-}
-
 bool delta::operator==(Type lhs, Type rhs) {
     if (lhs.isMutable() != rhs.isMutable()) return false;
     switch (lhs.getKind()) {

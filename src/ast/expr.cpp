@@ -154,10 +154,6 @@ std::string CallExpr::getMangledFunctionName() const {
     return mangleFunctionDecl(receiverType, getFunctionName());
 }
 
-bool CallExpr::isInitCall() const {
-    return getCalleeDecl()->isInitDecl();
-}
-
 Expr* CallExpr::getReceiver() const {
     if (!isMethodCall()) return nullptr;
     return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();

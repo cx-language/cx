@@ -104,7 +104,6 @@ public:
     llvm::ArrayRef<Type> getParamTypes() const;
     Type getPointee() const;
     Type getWrappedType() const;
-    Type getIterableElementType() const;
 
     static Type getVoid(bool isMutable = false);
     static Type getBool(bool isMutable = false);

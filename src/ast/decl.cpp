@@ -47,17 +47,6 @@ FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<Type>& generic
     return instantiations.emplace(std::move(orderedGenericArgs), std::move(instantiation)).first->second.get();
 }
 
-FunctionDecl* FunctionTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
-    ASSERT(genericArgs.size() == genericParams.size());
-    llvm::StringMap<Type> genericArgsMap;
-
-    for (auto t : llvm::zip_first(genericArgs, genericParams)) {
-        genericArgsMap.try_emplace(std::get<1>(t).getName(), std::get<0>(t));
-    }
-
-    return instantiate(genericArgsMap);
-}
-
 const FunctionType* FunctionDecl::getFunctionType() const {
     auto paramTypes = map(getParams(), [](const ParamDecl& p) -> Type { return p.getType(); });
     return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes)));
@@ -87,14 +76,6 @@ MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl,
                        SourceLocation location)
 : FunctionDecl(kind, std::move(proto), {}, *typeDecl.getModule(), location), typeDecl(&typeDecl),
   mutating(false) {}
-
-Type MethodDecl::getThisType() const {
-    if (getTypeDecl()->passByValue() && !isMutating()) {
-        return getTypeDecl()->getType(isMutating());
-    } else {
-        return PointerType::get(getTypeDecl()->getType(isMutating()));
-    }
-}
 
 MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) {
     std::unique_ptr<MethodDecl> instantiation;
@@ -254,6 +235,9 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
         case DeclKind::DeinitDecl:
             llvm_unreachable("handled via TypeDecl");
 
+        case DeclKind::FunctionTemplate:
+            llvm_unreachable("handled via FunctionTemplate::instantiate()");
+
         case DeclKind::TypeDecl: {
             auto* typeDecl = llvm::cast<TypeDecl>(this);
             auto instantiation = llvm::make_unique<TypeDecl>(typeDecl->getTag(), typeDecl->getName(),
@@ -270,6 +254,9 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
 
             return std::move(instantiation);
         }
+        case DeclKind::TypeTemplate:
+            llvm_unreachable("handled via TypeTemplate::instantiate()");
+
         case DeclKind::VarDecl: {
             auto* varDecl = llvm::cast<VarDecl>(this);
             auto type = varDecl->getType().resolve(genericArgs);
@@ -282,12 +269,8 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
         case DeclKind::FieldDecl:
             llvm_unreachable("handled via TypeDecl");
 
-        case DeclKind::ImportDecl: {
-            auto* importDecl = llvm::cast<ImportDecl>(this);
-            return llvm::make_unique<ImportDecl>(importDecl->getTarget(), *importDecl->getModule(),
-                                                 importDecl->getLocation());
-        }
-        default:
-            llvm_unreachable("all cases handled");
+        case DeclKind::ImportDecl:
+            llvm_unreachable("cannot instantiate ImportDecl");
     }
+    llvm_unreachable("all cases handled");
 }

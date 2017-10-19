@@ -209,7 +209,6 @@ public:
     bool isMutating() const override { return mutating; }
     void setMutating(bool mutating) { this->mutating = mutating; }
     TypeDecl* getTypeDecl() const override { return typeDecl; }
-    Type getThisType() const;
     MethodDecl* instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl);
     static bool classof(const Decl* d) { return d->isMethodDecl(); }
 
@@ -251,7 +250,6 @@ public:
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
     FunctionDecl* getFunctionDecl() const { return functionDecl.get(); }
     FunctionDecl* instantiate(const llvm::StringMap<Type>& genericArgs);
-    FunctionDecl* instantiate(llvm::ArrayRef<Type> genericArgs);
 
 private:
     std::vector<GenericParamDecl> genericParams;

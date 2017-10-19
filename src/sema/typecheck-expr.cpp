@@ -169,13 +169,6 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
               rightType, "')");
     }
 
-    if (expr.getOperator() == DOTDOT) {
-        return BasicType::get("Range", leftType);
-    }
-    if (expr.getOperator() == DOTDOTDOT) {
-        return BasicType::get("ClosedRange", leftType);
-    }
-
     return expr.getOperator().isComparisonOperator() ? Type::getBool() : leftType;
 }
 
