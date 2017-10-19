@@ -28,7 +28,7 @@ struct ArrayRef<Element> {
 
     /// Returns a reference to the element at the given index.
     func [](index: uint) -> Element* {
-        return data.offset(int64(index));
+        return data + index;
     }
 
     func data() -> Element* {

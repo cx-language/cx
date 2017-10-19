@@ -15,8 +15,8 @@ struct MapIterator<Key, Value> {
     mutating func next() -> KeyValuePair<Key, Value>* {
         let next = current;
         let slot = hashTableIterator.current();
-        let slotEnd = slot.data().offset(int64(slot.size()));
-        current = current.offset(1);
+        let slotEnd = slot.data() + slot.size();
+        current++;
 
         if (current == slotEnd) {
             hashTableIterator.next();

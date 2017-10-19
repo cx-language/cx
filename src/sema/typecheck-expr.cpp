@@ -151,6 +151,11 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
               rightType, "')");
     }
 
+    if (leftType.isPointerType() && rightType.isInteger() &&
+        (expr.getOperator() == PLUS || expr.getOperator() == MINUS)) {
+        return leftType;
+    }
+
     if (expr.getOperator().isBitwiseOperator() &&
         (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
         error(expr.getLocation(), "invalid operands to binary expression ('", leftType, "' and '",
@@ -626,14 +631,6 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     if (expr.getCallee().isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
         expr.setReceiverType(receiverType);
-
-        if (receiverType.isPointerType() && expr.getFunctionName() == "offset") {
-            validateArgs(expr.getArgs(), {ParamDecl(Type::getInt64(), "by", SourceLocation::invalid())},
-                         false, expr.getFunctionName(), expr.getLocation());
-            validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-            expr.setType(receiverType);
-            return expr.getType();
-        }
 
         if (receiverType.isOptionalType()) {
             error(expr.getReceiver()->getLocation(),

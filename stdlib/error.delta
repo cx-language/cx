@@ -10,7 +10,7 @@ func printStackTrace() {
     let strings = backtrace_symbols(&callstack[0], frames);
 
     for (let i in 0..frames) {
-        printf("%s\n", *strings.offset(int64(i)));
+        printf("%s\n", *(strings + i));
     }
 
     free(cast<mutable void*>(strings));

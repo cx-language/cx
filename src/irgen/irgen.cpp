@@ -237,14 +237,29 @@ void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
 void IRGenerator::codegenIncrementStmt(const IncrementStmt& stmt) {
     auto* alloca = codegenLvalueExpr(stmt.getOperand());
     auto* value = builder.CreateLoad(alloca);
-    auto* result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
+    llvm::Value* result;
+
+    if (stmt.getOperand().getType().isPointerType()) {
+        result = builder.CreateConstGEP1_32(value, 1);
+    } else {
+        result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
+    }
+
     builder.CreateStore(result, alloca);
 }
 
 void IRGenerator::codegenDecrementStmt(const DecrementStmt& stmt) {
     auto* alloca = codegenLvalueExpr(stmt.getOperand());
     auto* value = builder.CreateLoad(alloca);
-    auto* result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
+    llvm::Value* result;
+
+    if (stmt.getOperand().getType().isPointerType()) {
+        auto* minusOne = llvm::ConstantInt::getSigned(llvm::IntegerType::getInt32Ty(ctx), -1);
+        result = builder.CreateGEP(value, minusOne);
+    } else {
+        result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
+    }
+
     builder.CreateStore(result, alloca);
 }
 
@@ -348,9 +363,17 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
             default: break;
         }
 
-        auto* lhsValue = builder.CreateLoad(lhsLvalue);
-        auto* rhsValue = codegenExpr(binaryExpr.getRHS());
-        builder.CreateStore(codegenBinaryOp(binaryExpr.getOperator(), lhsValue, rhsValue, *stmt.getLHS()), lhsLvalue);
+        llvm::Value* rhsValue;
+
+        if (binaryExpr.getLHS().getType().isPointerType() && binaryExpr.getRHS().getType().isInteger()) {
+            rhsValue = codegenPointerOffset(binaryExpr);
+        } else {
+            auto* lhsValue = builder.CreateLoad(lhsLvalue);
+            rhsValue = codegenBinaryOp(binaryExpr.getOperator(), lhsValue,
+                                       codegenExpr(binaryExpr.getRHS()), *stmt.getLHS());
+        }
+
+        builder.CreateStore(rhsValue, lhsLvalue);
     } else {
         builder.CreateStore(codegenExpr(*stmt.getRHS()), lhsLvalue);
     }

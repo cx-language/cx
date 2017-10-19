@@ -30,7 +30,7 @@ class Array<Element> {
             _indexOutOfBounds(index);
         }
 
-        return bufferPointer!.offset(int64(index));
+        return bufferPointer! + index;
     }
 
     func first() -> Element* {
@@ -46,7 +46,7 @@ class Array<Element> {
             _emptyArrayLast();
         }
 
-        return bufferPointer!.offset(int64(size));
+        return bufferPointer! + size;
     }
 
     func data() -> Element* {
@@ -61,7 +61,7 @@ class Array<Element> {
     /// Adds the given element to the end of the array.
     mutating func push(newElement: Element) {
         reserve(size + 1);
-        *bufferPointer!.offset(int64(size)) = newElement;
+        *(bufferPointer! + size) = newElement;
         size++;
     }
 
@@ -77,8 +77,8 @@ class Array<Element> {
             let newBufferPointer = cast<mutable Element*?>(malloc(sizeof(Element) * uint64(capacity)));
 
             for (let index in uint(0)..size) {
-                let source = bufferPointer!.offset(int64(index));
-                let target = newBufferPointer!.offset(int64(index));
+                let source = bufferPointer! + index;
+                let target = newBufferPointer! + index;
                 *target = *source;
             }
 
@@ -121,8 +121,8 @@ class Array<Element> {
         // TODO: Call deinitializer of removed element.
 
         for (let i in (index + 1)..size) {
-            let source = bufferPointer!.offset(int64(i));
-            let target = bufferPointer!.offset(int64(i - 1));
+            let source = bufferPointer! + i;
+            let target = bufferPointer! + (i - 1);
             *target = *source;
         }
 

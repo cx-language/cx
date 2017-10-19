@@ -222,8 +222,13 @@ Prefixing the _pointee-type_ with `mutable` makes the _pointee-type_ mutable.
 Enclosing the _pointer-type_ in parentheses and prefixing the parentheses with
 `mutable` makes the _pointer-type_ itself mutable.
 
-Pointer arithmetic can be performed by calling the `.offset(int64)` method on
-pointers. The method returns the offset pointer.
+Pointer arithmetic is supported in the form of the following operations:
+
+- `pointer + integer`
+- `pointer - integer`
+- `pointer++`
+- `pointer--`
+- `pointer - pointer`
 
 ### Array types
 

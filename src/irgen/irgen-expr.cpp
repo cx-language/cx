@@ -224,6 +224,10 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
         return codegenCallExpr((const CallExpr&) expr);
     }
 
+    if (expr.getLHS().getType().isPointerType() && expr.getRHS().getType().isInteger()) {
+        return codegenPointerOffset(expr);
+    }
+
     ASSERT(expr.getLHS().getType().isImplicitlyConvertibleTo(expr.getRHS().getType()) ||
            expr.getRHS().getType().isImplicitlyConvertibleTo(expr.getLHS().getType()));
 
@@ -322,10 +326,6 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     if (expr.isBuiltinConversion())
         return codegenBuiltinConversion(*expr.getArgs().front().getValue(), expr.getType());
 
-    if (expr.getFunctionName() == "offset") {
-        return codegenPointerOffset(expr);
-    }
-
     if (expr.getReceiver() && expr.getReceiverType().removePointer().isArrayType()) {
         if (expr.getFunctionName() == "size") {
             return getArrayLength(*expr.getReceiver(), expr.getReceiverType().removePointer());
@@ -407,9 +407,14 @@ llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
     }
 }
 
-llvm::Value* IRGenerator::codegenPointerOffset(const CallExpr& call) {
-    auto* pointer = codegenExpr(*call.getReceiver());
-    auto* offset = codegenExpr(*call.getArgs().front().getValue());
+llvm::Value* IRGenerator::codegenPointerOffset(const BinaryExpr& expr) {
+    auto* pointer = codegenExpr(expr.getLHS());
+    auto* offset = codegenExpr(expr.getRHS());
+
+    if (expr.getOperator() == MINUS) {
+        offset = builder.CreateNeg(offset);
+    }
+
     return builder.CreateGEP(pointer, offset);
 }
 

@@ -4,7 +4,7 @@ struct StringIterator {
 
     init(string: StringRef) {
         current = string.data();
-        end = string.data().offset(int64(string.size()));
+        end = string.data() + string.size();
     }
 
     func hasNext() -> bool {
@@ -13,7 +13,7 @@ struct StringIterator {
 
     mutating func next() -> char {
         let next = current;
-        current = current.offset(1);
+        current++;
         return *next;
     }
 }
