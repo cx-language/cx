@@ -183,8 +183,9 @@ bool checkRange(Expr& expr, int64_t value, Type type) {
 }
 
 bool TypeChecker::isInterface(Type type) const {
-    return type.isBasicType() && !type.isBuiltinType() && !type.isVoid() &&
-           getTypeDecl(llvm::cast<BasicType>(*type))->isInterface();
+    if (!type.isBasicType() || type.isBuiltinType() || type.isVoid()) return false;
+    auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(*type));
+    return typeDecl && typeDecl->isInterface();
 }
 
 static bool hasField(TypeDecl& type, const FieldDecl& field) {
