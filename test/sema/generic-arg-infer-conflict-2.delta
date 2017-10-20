@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 func f(a: uint) {
-    // CHECK: [[@LINE+1]]:20: error: couldn't infer generic parameter 'T' of 'Range' because of conflicting argument types 'int' and 'uint'
-    for (let i in 0..a) {} // TODO: Treat the integer literal here as a uint so the inference succeeds.
+    // CHECK: [[@LINE+1]]:22: error: couldn't infer generic parameter 'T' of 'Range' because of conflicting argument types 'float64' and 'uint'
+    for (let i in 0.0..a) {}
 }

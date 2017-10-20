@@ -76,7 +76,7 @@ class Array<Element> {
 
             let newBufferPointer = cast<mutable Element*?>(malloc(sizeof(Element) * uint64(capacity)));
 
-            for (let index in uint(0)..size) {
+            for (let index in 0..size) {
                 let source = bufferPointer! + index;
                 let target = newBufferPointer! + index;
                 *target = *source;
@@ -165,7 +165,7 @@ func ==<T>(a: ArrayRef<T>, b: ArrayRef<T>) -> bool {
         return false;
     }
 
-    for (let i in uint(0)..a.size()) {
+    for (let i in 0..a.size()) {
         if (*a[i] != *b[i]) {
             return false;
         }

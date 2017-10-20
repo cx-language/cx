@@ -52,7 +52,7 @@ class Map<Key: Hashable, Value> {
             return;
         }
 
-        for (let i in uint(0)..slot.size()) {
+        for (let i in 0..slot.size()) {
             if (slot[i].key == *e) {
                 slot.removeAt(i);
                 size--;
@@ -63,7 +63,7 @@ class Map<Key: Hashable, Value> {
 
     /// Expands the hash table size, needed when there's too many elements in the map
     mutating func increaseTableSize(newTable: mutable Array<Array<KeyValuePair<Key, Value> > >*, newCapacity: uint) {
-        for (let i in uint(0)..newCapacity) {
+        for (let i in 0..newCapacity) {
             newTable.push(Array<KeyValuePair<Key, Value> >());
         }
     }
@@ -83,7 +83,7 @@ class Map<Key: Hashable, Value> {
 
         increaseTableSize(newTable, newCapacity);
 
-        for (let i in uint(0)..capacity()) {
+        for (let i in 0..capacity()) {
             let slot = hashTable[i];
 
             for (let el in slot) {

@@ -380,6 +380,7 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
 
     for (auto& genericParam : genericParams) {
         Type genericArg;
+        Expr* genericArgValue;
 
         for (auto tuple : llvm::zip_first(params, call.getArgs())) {
             Type paramType = std::get<0>(tuple).getType();
@@ -393,7 +394,13 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
 
                 if (!genericArg) {
                     genericArg = maybeGenericArg;
-                } else if (!maybeGenericArg.isImplicitlyConvertibleTo(genericArg)) {
+                    genericArgValue = std::get<1>(tuple).getValue();
+                } else if (isValidConversion(*std::get<1>(tuple).getValue(), maybeGenericArg, genericArg)) {
+                    continue;
+                } else if (isValidConversion(*genericArgValue, genericArg, maybeGenericArg)) {
+                    genericArg = maybeGenericArg.asMutable(genericArg.isMutable());
+                    genericArgValue = std::get<1>(tuple).getValue();
+                } else {
                     error(call.getLocation(), "couldn't infer generic parameter '", genericParam.getName(),
                           "' of '", call.getFunctionName(), "' because of conflicting argument types '",
                           genericArg, "' and '", maybeGenericArg, "'");

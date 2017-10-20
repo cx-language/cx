@@ -26,7 +26,7 @@ struct StringRef {
     func hash() -> uint64 {
         var hashValue: uint64 = 5381;
 
-        for (let index in uint(0)..characters.size()) {
+        for (let index in 0..characters.size()) {
             hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
         }
 
