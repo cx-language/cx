@@ -1,0 +1,45 @@
+// RUN: check_exit_status 0 %delta run %s test-support.delta
+
+func main() {
+    testInsertionSort();
+    testQuickSort();
+}
+
+func testInsertionSort() {
+    var a = Array<int>();
+
+    for (let i in 0..5) {
+
+        a.push(5 - i);
+    }
+
+    var real = Array<int>();
+
+    for (let i in 0..5) {
+        real.push(i+1);
+    }
+
+    sort(&a);
+
+    assert(ArrayRef(&a) == ArrayRef(&real), "Array is sorted");
+}
+
+
+func testQuickSort() {
+    var a = Array<int>();
+
+    for (let i in 0..64) {
+
+        a.push(64 - i);
+    }
+
+    var real = Array<int>();
+
+    for (let i in 0..64) {
+        real.push(i+1);
+    }
+
+    sort(&a);
+
+    assert(ArrayRef(&a) == ArrayRef(&real), "Array is sorted");
+}

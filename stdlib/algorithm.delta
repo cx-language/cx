@@ -1,0 +1,62 @@
+/// Public members
+
+/// Swaps two items in place
+func swap<E>(a: mutable E*, b: mutable E*) {
+    let t = *a;
+    *a = *b;
+    *b = t;
+}
+
+/// Sorts an array. Uses insertion sort if the array is small enough, and quickSort otherwise.
+func sort<E>(array: mutable Array<E>*) {
+    if (array.size() <= 32) {
+        _insertionSort(array);
+    } else {
+        _quickSort(array, 0, array.size() - 1);
+    }
+}
+
+/// Private members
+
+func _partition<E>(arr: Array<E>*, low: uint, high: uint) -> uint {
+    var pivot = arr[high];
+    var i = (low - 1);
+
+    for (let j in low..high) {
+        if (*arr[j] < *pivot) {
+            i++;
+            swap<E>(arr[i], arr[j]);
+        }
+    }
+    if (*arr[high] < *arr[i+1]) {
+        swap<E>(arr[i + 1], arr[high]);
+    }
+    return (i + 1);
+}
+
+/// Quicksorts the given array, in place. Not stable.
+func _quickSort<E>(arr: Array<E>*, low: uint, high: uint) {
+    if (low < high) {
+        let index = _partition<E>(arr, low, high);
+
+        if (low < index) {
+            _quickSort(arr, low, index - 1);
+        }
+        if (index < high) {
+            _quickSort(arr, index + 1, high);
+        }
+    }
+}
+
+/// Insertion sorts the given array, in place. Good for small arrays
+func _insertionSort<E>(arr: Array<E>*) {
+    var i: uint = 1;
+    while (i < arr.size()) {
+        var j: uint = i;
+        while ((j > 0) && (*arr[j-1] > *arr[j])) {
+            swap(arr[j], arr[j-1]);
+            j--;
+        }
+        i++;
+    }
+}
