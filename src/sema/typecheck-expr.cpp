@@ -679,10 +679,8 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     }
 
     for (auto t : llvm::zip_first(decl->getParams(), expr.getArgs()) ) {
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(std::get<1>(t).getValue())) {
-            if (!isImplicitlyCopyable(std::get<0>(t).getType())) {
-                varExpr->getDecl()->markAsMoved();
-            }
+        if (!isImplicitlyCopyable(std::get<0>(t).getType())) {
+            std::get<1>(t).getValue()->setMoved(true);
         }
     }
 

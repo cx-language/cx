@@ -206,14 +206,6 @@ bool Decl::hasBeenMoved() const {
     }
 }
 
-void Decl::markAsMoved() {
-    switch (getKind()) {
-        case DeclKind::ParamDecl: llvm::cast<ParamDecl>(this)->setMoved(true); break;
-        case DeclKind::VarDecl: llvm::cast<VarDecl>(this)->setMoved(true); break;
-        default: break;
-    }
-}
-
 std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs,
                                         llvm::ArrayRef<Type> genericArgsArray) const {
     switch (getKind()) {

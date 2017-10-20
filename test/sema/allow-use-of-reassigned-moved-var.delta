@@ -1,0 +1,12 @@
+// RUN: %delta -typecheck %s
+
+class A {
+    init() {}
+}
+
+func main() {
+    var a = A();
+    let b = a;
+    a = A();
+    let c = a;
+}

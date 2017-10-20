@@ -59,7 +59,7 @@ public:
     bool isLvalue() const;
     bool isRvalue() const { return !isLvalue(); }
     SourceLocation getLocation() const { return location; }
-    void markAsMoved();
+    void setMoved(bool moved);
     std::unique_ptr<Expr> instantiate(const llvm::StringMap<Type>& genericArgs) const;
 
 protected:

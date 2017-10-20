@@ -73,7 +73,6 @@ public:
     Module* getModule() const;
     SourceLocation getLocation() const;
     bool hasBeenMoved() const;
-    void markAsMoved();
     std::unique_ptr<Decl> instantiate(const llvm::StringMap<Type>& genericArgs,
                                       llvm::ArrayRef<Type> genericArgsArray) const;
 

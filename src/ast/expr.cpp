@@ -22,9 +22,18 @@ bool Expr::isLvalue() const {
     llvm_unreachable("all cases handled");
 }
 
-void Expr::markAsMoved() {
+void Expr::setMoved(bool moved) {
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(this)) {
-        varExpr->getDecl()->markAsMoved();
+        switch (varExpr->getDecl()->getKind()) {
+            case DeclKind::ParamDecl:
+                llvm::cast<ParamDecl>(varExpr->getDecl())->setMoved(moved);
+                break;
+            case DeclKind::VarDecl:
+                llvm::cast<VarDecl>(varExpr->getDecl())->setMoved(moved);
+                break;
+            default:
+                break;
+        }
     }
 }
 

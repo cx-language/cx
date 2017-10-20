@@ -206,9 +206,8 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     }
 
     if (rhsType && !isImplicitlyCopyable(rhsType)) {
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(stmt.getRHS())) {
-            varExpr->getDecl()->markAsMoved();
-        }
+        stmt.getRHS()->setMoved(true);
+        stmt.getLHS()->setMoved(false);
     }
 
     markFieldAsInitialized(*stmt.getLHS());
@@ -661,7 +660,7 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
     if (!isGlobal) addToSymbolTable(decl, false);
 
     if (decl.getInitializer() && !isImplicitlyCopyable(decl.getType())) {
-        decl.getInitializer()->markAsMoved();
+        decl.getInitializer()->setMoved(true);
     }
 }
 
