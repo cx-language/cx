@@ -25,7 +25,16 @@ class Array<Element> {
     }
 
     /// Returns the element at the given index.
-    func [](index: uint) -> mutable Element* {
+    func [](index: uint) -> Element* {
+        if (index >= size) {
+            _indexOutOfBounds(index);
+        }
+
+        return bufferPointer! + index;
+    }
+
+    /// Returns the element at the given index.
+    mutating func [](index: uint) -> mutable Element* {
         if (index >= size) {
             _indexOutOfBounds(index);
         }
@@ -53,8 +62,7 @@ class Array<Element> {
         return bufferPointer!;
     }
 
-    // TODO: Rename this to data() when methods can be overloaded on mutability of 'this'.
-    mutating func mutableData() -> mutable Element* {
+    mutating func data() -> mutable Element* {
         return bufferPointer!;
     }
 
@@ -132,6 +140,10 @@ class Array<Element> {
     func iterator() -> ArrayIterator<Element> {
         // TODO: When implicit initializers have been implemented, remove the ArrayRef() call below.
         return ArrayIterator(ArrayRef(this));
+    }
+
+    mutating func iterator() -> MutableArrayIterator<Element> {
+        return MutableArrayIterator(this);
     }
 
     func _indexOutOfBounds(index: uint) {

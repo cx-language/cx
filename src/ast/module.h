@@ -58,10 +58,11 @@ public:
     }
 
     template<typename T>
-    T* findWithMatchingParams(const T& toFind) const {
+    T* findWithMatchingPrototype(const T& toFind) const {
         for (Decl* decl : find(mangle(toFind))) {
             T* t = llvm::dyn_cast<T>(decl);
             if (!t || t->getParams().size() != toFind.getParams().size()) continue;
+            if (t->isMutating() != toFind.isMutating()) continue;
             if (std::equal(toFind.getParams().begin(), toFind.getParams().end(), t->getParams().begin(),
                            [](const ParamDecl& a, const ParamDecl& b) {
                                return a.getName() == b.getName() && a.getType() == b.getType();

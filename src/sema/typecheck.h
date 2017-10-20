@@ -105,7 +105,10 @@ private:
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     bool isImplicitlyCopyable(Type type) const;
-    bool validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamDecl> params,
+    bool validateArgs(const CallExpr& expr, const FunctionDecl& functionDecl,
+                      llvm::StringRef functionName = "",
+                      SourceLocation location = SourceLocation::invalid()) const;
+    bool validateArgs(const CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params,
                       bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type) const;

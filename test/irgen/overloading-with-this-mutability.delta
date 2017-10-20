@@ -1,0 +1,28 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class A {
+    init() {}
+
+    // CHECK: define void [[NONMUTATING:@A\.foo[\.0-9]*]]({}* %this)
+    // CHECK-NEXT: %a = alloca i32
+    func foo() {
+        let a = 1;
+    }
+
+    // CHECK: define void [[MUTATING:@A\.foo[\.0-9]*]]({}* %this)
+    // CHECK-NEXT: %b = alloca i32
+    mutating func foo() {
+        let b = 1;
+    }
+}
+
+func main() {
+    let a = A();
+    var b = A();
+
+    // CHECK: call void [[NONMUTATING]]({}* %a)
+    a.foo();
+
+    // CHECK: call void [[MUTATING]]({}* %b)
+    b.foo();
+}

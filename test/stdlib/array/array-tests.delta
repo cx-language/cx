@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run %s ../test-support.delta
+// RUN: check_exit_status 0 %delta run %s %p/../test-support.delta
 
 class C {
     let i: int;
@@ -27,6 +27,7 @@ func main() {
     assert(a.size() == 2 && a.capacity() >= 2, "size and capacity are valid after adding and removing elements");
 
     testArrayIterator(a);
+    testArrayMutatingIteration();
 }
 
 func testArrayIterator(array: Array<C>* ) {
@@ -39,4 +40,19 @@ func testArrayIterator(array: Array<C>* ) {
     assert(iterator.next().i == 4, "testArrayIterator: next() - 2");
 
     assert(!iterator.hasNext(), "testArrayIterator: hasNext() - 3");
+}
+
+func testArrayMutatingIteration() {
+    var a = Array<int>();
+    a.push(1);
+    a.push(2);
+    a.push(3);
+
+    for (let e in a) {
+        *e++;
+    }
+
+    assert(*a[0] == 2, "mutating iteration modified elements in the array");
+    assert(*a[1] == 3, "mutating iteration modified elements in the array");
+    assert(*a[2] == 4, "mutating iteration modified elements in the array");
 }

@@ -513,11 +513,10 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
                 declsToTypecheck.emplace_back(functionDecl);
 
                 if (decls.size() == 1) {
-                    validateArgs(expr.getArgs(), functionDecl->getParams(), functionDecl->isVariadic(),
-                                 callee, expr.getCallee().getLocation());
+                    validateArgs(expr, *functionDecl, callee, expr.getCallee().getLocation());
                     return *functionDecl;
                 }
-                if (validateArgs(expr.getArgs(), functionDecl->getParams(), functionDecl->isVariadic())) {
+                if (validateArgs(expr, *functionDecl)) {
                     matches.push_back(functionDecl);
                 }
                 break;
@@ -527,11 +526,10 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
 
                 if (decls.size() == 1) {
                     validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                    validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic(),
-                                 callee, expr.getCallee().getLocation());
+                    validateArgs(expr, functionDecl, callee, expr.getCallee().getLocation());
                     return functionDecl;
                 }
-                if (validateArgs(expr.getArgs(), functionDecl.getParams(), functionDecl.isVariadic())) {
+                if (validateArgs(expr, functionDecl)) {
                     matches.push_back(&functionDecl);
                 }
                 break;
@@ -546,11 +544,10 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
                     InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
 
                     if (initDecls.size() == 1) {
-                        validateArgs(expr.getArgs(), initDecl.getParams(), false, callee,
-                                     expr.getCallee().getLocation());
+                        validateArgs(expr, initDecl, callee, expr.getCallee().getLocation());
                         return initDecl;
                     }
-                    if (validateArgs(expr.getArgs(), initDecl.getParams(), false)) {
+                    if (validateArgs(expr, initDecl)) {
                         matches.push_back(&initDecl);
                     }
                 }
@@ -593,11 +590,10 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
 
                 for (auto* instantiatedInitDecl : instantiatedInitDecls) {
                     if (initDecls.size() == 1) {
-                        validateArgs(expr.getArgs(), instantiatedInitDecl->getParams(), false, callee,
-                                     expr.getCallee().getLocation());
+                        validateArgs(expr, *instantiatedInitDecl, callee, expr.getCallee().getLocation());
                         return *instantiatedInitDecl;
                     }
-                    if (validateArgs(expr.getArgs(), instantiatedInitDecl->getParams(), false)) {
+                    if (validateArgs(expr, *instantiatedInitDecl)) {
                         matches.push_back(instantiatedInitDecl);
                     }
                 }
@@ -626,6 +622,20 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
                 error(expr.getCallee().getLocation(), "'", callee, "' is not a function");
             }
         default:
+            if (expr.getReceiver() && expr.getReceiverType().removePointer().isMutable()) {
+                llvm::SmallVector<FunctionDecl*, 1> mutatingMatches;
+
+                for (auto* match : matches) {
+                    if (match->isMutating()) {
+                        mutatingMatches.push_back(match);
+                    }
+                }
+
+                if (mutatingMatches.size() == 1) {
+                    return *mutatingMatches.front();
+                }
+            }
+
             bool allMatchesAreFromC = llvm::all_of(matches, [](Decl* match) {
                 return match->getModule() && match->getModule()->getName().endswith_lower(".h");
             });
@@ -666,7 +676,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
                   "' which may be null");
         } else if (receiverType.removePointer().isArrayType()) {
             if (expr.getFunctionName() == "size") {
-                validateArgs(expr.getArgs(), {}, false, expr.getFunctionName(), expr.getLocation());
+                validateArgs(expr, false, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 return Type::getInt();
             }
@@ -735,10 +745,23 @@ bool TypeChecker::isImplicitlyCopyable(Type type) const {
     llvm_unreachable("all cases handled");
 }
 
-bool TypeChecker::validateArgs(llvm::ArrayRef<Argument> args, llvm::ArrayRef<ParamDecl> params,
+bool TypeChecker::validateArgs(const CallExpr& expr, const FunctionDecl& functionDecl,
+                               llvm::StringRef functionName, SourceLocation location) const {
+    return validateArgs(expr, functionDecl.isMutating(), functionDecl.getParams(),
+                        functionDecl.isVariadic(), functionName, location);
+}
+
+bool TypeChecker::validateArgs(const CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params,
                                bool isVariadic, llvm::StringRef functionName,
                                SourceLocation location) const {
+    llvm::ArrayRef<Argument> args = expr.getArgs();
     bool returnOnError = functionName.empty();
+
+    if (expr.getReceiver() && !expr.getReceiverType().removePointer().isMutable() && isMutating) {
+        if (returnOnError) return false;
+        error(location, "cannot call mutating method '", functionName,
+              "' on immutable receiver of type '", expr.getReceiverType(), "'");
+    }
 
     if (args.size() < params.size()) {
         if (returnOnError) return false;

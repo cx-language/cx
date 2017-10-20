@@ -3,6 +3,6 @@
 func main() -> int {
     var array = Array<int>();
     array.push(42);
-    // CHECK: [[@LINE+1]]:19: error: invalid argument #1 type 'int' to 'Array<int>.[]', expected 'uint'
+    // CHECK: [[@LINE+1]]:18: error: no matching function for call to 'Array<int>.[]' with argument list of type '(int)'
     return *array[-1];
 }

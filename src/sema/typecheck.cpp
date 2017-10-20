@@ -373,14 +373,14 @@ void TypeChecker::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, boo
 }
 
 void TypeChecker::addToSymbolTable(FunctionTemplate& decl) const {
-    if (getCurrentModule()->getSymbolTable().findWithMatchingParams(*decl.getFunctionDecl())) {
+    if (getCurrentModule()->getSymbolTable().findWithMatchingPrototype(*decl.getFunctionDecl())) {
         error(decl.getLocation(), "redefinition of '", mangle(decl), "'");
     }
     getCurrentModule()->getSymbolTable().addGlobal(mangle(decl), &decl);
 }
 
 void TypeChecker::addToSymbolTable(FunctionDecl& decl) const {
-    if (getCurrentModule()->getSymbolTable().findWithMatchingParams(decl)) {
+    if (getCurrentModule()->getSymbolTable().findWithMatchingPrototype(decl)) {
         error(decl.getLocation(), "redefinition of '", mangle(decl), "'");
     }
     getCurrentModule()->getSymbolTable().addGlobal(mangle(decl), &decl);

@@ -28,11 +28,19 @@ namespace {
 /// Helper for storing parameter name info in 'functionInstantiations' key strings.
 template<typename T>
 std::string mangleWithParams(const T& decl) {
-    std::string result = mangle(decl);
+    std::string result;
+
+    if (decl.isMutating() && !decl.isInitDecl() && !decl.isDeinitDecl()) {
+        result += "mutating ";
+    }
+
+    result += mangle(decl);
+
     for (auto& param : decl.getParams()) {
         result.append("$").append(param.getName());
         result.append(":").append(param.getType().toString());
     }
+
     return result;
 }
 

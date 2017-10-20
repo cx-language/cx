@@ -22,3 +22,28 @@ struct ArrayIterator<Element> {
         return current;
     }
 }
+
+// TODO: Figure out how to get rid of this code duplication.
+struct MutableArrayIterator<Element> {
+    var current: mutable Element*;
+    let end: mutable Element*;
+
+    init(array: mutable Array<Element>*) {
+        current = array.data();
+        end = array.data() + array.size();
+    }
+
+    func hasNext() -> bool {
+        return current != end;
+    }
+
+    mutating func next() -> mutable Element* {
+        let next = current;
+        current++;
+        return next;
+    }
+
+    func current() -> mutable Element* {
+        return current;
+    }
+}

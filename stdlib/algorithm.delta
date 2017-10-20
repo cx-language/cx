@@ -18,7 +18,7 @@ func sort<E>(array: mutable Array<E>*) {
 
 /// Private members
 
-func _partition<E>(arr: Array<E>*, low: uint, high: uint) -> uint {
+func _partition<E>(arr: mutable Array<E>*, low: uint, high: uint) -> uint {
     var pivot = arr[high];
     var i = (low - 1);
 
@@ -35,7 +35,7 @@ func _partition<E>(arr: Array<E>*, low: uint, high: uint) -> uint {
 }
 
 /// Quicksorts the given array, in place. Not stable.
-func _quickSort<E>(arr: Array<E>*, low: uint, high: uint) {
+func _quickSort<E>(arr: mutable Array<E>*, low: uint, high: uint) {
     if (low < high) {
         let index = _partition<E>(arr, low, high);
 
@@ -49,7 +49,7 @@ func _quickSort<E>(arr: Array<E>*, low: uint, high: uint) {
 }
 
 /// Insertion sorts the given array, in place. Good for small arrays
-func _insertionSort<E>(arr: Array<E>*) {
+func _insertionSort<E>(arr: mutable Array<E>*) {
     var i: uint = 1;
     while (i < arr.size()) {
         var j: uint = i;
