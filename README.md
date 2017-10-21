@@ -50,20 +50,13 @@ After this, the following commands can be invoked from the `build` directory:
 
 ## Documentation
 
+To learn how to compile Delta programs, see the [compiler manual](docs/compiler-manual.md).
+
 Auto-generated API documentation for the compiler is available at https://delta-lang.github.io/delta/doc.
 
 To generate HTML for the API documentation locally, run `doxygen docs/doxyfile`
 in the project root directory. The output is generated under `docs/html` and can be
 viewed by opening `docs/html/index.html` in a browser.
-
-## Usage
-
-The basic usage of the Delta compiler is as follows:
-
-- `delta <files>` compiles and links the given Delta source files into an executable.
-- `delta -c <files>` compiles the given Delta source files into an object (.o) file.
-
-Run `delta -help` for more options.
 
 ## Contributing
 
