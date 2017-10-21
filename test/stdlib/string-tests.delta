@@ -11,11 +11,13 @@ func main() {
 func testStringIterator() {
     var iterator = "xy".iterator();
 
-    assert(iterator.hasNext(), "testStringIterator: hasNext() - 1");
-    assert(iterator.next() == 'x', "testStringIterator: next() - 1");
+    assert(iterator.hasValue(), "testStringIterator: hasValue() - 1");
+    assert(iterator.value() == 'x', "testStringIterator: value() - 1");
 
-    assert(iterator.hasNext(), "testStringIterator: hasNext() - 2");
-    assert(iterator.next() == 'y', "testStringIterator: next() - 2");
+    iterator.increment();
+    assert(iterator.hasValue(), "testStringIterator: hasValue() - 2");
+    assert(iterator.value() == 'y', "testStringIterator: value() - 2");
 
-    assert(!iterator.hasNext(), "testStringIterator: hasNext() - 3");
+    iterator.increment();
+    assert(!iterator.hasValue(), "testStringIterator: hasValue() - 3");
 }

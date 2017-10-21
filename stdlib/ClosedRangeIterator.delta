@@ -7,13 +7,15 @@ struct ClosedRangeIterator<T> {
         end = range.end();
     }
 
-    func hasNext() -> bool {
+    func hasValue() -> bool {
         return current <= end;
     }
 
-    mutating func next() -> T {
-        let next = current;
+    func value() -> T {
+        return current;
+    }
+
+    mutating func increment() {
         current++;
-        return next;
     }
 }

@@ -8,18 +8,16 @@ struct ArrayIterator<Element> {
         end = array.data() + array.size();
     }
 
-    func hasNext() -> bool {
+    func hasValue() -> bool {
         return current != end;
     }
 
-    mutating func next() -> Element* {
-        let next = current;
-        current++;
-        return next;
+    func value() -> Element* {
+        return current;
     }
 
-    func current() -> Element* {
-        return current;
+    mutating func increment() {
+        current++;
     }
 }
 
@@ -33,17 +31,15 @@ struct MutableArrayIterator<Element> {
         end = array.data() + array.size();
     }
 
-    func hasNext() -> bool {
+    func hasValue() -> bool {
         return current != end;
     }
 
-    mutating func next() -> mutable Element* {
-        let next = current;
-        current++;
-        return next;
+    func value() -> mutable Element* {
+        return current;
     }
 
-    func current() -> mutable Element* {
-        return current;
+    mutating func increment() {
+        current++;
     }
 }

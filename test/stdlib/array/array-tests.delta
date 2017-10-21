@@ -33,13 +33,15 @@ func main() {
 func testArrayIterator(array: Array<C>* ) {
     var iterator = array.iterator();
 
-    assert(iterator.hasNext(), "testArrayIterator: hasNext() - 1");
-    assert(iterator.next().i == 1, "testArrayIterator: next() - 1");
+    assert(iterator.hasValue(), "testArrayIterator: hasValue() - 1");
+    assert(iterator.value().i == 1, "testArrayIterator: value() - 1");
 
-    assert(iterator.hasNext(), "testArrayIterator: hasNext() - 2");
-    assert(iterator.next().i == 4, "testArrayIterator: next() - 2");
+    iterator.increment();
+    assert(iterator.hasValue(), "testArrayIterator: hasValue() - 2");
+    assert(iterator.value().i == 4, "testArrayIterator: value() - 2");
 
-    assert(!iterator.hasNext(), "testArrayIterator: hasNext() - 3");
+    iterator.increment();
+    assert(!iterator.hasValue(), "testArrayIterator: hasValue() - 3");
 }
 
 func testArrayMutatingIteration() {

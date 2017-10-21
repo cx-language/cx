@@ -10,8 +10,9 @@ func f(r: Range<int>) -> int {
 
     // CHECK: alloca %"RangeIterator<int>"
     // CHECK: call %"RangeIterator<int>" @"Range<int>.iterator"(%"Range<int>" %r)
-    // CHECK: call i1 @"RangeIterator<int>.hasNext"
-    // CHECK: call i32 @"RangeIterator<int>.next"
+    // CHECK: call i1 @"RangeIterator<int>.hasValue"
+    // CHECK: call i32 @"RangeIterator<int>.value"
+    // CHECK: call void @"RangeIterator<int>.increment"
     for (let i in r) {
         sum += i;
     }

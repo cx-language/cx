@@ -63,7 +63,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
         }
         case StmtKind::ForStmt: {
             auto* forStmt = llvm::cast<ForStmt>(this);
-            // The second argument can be empty because VarDecl instantiation doesn't use it. 
+            // The second argument can be empty because VarDecl instantiation doesn't use it.
             auto variable = llvm::cast<VarDecl>(forStmt->getVariable()->instantiate(genericArgs, {}));
             auto range = forStmt->getRangeExpr().instantiate(genericArgs);
             auto body = ::instantiate(forStmt->getBody(), genericArgs);
@@ -96,9 +96,10 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
 // {
 //     var __iterator = range.iterator();
 //
-//     while (__iterator.hasNext()) {
-//         let id = __iterator.next();
+//     while (__iterator.hasValue()) {
+//         let id = __iterator.value();
 //         ...
+//         __iterator.increment();
 //     }
 // }
 std::unique_ptr<Stmt> ForStmt::lower() {
@@ -118,16 +119,16 @@ std::unique_ptr<Stmt> ForStmt::lower() {
     stmts.push_back(std::move(iteratorVarStmt));
 
     auto iteratorVarExpr = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
-    auto hasNextMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr), "hasNext", location);
-    auto hasNextCallExpr = llvm::make_unique<CallExpr>(std::move(hasNextMemberExpr), std::vector<Argument>(),
-                                                       std::vector<Type>(), location);
+    auto hasValueMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr), "hasValue", location);
+    auto hasValueCallExpr = llvm::make_unique<CallExpr>(std::move(hasValueMemberExpr), std::vector<Argument>(),
+                                                        std::vector<Type>(), location);
 
     auto iteratorVarExpr2 = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
-    auto nextMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr2), "next", location);
-    auto nextCallExpr = llvm::make_unique<CallExpr>(std::move(nextMemberExpr), std::vector<Argument>(),
-                                                    std::vector<Type>(), location);
+    auto valueMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr2), "value", location);
+    auto valueCallExpr = llvm::make_unique<CallExpr>(std::move(valueMemberExpr), std::vector<Argument>(),
+                                                     std::vector<Type>(), location);
     auto loopVariableVarDecl = llvm::make_unique<VarDecl>(variable->getType(), variable->getName(),
-                                                          std::move(nextCallExpr), variable->getParent(),
+                                                          std::move(valueCallExpr), variable->getParent(),
                                                           *variable->getModule(), variable->getLocation());
     auto loopVariableVarStmt = llvm::make_unique<VarStmt>(std::move(loopVariableVarDecl));
 
@@ -138,7 +139,14 @@ std::unique_ptr<Stmt> ForStmt::lower() {
         forStmtBody.push_back(std::move(stmt));
     }
 
-    auto whileStmt = llvm::make_unique<WhileStmt>(std::move(hasNextCallExpr), std::move(forStmtBody));
+    auto iteratorVarExpr3 = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
+    auto incrementMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr3), "increment", location);
+    auto incrementCallExpr = llvm::make_unique<CallExpr>(std::move(incrementMemberExpr), std::vector<Argument>(),
+                                                         std::vector<Type>(), location);
+    auto incrementExprStmt = llvm::make_unique<ExprStmt>(std::move(incrementCallExpr));
+    forStmtBody.push_back(std::move(incrementExprStmt));
+
+    auto whileStmt = llvm::make_unique<WhileStmt>(std::move(hasValueCallExpr), std::move(forStmtBody));
     stmts.push_back(std::move(whileStmt));
 
     return llvm::make_unique<CompoundStmt>(std::move(stmts));

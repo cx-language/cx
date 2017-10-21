@@ -5,11 +5,15 @@ struct SetIterator<Element> {
         iterator = MapIterator<Element, bool>(set.map);
     }
 
-    func hasNext() -> bool {
-        return iterator.hasNext();
+    func hasValue() -> bool {
+        return iterator.hasValue();
     }
 
-    mutating func next() -> Element* {
-        return &iterator.next().key;
+    func value() -> Element* {
+        return iterator.value().key;
+    }
+
+    mutating func increment() {
+        iterator.increment();
     }
 }

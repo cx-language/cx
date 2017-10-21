@@ -7,13 +7,15 @@ struct StringIterator {
         end = string.data() + string.size();
     }
 
-    func hasNext() -> bool {
+    func hasValue() -> bool {
         return current != end;
     }
 
-    mutating func next() -> char {
-        let next = current;
+    func value() -> char {
+        return *current;
+    }
+
+    mutating func increment() {
         current++;
-        return *next;
     }
 }

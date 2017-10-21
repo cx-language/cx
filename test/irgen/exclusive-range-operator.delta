@@ -9,8 +9,9 @@ func main() -> int {
     // CHECK-NEXT: %i = alloca i32
     // CHECK: [[RANGE:%[a-z0-9]+]] = call %"Range<int>" @"Range<int>.init"(i32 0, i32 3)
     // CHECK-NEXT: call %"RangeIterator<int>" @"Range<int>.iterator"(%"Range<int>" [[RANGE]])
-    // CHECK: call i1 @"RangeIterator<int>.hasNext"
-    // CHECK: call i32 @"RangeIterator<int>.next"
+    // CHECK: call i1 @"RangeIterator<int>.hasValue"
+    // CHECK: call i32 @"RangeIterator<int>.value"
+    // CHECK: call void @"RangeIterator<int>.increment"
     for (let i in 0..3) {
         p -= i;
     }

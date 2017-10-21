@@ -8,31 +8,32 @@ struct MapIterator<Key, Value> {
         _skipEmptySlots();
     }
 
-    func hasNext() -> bool {
-        return hashTableIterator.hasNext();
+    func hasValue() -> bool {
+        return hashTableIterator.hasValue();
     }
 
-    mutating func next() -> KeyValuePair<Key, Value>* {
-        let next = current;
-        let slot = hashTableIterator.current();
+    func value() -> KeyValuePair<Key, Value>* {
+        return current;
+    }
+
+    mutating func increment() {
+        let slot = hashTableIterator.value();
         let slotEnd = slot.data() + slot.size();
         current++;
 
         if (current == slotEnd) {
-            hashTableIterator.next();
+            hashTableIterator.increment();
             _skipEmptySlots();
         }
-
-        return next;
     }
 
     mutating func _skipEmptySlots() {
-        while (hashTableIterator.hasNext()) {
-            if (hashTableIterator.current().size() != 0) {
-                current = hashTableIterator.current().data();
+        while (hashTableIterator.hasValue()) {
+            if (hashTableIterator.value().size() != 0) {
+                current = hashTableIterator.value().data();
                 break;
             }
-            hashTableIterator.next();
+            hashTableIterator.increment();
         }
     }
 }
