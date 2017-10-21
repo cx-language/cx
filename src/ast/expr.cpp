@@ -8,9 +8,9 @@ using namespace delta;
 
 bool Expr::isLvalue() const {
     switch (getKind()) {
-        case ExprKind::VarExpr: case ExprKind::StringLiteralExpr:
-        case ExprKind::CharacterLiteralExpr: case ExprKind::ArrayLiteralExpr:
-        case ExprKind::MemberExpr: case ExprKind::SubscriptExpr:
+        case ExprKind::VarExpr: case ExprKind::StringLiteralExpr: case ExprKind::CharacterLiteralExpr:
+        case ExprKind::ArrayLiteralExpr: case ExprKind::TupleExpr: case ExprKind::MemberExpr:
+        case ExprKind::SubscriptExpr:
             return true;
         case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr: case ExprKind::SizeofExpr:
         case ExprKind::BoolLiteralExpr: case ExprKind::CastExpr: case ExprKind::UnwrapExpr:
@@ -86,6 +86,11 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             auto elements = ::instantiate(arrayLiteralExpr->getElements(), genericArgs);
             return llvm::make_unique<ArrayLiteralExpr>(std::move(elements),
                                                        arrayLiteralExpr->getLocation());
+        }
+        case ExprKind::TupleExpr: {
+            auto* tupleExpr = llvm::cast<TupleExpr>(this);
+            auto elements = ::instantiate(tupleExpr->getElements(), genericArgs);
+            return llvm::make_unique<TupleExpr>(std::move(elements), tupleExpr->getLocation());
         }
         case ExprKind::PrefixExpr: {
             auto* prefixExpr = llvm::cast<PrefixExpr>(this);

@@ -22,6 +22,7 @@ enum class ExprKind {
     BoolLiteralExpr,
     NullLiteralExpr,
     ArrayLiteralExpr,
+    TupleExpr,
     PrefixExpr,
     BinaryExpr,
     CallExpr,
@@ -44,6 +45,7 @@ public:
     bool isBoolLiteralExpr() const { return getKind() == ExprKind::BoolLiteralExpr; }
     bool isNullLiteralExpr() const { return getKind() == ExprKind::NullLiteralExpr; }
     bool isArrayLiteralExpr() const { return getKind() == ExprKind::ArrayLiteralExpr; }
+    bool isTupleExpr() const { return getKind() == ExprKind::TupleExpr; }
     bool isPrefixExpr() const { return getKind() == ExprKind::PrefixExpr; }
     bool isBinaryExpr() const { return getKind() == ExprKind::BinaryExpr; }
     bool isCallExpr() const { return getKind() == ExprKind::CallExpr; }
@@ -157,6 +159,17 @@ public:
     : Expr(ExprKind::ArrayLiteralExpr, location), elements(std::move(elements)) {}
     llvm::ArrayRef<std::unique_ptr<Expr>> getElements() const { return elements; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::ArrayLiteralExpr; }
+
+private:
+    std::vector<std::unique_ptr<Expr>> elements;
+};
+
+class TupleExpr : public Expr {
+public:
+    TupleExpr(std::vector<std::unique_ptr<Expr>>&& elements, SourceLocation location)
+    : Expr(ExprKind::TupleExpr, location), elements(std::move(elements)) {}
+    llvm::ArrayRef<std::unique_ptr<Expr>> getElements() const { return elements; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::TupleExpr; }
 
 private:
     std::vector<std::unique_ptr<Expr>> elements;

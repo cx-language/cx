@@ -15,7 +15,7 @@ func foo4() -> int { // CHECK-NEXT:    (function-decl foo4 () int
 }
 
 func foo5() -> int, bool { // CHECK-NEXT:    (function-decl foo5 () (int, bool)
-    return 42, false;      // CHECK-NEXT:        (return-stmt 42 false))
+    return 42, false;      // CHECK-NEXT:        (return-stmt (tuple-literal 42 false)))
 }
 
 func foo6() -> int { // CHECK-NEXT:    (function-decl foo6 () int

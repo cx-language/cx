@@ -199,16 +199,19 @@ void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
 }
 
 void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
-    ASSERT(stmt.getValues().size() < 2, "IRGen doesn't support multiple return values yet");
+    ASSERT(!stmt.getReturnValue() || !stmt.getReturnValue()->isTupleExpr(),
+           "IRGen doesn't support multiple return values yet");
 
     codegenDeferredExprsAndDeinitCallsForReturn();
 
-    if (stmt.getValues().empty()) {
-        if (llvm::cast<FunctionDecl>(currentDecl)->getName() != "main") builder.CreateRetVoid();
-        else builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
+    if (auto* returnValue = stmt.getReturnValue()) {
+        builder.CreateRet(codegenExprForPassing(*returnValue, builder.getCurrentFunctionReturnType()));
     } else {
-        auto& returnValue = *stmt.getValues()[0];
-        builder.CreateRet(codegenExprForPassing(returnValue, builder.getCurrentFunctionReturnType()));
+        if (llvm::cast<FunctionDecl>(currentDecl)->getName() != "main") {
+            builder.CreateRetVoid();
+        } else {
+            builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
+        }
     }
 }
 

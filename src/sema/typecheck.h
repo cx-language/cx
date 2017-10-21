@@ -84,6 +84,7 @@ private:
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) const;
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr) const;
+    Type typecheckTupleExpr(TupleExpr& expr) const;
     Type typecheckPrefixExpr(PrefixExpr& expr) const;
     Type typecheckBinaryExpr(BinaryExpr& expr) const;
     Type typecheckCallExpr(CallExpr& expr) const;
@@ -98,7 +99,6 @@ private:
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool implementsInterface(TypeDecl& type, TypeDecl& interface) const;
     bool isValidConversion(Expr& expr, Type source, Type target) const;
-    bool isValidConversion(llvm::ArrayRef<std::unique_ptr<Expr>> exprs, Type source, Type target) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     FunctionDecl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;

@@ -50,7 +50,7 @@ int breakableBlocks = 0;
 
 static void checkReturnPointerToLocal(ReturnStmt& stmt) {
     if (!functionReturnType.isTupleType()) {
-        auto* returnValue = stmt.getValues()[0].get();
+        auto* returnValue = stmt.getReturnValue();
 
         if (auto* prefixExpr = llvm::dyn_cast<PrefixExpr>(returnValue)) {
             if (prefixExpr->getOperator() == AND) {
@@ -88,7 +88,7 @@ static void checkReturnPointerToLocal(ReturnStmt& stmt) {
 }
 
 void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
-    if (stmt.getValues().empty()) {
+    if (!stmt.getReturnValue()) {
         if (!functionReturnType.isVoid()) {
             error(stmt.getLocation(), "expected return statement to return a value of type '",
                   functionReturnType, "'");
@@ -96,13 +96,10 @@ void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
         return;
     }
 
-    auto returnValueTypes = map(stmt.getValues(),
-                                [&](const std::unique_ptr<Expr>& value) { return typecheckExpr(*value); });
+    Type returnValueType = typecheckExpr(*stmt.getReturnValue());
 
-    Type returnType = returnValueTypes.size() > 1
-                      ? TupleType::get(std::move(returnValueTypes)) : returnValueTypes[0];
-    if (!isValidConversion(stmt.getValues(), returnType, functionReturnType)) {
-        error(stmt.getLocation(), "mismatching return type '", returnType, "', expected '",
+    if (!isValidConversion(*stmt.getReturnValue(), returnValueType, functionReturnType)) {
+        error(stmt.getLocation(), "mismatching return type '", returnValueType, "', expected '",
               functionReturnType, "'");
     }
 

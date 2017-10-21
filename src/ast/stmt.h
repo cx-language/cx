@@ -58,14 +58,14 @@ inline Stmt::~Stmt() {}
 
 class ReturnStmt : public Stmt {
 public:
-    ReturnStmt(std::vector<std::unique_ptr<Expr>>&& values, SourceLocation location)
-    : Stmt(StmtKind::ReturnStmt), values(std::move(values)), location(location) {}
-    llvm::ArrayRef<std::unique_ptr<Expr>> getValues() const { return values; }
+    ReturnStmt(std::unique_ptr<Expr> value, SourceLocation location)
+    : Stmt(StmtKind::ReturnStmt), value(std::move(value)), location(location) {}
+    Expr* getReturnValue() const { return value.get(); }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ReturnStmt; }
 
 private:
-    std::vector<std::unique_ptr<Expr>> values;
+    std::unique_ptr<Expr> value;
     SourceLocation location;
 };
 

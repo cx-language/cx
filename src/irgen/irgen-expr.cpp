@@ -472,6 +472,7 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
         case ExprKind::BoolLiteralExpr: return codegenBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
         case ExprKind::NullLiteralExpr: return codegenNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
         case ExprKind::ArrayLiteralExpr: return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
+        case ExprKind::TupleExpr: llvm_unreachable("IRGen doesn't support tuple types yet");
         case ExprKind::PrefixExpr: return codegenPrefixExpr(llvm::cast<PrefixExpr>(expr));
         case ExprKind::BinaryExpr: return codegenBinaryExpr(llvm::cast<BinaryExpr>(expr));
         case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));
@@ -494,6 +495,7 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
         case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");
         case ExprKind::NullLiteralExpr: llvm_unreachable("no lvalue null literals");
         case ExprKind::ArrayLiteralExpr: llvm_unreachable("no lvalue array literals");
+        case ExprKind::TupleExpr: llvm_unreachable("IRGen doesn't support tuple types yet");
         case ExprKind::PrefixExpr: return codegenLvaluePrefixExpr(llvm::cast<PrefixExpr>(expr));
         case ExprKind::BinaryExpr: llvm_unreachable("no lvalue binary expressions");
         case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));

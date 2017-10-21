@@ -7,10 +7,8 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
     switch (getKind()) {
         case StmtKind::ReturnStmt: {
             auto* returnStmt = llvm::cast<ReturnStmt>(this);
-            auto returnValues = map(returnStmt->getValues(), [&](const std::unique_ptr<Expr>& returnValue) {
-                return returnValue->instantiate(genericArgs);
-            });
-            return llvm::make_unique<ReturnStmt>(std::move(returnValues), returnStmt->getLocation());
+            auto returnValue = returnStmt->getReturnValue() ? returnStmt->getReturnValue()->instantiate(genericArgs) : nullptr;
+            return llvm::make_unique<ReturnStmt>(std::move(returnValue), returnStmt->getLocation());
         }
         case StmtKind::VarStmt: {
             auto* varStmt = llvm::cast<VarStmt>(this);

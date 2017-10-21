@@ -113,6 +113,17 @@ Type TypeChecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) const {
     return ArrayType::get(firstType, int64_t(array.getElements().size()));
 }
 
+Type TypeChecker::typecheckTupleExpr(TupleExpr& expr) const {
+    std::vector<Type> elementTypes;
+    elementTypes.reserve(expr.getElements().size());
+
+    for (auto& element : expr.getElements()) {
+        elementTypes.push_back(typecheckExpr(*element));
+    }
+
+    return TupleType::get(std::move(elementTypes));
+}
+
 Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) const {
     Type operandType = typecheckExpr(expr.getOperand());
 
@@ -302,6 +313,14 @@ bool TypeChecker::isValidConversion(Expr& expr, Type source, Type target) const 
     } else if (source.isArrayType() && target.removeOptional().isPointerType()
                && target.removeOptional().getPointee().isArrayType()
                && source.getElementType().isImplicitlyConvertibleTo(target.removeOptional().getPointee().getElementType())) {
+        return true;
+    } else if (source.isTupleType()) {
+        auto elements = llvm::cast<TupleExpr>(expr).getElements();
+        for (size_t i = 0; i < elements.size(); ++i) {
+            if (!isValidConversion(*elements[i], source.getSubtypes()[i], target.getSubtypes()[i])) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -947,6 +966,7 @@ Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
         case ExprKind::BoolLiteralExpr: type = typecheckBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr)); break;
         case ExprKind::NullLiteralExpr: type = typecheckNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr)); break;
         case ExprKind::ArrayLiteralExpr: type = typecheckArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr)); break;
+        case ExprKind::TupleExpr: type = typecheckTupleExpr(llvm::cast<TupleExpr>(expr)); break;
         case ExprKind::PrefixExpr: type = typecheckPrefixExpr(llvm::cast<PrefixExpr>(expr)); break;
         case ExprKind::BinaryExpr: type = typecheckBinaryExpr(llvm::cast<BinaryExpr>(expr)); break;
         case ExprKind::CallExpr: type = typecheckCallExpr(llvm::cast<CallExpr>(expr)); break;
@@ -961,19 +981,3 @@ Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
     return expr.getType();
 }
 
-bool TypeChecker::isValidConversion(llvm::ArrayRef<std::unique_ptr<Expr>> exprs, Type source,
-                                    Type target) const {
-    if (!source.isTupleType()) {
-        ASSERT(!target.isTupleType());
-        ASSERT(exprs.size() == 1);
-        return isValidConversion(*exprs[0], source, target);
-    }
-    ASSERT(target.isTupleType());
-
-    for (size_t i = 0; i < exprs.size(); ++i) {
-        if (!isValidConversion(*exprs[i], source.getSubtypes()[i], target.getSubtypes()[i])) {
-            return false;
-        }
-    }
-    return true;
-}

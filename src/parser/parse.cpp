@@ -590,9 +590,24 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
     ASSERT(currentToken() == RETURN);
     auto location = getCurrentLocation();
     consumeToken();
+
     auto returnValues = parseExprList();
+    std::unique_ptr<Expr> returnValue;
+
+    switch (returnValues.size()) {
+        case 0:
+            break;
+        case 1:
+            returnValue = std::move(returnValues[0]);
+            break;
+        default:
+            auto location = returnValues[0]->getLocation();
+            returnValue = llvm::make_unique<TupleExpr>(std::move(returnValues), location);
+            break;
+    }
+
     parseStmtTerminator();
-    return llvm::make_unique<ReturnStmt>(std::move(returnValues), location);
+    return llvm::make_unique<ReturnStmt>(std::move(returnValue), location);
 }
 
 /// var-decl ::= mutability-specifier id type-specifier? '=' initializer ('\n' | ';')

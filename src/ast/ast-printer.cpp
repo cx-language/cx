@@ -60,6 +60,12 @@ std::ostream& operator<<(std::ostream& out, const ArrayLiteralExpr& expr) {
     return out << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const TupleExpr& expr) {
+    out << "(tuple-literal";
+    for (auto& e : expr.getElements()) out << " " << *e;
+    return out << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const PrefixExpr& expr) {
     return out << "(" << expr.getOperator() << expr.getOperand() << ")";
 }
@@ -106,6 +112,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::BoolLiteralExpr: return out << llvm::cast<BoolLiteralExpr>(expr);
         case ExprKind::NullLiteralExpr: return out << llvm::cast<NullLiteralExpr>(expr);
         case ExprKind::ArrayLiteralExpr: return out << llvm::cast<ArrayLiteralExpr>(expr);
+        case ExprKind::TupleExpr: return out << llvm::cast<TupleExpr>(expr);
         case ExprKind::PrefixExpr: return out << llvm::cast<PrefixExpr>(expr);
         case ExprKind::BinaryExpr: return out << llvm::cast<BinaryExpr>(expr);
         case ExprKind::CallExpr: return out << llvm::cast<CallExpr>(expr);
@@ -128,11 +135,12 @@ std::ostream& operator<<(std::ostream& out, llvm::ArrayRef<std::unique_ptr<Stmt>
 }
 
 std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
-    out << br << "(return-stmt ";
-    for (const auto& value : stmt.getValues()) {
-        out << *value;
-        if (&value != &stmt.getValues().back()) out << " ";
+    out << br << "(return-stmt";
+
+    if (stmt.getReturnValue()) {
+        out << " " << *stmt.getReturnValue();
     }
+
     return out << ")";
 }
 
