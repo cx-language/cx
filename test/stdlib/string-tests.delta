@@ -8,6 +8,7 @@ func main() {
     testStringIterator();
     testFind();
     testSubstr();
+    testSplit();
 }
 
 func testStringIterator() {
@@ -47,4 +48,12 @@ func testSubstr() {
     assert(s.substr(0..3) == "wor", "Substring works correctly");
     assert(s.substr(1..3) == "or", "Substring works correctly");
     assert(s.substr(2..3) == "r", "Substring works correctly");
+}
+
+func testSplit() {
+    var s = String("this is the best sentence");
+
+    var words = s.split();
+
+    print(*words[0]);
 }
