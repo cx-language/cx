@@ -3,6 +3,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #include "type.h"
+#include "decl.h"
 #include "../support/utility.h"
 
 using namespace delta;
@@ -144,6 +145,17 @@ Type OptionalType::get(Type wrappedType, bool isMutable) {
 }
 
 #undef FETCH_AND_RETURN_TYPE
+
+std::vector<ParamDecl> FunctionType::getParamDecls(SourceLocation location) const {
+    std::vector<ParamDecl> paramDecls;
+    paramDecls.reserve(paramTypes.size());
+
+    for (Type paramType : paramTypes) {
+        paramDecls.push_back(ParamDecl(paramType, "", location));
+    }
+
+    return paramDecls;
+}
 
 bool Type::isSigned() const {
     ASSERT(isBasicType());

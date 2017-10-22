@@ -181,7 +181,6 @@ void TypeChecker::typecheckBreakStmt(BreakStmt& breakStmt) const {
 
 void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     Type lhsType = typecheckExpr(*stmt.getLHS(), true);
-    if (lhsType.isFunctionType()) error(stmt.getLocation(), "cannot assign to function");
     Type rhsType = stmt.getRHS() ? typecheckExpr(*stmt.getRHS()) : nullptr;
 
     if (!stmt.getRHS() && !currentFunction->isInitDecl()) {
@@ -491,14 +490,27 @@ Decl& TypeChecker::findDecl(llvm::StringRef name, SourceLocation location, bool 
     error(location, "unknown identifier '", name, "'");
 }
 
-std::vector<Decl*> TypeChecker::findDecls(llvm::StringRef name, bool everywhere) const {
+std::vector<Decl*> TypeChecker::findDecls(llvm::StringRef name, bool everywhere,
+                                          TypeDecl* receiverTypeDecl) const {
     std::vector<Decl*> decls;
-    if (auto* typeDecl = currentFunction ? currentFunction->getTypeDecl() : nullptr) {
-        for (auto& decl : typeDecl->getMemberDecls()) {
+
+    if (!receiverTypeDecl && currentFunction) {
+        receiverTypeDecl = currentFunction->getTypeDecl();
+    }
+
+    if (receiverTypeDecl) {
+        for (auto& decl : receiverTypeDecl->getMemberDecls()) {
             if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl.get())) {
                 if (functionDecl->getName() == name) {
                     decls.emplace_back(decl.get());
                 }
+            }
+        }
+
+        for (auto& field : receiverTypeDecl->getFields()) {
+            if (field.getName() == name
+                || (receiverTypeDecl->getName() + "." + field.getName()).str() == name) {
+                decls.emplace_back(&field);
             }
         }
     }
@@ -506,6 +518,7 @@ std::vector<Decl*> TypeChecker::findDecls(llvm::StringRef name, bool everywhere)
     if (getCurrentModule()->getName() != "std") {
         append(decls, findDeclsInModules(name, llvm::makeArrayRef(getCurrentModule())));
     }
+    
     append(decls, findDeclsInModules(name, getStdlibModules()));
     append(decls, everywhere ? findDeclsInModules(name, getAllImportedModules())
                              : findDeclsInModules(name, getCurrentSourceFile()->getImportedModules()));
@@ -632,10 +645,6 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
 
     if (decl.getInitializer()) {
         initType = typecheckExpr(*decl.getInitializer());
-
-        if (initType.isFunctionType()) {
-            error(decl.getInitializer()->getLocation(), "function pointers not implemented yet");
-        }
     } else if (isGlobal) {
         error(decl.getLocation(), "global variables cannot be uninitialized");
     }

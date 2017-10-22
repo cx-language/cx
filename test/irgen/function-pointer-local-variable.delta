@@ -1,0 +1,50 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define void @f()
+func f() {}
+
+// CHECK: define i32 @f2(i32 %a, i1 %b)
+func f2(a: int, b: bool) -> int { return a; }
+
+// CHECK: define void @g(void ()* %p)
+func g(p: () -> void) {
+    // CHECK-NEXT: %p2 = alloca void ()*
+    // CHECK-NEXT: store void ()* %p, void ()** %p2
+    let p2 = p;
+
+    // CHECK-NEXT: %p21 = load void ()*, void ()** %p2
+    // CHECK-NEXT: call void %p21()
+    p2();
+}
+
+// CHECK: define void @g2(i32 (i32, i1)* %p)
+func g2(p: (int, bool) -> int) {
+    // CHECK-NEXT: %p2 = alloca i32 (i32, i1)*
+    // CHECK-NEXT: %a = alloca i32
+    // CHECK-NEXT: store i32 (i32, i1)* %p, i32 (i32, i1)** %p2
+    let p2 = p;
+
+    // CHECK-NEXT: %p21 = load i32 (i32, i1)*, i32 (i32, i1)** %p2
+    // CHECK-NEXT: call i32 %p21(i32 42, i1 false)
+    let a = p2(42, !true) + 1;
+}
+
+// CHECK: define i32 @main()
+func main() {
+    // CHECK-NEXT: %lf = alloca void ()*
+    // CHECK-NEXT: %lf2 = alloca i32 (i32, i1)*
+
+    // CHECK-NEXT: store void ()* @f, void ()** %lf
+    let lf = f;
+
+    // CHECK-NEXT: %lf1 = load void ()*, void ()** %lf
+    // CHECK-NEXT: call void @g(void ()* %lf1)
+    g(lf);
+
+    // CHECK-NEXT: store i32 (i32, i1)* @f2, i32 (i32, i1)** %lf2
+    let lf2 = f2;
+
+    // CHECK-NEXT: %lf22 = load i32 (i32, i1)*, i32 (i32, i1)** %lf2
+    // CHECK-NEXT: call void @g2(i32 (i32, i1)* %lf22)
+    g2(lf2);
+}

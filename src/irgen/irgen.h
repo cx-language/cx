@@ -71,7 +71,8 @@ private:
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
     llvm::Module& getIRModule() { return module; }
 
-    llvm::Function* getFunction(Type  receiverType, llvm::StringRef functionName);
+    llvm::Function* getFunction(const FunctionDecl& decl);
+    llvm::Function* getFunction(Type receiverType, llvm::StringRef functionName);
     /// @param type The Delta type of the variable, or null if the variable is 'this'.
     void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
     llvm::Value* findValue(llvm::StringRef name, const Decl* decl);
@@ -130,7 +131,7 @@ private:
     llvm::StructType* codegenTypeDecl(const TypeDecl& decl);
     void codegenVarDecl(const VarDecl& decl);
 
-    llvm::Function* getFunctionForCall(const CallExpr& call);
+    llvm::Value* getFunctionForCall(const CallExpr& call);
     llvm::Function* getFunctionProto(const FunctionDecl& decl, Type receiverType = nullptr,
                                      std::string&& mangledName = {});
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,

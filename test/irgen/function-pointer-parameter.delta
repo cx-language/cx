@@ -1,0 +1,28 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define void @f()
+func f() {}
+
+// CHECK: define i32 @f2(i32 %a, i1 %b)
+func f2(a: int, b: bool) -> int { return a; }
+
+// CHECK: define void @g(void ()* %p)
+func g(p: () -> void) {
+    // CHECK-NEXT: call void %p()
+    p();
+}
+
+// CHECK: define void @g2(i32 (i32, i1)* %p)
+func g2(p: (int, bool) -> int) {
+    // CHECK: call i32 %p(i32 42, i1 false)
+    let a = p(42, !true) + 1;
+}
+
+// CHECK: define i32 @main()
+func main() {
+    // CHECK-NEXT: call void @g(void ()* @f)
+    g(f);
+
+    // CHECK-NEXT: call void @g2(i32 (i32, i1)* @f2)
+    g2(f2);
+}

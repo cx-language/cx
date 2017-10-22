@@ -329,9 +329,30 @@ Type parseSimpleType(bool isMutable) {
     return ArrayType::get(type, parseArraySizeInBrackets());
 }
 
-// type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '*' | type '?'
+/// function-type ::= param-type-list '->' type
+/// param-type-list ::= '(' param-types ')'
+/// param-types ::= '' | non-empty-param-types
+/// non-empty-param-types ::= type | type ',' non-empty-param-types
+Type parseFunctionType() {
+    ASSERT(currentToken() == LPAREN);
+    consumeToken();
+    std::vector<Type> paramTypes;
+
+    while (currentToken() != RPAREN) {
+        paramTypes.emplace_back(parseType());
+        if (currentToken() != RPAREN) parse(COMMA);
+    }
+
+    consumeToken();
+    parse(RARROW);
+    Type returnType = parseType();
+    return FunctionType::get(returnType, std::move(paramTypes));
+}
+
+/// type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '*' | type '?' | function-type
 Type parseType() {
     Type type;
+
     switch (currentToken()) {
         case IDENTIFIER:
             type = parseSimpleType(false);
@@ -347,9 +368,13 @@ Type parseType() {
             }
             type.setMutable(true);
             break;
+        case LPAREN:
+            type = parseFunctionType();
+            break;
         default:
-            unexpectedToken(currentToken(), { IDENTIFIER, MUTABLE });
+            unexpectedToken(currentToken(), { IDENTIFIER, MUTABLE, LPAREN });
     }
+
     while (true) {
         switch (currentToken()) {
             case STAR:

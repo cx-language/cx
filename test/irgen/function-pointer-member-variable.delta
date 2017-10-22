@@ -1,0 +1,62 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: %X = type { i32 (i32)* }
+class X {
+    let p: (int) -> int;
+
+    // CHECK: define %X @X.init(i32 (i32)* %p)
+    init(p: (int) -> int) {
+        // CHECK-NEXT: %1 = alloca %X
+        // CHECK-NEXT: %2 = getelementptr inbounds %X, %X* %1, i32 0, i32 0
+        // CHECK-NEXT: store i32 (i32)* %p, i32 (i32)** %2
+        this.p = p;
+
+        // CHECK-NEXT: %3 = load %X, %X* %1
+        // CHECK-NEXT: ret %X %3
+    }
+
+    // CHECK: define void @X.f(%X* %this)
+    func f() {
+        // CHECK-NEXT: %p2 = alloca i32 (i32)*
+
+        // CHECK-NEXT: %1 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
+        // CHECK-NEXT: %2 = load i32 (i32)*, i32 (i32)** %1
+        // CHECK-NEXT: %3 = call i32 %2(i32 42)
+        this.p(42);
+
+        // CHECK-NEXT: %4 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
+        // CHECK-NEXT: %5 = load i32 (i32)*, i32 (i32)** %4
+        // CHECK-NEXT: %6 = call i32 %5(i32 42)
+        p(42);
+
+        // CHECK-NEXT: %7 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
+        // CHECK-NEXT: %p = load i32 (i32)*, i32 (i32)** %7
+        // CHECK-NEXT: store i32 (i32)* %p, i32 (i32)** %p2
+        let p2 = p;
+
+        // CHECK-NEXT: %p21 = load i32 (i32)*, i32 (i32)** %p2
+        // CHECK-NEXT: %8 = call i32 %p21(i32 42)
+        p2(42);
+    }
+}
+
+// CHECK: define i32 @f(i32 %a)
+func f(a: int) -> int {
+    return a;
+}
+
+// CHECK: define i32 @main()
+func main() {
+    // CHECK-NEXT: %x = alloca %X
+    // CHECK-NEXT: %1 = call %X @X.init(i32 (i32)* @f)
+    // CHECK-NEXT: store %X %1, %X* %x
+    let x = X(f);
+
+    // CHECK-NEXT: %2 = getelementptr inbounds %X, %X* %x, i32 0, i32 0
+    // CHECK-NEXT: %3 = load i32 (i32)*, i32 (i32)** %2
+    // CHECK-NEXT: %4 = call i32 %3(i32 42)
+    x.p(42);
+
+    // CHECK-NEXT: call void @X.f(%X* %x)
+    x.f();
+}

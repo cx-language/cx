@@ -10,8 +10,8 @@ extern llvm::LLVMContext ctx;
 llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
     auto* value = findValue(expr.getIdentifier(), expr.getDecl());
 
-    if (llvm::isa<llvm::AllocaInst>(value) || llvm::isa<llvm::GlobalValue>(value) ||
-        llvm::isa<llvm::GetElementPtrInst>(value)) {
+    if (llvm::isa<llvm::AllocaInst>(value) || llvm::isa<llvm::GetElementPtrInst>(value) ||
+        (llvm::isa<llvm::GlobalValue>(value) && !llvm::isa<llvm::Function>(value))) {
         return builder.CreateLoad(value, expr.getIdentifier());
     } else {
         return value;
@@ -330,19 +330,31 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
         llvm_unreachable("unknown static array member function");
     }
 
-    llvm::Function* function = getFunctionForCall(expr);
-    ASSERT(function);
-    auto param = function->arg_begin();
+    llvm::Value* calleeValue = getFunctionForCall(expr);
+    llvm::FunctionType* functionType;
+
+    if (auto* function = llvm::dyn_cast<llvm::Function>(calleeValue)) {
+        functionType = function->getFunctionType();
+    } else {
+        if (!llvm::isa<llvm::FunctionType>(calleeValue->getType()->getPointerElementType())) {
+            calleeValue = builder.CreateLoad(calleeValue, calleeValue->getName());
+        }
+        functionType = llvm::cast<llvm::FunctionType>(calleeValue->getType()->getPointerElementType());
+    }
+
+    auto param = functionType->param_begin();
+    auto paramEnd = functionType->param_end();
+
     llvm::SmallVector<llvm::Value*, 16> args;
 
     auto* calleeDecl = expr.getCalleeDecl();
 
     if (calleeDecl && calleeDecl->isMethodDecl() && !calleeDecl->isInitDecl()) {
         if (expr.getReceiver()) {
-            args.emplace_back(codegenExprForPassing(*expr.getReceiver(), param->getType()));
+            args.emplace_back(codegenExprForPassing(*expr.getReceiver(), *param));
         } else {
             auto* thisValue = findValue("this", nullptr);
-            if (thisValue->getType()->isPointerTy() && !param->getType()->isPointerTy()) {
+            if (thisValue->getType()->isPointerTy() && !(*param)->isPointerTy()) {
                 thisValue = builder.CreateLoad(thisValue, thisValue->getName());
             }
             args.emplace_back(thisValue);
@@ -351,11 +363,11 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     }
 
     for (const auto& arg : expr.getArgs()) {
-        auto* paramType = param != function->arg_end() ? param++->getType() : nullptr;
+        auto* paramType = param != paramEnd ? *param++ : nullptr;
         args.emplace_back(codegenExprForPassing(*arg.getValue(), paramType));
     }
 
-    return builder.CreateCall(function, args);
+    return builder.CreateCall(calleeValue, args);
 }
 
 llvm::Value* IRGenerator::codegenCastExpr(const CastExpr& expr) {

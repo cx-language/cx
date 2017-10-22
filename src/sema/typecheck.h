@@ -38,7 +38,8 @@ public:
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
 
     Decl& findDecl(llvm::StringRef name, SourceLocation location, bool everywhere = false) const;
-    std::vector<Decl*> findDecls(llvm::StringRef name, bool everywhere = false) const;
+    std::vector<Decl*> findDecls(llvm::StringRef name, bool everywhere = false,
+                                 TypeDecl* receiverTypeDecl = nullptr) const;
 
     void addToSymbolTable(FunctionTemplate& decl) const;
     void addToSymbolTable(FunctionDecl& decl) const;
@@ -101,7 +102,7 @@ private:
     bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
-    FunctionDecl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
+    Decl& resolveOverload(CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     bool isImplicitlyCopyable(Type type) const;

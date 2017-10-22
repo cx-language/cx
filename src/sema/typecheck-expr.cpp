@@ -570,12 +570,19 @@ Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
     return expr.getType();
 }
 
-FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const {
-    llvm::SmallVector<FunctionDecl*, 1> matches;
+Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const {
+    llvm::SmallVector<Decl*, 1> matches;
     bool isInitCall = false;
     bool atLeastOneFunction = false;
+    TypeDecl* receiverTypeDecl;
 
-    auto decls = findDecls(callee, isPostProcessing);
+    if (expr.getReceiverType() && expr.getReceiverType().removePointer().isBasicType()) {
+        receiverTypeDecl = getTypeDecl(*llvm::cast<BasicType>(expr.getReceiverType().removePointer().get()));
+    } else {
+        receiverTypeDecl = nullptr;
+    }
+
+    auto decls = findDecls(callee, isPostProcessing, receiverTypeDecl);
 
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
@@ -686,9 +693,46 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
                 }
                 break;
             }
-            default: continue;
+            case DeclKind::VarDecl: {
+                auto* varDecl = llvm::cast<VarDecl>(decl);
+
+                if (auto* functionType = llvm::dyn_cast<FunctionType>(varDecl->getType().get())) {
+                    auto paramDecls = functionType->getParamDecls(varDecl->getLocation());
+                    if (validateArgs(expr, false, paramDecls, false)) {
+                        matches.push_back(varDecl);
+                    }
+                }
+                break;
+            }
+            case DeclKind::ParamDecl: {
+                auto* paramDecl = llvm::cast<ParamDecl>(decl);
+
+                if (auto* functionType = llvm::dyn_cast<FunctionType>(paramDecl->getType().get())) {
+                    auto paramDecls = functionType->getParamDecls(paramDecl->getLocation());
+                    if (validateArgs(expr, false, paramDecls, false)) {
+                        matches.push_back(paramDecl);
+                    }
+                }
+                break;
+            }
+            case DeclKind::FieldDecl: {
+                auto* fieldDecl = llvm::cast<FieldDecl>(decl);
+
+                if (auto* functionType = llvm::dyn_cast<FunctionType>(fieldDecl->getType().get())) {
+                    auto paramDecls = functionType->getParamDecls(fieldDecl->getLocation());
+                    if (validateArgs(expr, false, paramDecls, false)) {
+                        matches.push_back(fieldDecl);
+                    }
+                }
+                break;
+            }
+            default:
+                continue;
         }
-        atLeastOneFunction = true;
+
+        if (!decl->isVarDecl() && !decl->isParamDecl() && !decl->isFieldDecl()) {
+            atLeastOneFunction = true;
+        }
     }
 
     switch (matches.size()) {
@@ -710,10 +754,10 @@ FunctionDecl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef calle
             }
         default:
             if (expr.getReceiver() && expr.getReceiverType().removePointer().isMutable()) {
-                llvm::SmallVector<FunctionDecl*, 1> mutatingMatches;
+                llvm::SmallVector<Decl*, 1> mutatingMatches;
 
                 for (auto* match : matches) {
-                    if (match->isMutating()) {
+                    if (!match->isMethodDecl() || llvm::cast<MethodDecl>(match)->isMutating()) {
                         mutatingMatches.push_back(match);
                     }
                 }
@@ -751,7 +795,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         return typecheckBuiltinConversion(expr);
     }
 
-    FunctionDecl* decl;
+    Decl* decl;
 
     if (expr.getCallee().isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
@@ -782,7 +826,39 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         }
     }
 
-    for (auto t : llvm::zip_first(decl->getParams(), expr.getArgs()) ) {
+    std::vector<ParamDecl> paramsStorage;
+    llvm::ArrayRef<ParamDecl> params;
+
+    switch (decl->getKind()) {
+        case DeclKind::FunctionDecl:
+        case DeclKind::MethodDecl:
+        case DeclKind::InitDecl:
+            params = llvm::cast<FunctionDecl>(decl)->getParams();
+            break;
+
+        case DeclKind::VarDecl: {
+            auto type = llvm::cast<VarDecl>(decl)->getType();
+            paramsStorage = llvm::cast<FunctionType>(type.get())->getParamDecls();
+            params = paramsStorage;
+            break;
+        }
+        case DeclKind::ParamDecl: {
+            auto type = llvm::cast<ParamDecl>(decl)->getType();
+            paramsStorage = llvm::cast<FunctionType>(type.get())->getParamDecls();
+            params = paramsStorage;
+            break;
+        }
+        case DeclKind::FieldDecl: {
+            auto type = llvm::cast<FieldDecl>(decl)->getType();
+            paramsStorage = llvm::cast<FunctionType>(type.get())->getParamDecls();
+            params = paramsStorage;
+            break;
+        }
+        default:
+            llvm_unreachable("invalid callee decl");
+    }
+
+    for (auto t : llvm::zip_first(params, expr.getArgs()) ) {
         if (!isImplicitlyCopyable(std::get<0>(t).getType())) {
             std::get<1>(t).getValue()->setMoved(true);
         }
@@ -790,23 +866,38 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
 
     if (decl->isMethodDecl() && !decl->isInitDecl()) {
         ASSERT(expr.getReceiverType());
+        auto* methodDecl = llvm::cast<MethodDecl>(decl);
 
-        if (!decl->isDeinitDecl() && !expr.getReceiverType().removePointer().isMutable() && decl->isMutating()) {
+        if (!decl->isDeinitDecl() && !expr.getReceiverType().removePointer().isMutable()
+            && methodDecl->isMutating()) {
             error(expr.getCallee().getLocation(), "cannot call mutating function '",
-                  decl->getTypeDecl()->getName(), ".", decl->getName(), "' on immutable receiver");
+                  methodDecl->getTypeDecl()->getName(), ".", methodDecl->getName(),
+                  "' on immutable receiver");
         }
     }
 
     expr.setCalleeDecl(decl);
 
-    if (decl->isFunctionDecl() && !decl->isInitDecl()) {
-        auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-        return functionDecl->getFunctionType()->getReturnType();
-    } else if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
-        return initDecl->getTypeDecl()->getType();
-    }
+    switch (decl->getKind()) {
+        case DeclKind::FunctionDecl:
+        case DeclKind::MethodDecl:
+            return llvm::cast<FunctionDecl>(decl)->getFunctionType()->getReturnType();
 
-    llvm_unreachable("all cases handled");
+        case DeclKind::InitDecl:
+            return llvm::cast<InitDecl>(decl)->getTypeDecl()->getType();
+
+        case DeclKind::VarDecl:
+            return llvm::cast<FunctionType>(llvm::cast<VarDecl>(decl)->getType().get())->getReturnType();
+
+        case DeclKind::ParamDecl:
+            return llvm::cast<FunctionType>(llvm::cast<ParamDecl>(decl)->getType().get())->getReturnType();
+
+        case DeclKind::FieldDecl:
+            return llvm::cast<FunctionType>(llvm::cast<FieldDecl>(decl)->getType().get())->getReturnType();
+
+        default:
+            llvm_unreachable("invalid callee decl");
+    }
 }
 
 bool TypeChecker::isImplicitlyCopyable(Type type) const {
@@ -823,7 +914,7 @@ bool TypeChecker::isImplicitlyCopyable(Type type) const {
                 return isImplicitlyCopyable(type);
             });
         case TypeKind::FunctionType:
-            llvm_unreachable("unimplemented");
+            return true;
         case TypeKind::PointerType:
             return true;
         case TypeKind::OptionalType:

@@ -65,6 +65,11 @@ IRGenerator::IRGenerator()
     scopes.push_back(Scope(*this));
 }
 
+llvm::Function* IRGenerator::getFunction(const FunctionDecl& decl) {
+    Type receiverType = decl.getTypeDecl() ? decl.getTypeDecl()->getType() : nullptr;
+    return getFunctionProto(decl, receiverType);
+}
+
 llvm::Function* IRGenerator::getFunction(Type receiverType, llvm::StringRef functionName) {
     auto mangledName = mangleFunctionDecl(receiverType, functionName);
     auto it = functionInstantiations.find(mangledName);
@@ -99,17 +104,26 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
         break;
     }
 
-    if (!value) {
-        if (auto fieldDecl = llvm::dyn_cast<FieldDecl>(decl)) {
-            return codegenMemberAccess(findValue("this", nullptr), fieldDecl->getType(), fieldDecl->getName());
-        }
-        codegenDecl(*decl);
-        if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
-            name = varDecl->getName();
-        }
-        return globalScope().getLocalValues().find(name)->second;
+    if (value) {
+        return value;
     }
-    return value;
+
+    switch (decl->getKind()) {
+        case DeclKind::VarDecl:
+            codegenVarDecl(*llvm::cast<VarDecl>(decl));
+            return globalScope().getLocalValues().find(llvm::cast<VarDecl>(decl)->getName())->second;
+
+        case DeclKind::FieldDecl:
+            return codegenMemberAccess(findValue("this", nullptr),
+                                       llvm::cast<FieldDecl>(decl)->getType(),
+                                       llvm::cast<FieldDecl>(decl)->getName());
+
+        case DeclKind::FunctionDecl:
+            return getFunction(*llvm::cast<FunctionDecl>(decl));
+
+        default:
+            llvm_unreachable("all cases handled");
+    }
 }
 
 static const llvm::StringMap<llvm::Type*> builtinTypes = {
@@ -157,8 +171,11 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             return llvm::ArrayType::get(toIR(type.getElementType(), location), type.getArraySize());
         case TypeKind::TupleType:
             llvm_unreachable("IRGen doesn't support tuple types yet");
-        case TypeKind::FunctionType:
-            return llvm::IntegerType::getInt8Ty(ctx)->getPointerTo(); // FIXME: Temporary.
+        case TypeKind::FunctionType: {
+            auto paramTypes = map(type.getParamTypes(), [&](Type type) { return toIR(type); });
+            auto* returnType = toIR(type.getReturnType());
+            return llvm::FunctionType::get(returnType, paramTypes, false)->getPointerTo();
+        }
         case TypeKind::PointerType: {
             if (type.getPointee().isUnsizedArrayType()) {
                 return toIR(BasicType::get("ArrayRef", type.getPointee().getElementType()), location);
@@ -486,7 +503,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, Type rec
                                               FunctionInstantiation(decl, function)).first->second.getFunction();
 }
 
-llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
+llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
     if (!call.callsNamedFunction()) fatalError("anonymous function calls not implemented yet");
 
     const Decl* decl = call.getCalleeDecl();
@@ -494,11 +511,24 @@ llvm::Function* IRGenerator::getFunctionForCall(const CallExpr& call) {
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-        case DeclKind::InitDecl: {
-            auto* functionDecl = llvm::cast<FunctionDecl>(decl);
-            Type receiver = functionDecl->getTypeDecl() ? functionDecl->getTypeDecl()->getType() : nullptr;
-            return getFunctionProto(*functionDecl, receiver);
-        }
+        case DeclKind::InitDecl:
+            return getFunction(*llvm::cast<FunctionDecl>(decl));
+
+        case DeclKind::VarDecl:
+            return findValue(llvm::cast<VarDecl>(decl)->getName(), decl);
+
+        case DeclKind::ParamDecl:
+            return findValue(llvm::cast<ParamDecl>(decl)->getName(), decl);
+
+        case DeclKind::FieldDecl:
+            if (call.getReceiver()) {
+                return codegenMemberAccess(codegenLvalueExpr(*call.getReceiver()),
+                                           llvm::cast<FieldDecl>(decl)->getType(),
+                                           llvm::cast<FieldDecl>(decl)->getName());
+            } else {
+                return findValue(llvm::cast<FieldDecl>(decl)->getName(), decl);
+            }
+
         default:
             llvm_unreachable("invalid callee decl");
     }
