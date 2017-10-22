@@ -47,11 +47,13 @@ std::string mangleWithParams(const T& decl) {
 } // anonymous namespace
 
 void Scope::onScopeEnd() {
-    for (const Expr* expr : llvm::reverse(deferredExprs)) irGenerator.codegenExpr(*expr);
+    for (const Expr* expr : llvm::reverse(deferredExprs)) {
+        irGenerator->codegenExpr(*expr);
+    }
 
     for (auto& p : llvm::reverse(deinitsToCall)) {
         if (p.decl && p.decl->hasBeenMoved()) continue;
-        irGenerator.createDeinitCall(p.function, p.value, p.type, p.decl);
+        irGenerator->createDeinitCall(p.function, p.value, p.type, p.decl);
     }
 }
 
@@ -219,6 +221,9 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
     ASSERT(!stmt.getReturnValue() || !stmt.getReturnValue()->isTupleExpr(),
            "IRGen doesn't support multiple return values yet");
 
+    // TODO: Emit deferred expressions and deinitializer calls after the evaluation of the return
+    // value, but before emitting the return instruction. The return value expression may depend on
+    // the values that the deferred expressions and/or deinitializer calls could deallocate.
     codegenDeferredExprsAndDeinitCallsForReturn();
 
     if (auto* returnValue = stmt.getReturnValue()) {
@@ -248,7 +253,8 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
         builder.SetInsertPoint(entryBlock, std::next(lastAlloca));
     }
 
-    auto* alloca = builder.CreateAlloca(toIR(type, decl ? decl->getLocation() : SourceLocation::invalid()), arraySize, name);
+    auto* llvmType = toIR(type, decl ? decl->getLocation() : SourceLocation::invalid());
+    auto* alloca = builder.CreateAlloca(llvmType, arraySize, name);
     lastAlloca = alloca->getIterator();
     setLocalValue(type, name.str(), alloca, decl);
     builder.SetInsertPoint(insertBlock);
@@ -617,11 +623,13 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
 
     auto insertBlockBackup = builder.GetInsertBlock();
     auto insertPointBackup = builder.GetInsertPoint();
+    auto scopesBackup = std::move(scopes);
 
     for (auto& memberDecl : decl.getMemberDecls()) {
         codegenDecl(*memberDecl);
     }
 
+    scopes = std::move(scopesBackup);
     if (insertBlockBackup) builder.SetInsertPoint(insertBlockBackup, insertPointBackup);
 
     return structType;

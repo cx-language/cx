@@ -21,7 +21,7 @@ llvm::LLVMContext& getContext();
 }
 
 struct Scope {
-    Scope(IRGenerator& irGenerator) : irGenerator(irGenerator) {}
+    Scope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
     void addDeferredExpr(const Expr& expr) { deferredExprs.emplace_back(&expr); }
     void addDeinitToCall(llvm::Function* deinit, llvm::Value* value, Type type, const Decl* decl) {
         deinitsToCall.emplace_back(DeferredDeinit{deinit, value, type, decl});
@@ -45,7 +45,7 @@ private:
     llvm::SmallVector<const Expr*, 8> deferredExprs;
     llvm::SmallVector<DeferredDeinit, 8> deinitsToCall;
     llvm::StringMap<llvm::Value*> localValues;
-    IRGenerator& irGenerator;
+    IRGenerator* irGenerator;
 };
 
 class IRGenerator {

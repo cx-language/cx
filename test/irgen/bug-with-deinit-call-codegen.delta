@@ -1,0 +1,27 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+
+class X {
+    init() {}
+    deinit() {}
+}
+
+class Y<T> {
+    init() {}
+
+    // CHECK: define i32 @"Y<bool>.f"({}* %this)
+    func f() -> int {
+        // CHECK-NEXT: ret i32 1
+        return 1;
+    }
+}
+
+func main() {
+    var a = X();
+
+    // MAIN: call {} @"Y<bool>.init"()
+    // MAIN: call i32 @"Y<bool>.f"({}* %{{[0-9]+}})
+    Y<bool>().f();
+
+    // MAIN-NEXT: call void @X.deinit({}* %a)
+}
