@@ -636,9 +636,19 @@ void TypeChecker::typecheckTypeTemplate(TypeTemplate& decl) const {
 
 TypeDecl* TypeChecker::getTypeDecl(const BasicType& type) const {
     auto decls = findDecls(mangleTypeDecl(type.getName(), type.getGenericArgs()));
+
+    if (!decls.empty()) {
+        ASSERT(decls.size() == 1);
+        return llvm::cast<TypeDecl>(decls[0]);
+    }
+
+    decls = findDecls(mangleTypeDecl(type.getName(), {}));
     if (decls.empty()) return nullptr;
     ASSERT(decls.size() == 1);
-    return llvm::cast<TypeDecl>(decls[0]);
+    auto instantiation = llvm::cast<TypeTemplate>(decls[0])->instantiate(type.getGenericArgs());
+    addToSymbolTable(*instantiation);
+    typecheckTypeDecl(*instantiation);
+    return instantiation;
 }
 
 void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {

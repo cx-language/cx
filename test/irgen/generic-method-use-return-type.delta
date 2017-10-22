@@ -1,0 +1,22 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+
+class X<T> {
+    // CHECK-DAG: define {} @"X<int>.f<bool>"({}* %this, i1 %u)
+    func f<U>(u: U) -> X<U> {
+        let x: X<U> = undefined;
+        return x;
+    }
+
+    // CHECK-DAG: define void @"X<int>.g"({}* %this)
+    // CHECK-DAG: define void @"X<bool>.g"({}* %this)
+    func g() {}
+}
+
+func main(x: X<int>) {
+    // MAIN: call {} @"X<int>.f<bool>"({}* %1, i1 false)
+    let a = x.f(false);
+
+    // MAIN: call void @"X<bool>.g"({}* %a)
+    a.g();
+}
