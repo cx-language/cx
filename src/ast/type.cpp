@@ -247,7 +247,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             stream << ")";
             break;
         case TypeKind::FunctionType:
-            stream << "func(";
+            stream << "(";
             for (const Type& paramType : getParamTypes()) {
                 stream << paramType;
                 if (&paramType != &getParamTypes().back()) stream << ", ";

@@ -723,6 +723,11 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
 
                 if (auto* functionType = llvm::dyn_cast<FunctionType>(varDecl->getType().get())) {
                     auto paramDecls = functionType->getParamDecls(varDecl->getLocation());
+
+                    if (decls.size() == 1) {
+                        validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
+                        return *varDecl;
+                    }
                     if (validateArgs(expr, false, paramDecls, false)) {
                         matches.push_back(varDecl);
                     }
@@ -734,6 +739,11 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
 
                 if (auto* functionType = llvm::dyn_cast<FunctionType>(paramDecl->getType().get())) {
                     auto paramDecls = functionType->getParamDecls(paramDecl->getLocation());
+                    
+                    if (decls.size() == 1) {
+                        validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
+                        return *paramDecl;
+                    }
                     if (validateArgs(expr, false, paramDecls, false)) {
                         matches.push_back(paramDecl);
                     }
@@ -745,6 +755,11 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
 
                 if (auto* functionType = llvm::dyn_cast<FunctionType>(fieldDecl->getType().get())) {
                     auto paramDecls = functionType->getParamDecls(fieldDecl->getLocation());
+
+                    if (decls.size() == 1) {
+                        validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
+                        return *fieldDecl;
+                    }
                     if (validateArgs(expr, false, paramDecls, false)) {
                         matches.push_back(fieldDecl);
                     }
