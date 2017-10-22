@@ -73,7 +73,10 @@ class Array<Element> {
 
     /// Adds the given element to the end of the array.
     mutating func push(newElement: Element) {
-        reserve(size + 1);
+        if (size == capacity) {
+            _grow();
+        }
+
         *(bufferPointer! + size) = newElement;
         size++;
     }
@@ -81,11 +84,7 @@ class Array<Element> {
     /// Ensures that the capacity is large enough to store the given number of elements.
     mutating func reserve(minimumCapacity: uint) {
         if (minimumCapacity > capacity) {
-            if (capacity == 0) {
-                capacity = 1;
-            } else {
-                capacity *= 2;
-            }
+            capacity = minimumCapacity;
 
             let newBufferPointer = cast<mutable Element*?>(malloc(sizeof(Element) * uint64(capacity)));
 
@@ -149,6 +148,14 @@ class Array<Element> {
 
     mutating func iterator() -> MutableArrayIterator<Element> {
         return MutableArrayIterator(this);
+    }
+
+    mutating func _grow() {
+        if (capacity == 0) {
+            reserve(1);
+        } else {
+            reserve(capacity * 2);
+        }
     }
 
     func _indexOutOfBounds(index: uint) {
