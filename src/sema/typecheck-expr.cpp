@@ -485,7 +485,7 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
                     continue;
                 } else if (isImplicitlyConvertible(genericArgValue, genericArg, maybeGenericArg, &convertedType)) {
                     argValue->setType(convertedType ? convertedType : genericArg);
-                    genericArg = maybeGenericArg.asMutable(genericArg.isMutable());
+                    genericArg = maybeGenericArg;
                     genericArgValue = argValue;
                 } else {
                     error(call.getLocation(), "couldn't infer generic parameter '", genericParam.getName(),
@@ -496,7 +496,7 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
         }
 
         if (genericArg) {
-            inferredGenericArgs.push_back(genericArg);
+            inferredGenericArgs.push_back(genericArg.asImmutable());
         } else {
             return {};
         }

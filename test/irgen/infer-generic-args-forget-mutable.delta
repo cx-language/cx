@@ -1,0 +1,10 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+func f(r: Range<int>) {}
+
+func main() {
+    var foo = 0;
+    var bar = 0;
+    // CHECK: call %"Range<int>" @"Range<int>.init"(i32 %foo{{[0-9]*}}, i32 %bar{{[0-9]*}})
+    f(foo..bar);
+}
