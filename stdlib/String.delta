@@ -88,11 +88,17 @@ class String {
 
     // Returns the substring of the string in the given range, [inclusive, exclusive]
     func substr(range: Range<int>) -> StringRef {
+        if (range.end > int(size())) {
+            _indexOutOfBounds(range.end);
+        }
         return StringRef(characters[uint(range.start)], uint(range.size()));
     }
 
     // Returns the substring of the string in the given range, [inclusive, exclusive]
     func substr(range: Range<uint>) -> StringRef {
+        if (range.end > size()) {
+            _indexOutOfBounds(range.end);
+        }
         return StringRef(characters[range.start], range.size());
     }
 
@@ -111,14 +117,11 @@ class String {
             }
 
             let token = substr(prev..pos);
-
-            if (token.size() > 0) {
-                tokens.push(token);
-            }
+            tokens.push(token);
 
             prev = pos + 1;
 
-            if (pos >= int(size()) || prev >= int(size())) {
+            if (pos > int(size()) || prev > int(size())) {
                 break;
             }
         }
@@ -128,6 +131,16 @@ class String {
     // Splits the string by whitespace
     func split() -> Array<StringRef> {
         return split(' ');
+    }
+
+    func _indexOutOfBounds(index: uint) {
+        printf("Range index %d is out of bounds, size is %d\n", index, size());
+        fatalError();
+    }
+
+    func _indexOutOfBounds(index: int) {
+        printf("Range index %d is out of bounds, size is %d\n", index, size());
+        fatalError();
     }
 
 }

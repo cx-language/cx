@@ -9,6 +9,7 @@ func main() {
     testFind();
     testSubstr();
     testSplit();
+    testOtherSplit();
 }
 
 func testStringIterator() {
@@ -60,6 +61,10 @@ func testSubstr() {
     assert(s2.substr(8..11) == "the", "Works with longer sentences");
     assert(s2.substr(12..16) == "best", "Works with longer sentences");
     assert(s2.substr(17..25) == "sentence", "Works with longer sentences");
+
+    var s3 = String("best");
+
+    assert(s3.substr(0..0) == "", "Works on empty intervals");
 }
 
 func testSplit() {
@@ -88,4 +93,33 @@ func testOtherSplit() {
     assert(*words[4] == "separated", "The 4 words match");
 
     assert(words.size() == 5, "split into 5 parts");
+
+
+    var s2 = String(",,1,,2");
+
+    words = s2.split(',');
+
+    assert(*words[0] == "", "empty 1 works");
+    assert(*words[1] == "", "empty 2 works");
+    assert(*words[2] == "1", "empty 3 works");
+    assert(*words[3] == "", "empty 4 works");
+    assert(*words[4] == "2", "empty 5 works");
+
+    assert(words.size() == 5, "Split array is the right size");
+
+
+    var s3 = String(",,,b,a,,,");
+
+    words = s3.split(',');
+
+    assert(*words[0] == "", "empty 1 works");
+    assert(*words[1] == "", "empty 2 works");
+    assert(*words[2] == "", "empty 3 works");
+    assert(*words[3] == "b", "empty 4 works");
+    assert(*words[4] == "a", "empty 5 works");
+    assert(*words[5] == "", "empty 6 works");
+    assert(*words[6] == "", "empty 7 works");
+    assert(*words[7] == "", "empty 8 works");
+
+    assert(words.size() == 8, "Split array the correct size");
 }
