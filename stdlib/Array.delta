@@ -19,6 +19,11 @@ class Array<Element> {
         return size;
     }
 
+    /// Returns true if the array has no elements, otherwise false
+    func isEmpty() -> bool {
+        return size == 0;
+    }
+
     /// Returns the number of elements the array can store without allocating more memory.
     func capacity() -> uint {
         return capacity;

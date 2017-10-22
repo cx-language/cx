@@ -68,6 +68,31 @@ class String {
         // TODO: When implicit initializers have been implemented, remove the StringRef() call below.
         return StringIterator(StringRef(this));
     }
+
+    /// Returns the index of the given character, or -1 if it's not found
+    func find(c: char) -> int {
+        return find(c, 0);
+    }
+
+    /// Returns the index of the given character, or -1 if it's not found.
+    /// Starts from start
+    func find(c: char, start: uint) -> int {
+
+        for (let i in start..size()) {
+            if (*characters[i] == c) {
+                return int(i);
+            }
+        }
+        return -1;
+    }
+
+    func substr(range: Range<int>) -> StringRef {
+        return StringRef(characters[uint(range.start)], uint(range.size()));
+    }
+
+    func substr(range: Range<uint>) -> StringRef {
+        return StringRef(characters[range.start], range.size());
+    }
 }
 
 func +(a: StringRef, b: StringRef) -> String {

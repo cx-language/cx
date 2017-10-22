@@ -6,6 +6,8 @@ func main() {
     assert("abc" < "bcd", "less");
 
     testStringIterator();
+    testFind();
+    testSubstr();
 }
 
 func testStringIterator() {
@@ -20,4 +22,29 @@ func testStringIterator() {
 
     iterator.increment();
     assert(!iterator.hasValue(), "testStringIterator: hasValue() - 3");
+}
+
+func testFind() {
+    var s = String("word");
+
+    // Start from beginning
+    assert(s.find('w') == 0, "The index of w is 0");
+    assert(s.find('o') == 1, "The index of o is 1");
+    assert(s.find('r') == 2, "The index of r is 2");
+    assert(s.find('d') == 3, "The index of d is 3");
+
+    // Start from index
+
+    assert(s.find('w', 1) == -1, "Not found if starting from later");
+    assert(s.find('d', 2) == 3, "Still found if starting from 2");
+}
+
+func testSubstr() {
+    var s = String("word");
+
+    assert(s.substr(0..1) == "w", "Substring works correctly");
+    assert(s.substr(0..2) == "wo", "Substring works correctly");
+    assert(s.substr(0..3) == "wor", "Substring works correctly");
+    assert(s.substr(1..3) == "or", "Substring works correctly");
+    assert(s.substr(2..3) == "r", "Substring works correctly");
 }
