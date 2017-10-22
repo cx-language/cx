@@ -46,8 +46,20 @@ func testSubstr() {
     assert(s.substr(0..1) == "w", "Substring works correctly");
     assert(s.substr(0..2) == "wo", "Substring works correctly");
     assert(s.substr(0..3) == "wor", "Substring works correctly");
+    assert(s.substr(0..4) == "word", "Substring works correctly");
+    assert(s.substr(1..4) == "ord", "Substring works correctly");
+    assert(s.substr(2..4) == "rd", "Substring works correctly");
     assert(s.substr(1..3) == "or", "Substring works correctly");
     assert(s.substr(2..3) == "r", "Substring works correctly");
+
+
+    var s2 = String("this is the best sentence");
+
+    assert(s2.substr(0..4) == "this" ,"Works with longer sentences");
+    assert(s2.substr(5..7) == "is", "Works with longer sentences");
+    assert(s2.substr(8..11) == "the", "Works with longer sentences");
+    assert(s2.substr(12..16) == "best", "Works with longer sentences");
+    assert(s2.substr(17..25) == "sentence", "Works with longer sentences");
 }
 
 func testSplit() {
@@ -55,5 +67,25 @@ func testSplit() {
 
     var words = s.split();
 
-    print(*words[0]);
+    assert(*words[0] == "this", "The 0 words match");
+    assert(*words[1] == "is", "The 1 words match");
+    assert(*words[2] == "the", "The 2 words match");
+    assert(*words[3] == "best", "The 3 words match");
+    assert(*words[4] == "sentence", "The 4 words match");
+
+    assert(words.size() == 5, "split into 5 parts");
+}
+
+func testOtherSplit() {
+    var s = String("this,sentence,is,comma,separated");
+
+    var words = s.split(',');
+
+    assert(*words[0] == "this", "The 0 words match");
+    assert(*words[1] == "sentence", "The 1 words match");
+    assert(*words[2] == "is", "The 2 words match");
+    assert(*words[3] == "comma", "The 3 words match");
+    assert(*words[4] == "separated", "The 4 words match");
+
+    assert(words.size() == 5, "split into 5 parts");
 }

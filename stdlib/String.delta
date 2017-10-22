@@ -86,23 +86,31 @@ class String {
         return -1;
     }
 
+    // Returns the substring of the string in the given range, [inclusive, exclusive]
     func substr(range: Range<int>) -> StringRef {
         return StringRef(characters[uint(range.start)], uint(range.size()));
     }
 
+    // Returns the substring of the string in the given range, [inclusive, exclusive]
     func substr(range: Range<uint>) -> StringRef {
         return StringRef(characters[range.start], range.size());
     }
 
+    // Splits the string by the given delimiter
     func split(delim: char) -> Array<StringRef> {
         var tokens = Array<StringRef>();
 
-        var prev: uint = 0;
-        var pos: uint = 0;
+        var prev: int = 0;
+        var pos: int = 0;
 
         while (true) {
-            pos = uint(find(delim, prev));
-            let token = substr(prev..(pos - prev));
+            pos = find(delim, uint(prev));
+
+            if (pos == -1) {
+                pos = int(size());
+            }
+
+            let token = substr(prev..pos);
 
             if (token.size() > 0) {
                 tokens.push(token);
@@ -110,13 +118,14 @@ class String {
 
             prev = pos + 1;
 
-            if (pos >= size() || prev >= size()) {
+            if (pos >= int(size()) || prev >= int(size())) {
                 break;
             }
         }
         return tokens;
     }
 
+    // Splits the string by whitespace
     func split() -> Array<StringRef> {
         return split(' ');
     }
