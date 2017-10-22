@@ -66,29 +66,35 @@ std::unique_ptr<FunctionDecl> FunctionDecl::instantiate(const llvm::StringMap<Ty
     auto proto = getProto().instantiate(genericArgs);
     auto body = ::instantiate(getBody(), genericArgs);
 
-    auto instantiation = llvm::make_unique<FunctionDecl>(std::move(proto), genericArgsArray,
-                                                         module, location);
+    std::unique_ptr<FunctionDecl> instantiation;
+
+    if (isMethodDecl()) {
+        instantiation = llvm::make_unique<MethodDecl>(std::move(proto), *getTypeDecl(),
+                                                      genericArgsArray, location);
+    } else {
+        instantiation = llvm::make_unique<FunctionDecl>(std::move(proto), genericArgsArray,
+                                                        module, location);
+    }
+
     instantiation->setBody(std::move(body));
     return instantiation;
 }
 
 MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl,
-                       SourceLocation location)
-: FunctionDecl(kind, std::move(proto), {}, *typeDecl.getModule(), location), typeDecl(&typeDecl),
-  mutating(false) {}
+                       std::vector<Type>&& genericArgs, SourceLocation location)
+: FunctionDecl(kind, std::move(proto), std::move(genericArgs), *typeDecl.getModule(), location),
+  typeDecl(&typeDecl), mutating(false) {}
 
-MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) {
-    std::unique_ptr<MethodDecl> instantiation;
-
+std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) {
     switch (getKind()) {
         case DeclKind::MethodDecl: {
             auto* methodDecl = llvm::cast<MethodDecl>(this);
             auto proto = methodDecl->getProto().instantiate(genericArgs);
-            instantiation = llvm::make_unique<MethodDecl>(std::move(proto), typeDecl,
-                                                          methodDecl->getLocation());
+            auto instantiation = llvm::make_unique<MethodDecl>(std::move(proto), typeDecl, std::vector<Type>(),
+                                                               methodDecl->getLocation());
             instantiation->setMutating(methodDecl->isMutating());
             instantiation->setBody(::instantiate(methodDecl->getBody(), genericArgs));
-            break;
+            return instantiation;
         }
         case DeclKind::InitDecl: {
             auto* initDecl = llvm::cast<InitDecl>(this);
@@ -96,30 +102,26 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, Ty
                 auto type = param.getType().resolve(genericArgs);
                 return ParamDecl(type, param.getName(), param.getLocation());
             });
-            instantiation = llvm::make_unique<InitDecl>(typeDecl, std::move(params), initDecl->getLocation());
+            auto instantiation = llvm::make_unique<InitDecl>(typeDecl, std::move(params), initDecl->getLocation());
             instantiation->setBody(::instantiate(initDecl->getBody(), genericArgs));
-            break;
+            return std::move(instantiation);
         }
         case DeclKind::DeinitDecl: {
             auto* deinitDecl = llvm::cast<DeinitDecl>(this);
-            instantiation = llvm::make_unique<DeinitDecl>(typeDecl, deinitDecl->getLocation());
+            auto instantiation = llvm::make_unique<DeinitDecl>(typeDecl, deinitDecl->getLocation());
             instantiation->setBody(::instantiate(deinitDecl->getBody(), genericArgs));
-            break;
+            return std::move(instantiation);
         }
         default:
             llvm_unreachable("invalid method decl");
     }
-
-    auto* pointer = instantiation.get();
-    typeDecl.addMethod(std::move(instantiation));
-    return llvm::cast<MethodDecl>(pointer);
 }
 
 void TypeDecl::addField(FieldDecl&& field) {
     fields.emplace_back(std::move(field));
 }
 
-void TypeDecl::addMethod(std::unique_ptr<MethodDecl> decl) {
+void TypeDecl::addMethod(std::unique_ptr<Decl> decl) {
     methods.emplace_back(std::move(decl));
 }
 
@@ -241,7 +243,28 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
             }
 
             for (auto& method : typeDecl->getMethods()) {
-                method->instantiate(genericArgs, *instantiation);
+                if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(method.get())) {
+                    instantiation->addMethod(nonTemplateMethod->instantiate(genericArgs, *instantiation));
+                } else {
+                    auto* functionTemplate = llvm::cast<FunctionTemplate>(method.get());
+                    auto* methodDecl = llvm::cast<MethodDecl>(functionTemplate->getFunctionDecl());
+                    auto methodInstantiation = methodDecl->MethodDecl::instantiate(genericArgs, *instantiation);
+
+                    std::vector<GenericParamDecl> genericParams;
+                    genericParams.reserve(functionTemplate->getGenericParams().size());
+
+                    for (auto& genericParam : functionTemplate->getGenericParams()) {
+                        genericParams.emplace_back(genericParam.getName().str(), genericParam.getLocation());
+
+                        for (auto& constraint : genericParam.getConstraints()) {
+                            genericParams.back().addConstraint(std::string(constraint));
+                        }
+                    }
+
+                    auto p = llvm::make_unique<FunctionTemplate>(std::move(genericParams),
+                                                                 std::move(methodInstantiation));
+                    instantiation->addMethod(std::move(p));
+                }
             }
 
             return std::move(instantiation);

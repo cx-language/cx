@@ -39,6 +39,7 @@ std::string delta::mangle(const FunctionTemplate& decl) {
 
     if (decl.getFunctionDecl()->getTypeDecl()) {
         receiverTypeName = decl.getFunctionDecl()->getTypeDecl()->getName();
+        appendGenericArgs(receiverTypeName, decl.getFunctionDecl()->getTypeDecl()->getGenericArgs());
     }
 
     return mangleFunctionTemplate(receiverTypeName, decl.getFunctionDecl()->getName());
@@ -64,4 +65,8 @@ std::string delta::mangleTypeDecl(llvm::StringRef typeName, llvm::ArrayRef<Type>
     std::string mangled = typeName;
     appendGenericArgs(mangled, genericArgs);
     return mangled;
+}
+
+std::string delta::mangle(const FieldDecl& decl) {
+    return (mangle(*decl.getParent()) + "." + decl.getName()).str();
 }

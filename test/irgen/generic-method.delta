@@ -1,0 +1,31 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+
+class X {
+    init() {}
+
+    // CHECK: define i32 @"X.f<int>"({}* %this, i32 ()* %t) {
+    // CHECK-NEXT: %1 = call i32 %t()
+    // CHECK-NEXT: ret i32 %1
+
+    // CHECK: define i1 @"X.f<bool>"({}* %this, i1 ()* %t) {
+    // CHECK-NEXT: %1 = call i1 %t()
+    // CHECK-NEXT: ret i1 %1
+    func f<T>(t: () -> T) -> T {
+        return t();
+    }
+}
+
+func g() -> int { return 0; }
+func h() -> bool { return false; }
+
+// MAIN: define i32 @main()
+func main() {
+    let x = X();
+
+    // MAIN: call i32 @"X.f<int>"({}* %x, i32 ()* @g)
+    x.f(g);
+
+    // MAIN: call i1 @"X.f<bool>"({}* %x, i1 ()* @h)
+    x.f(h);
+}

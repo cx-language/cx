@@ -957,7 +957,8 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiv
     FunctionProto proto(std::move(name), std::move(params), std::move(returnType), isVariadic, isExtern);
 
     if (receiverTypeDecl) {
-        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, nameLocation);
+        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl,
+                                             std::vector<Type>(), nameLocation);
     } else {
         return llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(),
                                                *currentModule, nameLocation);
@@ -1085,9 +1086,16 @@ std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericPa
             case FUNC: {
                 bool isMutating = lookAhead(-1) == MUTATING;
                 auto requireBody = tag != TypeTag::Interface;
-                auto methodDecl = cast_unique_ptr<MethodDecl>(parseFunctionDecl(typeDecl.get(), requireBody));
-                methodDecl->setMutating(isMutating);
-                typeDecl->addMethod(std::move(methodDecl));
+
+                if (lookAhead(2) == LT) {
+                    auto decl = parseFunctionTemplate(typeDecl.get());
+                    llvm::cast<MethodDecl>(decl->getFunctionDecl())->setMutating(isMutating);
+                    typeDecl->addMethod(std::move(decl));
+                } else {
+                    auto decl = llvm::cast<MethodDecl>(parseFunctionDecl(typeDecl.get(), requireBody));
+                    decl->setMutating(isMutating);
+                    typeDecl->addMethod(std::move(decl));
+                }
                 break;
             }
             case INIT:

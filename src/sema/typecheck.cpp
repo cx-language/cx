@@ -400,7 +400,9 @@ void TypeChecker::addToSymbolTable(TypeDecl& decl) const {
     addToSymbolTableWithName(decl, mangle(decl), true);
 
     for (auto& memberDecl : decl.getMemberDecls()) {
-        addToSymbolTable(*memberDecl);
+        if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl.get())) {
+            addToSymbolTable(*nonTemplateMethod);
+        }
     }
 }
 
@@ -505,12 +507,15 @@ std::vector<Decl*> TypeChecker::findDecls(llvm::StringRef name, bool everywhere,
                 if (functionDecl->getName() == name) {
                     decls.emplace_back(decl.get());
                 }
+            } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl.get())) {
+                if (mangle(*functionTemplate) == name) {
+                    decls.emplace_back(decl.get());
+                }
             }
         }
 
         for (auto& field : receiverTypeDecl->getFields()) {
-            if (field.getName() == name
-                || (receiverTypeDecl->getName() + "." + field.getName()).str() == name) {
+            if (field.getName() == name || mangle(field) == name) {
                 decls.emplace_back(&field);
             }
         }
@@ -795,6 +800,7 @@ void TypeChecker::typecheckMemberDecl(Decl& decl) const {
         case DeclKind::InitDecl:
         case DeclKind::DeinitDecl: typecheckFunctionDecl(llvm::cast<MethodDecl>(decl)); break;
         case DeclKind::FieldDecl: typecheckFieldDecl(llvm::cast<FieldDecl>(decl)); break;
+        case DeclKind::FunctionTemplate: typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl)); break;
         default: llvm_unreachable("invalid member declaration kind");
     }
 }
@@ -809,6 +815,9 @@ void TypeChecker::postProcess() {
         for (auto* decl : genericFunctionInstantiations) {
             switch (decl->getKind()) {
                 case DeclKind::FunctionDecl:
+                case DeclKind::MethodDecl:
+                case DeclKind::InitDecl:
+                case DeclKind::DeinitDecl:
                     typecheckFunctionDecl(*llvm::cast<FunctionDecl>(decl));
                     break;
                 case DeclKind::FunctionTemplate:

@@ -203,16 +203,18 @@ private:
 
 class MethodDecl : public FunctionDecl {
 public:
-    MethodDecl(FunctionProto proto, TypeDecl& receiverTypeDecl, SourceLocation location)
-    : MethodDecl(DeclKind::MethodDecl, std::move(proto), receiverTypeDecl, location) {}
+    MethodDecl(FunctionProto proto, TypeDecl& receiverTypeDecl,
+               std::vector<Type>&& genericArgs, SourceLocation location)
+    : MethodDecl(DeclKind::MethodDecl, std::move(proto), receiverTypeDecl, std::move(genericArgs), location) {}
     bool isMutating() const override { return mutating; }
     void setMutating(bool mutating) { this->mutating = mutating; }
     TypeDecl* getTypeDecl() const override { return typeDecl; }
-    MethodDecl* instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl);
+    std::unique_ptr<MethodDecl> instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl);
     static bool classof(const Decl* d) { return d->isMethodDecl(); }
 
 protected:
-    MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, SourceLocation location);
+    MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl,
+               std::vector<Type>&& genericArgs, SourceLocation location);
 
 private:
     TypeDecl* typeDecl;
@@ -224,7 +226,7 @@ public:
     InitDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, SourceLocation location)
     : MethodDecl(DeclKind::InitDecl,
                  FunctionProto("init", std::move(params), Type::getVoid(), false, false),
-                 receiverTypeDecl, location) {}
+                 receiverTypeDecl, {}, location) {}
     bool isMutating() const override { return true; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }
 };
@@ -234,7 +236,7 @@ public:
     DeinitDecl(TypeDecl& receiverTypeDecl, SourceLocation location)
     : MethodDecl(DeclKind::DeinitDecl,
                  FunctionProto("deinit", {}, Type::getVoid(), false, false),
-                 receiverTypeDecl, location) {}
+                 receiverTypeDecl, {}, location) {}
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 };
 
@@ -269,12 +271,12 @@ public:
     llvm::StringRef getName() const { return name; }
     llvm::ArrayRef<FieldDecl> getFields() const { return fields; }
     std::vector<FieldDecl>& getFields() { return fields; }
-    llvm::ArrayRef<std::unique_ptr<MethodDecl>> getMethods() const { return methods; }
+    llvm::ArrayRef<std::unique_ptr<Decl>> getMethods() const { return methods; }
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     SourceLocation getLocation() const { return location; }
     void addField(FieldDecl&& field);
-    void addMethod(std::unique_ptr<MethodDecl> decl);
-    llvm::ArrayRef<std::unique_ptr<MethodDecl>> getMemberDecls() const { return methods; }
+    void addMethod(std::unique_ptr<Decl> decl);
+    llvm::ArrayRef<std::unique_ptr<Decl>> getMemberDecls() const { return methods; }
     DeinitDecl* getDeinitializer() const;
     Type getType(bool isMutable = false) const;
     /// 'T&' if this is class, or plain 'T' otherwise.
@@ -293,7 +295,7 @@ private:
     std::string name;
     std::vector<Type> genericArgs;
     std::vector<FieldDecl> fields;
-    std::vector<std::unique_ptr<MethodDecl>> methods;
+    std::vector<std::unique_ptr<Decl>> methods;
     SourceLocation location;
     Module& module;
 };

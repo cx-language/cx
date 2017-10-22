@@ -400,17 +400,28 @@ static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
                 }
             }
             return type.getName() == genericParam;
+
         case TypeKind::ArrayType:
             return containsGenericParam(type.getElementType(), genericParam);
+
         case TypeKind::TupleType:
             llvm_unreachable("unimplemented");
+
         case TypeKind::FunctionType:
-            llvm_unreachable("unimplemented");
+            for (Type paramType : type.getParamTypes()) {
+                if (containsGenericParam(paramType, genericParam)) {
+                    return true;
+                }
+            }
+            return containsGenericParam(type.getReturnType(), genericParam);
+
         case TypeKind::PointerType:
             return containsGenericParam(type.getPointee(), genericParam);
+
         case TypeKind::OptionalType:
             return containsGenericParam(type.getWrappedType(), genericParam);
     }
+
     llvm_unreachable("all cases handled");
 }
 
@@ -431,26 +442,40 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
                 }
             }
             return nullptr;
+
         case TypeKind::ArrayType:
             if (paramType.isArrayType()) {
                 return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam);
             }
             return nullptr;
+
         case TypeKind::TupleType:
             llvm_unreachable("unimplemented");
+
         case TypeKind::FunctionType:
-            llvm_unreachable("unimplemented");
+            if (paramType.isFunctionType()) {
+                for (auto t : llvm::zip_first(argType.getParamTypes(), paramType.getParamTypes())) {
+                    if (Type type = findGenericArg(std::get<0>(t), std::get<1>(t), genericParam)) {
+                        return type;
+                    }
+                }
+                return findGenericArg(argType.getReturnType(), paramType.getReturnType(), genericParam);
+            }
+            return nullptr;
+
         case TypeKind::PointerType:
             if (paramType.isPointerType()) {
                 return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
             }
             return nullptr;
+
         case TypeKind::OptionalType:
             if (paramType.isOptionalType()) {
                 return findGenericArg(argType.getWrappedType(), paramType.getWrappedType(), genericParam);
             }
             return nullptr;
     }
+
     llvm_unreachable("all cases handled");
 }
 

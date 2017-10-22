@@ -1,0 +1,19 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+
+class X<T> {
+    init() {}
+
+    // CHECK: define void @"X<int>.f<bool>"({}* %this, i32 (i1)* %u)
+    mutating func f<U>(u: (U) -> T) {}
+}
+
+func g(i: bool) -> int { return int(i); }
+
+// MAIN: define i32 @main()
+func main() {
+    var x = X<int>();
+
+    // MAIN: call void @"X<int>.f<bool>"({}* %x, i32 (i1)* @g)
+    x.f(g);
+}
