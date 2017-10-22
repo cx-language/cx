@@ -1,0 +1,10 @@
+// RUN: check_exit_status 254 %delta run %s | %FileCheck %s
+
+func main() -> int {
+    var s = String("ok");
+    s.substr(0..5);
+    return 0;
+}
+
+// CHECK: Range index 5 is out of bounds, size is 2
+// CHECK: Abort

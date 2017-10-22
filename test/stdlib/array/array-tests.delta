@@ -28,6 +28,7 @@ func main() {
 
     testArrayIterator(a);
     testArrayMutatingIteration();
+    testEmpty();
 }
 
 func testArrayIterator(array: Array<C>* ) {
@@ -57,4 +58,14 @@ func testArrayMutatingIteration() {
     assert(*a[0] == 2, "mutating iteration modified elements in the array");
     assert(*a[1] == 3, "mutating iteration modified elements in the array");
     assert(*a[2] == 4, "mutating iteration modified elements in the array");
+}
+
+func testEmpty() {
+    var a = Array<int>();
+
+    assert(a.isEmpty(), "The array is empty");
+
+    a.push(7);
+
+    assert(!a.isEmpty(), "The array is now not empty");
 }

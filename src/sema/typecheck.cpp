@@ -106,6 +106,7 @@ void TypeChecker::typecheckReturnStmt(ReturnStmt& stmt) const {
 
     stmt.getReturnValue()->setType(convertedType ? convertedType : returnValueType);
     checkReturnPointerToLocal(stmt);
+    stmt.getReturnValue()->setMoved(true);
 }
 
 void TypeChecker::typecheckVarStmt(VarStmt& stmt) const {

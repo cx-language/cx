@@ -68,6 +68,81 @@ class String {
         // TODO: When implicit initializers have been implemented, remove the StringRef() call below.
         return StringIterator(StringRef(this));
     }
+
+    /// Returns the index of the given character, or -1 if it's not found
+    func find(c: char) -> int {
+        return find(c, 0);
+    }
+
+    /// Returns the index of the given character, or -1 if it's not found.
+    /// Starts from start
+    func find(c: char, start: uint) -> int {
+
+        for (let i in start..size()) {
+            if (*characters[i] == c) {
+                return int(i);
+            }
+        }
+        return -1;
+    }
+
+    // Returns the substring of the string in the given range, [inclusive, exclusive]
+    func substr(range: Range<int>) -> StringRef {
+        if (range.end > int(size())) {
+            _indexOutOfBounds(range.end);
+        }
+        return StringRef(characters[uint(range.start)], uint(range.size()));
+    }
+
+    // Returns the substring of the string in the given range, [inclusive, exclusive]
+    func substr(range: Range<uint>) -> StringRef {
+        if (range.end > size()) {
+            _indexOutOfBounds(range.end);
+        }
+        return StringRef(characters[range.start], range.size());
+    }
+
+    // Splits the string by the given delimiter
+    func split(delim: char) -> Array<StringRef> {
+        var tokens = Array<StringRef>();
+
+        var prev: int = 0;
+        var pos: int = 0;
+
+        while (true) {
+            pos = find(delim, uint(prev));
+
+            if (pos == -1) {
+                pos = int(size());
+            }
+
+            let token = substr(prev..pos);
+            tokens.push(token);
+
+            prev = pos + 1;
+
+            if (pos > int(size()) || prev > int(size())) {
+                break;
+            }
+        }
+        return tokens;
+    }
+
+    // Splits the string by whitespace
+    func split() -> Array<StringRef> {
+        return split(' ');
+    }
+
+    func _indexOutOfBounds(index: uint) {
+        printf("Range index %d is out of bounds, size is %d\n", index, size());
+        fatalError();
+    }
+
+    func _indexOutOfBounds(index: int) {
+        printf("Range index %d is out of bounds, size is %d\n", index, size());
+        fatalError();
+    }
+
 }
 
 func +(a: StringRef, b: StringRef) -> String {
