@@ -112,8 +112,7 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
 
     switch (decl->getKind()) {
         case DeclKind::VarDecl:
-            codegenVarDecl(*llvm::cast<VarDecl>(decl));
-            return globalScope().getLocalValues().find(llvm::cast<VarDecl>(decl)->getName())->second;
+            return codegenVarDecl(*llvm::cast<VarDecl>(decl));
 
         case DeclKind::FieldDecl:
             return codegenMemberAccess(findValue("this", nullptr),
@@ -656,8 +655,11 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
     return structType;
 }
 
-void IRGenerator::codegenVarDecl(const VarDecl& decl) {
-    if (globalScope().getLocalValues().find(decl.getName()) != globalScope().getLocalValues().end()) return;
+llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
+    if (auto* value = module.getGlobalVariable(decl.getName(), true)) return value;
+
+    auto it = globalScope().getLocalValues().find(decl.getName());
+    if (it != globalScope().getLocalValues().end()) return it->second;
 
     llvm::Value* value = decl.getInitializer() ? codegenExpr(*decl.getInitializer()) : nullptr;
 
@@ -669,6 +671,7 @@ void IRGenerator::codegenVarDecl(const VarDecl& decl) {
     }
 
     globalScope().addLocalValue(decl.getName(), value);
+    return value;
 }
 
 void IRGenerator::codegenDecl(const Decl& decl) {

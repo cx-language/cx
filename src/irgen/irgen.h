@@ -129,7 +129,7 @@ private:
     void codegenFunctionDecl(const FunctionDecl& decl);
     void codegenInitDecl(const InitDecl& decl);
     llvm::StructType* codegenTypeDecl(const TypeDecl& decl);
-    void codegenVarDecl(const VarDecl& decl);
+    llvm::Value* codegenVarDecl(const VarDecl& decl);
 
     llvm::Value* getFunctionForCall(const CallExpr& call);
     llvm::Function* getFunctionProto(const FunctionDecl& decl, Type receiverType = nullptr,
