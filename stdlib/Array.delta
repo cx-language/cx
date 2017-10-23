@@ -10,6 +10,16 @@ class Array<Element> {
         capacity = 0;
     }
 
+    /// Initializes an empty array with pre-allocated capacity.
+    init(capacity: uint) {
+        // TODO: Call Array.init() when initializers can call other initializers.
+        bufferPointer = null;
+        size = 0;
+        this.capacity = 0;
+
+        reserve(capacity);
+    }
+
     deinit() {
         free(cast<mutable void*?>(bufferPointer));
     }
@@ -148,6 +158,28 @@ class Array<Element> {
 
     mutating func iterator() -> MutableArrayIterator<Element> {
         return MutableArrayIterator(this);
+    }
+
+    func map<Input, Output>(transform: (Input) -> Output) -> Array<Output> {
+        var output = Array<Output>(capacity: this.size);
+
+        for (let element in this) {
+            output.push(transform(element));
+        }
+
+        return output;
+    }
+
+    func filter<Input>(include: (Input) -> bool) -> Array<Element> {
+        var output = Array<Element>();
+
+        for (let element in this) {
+            if (include(element)) {
+                output.push(*element);
+            }
+        }
+
+        return output;
     }
 
     mutating func _grow() {

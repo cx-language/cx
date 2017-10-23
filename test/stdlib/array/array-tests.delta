@@ -29,6 +29,8 @@ func main() {
     testArrayIterator(a);
     testArrayMutatingIteration();
     testEmpty();
+    testMap();
+    testFilter();
 }
 
 func testArrayIterator(array: Array<C>* ) {
@@ -68,4 +70,42 @@ func testEmpty() {
     a.push(7);
 
     assert(!a.isEmpty(), "The array is now not empty");
+}
+
+// TODO: Change 'value' to type 'int' when pointer auto-dereferencing is implemented.
+func gt2(value: int*) -> bool {
+    return *value > 2;
+}
+
+func testMap() {
+    var a = Array<int>();
+    a.push(1);
+    a.push(2);
+    a.push(3);
+    a.push(4);
+
+    let b = a.map(gt2);
+    assert(b.size() == 4, "testMap 1");
+    assert(*b[0] == false, "testMap 2");
+    assert(*b[1] == false, "testMap 3");
+    assert(*b[2] == true, "testMap 4");
+    assert(*b[3] == true, "testMap 5");
+}
+
+// TODO: Change 'value' to type 'int' when pointer auto-dereferencing is implemented.
+func even(value: int*) -> bool {
+    return *value % 2 == 0;
+}
+
+func testFilter() {
+    var a = Array<int>();
+    a.push(1);
+    a.push(2);
+    a.push(3);
+    a.push(4);
+
+    let b = a.filter(even);
+    assert(b.size() == 2, "testFilter 1");
+    assert(*b[0] == 2, "testFilter 2");
+    assert(*b[1] == 4, "testFilter 3");
 }
