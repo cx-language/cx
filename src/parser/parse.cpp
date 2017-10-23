@@ -137,6 +137,8 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token end, Decl* parent);
 std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, Token end3, Decl* parent);
 Type parseType();
 std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams);
+std::vector<ParamDecl> parseParamList(bool* isVariadic, bool withTypes);
+ParamDecl parseParam(bool withType);
 
 /// argument-list ::= '(' ')' | '(' nonempty-argument-list ')'
 /// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
@@ -458,6 +460,22 @@ std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> callee) {
                                        std::move(genericArgs), location);
 }
 
+std::unique_ptr<LambdaExpr> parseLambdaExpr() {
+    ASSERT(currentToken().is(LPAREN, IDENTIFIER));
+    auto location = getCurrentLocation();
+    std::vector<ParamDecl> params;
+
+    if (currentToken() == IDENTIFIER) {
+        params.push_back(parseParam(true));
+    } else {
+        params = parseParamList(nullptr, true);
+    }
+
+    parse(RARROW);
+    auto body = parseExpr();
+    return llvm::make_unique<LambdaExpr>(std::move(params), std::move(body), location);
+}
+
 /// paren-expr ::= '(' expr ')'
 std::unique_ptr<Expr> parseParenExpr() {
     ASSERT(currentToken() == LPAREN);
@@ -478,7 +496,7 @@ bool shouldParseGenericArgumentList() {
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
 ///                  paren-expr | array-literal | cast-expr | subscript-expr | member-expr
-///                  unwrap-expr
+///                  unwrap-expr | lambda-expr
 std::unique_ptr<Expr> parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
     switch (currentToken()) {
@@ -501,7 +519,15 @@ std::unique_ptr<Expr> parsePostfixExpr() {
         case TRUE: case FALSE: expr = parseBoolLiteral(); break;
         case NULL_LITERAL: expr = parseNullLiteral(); break;
         case THIS: expr = parseThis(); break;
-        case LPAREN: expr = parseParenExpr(); break;
+        case LPAREN:
+            if (lookAhead(1) == RPAREN && lookAhead(2) == RARROW) {
+                expr = parseLambdaExpr();
+            } else if (lookAhead(1) == IDENTIFIER && lookAhead(2) == COLON) {
+                expr = parseLambdaExpr();
+            } else {
+                expr = parseParenExpr();
+            }
+            break;
         case LBRACKET: expr = parseArrayLiteral(); break;
         case CAST: expr = parseCastExpr(); break;
         case SIZEOF: expr = parseSizeofExpr(); break;
@@ -865,17 +891,22 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, 
 }
 
 /// param-decl ::= id ':' type
-ParamDecl parseParam() {
+ParamDecl parseParam(bool withType) {
     auto name = parse(IDENTIFIER);
-    parse(COLON);
-    auto type = parseType();
+    Type type;
+
+    if (withType) {
+        parse(COLON);
+        type = parseType();
+    }
+
     return ParamDecl(std::move(type), std::move(name.getString()), name.getLocation());
 }
 
 /// param-list ::= '(' params ')'
 /// params ::= '' | non-empty-params
 /// non-empty-params ::= param-decl | param-decl ',' non-empty-params
-std::vector<ParamDecl> parseParamList(bool* isVariadic) {
+std::vector<ParamDecl> parseParamList(bool* isVariadic, bool withTypes) {
     parse(LPAREN);
     std::vector<ParamDecl> params;
     while (currentToken() != RPAREN) {
@@ -884,7 +915,7 @@ std::vector<ParamDecl> parseParamList(bool* isVariadic) {
             *isVariadic = true;
             break;
         }
-        params.emplace_back(parseParam());
+        params.emplace_back(parseParam(withTypes));
         if (currentToken() != RPAREN) parse(COMMA);
     }
     parse(RPAREN);
@@ -942,7 +973,7 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiv
     }
 
     bool isVariadic = false;
-    auto params = parseParamList(isExtern ? &isVariadic : nullptr);
+    auto params = parseParamList(isExtern ? &isVariadic : nullptr, true);
 
     Type returnType = Type::getVoid();
     if (currentToken() == RARROW) {
@@ -1012,7 +1043,7 @@ std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
 /// init-decl ::= 'init' param-list '{' stmt* '}'
 std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl) {
     auto initLocation = parse(INIT).getLocation();
-    auto params = parseParamList(nullptr);
+    auto params = parseParamList(nullptr, true);
     auto decl = llvm::make_unique<InitDecl>(receiverTypeDecl, std::move(params), initLocation);
     parse(LBRACE);
     decl->setBody(parseStmtsUntil(RBRACE, decl.get()));

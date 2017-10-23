@@ -110,6 +110,8 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
         return value;
     }
 
+    ASSERT(decl);
+
     switch (decl->getKind()) {
         case DeclKind::VarDecl:
             return codegenVarDecl(*llvm::cast<VarDecl>(decl));

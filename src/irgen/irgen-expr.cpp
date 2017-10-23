@@ -475,6 +475,23 @@ llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {
     return codegenExpr(expr.getOperand());
 }
 
+llvm::Value* IRGenerator::codegenLambdaExpr(const LambdaExpr& expr) {
+    auto functionDecl = expr.lower(*currentDecl->getModule());
+
+    auto insertBlockBackup = builder.GetInsertBlock();
+    auto insertPointBackup = builder.GetInsertPoint();
+    auto scopesBackup = std::move(scopes);
+
+    codegenFunctionDecl(*functionDecl);
+
+    scopes = std::move(scopesBackup);
+    if (insertBlockBackup) builder.SetInsertPoint(insertBlockBackup, insertPointBackup);
+
+    VarExpr varExpr(functionDecl->getName(), functionDecl->getLocation());
+    varExpr.setDecl(functionDecl.get());
+    return codegenVarExpr(varExpr);
+}
+
 llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr: return codegenVarExpr(llvm::cast<VarExpr>(expr));
@@ -494,6 +511,7 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
         case ExprKind::MemberExpr: return codegenMemberExpr(llvm::cast<MemberExpr>(expr));
         case ExprKind::SubscriptExpr: return codegenSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
         case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
+        case ExprKind::LambdaExpr: return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }
@@ -517,6 +535,7 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
         case ExprKind::MemberExpr: return codegenLvalueMemberExpr(llvm::cast<MemberExpr>(expr));
         case ExprKind::SubscriptExpr: return codegenLvalueSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
         case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
+        case ExprKind::LambdaExpr: return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }

@@ -1,0 +1,17 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define void @f(i32 (i32, i32)* %a)
+func f(a: (int, int) -> int) {
+    // CHECK-NEXT: call i32 %a(i32 1, i32 2)
+    _ = a(1, 2);
+}
+
+// CHECK: define i32 @main()
+func main() {
+    // CHECK-NEXT: call void @f(i32 (i32, i32)* [[LAMBDA:@__lambda[0-9]+]])
+    f((a: int, b: int) -> a + b);
+}
+
+// CHECK: define i32 [[LAMBDA]](i32 %a, i32 %b)
+// CHECK-NEXT: %1 = add i32 %a, %b
+// CHECK-NEXT: ret i32 %1

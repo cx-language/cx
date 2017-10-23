@@ -362,6 +362,10 @@ void TypeChecker::typecheckParamDecl(ParamDecl& decl) const {
         error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
 
+    if (decl.getType().isMutable()) {
+        error(decl.getLocation(), "parameter types cannot be 'mutable'");
+    }
+
     typecheckType(decl.getType(), decl.getLocation());
     getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 }
@@ -560,6 +564,12 @@ void TypeChecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
     }
 }
 
+void TypeChecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params) const {
+    for (auto& param : params) {
+        typecheckParamDecl(param);
+    }
+}
+
 void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
     if (decl.isTypechecked()) return;
     if (decl.isExtern()) return; // TODO: Typecheck parameters and return type of extern functions.
@@ -570,12 +580,7 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
     SAVE_STATE(currentFunction);
     currentFunction = &decl;
 
-    for (ParamDecl& param : decl.getParams()) {
-        if (param.getType().isMutable()) {
-            error(param.getLocation(), "parameter types cannot be 'mutable'");
-        }
-        typecheckParamDecl(param);
-    }
+    typecheckParams(decl.getParams());
 
     typecheckType(decl.getReturnType(), decl.getLocation());
     if (decl.getReturnType().isMutable()) error(decl.getLocation(), "return types cannot be 'mutable'");

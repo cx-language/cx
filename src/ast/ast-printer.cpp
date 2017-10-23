@@ -26,6 +26,17 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr);
 std::ostream& operator<<(std::ostream& out, const Stmt& stmt);
 std::ostream& operator<<(std::ostream& out, const Decl& decl);
 
+std::ostream& operator<<(std::ostream& out, llvm::ArrayRef<ParamDecl> params) {
+    out << "(";
+
+    for (const ParamDecl& param : params) {
+        out << param;
+        if (&param != &params.back()) out << " ";
+    }
+
+    return out << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const VarExpr& expr) {
     return out << expr.getIdentifier();
 }
@@ -102,6 +113,10 @@ std::ostream& operator<<(std::ostream& out, const UnwrapExpr& expr) {
     return out << "(unwrap " << expr.getOperand() << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const LambdaExpr& expr) {
+    return out << "(lambda " << expr.getParams() << " " << *expr.getBody() << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr: return out << llvm::cast<VarExpr>(expr);
@@ -121,6 +136,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::MemberExpr: return out << llvm::cast<MemberExpr>(expr);
         case ExprKind::SubscriptExpr: return out << llvm::cast<SubscriptExpr>(expr);
         case ExprKind::UnwrapExpr: return out << llvm::cast<UnwrapExpr>(expr);
+        case ExprKind::LambdaExpr: return out << llvm::cast<LambdaExpr>(expr);
     }
     llvm_unreachable("all cases handled");
 }
@@ -243,14 +259,7 @@ std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {
 std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
     out << br << (decl.isExtern() ? "(extern-function-decl " : "(function-decl ");
     delta::operator<<(out, decl.getName());
-
-    out << " (";
-    for (const ParamDecl& param : decl.getParams()) {
-        out << param;
-        if (&param != &decl.getParams().back()) out << " ";
-    }
-    out << ") " << decl.getReturnType();
-
+    out << " " << decl.getParams() << " " << decl.getReturnType();
     if (!decl.isExtern()) out << decl.getBody();
     return out << ")";
 }

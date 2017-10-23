@@ -29,7 +29,7 @@ static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
     if (movable->isMoved()) {
         std::string typeInfo;
 
-        if (expr.getType()) {
+        if (expr.hasType()) {
             typeInfo = " of type '" + expr.getType().toString() + "'";
         }
 
@@ -1166,6 +1166,18 @@ Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) const {
     return type.getWrappedType();
 }
 
+Type TypeChecker::typecheckLambdaExpr(LambdaExpr& expr) const {
+    getCurrentModule()->getSymbolTable().pushScope();
+
+    typecheckParams(expr.getParams());
+    auto returnType = typecheckExpr(*expr.getBody());
+    
+    getCurrentModule()->getSymbolTable().popScope();
+
+    auto paramTypes = map(expr.getParams(), [](const ParamDecl& p) { return p.getType(); });
+    return FunctionType::get(returnType, std::move(paramTypes));
+}
+
 Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
     llvm::Optional<Type> type;
 
@@ -1187,6 +1199,7 @@ Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
         case ExprKind::MemberExpr: type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr)); break;
         case ExprKind::SubscriptExpr: type = typecheckSubscriptExpr(llvm::cast<SubscriptExpr>(expr)); break;
         case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;
+        case ExprKind::LambdaExpr: type = typecheckLambdaExpr(llvm::cast<LambdaExpr>(expr)); break;
     }
 
     expr.setType(*type);

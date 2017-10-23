@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_map>
 #include <vector>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
@@ -27,10 +28,10 @@ struct Scope {
         deinitsToCall.emplace_back(DeferredDeinit{deinit, value, type, decl});
     }
     void addLocalValue(std::string&& name, llvm::Value* value) {
-        bool didInsert = localValues.try_emplace(std::move(name), value).second;
+        bool didInsert = localValues.emplace(std::move(name), value).second;
         ASSERT(didInsert);
     }
-    const llvm::StringMap<llvm::Value*>& getLocalValues() const { return localValues; }
+    const std::unordered_map<std::string, llvm::Value*>& getLocalValues() const { return localValues; }
     void onScopeEnd();
     void clear();
 
@@ -44,7 +45,7 @@ private:
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
     llvm::SmallVector<DeferredDeinit, 8> deinitsToCall;
-    llvm::StringMap<llvm::Value*> localValues;
+    std::unordered_map<std::string, llvm::Value*> localValues;
     IRGenerator* irGenerator;
 };
 
@@ -108,6 +109,7 @@ private:
     llvm::Value* codegenLvalueSubscriptExpr(const SubscriptExpr& expr);
     llvm::Value* codegenSubscriptExpr(const SubscriptExpr& expr);
     llvm::Value* codegenUnwrapExpr(const UnwrapExpr& expr);
+    llvm::Value* codegenLambdaExpr(const LambdaExpr& expr);
     llvm::Value* codegenLvalueExpr(const Expr& expr);
 
     void codegenDeferredExprsAndDeinitCallsForReturn();
@@ -162,7 +164,7 @@ private:
 
 private:
     llvm::Optional<TypeChecker> currentTypeChecker;
-    llvm::SmallVector<Scope, 4> scopes;
+    std::vector<Scope> scopes;
 
     llvm::IRBuilder<> builder;
     llvm::Module module;

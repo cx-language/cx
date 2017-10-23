@@ -60,6 +60,7 @@ public:
     void postProcess();
 
 private:
+    void typecheckParams(llvm::MutableArrayRef<ParamDecl> params) const;
     void typecheckFunctionDecl(FunctionDecl& decl) const;
     void typecheckFunctionTemplate(FunctionTemplate& decl) const;
     void typecheckMemberDecl(Decl& decl) const;
@@ -95,6 +96,7 @@ private:
     Type typecheckMemberExpr(MemberExpr& expr) const;
     Type typecheckSubscriptExpr(SubscriptExpr& expr) const;
     Type typecheckUnwrapExpr(UnwrapExpr& expr) const;
+    Type typecheckLambdaExpr(LambdaExpr& expr) const;
 
     bool isInterface(Type type) const;
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;

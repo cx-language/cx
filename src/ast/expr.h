@@ -12,6 +12,8 @@
 namespace delta {
 
 class Decl;
+class FunctionDecl;
+class Module;
 
 enum class ExprKind {
     VarExpr,
@@ -31,6 +33,7 @@ enum class ExprKind {
     MemberExpr,
     SubscriptExpr,
     UnwrapExpr,
+    LambdaExpr
 };
 
 class Expr {
@@ -54,9 +57,11 @@ public:
     bool isMemberExpr() const { return getKind() == ExprKind::MemberExpr; }
     bool isSubscriptExpr() const { return getKind() == ExprKind::SubscriptExpr; }
     bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
+    bool isLambdaExpr() const { return getKind() == ExprKind::LambdaExpr; }
 
     ExprKind getKind() const { return kind; }
-    Type getType() const { return type; }
+    bool hasType() const { return type.get() != nullptr; }
+    Type getType() const { ASSERT(type); return type; }
     void setType(Type type) { ASSERT(type); this->type = type; }
     bool isLvalue() const;
     bool isRvalue() const { return !isLvalue(); }
@@ -326,7 +331,7 @@ public:
 };
 
 /// A postfix expression that unwraps an optional (nullable) value, yielding the value wrapped by
-//  the optional, for example 'foo!'. If the optional is null, the operation triggers an assertion
+/// the optional, for example 'foo!'. If the optional is null, the operation triggers an assertion
 /// error (by default), or causes undefined behavior (in unchecked mode).
 class UnwrapExpr : public Expr {
 public:
@@ -337,6 +342,23 @@ public:
 
 private:
     std::unique_ptr<Expr> operand;
+};
+
+class LambdaExpr : public Expr {
+public:
+    LambdaExpr(std::vector<ParamDecl>&& params, std::unique_ptr<Expr> body,
+               SourceLocation location)
+    : Expr(ExprKind::LambdaExpr, location), params(std::move(params)),
+      body(std::move(body)) {}
+    llvm::ArrayRef<ParamDecl> getParams() const { return params; }
+    llvm::MutableArrayRef<ParamDecl> getParams() { return params; }
+    Expr* getBody() const { return body.get(); }
+    std::unique_ptr<FunctionDecl> lower(Module& module) const;
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::LambdaExpr; }
+
+private:
+    std::vector<ParamDecl> params;
+    std::unique_ptr<Expr> body;
 };
 
 }
