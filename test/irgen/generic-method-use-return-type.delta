@@ -1,5 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=X-INT-G
 
 class X<T> {
     // CHECK-DAG: define {} @"X<int>.f<bool>"({}* %this, i1 %u)
@@ -8,7 +9,7 @@ class X<T> {
         return x;
     }
 
-    // CHECK-DAG: define void @"X<int>.g"({}* %this)
+    // X-INT-G-NOT: define void @"X<int>.g"({}* %this)
     // CHECK-DAG: define void @"X<bool>.g"({}* %this)
     func g() {}
 }

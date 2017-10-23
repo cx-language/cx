@@ -395,12 +395,16 @@ llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type membe
             baseValue = builder.CreateLoad(baseValue);
         }
         auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
-        auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(memberName);
-        auto* gep = builder.CreateStructGEP(nullptr, baseValue, index);
+
         if (baseTypeDecl.isUnion()) {
-            return builder.CreateBitCast(gep, toIR(memberType)->getPointerTo(), memberName);
+            return builder.CreateBitCast(baseValue, toIR(memberType)->getPointerTo(), memberName);
+        } else {
+            auto index = baseTypeDecl.getFieldIndex(memberName);
+            if (!baseType->isSized()) {
+                codegenTypeDecl(baseTypeDecl);
+            }
+            return builder.CreateStructGEP(nullptr, baseValue, index);
         }
-        return gep;
     } else {
         auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
         auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(memberName);

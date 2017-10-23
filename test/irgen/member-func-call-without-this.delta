@@ -1,15 +1,18 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-S
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 
 struct S {
-    // CHECK: define void @S.foo({}* %this)
-    // CHECK-NEXT: %this1 = load {}, {}* %this
-    // CHECK-NEXT: call void @S.bar({} %this1)
+    init() {}
+
+    // CHECK-S: define void @S.foo({}* %this)
+    // CHECK-S-NEXT: %this1 = load {}, {}* %this
+    // CHECK-S-NEXT: call void @S.bar({} %this1)
     mutating func foo() {
         bar()
     }
 
-    // CHECK: define void @S.bar({} %this)
+    // CHECK-S: define void @S.bar({} %this)
     func bar() { }
 }
 
@@ -32,6 +35,9 @@ class T<U> {
 }
 
 func main() {
+    var s = S()
+    s.foo()
+
     var t = T<int>()
     // CHECK-MAIN: call void @"T<int>.baz"({}* %t)
     t.baz()

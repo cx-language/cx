@@ -154,7 +154,7 @@ unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
             return static_cast<unsigned>(p.index());
         }
     }
-    fatalError("unknown field");
+    llvm_unreachable("unknown field");
 }
 
 TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {

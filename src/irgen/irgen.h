@@ -168,7 +168,6 @@ private:
     llvm::Module module;
 
     llvm::StringMap<FunctionInstantiation> functionInstantiations;
-    std::vector<std::unique_ptr<FunctionDecl>> helperDecls;
     llvm::StringMap<std::pair<llvm::StructType*, const TypeDecl*>> structs;
     const Decl* currentDecl;
 

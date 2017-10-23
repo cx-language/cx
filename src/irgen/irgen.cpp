@@ -607,23 +607,44 @@ std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
 llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
     if (decl.isInterface()) return nullptr;
 
-    auto it = structs.find(mangle(decl));
-    if (it != structs.end()) return it->second.first;
-
     llvm::StructType* structType;
+    auto it = structs.find(mangle(decl));
 
-    if (decl.getFields().empty()) {
-        structType = llvm::StructType::get(ctx);
-        structs.try_emplace(mangle(decl), std::make_pair(structType, &decl));
+    if (it != structs.end()) {
+        structType = it->second.first;
     } else {
-        structType = llvm::StructType::create(ctx, mangle(decl));
+        if (decl.getFields().empty()) {
+            structType = llvm::StructType::get(ctx);
+        } else {
+            structType = llvm::StructType::create(ctx, mangle(decl));
+        }
+
         structs.try_emplace(mangle(decl), std::make_pair(structType, &decl));
-        structType->setBody(getFieldTypes(decl));
     }
+
+    auto fieldTypes = getFieldTypes(decl);
+
+    if (!structType->isOpaque()) {
+        return structType;
+    }
+
+    structType->setBody(std::move(fieldTypes));
 
     auto insertBlockBackup = builder.GetInsertBlock();
     auto insertPointBackup = builder.GetInsertPoint();
     auto scopesBackup = std::move(scopes);
+
+    if (!decl.getFields().empty()) {
+        for (llvm::Type* element : structType->elements()) {
+            if (auto* elementStruct = llvm::dyn_cast<llvm::StructType>(element)) {
+                if (elementStruct->isLiteral()) continue;
+                auto it = structs.find(elementStruct->getName());
+                if (it != structs.end()) {
+                    codegenTypeDecl(*it->second.second);
+                }
+            }
+        }
+    }
 
     for (auto& memberDecl : decl.getMemberDecls()) {
         codegenDecl(*memberDecl);
@@ -688,7 +709,12 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
 
             setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
 
-            codegenFunctionBody(p.second.getDecl(), *p.second.getFunction());
+            if (auto* initDecl = llvm::dyn_cast<InitDecl>(&p.second.getDecl())) {
+                codegenInitDecl(*initDecl);
+            } else {
+                codegenFunctionBody(p.second.getDecl(), *p.second.getFunction());
+            }
+
             ASSERT(!llvm::verifyFunction(*p.second.getFunction(), &llvm::errs()));
         }
 

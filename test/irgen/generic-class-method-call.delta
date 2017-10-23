@@ -3,13 +3,19 @@
 
 class S<E> {
     // CHECK-DAG: define {} @"S<A>.init"()
-    init() {}
+    init() {
+        // CHECK: call {} @A.init()
+        // CHECK-NEXT: call void @A.h({} %{{[0-9]+}})
+        E().h();
+    }
 
     // CHECK-DAG: define void @"S<A>.s"({}* %this)
     func s() {}
 }
 
 struct A {
+    init() {}
+
     // CHECK-DAG: define void @A.h({} %this)
     func h() {}
 }
