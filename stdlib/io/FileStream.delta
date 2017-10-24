@@ -1,8 +1,6 @@
-struct FILE {}
-
 class FileStream {
 
-    var file: FILE*?;
+    var file: void*?;
 
     /// Initiates a stream that can both read and write to file
     init(filename: StringRef) {
@@ -13,22 +11,27 @@ class FileStream {
         fclose(file!);
     }
 
+    /// Returns true if the file is open for reading or writing
     func isOpen() -> bool {
         return file != null;
     }
 
+    /// Returns an iterator that can be used to iterate over lines in the file
     func lines() -> LineIterator<FileStream> {
         return LineIterator(this);
     }
 
+    /// Returns an iterator that can be used to iterate over each byte in the file
     func bytes() -> ByteIterator<FileStream> {
         return ByteIterator(this);
     }
 
+    /// Reads one byte from the file
     func readByte() -> int {
         return fgetc(file!);
     }
 
+    /// Reads one line from the file, separated by \n
     func readLine() -> String {
         var ret = String();
         for (let i in bytes()) {
@@ -40,6 +43,7 @@ class FileStream {
         return ret;
     }
 
+    /// Returns true if we have reached the end of the file
     func isEof() -> bool {
         return feof(file!) >= 1;
     }
