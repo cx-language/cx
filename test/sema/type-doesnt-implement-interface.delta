@@ -1,0 +1,19 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+interface X {
+    func foo();
+    func bar();
+    func qux();
+}
+
+class Y {
+    init() {}
+    func foo() {}
+}
+
+func f<T: X>(t: T) {}
+
+func main() {
+    // CHECK: [[@LINE+1]]:6: error: type 'Y' doesn't implement interface 'X' because it doesn't have method 'bar'
+    f(Y());
+}

@@ -243,21 +243,29 @@ bool TypeChecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     return false;
 }
 
-bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface) const {
+bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
     for (auto& fieldRequirement : interface.getFields()) {
         if (!hasField(type, fieldRequirement)) {
+            if (errorReason) {
+                *errorReason = ("it doesn't have field '" + fieldRequirement.getName() + "'").str();
+            }
             return false;
         }
     }
+
     for (auto& requiredMethod : interface.getMethods()) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod.get())) {
             if (!hasMethod(type, *functionDecl)) {
+                if (errorReason) {
+                    *errorReason = ("it doesn't have method '" + functionDecl->getName() + "'").str();
+                }
                 return false;
             }
         } else {
             fatalError("non-function interface member requirements are not supported yet");
         }
     }
+
     return true;
 }
 
@@ -311,7 +319,7 @@ bool TypeChecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     if (isInterface(target) && source.isBasicType()) {
         if (implementsInterface(*getTypeDecl(llvm::cast<BasicType>(*source)),
-                                *getTypeDecl(llvm::cast<BasicType>(*target)))) {
+                                *getTypeDecl(llvm::cast<BasicType>(*target)), nullptr)) {
             return true;
         }
     }
@@ -565,12 +573,13 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
 
             auto interfaces = findDecls(genericParam.getConstraints()[0]);
             ASSERT(interfaces.size() == 1);
+            std::string errorReason;
 
             if (genericArg->isBasicType() &&
                 !implementsInterface(*getTypeDecl(llvm::cast<BasicType>(**genericArg)),
-                                     llvm::cast<TypeDecl>(*interfaces[0]))) {
+                                     llvm::cast<TypeDecl>(*interfaces[0]), &errorReason)) {
                 error(call.getLocation(), "type '", *genericArg, "' doesn't implement interface '",
-                      genericParam.getConstraints()[0], "'");
+                      genericParam.getConstraints()[0], "' because ", errorReason);
             }
         }
 
