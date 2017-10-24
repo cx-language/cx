@@ -263,23 +263,24 @@ enum class TypeTag { Struct, Class, Interface, Union };
 /// A non-template function declaration or a function template instantiation.
 class TypeDecl : public Decl {
 public:
-    TypeDecl(TypeTag tag, std::string&& name, std::vector<Type>&& genericArgs, Module& module,
-             SourceLocation location)
-    : Decl(DeclKind::TypeDecl), tag(tag), name(std::move(name)),
-      genericArgs(std::move(genericArgs)), location(location), module(module) {}
+    TypeDecl(TypeTag tag, std::string&& name, std::vector<Type>&& genericArgs,
+             std::vector<Type>&& interfaces, Module& module, SourceLocation location)
+    : Decl(DeclKind::TypeDecl), tag(tag), name(std::move(name)), genericArgs(std::move(genericArgs)),
+      interfaces(std::move(interfaces)), location(location), module(module) {}
     TypeTag getTag() const { return tag; }
     llvm::StringRef getName() const { return name; }
     llvm::ArrayRef<FieldDecl> getFields() const { return fields; }
     std::vector<FieldDecl>& getFields() { return fields; }
     llvm::ArrayRef<std::unique_ptr<Decl>> getMethods() const { return methods; }
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
+    llvm::ArrayRef<Type> getInterfaces() const { return interfaces; }
     SourceLocation getLocation() const { return location; }
     void addField(FieldDecl&& field);
     void addMethod(std::unique_ptr<Decl> decl);
     llvm::ArrayRef<std::unique_ptr<Decl>> getMemberDecls() const { return methods; }
     DeinitDecl* getDeinitializer() const;
     Type getType(bool isMutable = false) const;
-    /// 'T&' if this is class, or plain 'T' otherwise.
+    /// 'T*' if this is class, or plain 'T' otherwise.
     Type getTypeForPassing(bool isMutable = false) const;
     bool passByValue() const { return isStruct() || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
@@ -294,6 +295,7 @@ private:
     TypeTag tag;
     std::string name;
     std::vector<Type> genericArgs;
+    std::vector<Type> interfaces;
     std::vector<FieldDecl> fields;
     std::vector<std::unique_ptr<Decl>> methods;
     SourceLocation location;

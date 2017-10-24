@@ -1,0 +1,14 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+interface X {
+    func foo();
+}
+
+// CHECK: [[@LINE+1]]:7: error: type 'Z' doesn't implement interface 'X' because it doesn't have method 'foo'
+class Z<T>: X {
+    init() {}
+}
+
+func main() {
+    let z = Z<int>();
+}

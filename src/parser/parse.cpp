@@ -270,25 +270,35 @@ std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral() {
     return llvm::make_unique<ArrayLiteralExpr>(std::move(elements), location);
 }
 
-/// generic-argument-list ::= '<' generic-arguments '>'
-/// generic-arguments ::= type | type ',' generic-arguments
-std::vector<Type> parseGenericArgumentList() {
-    ASSERT(currentToken() == LT);
-    consumeToken();
-    std::vector<Type> genericArgs;
+/// non-empty-type-list ::= type | type ',' non-empty-type-list
+std::vector<Type> parseNonEmptyTypeList() {
+    std::vector<Type> types;
 
     while (true) {
-        genericArgs.emplace_back(parseType());
-        if (currentToken() == GT) break;
+        types.push_back(parseType());
+
+        if (currentToken() == COMMA) {
+            consumeToken();
+            continue;
+        }
+
         if (currentToken() == RSHIFT) {
             tokenBuffer[currentTokenIndex] = GT;
             tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, GT);
-            break;
         }
-        parse(COMMA);
+
+        break;
     }
 
+    return types;
+}
+
+/// generic-argument-list ::= '<' non-empty-type-list '>'
+std::vector<Type> parseGenericArgumentList() {
+    ASSERT(currentToken() == LT);
     consumeToken();
+    std::vector<Type> genericArgs = parseNonEmptyTypeList();
+    parse(GT);
     return genericArgs;
 }
 
@@ -1087,7 +1097,8 @@ std::unique_ptr<TypeTemplate> parseTypeTemplate() {
     return llvm::make_unique<TypeTemplate>(std::move(genericParams), std::move(typeDecl));
 }
 
-/// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
+/// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}'
+/// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl
 std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams) {
     TypeTag tag;
@@ -1104,8 +1115,16 @@ std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericPa
         parseGenericParamList(*genericParams);
     }
 
+    std::vector<Type> interfaces;
+
+    if (currentToken() == COLON) {
+        consumeToken();
+        interfaces = parseNonEmptyTypeList();
+    }
+
     auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::vector<Type>(),
-                                                *currentModule, name.getLocation());
+                                                std::move(interfaces), *currentModule,
+                                                name.getLocation());
     parse(LBRACE);
 
     while (currentToken() != RBRACE) {

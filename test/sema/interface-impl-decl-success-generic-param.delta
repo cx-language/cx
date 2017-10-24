@@ -1,0 +1,14 @@
+// RUN: %delta -typecheck %s
+
+interface X {
+    func foo();
+}
+
+class Z<T>: T {
+    init() {}
+    func foo() {}
+}
+
+func main() {
+    let z = Z<X>();
+}

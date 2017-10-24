@@ -144,7 +144,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
     if (decl.getName().empty()) return llvm::None;
 
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
-                      decl.getNameAsString(), {}, *currentModule, SourceLocation::invalid());
+                      decl.getNameAsString(), {}, {}, *currentModule, SourceLocation::invalid());
     typeDecl.getFields().reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, typeDecl)) {

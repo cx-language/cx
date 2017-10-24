@@ -243,6 +243,16 @@ bool TypeChecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     return false;
 }
 
+void TypeChecker::checkImplementsInterface(TypeDecl& type, TypeDecl& interface, SourceLocation location) const {
+    ASSERT(interface.isInterface());
+    std::string errorReason;
+
+    if (!implementsInterface(type, interface, &errorReason)) {
+        error(location, "type '", type.getName(), "' doesn't implement interface '",
+              interface.getName(), "' because ", errorReason);
+    }
+}
+
 bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
     for (auto& fieldRequirement : interface.getFields()) {
         if (!hasField(type, fieldRequirement)) {
@@ -575,11 +585,9 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
             ASSERT(interfaces.size() == 1);
             std::string errorReason;
 
-            if (genericArg->isBasicType() &&
-                !implementsInterface(*getTypeDecl(llvm::cast<BasicType>(**genericArg)),
-                                     llvm::cast<TypeDecl>(*interfaces[0]), &errorReason)) {
-                error(call.getLocation(), "type '", *genericArg, "' doesn't implement interface '",
-                      genericParam.getConstraints()[0], "' because ", errorReason);
+            if (genericArg->isBasicType()) {
+                checkImplementsInterface(*getTypeDecl(llvm::cast<BasicType>(**genericArg)),
+                                         llvm::cast<TypeDecl>(*interfaces[0]), call.getLocation());
             }
         }
 

@@ -627,9 +627,22 @@ void TypeChecker::typecheckFunctionTemplate(FunctionTemplate& decl) const {
 }
 
 void TypeChecker::typecheckTypeDecl(TypeDecl& decl) const {
+    for (Type interface : decl.getInterfaces()) {
+        if (interface.isBasicType()) {
+            if (auto* interfaceDecl = getTypeDecl(llvm::cast<BasicType>(*interface))) {
+                if (interfaceDecl->isInterface()) {
+                    checkImplementsInterface(decl, *interfaceDecl, decl.getLocation());
+                    continue;
+                }
+            }
+        }
+        error(decl.getLocation(), "'", interface, "' is not an interface");
+    }
+
     for (auto& fieldDecl : decl.getFields()) {
         typecheckFieldDecl(fieldDecl);
     }
+
     for (auto& memberDecl : decl.getMemberDecls()) {
         typecheckMemberDecl(*memberDecl);
     }
@@ -644,7 +657,7 @@ TypeDecl* TypeChecker::getTypeDecl(const BasicType& type) const {
 
     if (!decls.empty()) {
         ASSERT(decls.size() == 1);
-        return llvm::cast<TypeDecl>(decls[0]);
+        return llvm::dyn_cast_or_null<TypeDecl>(decls[0]);
     }
 
     decls = findDecls(mangleTypeDecl(type.getName(), {}));

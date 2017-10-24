@@ -234,9 +234,12 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
 
         case DeclKind::TypeDecl: {
             auto* typeDecl = llvm::cast<TypeDecl>(this);
+            auto interfaces = map(typeDecl->getInterfaces(), [&](Type type) {
+                return type.resolve(genericArgs);
+            });
             auto instantiation = llvm::make_unique<TypeDecl>(typeDecl->getTag(), typeDecl->getName(),
-                                                             genericArgsArray, *typeDecl->getModule(),
-                                                             typeDecl->getLocation());
+                                                             genericArgsArray, std::move(interfaces),
+                                                             *typeDecl->getModule(), typeDecl->getLocation());
             for (auto& field : typeDecl->getFields()) {
                 instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName(),
                                                   *instantiation, field.getLocation()));
