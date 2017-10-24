@@ -1,4 +1,4 @@
-struct MapIterator<Key, Value> {
+struct MapIterator<Key, Value>: Iterator<KeyValuePair<Key, Value>*> {
     var hashTableIterator: ArrayIterator<Array<KeyValuePair<Key, Value>>>;
     var current: KeyValuePair<Key, Value>*;
 

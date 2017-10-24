@@ -1,4 +1,4 @@
-struct RangeIterator<T> {
+struct RangeIterator<T>: Iterator<T> {
     var current: T;
     let end: T;
 

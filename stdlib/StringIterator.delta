@@ -1,4 +1,4 @@
-struct StringIterator {
+struct StringIterator: Iterator<char> {
     var current: char*;
     let end: char*;
 

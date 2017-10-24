@@ -1,4 +1,4 @@
-class LineIterator<Stream: InputStream> {
+class LineIterator<Stream: InputStream>: Iterator<String> {
 
     var stream: Stream*;
     var next: String;

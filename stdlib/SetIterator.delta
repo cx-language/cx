@@ -1,4 +1,4 @@
-struct SetIterator<Element> {
+struct SetIterator<Element>: Iterator<Element*> {
     var iterator: MapIterator<Element, bool>;
 
     init(set: Set<Element>* ) {

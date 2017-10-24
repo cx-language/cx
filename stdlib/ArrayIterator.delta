@@ -1,4 +1,4 @@
-struct ArrayIterator<Element> {
+struct ArrayIterator<Element>: Iterator<Element*> {
     var current: Element*;
     let end: Element*;
 

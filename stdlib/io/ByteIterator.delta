@@ -1,4 +1,4 @@
-class ByteIterator<Stream: InputStream> {
+class ByteIterator<Stream: InputStream>: Iterator<uint8> {
 
     var stream: Stream*;
     var next: int;

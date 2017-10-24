@@ -1,4 +1,4 @@
-struct ClosedRangeIterator<T> {
+struct ClosedRangeIterator<T>: Iterator<T> {
     var current: T;
     let end: T;
 
