@@ -6,15 +6,15 @@ class FileStream {
 
     /// Initiates a stream that can both read and write to file
     init(filename: StringRef) {
-        file = fopen(String(filename).cString(), "r");
-
-        if (file == null) {
-            print("lol");
-        }
+        file = fopen(String(filename).cString(), "rb");
     }
 
     deinit() {
         fclose(file!);
+    }
+
+    func isOpen() -> bool {
+        return file != null;
     }
 
     func lines() -> LineIterator<FileStream> {

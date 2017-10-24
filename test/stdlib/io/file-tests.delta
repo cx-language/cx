@@ -32,3 +32,13 @@ func testLines() {
         i++;
     }
 }
+
+func testIsOpen() {
+    let f = FileStream("doesntexist");
+
+    assert(!f.isOpen(), "File could not be opened");
+
+    let f2 = FileStream("test.txt");
+
+    assert(f2.isOpen(), "File is open");
+}
