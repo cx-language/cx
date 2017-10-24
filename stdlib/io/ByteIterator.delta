@@ -1,0 +1,28 @@
+class ByteIterator<Stream: InputStream> {
+
+    var stream: Stream*;
+    var next: int;
+
+    init(stream: Stream*) {
+        this.stream = stream;
+        next = undefined;
+        increment();
+    }
+
+    func hasValue() -> bool {
+        return next >= 0;
+    }
+
+    func value() -> uint8 {
+        return uint8(next);
+    }
+
+    mutating func increment() {
+        next = stream.readByte();
+    }
+
+    func iterator() -> ByteIterator<Stream> {
+        return *this;
+    }
+
+}

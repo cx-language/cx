@@ -489,6 +489,7 @@ llvm::Value* IRGenerator::codegenLambdaExpr(const LambdaExpr& expr) {
 
     VarExpr varExpr(functionDecl->getName(), functionDecl->getLocation());
     varExpr.setDecl(functionDecl.get());
+    helperDecls.push_back(std::move(functionDecl));
     return codegenVarExpr(varExpr);
 }
 

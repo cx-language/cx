@@ -4,8 +4,14 @@ extern func free(ptr: mutable void*?);
 extern func abort();
 
 // stdio.h
+// TODO using FILE pointer causes infinite loop, so we use void pointer
 extern func printf(format: char*, ...) -> int;
 extern func getchar() -> int;
+extern func fopen(filename: char*, mode: char*) -> void*?;
+extern func fgetc(file: void*) -> int;
+extern func fclose(file: void*) -> int;
+extern func exit(status: int);
+extern func feof(file: void*) -> int;
 
 // execinfo.h
 extern func backtrace(array: mutable (mutable void*)*, size: int) -> int;

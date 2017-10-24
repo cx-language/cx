@@ -1,6 +1,3 @@
-import "stdio.h"
-import "stdlib.h"
-
 func assert(condition: bool, testName: StringRef) {
     if (!condition) {
         printf("Test '%.*s' failed\n", testName.size(), testName.data())
