@@ -1,0 +1,46 @@
+struct FILE {}
+
+class FileStream {
+
+    var file: FILE*?;
+
+    /// Initiates a stream that can both read and write to file
+    init(filename: StringRef) {
+        file = fopen(String(filename).cString(), "r");
+
+        if (file == null) {
+            print("lol");
+        }
+    }
+
+    deinit() {
+        fclose(file!);
+    }
+
+    func lines() -> LineIterator<FileStream> {
+        return LineIterator(this);
+    }
+
+    func bytes() -> ByteIterator<FileStream> {
+        return ByteIterator(this);
+    }
+
+    func readByte() -> int {
+        return fgetc(file!);
+    }
+
+    func readLine() -> String {
+        var ret = String();
+        for (let i in bytes()) {
+            if (i == '\n') {
+                break;
+            }
+            ret.push(char(i));
+        }
+        return ret;
+    }
+
+    func isEof() -> bool {
+        return feof(file!) >= 1;
+    }
+}

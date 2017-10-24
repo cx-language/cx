@@ -6,6 +6,11 @@ extern func abort();
 // stdio.h
 extern func printf(format: char*, ...) -> int;
 extern func getchar() -> int;
+extern func fopen(filename: char*, mode: char*) -> FILE*?;
+extern func fgetc(file: FILE*) -> int;
+extern func fclose(file: FILE*) -> int;
+extern func exit(status: int);
+extern func feof(file: FILE*) -> int;
 
 // execinfo.h
 extern func backtrace(array: mutable (mutable void*)*, size: int) -> int;

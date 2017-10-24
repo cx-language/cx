@@ -1,0 +1,34 @@
+// RUN: check_exit_status 0 %delta run %s ../test-support.delta
+
+func main() {
+    testBytes();
+    testLines();
+}
+
+func testBytes() {
+    let f = FileStream("test.txt");
+
+    let real = "this\nis the\nbest\n";
+    var i: uint = 0;
+
+    for (let byte in f.bytes()) {
+        assert(real[i] == char(byte), "correct");
+        i++;
+    }
+}
+
+func testLines() {
+    let f = FileStream("test.txt");
+
+    var a = Array<StringRef>();
+    a.push("this");
+    a.push("is the");
+    a.push("best");
+
+    var i: uint = 0;
+
+    for (let line in f.lines()) {
+        assert(*a[i] == line, "line correct");
+        i++;
+    }
+}

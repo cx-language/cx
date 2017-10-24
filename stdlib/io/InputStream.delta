@@ -1,0 +1,5 @@
+interface InputStream {
+    func readByte() -> int;
+    func readLine() -> String;
+    func isEof() -> bool;
+}

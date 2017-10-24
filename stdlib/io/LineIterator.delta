@@ -1,0 +1,29 @@
+class LineIterator<Stream: InputStream> {
+
+    var stream: Stream*;
+    var next: String;
+
+    init(stream: Stream*) {
+        this.stream = stream;
+        next = undefined;
+        increment();
+    }
+
+    func hasValue() -> bool {
+        return !stream.isEof() && !next.isEmpty();
+    }
+
+    func value() -> String {
+        return next;
+    }
+
+    mutating func increment() {
+        let next = stream.readLine();
+        this.next = next;
+    }
+
+    func iterator() -> LineIterator<Stream> {
+        return *this;
+    }
+
+}
