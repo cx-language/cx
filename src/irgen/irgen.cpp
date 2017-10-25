@@ -751,6 +751,7 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
             if (p.second.getDecl().isExtern() || !p.second.getFunction()->empty()) continue;
 
             setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
+            currentDecl = &p.second.getDecl();
 
             if (auto* initDecl = llvm::dyn_cast<InitDecl>(&p.second.getDecl())) {
                 codegenInitDecl(*initDecl);
