@@ -612,19 +612,10 @@ Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
     return expr.getType();
 }
 
-Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const {
+Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee) const {
     llvm::SmallVector<Decl*, 1> matches;
     bool isInitCall = false;
     bool atLeastOneFunction = false;
-    TypeDecl* receiverTypeDecl;
-
-    if (expr.getReceiverType() && expr.getReceiverType().removePointer().isBasicType()) {
-        receiverTypeDecl = getTypeDecl(*llvm::cast<BasicType>(expr.getReceiverType().removePointer().get()));
-    } else {
-        receiverTypeDecl = nullptr;
-    }
-
-    auto decls = findDecls(callee, isPostProcessing, receiverTypeDecl);
 
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
@@ -783,6 +774,10 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
                 }
                 break;
             }
+            case DeclKind::DeinitDecl:
+                matches.push_back(decl);
+                break;
+                
             default:
                 continue;
         }
@@ -843,6 +838,18 @@ Decl& TypeChecker::resolveOverload(CallExpr& expr, llvm::StringRef callee) const
     }
 }
 
+std::vector<Decl*> TypeChecker::findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee) const {
+    TypeDecl* receiverTypeDecl;
+
+    if (expr.getReceiverType() && expr.getReceiverType().removePointer().isBasicType()) {
+        receiverTypeDecl = getTypeDecl(*llvm::cast<BasicType>(expr.getReceiverType().removePointer().get()));
+    } else {
+        receiverTypeDecl = nullptr;
+    }
+
+    return findDecls(callee, isPostProcessing, receiverTypeDecl);
+}
+
 Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     if (!expr.callsNamedFunction()) {
         fatalError("anonymous function calls not implemented yet");
@@ -871,11 +878,22 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
 
             error(expr.getReceiver()->getLocation(), "type '", receiverType, "' has no method '",
                   expr.getFunctionName(), "'");
+        } else if (receiverType.removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
+            return Type::getVoid();
         }
 
-        decl = &resolveOverload(expr, expr.getMangledFunctionName());
+        auto callee = expr.getMangledFunctionName();
+        auto decls = findCalleeCandidates(expr, callee);
+
+        if (decls.empty() && expr.getFunctionName() == "deinit") {
+            return Type::getVoid();
+        }
+
+        decl = &resolveOverload(decls, expr, callee);
     } else {
-        decl = &resolveOverload(expr, expr.getFunctionName());
+        auto callee = expr.getFunctionName();
+        auto decls = findCalleeCandidates(expr, callee);
+        decl = &resolveOverload(decls, expr, callee);
 
         if (decl->isMethodDecl() && !decl->isInitDecl()) {
             auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
@@ -890,6 +908,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
         case DeclKind::InitDecl:
+        case DeclKind::DeinitDecl:
             params = llvm::cast<FunctionDecl>(decl)->getParams();
             break;
 
@@ -938,6 +957,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
+        case DeclKind::DeinitDecl:
             return llvm::cast<FunctionDecl>(decl)->getFunctionType()->getReturnType();
 
         case DeclKind::InitDecl:

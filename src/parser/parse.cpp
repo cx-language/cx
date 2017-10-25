@@ -436,8 +436,16 @@ std::unique_ptr<SizeofExpr> parseSizeofExpr() {
 
 /// member-expr ::= expr '.' id
 std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
-    auto member = parse(IDENTIFIER);
-    return llvm::make_unique<MemberExpr>(std::move(lhs), member.getString(), member.getLocation());
+    auto location = getCurrentLocation();
+    llvm::StringRef member;
+
+    if (currentToken().is(IDENTIFIER, DEINIT)) {
+        member = consumeToken().getString();
+    } else {
+        unexpectedToken(currentToken(), IDENTIFIER);
+    }
+
+    return llvm::make_unique<MemberExpr>(std::move(lhs), member, location);
 }
 
 /// subscript-expr ::= expr '[' expr ']'

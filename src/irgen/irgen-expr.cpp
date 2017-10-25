@@ -331,6 +331,11 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
     }
 
     llvm::Value* calleeValue = getFunctionForCall(expr);
+
+    if (!calleeValue) {
+        return nullptr;
+    }
+
     llvm::FunctionType* functionType;
 
     if (auto* function = llvm::dyn_cast<llvm::Function>(calleeValue)) {

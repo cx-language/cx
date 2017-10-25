@@ -126,8 +126,7 @@ class Array<Element> {
         }
 
         size--;
-        // TODO: Replace this with a .deinit() call once they have been implemented.
-        *(bufferPointer! + size) = undefined;
+        (bufferPointer! + size).deinit();
     }
 
     /// Removes the element at the given index from the array.
@@ -141,8 +140,7 @@ class Array<Element> {
     }
 
     mutating func _removeAt(index: uint) {
-        // TODO: Replace this with a .deinit() call once they have been implemented.
-        *(bufferPointer! + index) = undefined;
+        (bufferPointer! + index).deinit();
 
         for (let i in (index + 1)..size) {
             let source = bufferPointer! + i;

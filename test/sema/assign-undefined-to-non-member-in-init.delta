@@ -3,8 +3,9 @@
 class A {
     var i: int;
 
-    mutating func f() {
+    init() {
+        var j = 0;
         // CHECK: [[@LINE+1]]:11: error: 'undefined' is only allowed as an initial value
-        i = undefined;
+        j = undefined;
     }
 }

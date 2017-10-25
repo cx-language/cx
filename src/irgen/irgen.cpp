@@ -548,10 +548,15 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
 
     const Decl* decl = call.getCalleeDecl();
 
+    if (!decl) {
+        return nullptr;
+    }
+
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
         case DeclKind::InitDecl:
+        case DeclKind::DeinitDecl:
             return getFunction(*llvm::cast<FunctionDecl>(decl));
 
         case DeclKind::VarDecl:

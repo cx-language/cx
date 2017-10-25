@@ -403,10 +403,14 @@ Token delta::lex() {
                 } while (std::isalnum(ch = readChar()) || ch == '_');
                 unreadChar(ch);
 
-                auto it = keywords.find(llvm::StringRef(begin, end - begin));
-                if (it != keywords.end()) return it->second;
+                llvm::StringRef string(begin, end - begin);
 
-                return Token(IDENTIFIER, llvm::StringRef(begin, end - begin));
+                auto it = keywords.find(string);
+                if (it != keywords.end()) {
+                    return Token(it->second, string);
+                }
+
+                return Token(IDENTIFIER, string);
             }
             case '"':
                 return readQuotedLiteral('"', STRING_LITERAL);

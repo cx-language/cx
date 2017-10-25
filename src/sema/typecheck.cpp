@@ -180,9 +180,40 @@ void TypeChecker::typecheckBreakStmt(BreakStmt& breakStmt) const {
     }
 }
 
+static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* currentFunction) {
+    if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentFunction)) {
+        switch (lhs.getKind()) {
+            case ExprKind::VarExpr:
+                if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(llvm::cast<VarExpr>(lhs).getDecl())) {
+                    if (fieldDecl->getParent() == initDecl->getTypeDecl()) {
+                        return true;
+                    }
+                }
+                return false;
+
+            case ExprKind::MemberExpr:
+                if (auto* varExpr = llvm::dyn_cast<VarExpr>(llvm::cast<MemberExpr>(lhs).getBaseExpr())) {
+                    if (varExpr->getIdentifier() == "this") {
+                        return true;
+                    }
+                }
+                return false;
+
+            default:
+                return false;
+        }
+    }
+
+    return false;
+}
+
 void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     Type lhsType = typecheckExpr(*stmt.getLHS(), true);
     Type rhsType = stmt.getRHS() ? typecheckExpr(*stmt.getRHS()) : nullptr;
+
+    if (!stmt.getRHS() && !allowAssignmentOfUndefined(*stmt.getLHS(), currentFunction)) {
+        error(stmt.getLocation(), "'undefined' is only allowed as an initial value");
+    }
 
     if (stmt.getRHS()) {
         Type convertedType;
