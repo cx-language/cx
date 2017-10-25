@@ -6,6 +6,7 @@ class FileStream: InputStream, OutputStream {
     /// Initiates a stream that can both read and write to file
     init(filename: StringRef) {
         file = fopen(String(filename).cString(), "a+");
+        rewind(file!);
     }
 
     /// TODO when other init can be called by init, change this

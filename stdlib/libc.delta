@@ -15,6 +15,7 @@ extern func feof(file: void*) -> int;
 extern func fputc(c: int, file: void*) -> int;
 extern func remove(filename: char*) -> int;
 extern func ungetc(c: int, file: void*) -> int;
+extern func rewind(file: void*);
 
 // execinfo.h
 extern func backtrace(array: mutable (mutable void*)*, size: int) -> int;
