@@ -625,8 +625,10 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
             addToSymbolTable(VarDecl(thisType, "this", nullptr, &decl, *getCurrentModule(), decl.getLocation()));
         }
 
-        for (auto& stmt : decl.getBody()) {
-            typecheckStmt(*stmt);
+        if (decl.hasBody()) {
+            for (auto& stmt : decl.getBody()) {
+                typecheckStmt(*stmt);
+            }
         }
 
         if (decl.isInitDecl()) {
@@ -659,6 +661,15 @@ void TypeChecker::typecheckTypeDecl(TypeDecl& decl) const {
             if (auto* interfaceDecl = getTypeDecl(llvm::cast<BasicType>(*interface))) {
                 if (interfaceDecl->isInterface()) {
                     checkImplementsInterface(decl, *interfaceDecl, decl.getLocation());
+
+                    for (auto& method : interfaceDecl->getMethods()) {
+                        if (llvm::cast<MethodDecl>(*method).hasBody()) {
+                            auto copy = llvm::cast<MethodDecl>(*method).instantiate({}, decl);
+                            addToSymbolTable(*copy);
+                            decl.addMethod(std::move(copy));
+                        }
+                    }
+
                     continue;
                 }
             }

@@ -1,0 +1,22 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+
+interface A {
+    func f() -> int;
+
+    // CHECK: define i32 @B.g({}* %this)
+    // CHECK-NEXT: call i32 @B.f({}* %this)
+    func g() -> int { return f() * 2; }
+}
+
+class B: A {
+    init() {}
+    func f() -> int { return 21; }
+}
+
+func main() {
+    let b = B();
+
+    // MAIN: call i32 @B.g({}* %b)
+    let x = b.g();
+}

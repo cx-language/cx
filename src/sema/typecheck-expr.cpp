@@ -265,6 +265,8 @@ bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::
 
     for (auto& requiredMethod : interface.getMethods()) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod.get())) {
+            if (functionDecl->hasBody()) continue;
+
             if (!hasMethod(type, *functionDecl)) {
                 if (errorReason) {
                     *errorReason = ("it doesn't have method '" + functionDecl->getName() + "'").str();

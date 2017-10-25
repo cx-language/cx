@@ -93,7 +93,9 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
             auto instantiation = llvm::make_unique<MethodDecl>(std::move(proto), typeDecl, std::vector<Type>(),
                                                                methodDecl->getLocation());
             instantiation->setMutating(methodDecl->isMutating());
-            instantiation->setBody(::instantiate(methodDecl->getBody(), genericArgs));
+            if (methodDecl->hasBody()) {
+                instantiation->setBody(::instantiate(methodDecl->getBody(), genericArgs));
+            }
             return instantiation;
         }
         case DeclKind::InitDecl: {

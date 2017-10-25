@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <llvm/ADT/Optional.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Casting.h>
 #include "expr.h"
@@ -178,7 +179,8 @@ public:
     FunctionProto& getProto() { return proto; }
     virtual TypeDecl* getTypeDecl() const { return nullptr; }
     virtual bool isMutating() const { return false; }
-    llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
+    bool hasBody() const { return body.hasValue(); }
+    llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { ASSERT(hasBody()); return *body; }
     void setBody(std::vector<std::unique_ptr<Stmt>>&& body) { this->body = std::move(body); }
     SourceLocation getLocation() const { return location; }
     const FunctionType* getFunctionType() const;
@@ -199,7 +201,7 @@ protected:
 private:
     FunctionProto proto;
     std::vector<Type> genericArgs;
-    std::vector<std::unique_ptr<Stmt>> body;
+    llvm::Optional<std::vector<std::unique_ptr<Stmt>>> body;
     SourceLocation location;
     Module& module;
     bool typechecked;
