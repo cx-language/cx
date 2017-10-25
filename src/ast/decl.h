@@ -72,15 +72,19 @@ public:
     DeclKind getKind() const { return kind; }
     Module* getModule() const;
     SourceLocation getLocation() const;
+    virtual llvm::StringRef getName() const = 0;
+    bool isReferenced() const { return referenced; }
+    void setReferenced(bool referenced) { this->referenced = referenced; }
     bool hasBeenMoved() const;
     std::unique_ptr<Decl> instantiate(const llvm::StringMap<Type>& genericArgs,
                                       llvm::ArrayRef<Type> genericArgsArray) const;
 
 protected:
-    Decl(DeclKind kind) : kind(kind) {}
+    Decl(DeclKind kind) : kind(kind), referenced(false) {}
 
 private:
     const DeclKind kind;
+    bool referenced;
 };
 
 inline Decl::~Decl() {}
@@ -100,7 +104,7 @@ public:
     : Decl(DeclKind::ParamDecl), type(type), name(std::move(name)), location(location),
       parent(nullptr) {}
     Type getType() const { return type; }
-    llvm::StringRef getName() const { return name; }
+    llvm::StringRef getName() const override { return name; }
     FunctionDecl* getParent() const { ASSERT(parent); return parent; }
     void setParent(FunctionDecl* parent) { this->parent = parent; }
     SourceLocation getLocation() const { return location; }
@@ -120,7 +124,7 @@ class GenericParamDecl : public Decl {
 public:
     GenericParamDecl(std::string&& name, SourceLocation location)
     : Decl(DeclKind::GenericParamDecl), name(std::move(name)), parent(nullptr), location(location) {}
-    llvm::StringRef getName() const { return name; }
+    llvm::StringRef getName() const override { return name; }
     llvm::ArrayRef<std::string> getConstraints() const { return constraints; }
     void addConstraint(std::string&& constraint) { constraints.emplace_back(std::move(constraint)); }
     Decl* getParent() const { ASSERT(parent); return parent; }
@@ -165,7 +169,7 @@ public:
                    module, location) {}
     bool isExtern() const { return getProto().isExtern(); }
     bool isVariadic() const { return getProto().isVarArg(); }
-    llvm::StringRef getName() const { return getProto().getName(); }
+    llvm::StringRef getName() const override { return getProto().getName(); }
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     Type getReturnType() const { return getProto().getReturnType(); }
     llvm::ArrayRef<ParamDecl> getParams() const { return getProto().getParams(); }
@@ -246,6 +250,7 @@ public:
                      std::unique_ptr<FunctionDecl> functionDecl)
     : Decl(DeclKind::FunctionTemplate), genericParams(std::move(genericParams)),
       functionDecl(std::move(functionDecl)) {}
+    llvm::StringRef getName() const override { return getFunctionDecl()->getName(); }
     bool signatureMatches(const FunctionDecl& other, bool matchReceiver = true) const;
     static bool classof(const Decl* d) { return d->isFunctionTemplate(); }
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
@@ -307,6 +312,7 @@ public:
     TypeTemplate(std::vector<GenericParamDecl>&& genericParams, std::unique_ptr<TypeDecl> typeDecl)
     : Decl(DeclKind::TypeTemplate), genericParams(std::move(genericParams)), typeDecl(std::move(typeDecl)) {}
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
+    llvm::StringRef getName() const override { return getTypeDecl()->getName(); }
     TypeDecl* getTypeDecl() const { return typeDecl.get(); }
     TypeDecl* instantiate(const llvm::StringMap<Type>& genericArgs);
     TypeDecl* instantiate(llvm::ArrayRef<Type> genericArgs);
@@ -326,7 +332,7 @@ public:
       initializer(std::move(initializer)), parent(parent), location(location), module(module) {}
     Type getType() const { return type; }
     void setType(Type type) { this->type = type; }
-    llvm::StringRef getName() const { return name; }
+    llvm::StringRef getName() const override { return name; }
     Expr* getInitializer() const { return initializer.get(); }
     Decl* getParent() const { return parent; }
     SourceLocation getLocation() const { return location; }
@@ -348,7 +354,7 @@ public:
     : Decl(DeclKind::FieldDecl), type(type), name(std::move(name)), location(location),
       parent(parent) {}
     Type getType() const { return type; }
-    llvm::StringRef getName() const { return name; }
+    llvm::StringRef getName() const override { return name; }
     SourceLocation getLocation() const { return location; }
     TypeDecl* getParent() const { return &parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }
@@ -364,6 +370,7 @@ class ImportDecl : public Decl {
 public:
     ImportDecl(std::string&& target, Module& module, SourceLocation location)
     : Decl(DeclKind::ImportDecl), target(std::move(target)), location(location), module(module) {}
+    llvm::StringRef getName() const override { return ""; }
     llvm::StringRef getTarget() const { return target; }
     SourceLocation getLocation() const { return location; }
     Module* getModule() const { return &module; }

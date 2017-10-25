@@ -102,6 +102,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     bool printIR = checkFlag("-print-ir", args);
     bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
     bool emitPositionIndependentCode = checkFlag("-fPIC", args);
+    treatWarningsAsErrors = checkFlag("-Werror", args);
     auto importSearchPaths = collectStringOptionValues("-I", args);
     importSearchPaths.push_back(DELTA_ROOT_DIR); // For development.
 

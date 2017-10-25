@@ -888,6 +888,20 @@ void TypeChecker::postProcess() {
     }
 }
 
+static void checkUnusedDecls(const Module& module) {
+    for (auto& sourceFile : module.getSourceFiles()) {
+        for (auto& decl : sourceFile.getTopLevelDecls()) {
+            if (decl->isReferenced()) continue;
+
+            if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
+                if (decl->getName() == "main") continue;
+
+                warning(decl->getLocation(), "unused declaration '", decl->getName(), "'");
+            }
+        }
+    }
+}
+
 void delta::typecheckModule(Module& module, const PackageManifest* manifest,
                             llvm::ArrayRef<std::string> importSearchPaths,
                             ParserFunction& parse) {
@@ -918,5 +932,9 @@ void delta::typecheckModule(Module& module, const PackageManifest* manifest,
                 typeChecker.postProcess();
             }
         }
+    }
+
+    if (module.getName() != "std") {
+        checkUnusedDecls(module);
     }
 }

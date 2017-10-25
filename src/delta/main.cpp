@@ -24,7 +24,8 @@ static void printHelp() {
         "  -parse                - Perform parsing\n"
         "  -print-ast            - Print the abstract syntax tree to stdout\n"
         "  -print-ir             - Print the generated LLVM IR to stdout\n"
-        "  -typecheck            - Perform parsing and type checking\n";
+        "  -typecheck            - Perform parsing and type checking\n"
+        "  -Werror               - Treat warnings as errors\n";
 }
 
 int main(int argc, const char** argv) {

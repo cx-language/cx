@@ -128,8 +128,14 @@ template<typename... Args>
     throw CompileError(location, std::move(messageStream.str()));
 }
 
+extern bool treatWarningsAsErrors;
+
 template<typename... Args>
 void warning(SourceLocation location, Args&&... args) {
+    if (treatWarningsAsErrors) {
+        error(location, std::forward<Args>(args)...);
+    }
+
     std::string message;
     llvm::raw_string_ostream messageStream(message);
     using expander = int[];

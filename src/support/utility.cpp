@@ -6,6 +6,8 @@
 
 using namespace delta;
 
+bool delta::treatWarningsAsErrors;
+
 void delta::skipWhitespace(llvm::StringRef& string) {
     string = string.drop_while([](unsigned char c) { return std::isspace(c); });
 }

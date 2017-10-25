@@ -953,6 +953,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     }
 
     expr.setCalleeDecl(decl);
+    decl->setReferenced(true);
 
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:

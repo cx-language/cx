@@ -192,7 +192,7 @@ SourceLocation Decl::getLocation() const {
         case DeclKind::GenericParamDecl: return llvm::cast<GenericParamDecl>(this)->getLocation();
         case DeclKind::FunctionTemplate: return llvm::cast<FunctionTemplate>(this)->getFunctionDecl()->getLocation();
         case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(this)->getLocation();
-        case DeclKind::TypeTemplate: return llvm::cast<TypeTemplate>(this)->getLocation();
+        case DeclKind::TypeTemplate: return llvm::cast<TypeTemplate>(this)->getTypeDecl()->getLocation();
         case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->getLocation();
         case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(this)->getLocation();
         case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(this)->getLocation();
