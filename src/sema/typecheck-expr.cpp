@@ -873,7 +873,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             if (expr.getFunctionName() == "size") {
                 validateArgs(expr, false, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                return Type::getInt();
+                return Type::getUInt();
             }
 
             error(expr.getReceiver()->getLocation(), "type '", receiverType, "' has no method '",
