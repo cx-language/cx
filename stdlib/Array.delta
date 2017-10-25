@@ -160,6 +160,10 @@ class Array<Element> {
         return MutableArrayIterator(this);
     }
 
+    func enumerate() -> EnumeratedIterator<Element> {
+        return EnumeratedIterator(iterator());
+    }
+
     func map<Input, Output>(transform: (Input) -> Output) -> Array<Output> {
         var output = Array<Output>(capacity: this.size);
 

@@ -1,0 +1,32 @@
+struct EnumeratedIterator<Element>: Iterator<EnumeratedIteratorEntry<Element>> {
+    var base: ArrayIterator<Element>;
+    var index: uint;
+
+    init(iterator: ArrayIterator<Element>) {
+        base = iterator;
+        index = 0;
+    }
+
+    func hasValue() -> bool {
+        return base.hasValue();
+    }
+
+    func value() -> EnumeratedIteratorEntry<Element> {
+        return EnumeratedIteratorEntry(base.value(), index);
+    }
+
+    mutating func increment() {
+        base.increment();
+        index++;
+    }
+}
+
+struct EnumeratedIteratorEntry<Value> {
+    let value: Value*;
+    let index: uint;
+
+    init(value: Value*, index: uint) {
+        this.value = value;
+        this.index = index;
+    }
+}

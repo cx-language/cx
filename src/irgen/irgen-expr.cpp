@@ -442,7 +442,12 @@ llvm::Value* IRGenerator::codegenLvalueMemberExpr(const MemberExpr& expr) {
 
 llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
     auto* value = codegenLvalueMemberExpr(expr);
-    return value->getType()->isPointerTy() ? builder.CreateLoad(value) : value;
+
+    if (value->getType()->isPointerTy() && !expr.getType().isPointerType()) {
+        value = builder.CreateLoad(value);
+    }
+
+    return value;
 }
 
 llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) {
