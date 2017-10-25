@@ -7,3 +7,5 @@
 * [Functions](functions.md)
 * [Control Flow](control-flow.md)
 * [Classes and Structs](classes-and-structs.md)
+* [Ranges](ranges.md)
+* [Arrays](arrays.md)
