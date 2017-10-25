@@ -10,7 +10,7 @@ class ByteIterator<Stream: InputStream>: Iterator<uint8> {
     }
 
     func hasValue() -> bool {
-        return next >= 0;
+        return !stream.isEof() || next >= 0;
     }
 
     func value() -> uint8 {

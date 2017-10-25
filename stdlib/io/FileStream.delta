@@ -1,14 +1,31 @@
-class FileStream {
+/// A Stream that can both read and write to files
+class FileStream: InputStream, OutputStream {
 
     var file: void*?;
 
     /// Initiates a stream that can both read and write to file
     init(filename: StringRef) {
-        file = fopen(String(filename).cString(), "rb");
+        file = fopen(String(filename).cString(), "a+");
+    }
+
+    /// TODO when other init can be called by init, change this
+    /// TODO when we have default params, switch to that
+    init(filename: StringRef, destroyContents: bool) {
+        if (destroyContents) {
+            file = fopen(String(filename).cString(), "w+");
+        } else {
+            file = fopen(String(filename).cString(), "a+");
+        }
+    }
+
+    init(filename: StringRef, readOnly: bool) {
+        file = fopen(String(filename).cString(), "r");
     }
 
     deinit() {
-        fclose(file!);
+        if (file != null) {
+            fclose(file!);
+        }
     }
 
     /// Returns true if the file is open for reading or writing
@@ -45,6 +62,22 @@ class FileStream {
 
     /// Returns true if we have reached the end of the file
     func isEof() -> bool {
-        return feof(file!) >= 1;
+        let ret = fgetc(file!);
+        if (ret < 0) {
+            return true;
+        }
+        ungetc(ret, file!);
+        return false;
+    }
+
+    /// Writes the given string into the file. Returns true on success, false on failure
+    func write(string: StringRef) -> bool {
+        for (let c in string) {
+            let ret = fputc(int(c), file!);
+            if (ret <= 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }
