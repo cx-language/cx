@@ -1,0 +1,30 @@
+/// A Stream that can only write to files
+class OutputFileStream: OutputStream {
+
+    var fs: FileStream;
+
+    /// Initiates a stream that can only write to files
+    init(filename: StringRef) {
+        fs = FileStream(filename);
+    }
+
+    /// TODO when other init can be called by init, change this
+    /// TODO when we have default params, switch to that
+    init(filename: StringRef, destroyContents: bool) {
+        fs = FileStream(filename, destroyContents);
+    }
+
+    deinit() {
+        fs.deinit();
+    }
+
+    /// Returns true if the file is open for writing
+    func isOpen() -> bool {
+        return fs.isOpen();
+    }
+
+    /// Writes the given string into the file. Returns true on success, false on failure
+    func write(string: StringRef) -> bool {
+        return fs.write(string);
+    }
+}

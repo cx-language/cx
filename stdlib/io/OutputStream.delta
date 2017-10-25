@@ -1,0 +1,3 @@
+interface OutputStream {
+    func write(string: StringRef) -> bool;
+}

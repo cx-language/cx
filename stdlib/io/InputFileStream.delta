@@ -1,0 +1,44 @@
+/// A Stream that can only read from files, not write to them
+class InputFileStream: InputStream {
+
+    var fs: FileStream;
+
+    /// Initiates a stream that can read from files
+    init(filename: StringRef) {
+        fs = FileStream(filename, readOnly: true);
+    }
+
+    deinit() {
+        fs.deinit();
+    }
+
+    /// Returns true if the file is open for reading
+    func isOpen() -> bool {
+        return fs.isOpen();
+    }
+
+    /// Returns an iterator that can be used to iterate over lines in the file
+    func lines() -> LineIterator<InputFileStream> {
+        return LineIterator(this);
+    }
+
+    /// Returns an iterator that can be used to iterate over each byte in the file
+    func bytes() -> ByteIterator<InputFileStream> {
+        return ByteIterator(this);
+    }
+
+    /// Reads one byte from the file
+    func readByte() -> int {
+        return fs.readByte();
+    }
+
+    /// Reads one line from the file, separated by \n
+    func readLine() -> String {
+        return fs.readLine();
+    }
+
+    /// Returns true if we have reached the end of the file
+    func isEof() -> bool {
+        return fs.isEof();
+    }
+}

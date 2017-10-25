@@ -3,6 +3,13 @@
 func main() {
     testBytes();
     testLines();
+    testWrite();
+    testOutputStream();
+    testInputStreamIsOpenOnNonexistingFile();
+    testInputStream();
+    testReadlineTwice();
+    testMultipleEmptyLines();
+    testIsEofWhileLoop();
 }
 
 func testBytes() {
@@ -15,6 +22,8 @@ func testBytes() {
         assert(real[i] == char(byte), "correct");
         i++;
     }
+
+    assert(i == 17, "testBytes right amount of lines read");
 }
 
 func testLines() {
@@ -31,14 +40,100 @@ func testLines() {
         assert(*a[i] == line, "line correct");
         i++;
     }
+
+    assert(i == 3, "testLines right amount of lines read");
 }
 
-func testIsOpen() {
-    let f = FileStream("doesntexist");
+func testReadlineTwice() {
+    let f = InputFileStream("test.txt");
+
+    var a = f.readLine();
+    assert(a == "this", "correct line");
+    a = f.readLine();
+    assert(a == "is the", "correct line");
+}
+
+func testMultipleEmptyLines() {
+    let f = InputFileStream("corner.txt");
+
+    var a = f.readLine();
+    assert(a == "", "empty line read");
+
+    a = f.readLine();
+    assert(a == "", "empty line read");
+
+    a = f.readLine();
+    assert(a == "", "empty line read");
+
+    assert(f.isEof(), "File is now at EOF");
+}
+
+func testIsEofWhileLoop() {
+    let f = InputFileStream("test.txt");
+
+    var a = Array<StringRef>();
+    a.push("this");
+    a.push("is the");
+    a.push("best");
+
+    var i: uint = 0;
+
+    while (!f.isEof()) {
+        let line = f.readLine();
+        assert(*a[i] == line, "correct line");
+        i++;
+    }
+
+    assert(i == 3, "correct number of lines read");
+}
+
+func testWrite() {
+    var f = FileStream("new.txt");
+
+    let ret = f.write("best sentence\n");
+    assert(ret, "Successfully wrote to file");
+
+    f = FileStream("new.txt");
+    var read = f.readLine();
+
+    remove("new.txt");
+    assert(read == "best sentence", "Wrote to file");
+}
+
+func testInputStream() {
+    var f = InputFileStream("test.txt");
+
+    var a = Array<StringRef>();
+
+    a.push("this");
+    a.push("is the");
+    a.push("best");
+
+    var i: uint = 0;
+
+    for (let line in f.lines()) {
+        assert(*a[i] == line, "line correct");
+        i++;
+    }
+
+    assert(i == 3, "right amount of lines read");
+}
+
+func testInputStreamIsOpenOnNonexistingFile() {
+    let f = InputFileStream("doesntexist");
 
     assert(!f.isOpen(), "File could not be opened");
 
     let f2 = FileStream("test.txt");
 
     assert(f2.isOpen(), "File is open");
+}
+
+func testOutputStream() {
+    var f = OutputFileStream("new.txt");
+
+    let ret = f.write("best sentence\n");
+
+    remove("new.txt");
+    assert(ret, "Successfully wrote to file");
 }

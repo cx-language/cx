@@ -10,7 +10,7 @@ class LineIterator<Stream: InputStream>: Iterator<String> {
     }
 
     func hasValue() -> bool {
-        return !stream.isEof() && !next.isEmpty();
+        return !stream.isEof() || !next.isEmpty();
     }
 
     func value() -> String {
