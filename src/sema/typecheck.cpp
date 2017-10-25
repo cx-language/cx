@@ -184,10 +184,6 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
     Type lhsType = typecheckExpr(*stmt.getLHS(), true);
     Type rhsType = stmt.getRHS() ? typecheckExpr(*stmt.getRHS()) : nullptr;
 
-    if (!stmt.getRHS() && !currentFunction->isInitDecl()) {
-        error(stmt.getLocation(), "'undefined' is only allowed as an initial value");
-    }
-
     if (stmt.getRHS()) {
         Type convertedType;
 

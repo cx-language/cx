@@ -1,4 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
+// TODO: Currently assignments with 'undefined' as the RHS are used to explicitly invoke the
+// deinitializer for the LHS. Enable this test again once explicit '.deinit()' calls have been
+// implemented.
+// XFAIL: *
 
 class A {
     var i: int;

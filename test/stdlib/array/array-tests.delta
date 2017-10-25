@@ -31,6 +31,7 @@ func main() {
     testEmpty();
     testMap();
     testFilter();
+    testElementDestruction();
 }
 
 func testArrayIterator(array: Array<C>* ) {
@@ -98,4 +99,30 @@ func testFilter() {
     assert(b.size() == 2, "testFilter 1");
     assert(*b[0] == 2, "testFilter 2");
     assert(*b[1] == 4, "testFilter 3");
+}
+
+var deinits = 0;
+
+class DestructionTester {
+    init() {}
+
+    deinit() {
+        deinits++;
+    }
+}
+
+func testElementDestruction() {
+    var a = Array<DestructionTester>();
+
+    for (let i in 0..50) {
+        a.push(DestructionTester());
+    }
+
+    a.removeAt(25);
+    a.removeAt(25);
+    a.removeAt(25);
+    a.removeLast();
+    a.removeFirst();
+
+    assert(deinits == 5, "testElementDestruction: wrong number of deinit calls");
 }

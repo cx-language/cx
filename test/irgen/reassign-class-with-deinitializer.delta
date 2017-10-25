@@ -1,0 +1,22 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class X {
+    init() {}
+    deinit() {}
+}
+
+// CHECK: define i32 @main()
+func main() {
+    // CHECK-NEXT: %x = alloca {}
+    // CHECK-NEXT: %1 = call {} @X.init()
+    // CHECK-NEXT: store {} %1, {}* %x
+    var x = X();
+
+    // CHECK-NEXT: call void @X.deinit({}* %x)
+    // CHECK-NEXT: %2 = call {} @X.init()
+    // CHECK-NEXT: store {} %2, {}* %x
+    // CHECK-NEXT: call void @X.deinit({}* %x)
+    x = X();
+
+    // CHECK-NEXT: ret i32 0
+}

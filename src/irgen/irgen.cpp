@@ -380,10 +380,43 @@ void IRGenerator::codegenBreakStmt(const BreakStmt&) {
     builder.CreateBr(breakTargets.back());
 }
 
-void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
-    if (!stmt.getRHS()) return;
+llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs, bool isRawAssignment) {
+    if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentDecl)) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
+            if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
+                if (fieldDecl->getParent() == initDecl->getTypeDecl()) {
+                    return rhs ? codegenLvalueExpr(*lhs) : nullptr;
+                }
+            }
+        }
+    }
 
-    auto* lhsLvalue = codegenLvalueExpr(*stmt.getLHS());
+    if (!isRawAssignment) {
+        if (auto* basicType = llvm::dyn_cast<BasicType>(lhs->getType().get())) {
+            auto mangledName = mangleTypeDecl(basicType->getName(), basicType->getGenericArgs());
+            auto decls = currentTypeChecker->findDecls(mangledName, true);
+
+            if (!decls.empty()) {
+                auto* typeDecl = llvm::cast<TypeDecl>(decls[0]);
+
+                if (auto* deinit = typeDecl->getDeinitializer()) {
+                    llvm::Value* value = codegenLvalueExpr(*lhs);
+                    createDeinitCall(getFunction(*deinit), value, lhs->getType(), typeDecl);
+                    return rhs ? value : nullptr;
+                }
+            }
+        }
+    }
+
+    return rhs ? codegenLvalueExpr(*lhs) : nullptr;
+}
+
+void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
+    llvm::Value* lhsLvalue = codegenAssignmentLHS(stmt.getLHS(), stmt.getRHS(), stmt.isRawAssignment());
+
+    if (!lhsLvalue) {
+        return;
+    }
 
     if (stmt.isCompoundAssignment()) {
         auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.getRHS());

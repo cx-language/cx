@@ -7,6 +7,7 @@ class Y {
 
 // CHECK: define void @f({} %a, {}* %b)
 func f(a: Y, b: mutable Y*) {
+    // CHECK-NEXT: all void @Y.deinit({}* %b)
     // CHECK-NEXT: store {} %a, {}* %b
     *b = a;
     // CHECK-NEXT: ret void

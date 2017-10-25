@@ -78,6 +78,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
             auto rhs = assignStmt->getRHS() ? assignStmt->getRHS()->instantiate(genericArgs) : nullptr;
             return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs),
                                                  assignStmt->isCompoundAssignment(),
+                                                 assignStmt->isRawAssignment(),
                                                  assignStmt->getLocation());
         }
         case StmtKind::CompoundStmt: {

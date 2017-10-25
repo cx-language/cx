@@ -359,6 +359,9 @@ Token delta::lex() {
                 unreadChar(ch);
                 return XOR;
             case '~':
+                ch = readChar();
+                if (ch == '=') return RAW_ASSIGN;
+                unreadChar(ch);
                 return COMPL;
             case '(': return LPAREN;
             case ')': return RPAREN;
