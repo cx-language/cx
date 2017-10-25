@@ -16,6 +16,7 @@ cd build
 brew update
 
 brew install cmake ninja llvm
+sudo easy_install pip
 sudo pip2 install lit
 
 cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
