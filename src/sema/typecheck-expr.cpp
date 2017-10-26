@@ -617,7 +617,6 @@ Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
 Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee) const {
     llvm::SmallVector<Decl*, 1> matches;
     bool isInitCall = false;
-    bool atLeastOneFunction = false;
 
     for (Decl* decl : decls) {
         switch (decl->getKind()) {
@@ -783,18 +782,23 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             default:
                 continue;
         }
-
-        if (!decl->isVarDecl() && !decl->isParamDecl() && !decl->isFieldDecl()) {
-            atLeastOneFunction = true;
-        }
     }
 
     switch (matches.size()) {
         case 1: return *matches.front();
-        case 0:
+        case 0: {
             if (decls.size() == 0) {
                 error(expr.getCallee().getLocation(), "unknown identifier '", callee, "'");
-            } else if (atLeastOneFunction) {
+            }
+
+            bool atLeastOneFunction = llvm::any_of(decls, [](Decl* decl) {
+                return decl->isFunctionDecl()
+                    || decl->isFunctionTemplate()
+                    || decl->isTypeDecl()
+                    || decl->isTypeTemplate();
+            });
+
+            if (atLeastOneFunction) {
                 auto argTypeStrings = map(expr.getArgs(), [](const Argument& arg) {
                     auto type = arg.getValue()->getType();
                     return type ? type.toString() : "???";
@@ -806,6 +810,7 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             } else {
                 error(expr.getCallee().getLocation(), "'", callee, "' is not a function");
             }
+        }
         default:
             if (expr.getReceiver() && expr.getReceiverType().removePointer().isMutable()) {
                 llvm::SmallVector<Decl*, 1> mutatingMatches;
