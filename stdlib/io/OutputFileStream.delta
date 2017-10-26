@@ -24,7 +24,7 @@ class OutputFileStream: OutputStream {
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    func write(string: StringRef) -> bool {
+    mutating func write(string: StringRef) -> bool {
         return fs.write(string);
     }
 }

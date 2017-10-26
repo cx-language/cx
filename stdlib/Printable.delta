@@ -1,0 +1,10 @@
+interface Printable {
+    // TODO: Make this method take any OutputStream as an argument once the compiler supports it.
+    func printTo(stream: mutable String*);
+
+    func toString() -> String {
+        var string = String();
+        printTo(string);
+        return string;
+    }
+}

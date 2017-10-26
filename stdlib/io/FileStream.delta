@@ -72,7 +72,7 @@ class FileStream: InputStream, OutputStream {
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    func write(string: StringRef) -> bool {
+    mutating func write(string: StringRef) -> bool {
         for (let c in string) {
             let ret = fputc(int(c), file!);
             if (ret <= 0) {

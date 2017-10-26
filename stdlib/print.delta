@@ -1,5 +1,11 @@
-func print(text: StringRef) {
-    printf("%.*s\n", text.size(), text.data());
+func print<T: Printable>(value: T*) {
+    let string = value.toString();
+    printf("%.*s\n", string.size(), string.data());
+}
+
+func print<T: Printable>(value: T) {
+    let string = value.toString();
+    printf("%.*s\n", string.size(), string.data());
 }
 
 func readLine() -> String {

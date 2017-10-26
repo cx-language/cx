@@ -1,4 +1,4 @@
-struct StringRef {
+struct StringRef: Printable {
     var characters: ArrayRef<char>;
 
     init(pointer: char*, length: uint) {
@@ -35,5 +35,9 @@ struct StringRef {
 
     func iterator() -> StringIterator {
         return StringIterator(this);
+    }
+
+    func printTo(stream: mutable String*) {
+        stream.write(this);
     }
 }

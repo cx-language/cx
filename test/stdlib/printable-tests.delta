@@ -1,0 +1,25 @@
+// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+
+func main() {
+    testCustomPrintableClass();
+}
+
+class A: Printable {
+    let a: StringRef;
+    let b: StringRef;
+
+    init(a: StringRef, b: StringRef) {
+        this.a = a;
+        this.b = b;
+    }
+
+    func printTo(stream: mutable String*) {
+        stream.write(a);
+        stream.write("+");
+        stream.write(b);
+    }
+}
+
+func testCustomPrintableClass() {
+    assert(A("foo", "bar").toString() == "foo+bar", "testCustomPrintableClass");
+}

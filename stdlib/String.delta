@@ -1,4 +1,4 @@
-class String {
+class String: OutputStream, Printable {
     var characters: Array<char>;
 
     /// Initializes an empty string.
@@ -50,6 +50,13 @@ class String {
     mutating func push(character: char) {
         *characters[size()] = character;
         characters.push('\0');
+    }
+
+    mutating func write(string: StringRef) -> bool {
+        for (let ch in string) {
+            push(ch);
+        }
+        return true;
     }
 
     /// Removes the first character from the string.
@@ -135,6 +142,10 @@ class String {
     // Splits the string by whitespace
     func split() -> Array<StringRef> {
         return split(' ');
+    }
+
+    func printTo(stream: mutable String*) {
+        stream.write(StringRef(this));
     }
 
     func _indexOutOfBounds(index: uint) {
