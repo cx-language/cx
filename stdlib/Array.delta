@@ -20,6 +20,21 @@ class Array<Element> {
         reserve(capacity);
     }
 
+    /// Initializes an array containing the elements of the given array.
+    init(elements: Element[]*) {
+        // TODO: Call Array.init() when initializers can call other initializers.
+        bufferPointer = undefined;
+        size = 0;
+        this.capacity = 0;
+
+        reserve(elements.size());
+
+        // TODO: Change this to a for-each loop when arrays can be iterated.
+        for (let index in 0..elements.size()) {
+            push(elements[index]);
+        }
+    }
+
     deinit() {
         free(cast<mutable void*>(bufferPointer));
     }

@@ -11,6 +11,18 @@ class C {
 }
 
 func main() {
+    testArrayInsertionAndRemoval();
+    testArrayInitFromLiteral();
+    testArrayIterator();
+    testArrayMutatingIteration();
+    testArrayEnumeratedIterator();
+    testEmpty();
+    testMap();
+    testFilter();
+    testElementDestruction();
+}
+
+func testArrayInsertionAndRemoval() {
     var a = Array<C>();
     assert(a.size() == 0 && a.capacity() >= 0, "initial size and capacity are valid");
 
@@ -25,17 +37,21 @@ func main() {
     a.removeLast();
     a.push(C(4));
     assert(a.size() == 2 && a.capacity() >= 2, "size and capacity are valid after adding and removing elements");
-
-    testArrayIterator(a);
-    testArrayMutatingIteration();
-    testArrayEnumeratedIterator();
-    testEmpty();
-    testMap();
-    testFilter();
-    testElementDestruction();
 }
 
-func testArrayIterator(array: Array<C>* ) {
+func testArrayInitFromLiteral() {
+    let a = Array(&[1, 2, 3]);
+
+    assert(*a[0] == 1, "testArrayInitFromLiteral - 1");
+    assert(*a[1] == 2, "testArrayInitFromLiteral - 2");
+    assert(*a[2] == 3, "testArrayInitFromLiteral - 3");
+}
+
+func testArrayIterator() {
+    var array = Array<C>();
+    array.push(C(1));
+    array.push(C(4));
+
     var iterator = array.iterator();
 
     assert(iterator.hasValue(), "testArrayIterator: hasValue() - 1");
