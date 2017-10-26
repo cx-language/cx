@@ -1,11 +1,11 @@
 class Array<Element> {
-    var bufferPointer: mutable Element*?;
+    var bufferPointer: mutable Element*;
     var size: uint;
     var capacity: uint;
 
     /// Initializes an empty array.
     init() {
-        bufferPointer = null;
+        bufferPointer = undefined;
         size = 0;
         capacity = 0;
     }
@@ -13,7 +13,7 @@ class Array<Element> {
     /// Initializes an empty array with pre-allocated capacity.
     init(capacity: uint) {
         // TODO: Call Array.init() when initializers can call other initializers.
-        bufferPointer = null;
+        bufferPointer = undefined;
         size = 0;
         this.capacity = 0;
 
@@ -21,7 +21,7 @@ class Array<Element> {
     }
 
     deinit() {
-        free(cast<mutable void*?>(bufferPointer));
+        free(cast<mutable void*>(bufferPointer));
     }
 
     /// Returns the number of elements in the array.
@@ -45,7 +45,7 @@ class Array<Element> {
             _indexOutOfBounds(index);
         }
 
-        return bufferPointer! + index;
+        return bufferPointer + index;
     }
 
     /// Returns the element at the given index.
@@ -54,7 +54,7 @@ class Array<Element> {
             _indexOutOfBounds(index);
         }
 
-        return bufferPointer! + index;
+        return bufferPointer + index;
     }
 
     func first() -> Element* {
@@ -62,7 +62,7 @@ class Array<Element> {
             _emptyArrayFirst();
         }
 
-        return bufferPointer!;
+        return bufferPointer;
     }
 
     func last() -> Element* {
@@ -70,15 +70,15 @@ class Array<Element> {
             _emptyArrayLast();
         }
 
-        return bufferPointer! + size;
+        return bufferPointer + size;
     }
 
     func data() -> Element* {
-        return bufferPointer!;
+        return bufferPointer;
     }
 
     mutating func data() -> mutable Element* {
-        return bufferPointer!;
+        return bufferPointer;
     }
 
     /// Adds the given element to the end of the array.
@@ -87,25 +87,27 @@ class Array<Element> {
             _grow();
         }
 
-        *(bufferPointer! + size) ~= newElement;
+        *(bufferPointer + size) ~= newElement;
         size++;
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
     mutating func reserve(minimumCapacity: uint) {
         if (minimumCapacity > capacity) {
-            capacity = minimumCapacity;
-
-            let newBufferPointer = cast<mutable Element*?>(malloc(sizeof(Element) * uint64(capacity)));
+            let newBufferPointer = cast<mutable Element*>(malloc(sizeof(Element) * uint64(minimumCapacity))!);
 
             for (let index in 0..size) {
-                let source = bufferPointer! + index;
-                let target = newBufferPointer! + index;
+                let source = bufferPointer + index;
+                let target = newBufferPointer + index;
                 *target ~= *source;
             }
 
-            free(cast<mutable void*?>(bufferPointer));
+            if (capacity != 0) {
+                free(cast<mutable void*>(bufferPointer));
+            }
+
             bufferPointer = newBufferPointer;
+            capacity = minimumCapacity;
         }
     }
 
@@ -126,7 +128,7 @@ class Array<Element> {
         }
 
         size--;
-        (bufferPointer! + size).deinit();
+        (bufferPointer + size).deinit();
     }
 
     /// Removes the element at the given index from the array.
@@ -140,11 +142,11 @@ class Array<Element> {
     }
 
     mutating func _removeAt(index: uint) {
-        (bufferPointer! + index).deinit();
+        (bufferPointer + index).deinit();
 
         for (let i in (index + 1)..size) {
-            let source = bufferPointer! + i;
-            let target = bufferPointer! + (i - 1);
+            let source = bufferPointer + i;
+            let target = bufferPointer + (i - 1);
             *target ~= *source;
         }
 

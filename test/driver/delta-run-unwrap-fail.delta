@@ -2,7 +2,7 @@
 
 func main() {
     let p: mutable int*? = null;
-    *(p!) = 666;
+    let pp = p!;
 }
 
-// CHECK: Segmentation fault
+// CHECK: Illegal instruction

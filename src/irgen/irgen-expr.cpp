@@ -481,8 +481,17 @@ llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {
-    // TODO: Assert that the operand is non-null.
-    return codegenExpr(expr.getOperand());
+    auto* value = codegenExpr(expr.getOperand());
+    auto* condition = builder.CreateIsNull(value, "isNull");
+    auto* function = builder.GetInsertBlock()->getParent();
+    auto* unwrapFailBlock = llvm::BasicBlock::Create(ctx, "unwrapFail", function);
+    auto* unwrapSuccessBlock = llvm::BasicBlock::Create(ctx, "unwrapSuccess", function);
+    builder.CreateCondBr(condition, unwrapFailBlock, unwrapSuccessBlock);
+    builder.SetInsertPoint(unwrapFailBlock);
+    builder.CreateCall(llvm::Intrinsic::getDeclaration(&module, llvm::Intrinsic::trap));
+    builder.CreateUnreachable();
+    builder.SetInsertPoint(unwrapSuccessBlock);
+    return value;
 }
 
 llvm::Value* IRGenerator::codegenLambdaExpr(const LambdaExpr& expr) {
