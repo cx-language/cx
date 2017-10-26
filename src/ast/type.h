@@ -156,6 +156,7 @@ public:
     Type getElementType() const { return elementType; }
     int64_t getSize() const { return size; }
     bool isUnsized() const { return size == unsized; }
+    static Type getIndexType() { return Type::getUInt(); }
     static const int64_t unsized = -1;
     static Type get(Type type, int64_t size, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }

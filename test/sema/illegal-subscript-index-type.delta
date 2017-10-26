@@ -4,6 +4,6 @@ extern func foo() -> int[5]*;
 
 func main() {
     let p = foo();
-    // CHECK: [[@LINE+1]]:15: error: illegal subscript index type 'bool', expected 'int'
+    // CHECK: [[@LINE+1]]:15: error: illegal subscript index type 'bool', expected 'uint'
     let e = p[false];
 }

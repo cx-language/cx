@@ -1179,11 +1179,11 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
     Type indexType = typecheckExpr(*expr.getIndexExpr());
     Type convertedType;
 
-    if (isImplicitlyConvertible(expr.getIndexExpr(), indexType, Type::getInt(), &convertedType)) {
+    if (isImplicitlyConvertible(expr.getIndexExpr(), indexType, ArrayType::getIndexType(), &convertedType)) {
         expr.getIndexExpr()->setType(convertedType ? convertedType : indexType);
     } else {
         error(expr.getIndexExpr()->getLocation(), "illegal subscript index type '", indexType,
-              "', expected 'int'");
+              "', expected '", ArrayType::getIndexType(), "'");
     }
 
     if (!arrayType.isUnsizedArrayType()) {
