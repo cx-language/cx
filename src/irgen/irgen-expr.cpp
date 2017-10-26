@@ -104,6 +104,7 @@ llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
 llvm::Value* IRGenerator::codegenLvaluePrefixExpr(const PrefixExpr& expr) {
     switch (expr.getOperator()) {
         case STAR: return codegenExpr(expr.getOperand());
+        case AND: return codegenLvalueExpr(expr.getOperand());
         default: llvm_unreachable("invalid lvalue prefix operator");
     }
 }
@@ -246,12 +247,14 @@ bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* target
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
     if (targetType && isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
         ASSERT(expr.getType().removePointer().getArraySize() != ArrayType::unsized);
-        llvm::Value* value;
+        auto* value = codegenLvalueExpr(expr);
 
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(&expr)) {
-            value = codegenLvalueVarExpr(*varExpr);
-        } else {
-            value = codegenExpr(expr);
+        if (!value->getType()->isPointerTy()) {
+            static int temporaryArrayCounter = 0;
+            auto name = "__temporaryArray" + std::to_string(temporaryArrayCounter++);
+            auto* alloca = createEntryBlockAlloca(expr.getType().removePointer(), nullptr, nullptr, name);
+            builder.CreateStore(value, alloca);
+            value = alloca;
         }
 
         auto* elementPtr = builder.CreateConstGEP2_32(nullptr, value, 0, 0);
@@ -545,7 +548,7 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
         case ExprKind::FloatLiteralExpr: llvm_unreachable("no lvalue float literals");
         case ExprKind::BoolLiteralExpr: llvm_unreachable("no lvalue boolean literals");
         case ExprKind::NullLiteralExpr: llvm_unreachable("no lvalue null literals");
-        case ExprKind::ArrayLiteralExpr: llvm_unreachable("no lvalue array literals");
+        case ExprKind::ArrayLiteralExpr: return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
         case ExprKind::TupleExpr: llvm_unreachable("IRGen doesn't support tuple types yet");
         case ExprKind::PrefixExpr: return codegenLvaluePrefixExpr(llvm::cast<PrefixExpr>(expr));
         case ExprKind::BinaryExpr: llvm_unreachable("no lvalue binary expressions");
