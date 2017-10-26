@@ -1,0 +1,14 @@
+// RUN: %delta -typecheck -Werror %s | %FileCheck %s -allow-empty
+
+func f<T>() {}
+
+class A<T> {
+    init() {}
+}
+
+func main() {
+    f<int>();
+    let a = A<int>();
+}
+
+// CHECK-NOT: unused

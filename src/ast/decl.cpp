@@ -80,6 +80,20 @@ std::unique_ptr<FunctionDecl> FunctionDecl::instantiate(const llvm::StringMap<Ty
     return instantiation;
 }
 
+bool FunctionTemplate::isReferenced() const {
+    if (Decl::isReferenced()) {
+        return true;
+    }
+
+    for (auto& instantiation : instantiations) {
+        if (instantiation.second->isReferenced()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl,
                        std::vector<Type>&& genericArgs, SourceLocation location)
 : FunctionDecl(kind, std::move(proto), std::move(genericArgs), *typeDecl.getModule(), location),

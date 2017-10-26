@@ -74,7 +74,7 @@ public:
     Module* getModule() const;
     SourceLocation getLocation() const;
     virtual llvm::StringRef getName() const = 0;
-    bool isReferenced() const { return referenced; }
+    virtual bool isReferenced() const { return referenced; }
     void setReferenced(bool referenced) { this->referenced = referenced; }
     bool hasBeenMoved() const;
     std::unique_ptr<Decl> instantiate(const llvm::StringMap<Type>& genericArgs,
@@ -253,7 +253,7 @@ public:
     : Decl(DeclKind::FunctionTemplate), genericParams(std::move(genericParams)),
       functionDecl(std::move(functionDecl)) {}
     llvm::StringRef getName() const override { return getFunctionDecl()->getName(); }
-    bool signatureMatches(const FunctionDecl& other, bool matchReceiver = true) const;
+    bool isReferenced() const override;
     static bool classof(const Decl* d) { return d->isFunctionTemplate(); }
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
     FunctionDecl* getFunctionDecl() const { return functionDecl.get(); }
