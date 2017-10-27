@@ -63,7 +63,8 @@ viewed by opening `docs/html/index.html` in a browser.
 Delta is an open-source language. Contributions are welcome and encouraged! See the
 current [projects](https://github.com/delta-lang/delta/projects) for things that
 need to be done. All contributors are expected to follow the Delta
-[code of conduct](docs/CODE_OF_CONDUCT.md).
+[code of conduct](docs/CODE_OF_CONDUCT.md). If you have any questions or just want
+to chat, join our Telegram group: [t.me/deltalang](https://t.me/deltalang).
 
 ## License
 
