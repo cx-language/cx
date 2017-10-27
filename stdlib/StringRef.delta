@@ -5,6 +5,16 @@ struct StringRef: Printable {
         characters = ArrayRef<char>(pointer, length);
     }
 
+    /// Initializes a StringRef referring to a null-terminated C-style string.
+    ///
+    /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
+    /// length of the argument string. If you know the length beforehand, consider using
+    /// `StringRef.init(pointer: char*, length: uint)` instead.
+    ///
+    init(cString: char*) {
+        characters = ArrayRef<char>(cString, uint(strlen(cString)));
+    }
+
     init (string: String*) {
         characters = ArrayRef<char>(string.data(), string.size());
     }

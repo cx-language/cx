@@ -8,10 +8,37 @@ class String: OutputStream, Printable {
     }
 
     init(string: StringRef) {
-        characters = Array<char>();
-        characters.reserve(string.size() + 1);
+        characters = Array<char>(capacity: string.size() + 1);
 
         for (let ch in string) {
+            characters.push(ch);
+        }
+
+        characters.push('\0');
+    }
+
+    /// Initializes a string with the characters from a character array of known length.
+    init(pointer: char*, length: uint) {
+        characters = Array<char>(capacity: length + 1);
+
+        for (let ch in StringRef(pointer, length)) {
+            characters.push(ch);
+        }
+
+        characters.push('\0');
+    }
+
+    /// Initializes a string with the contents of a null-terminated C-style string.
+    ///
+    /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
+    /// length of the argument string. If you know the length beforehand, consider using
+    /// `String.init(pointer: char*, length: uint)` instead.
+    ///
+    init(cString: char*) {
+        let cStringSize = uint(strlen(cString));
+        characters = Array<char>(capacity: cStringSize + 1);
+
+        for (let ch in StringRef(cString, cStringSize)) {
             characters.push(ch);
         }
 
