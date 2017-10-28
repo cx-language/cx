@@ -187,7 +187,8 @@ public:
     : name(std::move(name)), value(std::move(value)),
       location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
-    Expr* getValue() const { return value.get(); }
+    Expr* getValue() { return value.get(); }
+    const Expr* getValue() const { return value.get(); }
     SourceLocation getLocation() const { return location; }
 
 private:
@@ -207,13 +208,16 @@ public:
     std::string getMangledFunctionName() const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
     bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFunctionName()); }
-    Expr* getReceiver() const;
+    const Expr* getReceiver() const;
+    Expr* getReceiver();
     Type getReceiverType() const { return receiverType; }
     void setReceiverType(Type type) { receiverType = type; }
     Decl* getCalleeDecl() const { return calleeDecl; }
-    void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
+    void setCalleeDecl(Decl* callee) { ASSERT(callee); calleeDecl = callee; }
     const Expr& getCallee() const { return *callee; }
+    Expr& getCallee() { return *callee; }
     llvm::ArrayRef<Argument> getArgs() const { return args; }
+    llvm::MutableArrayRef<Argument> getArgs() { return args; }
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     void setGenericArgs(std::vector<Type>&& types) { genericArgs = std::move(types); }
     static bool classof(const Expr* e) {
@@ -253,7 +257,8 @@ public:
                llvm::make_unique<VarExpr>(toString(op.getKind()), location),
                addArg({}, std::move(operand)), location), op(op) {}
     PrefixOperator getOperator() const { return op; }
-    Expr& getOperand() const { return *getArgs()[0].getValue(); }
+    Expr& getOperand() { return *getArgs()[0].getValue(); }
+    const Expr& getOperand() const { return *getArgs()[0].getValue(); }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::PrefixExpr; }
 
 private:
@@ -267,8 +272,10 @@ public:
     : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(op.getFunctionName(), location),
                addArg(addArg({}, std::move(left)), std::move(right)), location), op(op) {}
     BinaryOperator getOperator() const { return op; }
-    Expr& getLHS() const { return *getArgs()[0].getValue(); }
-    Expr& getRHS() const { return *getArgs()[1].getValue(); }
+    const Expr& getLHS() const { return *getArgs()[0].getValue(); }
+    const Expr& getRHS() const { return *getArgs()[1].getValue(); }
+    Expr& getLHS() { return *getArgs()[0].getValue(); }
+    Expr& getRHS() { return *getArgs()[1].getValue(); }
     bool isBuiltinOp() const;
     Decl* getCalleeDecl() const { return calleeDecl; }
     void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
@@ -310,7 +317,8 @@ class MemberExpr : public Expr {
 public:
     MemberExpr(std::unique_ptr<Expr> base, std::string&& member, SourceLocation location)
     : Expr(ExprKind::MemberExpr, location), base(std::move(base)), member(std::move(member)) {}
-    Expr* getBaseExpr() const { return base.get(); }
+    const Expr* getBaseExpr() const { return base.get(); }
+    Expr* getBaseExpr() { return base.get(); }
     llvm::StringRef getMemberName() const { return member; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::MemberExpr; }
 
@@ -325,8 +333,10 @@ public:
     SubscriptExpr(std::unique_ptr<Expr> array, std::unique_ptr<Expr> index, SourceLocation location)
     : CallExpr(ExprKind::SubscriptExpr, llvm::make_unique<MemberExpr>(std::move(array), "[]", location),
                { Argument("", std::move(index)) }, location) {}
-    Expr* getBaseExpr() const { return getReceiver(); }
-    Expr* getIndexExpr() const { return getArgs()[0].getValue(); }
+    const Expr* getBaseExpr() const { return getReceiver(); }
+    const Expr* getIndexExpr() const { return getArgs()[0].getValue(); }
+    Expr* getBaseExpr() { return getReceiver(); }
+    Expr* getIndexExpr() { return getArgs()[0].getValue(); }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::SubscriptExpr; }
 };
 

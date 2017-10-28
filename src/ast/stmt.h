@@ -226,8 +226,10 @@ public:
                bool isRawAssignment, SourceLocation location)
     : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)),
       isCompound(isCompoundAssignment), isRaw(isRawAssignment), location(location) {}
-    Expr* getLHS() const { return lhs.get(); }
-    Expr* getRHS() const { return rhs.get(); }
+    const Expr* getLHS() const { return lhs.get(); }
+    const Expr* getRHS() const { return rhs.get(); }
+    Expr* getLHS() { return lhs.get(); }
+    Expr* getRHS() { return rhs.get(); }
     bool isCompoundAssignment() const { return isCompound; }
     bool isRawAssignment() const { return isRaw; }
     SourceLocation getLocation() const { return location; }

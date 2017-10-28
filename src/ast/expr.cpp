@@ -132,7 +132,9 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             instantiation = llvm::make_unique<CallExpr>(std::move(callee), std::move(args),
                                                         std::move(callGenericArgs),
                                                         callExpr->getLocation());
-            llvm::cast<CallExpr>(*instantiation).setCalleeDecl(callExpr->getCalleeDecl());
+            if (auto* callee = callExpr->getCalleeDecl()) {
+                llvm::cast<CallExpr>(*instantiation).setCalleeDecl(callee);
+            }
             break;
         }
         case ExprKind::CastExpr: {
@@ -207,7 +209,12 @@ std::string CallExpr::getMangledFunctionName() const {
     return mangleFunctionDecl(receiverType, getFunctionName());
 }
 
-Expr* CallExpr::getReceiver() const {
+const Expr* CallExpr::getReceiver() const {
+    if (!isMethodCall()) return nullptr;
+    return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
+}
+
+Expr* CallExpr::getReceiver() {
     if (!isMethodCall()) return nullptr;
     return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
 }

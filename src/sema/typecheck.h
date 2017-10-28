@@ -108,12 +108,13 @@ private:
                                                 CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     Decl& resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
-                                       const CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
+                                       CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     bool isImplicitlyCopyable(Type type) const;
-    bool validateArgs(const CallExpr& expr, const FunctionDecl& functionDecl,
-                      llvm::StringRef functionName = "",
+    bool argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl,
+                        llvm::ArrayRef<ParamDecl> params = {}) const;
+    void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
-    bool validateArgs(const CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params,
+    void validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params,
                       bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type) const;
