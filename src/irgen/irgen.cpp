@@ -67,11 +67,6 @@ IRGenerator::IRGenerator()
     scopes.push_back(Scope(*this));
 }
 
-llvm::Function* IRGenerator::getFunction(const FunctionDecl& decl) {
-    Type receiverType = decl.getTypeDecl() ? decl.getTypeDecl()->getType() : nullptr;
-    return getFunctionProto(decl, receiverType);
-}
-
 llvm::Function* IRGenerator::getFunction(Type receiverType, llvm::StringRef functionName) {
     auto mangledName = mangleFunctionDecl(receiverType, functionName);
     auto it = functionInstantiations.find(mangledName);
@@ -122,7 +117,7 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
                                        llvm::cast<FieldDecl>(decl)->getName());
 
         case DeclKind::FunctionDecl:
-            return getFunction(*llvm::cast<FunctionDecl>(decl));
+            return getFunctionProto(*llvm::cast<FunctionDecl>(decl));
 
         default:
             llvm_unreachable("all cases handled");
@@ -265,7 +260,19 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
 void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), &stmt.getDecl(), nullptr,
                                           stmt.getDecl().getName());
+
     if (auto initializer = stmt.getDecl().getInitializer()) {
+        if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
+            if (callExpr->getCalleeDecl()) {
+                if (auto* initDecl = llvm::dyn_cast<InitDecl>(callExpr->getCalleeDecl())) {
+                    if (initDecl->getTypeDecl()->getType() == stmt.getDecl().getType().asImmutable()) {
+                        codegenCallExpr(*callExpr, alloca);
+                        return;
+                    }
+                }
+            }
+        }
+
         builder.CreateStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
     }
 }
@@ -401,7 +408,7 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs,
 
                 if (auto* deinit = typeDecl->getDeinitializer()) {
                     llvm::Value* value = codegenLvalueExpr(*lhs);
-                    createDeinitCall(getFunction(*deinit), value, lhs->getType(), typeDecl);
+                    createDeinitCall(getFunctionProto(*deinit), value, lhs->getType(), typeDecl);
                     return rhs ? value : nullptr;
                 }
             }
@@ -444,7 +451,8 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
 
         builder.CreateStore(rhsValue, lhsLvalue);
     } else {
-        builder.CreateStore(codegenExpr(*stmt.getRHS()), lhsLvalue);
+        auto* rhsValue = codegenExprForPassing(*stmt.getRHS(), lhsLvalue->getType()->getPointerElementType());
+        builder.CreateStore(rhsValue, lhsLvalue);
     }
 }
 
@@ -506,15 +514,14 @@ llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool is
     }
 }
 
-llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, Type receiverType,
-                                              std::string&& mangledName) {
+llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::string&& mangledName) {
     auto it = functionInstantiations.find(mangleWithParams(decl));
     if (it != functionInstantiations.end()) return it->second.getFunction();
 
     auto* functionType = decl.getFunctionType();
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
-    if (decl.isMethodDecl() && !decl.isInitDecl()) {
+    if (decl.isMethodDecl()) {
         paramTypes.emplace_back(getLLVMTypeForPassing(*decl.getTypeDecl(), decl.isMutating()));
     }
 
@@ -523,7 +530,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, Type rec
     }
 
     ASSERT(!functionType->getReturnType().isTupleType(), "IRGen doesn't support tuple return values yet");
-    auto* returnType = toIR(decl.isInitDecl() ? receiverType : functionType->getReturnType());
+    auto* returnType = toIR(functionType->getReturnType());
     if (decl.getName() == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
@@ -532,7 +539,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, Type rec
                                             mangledName, &module);
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
-    if (decl.isMethodDecl() && !decl.isInitDecl()) arg++->setName("this");
+    if (decl.isMethodDecl()) arg++->setName("this");
 
     ASSERT(decl.getParams().size() == size_t(std::distance(arg, argsEnd)));
     for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) {
@@ -558,7 +565,7 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
         case DeclKind::MethodDecl:
         case DeclKind::InitDecl:
         case DeclKind::DeinitDecl:
-            return getFunction(*llvm::cast<FunctionDecl>(decl));
+            return getFunctionProto(*llvm::cast<FunctionDecl>(decl));
 
         case DeclKind::VarDecl:
             return findValue(llvm::cast<VarDecl>(decl)->getName(), decl);
@@ -611,30 +618,6 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
 void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
     llvm::Function* function = getFunctionProto(decl);
     if (!decl.isExtern()) codegenFunctionBody(decl, *function);
-    ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
-}
-
-void IRGenerator::codegenInitDecl(const InitDecl& decl) {
-    llvm::Function* function = getFunctionProto(decl, decl.getTypeDecl()->getType());
-
-    builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", function));
-
-    auto* type = llvm::cast<llvm::StructType>(toIR(decl.getTypeDecl()->getType()));
-    auto* alloca = builder.CreateAlloca(type);
-
-    beginScope();
-    setLocalValue(nullptr, "this", alloca, nullptr);
-    auto param = decl.getParams().begin();
-    for (auto& arg : function->args()) {
-        setLocalValue(param->getType(), arg.getName(), &arg, param);
-        ++param;
-    }
-    for (auto& stmt : decl.getBody()) {
-        codegenStmt(*stmt);
-    }
-    builder.CreateRet(builder.CreateLoad(alloca));
-    endScope();
-
     ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
 }
 
@@ -724,7 +707,7 @@ void IRGenerator::codegenDecl(const Decl& decl) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl: codegenFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
         case DeclKind::GenericParamDecl: llvm_unreachable("cannot codegen generic parameter declaration");
-        case DeclKind::InitDecl: codegenInitDecl(llvm::cast<InitDecl>(decl)); break;
+        case DeclKind::InitDecl: codegenFunctionDecl(llvm::cast<InitDecl>(decl)); break;
         case DeclKind::DeinitDecl: codegenFunctionDecl(llvm::cast<DeinitDecl>(decl)); break;
         case DeclKind::FunctionTemplate: break;
         case DeclKind::TypeDecl: codegenTypeDecl(llvm::cast<TypeDecl>(decl)); break;
@@ -753,13 +736,7 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
 
             setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
             currentDecl = &p.second.getDecl();
-
-            if (auto* initDecl = llvm::dyn_cast<InitDecl>(&p.second.getDecl())) {
-                codegenInitDecl(*initDecl);
-            } else {
-                codegenFunctionBody(p.second.getDecl(), *p.second.getFunction());
-            }
-
+            codegenFunctionBody(p.second.getDecl(), *p.second.getFunction());
             ASSERT(!llvm::verifyFunction(*p.second.getFunction(), &llvm::errs()));
         }
 

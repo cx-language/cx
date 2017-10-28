@@ -4,7 +4,7 @@ class F {
     let v: int;
     let a: int[1];
 
-    // CHECK: define %F @F.init{{[\.0-9]*}}()
+    // CHECK: define void @F.init{{[\.0-9]*}}
     init() {
         // CHECK: store i32 42, i32* %{{[a-z0-9]+}}
         this.v = 42;

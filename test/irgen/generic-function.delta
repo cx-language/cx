@@ -21,8 +21,8 @@ func main() {
     foo<bool>(false);
     // CHECK-NEXT: call void @"foo<bool>"(i1 true)
     foo<bool>(true);
-    // CHECK-NEXT: call %StringRef @StringRef.init
-    // CHECK-NEXT: call %StringRef @"bar<StringRef>"
+    // CHECK-NEXT: call void @StringRef.init
+    // CHECK: call %StringRef @"bar<StringRef>"
     var b = bar("bar");
     // CHECK: call i32 @"qux<int>"(i32 -5)
     let five = qux(-5);

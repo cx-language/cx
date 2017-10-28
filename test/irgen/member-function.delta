@@ -3,12 +3,10 @@
 struct Foo {
     let baz: int;
 
-    // CHECK: define %Foo @Foo.init()
-    // CHECK-NEXT: %1 = alloca %Foo
-    // CHECK-NEXT: %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
-    // CHECK-NEXT: store i32 42, i32* %2
-    // CHECK-NEXT: %3 = load %Foo, %Foo* %1
-    // CHECK-NEXT: ret %Foo %3
+    // CHECK: define void @Foo.init
+    // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
+    // CHECK-NEXT: store i32 42, i32* %1
+    // CHECK-NEXT: ret void
     init() { this.baz = 42; }
 
     // CHECK: define void @Foo.bar(%Foo %this)
@@ -24,13 +22,12 @@ struct Foo {
 // CHECK: define i32 @main()
 // CHECK-NEXT: %foo = alloca %Foo
 // CHECK-NEXT: %i = alloca i32
-// CHECK-NEXT: %1 = call %Foo @Foo.init()
-// CHECK-NEXT: store %Foo %1, %Foo* %foo
+// CHECK-NEXT: call void @Foo.init(%Foo* %foo)
 // CHECK-NEXT: %foo1 = load %Foo, %Foo* %foo
 // CHECK-NEXT: call void @Foo.bar(%Foo %foo1)
 // CHECK-NEXT: %foo2 = load %Foo, %Foo* %foo
-// CHECK-NEXT: %2 = call i32 @Foo.qux(%Foo %foo2)
-// CHECK-NEXT: store i32 %2, i32* %i
+// CHECK-NEXT: %1 = call i32 @Foo.qux(%Foo %foo2)
+// CHECK-NEXT: store i32 %1, i32* %i
 // CHECK-NEXT: ret
 func main() {
     var foo = Foo();

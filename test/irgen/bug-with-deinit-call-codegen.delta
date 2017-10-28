@@ -19,7 +19,7 @@ class Y<T> {
 func main() {
     var a = X();
 
-    // MAIN: call {} @"Y<bool>.init"()
+    // MAIN: call void @"Y<bool>.init"
     // MAIN: call i32 @"Y<bool>.f"({}* %{{[0-9]+}})
     Y<bool>().f();
 

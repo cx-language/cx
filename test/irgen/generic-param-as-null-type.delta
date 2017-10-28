@@ -9,8 +9,8 @@ struct S<T> {
 }
 
 func main() {
-    // CHECK: call %"S<int>" @"S<int>.init"()
+    // CHECK: call void @"S<int>.init"
     _ = S<int>()
-    // CHECK-NEXT: call %"S<bool>" @"S<bool>.init"()
+    // CHECK: call void @"S<bool>.init"
     _ = S<bool>()
 }

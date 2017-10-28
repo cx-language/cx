@@ -72,7 +72,6 @@ private:
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
     llvm::Module& getIRModule() { return module; }
 
-    llvm::Function* getFunction(const FunctionDecl& decl);
     llvm::Function* getFunction(Type receiverType, llvm::StringRef functionName);
     /// @param type The Delta type of the variable, or null if the variable is 'this'.
     void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
@@ -100,7 +99,7 @@ private:
     llvm::Value* codegenBinaryExpr(const BinaryExpr& expr);
     llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType);
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
-    llvm::Value* codegenCallExpr(const CallExpr& expr);
+    llvm::Value* codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit = nullptr);
     llvm::Value* codegenCastExpr(const CastExpr& expr);
     llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);
     llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
@@ -130,13 +129,11 @@ private:
 
     void codegenDecl(const Decl& decl);
     void codegenFunctionDecl(const FunctionDecl& decl);
-    void codegenInitDecl(const InitDecl& decl);
     llvm::StructType* codegenTypeDecl(const TypeDecl& decl);
     llvm::Value* codegenVarDecl(const VarDecl& decl);
 
     llvm::Value* getFunctionForCall(const CallExpr& call);
-    llvm::Function* getFunctionProto(const FunctionDecl& decl, Type receiverType = nullptr,
-                                     std::string&& mangledName = {});
+    llvm::Function* getFunctionProto(const FunctionDecl& decl, std::string&& mangledName = {});
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);

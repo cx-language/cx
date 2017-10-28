@@ -5,14 +5,9 @@ class X {
     deinit() {}
 }
 
-// CHECK: define {} @f() {
 func f() -> X {
-    // CHECK-NEXT: %x = alloca {}
-    // CHECK-NEXT: %1 = call {} @X.init()
-    // CHECK-NEXT: store {} %1, {}* %x
     let x = X();
 
-    // CHECK-NEXT: %x1 = load {}, {}* %x
-    // CHECK-NEXT: ret {} %x1
+    // CHECK-NOT: call void @X.deinit
     return x;
 }

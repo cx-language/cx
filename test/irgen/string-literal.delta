@@ -3,9 +3,12 @@
 // CHECK: @[[ID:[0-9]+]] = private unnamed_addr constant [4 x i8] c"foo\00"
 
 func main() {
+    // TODO: Improve codegen here.
     // CHECK: %s = alloca %StringRef
-    // CHECK-NEXT: %1 = call %StringRef @StringRef.init(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @[[ID]], i32 0, i32 0), i32 3)
-    // CHECK-NEXT: store %StringRef %1, %StringRef* %s
+    // CHECK-NEXT: [[LITERAL:%__str[0-9]+]] = alloca %StringRef
+    // CHECK-NEXT: call void @StringRef.init(%StringRef* [[LITERAL]], i8* getelementptr inbounds ([4 x i8], [4 x i8]* @[[ID]], i32 0, i32 0), i32 3)
+    // CHECK-NEXT: [[LOADED_LITERAL:%__str[0-9]+]] = load %StringRef, %StringRef* [[LITERAL]]
+    // CHECK-NEXT: store %StringRef [[LOADED_LITERAL]], %StringRef* %s
     let s = "foo";
     // CHECK-NEXT: ret
 }

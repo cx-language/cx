@@ -7,8 +7,8 @@ func main() -> int {
 
     // CHECK: alloca %"RangeIterator<int>"
     // CHECK-NEXT: %i = alloca i32
-    // CHECK: [[RANGE:%[a-z0-9]+]] = call %"Range<int>" @"Range<int>.init"(i32 0, i32 3)
-    // CHECK-NEXT: call %"RangeIterator<int>" @"Range<int>.iterator"(%"Range<int>" [[RANGE]])
+    // CHECK: call void @"Range<int>.init"(%"Range<int>"* %{{[0-9]+}}, i32 0, i32 3)
+    // CHECK: call %"RangeIterator<int>" @"Range<int>.iterator"
     // CHECK: call i1 @"RangeIterator<int>.hasValue"
     // CHECK: call i32 @"RangeIterator<int>.value"
     // CHECK: call void @"RangeIterator<int>.increment"

@@ -21,21 +21,18 @@ func main() {
     // CHECK-NEXT: %b = alloca %B
     let b: B = undefined;
 
-    // CHECK-NEXT: %1 = call %A @A.init()
-    // CHECK-NEXT: %2 = alloca %A
-    // CHECK-NEXT: store %A %1, %A* %2
-    // CHECK-NEXT: call void @f(%A* %2)
+    // CHECK-NEXT: %1 = alloca %A
+    // CHECK-NEXT: call void @A.init(%A* %1)
+    // CHECK-NEXT: call void @f(%A* %1)
     f(A());
 
-    // CHECK-NEXT: %3 = call %B @B.init()
-    // CHECK-NEXT: %4 = alloca %B
-    // CHECK-NEXT: store %B %3, %B* %4
-    // CHECK-NEXT: call void @f{{[\.0-9]+}}(%B* %4)
-
+    // CHECK-NEXT: %2 = alloca %B
+    // CHECK-NEXT: call void @B.init(%B* %2)
+    // CHECK-NEXT: call void @f{{[\.0-9]+}}(%B* %2)
     f(B());
 
-    // CHECK-NEXT: %5 = alloca i32
-    // CHECK-NEXT: store i32 0, i32* %5
-    // CHECK-NEXT: call void @f{{[\.0-9]+}}(i32* %5)
+    // CHECK-NEXT: %3 = alloca i32
+    // CHECK-NEXT: store i32 0, i32* %3
+    // CHECK-NEXT: call void @f{{[\.0-9]+}}(i32* %3)
     f(0);
 }

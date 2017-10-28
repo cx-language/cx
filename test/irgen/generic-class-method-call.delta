@@ -2,10 +2,10 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
 
 class S<E> {
-    // CHECK-DAG: define {} @"S<A>.init"()
+    // CHECK-DAG: define void @"S<A>.init"
     init() {
-        // CHECK: call {} @A.init()
-        // CHECK-NEXT: call void @A.h({} %{{[0-9]+}})
+        // CHECK: call void @A.init
+        // CHECK: call void @A.h({} %{{[0-9]+}})
         E().h();
     }
 
@@ -23,8 +23,7 @@ struct A {
 // MAIN: define i32 @main()
 func main() {
     // MAIN-NEXT: %x = alloca {}
-    // MAIN-NEXT: %1 = call {} @"S<A>.init"()
-    // MAIN-NEXT: store {} %1, {}* %x
+    // MAIN-NEXT: call void @"S<A>.init"({}* %x)
     let x = S<A>();
 
     // MAIN-NEXT: call void @"S<A>.s"({}* %x)

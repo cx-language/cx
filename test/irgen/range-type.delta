@@ -2,7 +2,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-RANGE
 // RUN: check_exit_status 10 %delta run %s
 
-// CHECK-RANGE: define %"Range<int>" @"Range<int>.init"(i32 %start, i32 %end)
+// CHECK-RANGE: define void @"Range<int>.init"(%"Range<int>"* %this, i32 %start, i32 %end)
 
 // CHECK: define i32 @f(%"Range<int>" %r)
 func f(r: Range<int>) -> int {
@@ -22,7 +22,8 @@ func f(r: Range<int>) -> int {
 
 // CHECK-LABEL: define i32 @main()
 func main() -> int {
-    // CHECK-NEXT: call %"Range<int>" @"Range<int>.init"(i32 0, i32 5)
+    // CHECK: call void @"Range<int>.init"(%"Range<int>"* %{{[0-9]+}}, i32 0, i32 5)
+    // CHECK-NEXT: %{{[0-9]+}} = load %"Range<int>", %"Range<int>"* %{{[0-9]+}}
     // CHECK-NEXT: call i32 @f(%"Range<int>" %{{[0-9]+}})
     return f(0..5);
 }

@@ -4,14 +4,14 @@
 class C<T> {
     let t: T;
 
-    // CHECK: define %"C<int>" @"C<int>.init"(i32 %t)
-    // CHECK: define %"C<StringRef>" @"C<StringRef>.init"(%StringRef %t)
+    // CHECK: define void @"C<int>.init"(%"C<int>"* %this, i32 %t)
+    // CHECK: define void @"C<StringRef>.init"(%"C<StringRef>"* %this, %StringRef %t)
     init(t: T) {}
 }
 
 func main() {
-    // CHECK-CALL: call %"C<int>" @"C<int>.init"(i32 42)
+    // CHECK-CALL: call void @"C<int>.init"(%"C<int>"* %i, i32 42)
     let i = C(42);
-    // CHECK-CALL: call %"C<StringRef>" @"C<StringRef>.init"(%StringRef %{{[a-z0-9]+}})
+    // CHECK-CALL: call void @"C<StringRef>.init"(%"C<StringRef>"* %b, %StringRef %__str{{[0-9]+}})
     let b = C("");
 }

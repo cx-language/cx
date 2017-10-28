@@ -5,7 +5,7 @@ class A {
     var j: int
 
     init() {
-        j = 42 // CHECK: getelementptr inbounds %A, %A* %1, i32 0, i32 1
+        j = 42 // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
     }
 
     func foo() {
@@ -22,7 +22,7 @@ struct B {
     var j: int
 
     init() {
-        j = 42 // CHECK: getelementptr inbounds %B, %B* %1, i32 0, i32 1
+        j = 42 // CHECK: getelementptr inbounds %B, %B* %this, i32 0, i32 1
     }
 
     func foo() {

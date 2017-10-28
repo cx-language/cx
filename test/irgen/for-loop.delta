@@ -6,8 +6,9 @@ func main() {
 
     // CHECK: [[ITERATOR:%__iterator[0-9]*]] = alloca %"ClosedRangeIterator<int>"
     // CHECK-NEXT: %i = alloca i32
-    // CHECK: [[RANGE:%[a-z0-9]+]] = call %"ClosedRange<int>" @"ClosedRange<int>.init"(i32 68, i32 75)
-    // CHECK-NEXT: [[TEMP_ITERATOR:%[a-z0-9]+]] = call %"ClosedRangeIterator<int>" @"ClosedRange<int>.iterator"(%"ClosedRange<int>" [[RANGE]])
+    // CHECK: call void @"ClosedRange<int>.init"(%"ClosedRange<int>"* %1, i32 68, i32 75)
+    // CHECK-NEXT: %2 = load %"ClosedRange<int>", %"ClosedRange<int>"* %1
+    // CHECK-NEXT: [[TEMP_ITERATOR:%[a-z0-9]+]] = call %"ClosedRangeIterator<int>" @"ClosedRange<int>.iterator"(%"ClosedRange<int>" %2)
     // CHECK-NEXT: store %"ClosedRangeIterator<int>" [[TEMP_ITERATOR]], %"ClosedRangeIterator<int>"* [[ITERATOR]]
     // CHECK-NEXT: br label %[[LOOP:(for|while)]]
     for (let i in 68...75) {

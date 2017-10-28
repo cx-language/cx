@@ -16,8 +16,10 @@ class A<E> {
 
     // CHECK: define %S @"A<S>.a"({}* %this)
     func a() -> E {
-        // CHECK-NEXT: %1 = call %S @S.init()
-        // CHECK-NEXT: ret %S %1
+        // CHECK-NEXT: %1 = alloca %S
+        // CHECK-NEXT: call void @S.init(%S* %1)
+        // CHECK-NEXT: %2 = load %S, %S* %1
+        // CHECK-NEXT: ret %S %2
         return E();
     }
 }
@@ -30,8 +32,8 @@ class M<T: I> {
     // CHECK-M: define void @"M<S>.f"(%"M<S>"* %this)
     func f() {
         let a = A<T>();
-        // CHECK-M: %2 = call %S @"A<S>.a"({}* %a)
-        // CHECK-M-NEXT: call void @S.i(%S %2)
+        // CHECK-M: [[TMP:%[0-9]+]] = call %S @"A<S>.a"({}* %a)
+        // CHECK-M-NEXT: call void @S.i(%S [[TMP]])
         a.a().i();
     }
 }

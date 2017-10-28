@@ -3,13 +3,14 @@
 // CHECK: define i32 @main()
 func main() {
     // CHECK-NEXT: %a = alloca %String
-    // CHECK-NEXT: %1 = call %String @String.init()
-    // CHECK-NEXT: store %String %1, %String* %a
-    // CHECK-NEXT: %a1 = load %String, %String* %a
+    // CHECK-NEXT: [[LITERAL:%__str[0-9]+]] = alloca %StringRef
+    // CHECK-NEXT: call void @String.init(%String* %a)
     var a = String()
 
-    // CHECK-NEXT: %[[LITERAL:[[:alnum:]_]+]] = call %StringRef @StringRef.init(i8* getelementptr inbounds ([1 x i8], [1 x i8]* @{{[0-9]+}}, i32 0, i32 0), i32 0)
-    // CHECK-NEXT: %[[A:[[:alnum:]_]+]] = call %String @"+{{[\.0-9]*}}"(%String %a{{[0-9]*}}, %StringRef %[[LITERAL]])
+    // CHECK-NEXT: %a1 = load %String, %String* %a
+    // CHECK-NEXT: call void @StringRef.init(%StringRef* [[LITERAL]], i8* getelementptr inbounds ([1 x i8], [1 x i8]* @{{[0-9]+}}, i32 0, i32 0), i32 0)
+    // CHECK-NEXT: [[LOADED_LITERAL:%__str[0-9]+]] = load %StringRef, %StringRef* [[LITERAL]]
+    // CHECK-NEXT: %[[A:[[:alnum:]_]+]] = call %String @"+{{[\.0-9]*}}"(%String %a{{[0-9]*}}, %StringRef [[LOADED_LITERAL]])
     // CHECK-NEXT: store %String %[[A]], %String* %a
     a += ""
 

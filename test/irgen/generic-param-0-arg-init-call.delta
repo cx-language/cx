@@ -6,10 +6,10 @@ class C {
 }
 
 class A<T> {
-    // CHECK: define {} @"A<C>.init"()
+    // CHECK: define void @"A<C>.init"
     // CHECK-NEXT: %t = alloca %C
-    // CHECK-NEXT: %1 = alloca {}
-    // CHECK-NEXT: %2 = call %C @C.init()
+    // CHECK-NEXT: call void @C.init(%C* %t)
+    // CHECK-NEXT: ret void
     init() {
         let t = T();
     }

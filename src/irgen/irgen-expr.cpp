@@ -27,8 +27,13 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
-        auto* initializer = functionInstantiations.find("StringRef.init$pointer:char*$length:uint")->second.getFunction();
-        return builder.CreateCall(initializer, {stringPtr, size});
+        static int stringLiteralCounter = 0;
+        auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}),
+                                              structs.find("StringRef")->second.second, nullptr,
+                                              "__str" + std::to_string(stringLiteralCounter++));
+        auto it = functionInstantiations.find("StringRef.init$pointer:char*$length:uint");
+        builder.CreateCall(it->second.getFunction(), { alloca, stringPtr, size });
+        return alloca;
     } else {
         // Passing as C-string, i.e. char pointer.
         ASSERT(expr.getType().removeOptional().isPointerType() &&
@@ -279,6 +284,8 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
             auto* alloca = builder.CreateAlloca(value->getType());
             builder.CreateStore(value, alloca);
             return alloca;
+        } else if (targetType && value->getType()->isPointerTy() && !targetType->isPointerTy()) {
+            return builder.CreateLoad(value, value->getName());
         } else {
             return value;
         }
@@ -300,7 +307,11 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         }
     }
 
-    return codegenExpr(expr);
+    auto* value = codegenExpr(expr);
+    if (value->getType()->isPointerTy() && !targetType->isPointerTy()) {
+        value = builder.CreateLoad(value, value->getName());
+    }
+    return value;
 }
 
 llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) {
@@ -322,7 +333,7 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
     error(expr.getLocation(), "conversion from '", expr.getType(), "' to '", type, "' not supported");
 }
 
-llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
+llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit) {
     if (expr.isBuiltinConversion())
         return codegenBuiltinConversion(*expr.getArgs().front().getValue(), expr.getType());
 
@@ -357,9 +368,18 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
 
     auto* calleeDecl = expr.getCalleeDecl();
 
-    if (calleeDecl && calleeDecl->isMethodDecl() && !calleeDecl->isInitDecl()) {
-        if (expr.getReceiver()) {
-            args.emplace_back(codegenExprForPassing(*expr.getReceiver(), *param));
+    if (calleeDecl && calleeDecl->isMethodDecl()) {
+        if (auto* initDecl = llvm::dyn_cast<InitDecl>(calleeDecl)) {
+            if (thisAllocaForInit) {
+                args.emplace_back(thisAllocaForInit);
+            } else {
+                auto* type = toIR(initDecl->getTypeDecl()->getType());
+                auto* alloca = builder.CreateAlloca(type);
+                args.emplace_back(alloca);
+            }
+        } else if (expr.getReceiver()) {
+            auto* thisValue = codegenExprForPassing(*expr.getReceiver(), *param);
+            args.emplace_back(thisValue);
         } else {
             auto* thisValue = findValue("this", nullptr);
             if (thisValue->getType()->isPointerTy() && !(*param)->isPointerTy()) {
@@ -375,7 +395,12 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr) {
         args.emplace_back(codegenExprForPassing(*arg.getValue(), paramType));
     }
 
-    return builder.CreateCall(calleeValue, args);
+    if (calleeDecl->isInitDecl()) {
+        builder.CreateCall(calleeValue, args);
+        return args[0];
+    } else {
+        return builder.CreateCall(calleeValue, args);
+    }
 }
 
 llvm::Value* IRGenerator::codegenCastExpr(const CastExpr& expr) {

@@ -26,13 +26,16 @@ func main() {
     // CHECK-NEXT: call void @C.f(%C* %3)
     c().f();
 
-    // CHECK-NEXT: %4 = call %S @S.init()
-    // CHECK-NEXT: call void @S.f(%S %4)
+    // CHECK-NEXT: %4 = alloca %S
+    // CHECK-NEXT: call void @S.init(%S* %4)
+    // CHECK-NEXT: %5 = load %S, %S* %4
+    // CHECK-NEXT: call void @S.f(%S %5)
     S().f();
 
-    // CHECK-NEXT: %5 = call %C @C.init()
     // CHECK-NEXT: %6 = alloca %C
-    // CHECK-NEXT: store %C %5, %C* %6
+    // CHECK-NEXT: call void @C.init(%C* %6)
     // CHECK-NEXT: call void @C.f(%C* %6)
     C().f();
+
+    // CHECK-NEXT: ret i32 0
 }

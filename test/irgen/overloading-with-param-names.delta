@@ -3,10 +3,10 @@
 class Foo {
     let i: int
 
-    // CHECK: define %Foo @Foo.init(i32 %i)
+    // CHECK: define void @Foo.init(%Foo* %this, i32 %i)
     init(i: int) { }
 
-    // CHECK: define %Foo @Foo.init.{{[0-9]+}}(i32 %qux)
+    // CHECK: define void @Foo.init.{{[0-9]+}}(%Foo* %this, i32 %qux)
     init(qux: int) { }
 
     // CHECK: define void @Foo.foo(%Foo* %this, i32 %i)

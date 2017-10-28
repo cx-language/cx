@@ -917,7 +917,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         auto decls = findCalleeCandidates(expr, callee);
         decl = &resolveOverload(decls, expr, callee);
 
-        if (decl->isMethodDecl() && !decl->isInitDecl()) {
+        if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
+            expr.setReceiverType(initDecl->getTypeDecl()->getType());
+        } else if (decl->isMethodDecl()) {
             auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
             expr.setReceiverType(varDecl.getType());
         }

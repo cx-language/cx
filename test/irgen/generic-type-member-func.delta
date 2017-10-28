@@ -7,7 +7,7 @@ struct F<T, U> {
     var a: T
     var b: U
 
-    // CHECK-DAG: define %"F<int, bool>" @"F<int, bool>.init"()
+    // CHECK-DAG: define void @"F<int, bool>.init"
     init() { }
 
     // CHECK-DAG: define void @"F<int, bool>.foo"(%"F<int, bool>" %this)
@@ -20,7 +20,7 @@ struct F<T, U> {
 
 func main() {
     // CHECK-MAIN: %f = alloca %"F<int, bool>"
-    // CHECK-MAIN: %1 = call %"F<int, bool>" @"F<int, bool>.init"()
+    // CHECK-MAIN: call void @"F<int, bool>.init"
     let f = F<int, bool>()
 
     // CHECK-MAIN: call void @"F<int, bool>.foo"(%"F<int, bool>" %f1)

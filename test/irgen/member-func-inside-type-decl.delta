@@ -3,7 +3,7 @@
 // CHECK: %A = type { i32 }
 class A {
     var i: int
-    // CHECK: define %A @A.init()
+    // CHECK: define void @A.init(%A* %this)
     init() { }
     // CHECK: define void @A.deinit(%A* %this)
     deinit() { }
@@ -15,7 +15,7 @@ class A {
 
 func main() {
     // CHECK: %a = alloca %A
-    // CHECK: %1 = call %A @A.init()
+    // CHECK: call void @A.init(%A* %a)
     var a = A()
     // CHECK: call void @A.foo(%A* %a)
     a.foo()
