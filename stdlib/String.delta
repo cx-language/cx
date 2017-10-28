@@ -19,13 +19,7 @@ class String: OutputStream, Printable {
 
     /// Initializes a string with the characters from a character array of known length.
     init(pointer: char*, length: uint) {
-        characters = Array<char>(capacity: length + 1);
-
-        for (let ch in StringRef(pointer, length)) {
-            characters.push(ch);
-        }
-
-        characters.push('\0');
+        init(StringRef(pointer, length));
     }
 
     /// Initializes a string with the contents of a null-terminated C-style string.
@@ -35,14 +29,7 @@ class String: OutputStream, Printable {
     /// `String.init(pointer: char*, length: uint)` instead.
     ///
     init(cString: char*) {
-        let cStringSize = uint(strlen(cString));
-        characters = Array<char>(capacity: cStringSize + 1);
-
-        for (let ch in StringRef(cString, cStringSize)) {
-            characters.push(ch);
-        }
-
-        characters.push('\0');
+        init(StringRef(cString, uint(strlen(cString))));
     }
 
     func size() -> uint {

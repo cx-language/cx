@@ -625,13 +625,27 @@ void TypeChecker::typecheckFunctionDecl(FunctionDecl& decl) const {
             addToSymbolTable(VarDecl(thisType, "this", nullptr, &decl, *getCurrentModule(), decl.getLocation()));
         }
 
+        bool delegatedInit = false;
+
         if (decl.hasBody()) {
             for (auto& stmt : decl.getBody()) {
                 typecheckStmt(*stmt);
+
+                if (!decl.isInitDecl()) continue;
+
+                if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt.get())) {
+                    if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
+                        if (auto* initDecl = llvm::dyn_cast<InitDecl>(callExpr->getCalleeDecl())) {
+                            if (initDecl->getTypeDecl() == receiverTypeDecl) {
+                                delegatedInit = true;
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        if (decl.isInitDecl()) {
+        if (decl.isInitDecl() && !delegatedInit) {
             for (auto& fieldAndInitialized : currentFieldDecls) {
                 if (!fieldAndInitialized.second) {
                     warning(decl.getLocation(), "initializer doesn't initialize member variable '",

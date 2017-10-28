@@ -654,7 +654,9 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
                 break;
             }
-            case DeclKind::FunctionDecl: case DeclKind::MethodDecl: {
+            case DeclKind::FunctionDecl:
+            case DeclKind::MethodDecl:
+            case DeclKind::InitDecl: {
                 auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
 
                 if (decls.size() == 1) {

@@ -372,6 +372,8 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
         if (auto* initDecl = llvm::dyn_cast<InitDecl>(calleeDecl)) {
             if (thisAllocaForInit) {
                 args.emplace_back(thisAllocaForInit);
+            } else if (currentDecl->isInitDecl() && expr.getFunctionName() == "init") {
+                args.emplace_back(findValue("this", nullptr));
             } else {
                 auto* type = toIR(initDecl->getTypeDecl()->getType());
                 auto* alloca = builder.CreateAlloca(type);

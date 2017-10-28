@@ -166,8 +166,8 @@ std::vector<Argument> parseArgumentList() {
 
 /// var-expr ::= id
 std::unique_ptr<VarExpr> parseVarExpr() {
-    ASSERT(currentToken() == IDENTIFIER);
-    auto id = parse(IDENTIFIER);
+    ASSERT(currentToken().is(IDENTIFIER, INIT));
+    auto id = consumeToken();
     return llvm::make_unique<VarExpr>(id.getString(), id.getLocation());
 }
 
@@ -519,6 +519,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
     switch (currentToken()) {
         case IDENTIFIER:
+        case INIT:
             switch (lookAhead(1)) {
                 case LPAREN: expr = parseCallExpr(parseVarExpr()); break;
                 case LT:
