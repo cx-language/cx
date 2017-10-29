@@ -14,6 +14,6 @@ class Y {
 func f<T: X>(t: T) {}
 
 func main() {
-    // CHECK: [[@LINE+1]]:6: error: type 'Y' doesn't implement interface 'X' because it doesn't have method 'bar'
+    // CHECK: [[@LINE+1]]:6: error: type 'Y' doesn't implement interface 'X' because it doesn't have member function 'bar'
     f(Y());
 }

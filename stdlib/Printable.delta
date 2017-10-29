@@ -1,5 +1,5 @@
 interface Printable {
-    // TODO: Make this method take any OutputStream as an argument once the compiler supports it.
+    // TODO: Make this member function take any OutputStream as an argument once the compiler supports it.
     func printTo(stream: mutable String*);
 
     func toString() -> String {

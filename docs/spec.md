@@ -210,8 +210,8 @@ Pointers are values that point to other values. They can be reassigned to point
 to another value (if the pointer type itself is declared as `mutable`), but they
 must always refer to some value, i.e. they cannot be null by default (nullable
 pointers can be created using the optional type, see below). Member access,
-method calls, and subscript operations via pointers are allowed: they will be
-forwarded to the pointee value.
+member function calls, and subscript operations via pointers are allowed: they
+will be forwarded to the pointee value.
 
 > _pointer-type_ → _pointee-type_ `*`<br>
 > _pointer-type_ → `mutable` _pointee-type_ `*`<br>

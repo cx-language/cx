@@ -269,7 +269,7 @@ bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::
 
             if (!hasMethod(type, *functionDecl)) {
                 if (errorReason) {
-                    *errorReason = ("it doesn't have method '" + functionDecl->getName() + "'").str();
+                    *errorReason = ("it doesn't have member function '" + functionDecl->getName() + "'").str();
                 }
                 return false;
             }
@@ -755,7 +755,7 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                 if (auto* functionType = llvm::dyn_cast<FunctionType>(paramDecl->getType().get())) {
                     auto paramDecls = functionType->getParamDecls(paramDecl->getLocation());
-                    
+
                     if (decls.size() == 1) {
                         validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
                         return *paramDecl;
@@ -785,7 +785,7 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             case DeclKind::DeinitDecl:
                 matches.push_back(decl);
                 break;
-                
+
             default:
                 continue;
         }
@@ -900,8 +900,8 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
                 return Type::getUInt();
             }
 
-            error(expr.getReceiver()->getLocation(), "type '", receiverType, "' has no method '",
-                  expr.getFunctionName(), "'");
+            error(expr.getReceiver()->getLocation(), "type '", receiverType,
+                  "' has no member function '", expr.getFunctionName(), "'");
         } else if (receiverType.removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
         }
@@ -1119,7 +1119,7 @@ void TypeChecker::validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<P
     auto args = expr.getArgs();
 
     if (expr.getReceiver() && !expr.getReceiverType().removePointer().isMutable() && isMutating) {
-        error(location, "cannot call mutating method '", functionName,
+        error(location, "cannot call mutating member function '", functionName,
               "' on immutable receiver of type '", expr.getReceiverType(), "'");
     }
 
@@ -1229,7 +1229,8 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
         auto sizeSynonyms = { "count", "length", "size" };
 
         if (llvm::is_contained(sizeSynonyms, expr.getMemberName())) {
-            error(expr.getLocation(), "use the '.size()' method to get the number of elements in an array");
+            error(expr.getLocation(),
+                  "use the '.size()' member function to get the number of elements in an array");
         }
     }
 
@@ -1307,7 +1308,7 @@ Type TypeChecker::typecheckLambdaExpr(LambdaExpr& expr) const {
 
     typecheckParams(expr.getParams());
     auto returnType = typecheckExpr(*expr.getBody());
-    
+
     getCurrentModule()->getSymbolTable().popScope();
 
     auto paramTypes = map(expr.getParams(), [](const ParamDecl& p) { return p.getType(); });
