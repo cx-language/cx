@@ -596,8 +596,8 @@ void TypeChecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
             error(genericParam.getLocation(), "redefinition of '", genericParam.getName(), "'");
         }
 
-        for (auto& constraint : genericParam.getConstraints()) {
-            typecheckType(BasicType::get(constraint, {}), genericParam.getLocation());
+        for (Type constraint : genericParam.getConstraints()) {
+            typecheckType(constraint, genericParam.getLocation());
         }
     }
 }

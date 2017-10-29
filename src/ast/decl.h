@@ -126,8 +126,8 @@ public:
     GenericParamDecl(std::string&& name, SourceLocation location)
     : Decl(DeclKind::GenericParamDecl), name(std::move(name)), parent(nullptr), location(location) {}
     llvm::StringRef getName() const override { return name; }
-    llvm::ArrayRef<std::string> getConstraints() const { return constraints; }
-    void addConstraint(std::string&& constraint) { constraints.emplace_back(std::move(constraint)); }
+    llvm::ArrayRef<Type> getConstraints() const { return constraints; }
+    void addConstraint(Type constraint) { constraints.push_back(constraint); }
     Decl* getParent() const { ASSERT(parent); return parent; }
     void setParent(Decl* parent) { this->parent = parent; }
     SourceLocation getLocation() const { return location; }
@@ -135,7 +135,7 @@ public:
 
 private:
     std::string name;
-    llvm::SmallVector<std::string, 1> constraints;
+    llvm::SmallVector<Type, 1> constraints;
     Decl* parent;
     SourceLocation location;
 };

@@ -583,17 +583,15 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
         if (!genericParam.getConstraints().empty()) {
             ASSERT(genericParam.getConstraints().size() == 1, "cannot have multiple generic constraints yet");
 
-            auto interfaces = findDecls(genericParam.getConstraints()[0]);
-            ASSERT(interfaces.size() == 1);
+            auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.getConstraints()[0].get()));
             std::string errorReason;
 
             if (genericArg->isBasicType()) {
                 if (auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(**genericArg))) {
-                    checkImplementsInterface(*typeDecl, llvm::cast<TypeDecl>(*interfaces[0]),
-                                             call.getLocation());
+                    checkImplementsInterface(*typeDecl, *interface, call.getLocation());
                 } else {
                     error(call.getLocation(), "type '", *genericArg,
-                          "' doesn't implement interface '", interfaces[0]->getName(), "'");
+                          "' doesn't implement interface '", interface->getName(), "'");
                 }
             }
         }

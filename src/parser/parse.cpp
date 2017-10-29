@@ -962,7 +962,7 @@ void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
 
         if (currentToken() == COLON) { // Generic type constraint.
             consumeToken();
-            genericParams.back().addConstraint(parse(IDENTIFIER).getString());
+            genericParams.back().addConstraint(BasicType::get(parse(IDENTIFIER).getString(), {}));
             // TODO: Add support for multiple generic type constraints.
         }
 
