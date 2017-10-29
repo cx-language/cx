@@ -1,0 +1,43 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-BAR
+
+interface Interface {
+    let that: This*;
+
+    func foo(a: This*) -> This*;
+
+    // CHECK-BAR: define %S* @S.bar(%S* %this)
+    // CHECK-BAR-NEXT: %1 = call %S* @S.foo(%S* %this, %S* %this)
+    // CHECK-BAR-NEXT: %2 = call %S* @S.foo(%S* %this, %S* %1)
+    // CHECK-BAR-NEXT: ret %S* %2
+    func bar() -> This* {
+        return foo(foo(this));
+    }
+}
+
+class S: Interface {
+    let that: S*;
+
+    init() { that = this; }
+
+    // CHECK: define %S* @S.foo(%S* %this, %S* %a)
+    func foo(a: S*) -> S* {
+        return this;
+    }
+}
+
+func main() {
+    let a = S();
+    let b = S();
+
+    // CHECK: %1 = call %S* @S.foo(%S* %a, %S* %b)
+    // CHECK-NEXT: call void @"f<S>"(%S* %1)
+    f(a.foo(b));
+}
+
+// CHECK: define void @"f<S>"(%S* %a)
+// CHECK-NEXT: %1 = call %S* @S.foo(%S* %a, %S* %a)
+// CHECK-NEXT: %2 = call %S* @S.foo(%S* %a, %S* %1)
+func f<T: Interface>(a: T*) {
+    a.foo(a.foo(a));
+}

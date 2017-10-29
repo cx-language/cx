@@ -254,7 +254,9 @@ void TypeChecker::checkImplementsInterface(TypeDecl& type, TypeDecl& interface, 
 }
 
 bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
-    for (auto& fieldRequirement : interface.getFields()) {
+    auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({{ "This", type.getType() }}, {}));
+
+    for (auto& fieldRequirement : thisTypeResolvedInterface->getFields()) {
         if (!hasField(type, fieldRequirement)) {
             if (errorReason) {
                 *errorReason = ("it doesn't have field '" + fieldRequirement.getName() + "'").str();
@@ -263,7 +265,7 @@ bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::
         }
     }
 
-    for (auto& requiredMethod : interface.getMethods()) {
+    for (auto& requiredMethod : thisTypeResolvedInterface->getMethods()) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod.get())) {
             if (functionDecl->hasBody()) continue;
 
@@ -327,13 +329,6 @@ bool TypeChecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                 return true;
             }
             break;
-    }
-
-    if (isInterface(target) && source.isBasicType()) {
-        if (implementsInterface(*getTypeDecl(llvm::cast<BasicType>(*source)),
-                                *getTypeDecl(llvm::cast<BasicType>(*target)), nullptr)) {
-            return true;
-        }
     }
 
     if (expr) {

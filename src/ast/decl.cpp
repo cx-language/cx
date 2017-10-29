@@ -71,6 +71,7 @@ std::unique_ptr<FunctionDecl> FunctionDecl::instantiate(const llvm::StringMap<Ty
     if (isMethodDecl()) {
         instantiation = llvm::make_unique<MethodDecl>(std::move(proto), *getTypeDecl(),
                                                       genericArgsArray, location);
+        llvm::cast<MethodDecl>(*instantiation).setMutating(isMutating());
     } else {
         instantiation = llvm::make_unique<FunctionDecl>(std::move(proto), genericArgsArray,
                                                         module, location);

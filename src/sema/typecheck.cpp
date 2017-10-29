@@ -677,8 +677,10 @@ void TypeChecker::typecheckTypeDecl(TypeDecl& decl) const {
                     checkImplementsInterface(decl, *interfaceDecl, decl.getLocation());
 
                     for (auto& method : interfaceDecl->getMethods()) {
-                        if (llvm::cast<MethodDecl>(*method).hasBody()) {
-                            auto copy = llvm::cast<MethodDecl>(*method).instantiate({}, decl);
+                        auto& methodDecl = llvm::cast<MethodDecl>(*method);
+
+                        if (methodDecl.hasBody()) {
+                            auto copy = methodDecl.instantiate({{ "This", decl.getType() }}, decl);
                             addToSymbolTable(*copy);
                             decl.addMethod(std::move(copy));
                         }
@@ -691,11 +693,21 @@ void TypeChecker::typecheckTypeDecl(TypeDecl& decl) const {
         error(decl.getLocation(), "'", interface, "' is not an interface");
     }
 
-    for (auto& fieldDecl : decl.getFields()) {
+    TypeDecl* realDecl;
+    std::unique_ptr<TypeDecl> thisTypeResolved;
+
+    if (decl.isInterface()) {
+        thisTypeResolved = llvm::cast<TypeDecl>(decl.instantiate({{ "This", decl.getType() }}, {}));
+        realDecl = thisTypeResolved.get();
+    } else {
+        realDecl = &decl;
+    }
+
+    for (auto& fieldDecl : realDecl->getFields()) {
         typecheckFieldDecl(fieldDecl);
     }
 
-    for (auto& memberDecl : decl.getMemberDecls()) {
+    for (auto& memberDecl : realDecl->getMemberDecls()) {
         typecheckMemberDecl(*memberDecl);
     }
 }
