@@ -27,7 +27,9 @@ class Array<Element> {
     }
 
     deinit() {
-        free(cast<mutable void*>(bufferPointer));
+        if (capacity != 0) {
+            free(cast<mutable void*>(bufferPointer));
+        }
     }
 
     /// Returns the number of elements in the array.
