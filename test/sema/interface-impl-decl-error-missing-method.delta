@@ -4,7 +4,7 @@ interface X {
     func foo();
 }
 
-// CHECK: [[@LINE+1]]:7: error: type 'Z' doesn't implement interface 'X' because it doesn't have method 'foo'
+// CHECK: [[@LINE+1]]:7: error: type 'Z' doesn't implement interface 'X' because it doesn't have member function 'foo'
 class Z<T>: X {
     init() {}
 }

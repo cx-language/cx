@@ -39,15 +39,15 @@ If we now try to call `sort` with an array whose element type is not comparable
 with `<`, we'll get a nice error message:
 
 ```
-main.delta:4:9: error: type 'X' doesn't implement interface 'Comparable' because it doesn't have method '<'
+main.delta:4:9: error: type 'X' doesn't implement interface 'Comparable' because it doesn't have member function '<'
     sort(array);
         ^
 ```
 
 ## Declaring Interfaces
 
-Interfaces are types that specify a set of methods. Other types can implement an
-interface by providing those methods. For example:
+Interfaces are types that specify a set of member functions. Other types can
+implement an interface by providing those member functions. For example:
 
 ```go
 interface Fooable {
@@ -71,12 +71,12 @@ struct X: Fooable {
 ```
 
 Now the compiler sees that we intended `X` to be `Fooable`, and so it can check
-that we provided all the methods required by `Fooable`.
+that we provided all the member functions required by `Fooable`.
 
-## Default Methods
+## Default Member Functions
 
-Interfaces may also contain methods with implementations, called _default
-methods_:
+Interfaces may also contain member functions with implementations, called
+_default member functions_:
 
 ```go
 interface Fooable {
@@ -89,4 +89,4 @@ interface Fooable {
 ```
 
 Now every type that explicitly implements `Fooable` gets the `fooSquared()`
-method for free.
+member function for free.
