@@ -1,0 +1,62 @@
+// TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
+// function for all integer types.
+
+struct int: Comparable {
+    func compare(other: int*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct int8: Comparable {
+    func compare(other: int8*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct int16: Comparable {
+    func compare(other: int16*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct int32: Comparable {
+    func compare(other: int32*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct int64: Comparable {
+    func compare(other: int64*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct uint: Comparable {
+    func compare(other: uint*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct uint8: Comparable {
+    func compare(other: uint8*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct uint16: Comparable {
+    func compare(other: uint16*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct uint32: Comparable {
+    func compare(other: uint32*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}
+
+struct uint64: Comparable {
+    func compare(other: uint64*) -> int {
+        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    }
+}

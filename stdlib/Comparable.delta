@@ -1,0 +1,9 @@
+/// A type whose instances have an inherent sort-order, i.e. can be compared with the `<`, `<=`,
+/// `>`, `>=` operators.
+interface Comparable {
+
+    // TODO: Change the return type of `compare` to a 3-value enum instead of int.
+    /// Returns a negative number if `this` is less than `other`, 0 if `this` is equal to `other`,
+    /// or a number greater than 0 if `this` is greater than `other`.
+    func compare(other: This*) -> int;
+}

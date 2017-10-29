@@ -588,8 +588,13 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
             std::string errorReason;
 
             if (genericArg->isBasicType()) {
-                checkImplementsInterface(*getTypeDecl(llvm::cast<BasicType>(**genericArg)),
-                                         llvm::cast<TypeDecl>(*interfaces[0]), call.getLocation());
+                if (auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(**genericArg))) {
+                    checkImplementsInterface(*typeDecl, llvm::cast<TypeDecl>(*interfaces[0]),
+                                             call.getLocation());
+                } else {
+                    error(call.getLocation(), "type '", *genericArg,
+                          "' doesn't implement interface '", interfaces[0]->getName(), "'");
+                }
             }
         }
 

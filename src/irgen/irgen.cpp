@@ -498,6 +498,12 @@ void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToD
 
 llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating) {
     ASSERT(!typeDecl.isInterface());
+
+    auto builtinType = builtinTypes.find(typeDecl.getName());
+    if (builtinType != builtinTypes.end()) {
+        return builtinType->second;
+    }
+
     llvm::StructType* structType;
 
     auto it = structs.find(mangle(typeDecl));
