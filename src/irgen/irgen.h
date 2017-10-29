@@ -109,6 +109,7 @@ private:
     llvm::Value* codegenSubscriptExpr(const SubscriptExpr& expr);
     llvm::Value* codegenUnwrapExpr(const UnwrapExpr& expr);
     llvm::Value* codegenLambdaExpr(const LambdaExpr& expr);
+    llvm::Value* codegenIfExpr(const IfExpr& expr);
     llvm::Value* codegenLvalueExpr(const Expr& expr);
 
     void codegenDeferredExprsAndDeinitCallsForReturn();

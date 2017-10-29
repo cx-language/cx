@@ -98,6 +98,7 @@ private:
     Type typecheckSubscriptExpr(SubscriptExpr& expr) const;
     Type typecheckUnwrapExpr(UnwrapExpr& expr) const;
     Type typecheckLambdaExpr(LambdaExpr& expr) const;
+    Type typecheckIfExpr(IfExpr& expr) const;
 
     bool isInterface(Type type) const;
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;

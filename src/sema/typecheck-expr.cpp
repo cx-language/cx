@@ -1310,6 +1310,28 @@ Type TypeChecker::typecheckLambdaExpr(LambdaExpr& expr) const {
     return FunctionType::get(returnType, std::move(paramTypes));
 }
 
+Type TypeChecker::typecheckIfExpr(IfExpr& expr) const {
+    auto conditionType = typecheckExpr(*expr.getCondition());
+
+    if (!conditionType.isBool()) {
+        error(expr.getCondition()->getLocation(), "if-expression condition must have type 'bool'");
+    }
+
+    auto thenType = typecheckExpr(*expr.getThenExpr());
+    auto elseType = typecheckExpr(*expr.getElseExpr());
+    Type convertedType;
+
+    if (isImplicitlyConvertible(expr.getThenExpr(), thenType, elseType, &convertedType)) {
+        if (convertedType) expr.getThenExpr()->setType(convertedType);
+        return elseType;
+    } else if (isImplicitlyConvertible(expr.getElseExpr(), elseType, thenType, &convertedType)) {
+        if (convertedType) expr.getThenExpr()->setType(convertedType);
+        return thenType;
+    } else {
+        error(expr.getLocation(), "incompatible operand types ('", thenType, "' and '", elseType, "')");
+    }
+}
+
 Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
     llvm::Optional<Type> type;
 
@@ -1332,6 +1354,7 @@ Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
         case ExprKind::SubscriptExpr: type = typecheckSubscriptExpr(llvm::cast<SubscriptExpr>(expr)); break;
         case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;
         case ExprKind::LambdaExpr: type = typecheckLambdaExpr(llvm::cast<LambdaExpr>(expr)); break;
+        case ExprKind::IfExpr: type = typecheckIfExpr(llvm::cast<IfExpr>(expr)); break;
     }
 
     expr.setType(*type);

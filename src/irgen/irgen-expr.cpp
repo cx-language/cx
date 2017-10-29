@@ -542,6 +542,33 @@ llvm::Value* IRGenerator::codegenLambdaExpr(const LambdaExpr& expr) {
     return codegenVarExpr(varExpr);
 }
 
+llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
+    auto* condition = codegenExpr(*expr.getCondition());
+    auto* function = builder.GetInsertBlock()->getParent();
+    auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", function);
+    auto* elseBlock = llvm::BasicBlock::Create(ctx, "else");
+    auto* endIfBlock = llvm::BasicBlock::Create(ctx, "endif");
+    builder.CreateCondBr(condition, thenBlock, elseBlock);
+
+    builder.SetInsertPoint(thenBlock);
+    auto* thenValue = codegenExpr(*expr.getThenExpr());
+    builder.CreateBr(endIfBlock);
+    thenBlock = builder.GetInsertBlock();
+
+    function->getBasicBlockList().push_back(elseBlock);
+    builder.SetInsertPoint(elseBlock);
+    auto* elseValue = codegenExpr(*expr.getElseExpr());
+    builder.CreateBr(endIfBlock);
+    elseBlock = builder.GetInsertBlock();
+
+    function->getBasicBlockList().push_back(endIfBlock);
+    builder.SetInsertPoint(endIfBlock);
+    auto* phi = builder.CreatePHI(thenValue->getType(), 2, "phi");
+    phi->addIncoming(thenValue, thenBlock);
+    phi->addIncoming(elseValue, elseBlock);
+    return phi;
+}
+
 llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr: return codegenVarExpr(llvm::cast<VarExpr>(expr));
@@ -562,6 +589,7 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
         case ExprKind::SubscriptExpr: return codegenSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
         case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
         case ExprKind::LambdaExpr: return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
+        case ExprKind::IfExpr: return codegenIfExpr(llvm::cast<IfExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }
@@ -586,6 +614,7 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
         case ExprKind::SubscriptExpr: return codegenLvalueSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
         case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
         case ExprKind::LambdaExpr: return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
+        case ExprKind::IfExpr: return codegenIfExpr(llvm::cast<IfExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }

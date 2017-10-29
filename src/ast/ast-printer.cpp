@@ -117,6 +117,11 @@ std::ostream& operator<<(std::ostream& out, const LambdaExpr& expr) {
     return out << "(lambda " << expr.getParams() << " " << *expr.getBody() << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const IfExpr& expr) {
+    return out << "(if-expr " << *expr.getCondition() << " " << *expr.getThenExpr() << " "
+               << *expr.getElseExpr() << ")";
+}
+
 std::ostream& operator<<(std::ostream& out, const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr: return out << llvm::cast<VarExpr>(expr);
@@ -137,6 +142,7 @@ std::ostream& operator<<(std::ostream& out, const Expr& expr) {
         case ExprKind::SubscriptExpr: return out << llvm::cast<SubscriptExpr>(expr);
         case ExprKind::UnwrapExpr: return out << llvm::cast<UnwrapExpr>(expr);
         case ExprKind::LambdaExpr: return out << llvm::cast<LambdaExpr>(expr);
+        case ExprKind::IfExpr: return out << llvm::cast<IfExpr>(expr);
     }
     llvm_unreachable("all cases handled");
 }

@@ -10,7 +10,7 @@ bool Expr::isLvalue() const {
     switch (getKind()) {
         case ExprKind::VarExpr: case ExprKind::StringLiteralExpr: case ExprKind::CharacterLiteralExpr:
         case ExprKind::ArrayLiteralExpr: case ExprKind::TupleExpr: case ExprKind::MemberExpr:
-        case ExprKind::SubscriptExpr:
+        case ExprKind::SubscriptExpr: case ExprKind::IfExpr:
             return true;
         case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr: case ExprKind::SizeofExpr:
         case ExprKind::BoolLiteralExpr: case ExprKind::CastExpr: case ExprKind::UnwrapExpr:
@@ -181,6 +181,14 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             instantiation = llvm::make_unique<LambdaExpr>(std::move(params), std::move(body),
                                                           lambdaExpr->getLocation());
             break;
+        }
+        case ExprKind::IfExpr: {
+            auto* ifExpr = llvm::cast<IfExpr>(this);
+            auto condition = ifExpr->getCondition()->instantiate(genericArgs);
+            auto thenExpr = ifExpr->getThenExpr()->instantiate(genericArgs);
+            auto elseExpr = ifExpr->getElseExpr()->instantiate(genericArgs);
+            instantiation = llvm::make_unique<IfExpr>(std::move(condition), std::move(thenExpr),
+                                                      std::move(elseExpr), ifExpr->getLocation());
         }
     }
 

@@ -33,7 +33,8 @@ enum class ExprKind {
     MemberExpr,
     SubscriptExpr,
     UnwrapExpr,
-    LambdaExpr
+    LambdaExpr,
+    IfExpr
 };
 
 class Expr {
@@ -58,6 +59,7 @@ public:
     bool isSubscriptExpr() const { return getKind() == ExprKind::SubscriptExpr; }
     bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
     bool isLambdaExpr() const { return getKind() == ExprKind::LambdaExpr; }
+    bool isIfExpr() const { return getKind() == ExprKind::IfExpr; }
 
     ExprKind getKind() const { return kind; }
     bool hasType() const { return type.get() != nullptr; }
@@ -369,6 +371,26 @@ public:
 private:
     std::vector<ParamDecl> params;
     std::unique_ptr<Expr> body;
+};
+
+class IfExpr : public Expr {
+public:
+    IfExpr(std::unique_ptr<Expr> condition, std::unique_ptr<Expr> thenExpr,
+           std::unique_ptr<Expr> elseExpr, SourceLocation location)
+    : Expr(ExprKind::IfExpr, location), condition(std::move(condition)),
+      thenExpr(std::move(thenExpr)), elseExpr(std::move(elseExpr)) {}
+    Expr* getCondition() { return condition.get(); }
+    Expr* getThenExpr() { return thenExpr.get(); }
+    Expr* getElseExpr() { return elseExpr.get(); }
+    const Expr* getCondition() const { return condition.get(); }
+    const Expr* getThenExpr() const { return thenExpr.get(); }
+    const Expr* getElseExpr() const { return elseExpr.get(); }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::IfExpr; }
+
+private:
+    std::unique_ptr<Expr> condition;
+    std::unique_ptr<Expr> thenExpr;
+    std::unique_ptr<Expr> elseExpr;
 };
 
 }

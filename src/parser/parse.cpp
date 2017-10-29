@@ -503,6 +503,17 @@ std::unique_ptr<Expr> parseParenExpr() {
     return expr;
 }
 
+/// if-expr ::= expr '?' expr ':' expr
+std::unique_ptr<IfExpr> parseIfExpr(std::unique_ptr<Expr> condition) {
+    ASSERT(currentToken() == QUESTION_MARK);
+    auto location = getCurrentLocation();
+    consumeToken();
+    auto thenExpr = parseExpr();
+    parse(COLON);
+    auto elseExpr = parseExpr();
+    return llvm::make_unique<IfExpr>(std::move(condition), std::move(thenExpr), std::move(elseExpr), location);
+}
+
 bool shouldParseGenericArgumentList() {
     // Temporary hack: use spacing to determine whether to parse a generic argument list
     // of a less-than binary expression. Zero spaces on either side of '<' will cause it
@@ -566,6 +577,9 @@ std::unique_ptr<Expr> parsePostfixExpr() {
                 break;
             case NOT:
                 expr = parseUnwrapExpr(std::move(expr));
+                break;
+            case QUESTION_MARK:
+                expr = parseIfExpr(std::move(expr));
                 break;
             default:
                 return expr;
