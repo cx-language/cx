@@ -318,6 +318,11 @@ void TypeChecker::typecheckStmt(Stmt& stmt) const {
 void TypeChecker::typecheckType(Type type, SourceLocation location) const {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
+            if (type.isBuiltinType()) {
+                validateGenericArgCount(0, type.getGenericArgs(), type.getName(), location);
+                break;
+            }
+
             auto* basicType = llvm::cast<BasicType>(type.get());
 
             for (auto genericArg : basicType->getGenericArgs()) {
@@ -329,11 +334,13 @@ void TypeChecker::typecheckType(Type type, SourceLocation location) const {
             if (decls.empty()) {
                 auto decls = findDecls(basicType->getName());
 
-                if (!decls.empty()) {
-                    auto p = llvm::cast<TypeTemplate>(decls[0])->instantiate(basicType->getGenericArgs());
-                    addToSymbolTable(*p);
-                    typecheckTypeDecl(*p);
+                if (decls.empty()) {
+                    error(location, "unknown type '", type, "'");
                 }
+
+                auto p = llvm::cast<TypeTemplate>(decls[0])->instantiate(basicType->getGenericArgs());
+                addToSymbolTable(*p);
+                typecheckTypeDecl(*p);
             } else {
                 switch (decls[0]->getKind()) {
                     case DeclKind::TypeDecl:
@@ -587,6 +594,10 @@ void TypeChecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
     for (auto& genericParam : genericParams) {
         if (getCurrentModule()->getSymbolTable().contains(genericParam.getName())) {
             error(genericParam.getLocation(), "redefinition of '", genericParam.getName(), "'");
+        }
+
+        for (auto& constraint : genericParam.getConstraints()) {
+            typecheckType(BasicType::get(constraint, {}), genericParam.getLocation());
         }
     }
 }

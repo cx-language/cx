@@ -53,7 +53,8 @@ public:
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
     bool isOptionalType() const { return getKind() == TypeKind::OptionalType; }
     bool isBuiltinType() const {
-        return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType() || isNull();
+        return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType()
+            || isNull() || isVoid();
     }
     bool isSizedArrayType() const;
     bool isUnsizedArrayType() const;
