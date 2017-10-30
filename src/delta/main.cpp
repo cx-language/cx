@@ -18,6 +18,7 @@ static void printHelp() {
         "OPTIONS:\n"
         "  -c                    - Compile only, generating an .o file; don't link\n"
         "  -emit-assembly        - Emit assembly code\n"
+        "  -emit-llvm-bitcode    - Emit LLVM bitcode\n"
         "  -fPIC                 - Emit position-independent code\n"
         "  -help                 - Display this help\n"
         "  -I<directory>         - Add a search path for module and C header import\n"

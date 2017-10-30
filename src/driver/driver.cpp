@@ -4,6 +4,7 @@
 #include <vector>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
+#include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/CodeGen.h>
@@ -82,6 +83,14 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
     file.flush();
 }
 
+void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
+    std::error_code error;
+    llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::F_None);
+    if (error) printErrorAndExit(error.message());
+    llvm::WriteBitcodeToFile(&module, file);
+    file.flush();
+}
+
 } // anonymous namespace
 
 int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args, bool run) {
@@ -101,6 +110,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     bool printAST = checkFlag("-print-ast", args);
     bool printIR = checkFlag("-print-ir", args);
     bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
+    bool emitLLVMBitcode = checkFlag("-emit-llvm-bitcode", args);
     bool emitPositionIndependentCode = checkFlag("-fPIC", args);
     treatWarningsAsErrors = checkFlag("-Werror", args);
     auto importSearchPaths = collectStringOptionValues("-I", args);
@@ -159,6 +169,11 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (printIR) {
         irModule.print(llvm::outs(), nullptr);
+        return 0;
+    }
+
+    if (emitLLVMBitcode) {
+        ::emitLLVMBitcode(irModule, "output.bc");
         return 0;
     }
 
