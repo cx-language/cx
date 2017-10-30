@@ -11,51 +11,14 @@ __Note:__ This document is incomplete.
 
 The following keywords are reserved and can't be used as identifiers.
 
-    break
-    case
-    cast
-    catch
-    class
-    const
-    continue
-    default
-    defer
-    deinit
-    do
-    else
-    enum
-    extern
-    fallthrough
-    false
-    for
-    func
-    if
-    import
-    in
-    init
-    inout
-    interface
-    let
-    move
-    mutable
-    mutating
-    null
-    private
-    public
-    return
-    static
-    struct
-    switch
-    this
-    throw
-    throws
-    true
-    try
-    typealias
-    undefined
-    var
-    while
-    _
+    break       case        cast        catch       class       const
+    continue    default     defer       deinit      do          else
+    enum        extern      fallthrough false       for         func
+    if          import      in          init        inout       interface
+    let         move        mutable     mutating    null        private
+    public      return      static      struct      switch      this
+    throw       throws      true        try         typealias   undefined
+    var         while       _
 
 The keywords `class` and `struct` can be used as variable names but not as a
 type names.
