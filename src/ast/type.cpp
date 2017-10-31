@@ -158,7 +158,9 @@ std::vector<ParamDecl> FunctionType::getParamDecls(SourceLocation location) cons
 }
 
 bool Type::isSigned() const {
-    ASSERT(isBasicType());
+    if (!isBasicType()) {
+        return false;
+    }
     llvm::StringRef name = getName();
     return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
 }
