@@ -174,8 +174,8 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS());
 
-    if (!expr.isBuiltinOp()) {
-        return typecheckCallExpr((CallExpr&) expr);
+    if (!expr.isBuiltinOp() || getBinaryExprCallee(expr)) {
+        return typecheckCallExpr(expr);
     }
 
     if (expr.getOperator() == AND_AND || expr.getOperator() == OR_OR) {
@@ -617,7 +617,8 @@ Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
     return expr.getType();
 }
 
-Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee) const {
+Decl* TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
+                                   llvm::StringRef callee, bool returnNullOnError) const {
     llvm::SmallVector<Decl*, 1> matches;
     bool isInitCall = false;
 
@@ -643,9 +644,9 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 auto* functionDecl = functionTemplate->instantiate(genericArgs);
                 declsToTypecheck.emplace_back(functionDecl);
 
-                if (decls.size() == 1) {
+                if (decls.size() == 1 && !returnNullOnError) {
                     validateArgs(expr, *functionDecl, callee, expr.getCallee().getLocation());
-                    return *functionDecl;
+                    return functionDecl;
                 }
                 if (argumentsMatch(expr, functionDecl)) {
                     matches.push_back(functionDecl);
@@ -657,10 +658,10 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             case DeclKind::InitDecl: {
                 auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
 
-                if (decls.size() == 1) {
+                if (decls.size() == 1 && !returnNullOnError) {
                     validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                     validateArgs(expr, functionDecl, callee, expr.getCallee().getLocation());
-                    return functionDecl;
+                    return &functionDecl;
                 }
                 if (argumentsMatch(expr, &functionDecl)) {
                     matches.push_back(&functionDecl);
@@ -676,9 +677,9 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 for (Decl* decl : initDecls) {
                     InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
 
-                    if (initDecls.size() == 1) {
+                    if (initDecls.size() == 1 && !returnNullOnError) {
                         validateArgs(expr, initDecl, callee, expr.getCallee().getLocation());
-                        return initDecl;
+                        return &initDecl;
                     }
                     if (argumentsMatch(expr, &initDecl)) {
                         matches.push_back(&initDecl);
@@ -722,9 +723,9 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
 
                 for (auto* instantiatedInitDecl : instantiatedInitDecls) {
-                    if (initDecls.size() == 1) {
+                    if (initDecls.size() == 1 && !returnNullOnError) {
                         validateArgs(expr, *instantiatedInitDecl, callee, expr.getCallee().getLocation());
-                        return *instantiatedInitDecl;
+                        return instantiatedInitDecl;
                     }
                     if (argumentsMatch(expr, instantiatedInitDecl)) {
                         matches.push_back(instantiatedInitDecl);
@@ -738,9 +739,9 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 if (auto* functionType = llvm::dyn_cast<FunctionType>(varDecl->getType().get())) {
                     auto paramDecls = functionType->getParamDecls(varDecl->getLocation());
 
-                    if (decls.size() == 1) {
+                    if (decls.size() == 1 && !returnNullOnError) {
                         validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
-                        return *varDecl;
+                        return varDecl;
                     }
                     if (argumentsMatch(expr, nullptr, paramDecls)) {
                         matches.push_back(varDecl);
@@ -754,9 +755,9 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 if (auto* functionType = llvm::dyn_cast<FunctionType>(paramDecl->getType().get())) {
                     auto paramDecls = functionType->getParamDecls(paramDecl->getLocation());
 
-                    if (decls.size() == 1) {
+                    if (decls.size() == 1 && !returnNullOnError) {
                         validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
-                        return *paramDecl;
+                        return paramDecl;
                     }
                     if (argumentsMatch(expr, nullptr, paramDecls)) {
                         matches.push_back(paramDecl);
@@ -770,9 +771,9 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 if (auto* functionType = llvm::dyn_cast<FunctionType>(fieldDecl->getType().get())) {
                     auto paramDecls = functionType->getParamDecls(fieldDecl->getLocation());
 
-                    if (decls.size() == 1) {
+                    if (decls.size() == 1 && !returnNullOnError) {
                         validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
-                        return *fieldDecl;
+                        return fieldDecl;
                     }
                     if (argumentsMatch(expr, nullptr, paramDecls)) {
                         matches.push_back(fieldDecl);
@@ -792,9 +793,13 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     switch (matches.size()) {
         case 1:
             validateArgs(expr, *matches.front());
-            return *matches.front();
+            return matches.front();
 
         case 0: {
+            if (returnNullOnError) {
+                return nullptr;
+            }
+
             if (decls.size() == 0) {
                 error(expr.getCallee().getLocation(), "unknown identifier '", callee, "'");
             }
@@ -820,6 +825,10 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             }
         }
         default:
+            if (returnNullOnError) {
+                return nullptr;
+            }
+
             if (expr.getReceiver() && expr.getReceiverType().removePointer().isMutable()) {
                 llvm::SmallVector<Decl*, 1> mutatingMatches;
 
@@ -831,7 +840,7 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                 if (mutatingMatches.size() == 1) {
                     validateArgs(expr, *mutatingMatches.front());
-                    return *mutatingMatches.front();
+                    return mutatingMatches.front();
                 }
             }
 
@@ -841,13 +850,13 @@ Decl& TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
             if (allMatchesAreFromC) {
                 validateArgs(expr, *matches.front());
-                return *matches.front();
+                return matches.front();
             }
 
             for (auto* match : matches) {
                 if (match->getModule() && match->getModule()->getName() == "std") {
                     validateArgs(expr, *match);
-                    return *match;
+                    return match;
                 }
             }
 
@@ -911,11 +920,11 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
             return Type::getVoid();
         }
 
-        decl = &resolveOverload(decls, expr, callee);
+        decl = resolveOverload(decls, expr, callee);
     } else {
         auto callee = expr.getFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
-        decl = &resolveOverload(decls, expr, callee);
+        decl = resolveOverload(decls, expr, callee);
 
         if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
             expr.setReceiverType(initDecl->getTypeDecl()->getType());

@@ -279,13 +279,10 @@ public:
     Expr& getLHS() { return *getArgs()[0].getValue(); }
     Expr& getRHS() { return *getArgs()[1].getValue(); }
     bool isBuiltinOp() const;
-    Decl* getCalleeDecl() const { return calleeDecl; }
-    void setCalleeDecl(Decl* decl) { calleeDecl = decl; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 
 private:
     BinaryOperator op;
-    Decl* calleeDecl;
 };
 
 /// A type cast expression using the 'cast' keyword, e.g. 'cast<type>(expr)'.

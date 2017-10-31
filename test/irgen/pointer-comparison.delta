@@ -1,0 +1,21 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class X { let i: int; }
+class Y { let i: int; }
+
+// CHECK: define i1 [[EQ:@"==\.[0-9]+"]](%X* %a, %X* %b)
+func ==(a: X*, b: X*) -> bool {
+    return true;
+}
+
+// CHECK: define void @fx(%X* %a, %X* %b)
+// CHECK-NEXT: call i1 [[EQ]](%X* %a, %X* %b)
+func fx(a: X*, b: X*) {
+    _ = a == b;
+}
+
+// CHECK: define void @fy(%Y* %a, %Y* %b)
+// CHECK-NEXT: icmp eq %Y* %a, %b
+func fy(a: Y*, b: Y*) {
+    _ = a == b;
+}

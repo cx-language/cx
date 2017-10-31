@@ -107,7 +107,8 @@ private:
     bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
-    Decl& resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee) const;
+    Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee,
+                          bool returnNullOnError = false) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                        CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
     bool isImplicitlyCopyable(Type type) const;
@@ -119,6 +120,7 @@ private:
                       bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type) const;
+    Decl* getBinaryExprCallee(BinaryExpr& expr) const;
     void markFieldAsInitialized(Expr& expr) const;
     void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) const;
     template<typename DeclT>

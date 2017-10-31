@@ -226,8 +226,8 @@ llvm::Value* IRGenerator::codegenShortCircuitBinaryOp(BinaryOperator op, const E
 }
 
 llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
-    if (!expr.isBuiltinOp()) {
-        return codegenCallExpr((const CallExpr&) expr);
+    if (expr.getCalleeDecl() != nullptr) {
+        return codegenCallExpr(expr);
     }
 
     if (expr.getLHS().getType().isPointerType() && expr.getRHS().getType().isInteger()) {
