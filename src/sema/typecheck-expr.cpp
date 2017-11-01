@@ -456,13 +456,13 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
                     }
                 }
             }
-            return nullptr;
+            break;
 
         case TypeKind::ArrayType:
             if (paramType.isArrayType()) {
                 return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam);
             }
-            return nullptr;
+            break;
 
         case TypeKind::TupleType:
             llvm_unreachable("unimplemented");
@@ -476,22 +476,26 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
                 }
                 return findGenericArg(argType.getReturnType(), paramType.getReturnType(), genericParam);
             }
-            return nullptr;
+            break;
 
         case TypeKind::PointerType:
             if (paramType.isPointerType()) {
                 return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
             }
-            return nullptr;
+            break;
 
         case TypeKind::OptionalType:
             if (paramType.isOptionalType()) {
                 return findGenericArg(argType.getWrappedType(), paramType.getWrappedType(), genericParam);
             }
-            return nullptr;
+            break;
     }
 
-    llvm_unreachable("all cases handled");
+    if (paramType.removeOptional().isPointerType()) {
+        return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam);
+    }
+
+    return nullptr;
 }
 
 std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,

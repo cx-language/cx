@@ -2,7 +2,11 @@
 
 struct S {}
 
-func ==<T>(a: T*, b: T*) {}
+interface I {
+    func foo();
+}
+
+func ==<T: I>(a: T*, b: T*) {}
 
 // CHECK: define void @"==[[SUFFIX:[\.0-9]+]]"({} %a, {} %b)
 func ==(a: S, b: S) {}

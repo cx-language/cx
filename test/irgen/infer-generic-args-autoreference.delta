@@ -1,0 +1,10 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+func f<T>(p: T*) {}
+
+func main() {
+    let i = 42;
+
+    // CHECK: call void @"f<int>"(i32* %i)
+    f(i);
+}
