@@ -8,10 +8,20 @@ func <(a: X*, b: X*) -> bool {
     return true;
 }
 
+interface Z {
+    func z();
+}
+
+func < <T: Z>(a: T*, b: T*) -> bool {
+    return true;
+}
+
 // CHECK: define void @fx(%X* %a, %X* %b)
+// CHECK-NEXT: call i1 [[EQ]](%X* %a, %X* %b)
 // CHECK-NEXT: call i1 [[EQ]](%X* %a, %X* %b)
 func fx(a: X*, b: X*) {
     _ = a < b;
+    _ = *a < *b;
 }
 
 // CHECK: define void @fy(%Y* %a, %Y* %b)

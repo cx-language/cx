@@ -106,11 +106,13 @@ private:
     bool implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
     bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
-                                                CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
+                                                CallExpr& call, llvm::ArrayRef<ParamDecl> params,
+                                                bool returnOnError) const;
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee,
                           bool returnNullOnError = false) const;
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
-                                       CallExpr& call, llvm::ArrayRef<ParamDecl> params) const;
+                                       CallExpr& call, llvm::ArrayRef<ParamDecl> params,
+                                       bool returnOnError) const;
     bool isImplicitlyCopyable(Type type) const;
     bool argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl,
                         llvm::ArrayRef<ParamDecl> params = {}) const;

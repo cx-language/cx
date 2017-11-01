@@ -495,7 +495,8 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
 }
 
 std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
-                                                CallExpr& call, llvm::ArrayRef<ParamDecl> params) const {
+                                                CallExpr& call, llvm::ArrayRef<ParamDecl> params,
+                                                bool returnOnError) const {
     if (call.getArgs().size() != params.size()) return {};
 
     std::vector<Type> inferredGenericArgs;
@@ -547,6 +548,37 @@ std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
         }
     }
 
+    ASSERT(genericParams.size() == inferredGenericArgs.size());
+
+    for (auto t : llvm::zip(genericParams, inferredGenericArgs)) {
+        auto& genericParam = std::get<0>(t);
+        auto& genericArg = std::get<1>(t);
+
+        if (!genericParam.getConstraints().empty()) {
+            ASSERT(genericParam.getConstraints().size() == 1, "cannot have multiple generic constraints yet");
+
+            auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.getConstraints()[0].get()));
+            std::string errorReason;
+
+            if (genericArg.isBasicType()) {
+                auto* typeDecl = getTypeDecl(*llvm::cast<BasicType>(genericArg.get()));
+
+                if (returnOnError) {
+                    if (!typeDecl || !implementsInterface(*typeDecl, *interface, &errorReason)) {
+                        return {};
+                    }
+                } else {
+                    if (typeDecl) {
+                        checkImplementsInterface(*typeDecl, *interface, call.getLocation());
+                    } else {
+                        error(call.getLocation(), "type '", genericArg,
+                              "' doesn't implement interface '", interface->getName(), "'");
+                    }
+                }
+            }
+        }
+    }
+
     return inferredGenericArgs;
 }
 
@@ -562,7 +594,8 @@ void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> gene
 }
 
 llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
-                                                         CallExpr& call, llvm::ArrayRef<ParamDecl> params) const {
+                                                         CallExpr& call, llvm::ArrayRef<ParamDecl> params,
+                                                         bool returnOnError) const {
     ASSERT(!genericParams.empty());
 
     if (call.getGenericArgs().empty()) {
@@ -570,7 +603,7 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
             error(call.getLocation(), "can't infer generic parameters without function arguments");
         }
 
-        auto inferredGenericArgs = inferGenericArgs(genericParams, call, params);
+        auto inferredGenericArgs = inferGenericArgs(genericParams, call, params, returnOnError);
         if (inferredGenericArgs.empty()) return {};
         call.setGenericArgs(std::move(inferredGenericArgs));
         ASSERT(call.getGenericArgs().size() == genericParams.size());
@@ -580,22 +613,6 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
     auto genericArg = call.getGenericArgs().begin();
 
     for (const GenericParamDecl& genericParam : genericParams) {
-        if (!genericParam.getConstraints().empty()) {
-            ASSERT(genericParam.getConstraints().size() == 1, "cannot have multiple generic constraints yet");
-
-            auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.getConstraints()[0].get()));
-            std::string errorReason;
-
-            if (genericArg->isBasicType()) {
-                if (auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(**genericArg))) {
-                    checkImplementsInterface(*typeDecl, *interface, call.getLocation());
-                } else {
-                    error(call.getLocation(), "type '", *genericArg,
-                          "' doesn't implement interface '", interface->getName(), "'");
-                }
-            }
-        }
-
         genericArgs.try_emplace(genericParam.getName(), *genericArg++);
     }
 
@@ -638,7 +655,7 @@ Decl* TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                 }
 
                 auto params = functionTemplate->getFunctionDecl()->getParams();
-                auto genericArgs = getGenericArgsForCall(genericParams, expr, params);
+                auto genericArgs = getGenericArgsForCall(genericParams, expr, params, decls.size() != 1);
                 if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
                 auto* functionDecl = functionTemplate->instantiate(genericArgs);
@@ -701,7 +718,8 @@ Decl* TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                 }
 
                 for (auto* initDecl : initDecls) {
-                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, initDecl->getParams());
+                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr,
+                                                             initDecl->getParams(), initDecls.size() != 1);
                     if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
                     TypeDecl* typeDecl = nullptr;
