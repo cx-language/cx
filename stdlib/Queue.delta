@@ -1,0 +1,79 @@
+/// First-in-first-out data structure
+class Queue<T> {
+
+    var head: mutable Node<T>*?;
+    var tail: mutable Node<T>*?;
+    var size: uint;
+
+    /// Initialize an empty Queue
+    init() {
+        head = null;
+        tail = null;
+        size = 0;
+    }
+
+    /// Deinitialize the queue
+    deinit() {
+        while (!isEmpty()) {
+            let next = head!.next;
+            free(cast<mutable void*?>(head));
+            head = next;
+        }
+    }
+
+    /// Add to the front of the queue
+    mutating func push(value: T) {
+        let newNode = cast<mutable Node<T>*>(malloc(sizeof(Node<T>))!);
+        *newNode ~= Node<T>(value);
+
+        if (isEmpty()) {
+            head = newNode;
+            tail = newNode;
+        } else {
+            tail!.next = newNode;
+            tail = newNode;
+        }
+        size++;
+    }
+
+    /// Retrieve and remove head of the queue
+    mutating func pop() -> T {
+        let value = head!.value;
+        let next = head!.next;
+        free(cast<mutable void*?>(head));
+        head = next;
+
+        if (head == null) {
+            tail = null;
+        }
+
+        size--;
+        return value;
+    }
+
+    /// Access element in the front of the queue
+    func first() -> T* {
+        return head!.value;
+    }
+
+    func size() -> uint {
+        return size;
+    }
+
+    /// Check if queue is empty
+    func isEmpty() -> bool {
+        return head == null;
+    }
+}
+
+/// Represents a single element in the queue
+class Node<T> {
+
+    var next: mutable Node<T>*?;
+    var value: T;
+
+    init(val: T) {
+        this.value = val;
+        this.next = null;
+    }
+}
