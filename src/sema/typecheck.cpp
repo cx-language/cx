@@ -238,7 +238,7 @@ void TypeChecker::typecheckAssignStmt(AssignStmt& stmt) const {
         }
     }
 
-    if (rhsType && !isImplicitlyCopyable(rhsType)) {
+    if (rhsType && !isImplicitlyCopyable(rhsType) && !lhsType.removeOptional().isPointerType()) {
         stmt.getRHS()->setMoved(true);
         stmt.getLHS()->setMoved(false);
     }

@@ -1,0 +1,9 @@
+// RUN: %delta -typecheck %s
+
+class X {}
+
+func f(x: X) {
+    var p: X*? = null;
+    p = x;
+    p = x;
+}
