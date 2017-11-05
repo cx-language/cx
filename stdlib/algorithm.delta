@@ -1,5 +1,13 @@
 /// Public members
 
+/// Gives the maximum of the two elements
+func max<T>(a: T*, b: T*) -> T* {
+    if (*a >= *b) {
+        return a;
+    }
+    return b;
+}
+
 /// Swaps two items in place
 func swap<E>(a: mutable E*, b: mutable E*) {
     let t = *a;

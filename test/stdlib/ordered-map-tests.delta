@@ -1,0 +1,12 @@
+// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+
+func main() {
+    testInsert();
+}
+
+func testInsert() {
+    var m = OrderedMap<int, int>();
+    assert(m.size() == 0, "size ok");
+
+    m.insert(7, 8);
+}

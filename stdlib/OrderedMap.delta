@@ -1,0 +1,220 @@
+
+/// An ordered key-value container that supports fast insertion, deletion and lookup
+class OrderedMap<Key, Value> {
+
+    var root: mutable AVLnode<Key, Value>*?;
+    var size: uint;
+
+    init() {
+        root = null;
+        size = 0;
+    }
+
+    /// Returns the size of the Map
+    func size() -> uint {
+        return size;
+    }
+
+    mutating func rebalance(node: mutable AVLnode<Key, Value>*) {
+        var n = node;
+        setBalance(n);
+
+        if (n.balance == -2) {
+            if (height(n.left!.left) >= height(n.left!.right)) {
+                n = rotateRight(n);
+            } else {
+                n = rotateLeftThenRight(n);
+            }
+        }
+        else if (n.balance == 2) {
+            if (height(n.right!.right) >= height(n.right!.left)) {
+                n = rotateLeft(n);
+            } else {
+                n = rotateRightThenLeft(n);
+            }
+        }
+
+        if (n.parent != null) {
+            rebalance(n.parent!);
+        }
+        else {
+            root = n;
+        }
+    }
+
+     func rotateLeft(node: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
+        var a = node;
+        var b = a.right;
+        b!.parent = a.parent;
+        a.right = b!.left;
+
+        if (a.right != null) {
+            a.right!.parent = a;
+        }
+
+        b!.left = a;
+        a.parent = b;
+
+        if (b!.parent != null) {
+            if (b!.parent!.right == a) {
+                b!.parent!.right = b;
+            }
+            else {
+                b!.parent!.left = b;
+            }
+        }
+
+        setBalance(a);
+        setBalance(b!);
+        return b!;
+    }
+
+     func rotateRight(node: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
+        var a = node;
+        var b = a.left;
+        b!.parent = a.parent;
+        a.left = b!.right;
+
+        if (a.left != null) {
+            a.left!.parent = a;
+        }
+
+        b!.right = a;
+        a.parent = b;
+
+        if (b!.parent != null) {
+            if (b!.parent!.right == a) {
+                b!.parent!.right = b;
+            }
+            else {
+                b!.parent!.left = b;
+            }
+        }
+
+        setBalance(a);
+        setBalance(b!);
+        return b!;
+    }
+
+    func rotateLeftThenRight(n: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
+        n.left = rotateLeft(n.left!);
+        return rotateRight(n);
+    }
+
+    func rotateRightThenLeft(n: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
+        n.right = rotateRight(n.right!);
+        return rotateLeft(n);
+    }
+
+    func height(n: AVLnode<Key, Value>*?) -> int {
+        if (n == null) {
+            return -1;
+        }
+        return 1 + *max(height(n!.left), height(n!.right));
+    }
+
+    func setBalance(n: mutable AVLnode<Key, Value>*) {
+        n.balance = height(n.right) - height(n.left);
+    }
+
+    /// Inserts a key-value pair into the Map.
+    mutating func insert(key: Key, value: Value) -> bool {
+        if (root == null) {
+            root = cast<mutable AVLnode<Key, Value>*>(malloc(sizeof(AVLnode<Key, Value>))!);
+            *root! ~= AVLnode<Key, Value>(key, null, value);
+        }
+        else {
+            var n = root;
+            var parent: mutable AVLnode<Key, Value>*? = null;
+
+            while (true) {
+                if (n!.key == key) {
+                    return false;
+                }
+
+                parent = n;
+
+                let goLeft = n!.key > key;
+                n = goLeft ? n!.left : n!.right;
+
+                if (n == null) {
+                    if (goLeft) {
+                        parent!.left = cast<mutable AVLnode<Key, Value>*>(malloc(sizeof(AVLnode<Key, Value>))!);
+                        *parent!.left! ~= AVLnode<Key, Value>(key, parent, value);
+                    }
+                    else {
+                        parent!.right = cast<mutable AVLnode<Key, Value>*>(malloc(sizeof(AVLnode<Key, Value>))!);
+                        *parent!.right! ~= AVLnode<Key, Value>(key, parent, value);
+                    }
+
+                    rebalance(parent!);
+                    break;
+                }
+            }
+        }
+        size++;
+
+        return true;
+    }
+
+    /// Removes a key and it's associated value from the Map
+    mutating func remove(key: Key*) {
+        if (root == null) {
+            return;
+        }
+
+        var n = root;
+        var parent = root;
+        var delNode: mutable AVLnode<Key, Value>*? = null;
+        var child = root;
+
+        while (child != null) {
+            parent = n;
+            n = child;
+            child = (*key >= n!.key) ? n!.right : n!.left;
+            if (*key == n!.key) {
+                delNode = n;
+            }
+        }
+
+        if (delNode != null) {
+            delNode!.key = n!.key;
+
+            child = (n!.left != null) ? n!.left : n!.right;
+
+            if (root!.key == *key) {
+                root = child;
+            }
+            else {
+                if (parent!.left == n) {
+                    parent!.left = child;
+                }
+                else {
+                    parent!.right = child;
+                }
+
+                rebalance(parent!);
+            }
+        }
+    }
+}
+
+/// One node in the AVL tree
+class AVLnode<Key, Value> {
+    var key: Key;
+    var value: Value;
+    var balance: int;
+    var parent: mutable AVLnode<Key, Value>*?;
+    var left: mutable AVLnode<Key, Value>*?;
+    var right: mutable AVLnode<Key, Value>*?;
+
+
+    init(key: Key, parent: mutable AVLnode<Key, Value>*?, value: Value) {
+        this.key = key;
+        this.value = value;
+        this.parent = parent;
+        this.balance = 0;
+        this.left = null;
+        this.right = null;
+    }
+}
