@@ -243,6 +243,7 @@ public:
     : MethodDecl(DeclKind::DeinitDecl,
                  FunctionProto("deinit", {}, Type::getVoid(), false, false),
                  receiverTypeDecl, {}, location) {}
+    bool isMutating() const override { return true; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 };
 

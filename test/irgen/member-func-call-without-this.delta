@@ -1,4 +1,5 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=DEINIT
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-S
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 
@@ -20,6 +21,12 @@ class T<U> {
     // CHECK: define void @"T<int>.init"({}* %this)
     // CHECK-NEXT: call void @"T<int>.baz"({}* %this)
     init() {
+        baz()
+    }
+
+    // DEINIT: define void @"T<int>.deinit"({}* %this)
+    // DEINIT-NEXT: call void @"T<int>.baz"({}* %this)
+    deinit() {
         baz()
     }
 
