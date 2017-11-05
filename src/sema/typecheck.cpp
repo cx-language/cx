@@ -386,7 +386,8 @@ void TypeChecker::typecheckType(Type type, SourceLocation location) const {
             }
             break;
         }
-        default:
+        case TypeKind::OptionalType:
+            typecheckType(type.getWrappedType(), location);
             break;
     }
 }

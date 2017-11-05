@@ -1,0 +1,23 @@
+// RUN: %delta -print-ir %s
+
+class X<T> {
+    let y: Y<T>*?;
+
+    init() {
+        y = null;
+    }
+
+    deinit() {
+        let a = y!.a;
+    }
+}
+
+class Y<T> {
+    let a: T;
+
+    func f() {}
+}
+
+func main() {
+    let x = X<int>();
+}
