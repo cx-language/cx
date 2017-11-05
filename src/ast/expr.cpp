@@ -211,7 +211,7 @@ std::string CallExpr::getMangledFunctionName() const {
     Type receiverType;
 
     if (getCallee().isMemberExpr()) {
-        receiverType = getReceiver()->getType().removePointer();
+        receiverType = getReceiver()->getType().removeOptional().removePointer();
     }
 
     return mangleFunctionDecl(receiverType, getFunctionName());

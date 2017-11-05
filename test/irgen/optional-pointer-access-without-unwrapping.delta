@@ -1,0 +1,27 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+class Foo {
+    let i: int;
+    func bar() { }
+}
+
+func main() {
+    let f: mutable Foo*? = null;
+
+    // CHECK: %1 = load %Foo*, %Foo** %f
+    // CHECK-NEXT: %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
+    // CHECK-NEXT: %3 = load i32, i32* %2
+    _ = f.i;
+
+    // CHECK-NEXT: %f1 = load %Foo*, %Foo** %f
+    // CHECK-NEXT: call void @Foo.bar(%Foo* %f1)
+    f.bar();
+
+    // CHECK-NEXT: %f2 = load %Foo*, %Foo** %f
+    // CHECK-NEXT: %f3 = load %Foo*, %Foo** %f
+    // CHECK-NEXT: %4 = load %Foo, %Foo* %f3
+    // CHECK-NEXT: store %Foo %4, %Foo* %f2
+    *f = *f;
+
+    // CHECK-NEXT: ret i32 0
+}

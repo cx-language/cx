@@ -136,8 +136,9 @@ Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) const {
     }
     if (expr.getOperator() == STAR) { // Dereference operation
         if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
-            error(expr.getOperand().getLocation(), "cannot dereference possibly-null pointer of type '",
-                  operandType, "' (unwrap the value with '!' to access the pointer anyway)");
+            warning(expr.getOperand().getLocation(), "dereferencing value of optional type '", operandType,
+                    "' which may be null; unwrap the value with a postfix '!' to silence this warning");
+            operandType = operandType.getWrappedType();
         } else if (!operandType.isPointerType()) {
             error(expr.getOperand().getLocation(), "cannot dereference non-pointer type '",
                   operandType, "'");
@@ -919,9 +920,9 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         expr.setReceiverType(receiverType);
 
         if (receiverType.isOptionalType()) {
-            error(expr.getReceiver()->getLocation(),
-                  "cannot call member function through value of optional type '", receiverType,
-                  "' which may be null");
+            warning(expr.getReceiver()->getLocation(),
+                    "calling member function through value of optional type '", receiverType,
+                    "' which may be null; unwrap the value with a postfix '!' to silence this warning");
         } else if (receiverType.removePointer().isArrayType()) {
             if (expr.getFunctionName() == "size") {
                 validateArgs(expr, false, {}, false, expr.getFunctionName(), expr.getLocation());
@@ -1245,13 +1246,15 @@ Type TypeChecker::typecheckSizeofExpr(SizeofExpr&) const {
 Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
     Type baseType = typecheckExpr(*expr.getBaseExpr());
 
-    if (baseType.isPointerType()) {
-        baseType = baseType.getPointee();
+    if (baseType.isOptionalType()) {
+        warning(expr.getBaseExpr()->getLocation(),
+                "accessing member through value of optional type '", baseType,
+                "' which may be null; unwrap the value with a postfix '!' to silence this warning");
+        baseType = baseType.getWrappedType();
     }
 
-    if (baseType.isOptionalType()) {
-        error(expr.getBaseExpr()->getLocation(), "cannot access member through value of optional type '",
-              baseType, "' which may be null");
+    if (baseType.isPointerType()) {
+        baseType = baseType.getPointee();
     }
 
     if (baseType.isArrayType()) {

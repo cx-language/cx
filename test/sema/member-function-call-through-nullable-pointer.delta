@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %delta -typecheck %s | %FileCheck %s
 
 struct Foo {
     let i: int;
@@ -7,6 +7,6 @@ struct Foo {
 
 func main() {
     let f: Foo*? = null;
-    // CHECK: [[@LINE+1]]:5: error: cannot call member function through value of optional type 'Foo*?' which may be null
+    // CHECK: [[@LINE+1]]:5: warning: calling member function through value of optional type 'Foo*?' which may be null; unwrap the value with a postfix '!' to silence this warning
     f.bar();
 }
