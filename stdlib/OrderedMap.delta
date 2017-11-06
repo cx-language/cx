@@ -9,6 +9,15 @@ class OrderedMap<Key, Value> {
         size = 0;
     }
 
+    deinit() {
+        var node = firstNode();
+        while (node != null) {
+            let next = higherNode(node!);
+            deallocate(node!);
+            node = next;
+        }
+    }
+
     /// Returns the size of the Map
     func size() -> uint {
         return size;
@@ -19,106 +28,102 @@ class OrderedMap<Key, Value> {
         return size == 0;
     }
 
-    mutating func rebalance(node: mutable AVLnode<Key, Value>*) {
+    mutating func _rebalance(node: mutable AVLnode<Key, Value>*) {
         var n = node;
-        setBalance(n);
+        _setBalance(n);
 
         if (n.balance == -2) {
-            if (height(n.left!.left) >= height(n.left!.right)) {
-                n = rotateRight(n);
+            if (_height(n.left!.left) >= _height(n.left!.right)) {
+                n = _rotateRight(n);
             } else {
-                n = rotateLeftThenRight(n);
+                n = _rotateLeftThenRight(n);
             }
-        }
-        else if (n.balance == 2) {
-            if (height(n.right!.right) >= height(n.right!.left)) {
-                n = rotateLeft(n);
+        } else if (n.balance == 2) {
+            if (_height(n.right!.right) >= _height(n.right!.left)) {
+                n = _rotateLeft(n);
             } else {
-                n = rotateRightThenLeft(n);
+                n = _rotateRightThenLeft(n);
             }
         }
 
         if (n.parent != null) {
-            rebalance(n.parent!);
-        }
-        else {
+            _rebalance(n.parent!);
+        } else {
             root = n;
         }
     }
 
-     func rotateLeft(node: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
+    func _rotateLeft(node: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
         var a = node;
-        var b = a.right;
-        b!.parent = a.parent;
-        a.right = b!.left;
+        var b = a.right!;
+        b.parent = a.parent;
+        a.right = b.left;
 
         if (a.right != null) {
             a.right!.parent = a;
         }
 
-        b!.left = a;
+        b.left = a;
         a.parent = b;
 
-        if (b!.parent != null) {
-            if (b!.parent!.right == a) {
-                b!.parent!.right = b;
-            }
-            else {
-                b!.parent!.left = b;
+        if (b.parent != null) {
+            if (b.parent!.right == a) {
+                b.parent!.right = b;
+            } else {
+                b.parent!.left = b;
             }
         }
 
-        setBalance(a);
-        setBalance(b!);
-        return b!;
+        _setBalance(a);
+        _setBalance(b);
+        return b;
     }
 
-     func rotateRight(node: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
+    func _rotateRight(node: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
         var a = node;
-        var b = a.left;
-        b!.parent = a.parent;
-        a.left = b!.right;
+        var b = a.left!;
+        b.parent = a.parent;
+        a.left = b.right;
 
         if (a.left != null) {
             a.left!.parent = a;
         }
 
-        b!.right = a;
+        b.right = a;
         a.parent = b;
 
-        if (b!.parent != null) {
-            if (b!.parent!.right == a) {
-                b!.parent!.right = b;
-            }
-            else {
-                b!.parent!.left = b;
+        if (b.parent != null) {
+            if (b.parent!.right == a) {
+                b.parent!.right = b;
+            } else {
+                b.parent!.left = b;
             }
         }
 
-        setBalance(a);
-        setBalance(b!);
-        return b!;
+        _setBalance(a);
+        _setBalance(b);
+        return b;
     }
 
-    func rotateLeftThenRight(n: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
-        n.left = rotateLeft(n.left!);
-        return rotateRight(n);
+    func _rotateLeftThenRight(n: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
+        n.left = _rotateLeft(n.left!);
+        return _rotateRight(n);
     }
 
-    func rotateRightThenLeft(n: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
-        n.right = rotateRight(n.right!);
-        return rotateLeft(n);
+    func _rotateRightThenLeft(n: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
+        n.right = _rotateRight(n.right!);
+        return _rotateLeft(n);
     }
 
-    func height(n: AVLnode<Key, Value>*?) -> int {
+    func _height(n: AVLnode<Key, Value>*?) -> int {
         if (n == null) {
             return -1;
         }
-        return 1 + *max(height(n!.left), height(n!.right));
+        return 1 + *max(_height(n!.left), _height(n!.right));
     }
 
-    func setBalance(n: mutable AVLnode<Key, Value>*) {
-        n.balance = height(n.right) - height(n.left);
+    func _setBalance(n: mutable AVLnode<Key, Value>*) {
+        n.balance = _height(n.right) - _height(n.left);
     }
 
     /// Checks if the given element is in the Map. Returns true if it is, otherwise false
@@ -126,18 +131,19 @@ class OrderedMap<Key, Value> {
         if (root == null) {
             return false;
         }
-        var n = root;
+        var n = root!;
         while (true) {
-            if (n!.key == *key) {
+            if (n.key == *key) {
                 return true;
             }
 
-            let goLeft = n!.key > *key;
-            n = goLeft ? n!.left : n!.right;
+            let goLeft = n.key > *key;
+            let newNode = goLeft ? n.left : n.right;
 
-            if (n == null) {
+            if (newNode == null) {
                 return false;
             }
+            n = newNode!;
         }
         return false;
     }
@@ -154,40 +160,36 @@ class OrderedMap<Key, Value> {
     /// Inserts a key-value pair into the Map.
     mutating func insert(key: Key, value: Value) -> bool {
         if (root == null) {
-            root = cast<mutable AVLnode<Key, Value>*>(malloc(sizeof(AVLnode<Key, Value>))!);
-            *root! ~= AVLnode<Key, Value>(key, null, value);
-        }
-        else {
-            var n = root;
+            root = allocate(AVLnode<Key, Value>(key, null, value));
+        } else {
+            var n = root!;
             var parent: mutable AVLnode<Key, Value>*? = null;
 
             while (true) {
-                if (n!.key == key) {
+                if (n.key == key) {
                     return false;
                 }
 
                 parent = n;
 
-                let goLeft = n!.key > key;
-                n = goLeft ? n!.left : n!.right;
+                let goLeft = n.key > key;
+                let newNode = goLeft ? n.left : n.right;
 
-                if (n == null) {
+                if (newNode == null) {
                     if (goLeft) {
-                        parent!.left = cast<mutable AVLnode<Key, Value>*>(malloc(sizeof(AVLnode<Key, Value>))!);
-                        *parent!.left! ~= AVLnode<Key, Value>(key, parent, value);
-                    }
-                    else {
-                        parent!.right = cast<mutable AVLnode<Key, Value>*>(malloc(sizeof(AVLnode<Key, Value>))!);
-                        *parent!.right! ~= AVLnode<Key, Value>(key, parent, value);
+                        parent!.left = allocate(AVLnode<Key, Value>(key, parent, value));
+                    } else {
+                        parent!.right = allocate(AVLnode<Key, Value>(key, parent, value));
                     }
 
-                    rebalance(parent!);
+                    _rebalance(parent!);
                     break;
                 }
+                n = newNode!;
             }
         }
-        size++;
 
+        size++;
         return true;
     }
 
@@ -197,41 +199,39 @@ class OrderedMap<Key, Value> {
             return;
         }
 
-        var n = root;
+        var n = root!;
         var parent = root;
         var delNode: mutable AVLnode<Key, Value>*? = null;
         var child = root;
 
         while (child != null) {
             parent = n;
-            n = child;
-            child = (*key >= n!.key) ? n!.right : n!.left;
-            if (*key == n!.key) {
+            n = child!;
+            child = (*key >= n.key) ? n.right : n.left;
+            if (*key == n.key) {
                 delNode = n;
             }
         }
 
         if (delNode != null) {
-            delNode!.key = n!.key;
-            delNode!.value = n!.value;
+            delNode!.key = n.key;
+            delNode!.value = n.value;
 
-            child = (n!.left != null) ? n!.left : n!.right;
+            child = (n.left != null) ? n.left : n.right;
 
             if (root!.key == *key) {
                 root = child;
-            }
-            else {
+            } else {
                 if (parent!.left == n) {
                     parent!.left = child;
-                }
-                else {
+                } else {
                     parent!.right = child;
                 }
 
-                rebalance(parent!);
+                _rebalance(parent!);
             }
-            n!.deinit();
-            free(cast<mutable void*?>(n));
+            n.deinit();
+            deallocate(n);
         }
         size--;
     }
@@ -273,39 +273,27 @@ class OrderedMap<Key, Value> {
         return lower!.key;
     }
 
-    func maxInSubtree(node: AVLnode<Key, Value>*) -> AVLnode<Key, Value>*? {
-        let key = node.key;
-
+    func _maxInSubtree(node: AVLnode<Key, Value>*) -> AVLnode<Key, Value>* {
         var n = node;
-        while (true) {
-            if (n.right != null) {
-                n = n.right!;
-            } else {
-                return n;
-            }
+        while (n.right != null) {
+            n = n.right!;
         }
-        return null;
+        return n;
     }
 
-    func minInSubtree(node: AVLnode<Key, Value>*) -> AVLnode<Key, Value>*? {
-        let key = node.key;
-
+    func _minInSubtree(node: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
         var n = node;
-        while (true) {
-            if (n.left != null) {
-                n = n.left!;
-            } else {
-                return n;
-            }
+        while (n.left != null) {
+            n = n.left!;
         }
-        return null;
+        return n;
     }
 
     /// Returns the node that contains the key immediately smaller than the key of the given node,
     /// or null, if the key of `node` is the smallest value.
     func lowerNode(node: AVLnode<Key, Value>*) -> AVLnode<Key, Value>*? {
         if (node.left != null) {
-            return maxInSubtree(node.left!);
+            return _maxInSubtree(node.left!);
         }
 
         var n = node;
@@ -339,9 +327,9 @@ class OrderedMap<Key, Value> {
 
     /// Returns the node that contains the key immediately larger than the key of the given node,
     /// or null, if the key of `node` is the largest value.
-    func higherNode(node: AVLnode<Key, Value>*) -> AVLnode<Key, Value>*? {
+    func higherNode(node: AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>*? {
         if (node.right != null) {
-            return minInSubtree(node.right!);
+            return _minInSubtree(node.right!);
         }
 
         var n = node;
@@ -362,7 +350,15 @@ class OrderedMap<Key, Value> {
         if (root == null) {
             return null;
         }
-        return minInSubtree(root!)!.key;
+        return _minInSubtree(root!).key;
+    }
+
+    /// Returns the node with the smallest key in the Map, or null if the Map is empty.
+    func firstNode() -> mutable AVLnode<Key, Value>*? {
+        if (root == null) {
+            return null;
+        }
+        return _minInSubtree(root!);
     }
 
     /// Returns the largest element in the Map, or null if the map is empty.
@@ -370,15 +366,23 @@ class OrderedMap<Key, Value> {
         if (root == null) {
             return null;
         }
-        return maxInSubtree(root!)!.key;
+        return _maxInSubtree(root!).key;
     }
 
-    /*
+    /// Returns the node with the largest key in the Map, or null if the Map is empty.
+    func lastNode() -> AVLnode<Key, Value>*? {
+        if (root == null) {
+            return null;
+        }
+        return _maxInSubtree(root!);
+    }
+
+
     /// Iterate over the map, in order
     func iterator() -> OrderedMapIterator<Key, Value> {
         return OrderedMapIterator(this);
     }
-    */
+
 }
 
 /// One node in the AVL tree

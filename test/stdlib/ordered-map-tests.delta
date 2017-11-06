@@ -7,6 +7,9 @@ func main() {
     testLowerAndHigher();
     testFirstLast();
     testEmptyMapFunctions();
+    testEmptyMapIterator();
+    testIteratorOrder();
+    testUnitMapIterator();
 }
 
 func testInsertAndContains() {
@@ -99,8 +102,70 @@ func testFirstLast() {
 func testEmptyMapFunctions() {
     var m = OrderedMap<int, int>();
 
-    assert(m.first() == null, "works");
-    assert(m.last() == null, "works");
-    assert(m.higherKey(48) == null, "works");
-    assert(m.lowerKey(42) == null, "works");
+    assert(m.first() == null, "testEmptyMapFunctions - 1");
+    assert(m.last() == null, "testEmptyMapFunctions - 2");
+    assert(m.higherKey(48) == null, "testEmptyMapFunctions - 3");
+    assert(m.lowerKey(42) == null, "testEmptyMapFunctions - 4");
+}
+
+
+func testIteratorOrder() {
+    var map = OrderedMap<int, int>();
+
+    for (let i in 0..100) {
+        map.insert(i, i-12);
+    }
+
+    var called = 0;
+    for (let e in map) {
+        assert(e.key == called, "key has correct value");
+        assert(e.value == called - 12, "value has correct value");
+        called++;
+    }
+
+    assert(called == 100, "Called 100 times.");
+
+    map = OrderedMap<int, int>();
+
+    for (let i in 0..100) {
+        map.insert(99 - i, i-12);
+    }
+
+    called = 0;
+    // Still in correct order
+    for (let e in map) {
+        assert(e.key == called, "key has correct value");
+        assert(e.value == 99 - called - 12, "value has correct value");
+        called++;
+    }
+
+    assert(called == 100, "Called 100 times.");
+
+
+}
+
+func testEmptyMapIterator() {
+    var map = OrderedMap<int, int>();
+    map.insert(1, 2);
+    map.insert(1, 2);
+    map.remove(1);
+
+    for (let e in map) {
+        assert(false, "Shouldn't enter for-loop body when the map is empty");
+    }
+}
+
+func testUnitMapIterator() {
+    var map = OrderedMap<int, int>();
+    map.insert(1, 2);
+    map.insert(1, 4);
+
+    var count = 0;
+
+    for (let e in map) {
+        count++;
+        assert(e.key == 1, "Map iterator returned an element that should not be in the map");
+    }
+
+    assert(count == 1, "Should enter for-loop body once when map contains one element");
 }

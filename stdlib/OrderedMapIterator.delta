@@ -1,19 +1,22 @@
+// TODO fix return type to tuple when tuples are implemented
 struct OrderedMapIterator<Key, Value>: Iterator<AVLnode<Key, Value>*> {
-    var current: AVLnode<Key, Value>*;
+    var current: AVLnode<Key, Value>*?;
+    let map: OrderedMap<Key, Value>*;
 
-    init(map: OrderedMap<Key, Value>* ) {
-        current = undefined;
+    init (map: OrderedMap<Key, Value>*) {
+        current = map.firstNode();
+        this.map = map;
     }
 
     func hasValue() -> bool {
-        return hashTableIterator.hasValue();
+        return current != null;
     }
 
-    func value() -> KeyValuePair<Key, Value>* {
-        return current;
+    func value() -> AVLnode<Key, Value>* {
+        return current!;
     }
 
     mutating func increment() {
-
+        current = map.higherNode(current!);
     }
 }
