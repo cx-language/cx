@@ -1,0 +1,21 @@
+/// Allocates a block of dynamic memory to hold the given value, moves the value into the memory
+/// block, and returns a pointer to it. The block can be freed by passing the returned pointer to a
+/// call to `deallocate`.
+func allocate<Type>(value: Type) -> mutable Type* {
+    let allocation = cast<mutable Type*>(malloc(sizeof(Type))!);
+    *allocation ~= value;
+    return allocation;
+}
+
+/// Allocates a block of dynamic memory to hold an array with the given element type and size, and
+/// returns a pointer to the array. The elements of the array are uninitialized. The block can be
+/// freed by passing the returned pointer to a call to `deallocate`.
+func allocateArray<Type>(size: uint) -> mutable Type* {
+    return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size))!);
+}
+
+/// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate` or
+/// `allocateArray`.
+func deallocate<Type>(allocation: mutable Type*) {
+    free(cast<mutable void*>(allocation));
+}
