@@ -1,0 +1,65 @@
+// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+
+func main() {
+    testPushPop();
+    testEmpty();
+    testPushAfterPop();
+    testFirst();
+}
+
+func testPushPop() {
+    var q = Queue<int>();
+
+    assert(q.size() == 0, "contains nothing");
+    q.push(23);
+    q.push(48);
+
+    assert(q.size() == 2, "contains 2 items");
+
+    var elem = q.pop();
+    assert(q.size() == 1, "contains 1 item");
+    assert(elem == 23, "FIFO");
+
+    elem = q.pop();
+
+    assert(elem == 48, "FIFO");
+    assert(q.size() == 0, "empty");
+}
+
+func testEmpty() {
+    var q = Queue<StringRef>();
+
+    assert(q.isEmpty(), "is empty");
+
+    q.push("foo");
+    assert(!q.isEmpty(), "is not empty");
+    q.push("bar");
+    assert(!q.isEmpty(), "is still not empty");
+    q.pop();
+    q.pop();
+    assert(q.isEmpty(), "is empty again");
+}
+
+func testPushAfterPop() {
+    var q = Queue<StringRef>();
+
+    q.push("foo");
+    assert(q.size() == 1, "testPushAfterPop - 1");
+    q.pop();
+    assert(q.size() == 0, "testPushAfterPop - 2");
+    q.push("bar");
+    assert(q.size() == 1, "testPushAfterPop - 3");
+    q.pop();
+    assert(q.size() == 0, "testPushAfterPop - 4");
+}
+
+func testFirst() {
+    var q = Queue<StringRef>();
+
+    q.push("foo");
+    q.push("bar");
+    assert(*q.first() == "foo", "testFirst - 1");
+    assert(q.pop() == "foo", "testFirst - 2");
+    assert(*q.first() == "bar", "testFirst - 3");
+    assert(q.pop() == "bar", "testFirst - 4");
+}
