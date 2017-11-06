@@ -1,4 +1,4 @@
-struct StringRef: Printable {
+struct StringRef: Printable, Hashable {
     var characters: ArrayRef<char>;
 
     init(pointer: char*, length: uint) {

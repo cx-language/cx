@@ -3,6 +3,7 @@
 func main() {
     testInsertionSort();
     testQuickSort();
+    testMax();
 }
 
 func testInsertionSort() {
@@ -42,4 +43,11 @@ func testQuickSort() {
     sort(&a);
 
     assert(ArrayRef(&a) == ArrayRef(&real), "Array is sorted");
+}
+
+func testMax() {
+    let a = 7;
+    let b = 9;
+
+    assert(*max(a, b) == 9, "max works");
 }
