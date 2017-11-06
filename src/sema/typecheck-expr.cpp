@@ -202,7 +202,8 @@ Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
         expr.getRHS().setType(convertedType ? convertedType : rightType);
     } else if (isImplicitlyConvertible(&expr.getLHS(), leftType, rightType, &convertedType)) {
         expr.getLHS().setType(convertedType ? convertedType : leftType);
-    } else {
+    } else if (!leftType.removeOptional().isPointerType() ||
+               !rightType.removeOptional().isPointerType()) {
         invalidOperandsToBinaryExpr(expr);
     }
 
