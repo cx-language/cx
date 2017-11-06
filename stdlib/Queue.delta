@@ -16,15 +16,14 @@ class Queue<T> {
     deinit() {
         while (!isEmpty()) {
             let next = head!.next;
-            free(cast<mutable void*?>(head));
+            deallocate(head!);
             head = next;
         }
     }
 
     /// Add to the front of the queue
     mutating func push(value: T) {
-        let newNode = cast<mutable Node<T>*>(malloc(sizeof(Node<T>))!);
-        *newNode ~= Node<T>(value);
+        let newNode = allocate(Node(value));
 
         if (isEmpty()) {
             head = newNode;
@@ -40,7 +39,7 @@ class Queue<T> {
     mutating func pop() -> T {
         let value = head!.value;
         let next = head!.next;
-        free(cast<mutable void*?>(head));
+        deallocate(head!);
         head = next;
 
         if (head == null) {

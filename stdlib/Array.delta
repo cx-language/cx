@@ -28,7 +28,7 @@ class Array<Element> {
 
     deinit() {
         if (capacity != 0) {
-            free(cast<mutable void*>(bufferPointer));
+            deallocate(bufferPointer);
         }
     }
 
@@ -102,7 +102,7 @@ class Array<Element> {
     /// Ensures that the capacity is large enough to store the given number of elements.
     mutating func reserve(minimumCapacity: uint) {
         if (minimumCapacity > capacity) {
-            let newBufferPointer = cast<mutable Element*>(malloc(sizeof(Element) * uint64(minimumCapacity))!);
+            let newBufferPointer = allocateArray<Element>(size: minimumCapacity);
 
             for (let index in 0..size) {
                 let source = bufferPointer + index;
@@ -111,7 +111,7 @@ class Array<Element> {
             }
 
             if (capacity != 0) {
-                free(cast<mutable void*>(bufferPointer));
+                deallocate(bufferPointer);
             }
 
             bufferPointer = newBufferPointer;
