@@ -1,12 +1,64 @@
 // RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
 
 func main() {
-    testInsert();
+    testInsertAndContains();
+    testInsertAndDelete();
+    testInsertAndSubscript();
 }
 
-func testInsert() {
+func testInsertAndContains() {
     var m = OrderedMap<int, int>();
     assert(m.size() == 0, "size ok");
 
     m.insert(7, 8);
+    assert(m.contains(7), "Map contains 7");
+
+
+    for (let i in 0..10) {
+        m.insert(i, i);
+        assert(m.contains(i), "contains i");
+    }
+
+    assert(!m.contains(42), "doesnt contain random numbers");
+    assert(m.size() == 10, "contains 10 numbers");
+}
+
+func testInsertAndDelete() {
+    var m = OrderedMap<int, int>();
+
+    m.insert(42, 39);
+    assert(m.contains(42), "contains 42");
+
+    m.remove(42);
+    assert(!m.contains(42), "doesnt contain 42");
+
+    for (let i in 42..79) {
+        m.insert(i, 42);
+    }
+
+    for (let i in 42..79) {
+        assert(m.contains(i), "contains i");
+        m.remove(i);
+        assert(!m.contains(i), "doesnt contain i");
+    }
+}
+
+func testInsertAndSubscript() {
+    var m = OrderedMap<int, int>();
+
+    m.insert(42, 39);
+    assert(*m[42]! == 39, "gives correct value");
+
+    m.remove(42);
+
+    for (let i in 42..79) {
+        m.insert(i, i+7);
+    }
+
+    for (let i in 42..79) {
+        assert(*m[i]! == i+7, "has correct value");
+
+        m.remove(i);
+        assert(m[i] == null, "is null after removal");
+    }
 }

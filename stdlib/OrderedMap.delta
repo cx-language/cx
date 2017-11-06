@@ -15,6 +15,11 @@ class OrderedMap<Key, Value> {
         return size;
     }
 
+    /// Returns true if the Map is empty, otherwise false
+    func isEmpty() -> bool {
+        return size == 0;
+    }
+
     mutating func rebalance(node: mutable AVLnode<Key, Value>*) {
         var n = node;
         setBalance(n);
@@ -117,6 +122,48 @@ class OrderedMap<Key, Value> {
         n.balance = height(n.right) - height(n.left);
     }
 
+    /// Checks if the given element is in the Map. Returns true if it is, otherwise false
+    func contains(key: Key) -> bool {
+        if (root == null) {
+            return false;
+        }
+        var n = root;
+        while (true) {
+            if (n!.key == key) {
+                return true;
+            }
+
+            let goLeft = n!.key > key;
+            n = goLeft ? n!.left : n!.right;
+
+            if (n == null) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    func [](key: Key*) -> Value*? {
+        if (root == null) {
+            return null;
+        }
+
+        var n = root;
+        while (true) {
+            if (n!.key == *key) {
+                return n!.value;
+            }
+
+            let goLeft = n!.key > *key;
+            n = goLeft ? n!.left : n!.right;
+
+            if (n == null) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     /// Inserts a key-value pair into the Map.
     mutating func insert(key: Key, value: Value) -> bool {
         if (root == null) {
@@ -179,6 +226,7 @@ class OrderedMap<Key, Value> {
 
         if (delNode != null) {
             delNode!.key = n!.key;
+            delNode!.value = n!.value;
 
             child = (n!.left != null) ? n!.left : n!.right;
 
@@ -195,7 +243,9 @@ class OrderedMap<Key, Value> {
 
                 rebalance(parent!);
             }
+            free(cast<mutable void*?>(n));
         }
+        size--;
     }
 }
 
