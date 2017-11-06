@@ -1,21 +1,60 @@
 /// Allocates a block of dynamic memory to hold the given value, moves the value into the memory
 /// block, and returns a pointer to it. The block can be freed by passing the returned pointer to a
 /// call to `deallocate`.
+///
+/// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
+/// undefined behavior (when compiled in unchecked mode).
+///
 func allocate<Type>(value: Type) -> mutable Type* {
     let allocation = cast<mutable Type*>(malloc(sizeof(Type))!);
     *allocation ~= value;
     return allocation;
 }
 
+/// Allocates a block of dynamic memory to hold the given value, moves the value into the memory
+/// block, and returns a pointer to it. The block can be freed by passing the returned pointer to a
+/// call to `deallocate`.
+///
+/// If the memory allocation fails, null is returned.
+///
+func safeAllocate<Type>(value: Type) -> mutable Type*? {
+    let allocation = cast<mutable Type*?>(malloc(sizeof(Type)));
+    if (allocation != null) {
+        *allocation ~= value;
+    }
+    return allocation;
+}
+
 /// Allocates a block of dynamic memory to hold an array with the given element type and size, and
 /// returns a pointer to the array. The elements of the array are uninitialized. The block can be
 /// freed by passing the returned pointer to a call to `deallocate`.
+///
+/// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
+/// undefined behavior (when compiled in unchecked mode).
+///
 func allocateArray<Type>(size: uint) -> mutable Type* {
     return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size))!);
 }
 
-/// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate` or
-/// `allocateArray`.
+/// Allocates a block of dynamic memory to hold an array with the given element type and size, and
+/// returns a pointer to the array. The elements of the array are uninitialized. The block can be
+/// freed by passing the returned pointer to a call to `deallocate`.
+///
+/// If the memory allocation fails, null is returned.
+///
+func safeAllocateArray<Type>(size: uint) -> mutable Type*? {
+    return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size)));
+}
+
+/// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
+/// `allocateArray`, `safeAllocate`, or `safeAllocateArray`.
 func deallocate<Type>(allocation: mutable Type*) {
     free(cast<mutable void*>(allocation));
+}
+
+/// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
+/// `allocateArray`, `safeAllocate`, or `safeAllocateArray`. If the argument is null, no operation
+/// is performed.
+func deallocate<Type>(allocation: mutable Type*?) {
+    free(cast<mutable void*?>(allocation));
 }
