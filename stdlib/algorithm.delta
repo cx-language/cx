@@ -8,6 +8,14 @@ func max<T>(a: T*, b: T*) -> T* {
     return b;
 }
 
+/// Gives the minimum of the two elements
+func min<T>(a: T*, b: T*) -> T* {
+    if (*a < *b) {
+        return a;
+    }
+    return b;
+}
+
 /// Swaps two items in place
 func swap<E>(a: mutable E*, b: mutable E*) {
     let t = *a;

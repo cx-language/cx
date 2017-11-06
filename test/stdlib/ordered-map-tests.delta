@@ -4,6 +4,9 @@ func main() {
     testInsertAndContains();
     testInsertAndDelete();
     testInsertAndSubscript();
+    testLowerAndHigher();
+    testFirstLast();
+    testEmptyMapFunctions();
 }
 
 func testInsertAndContains() {
@@ -61,4 +64,43 @@ func testInsertAndSubscript() {
         m.remove(i);
         assert(m[i] == null, "is null after removal");
     }
+}
+
+func testLowerAndHigher() {
+    var m = OrderedMap<int, int>();
+
+    for (let i in 0..100) {
+        m.insert(i, i+6);
+    }
+
+    assert(m.lowerKey(0) == null, "lowerKey works correctly");
+    for (let i in 1..100) {
+        assert(*m.lowerKey(i)! == i-1, "lowerKey works correctly");
+    }
+
+    assert(m.higherKey(99) == null, "higherKey works correctly");
+    for (let i in 0..99) {
+        assert(*m.higherKey(i)! == i+1, "higherKey works correctly");
+    }
+}
+
+func testFirstLast() {
+    var m = OrderedMap<int, int>();
+
+    m.insert(63, 3);
+    m.insert(69, 3);
+    m.insert(1, 3);
+    m.insert(53, 3);
+
+    assert(*m.first()! == 1, "first is 1");
+    assert(*m.last()! == 69, "last is 69");
+}
+
+func testEmptyMapFunctions() {
+    var m = OrderedMap<int, int>();
+
+    assert(m.first() == null, "works");
+    assert(m.last() == null, "works");
+    assert(m.higherKey(48) == null, "works");
+    assert(m.lowerKey(42) == null, "works");
 }
