@@ -36,7 +36,7 @@ Binary comparison operators:
 
 Miscellaneous binary operators:
 
-    =   ~=  ..  ...
+    =   ..  ...
 
 Unary prefix operators:
 
@@ -482,7 +482,7 @@ use in the _class-name_ / _struct-name_ / _interface-name_ part.
 
 ### Assignment statement
 
-> _assignment-statement_ → _lvalue-expression_ (`=` | `~=`) _expression_ `;`<br>
+> _assignment-statement_ → _lvalue-expression_ `=` _expression_ `;`<br>
 > _assignment-statement_ → `_` `=` _expression_ `;`<br>
 
 Assignments in Delta don't return any value. This applies to compound
@@ -493,11 +493,6 @@ syntactic sugar for `+= 1` and `-= 1`, respectively.
 The assignment to `_`, called a _discarding assignment_, can be used to ignore
 the result of the expression, suppressing any compilation errors or warnings
 that would otherwise be emitted.
-
-An assignment that uses the `~=` operator instead of `=` is called a _raw
-assignment_. The left-hand-side of a raw assignment is treated as uninitialized
-memory. This means that the assignment will not invoke the deinitializer of the
-left-hand value, even if its type has a deinitializer.
 
 ### Increment and decrement statements
 

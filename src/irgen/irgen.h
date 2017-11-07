@@ -123,7 +123,7 @@ private:
     void codegenSwitchStmt(const SwitchStmt& switchStmt);
     void codegenWhileStmt(const WhileStmt& whileStmt);
     void codegenBreakStmt(const BreakStmt&);
-    llvm::Value* codegenAssignmentLHS(const Expr* lhs, const Expr* rhs, bool isRawAssignment);
+    llvm::Value* codegenAssignmentLHS(const Expr* lhs, const Expr* rhs);
     void codegenAssignStmt(const AssignStmt& stmt);
     void codegenCompoundStmt(const CompoundStmt& stmt);
     void codegenStmt(const Stmt& stmt);

@@ -940,6 +940,11 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
         auto callee = expr.getMangledFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
 
+        if (expr.isMoveInit()) {
+            expr.getArgs()[0].getValue()->setMoved(true);
+            return Type::getVoid();
+        }
+
         if (decls.empty() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
         }

@@ -439,7 +439,7 @@ std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
     auto location = getCurrentLocation();
     llvm::StringRef member;
 
-    if (currentToken().is(IDENTIFIER, DEINIT)) {
+    if (currentToken().is(IDENTIFIER, INIT, DEINIT)) {
         member = consumeToken().getString();
     } else {
         unexpectedToken(currentToken(), IDENTIFIER);
@@ -626,14 +626,14 @@ std::unique_ptr<Expr> parseExpr() {
     return parseBinaryExpr(parsePreOrPostfixExpr(), 0);
 }
 
-/// assign-stmt ::= expr ('=' | '~=') expr ('\n' | ';')
+/// assign-stmt ::= expr '=' expr ('\n' | ';')
 std::unique_ptr<AssignStmt> parseAssignStmt(std::unique_ptr<Expr> lhs) {
     auto location = getCurrentLocation();
-    auto isRaw = parse({ ASSIGN, RAW_ASSIGN }) == RAW_ASSIGN;
+    parse(ASSIGN);
     auto rhs = currentToken() != UNDEFINED ? parseExpr() : nullptr;
     if (!rhs) consumeToken();
     parseStmtTerminator();
-    return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs), false, isRaw, location);
+    return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs), false, location);
 }
 
 /// compound-assign-stmt ::= expr compound-assignment-op expr ('\n' | ';')
@@ -647,8 +647,7 @@ std::unique_ptr<AssignStmt> parseCompoundAssignStmt(std::unique_ptr<Expr> lhs = 
     std::shared_ptr<Expr> sharedLHS = std::move(lhs);
     auto binaryExpr = llvm::make_unique<BinaryExpr>(op, std::shared_ptr<Expr>(sharedLHS),
                                                     std::move(rhs), location);
-    return llvm::make_unique<AssignStmt>(std::move(sharedLHS), std::move(binaryExpr), true, false,
-                                         location);
+    return llvm::make_unique<AssignStmt>(std::move(sharedLHS), std::move(binaryExpr), true, location);
 }
 
 /// expr-list ::= '' | nonempty-expr-list
@@ -897,7 +896,7 @@ std::unique_ptr<Stmt> parseStmt(Decl* parent) {
     switch (currentToken()) {
         case INCREMENT: return parseIncrementStmt(std::move(expr));
         case DECREMENT: return parseDecrementStmt(std::move(expr));
-        case ASSIGN: case RAW_ASSIGN: return parseAssignStmt(std::move(expr));
+        case ASSIGN: return parseAssignStmt(std::move(expr));
         default:
             if (currentToken().isCompoundAssignmentOperator()) {
                 return parseCompoundAssignStmt(std::move(expr));

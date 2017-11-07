@@ -7,7 +7,7 @@
 ///
 func allocate<Type>(value: Type) -> mutable Type* {
     let allocation = cast<mutable Type*>(malloc(sizeof(Type))!);
-    *allocation ~= value;
+    allocation.init(value);
     return allocation;
 }
 
@@ -20,7 +20,7 @@ func allocate<Type>(value: Type) -> mutable Type* {
 func safeAllocate<Type>(value: Type) -> mutable Type*? {
     let allocation = cast<mutable Type*?>(malloc(sizeof(Type)));
     if (allocation != null) {
-        *allocation ~= value;
+        allocation.init(value);
     }
     return allocation;
 }

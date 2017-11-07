@@ -95,7 +95,7 @@ class Array<Element> {
             _grow();
         }
 
-        *(bufferPointer + size) ~= newElement;
+        (bufferPointer + size).init(newElement);
         size++;
     }
 
@@ -107,7 +107,7 @@ class Array<Element> {
             for (let index in 0..size) {
                 let source = bufferPointer + index;
                 let target = newBufferPointer + index;
-                *target ~= *source;
+                target.init(*source);
             }
 
             if (capacity != 0) {
@@ -155,7 +155,7 @@ class Array<Element> {
         for (let i in (index + 1)..size) {
             let source = bufferPointer + i;
             let target = bufferPointer + (i - 1);
-            *target ~= *source;
+            target.init(*source);
         }
 
         size--;

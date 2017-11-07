@@ -207,14 +207,26 @@ llvm::StringRef CallExpr::getFunctionName() const {
     }
 }
 
-std::string CallExpr::getMangledFunctionName() const {
-    Type receiverType;
+static Type getReceiverType(const CallExpr& call) {
+    if (call.getCallee().isMemberExpr()) {
+        return call.getReceiver()->getType().removeOptional().removePointer();
+    }
+    return nullptr;
+}
 
-    if (getCallee().isMemberExpr()) {
-        receiverType = getReceiver()->getType().removeOptional().removePointer();
+std::string CallExpr::getMangledFunctionName() const {
+    return mangleFunctionDecl(::getReceiverType(*this), getFunctionName());
+}
+
+bool CallExpr::isMoveInit() const {
+    if (getFunctionName() != "init") return false;
+    if (getArgs().size() != 1) return false;
+
+    if (Type receiverType = ::getReceiverType(*this)) {
+        return getArgs()[0].getValue()->getType().asImmutable() == receiverType.asImmutable();
     }
 
-    return mangleFunctionDecl(receiverType, getFunctionName());
+    return false;
 }
 
 const Expr* CallExpr::getReceiver() const {

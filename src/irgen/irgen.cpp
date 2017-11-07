@@ -387,7 +387,7 @@ void IRGenerator::codegenBreakStmt(const BreakStmt&) {
     builder.CreateBr(breakTargets.back());
 }
 
-llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs, bool isRawAssignment) {
+llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs) {
     if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentDecl)) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
             if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
@@ -398,19 +398,17 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs,
         }
     }
 
-    if (!isRawAssignment) {
-        if (auto* basicType = llvm::dyn_cast<BasicType>(lhs->getType().get())) {
-            auto mangledName = mangleTypeDecl(basicType->getName(), basicType->getGenericArgs());
-            auto decls = currentTypeChecker->findDecls(mangledName, true);
+    if (auto* basicType = llvm::dyn_cast<BasicType>(lhs->getType().get())) {
+        auto mangledName = mangleTypeDecl(basicType->getName(), basicType->getGenericArgs());
+        auto decls = currentTypeChecker->findDecls(mangledName, true);
 
-            if (!decls.empty()) {
-                auto* typeDecl = llvm::cast<TypeDecl>(decls[0]);
+        if (!decls.empty()) {
+            auto* typeDecl = llvm::cast<TypeDecl>(decls[0]);
 
-                if (auto* deinit = typeDecl->getDeinitializer()) {
-                    llvm::Value* value = codegenLvalueExpr(*lhs);
-                    createDeinitCall(getFunctionProto(*deinit), value, lhs->getType(), typeDecl);
-                    return rhs ? value : nullptr;
-                }
+            if (auto* deinit = typeDecl->getDeinitializer()) {
+                llvm::Value* value = codegenLvalueExpr(*lhs);
+                createDeinitCall(getFunctionProto(*deinit), value, lhs->getType(), typeDecl);
+                return rhs ? value : nullptr;
             }
         }
     }
@@ -419,7 +417,7 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs,
 }
 
 void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
-    llvm::Value* lhsLvalue = codegenAssignmentLHS(stmt.getLHS(), stmt.getRHS(), stmt.isRawAssignment());
+    llvm::Value* lhsLvalue = codegenAssignmentLHS(stmt.getLHS(), stmt.getRHS());
 
     if (!lhsLvalue) {
         return;

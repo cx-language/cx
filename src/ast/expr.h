@@ -210,6 +210,7 @@ public:
     std::string getMangledFunctionName() const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
     bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFunctionName()); }
+    bool isMoveInit() const;
     const Expr* getReceiver() const;
     Expr* getReceiver();
     Type getReceiverType() const { return receiverType; }

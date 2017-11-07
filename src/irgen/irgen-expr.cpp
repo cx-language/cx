@@ -344,6 +344,13 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
         llvm_unreachable("unknown static array member function");
     }
 
+    if (expr.isMoveInit()) {
+        auto* receiverValue = codegenExpr(*expr.getReceiver());
+        auto* argumentValue = codegenExpr(*expr.getArgs()[0].getValue());
+        builder.CreateStore(argumentValue, receiverValue);
+        return nullptr;
+    }
+
     llvm::Value* calleeValue = getFunctionForCall(expr);
 
     if (!calleeValue) {

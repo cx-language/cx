@@ -81,7 +81,6 @@ enum TokenKind {
     RSHIFT,
     RSHIFT_EQ,
     ASSIGN, // Miscellaneous...
-    RAW_ASSIGN,
     LPAREN,
     RPAREN,
     LBRACKET,

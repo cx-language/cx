@@ -5,7 +5,7 @@
 There are the usual arithmetic operators `+`, `-`, `*`, `/`, `%`, `&&`, `||`,
 `!`, `&`, `|`, `^`, `~`, `<<`, `>>`, and the compound assignment counterparts
 for the binary operators: `+=`, `-=`, `*=`, `/=`, `%=`, `&&=`, `||=`, `&=`,
-`|=`, `^=`, `~=`, `<<=`, `>>=`.
+`|=`, `^=`, `<<=`, `>>=`.
 
 An important thing to note about `+`, `-`, and `*` is that they don't silently
 wrap on overflow. Instead they raise an error (in checked mode), or invoke
