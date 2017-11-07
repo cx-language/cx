@@ -1,0 +1,19 @@
+struct OrderedSetIterator<Element>: Iterator<Element*> {
+    var mapIter: mutable OrderedMapIterator<Element, bool>*;
+
+    init (set: OrderedSet<Element>*) {
+        this.mapIter = set.map.iterator();
+    }
+
+    func hasValue() -> bool {
+        return mapIter.hasValue();
+    }
+
+    func value() -> Element* {
+        return mapIter.value().key;
+    }
+
+    mutating func increment() {
+        mapIter.increment();
+    }
+}
