@@ -10,11 +10,8 @@ class OrderedMap<Key, Value> {
     }
 
     deinit() {
-        var node = firstNode();
-        while (node != null) {
-            let next = higherNode(node!);
-            deallocate(node!);
-            node = next;
+        if (root != null) {
+            root!.deallocate();
         }
     }
 
@@ -298,12 +295,9 @@ class OrderedMap<Key, Value> {
 
         var n = node;
         while (n.parent != null) {
-            if (n.parent!.right != null) {
-                if (n == n.parent!.right!) {
-                    return n.parent;
-                }
+            if (n == n.parent!.right) {
+                return n.parent;
             }
-
             n = n.parent!;
         }
         return null;
@@ -334,10 +328,8 @@ class OrderedMap<Key, Value> {
 
         var n = node;
         while (n.parent != null) {
-            if (n.parent!.left != null) {
-                if (n == n.parent!.left!) {
-                    return n.parent;
-                }
+            if (n == n.parent!.left) {
+                return n.parent;
             }
             n = n.parent!;
         }
@@ -401,5 +393,16 @@ class AVLnode<Key, Value> {
         this.balance = 0;
         this.left = null;
         this.right = null;
+    }
+
+    mutating func deallocate() {
+        deallocate(this);
+
+        if (left != null) {
+            left!.deallocate();
+        }
+        if (right != null) {
+            right!.deallocate();
+        }
     }
 }
