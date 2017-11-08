@@ -37,7 +37,7 @@ static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
     }
 }
 
-Type TypeChecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) const {
+Type TypeChecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     Decl& decl = findDecl(expr.getIdentifier(), expr.getLocation());
     expr.setDecl(&decl);
 
@@ -101,7 +101,7 @@ Type typecheckNullLiteralExpr(NullLiteralExpr&) {
     return Type::getNull();
 }
 
-Type TypeChecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) const {
+Type TypeChecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
     Type firstType = typecheckExpr(*array.getElements()[0]);
     for (auto& element : llvm::drop_begin(array.getElements(), 1)) {
         Type type = typecheckExpr(*element);
@@ -113,7 +113,7 @@ Type TypeChecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) const {
     return ArrayType::get(firstType, int64_t(array.getElements().size()));
 }
 
-Type TypeChecker::typecheckTupleExpr(TupleExpr& expr) const {
+Type TypeChecker::typecheckTupleExpr(TupleExpr& expr) {
     std::vector<Type> elementTypes;
     elementTypes.reserve(expr.getElements().size());
 
@@ -124,7 +124,7 @@ Type TypeChecker::typecheckTupleExpr(TupleExpr& expr) const {
     return TupleType::get(std::move(elementTypes));
 }
 
-Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) const {
+Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
     if (expr.getOperator() == NOT) {
@@ -171,7 +171,7 @@ static void invalidOperandsToBinaryExpr(const BinaryExpr& expr) {
           expr.getRHS().getType(), "' to '", expr.getFunctionName(), "'", hint);
 }
 
-Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) const {
+Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) {
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS());
 
@@ -221,8 +221,8 @@ bool checkRange(const Expr& expr, int64_t value, Type type, Type* convertedType)
     return true;
 }
 
-bool TypeChecker::isInterface(Type type) const {
-    if (!type.isBasicType() || type.isBuiltinType() || type.isVoid()) return false;
+bool TypeChecker::isInterface(Type type) {
+    if (!type.isBasicType() || type.isBuiltinType()) return false;
     auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(*type));
     return typeDecl && typeDecl->isInterface();
 }
@@ -503,7 +503,7 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
 
 std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 CallExpr& call, llvm::ArrayRef<ParamDecl> params,
-                                                bool returnOnError) const {
+                                                bool returnOnError) {
     if (call.getArgs().size() != params.size()) return {};
 
     std::vector<Type> inferredGenericArgs;
@@ -602,7 +602,7 @@ void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> gene
 
 llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                          CallExpr& call, llvm::ArrayRef<ParamDecl> params,
-                                                         bool returnOnError) const {
+                                                         bool returnOnError) {
     ASSERT(!genericParams.empty());
 
     if (call.getGenericArgs().empty()) {
@@ -626,7 +626,7 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
     return genericArgs;
 }
 
-Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
+Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) {
     if (expr.getArgs().size() != 1) {
         error(expr.getLocation(), "expected single argument to converting initializer");
     }
@@ -642,7 +642,7 @@ Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) const {
 }
 
 Decl* TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
-                                   llvm::StringRef callee, bool returnNullOnError) const {
+                                   llvm::StringRef callee, bool returnNullOnError) {
     llvm::SmallVector<Decl*, 1> matches;
     bool isInitCall = false;
 
@@ -890,7 +890,7 @@ Decl* TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
     }
 }
 
-std::vector<Decl*> TypeChecker::findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee) const {
+std::vector<Decl*> TypeChecker::findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee) {
     TypeDecl* receiverTypeDecl;
 
     if (expr.getReceiverType() && expr.getReceiverType().removePointer().isBasicType()) {
@@ -902,7 +902,7 @@ std::vector<Decl*> TypeChecker::findCalleeCandidates(const CallExpr& expr, llvm:
     return findDecls(callee, isPostProcessing, receiverTypeDecl);
 }
 
-Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
+Type TypeChecker::typecheckCallExpr(CallExpr& expr) {
     if (!expr.callsNamedFunction()) {
         fatalError("anonymous function calls not implemented yet");
     }
@@ -1041,7 +1041,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) const {
     }
 }
 
-bool TypeChecker::isImplicitlyCopyable(Type type) const {
+bool TypeChecker::isImplicitlyCopyable(Type type) {
     switch (type.getKind()) {
         case TypeKind::BasicType:
             if (auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(*type))) {
@@ -1235,7 +1235,7 @@ static bool isValidCast(Type sourceType, Type targetType) {
     }
 }
 
-Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
+Type TypeChecker::typecheckCastExpr(CastExpr& expr) {
     Type sourceType = typecheckExpr(expr.getExpr());
     Type targetType = expr.getTargetType();
 
@@ -1246,11 +1246,11 @@ Type TypeChecker::typecheckCastExpr(CastExpr& expr) const {
     error(expr.getLocation(), "illegal cast from '", sourceType, "' to '", targetType, "'");
 }
 
-Type TypeChecker::typecheckSizeofExpr(SizeofExpr&) const {
+Type TypeChecker::typecheckSizeofExpr(SizeofExpr&) {
     return Type::getUInt64();
 }
 
-Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
+Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) {
     Type baseType = typecheckExpr(*expr.getBaseExpr());
 
     if (baseType.isOptionalType()) {
@@ -1298,7 +1298,7 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) const {
     error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");
 }
 
-Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
+Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
     Type lhsType = typecheckExpr(*expr.getBaseExpr());
     Type arrayType;
 
@@ -1334,7 +1334,7 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) const {
     return arrayType.getElementType();
 }
 
-Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) const {
+Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
     Type type = typecheckExpr(expr.getOperand());
     if (!type.isOptionalType()) {
         error(expr.getLocation(), "cannot unwrap non-optional type '", type, "'");
@@ -1342,7 +1342,7 @@ Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) const {
     return type.getWrappedType();
 }
 
-Type TypeChecker::typecheckLambdaExpr(LambdaExpr& expr) const {
+Type TypeChecker::typecheckLambdaExpr(LambdaExpr& expr) {
     getCurrentModule()->getSymbolTable().pushScope();
 
     typecheckParams(expr.getParams());
@@ -1354,7 +1354,7 @@ Type TypeChecker::typecheckLambdaExpr(LambdaExpr& expr) const {
     return FunctionType::get(returnType, std::move(paramTypes));
 }
 
-Type TypeChecker::typecheckIfExpr(IfExpr& expr) const {
+Type TypeChecker::typecheckIfExpr(IfExpr& expr) {
     auto conditionType = typecheckExpr(*expr.getCondition());
 
     if (!conditionType.isBool()) {
@@ -1376,7 +1376,7 @@ Type TypeChecker::typecheckIfExpr(IfExpr& expr) const {
     }
 }
 
-Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) const {
+Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
     llvm::Optional<Type> type;
 
     switch (expr.getKind()) {

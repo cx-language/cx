@@ -53,7 +53,7 @@ class IRGenerator {
 public:
     IRGenerator();
 
-    const TypeChecker& getTypeChecker() const { return *currentTypeChecker; }
+    TypeChecker& getTypeChecker() { return *currentTypeChecker; }
     void setTypeChecker(TypeChecker&& typeChecker) { currentTypeChecker = std::move(typeChecker); }
     llvm::Module& compile(const Module& sourceModule);
     llvm::Value* codegenExpr(const Expr& expr);
