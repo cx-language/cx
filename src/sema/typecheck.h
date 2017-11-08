@@ -28,9 +28,9 @@ std::vector<Module*> getAllImportedModules();
 void typecheckModule(Module& module, const PackageManifest* manifest,
                      llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse);
 
-class TypeChecker {
+class Typechecker {
 public:
-    explicit TypeChecker(Module* currentModule, SourceFile* currentSourceFile)
+    explicit Typechecker(Module* currentModule, SourceFile* currentSourceFile)
     : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunction(nullptr),
       isPostProcessing(false) {}
 

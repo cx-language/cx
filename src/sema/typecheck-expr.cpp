@@ -37,7 +37,7 @@ static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
     }
 }
 
-Type TypeChecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
+Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     Decl& decl = findDecl(expr.getIdentifier(), expr.getLocation());
     expr.setDecl(&decl);
 
@@ -101,7 +101,7 @@ Type typecheckNullLiteralExpr(NullLiteralExpr&) {
     return Type::getNull();
 }
 
-Type TypeChecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
+Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
     Type firstType = typecheckExpr(*array.getElements()[0]);
     for (auto& element : llvm::drop_begin(array.getElements(), 1)) {
         Type type = typecheckExpr(*element);
@@ -113,7 +113,7 @@ Type TypeChecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
     return ArrayType::get(firstType, int64_t(array.getElements().size()));
 }
 
-Type TypeChecker::typecheckTupleExpr(TupleExpr& expr) {
+Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
     std::vector<Type> elementTypes;
     elementTypes.reserve(expr.getElements().size());
 
@@ -124,7 +124,7 @@ Type TypeChecker::typecheckTupleExpr(TupleExpr& expr) {
     return TupleType::get(std::move(elementTypes));
 }
 
-Type TypeChecker::typecheckPrefixExpr(PrefixExpr& expr) {
+Type Typechecker::typecheckPrefixExpr(PrefixExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
     if (expr.getOperator() == NOT) {
@@ -171,7 +171,7 @@ static void invalidOperandsToBinaryExpr(const BinaryExpr& expr) {
           expr.getRHS().getType(), "' to '", expr.getFunctionName(), "'", hint);
 }
 
-Type TypeChecker::typecheckBinaryExpr(BinaryExpr& expr) {
+Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS());
 
@@ -221,7 +221,7 @@ bool checkRange(const Expr& expr, int64_t value, Type type, Type* convertedType)
     return true;
 }
 
-bool TypeChecker::isInterface(Type type) {
+bool Typechecker::isInterface(Type type) {
     if (!type.isBasicType() || type.isBuiltinType()) return false;
     auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(*type));
     return typeDecl && typeDecl->isInterface();
@@ -233,7 +233,7 @@ static bool hasField(TypeDecl& type, const FieldDecl& field) {
     });
 }
 
-bool TypeChecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
+bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     auto decls = findDecls(mangleFunctionDecl(type.getType(), functionDecl.getName()));
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
@@ -245,7 +245,7 @@ bool TypeChecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     return false;
 }
 
-void TypeChecker::checkImplementsInterface(TypeDecl& type, TypeDecl& interface, SourceLocation location) const {
+void Typechecker::checkImplementsInterface(TypeDecl& type, TypeDecl& interface, SourceLocation location) const {
     ASSERT(interface.isInterface());
     std::string errorReason;
 
@@ -255,7 +255,7 @@ void TypeChecker::checkImplementsInterface(TypeDecl& type, TypeDecl& interface, 
     }
 }
 
-bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
+bool Typechecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
     auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({{ "This", type.getType() }}, {}));
 
     for (auto& fieldRequirement : thisTypeResolvedInterface->getFields()) {
@@ -285,7 +285,7 @@ bool TypeChecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::
     return true;
 }
 
-bool TypeChecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const {
+bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const {
     if (target.isOptionalType()) {
         if (isImplicitlyConvertible(expr, source, target.getWrappedType(), convertedType)) {
             return true;
@@ -501,7 +501,7 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
     return nullptr;
 }
 
-std::vector<Type> TypeChecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
+std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                 bool returnOnError) {
     if (call.getArgs().size() != params.size()) return {};
@@ -600,7 +600,7 @@ void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> gene
     }
 }
 
-llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
+llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                          CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                          bool returnOnError) {
     ASSERT(!genericParams.empty());
@@ -626,7 +626,7 @@ llvm::StringMap<Type> TypeChecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
     return genericArgs;
 }
 
-Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) {
+Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
     if (expr.getArgs().size() != 1) {
         error(expr.getLocation(), "expected single argument to converting initializer");
     }
@@ -641,7 +641,7 @@ Type TypeChecker::typecheckBuiltinConversion(CallExpr& expr) {
     return expr.getType();
 }
 
-Decl* TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
+Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                                    llvm::StringRef callee, bool returnNullOnError) {
     llvm::SmallVector<Decl*, 1> matches;
     bool isInitCall = false;
@@ -890,7 +890,7 @@ Decl* TypeChecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
     }
 }
 
-std::vector<Decl*> TypeChecker::findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee) {
+std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee) {
     TypeDecl* receiverTypeDecl;
 
     if (expr.getReceiverType() && expr.getReceiverType().removePointer().isBasicType()) {
@@ -902,7 +902,7 @@ std::vector<Decl*> TypeChecker::findCalleeCandidates(const CallExpr& expr, llvm:
     return findDecls(callee, isPostProcessing, receiverTypeDecl);
 }
 
-Type TypeChecker::typecheckCallExpr(CallExpr& expr) {
+Type Typechecker::typecheckCallExpr(CallExpr& expr) {
     if (!expr.callsNamedFunction()) {
         fatalError("anonymous function calls not implemented yet");
     }
@@ -1041,7 +1041,7 @@ Type TypeChecker::typecheckCallExpr(CallExpr& expr) {
     }
 }
 
-bool TypeChecker::isImplicitlyCopyable(Type type) {
+bool Typechecker::isImplicitlyCopyable(Type type) {
     switch (type.getKind()) {
         case TypeKind::BasicType:
             if (auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(*type))) {
@@ -1064,7 +1064,7 @@ bool TypeChecker::isImplicitlyCopyable(Type type) {
     llvm_unreachable("all cases handled");
 }
 
-bool TypeChecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl,
+bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl,
                                  llvm::ArrayRef<ParamDecl> params) const {
     bool isMutating;
     bool isVariadic;
@@ -1112,7 +1112,7 @@ bool TypeChecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* funct
     return true;
 }
 
-void TypeChecker::validateArgs(CallExpr& expr, const Decl& calleeDecl,
+void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl,
                                llvm::StringRef functionName, SourceLocation location) const {
     switch (calleeDecl.getKind()) {
         case DeclKind::FunctionDecl:
@@ -1150,7 +1150,7 @@ void TypeChecker::validateArgs(CallExpr& expr, const Decl& calleeDecl,
     }
 }
 
-void TypeChecker::validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params,
+void Typechecker::validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params,
                                bool isVariadic, llvm::StringRef functionName,
                                SourceLocation location) const {
     auto args = expr.getArgs();
@@ -1235,7 +1235,7 @@ static bool isValidCast(Type sourceType, Type targetType) {
     }
 }
 
-Type TypeChecker::typecheckCastExpr(CastExpr& expr) {
+Type Typechecker::typecheckCastExpr(CastExpr& expr) {
     Type sourceType = typecheckExpr(expr.getExpr());
     Type targetType = expr.getTargetType();
 
@@ -1246,11 +1246,11 @@ Type TypeChecker::typecheckCastExpr(CastExpr& expr) {
     error(expr.getLocation(), "illegal cast from '", sourceType, "' to '", targetType, "'");
 }
 
-Type TypeChecker::typecheckSizeofExpr(SizeofExpr&) {
+Type Typechecker::typecheckSizeofExpr(SizeofExpr&) {
     return Type::getUInt64();
 }
 
-Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) {
+Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     Type baseType = typecheckExpr(*expr.getBaseExpr());
 
     if (baseType.isOptionalType()) {
@@ -1298,7 +1298,7 @@ Type TypeChecker::typecheckMemberExpr(MemberExpr& expr) {
     error(expr.getLocation(), "no member named '", expr.getMemberName(), "' in '", baseType, "'");
 }
 
-Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
+Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
     Type lhsType = typecheckExpr(*expr.getBaseExpr());
     Type arrayType;
 
@@ -1334,7 +1334,7 @@ Type TypeChecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
     return arrayType.getElementType();
 }
 
-Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
+Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
     Type type = typecheckExpr(expr.getOperand());
     if (!type.isOptionalType()) {
         error(expr.getLocation(), "cannot unwrap non-optional type '", type, "'");
@@ -1342,7 +1342,7 @@ Type TypeChecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
     return type.getWrappedType();
 }
 
-Type TypeChecker::typecheckLambdaExpr(LambdaExpr& expr) {
+Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr) {
     getCurrentModule()->getSymbolTable().pushScope();
 
     typecheckParams(expr.getParams());
@@ -1354,7 +1354,7 @@ Type TypeChecker::typecheckLambdaExpr(LambdaExpr& expr) {
     return FunctionType::get(returnType, std::move(paramTypes));
 }
 
-Type TypeChecker::typecheckIfExpr(IfExpr& expr) {
+Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto conditionType = typecheckExpr(*expr.getCondition());
 
     if (!conditionType.isBool()) {
@@ -1376,7 +1376,7 @@ Type TypeChecker::typecheckIfExpr(IfExpr& expr) {
     }
 }
 
-Type TypeChecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
+Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
     llvm::Optional<Type> type;
 
     switch (expr.getKind()) {

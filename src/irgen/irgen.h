@@ -13,7 +13,7 @@ namespace delta {
 
 class Module;
 struct Type;
-class TypeChecker;
+class Typechecker;
 class IRGenerator;
 
 namespace irgen {
@@ -53,8 +53,8 @@ class IRGenerator {
 public:
     IRGenerator();
 
-    TypeChecker& getTypeChecker() { return *currentTypeChecker; }
-    void setTypeChecker(TypeChecker&& typeChecker) { currentTypeChecker = std::move(typeChecker); }
+    Typechecker& getTypechecker() { return *currentTypechecker; }
+    void setTypechecker(Typechecker&& typechecker) { currentTypechecker = std::move(typechecker); }
     llvm::Module& compile(const Module& sourceModule);
     llvm::Value* codegenExpr(const Expr& expr);
     llvm::Type* toIR(Type type, SourceLocation location = SourceLocation::invalid());
@@ -162,7 +162,7 @@ private:
     };
 
 private:
-    llvm::Optional<TypeChecker> currentTypeChecker;
+    llvm::Optional<Typechecker> currentTypechecker;
     std::vector<Scope> scopes;
 
     llvm::IRBuilder<> builder;

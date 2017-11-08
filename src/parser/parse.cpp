@@ -1206,37 +1206,37 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
 }
 
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | import-decl | var-decl
-std::unique_ptr<Decl> parseTopLevelDecl(const TypeChecker& typeChecker) {
+std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
     switch (currentToken()) {
         case FUNC:
             if (lookAhead(2) == LT) {
                 auto decl = parseFunctionTemplate(nullptr);
-                typeChecker.addToSymbolTable(*decl);
+                typechecker.addToSymbolTable(*decl);
                 return std::move(decl);
             } else {
                 auto decl = parseFunctionDecl(nullptr);
-                typeChecker.addToSymbolTable(*decl);
+                typechecker.addToSymbolTable(*decl);
                 return std::move(decl);
             }
         case EXTERN: {
             auto decl = parseExternFunctionDecl();
-            typeChecker.addToSymbolTable(*decl);
+            typechecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
         case CLASS: case STRUCT: case INTERFACE: {
             if (lookAhead(2) == LT) {
                 auto decl = parseTypeTemplate();
-                typeChecker.addToSymbolTable(*decl);
+                typechecker.addToSymbolTable(*decl);
                 return std::move(decl);
             } else {
                 auto decl = parseTypeDecl(nullptr);
-                typeChecker.addToSymbolTable(*decl);
+                typechecker.addToSymbolTable(*decl);
                 return std::move(decl);
             }
         }
         case LET: case VAR: {
             auto decl = parseVarDecl(true, nullptr);
-            typeChecker.addToSymbolTable(*decl, true);
+            typechecker.addToSymbolTable(*decl, true);
             return std::move(decl);
         }
         case IMPORT:
@@ -1258,10 +1258,10 @@ SourceFile parse(std::unique_ptr<llvm::MemoryBuffer> input, Module& module) {
     initParser(std::move(input));
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
     SourceFile sourceFile(identifier);
-    TypeChecker typeChecker(&module, &sourceFile);
+    Typechecker typechecker(&module, &sourceFile);
 
     while (currentToken() != NO_TOKEN) {
-        topLevelDecls.emplace_back(parseTopLevelDecl(typeChecker));
+        topLevelDecls.emplace_back(parseTopLevelDecl(typechecker));
     }
 
     sourceFile.setDecls(std::move(topLevelDecls));

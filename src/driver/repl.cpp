@@ -25,12 +25,12 @@ void evaluate(llvm::StringRef line) {
     module.addSourceFile(SourceFile(llvm::StringRef()));
 
     IRGenerator irGenerator;
-    irGenerator.setTypeChecker(TypeChecker(&module, &module.getSourceFiles().front()));
+    irGenerator.setTypechecker(Typechecker(&module, &module.getSourceFiles().front()));
 
     std::unique_ptr<Expr> expr;
     try {
         expr = parseExpr(llvm::MemoryBuffer::getMemBuffer(line, "", false), module);
-        irGenerator.getTypeChecker().typecheckExpr(*expr);
+        irGenerator.getTypechecker().typecheckExpr(*expr);
     } catch (const CompileError& error) {
         llvm::StringRef trimmed = line.ltrim();
         bool isComment = trimmed.size() >= 2 && trimmed[0] == '/' && trimmed[1] == '/';

@@ -71,7 +71,7 @@ llvm::Function* IRGenerator::getFunction(Type receiverType, llvm::StringRef func
     auto mangledName = mangleFunctionDecl(receiverType, functionName);
     auto it = functionInstantiations.find(mangledName);
     if (it == functionInstantiations.end()) {
-        auto decls = currentTypeChecker->findDecls(mangledName, /*everywhere*/ true);
+        auto decls = currentTypechecker->findDecls(mangledName, /*everywhere*/ true);
         if (!decls.empty()) {
             auto& decl = llvm::cast<FunctionDecl>(*decls[0]);
             return getFunctionProto(decl);
@@ -697,7 +697,7 @@ void IRGenerator::codegenDecl(const Decl& decl) {
 
 llvm::Module& IRGenerator::compile(const Module& sourceModule) {
     for (const auto& sourceFile : sourceModule.getSourceFiles()) {
-        setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule),
+        setTypechecker(Typechecker(const_cast<Module*>(&sourceModule),
                                    const_cast<SourceFile*>(&sourceFile)));
 
         for (const auto& decl : sourceFile.getTopLevelDecls()) {
@@ -711,7 +711,7 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
         for (auto& p : currentFunctionInstantiations) {
             if (p.second.getDecl().isExtern() || !p.second.getFunction()->empty()) continue;
 
-            setTypeChecker(TypeChecker(const_cast<Module*>(&sourceModule), nullptr));
+            setTypechecker(Typechecker(const_cast<Module*>(&sourceModule), nullptr));
             currentDecl = &p.second.getDecl();
             codegenFunctionBody(p.second.getDecl(), *p.second.getFunction());
             ASSERT(!llvm::verifyFunction(*p.second.getFunction(), &llvm::errs()));
