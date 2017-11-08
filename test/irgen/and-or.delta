@@ -1,35 +1,89 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func and() {
-    var a = true;
-    var b = false;
-    var c = a && b;
+extern func a() -> bool;
+extern func b() -> bool;
+extern func c() -> bool;
 
-    // CHECK:        %a1 = load i1, i1* %a
-    // CHECK-NEXT:   br i1 %a1, label %andRHS, label %andEnd
+// CHECK-LABEL: define void @and()
+func and() {
+    let result = a() && b();
+
+    // CHECK:        %1 = call i1 @a()
+    // CHECK-NEXT:   br i1 %1, label %andRHS, label %andEnd
 
     // CHECK:      andRHS:                                           ; preds = %0
-    // CHECK-NEXT:   %b2 = load i1, i1* %b
+    // CHECK-NEXT:   %2 = call i1 @b()
     // CHECK-NEXT:   br label %andEnd
 
     // CHECK:      andEnd:                                           ; preds = %andRHS, %0
-    // CHECK-NEXT:   %and = phi i1 [ %a1, %0 ], [ %b2, %andRHS ]
-    // CHECK-NEXT:   store i1 %and, i1* %c
+    // CHECK-NEXT:   %and = phi i1 [ %1, %0 ], [ %2, %andRHS ]
+    // CHECK-NEXT:   store i1 %and, i1* %result
+    // CHECK-NEXT:   ret void
 }
 
-func or() {
-    var a = true;
-    var b = false;
-    var c = a || b;
+// CHECK-LABEL: define void @and2()
+func and2() {
+    let result = a() && b() && c();
 
-    // CHECK:        %a1 = load i1, i1* %a
-    // CHECK-NEXT:   br i1 %a1, label %orEnd, label %orRHS
+    // CHECK:        %1 = call i1 @a()
+    // CHECK-NEXT:   br i1 %1, label %andRHS1, label %andEnd2
+
+    // CHECK:      andRHS:                                           ; preds = %andEnd2
+    // CHECK-NEXT:   %2 = call i1 @c()
+    // CHECK-NEXT:   br label %andEnd
+
+    // CHECK:      andEnd:                                           ; preds = %andRHS, %andEnd2
+    // CHECK-NEXT:   %and3 = phi i1 [ %and, %andEnd2 ], [ %2, %andRHS ]
+    // CHECK-NEXT:   store i1 %and3, i1* %result
+    // CHECK-NEXT:   ret void
+
+    // CHECK:      andRHS1:                                          ; preds = %0
+    // CHECK-NEXT:   %3 = call i1 @b()
+    // CHECK-NEXT:   br label %andEnd2
+
+    // CHECK:      andEnd2:                                          ; preds = %andRHS1, %0
+    // CHECK-NEXT:   %and = phi i1 [ %1, %0 ], [ %3, %andRHS1 ]
+    // CHECK-NEXT:   br i1 %and, label %andRHS, label %andEnd
+}
+
+// CHECK-LABEL: define void @or()
+func or() {
+    let result = a() || b();
+
+    // CHECK:        %1 = call i1 @a()
+    // CHECK-NEXT:   br i1 %1, label %orEnd, label %orRHS
 
     // CHECK:      orRHS:                                            ; preds = %0
-    // CHECK-NEXT:   %b2 = load i1, i1* %b
+    // CHECK-NEXT:   %2 = call i1 @b()
     // CHECK-NEXT:   br label %orEnd
 
     // CHECK:      orEnd:                                            ; preds = %orRHS, %0
-    // CHECK-NEXT:   %or = phi i1 [ %a1, %0 ], [ %b2, %orRHS ]
-    // CHECK-NEXT:   store i1 %or, i1* %c
+    // CHECK-NEXT:   %or = phi i1 [ %1, %0 ], [ %2, %orRHS ]
+    // CHECK-NEXT:   store i1 %or, i1* %result
+    // CHECK-NEXT:   ret void
+}
+
+// CHECK-LABEL: define void @or2()
+func or2() {
+    let result = a() || b() || c();
+
+    // CHECK:        %1 = call i1 @a()
+    // CHECK-NEXT:   br i1 %1, label %orEnd2, label %orRHS1
+
+    // CHECK:      orRHS:                                            ; preds = %orEnd2
+    // CHECK-NEXT:   %2 = call i1 @c()
+    // CHECK-NEXT:   br label %orEnd
+
+    // CHECK:      orEnd:                                            ; preds = %orRHS, %orEnd2
+    // CHECK-NEXT:   %or3 = phi i1 [ %or, %orEnd2 ], [ %2, %orRHS ]
+    // CHECK-NEXT:   store i1 %or3, i1* %result
+    // CHECK-NEXT:   ret void
+
+    // CHECK:      orRHS1:                                           ; preds = %0
+    // CHECK-NEXT:   %3 = call i1 @b()
+    // CHECK-NEXT:   br label %orEnd2
+
+    // CHECK:      orEnd2:                                           ; preds = %orRHS1, %0
+    // CHECK-NEXT:   %or = phi i1 [ %1, %0 ], [ %3, %orRHS1 ]
+    // CHECK-NEXT:   br i1 %or, label %orEnd, label %orRHS
 }

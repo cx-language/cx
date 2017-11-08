@@ -133,10 +133,12 @@ llvm::Value* IRGenerator::codegenLogicalAnd(const Expr& left, const Expr& right)
 
     llvm::Value* lhs = codegenExpr(left);
     builder.CreateCondBr(lhs, rhsBlock, endBlock);
+    lhsBlock = builder.GetInsertBlock();
 
     builder.SetInsertPoint(rhsBlock);
     llvm::Value* rhs = codegenExpr(right);
     builder.CreateBr(endBlock);
+    rhsBlock = builder.GetInsertBlock();
 
     builder.SetInsertPoint(endBlock);
     llvm::PHINode* phi = builder.CreatePHI(llvm::IntegerType::getInt1Ty(ctx), 2, "and");
@@ -152,10 +154,12 @@ llvm::Value* IRGenerator::codegenLogicalOr(const Expr& left, const Expr& right) 
 
     llvm::Value* lhs = codegenExpr(left);
     builder.CreateCondBr(lhs, endBlock, rhsBlock);
+    lhsBlock = builder.GetInsertBlock();
 
     builder.SetInsertPoint(rhsBlock);
     llvm::Value* rhs = codegenExpr(right);
     builder.CreateBr(endBlock);
+    rhsBlock = builder.GetInsertBlock();
 
     builder.SetInsertPoint(endBlock);
     llvm::PHINode* phi = builder.CreatePHI(llvm::IntegerType::getInt1Ty(ctx), 2, "or");
