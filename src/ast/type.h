@@ -13,6 +13,7 @@
 namespace delta {
 
 class ParamDecl;
+class TypeDecl;
 
 enum class TypeKind {
     BasicType,
@@ -39,11 +40,11 @@ inline TypeBase::~TypeBase() {}
 
 struct Type {
 public:
-    Type(const TypeBase* typeBase = nullptr, bool isMutable = false)
+    Type(TypeBase* typeBase = nullptr, bool isMutable = false)
     : typeBase(typeBase), mutableFlag(isMutable) {}
-    const TypeBase& operator*() const { return *typeBase; }
+    TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
-    const TypeBase* get() const { return typeBase; }
+    TypeBase* get() const { return typeBase; }
 
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
     bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
@@ -130,7 +131,7 @@ public:
     static bool isBuiltinScalar(llvm::StringRef typeName);
 
 private:
-    const TypeBase* typeBase;
+    TypeBase* typeBase;
     bool mutableFlag;
 };
 
@@ -138,18 +139,20 @@ class BasicType : public TypeBase {
 public:
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     llvm::StringRef getName() const { return name; }
-    static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs,
-                    bool isMutable = false);
+    TypeDecl* getDecl() const { return decl; }
+    void setDecl(TypeDecl* decl) { this->decl = decl; }
+    static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::BasicType; }
 
 private:
     friend Type;
     BasicType(llvm::StringRef name, std::vector<Type>&& genericArgs)
-    : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)) {}
+    : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)), decl(nullptr) {}
 
 private:
     std::string name;
     std::vector<Type> genericArgs;
+    TypeDecl* decl;
 };
 
 class ArrayType : public TypeBase {

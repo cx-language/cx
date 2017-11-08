@@ -154,15 +154,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             auto it = structs.find(name);
             if (it != structs.end()) return it->second.first;
 
-            auto decls = currentTypeChecker->findDecls(name, true);
-
-            if (decls.empty()) {
-                auto& decl = currentTypeChecker->findDecl(type.getName(), location, true);
-                auto* typeDecl = llvm::cast<TypeTemplate>(decl).instantiate(type.getGenericArgs());
-                return codegenTypeDecl(*typeDecl);
-            } else {
-                return codegenTypeDecl(llvm::cast<TypeDecl>(*decls[0]));
-            }
+            return codegenTypeDecl(*llvm::cast<BasicType>(*type).getDecl());
         }
         case TypeKind::ArrayType:
             ASSERT(type.getArraySize() != ArrayType::unsized, "unimplemented");
@@ -399,12 +391,7 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs)
     }
 
     if (auto* basicType = llvm::dyn_cast<BasicType>(lhs->getType().get())) {
-        auto mangledName = mangleTypeDecl(basicType->getName(), basicType->getGenericArgs());
-        auto decls = currentTypeChecker->findDecls(mangledName, true);
-
-        if (!decls.empty()) {
-            auto* typeDecl = llvm::cast<TypeDecl>(decls[0]);
-
+        if (auto* typeDecl = basicType->getDecl()) {
             if (auto* deinit = typeDecl->getDeinitializer()) {
                 llvm::Value* value = codegenLvalueExpr(*lhs);
                 createDeinitCall(getFunctionProto(*deinit), value, lhs->getType(), typeDecl);
@@ -495,21 +482,7 @@ void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToD
 }
 
 llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating) {
-    ASSERT(!typeDecl.isInterface());
-
-    auto builtinType = builtinTypes.find(typeDecl.getName());
-    if (builtinType != builtinTypes.end()) {
-        return builtinType->second;
-    }
-
-    llvm::StructType* structType;
-
-    auto it = structs.find(mangle(typeDecl));
-    if (it != structs.end()) {
-        structType = it->second.first;
-    } else {
-        structType = codegenTypeDecl(typeDecl);
-    }
+    auto* structType = toIR(typeDecl.getType());
 
     if (!isMutating && typeDecl.passByValue()) {
         return structType;

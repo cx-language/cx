@@ -47,7 +47,7 @@ FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<Type>& generic
     return instantiations.emplace(std::move(orderedGenericArgs), std::move(instantiation)).first->second.get();
 }
 
-const FunctionType* FunctionDecl::getFunctionType() const {
+FunctionType* FunctionDecl::getFunctionType() const {
     auto paramTypes = map(getParams(), [](const ParamDecl& p) -> Type { return p.getType(); });
     return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes)));
 }

@@ -183,7 +183,7 @@ public:
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { ASSERT(hasBody()); return *body; }
     void setBody(std::vector<std::unique_ptr<Stmt>>&& body) { this->body = std::move(body); }
     SourceLocation getLocation() const { return location; }
-    const FunctionType* getFunctionType() const;
+    FunctionType* getFunctionType() const;
     bool signatureMatches(const FunctionDecl& other, bool matchReceiver = true) const;
     Module* getModule() const { return &module; }
     std::unique_ptr<FunctionDecl> instantiate(const llvm::StringMap<Type>& genericArgs,

@@ -454,6 +454,11 @@ void TypeChecker::addToSymbolTableNonAST(DeclT& decl) const {
     std::string name = decl.getName();
     nonASTDecls.push_back(llvm::make_unique<DeclT>(std::move(decl)));
     getCurrentModule()->getSymbolTable().add(std::move(name), nonASTDecls.back().get());
+
+    if (std::is_same<DeclT, TypeDecl>::value) {
+        auto& typeDecl = llvm::cast<TypeDecl>(*nonASTDecls.back());
+        llvm::cast<BasicType>(*typeDecl.getType()).setDecl(&typeDecl);
+    }
 }
 
 void TypeChecker::addToSymbolTable(FunctionDecl&& decl) const {
@@ -722,6 +727,8 @@ void TypeChecker::typecheckTypeDecl(TypeDecl& decl) const {
     for (auto& memberDecl : realDecl->getMemberDecls()) {
         typecheckMemberDecl(*memberDecl);
     }
+
+    llvm::cast<BasicType>(*decl.getType()).setDecl(&decl);
 }
 
 void TypeChecker::typecheckTypeTemplate(TypeTemplate& decl) const {
@@ -729,6 +736,10 @@ void TypeChecker::typecheckTypeTemplate(TypeTemplate& decl) const {
 }
 
 TypeDecl* TypeChecker::getTypeDecl(const BasicType& type) const {
+    if (auto* typeDecl = type.getDecl()) {
+        return typeDecl;
+    }
+
     auto decls = findDecls(mangleTypeDecl(type.getName(), type.getGenericArgs()));
 
     if (!decls.empty()) {
@@ -766,6 +777,8 @@ void TypeChecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) const {
     }
 
     if (declaredType) {
+        typecheckType(declaredType, decl.getLocation());
+
         if (initType) {
             Type convertedType;
 
