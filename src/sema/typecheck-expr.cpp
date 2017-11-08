@@ -278,7 +278,8 @@ bool Typechecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::
                 return false;
             }
         } else {
-            fatalError("non-function interface member requirements are not supported yet");
+            error(requiredMethod->getLocation(),
+                  "non-function interface member requirements are not supported yet");
         }
     }
 
@@ -904,7 +905,7 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
 
 Type Typechecker::typecheckCallExpr(CallExpr& expr) {
     if (!expr.callsNamedFunction()) {
-        fatalError("anonymous function calls not implemented yet");
+        error(expr.getLocation(), "anonymous function calls not implemented yet");
     }
 
     if (Type::isBuiltinScalar(expr.getFunctionName())) {

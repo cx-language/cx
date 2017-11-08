@@ -892,8 +892,7 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* m
     }
 
     if (!importCHeader(*currentSourceFile, decl.getTarget(), importSearchPaths)) {
-        llvm::errs() << "error: couldn't find module or C header '" << decl.getTarget() << "'\n";
-        abort();
+        error(decl.getLocation(), "couldn't find module or C header '", decl.getTarget(), "'");
     }
 }
 

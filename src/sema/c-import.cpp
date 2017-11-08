@@ -103,7 +103,7 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
             if (!constantArrayType.getSize().isIntN(64)) {
-                fatalError("array is too large");
+                error(SourceLocation::invalid(), "array is too large");
             }
             return ArrayType::get(toDelta(constantArrayType.getElementType()),
                                   constantArrayType.getSize().getLimitedValue(), isMutable);
@@ -119,9 +119,8 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Vector:
             return Type::getInt(); // FIXME: Temporary.
         default:
-            auto errorMessage = std::string("unhandled type class '") +
-                                type.getTypeClassName() + "' (importing type '" + qualtype.getAsString() + "')";
-            fatalError(errorMessage.c_str());
+            error(SourceLocation::invalid(), "unhandled type class '", type.getTypeClassName(),
+                  "' (importing type '", qualtype.getAsString(), "')");
     }
 }
 

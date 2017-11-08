@@ -419,8 +419,8 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
         }
 
         switch (binaryExpr.getOperator()) {
-            case AND_AND: fatalError("'&&=' not implemented yet");
-            case OR_OR: fatalError("'||=' not implemented yet");
+            case AND_AND: error(stmt.getLocation(), "'&&=' not implemented yet");
+            case OR_OR: error(stmt.getLocation(), "'||=' not implemented yet");
             default: break;
         }
 
@@ -529,7 +529,9 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::str
 }
 
 llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
-    if (!call.callsNamedFunction()) fatalError("anonymous function calls not implemented yet");
+    if (!call.callsNamedFunction()) {
+        error(call.getLocation(), "anonymous function calls not implemented yet");
+    }
 
     const Decl* decl = call.getCalleeDecl();
 

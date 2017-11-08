@@ -143,11 +143,6 @@ void warning(SourceLocation location, Args&&... args) {
     printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, messageStream.str());
 }
 
-[[noreturn]] inline void fatalError(const char* message) {
-    llvm::errs() << "FATAL ERROR: " << message << '\n';
-    abort();
-}
-
 std::string getCCompilerPath();
 
 }
