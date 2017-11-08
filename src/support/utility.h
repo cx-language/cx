@@ -9,6 +9,7 @@
 #include <vector>
 #include <utility> // std::move
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/Casting.h>
@@ -91,15 +92,29 @@ std::string readLineFromFile(SourceLocation location);
 void printDiagnostic(SourceLocation location, llvm::StringRef type,
                      llvm::raw_ostream::Colors color, llvm::StringRef message);
 
+class Note {
+public:
+    template<typename... Args>
+    Note(SourceLocation location, Args&&... args)
+    : location(location), message(llvm::join_items("", std::forward<Args>(args)...)) {}
+    SourceLocation getLocation() const { return location; }
+    llvm::StringRef getMessage() const { return message; }
+
+private:
+    SourceLocation location;
+    std::string message;
+};
+
 class CompileError {
 public:
-    CompileError(SourceLocation location, std::string&& message)
-    : location(location), message(std::move(message)) {}
+    CompileError(SourceLocation location, std::string&& message, std::vector<Note>&& notes)
+    : location(location), message(std::move(message)), notes(std::move(notes)) {}
     void print() const;
 
 private:
     SourceLocation location;
     std::string message;
+    std::vector<Note> notes;
 };
 
 template<typename T>
@@ -120,12 +135,17 @@ template<typename... Args>
 }
 
 template<typename... Args>
-[[noreturn]] void error(SourceLocation location, Args&&... args) {
+[[noreturn]] void errorWithNotes(SourceLocation location, std::vector<Note>&& notes, Args&&... args) {
     std::string message;
     llvm::raw_string_ostream messageStream(message);
     using expander = int[];
     (void)expander{0, (void(void(messageStream << std::forward<Args>(args))), 0)...};
-    throw CompileError(location, std::move(messageStream.str()));
+    throw CompileError(location, std::move(messageStream.str()), std::move(notes));
+}
+
+template<typename... Args>
+[[noreturn]] void error(SourceLocation location, Args&&... args) {
+    errorWithNotes(location, std::vector<Note>(), std::forward<Args>(args)...);
 }
 
 extern bool treatWarningsAsErrors;

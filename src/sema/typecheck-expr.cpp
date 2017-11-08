@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <string>
@@ -642,9 +643,16 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
     return expr.getType();
 }
 
+static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
+    return map(candidates, [](Decl* candidate) {
+        return Note(candidate->getLocation(), "candidate function:");
+    });
+}
+
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                                    llvm::StringRef callee, bool returnNullOnError) {
     llvm::SmallVector<Decl*, 1> matches;
+    std::vector<Decl*> initDecls;
     bool isInitCall = false;
 
     for (Decl* decl : decls) {
@@ -697,7 +705,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                 isInitCall = true;
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 auto mangledName = mangleFunctionDecl(llvm::cast<TypeDecl>(decl)->getType(), "init");
-                auto initDecls = findDecls(mangledName);
+                initDecls = findDecls(mangledName);
+                ASSERT(decls.size() == 1);
+                decls = initDecls;
 
                 for (Decl* decl : initDecls) {
                     InitDecl& initDecl = llvm::cast<InitDecl>(*decl);
@@ -716,7 +726,6 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                 auto* typeTemplate = llvm::cast<TypeTemplate>(decl);
                 isInitCall = true;
 
-                std::vector<InitDecl*> initDecls;
                 std::vector<InitDecl*> instantiatedInitDecls;
 
                 for (auto& method : typeTemplate->getTypeDecl()->getMethods()) {
@@ -725,7 +734,11 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                     initDecls.push_back(initDecl);
                 }
 
-                for (auto* initDecl : initDecls) {
+                ASSERT(decls.size() == 1);
+                decls = initDecls;
+
+                for (auto* decl : initDecls) {
+                    auto* initDecl = llvm::cast<InitDecl>(decl);
                     auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr,
                                                              initDecl->getParams(), initDecls.size() != 1);
                     if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
@@ -843,9 +856,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                     return type ? type.toString() : "???";
                 });
 
-                error(expr.getCallee().getLocation(), "no matching ",
-                      isInitCall ? "initializer for '" : "function for call to '", callee,
-                      "' with argument list of type '(", llvm::join(argTypeStrings, ", "), ")'");
+                errorWithNotes(expr.getCallee().getLocation(), getCandidateNotes(decls), "no matching ",
+                               isInitCall ? "initializer for '" : "function for call to '", callee,
+                               "' with argument list of type '(", llvm::join(argTypeStrings, ", "), ")'");
             } else {
                 error(expr.getCallee().getLocation(), "'", callee, "' is not a function");
             }
@@ -886,8 +899,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                 }
             }
 
-            error(expr.getCallee().getLocation(), "ambiguous reference to '", callee,
-                  isInitCall ? ".init'" : "'");
+            errorWithNotes(expr.getCallee().getLocation(), getCandidateNotes(decls),
+                           "ambiguous reference to '", callee, isInitCall ? ".init'" : "'");
     }
 }
 
@@ -955,6 +968,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
     } else {
         auto callee = expr.getFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
+        decls.erase(std::unique(decls.begin(), decls.end()), decls.end()); // TODO: Prevent duplicates and remove this call.
         decl = resolveOverload(decls, expr, callee);
 
         if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {

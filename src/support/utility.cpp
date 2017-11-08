@@ -69,6 +69,10 @@ void delta::printDiagnostic(SourceLocation location, llvm::StringRef type,
 
 void CompileError::print() const {
     printDiagnostic(location, "error", llvm::raw_ostream::RED, message);
+
+    for (auto& note : notes) {
+        printDiagnostic(note.getLocation(), "note", llvm::raw_ostream::BLACK, note.getMessage());
+    }
 }
 
 std::string delta::getCCompilerPath() {

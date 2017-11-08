@@ -4,6 +4,11 @@ func foo(a: int) { }
 func foo(b: int) { }
 
 func main() {
-    // CHECK: 8:5: error: ambiguous reference to 'foo'
+    // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'foo'
+    // CHECK: 3:6: note: candidate function:
+    // CHECK-NEXT: func foo(a: int) { }
+    // CHECK: 4:6: note: candidate function:
+    // CHECK-NEXT: func foo(b: int) { }
+    // CHECK-NOT: note
     foo(1)
 }

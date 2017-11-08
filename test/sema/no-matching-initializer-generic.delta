@@ -1,16 +1,16 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct Foo {
+struct Foo<T> {
     init() { }
-    init(i: int) { }
+    init(a: T, b: T) { }
 }
 
 func main() {
-    // CHECK: no matching initializer for 'Foo'
+    // CHECK: [[@LINE+6]]:9: error: no matching initializer for 'Foo' with argument list of type '(int)'
     // CHECK: 4:5: note: candidate function:
     // CHECK-NEXT: init() { }
     // CHECK: 5:5: note: candidate function:
-    // CHECK-NEXT: init(i: int) { }
+    // CHECK-NEXT: init(a: T, b: T) { }
     // CHECK-NOT: note
-    _ = Foo(3.14)
+    _ = Foo(42)
 }

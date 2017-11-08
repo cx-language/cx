@@ -6,6 +6,11 @@ struct Foo {
 }
 
 func main() {
-    // CHECK: 10:9: error: ambiguous reference to 'Foo.init'
+    // CHECK: [[@LINE+6]]:9: error: ambiguous reference to 'Foo.init'
+    // CHECK: 4:5: note: candidate function:
+    // CHECK-NEXT: init(a: int) { }
+    // CHECK: 5:5: note: candidate function:
+    // CHECK-NEXT: init(b: int) { }
+    // CHECK-NOT: note
     _ = Foo(1)
 }
