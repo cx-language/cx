@@ -320,7 +320,8 @@ bool TypeChecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         case TypeKind::PointerType:
             if (target.isPointerType()
                 && (source.getPointee().isMutable() || !target.getPointee().isMutable())
-                && isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee(), nullptr)) {
+                && (isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee(), nullptr)
+                    || target.getPointee().isVoid())) {
                 return true;
             }
             break;

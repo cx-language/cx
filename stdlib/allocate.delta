@@ -49,12 +49,12 @@ func safeAllocateArray<Type>(size: uint) -> mutable Type*? {
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
 /// `allocateArray`, `safeAllocate`, or `safeAllocateArray`.
 func deallocate<Type>(allocation: mutable Type*) {
-    free(cast<mutable void*>(allocation));
+    free(allocation);
 }
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
 /// `allocateArray`, `safeAllocate`, or `safeAllocateArray`. If the argument is null, no operation
 /// is performed.
 func deallocate<Type>(allocation: mutable Type*?) {
-    free(cast<mutable void*?>(allocation));
+    free(allocation);
 }

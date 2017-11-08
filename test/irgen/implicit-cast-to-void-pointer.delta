@@ -1,0 +1,45 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define void @f(i32* %p, i32* %mp)
+func f(p: int*, mp: mutable int*) {
+    // CHECK-NEXT: %v = alloca i8*
+    // CHECK-NEXT: %b = alloca i8*
+    // CHECK-NEXT: %i = alloca i32
+
+    // CHECK-NEXT: %1 = bitcast i32* %p to i8*
+    // CHECK-NEXT: store i8* %1, i8** %v
+    var v: void* = p;
+
+    // CHECK-NEXT: %2 = bitcast i32* %p to i8*
+    // CHECK-NEXT: call void @g(i8* %2)
+    g(p);
+
+    // CHECK-NEXT: %v1 = load i8*, i8** %v
+    // CHECK-NEXT: call void @g(i8* %v1)
+    g(v);
+
+    // CHECK-NEXT: %v2 = load i8*, i8** %v
+    // CHECK-NEXT: store i8* %v2, i8** %b
+    let b = cast<int8*>(v);
+
+    // CHECK-NEXT: %b3 = load i8*, i8** %b
+    // CHECK-NEXT: store i8* %b3, i8** %v
+    v = b;
+
+    // CHECK-NEXT: %3 = bitcast i32* %mp to i8*
+    // CHECK-NEXT: call void @h(i8* %3)
+    h(mp);
+
+    // CHECK-NEXT: store i32 0, i32* %i
+    var i = 0;
+
+    // CHECK-NEXT: %4 = bitcast i32* %i to i8*
+    // CHECK-NEXT: call void @h(i8* %4)
+    h(&i);
+
+    // CHECK-NEXT: ret void
+}
+
+func g(p: void*) {}
+
+func h(p: void*?) {}

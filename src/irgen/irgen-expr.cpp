@@ -270,6 +270,12 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         return builder.CreateInsertValue(arrayRef, size, 1);
     }
 
+    // Handle implicit conversions to void pointer.
+    if (targetType && expr.getType().isPointerType() && !expr.getType().getPointee().isVoid()
+        && targetType->isPointerTy() && targetType->getPointerElementType()->isIntegerTy(8)) {
+        return builder.CreateBitCast(codegenExpr(expr), targetType);
+    }
+
     Type exprType = expr.getType();
     if (exprType.isPointerType()) exprType = exprType.getPointee();
 
