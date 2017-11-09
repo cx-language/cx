@@ -379,6 +379,20 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             // Special case: allow passing string literals as C-strings (const char*).
             if (convertedType) *convertedType = target;
             return true;
+        } else if (expr->isArrayLiteralExpr() && target.isArrayType()) {
+            bool isConvertible = llvm::all_of(llvm::cast<ArrayLiteralExpr>(expr)->getElements(),
+                                              [&](const std::unique_ptr<Expr>& element) {
+                return isImplicitlyConvertible(element.get(), source.getElementType(),
+                                               target.getElementType(), nullptr);
+            });
+
+            if (isConvertible) {
+                for (auto& element : llvm::cast<ArrayLiteralExpr>(expr)->getElements()) {
+                    element->setType(target.getElementType());
+                }
+                if (convertedType) *convertedType = target;
+                return true;
+            }
         }
     }
 
