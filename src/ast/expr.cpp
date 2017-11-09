@@ -6,6 +6,88 @@
 
 using namespace delta;
 
+bool Expr::isConstant() const {
+    switch (getKind()) {
+        case ExprKind::VarExpr:
+            return false;
+
+        case ExprKind::StringLiteralExpr:
+        case ExprKind::CharacterLiteralExpr:
+        case ExprKind::IntLiteralExpr:
+        case ExprKind::FloatLiteralExpr:
+        case ExprKind::BoolLiteralExpr:
+        case ExprKind::NullLiteralExpr:
+            return true;
+
+        case ExprKind::ArrayLiteralExpr:
+            for (auto& element : llvm::cast<ArrayLiteralExpr>(this)->getElements()) {
+                if (!element->isConstant()) {
+                    return false;
+                }
+            }
+            return true;
+
+        case ExprKind::TupleExpr:
+            for (auto& element : llvm::cast<TupleExpr>(this)->getElements()) {
+                if (!element->isConstant()) {
+                    return false;
+                }
+            }
+            return true;
+
+        case ExprKind::PrefixExpr:
+            return llvm::cast<PrefixExpr>(this)->getOperand().isConstant();
+
+        case ExprKind::BinaryExpr:
+            return llvm::cast<BinaryExpr>(this)->getLHS().isConstant()
+                && llvm::cast<BinaryExpr>(this)->getRHS().isConstant();
+
+        case ExprKind::CallExpr:
+            return false;
+
+        case ExprKind::CastExpr:
+            return llvm::cast<CastExpr>(this)->getExpr().isConstant();
+
+        case ExprKind::SizeofExpr:
+            return false; // TODO: sizeof should be a constant expression.
+
+        case ExprKind::MemberExpr:
+        case ExprKind::SubscriptExpr:
+        case ExprKind::UnwrapExpr:
+        case ExprKind::LambdaExpr:
+            return false;
+
+        case ExprKind::IfExpr:
+            return llvm::cast<IfExpr>(this)->getCondition()->isConstant()
+                && llvm::cast<IfExpr>(this)->getThenExpr()->isConstant()
+                && llvm::cast<IfExpr>(this)->getElseExpr()->isConstant();
+    }
+}
+
+int64_t Expr::getConstantIntegerValue() const {
+    switch (getKind()) {
+        case ExprKind::CharacterLiteralExpr:
+            return static_cast<unsigned char>(llvm::cast<CharacterLiteralExpr>(this)->getValue());
+
+        case ExprKind::IntLiteralExpr:
+            return llvm::cast<IntLiteralExpr>(this)->getValue();
+
+        case ExprKind::PrefixExpr:
+            return llvm::cast<PrefixExpr>(this)->getConstantIntegerValue();
+
+        case ExprKind::BinaryExpr:
+            return llvm::cast<BinaryExpr>(this)->getConstantIntegerValue();
+
+        case ExprKind::SizeofExpr:
+        case ExprKind::CastExpr:
+        case ExprKind::IfExpr:
+            llvm_unreachable("unimplemented");
+
+        default:
+            llvm_unreachable("not a constant integer");
+    }
+}
+
 bool Expr::isLvalue() const {
     switch (getKind()) {
         case ExprKind::VarExpr: case ExprKind::StringLiteralExpr: case ExprKind::CharacterLiteralExpr:
@@ -239,9 +321,42 @@ Expr* CallExpr::getReceiver() {
     return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
 }
 
+int64_t PrefixExpr::getConstantIntegerValue() const {
+    auto operand = getOperand().getConstantIntegerValue();
+
+    switch (getOperator()) {
+        case PLUS: return operand;
+        case MINUS: return -operand;
+        case COMPL: return ~operand;
+        default: llvm_unreachable("invalid constant integer prefix operator");
+    }
+}
+
 bool BinaryExpr::isBuiltinOp() const {
     if (op == DOTDOT || op == DOTDOTDOT) return false;
     return getLHS().getType().isBuiltinType() && getRHS().getType().isBuiltinType();
+}
+
+int64_t BinaryExpr::getConstantIntegerValue() const {
+    // TODO: Add overflow checks.
+    // TODO: Handle signedness for '>>' operator;
+
+    auto lhs = getLHS().getConstantIntegerValue();
+    auto rhs = getRHS().getConstantIntegerValue();
+
+    switch (getOperator()) {
+        case PLUS: return lhs + rhs;
+        case MINUS: return lhs - rhs;
+        case STAR: return lhs * rhs;
+        case SLASH: return lhs / rhs;
+        case MOD: return lhs % rhs;
+        case AND: return lhs & rhs;
+        case OR: return lhs | rhs;
+        case XOR: return lhs ^ rhs;
+        case LSHIFT: return lhs << rhs;
+        case RSHIFT: return lhs >> rhs;
+        default: llvm_unreachable("invalid constant integer binary operator");
+    }
 }
 
 std::unique_ptr<FunctionDecl> LambdaExpr::lower(Module& module) const {

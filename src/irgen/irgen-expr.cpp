@@ -94,9 +94,11 @@ llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
         case PLUS: return codegenExpr(expr.getOperand());
         case MINUS:
             if (expr.getOperand().getType().isFloatingPoint()) {
-                return builder.CreateFNeg(codegenExpr(expr.getOperand()));
+                return builder.CreateFPCast(builder.CreateFNeg(codegenExpr(expr.getOperand())),
+                                            toIR(expr.getType()));
             } else {
-                return builder.CreateNeg(codegenExpr(expr.getOperand()));
+                return builder.CreateIntCast(builder.CreateNeg(codegenExpr(expr.getOperand())),
+                                             toIR(expr.getType()), expr.getType().isSigned());
             }
         case STAR: return builder.CreateLoad(codegenExpr(expr.getOperand()));
         case AND: return codegenLvalueExpr(expr.getOperand());

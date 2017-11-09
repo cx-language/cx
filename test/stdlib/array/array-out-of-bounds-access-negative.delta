@@ -3,11 +3,6 @@
 func main() -> int {
     var array = Array<int>();
     array.push(42);
-    // CHECK: [[@LINE+6]]:18: error: no matching function for call to 'Array<int>.[]' with argument list of type '(int)'
-    // CHECK: note: candidate function:
-    // CHECK-NEXT: func [](index: uint)
-    // CHECK: note: candidate function:
-    // CHECK-NEXT: mutating func [](index: uint)
-    // CHECK-NOT: note
+    // CHECK: [[@LINE+1]]:19: error: -1 is out of range for type 'uint'
     return *array[-1];
 }

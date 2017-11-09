@@ -3,6 +3,6 @@
 func foo(a: uint) { }
 
 func main() {
-    // CHECK: [[@LINE+1]]:9: error: invalid argument #1 type 'int' to 'foo', expected 'uint'
+    // CHECK: [[@LINE+1]]:9: error: -1 is out of range for type 'uint'
     foo(-1);
 }

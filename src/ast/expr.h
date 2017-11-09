@@ -65,6 +65,9 @@ public:
     bool hasType() const { return type.get() != nullptr; }
     Type getType() const { ASSERT(type); return type; }
     void setType(Type type) { ASSERT(type); this->type = type; }
+    bool isConstant() const;
+    // TODO: Use llvm::APSInt instead of int64_t.
+    int64_t getConstantIntegerValue() const;
     bool isLvalue() const;
     bool isRvalue() const { return !isLvalue(); }
     SourceLocation getLocation() const { return location; }
@@ -262,6 +265,7 @@ public:
     PrefixOperator getOperator() const { return op; }
     Expr& getOperand() { return *getArgs()[0].getValue(); }
     const Expr& getOperand() const { return *getArgs()[0].getValue(); }
+    int64_t getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::PrefixExpr; }
 
 private:
@@ -280,6 +284,7 @@ public:
     Expr& getLHS() { return *getArgs()[0].getValue(); }
     Expr& getRHS() { return *getArgs()[1].getValue(); }
     bool isBuiltinOp() const;
+    int64_t getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 
 private:

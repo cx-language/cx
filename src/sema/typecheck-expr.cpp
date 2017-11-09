@@ -337,16 +337,9 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (expr) {
-        // Autocast integer literals to parameter type if within range, error out if not within range.
-        if ((expr->isIntLiteralExpr() || expr->isCharacterLiteralExpr()) && target.isBasicType()) {
-            int64_t value;
-
-            if (auto* intLiteral = llvm::dyn_cast<IntLiteralExpr>(expr)) {
-                value = intLiteral->getValue();
-            } else {
-                auto* charLiteral = llvm::cast<CharacterLiteralExpr>(expr);
-                value = static_cast<unsigned char>(charLiteral->getValue());
-            }
+        // Autocast integer constants to parameter type if within range, error out if not within range.
+        if ((expr->getType().isInteger() || expr->getType().isChar()) && expr->isConstant() && target.isBasicType()) {
+            auto value = expr->getConstantIntegerValue();
 
             if (target.isInteger()) {
                 if (target.isInt()) return checkRange<32, true>(*expr, value, target, convertedType);
@@ -366,7 +359,8 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                 if (convertedType) *convertedType = target;
                 return true;
             }
-        } else if (expr->isFloatLiteralExpr() && target.isFloatingPoint()) {
+        } else if (expr->getType().isFloatingPoint() && expr->isConstant() && target.isFloatingPoint()) {
+            // TODO: Check that the floating-point value is losslessly convertible to the target type?
             if (convertedType) *convertedType = target;
             return true;
         } else if (expr->isNullLiteralExpr() && target.isOptionalType()) {
