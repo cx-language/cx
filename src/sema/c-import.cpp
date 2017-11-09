@@ -84,8 +84,11 @@ Type toDelta(clang::QualType qualtype) {
             deltaType.setMutable(isMutable);
             return deltaType;
         }
-        case clang::Type::Typedef:
-            return toDelta(llvm::cast<clang::TypedefType>(type).desugar());
+        case clang::Type::Typedef: {
+            auto desugared = llvm::cast<clang::TypedefType>(type).desugar();
+            if (!isMutable) desugared.addConst();
+            return toDelta(desugared);
+        }
         case clang::Type::Elaborated:
             return toDelta(llvm::cast<clang::ElaboratedType>(type).getNamedType());
         case clang::Type::Record:

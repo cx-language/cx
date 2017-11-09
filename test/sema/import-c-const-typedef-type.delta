@@ -1,0 +1,8 @@
+// RUN: %delta -typecheck %s -Iinputs
+
+import "import-c-const-typedef-type.h";
+
+func main() {
+    let i = 0;
+    bar(&i);
+}
