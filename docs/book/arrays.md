@@ -19,7 +19,7 @@ let error = a[1];
 We can also access elements using the short-hand functions `first` and `last`:
 
 ```swift
-var a = Array<int>([1,2,3]);
+var a = Array([1, 2, 3]);
 printf("%d", a.first());
 // => 1
 printf("%d", a.last());
@@ -40,12 +40,12 @@ comparison operator
 
 
 ```swift
-let a = Array<int>([1,2,3]);
-let b = Array<int>([1,2,3]);
+let a = Array([1, 2, 3]);
+let b = Array([1, 2, 3]);
 a == b; // true
 
-let a = Array<int>([1]);
-let b = Array<int>([2]);
+let a = Array([1]);
+let b = Array([2]);
 a == b; // false
 ```
 
@@ -54,7 +54,7 @@ a == b; // false
 We can iterate over arrays with the for-each style loop
 
 ```swift
-var a = Array<int>([1,2,3]);
+var a = Array([1, 2, 3]);
 for (let e in a) {
     // ...
 }
@@ -66,7 +66,7 @@ We can use the functional `map` and `filter` operations on Arrays, using
 function pointers or lambda expressions. First, let's see how filter works.
 
 ```swift
-var a = Array<int>([1,2,3]);
+var a = Array([1, 2, 3]);
 let filtered = a.filter((e: int*) -> *e > 2);
 printf("%d", *filtered[0]);
 // => 3
@@ -78,10 +78,8 @@ has to be dereferenced to get the value.
 `map` works similarly, except it returns an Array of the same size.
 
 ```swift
-var a = Array<int>([1,2,3]);
+var a = Array([1, 2, 3]);
 let b = a.map((e: int*) -> *e * 2);
 printf("%d, %d, %d", *b[0], *b[1], *b[2]);
 // => 2, 4, 6
 ```
-
-

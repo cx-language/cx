@@ -10,6 +10,7 @@ func f<T>(a: T[]*) {
 func main() {
     // MAIN-NEXT: %__temporaryArray0 = alloca [3 x i32]
     // MAIN-NEXT: %__temporaryArray1 = alloca [3 x i32]
+    // MAIN-NEXT: %__temporaryArray2 = alloca [3 x i32]
     // MAIN-NEXT: store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %__temporaryArray0
     // MAIN-NEXT: %1 = getelementptr [3 x i32], [3 x i32]* %__temporaryArray0, i32 0, i32 0
     // MAIN-NEXT: %2 = insertvalue %"ArrayRef<int>" undef, i32* %1, 0
@@ -20,8 +21,8 @@ func main() {
     // MAIN: call void @"f<int>"(%"ArrayRef<int>" %{{[0-9]+}})
     f<int>([1,2,3]);
 
-    // TODO: Make this work:
-    // f([1,2,3]);
+    // MAIN: call void @"f<int>"(%"ArrayRef<int>" %{{[0-9]+}})
+    f([1,2,3]);
 
     // MAIN-NEXT: ret i32 0
 }

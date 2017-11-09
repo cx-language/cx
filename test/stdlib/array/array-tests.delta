@@ -40,7 +40,7 @@ func testArrayInsertionAndRemoval() {
 }
 
 func testArrayInitFromLiteral() {
-    let a = Array(&[1, 2, 3]);
+    let a = Array([1, 2, 3]);
 
     assert(*a[0] == 1, "testArrayInitFromLiteral - 1");
     assert(*a[1] == 2, "testArrayInitFromLiteral - 2");
