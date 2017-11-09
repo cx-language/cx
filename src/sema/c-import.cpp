@@ -297,7 +297,8 @@ static void addHeaderSearchPathsFromCCompilerOutput(clang::CompilerInstance& ci)
 }
 
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
-                          llvm::ArrayRef<std::string> importSearchPaths) {
+                          llvm::ArrayRef<std::string> importSearchPaths,
+                          llvm::ArrayRef<std::string> frameworkSearchPaths) {
     auto it = allImportedModules.find(headerName);
     if (it != allImportedModules.end()) {
         importer.addImportedModule(it->second);
@@ -327,6 +328,9 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     addHeaderSearchPathsFromEnvVar(ci, "C_INCLUDE_PATH");
     for (llvm::StringRef includePath : importSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(includePath,      clang::frontend::System, false, false);
+    }
+    for (llvm::StringRef frameworkPath : frameworkSearchPaths) {
+        ci.getHeaderSearchOpts().AddPath(frameworkPath,    clang::frontend::System, true, false);
     }
 
     ci.createPreprocessor(clang::TU_Complete);

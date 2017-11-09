@@ -114,6 +114,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     bool emitPositionIndependentCode = checkFlag("-fPIC", args);
     treatWarningsAsErrors = checkFlag("-Werror", args);
     auto importSearchPaths = collectStringOptionValues("-I", args);
+    auto frameworkSearchPaths = collectStringOptionValues("-F", args);
     importSearchPaths.push_back(DELTA_ROOT_DIR); // For development.
 
     for (llvm::StringRef arg : args) {
@@ -150,9 +151,9 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     for (auto& importedModule : module.getImportedModules()) {
         typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr,
-                        importSearchPaths, ::parse);
+                        importSearchPaths, frameworkSearchPaths, ::parse);
     }
-    typecheckModule(module, manifest, importSearchPaths, ::parse);
+    typecheckModule(module, manifest, importSearchPaths, frameworkSearchPaths, ::parse);
 
     bool treatAsLibrary = !module.getSymbolTable().contains("main") && !run;
     if (treatAsLibrary) {

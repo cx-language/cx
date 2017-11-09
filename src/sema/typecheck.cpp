@@ -837,6 +837,7 @@ std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath
 llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
                                                const PackageManifest* manifest,
                                                llvm::ArrayRef<std::string> importSearchPaths,
+                                               llvm::ArrayRef<std::string> frameworkSearchPaths,
                                                ParserFunction& parse,
                                                llvm::StringRef moduleExternalName,
                                                llvm::StringRef moduleInternalName = "") {
@@ -880,24 +881,27 @@ done:
     if (importer) importer->addImportedModule(module);
     allImportedModules[module->getName()] = module;
     typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr,
-                    importSearchPaths, parse);
+                    importSearchPaths, frameworkSearchPaths, parse);
     return *module;
 }
 
 void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
                                       llvm::ArrayRef<std::string> importSearchPaths,
+                                      llvm::ArrayRef<std::string> frameworkSearchPaths,
                                       ParserFunction& parse) {
-    if (importDeltaModule(currentSourceFile, manifest, importSearchPaths, parse, decl.getTarget())) {
+    if (importDeltaModule(currentSourceFile, manifest, importSearchPaths, frameworkSearchPaths,
+                          parse, decl.getTarget())) {
         return;
     }
 
-    if (!importCHeader(*currentSourceFile, decl.getTarget(), importSearchPaths)) {
+    if (!importCHeader(*currentSourceFile, decl.getTarget(), importSearchPaths, frameworkSearchPaths)) {
         error(decl.getLocation(), "couldn't find module or C header '", decl.getTarget(), "'");
     }
 }
 
 void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
                                         llvm::ArrayRef<std::string> importSearchPaths,
+                                        llvm::ArrayRef<std::string> frameworkSearchPaths,
                                         ParserFunction& parse) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: llvm_unreachable("no top-level parameter declarations");
@@ -912,7 +916,7 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
         case DeclKind::VarDecl: typecheckVarDecl(llvm::cast<VarDecl>(decl), true); break;
         case DeclKind::FieldDecl: llvm_unreachable("no top-level field declarations");
         case DeclKind::ImportDecl: typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest,
-                                                       importSearchPaths, parse); break;
+                                                       importSearchPaths, frameworkSearchPaths, parse); break;
     }
 }
 
@@ -971,8 +975,10 @@ static void checkUnusedDecls(const Module& module) {
 
 void delta::typecheckModule(Module& module, const PackageManifest* manifest,
                             llvm::ArrayRef<std::string> importSearchPaths,
+                            llvm::ArrayRef<std::string> frameworkSearchPaths,
                             ParserFunction& parse) {
-    auto stdlibModule = importDeltaModule(nullptr, nullptr, importSearchPaths, parse, "stdlib", "std");
+    auto stdlibModule = importDeltaModule(nullptr, nullptr, importSearchPaths, frameworkSearchPaths,
+                                          parse, "stdlib", "std");
     if (!stdlibModule) {
         printErrorAndExit("couldn't import the standard library: ", stdlibModule.getError().message());
     }
@@ -995,7 +1001,8 @@ void delta::typecheckModule(Module& module, const PackageManifest* manifest,
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (!decl->isVarDecl()) {
-                typechecker.typecheckTopLevelDecl(*decl, manifest, importSearchPaths, parse);
+                typechecker.typecheckTopLevelDecl(*decl, manifest, importSearchPaths,
+                                                  frameworkSearchPaths, parse);
                 typechecker.postProcess();
             }
         }

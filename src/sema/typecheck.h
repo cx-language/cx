@@ -26,7 +26,9 @@ using ParserFunction = void(llvm::StringRef filePath, Module& module);
 
 std::vector<Module*> getAllImportedModules();
 void typecheckModule(Module& module, const PackageManifest* manifest,
-                     llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse);
+                     llvm::ArrayRef<std::string> importSearchPaths,
+                     llvm::ArrayRef<std::string> frameworkSearchPaths,
+                     ParserFunction& parse);
 
 class Typechecker {
 public:
@@ -57,6 +59,7 @@ public:
     void typecheckFieldDecl(FieldDecl& decl);
     void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
                                llvm::ArrayRef<std::string> importSearchPaths,
+                               llvm::ArrayRef<std::string> frameworkSearchPaths,
                                ParserFunction& parse);
     void postProcess();
 
@@ -83,7 +86,9 @@ private:
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
     void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
-                             llvm::ArrayRef<std::string> importSearchPaths, ParserFunction& parse);
+                             llvm::ArrayRef<std::string> importSearchPaths,
+                             llvm::ArrayRef<std::string> frameworkSearchPaths,
+                             ParserFunction& parse);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr);
