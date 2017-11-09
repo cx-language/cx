@@ -1,0 +1,9 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+func main() {
+    // CHECK: store float 4.200000e+01, float* %f
+    let f: float = 42.0;
+
+    // TODO: Auto-convert negative floating-point literals as well:
+    // let g: float = -42.0;
+}

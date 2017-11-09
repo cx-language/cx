@@ -366,6 +366,9 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                 if (convertedType) *convertedType = target;
                 return true;
             }
+        } else if (expr->isFloatLiteralExpr() && target.isFloatingPoint()) {
+            if (convertedType) *convertedType = target;
+            return true;
         } else if (expr->isNullLiteralExpr() && target.isOptionalType()) {
             if (convertedType) *convertedType = target;
             return true;
