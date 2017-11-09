@@ -1,0 +1,1 @@
+#define FOO 0x88E4

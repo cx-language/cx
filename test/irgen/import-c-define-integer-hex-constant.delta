@@ -1,0 +1,8 @@
+// RUN: %delta -print-ir %s -Iinputs | %FileCheck %s
+
+import "import-c-defined-integer-hex-constant.h";
+
+func main() {
+    // CHECK: store i32 35044, i32* %foo
+    let foo: int = FOO;
+}

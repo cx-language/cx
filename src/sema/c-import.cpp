@@ -19,6 +19,7 @@
 #include <clang/AST/DeclGroup.h>
 #include <clang/AST/Type.h>
 #include <clang/AST/PrettyPrinter.h>
+#include <clang/Sema/Sema.h>
 #include "c-import.h"
 #include "typecheck.h"
 #include "../ast/type.h"
@@ -163,6 +164,7 @@ VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
                    SourceLocation::invalid());
 }
 
+// TODO: Use llvm::APSInt instead of int64_t.
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, const Typechecker& typechecker) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getInt());
@@ -170,6 +172,7 @@ void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, const 
                                          *typechecker.getCurrentModule(), SourceLocation::invalid()));
 }
 
+// TODO: Use llvm::APFloat instead of long double.
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, const Typechecker& typechecker) {
     auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getFloat64());
@@ -231,7 +234,8 @@ private:
 
 class MacroImporter : public clang::PPCallbacks {
 public:
-    MacroImporter(const Typechecker& typechecker) : typechecker(typechecker) {}
+    MacroImporter(const Typechecker& typechecker, clang::Sema& clangSema)
+    : typechecker(typechecker), clangSema(clangSema) {}
 
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) final override {
         if (macro->getMacroInfo()->getNumTokens() != 1) return;
@@ -242,25 +246,35 @@ public:
                 typechecker.addIdentifierReplacement(name.getIdentifierInfo()->getName(),
                                                      token.getIdentifierInfo()->getName());
                 return;
-            case clang::tok::numeric_constant: {
-                llvm::StringRef text(token.getLiteralData(), token.getLength());
-                if (text.find_first_of(".eE") == llvm::StringRef::npos) {
-                    long long value = strtoll(text.data(), nullptr, 0);
-                    addIntegerConstantToSymbolTable(name.getIdentifierInfo()->getName(),
-                                                    value, typechecker);
-                } else {
-                    long double value = strtold(text.data(), nullptr);
-                    addFloatConstantToSymbolTable(name.getIdentifierInfo()->getName(),
-                                                  value, typechecker);
-                }
-            }
+
+            case clang::tok::numeric_constant:
+                importNumericConstant(name.getIdentifierInfo()->getName(), token);
+                return;
+                
             default:
                 return;
         }
     }
 
 private:
+    void importNumericConstant(llvm::StringRef name, const clang::Token& token) {
+        auto result = clangSema.ActOnNumericConstant(token);
+        if (!result.isUsable()) return;
+        clang::Expr* parsed = result.get();
+
+        if (auto* intLiteral = llvm::dyn_cast<clang::IntegerLiteral>(parsed)) {
+            llvm::APSInt value(intLiteral->getValue(), parsed->getType()->isUnsignedIntegerType());
+            addIntegerConstantToSymbolTable(name, value.getExtValue(), typechecker);
+        } else if (auto* floatLiteral = llvm::dyn_cast<clang::FloatingLiteral>(parsed)) {
+            // TODO: Use llvm::APFloat instead of lossy conversion to double.
+            auto value = floatLiteral->getValueAsApproximateDouble();
+            addFloatConstantToSymbolTable(name, value, typechecker);
+        }
+    }
+
+private:
     const Typechecker& typechecker;
+    clang::Sema& clangSema;
 };
 
 } // anonymous namespace
@@ -339,10 +353,11 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     ci.createPreprocessor(clang::TU_Complete);
     auto& pp = ci.getPreprocessor();
     pp.getBuiltinInfo().initializeBuiltins(pp.getIdentifierTable(), pp.getLangOpts());
-    pp.addPPCallbacks(llvm::make_unique<MacroImporter>(typechecker));
 
     ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>(typechecker));
     ci.createASTContext();
+    ci.createSema(clang::TU_Complete, nullptr);
+    pp.addPPCallbacks(llvm::make_unique<MacroImporter>(typechecker, ci.getSema()));
 
     const clang::DirectoryLookup* curDir = nullptr;
     const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(
