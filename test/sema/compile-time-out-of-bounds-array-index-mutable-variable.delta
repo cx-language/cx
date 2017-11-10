@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+extern func foo() -> int[5]*;
+
+func main() {
+    let p = foo();
+    let i: uint = 5;
+    // CHECK: [[@LINE+1]]:15: error: accessing array out-of-bounds with index 5, array size is 5
+    let e = p[i];
+}

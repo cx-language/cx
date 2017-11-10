@@ -1,11 +1,8 @@
-// RUN: not %delta -typecheck -Iinputs %s | %FileCheck %s
+// RUN: %delta -typecheck -Iinputs %s
 
 import "c-enum.h";
 
 func main() {
     let u: uint = FOO;
-
-    // TODO: Auto-convert the constant integer to int here.
-    // CHECK: [[@LINE+1]]:18: error: cannot initialize variable of type 'int' with 'uint'
     let i: int = FOO;
 }

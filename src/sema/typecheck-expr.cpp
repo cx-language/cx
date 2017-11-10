@@ -1349,10 +1349,12 @@ Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
     }
 
     if (!arrayType.isUnsizedArrayType()) {
-        if (auto* intLiteralExpr = llvm::dyn_cast<IntLiteralExpr>(expr.getIndexExpr())) {
-            if (intLiteralExpr->getValue() >= arrayType.getArraySize()) {
-                error(intLiteralExpr->getLocation(), "accessing array out-of-bounds with index ",
-                      intLiteralExpr->getValue(), ", array size is ", arrayType.getArraySize());
+        if (expr.getIndexExpr()->isConstant()) {
+            auto index = expr.getIndexExpr()->getConstantIntegerValue();
+
+            if (index < 0 || index >= arrayType.getArraySize()) {
+                error(expr.getIndexExpr()->getLocation(), "accessing array out-of-bounds with index ",
+                      index, ", array size is ", arrayType.getArraySize());
             }
         }
     }

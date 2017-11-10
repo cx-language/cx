@@ -12,10 +12,16 @@ llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
 
     if (llvm::isa<llvm::AllocaInst>(value) || llvm::isa<llvm::GetElementPtrInst>(value) ||
         (llvm::isa<llvm::GlobalValue>(value) && !llvm::isa<llvm::Function>(value))) {
-        return builder.CreateLoad(value, expr.getIdentifier());
-    } else {
-        return value;
+        value = builder.CreateLoad(value, expr.getIdentifier());
     }
+
+    if (value->getType()->isFloatingPointTy()) {
+        value = builder.CreateFPCast(value, toIR(expr.getType()));
+    } else if (value->getType()->isIntegerTy()) {
+        value = builder.CreateIntCast(value, toIR(expr.getType()), expr.getType().isSigned());
+    }
+
+    return value;
 }
 
 llvm::Value* IRGenerator::codegenLvalueVarExpr(const VarExpr& expr) {

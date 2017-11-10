@@ -8,8 +8,17 @@ using namespace delta;
 
 bool Expr::isConstant() const {
     switch (getKind()) {
-        case ExprKind::VarExpr:
+        case ExprKind::VarExpr: {
+            auto* decl = llvm::cast<VarExpr>(this)->getDecl();
+
+            if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+                if (!varDecl->getType().isMutable() && varDecl->getInitializer()) {
+                    return varDecl->getInitializer()->isConstant();
+                }
+            }
+
             return false;
+        }
 
         case ExprKind::StringLiteralExpr:
         case ExprKind::CharacterLiteralExpr:
@@ -66,6 +75,18 @@ bool Expr::isConstant() const {
 
 int64_t Expr::getConstantIntegerValue() const {
     switch (getKind()) {
+        case ExprKind::VarExpr: {
+            auto* decl = llvm::cast<VarExpr>(this)->getDecl();
+
+            if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+                if (!varDecl->getType().isMutable() && varDecl->getInitializer()) {
+                    return varDecl->getInitializer()->getConstantIntegerValue();
+                }
+            }
+
+            llvm_unreachable("not a constant integer");
+        }
+
         case ExprKind::CharacterLiteralExpr:
             return static_cast<unsigned char>(llvm::cast<CharacterLiteralExpr>(this)->getValue());
 
