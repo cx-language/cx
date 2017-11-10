@@ -3,9 +3,9 @@
 import "c-enum.h";
 
 func main() {
-    let i: int = FOO;
-
-    // TODO: Auto-convert the constant integer to uint here.
-    // CHECK: [[@LINE+1]]:19: error: cannot initialize variable of type 'uint' with 'int'
     let u: uint = FOO;
+
+    // TODO: Auto-convert the constant integer to int here.
+    // CHECK: [[@LINE+1]]:18: error: cannot initialize variable of type 'int' with 'uint'
+    let i: int = FOO;
 }

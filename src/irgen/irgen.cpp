@@ -333,9 +333,9 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
     auto* insertBlockBackup = builder.GetInsertBlock();
 
     auto cases = map(switchStmt.getCases(), [&](const SwitchCase& switchCase) {
-        auto* value = llvm::cast<llvm::ConstantInt>(codegenExpr(*switchCase.getValue()));
+        auto* value = codegenExpr(*switchCase.getValue());
         auto* block = llvm::BasicBlock::Create(ctx, "", function);
-        return std::make_pair(value, block);
+        return std::make_pair(llvm::cast<llvm::ConstantInt>(value), block);
     });
 
     builder.SetInsertPoint(insertBlockBackup);

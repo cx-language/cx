@@ -120,6 +120,7 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Decayed:
             return toDelta(llvm::cast<clang::DecayedType>(type).getDecayedType());
         case clang::Type::Enum:
+            return toDelta(llvm::cast<clang::EnumType>(type).getDecl()->getIntegerType());
         case clang::Type::Vector:
             return Type::getInt(); // FIXME: Temporary.
         default:
@@ -165,9 +166,10 @@ VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
 }
 
 // TODO: Use llvm::APSInt instead of int64_t.
-void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, const Typechecker& typechecker) {
+void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, clang::QualType type,
+                                     const Typechecker& typechecker) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation::invalid());
-    initializer->setType(Type::getInt());
+    initializer->setType(toDelta(type).asImmutable());
     typechecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
                                          *typechecker.getCurrentModule(), SourceLocation::invalid()));
 }
@@ -204,9 +206,11 @@ public:
                     break;
                 }
                 case clang::Decl::Enum: {
-                    for (auto* enumerator : llvm::cast<clang::EnumDecl>(*decl).enumerators()) {
+                    auto& enumDecl = llvm::cast<clang::EnumDecl>(*decl);
+                    for (auto* enumerator : enumDecl.enumerators()) {
                         auto value = enumerator->getInitVal().getExtValue();
-                        addIntegerConstantToSymbolTable(enumerator->getName(), value, typechecker);
+                        addIntegerConstantToSymbolTable(enumerator->getName(), value,
+                                                        enumDecl.getIntegerType(), typechecker);
                     }
                     break;
                 }
@@ -264,7 +268,7 @@ private:
 
         if (auto* intLiteral = llvm::dyn_cast<clang::IntegerLiteral>(parsed)) {
             llvm::APSInt value(intLiteral->getValue(), parsed->getType()->isUnsignedIntegerType());
-            addIntegerConstantToSymbolTable(name, value.getExtValue(), typechecker);
+            addIntegerConstantToSymbolTable(name, value.getExtValue(), parsed->getType(), typechecker);
         } else if (auto* floatLiteral = llvm::dyn_cast<clang::FloatingLiteral>(parsed)) {
             // TODO: Use llvm::APFloat instead of lossy conversion to double.
             auto value = floatLiteral->getValueAsApproximateDouble();

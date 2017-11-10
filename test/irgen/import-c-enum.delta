@@ -1,0 +1,13 @@
+// RUN: %delta -print-ir %s -Iinputs | %FileCheck %s
+
+import "import-c-enum.h";
+
+func main() {
+    let foo: int = FooA;
+    let bar: uint = BarA;
+    let qux: uint64 = QuxA;
+
+    // CHECK:      store i32 -1, i32* %foo
+    // CHECK-NEXT: store i32 0, i32* %bar
+    // CHECK-NEXT: store i64 0, i64* %qux
+}
