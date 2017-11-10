@@ -57,8 +57,9 @@ public:
         return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType()
             || isNull() || isVoid();
     }
-    bool isSizedArrayType() const;
-    bool isUnsizedArrayType() const;
+    bool isArrayWithConstantSize() const;
+    bool isArrayWithRuntimeSize() const;
+    bool isArrayWithUnknownSize() const;
     bool isFloatingPoint() const {
         return isFloat() || isFloat32() || isFloat64() || isFloat80();
     }
@@ -159,9 +160,11 @@ class ArrayType : public TypeBase {
 public:
     Type getElementType() const { return elementType; }
     int64_t getSize() const { return size; }
-    bool isUnsized() const { return size == unsized; }
+    bool hasRuntimeSize() const { return size == runtimeSize; }
+    bool hasUnknownSize() const { return size == unknownSize; }
     static Type getIndexType() { return Type::getUInt(); }
-    static const int64_t unsized = -1;
+    static const int64_t runtimeSize = -1;
+    static const int64_t unknownSize = -2;
     static Type get(Type type, int64_t size, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
 
@@ -171,7 +174,9 @@ private:
 
 private:
     Type elementType;
-    int64_t size; ///< Equal to ArrayType::unsized if this is an unsized array type.
+    int64_t size; ///< Equal to ArrayType::runtimeSize if values of this type know their size at
+                  ///< runtime (i.e. this is an ArrayRef), or ArrayType::unknownSize if values of
+                  /// this type never know their size.
 };
 
 class TupleType : public TypeBase {

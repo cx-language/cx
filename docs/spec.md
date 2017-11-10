@@ -195,14 +195,17 @@ Pointer arithmetic is supported in the form of the following operations:
 
 ### Array types
 
-> _sized-array-type_ → _element-type_ `[` _size_ `]`<br>
-> _unsized-array-type_ → _element-type_ `[` `]`<br>
+> _array-type-with-constant-size_ → _element-type_ `[` _size_ `]`<br>
+> _array-type-with-runtime-size_ → _element-type_ `[` `]`<br>
+> _array-type-with-unknown-size_ → _element-type_ `[` `?` `]`<br>
 
-_sized-array-types_ are contiguous blocks of _size_ elements of type
-_element-type_. _unsized-array-types_ may only be used as return types and
-parameters types, and are implemented as pointer-and-size pairs under the hood,
-unless the compiler detects that the size is unused, in which case it will be
-optimized out.
+_array-type-with-constant-size_ represents a contiguous block of _size_ elements
+of type _element-type_. _array-type-with-runtime-size_ is conceptually a
+pointer-and-size pair. _array-type-with-unknown-size_ can only be used through a
+pointer; such pointers are memory-layout-compatible with pointers to
+_element-type_, primarily for C interoperability. _array-type-with-unknown-size_
+is the only array type for which index operations are not guaranteed to be
+bounds-checked.
 
 ### String type
 

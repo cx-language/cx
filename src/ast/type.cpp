@@ -38,12 +38,16 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Char, char)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
 #undef DEFINE_BUILTIN_TYPE_GET_AND_IS
 
-bool Type::isSizedArrayType() const {
-    return isArrayType() && getArraySize() != ArrayType::unsized;
+bool Type::isArrayWithConstantSize() const {
+    return isArrayType() && getArraySize() >= 0;
 }
 
-bool Type::isUnsizedArrayType() const {
-    return isArrayType() && getArraySize() == ArrayType::unsized;
+bool Type::isArrayWithRuntimeSize() const {
+    return isArrayType() && getArraySize() == ArrayType::runtimeSize;
+}
+
+bool Type::isArrayWithUnknownSize() const {
+    return isArrayType() && getArraySize() == ArrayType::unknownSize;
 }
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
@@ -237,7 +241,16 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
         case TypeKind::ArrayType:
             getElementType().printTo(stream, omitTopLevelMutable);
             stream << "[";
-            if (!isUnsizedArrayType()) stream << getArraySize();
+            switch (getArraySize()) {
+                case ArrayType::runtimeSize:
+                    break;
+                case ArrayType::unknownSize:
+                    stream << "?";
+                    break;
+                default:
+                    stream << getArraySize();
+                    break;
+            }
             stream << "]";
             break;
         case TypeKind::TupleType:

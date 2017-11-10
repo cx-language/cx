@@ -303,7 +303,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             break;
         case TypeKind::ArrayType:
             if (target.isArrayType()
-                && (source.getArraySize() == target.getArraySize() || target.isUnsizedArrayType())
+                && (source.getArraySize() == target.getArraySize() || target.isArrayWithRuntimeSize())
                 && isImplicitlyConvertible(nullptr, source.getElementType(), target.getElementType(), nullptr)) {
                 return true;
             }
@@ -399,6 +399,9 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                && isImplicitlyConvertible(nullptr, source.getElementType(),
                                           target.removeOptional().getPointee().getElementType(), nullptr)) {
         if (convertedType) *convertedType = source;
+        return true;
+    } else if (source.isPointerType() && target.removeOptional().isPointerType()
+               && target.removeOptional().getPointee().isArrayWithUnknownSize()) {
         return true;
     } else if (source.isTupleType()) {
         auto elements = llvm::cast<TupleExpr>(expr)->getElements();
@@ -1348,7 +1351,7 @@ Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
               "', expected '", ArrayType::getIndexType(), "'");
     }
 
-    if (!arrayType.isUnsizedArrayType()) {
+    if (arrayType.isArrayWithConstantSize()) {
         if (expr.getIndexExpr()->isConstant()) {
             auto index = expr.getIndexExpr()->getConstantIntegerValue();
 

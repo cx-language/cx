@@ -73,11 +73,9 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
     auto pointeeType = expr.getType().getWrappedType().getPointee();
 
-    if (pointeeType.isUnsizedArrayType()) {
-        return llvm::ConstantStruct::getAnon({
-            llvm::ConstantPointerNull::get(toIR(pointeeType.getElementType())->getPointerTo()),
-            llvm::ConstantInt::getSigned(llvm::Type::getInt32Ty(ctx), 0)
-        });
+    if (pointeeType.isArrayWithUnknownSize()) {
+        auto* pointerType = toIR(pointeeType.getElementType())->getPointerTo();
+        return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(pointerType));
     }
 
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
@@ -256,14 +254,14 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
     }
 }
 
-bool isSizedArrayToUnsizedArrayRefConversion(Type sourceType, llvm::Type* targetType) {
-    return sourceType.removePointer().isSizedArrayType() && targetType->isStructTy()
+bool isBuiltinArrayToArrayRefConversion(Type sourceType, llvm::Type* targetType) {
+    return sourceType.removePointer().isArrayWithConstantSize() && targetType->isStructTy()
         && targetType->getStructName().startswith("ArrayRef");
 }
 
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
-    if (targetType && isSizedArrayToUnsizedArrayRefConversion(expr.getType(), targetType)) {
-        ASSERT(expr.getType().removePointer().getArraySize() != ArrayType::unsized);
+    if (targetType && isBuiltinArrayToArrayRefConversion(expr.getType(), targetType)) {
+        ASSERT(expr.getType().removePointer().isArrayWithConstantSize());
         auto* value = codegenLvalueExpr(expr);
 
         if (!value->getType()->isPointerTy()) {
@@ -282,6 +280,12 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         return builder.CreateInsertValue(arrayRef, size, 1);
     }
 
+    // Handle implicit conversions to type 'T[?]*'.
+    if (targetType && expr.getType().removePointer().isArrayWithConstantSize()
+        && targetType->isPointerTy() && !targetType->getPointerElementType()->isArrayTy()) {
+        return builder.CreateBitOrPointerCast(codegenLvalueExpr(expr), targetType);
+    }
+
     // Handle implicit conversions to void pointer.
     if (targetType && expr.getType().isPointerType() && !expr.getType().getPointee().isVoid()
         && targetType->isPointerTy() && targetType->getPointerElementType()->isIntegerTy(8)) {
@@ -292,7 +296,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     if (exprType.isPointerType()) exprType = exprType.getPointee();
 
     if (!targetType || expr.isRvalue() || !exprType.isBasicType()) {
-        if (expr.getType().isSizedArrayType() && targetType->isPointerTy()) {
+        if (expr.getType().isArrayWithConstantSize() && targetType->isPointerTy()) {
             return codegenLvalueExpr(expr);
         }
 
@@ -433,12 +437,11 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
 llvm::Value* IRGenerator::codegenCastExpr(const CastExpr& expr) {
     auto* value = codegenExpr(expr.getExpr());
     auto* type = toIR(expr.getTargetType());
+
     if (value->getType()->isIntegerTy() && type->isIntegerTy()) {
         return builder.CreateIntCast(value, type, expr.getExpr().getType().isSigned());
     }
-    if (expr.getExpr().getType().isPointerType() && expr.getExpr().getType().getPointee().isUnsizedArrayType()) {
-        value = builder.CreateExtractValue(value, 0);
-    }
+
     return builder.CreateBitOrPointerCast(value, type);
 }
 
@@ -473,7 +476,7 @@ llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type membe
 }
 
 llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
-    if (objectType.isUnsizedArrayType() || objectType.isString()) {
+    if (objectType.isArrayWithRuntimeSize() || objectType.isString()) {
         return builder.CreateExtractValue(codegenExpr(object), 1, "size");
     } else {
         return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), objectType.getArraySize());
@@ -513,13 +516,18 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
     auto* value = codegenLvalueExpr(*expr.getBaseExpr());
     Type lhsType = expr.getBaseExpr()->getType();
 
-    if (lhsType.isPointerType() && lhsType.getPointee().isUnsizedArrayType()) {
+    if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithRuntimeSize()) {
         if (value->getType()->isPointerTy()) {
             value = builder.CreateLoad(value);
         }
         return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegenExpr(*expr.getIndexExpr()));
     }
+    
     if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
+
+    if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithUnknownSize()) {
+        return builder.CreateGEP(value, codegenExpr(*expr.getIndexExpr()));
+    }
 
     return builder.CreateGEP(value, {
         llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0),

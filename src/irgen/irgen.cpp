@@ -157,7 +157,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             return codegenTypeDecl(*llvm::cast<BasicType>(*type).getDecl());
         }
         case TypeKind::ArrayType:
-            ASSERT(type.getArraySize() != ArrayType::unsized, "unimplemented");
+            ASSERT(type.isArrayWithConstantSize(), "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType(), location), type.getArraySize());
         case TypeKind::TupleType:
             llvm_unreachable("IRGen doesn't support tuple types yet");
@@ -167,9 +167,12 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             return llvm::FunctionType::get(returnType, paramTypes, false)->getPointerTo();
         }
         case TypeKind::PointerType: {
-            if (type.getPointee().isUnsizedArrayType()) {
+            if (type.getPointee().isArrayWithRuntimeSize()) {
                 return toIR(BasicType::get("ArrayRef", type.getPointee().getElementType()), location);
+            } else if (type.getPointee().isArrayWithUnknownSize()) {
+                return llvm::PointerType::get(toIR(type.getPointee().getElementType(), location), 0);
             }
+
             auto* pointeeType = toIR(type.getPointee(), location);
             if (!pointeeType->isVoidTy()) return llvm::PointerType::get(pointeeType, 0);
             else return llvm::PointerType::get(llvm::Type::getInt8Ty(ctx), 0);

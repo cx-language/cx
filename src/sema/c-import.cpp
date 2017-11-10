@@ -114,7 +114,7 @@ Type toDelta(clang::QualType qualtype) {
         }
         case clang::Type::IncompleteArray:
             return ArrayType::get(toDelta(llvm::cast<clang::IncompleteArrayType>(type).getElementType()),
-                                  ArrayType::unsized);
+                                  ArrayType::unknownSize);
         case clang::Type::Attributed:
             return toDelta(llvm::cast<clang::AttributedType>(type).getEquivalentType());
         case clang::Type::Decayed:

@@ -307,12 +307,19 @@ int64_t parseArraySizeInBrackets() {
     consumeToken();
     int64_t arraySize;
 
-    if (currentToken() == RBRACKET) {
-        arraySize = ArrayType::unsized;
-    } else if (currentToken() == INT_LITERAL) {
-        arraySize = consumeToken().getIntegerValue();
-    } else {
-        error(getCurrentLocation(), "non-literal array bounds not implemented yet");
+    switch (currentToken()) {
+        case INT_LITERAL:
+            arraySize = consumeToken().getIntegerValue();
+            break;
+        case RBRACKET:
+            arraySize = ArrayType::runtimeSize;
+            break;
+        case QUESTION_MARK:
+            consumeToken();
+            arraySize = ArrayType::unknownSize;
+            break;
+        default:
+            error(getCurrentLocation(), "non-literal array bounds not implemented yet");
     }
 
     parse(RBRACKET);

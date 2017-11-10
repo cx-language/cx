@@ -374,7 +374,7 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
             typecheckType(type.getReturnType(), location);
             break;
         case TypeKind::PointerType: {
-            if (type.getPointee().isUnsizedArrayType()) {
+            if (type.getPointee().isArrayWithRuntimeSize()) {
                 if (findDecls(mangleTypeDecl("ArrayRef", type.getPointee().getElementType())).empty()) {
                     auto& arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation::invalid()));
                     auto* instantiation = arrayRef.instantiate({type.getPointee().getElementType()});
