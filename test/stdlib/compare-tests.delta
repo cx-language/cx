@@ -1,0 +1,25 @@
+// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+
+class C: Comparable {
+
+    var a: int;
+
+    init(a: int) {
+        this.a = a;
+    }
+
+    func compare(other: C) -> int {
+        return other.a < this.a;
+    }
+}
+
+func main() {
+    var a = C(6);
+    var b = C(99);
+
+    assert(a <= b, "Comparison works");
+    assert(!(a >= b), "Comparison works");
+    assert(!(a > b), "Comparison works");
+    assert(!(a == b), "Comparison works");
+    assert(a != b, "Comparison works");
+}

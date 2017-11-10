@@ -9,7 +9,7 @@ struct ArrayIterator<Element>: Iterator<Element*> {
     }
 
     func hasValue() -> bool {
-        return current != end;
+        return cast<void*>(current) != cast<void*>(end);
     }
 
     func value() -> Element* {

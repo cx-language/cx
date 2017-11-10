@@ -83,12 +83,13 @@ bool Token::isCompoundAssignmentOperator() const {
     }
 }
 
-bool Token::isOverloadable() const {
-    switch (kind) {
-        case EQ: case LT: case PLUS: case MINUS: case STAR: case SLASH: case MOD: return true;
+ bool Token::isOverloadable() const {
+     switch (kind) {
+        case EQ: case NE: case LT: case LE: case GT: case GE:
+        case PLUS: case MINUS: case STAR: case SLASH: case MOD: return true;
         default: return false;
-    }
-}
+     }
+ }
 
 int Token::getPrecedence() const {
     return int(getPrecedenceGroup(kind));
