@@ -13,7 +13,7 @@ the array.
 ```swift
 var a = Array<int>();
 let error = a[1];
-// => Array index 1 is out ofbounds, size is 0
+// => Array index 1 is out of bounds, size is 0
 ```
 
 We can also access elements using the short-hand functions `first` and `last`:
