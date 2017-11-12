@@ -1,6 +1,4 @@
 // RUN: %delta -typecheck -Iinputs %s
-// FIXME
-// XFAIL: *
 
 import inputs
 

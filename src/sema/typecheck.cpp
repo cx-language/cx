@@ -379,7 +379,7 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
                     auto& arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation::invalid()));
                     auto* instantiation = arrayRef.instantiate({type.getPointee().getElementType()});
                     addToSymbolTable(*instantiation);
-                    typecheckTypeDecl(*instantiation);
+                    declsToTypecheck.push_back(instantiation);
                 }
             } else {
                 typecheckType(type.getPointee(), location);
@@ -752,7 +752,7 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     ASSERT(decls.size() == 1);
     auto instantiation = llvm::cast<TypeTemplate>(decls[0])->instantiate(type.getGenericArgs());
     addToSymbolTable(*instantiation);
-    typecheckTypeDecl(*instantiation);
+    declsToTypecheck.push_back(instantiation);
     return instantiation;
 }
 
@@ -936,9 +936,9 @@ void Typechecker::postProcess() {
     isPostProcessing = true;
 
     while (!declsToTypecheck.empty()) {
-        auto genericFunctionInstantiations = std::move(declsToTypecheck);
+        auto currentDeclsToTypecheck = std::move(declsToTypecheck);
 
-        for (auto* decl : genericFunctionInstantiations) {
+        for (auto* decl : currentDeclsToTypecheck) {
             switch (decl->getKind()) {
                 case DeclKind::FunctionDecl:
                 case DeclKind::MethodDecl:

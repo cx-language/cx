@@ -1,0 +1,20 @@
+// RUN: %delta -print-ir %s
+
+func f() {
+    let index = 0;
+    let x = g();
+    X<int>().g();
+}
+
+func g() -> X<int> {
+    var x = X<int>();
+    return x;
+}
+
+class X<T> {
+    init() {}
+
+    func g() {
+        let index = 0;
+    }
+}

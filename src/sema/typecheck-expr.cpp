@@ -765,7 +765,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                     if (decls.empty()) {
                         typeDecl = typeTemplate->instantiate(genericArgs);
                         addToSymbolTable(*typeDecl);
-                        typecheckTypeDecl(*typeDecl);
+                        declsToTypecheck.push_back(typeDecl);
                     } else {
                         typeDecl = llvm::cast<TypeDecl>(decls[0]);
                     }
