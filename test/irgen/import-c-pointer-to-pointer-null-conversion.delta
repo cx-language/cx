@@ -1,0 +1,8 @@
+// RUN: %delta -print-ir %s -Iinputs | %FileCheck %s
+
+import "import-c-pointer-to-pointer-null-conversion.h";
+
+func main() {
+    // CHECK: call void @foo(i8** null)
+    foo(p: null);
+}

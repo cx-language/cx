@@ -288,7 +288,9 @@ bool Typechecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::
 }
 
 bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const {
-    if (target.isOptionalType()) {
+    bool isNullLiteral = expr && expr->isNullLiteralExpr();
+
+    if (target.isOptionalType() && !isNullLiteral) {
         if (isImplicitlyConvertible(expr, source, target.getWrappedType(), convertedType)) {
             return true;
         }
