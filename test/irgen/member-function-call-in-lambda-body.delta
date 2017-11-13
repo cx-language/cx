@@ -1,0 +1,20 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=LAMBDA
+
+class X {
+    func foo() -> int {
+        return 42;
+    }
+}
+
+// CHECK-LABEL: define i32 @main()
+// CHECK-NEXT: %lambda = alloca i32 ({}*)*
+// CHECK-NEXT: store i32 ({}*)* @__lambda0, i32 ({}*)** %lambda
+// CHECK-NEXT: ret i32 0
+func main() {
+    let lambda = (x: X*) -> x.foo();
+}
+
+// LAMBDA-LABEL: define i32 @__lambda0({}* %x)
+// LAMBDA-NEXT: %1 = call i32 @X.foo({}* %x)
+// LAMBDA-NEXT: ret i32 %1

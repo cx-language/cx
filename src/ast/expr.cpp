@@ -238,6 +238,8 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             if (auto* callee = callExpr->getCalleeDecl()) {
                 llvm::cast<CallExpr>(*instantiation).setCalleeDecl(callee);
             }
+            Type receiverType = callExpr->getReceiverType().resolve(genericArgs);
+            llvm::cast<CallExpr>(*instantiation).setReceiverType(receiverType);
             break;
         }
         case ExprKind::CastExpr: {
