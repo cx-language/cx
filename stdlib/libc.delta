@@ -21,5 +21,5 @@ extern func rewind(file: void*);
 extern func strlen(string: char*) -> uint64;
 
 // execinfo.h
-extern func backtrace(array: mutable (mutable void*)*, size: int) -> int;
-extern func backtrace_symbols(array: mutable void**, size: int) -> mutable (mutable char*)*;
+extern func backtrace(array: mutable void mutable**, size: int) -> int;
+extern func backtrace_symbols(array: mutable void**, size: int) -> mutable char mutable**;

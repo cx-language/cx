@@ -271,24 +271,18 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             getReturnType().printTo(stream, true);
             break;
         case TypeKind::PointerType:
+            getPointee().printTo(stream, false);
             if (isMutable() && !omitTopLevelMutable) {
-                stream << "mutable(";
-                getPointee().printTo(stream, false);
-                stream << "*)";
-            } else {
-                getPointee().printTo(stream, false);
-                stream << '*';
+                stream << " mutable";
             }
+            stream << '*';
             break;
         case TypeKind::OptionalType:
+            getWrappedType().printTo(stream, false);
             if (isMutable() && !omitTopLevelMutable) {
-                stream << "mutable(";
-                getWrappedType().printTo(stream, false);
-                stream << "?)";
-            } else {
-                getWrappedType().printTo(stream, false);
-                stream << '?';
+                stream << " mutable";
             }
+            stream << '?';
             break;
     }
 }

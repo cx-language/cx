@@ -1,4 +1,0 @@
-// RUN: not %delta -parse %s | %FileCheck %s
-
-// CHECK: [[@LINE+1]]:25: error: expected ')', got ';'
-var p: mutable(int**?**?;

@@ -177,13 +177,12 @@ member function calls, and subscript operations via pointers are allowed: they
 will be forwarded to the pointee value.
 
 > _pointer-type_ → _pointee-type_ `*`<br>
+> _pointer-type_ → _pointee-type_ `mutable` `*`<br>
 > _pointer-type_ → `mutable` _pointee-type_ `*`<br>
-> _pointer-type_ → `mutable` `(` _pointee-type_ `*` `)`<br>
-> _pointer-type_ → `mutable` `(` `mutable` _pointee-type_ `*` `)`<br>
+> _pointer-type_ → `mutable` _pointee-type_ `mutable` `*`<br>
 
 Prefixing the _pointee-type_ with `mutable` makes the _pointee-type_ mutable.
-Enclosing the _pointer-type_ in parentheses and prefixing the parentheses with
-`mutable` makes the _pointer-type_ itself mutable.
+Prefixing the `*` with `mutable` makes the _pointer-type_ itself mutable.
 
 Pointer arithmetic is supported in the form of the following operations:
 

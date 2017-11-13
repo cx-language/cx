@@ -328,8 +328,7 @@ int64_t parseArraySizeInBrackets() {
 
 /// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
 Type parseSimpleType(bool isMutable) {
-    ASSERT(currentToken() == IDENTIFIER);
-    llvm::StringRef id = consumeToken().getString();
+    llvm::StringRef id = parse(IDENTIFIER).getString();
 
     Type type;
     std::vector<Type> genericArgs;
@@ -368,7 +367,7 @@ Type parseFunctionType() {
     return FunctionType::get(returnType, std::move(paramTypes));
 }
 
-/// type ::= simple-type | 'mutable' simple-type | 'mutable' '(' type ')' | type '*' | type '?' | function-type
+/// type ::= simple-type | 'mutable' simple-type | type 'mutable'? '*' | type 'mutable'? '?' | function-type
 Type parseType() {
     Type type;
 
@@ -378,13 +377,7 @@ Type parseType() {
             break;
         case MUTABLE:
             consumeToken();
-            if (currentToken() != LPAREN) {
-                type = parseSimpleType(true);
-            } else {
-                consumeToken();
-                type = parseType();
-                parse(RPAREN);
-            }
+            type = parseSimpleType(true);
             type.setMutable(true);
             break;
         case LPAREN:
@@ -403,6 +396,20 @@ Type parseType() {
             case QUESTION_MARK:
                 type = OptionalType::get(type);
                 consumeToken();
+                break;
+            case MUTABLE:
+                consumeToken();
+                switch (currentToken()) {
+                    case STAR:
+                        type = PointerType::get(type, true);
+                        consumeToken();
+                        break;
+                    case QUESTION_MARK:
+                        type = OptionalType::get(type, true);
+                        consumeToken();
+                    default:
+                        unexpectedToken(currentToken(), { STAR, QUESTION_MARK }, "after 'mutable'");
+                }
                 break;
             case LBRACKET:
                 type = ArrayType::get(type, parseArraySizeInBrackets());

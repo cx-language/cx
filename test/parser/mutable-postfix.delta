@@ -1,0 +1,4 @@
+// RUN: not %delta -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:20: error: expected '*' or '?' after 'mutable', got ';'
+var p: int* mutable;
