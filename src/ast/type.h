@@ -97,7 +97,7 @@ public:
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
-    std::string toString() const;
+    std::string toString(bool omitTopLevelMutable = false) const;
 
     llvm::StringRef getName() const;
     Type getElementType() const;

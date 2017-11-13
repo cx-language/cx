@@ -24,8 +24,7 @@ std::string delta::mangleFunctionDecl(Type receiver, llvm::StringRef name, llvm:
     std::string mangled;
 
     if (receiver) {
-        mangled = receiver.getName();
-        appendGenericArgs(mangled, receiver.getGenericArgs());
+        mangled = receiver.toString(true);
         mangled += '.';
     }
 

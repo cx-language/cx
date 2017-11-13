@@ -293,9 +293,9 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
     }
 }
 
-std::string Type::toString() const {
+std::string Type::toString(bool omitTopLevelMutable) const {
     std::ostringstream stream;
-    printTo(stream, false);
+    printTo(stream, omitTopLevelMutable);
     return stream.str();
 }
 

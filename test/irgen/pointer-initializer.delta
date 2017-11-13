@@ -1,0 +1,21 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK-LABEL: define void @f(i8** %p, i8* %x)
+func f(p: mutable(char*)*, x: char*) {
+    // CHECK-NEXT: %pp = alloca i8**
+    var pp: mutable(char*)* = undefined;
+
+    // CHECK-NEXT: store i8** %p, i8*** %pp
+    (&pp).init(p);
+
+    // CHECK-NEXT: %pp1 = load i8**, i8*** %pp
+    // CHECK-NEXT: store i8* %x, i8** %pp1
+    pp.init(x);
+
+    // CHECK-NEXT: %pp2 = load i8**, i8*** %pp
+    // CHECK-NEXT: %1 = load i8*, i8** %pp2
+    // CHECK-NEXT: store i8 120, i8* %1
+    (*pp).init('x');
+
+    // CHECK-NEXT: ret void
+}

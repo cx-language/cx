@@ -972,7 +972,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         auto decls = findCalleeCandidates(expr, callee);
 
         if (expr.isMoveInit()) {
-            expr.getArgs()[0].getValue()->setMoved(true);
+            if (!isImplicitlyCopyable(expr.getArgs()[0].getValue()->getType())) {
+                expr.getArgs()[0].getValue()->setMoved(true);
+            }
             return Type::getVoid();
         }
 
