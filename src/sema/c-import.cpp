@@ -72,6 +72,15 @@ Type toDelta(const clang::BuiltinType& type) {
     llvm_unreachable("unsupported builtin type");
 }
 
+llvm::StringRef getRecordName(const clang::RecordDecl& recordDecl) {
+    if (!recordDecl.getName().empty()) {
+        return recordDecl.getName();
+    } else if (auto* typedefNameDecl = recordDecl.getTypedefNameForAnonDecl()) {
+        return typedefNameDecl->getName();
+    }
+    return "";
+}
+
 Type toDelta(clang::QualType qualtype) {
     const bool isMutable = !qualtype.isConstQualified();
     auto& type = *qualtype.getTypePtr();
@@ -92,9 +101,10 @@ Type toDelta(clang::QualType qualtype) {
         }
         case clang::Type::Elaborated:
             return toDelta(llvm::cast<clang::ElaboratedType>(type).getNamedType());
-        case clang::Type::Record:
-            return BasicType::get(llvm::cast<clang::RecordType>(type).getDecl()->getName(),
-                                  {}, isMutable);
+        case clang::Type::Record: {
+            auto* recordDecl = llvm::cast<clang::RecordType>(type).getDecl();
+            return BasicType::get(getRecordName(*recordDecl), {}, isMutable);
+        }
         case clang::Type::Paren:
             return toDelta(llvm::cast<clang::ParenType>(type).getInnerType());
         case clang::Type::FunctionProto: {
@@ -145,10 +155,8 @@ llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDe
 }
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
-    if (decl.getName().empty()) return llvm::None;
-
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct,
-                      decl.getNameAsString(), {}, {}, *currentModule, SourceLocation::invalid());
+                      getRecordName(decl), {}, {}, *currentModule, SourceLocation::invalid());
     typeDecl.getFields().reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, typeDecl)) {

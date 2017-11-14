@@ -474,6 +474,7 @@ void Typechecker::addToSymbolTable(VarDecl&& decl) const {
 }
 
 void Typechecker::addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) const {
+    ASSERT(!target.empty());
     getCurrentModule()->getSymbolTable().addIdentifierReplacement(source, target);
 }
 

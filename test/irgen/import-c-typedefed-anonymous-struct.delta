@@ -1,0 +1,8 @@
+// RUN: %delta -print-ir %s -Iinputs
+
+import "import-c-typedefed-anonymous-struct.h";
+
+func main() {
+    var x: Foo = undefined;
+    foo(x);
+}
