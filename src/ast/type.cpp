@@ -271,16 +271,28 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             getReturnType().printTo(stream, true);
             break;
         case TypeKind::PointerType:
+            if (getPointee().isFunctionType()) {
+                stream << '(';
+            }
             getPointee().printTo(stream, false);
             if (isMutable() && !omitTopLevelMutable) {
                 stream << " mutable";
             }
+            if (getPointee().isFunctionType()) {
+                stream << ')';
+            }
             stream << '*';
             break;
         case TypeKind::OptionalType:
+            if (getWrappedType().isFunctionType()) {
+                stream << '(';
+            }
             getWrappedType().printTo(stream, false);
             if (isMutable() && !omitTopLevelMutable) {
                 stream << " mutable";
+            }
+            if (getWrappedType().isFunctionType()) {
+                stream << ')';
             }
             stream << '?';
             break;
