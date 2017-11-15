@@ -142,7 +142,7 @@ const char* delta::toString(TokenKind tokenKind) {
     static const char* const tokenStrings[] = {
         "end-of-file", "newline", "identifier", "number", "float literal", "string literal",
         "character literal", "break", "case", "cast", "class", "const", "default", "defer",
-        "deinit", "else", "extern", "false", "for", "func", "if", "import", "in", "init",
+        "deinit", "else", "enum", "extern", "false", "for", "func", "if", "import", "in", "init",
         "interface", "let", "mutable", "mutating", "null", "return", "sizeof", "struct",
         "switch", "this", "true", "undefined", "var", "while",
         "_", "==", "!=", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",

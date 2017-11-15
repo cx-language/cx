@@ -154,7 +154,12 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             auto it = structs.find(name);
             if (it != structs.end()) return it->second.first;
 
-            return codegenTypeDecl(*llvm::cast<BasicType>(*type).getDecl());
+            auto& basicType = llvm::cast<BasicType>(*type);
+            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(basicType.getDecl())) {
+                return toIR(enumDecl->getUnderlyingType());
+            }
+
+            return codegenTypeDecl(*basicType.getDecl());
         }
         case TypeKind::ArrayType:
             ASSERT(type.isArrayWithConstantSize(), "unimplemented");
@@ -697,6 +702,7 @@ void IRGenerator::codegenDecl(const Decl& decl) {
         case DeclKind::FunctionTemplate: break;
         case DeclKind::TypeDecl: codegenTypeDecl(llvm::cast<TypeDecl>(decl)); break;
         case DeclKind::TypeTemplate: break;
+        case DeclKind::EnumDecl: break;
         case DeclKind::VarDecl: codegenVarDecl(llvm::cast<VarDecl>(decl)); break;
         case DeclKind::FieldDecl: llvm_unreachable("handled via TypeDecl");
         case DeclKind::ImportDecl: break;

@@ -50,6 +50,7 @@ public:
     void addToSymbolTable(TypeTemplate& decl) const;
     void addToSymbolTable(TypeDecl& decl) const;
     void addToSymbolTable(TypeDecl&& decl) const;
+    void addToSymbolTable(EnumDecl& decl) const;
     void addToSymbolTable(VarDecl& decl, bool global) const;
     void addToSymbolTable(VarDecl&& decl) const;
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) const;
@@ -85,6 +86,7 @@ private:
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams);
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
+    void typecheckEnumDecl(EnumDecl& decl);
     void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
                              llvm::ArrayRef<std::string> importSearchPaths,
                              llvm::ArrayRef<std::string> frameworkSearchPaths,

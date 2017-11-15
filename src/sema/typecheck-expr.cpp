@@ -57,6 +57,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
         case DeclKind::FunctionTemplate: llvm_unreachable("cannot refer to generic functions yet");
         case DeclKind::TypeDecl: error(expr.getLocation(), "'", expr.getIdentifier(), "' is not a variable");
         case DeclKind::TypeTemplate: llvm_unreachable("cannot refer to generic types yet");
+        case DeclKind::EnumDecl: error(expr.getLocation(), "'", expr.getIdentifier(), "' is not a variable");
         case DeclKind::FieldDecl:
             if (currentFunction->isInitDecl() || currentFunction->isDeinitDecl()) {
                 return llvm::cast<FieldDecl>(decl).getType().asMutable();
@@ -1284,6 +1285,19 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr&) {
 }
 
 Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr())) {
+        auto decls = findDecls(varExpr->getIdentifier());
+        if (!decls.empty()) {
+            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
+                if (!enumDecl->getCaseByName(expr.getMemberName())) {
+                    error(expr.getLocation(), "enum '", enumDecl->getName(),
+                          "' has no case named '", expr.getMemberName(), "'");
+                }
+                return enumDecl->getEnumType();
+            }
+        }
+    }
+
     Type baseType = typecheckExpr(*expr.getBaseExpr());
 
     if (baseType.isOptionalType()) {

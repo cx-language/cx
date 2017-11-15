@@ -1,6 +1,7 @@
 #include <vector>
 #include <forward_list>
 #include <sstream>
+#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
@@ -1132,6 +1133,22 @@ std::unique_ptr<TypeTemplate> parseTypeTemplate() {
     return llvm::make_unique<TypeTemplate>(std::move(genericParams), std::move(typeDecl));
 }
 
+static Token parseTypeHeader(std::vector<Type>& interfaces,
+                             std::vector<GenericParamDecl>* genericParams) {
+    auto name = parse(IDENTIFIER);
+
+    if (currentToken() == LT) {
+        parseGenericParamList(*genericParams);
+    }
+
+    if (currentToken() == COLON) {
+        consumeToken();
+        interfaces = parseNonEmptyTypeList();
+    }
+
+    return name;
+}
+
 /// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}'
 /// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl
@@ -1144,18 +1161,8 @@ std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericPa
         default: llvm_unreachable("invalid token");
     }
 
-    auto name = parse(IDENTIFIER);
-
-    if (currentToken() == LT) {
-        parseGenericParamList(*genericParams);
-    }
-
     std::vector<Type> interfaces;
-
-    if (currentToken() == COLON) {
-        consumeToken();
-        interfaces = parseNonEmptyTypeList();
-    }
+    auto name = parseTypeHeader(interfaces, genericParams);
 
     auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::vector<Type>(),
                                                 std::move(interfaces), *currentModule,
@@ -1201,6 +1208,33 @@ std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericPa
     return typeDecl;
 }
 
+/// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' enum-case-decl* '}'
+/// enum-case-decl ::= 'case' id ('\n' | ';')
+std::unique_ptr<EnumDecl> parseEnumDecl(std::vector<GenericParamDecl>* genericParams) {
+    ASSERT(currentToken() == ENUM);
+    consumeToken();
+
+    std::vector<Type> interfaces;
+    auto name = parseTypeHeader(interfaces, genericParams);
+
+    parse(LBRACE);
+    std::vector<EnumCase> cases;
+    auto valueCounter = llvm::APSInt::get(0);
+
+    while (currentToken() != RBRACE) {
+        parse(CASE);
+        auto caseName = parse(IDENTIFIER);
+        auto value = llvm::make_unique<IntLiteralExpr>(valueCounter.getExtValue(), caseName.getLocation());
+        cases.emplace_back(caseName.getString(), std::move(value), caseName.getLocation());
+        parseStmtTerminator("after enum case");
+        ++valueCounter;
+    }
+
+    consumeToken();
+    return llvm::make_unique<EnumDecl>(name.getString(), std::move(cases), *currentModule,
+                                       name.getLocation());
+}
+
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')
 std::unique_ptr<ImportDecl> parseImportDecl() {
     ASSERT(currentToken() == IMPORT);
@@ -1219,7 +1253,7 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
     return llvm::make_unique<ImportDecl>(std::move(importTarget), *currentModule, location);
 }
 
-/// top-level-decl ::= function-decl | extern-function-decl | type-decl | import-decl | var-decl
+/// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | import-decl | var-decl
 std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
     switch (currentToken()) {
         case FUNC:
@@ -1245,6 +1279,15 @@ std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
             } else {
                 auto decl = parseTypeDecl(nullptr);
                 typechecker.addToSymbolTable(*decl);
+                return std::move(decl);
+            }
+        }
+        case ENUM: {
+            if (lookAhead(2) == LT) {
+                error(getCurrentLocation(), "generic enums not implemented yet");
+            } else {
+                auto decl = parseEnumDecl(nullptr);
+                typechecker.addToSymbolTable(llvm::cast<EnumDecl>(*decl));
                 return std::move(decl);
             }
         }

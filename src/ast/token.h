@@ -23,6 +23,7 @@ enum TokenKind {
     DEFER,
     DEINIT,
     ELSE,
+    ENUM,
     EXTERN,
     FALSE,
     FOR,

@@ -499,6 +499,14 @@ llvm::Value* IRGenerator::codegenLvalueMemberExpr(const MemberExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
+    if (auto* basicType = llvm::dyn_cast<BasicType>(expr.getType().getBase())) {
+        if (basicType->getDecl()) {
+            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(basicType->getDecl())) {
+                return codegenExpr(*enumDecl->getCaseByName(expr.getMemberName())->getValue());
+            }
+        }
+    }
+
     auto* value = codegenLvalueMemberExpr(expr);
 
     if (value->getType()->isPointerTy() && !expr.getType().isPointerType()) {

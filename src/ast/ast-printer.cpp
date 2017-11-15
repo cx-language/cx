@@ -303,12 +303,21 @@ std::ostream& operator<<(std::ostream& out, const TypeDecl& decl) {
         case TypeTag::Class: out << "class "; break;
         case TypeTag::Interface: out << "interface "; break;
         case TypeTag::Union: out << "union "; break;
+        case TypeTag::Enum: out << "enum "; break;
     }
     out << decl.getName();
     indentLevel++;
+
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&decl)) {
+        for (auto& enumCase : enumDecl->getCases()) {
+            out << br << "(enum-case " << enumCase.getName() << " " << *enumCase.getValue() << ")";
+        }
+    }
+
     for (const FieldDecl& field : decl.getFields()) {
         out << field;
     }
+
     indentLevel--;
     return out << ")";
 }
@@ -332,6 +341,7 @@ std::ostream& operator<<(std::ostream& out, const Decl& decl) {
         case DeclKind::FunctionTemplate: return out << llvm::cast<FunctionTemplate>(decl);
         case DeclKind::TypeDecl: return out << llvm::cast<TypeDecl>(decl);
         case DeclKind::TypeTemplate: return out << llvm::cast<TypeTemplate>(decl);
+        case DeclKind::EnumDecl: return out << llvm::cast<EnumDecl>(decl);
         case DeclKind::VarDecl: return out << llvm::cast<VarDecl>(decl);
         case DeclKind::FieldDecl: return out << llvm::cast<FieldDecl>(decl);
         case DeclKind::ImportDecl: return out << llvm::cast<ImportDecl>(decl);

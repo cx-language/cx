@@ -1,0 +1,16 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+var x = 0;
+
+enum A {
+    case x;
+    case y;
+    case z;
+}
+
+// CHECK-LABEL: define i32 @main()
+func main() {
+    // CHECK-NEXT: %foo = alloca i32
+    // CHECK-NEXT: store i32 2, i32* %foo
+    let foo = A.z;
+}

@@ -222,6 +222,7 @@ const llvm::StringMap<TokenKind> keywords = {
     {"defer",         DEFER},
     {"deinit",        DEINIT},
     {"else",          ELSE},
+    {"enum",          ENUM},
     {"extern",        EXTERN},
     {"false",         FALSE},
     {"for",           FOR},

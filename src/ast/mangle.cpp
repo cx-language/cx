@@ -69,3 +69,7 @@ std::string delta::mangleTypeDecl(llvm::StringRef typeName, llvm::ArrayRef<Type>
 std::string delta::mangle(const FieldDecl& decl) {
     return (mangle(*decl.getParent()) + "." + decl.getName()).str();
 }
+
+std::string delta::mangle(const EnumDecl& decl) {
+    return mangleTypeDecl(decl.getName(), {});
+}

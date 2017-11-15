@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -445,6 +446,10 @@ void Typechecker::addToSymbolTable(TypeDecl& decl) const {
     }
 }
 
+void Typechecker::addToSymbolTable(EnumDecl& decl) const {
+    addToSymbolTableWithName(decl, mangle(decl), true);
+}
+
 void Typechecker::addToSymbolTable(VarDecl& decl, bool global) const {
     addToSymbolTableWithName(decl, decl.getName(), global);
 }
@@ -569,7 +574,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, bool everywhere,
     if (getCurrentModule()->getName() != "std") {
         append(decls, findDeclsInModules(name, llvm::makeArrayRef(getCurrentModule())));
     }
-    
+
     append(decls, findDeclsInModules(name, getStdlibModules()));
     append(decls, everywhere ? findDeclsInModules(name, getAllImportedModules())
                              : findDeclsInModules(name, getCurrentSourceFile()->getImportedModules()));
@@ -734,6 +739,28 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
 
 void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
     typecheckGenericParamDecls(decl.getGenericParams());
+}
+
+void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
+    std::vector<const EnumCase*> cases = map(decl.getCases(), [](const EnumCase& c) { return &c; });
+
+    std::sort(cases.begin(), cases.end(), [](const EnumCase* a, const EnumCase* b) {
+        return a->getName() < b->getName();
+    });
+
+    auto it = std::adjacent_find(cases.begin(), cases.end(), [](const EnumCase* a, const EnumCase* b) {
+        return a->getName() == b->getName();
+    });
+
+    if (it != cases.end()) {
+        error((*it)->getLocation(), "duplicate enum case '", (*it)->getName(), "'");
+    }
+
+    for (auto& enumCase : decl.getCases()) {
+        typecheckExpr(*enumCase.getValue());
+    }
+
+    llvm::cast<BasicType>(*decl.getEnumType()).setDecl(&decl);
 }
 
 TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
@@ -914,6 +941,7 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
         case DeclKind::FunctionTemplate: typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl)); break;
         case DeclKind::TypeDecl: typecheckTypeDecl(llvm::cast<TypeDecl>(decl)); break;
         case DeclKind::TypeTemplate: typecheckTypeTemplate(llvm::cast<TypeTemplate>(decl)); break;
+        case DeclKind::EnumDecl: typecheckEnumDecl(llvm::cast<EnumDecl>(decl)); break;
         case DeclKind::VarDecl: typecheckVarDecl(llvm::cast<VarDecl>(decl), true); break;
         case DeclKind::FieldDecl: llvm_unreachable("no top-level field declarations");
         case DeclKind::ImportDecl: typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest,

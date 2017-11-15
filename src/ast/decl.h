@@ -48,6 +48,7 @@ enum class DeclKind {
     FunctionTemplate,
     TypeDecl,
     TypeTemplate,
+    EnumDecl,
     VarDecl,
     FieldDecl, /// A struct or class field declaration.
     ImportDecl,
@@ -64,8 +65,9 @@ public:
     bool isInitDecl() const { return getKind() == DeclKind::InitDecl; }
     bool isDeinitDecl() const { return getKind() == DeclKind::DeinitDecl; }
     bool isFunctionTemplate() const { return getKind() == DeclKind::FunctionTemplate; }
-    bool isTypeDecl() const { return getKind() == DeclKind::TypeDecl; }
+    bool isTypeDecl() const { return getKind() == DeclKind::TypeDecl || getKind() == DeclKind::EnumDecl; }
     bool isTypeTemplate() const { return getKind() == DeclKind::TypeTemplate; }
+    bool isEnumDecl() const { return getKind() == DeclKind::EnumDecl; }
     bool isVarDecl() const { return getKind() == DeclKind::VarDecl; }
     bool isFieldDecl() const { return getKind() == DeclKind::FieldDecl; }
     bool isImportDecl() const { return getKind() == DeclKind::ImportDecl; }
@@ -266,7 +268,7 @@ private:
     std::unordered_map<std::vector<Type>, std::unique_ptr<FunctionDecl>> instantiations;
 };
 
-enum class TypeTag { Struct, Class, Interface, Union };
+enum class TypeTag { Struct, Class, Interface, Union, Enum };
 
 /// A non-template function declaration or a function template instantiation.
 class TypeDecl : public Decl {
@@ -297,7 +299,11 @@ public:
     bool isUnion() const { return tag == TypeTag::Union; }
     unsigned getFieldIndex(llvm::StringRef fieldName) const;
     Module* getModule() const { return &module; }
-    static bool classof(const Decl* d) { return d->getKind() == DeclKind::TypeDecl; }
+    static bool classof(const Decl* d) { return d->isTypeDecl(); }
+
+protected:
+    TypeDecl(DeclKind kind, TypeTag tag, std::string&& name, Module& module, SourceLocation location)
+    : Decl(kind), tag(tag), name(std::move(name)), location(location), module(module) {}
 
 private:
     TypeTag tag;
@@ -325,6 +331,37 @@ private:
     std::vector<GenericParamDecl> genericParams;
     std::unique_ptr<TypeDecl> typeDecl;
     std::unordered_map<std::vector<Type>, std::unique_ptr<TypeDecl>> instantiations;
+};
+
+class EnumCase {
+public:
+    EnumCase(std::string&& name, std::unique_ptr<Expr> value, SourceLocation location)
+    : name(std::move(name)), value(std::move(value)), location(location) {}
+    llvm::StringRef getName() const { return name; }
+    Expr* getValue() const { return value.get(); }
+    SourceLocation getLocation() const { return location; }
+
+private:
+    std::string name;
+    std::unique_ptr<Expr> value;
+    SourceLocation location;
+};
+
+class EnumDecl : public TypeDecl {
+public:
+    EnumDecl(std::string&& name, std::vector<EnumCase>&& cases, Module& module,
+             SourceLocation location)
+    : TypeDecl(DeclKind::EnumDecl, TypeTag::Enum, std::move(name), module, location),
+      cases(std::move(cases)) {}
+    llvm::ArrayRef<EnumCase> getCases() const { return cases; }
+    const EnumCase* getCaseByName(llvm::StringRef name) const;
+    Type getEnumType() const { return BasicType::get(getName(), {}); }
+    // TODO: Select underlying type to be able to hold all case values.
+    Type getUnderlyingType() const { return Type::getInt(); }
+    static bool classof(const Decl* d) { return d->getKind() == DeclKind::EnumDecl; }
+
+private:
+    std::vector<EnumCase> cases;
 };
 
 class VarDecl : public Decl, public Movable {

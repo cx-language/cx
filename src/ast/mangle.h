@@ -17,6 +17,7 @@ class FunctionTemplate;
 class TypeTemplate;
 class TypeDecl;
 class FieldDecl;
+class EnumDecl;
 
 std::string mangle(const FunctionDecl& decl);
 std::string mangleFunctionDecl(Type receiver, llvm::StringRef name, llvm::ArrayRef<Type> genericArgs = {});
@@ -25,5 +26,6 @@ std::string mangleFunctionTemplate(llvm::StringRef receiverType, llvm::StringRef
 std::string mangle(const TypeDecl& decl);
 std::string mangleTypeDecl(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs);
 std::string mangle(const FieldDecl& decl);
+std::string mangle(const EnumDecl& decl);
 
 }

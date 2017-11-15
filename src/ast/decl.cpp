@@ -17,6 +17,7 @@ Module* Decl::getModule() const {
         case DeclKind::FunctionTemplate: return llvm::cast<FunctionTemplate>(this)->getFunctionDecl()->getModule();
         case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(this)->getModule();
         case DeclKind::TypeTemplate: return llvm::cast<TypeTemplate>(this)->getModule();
+        case DeclKind::EnumDecl: return llvm::cast<EnumDecl>(this)->getModule();
         case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->getModule();
         case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(this)->getParent()->getModule();
         case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(this)->getModule();
@@ -157,7 +158,7 @@ Type TypeDecl::getType(bool isMutable) const {
 
 Type TypeDecl::getTypeForPassing(bool isMutable) const {
     switch (tag) {
-        case TypeTag::Struct: case TypeTag::Union:
+        case TypeTag::Struct: case TypeTag::Union: case TypeTag::Enum:
             return getType(isMutable);
         case TypeTag::Class: case TypeTag::Interface:
             return PointerType::get(getType(isMutable));
@@ -199,6 +200,15 @@ TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
     return instantiate(genericArgsMap);
 }
 
+const EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) const {
+    for (auto& enumCase : cases) {
+        if (enumCase.getName() == name) {
+            return &enumCase;
+        }
+    }
+    return nullptr;
+}
+
 SourceLocation Decl::getLocation() const {
     switch (getKind()) {
         case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(this)->getLocation();
@@ -210,6 +220,7 @@ SourceLocation Decl::getLocation() const {
         case DeclKind::FunctionTemplate: return llvm::cast<FunctionTemplate>(this)->getFunctionDecl()->getLocation();
         case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(this)->getLocation();
         case DeclKind::TypeTemplate: return llvm::cast<TypeTemplate>(this)->getTypeDecl()->getLocation();
+        case DeclKind::EnumDecl: return llvm::cast<EnumDecl>(this)->getLocation();
         case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->getLocation();
         case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(this)->getLocation();
         case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(this)->getLocation();
@@ -291,6 +302,9 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
         }
         case DeclKind::TypeTemplate:
             llvm_unreachable("handled via TypeTemplate::instantiate()");
+
+        case DeclKind::EnumDecl:
+            llvm_unreachable("EnumDecl cannot be generic or declared inside another generic type");
 
         case DeclKind::VarDecl: {
             auto* varDecl = llvm::cast<VarDecl>(this);
