@@ -5,6 +5,7 @@ func main() {
     var sum = 0;
 
     // CHECK: [[ITERATOR:%__iterator[0-9]*]] = alloca %"ClosedRangeIterator<int>"
+    // CHECK-NEXT: %1 = alloca %"ClosedRange<int>"
     // CHECK-NEXT: %i = alloca i32
     // CHECK: call void @"ClosedRange<int>.init"(%"ClosedRange<int>"* %1, i32 68, i32 75)
     // CHECK-NEXT: %2 = load %"ClosedRange<int>", %"ClosedRange<int>"* %1

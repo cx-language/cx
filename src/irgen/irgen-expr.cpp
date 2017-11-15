@@ -303,7 +303,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         auto* value = codegenExpr(expr);
 
         if (targetType && targetType->isPointerTy() && !value->getType()->isPointerTy()) {
-            auto* alloca = builder.CreateAlloca(value->getType());
+            auto* alloca = createEntryBlockAlloca(expr.getType(), nullptr);
             builder.CreateStore(value, alloca);
             return alloca;
         } else if (targetType && value->getType()->isPointerTy() && !targetType->isPointerTy()) {
@@ -323,7 +323,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         if (value->getType()->isPointerTy()) {
             return value;
         } else {
-            auto* alloca = builder.CreateAlloca(value->getType());
+            auto* alloca = createEntryBlockAlloca(expr.getType(), nullptr);
             builder.CreateStore(value, alloca);
             return alloca;
         }
@@ -404,8 +404,8 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
             } else if (currentDecl->isInitDecl() && expr.getFunctionName() == "init") {
                 args.emplace_back(findValue("this", nullptr));
             } else {
-                auto* type = toIR(initDecl->getTypeDecl()->getType());
-                auto* alloca = builder.CreateAlloca(type);
+                Type type = initDecl->getTypeDecl()->getType();
+                auto* alloca = createEntryBlockAlloca(type, nullptr);
                 args.emplace_back(alloca);
             }
         } else if (expr.getReceiver()) {

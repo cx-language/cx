@@ -8,13 +8,14 @@ class X {
 // CHECK: define i32 @main()
 func main() {
     // CHECK-NEXT: %x = alloca {}
+    // CHECK-NEXT: %1 = alloca {}
+
     // CHECK-NEXT: call void @X.init({}* %x)
     var x = X();
 
     // CHECK-NEXT: call void @X.deinit({}* %x)
 
     // TODO: Optimize this into only an init call.
-    // CHECK-NEXT: %1 = alloca {}
     // CHECK-NEXT: call void @X.init({}* %1)
     // CHECK-NEXT: %2 = load {}, {}* %1
     // CHECK-NEXT: store {} %2, {}* %x

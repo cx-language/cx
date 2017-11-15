@@ -15,26 +15,28 @@ class C {
 func s() -> S { return S(); }
 func c() -> C { return C(); }
 
+// CHECK-LABEL: define i32 @main()
 func main() {
-    // CHECK: %1 = call %S @s()
-    // CHECK-NEXT: call void @S.f(%S %1)
+    // CHECK-NEXT: %1 = alloca %C
+    // CHECK-NEXT: %2 = alloca %S
+    // CHECK-NEXT: %3 = alloca %C
+
+    // CHECK-NEXT: %4 = call %S @s()
+    // CHECK-NEXT: call void @S.f(%S %4)
     s().f();
 
-    // CHECK-NEXT: %2 = call %C @c()
-    // CHECK-NEXT: %3 = alloca %C
-    // CHECK-NEXT: store %C %2, %C* %3
-    // CHECK-NEXT: call void @C.f(%C* %3)
+    // CHECK-NEXT: %5 = call %C @c()
+    // CHECK-NEXT: store %C %5, %C* %1
+    // CHECK-NEXT: call void @C.f(%C* %1)
     c().f();
 
-    // CHECK-NEXT: %4 = alloca %S
-    // CHECK-NEXT: call void @S.init(%S* %4)
-    // CHECK-NEXT: %5 = load %S, %S* %4
-    // CHECK-NEXT: call void @S.f(%S %5)
+    // CHECK-NEXT: call void @S.init(%S* %2)
+    // CHECK-NEXT: %6 = load %S, %S* %2
+    // CHECK-NEXT: call void @S.f(%S %6)
     S().f();
 
-    // CHECK-NEXT: %6 = alloca %C
-    // CHECK-NEXT: call void @C.init(%C* %6)
-    // CHECK-NEXT: call void @C.f(%C* %6)
+    // CHECK-NEXT: call void @C.init(%C* %3)
+    // CHECK-NEXT: call void @C.f(%C* %3)
     C().f();
 
     // CHECK-NEXT: ret i32 0

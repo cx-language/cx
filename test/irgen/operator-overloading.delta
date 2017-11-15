@@ -23,7 +23,7 @@ func *(a: vec2, b: vec2) -> vec2 {
 func main() {
     var v = vec2(3, 2)
 
-    // CHECK: call %vec2 @"*"(%vec2 %2, %vec2 %v1)
+    // CHECK: call %vec2 @"*"(%vec2 %{{[0-9]+}}, %vec2 %v1)
     v = vec2(2, 4) * v
 
     // CHECK: call i1 [[EQ:@"==\.[0-9]+"]](%vec2 %v2, %vec2 %{{[0-9]+}})

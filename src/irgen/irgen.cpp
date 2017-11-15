@@ -247,7 +247,10 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
     auto* llvmType = toIR(type, decl ? decl->getLocation() : SourceLocation::invalid());
     auto* alloca = builder.CreateAlloca(llvmType, arraySize, name);
     lastAlloca = alloca->getIterator();
-    setLocalValue(type, name.str(), alloca, decl);
+    auto nameString = name.str();
+    if (!nameString.empty()) {
+        setLocalValue(type, std::move(nameString), alloca, decl);
+    }
     builder.SetInsertPoint(insertBlock);
     return alloca;
 }

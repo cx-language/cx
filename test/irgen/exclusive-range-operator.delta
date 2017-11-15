@@ -6,8 +6,9 @@ func main() -> int {
     var p = 9;
 
     // CHECK: alloca %"RangeIterator<int>"
+    // CHECK-NEXT: %1 = alloca %"Range<int>"
     // CHECK-NEXT: %i = alloca i32
-    // CHECK: call void @"Range<int>.init"(%"Range<int>"* %{{[0-9]+}}, i32 0, i32 3)
+    // CHECK: call void @"Range<int>.init"(%"Range<int>"* %1, i32 0, i32 3)
     // CHECK: call %"RangeIterator<int>" @"Range<int>.iterator"
     // CHECK: call i1 @"RangeIterator<int>.hasValue"
     // CHECK: call i32 @"RangeIterator<int>.value"
