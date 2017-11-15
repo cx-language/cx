@@ -63,6 +63,7 @@ public:
     bool isFloatingPoint() const {
         return isFloat() || isFloat32() || isFloat64() || isFloat80();
     }
+    bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
     bool isVoid() const;
     bool isBool() const;

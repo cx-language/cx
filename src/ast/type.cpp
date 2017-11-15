@@ -60,6 +60,13 @@ bool Type::isBuiltinScalar(llvm::StringRef typeName) {
            != std::end(builtinTypeNames);
 }
 
+bool Type::isEnumType() const {
+    if (auto* basicType = llvm::dyn_cast<BasicType>(getBase())) {
+        return basicType->getDecl() && basicType->getDecl()->isEnumDecl();
+    }
+    return false;
+}
+
 Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
     if (!typeBase) return Type(nullptr, isMutable());
 
