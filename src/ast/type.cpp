@@ -101,7 +101,7 @@ void Type::appendType(Type type) {
     else
         subtypes = llvm::cast<TupleType>(*typeBase).getSubtypes();
     subtypes.push_back(type);
-    typeBase = TupleType::get(std::move(subtypes)).get();
+    typeBase = TupleType::get(std::move(subtypes)).getBase();
 }
 
 namespace {

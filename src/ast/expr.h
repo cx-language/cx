@@ -62,7 +62,7 @@ public:
     bool isIfExpr() const { return getKind() == ExprKind::IfExpr; }
 
     ExprKind getKind() const { return kind; }
-    bool hasType() const { return type.get() != nullptr; }
+    bool hasType() const { return type.getBase() != nullptr; }
     Type getType() const { ASSERT(type); return type; }
     void setType(Type type) { ASSERT(type); this->type = type; }
     bool isConstant() const;

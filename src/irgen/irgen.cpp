@@ -396,7 +396,7 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs)
         }
     }
 
-    if (auto* basicType = llvm::dyn_cast<BasicType>(lhs->getType().get())) {
+    if (auto* basicType = llvm::dyn_cast<BasicType>(lhs->getType().getBase())) {
         if (auto* typeDecl = basicType->getDecl()) {
             if (auto* deinit = typeDecl->getDeinitializer()) {
                 llvm::Value* value = codegenLvalueExpr(*lhs);

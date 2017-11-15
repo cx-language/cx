@@ -44,7 +44,7 @@ public:
     : typeBase(typeBase), mutableFlag(isMutable) {}
     TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
-    TypeBase* get() const { return typeBase; }
+    TypeBase* getBase() const { return typeBase; }
 
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
     bool isArrayType() const { return getKind() == TypeKind::ArrayType; }

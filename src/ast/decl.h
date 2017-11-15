@@ -18,10 +18,10 @@ template<>
 struct hash<std::vector<delta::Type>> {
     size_t operator()(llvm::ArrayRef<delta::Type> types) const {
         ASSERT(!types.empty());
-        size_t hashValue = reinterpret_cast<size_t>(types[0].get());
+        size_t hashValue = reinterpret_cast<size_t>(types[0].getBase());
 
         for (auto type : types.drop_front()) {
-            hashValue ^= reinterpret_cast<size_t>(type.get());
+            hashValue ^= reinterpret_cast<size_t>(type.getBase());
         }
 
         return hashValue;

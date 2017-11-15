@@ -323,7 +323,7 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
                 break;
             }
 
-            auto* basicType = llvm::cast<BasicType>(type.get());
+            auto* basicType = llvm::cast<BasicType>(type.getBase());
 
             for (auto genericArg : basicType->getGenericArgs()) {
                 typecheckType(genericArg, location);
