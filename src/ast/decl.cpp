@@ -6,25 +6,6 @@
 
 using namespace delta;
 
-Module* Decl::getModule() const {
-    switch (getKind()) {
-        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(this)->getParent()->getModule();
-        case DeclKind::GenericParamDecl: return llvm::cast<GenericParamDecl>(this)->getParent()->getModule();
-        case DeclKind::FunctionDecl: return llvm::cast<FunctionDecl>(this)->getModule();
-        case DeclKind::MethodDecl: return llvm::cast<MethodDecl>(this)->getTypeDecl()->getModule();
-        case DeclKind::InitDecl: return llvm::cast<InitDecl>(this)->getTypeDecl()->getModule();
-        case DeclKind::DeinitDecl: return llvm::cast<DeinitDecl>(this)->getTypeDecl()->getModule();
-        case DeclKind::FunctionTemplate: return llvm::cast<FunctionTemplate>(this)->getFunctionDecl()->getModule();
-        case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(this)->getModule();
-        case DeclKind::TypeTemplate: return llvm::cast<TypeTemplate>(this)->getModule();
-        case DeclKind::EnumDecl: return llvm::cast<EnumDecl>(this)->getModule();
-        case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->getModule();
-        case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(this)->getParent()->getModule();
-        case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(this)->getModule();
-    }
-    llvm_unreachable("all cases handled");
-}
-
 FunctionProto FunctionProto::instantiate(const llvm::StringMap<Type> genericArgs) const {
     auto params = map(getParams(), [&](const ParamDecl& param) {
         auto type = param.getType().resolve(genericArgs);
@@ -207,25 +188,6 @@ const EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) const {
         }
     }
     return nullptr;
-}
-
-SourceLocation Decl::getLocation() const {
-    switch (getKind()) {
-        case DeclKind::ParamDecl: return llvm::cast<ParamDecl>(this)->getLocation();
-        case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl:
-        case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl: return llvm::cast<FunctionDecl>(this)->getLocation();
-        case DeclKind::GenericParamDecl: return llvm::cast<GenericParamDecl>(this)->getLocation();
-        case DeclKind::FunctionTemplate: return llvm::cast<FunctionTemplate>(this)->getFunctionDecl()->getLocation();
-        case DeclKind::TypeDecl: return llvm::cast<TypeDecl>(this)->getLocation();
-        case DeclKind::TypeTemplate: return llvm::cast<TypeTemplate>(this)->getTypeDecl()->getLocation();
-        case DeclKind::EnumDecl: return llvm::cast<EnumDecl>(this)->getLocation();
-        case DeclKind::VarDecl: return llvm::cast<VarDecl>(this)->getLocation();
-        case DeclKind::FieldDecl: return llvm::cast<FieldDecl>(this)->getLocation();
-        case DeclKind::ImportDecl: return llvm::cast<ImportDecl>(this)->getLocation();
-    }
-    llvm_unreachable("all cases handled");
 }
 
 bool Decl::hasBeenMoved() const {

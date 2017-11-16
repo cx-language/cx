@@ -73,8 +73,8 @@ public:
     bool isImportDecl() const { return getKind() == DeclKind::ImportDecl; }
 
     DeclKind getKind() const { return kind; }
-    Module* getModule() const;
-    SourceLocation getLocation() const;
+    virtual Module* getModule() const = 0;
+    virtual SourceLocation getLocation() const = 0;
     virtual llvm::StringRef getName() const = 0;
     virtual bool isReferenced() const { return referenced; }
     void setReferenced(bool referenced) { this->referenced = referenced; }
@@ -110,7 +110,8 @@ public:
     llvm::StringRef getName() const override { return name; }
     FunctionDecl* getParent() const { ASSERT(parent); return parent; }
     void setParent(FunctionDecl* parent) { this->parent = parent; }
-    SourceLocation getLocation() const { return location; }
+    Module* getModule() const override;
+    SourceLocation getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
     bool operator==(const ParamDecl& other) const {
         return getType() == other.getType() && getName() == other.getName();
@@ -132,7 +133,8 @@ public:
     void addConstraint(Type constraint) { constraints.push_back(constraint); }
     Decl* getParent() const { ASSERT(parent); return parent; }
     void setParent(Decl* parent) { this->parent = parent; }
-    SourceLocation getLocation() const { return location; }
+    Module* getModule() const override { return parent->getModule(); }
+    SourceLocation getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::GenericParamDecl; }
 
 private:
@@ -184,10 +186,10 @@ public:
     bool hasBody() const { return body.hasValue(); }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { ASSERT(hasBody()); return *body; }
     void setBody(std::vector<std::unique_ptr<Stmt>>&& body) { this->body = std::move(body); }
-    SourceLocation getLocation() const { return location; }
+    SourceLocation getLocation() const override { return location; }
     FunctionType* getFunctionType() const;
     bool signatureMatches(const FunctionDecl& other, bool matchReceiver = true) const;
-    Module* getModule() const { return &module; }
+    Module* getModule() const override { return &module; }
     std::unique_ptr<FunctionDecl> instantiate(const llvm::StringMap<Type>& genericArgs,
                                               llvm::ArrayRef<Type> genericArgsArray);
     bool isTypechecked() const { return typechecked; }
@@ -208,6 +210,8 @@ private:
     Module& module;
     bool typechecked;
 };
+
+inline Module* ParamDecl::getModule() const { return parent->getModule(); }
 
 class MethodDecl : public FunctionDecl {
 public:
@@ -261,6 +265,8 @@ public:
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
     FunctionDecl* getFunctionDecl() const { return functionDecl.get(); }
     FunctionDecl* instantiate(const llvm::StringMap<Type>& genericArgs);
+    Module* getModule() const override { return functionDecl->getModule(); }
+    SourceLocation getLocation() const override { return functionDecl->getLocation(); }
 
 private:
     std::vector<GenericParamDecl> genericParams;
@@ -325,6 +331,8 @@ public:
     TypeDecl* getTypeDecl() const { return typeDecl.get(); }
     TypeDecl* instantiate(const llvm::StringMap<Type>& genericArgs);
     TypeDecl* instantiate(llvm::ArrayRef<Type> genericArgs);
+    Module* getModule() const override { return typeDecl->getModule(); }
+    SourceLocation getLocation() const override { return typeDecl->getLocation(); }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::TypeTemplate; }
 
 private:
@@ -375,8 +383,8 @@ public:
     llvm::StringRef getName() const override { return name; }
     Expr* getInitializer() const { return initializer.get(); }
     Decl* getParent() const { return parent; }
-    SourceLocation getLocation() const { return location; }
-    Module* getModule() const { return &module; }
+    SourceLocation getLocation() const override { return location; }
+    Module* getModule() const override { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }
 
 private:
@@ -395,7 +403,8 @@ public:
       parent(parent) {}
     Type getType() const { return type; }
     llvm::StringRef getName() const override { return name; }
-    SourceLocation getLocation() const { return location; }
+    Module* getModule() const override { return parent.getModule(); } 
+    SourceLocation getLocation() const override { return location; }
     TypeDecl* getParent() const { return &parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }
 
@@ -412,8 +421,8 @@ public:
     : Decl(DeclKind::ImportDecl), target(std::move(target)), location(location), module(module) {}
     llvm::StringRef getName() const override { return ""; }
     llvm::StringRef getTarget() const { return target; }
-    SourceLocation getLocation() const { return location; }
-    Module* getModule() const { return &module; }
+    SourceLocation getLocation() const override { return location; }
+    Module* getModule() const override { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ImportDecl; }
 
 private:
