@@ -5,10 +5,9 @@ class OutputFileStream: OutputStream {
 
     /// Initiates a stream that can only write to files
     init(filename: StringRef) {
-        fs = FileStream(filename);
+        init(filename, false);
     }
 
-    /// TODO when other init can be called by init, change this
     /// TODO when we have default params, switch to that
     init(filename: StringRef, destroyContents: bool) {
         fs = FileStream(filename, destroyContents);
