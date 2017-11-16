@@ -8,8 +8,7 @@ struct ClosedRange<T> {
     }
 
     init (end: T) {
-        this.start = 0;
-        this.end = end;
+        init(0, end);
     }
 
     // Returns the number of elements this range contains.

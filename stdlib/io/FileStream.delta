@@ -9,13 +9,12 @@ class FileStream: InputStream, OutputStream {
         rewind(file!);
     }
 
-    /// TODO when other init can be called by init, change this
     /// TODO when we have default params, switch to that
     init(filename: StringRef, destroyContents: bool) {
         if (destroyContents) {
             file = fopen(String(filename).cString(), "w+");
         } else {
-            file = fopen(String(filename).cString(), "a+");
+            init(filename);
         }
     }
 
