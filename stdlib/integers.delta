@@ -2,61 +2,61 @@
 // function for all integer types.
 
 struct int: Comparable {
-    func compare(other: int*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: int*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct int8: Comparable {
-    func compare(other: int8*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: int8*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct int16: Comparable {
-    func compare(other: int16*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: int16*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct int32: Comparable {
-    func compare(other: int32*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: int32*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct int64: Comparable {
-    func compare(other: int64*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: int64*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct uint: Comparable {
-    func compare(other: uint*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: uint*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct uint8: Comparable {
-    func compare(other: uint8*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: uint8*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct uint16: Comparable {
-    func compare(other: uint16*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: uint16*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct uint32: Comparable {
-    func compare(other: uint32*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: uint32*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct uint64: Comparable {
-    func compare(other: uint64*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: uint64*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }

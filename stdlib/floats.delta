@@ -2,25 +2,25 @@
 // 'compare' function for all floating-point types.
 
 struct float: Comparable {
-    func compare(other: float*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: float*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct float32: Comparable {
-    func compare(other: float32*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: float32*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct float64: Comparable {
-    func compare(other: float64*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: float64*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct float80: Comparable {
-    func compare(other: float80*) -> int {
-        return (this < *other) ? -1 : (this > *other) ? 1 : 0;
+    func compare(other: float80*) -> Ordering {
+        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
