@@ -1,0 +1,5 @@
+struct bool: Comparable {
+    func compare(other: bool*) -> Ordering {
+        return int(this).compare(int(*other));
+    }
+}

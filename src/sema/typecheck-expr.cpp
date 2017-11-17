@@ -173,11 +173,16 @@ static void invalidOperandsToBinaryExpr(const BinaryExpr& expr) {
           expr.getRHS().getType(), "' to '", expr.getFunctionName(), "'", hint);
 }
 
+static bool bothAreVoid(Type leftType, Type rightType) {
+    return (leftType.isPointerType() && leftType.getPointee().isVoid()
+        && rightType.isPointerType() && rightType.getPointee().isVoid());
+}
+
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS());
 
-    if (!expr.isBuiltinOp() || getBinaryExprCallee(expr)) {
+    if (!bothAreVoid(leftType, rightType) && (!expr.isBuiltinOp())) { //getBinaryExprCallee(expr))) {
         return typecheckCallExpr(expr);
     }
 

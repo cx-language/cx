@@ -8,8 +8,8 @@ class C: Comparable {
         this.a = a;
     }
 
-    func compare(other: C) -> int {
-        return other.a < this.a;
+    func compare(other: C*) -> Ordering {
+        return this.a.compare(other.a);
     }
 }
 

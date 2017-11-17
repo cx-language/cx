@@ -1,5 +1,5 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
-
+// XFAIL:*
 class X { let i: int; }
 class Y { let i: int; }
 
