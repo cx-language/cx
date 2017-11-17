@@ -20,6 +20,14 @@ func main() {
     assert(a <= b, "Comparison works");
     assert(!(a >= b), "Comparison works");
     assert(!(a > b), "Comparison works");
+    assert(a < b, "Comparison works");
     assert(!(a == b), "Comparison works");
     assert(a != b, "Comparison works");
+    
+    assert(&a <= &b, "Comparison works");
+    assert(!(&a >= &b), "Comparison works");
+    assert(!(&a > &b), "Comparison works");
+    assert(&a < &b, "Comparison works");
+    assert(!(&a == &b), "Comparison works");
+    assert(&a != &b, "Comparison works");
 }

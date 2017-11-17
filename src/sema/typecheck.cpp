@@ -784,12 +784,6 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     return instantiation;
 }
 
-Decl* Typechecker::getBinaryExprCallee(BinaryExpr& expr) {
-    auto callee = expr.getFunctionName();
-    auto decls = findCalleeCandidates(expr, callee);
-    return resolveOverload(decls, expr, callee, true);
-}
-
 void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     if (!isGlobal && getCurrentModule()->getSymbolTable().contains(decl.getName())) {
         error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
