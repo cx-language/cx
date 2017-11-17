@@ -102,7 +102,6 @@ class String: OutputStream, Printable {
     /// Returns the index of the given character, or -1 if it's not found.
     /// Starts from start
     func find(c: char, start: uint) -> int {
-
         for (let i in start..size()) {
             if (*characters[i] == c) {
                 return int(i);

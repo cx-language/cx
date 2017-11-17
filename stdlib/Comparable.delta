@@ -12,3 +12,27 @@ enum Ordering {
     case Equal;
     case Greater;
 }
+
+func == <T: Comparable>(a: T*, b: T*) -> bool {
+    return a.compare(b) == Ordering.Equal;
+}
+
+func != <T: Comparable>(a: T*, b: T*) -> bool {
+    return a.compare(b) != Ordering.Equal;
+}
+
+func < <T: Comparable>(a: T*, b: T*) -> bool {
+    return a.compare(b) == Ordering.Less;
+}
+
+func > <T: Comparable>(a: T*, b: T*) -> bool {
+    return a.compare(b) == Ordering.Greater;
+}
+
+func >= <T: Comparable>(a: T*, b: T*) -> bool {
+    return a.compare(b) != Ordering.Less;
+}
+
+func <= <T: Comparable>(a: T*, b: T*) -> bool {
+    return a.compare(b) != Ordering.Greater;
+}

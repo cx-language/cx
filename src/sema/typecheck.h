@@ -129,7 +129,6 @@ private:
                       bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
-    Decl* getBinaryExprCallee(BinaryExpr& expr);
     void markFieldAsInitialized(Expr& expr) const;
     void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) const;
     template<typename DeclT>

@@ -85,7 +85,8 @@ bool Token::isCompoundAssignmentOperator() const {
 
 bool Token::isOverloadable() const {
     switch (kind) {
-        case EQ: case LT: case PLUS: case MINUS: case STAR: case SLASH: case MOD: return true;
+        case EQ: case NE: case LT: case LE: case GT: case GE:
+        case PLUS: case MINUS: case STAR: case SLASH: case MOD: return true;
         default: return false;
     }
 }

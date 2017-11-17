@@ -177,7 +177,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS());
 
-    if (!expr.isBuiltinOp() || getBinaryExprCallee(expr)) {
+    if (!expr.isBuiltinOp()) {
         return typecheckCallExpr(expr);
     }
 
