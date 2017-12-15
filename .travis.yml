@@ -47,7 +47,7 @@ install:
           brew update;
           brew install cmake llvm;
           export LLVMDIR="$(brew --prefix llvm)";
-          pip install lit;
+          pip2 install lit;
       fi
 
 script:
