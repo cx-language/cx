@@ -28,9 +28,9 @@ I recommend using [Ninja](https://ninja-build.org/) instead of Make, because it
 has cleaner output, and runs builds in parallel by default. It can be installed
 with `sudo apt install ninja-build` (Ubuntu) or `brew install ninja` (macOS).
 
-If you're on Ubuntu or macOS you can run the provided `setup-build-*.sh` script
-to automatically download all the dependencies and invoke the appropriate
-commands to generate a ready-to-use build system.
+If you're on Ubuntu or macOS you can run the provided `setup-build.sh` script to
+automatically download all the dependencies and invoke the appropriate commands
+to generate a ready-to-use build system.
 
 Otherwise, install the dependencies manually and do the following in the root
 directory of the repository:
