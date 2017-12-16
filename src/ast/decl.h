@@ -405,7 +405,7 @@ public:
       parent(parent) {}
     Type getType() const { return type; }
     llvm::StringRef getName() const override { return name; }
-    Module* getModule() const override { return parent.getModule(); } 
+    Module* getModule() const override { return parent.getModule(); }
     SourceLocation getLocation() const override { return location; }
     TypeDecl* getParent() const { return &parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }

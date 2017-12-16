@@ -321,7 +321,7 @@ private:
     Type type;
 };
 
-/// An expression that returns the memory address stored in a pointer (non-null or nullable) 
+/// An expression that returns the memory address stored in a pointer (non-null or nullable)
 /// as an unsigned integer, e.g. 'addressof(ptr)'.
 class AddressofExpr : public Expr {
 public:

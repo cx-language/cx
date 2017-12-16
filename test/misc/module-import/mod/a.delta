@@ -3,5 +3,5 @@
 import "stdio.h"
 
 func foo() {
-  puts("foo!!!")
+    puts("foo!!!")
 }

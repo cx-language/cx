@@ -3,5 +3,5 @@
 import "stdio.h"
 
 func bar() {
-  puts("bar!!!")
+    puts("bar!!!")
 }

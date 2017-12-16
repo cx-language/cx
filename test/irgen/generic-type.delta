@@ -11,7 +11,7 @@ class A<T> {
 func main() {
     // CHECK: %a = alloca %"A<int>"
     let a: A<int> = undefined
-    
+
     // CHECK: %aaa = alloca %"A<A<A<bool>>>"
     let aaa: A<A<A<bool>>> = undefined
 }

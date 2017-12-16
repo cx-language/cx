@@ -443,13 +443,13 @@ std::unique_ptr<CastExpr> parseCastExpr() {
 
 /// sizeof-expr ::= 'sizeof' '(' type ')'
 std::unique_ptr<SizeofExpr> parseSizeofExpr() {
-   assert(currentToken() == Token::Sizeof);
-   auto location = getCurrentLocation();
-   consumeToken();
-   parse(Token::LeftParen);
-   auto type = parseType();
-   parse(Token::RightParen);
-   return llvm::make_unique<SizeofExpr>(type, location);
+    assert(currentToken() == Token::Sizeof);
+    auto location = getCurrentLocation();
+    consumeToken();
+    parse(Token::LeftParen);
+    auto type = parseType();
+    parse(Token::RightParen);
+    return llvm::make_unique<SizeofExpr>(type, location);
 }
 
 /// addressof-expr ::= 'addressof' '(' expr ')'

@@ -5,6 +5,6 @@
 import mod
 
 func main() {
-  foo()
-  bar()
+    foo()
+    bar()
 }
