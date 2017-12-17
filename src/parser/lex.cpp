@@ -1,4 +1,5 @@
 #include "lex.h"
+#include <cctype>
 #include <vector>
 #include <string>
 #include <llvm/ADT/StringMap.h>

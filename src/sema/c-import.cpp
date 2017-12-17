@@ -27,6 +27,11 @@
 #include "../ast/module.h"
 #include "../support/utility.h"
 
+#ifdef _MSC_VER
+#define popen _popen
+#define pclose _pclose
+#endif
+
 using namespace delta;
 
 namespace delta {
@@ -265,7 +270,7 @@ public:
             case clang::tok::numeric_constant:
                 importNumericConstant(name.getIdentifierInfo()->getName(), token);
                 return;
-                
+
             default:
                 return;
         }
