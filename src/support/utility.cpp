@@ -78,7 +78,7 @@ void CompileError::print() const {
 }
 
 std::string delta::getCCompilerPath() {
-    for (const char* compiler : { "cc", "gcc", "clang" }) {
+    for (const char* compiler : { "cc", "gcc", "clang", "cl.exe" }) {
         if (auto path = llvm::sys::findProgramByName(compiler)) {
             return std::move(*path);
         }
