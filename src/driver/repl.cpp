@@ -66,6 +66,7 @@ void evaluate(llvm::StringRef line) {
     }
 
     llvm::outs() << '\n';
+    llvm::outs().flush();
 }
 
 }

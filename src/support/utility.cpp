@@ -73,6 +73,8 @@ void CompileError::print() const {
     for (auto& note : notes) {
         printDiagnostic(note.getLocation(), "note", llvm::raw_ostream::BLACK, note.getMessage());
     }
+
+    llvm::outs().flush();
 }
 
 std::string delta::getCCompilerPath() {
