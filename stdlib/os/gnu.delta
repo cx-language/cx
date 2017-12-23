@@ -1,0 +1,19 @@
+extern func backtrace(array: mutable void mutable**, size: int) -> int;
+extern func backtrace_symbols(array: mutable void**, size: int) -> mutable char mutable**?;
+
+func printStackTrace() {
+    var callstack: mutable void*[128] = undefined;
+
+    let frames = backtrace(&callstack[0], int(callstack.size()));
+    let strings = backtrace_symbols(&callstack[0], frames);
+
+    if (strings == null) {
+        return;
+    }
+
+    for (let i in 0..frames) {
+        printf("%s\n", *(strings! + i));
+    }
+
+    free(cast<mutable void*>(strings!));
+}

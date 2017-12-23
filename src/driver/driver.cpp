@@ -58,7 +58,8 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
 
-    std::string targetTriple = llvm::sys::getDefaultTargetTriple();
+    llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
+    const std::string& targetTriple = triple.str();
     module.setTargetTriple(targetTriple);
 
     std::string errorMessage;
@@ -178,8 +179,11 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         return 0;
     }
 
+    auto ccPath = getCCompilerPath();
+    bool msvc = llvm::StringRef(ccPath).endswith_lower("cl.exe");
+
     llvm::SmallString<128> temporaryOutputFilePath;
-    auto* outputFileExtension = emitAssembly ? "s" : "o";
+    auto* outputFileExtension = emitAssembly ? "s" : msvc ? "obj" : "o";
     if (auto error = llvm::sys::fs::createTemporaryFile("delta", outputFileExtension,
                                                         temporaryOutputFilePath)) {
         printErrorAndExit(error.message());
@@ -202,24 +206,35 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     // Link the output.
 
     llvm::SmallString<128> temporaryExecutablePath;
-    if (auto error = llvm::sys::fs::createUniqueFile("delta-%%%%%%%%.out", temporaryExecutablePath)) {
+    const char* executableNamePattern = msvc ? "delta-%%%%%%%%.exe" : "delta-%%%%%%%%.out";
+
+    if (auto error = llvm::sys::fs::createUniqueFile(executableNamePattern, temporaryExecutablePath)) {
         printErrorAndExit(error.message());
     }
 
-    auto ccPath = getCCompilerPath();
-    const char* ccArgs[] = {
+    std::vector<const char*> ccArgs = {
         ccPath.c_str(),
         temporaryOutputFilePath.c_str(),
-        "-o",
-        temporaryExecutablePath.c_str(),
-#ifndef __APPLE__
-        // Don't add '-static' flag on macOS to avoid "ld: library not found for -lcrt0.o" error.
-        "-static",
+#ifdef __linux__
+        "-static"
 #endif
-        nullptr
     };
 
-    int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs);
+    std::string outputPathFlag = ((msvc ? "-Fe" : "-o") + temporaryExecutablePath).str();
+    ccArgs.push_back(outputPathFlag.c_str());
+
+    if (msvc) {
+        ccArgs.push_back("-link");
+
+        // TODO: This probably won't work with pre-2015 Visual Studio.
+        ccArgs.push_back("legacy_stdio_definitions.lib");
+        ccArgs.push_back("ucrt.lib");
+        ccArgs.push_back("msvcrt.lib");
+    }
+
+    ccArgs.push_back(nullptr);
+
+    int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs.data());
     std::remove(temporaryOutputFilePath.c_str());
     if (ccExitStatus != 0) return ccExitStatus;
 
@@ -237,7 +252,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         return executableExitStatus;
     }
 
-    if (auto error = llvm::sys::fs::rename(temporaryExecutablePath, "a.out")) {
+    if (auto error = llvm::sys::fs::rename(temporaryExecutablePath, msvc ? "a.exe" : "a.out")) {
         printErrorAndExit(error.message());
     }
 
