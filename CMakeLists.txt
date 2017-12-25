@@ -49,7 +49,7 @@ add_custom_target(check COMMAND lit --verbose --incremental ${PROJECT_SOURCE_DIR
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dnot_path="$<TARGET_FILE:not>"
-    -Dcheck_exit_status_path="${PROJECT_SOURCE_DIR}/test/check_exit_status"
+    -Dtest_helper_scripts_path="${PROJECT_SOURCE_DIR}/test"
     USES_TERMINAL)
 
 # Download the LLVM FileCheck utility for tests.
