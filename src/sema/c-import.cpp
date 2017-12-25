@@ -311,24 +311,37 @@ static void addHeaderSearchPathsFromEnvVar(clang::CompilerInstance& ci, const ch
 }
 
 static void addHeaderSearchPathsFromCCompilerOutput(clang::CompilerInstance& ci) {
-    std::string command = "echo | " + getCCompilerPath() + " -E -v - 2>&1 | grep '^ /'";
-    std::shared_ptr<FILE> process(popen(command.c_str(), "r"), pclose);
+    auto compilerPath = getCCompilerPath();
 
-    while (!std::feof(process.get())) {
-        std::string path;
+    if (llvm::StringRef(compilerPath).endswith_lower("cl.exe")) {
+        if (const char* includePathsVariable = std::getenv("INCLUDE")) {
+            llvm::SmallVector<StringRef, 16> includePaths;
+            llvm::StringRef(includePathsVariable).split(includePaths, ";", -1, false);
 
-        while (true) {
-            int ch = std::fgetc(process.get());
-
-            if (ch == EOF || ch == '\n') {
-                break;
-            } else if (!path.empty() || ch != ' ') {
-                path += (char) ch;
+            for (llvm::StringRef path : includePaths) {
+                ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
             }
         }
+    } else {
+        std::string command = "echo | " + compilerPath + " -E -v - 2>&1 | grep '^ /'";
+        std::shared_ptr<FILE> process(popen(command.c_str(), "r"), pclose);
 
-        if (llvm::sys::fs::is_directory(path)) {
-            ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
+        while (!std::feof(process.get())) {
+            std::string path;
+
+            while (true) {
+                int ch = std::fgetc(process.get());
+
+                if (ch == EOF || ch == '\n') {
+                    break;
+                } else if (!path.empty() || ch != ' ') {
+                    path += (char) ch;
+                }
+            }
+
+            if (llvm::sys::fs::is_directory(path)) {
+                ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
+            }
         }
     }
 }
