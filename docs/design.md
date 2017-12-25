@@ -117,6 +117,7 @@ important than Rust's safety and explicitness.
 
 ## Resources
 
+- ["What are the weakest points of C++ in your opinion?" on Reddit](https://www.reddit.com/r/cpp/comments/7lvteh/what_are_the_weakest_points_of_c_in_your_opinion/?st=JBM8MFRN&sh=30098ea8)
 - ["What would you change in C++ if backwards compatibility was not an issue?" on Reddit][1]
 - ["Let's stop copying C" by Eevee][2]
 - ["Hypothetically, which standard library warts would you like to see fixed in a "std2"?" on Reddit][3]
