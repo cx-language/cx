@@ -122,6 +122,12 @@ Type toDelta(clang::QualType qualtype) {
             return FunctionType::get(toDelta(functionProtoType.getReturnType()),
                                      std::move(paramTypes), isMutable);
         }
+        case clang::Type::FunctionNoProto: {
+            auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
+            // TODO: Allow passing any number of parameters of any types to a FunctionNoProtoType.
+            // Now we're just assuming the writer meant a 0-argument function type.
+            return FunctionType::get(toDelta(functionNoProtoType.getReturnType()), {}, isMutable);
+        }
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
             if (!constantArrayType.getSize().isIntN(64)) {
