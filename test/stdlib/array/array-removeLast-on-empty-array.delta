@@ -6,4 +6,3 @@ func main() {
 }
 
 // CHECK: Called removeLast() on empty Array
-// CHECK: Abort

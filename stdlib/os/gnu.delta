@@ -17,3 +17,6 @@ func printStackTrace() {
 
     free(cast<mutable void*>(strings!));
 }
+
+func setAbortBehavior() {
+}

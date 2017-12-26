@@ -7,4 +7,3 @@ func main() -> int {
 }
 
 // CHECK: Range index 5 is out of bounds, size is 2
-// CHECK: Abort
