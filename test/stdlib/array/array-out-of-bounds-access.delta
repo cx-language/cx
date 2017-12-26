@@ -1,4 +1,4 @@
-// RUN: check_exit_status 254 %delta run %s | %FileCheck %s
+// RUN: not %delta run %s | %FileCheck %s
 
 func main() -> int {
     return *Array<int>()[0];
