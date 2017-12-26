@@ -7,5 +7,5 @@ given_exit_status = int(sys.argv[1])
 actual_exit_status = subprocess.call(sys.argv[2:])
 
 if actual_exit_status != given_exit_status:
-    print("FAIL: expected exit status: {}, actual exit status: {}".format(given_exit_status, actual_exit_status))
+    print("FAIL: expected exit status: {}, actual exit status: {}".format(hex(given_exit_status), hex(actual_exit_status)))
     sys.exit(1)
