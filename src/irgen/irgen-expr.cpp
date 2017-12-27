@@ -57,7 +57,7 @@ llvm::Value* IRGenerator::codegenIntLiteralExpr(const IntLiteralExpr& expr) {
     // that requires a floating-point value. It might make sense to combine
     // IntLiteralExpr and FloatLiteralExpr into a single class.
     if (expr.getType().isFloatingPoint())
-        return llvm::ConstantFP::get(toIR(expr.getType()), expr.getValue());
+        return llvm::ConstantFP::get(toIR(expr.getType()), static_cast<double>(expr.getValue()));
 
     return llvm::ConstantInt::getSigned(toIR(expr.getType()), expr.getValue());
 }
@@ -530,7 +530,7 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
         }
         return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegenExpr(*expr.getIndexExpr()));
     }
-    
+
     if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
 
     if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithUnknownSize()) {

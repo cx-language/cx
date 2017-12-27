@@ -1,16 +1,24 @@
 #pragma once
 
-#include <climits>
+#include <limits>
 
 namespace delta {
 
 struct SourceLocation {
-    const char* file;
-    short line;
-    short column;
+    using IntegerType = short;
 
-    SourceLocation(const char* file, short line, short column) : file(file), line(line), column(column) {}
-    static SourceLocation invalid() { return SourceLocation(nullptr, SHRT_MIN, SHRT_MIN); }
+    const char* file;
+    IntegerType line;
+    IntegerType column;
+
+    SourceLocation(const char* file, IntegerType line, IntegerType column)
+    :   file(file), line(line), column(column) {}
+
+    static SourceLocation invalid() {
+        auto min = std::numeric_limits<IntegerType>::min();
+        return SourceLocation(nullptr, min, min);
+    }
+
     bool isValid() const { return line > 0 && column > 0; }
 };
 

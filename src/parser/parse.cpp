@@ -115,7 +115,8 @@ void parseStmtTerminator(const char* contextInfo = nullptr) {
             }
             std::string line;
             std::getline(file, line);
-            return SourceLocation(getCurrentLocation().file, lookAhead(-1).getLocation().line, line.size() + 1);
+            return SourceLocation(getCurrentLocation().file, lookAhead(-1).getLocation().line,
+                                  static_cast<SourceLocation::IntegerType>(line.size() + 1));
         });
         return;
     }

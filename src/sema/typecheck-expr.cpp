@@ -1269,6 +1269,8 @@ static bool isValidCast(Type sourceType, Type targetType) {
             return false;
         }
     }
+
+    llvm_unreachable("all cases handled");
 }
 
 Type Typechecker::typecheckCastExpr(CastExpr& expr) {
