@@ -53,6 +53,14 @@ add_custom_target(check COMMAND lit --verbose --incremental ${PROJECT_SOURCE_DIR
     -Dtest_helper_scripts_path="${PROJECT_SOURCE_DIR}/test"
     USES_TERMINAL)
 
+if(MSVC)
+    # If we try to set '-Ox' here, we get the error "'/Ox' and '/RTC1' command-line options are incompatible",
+    # and there seems to be no easy way to override compile flags for a specific target for MSVC from CMake.
+    set(UTILITY_PROGRAM_COMPILE_FLAGS "-w")
+else()
+    set(UTILITY_PROGRAM_COMPILE_FLAGS "-w -O3")
+endif()
+
 # Download the LLVM FileCheck utility for tests.
 set(FILECHECK_SRC_URL "https://raw.githubusercontent.com/llvm-mirror/llvm/release_${LLVM_VERSION_MAJOR}${LLVM_VERSION_MINOR}/utils/FileCheck/FileCheck.cpp")
 set(FILECHECK_SRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/FileCheck.cpp")
@@ -61,8 +69,7 @@ if(NOT EXISTS "${FILECHECK_SRC_FILE}")
     file(DOWNLOAD "${FILECHECK_SRC_URL}" "${FILECHECK_SRC_FILE}")
 endif()
 add_executable(FileCheck ${FILECHECK_SRC_FILE})
-target_compile_options(FileCheck PRIVATE -w)
-set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS -O3)
+set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS ${UTILITY_PROGRAM_COMPILE_FLAGS})
 llvm_map_components_to_libnames(FILECHECK_NEEDED_LIBS support)
 target_link_libraries(FileCheck PRIVATE ${FILECHECK_NEEDED_LIBS})
 
@@ -74,8 +81,7 @@ if(NOT EXISTS "${NOT_SRC_FILE}")
     file(DOWNLOAD "${NOT_SRC_URL}" "${NOT_SRC_FILE}")
 endif()
 add_executable(not ${NOT_SRC_FILE})
-target_compile_options(not PRIVATE -w)
-set_target_properties(not PROPERTIES COMPILE_FLAGS -O3)
+set_target_properties(not PROPERTIES COMPILE_FLAGS ${UTILITY_PROGRAM_COMPILE_FLAGS})
 llvm_map_components_to_libnames(NOT_NEEDED_LIBS support)
 target_link_libraries(not PRIVATE ${NOT_NEEDED_LIBS})
 
