@@ -1,4 +1,5 @@
 // RUN: not %delta run %s | %FileCheck %s
+// UNSUPPORTED: windows
 
 func main() {
     let p: mutable int*? = null;
