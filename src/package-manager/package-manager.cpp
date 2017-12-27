@@ -1,12 +1,14 @@
 #include <string>
 #include <system_error>
 #include <vector>
+#pragma warning(push, 0)
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Program.h>
 #include <llvm/Support/raw_ostream.h>
+#pragma warning(pop)
 #include "package-manager.h"
 #include "manifest.h"
 #include "../support/utility.h"

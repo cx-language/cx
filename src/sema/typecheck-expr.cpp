@@ -4,11 +4,13 @@
 #include <memory>
 #include <string>
 #include <vector>
+#pragma warning(push, 0)
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/iterator_range.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/ErrorHandling.h>
+#pragma warning(push, 0)
 #include "../ast/decl.h"
 #include "../ast/expr.h"
 #include "../ast/mangle.h"

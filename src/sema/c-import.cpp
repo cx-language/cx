@@ -3,6 +3,7 @@
 #include <memory>
 #include <cstdlib>
 #include <string>
+#pragma warning(push, 0)
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
@@ -20,6 +21,7 @@
 #include <clang/AST/Type.h>
 #include <clang/AST/PrettyPrinter.h>
 #include <clang/Sema/Sema.h>
+#pragma warning(pop)
 #include "c-import.h"
 #include "typecheck.h"
 #include "../ast/type.h"

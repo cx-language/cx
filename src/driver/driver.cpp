@@ -2,6 +2,7 @@
 #include <string>
 #include <system_error>
 #include <vector>
+#pragma warning(push, 0)
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
@@ -16,6 +17,7 @@
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
+#pragma warning(pop)
 #include "driver.h"
 #include "../ast/ast-printer.h"
 #include "../ast/module.h"

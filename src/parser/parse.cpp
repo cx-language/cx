@@ -1,12 +1,14 @@
 #include <vector>
 #include <forward_list>
 #include <sstream>
+#pragma warning(push, 0)
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/MemoryBuffer.h>
+#pragma warning(pop)
 #include "parse.h"
 #include "lex.h"
 #include "../ast/token.h"

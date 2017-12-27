@@ -1,6 +1,7 @@
 #include <iterator>
 #include <vector>
 #include <memory>
+#pragma warning(push, 0)
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -8,6 +9,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/IR/CFG.h>
+#pragma warning(pop)
 #include "irgen.h"
 #include "../ast/mangle.h"
 #include "../ast/expr.h"

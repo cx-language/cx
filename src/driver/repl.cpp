@@ -1,4 +1,5 @@
 #include "repl.h"
+#pragma warning(push, 0)
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/Format.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -9,6 +10,7 @@
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/ExecutionEngine/Interpreter.h>
+#pragma warning(pop)
 #include "../ast/expr.h"
 #include "../ast/module.h"
 #include "../irgen/irgen.h"

@@ -4,9 +4,11 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#pragma warning(push, 0)
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Casting.h>
+#pragma warning(pop)
 #include "expr.h"
 #include "stmt.h"
 #include "type.h"

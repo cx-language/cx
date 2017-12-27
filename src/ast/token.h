@@ -1,7 +1,9 @@
 #pragma once
 
 #include <ostream>
+#pragma warning(push, 0)
 #include <llvm/ADT/StringRef.h>
+#pragma warning(pop)
 #include "../ast/location.h"
 
 namespace delta {

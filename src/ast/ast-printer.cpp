@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
+#pragma warning(push, 0)
 #include <llvm/Support/ErrorHandling.h>
+#pragma warning(pop)
 #include "ast-printer.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"

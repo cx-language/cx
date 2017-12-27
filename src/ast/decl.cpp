@@ -1,5 +1,7 @@
+#pragma warning(push, 0)
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
+#pragma warning(pop)
 #include "decl.h"
 #include "mangle.h"
 #include "../support/utility.h"

@@ -3,11 +3,13 @@
 #include <vector>
 #include <string>
 #include <ostream>
+#pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_ostream.h>
+#pragma warning(pop)
 #include "../support/utility.h"
 
 namespace delta {

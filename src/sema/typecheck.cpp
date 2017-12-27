@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdlib>
 #include <system_error>
+#pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
@@ -14,6 +15,7 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorOr.h>
+#pragma warning(pop)
 #include "typecheck.h"
 #include "c-import.h"
 #include "../ast/type.h"

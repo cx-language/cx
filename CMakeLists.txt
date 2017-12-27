@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT MSVC)
-    set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility-inlines-hidden -Wall -Wextra ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility-inlines-hidden -Wall -Wextra -Wno-unknown-pragmas \
+        ${CMAKE_CXX_FLAGS}")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
