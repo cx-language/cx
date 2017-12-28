@@ -12,6 +12,10 @@ class InputFileStream: InputStream {
         fs.deinit();
     }
 
+    mutating func close() {
+        fs.close();
+    }
+
     /// Returns true if the file is open for reading
     func isOpen() -> bool {
         return fs.isOpen();
