@@ -205,7 +205,7 @@ class Array<Element> {
     }
 
     func _indexOutOfBounds(index: uint) {
-        printf("Array index %d is out of bounds, size is %d\n", index, size());
+        printf("Array index %u is out of bounds, size is %u\n", index, size());
         fatalError();
     }
 
