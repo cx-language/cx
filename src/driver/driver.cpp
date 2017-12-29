@@ -243,7 +243,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     const llvm::StringRef* redirects[3] = { nullptr, &out, &err };
 
     int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs.data(), nullptr, redirects);
-    std::remove(temporaryOutputFilePath.c_str());
+    llvm::sys::fs::remove(temporaryOutputFilePath);
     if (ccExitStatus != 0) return ccExitStatus;
 
     if (run) {
@@ -251,14 +251,14 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         const char* executableArgs[] = { temporaryExecutablePath.c_str(), nullptr };
         int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs,
                                                              nullptr, nullptr, 0, 0, &error);
-        std::remove(temporaryExecutablePath.c_str());
+        llvm::sys::fs::remove(temporaryExecutablePath);
 
         if (msvc) {
             auto path = temporaryExecutablePath;
             llvm::sys::path::replace_extension(path, "ilk");
-            std::remove(path.c_str());
+            llvm::sys::fs::remove(path);
             llvm::sys::path::replace_extension(path, "pdb");
-            std::remove(path.c_str());
+            llvm::sys::fs::remove(path);
         }
 
         if (!error.empty()) {
