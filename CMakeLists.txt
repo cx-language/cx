@@ -46,7 +46,13 @@ add_subdirectory(src/package-manager)
 add_subdirectory(src/sema)
 add_subdirectory(src/support)
 
-add_custom_target(check COMMAND lit --verbose --incremental ${PROJECT_SOURCE_DIR}/test
+if(MSVC)
+    # For some reason running the tests multi-threadedly on Windows causes random tests to fail occasionally.
+    # TODO: Figure out what's going on.
+    set(EXTRA_LIT_FLAGS "--threads=1")
+endif()
+
+add_custom_target(check COMMAND lit --verbose --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dnot_path="$<TARGET_FILE:not>"
