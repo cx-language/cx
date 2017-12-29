@@ -227,6 +227,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (msvc) {
         ccArgs.push_back("-link");
+        ccArgs.push_back("-DEBUG");
 
         // TODO: This probably won't work with pre-2015 Visual Studio.
         ccArgs.push_back("legacy_stdio_definitions.lib");
@@ -252,6 +253,14 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
                                                              nullptr, nullptr, 0, 0, &error);
         std::remove(temporaryExecutablePath.c_str());
 
+        if (msvc) {
+            auto path = temporaryExecutablePath;
+            llvm::sys::path::replace_extension(path, "ilk");
+            std::remove(path.c_str());
+            llvm::sys::path::replace_extension(path, "pdb");
+            std::remove(path.c_str());
+        }
+
         if (!error.empty()) {
             llvm::outs() << error << '\n';
         }
@@ -259,8 +268,15 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         return executableExitStatus;
     }
 
-    if (auto error = llvm::sys::fs::rename(temporaryExecutablePath, msvc ? "a.exe" : "a.out")) {
-        printErrorAndExit(error.message());
+    llvm::StringRef executableNameStem = "a";
+    llvm::sys::fs::rename(temporaryExecutablePath, executableNameStem + (msvc ? ".exe" : ".out"));
+
+    if (msvc) {
+        auto path = temporaryExecutablePath;
+        llvm::sys::path::replace_extension(path, "ilk");
+        llvm::sys::fs::rename(path, executableNameStem + ".ilk");
+        llvm::sys::path::replace_extension(path, "pdb");
+        llvm::sys::fs::rename(path, executableNameStem + ".pdb");
     }
 
     return 0;
