@@ -1,0 +1,35 @@
+version: "{build}"
+image: Visual Studio 2017
+
+install:
+    - git submodule update --init --recursive
+    - ps: |
+          $LLVM_VERSION = "5.0.0"
+          $CLANG_DIR = "cfe-$LLVM_VERSION.src"
+          if (!(Test-Path -Path $CLANG_DIR)) {
+              Start-FileDownload http://releases.llvm.org/$LLVM_VERSION/cfe-$LLVM_VERSION.src.tar.xz
+              7z x cfe-$LLVM_VERSION.src.tar.xz
+              7z x cfe-$LLVM_VERSION.src.tar
+          }
+          cd $CLANG_DIR
+          mkdir build
+          cd build
+          $LLVM_INSTALL_DIR = "C:\Libraries\llvm-$LLVM_VERSION"
+          cmake -Thost=x64 -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX="$LLVM_INSTALL_DIR" -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build . --config Release
+          cmake --build . --config Release --target install
+    - pip install lit
+
+cache:
+    - C:\Libraries\llvm-5.0.0 -> .appveyor.yml
+
+before_build:
+    - cd C:\projects\delta
+    - mkdir build
+    - cd build
+    - cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH="C:\Libraries\llvm-5.0.0" ..
+
+build_script:
+    - cmd: |
+          "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+          cmake --build . --config Release --target check
