@@ -4,7 +4,9 @@ project(delta)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT MSVC)
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "-w14062 ${CMAKE_CXX_FLAGS}")
+else()
     set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility-inlines-hidden -Wall -Wextra -Wno-unknown-pragmas \
         ${CMAKE_CXX_FLAGS}")
 endif()
