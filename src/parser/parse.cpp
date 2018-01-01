@@ -543,7 +543,7 @@ bool shouldParseGenericArgumentList() {
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
 ///                  paren-expr | array-literal | cast-expr | subscript-expr | member-expr
-///                  unwrap-expr | lambda-expr
+///                  unwrap-expr | lambda-expr | sizeof-expr
 std::unique_ptr<Expr> parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
     switch (currentToken()) {
