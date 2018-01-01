@@ -1,10 +1,13 @@
 #include "lex.h"
+#include <cctype>
 #include <vector>
 #include <string>
+#pragma warning(push, 0)
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/MemoryBuffer.h>
+#pragma warning(pop)
 #include "parse.h"
 #include "../ast/token.h"
 #include "../support/utility.h"

@@ -2,7 +2,9 @@
 
 #include <vector>
 #include <memory>
+#pragma warning(push, 0)
 #include <llvm/Support/Casting.h>
+#pragma warning(pop)
 #include "expr.h"
 
 namespace delta {

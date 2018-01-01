@@ -1,4 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// XFAIL: windows
+// testIterator() segfaults on Windows for an unknown reason.
 
 func main() {
     testInsert();

@@ -32,6 +32,20 @@ If you're on Ubuntu or macOS you can run the provided `setup-build.sh` script to
 automatically download all the dependencies and invoke the appropriate commands
 to generate a ready-to-use build system.
 
+If you're on Windows, do the following:
+
+1. Download and extract LLVM sources from http://releases.llvm.org/5.0.0/llvm-5.0.0.src.tar.xz.
+2. Download and extract Clang sources from http://releases.llvm.org/5.0.0/cfe-5.0.0.src.tar.xz.
+3. Rename the extracted Clang source directory to `clang`, and move it inside
+   the `tools` subdirectory inside the LLVM source directory.
+4. During this step, LLVM and Clang will be built from source, which requires
+   about 24 GB of free disk space, and will take some time to complete. Run
+   `setup-build.sh`, passing the path to your LLVM source directory as an
+   argument.
+5. For running the tests, install [lit](http://llvm.org/docs/CommandGuide/lit.html)
+   by running `pip install lit` (you need [pip](https://pip.pypa.io/en/stable/)
+   installed). You might have to do this as an administrator.
+
 Otherwise, install the dependencies manually and do the following in the root
 directory of the repository:
 

@@ -42,3 +42,7 @@ _book
 
 # VSCode
 .vscode
+
+# C compiler output logs for debugging.
+c-compiler-stdout.txt
+c-compiler-stderr.txt

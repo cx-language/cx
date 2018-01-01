@@ -17,6 +17,10 @@ class OutputFileStream: OutputStream {
         fs.deinit();
     }
 
+    mutating func close() {
+        fs.close();
+    }
+
     /// Returns true if the file is open for writing
     func isOpen() -> bool {
         return fs.isOpen();

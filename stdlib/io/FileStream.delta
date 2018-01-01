@@ -28,6 +28,13 @@ class FileStream: InputStream, OutputStream {
         }
     }
 
+    mutating func close() {
+        if (file != null) {
+            fclose(file!);
+            file = null;
+        }
+    }
+
     /// Returns true if the file is open for reading or writing
     func isOpen() -> bool {
         return file != null;

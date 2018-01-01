@@ -1,0 +1,11 @@
+extern func _set_abort_behavior(flags: uint, mask: uint) -> uint;
+let _CALL_REPORTFAULT = 0x2;
+
+func printStackTrace() {
+    // TODO
+}
+
+func setAbortBehavior() {
+    // Disable "*.exe has stopped working" popup window which prevents testing the output of the program.
+    _set_abort_behavior(0, _CALL_REPORTFAULT);
+}

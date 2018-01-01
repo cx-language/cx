@@ -11,9 +11,9 @@ fi
 
 set -x
 
-cd "$(dirname "$0")"
-mkdir -p build
-cd build
+build_dir="$(dirname "$0")/build"
+mkdir -p "$build_dir"
+cd "$build_dir"
 
 if [[ "$os" == "Darwin" ]]; then
     # Tested on macOS 10.13.
@@ -25,6 +25,26 @@ if [[ "$os" == "Darwin" ]]; then
     sudo pip2 install lit
 
     cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
+elif [[ "$os" == "MINGW"* ]]; then
+    # Tested on Windows 10 with MinGW64.
+
+    # Build LLVM and Clang libraries from source, because the prebuilt Windows
+    # binaries provided in http://releases.llvm.org/download.html don't include
+    # everything we need, e.g. header files.
+
+    llvm_dir="$1"
+    llvm_build_dir="$llvm_dir/build"
+    llvm_install_dir="$llvm_dir/install"
+
+    mkdir -p "$llvm_build_dir"
+    cd "$llvm_build_dir"
+    cmake "$llvm_dir" -DCMAKE_INSTALL_PREFIX="$llvm_install_dir" -DCMAKE_BUILD_TYPE=Debug \
+        -DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS_TO_BUILD:-X86}" -DLLVM_OPTIMIZED_TABLEGEN=ON
+    cmake --build .
+    cmake --build . --target install
+
+    cd "$build_dir"
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$llvm_install_dir"
 else
     # Tested on Ubuntu 17.04 and Windows Subsystem for Linux (running Ubuntu 16.04).
 

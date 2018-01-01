@@ -2,8 +2,10 @@
 
 #include <unordered_map>
 #include <vector>
+#pragma warning(push, 0)
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
+#pragma warning(pop)
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"

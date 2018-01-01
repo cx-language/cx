@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdlib>
 #include <system_error>
+#pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
@@ -14,6 +15,7 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorOr.h>
+#pragma warning(pop)
 #include "typecheck.h"
 #include "c-import.h"
 #include "../ast/type.h"
@@ -847,6 +849,16 @@ std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath
 
     for (; it != end; it.increment(error)) {
         if (error) break;
+
+        // TODO: Replace this 'if' with conditional compilation in the relevant
+        // files when conditional compilation has been implemented.
+        if (module.getName() == "std") {
+#ifdef _MSC_VER
+            if (llvm::sys::path::stem(it->path()) == "gnu") continue;
+#else
+            if (llvm::sys::path::stem(it->path()) == "windows") continue;
+#endif
+        }
 
         if (llvm::sys::path::extension(it->path()) == ".delta") {
             parse(it->path(), module);

@@ -162,12 +162,12 @@ class String: OutputStream, Printable {
     }
 
     func _indexOutOfBounds(index: uint) {
-        printf("Range index %d is out of bounds, size is %d\n", index, size());
+        printf("Range index %u is out of bounds, size is %u\n", index, size());
         fatalError();
     }
 
     func _indexOutOfBounds(index: int) {
-        printf("Range index %d is out of bounds, size is %d\n", index, size());
+        printf("Range index %d is out of bounds, size is %u\n", index, size());
         fatalError();
     }
 

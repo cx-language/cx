@@ -3,7 +3,9 @@
 #include <memory>
 #include <string>
 #include <vector>
+#pragma warning(push, 0)
 #include <llvm/ADT/StringMap.h>
+#pragma warning(pop)
 #include "../ast/expr.h"
 #include "../ast/decl.h"
 #include "../ast/stmt.h"

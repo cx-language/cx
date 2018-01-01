@@ -3,7 +3,12 @@ project(delta)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility-inlines-hidden -Wall -Wextra ${CMAKE_CXX_FLAGS}")
+
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility-inlines-hidden -Wall -Wextra -Wno-unknown-pragmas \
+        ${CMAKE_CXX_FLAGS}")
+endif()
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "--system-header-prefix=llvm --system-header-prefix=clang ${CMAKE_CXX_FLAGS}")
 endif()
@@ -41,12 +46,26 @@ add_subdirectory(src/package-manager)
 add_subdirectory(src/sema)
 add_subdirectory(src/support)
 
-add_custom_target(check COMMAND lit --verbose --incremental ${PROJECT_SOURCE_DIR}/test
+if(MSVC)
+    # For some reason running the tests multi-threadedly on Windows causes random tests to fail occasionally.
+    # TODO: Figure out what's going on.
+    set(EXTRA_LIT_FLAGS "--threads=1")
+endif()
+
+add_custom_target(check COMMAND lit --verbose --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dnot_path="$<TARGET_FILE:not>"
-    -Dcheck_exit_status_path="${PROJECT_SOURCE_DIR}/test/check_exit_status.sh"
+    -Dtest_helper_scripts_path="${PROJECT_SOURCE_DIR}/test"
     USES_TERMINAL)
+
+if(MSVC)
+    # If we try to set '-Ox' here, we get the error "'/Ox' and '/RTC1' command-line options are incompatible",
+    # and there seems to be no easy way to override compile flags for a specific target for MSVC from CMake.
+    set(UTILITY_PROGRAM_COMPILE_FLAGS "-w")
+else()
+    set(UTILITY_PROGRAM_COMPILE_FLAGS "-w -O3")
+endif()
 
 # Download the LLVM FileCheck utility for tests.
 set(FILECHECK_SRC_URL "https://raw.githubusercontent.com/llvm-mirror/llvm/release_${LLVM_VERSION_MAJOR}${LLVM_VERSION_MINOR}/utils/FileCheck/FileCheck.cpp")
@@ -56,8 +75,7 @@ if(NOT EXISTS "${FILECHECK_SRC_FILE}")
     file(DOWNLOAD "${FILECHECK_SRC_URL}" "${FILECHECK_SRC_FILE}")
 endif()
 add_executable(FileCheck ${FILECHECK_SRC_FILE})
-target_compile_options(FileCheck PRIVATE -w)
-set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS -O3)
+set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS ${UTILITY_PROGRAM_COMPILE_FLAGS})
 llvm_map_components_to_libnames(FILECHECK_NEEDED_LIBS support)
 target_link_libraries(FileCheck PRIVATE ${FILECHECK_NEEDED_LIBS})
 
@@ -69,8 +87,7 @@ if(NOT EXISTS "${NOT_SRC_FILE}")
     file(DOWNLOAD "${NOT_SRC_URL}" "${NOT_SRC_FILE}")
 endif()
 add_executable(not ${NOT_SRC_FILE})
-target_compile_options(not PRIVATE -w)
-set_target_properties(not PROPERTIES COMPILE_FLAGS -O3)
+set_target_properties(not PROPERTIES COMPILE_FLAGS ${UTILITY_PROGRAM_COMPILE_FLAGS})
 llvm_map_components_to_libnames(NOT_NEEDED_LIBS support)
 target_link_libraries(not PRIVATE ${NOT_NEEDED_LIBS})
 

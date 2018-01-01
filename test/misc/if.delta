@@ -5,22 +5,20 @@
 
 func main() {
     if (true) {
-        puts("a");
+        print("a");
     }
 
     if (false) {
-        puts("b");
+        print("b");
     } else {
-        puts("c");
+        print("c");
     }
 
     if (false) {
-        puts("d");
+        print("d");
     } else if (true) {
-        puts("e");
+        print("e");
     } else {
-        puts("d");
+        print("d");
     }
 }
-
-extern func puts(s: char*);

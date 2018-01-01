@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <cctype>
+#pragma warning(push, 0)
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/Program.h>
+#pragma warning(pop)
 #include "utility.h"
 
 using namespace delta;
@@ -73,10 +75,12 @@ void CompileError::print() const {
     for (auto& note : notes) {
         printDiagnostic(note.getLocation(), "note", llvm::raw_ostream::BLACK, note.getMessage());
     }
+
+    llvm::outs().flush();
 }
 
 std::string delta::getCCompilerPath() {
-    for (const char* compiler : { "cc", "gcc", "clang" }) {
+    for (const char* compiler : { "cc", "gcc", "clang", "cl.exe" }) {
         if (auto path = llvm::sys::findProgramByName(compiler)) {
             return std::move(*path);
         }

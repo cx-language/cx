@@ -1,7 +1,9 @@
 #include <string>
 #include <vector>
+#pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
+#pragma warning(pop)
 
 namespace delta {
 

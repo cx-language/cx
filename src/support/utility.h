@@ -8,11 +8,13 @@
 #include <string>
 #include <vector>
 #include <utility> // std::move
+#pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/Casting.h>
+#pragma warning(pop)
 #include "../ast/location.h"
 
 #ifndef NDEBUG

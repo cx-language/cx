@@ -71,6 +71,8 @@ bool Expr::isConstant() const {
                 && llvm::cast<IfExpr>(this)->getThenExpr()->isConstant()
                 && llvm::cast<IfExpr>(this)->getElseExpr()->isConstant();
     }
+
+    llvm_unreachable("all cases handled");
 }
 
 int64_t Expr::getConstantIntegerValue() const {

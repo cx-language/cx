@@ -96,6 +96,7 @@ func testWrite() {
     f = FileStream("new.txt");
     var read = f.readLine();
 
+    f.close();
     remove("new.txt");
     assert(StringRef(read) == "best sentence", "Wrote to file");
 }
@@ -134,6 +135,7 @@ func testOutputStream() {
 
     let ret = f.write("best sentence\n");
 
+    f.close();
     remove("new.txt");
     assert(ret, "Successfully wrote to file");
 }

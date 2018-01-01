@@ -3,8 +3,10 @@
 #include <string>
 #include <memory>
 #include <vector>
+#pragma warning(push, 0)
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Casting.h>
+#pragma warning(pop)
 #include "type.h"
 #include "location.h"
 #include "token.h"

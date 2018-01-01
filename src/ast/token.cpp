@@ -1,9 +1,11 @@
 #include "token.h"
 #include <ostream>
 #include <cerrno>
+#pragma warning(push, 0)
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
+#pragma warning(pop)
 #include "../support/utility.h"
 
 using namespace delta;

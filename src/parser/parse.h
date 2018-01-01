@@ -1,7 +1,9 @@
 #pragma once
 
 #include <memory>
+#pragma warning(push, 0)
 #include <llvm/Support/MemoryBuffer.h>
+#pragma warning(pop)
 
 namespace llvm {
 class StringRef;

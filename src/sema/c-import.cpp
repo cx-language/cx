@@ -3,6 +3,7 @@
 #include <memory>
 #include <cstdlib>
 #include <string>
+#pragma warning(push, 0)
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
@@ -20,12 +21,18 @@
 #include <clang/AST/Type.h>
 #include <clang/AST/PrettyPrinter.h>
 #include <clang/Sema/Sema.h>
+#pragma warning(pop)
 #include "c-import.h"
 #include "typecheck.h"
 #include "../ast/type.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../support/utility.h"
+
+#ifdef _MSC_VER
+#define popen _popen
+#define pclose _pclose
+#endif
 
 using namespace delta;
 
@@ -116,6 +123,12 @@ Type toDelta(clang::QualType qualtype) {
                                   [](clang::QualType qualType) { return toDelta(qualType); });
             return FunctionType::get(toDelta(functionProtoType.getReturnType()),
                                      std::move(paramTypes), isMutable);
+        }
+        case clang::Type::FunctionNoProto: {
+            auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
+            // TODO: Allow passing any number of parameters of any types to a FunctionNoProtoType.
+            // Now we're just assuming the writer meant a 0-argument function type.
+            return FunctionType::get(toDelta(functionNoProtoType.getReturnType()), {}, isMutable);
         }
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
@@ -265,7 +278,7 @@ public:
             case clang::tok::numeric_constant:
                 importNumericConstant(name.getIdentifierInfo()->getName(), token);
                 return;
-                
+
             default:
                 return;
         }
@@ -306,24 +319,37 @@ static void addHeaderSearchPathsFromEnvVar(clang::CompilerInstance& ci, const ch
 }
 
 static void addHeaderSearchPathsFromCCompilerOutput(clang::CompilerInstance& ci) {
-    std::string command = "echo | " + getCCompilerPath() + " -E -v - 2>&1 | grep '^ /'";
-    std::shared_ptr<FILE> process(popen(command.c_str(), "r"), pclose);
+    auto compilerPath = getCCompilerPath();
 
-    while (!std::feof(process.get())) {
-        std::string path;
+    if (llvm::StringRef(compilerPath).endswith_lower("cl.exe")) {
+        if (const char* includePathsVariable = std::getenv("INCLUDE")) {
+            llvm::SmallVector<StringRef, 16> includePaths;
+            llvm::StringRef(includePathsVariable).split(includePaths, ";", -1, false);
 
-        while (true) {
-            int ch = std::fgetc(process.get());
-
-            if (ch == EOF || ch == '\n') {
-                break;
-            } else if (!path.empty() || ch != ' ') {
-                path += (char) ch;
+            for (llvm::StringRef path : includePaths) {
+                ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
             }
         }
+    } else {
+        std::string command = "echo | " + compilerPath + " -E -v - 2>&1 | grep '^ /'";
+        std::shared_ptr<FILE> process(popen(command.c_str(), "r"), pclose);
 
-        if (llvm::sys::fs::is_directory(path)) {
-            ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
+        while (!std::feof(process.get())) {
+            std::string path;
+
+            while (true) {
+                int ch = std::fgetc(process.get());
+
+                if (ch == EOF || ch == '\n') {
+                    break;
+                } else if (!path.empty() || ch != ' ') {
+                    path += (char) ch;
+                }
+            }
+
+            if (llvm::sys::fs::is_directory(path)) {
+                ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
+            }
         }
     }
 }
