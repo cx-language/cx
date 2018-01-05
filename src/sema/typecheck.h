@@ -103,6 +103,7 @@ private:
     Type typecheckBuiltinConversion(CallExpr& expr);
     Type typecheckCastExpr(CastExpr& expr);
     Type typecheckSizeofExpr(SizeofExpr& expr);
+    Type typecheckAddressofExpr(AddressofExpr& expr);
     Type typecheckMemberExpr(MemberExpr& expr);
     Type typecheckSubscriptExpr(SubscriptExpr& expr);
     Type typecheckUnwrapExpr(UnwrapExpr& expr);

@@ -32,6 +32,7 @@ enum class ExprKind {
     CallExpr,
     CastExpr,
     SizeofExpr,
+    AddressofExpr,
     MemberExpr,
     SubscriptExpr,
     UnwrapExpr,
@@ -57,6 +58,7 @@ public:
     bool isCallExpr() const { return getKind() == ExprKind::CallExpr; }
     bool isCastExpr() const { return getKind() == ExprKind::CastExpr; }
     bool isSizeofExpr() const { return getKind() == ExprKind::SizeofExpr; }
+    bool isAddressofExpr() const { return getKind() == ExprKind::AddressofExpr; }
     bool isMemberExpr() const { return getKind() == ExprKind::MemberExpr; }
     bool isSubscriptExpr() const { return getKind() == ExprKind::SubscriptExpr; }
     bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
@@ -317,6 +319,20 @@ public:
 
 private:
     Type type;
+};
+
+/// An expression that returns the memory address stored in a pointer (non-null or nullable) 
+/// as an unsigned integer, e.g. 'addressof(ptr)'.
+class AddressofExpr : public Expr {
+public:
+    AddressofExpr(std::unique_ptr<Expr> operand, SourceLocation location)
+    : Expr(ExprKind::AddressofExpr, location), operand(std::move(operand)) {}
+    const Expr& getOperand() const { return *operand; }
+    Expr& getOperand() { return *operand; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::AddressofExpr; }
+
+private:
+    std::unique_ptr<Expr> operand;
 };
 
 /// A member access expression using the dot syntax, such as 'a.b'.

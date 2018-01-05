@@ -9,7 +9,7 @@ struct ArrayIterator<Element>: Iterator<Element*> {
     }
 
     func hasValue() -> bool {
-        return cast<void*>(current) != cast<void*>(end);
+        return addressof(current) != addressof(end);
     }
 
     func value() -> Element* {
@@ -32,7 +32,7 @@ struct MutableArrayIterator<Element> {
     }
 
     func hasValue() -> bool {
-        return cast<void*>(current) != cast<void*>(end);
+        return addressof(current) != addressof(end);
     }
 
     func value() -> mutable Element* {

@@ -16,7 +16,8 @@ enum TokenKind {
     FLOAT_LITERAL,
     STRING_LITERAL,
     CHARACTER_LITERAL,
-    BREAK, // Keywords...
+    ADDRESSOF, // Keywords...
+    BREAK,
     CASE,
     CAST,
     CLASS,

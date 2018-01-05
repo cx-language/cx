@@ -8,7 +8,7 @@ struct StringIterator: Iterator<char> {
     }
 
     func hasValue() -> bool {
-        return cast<void*>(current) != cast<void*>(end);
+        return addressof(current) != addressof(end);
     }
 
     func value() -> char {

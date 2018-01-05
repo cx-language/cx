@@ -449,6 +449,12 @@ llvm::Value* IRGenerator::codegenSizeofExpr(const SizeofExpr& expr) {
     return llvm::ConstantExpr::getSizeOf(toIR(expr.getType()));
 }
 
+llvm::Value* IRGenerator::codegenAddressofExpr(const AddressofExpr& expr) {
+    llvm::Value* value = codegenExpr(expr.getOperand());
+    llvm::Type* uintptr = toIR(Type::getUIntPtr());
+    return builder.CreatePtrToInt(value, uintptr, "address");
+}
+
 llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName) {
     auto baseType = baseValue->getType();
     if (baseType->isPointerTy()) {
@@ -626,6 +632,7 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
         case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));
         case ExprKind::CastExpr: return codegenCastExpr(llvm::cast<CastExpr>(expr));
         case ExprKind::SizeofExpr: return codegenSizeofExpr(llvm::cast<SizeofExpr>(expr));
+        case ExprKind::AddressofExpr: return codegenAddressofExpr(llvm::cast<AddressofExpr>(expr));
         case ExprKind::MemberExpr: return codegenMemberExpr(llvm::cast<MemberExpr>(expr));
         case ExprKind::SubscriptExpr: return codegenSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
         case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
@@ -651,6 +658,7 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
         case ExprKind::CallExpr: return codegenCallExpr(llvm::cast<CallExpr>(expr));
         case ExprKind::CastExpr: llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
         case ExprKind::SizeofExpr: llvm_unreachable("no lvalue sizeof expressions");
+        case ExprKind::AddressofExpr: llvm_unreachable("no lvalue addressof expressions");
         case ExprKind::MemberExpr: return codegenLvalueMemberExpr(llvm::cast<MemberExpr>(expr));
         case ExprKind::SubscriptExpr: return codegenLvalueSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
         case ExprKind::UnwrapExpr: return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));

@@ -452,6 +452,17 @@ std::unique_ptr<SizeofExpr> parseSizeofExpr() {
    return llvm::make_unique<SizeofExpr>(type, location);
 }
 
+/// addressof-expr ::= 'addressof' '(' expr ')'
+std::unique_ptr<AddressofExpr> parseAddressofExpr() {
+    assert(currentToken() == ADDRESSOF);
+    auto location = getCurrentLocation();
+    consumeToken();
+    parse(LPAREN);
+    auto operand = parseExpr();
+    parse(RPAREN);
+    return llvm::make_unique<AddressofExpr>(std::move(operand), location);
+}
+
 /// member-expr ::= expr '.' id
 std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
     auto location = getCurrentLocation();
@@ -543,7 +554,7 @@ bool shouldParseGenericArgumentList() {
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
 ///                  paren-expr | array-literal | cast-expr | subscript-expr | member-expr
-///                  unwrap-expr | lambda-expr | sizeof-expr
+///                  unwrap-expr | lambda-expr | sizeof-expr | addressof-expr
 std::unique_ptr<Expr> parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
     switch (currentToken()) {
@@ -579,6 +590,7 @@ std::unique_ptr<Expr> parsePostfixExpr() {
         case LBRACKET: expr = parseArrayLiteral(); break;
         case CAST: expr = parseCastExpr(); break;
         case SIZEOF: expr = parseSizeofExpr(); break;
+        case ADDRESSOF: expr = parseAddressofExpr(); break;
         default: unexpectedToken(currentToken()); break;
     }
     while (true) {

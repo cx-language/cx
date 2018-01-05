@@ -60,6 +60,7 @@ bool Expr::isConstant() const {
         case ExprKind::SizeofExpr:
             return false; // TODO: sizeof should be a constant expression.
 
+        case ExprKind::AddressofExpr:
         case ExprKind::MemberExpr:
         case ExprKind::SubscriptExpr:
         case ExprKind::UnwrapExpr:
@@ -117,10 +118,10 @@ bool Expr::isLvalue() const {
         case ExprKind::ArrayLiteralExpr: case ExprKind::TupleExpr: case ExprKind::MemberExpr:
         case ExprKind::SubscriptExpr: case ExprKind::IfExpr:
             return true;
-        case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr: case ExprKind::SizeofExpr:
-        case ExprKind::BoolLiteralExpr: case ExprKind::CastExpr: case ExprKind::UnwrapExpr:
-        case ExprKind::NullLiteralExpr: case ExprKind::BinaryExpr: case ExprKind::CallExpr:
-        case ExprKind::LambdaExpr:
+        case ExprKind::IntLiteralExpr: case ExprKind::FloatLiteralExpr: case ExprKind::BoolLiteralExpr:
+        case ExprKind::NullLiteralExpr: case ExprKind::SizeofExpr: case ExprKind::AddressofExpr:
+        case ExprKind::CastExpr: case ExprKind::UnwrapExpr: case ExprKind::BinaryExpr:
+        case ExprKind::CallExpr: case ExprKind::LambdaExpr:
             return false;
         case ExprKind::PrefixExpr:
             return llvm::cast<PrefixExpr>(this)->getOperator() == STAR;
@@ -258,6 +259,12 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             instantiation = llvm::make_unique<SizeofExpr>(type, sizeofExpr->getLocation());
             break;
         }
+        case ExprKind::AddressofExpr: {
+            auto* addressofExpr = llvm::cast<AddressofExpr>(this);
+            auto operand = addressofExpr->getOperand().instantiate(genericArgs);
+            instantiation = llvm::make_unique<AddressofExpr>(std::move(operand), addressofExpr->getLocation());
+            break;
+        }
         case ExprKind::MemberExpr: {
             auto* memberExpr = llvm::cast<MemberExpr>(this);
             auto base = memberExpr->getBaseExpr()->instantiate(genericArgs);
@@ -359,9 +366,7 @@ int64_t PrefixExpr::getConstantIntegerValue() const {
 
 bool BinaryExpr::isBuiltinOp() const {
     if (op == DOTDOT || op == DOTDOTDOT) return false;
-    if (getLHS().getType().isPointerType() && getRHS().getType().isPointerType()) {
-        return getLHS().getType().getPointee().isVoid() && getRHS().getType().getPointee().isVoid();
-    }
+    if (getLHS().getType().isPointerType() && getRHS().getType().isPointerType()) return false;
     if (getLHS().getType().isEnumType() && getLHS().getType() == getRHS().getType()) return true;
     return getLHS().getType().isBuiltinType() && getRHS().getType().isBuiltinType();
 }

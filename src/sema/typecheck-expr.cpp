@@ -1288,6 +1288,13 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr&) {
     return Type::getUInt64();
 }
 
+Type Typechecker::typecheckAddressofExpr(AddressofExpr& expr) {
+    if (!typecheckExpr(expr.getOperand()).removeOptional().isPointerType()) {
+        error(expr.getLocation(), "operand to 'addressof' must have pointer type");
+    }
+    return Type::getUIntPtr();
+}
+
 Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr())) {
         auto decls = findDecls(varExpr->getIdentifier());
@@ -1447,6 +1454,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
         case ExprKind::CallExpr: type = typecheckCallExpr(llvm::cast<CallExpr>(expr)); break;
         case ExprKind::CastExpr: type = typecheckCastExpr(llvm::cast<CastExpr>(expr)); break;
         case ExprKind::SizeofExpr: type = typecheckSizeofExpr(llvm::cast<SizeofExpr>(expr)); break;
+        case ExprKind::AddressofExpr: type = typecheckAddressofExpr(llvm::cast<AddressofExpr>(expr)); break;
         case ExprKind::MemberExpr: type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr)); break;
         case ExprKind::SubscriptExpr: type = typecheckSubscriptExpr(llvm::cast<SubscriptExpr>(expr)); break;
         case ExprKind::UnwrapExpr: type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;

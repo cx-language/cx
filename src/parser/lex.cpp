@@ -216,6 +216,7 @@ end:
 }
 
 const llvm::StringMap<TokenKind> keywords = {
+    {"addressof",     ADDRESSOF},
     {"break",         BREAK},
     {"case",          CASE},
     {"cast",          CAST},

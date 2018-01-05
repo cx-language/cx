@@ -25,10 +25,10 @@ func fx(a: X*, b: X*) {
 }
 
 // CHECK: define void @fy(%Y* %a, %Y* %b)
-// CHECK-NEXT: %1 = bitcast %Y* %a to i8*
-// CHECK-NEXT: %2 = bitcast %Y* %b to i8*
-// CHECK-NEXT: %3 = icmp ult i8* %1, %2
+// CHECK-NEXT: %address = ptrtoint %Y* %a to i64
+// CHECK-NEXT: %address1 = ptrtoint %Y* %b to i64
+// CHECK-NEXT: %1 = icmp ult i64 %address, %address1
 // CHECK-NEXT: ret void
 func fy(a: Y*, b: Y*) {
-    _ = cast<void*>(a) < cast<void*>(b);
+    _ = addressof(a) < addressof(b);
 }

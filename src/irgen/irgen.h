@@ -104,6 +104,7 @@ private:
     llvm::Value* codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit = nullptr);
     llvm::Value* codegenCastExpr(const CastExpr& expr);
     llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);
+    llvm::Value* codegenAddressofExpr(const AddressofExpr& expr);
     llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
     llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr);
     llvm::Value* codegenMemberExpr(const MemberExpr& expr);
