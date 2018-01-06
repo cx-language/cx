@@ -52,6 +52,8 @@ enum TokenKind {
     UNDERSCORE,
     EQ, // Operators...
     NE,
+    PTR_EQ,
+    PTR_NE,
     LT,
     LE,
     GT,

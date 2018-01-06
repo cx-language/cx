@@ -366,6 +366,7 @@ int64_t PrefixExpr::getConstantIntegerValue() const {
 
 bool BinaryExpr::isBuiltinOp() const {
     if (op == DOTDOT || op == DOTDOTDOT) return false;
+    if (op == PTR_EQ || op == PTR_NE) return true;
     if (getLHS().getType().isPointerType() && getRHS().getType().isPointerType()) return false;
     if (getLHS().getType().isEnumType() && getLHS().getType() == getRHS().getType()) return true;
     return getLHS().getType().isBuiltinType() && getRHS().getType().isBuiltinType();

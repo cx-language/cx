@@ -328,12 +328,22 @@ Token delta::lex() {
                 return GT;
             case '=':
                 ch = readChar();
-                if (ch == '=') return EQ;
+                if (ch == '=') {
+                    ch = readChar();
+                    if (ch == '=') return PTR_EQ;
+                    unreadChar(ch);
+                    return EQ;
+                }
                 unreadChar(ch);
                 return ASSIGN;
             case '!':
                 ch = readChar();
-                if (ch == '=') return NE;
+                if (ch == '=') {
+                    ch = readChar();
+                    if (ch == '=') return PTR_NE;
+                    unreadChar(ch);
+                    return NE;
+                }
                 unreadChar(ch);
                 return NOT;
             case '&':

@@ -1,0 +1,6 @@
+// RUN: %delta -typecheck %s | %FileCheck %s
+
+func f(a: int*, b: uint*) {
+	// CHECK: [[@LINE+1]]:8: warning: pointers to different types are not allowed to be equal
+	_ = a === b;
+}

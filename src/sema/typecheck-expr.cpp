@@ -190,6 +190,16 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         invalidOperandsToBinaryExpr(expr);
     }
 
+    if (expr.getOperator() == PTR_EQ || expr.getOperator() == PTR_NE) {
+        if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
+            error(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
+        }
+        if (leftType.removeOptional().removePointer().asImmutable() !=
+            rightType.removeOptional().removePointer().asImmutable()) {
+            warning(expr.getLocation(), "pointers to different types are not allowed to be equal");
+        }
+    }
+
     if (leftType.isPointerType() && rightType.isInteger() &&
         (expr.getOperator() == PLUS || expr.getOperator() == MINUS)) {
         return leftType;

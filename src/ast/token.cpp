@@ -24,7 +24,7 @@ enum class PrecedenceGroup {
 
 PrecedenceGroup getPrecedenceGroup(TokenKind tokenKind) {
     switch (tokenKind) {
-        case EQ: case NE: return PrecedenceGroup::Comparison;
+        case EQ: case NE: case PTR_EQ: case PTR_NE: return PrecedenceGroup::Comparison;
         case LT: case LE: case GT: case GE: return PrecedenceGroup::Comparison;
         case DOTDOT: case DOTDOTDOT: return PrecedenceGroup::Range;
         case PLUS: case MINUS: return PrecedenceGroup::AddSub;
@@ -57,8 +57,8 @@ Token::Token(TokenKind kind, llvm::StringRef string)
 
 bool Token::isBinaryOperator() const {
     switch (kind) {
-        case EQ: case NE: case LT: case LE: case GT: case GE: case PLUS:
-        case MINUS: case STAR: case SLASH: case MOD: case AND: case AND_AND:
+        case EQ: case NE: case PTR_EQ: case PTR_NE: case LT: case LE: case GT: case GE:
+        case PLUS: case MINUS: case STAR: case SLASH: case MOD: case AND: case AND_AND:
         case OR: case OR_OR: case XOR: case LSHIFT: case RSHIFT:
         case DOTDOT: case DOTDOTDOT: return true;
         default: return false;
@@ -120,7 +120,7 @@ BinaryOperator::BinaryOperator(Token token) : kind(token) {
 
 bool BinaryOperator::isComparisonOperator() const {
     switch (kind) {
-        case EQ: case NE: case LT: case LE: case GT: case GE: return true;
+        case EQ: case NE: case PTR_EQ: case PTR_NE: case LT: case LE: case GT: case GE: return true;
         default: return false;
     }
 }
@@ -148,7 +148,7 @@ const char* delta::toString(TokenKind tokenKind) {
         "defer", "deinit", "else", "enum", "extern", "false", "for", "func", "if", "import", "in",
         "init", "interface", "let", "mutable", "mutating", "null", "return", "sizeof", "struct",
         "switch", "this", "true", "undefined", "var", "while",
-        "_", "==", "!=", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",
+        "_", "==", "!=", "===", "!==", "<", "<=", ">", ">=", "+", "+=", "-", "-=", "*", "*=",
         "/", "/=", "%", "%=", "++", "--", "!", "&", "&=", "&&", "&&=", "|", "|=", "||", "||=",
         "^", "^=", "~", "<<", "<<=", ">>", ">>=", "=", "(", ")", "[", "]", "{", "}",
         ".", "..", "...", ",", ":", ";", "->", "?"

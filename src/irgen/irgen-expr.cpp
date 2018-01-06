@@ -193,8 +193,8 @@ llvm::Value* IRGenerator::codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, l
     }
 
     switch (op) {
-        case EQ:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
-        case NE:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
+        case EQ: case PTR_EQ: return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
+        case NE: case PTR_NE: return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
         case LT:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
                                            &llvm::IRBuilder<>::CreateICmpSLT :
                                            &llvm::IRBuilder<>::CreateICmpULT);
