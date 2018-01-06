@@ -21,7 +21,7 @@ struct MapIterator<Key, Value>: Iterator<KeyValuePair<Key, Value>*> {
         let slotEnd = slot.data() + slot.size();
         current++;
 
-        if (addressof(current) == addressof(slotEnd)) {
+        if (current === slotEnd) {
             hashTableIterator.increment();
             _skipEmptySlots();
         }

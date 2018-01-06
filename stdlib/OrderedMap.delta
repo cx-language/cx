@@ -64,7 +64,7 @@ class OrderedMap<Key, Value> {
         a.parent = b;
 
         if (b.parent != null) {
-            if (addressof(b.parent!.right) == addressof(a)) {
+            if (b.parent!.right === a) {
                 b.parent!.right = b;
             } else {
                 b.parent!.left = b;
@@ -90,7 +90,7 @@ class OrderedMap<Key, Value> {
         a.parent = b;
 
         if (b.parent != null) {
-            if (addressof(b.parent!.right) == addressof(a)) {
+            if (b.parent!.right === a) {
                 b.parent!.right = b;
             } else {
                 b.parent!.left = b;
@@ -219,7 +219,7 @@ class OrderedMap<Key, Value> {
             if (root!.key == *key) {
                 root = child;
             } else {
-                if (addressof(parent!.left) == addressof(n)) {
+                if (parent!.left === n) {
                     parent!.left = child;
                 } else {
                     parent!.right = child;
@@ -295,7 +295,7 @@ class OrderedMap<Key, Value> {
 
         var n = node;
         while (n.parent != null) {
-            if (addressof(n) == addressof(n.parent!.right)) {
+            if (n === n.parent!.right) {
                 return n.parent;
             }
             n = n.parent!;
@@ -328,7 +328,7 @@ class OrderedMap<Key, Value> {
 
         var n = node;
         while (n.parent != null) {
-            if (addressof(n) == addressof(n.parent!.left)) {
+            if (n === n.parent!.left) {
                 return n.parent;
             }
             n = n.parent!;
