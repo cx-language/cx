@@ -432,8 +432,8 @@ void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
         }
 
         switch (binaryExpr.getOperator()) {
-            case AND_AND: error(stmt.getLocation(), "'&&=' not implemented yet");
-            case OR_OR: error(stmt.getLocation(), "'||=' not implemented yet");
+            case Token::AndAnd: error(stmt.getLocation(), "'&&=' not implemented yet");
+            case Token::OrOr: error(stmt.getLocation(), "'||=' not implemented yet");
             default: break;
         }
 

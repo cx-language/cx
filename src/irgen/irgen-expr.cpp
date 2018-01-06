@@ -95,8 +95,8 @@ llvm::Value* IRGenerator::codegenNot(const PrefixExpr& expr) {
 
 llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
     switch (expr.getOperator()) {
-        case PLUS: return codegenExpr(expr.getOperand());
-        case MINUS:
+        case Token::Plus: return codegenExpr(expr.getOperand());
+        case Token::Minus:
             if (expr.getOperand().getType().isFloatingPoint()) {
                 return builder.CreateFPCast(builder.CreateFNeg(codegenExpr(expr.getOperand())),
                                             toIR(expr.getType()));
@@ -104,18 +104,18 @@ llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
                 return builder.CreateIntCast(builder.CreateNeg(codegenExpr(expr.getOperand())),
                                              toIR(expr.getType()), expr.getType().isSigned());
             }
-        case STAR: return builder.CreateLoad(codegenExpr(expr.getOperand()));
-        case AND: return codegenLvalueExpr(expr.getOperand());
-        case NOT: return codegenNot(expr);
-        case COMPL: return codegenNot(expr);
+        case Token::Star: return builder.CreateLoad(codegenExpr(expr.getOperand()));
+        case Token::And: return codegenLvalueExpr(expr.getOperand());
+        case Token::Not: return codegenNot(expr);
+        case Token::Tilde: return codegenNot(expr);
         default: llvm_unreachable("invalid prefix operator");
     }
 }
 
 llvm::Value* IRGenerator::codegenLvaluePrefixExpr(const PrefixExpr& expr) {
     switch (expr.getOperator()) {
-        case STAR: return codegenExpr(expr.getOperand());
-        case AND: return codegenLvalueExpr(expr.getOperand());
+        case Token::Star: return codegenExpr(expr.getOperand());
+        case Token::And: return codegenLvalueExpr(expr.getOperand());
         default: llvm_unreachable("invalid lvalue prefix operator");
     }
 }
@@ -177,61 +177,92 @@ llvm::Value* IRGenerator::codegenLogicalOr(const Expr& left, const Expr& right) 
 llvm::Value* IRGenerator::codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr) {
     if (lhs->getType()->isFloatingPointTy()) {
         switch (op) {
-            case EQ:    return builder.CreateFCmpOEQ(lhs, rhs);
-            case NE:    return builder.CreateFCmpONE(lhs, rhs);
-            case LT:    return builder.CreateFCmpOLT(lhs, rhs);
-            case LE:    return builder.CreateFCmpOLE(lhs, rhs);
-            case GT:    return builder.CreateFCmpOGT(lhs, rhs);
-            case GE:    return builder.CreateFCmpOGE(lhs, rhs);
-            case PLUS:  return builder.CreateFAdd(lhs, rhs);
-            case MINUS: return builder.CreateFSub(lhs, rhs);
-            case STAR:  return builder.CreateFMul(lhs, rhs);
-            case SLASH: return builder.CreateFDiv(lhs, rhs);
-            case MOD:   return builder.CreateFRem(lhs, rhs);
-            default:    llvm_unreachable("all cases handled");
+            case Token::Equal: return builder.CreateFCmpOEQ(lhs, rhs);
+            case Token::NotEqual: return builder.CreateFCmpONE(lhs, rhs);
+            case Token::Less: return builder.CreateFCmpOLT(lhs, rhs);
+            case Token::LessOrEqual: return builder.CreateFCmpOLE(lhs, rhs);
+            case Token::Greater: return builder.CreateFCmpOGT(lhs, rhs);
+            case Token::GreaterOrEqual: return builder.CreateFCmpOGE(lhs, rhs);
+            case Token::Plus: return builder.CreateFAdd(lhs, rhs);
+            case Token::Minus: return builder.CreateFSub(lhs, rhs);
+            case Token::Star: return builder.CreateFMul(lhs, rhs);
+            case Token::Slash: return builder.CreateFDiv(lhs, rhs);
+            case Token::Modulo: return builder.CreateFRem(lhs, rhs);
+            default: llvm_unreachable("all cases handled");
         }
     }
 
     switch (op) {
-        case EQ: case PTR_EQ: return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
-        case NE: case PTR_NE: return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
-        case LT:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
-                                           &llvm::IRBuilder<>::CreateICmpSLT :
-                                           &llvm::IRBuilder<>::CreateICmpULT);
-        case LE:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
-                                           &llvm::IRBuilder<>::CreateICmpSLE :
-                                           &llvm::IRBuilder<>::CreateICmpULE);
-        case GT:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
-                                           &llvm::IRBuilder<>::CreateICmpSGT :
-                                           &llvm::IRBuilder<>::CreateICmpUGT);
-        case GE:    return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
-                                           &llvm::IRBuilder<>::CreateICmpSGE :
-                                           &llvm::IRBuilder<>::CreateICmpUGE);
-        case PLUS:  return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAdd);
-        case MINUS: return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSub);
-        case STAR:  return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateMul);
-        case SLASH: return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
-                                           &llvm::IRBuilder<>::CreateSDiv :
-                                           &llvm::IRBuilder<>::CreateUDiv);
-        case MOD:   return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
-                                           &llvm::IRBuilder<>::CreateSRem :
-                                           &llvm::IRBuilder<>::CreateURem);
-        case AND:   return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAnd);
-        case OR:    return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateOr);
-        case XOR:   return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateXor);
-        case LSHIFT: return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateShl);
-        case RSHIFT: return codegenBinaryOp(lhs, rhs, leftExpr.getType().isSigned() ?
-                                            (BinaryCreate1) &llvm::IRBuilder<>::CreateAShr :
-                                            (BinaryCreate1) &llvm::IRBuilder<>::CreateLShr);
-        default:    llvm_unreachable("all cases handled");
+        case Token::Equal: case Token::PointerEqual:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
+        case Token::NotEqual: case Token::PointerNotEqual:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
+        case Token::Less:
+            if (leftExpr.getType().isSigned()) {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSLT);
+            } else {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpULT);
+            }
+        case Token::LessOrEqual:
+            if (leftExpr.getType().isSigned()) {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSLE);
+            } else {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpULE);
+            }
+        case Token::Greater:
+            if (leftExpr.getType().isSigned()) {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSGT);
+            } else {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpUGT);
+            }
+        case Token::GreaterOrEqual:
+            if (leftExpr.getType().isSigned()) {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSGE);
+            } else {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpUGE);
+            }
+        case Token::Plus:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAdd);
+        case Token::Minus:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSub);
+        case Token::Star:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateMul);
+        case Token::Slash:
+            if (leftExpr.getType().isSigned()) {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSDiv);
+            } else {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateUDiv);
+            }
+        case Token::Modulo:
+            if (leftExpr.getType().isSigned()) {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSRem);
+            } else {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateURem);
+            }
+        case Token::And:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAnd);
+        case Token::Or:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateOr);
+        case Token::Xor:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateXor);
+        case Token::LeftShift:
+            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateShl);
+        case Token::RightShift:
+            if (leftExpr.getType().isSigned()) {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAShr);
+            } else {
+                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateLShr);
+            }
+        default:
+            llvm_unreachable("all cases handled");
     }
 }
 
 llvm::Value* IRGenerator::codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, const Expr& rhs) {
     switch (op) {
-        case AND_AND: return codegenLogicalAnd(lhs, rhs);
-        case OR_OR:   return codegenLogicalOr(lhs, rhs);
-        default:      llvm_unreachable("invalid short-circuit binary operator");
+        case Token::AndAnd: return codegenLogicalAnd(lhs, rhs);
+        case Token::OrOr: return codegenLogicalOr(lhs, rhs);
+        default: llvm_unreachable("invalid short-circuit binary operator");
     }
 }
 
@@ -245,7 +276,7 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
     }
 
     switch (expr.getOperator()) {
-        case AND_AND: case OR_OR:
+        case Token::AndAnd: case Token::OrOr:
             return codegenShortCircuitBinaryOp(expr.getOperator(), expr.getLHS(), expr.getRHS());
         default:
             llvm::Value* lhs = codegenExpr(expr.getLHS());
@@ -493,7 +524,7 @@ llvm::Value* IRGenerator::codegenPointerOffset(const BinaryExpr& expr) {
     auto* pointer = codegenExpr(expr.getLHS());
     auto* offset = codegenExpr(expr.getRHS());
 
-    if (expr.getOperator() == MINUS) {
+    if (expr.getOperator() == Token::Minus) {
         offset = builder.CreateNeg(offset);
     }
 

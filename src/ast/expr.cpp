@@ -124,7 +124,7 @@ bool Expr::isLvalue() const {
         case ExprKind::CallExpr: case ExprKind::LambdaExpr:
             return false;
         case ExprKind::PrefixExpr:
-            return llvm::cast<PrefixExpr>(this)->getOperator() == STAR;
+            return llvm::cast<PrefixExpr>(this)->getOperator() == Token::Star;
     }
     llvm_unreachable("all cases handled");
 }
@@ -357,16 +357,16 @@ int64_t PrefixExpr::getConstantIntegerValue() const {
     auto operand = getOperand().getConstantIntegerValue();
 
     switch (getOperator()) {
-        case PLUS: return operand;
-        case MINUS: return -operand;
-        case COMPL: return ~operand;
+        case Token::Plus: return operand;
+        case Token::Minus: return -operand;
+        case Token::Tilde: return ~operand;
         default: llvm_unreachable("invalid constant integer prefix operator");
     }
 }
 
 bool BinaryExpr::isBuiltinOp() const {
-    if (op == DOTDOT || op == DOTDOTDOT) return false;
-    if (op == PTR_EQ || op == PTR_NE) return true;
+    if (op == Token::DotDot || op == Token::DotDotDot) return false;
+    if (op == Token::PointerEqual || op == Token::PointerNotEqual) return true;
     if (getLHS().getType().isPointerType() && getRHS().getType().isPointerType()) return false;
     if (getLHS().getType().isEnumType() && getLHS().getType() == getRHS().getType()) return true;
     return getLHS().getType().isBuiltinType() && getRHS().getType().isBuiltinType();
@@ -380,16 +380,16 @@ int64_t BinaryExpr::getConstantIntegerValue() const {
     auto rhs = getRHS().getConstantIntegerValue();
 
     switch (getOperator()) {
-        case PLUS: return lhs + rhs;
-        case MINUS: return lhs - rhs;
-        case STAR: return lhs * rhs;
-        case SLASH: return lhs / rhs;
-        case MOD: return lhs % rhs;
-        case AND: return lhs & rhs;
-        case OR: return lhs | rhs;
-        case XOR: return lhs ^ rhs;
-        case LSHIFT: return lhs << rhs;
-        case RSHIFT: return lhs >> rhs;
+        case Token::Plus: return lhs + rhs;
+        case Token::Minus: return lhs - rhs;
+        case Token::Star: return lhs * rhs;
+        case Token::Slash: return lhs / rhs;
+        case Token::Modulo: return lhs % rhs;
+        case Token::And: return lhs & rhs;
+        case Token::Or: return lhs | rhs;
+        case Token::Xor: return lhs ^ rhs;
+        case Token::LeftShift: return lhs << rhs;
+        case Token::RightShift: return lhs >> rhs;
         default: llvm_unreachable("invalid constant integer binary operator");
     }
 }

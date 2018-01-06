@@ -39,7 +39,7 @@ SourceLocation getCurrentLocation() {
 }
 
 Token lookAhead(int offset) {
-    if (int(currentTokenIndex) + offset < 0) return NO_TOKEN;
+    if (int(currentTokenIndex) + offset < 0) return Token::None;
     int count = int(currentTokenIndex) + offset - int(tokenBuffer.size()) + 1;
     while (count-- > 0) tokenBuffer.emplace_back(lex());
     return tokenBuffer[currentTokenIndex + offset];
@@ -54,9 +54,9 @@ Token consumeToken() {
 
 /// Adds quotes around the string representation of the given token unless
 /// it's an identifier, numeric literal, string literal, or end-of-file.
-std::string quote(TokenKind tokenKind) {
+std::string quote(Token::Kind tokenKind) {
     std::ostringstream stream;
-    if (tokenKind < BREAK) {
+    if (tokenKind < Token::Break) {
         stream << tokenKind;
     } else {
         stream << '\'' << tokenKind << '\'';
@@ -64,7 +64,7 @@ std::string quote(TokenKind tokenKind) {
     return stream.str();
 }
 
-[[noreturn]] void unexpectedToken(Token token, llvm::ArrayRef<TokenKind> expected = {},
+[[noreturn]] void unexpectedToken(Token token, llvm::ArrayRef<Token::Kind> expected = {},
                                   const char* contextInfo = nullptr) {
     if (expected.size() == 0) {
         error(token.getLocation(), "unexpected ", quote(token),
@@ -76,28 +76,28 @@ std::string quote(TokenKind tokenKind) {
     }
 }
 
-void expect(llvm::ArrayRef<TokenKind> expected, const char* contextInfo) {
+void expect(llvm::ArrayRef<Token::Kind> expected, const char* contextInfo) {
     if (!llvm::is_contained(expected, currentToken())) {
         unexpectedToken(currentToken(), expected, contextInfo);
     }
 }
 
-Token parse(llvm::ArrayRef<TokenKind> expected, const char* contextInfo = nullptr) {
+Token parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInfo = nullptr) {
     expect(expected, contextInfo);
     return consumeToken();
 }
 
-static void checkStmtTerminatorConsistency(TokenKind currentTerminator,
+static void checkStmtTerminatorConsistency(Token::Kind currentTerminator,
                                            llvm::function_ref<SourceLocation()> getLocation) {
-    static TokenKind previousTerminator = NO_TOKEN;
+    static Token::Kind previousTerminator = Token::None;
     static const char* filePath = nullptr;
 
     if (filePath != delta::currentFilePath) {
         filePath = delta::currentFilePath;
-        previousTerminator = NO_TOKEN;
+        previousTerminator = Token::None;
     }
 
-    if (previousTerminator == NO_TOKEN) {
+    if (previousTerminator == Token::None) {
         previousTerminator = currentTerminator;
     } else if (previousTerminator != currentTerminator) {
         warning(getLocation(), "inconsistent statement terminator, expected ", quote(previousTerminator));
@@ -106,7 +106,7 @@ static void checkStmtTerminatorConsistency(TokenKind currentTerminator,
 
 void parseStmtTerminator(const char* contextInfo = nullptr) {
     if (getCurrentLocation().line != lookAhead(-1).getLocation().line) {
-        checkStmtTerminatorConsistency(NEWLINE, [] {
+        checkStmtTerminatorConsistency(Token::Newline, [] {
             // TODO: Use pre-existing buffer instead of reading from file here.
             readLineFromFile(lookAhead(-1).getLocation());
             std::ifstream file(getCurrentLocation().file);
@@ -122,15 +122,15 @@ void parseStmtTerminator(const char* contextInfo = nullptr) {
     }
 
     switch (currentToken()) {
-        case RBRACE:
-            checkStmtTerminatorConsistency(NEWLINE, getCurrentLocation);
+        case Token::RightBrace:
+            checkStmtTerminatorConsistency(Token::Newline, getCurrentLocation);
             return;
-        case SEMICOLON:
-            checkStmtTerminatorConsistency(SEMICOLON, getCurrentLocation);
+        case Token::Semicolon:
+            checkStmtTerminatorConsistency(Token::Semicolon, getCurrentLocation);
             consumeToken();
             return;
         default:
-            unexpectedToken(currentToken(), { NEWLINE, SEMICOLON }, contextInfo);
+            unexpectedToken(currentToken(), { Token::Newline, Token::Semicolon }, contextInfo);
     }
 }
 
@@ -148,13 +148,13 @@ ParamDecl parseParam(bool withType);
 /// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
 /// argument ::= (id ':')? expr
 std::vector<Argument> parseArgumentList() {
-    parse(LPAREN);
+    parse(Token::LeftParen);
     std::vector<Argument> args;
-    while (currentToken() != RPAREN) {
+    while (currentToken() != Token::RightParen) {
         std::string name;
         SourceLocation location = SourceLocation::invalid();
-        if (lookAhead(1) == COLON) {
-            auto result = parse(IDENTIFIER);
+        if (lookAhead(1) == Token::Colon) {
+            auto result = parse(Token::Identifier);
             name = std::move(result.getString());
             location = result.getLocation();
             consumeToken();
@@ -162,7 +162,7 @@ std::vector<Argument> parseArgumentList() {
         auto value = parseExpr();
         if (!location.isValid()) location = value->getLocation();
         args.push_back({ std::move(name), std::move(value), location });
-        if (currentToken() != RPAREN) parse(COMMA);
+        if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
     consumeToken();
     return args;
@@ -170,13 +170,13 @@ std::vector<Argument> parseArgumentList() {
 
 /// var-expr ::= id
 std::unique_ptr<VarExpr> parseVarExpr() {
-    ASSERT(currentToken().is(IDENTIFIER, INIT));
+    ASSERT(currentToken().is(Token::Identifier, Token::Init));
     auto id = consumeToken();
     return llvm::make_unique<VarExpr>(id.getString(), id.getLocation());
 }
 
 std::unique_ptr<VarExpr> parseThis() {
-    ASSERT(currentToken() == THIS);
+    ASSERT(currentToken() == Token::This);
     auto expr = llvm::make_unique<VarExpr>("this", getCurrentLocation());
     consumeToken();
     return expr;
@@ -214,7 +214,7 @@ std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLocation li
 }
 
 std::unique_ptr<StringLiteralExpr> parseStringLiteral() {
-    ASSERT(currentToken() == STRING_LITERAL);
+    ASSERT(currentToken() == Token::StringLiteral);
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
     auto expr = llvm::make_unique<StringLiteralExpr>(std::move(content), getCurrentLocation());
     consumeToken();
@@ -222,7 +222,7 @@ std::unique_ptr<StringLiteralExpr> parseStringLiteral() {
 }
 
 std::unique_ptr<CharacterLiteralExpr> parseCharacterLiteral() {
-    ASSERT(currentToken() == CHARACTER_LITERAL);
+    ASSERT(currentToken() == Token::CharacterLiteral);
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
     if (content.size() != 1) error(getCurrentLocation(), "character literal must consist of a single UTF-8 byte");
     auto expr = llvm::make_unique<CharacterLiteralExpr>(content[0], getCurrentLocation());
@@ -231,7 +231,7 @@ std::unique_ptr<CharacterLiteralExpr> parseCharacterLiteral() {
 }
 
 std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
-    ASSERT(currentToken() == INT_LITERAL);
+    ASSERT(currentToken() == Token::IntegerLiteral);
     auto expr = llvm::make_unique<IntLiteralExpr>(currentToken().getIntegerValue(),
                                                   getCurrentLocation());
     consumeToken();
@@ -239,7 +239,7 @@ std::unique_ptr<IntLiteralExpr> parseIntLiteral() {
 }
 
 std::unique_ptr<FloatLiteralExpr> parseFloatLiteral() {
-    ASSERT(currentToken() == FLOAT_LITERAL);
+    ASSERT(currentToken() == Token::FloatLiteral);
     auto expr = llvm::make_unique<FloatLiteralExpr>(currentToken().getFloatingPointValue(),
                                                     getCurrentLocation());
     consumeToken();
@@ -249,8 +249,8 @@ std::unique_ptr<FloatLiteralExpr> parseFloatLiteral() {
 std::unique_ptr<BoolLiteralExpr> parseBoolLiteral() {
     std::unique_ptr<BoolLiteralExpr> expr;
     switch (currentToken()) {
-        case TRUE: expr = llvm::make_unique<BoolLiteralExpr>(true, getCurrentLocation()); break;
-        case FALSE: expr = llvm::make_unique<BoolLiteralExpr>(false, getCurrentLocation()); break;
+        case Token::True: expr = llvm::make_unique<BoolLiteralExpr>(true, getCurrentLocation()); break;
+        case Token::False: expr = llvm::make_unique<BoolLiteralExpr>(false, getCurrentLocation()); break;
         default: llvm_unreachable("all cases handled");
     }
     consumeToken();
@@ -258,7 +258,7 @@ std::unique_ptr<BoolLiteralExpr> parseBoolLiteral() {
 }
 
 std::unique_ptr<NullLiteralExpr> parseNullLiteral() {
-    ASSERT(currentToken() == NULL_LITERAL);
+    ASSERT(currentToken() == Token::Null);
     auto expr = llvm::make_unique<NullLiteralExpr>(getCurrentLocation());
     consumeToken();
     return expr;
@@ -266,11 +266,11 @@ std::unique_ptr<NullLiteralExpr> parseNullLiteral() {
 
 /// array-literal ::= '[' expr-list ']'
 std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral() {
-    ASSERT(currentToken() == LBRACKET);
+    ASSERT(currentToken() == Token::LeftBracket);
     auto location = getCurrentLocation();
     consumeToken();
     auto elements = parseExprList();
-    parse(RBRACKET);
+    parse(Token::RightBracket);
     return llvm::make_unique<ArrayLiteralExpr>(std::move(elements), location);
 }
 
@@ -281,14 +281,14 @@ std::vector<Type> parseNonEmptyTypeList() {
     while (true) {
         types.push_back(parseType());
 
-        if (currentToken() == COMMA) {
+        if (currentToken() == Token::Comma) {
             consumeToken();
             continue;
         }
 
-        if (currentToken() == RSHIFT) {
-            tokenBuffer[currentTokenIndex] = GT;
-            tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, GT);
+        if (currentToken() == Token::RightShift) {
+            tokenBuffer[currentTokenIndex] = Token::Greater;
+            tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token::Greater);
         }
 
         break;
@@ -299,26 +299,26 @@ std::vector<Type> parseNonEmptyTypeList() {
 
 /// generic-argument-list ::= '<' non-empty-type-list '>'
 std::vector<Type> parseGenericArgumentList() {
-    ASSERT(currentToken() == LT);
+    ASSERT(currentToken() == Token::Less);
     consumeToken();
     std::vector<Type> genericArgs = parseNonEmptyTypeList();
-    parse(GT);
+    parse(Token::Greater);
     return genericArgs;
 }
 
 int64_t parseArraySizeInBrackets() {
-    ASSERT(currentToken() == LBRACKET);
+    ASSERT(currentToken() == Token::LeftBracket);
     consumeToken();
     int64_t arraySize;
 
     switch (currentToken()) {
-        case INT_LITERAL:
+        case Token::IntegerLiteral:
             arraySize = consumeToken().getIntegerValue();
             break;
-        case RBRACKET:
+        case Token::RightBracket:
             arraySize = ArrayType::runtimeSize;
             break;
-        case QUESTION_MARK:
+        case Token::QuestionMark:
             consumeToken();
             arraySize = ArrayType::unknownSize;
             break;
@@ -326,24 +326,24 @@ int64_t parseArraySizeInBrackets() {
             error(getCurrentLocation(), "non-literal array bounds not implemented yet");
     }
 
-    parse(RBRACKET);
+    parse(Token::RightBracket);
     return arraySize;
 }
 
 /// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
 Type parseSimpleType(bool isMutable) {
-    llvm::StringRef id = parse(IDENTIFIER).getString();
+    llvm::StringRef id = parse(Token::Identifier).getString();
 
     Type type;
     std::vector<Type> genericArgs;
 
     switch (currentToken()) {
-        case LT:
+        case Token::Less:
             genericArgs = parseGenericArgumentList();
             LLVM_FALLTHROUGH;
         default:
             return BasicType::get(id, std::move(genericArgs), isMutable);
-        case LBRACKET:
+        case Token::LeftBracket:
             type = BasicType::get(id, {}, isMutable);
             break;
     }
@@ -356,17 +356,17 @@ Type parseSimpleType(bool isMutable) {
 /// param-types ::= '' | non-empty-param-types
 /// non-empty-param-types ::= type | type ',' non-empty-param-types
 Type parseFunctionType() {
-    ASSERT(currentToken() == LPAREN);
+    ASSERT(currentToken() == Token::LeftParen);
     consumeToken();
     std::vector<Type> paramTypes;
 
-    while (currentToken() != RPAREN) {
+    while (currentToken() != Token::RightParen) {
         paramTypes.emplace_back(parseType());
-        if (currentToken() != RPAREN) parse(COMMA);
+        if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
 
     consumeToken();
-    parse(RARROW);
+    parse(Token::RightArrow);
     Type returnType = parseType();
     return FunctionType::get(returnType, std::move(paramTypes));
 }
@@ -376,49 +376,49 @@ Type parseType() {
     Type type;
 
     switch (currentToken()) {
-        case IDENTIFIER:
+        case Token::Identifier:
             type = parseSimpleType(false);
             break;
-        case MUTABLE:
+        case Token::Mutable:
             consumeToken();
             type = parseSimpleType(true);
             type.setMutable(true);
             break;
-        case LPAREN:
+        case Token::LeftParen:
             type = parseFunctionType();
             break;
         default:
-            unexpectedToken(currentToken(), { IDENTIFIER, MUTABLE, LPAREN });
+            unexpectedToken(currentToken(), { Token::Identifier, Token::Mutable, Token::LeftParen });
     }
 
     while (true) {
         switch (currentToken()) {
-            case STAR:
+            case Token::Star:
                 type = PointerType::get(type);
                 consumeToken();
                 break;
-            case QUESTION_MARK:
+            case Token::QuestionMark:
                 type = OptionalType::get(type);
                 consumeToken();
                 break;
-            case MUTABLE:
+            case Token::Mutable:
                 consumeToken();
                 switch (currentToken()) {
-                    case STAR:
+                    case Token::Star:
                         type = PointerType::get(type, true);
                         consumeToken();
                         break;
-                    case QUESTION_MARK:
+                    case Token::QuestionMark:
                         type = OptionalType::get(type, true);
                         consumeToken();
                     default:
-                        unexpectedToken(currentToken(), { STAR, QUESTION_MARK }, "after 'mutable'");
+                        unexpectedToken(currentToken(), { Token::Star, Token::QuestionMark }, "after 'mutable'");
                 }
                 break;
-            case LBRACKET:
+            case Token::LeftBracket:
                 type = ArrayType::get(type, parseArraySizeInBrackets());
                 break;
-            case AND:
+            case Token::And:
                 error(getCurrentLocation(), "Delta doesn't have C++-style references; ",
                       "use pointers ('*') instead, they are non-null by default");
             default:
@@ -429,37 +429,37 @@ Type parseType() {
 
 /// cast-expr ::= 'cast' '<' type '>' '(' expr ')'
 std::unique_ptr<CastExpr> parseCastExpr() {
-    ASSERT(currentToken() == CAST);
+    ASSERT(currentToken() == Token::Cast);
     auto location = getCurrentLocation();
     consumeToken();
-    parse(LT);
+    parse(Token::Less);
     auto type = parseType();
-    parse(GT);
-    parse(LPAREN);
+    parse(Token::Greater);
+    parse(Token::LeftParen);
     auto expr = parseExpr();
-    parse(RPAREN);
+    parse(Token::RightParen);
     return llvm::make_unique<CastExpr>(type, std::move(expr), location);
 }
 
 /// sizeof-expr ::= 'sizeof' '(' type ')'
 std::unique_ptr<SizeofExpr> parseSizeofExpr() {
-   assert(currentToken() == SIZEOF);
+   assert(currentToken() == Token::Sizeof);
    auto location = getCurrentLocation();
    consumeToken();
-   parse(LPAREN);
+   parse(Token::LeftParen);
    auto type = parseType();
-   parse(RPAREN);
+   parse(Token::RightParen);
    return llvm::make_unique<SizeofExpr>(type, location);
 }
 
 /// addressof-expr ::= 'addressof' '(' expr ')'
 std::unique_ptr<AddressofExpr> parseAddressofExpr() {
-    assert(currentToken() == ADDRESSOF);
+    assert(currentToken() == Token::Addressof);
     auto location = getCurrentLocation();
     consumeToken();
-    parse(LPAREN);
+    parse(Token::LeftParen);
     auto operand = parseExpr();
-    parse(RPAREN);
+    parse(Token::RightParen);
     return llvm::make_unique<AddressofExpr>(std::move(operand), location);
 }
 
@@ -468,10 +468,10 @@ std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
     auto location = getCurrentLocation();
     llvm::StringRef member;
 
-    if (currentToken().is(IDENTIFIER, INIT, DEINIT)) {
+    if (currentToken().is(Token::Identifier, Token::Init, Token::Deinit)) {
         member = consumeToken().getString();
     } else {
-        unexpectedToken(currentToken(), IDENTIFIER);
+        unexpectedToken(currentToken(), Token::Identifier);
     }
 
     return llvm::make_unique<MemberExpr>(std::move(lhs), member, location);
@@ -479,17 +479,17 @@ std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs) {
 
 /// subscript-expr ::= expr '[' expr ']'
 std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand) {
-    ASSERT(currentToken() == LBRACKET);
+    ASSERT(currentToken() == Token::LeftBracket);
     auto location = getCurrentLocation();
     consumeToken();
     auto index = parseExpr();
-    parse(RBRACKET);
+    parse(Token::RightBracket);
     return llvm::make_unique<SubscriptExpr>(std::move(operand), std::move(index), location);
 }
 
 /// unwrap-expr ::= expr '!'
 std::unique_ptr<UnwrapExpr> parseUnwrapExpr(std::unique_ptr<Expr> operand) {
-    ASSERT(currentToken() == NOT);
+    ASSERT(currentToken() == Token::Not);
     auto location = getCurrentLocation();
     consumeToken();
     return llvm::make_unique<UnwrapExpr>(std::move(operand), location);
@@ -498,7 +498,7 @@ std::unique_ptr<UnwrapExpr> parseUnwrapExpr(std::unique_ptr<Expr> operand) {
 /// call-expr ::= expr generic-argument-list? '(' arguments ')'
 std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> callee) {
     std::vector<Type> genericArgs;
-    if (currentToken() == LT) {
+    if (currentToken() == Token::Less) {
         genericArgs = parseGenericArgumentList();
     }
     auto location = getCurrentLocation();
@@ -508,37 +508,37 @@ std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> callee) {
 }
 
 std::unique_ptr<LambdaExpr> parseLambdaExpr() {
-    ASSERT(currentToken().is(LPAREN, IDENTIFIER));
+    ASSERT(currentToken().is(Token::LeftParen, Token::Identifier));
     auto location = getCurrentLocation();
     std::vector<ParamDecl> params;
 
-    if (currentToken() == IDENTIFIER) {
+    if (currentToken() == Token::Identifier) {
         params.push_back(parseParam(true));
     } else {
         params = parseParamList(nullptr, true);
     }
 
-    parse(RARROW);
+    parse(Token::RightArrow);
     auto body = parseExpr();
     return llvm::make_unique<LambdaExpr>(std::move(params), std::move(body), location);
 }
 
 /// paren-expr ::= '(' expr ')'
 std::unique_ptr<Expr> parseParenExpr() {
-    ASSERT(currentToken() == LPAREN);
+    ASSERT(currentToken() == Token::LeftParen);
     consumeToken();
     auto expr = parseExpr();
-    parse(RPAREN);
+    parse(Token::RightParen);
     return expr;
 }
 
 /// if-expr ::= expr '?' expr ':' expr
 std::unique_ptr<IfExpr> parseIfExpr(std::unique_ptr<Expr> condition) {
-    ASSERT(currentToken() == QUESTION_MARK);
+    ASSERT(currentToken() == Token::QuestionMark);
     auto location = getCurrentLocation();
     consumeToken();
     auto thenExpr = parseExpr();
-    parse(COLON);
+    parse(Token::Colon);
     auto elseExpr = parseExpr();
     return llvm::make_unique<IfExpr>(std::move(condition), std::move(thenExpr), std::move(elseExpr), location);
 }
@@ -558,11 +558,11 @@ bool shouldParseGenericArgumentList() {
 std::unique_ptr<Expr> parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
     switch (currentToken()) {
-        case IDENTIFIER:
-        case INIT:
+        case Token::Identifier:
+        case Token::Init:
             switch (lookAhead(1)) {
-                case LPAREN: expr = parseCallExpr(parseVarExpr()); break;
-                case LT:
+                case Token::LeftParen: expr = parseCallExpr(parseVarExpr()); break;
+                case Token::Less:
                     if (shouldParseGenericArgumentList()) {
                         expr = parseCallExpr(parseVarExpr());
                         break;
@@ -571,44 +571,44 @@ std::unique_ptr<Expr> parsePostfixExpr() {
                 default: expr = parseVarExpr(); break;
             }
             break;
-        case STRING_LITERAL: expr = parseStringLiteral(); break;
-        case CHARACTER_LITERAL: expr = parseCharacterLiteral(); break;
-        case INT_LITERAL: expr = parseIntLiteral(); break;
-        case FLOAT_LITERAL: expr = parseFloatLiteral(); break;
-        case TRUE: case FALSE: expr = parseBoolLiteral(); break;
-        case NULL_LITERAL: expr = parseNullLiteral(); break;
-        case THIS: expr = parseThis(); break;
-        case LPAREN:
-            if (lookAhead(1) == RPAREN && lookAhead(2) == RARROW) {
+        case Token::StringLiteral: expr = parseStringLiteral(); break;
+        case Token::CharacterLiteral: expr = parseCharacterLiteral(); break;
+        case Token::IntegerLiteral: expr = parseIntLiteral(); break;
+        case Token::FloatLiteral: expr = parseFloatLiteral(); break;
+        case Token::True: case Token::False: expr = parseBoolLiteral(); break;
+        case Token::Null: expr = parseNullLiteral(); break;
+        case Token::This: expr = parseThis(); break;
+        case Token::LeftParen:
+            if (lookAhead(1) == Token::RightParen && lookAhead(2) == Token::RightArrow) {
                 expr = parseLambdaExpr();
-            } else if (lookAhead(1) == IDENTIFIER && lookAhead(2) == COLON) {
+            } else if (lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Colon) {
                 expr = parseLambdaExpr();
             } else {
                 expr = parseParenExpr();
             }
             break;
-        case LBRACKET: expr = parseArrayLiteral(); break;
-        case CAST: expr = parseCastExpr(); break;
-        case SIZEOF: expr = parseSizeofExpr(); break;
-        case ADDRESSOF: expr = parseAddressofExpr(); break;
+        case Token::LeftBracket: expr = parseArrayLiteral(); break;
+        case Token::Cast: expr = parseCastExpr(); break;
+        case Token::Sizeof: expr = parseSizeofExpr(); break;
+        case Token::Addressof: expr = parseAddressofExpr(); break;
         default: unexpectedToken(currentToken()); break;
     }
     while (true) {
         switch (currentToken()) {
-            case LBRACKET:
+            case Token::LeftBracket:
                 expr = parseSubscript(std::move(expr));
                 break;
-            case LPAREN:
+            case Token::LeftParen:
                 expr = parseCallExpr(std::move(expr));
                 break;
-            case DOT:
+            case Token::Dot:
                 consumeToken();
                 expr = parseMemberExpr(std::move(expr));
                 break;
-            case NOT:
+            case Token::Not:
                 expr = parseUnwrapExpr(std::move(expr));
                 break;
-            case QUESTION_MARK:
+            case Token::QuestionMark:
                 expr = parseIfExpr(std::move(expr));
                 break;
             default:
@@ -659,8 +659,8 @@ std::unique_ptr<Expr> parseExpr() {
 /// assign-stmt ::= expr '=' expr ('\n' | ';')
 std::unique_ptr<AssignStmt> parseAssignStmt(std::unique_ptr<Expr> lhs) {
     auto location = getCurrentLocation();
-    parse(ASSIGN);
-    auto rhs = currentToken() != UNDEFINED ? parseExpr() : nullptr;
+    parse(Token::Assignment);
+    auto rhs = currentToken() != Token::Undefined ? parseExpr() : nullptr;
     if (!rhs) consumeToken();
     parseStmtTerminator();
     return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs), false, location);
@@ -686,20 +686,20 @@ std::vector<std::unique_ptr<Expr>> parseExprList() {
     std::vector<std::unique_ptr<Expr>> exprs;
 
     // TODO: Handle empty expression list.
-    if (currentToken() == SEMICOLON || currentToken() == RBRACE) {
+    if (currentToken() == Token::Semicolon || currentToken() == Token::RightBrace) {
         return exprs;
     }
 
     while (true) {
         exprs.emplace_back(parseExpr());
-        if (currentToken() != COMMA) return exprs;
+        if (currentToken() != Token::Comma) return exprs;
         consumeToken();
     }
 }
 
 /// return-stmt ::= 'return' expr-list ('\n' | ';')
 std::unique_ptr<ReturnStmt> parseReturnStmt() {
-    ASSERT(currentToken() == RETURN);
+    ASSERT(currentToken() == Token::Return);
     auto location = getCurrentLocation();
     consumeToken();
 
@@ -727,11 +727,11 @@ std::unique_ptr<ReturnStmt> parseReturnStmt() {
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'undefined'
 std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue, Decl* parent) {
-    bool isMutable = parse({ LET, VAR }) == VAR;
-    auto name = parse(IDENTIFIER);
+    bool isMutable = parse({ Token::Let, Token::Var }) == Token::Var;
+    auto name = parse(Token::Identifier);
 
     Type type;
-    if (currentToken() == COLON) {
+    if (currentToken() == Token::Colon) {
         consumeToken();
         auto typeLocation = getCurrentLocation();
         type = parseType();
@@ -742,8 +742,8 @@ std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue, Decl* parent) {
     std::unique_ptr<Expr> initializer;
 
     if (requireInitialValue) {
-        parse(ASSIGN);
-        initializer = currentToken() != UNDEFINED ? parseExpr() : nullptr;
+        parse(Token::Assignment);
+        initializer = currentToken() != Token::Undefined ? parseExpr() : nullptr;
         if (!initializer) consumeToken();
         parseStmtTerminator();
     }
@@ -768,7 +768,7 @@ std::unique_ptr<ExprStmt> parseCallStmt(std::unique_ptr<Expr> callExpr) {
 /// inc-stmt ::= expr '++' ('\n' | ';')
 std::unique_ptr<IncrementStmt> parseIncrementStmt(std::unique_ptr<Expr> operand) {
     auto location = getCurrentLocation();
-    parse(INCREMENT);
+    parse(Token::Increment);
     parseStmtTerminator();
     return llvm::make_unique<IncrementStmt>(std::move(operand), location);
 }
@@ -776,14 +776,14 @@ std::unique_ptr<IncrementStmt> parseIncrementStmt(std::unique_ptr<Expr> operand)
 /// dec-stmt ::= expr '--' ('\n' | ';')
 std::unique_ptr<DecrementStmt> parseDecrementStmt(std::unique_ptr<Expr> operand) {
     auto location = getCurrentLocation();
-    parse(DECREMENT);
+    parse(Token::Decrement);
     parseStmtTerminator();
     return llvm::make_unique<DecrementStmt>(std::move(operand), location);
 }
 
 /// defer-stmt ::= 'defer' call-expr ('\n' | ';')
 std::unique_ptr<DeferStmt> parseDeferStmt() {
-    ASSERT(currentToken() == DEFER);
+    ASSERT(currentToken() == Token::Defer);
     consumeToken();
     // FIXME: Doesn't have to be a variable expression.
     auto stmt = llvm::make_unique<DeferStmt>(parseCallExpr(parseVarExpr()));
@@ -794,60 +794,60 @@ std::unique_ptr<DeferStmt> parseDeferStmt() {
 /// if-stmt ::= 'if' '(' expr ')' '{' stmt* '}' ('else' else-branch)?
 /// else-branch ::= if-stmt | '{' stmt* '}'
 std::unique_ptr<IfStmt> parseIfStmt(Decl* parent) {
-    ASSERT(currentToken() == IF);
+    ASSERT(currentToken() == Token::If);
     consumeToken();
-    parse(LPAREN);
+    parse(Token::LeftParen);
     auto condition = parseExpr();
-    parse(RPAREN);
-    parse(LBRACE);
-    auto thenStmts = parseStmtsUntil(RBRACE, parent);
-    parse(RBRACE);
+    parse(Token::RightParen);
+    parse(Token::LeftBrace);
+    auto thenStmts = parseStmtsUntil(Token::RightBrace, parent);
+    parse(Token::RightBrace);
     std::vector<std::unique_ptr<Stmt>> elseStmts;
-    if (currentToken() != ELSE)
+    if (currentToken() != Token::Else)
         return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts),
                                          std::move(elseStmts));
     consumeToken();
-    if (currentToken() == LBRACE) {
+    if (currentToken() == Token::LeftBrace) {
         consumeToken();
-        elseStmts = parseStmtsUntil(RBRACE, parent);
-        parse(RBRACE);
+        elseStmts = parseStmtsUntil(Token::RightBrace, parent);
+        parse(Token::RightBrace);
         return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts),
                                          std::move(elseStmts));
     }
-    if (currentToken() == IF) {
+    if (currentToken() == Token::If) {
         elseStmts.emplace_back(parseIfStmt(parent));
         return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts),
                                          std::move(elseStmts));
     }
-    unexpectedToken(currentToken(), { LBRACE, IF });
+    unexpectedToken(currentToken(), { Token::LeftBrace, Token::If });
 }
 
 /// while-stmt ::= 'while' '(' expr ')' '{' stmt* '}'
 std::unique_ptr<WhileStmt> parseWhileStmt(Decl* parent) {
-    ASSERT(currentToken() == WHILE);
+    ASSERT(currentToken() == Token::While);
     consumeToken();
-    parse(LPAREN);
+    parse(Token::LeftParen);
     auto condition = parseExpr();
-    parse(RPAREN);
-    parse(LBRACE);
-    auto body = parseStmtsUntil(RBRACE, parent);
-    parse(RBRACE);
+    parse(Token::RightParen);
+    parse(Token::LeftBrace);
+    auto body = parseStmtsUntil(Token::RightBrace, parent);
+    parse(Token::RightBrace);
     return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
 
 /// for-stmt ::= 'for' '(' id 'in' expr ')' '{' stmt* '}'
 std::unique_ptr<Stmt> parseForStmt(Decl* parent) {
-    ASSERT(currentToken() == FOR);
+    ASSERT(currentToken() == Token::For);
     auto location = getCurrentLocation();
     consumeToken();
-    parse(LPAREN);
+    parse(Token::LeftParen);
     auto variable = parseVarDecl(false, parent);
-    parse(IN);
+    parse(Token::In);
     auto range = parseExpr();
-    parse(RPAREN);
-    parse(LBRACE);
-    auto body = parseStmtsUntil(RBRACE, parent);
-    parse(RBRACE);
+    parse(Token::RightParen);
+    parse(Token::LeftBrace);
+    auto body = parseStmtsUntil(Token::RightBrace, parent);
+    parse(Token::RightBrace);
     return ForStmt(std::move(variable), std::move(range), std::move(body), location).lower();
 }
 
@@ -856,33 +856,33 @@ std::unique_ptr<Stmt> parseForStmt(Decl* parent) {
 /// case ::= 'case' expr ':' stmt+
 /// default-case ::= 'default' ':' stmt+
 std::unique_ptr<SwitchStmt> parseSwitchStmt(Decl* parent) {
-    ASSERT(currentToken() == SWITCH);
+    ASSERT(currentToken() == Token::Switch);
     consumeToken();
-    parse(LPAREN);
+    parse(Token::LeftParen);
     auto condition = parseExpr();
-    parse(RPAREN);
-    parse(LBRACE);
+    parse(Token::RightParen);
+    parse(Token::LeftBrace);
     std::vector<SwitchCase> cases;
     std::vector<std::unique_ptr<Stmt>> defaultStmts;
     bool defaultSeen = false;
     while (true) {
-        if (currentToken() == CASE) {
+        if (currentToken() == Token::Case) {
             consumeToken();
             auto value = parseExpr();
-            parse(COLON);
-            auto stmts = parseStmtsUntilOneOf(CASE, DEFAULT, RBRACE, parent);
+            parse(Token::Colon);
+            auto stmts = parseStmtsUntilOneOf(Token::Case, Token::Default, Token::RightBrace, parent);
             cases.push_back({ std::move(value), std::move(stmts) });
-        } else if (currentToken() == DEFAULT) {
+        } else if (currentToken() == Token::Default) {
             if (defaultSeen)
                 error(getCurrentLocation(), "switch-statement may only contain one 'default' case");
             consumeToken();
-            parse(COLON);
-            defaultStmts = parseStmtsUntilOneOf(CASE, DEFAULT, RBRACE, parent);
+            parse(Token::Colon);
+            defaultStmts = parseStmtsUntilOneOf(Token::Case, Token::Default, Token::RightBrace, parent);
             defaultSeen = true;
         } else {
             error(getCurrentLocation(), "expected 'case' or 'default'");
         }
-        if (currentToken() == RBRACE) break;
+        if (currentToken() == Token::RightBrace) break;
     }
     consumeToken();
     return llvm::make_unique<SwitchStmt>(std::move(condition), std::move(cases),
@@ -902,17 +902,17 @@ std::unique_ptr<BreakStmt> parseBreakStmt() {
 ///          if-stmt | switch-stmt | while-stmt | for-stmt | break-stmt
 std::unique_ptr<Stmt> parseStmt(Decl* parent) {
     switch (currentToken()) {
-        case RETURN: return parseReturnStmt();
-        case LET: case VAR: return parseVarStmt(parent);
-        case DEFER: return parseDeferStmt();
-        case IF: return parseIfStmt(parent);
-        case WHILE: return parseWhileStmt(parent);
-        case FOR: return parseForStmt(parent);
-        case SWITCH: return parseSwitchStmt(parent);
-        case BREAK: return parseBreakStmt();
-        case UNDERSCORE: {
+        case Token::Return: return parseReturnStmt();
+        case Token::Let: case Token::Var: return parseVarStmt(parent);
+        case Token::Defer: return parseDeferStmt();
+        case Token::If: return parseIfStmt(parent);
+        case Token::While: return parseWhileStmt(parent);
+        case Token::For: return parseForStmt(parent);
+        case Token::Switch: return parseSwitchStmt(parent);
+        case Token::Break: return parseBreakStmt();
+        case Token::Underscore: {
             consumeToken();
-            parse(ASSIGN);
+            parse(Token::Assignment);
             auto stmt = llvm::make_unique<ExprStmt>(parseExpr());
             parseStmtTerminator();
             return std::move(stmt);
@@ -924,9 +924,9 @@ std::unique_ptr<Stmt> parseStmt(Decl* parent) {
     std::unique_ptr<Expr> expr = parseExpr();
 
     switch (currentToken()) {
-        case INCREMENT: return parseIncrementStmt(std::move(expr));
-        case DECREMENT: return parseDecrementStmt(std::move(expr));
-        case ASSIGN: return parseAssignStmt(std::move(expr));
+        case Token::Increment: return parseIncrementStmt(std::move(expr));
+        case Token::Decrement: return parseDecrementStmt(std::move(expr));
+        case Token::Assignment: return parseAssignStmt(std::move(expr));
         default:
             if (currentToken().isCompoundAssignmentOperator()) {
                 return parseCompoundAssignStmt(std::move(expr));
@@ -953,11 +953,11 @@ std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token end1, Token end2, 
 
 /// param-decl ::= id ':' type
 ParamDecl parseParam(bool withType) {
-    auto name = parse(IDENTIFIER);
+    auto name = parse(Token::Identifier);
     Type type;
 
     if (withType) {
-        parse(COLON);
+        parse(Token::Colon);
         type = parseType();
     }
 
@@ -968,60 +968,60 @@ ParamDecl parseParam(bool withType) {
 /// params ::= '' | non-empty-params
 /// non-empty-params ::= param-decl | param-decl ',' non-empty-params
 std::vector<ParamDecl> parseParamList(bool* isVariadic, bool withTypes) {
-    parse(LPAREN);
+    parse(Token::LeftParen);
     std::vector<ParamDecl> params;
-    while (currentToken() != RPAREN) {
-        if (isVariadic && currentToken() == DOTDOTDOT) {
+    while (currentToken() != Token::RightParen) {
+        if (isVariadic && currentToken() == Token::DotDotDot) {
             consumeToken();
             *isVariadic = true;
             break;
         }
         params.emplace_back(parseParam(withTypes));
-        if (currentToken() != RPAREN) parse(COMMA);
+        if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
-    parse(RPAREN);
+    parse(Token::RightParen);
     return params;
 }
 
 void parseGenericParamList(std::vector<GenericParamDecl>& genericParams) {
-    parse(LT);
+    parse(Token::Less);
     while (true) {
-        auto genericParamName = parse(IDENTIFIER);
+        auto genericParamName = parse(Token::Identifier);
         genericParams.emplace_back(genericParamName.getString(), genericParamName.getLocation());
 
-        if (currentToken() == COLON) { // Generic type constraint.
+        if (currentToken() == Token::Colon) { // Generic type constraint.
             consumeToken();
-            genericParams.back().addConstraint(BasicType::get(parse(IDENTIFIER).getString(), {}));
+            genericParams.back().addConstraint(BasicType::get(parse(Token::Identifier).getString(), {}));
             // TODO: Add support for multiple generic type constraints.
         }
 
-        if (currentToken() == GT) break;
-        parse(COMMA);
+        if (currentToken() == Token::Greater) break;
+        parse(Token::Comma);
     }
-    parse(GT);
+    parse(Token::Greater);
 }
 
 /// function-proto ::= 'func' id param-list ('->' type)?
 std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl,
                                                  std::vector<GenericParamDecl>* genericParams) {
-    ASSERT(currentToken() == FUNC);
+    ASSERT(currentToken() == Token::Func);
     consumeToken();
 
     bool isValidFunctionName =
-        currentToken() == IDENTIFIER ||
+        currentToken() == Token::Identifier ||
         currentToken().isOverloadable() ||
-        (currentToken() == LBRACKET && lookAhead(1) == RBRACKET);
+        (currentToken() == Token::LeftBracket && lookAhead(1) == Token::RightBracket);
 
     if (!isValidFunctionName)
         unexpectedToken(currentToken(), {}, "as function name");
 
     SourceLocation nameLocation = getCurrentLocation();
     llvm::StringRef name;
-    if (currentToken() == IDENTIFIER) {
+    if (currentToken() == Token::Identifier) {
         name = consumeToken().getString();
-    } else if (currentToken() == LBRACKET) {
+    } else if (currentToken() == Token::LeftBracket) {
         consumeToken();
-        parse(RBRACKET);
+        parse(Token::RightBracket);
         name = "[]";
     } else if (receiverTypeDecl) {
         error(nameLocation, "operator functions other than subscript must be non-member functions");
@@ -1029,7 +1029,7 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiv
         name = toString(consumeToken().getKind());
     }
 
-    if (currentToken() == LT) {
+    if (currentToken() == Token::Less) {
         parseGenericParamList(*genericParams);
     }
 
@@ -1037,10 +1037,10 @@ std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiv
     auto params = parseParamList(isExtern ? &isVariadic : nullptr, true);
 
     Type returnType = Type::getVoid();
-    if (currentToken() == RARROW) {
+    if (currentToken() == Token::RightArrow) {
         consumeToken();
         returnType = parseType();
-        while (currentToken() == COMMA) {
+        while (currentToken() == Token::Comma) {
             consumeToken();
             returnType.appendType(parseType());
         }
@@ -1070,13 +1070,13 @@ std::unique_ptr<FunctionTemplate> parseFunctionTemplateProto(TypeDecl* receiverT
 std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool requireBody = true) {
     auto decl = parseFunctionProto(false, receiverTypeDecl, nullptr);
 
-    if (requireBody || currentToken() == LBRACE) {
-        parse(LBRACE);
-        decl->setBody(parseStmtsUntil(RBRACE, decl.get()));
-        parse(RBRACE);
+    if (requireBody || currentToken() == Token::LeftBrace) {
+        parse(Token::LeftBrace);
+        decl->setBody(parseStmtsUntil(Token::RightBrace, decl.get()));
+        parse(Token::RightBrace);
     }
 
-    if (lookAhead(-1) != RBRACE) {
+    if (lookAhead(-1) != Token::RightBrace) {
         parseStmtTerminator();
     }
 
@@ -1086,15 +1086,15 @@ std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool
 /// function-template-decl ::= function-template-proto '{' stmt* '}'
 std::unique_ptr<FunctionTemplate> parseFunctionTemplate(TypeDecl* receiverTypeDecl) {
     auto decl = parseFunctionTemplateProto(receiverTypeDecl);
-    parse(LBRACE);
-    decl->getFunctionDecl()->setBody(parseStmtsUntil(RBRACE, decl.get()));
-    parse(RBRACE);
+    parse(Token::LeftBrace);
+    decl->getFunctionDecl()->setBody(parseStmtsUntil(Token::RightBrace, decl.get()));
+    parse(Token::RightBrace);
     return decl;
 }
 
 /// extern-function-decl ::= 'extern' function-proto ('\n' | ';')
 std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
-    ASSERT(currentToken() == EXTERN);
+    ASSERT(currentToken() == Token::Extern);
     consumeToken();
     auto decl = parseFunctionProto(true, nullptr, nullptr);
     parseStmtTerminator();
@@ -1103,35 +1103,35 @@ std::unique_ptr<FunctionDecl> parseExternFunctionDecl() {
 
 /// init-decl ::= 'init' param-list '{' stmt* '}'
 std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl) {
-    auto initLocation = parse(INIT).getLocation();
+    auto initLocation = parse(Token::Init).getLocation();
     auto params = parseParamList(nullptr, true);
     auto decl = llvm::make_unique<InitDecl>(receiverTypeDecl, std::move(params), initLocation);
-    parse(LBRACE);
-    decl->setBody(parseStmtsUntil(RBRACE, decl.get()));
-    parse(RBRACE);
+    parse(Token::LeftBrace);
+    decl->setBody(parseStmtsUntil(Token::RightBrace, decl.get()));
+    parse(Token::RightBrace);
     return decl;
 }
 
 /// deinit-decl ::= 'deinit' '(' ')' '{' stmt* '}'
 std::unique_ptr<DeinitDecl> parseDeinitDecl(TypeDecl& receiverTypeDecl) {
-    auto deinitLocation = parse(DEINIT).getLocation();
-    parse(LPAREN);
+    auto deinitLocation = parse(Token::Deinit).getLocation();
+    parse(Token::LeftParen);
     auto expectedRParenLocation = getCurrentLocation();
-    if (consumeToken() != RPAREN) error(expectedRParenLocation, "deinitializers cannot have parameters");
+    if (consumeToken() != Token::RightParen) error(expectedRParenLocation, "deinitializers cannot have parameters");
     auto decl = llvm::make_unique<DeinitDecl>(receiverTypeDecl, deinitLocation);
-    parse(LBRACE);
-    decl->setBody(parseStmtsUntil(RBRACE, decl.get()));
-    parse(RBRACE);
+    parse(Token::LeftBrace);
+    decl->setBody(parseStmtsUntil(Token::RightBrace, decl.get()));
+    parse(Token::RightBrace);
     return decl;
 }
 
 /// field-decl ::= ('let' | 'var') id ':' type ('\n' | ';')
 FieldDecl parseFieldDecl(TypeDecl& typeDecl) {
-    expect({ LET, VAR }, "in field declaration");
-    bool isMutable = consumeToken() == VAR;
-    auto name = parse(IDENTIFIER);
+    expect({ Token::Let, Token::Var }, "in field declaration");
+    bool isMutable = consumeToken() == Token::Var;
+    auto name = parse(Token::Identifier);
 
-    parse(COLON);
+    parse(Token::Colon);
     auto typeLocation = getCurrentLocation();
     Type type = parseType();
     if (type.isMutable()) error(typeLocation, "type specifier cannot specify mutability");
@@ -1150,13 +1150,13 @@ std::unique_ptr<TypeTemplate> parseTypeTemplate() {
 
 static Token parseTypeHeader(std::vector<Type>& interfaces,
                              std::vector<GenericParamDecl>* genericParams) {
-    auto name = parse(IDENTIFIER);
+    auto name = parse(Token::Identifier);
 
-    if (currentToken() == LT) {
+    if (currentToken() == Token::Less) {
         parseGenericParamList(*genericParams);
     }
 
-    if (currentToken() == COLON) {
+    if (currentToken() == Token::Colon) {
         consumeToken();
         interfaces = parseNonEmptyTypeList();
     }
@@ -1170,9 +1170,9 @@ static Token parseTypeHeader(std::vector<Type>& interfaces,
 std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams) {
     TypeTag tag;
     switch (consumeToken()) {
-        case CLASS: tag = TypeTag::Class; break;
-        case STRUCT: tag = TypeTag::Struct; break;
-        case INTERFACE: tag = TypeTag::Interface; break;
+        case Token::Class: tag = TypeTag::Class; break;
+        case Token::Struct: tag = TypeTag::Struct; break;
+        case Token::Interface: tag = TypeTag::Interface; break;
         default: llvm_unreachable("invalid token");
     }
 
@@ -1182,19 +1182,19 @@ std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericPa
     auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::vector<Type>(),
                                                 std::move(interfaces), *currentModule,
                                                 name.getLocation());
-    parse(LBRACE);
+    parse(Token::LeftBrace);
 
-    while (currentToken() != RBRACE) {
+    while (currentToken() != Token::RightBrace) {
         switch (currentToken()) {
-            case MUTATING:
+            case Token::Mutating:
                 consumeToken();
-                expect(FUNC, "after 'mutating'");
+                expect(Token::Func, "after 'mutating'");
                 LLVM_FALLTHROUGH;
-            case FUNC: {
-                bool isMutating = lookAhead(-1) == MUTATING;
+            case Token::Func: {
+                bool isMutating = lookAhead(-1) == Token::Mutating;
                 auto requireBody = tag != TypeTag::Interface;
 
-                if (lookAhead(2) == LT) {
+                if (lookAhead(2) == Token::Less) {
                     auto decl = parseFunctionTemplate(typeDecl.get());
                     llvm::cast<MethodDecl>(decl->getFunctionDecl())->setMutating(isMutating);
                     typeDecl->addMethod(std::move(decl));
@@ -1205,13 +1205,13 @@ std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericPa
                 }
                 break;
             }
-            case INIT:
+            case Token::Init:
                 typeDecl->addMethod(parseInitDecl(*typeDecl));
                 break;
-            case DEINIT:
+            case Token::Deinit:
                 typeDecl->addMethod(parseDeinitDecl(*typeDecl));
                 break;
-            case LET: case VAR:
+            case Token::Let: case Token::Var:
                 typeDecl->addField(parseFieldDecl(*typeDecl));
                 break;
             default:
@@ -1226,19 +1226,19 @@ std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericPa
 /// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' enum-case-decl* '}'
 /// enum-case-decl ::= 'case' id ('\n' | ';')
 std::unique_ptr<EnumDecl> parseEnumDecl(std::vector<GenericParamDecl>* genericParams) {
-    ASSERT(currentToken() == ENUM);
+    ASSERT(currentToken() == Token::Enum);
     consumeToken();
 
     std::vector<Type> interfaces;
     auto name = parseTypeHeader(interfaces, genericParams);
 
-    parse(LBRACE);
+    parse(Token::LeftBrace);
     std::vector<EnumCase> cases;
     auto valueCounter = llvm::APSInt::get(0);
 
-    while (currentToken() != RBRACE) {
-        parse(CASE);
-        auto caseName = parse(IDENTIFIER);
+    while (currentToken() != Token::RightBrace) {
+        parse(Token::Case);
+        auto caseName = parse(Token::Identifier);
         auto value = llvm::make_unique<IntLiteralExpr>(valueCounter.getExtValue(), caseName.getLocation());
         cases.emplace_back(caseName.getString(), std::move(value), caseName.getLocation());
         parseStmtTerminator("after enum case");
@@ -1252,16 +1252,16 @@ std::unique_ptr<EnumDecl> parseEnumDecl(std::vector<GenericParamDecl>* genericPa
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')
 std::unique_ptr<ImportDecl> parseImportDecl() {
-    ASSERT(currentToken() == IMPORT);
+    ASSERT(currentToken() == Token::Import);
     consumeToken();
 
     std::string importTarget;
     auto location = getCurrentLocation();
 
-    if (currentToken() == STRING_LITERAL) {
+    if (currentToken() == Token::StringLiteral) {
         importTarget = parseStringLiteral()->getValue();
     } else {
-        importTarget = parse({ IDENTIFIER, STRING_LITERAL }, "after 'import'").getString();
+        importTarget = parse({ Token::Identifier, Token::StringLiteral }, "after 'import'").getString();
     }
 
     parseStmtTerminator("after 'import' declaration");
@@ -1271,8 +1271,8 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | import-decl | var-decl
 std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
     switch (currentToken()) {
-        case FUNC:
-            if (lookAhead(2) == LT) {
+        case Token::Func:
+            if (lookAhead(2) == Token::Less) {
                 auto decl = parseFunctionTemplate(nullptr);
                 typechecker.addToSymbolTable(*decl);
                 return std::move(decl);
@@ -1281,13 +1281,13 @@ std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
                 typechecker.addToSymbolTable(*decl);
                 return std::move(decl);
             }
-        case EXTERN: {
+        case Token::Extern: {
             auto decl = parseExternFunctionDecl();
             typechecker.addToSymbolTable(*decl);
             return std::move(decl);
         }
-        case CLASS: case STRUCT: case INTERFACE: {
-            if (lookAhead(2) == LT) {
+        case Token::Class: case Token::Struct: case Token::Interface: {
+            if (lookAhead(2) == Token::Less) {
                 auto decl = parseTypeTemplate();
                 typechecker.addToSymbolTable(*decl);
                 return std::move(decl);
@@ -1297,8 +1297,8 @@ std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
                 return std::move(decl);
             }
         }
-        case ENUM: {
-            if (lookAhead(2) == LT) {
+        case Token::Enum: {
+            if (lookAhead(2) == Token::Less) {
                 error(getCurrentLocation(), "generic enums not implemented yet");
             } else {
                 auto decl = parseEnumDecl(nullptr);
@@ -1306,12 +1306,12 @@ std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
                 return std::move(decl);
             }
         }
-        case LET: case VAR: {
+        case Token::Let: case Token::Var: {
             auto decl = parseVarDecl(true, nullptr);
             typechecker.addToSymbolTable(*decl, true);
             return std::move(decl);
         }
-        case IMPORT:
+        case Token::Import:
             return parseImportDecl();
         default:
             unexpectedToken(currentToken());
@@ -1332,7 +1332,7 @@ SourceFile parse(std::unique_ptr<llvm::MemoryBuffer> input, Module& module) {
     SourceFile sourceFile(identifier);
     Typechecker typechecker(&module, &sourceFile);
 
-    while (currentToken() != NO_TOKEN) {
+    while (currentToken() != Token::None) {
         topLevelDecls.emplace_back(parseTopLevelDecl(typechecker));
     }
 

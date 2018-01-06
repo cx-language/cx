@@ -22,18 +22,28 @@ enum class PrecedenceGroup {
     MulDiv,
 };
 
-PrecedenceGroup getPrecedenceGroup(TokenKind tokenKind) {
+PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     switch (tokenKind) {
-        case EQ: case NE: case PTR_EQ: case PTR_NE: return PrecedenceGroup::Comparison;
-        case LT: case LE: case GT: case GE: return PrecedenceGroup::Comparison;
-        case DOTDOT: case DOTDOTDOT: return PrecedenceGroup::Range;
-        case PLUS: case MINUS: return PrecedenceGroup::AddSub;
-        case STAR: case SLASH: case MOD: return PrecedenceGroup::MulDiv;
-        case AND_AND: return PrecedenceGroup::LogicalAnd;
-        case OR_OR: return PrecedenceGroup::LogicalOr;
-        case AND: case OR: case XOR: return PrecedenceGroup::Bitwise;
-        case LSHIFT: case RSHIFT: return PrecedenceGroup::Bitwise;
-        default: llvm_unreachable("invalid binary operator");
+        case Token::Equal: case Token::NotEqual: case Token::PointerEqual: case Token::PointerNotEqual:
+            return PrecedenceGroup::Comparison;
+        case Token::Less: case Token::LessOrEqual: case Token::Greater: case Token::GreaterOrEqual:
+            return PrecedenceGroup::Comparison;
+        case Token::DotDot: case Token::DotDotDot:
+            return PrecedenceGroup::Range;
+        case Token::Plus: case Token::Minus:
+            return PrecedenceGroup::AddSub;
+        case Token::Star: case Token::Slash: case Token::Modulo:
+            return PrecedenceGroup::MulDiv;
+        case Token::AndAnd:
+            return PrecedenceGroup::LogicalAnd;
+        case Token::OrOr:
+            return PrecedenceGroup::LogicalOr;
+        case Token::And: case Token::Or: case Token::Xor:
+            return PrecedenceGroup::Bitwise;
+        case Token::LeftShift: case Token::RightShift:
+            return PrecedenceGroup::Bitwise;
+        default:
+            llvm_unreachable("invalid binary operator");
     }
 }
 
@@ -45,51 +55,62 @@ SourceLocation firstLocation(nullptr, 1, 0);
 SourceLocation lastLocation(nullptr, 1, 0);
 }
 
-Token::Token(TokenKind kind, llvm::StringRef string)
+Token::Token(Token::Kind kind, llvm::StringRef string)
 : kind(kind), string(string), location(currentFilePath, firstLocation.line, firstLocation.column) {
-    ASSERT(!string.empty() || kind == NO_TOKEN || kind >= BREAK);
+    ASSERT(!string.empty() || kind == Token::None || kind >= Token::Break);
     ASSERT(location.isValid());
 #ifndef NDEBUG
-    if (kind == INT_LITERAL) (void) getIntegerValue(); // Validate the integer value.
-    if (kind == FLOAT_LITERAL) (void) getFloatingPointValue(); // Validate the FP value.
+    if (kind == Token::IntegerLiteral) (void) getIntegerValue(); // Validate the integer value.
+    if (kind == Token::FloatLiteral) (void) getFloatingPointValue(); // Validate the FP value.
 #endif
 }
 
 bool Token::isBinaryOperator() const {
     switch (kind) {
-        case EQ: case NE: case PTR_EQ: case PTR_NE: case LT: case LE: case GT: case GE:
-        case PLUS: case MINUS: case STAR: case SLASH: case MOD: case AND: case AND_AND:
-        case OR: case OR_OR: case XOR: case LSHIFT: case RSHIFT:
-        case DOTDOT: case DOTDOTDOT: return true;
-        default: return false;
+        case Token::Equal: case Token::NotEqual: case Token::PointerEqual: case Token::PointerNotEqual:
+        case Token::Less: case Token::LessOrEqual: case Token::Greater: case Token::GreaterOrEqual:
+        case Token::Plus: case Token::Minus: case Token::Star: case Token::Slash: case Token::Modulo:
+        case Token::And: case Token::AndAnd: case Token::Or: case Token::OrOr: case Token::Xor:
+        case Token::LeftShift: case Token::RightShift: case Token::DotDot: case Token::DotDotDot:
+            return true;
+        default:
+            return false;
     }
 }
 
 bool Token::isPrefixOperator() const {
     switch (kind) {
-        case PLUS: case MINUS: case STAR: case AND: case NOT: case COMPL: return true;
-        default: return false;
+        case Token::Plus: case Token::Minus: case Token::Star: case Token::And: case Token::Not:
+        case Token::Tilde:
+            return true;
+        default:
+            return false;
     }
 }
 
 bool Token::isAssignmentOperator() const {
-    return kind == ASSIGN || isCompoundAssignmentOperator();
+    return kind == Token::Assignment || isCompoundAssignmentOperator();
 }
 
 bool Token::isCompoundAssignmentOperator() const {
     switch (kind) {
-        case PLUS_EQ: case MINUS_EQ: case STAR_EQ: case SLASH_EQ: case MOD_EQ:
-        case AND_EQ: case AND_AND_EQ: case OR_EQ: case OR_OR_EQ:
-        case XOR_EQ: case LSHIFT_EQ: case RSHIFT_EQ: return true;
-        default: return false;
+        case Token::PlusEqual: case Token::MinusEqual: case Token::StarEqual: case Token::SlashEqual:
+        case Token::ModuloEqual: case Token::AndEqual: case Token::AndAndEqual: case Token::OrEqual:
+        case Token::OrOrEqual: case Token::XorEqual: case Token::LeftShiftEqual: case Token::RightShiftEqual:
+            return true;
+        default:
+            return false;
     }
 }
 
 bool Token::isOverloadable() const {
     switch (kind) {
-        case EQ: case NE: case LT: case LE: case GT: case GE:
-        case PLUS: case MINUS: case STAR: case SLASH: case MOD: return true;
-        default: return false;
+        case Token::Equal: case Token::NotEqual: case Token::Less: case Token::LessOrEqual:
+        case Token::Greater: case Token::GreaterOrEqual: case Token::Plus: case Token::Minus:
+        case Token::Star: case Token::Slash: case Token::Modulo:
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -120,28 +141,35 @@ BinaryOperator::BinaryOperator(Token token) : kind(token) {
 
 bool BinaryOperator::isComparisonOperator() const {
     switch (kind) {
-        case EQ: case NE: case PTR_EQ: case PTR_NE: case LT: case LE: case GT: case GE: return true;
-        default: return false;
+        case Token::Equal: case Token::NotEqual: case Token::PointerEqual:
+        case Token::PointerNotEqual: case Token::Less: case Token::LessOrEqual:
+        case Token::Greater: case Token::GreaterOrEqual:
+            return true;
+        default:
+            return false;
     }
 }
 
 bool BinaryOperator::isBitwiseOperator() const {
     switch (kind) {
-        case AND: case AND_EQ: case OR: case OR_EQ: case XOR: case XOR_EQ: case COMPL:
-        case LSHIFT: case LSHIFT_EQ: case RSHIFT: case RSHIFT_EQ: return true;
-        default: return false;
+        case Token::And: case Token::AndEqual: case Token::Or: case Token::OrEqual: case Token::Xor:
+        case Token::XorEqual: case Token::Tilde: case Token::LeftShift: case Token::LeftShiftEqual:
+        case Token::RightShift: case Token::RightShiftEqual:
+            return true;
+        default:
+            return false;
     }
 }
 
 std::string BinaryOperator::getFunctionName() const {
     switch (kind) {
-        case DOTDOT: return "Range";
-        case DOTDOTDOT: return "ClosedRange";
+        case Token::DotDot: return "Range";
+        case Token::DotDotDot: return "ClosedRange";
         default: return toString(kind);
     }
 }
 
-const char* delta::toString(TokenKind tokenKind) {
+const char* delta::toString(Token::Kind tokenKind) {
     static const char* const tokenStrings[] = {
         "end-of-file", "newline", "identifier", "number", "float literal", "string literal",
         "character literal", "addressof", "break", "case", "cast", "class", "const", "default",
@@ -153,11 +181,11 @@ const char* delta::toString(TokenKind tokenKind) {
         "^", "^=", "~", "<<", "<<=", ">>", ">>=", "=", "(", ")", "[", "]", "{", "}",
         ".", "..", "...", ",", ":", ";", "->", "?"
     };
-    static_assert(llvm::array_lengthof(tokenStrings) == TOKEN_COUNT,
+    static_assert(llvm::array_lengthof(tokenStrings) == int(Token::TokenCount),
                   "tokenStrings array not up-to-date");
-    return tokenStrings[tokenKind];
+    return tokenStrings[int(tokenKind)];
 }
 
-std::ostream& delta::operator<<(std::ostream& stream, TokenKind tokenKind) {
+std::ostream& delta::operator<<(std::ostream& stream, Token::Kind tokenKind) {
     return stream << toString(tokenKind);
 }

@@ -56,7 +56,7 @@ static void checkReturnPointerToLocal(ReturnStmt& stmt) {
         auto* returnValue = stmt.getReturnValue();
 
         if (auto* prefixExpr = llvm::dyn_cast<PrefixExpr>(returnValue)) {
-            if (prefixExpr->getOperator() == AND) {
+            if (prefixExpr->getOperator() == Token::And) {
                 returnValue = &prefixExpr->getOperand();
             }
         }

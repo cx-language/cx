@@ -90,7 +90,7 @@ static void readBlockComment(SourceLocation startLocation) {
     }
 }
 
-static Token readQuotedLiteral(char delimiter, TokenKind literalKind) {
+static Token readQuotedLiteral(char delimiter, Token::Kind literalKind) {
     const char* begin = currentFilePosition;
     const char* end = begin + 2;
     int ch;
@@ -207,49 +207,49 @@ end:
 
     ASSERT(begin != end);
     if (end[-1] == '.') {
-        unreadChar('.'); // Lex the '.' as a Token::DOT.
+        unreadChar('.'); // Lex the '.' as a Token::Dot.
         isFloat = false;
         end--;
     }
 
-    return Token(isFloat ? FLOAT_LITERAL : INT_LITERAL, llvm::StringRef(begin, end - begin));
+    return Token(isFloat ? Token::FloatLiteral : Token::IntegerLiteral, llvm::StringRef(begin, end - begin));
 }
 
-const llvm::StringMap<TokenKind> keywords = {
-    {"addressof",     ADDRESSOF},
-    {"break",         BREAK},
-    {"case",          CASE},
-    {"cast",          CAST},
-    {"class",         CLASS},
-    {"const",         CONST},
-    {"default",       DEFAULT},
-    {"defer",         DEFER},
-    {"deinit",        DEINIT},
-    {"else",          ELSE},
-    {"enum",          ENUM},
-    {"extern",        EXTERN},
-    {"false",         FALSE},
-    {"for",           FOR},
-    {"func",          FUNC},
-    {"if",            IF},
-    {"import",        IMPORT},
-    {"in",            IN},
-    {"init",          INIT},
-    {"interface",     INTERFACE},
-    {"let",           LET},
-    {"mutable",       MUTABLE},
-    {"mutating",      MUTATING},
-    {"null",          NULL_LITERAL},
-    {"return",        RETURN},
-    {"sizeof",        SIZEOF},
-    {"struct",        STRUCT},
-    {"switch",        SWITCH},
-    {"this",          THIS},
-    {"true",          TRUE},
-    {"undefined",     UNDEFINED},
-    {"var",           VAR},
-    {"while",         WHILE},
-    {"_",             UNDERSCORE},
+const llvm::StringMap<Token::Kind> keywords = {
+    {"addressof",     Token::Addressof},
+    {"break",         Token::Break},
+    {"case",          Token::Case},
+    {"cast",          Token::Cast},
+    {"class",         Token::Class},
+    {"const",         Token::Const},
+    {"default",       Token::Default},
+    {"defer",         Token::Defer},
+    {"deinit",        Token::Deinit},
+    {"else",          Token::Else},
+    {"enum",          Token::Enum},
+    {"extern",        Token::Extern},
+    {"false",         Token::False},
+    {"for",           Token::For},
+    {"func",          Token::Func},
+    {"if",            Token::If},
+    {"import",        Token::Import},
+    {"in",            Token::In},
+    {"init",          Token::Init},
+    {"interface",     Token::Interface},
+    {"let",           Token::Let},
+    {"mutable",       Token::Mutable},
+    {"mutating",      Token::Mutating},
+    {"null",          Token::Null},
+    {"return",        Token::Return},
+    {"sizeof",        Token::Sizeof},
+    {"struct",        Token::Struct},
+    {"switch",        Token::Switch},
+    {"this",          Token::This},
+    {"true",          Token::True},
+    {"undefined",     Token::Undefined},
+    {"var",           Token::Var},
+    {"while",         Token::While},
+    {"_",             Token::Underscore},
 };
 
 } // anonymous namespace
@@ -275,125 +275,125 @@ Token delta::lex() {
                 } else if (ch == '*') {
                     readBlockComment(firstLocation);
                 } else if (ch == '=') {
-                    return SLASH_EQ;
+                    return Token::SlashEqual;
                 } else {
                     unreadChar(ch);
-                    return SLASH;
+                    return Token::Slash;
                 }
                 break;
             case '+':
                 ch = readChar();
-                if (ch == '+') return INCREMENT;
-                if (ch == '=') return PLUS_EQ;
+                if (ch == '+') return Token::Increment;
+                if (ch == '=') return Token::PlusEqual;
                 unreadChar(ch);
-                return PLUS;
+                return Token::Plus;
             case '-':
                 ch = readChar();
-                if (ch == '-') return DECREMENT;
-                if (ch == '>') return RARROW;
-                if (ch == '=') return MINUS_EQ;
+                if (ch == '-') return Token::Decrement;
+                if (ch == '>') return Token::RightArrow;
+                if (ch == '=') return Token::MinusEqual;
                 unreadChar(ch);
-                return MINUS;
+                return Token::Minus;
             case '*':
                 ch = readChar();
-                if (ch == '=') return STAR_EQ;
+                if (ch == '=') return Token::StarEqual;
                 unreadChar(ch);
-                return STAR;
+                return Token::Star;
             case '%':
                 ch = readChar();
-                if (ch == '=') return MOD_EQ;
+                if (ch == '=') return Token::ModuloEqual;
                 unreadChar(ch);
-                return MOD;
+                return Token::Modulo;
             case '<':
                 ch = readChar();
-                if (ch == '=') return LE;
+                if (ch == '=') return Token::LessOrEqual;
                 if (ch == '<') {
                     ch = readChar();
-                    if (ch == '=') return LSHIFT_EQ;
+                    if (ch == '=') return Token::LeftShiftEqual;
                     unreadChar(ch);
-                    return LSHIFT;
+                    return Token::LeftShift;
                 }
                 unreadChar(ch);
-                return LT;
+                return Token::Less;
             case '>':
                 ch = readChar();
-                if (ch == '=') return GE;
+                if (ch == '=') return Token::GreaterOrEqual;
                 if (ch == '>') {
                     ch = readChar();
-                    if (ch == '=') return RSHIFT_EQ;
+                    if (ch == '=') return Token::RightShiftEqual;
                     unreadChar(ch);
-                    return RSHIFT;
+                    return Token::RightShift;
                 }
                 unreadChar(ch);
-                return GT;
+                return Token::Greater;
             case '=':
                 ch = readChar();
                 if (ch == '=') {
                     ch = readChar();
-                    if (ch == '=') return PTR_EQ;
+                    if (ch == '=') return Token::PointerEqual;
                     unreadChar(ch);
-                    return EQ;
+                    return Token::Equal;
                 }
                 unreadChar(ch);
-                return ASSIGN;
+                return Token::Assignment;
             case '!':
                 ch = readChar();
                 if (ch == '=') {
                     ch = readChar();
-                    if (ch == '=') return PTR_NE;
+                    if (ch == '=') return Token::PointerNotEqual;
                     unreadChar(ch);
-                    return NE;
+                    return Token::NotEqual;
                 }
                 unreadChar(ch);
-                return NOT;
+                return Token::Not;
             case '&':
                 ch = readChar();
                 if (ch == '&') {
                     ch = readChar();
-                    if (ch == '=') return AND_AND_EQ;
+                    if (ch == '=') return Token::AndAndEqual;
                     unreadChar(ch);
-                    return AND_AND;
+                    return Token::AndAnd;
                 }
-                if (ch == '=') return AND_EQ;
+                if (ch == '=') return Token::AndEqual;
                 unreadChar(ch);
-                return AND;
+                return Token::And;
             case '|':
                 ch = readChar();
                 if (ch == '|') {
                     ch = readChar();
-                    if (ch == '=') return OR_OR_EQ;
+                    if (ch == '=') return Token::OrOrEqual;
                     unreadChar(ch);
-                    return OR_OR;
+                    return Token::OrOr;
                 }
-                if (ch == '=') return OR_EQ;
+                if (ch == '=') return Token::OrEqual;
                 unreadChar(ch);
-                return OR;
+                return Token::Or;
             case '^':
                 ch = readChar();
-                if (ch == '=') return XOR_EQ;
+                if (ch == '=') return Token::XorEqual;
                 unreadChar(ch);
-                return XOR;
-            case '~': return COMPL;
-            case '(': return LPAREN;
-            case ')': return RPAREN;
-            case '[': return LBRACKET;
-            case ']': return RBRACKET;
-            case '{': return LBRACE;
-            case '}': return RBRACE;
+                return Token::Xor;
+            case '~': return Token::Tilde;
+            case '(': return Token::LeftParen;
+            case ')': return Token::RightParen;
+            case '[': return Token::LeftBracket;
+            case ']': return Token::RightBracket;
+            case '{': return Token::LeftBrace;
+            case '}': return Token::RightBrace;
             case '.':
                 ch = readChar();
                 if (ch == '.') {
                     char ch = readChar();
-                    if (ch == '.') return DOTDOTDOT;
+                    if (ch == '.') return Token::DotDotDot;
                     unreadChar(ch);
-                    return DOTDOT;
+                    return Token::DotDot;
                 }
                 unreadChar(ch);
-                return DOT;
-            case ',': return COMMA;
-            case ';': return SEMICOLON;
-            case ':': return COLON;
-            case '?': return QUESTION_MARK;
+                return Token::Dot;
+            case ',': return Token::Comma;
+            case ';': return Token::Semicolon;
+            case ':': return Token::Colon;
+            case '?': return Token::QuestionMark;
             case '\0':
                 goto end;
             case '0': case '1': case '2': case '3': case '4':
@@ -421,17 +421,17 @@ Token delta::lex() {
                     return Token(it->second, string);
                 }
 
-                return Token(IDENTIFIER, string);
+                return Token(Token::Identifier, string);
             }
             case '"':
-                return readQuotedLiteral('"', STRING_LITERAL);
+                return readQuotedLiteral('"', Token::StringLiteral);
             case '\'':
-                return readQuotedLiteral('\'', CHARACTER_LITERAL);
+                return readQuotedLiteral('\'', Token::CharacterLiteral);
             default:
                 error(firstLocation, "unknown token '", (char) ch, "'");
         }
     }
 
 end:
-    return NO_TOKEN;
+    return Token::None;
 }

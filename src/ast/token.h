@@ -8,111 +8,111 @@
 
 namespace delta {
 
-enum TokenKind {
-    NO_TOKEN,
-    NEWLINE, // Not lexed.
-    IDENTIFIER,
-    INT_LITERAL,
-    FLOAT_LITERAL,
-    STRING_LITERAL,
-    CHARACTER_LITERAL,
-    ADDRESSOF, // Keywords...
-    BREAK,
-    CASE,
-    CAST,
-    CLASS,
-    CONST,
-    DEFAULT,
-    DEFER,
-    DEINIT,
-    ELSE,
-    ENUM,
-    EXTERN,
-    FALSE,
-    FOR,
-    FUNC,
-    IF,
-    IMPORT,
-    IN,
-    INIT,
-    INTERFACE,
-    LET,
-    MUTABLE,
-    MUTATING,
-    NULL_LITERAL,
-    RETURN,
-    SIZEOF,
-    STRUCT,
-    SWITCH,
-    THIS,
-    TRUE,
-    UNDEFINED,
-    VAR,
-    WHILE,
-    UNDERSCORE,
-    EQ, // Operators...
-    NE,
-    PTR_EQ,
-    PTR_NE,
-    LT,
-    LE,
-    GT,
-    GE,
-    PLUS,
-    PLUS_EQ,
-    MINUS,
-    MINUS_EQ,
-    STAR,
-    STAR_EQ,
-    SLASH,
-    SLASH_EQ,
-    MOD,
-    MOD_EQ,
-    INCREMENT,
-    DECREMENT,
-    NOT,
-    AND,
-    AND_EQ,
-    AND_AND,
-    AND_AND_EQ,
-    OR,
-    OR_EQ,
-    OR_OR,
-    OR_OR_EQ,
-    XOR,
-    XOR_EQ,
-    COMPL,
-    LSHIFT,
-    LSHIFT_EQ,
-    RSHIFT,
-    RSHIFT_EQ,
-    ASSIGN, // Miscellaneous...
-    LPAREN,
-    RPAREN,
-    LBRACKET,
-    RBRACKET,
-    LBRACE,
-    RBRACE,
-    DOT,
-    DOTDOT,
-    DOTDOTDOT,
-    COMMA,
-    COLON,
-    SEMICOLON,
-    RARROW,
-    QUESTION_MARK,
-    TOKEN_COUNT
-};
-
 struct Token {
-    Token(TokenKind kind, llvm::StringRef string = {});
-    TokenKind getKind() const { return kind; }
-    operator TokenKind() const { return kind; }
+    enum Kind {
+        None,
+        Newline,
+        Identifier,
+        IntegerLiteral,
+        FloatLiteral,
+        StringLiteral,
+        CharacterLiteral,
+        Addressof,
+        Break,
+        Case,
+        Cast,
+        Class,
+        Const,
+        Default,
+        Defer,
+        Deinit,
+        Else,
+        Enum,
+        Extern,
+        False,
+        For,
+        Func,
+        If,
+        Import,
+        In,
+        Init,
+        Interface,
+        Let,
+        Mutable,
+        Mutating,
+        Null,
+        Return,
+        Sizeof,
+        Struct,
+        Switch,
+        This,
+        True,
+        Undefined,
+        Var,
+        While,
+        Underscore,
+        Equal,
+        NotEqual,
+        PointerEqual,
+        PointerNotEqual,
+        Less,
+        LessOrEqual,
+        Greater,
+        GreaterOrEqual,
+        Plus,
+        PlusEqual,
+        Minus,
+        MinusEqual,
+        Star,
+        StarEqual,
+        Slash,
+        SlashEqual,
+        Modulo,
+        ModuloEqual,
+        Increment,
+        Decrement,
+        Not,
+        And,
+        AndEqual,
+        AndAnd,
+        AndAndEqual,
+        Or,
+        OrEqual,
+        OrOr,
+        OrOrEqual,
+        Xor,
+        XorEqual,
+        Tilde,
+        LeftShift,
+        LeftShiftEqual,
+        RightShift,
+        RightShiftEqual,
+        Assignment,
+        LeftParen,
+        RightParen,
+        LeftBracket,
+        RightBracket,
+        LeftBrace,
+        RightBrace,
+        Dot,
+        DotDot,
+        DotDotDot,
+        Comma,
+        Colon,
+        Semicolon,
+        RightArrow,
+        QuestionMark,
+        TokenCount
+    };
+
+    Token(Token::Kind kind, llvm::StringRef string = {});
+    Token::Kind getKind() const { return kind; }
+    operator Token::Kind() const { return kind; }
     llvm::StringRef getString() const { return string; }
     SourceLocation getLocation() const { return location; }
-    bool is(TokenKind kind) const { return this->kind == kind; }
+    bool is(Token::Kind kind) const { return this->kind == kind; }
     template<typename... T>
-    bool is(TokenKind kind, T... kinds) const { return is(kind) || is(kinds...); }
+    bool is(Token::Kind kind, T... kinds) const { return is(kind) || is(kinds...); }
     bool isBinaryOperator() const;
     bool isPrefixOperator() const;
     bool isAssignmentOperator() const;
@@ -124,36 +124,38 @@ struct Token {
 
     /// Strips the trailing '=' from a compound assignment operator.
     /// E.g. given '+=', returns '+', and so on.
-    Token withoutCompoundEqSuffix() const { return Token(TokenKind(kind - 1)); }
+    Token withoutCompoundEqSuffix() const {
+        return Token(static_cast<Token::Kind>(static_cast<int>(kind) - 1));
+    }
 
 private:
-    TokenKind kind;
+    Token::Kind kind;
     llvm::StringRef string; ///< The substring in the source code representing this token.
     SourceLocation location;
 };
 
 struct PrefixOperator {
     PrefixOperator(Token token);
-    TokenKind getKind() const { return kind; }
-    operator TokenKind() const { return kind; }
+    Token::Kind getKind() const { return kind; }
+    operator Token::Kind() const { return kind; }
 
 private:
-    TokenKind kind;
+    Token::Kind kind;
 };
 
 struct BinaryOperator {
     BinaryOperator(Token token);
-    TokenKind getKind() const { return kind; }
-    operator TokenKind() const { return kind; }
+    Token::Kind getKind() const { return kind; }
+    operator Token::Kind() const { return kind; }
     bool isComparisonOperator() const;
     bool isBitwiseOperator() const;
     std::string getFunctionName() const;
 
 private:
-    TokenKind kind;
+    Token::Kind kind;
 };
 
-const char* toString(TokenKind tokenKind);
-std::ostream& operator<<(std::ostream& stream, TokenKind tokenKind);
+const char* toString(Token::Kind tokenKind);
+std::ostream& operator<<(std::ostream& stream, Token::Kind tokenKind);
 
 }

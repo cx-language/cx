@@ -131,14 +131,14 @@ Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
 Type Typechecker::typecheckPrefixExpr(PrefixExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
-    if (expr.getOperator() == NOT) {
+    if (expr.getOperator() == Token::Not) {
         if (!operandType.isBool()) {
             error(expr.getOperand().getLocation(), "invalid operand type '", operandType,
                   "' to logical not");
         }
         return operandType;
     }
-    if (expr.getOperator() == STAR) { // Dereference operation
+    if (expr.getOperator() == Token::Star) { // Dereference operation
         if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
             warning(expr.getOperand().getLocation(), "dereferencing value of optional type '", operandType,
                     "' which may be null; unwrap the value with a postfix '!' to silence this warning");
@@ -149,7 +149,7 @@ Type Typechecker::typecheckPrefixExpr(PrefixExpr& expr) {
         }
         return operandType.getPointee();
     }
-    if (expr.getOperator() == AND) { // Address-of operation
+    if (expr.getOperator() == Token::And) { // Address-of operation
         return PointerType::get(operandType);
     }
     return operandType;
@@ -159,7 +159,7 @@ static void invalidOperandsToBinaryExpr(const BinaryExpr& expr) {
     std::string hint;
 
     if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr())
-        && (expr.getOperator() == EQ || expr.getOperator() == NE)) {
+        && (expr.getOperator() == Token::Equal || expr.getOperator() == Token::NotEqual)) {
         hint += " (non-optional type '";
         if (expr.getRHS().isNullLiteralExpr()) {
             hint += expr.getLHS().getType().toString();
@@ -183,14 +183,14 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         return typecheckCallExpr(expr);
     }
 
-    if (expr.getOperator() == AND_AND || expr.getOperator() == OR_OR) {
+    if (expr.getOperator() == Token::AndAnd || expr.getOperator() == Token::OrOr) {
         if (leftType.isBool() && rightType.isBool()) {
             return Type::getBool();
         }
         invalidOperandsToBinaryExpr(expr);
     }
 
-    if (expr.getOperator() == PTR_EQ || expr.getOperator() == PTR_NE) {
+    if (expr.getOperator() == Token::PointerEqual || expr.getOperator() == Token::PointerNotEqual) {
         if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
             error(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
         }
@@ -201,7 +201,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     if (leftType.isPointerType() && rightType.isInteger() &&
-        (expr.getOperator() == PLUS || expr.getOperator() == MINUS)) {
+        (expr.getOperator() == Token::Plus || expr.getOperator() == Token::Minus)) {
         return leftType;
     }
 
