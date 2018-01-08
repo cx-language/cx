@@ -1,0 +1,23 @@
+class UniquePtr<Pointee> {
+	var pointer: mutable Pointee*;
+
+	init(value: Pointee) {
+		this.pointer = allocate(value);
+	}
+
+	init(pointer: mutable Pointee*) {
+		this.pointer = pointer;
+	}
+
+	deinit() {
+		deallocate(pointer);
+	}
+
+	func get() -> Pointee* {
+		return pointer;
+	}
+
+	mutating func get() -> mutable Pointee* {
+		return pointer;
+	}
+}
