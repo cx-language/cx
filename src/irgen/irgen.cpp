@@ -69,27 +69,18 @@ IRGenerator::IRGenerator()
     scopes.push_back(Scope(*this));
 }
 
-llvm::Function* IRGenerator::getFunction(Type receiverType, llvm::StringRef functionName) {
-    auto mangledName = mangleFunctionDecl(receiverType, functionName);
-    auto it = functionInstantiations.find(mangledName);
-    if (it == functionInstantiations.end()) {
-        auto decls = currentTypechecker->findDecls(mangledName, /*everywhere*/ true);
-        if (!decls.empty()) {
-            auto& decl = llvm::cast<FunctionDecl>(*decls[0]);
-            return getFunctionProto(decl);
-        }
-        return nullptr;
-    }
-    return it->second.getFunction();
-}
-
 /// @param type The Delta type of the variable, or null if the variable is 'this'.
 void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl) {
     scopes.back().addLocalValue(std::move(name), value);
 
-    if (type && type.isBasicType()) {
-        llvm::Function* deinit = getFunction(type, "deinit");
-        if (deinit) deferDeinitCall(deinit, value, type, decl);
+    if (type) {
+        if (auto* basicType = llvm::dyn_cast<BasicType>(type.getBase())) {
+            if (auto* typeDecl = basicType->getDecl()) {
+                if (auto* deinitDecl = typeDecl->getDeinitializer()) {
+                    deferDeinitCall(getFunctionProto(*deinitDecl), value, type, decl);
+                }
+            }
+        }
     }
 }
 
@@ -713,9 +704,6 @@ void IRGenerator::codegenDecl(const Decl& decl) {
 
 llvm::Module& IRGenerator::compile(const Module& sourceModule) {
     for (const auto& sourceFile : sourceModule.getSourceFiles()) {
-        setTypechecker(Typechecker(const_cast<Module*>(&sourceModule),
-                                   const_cast<SourceFile*>(&sourceFile)));
-
         for (const auto& decl : sourceFile.getTopLevelDecls()) {
             codegenDecl(*decl);
         }
@@ -727,7 +715,6 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
         for (auto& p : currentFunctionInstantiations) {
             if (p.second.getDecl().isExtern() || !p.second.getFunction()->empty()) continue;
 
-            setTypechecker(Typechecker(const_cast<Module*>(&sourceModule), nullptr));
             currentDecl = &p.second.getDecl();
             codegenFunctionBody(p.second.getDecl(), *p.second.getFunction());
             ASSERT(!llvm::verifyFunction(*p.second.getFunction(), &llvm::errs()));

@@ -55,8 +55,6 @@ class IRGenerator {
 public:
     IRGenerator();
 
-    Typechecker& getTypechecker() { return *currentTypechecker; }
-    void setTypechecker(Typechecker&& typechecker) { currentTypechecker = std::move(typechecker); }
     llvm::Module& compile(const Module& sourceModule);
     llvm::Value* codegenExpr(const Expr& expr);
     llvm::Type* toIR(Type type, SourceLocation location = SourceLocation::invalid());
@@ -74,7 +72,6 @@ private:
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
     llvm::Module& getIRModule() { return module; }
 
-    llvm::Function* getFunction(Type receiverType, llvm::StringRef functionName);
     /// @param type The Delta type of the variable, or null if the variable is 'this'.
     void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
     llvm::Value* findValue(llvm::StringRef name, const Decl* decl);
@@ -165,7 +162,6 @@ private:
     };
 
 private:
-    llvm::Optional<Typechecker> currentTypechecker;
     std::vector<Scope> scopes;
 
     llvm::IRBuilder<> builder;
