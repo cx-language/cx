@@ -190,41 +190,38 @@ VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
 }
 
 // TODO: Use llvm::APSInt instead of int64_t.
-void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, clang::QualType type,
-                                     const Typechecker& typechecker) {
+void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, clang::QualType type, Module& module) {
     auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(toDelta(type).asImmutable());
-    typechecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
-                                         *typechecker.getCurrentModule(), SourceLocation::invalid()));
+    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
+                                    module, SourceLocation::invalid()));
 }
 
 // TODO: Use llvm::APFloat instead of long double.
-void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, const Typechecker& typechecker) {
+void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
     auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation::invalid());
     initializer->setType(Type::getFloat64());
-    typechecker.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
-                                         *typechecker.getCurrentModule(), SourceLocation::invalid()));
+    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr,
+                                    module, SourceLocation::invalid()));
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {
 public:
-    CToDeltaConverter(const Typechecker& typechecker) : typechecker(typechecker) {}
+    CToDeltaConverter(Module& module) : module(module) {}
 
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
         for (clang::Decl* decl : declGroup) {
             switch (decl->getKind()) {
                 case clang::Decl::Function:
-                    typechecker.addToSymbolTable(toDelta(llvm::cast<clang::FunctionDecl>(*decl),
-                                                         typechecker.getCurrentModule()));
+                    module.addToSymbolTable(toDelta(llvm::cast<clang::FunctionDecl>(*decl), &module));
                     break;
                 case clang::Decl::Record: {
                     if (!decl->isFirstDecl()) break;
-                    auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl),
-                                            typechecker.getCurrentModule());
+                    auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl), &module);
                     if (typeDecl) {
                         // Skip redefinitions caused by different modules including the same headers.
-                        if (typechecker.findDecls(typeDecl->getName(), true).empty()) {
-                            typechecker.addToSymbolTable(std::move(*typeDecl));
+                        if (module.findDecls(typeDecl->getName(), nullptr, nullptr).empty()) {
+                            module.addToSymbolTable(std::move(*typeDecl));
                         }
                     }
                     break;
@@ -234,18 +231,17 @@ public:
                     for (auto* enumerator : enumDecl.enumerators()) {
                         auto value = enumerator->getInitVal().getExtValue();
                         addIntegerConstantToSymbolTable(enumerator->getName(), value,
-                                                        enumDecl.getIntegerType(), typechecker);
+                                                        enumDecl.getIntegerType(), module);
                     }
                     break;
                 }
                 case clang::Decl::Var:
-                    typechecker.addToSymbolTable(toDelta(llvm::cast<clang::VarDecl>(*decl),
-                                                         typechecker.getCurrentModule()));
+                    module.addToSymbolTable(toDelta(llvm::cast<clang::VarDecl>(*decl), &module));
                     break;
                 case clang::Decl::Typedef: {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
                     if (auto* baseTypeId = typedefDecl.getUnderlyingType().getBaseTypeIdentifier()) {
-                        typechecker.addIdentifierReplacement(typedefDecl.getName(), baseTypeId->getName());
+                        module.addIdentifierReplacement(typedefDecl.getName(), baseTypeId->getName());
                     }
                     break;
                 }
@@ -257,13 +253,13 @@ public:
     }
 
 private:
-    const Typechecker& typechecker;
+    Module& module;
 };
 
 class MacroImporter : public clang::PPCallbacks {
 public:
-    MacroImporter(const Typechecker& typechecker, clang::Sema& clangSema)
-    : typechecker(typechecker), clangSema(clangSema) {}
+    MacroImporter(Module& module, clang::Sema& clangSema)
+    : module(module), clangSema(clangSema) {}
 
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) final override {
         if (macro->getMacroInfo()->getNumTokens() != 1) return;
@@ -271,8 +267,8 @@ public:
 
         switch (token.getKind()) {
             case clang::tok::identifier:
-                typechecker.addIdentifierReplacement(name.getIdentifierInfo()->getName(),
-                                                     token.getIdentifierInfo()->getName());
+                module.addIdentifierReplacement(name.getIdentifierInfo()->getName(),
+                                                token.getIdentifierInfo()->getName());
                 return;
 
             case clang::tok::numeric_constant:
@@ -292,16 +288,16 @@ private:
 
         if (auto* intLiteral = llvm::dyn_cast<clang::IntegerLiteral>(parsed)) {
             llvm::APSInt value(intLiteral->getValue(), parsed->getType()->isUnsignedIntegerType());
-            addIntegerConstantToSymbolTable(name, value.getExtValue(), parsed->getType(), typechecker);
+            addIntegerConstantToSymbolTable(name, value.getExtValue(), parsed->getType(), module);
         } else if (auto* floatLiteral = llvm::dyn_cast<clang::FloatingLiteral>(parsed)) {
             // TODO: Use llvm::APFloat instead of lossy conversion to double.
             auto value = floatLiteral->getValueAsApproximateDouble();
-            addFloatConstantToSymbolTable(name, value, typechecker);
+            addFloatConstantToSymbolTable(name, value, module);
         }
     }
 
 private:
-    const Typechecker& typechecker;
+    Module& module;
     clang::Sema& clangSema;
 };
 
@@ -395,10 +391,10 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     auto& pp = ci.getPreprocessor();
     pp.getBuiltinInfo().initializeBuiltins(pp.getIdentifierTable(), pp.getLangOpts());
 
-    ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>(typechecker));
+    ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>(*module));
     ci.createASTContext();
     ci.createSema(clang::TU_Complete, nullptr);
-    pp.addPPCallbacks(llvm::make_unique<MacroImporter>(typechecker, ci.getSema()));
+    pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
 
     const clang::DirectoryLookup* curDir = nullptr;
     const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(

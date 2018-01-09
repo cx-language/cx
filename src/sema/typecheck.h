@@ -26,7 +26,6 @@ struct Type;
 
 using ParserFunction = void(llvm::StringRef filePath, Module& module);
 
-std::vector<Module*> getAllImportedModules();
 void typecheckModule(Module& module, const PackageManifest* manifest,
                      llvm::ArrayRef<std::string> importSearchPaths,
                      llvm::ArrayRef<std::string> frameworkSearchPaths,
@@ -40,22 +39,6 @@ public:
 
     Module* getCurrentModule() const { return currentModule; }
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
-
-    Decl& findDecl(llvm::StringRef name, SourceLocation location, bool everywhere = false) const;
-    std::vector<Decl*> findDecls(llvm::StringRef name, bool everywhere = false,
-                                 TypeDecl* receiverTypeDecl = nullptr) const;
-    std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
-
-    void addToSymbolTable(FunctionTemplate& decl) const;
-    void addToSymbolTable(FunctionDecl& decl) const;
-    void addToSymbolTable(FunctionDecl&& decl) const;
-    void addToSymbolTable(TypeTemplate& decl) const;
-    void addToSymbolTable(TypeDecl& decl) const;
-    void addToSymbolTable(TypeDecl&& decl) const;
-    void addToSymbolTable(EnumDecl& decl) const;
-    void addToSymbolTable(VarDecl& decl, bool global) const;
-    void addToSymbolTable(VarDecl&& decl) const;
-    void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) const;
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false);
     void typecheckVarDecl(VarDecl& decl, bool isGlobal);
@@ -118,6 +101,7 @@ private:
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams,
                                                 CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                 bool returnOnError);
+    std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee,
                           bool returnNullOnError = false);
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams,
@@ -133,9 +117,6 @@ private:
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
     void markFieldAsInitialized(Expr& expr) const;
-    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) const;
-    template<typename DeclT>
-    void addToSymbolTableNonAST(DeclT& decl) const;
 
 private:
     Module* currentModule;

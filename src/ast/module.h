@@ -110,10 +110,32 @@ public:
         return importedModules;
     }
 
+    void addToSymbolTable(FunctionTemplate& decl);
+    void addToSymbolTable(FunctionDecl& decl);
+    void addToSymbolTable(FunctionDecl&& decl);
+    void addToSymbolTable(TypeTemplate& decl);
+    void addToSymbolTable(TypeDecl& decl);
+    void addToSymbolTable(TypeDecl&& decl);
+    void addToSymbolTable(EnumDecl& decl);
+    void addToSymbolTable(VarDecl& decl, bool global);
+    void addToSymbolTable(VarDecl&& decl);
+    void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
+
+    Decl& findDecl(llvm::StringRef name, SourceLocation location, SourceFile* currentSourceFile) const;
+    std::vector<Decl*> findDecls(llvm::StringRef name, SourceFile* currentSourceFile,
+                                 FunctionDecl* currentFunction, TypeDecl* receiverTypeDecl = nullptr) const;
+
+private:
+    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global);
+    template<typename DeclT>
+    void addToSymbolTableNonAST(DeclT& decl);
+
 private:
     std::string name;
     std::vector<SourceFile> sourceFiles;
     SymbolTable symbolTable;
 };
+
+std::vector<Module*> getAllImportedModules();
 
 }

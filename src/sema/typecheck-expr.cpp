@@ -41,7 +41,7 @@ static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
 }
 
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
-    Decl& decl = findDecl(expr.getIdentifier(), expr.getLocation());
+    Decl& decl = getCurrentModule()->findDecl(expr.getIdentifier(), expr.getLocation(), currentSourceFile);
     expr.setDecl(&decl);
 
     switch (decl.getKind()) {
@@ -248,7 +248,8 @@ static bool hasField(TypeDecl& type, const FieldDecl& field) {
 }
 
 bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
-    auto decls = findDecls(mangleFunctionDecl(type.getType(), functionDecl.getName()));
+    auto decls = getCurrentModule()->findDecls(mangleFunctionDecl(type.getType(), functionDecl.getName()),
+                                               currentSourceFile, currentFunction);
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
         if (!llvm::cast<FunctionDecl>(decl)->getTypeDecl()) continue;
@@ -734,7 +735,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
                 isInitCall = true;
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 auto mangledName = mangleFunctionDecl(llvm::cast<TypeDecl>(decl)->getType(), "init");
-                initDecls = findDecls(mangledName);
+                initDecls = getCurrentModule()->findDecls(mangledName, currentSourceFile, currentFunction);
                 ASSERT(decls.size() == 1);
                 decls = initDecls;
 
@@ -774,10 +775,11 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
 
                     TypeDecl* typeDecl = nullptr;
 
-                    auto decls = findDecls(mangleTypeDecl(typeTemplate->getTypeDecl()->getName(), expr.getGenericArgs()));
+                    auto decls = getCurrentModule()->findDecls(mangleTypeDecl(typeTemplate->getTypeDecl()->getName(), expr.getGenericArgs()),
+                                                               currentSourceFile, currentFunction);
                     if (decls.empty()) {
                         typeDecl = typeTemplate->instantiate(genericArgs);
-                        addToSymbolTable(*typeDecl);
+                        getCurrentModule()->addToSymbolTable(*typeDecl);
                         declsToTypecheck.push_back(typeDecl);
                     } else {
                         typeDecl = llvm::cast<TypeDecl>(decls[0]);
@@ -942,7 +944,8 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
         receiverTypeDecl = nullptr;
     }
 
-    return findDecls(callee, isPostProcessing, receiverTypeDecl);
+    return getCurrentModule()->findDecls(callee, isPostProcessing ? nullptr : currentSourceFile,
+                                         currentFunction, receiverTypeDecl);
 }
 
 Type Typechecker::typecheckCallExpr(CallExpr& expr) {
@@ -1005,7 +1008,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
             expr.setReceiverType(initDecl->getTypeDecl()->getType());
         } else if (decl->isMethodDecl()) {
-            auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
+            auto& varDecl = llvm::cast<VarDecl>(getCurrentModule()->findDecl("this", expr.getCallee().getLocation(),
+                                                                             currentSourceFile));
             expr.setReceiverType(varDecl.getType());
         }
     }
@@ -1307,7 +1311,8 @@ Type Typechecker::typecheckAddressofExpr(AddressofExpr& expr) {
 
 Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr())) {
-        auto decls = findDecls(varExpr->getIdentifier());
+        auto decls = getCurrentModule()->findDecls(varExpr->getIdentifier(), currentSourceFile, currentFunction);
+
         if (!decls.empty()) {
             if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
                 if (!enumDecl->getCaseByName(expr.getMemberName())) {
@@ -1342,8 +1347,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     }
 
     if (baseType.isBasicType()) {
-        Decl& typeDecl = findDecl(mangleTypeDecl(baseType.getName(), baseType.getGenericArgs()),
-                                  expr.getBaseExpr()->getLocation());
+        Decl& typeDecl = getCurrentModule()->findDecl(mangleTypeDecl(baseType.getName(),baseType.getGenericArgs()),
+                                                      expr.getBaseExpr()->getLocation(), currentSourceFile);
 
         for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
             if (field.getName() == expr.getMemberName()) {

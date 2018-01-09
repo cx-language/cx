@@ -1269,31 +1269,31 @@ std::unique_ptr<ImportDecl> parseImportDecl() {
 }
 
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | import-decl | var-decl
-std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
+std::unique_ptr<Decl> parseTopLevelDecl(Module& module) {
     switch (currentToken()) {
         case Token::Func:
             if (lookAhead(2) == Token::Less) {
                 auto decl = parseFunctionTemplate(nullptr);
-                typechecker.addToSymbolTable(*decl);
+                module.addToSymbolTable(*decl);
                 return std::move(decl);
             } else {
                 auto decl = parseFunctionDecl(nullptr);
-                typechecker.addToSymbolTable(*decl);
+                module.addToSymbolTable(*decl);
                 return std::move(decl);
             }
         case Token::Extern: {
             auto decl = parseExternFunctionDecl();
-            typechecker.addToSymbolTable(*decl);
+            module.addToSymbolTable(*decl);
             return std::move(decl);
         }
         case Token::Class: case Token::Struct: case Token::Interface: {
             if (lookAhead(2) == Token::Less) {
                 auto decl = parseTypeTemplate();
-                typechecker.addToSymbolTable(*decl);
+                module.addToSymbolTable(*decl);
                 return std::move(decl);
             } else {
                 auto decl = parseTypeDecl(nullptr);
-                typechecker.addToSymbolTable(*decl);
+                module.addToSymbolTable(*decl);
                 return std::move(decl);
             }
         }
@@ -1302,13 +1302,13 @@ std::unique_ptr<Decl> parseTopLevelDecl(const Typechecker& typechecker) {
                 error(getCurrentLocation(), "generic enums not implemented yet");
             } else {
                 auto decl = parseEnumDecl(nullptr);
-                typechecker.addToSymbolTable(llvm::cast<EnumDecl>(*decl));
+                module.addToSymbolTable(llvm::cast<EnumDecl>(*decl));
                 return std::move(decl);
             }
         }
         case Token::Let: case Token::Var: {
             auto decl = parseVarDecl(true, nullptr);
-            typechecker.addToSymbolTable(*decl, true);
+            module.addToSymbolTable(*decl, true);
             return std::move(decl);
         }
         case Token::Import:
@@ -1330,10 +1330,9 @@ SourceFile parse(std::unique_ptr<llvm::MemoryBuffer> input, Module& module) {
     initParser(std::move(input));
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
     SourceFile sourceFile(identifier);
-    Typechecker typechecker(&module, &sourceFile);
 
     while (currentToken() != Token::None) {
-        topLevelDecls.emplace_back(parseTopLevelDecl(typechecker));
+        topLevelDecls.emplace_back(parseTopLevelDecl(module));
     }
 
     sourceFile.setDecls(std::move(topLevelDecls));
