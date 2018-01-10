@@ -152,11 +152,12 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (parse) return 0;
 
+    Typechecker typechecker;
     for (auto& importedModule : module.getImportedModules()) {
-        typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr,
-                        importSearchPaths, frameworkSearchPaths, ::parse);
+        typechecker.typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr,
+                                    importSearchPaths, frameworkSearchPaths, ::parse);
     }
-    typecheckModule(module, manifest, importSearchPaths, frameworkSearchPaths, ::parse);
+    typechecker.typecheckModule(module, manifest, importSearchPaths, frameworkSearchPaths, ::parse);
 
     bool treatAsLibrary = !module.getSymbolTable().contains("main") && !run;
     if (treatAsLibrary) {
@@ -166,7 +167,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (typecheck) return 0;
 
     IRGenerator irGenerator;
-    for (auto& module : getAllImportedModules()) {
+    for (auto* module : Module::getAllImportedModules()) {
         irGenerator.compile(*module);
     }
     auto& irModule = irGenerator.compile(module);

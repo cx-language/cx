@@ -41,7 +41,8 @@ static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
 }
 
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
-    Decl& decl = getCurrentModule()->findDecl(expr.getIdentifier(), expr.getLocation(), currentSourceFile);
+    Decl& decl = getCurrentModule()->findDecl(expr.getIdentifier(), expr.getLocation(),
+                                              currentSourceFile, currentFieldDecls);
     expr.setDecl(&decl);
 
     switch (decl.getKind()) {
@@ -1009,7 +1010,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
             expr.setReceiverType(initDecl->getTypeDecl()->getType());
         } else if (decl->isMethodDecl()) {
             auto& varDecl = llvm::cast<VarDecl>(getCurrentModule()->findDecl("this", expr.getCallee().getLocation(),
-                                                                             currentSourceFile));
+                                                                             currentSourceFile, currentFieldDecls));
             expr.setReceiverType(varDecl.getType());
         }
     }
@@ -1348,7 +1349,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
 
     if (baseType.isBasicType()) {
         Decl& typeDecl = getCurrentModule()->findDecl(mangleTypeDecl(baseType.getName(),baseType.getGenericArgs()),
-                                                      expr.getBaseExpr()->getLocation(), currentSourceFile);
+                                                      expr.getBaseExpr()->getLocation(), currentSourceFile,
+                                                      currentFieldDecls);
 
         for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
             if (field.getName() == expr.getMemberName()) {

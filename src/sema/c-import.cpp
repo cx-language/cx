@@ -36,13 +36,8 @@
 
 using namespace delta;
 
-namespace delta {
-extern llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
-}
-
 namespace {
 
-clang::PrintingPolicy printingPolicy{clang::LangOptions()};
 clang::TargetInfo* targetInfo;
 
 Type getIntTypeByWidth(int widthInBits, bool asSigned) {
@@ -353,14 +348,13 @@ static void addHeaderSearchPathsFromCCompilerOutput(clang::CompilerInstance& ci)
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
                           llvm::ArrayRef<std::string> importSearchPaths,
                           llvm::ArrayRef<std::string> frameworkSearchPaths) {
-    auto it = allImportedModules.find(headerName);
-    if (it != allImportedModules.end()) {
+    auto it = Module::getAllImportedModulesMap().find(headerName);
+    if (it != Module::getAllImportedModulesMap().end()) {
         importer.addImportedModule(it->second);
         return true;
     }
 
     auto module = std::make_shared<Module>(headerName);
-    Typechecker typechecker(module.get(), nullptr);
 
     clang::CompilerInstance ci;
     clang::DiagnosticOptions diagnosticOptions;
@@ -409,6 +403,6 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     ci.getDiagnosticClient().EndSourceFile();
 
     importer.addImportedModule(module);
-    allImportedModules[module->getName()] = module;
+    Module::getAllImportedModulesMap()[module->getName()] = module;
     return true;
 }

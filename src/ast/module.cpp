@@ -3,15 +3,18 @@
 
 using namespace delta;
 
-namespace delta {
-llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
-extern std::vector<std::pair<FieldDecl*, bool>> currentFieldDecls;
-}
+llvm::StringMap<std::shared_ptr<Module>> Module::allImportedModules;
 
-std::vector<Module*> delta::getAllImportedModules() {
+std::vector<Module*> Module::getAllImportedModules() {
     return map(allImportedModules, [](const llvm::StringMapEntry<std::shared_ptr<Module>>& p) {
         return p.second.get();
     });
+}
+
+llvm::ArrayRef<std::shared_ptr<Module>> Module::getStdlibModules() {
+    auto it = allImportedModules.find("std");
+    if (it == allImportedModules.end()) return {};
+    return it->second;
 }
 
 /// Storage for Decls that are not in the AST but are referenced by the symbol table.
@@ -117,13 +120,8 @@ static Decl* findDeclInModules(llvm::StringRef name, SourceLocation location, co
     }
 }
 
-llvm::ArrayRef<std::shared_ptr<Module>> getStdlibModules() {
-    auto it = allImportedModules.find("std");
-    if (it == allImportedModules.end()) return {};
-    return it->second;
-}
-
-Decl& Module::findDecl(llvm::StringRef name, SourceLocation location, SourceFile* currentSourceFile) const {
+Decl& Module::findDecl(llvm::StringRef name, SourceLocation location, SourceFile* currentSourceFile,
+                       llvm::ArrayRef<std::pair<FieldDecl*, bool>> currentFieldDecls) const {
     ASSERT(!name.empty());
 
     if (Decl* match = findDeclInModules(name, location, llvm::makeArrayRef(this))) {

@@ -26,20 +26,20 @@ struct Type;
 
 using ParserFunction = void(llvm::StringRef filePath, Module& module);
 
-void typecheckModule(Module& module, const PackageManifest* manifest,
-                     llvm::ArrayRef<std::string> importSearchPaths,
-                     llvm::ArrayRef<std::string> frameworkSearchPaths,
-                     ParserFunction& parse);
-
 class Typechecker {
 public:
-    explicit Typechecker(Module* currentModule, SourceFile* currentSourceFile)
-    : currentModule(currentModule), currentSourceFile(currentSourceFile), currentFunction(nullptr),
-      isPostProcessing(false) {}
+    Typechecker()
+    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr),
+      functionReturnType(nullptr), breakableBlocks(0), isPostProcessing(false) {}
 
-    Module* getCurrentModule() const { return currentModule; }
+    Module* getCurrentModule() const { ASSERT(currentModule); return currentModule; }
+    void setCurrentModule(Module* module) { currentModule = module; }
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
 
+    void typecheckModule(Module& module, const PackageManifest* manifest,
+                         llvm::ArrayRef<std::string> importSearchPaths,
+                         llvm::ArrayRef<std::string> frameworkSearchPaths,
+                         ParserFunction& parse);
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false);
     void typecheckVarDecl(VarDecl& decl, bool isGlobal);
     void typecheckFieldDecl(FieldDecl& decl);
@@ -116,12 +116,24 @@ private:
                       bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation::invalid()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
-    void markFieldAsInitialized(Expr& expr) const;
+    void markFieldAsInitialized(Expr& expr);
+    void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
+
+    llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
+                                                   const PackageManifest* manifest,
+                                                   llvm::ArrayRef<std::string> importSearchPaths,
+                                                   llvm::ArrayRef<std::string> frameworkSearchPaths,
+                                                   ParserFunction& parse,
+                                                   llvm::StringRef moduleExternalName,
+                                                   llvm::StringRef moduleInternalName = "");
 
 private:
     Module* currentModule;
     SourceFile* currentSourceFile;
+    std::vector<std::pair<FieldDecl*, bool>> currentFieldDecls;
     FunctionDecl* currentFunction;
+    Type functionReturnType;
+    int breakableBlocks;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
 };

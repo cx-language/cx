@@ -31,19 +31,7 @@ using namespace delta;
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs,
                              llvm::StringRef name, SourceLocation location);
 
-namespace delta {
-extern llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
-std::vector<std::pair<FieldDecl*, bool>> currentFieldDecls;
-}
-
-namespace {
-
-Type functionReturnType = nullptr;
-int breakableBlocks = 0;
-
-}
-
-static void checkReturnPointerToLocal(ReturnStmt& stmt) {
+void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
     if (!functionReturnType.isTupleType()) {
         auto* returnValue = stmt.getReturnValue();
 
@@ -251,7 +239,7 @@ void Typechecker::typecheckCompoundStmt(CompoundStmt& stmt) {
     getCurrentModule()->getSymbolTable().popScope();
 }
 
-void Typechecker::markFieldAsInitialized(Expr& expr) const {
+void Typechecker::markFieldAsInitialized(Expr& expr) {
     if (currentFunction->isInitDecl()) {
         switch (expr.getKind()) {
             case ExprKind::VarExpr: {
@@ -374,7 +362,9 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
             if (type.getPointee().isArrayWithRuntimeSize()) {
                 if (getCurrentModule()->findDecls(mangleTypeDecl("ArrayRef", type.getPointee().getElementType()),
                                                   currentSourceFile, currentFunction).empty()) {
-                    auto& arrayRef = llvm::cast<TypeTemplate>(getCurrentModule()->findDecl("ArrayRef", SourceLocation::invalid(), currentSourceFile));
+                    auto& arrayRefDecl = getCurrentModule()->findDecl("ArrayRef", SourceLocation::invalid(),
+                                                                      currentSourceFile, currentFieldDecls);
+                    auto& arrayRef = llvm::cast<TypeTemplate>(arrayRefDecl);
                     auto* instantiation = arrayRef.instantiate({type.getPointee().getElementType()});
                     getCurrentModule()->addToSymbolTable(*instantiation);
                     declsToTypecheck.push_back(instantiation);
@@ -691,17 +681,17 @@ std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath
     return error;
 }
 
-llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer,
-                                               const PackageManifest* manifest,
-                                               llvm::ArrayRef<std::string> importSearchPaths,
-                                               llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                               ParserFunction& parse,
-                                               llvm::StringRef moduleExternalName,
-                                               llvm::StringRef moduleInternalName = "") {
+llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer,
+                                                            const PackageManifest* manifest,
+                                                            llvm::ArrayRef<std::string> importSearchPaths,
+                                                            llvm::ArrayRef<std::string> frameworkSearchPaths,
+                                                            ParserFunction& parse,
+                                                            llvm::StringRef moduleExternalName,
+                                                            llvm::StringRef moduleInternalName) {
     if (moduleInternalName.empty()) moduleInternalName = moduleExternalName;
 
-    auto it = allImportedModules.find(moduleInternalName);
-    if (it != allImportedModules.end()) {
+    auto it = Module::getAllImportedModulesMap().find(moduleInternalName);
+    if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);
         return *it->second;
     }
@@ -736,7 +726,7 @@ done:
     }
 
     if (importer) importer->addImportedModule(module);
-    allImportedModules[module->getName()] = module;
+    Module::getAllImportedModulesMap()[module->getName()] = module;
     typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr,
                     importSearchPaths, frameworkSearchPaths, parse);
     return *module;
@@ -831,10 +821,10 @@ static void checkUnusedDecls(const Module& module) {
     }
 }
 
-void delta::typecheckModule(Module& module, const PackageManifest* manifest,
-                            llvm::ArrayRef<std::string> importSearchPaths,
-                            llvm::ArrayRef<std::string> frameworkSearchPaths,
-                            ParserFunction& parse) {
+void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest,
+                                  llvm::ArrayRef<std::string> importSearchPaths,
+                                  llvm::ArrayRef<std::string> frameworkSearchPaths,
+                                  ParserFunction& parse) {
     auto stdlibModule = importDeltaModule(nullptr, nullptr, importSearchPaths, frameworkSearchPaths,
                                           parse, "stdlib", "std");
     if (!stdlibModule) {
@@ -843,25 +833,27 @@ void delta::typecheckModule(Module& module, const PackageManifest* manifest,
 
     // Infer the types of global variables for use before their declaration.
     for (auto& sourceFile : module.getSourceFiles()) {
-        Typechecker typechecker(&module, &sourceFile);
+        currentModule = &module;
+        currentSourceFile = &sourceFile;
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl.get())) {
-                typechecker.typecheckVarDecl(*varDecl, true);
+                typecheckVarDecl(*varDecl, true);
             }
         }
 
-        typechecker.postProcess();
+        postProcess();
     }
 
-    for (auto& sourceFile : module.getSourceFiles()) {
-        Typechecker typechecker(&module, &sourceFile);
 
+    for (auto& sourceFile : module.getSourceFiles()) {
         for (auto& decl : sourceFile.getTopLevelDecls()) {
+            currentModule = &module;
+            currentSourceFile = &sourceFile;
+
             if (!decl->isVarDecl()) {
-                typechecker.typecheckTopLevelDecl(*decl, manifest, importSearchPaths,
-                                                  frameworkSearchPaths, parse);
-                typechecker.postProcess();
+                typecheckTopLevelDecl(*decl, manifest, importSearchPaths, frameworkSearchPaths, parse);
+                postProcess();
             }
         }
     }
@@ -869,4 +861,7 @@ void delta::typecheckModule(Module& module, const PackageManifest* manifest,
     if (module.getName() != "std") {
         checkUnusedDecls(module);
     }
+
+    currentModule = nullptr;
+    currentSourceFile = nullptr;
 }

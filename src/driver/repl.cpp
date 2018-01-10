@@ -26,7 +26,8 @@ void evaluate(llvm::StringRef line) {
     Module module("main");
     module.addSourceFile(SourceFile(llvm::StringRef()));
 
-    Typechecker typechecker(&module, &module.getSourceFiles().front());
+    Typechecker typechecker;
+    typechecker.setCurrentModule(&module);
     IRGenerator irGenerator;
 
     std::unique_ptr<Expr> expr;
