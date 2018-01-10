@@ -125,7 +125,7 @@ public:
     static Type getUInt32(bool isMutable = false);
     static Type getUInt64(bool isMutable = false);
     // TODO: Return correct uintptr type by checking target platform pointer size.
-    static Type getUIntPtr(bool isMutable = false) { return getUInt64(); }
+    static Type getUIntPtr(bool isMutable = false) { return getUInt64(isMutable); }
     static Type getFloat(bool isMutable = false);
     static Type getFloat32(bool isMutable = false);
     static Type getFloat64(bool isMutable = false);
