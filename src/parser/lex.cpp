@@ -14,20 +14,15 @@
 
 using namespace delta;
 
-namespace {
-
-std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
-const char* currentFilePosition;
-
-}
-
 namespace delta {
-
 extern const char* currentFilePath;
 extern SourceLocation firstLocation;
 extern SourceLocation lastLocation;
+}
 
-void initLexer(std::unique_ptr<llvm::MemoryBuffer> input) {
+std::vector<std::unique_ptr<llvm::MemoryBuffer>> Lexer::fileBuffers;
+
+Lexer::Lexer(std::unique_ptr<llvm::MemoryBuffer> input) {
     currentFilePath = input->getBufferIdentifier().data();
     fileBuffers.emplace_back(std::move(input));
     currentFilePosition = fileBuffers.back()->getBufferStart() - 1;
@@ -36,11 +31,7 @@ void initLexer(std::unique_ptr<llvm::MemoryBuffer> input) {
     lastLocation = SourceLocation(currentFilePath, 1, 0);
 }
 
-}
-
-namespace {
-
-inline char readChar() {
+char Lexer::readChar() {
     char ch = *++currentFilePosition;
     if (ch != '\n') {
         lastLocation.column++;
@@ -51,7 +42,7 @@ inline char readChar() {
     return ch;
 }
 
-inline void unreadChar(char ch) {
+void Lexer::unreadChar(char ch) {
     if (ch != '\n') {
         lastLocation.column--;
     } else {
@@ -61,7 +52,7 @@ inline void unreadChar(char ch) {
     currentFilePosition--;
 }
 
-static void readBlockComment(SourceLocation startLocation) {
+void Lexer::readBlockComment(SourceLocation startLocation) {
     int nestLevel = 1;
 
     while (true) {
@@ -90,7 +81,7 @@ static void readBlockComment(SourceLocation startLocation) {
     }
 }
 
-static Token readQuotedLiteral(char delimiter, Token::Kind literalKind) {
+Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
     const char* begin = currentFilePosition;
     const char* end = begin + 2;
     int ch;
@@ -107,7 +98,7 @@ static Token readQuotedLiteral(char delimiter, Token::Kind literalKind) {
     return Token(literalKind, llvm::StringRef(begin, end - begin));
 }
 
-inline Token readNumber() {
+Token Lexer::readNumber() {
     const char* const begin = currentFilePosition;
     const char* end = begin + 1;
     bool isFloat = false;
@@ -215,7 +206,7 @@ end:
     return Token(isFloat ? Token::FloatLiteral : Token::IntegerLiteral, llvm::StringRef(begin, end - begin));
 }
 
-const llvm::StringMap<Token::Kind> keywords = {
+static const llvm::StringMap<Token::Kind> keywords = {
     {"addressof",     Token::Addressof},
     {"break",         Token::Break},
     {"case",          Token::Case},
@@ -252,9 +243,7 @@ const llvm::StringMap<Token::Kind> keywords = {
     {"_",             Token::Underscore},
 };
 
-} // anonymous namespace
-
-Token delta::lex() {
+Token Lexer::nextToken() {
     while (true) {
         char ch = readChar();
         firstLocation.line = lastLocation.line;

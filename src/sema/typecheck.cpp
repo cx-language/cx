@@ -24,6 +24,7 @@
 #include "../ast/module.h"
 #include "../ast/mangle.h"
 #include "../package-manager/manifest.h"
+#include "../parser/parse.h"
 #include "../support/utility.h"
 
 using namespace delta;
@@ -655,8 +656,7 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     typecheckType(decl.getType(), decl.getLocation());
 }
 
-std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module,
-                                                   ParserFunction& parse) {
+static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module) {
     std::error_code error;
     llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end;
 
@@ -674,7 +674,8 @@ std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath
         }
 
         if (llvm::sys::path::extension(it->path()) == ".delta") {
-            parse(it->path(), module);
+            Parser parser(it->path(), module);
+            parser.parse();
         }
     }
 
@@ -685,7 +686,6 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
                                                             const PackageManifest* manifest,
                                                             llvm::ArrayRef<std::string> importSearchPaths,
                                                             llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                                            ParserFunction& parse,
                                                             llvm::StringRef moduleExternalName,
                                                             llvm::StringRef moduleInternalName) {
     if (moduleInternalName.empty()) moduleInternalName = moduleExternalName;
@@ -702,7 +702,7 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     if (manifest) {
         for (auto& dependency : manifest->getDeclaredDependencies()) {
             if (dependency.getPackageIdentifier() == moduleInternalName) {
-                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, parse);
+                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module);
                 goto done;
             }
         }
@@ -715,7 +715,7 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
             if (!llvm::sys::fs::is_directory(it->path())) continue;
             if (llvm::sys::path::filename(it->path()) != moduleExternalName) continue;
 
-            error = parseSourcesInDirectoryRecursively(it->path(), *module, parse);
+            error = parseSourcesInDirectoryRecursively(it->path(), *module);
             goto done;
         }
     }
@@ -728,16 +728,14 @@ done:
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->getName()] = module;
     typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr,
-                    importSearchPaths, frameworkSearchPaths, parse);
+                    importSearchPaths, frameworkSearchPaths);
     return *module;
 }
 
 void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
                                       llvm::ArrayRef<std::string> importSearchPaths,
-                                      llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                      ParserFunction& parse) {
-    if (importDeltaModule(currentSourceFile, manifest, importSearchPaths, frameworkSearchPaths,
-                          parse, decl.getTarget())) {
+                                      llvm::ArrayRef<std::string> frameworkSearchPaths) {
+    if (importDeltaModule(currentSourceFile, manifest, importSearchPaths, frameworkSearchPaths, decl.getTarget())) {
         return;
     }
 
@@ -748,8 +746,7 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* m
 
 void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
                                         llvm::ArrayRef<std::string> importSearchPaths,
-                                        llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                        ParserFunction& parse) {
+                                        llvm::ArrayRef<std::string> frameworkSearchPaths) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl: llvm_unreachable("no top-level parameter declarations");
         case DeclKind::FunctionDecl: typecheckFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
@@ -764,7 +761,7 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
         case DeclKind::VarDecl: typecheckVarDecl(llvm::cast<VarDecl>(decl), true); break;
         case DeclKind::FieldDecl: llvm_unreachable("no top-level field declarations");
         case DeclKind::ImportDecl: typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest,
-                                                       importSearchPaths, frameworkSearchPaths, parse); break;
+                                                       importSearchPaths, frameworkSearchPaths); break;
     }
 }
 
@@ -823,10 +820,8 @@ static void checkUnusedDecls(const Module& module) {
 
 void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest,
                                   llvm::ArrayRef<std::string> importSearchPaths,
-                                  llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                  ParserFunction& parse) {
-    auto stdlibModule = importDeltaModule(nullptr, nullptr, importSearchPaths, frameworkSearchPaths,
-                                          parse, "stdlib", "std");
+                                  llvm::ArrayRef<std::string> frameworkSearchPaths) {
+    auto stdlibModule = importDeltaModule(nullptr, nullptr, importSearchPaths, frameworkSearchPaths, "stdlib", "std");
     if (!stdlibModule) {
         printErrorAndExit("couldn't import the standard library: ", stdlibModule.getError().message());
     }
@@ -852,7 +847,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             currentSourceFile = &sourceFile;
 
             if (!decl->isVarDecl()) {
-                typecheckTopLevelDecl(*decl, manifest, importSearchPaths, frameworkSearchPaths, parse);
+                typecheckTopLevelDecl(*decl, manifest, importSearchPaths, frameworkSearchPaths);
                 postProcess();
             }
         }

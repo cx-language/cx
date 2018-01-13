@@ -134,7 +134,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     llvm::StringSet<> relativeImportSearchPaths;
 
     for (llvm::StringRef filePath : files) {
-        ::parse(filePath, module);
+        Parser parser(filePath, module);
+        parser.parse();
 
         auto directoryPath = llvm::sys::path::parent_path(filePath);
         if (directoryPath.empty()) directoryPath = ".";
@@ -155,9 +156,9 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     Typechecker typechecker;
     for (auto& importedModule : module.getImportedModules()) {
         typechecker.typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr,
-                                    importSearchPaths, frameworkSearchPaths, ::parse);
+                                    importSearchPaths, frameworkSearchPaths);
     }
-    typechecker.typecheckModule(module, manifest, importSearchPaths, frameworkSearchPaths, ::parse);
+    typechecker.typecheckModule(module, manifest, importSearchPaths, frameworkSearchPaths);
 
     bool treatAsLibrary = !module.getSymbolTable().contains("main") && !run;
     if (treatAsLibrary) {

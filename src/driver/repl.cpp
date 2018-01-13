@@ -25,14 +25,14 @@ namespace {
 void evaluate(llvm::StringRef line) {
     Module module("main");
     module.addSourceFile(SourceFile(llvm::StringRef()));
-
+    Parser parser(llvm::MemoryBuffer::getMemBuffer(line, "", false), module);
     Typechecker typechecker;
     typechecker.setCurrentModule(&module);
     IRGenerator irGenerator;
 
     std::unique_ptr<Expr> expr;
     try {
-        expr = parseExpr(llvm::MemoryBuffer::getMemBuffer(line, "", false), module);
+        expr = parser.parseExpr();
         typechecker.typecheckExpr(*expr);
     } catch (const CompileError& error) {
         llvm::StringRef trimmed = line.ltrim();

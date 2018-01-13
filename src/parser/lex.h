@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+#include "../ast/token.h"
 
 namespace llvm {
 class MemoryBuffer;
@@ -8,9 +10,23 @@ class MemoryBuffer;
 
 namespace delta {
 
-struct Token;
+struct SourceLocation;
 
-void initLexer(std::unique_ptr<llvm::MemoryBuffer> input);
-Token lex();
+class Lexer {
+public:
+    Lexer(std::unique_ptr<llvm::MemoryBuffer> input);
+    Token nextToken();
+
+private:
+    char readChar();
+    void unreadChar(char ch);
+    void readBlockComment(SourceLocation startLocation);
+    Token readQuotedLiteral(char delimiter, Token::Kind literalKind);
+    Token readNumber();
+
+private:
+    const char* currentFilePosition;
+    static std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
+};
 
 }

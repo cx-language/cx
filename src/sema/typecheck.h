@@ -24,8 +24,6 @@ class SourceFile;
 struct SourceLocation;
 struct Type;
 
-using ParserFunction = void(llvm::StringRef filePath, Module& module);
-
 class Typechecker {
 public:
     Typechecker()
@@ -38,15 +36,13 @@ public:
 
     void typecheckModule(Module& module, const PackageManifest* manifest,
                          llvm::ArrayRef<std::string> importSearchPaths,
-                         llvm::ArrayRef<std::string> frameworkSearchPaths,
-                         ParserFunction& parse);
+                         llvm::ArrayRef<std::string> frameworkSearchPaths);
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false);
     void typecheckVarDecl(VarDecl& decl, bool isGlobal);
     void typecheckFieldDecl(FieldDecl& decl);
     void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
                                llvm::ArrayRef<std::string> importSearchPaths,
-                               llvm::ArrayRef<std::string> frameworkSearchPaths,
-                               ParserFunction& parse);
+                               llvm::ArrayRef<std::string> frameworkSearchPaths);
     void postProcess();
 
 private:
@@ -74,8 +70,7 @@ private:
     void typecheckEnumDecl(EnumDecl& decl);
     void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
                              llvm::ArrayRef<std::string> importSearchPaths,
-                             llvm::ArrayRef<std::string> frameworkSearchPaths,
-                             ParserFunction& parse);
+                             llvm::ArrayRef<std::string> frameworkSearchPaths);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr);
@@ -123,7 +118,6 @@ private:
                                                    const PackageManifest* manifest,
                                                    llvm::ArrayRef<std::string> importSearchPaths,
                                                    llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                                   ParserFunction& parse,
                                                    llvm::StringRef moduleExternalName,
                                                    llvm::StringRef moduleInternalName = "");
 
