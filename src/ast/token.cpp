@@ -49,14 +49,8 @@ PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
 
 }
 
-namespace delta {
-const char* currentFilePath;
-SourceLocation firstLocation(nullptr, 1, 0);
-SourceLocation lastLocation(nullptr, 1, 0);
-}
-
-Token::Token(Token::Kind kind, llvm::StringRef string)
-: kind(kind), string(string), location(currentFilePath, firstLocation.line, firstLocation.column) {
+Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string)
+: kind(kind), string(string), location(location) {
     ASSERT(!string.empty() || kind == Token::None || kind >= Token::Break);
     ASSERT(location.isValid());
 #ifndef NDEBUG

@@ -19,6 +19,7 @@ struct SourceLocation {
         return SourceLocation(nullptr, min, min);
     }
 
+    SourceLocation nextColumn() const { return SourceLocation(file, line, column + 1); }
     bool isValid() const { return line > 0 && column > 0; }
 };
 

@@ -105,7 +105,7 @@ struct Token {
         TokenCount
     };
 
-    Token(Token::Kind kind, llvm::StringRef string = {});
+    Token(Token::Kind kind, SourceLocation location, llvm::StringRef string = {});
     Token::Kind getKind() const { return kind; }
     operator Token::Kind() const { return kind; }
     llvm::StringRef getString() const { return string; }
@@ -125,7 +125,7 @@ struct Token {
     /// Strips the trailing '=' from a compound assignment operator.
     /// E.g. given '+=', returns '+', and so on.
     Token withoutCompoundEqSuffix() const {
-        return Token(static_cast<Token::Kind>(static_cast<int>(kind) - 1));
+        return Token(static_cast<Token::Kind>(static_cast<int>(kind) - 1), location, string);
     }
 
 private:

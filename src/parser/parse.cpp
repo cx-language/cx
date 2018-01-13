@@ -19,10 +19,6 @@
 
 using namespace delta;
 
-namespace delta {
-extern const char* currentFilePath;
-}
-
 static std::unique_ptr<llvm::MemoryBuffer> getFileMemoryBuffer(llvm::StringRef filePath) {
     auto buffer = llvm::MemoryBuffer::getFile(filePath);
     if (!buffer) printErrorAndExit("couldn't open file '", filePath, "'");
@@ -47,7 +43,7 @@ SourceLocation Parser::getCurrentLocation() {
 }
 
 Token Parser::lookAhead(int offset) {
-    if (int(currentTokenIndex) + offset < 0) return Token::None;
+    if (int(currentTokenIndex) + offset < 0) return Token(Token::None, SourceLocation::invalid());
     int count = int(currentTokenIndex) + offset - int(tokenBuffer.size()) + 1;
     while (count-- > 0) tokenBuffer.emplace_back(lexer.nextToken());
     return tokenBuffer[currentTokenIndex + offset];
@@ -95,13 +91,13 @@ Token Parser::parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInf
     return consumeToken();
 }
 
-static void checkStmtTerminatorConsistency(Token::Kind currentTerminator,
-                                           llvm::function_ref<SourceLocation()> getLocation) {
+void Parser::checkStmtTerminatorConsistency(Token::Kind currentTerminator,
+                                            llvm::function_ref<SourceLocation()> getLocation) {
     static Token::Kind previousTerminator = Token::None;
     static const char* filePath = nullptr;
 
-    if (filePath != currentFilePath) {
-        filePath = currentFilePath;
+    if (filePath != lexer.getFilePath()) {
+        filePath = lexer.getFilePath();
         previousTerminator = Token::None;
     }
 
@@ -283,8 +279,9 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
         }
 
         if (currentToken() == Token::RightShift) {
-            tokenBuffer[currentTokenIndex] = Token::Greater;
-            tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token::Greater);
+            tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().getLocation());
+            tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1,
+                               Token(Token::Greater, currentToken().getLocation().nextColumn()));
         }
 
         break;
@@ -933,14 +930,15 @@ std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
     }
 }
 
-std::vector<std::unique_ptr<Stmt>> Parser::parseStmtsUntil(Token end, Decl* parent) {
+std::vector<std::unique_ptr<Stmt>> Parser::parseStmtsUntil(Token::Kind end, Decl* parent) {
     std::vector<std::unique_ptr<Stmt>> stmts;
     while (currentToken() != end)
         stmts.emplace_back(parseStmt(parent));
     return stmts;
 }
 
-std::vector<std::unique_ptr<Stmt>> Parser::parseStmtsUntilOneOf(Token end1, Token end2, Token end3, Decl* parent) {
+std::vector<std::unique_ptr<Stmt>> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2,
+                                                                Token::Kind end3, Decl* parent) {
     std::vector<std::unique_ptr<Stmt>> stmts;
     while (currentToken() != end1 && currentToken() != end2  && currentToken() != end3)
         stmts.emplace_back(parseStmt(parent));
@@ -1315,7 +1313,7 @@ std::unique_ptr<Decl> Parser::parseTopLevelDecl() {
 
 void Parser::parse() {
     std::vector<std::unique_ptr<Decl>> topLevelDecls;
-    SourceFile sourceFile(currentFilePath);
+    SourceFile sourceFile(lexer.getFilePath());
 
     while (currentToken() != Token::None) {
         topLevelDecls.emplace_back(parseTopLevelDecl());

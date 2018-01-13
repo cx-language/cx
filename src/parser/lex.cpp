@@ -14,21 +14,21 @@
 
 using namespace delta;
 
-namespace delta {
-extern const char* currentFilePath;
-extern SourceLocation firstLocation;
-extern SourceLocation lastLocation;
-}
-
 std::vector<std::unique_ptr<llvm::MemoryBuffer>> Lexer::fileBuffers;
 
-Lexer::Lexer(std::unique_ptr<llvm::MemoryBuffer> input) {
-    currentFilePath = input->getBufferIdentifier().data();
+Lexer::Lexer(std::unique_ptr<llvm::MemoryBuffer> input)
+: firstLocation(input->getBufferIdentifier().data(), 1, 0),
+  lastLocation(input->getBufferIdentifier().data(), 1, 0) {
     fileBuffers.emplace_back(std::move(input));
     currentFilePosition = fileBuffers.back()->getBufferStart() - 1;
+}
 
-    firstLocation = SourceLocation(currentFilePath, 1, 0);
-    lastLocation = SourceLocation(currentFilePath, 1, 0);
+const char* Lexer::getFilePath() const {
+    return fileBuffers.back()->getBufferIdentifier().data();
+}
+
+SourceLocation Lexer::getCurrentLocation() const {
+    return SourceLocation(getFilePath(), firstLocation.line, firstLocation.column);
 }
 
 char Lexer::readChar() {
@@ -95,7 +95,7 @@ Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
         end++;
     }
 
-    return Token(literalKind, llvm::StringRef(begin, end - begin));
+    return Token(literalKind, getCurrentLocation(), llvm::StringRef(begin, end - begin));
 }
 
 Token Lexer::readNumber() {
@@ -203,7 +203,8 @@ end:
         end--;
     }
 
-    return Token(isFloat ? Token::FloatLiteral : Token::IntegerLiteral, llvm::StringRef(begin, end - begin));
+    return Token(isFloat ? Token::FloatLiteral : Token::IntegerLiteral, getCurrentLocation(),
+                 llvm::StringRef(begin, end - begin));
 }
 
 static const llvm::StringMap<Token::Kind> keywords = {
@@ -264,125 +265,125 @@ Token Lexer::nextToken() {
                 } else if (ch == '*') {
                     readBlockComment(firstLocation);
                 } else if (ch == '=') {
-                    return Token::SlashEqual;
+                    return Token(Token::SlashEqual, getCurrentLocation());
                 } else {
                     unreadChar(ch);
-                    return Token::Slash;
+                    return Token(Token::Slash, getCurrentLocation());
                 }
                 break;
             case '+':
                 ch = readChar();
-                if (ch == '+') return Token::Increment;
-                if (ch == '=') return Token::PlusEqual;
+                if (ch == '+') return Token(Token::Increment, getCurrentLocation());
+                if (ch == '=') return Token(Token::PlusEqual, getCurrentLocation());
                 unreadChar(ch);
-                return Token::Plus;
+                return Token(Token::Plus, getCurrentLocation());
             case '-':
                 ch = readChar();
-                if (ch == '-') return Token::Decrement;
-                if (ch == '>') return Token::RightArrow;
-                if (ch == '=') return Token::MinusEqual;
+                if (ch == '-') return Token(Token::Decrement, getCurrentLocation());
+                if (ch == '>') return Token(Token::RightArrow, getCurrentLocation());
+                if (ch == '=') return Token(Token::MinusEqual, getCurrentLocation());
                 unreadChar(ch);
-                return Token::Minus;
+                return Token(Token::Minus, getCurrentLocation());
             case '*':
                 ch = readChar();
-                if (ch == '=') return Token::StarEqual;
+                if (ch == '=') return Token(Token::StarEqual, getCurrentLocation());
                 unreadChar(ch);
-                return Token::Star;
+                return Token(Token::Star, getCurrentLocation());
             case '%':
                 ch = readChar();
-                if (ch == '=') return Token::ModuloEqual;
+                if (ch == '=') return Token(Token::ModuloEqual, getCurrentLocation());
                 unreadChar(ch);
-                return Token::Modulo;
+                return Token(Token::Modulo, getCurrentLocation());
             case '<':
                 ch = readChar();
-                if (ch == '=') return Token::LessOrEqual;
+                if (ch == '=') return Token(Token::LessOrEqual, getCurrentLocation());
                 if (ch == '<') {
                     ch = readChar();
-                    if (ch == '=') return Token::LeftShiftEqual;
+                    if (ch == '=') return Token(Token::LeftShiftEqual, getCurrentLocation());
                     unreadChar(ch);
-                    return Token::LeftShift;
+                    return Token(Token::LeftShift, getCurrentLocation());
                 }
                 unreadChar(ch);
-                return Token::Less;
+                return Token(Token::Less, getCurrentLocation());
             case '>':
                 ch = readChar();
-                if (ch == '=') return Token::GreaterOrEqual;
+                if (ch == '=') return Token(Token::GreaterOrEqual, getCurrentLocation());
                 if (ch == '>') {
                     ch = readChar();
-                    if (ch == '=') return Token::RightShiftEqual;
+                    if (ch == '=') return Token(Token::RightShiftEqual, getCurrentLocation());
                     unreadChar(ch);
-                    return Token::RightShift;
+                    return Token(Token::RightShift, getCurrentLocation());
                 }
                 unreadChar(ch);
-                return Token::Greater;
+                return Token(Token::Greater, getCurrentLocation());
             case '=':
                 ch = readChar();
                 if (ch == '=') {
                     ch = readChar();
-                    if (ch == '=') return Token::PointerEqual;
+                    if (ch == '=') return Token(Token::PointerEqual, getCurrentLocation());
                     unreadChar(ch);
-                    return Token::Equal;
+                    return Token(Token::Equal, getCurrentLocation());
                 }
                 unreadChar(ch);
-                return Token::Assignment;
+                return Token(Token::Assignment, getCurrentLocation());
             case '!':
                 ch = readChar();
                 if (ch == '=') {
                     ch = readChar();
-                    if (ch == '=') return Token::PointerNotEqual;
+                    if (ch == '=') return Token(Token::PointerNotEqual, getCurrentLocation());
                     unreadChar(ch);
-                    return Token::NotEqual;
+                    return Token(Token::NotEqual, getCurrentLocation());
                 }
                 unreadChar(ch);
-                return Token::Not;
+                return Token(Token::Not, getCurrentLocation());
             case '&':
                 ch = readChar();
                 if (ch == '&') {
                     ch = readChar();
-                    if (ch == '=') return Token::AndAndEqual;
+                    if (ch == '=') return Token(Token::AndAndEqual, getCurrentLocation());
                     unreadChar(ch);
-                    return Token::AndAnd;
+                    return Token(Token::AndAnd, getCurrentLocation());
                 }
-                if (ch == '=') return Token::AndEqual;
+                if (ch == '=') return Token(Token::AndEqual, getCurrentLocation());
                 unreadChar(ch);
-                return Token::And;
+                return Token(Token::And, getCurrentLocation());
             case '|':
                 ch = readChar();
                 if (ch == '|') {
                     ch = readChar();
-                    if (ch == '=') return Token::OrOrEqual;
+                    if (ch == '=') return Token(Token::OrOrEqual, getCurrentLocation());
                     unreadChar(ch);
-                    return Token::OrOr;
+                    return Token(Token::OrOr, getCurrentLocation());
                 }
-                if (ch == '=') return Token::OrEqual;
+                if (ch == '=') return Token(Token::OrEqual, getCurrentLocation());
                 unreadChar(ch);
-                return Token::Or;
+                return Token(Token::Or, getCurrentLocation());
             case '^':
                 ch = readChar();
-                if (ch == '=') return Token::XorEqual;
+                if (ch == '=') return Token(Token::XorEqual, getCurrentLocation());
                 unreadChar(ch);
-                return Token::Xor;
-            case '~': return Token::Tilde;
-            case '(': return Token::LeftParen;
-            case ')': return Token::RightParen;
-            case '[': return Token::LeftBracket;
-            case ']': return Token::RightBracket;
-            case '{': return Token::LeftBrace;
-            case '}': return Token::RightBrace;
+                return Token(Token::Xor, getCurrentLocation());
+            case '~': return Token(Token::Tilde, getCurrentLocation());
+            case '(': return Token(Token::LeftParen, getCurrentLocation());
+            case ')': return Token(Token::RightParen, getCurrentLocation());
+            case '[': return Token(Token::LeftBracket, getCurrentLocation());
+            case ']': return Token(Token::RightBracket, getCurrentLocation());
+            case '{': return Token(Token::LeftBrace, getCurrentLocation());
+            case '}': return Token(Token::RightBrace, getCurrentLocation());
             case '.':
                 ch = readChar();
                 if (ch == '.') {
                     char ch = readChar();
-                    if (ch == '.') return Token::DotDotDot;
+                    if (ch == '.') return Token(Token::DotDotDot, getCurrentLocation());
                     unreadChar(ch);
-                    return Token::DotDot;
+                    return Token(Token::DotDot, getCurrentLocation());
                 }
                 unreadChar(ch);
-                return Token::Dot;
-            case ',': return Token::Comma;
-            case ';': return Token::Semicolon;
-            case ':': return Token::Colon;
-            case '?': return Token::QuestionMark;
+                return Token(Token::Dot, getCurrentLocation());
+            case ',': return Token(Token::Comma, getCurrentLocation());
+            case ';': return Token(Token::Semicolon, getCurrentLocation());
+            case ':': return Token(Token::Colon, getCurrentLocation());
+            case '?': return Token(Token::QuestionMark, getCurrentLocation());
             case '\0':
                 goto end;
             case '0': case '1': case '2': case '3': case '4':
@@ -407,10 +408,10 @@ Token Lexer::nextToken() {
 
                 auto it = keywords.find(string);
                 if (it != keywords.end()) {
-                    return Token(it->second, string);
+                    return Token(it->second, getCurrentLocation(), string);
                 }
 
-                return Token(Token::Identifier, string);
+                return Token(Token::Identifier, getCurrentLocation(), string);
             }
             case '"':
                 return readQuotedLiteral('"', Token::StringLiteral);
@@ -422,5 +423,5 @@ Token Lexer::nextToken() {
     }
 
 end:
-    return Token::None;
+    return Token(Token::None, getCurrentLocation());
 }

@@ -16,8 +16,10 @@ class Lexer {
 public:
     Lexer(std::unique_ptr<llvm::MemoryBuffer> input);
     Token nextToken();
+    const char* getFilePath() const;
 
 private:
+    SourceLocation getCurrentLocation() const;
     char readChar();
     void unreadChar(char ch);
     void readBlockComment(SourceLocation startLocation);
@@ -26,6 +28,8 @@ private:
 
 private:
     const char* currentFilePosition;
+    SourceLocation firstLocation;
+    SourceLocation lastLocation;
     static std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
 };
 
