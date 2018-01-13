@@ -42,7 +42,7 @@ void evaluate(llvm::StringRef line) {
     }
 
     llvm::InitializeNativeTarget();
-    auto irModule = llvm::make_unique<llvm::Module>("deltajit", irgen::getContext());
+    auto irModule = llvm::make_unique<llvm::Module>("deltajit", irGenerator.getLLVMContext());
     auto& irModuleRef = *irModule;
 
     std::string error;
@@ -52,7 +52,7 @@ void evaluate(llvm::StringRef line) {
     llvm::FunctionType* functionType = llvm::FunctionType::get(irGenerator.toIR(expr->getType()), {}, false);
     llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage,
                                                       "__anon_expr", &irModuleRef);
-    irGenerator.getBuilder().SetInsertPoint(llvm::BasicBlock::Create(irgen::getContext(), "", function));
+    irGenerator.getBuilder().SetInsertPoint(llvm::BasicBlock::Create(irGenerator.getLLVMContext(), "", function));
     irGenerator.getBuilder().CreateRet(irGenerator.codegenExpr(*expr));
     ASSERT(!llvm::verifyModule(irModuleRef, &llvm::errs()));
 

@@ -3,10 +3,6 @@
 
 using namespace delta;
 
-namespace delta {
-extern llvm::LLVMContext ctx;
-}
-
 llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
     auto* value = findValue(expr.getIdentifier(), expr.getDecl());
 

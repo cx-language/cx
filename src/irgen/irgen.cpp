@@ -4,6 +4,7 @@
 #pragma warning(push, 0)
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringMap.h>
+#include <llvm/ADT/StringSwitch.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Function.h>
@@ -20,10 +21,6 @@
 #include "../support/utility.h"
 
 using namespace delta;
-
-namespace delta {
-llvm::LLVMContext ctx;
-}
 
 namespace {
 
@@ -117,31 +114,30 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
     }
 }
 
-static const llvm::StringMap<llvm::Type*> builtinTypes = {
-    { "void", llvm::Type::getVoidTy(ctx) },
-    { "bool", llvm::Type::getInt1Ty(ctx) },
-    { "char", llvm::Type::getInt8Ty(ctx) },
-    { "int", llvm::Type::getInt32Ty(ctx) },
-    { "int8", llvm::Type::getInt8Ty(ctx) },
-    { "int16", llvm::Type::getInt16Ty(ctx) },
-    { "int32", llvm::Type::getInt32Ty(ctx) },
-    { "int64", llvm::Type::getInt64Ty(ctx) },
-    { "uint", llvm::Type::getInt32Ty(ctx) },
-    { "uint8", llvm::Type::getInt8Ty(ctx) },
-    { "uint16", llvm::Type::getInt16Ty(ctx) },
-    { "uint32", llvm::Type::getInt32Ty(ctx) },
-    { "uint64", llvm::Type::getInt64Ty(ctx) },
-    { "float", llvm::Type::getFloatTy(ctx) },
-    { "float32", llvm::Type::getFloatTy(ctx) },
-    { "float64", llvm::Type::getDoubleTy(ctx) },
-    { "float80", llvm::Type::getX86_FP80Ty(ctx) },
-};
-
 llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
-            auto builtinType = builtinTypes.find(type.getName());
-            if (builtinType != builtinTypes.end()) return builtinType->second;
+            llvm::Type* builtinType = llvm::StringSwitch<llvm::Type*>(type.getName())
+                .Case("void", llvm::Type::getVoidTy(ctx))
+                .Case("bool", llvm::Type::getInt1Ty(ctx))
+                .Case("char", llvm::Type::getInt8Ty(ctx))
+                .Case("int", llvm::Type::getInt32Ty(ctx))
+                .Case("int8", llvm::Type::getInt8Ty(ctx))
+                .Case("int16", llvm::Type::getInt16Ty(ctx))
+                .Case("int32", llvm::Type::getInt32Ty(ctx))
+                .Case("int64", llvm::Type::getInt64Ty(ctx))
+                .Case("uint", llvm::Type::getInt32Ty(ctx))
+                .Case("uint8", llvm::Type::getInt8Ty(ctx))
+                .Case("uint16", llvm::Type::getInt16Ty(ctx))
+                .Case("uint32", llvm::Type::getInt32Ty(ctx))
+                .Case("uint64", llvm::Type::getInt64Ty(ctx))
+                .Case("float", llvm::Type::getFloatTy(ctx))
+                .Case("float32", llvm::Type::getFloatTy(ctx))
+                .Case("float64", llvm::Type::getDoubleTy(ctx))
+                .Case("float80", llvm::Type::getX86_FP80Ty(ctx))
+                .Default(nullptr);
+
+            if (builtinType) return builtinType;
 
             auto name = mangleTypeDecl(type.getName(), type.getGenericArgs());
             auto it = structs.find(name);
@@ -727,6 +723,3 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
     return module;
 }
 
-llvm::LLVMContext& irgen::getContext() {
-    return ctx;
-}

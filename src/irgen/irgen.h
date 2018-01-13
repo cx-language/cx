@@ -18,11 +18,6 @@ struct Type;
 class Typechecker;
 class IRGenerator;
 
-namespace irgen {
-llvm::Type* getBuiltinType(llvm::StringRef typeName);
-llvm::LLVMContext& getContext();
-}
-
 struct Scope {
     Scope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
     void addDeferredExpr(const Expr& expr) { deferredExprs.emplace_back(&expr); }
@@ -58,6 +53,7 @@ public:
     llvm::Module& compile(const Module& sourceModule);
     llvm::Value* codegenExpr(const Expr& expr);
     llvm::Type* toIR(Type type, SourceLocation location = SourceLocation::invalid());
+    llvm::LLVMContext& getLLVMContext() { return ctx; }
     llvm::IRBuilder<>& getBuilder() { return builder; }
 
 private:
@@ -164,6 +160,7 @@ private:
 private:
     std::vector<Scope> scopes;
 
+    llvm::LLVMContext ctx;
     llvm::IRBuilder<> builder;
     llvm::Module module;
 
