@@ -11,300 +11,391 @@
 
 using namespace delta;
 
-namespace {
-
-int indentLevel = 0;
-
-/// Inserts a line break followed by appropriate indentation.
-std::ostream& br(std::ostream& out) {
-    return out << '\n' << std::string(indentLevel * 4, ' ');
+/// Used to insert a line break followed by appropriate indentation.
+void ASTPrinter::breakLine() {
+    out << '\n';
+    for (int i = 0; i < indentLevel; ++i) {
+        out << "    ";
+    }
 }
 
-inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
-    return stream.write(string.data(), string.size());
-}
-
-std::ostream& operator<<(std::ostream& out, const Expr& expr);
-std::ostream& operator<<(std::ostream& out, const Stmt& stmt);
-std::ostream& operator<<(std::ostream& out, const Decl& decl);
-
-std::ostream& operator<<(std::ostream& out, llvm::ArrayRef<ParamDecl> params) {
+void ASTPrinter::printParams(llvm::ArrayRef<ParamDecl> params) {
     out << "(";
-
     for (const ParamDecl& param : params) {
-        out << param;
+        printParamDecl(param);
         if (&param != &params.back()) out << " ";
     }
-
-    return out << ")";
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const VarExpr& expr) {
-    return out << expr.getIdentifier();
+void ASTPrinter::printGenericParams(llvm::ArrayRef<GenericParamDecl> genericParams) {
+    out << "(";
+    for (const GenericParamDecl& genericParam : genericParams) {
+        out << genericParam.getName();
+        if (&genericParam != &genericParams.back()) out << " ";
+    }
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const StringLiteralExpr& expr) {
-    return out << '"' << expr.getValue() << '"';
+void ASTPrinter::printVarExpr(const VarExpr& expr) {
+    out << expr.getIdentifier();
 }
 
-std::ostream& operator<<(std::ostream& out, const CharacterLiteralExpr& expr) {
-    return out << '\'' << expr.getValue() << '\'';
+void ASTPrinter::printStringLiteralExpr(const StringLiteralExpr& expr) {
+    out << '"' << expr.getValue() << '"';
 }
 
-std::ostream& operator<<(std::ostream& out, const IntLiteralExpr& expr) {
-    return out << expr.getValue();
+void ASTPrinter::printCharacterLiteralExpr(const CharacterLiteralExpr& expr) {
+    out << '\'' << expr.getValue() << '\'';
 }
 
-std::ostream& operator<<(std::ostream& out, const FloatLiteralExpr& expr) {
-    return out << expr.getValue();
+void ASTPrinter::printIntLiteralExpr(const IntLiteralExpr& expr) {
+    out << expr.getValue();
 }
 
-std::ostream& operator<<(std::ostream& out, const BoolLiteralExpr& expr) {
-    return out << (expr.getValue() ? "true" : "false");
+void ASTPrinter::printFloatLiteralExpr(const FloatLiteralExpr& expr) {
+    out << expr.getValue();
 }
 
-std::ostream& operator<<(std::ostream& out, const NullLiteralExpr&) {
-    return out << "null";
+void ASTPrinter::printBoolLiteralExpr(const BoolLiteralExpr& expr) {
+    out << (expr.getValue() ? "true" : "false");
 }
 
-std::ostream& operator<<(std::ostream& out, const ArrayLiteralExpr& expr) {
+void ASTPrinter::printNullLiteralExpr(const NullLiteralExpr&) {
+    out << "null";
+}
+
+void ASTPrinter::printArrayLiteralExpr(const ArrayLiteralExpr& expr) {
     out << "(array-literal";
-    for (auto& e : expr.getElements()) out << " " << *e;
-    return out << ")";
+    for (auto& e : expr.getElements()) {
+        out << " ";
+        printExpr(*e);
+    }
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const TupleExpr& expr) {
+void ASTPrinter::printTupleExpr(const TupleExpr& expr) {
     out << "(tuple-literal";
-    for (auto& e : expr.getElements()) out << " " << *e;
-    return out << ")";
+    for (auto& e : expr.getElements()) {
+        out << " ";
+        printExpr(*e);
+    }
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const PrefixExpr& expr) {
-    return out << "(" << expr.getOperator() << expr.getOperand() << ")";
+void ASTPrinter::printPrefixExpr(const PrefixExpr& expr) {
+    out << "(" << expr.getOperator();
+    printExpr(expr.getOperand());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const BinaryExpr& expr) {
-    return out << "(" << expr.getLHS() << " " << expr.getOperator() << " " << expr.getRHS() << ")";
+void ASTPrinter::printBinaryExpr(const BinaryExpr& expr) {
+    out << "(";
+    printExpr(expr.getLHS());
+    out << " " << expr.getOperator() << " ";
+    printExpr(expr.getRHS());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const CallExpr& expr) {
-    out << "(call " << expr.getCallee();
+void ASTPrinter::printCallExpr(const CallExpr& expr) {
+    out << "(call ";
+    printExpr(expr.getCallee());
     for (const Argument& arg : expr.getArgs()) {
-        out << " " << *arg.getValue();
+        out << " ";
+        printExpr(*arg.getValue());
     }
-    return out << ")";
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const CastExpr& expr) {
-    return out << "(cast " << expr.getExpr() << " " << expr.getType() << ")";
+void ASTPrinter::printCastExpr(const CastExpr& expr) {
+    out << "(cast ";
+    printExpr(expr.getExpr());
+    out << " " << expr.getType() << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const SizeofExpr& expr) {
-    return out << "(sizeof " << expr.getType() << ")";
+void ASTPrinter::printSizeofExpr(const SizeofExpr& expr) {
+    out << "(sizeof " << expr.getType() << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const AddressofExpr& expr) {
-    return out << "(addressof " << expr.getOperand() << ")";
+void ASTPrinter::printAddressofExpr(const AddressofExpr& expr) {
+    out << "(addressof ";
+    printExpr(expr.getOperand());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const MemberExpr& expr) {
-    return out << "(member-expr " << *expr.getBaseExpr() << " " << expr.getMemberName() << ")";
+void ASTPrinter::printMemberExpr(const MemberExpr& expr) {
+    out << "(member-expr ";
+    printExpr(*expr.getBaseExpr());
+    out << " " << expr.getMemberName() << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const SubscriptExpr& expr) {
-    return out << "(subscript " << *expr.getBaseExpr() << " " << *expr.getIndexExpr() << ")";
+void ASTPrinter::printSubscriptExpr(const SubscriptExpr& expr) {
+    out << "(subscript ";
+    printExpr(*expr.getBaseExpr());
+    out << " ";
+    printExpr(*expr.getIndexExpr());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const UnwrapExpr& expr) {
-    return out << "(unwrap " << expr.getOperand() << ")";
+void ASTPrinter::printUnwrapExpr(const UnwrapExpr& expr) {
+    out << "(unwrap ";
+    printExpr(expr.getOperand());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const LambdaExpr& expr) {
-    return out << "(lambda " << expr.getParams() << " " << *expr.getBody() << ")";
+void ASTPrinter::printLambdaExpr(const LambdaExpr& expr) {
+    out << "(lambda ";
+    printParams(expr.getParams());
+    out << " ";
+    printExpr(*expr.getBody());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const IfExpr& expr) {
-    return out << "(if-expr " << *expr.getCondition() << " " << *expr.getThenExpr() << " "
-               << *expr.getElseExpr() << ")";
+void ASTPrinter::printIfExpr(const IfExpr& expr) {
+    out << "(if-expr ";
+    printExpr(*expr.getCondition());
+    out << " ";
+    printExpr(*expr.getThenExpr());
+    out << " ";
+    printExpr(*expr.getElseExpr());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const Expr& expr) {
+void ASTPrinter::printExpr(const Expr& expr) {
     switch (expr.getKind()) {
-        case ExprKind::VarExpr: return out << llvm::cast<VarExpr>(expr);
-        case ExprKind::StringLiteralExpr: return out << llvm::cast<StringLiteralExpr>(expr);
-        case ExprKind::CharacterLiteralExpr: return out << llvm::cast<CharacterLiteralExpr>(expr);
-        case ExprKind::IntLiteralExpr: return out << llvm::cast<IntLiteralExpr>(expr);
-        case ExprKind::FloatLiteralExpr: return out << llvm::cast<FloatLiteralExpr>(expr);
-        case ExprKind::BoolLiteralExpr: return out << llvm::cast<BoolLiteralExpr>(expr);
-        case ExprKind::NullLiteralExpr: return out << llvm::cast<NullLiteralExpr>(expr);
-        case ExprKind::ArrayLiteralExpr: return out << llvm::cast<ArrayLiteralExpr>(expr);
-        case ExprKind::TupleExpr: return out << llvm::cast<TupleExpr>(expr);
-        case ExprKind::PrefixExpr: return out << llvm::cast<PrefixExpr>(expr);
-        case ExprKind::BinaryExpr: return out << llvm::cast<BinaryExpr>(expr);
-        case ExprKind::CallExpr: return out << llvm::cast<CallExpr>(expr);
-        case ExprKind::CastExpr: return out << llvm::cast<CastExpr>(expr);
-        case ExprKind::SizeofExpr: return out << llvm::cast<SizeofExpr>(expr);
-        case ExprKind::AddressofExpr: return out << llvm::cast<AddressofExpr>(expr);
-        case ExprKind::MemberExpr: return out << llvm::cast<MemberExpr>(expr);
-        case ExprKind::SubscriptExpr: return out << llvm::cast<SubscriptExpr>(expr);
-        case ExprKind::UnwrapExpr: return out << llvm::cast<UnwrapExpr>(expr);
-        case ExprKind::LambdaExpr: return out << llvm::cast<LambdaExpr>(expr);
-        case ExprKind::IfExpr: return out << llvm::cast<IfExpr>(expr);
+        case ExprKind::VarExpr: printVarExpr(llvm::cast<VarExpr>(expr)); break;
+        case ExprKind::StringLiteralExpr: printStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr)); break;
+        case ExprKind::CharacterLiteralExpr: printCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr)); break;
+        case ExprKind::IntLiteralExpr: printIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr)); break;
+        case ExprKind::FloatLiteralExpr: printFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr)); break;
+        case ExprKind::BoolLiteralExpr: printBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr)); break;
+        case ExprKind::NullLiteralExpr: printNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr)); break;
+        case ExprKind::ArrayLiteralExpr: printArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr)); break;
+        case ExprKind::TupleExpr: printTupleExpr(llvm::cast<TupleExpr>(expr)); break;
+        case ExprKind::PrefixExpr: printPrefixExpr(llvm::cast<PrefixExpr>(expr)); break;
+        case ExprKind::BinaryExpr: printBinaryExpr(llvm::cast<BinaryExpr>(expr)); break;
+        case ExprKind::CallExpr: printCallExpr(llvm::cast<CallExpr>(expr)); break;
+        case ExprKind::CastExpr: printCastExpr(llvm::cast<CastExpr>(expr)); break;
+        case ExprKind::SizeofExpr: printSizeofExpr(llvm::cast<SizeofExpr>(expr)); break;
+        case ExprKind::AddressofExpr: printAddressofExpr(llvm::cast<AddressofExpr>(expr)); break;
+        case ExprKind::MemberExpr: printMemberExpr(llvm::cast<MemberExpr>(expr)); break;
+        case ExprKind::SubscriptExpr: printSubscriptExpr(llvm::cast<SubscriptExpr>(expr)); break;
+        case ExprKind::UnwrapExpr: printUnwrapExpr(llvm::cast<UnwrapExpr>(expr)); break;
+        case ExprKind::LambdaExpr: printLambdaExpr(llvm::cast<LambdaExpr>(expr)); break;
+        case ExprKind::IfExpr: printIfExpr(llvm::cast<IfExpr>(expr)); break;
     }
-    llvm_unreachable("all cases handled");
 }
 
-std::ostream& operator<<(std::ostream& out, llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
+void ASTPrinter::printBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
     indentLevel++;
     for (const auto& stmt : block) {
-        out << *stmt;
+        printStmt(*stmt);
     }
     indentLevel--;
-    return out;
 }
 
-std::ostream& operator<<(std::ostream& out, const ReturnStmt& stmt) {
-    out << br << "(return-stmt";
+void ASTPrinter::printReturnStmt(const ReturnStmt& stmt) {
+    breakLine();
+    out << "(return-stmt";
 
     if (stmt.getReturnValue()) {
-        out << " " << *stmt.getReturnValue();
+        out << " ";
+        printExpr(*stmt.getReturnValue());
     }
 
-    return out << ")";
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const VarStmt& stmt) {
-    out << br << "(var-stmt " << stmt.getDecl().getName() << " ";
-    if (stmt.getDecl().getInitializer()) out << *stmt.getDecl().getInitializer();
-    else out << "undefined";
-    return out << ")";
+void ASTPrinter::printVarStmt(const VarStmt& stmt) {
+    breakLine();
+    out << "(var-stmt " << stmt.getDecl().getName() << " ";
+    if (stmt.getDecl().getInitializer()) {
+        printExpr(*stmt.getDecl().getInitializer());
+    } else {
+        out << "undefined";
+    }
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const IncrementStmt& stmt) {
-    return out << br << "(inc-stmt " << stmt.getOperand() << ")";
+void ASTPrinter::printIncrementStmt(const IncrementStmt& stmt) {
+    breakLine();
+    out << "(inc-stmt ";
+    printExpr(stmt.getOperand());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const DecrementStmt& stmt) {
-    return out << br << "(dec-stmt " << stmt.getOperand() << ")";
+void ASTPrinter::printDecrementStmt(const DecrementStmt& stmt) {
+    breakLine();
+    out << "(dec-stmt ";
+    printExpr(stmt.getOperand());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const DeferStmt& stmt) {
-    return out << br << "(defer-stmt " << stmt.getExpr() << ")";
+void ASTPrinter::printDeferStmt(const DeferStmt& stmt) {
+    breakLine();
+    out << "(defer-stmt ";
+    printExpr(stmt.getExpr());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const IfStmt& stmt) {
-    out << br << "(if-stmt " << stmt.getCondition();
+void ASTPrinter::printIfStmt(const IfStmt& stmt) {
+    breakLine();
+    out << "(if-stmt ";
+    printExpr(stmt.getCondition());
     indentLevel++;
-    out << br << "(then" << stmt.getThenBody() << ")";
+    breakLine();
+    out << "(then";
+    printBlock(stmt.getThenBody());
+    out << ")";
     if (!stmt.getElseBody().empty()) {
-        out << br << "(else";
+        breakLine();
+        out << "(else";
         indentLevel++;
         for (const auto& substmt : stmt.getElseBody()) {
-            if (!substmt->isIfStmt()) out << br;
-            out << *substmt;
+            if (!substmt->isIfStmt()) breakLine();
+            printStmt(*substmt);
         }
         indentLevel--;
         out << ")";
     }
     indentLevel--;
-    return out << ")";
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const SwitchStmt& stmt) {
-    out << br << "(switch-stmt " << stmt.getCondition();
+void ASTPrinter::printSwitchStmt(const SwitchStmt& stmt) {
+    breakLine();
+    out << "(switch-stmt ";
+    printExpr(stmt.getCondition());
     indentLevel++;
     for (const SwitchCase& switchCase : stmt.getCases()) {
-        out << br << "(case " << *switchCase.getValue() << switchCase.getStmts() << ")";
+        breakLine();
+        out << "(case ";
+        printExpr(*switchCase.getValue());
+        printBlock(switchCase.getStmts());
+        out << ")";
     }
     indentLevel--;
-    return out << ")";
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const WhileStmt& stmt) {
-    return out << br << "(while-stmt " << stmt.getCondition() << stmt.getBody() << ")";
+void ASTPrinter::printWhileStmt(const WhileStmt& stmt) {
+    breakLine();
+    out << "(while-stmt ";
+    printExpr(stmt.getCondition());
+    printBlock(stmt.getBody());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const ForStmt& stmt) {
-    return out << br << "(for-stmt " << *stmt.getVariable() << " " << stmt.getRangeExpr() << stmt.getBody() << ")";
+void ASTPrinter::printForStmt(const ForStmt& stmt) {
+    breakLine();
+    out << "(for-stmt ";
+    printVarDecl(*stmt.getVariable());
+    out << " ";
+    printExpr(stmt.getRangeExpr());
+    printBlock(stmt.getBody());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const BreakStmt&) {
-    return out << br << "(break-stmt)";
+void ASTPrinter::printBreakStmt(const BreakStmt&) {
+    breakLine();
+    out << "(break-stmt)";
 }
 
-std::ostream& operator<<(std::ostream& out, const AssignStmt& stmt) {
+void ASTPrinter::printAssignStmt(const AssignStmt& stmt) {
     if (stmt.isCompoundAssignment()) {
+        breakLine();
         auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.getRHS());
-        return out << br << "(compound-assign-stmt " << binaryExpr.getOperator() << " "
-                   << binaryExpr.getLHS() << " " << binaryExpr.getRHS() << ")";
+        out << "(compound-assign-stmt " << binaryExpr.getOperator() << " ";
+        printExpr(binaryExpr.getLHS());
+        out << " ";
+        printExpr(binaryExpr.getRHS());
+        out << ")";
     } else {
-        return out << br << "(assign-stmt " << *stmt.getLHS() << " " << *stmt.getRHS() << ")";
+        breakLine();
+        out << "(assign-stmt ";
+        printExpr(*stmt.getLHS());
+        out << " ";
+        printExpr(*stmt.getRHS());
+        out << ")";
     }
 }
 
-std::ostream& operator<<(std::ostream& out, const CompoundStmt& stmt) {
-    return out << br << "(compound-stmt " << stmt.getBody() << ")";
+void ASTPrinter::printCompoundStmt(const CompoundStmt& stmt) {
+    breakLine();
+    out << "(compound-stmt ";
+    printBlock(stmt.getBody());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const Stmt& stmt) {
+void ASTPrinter::printStmt(const Stmt& stmt) {
     switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt: return out << llvm::cast<ReturnStmt>(stmt);
-        case StmtKind::VarStmt: return out << llvm::cast<VarStmt>(stmt);
-        case StmtKind::IncrementStmt: return out << llvm::cast<IncrementStmt>(stmt);
-        case StmtKind::DecrementStmt: return out << llvm::cast<DecrementStmt>(stmt);
-        case StmtKind::ExprStmt: return out << br << llvm::cast<ExprStmt>(stmt).getExpr();
-        case StmtKind::DeferStmt: return out << llvm::cast<DeferStmt>(stmt);
-        case StmtKind::IfStmt: return out << llvm::cast<IfStmt>(stmt);
-        case StmtKind::SwitchStmt: return out << llvm::cast<SwitchStmt>(stmt);
-        case StmtKind::WhileStmt: return out << llvm::cast<WhileStmt>(stmt);
-        case StmtKind::ForStmt: return out << llvm::cast<ForStmt>(stmt);
-        case StmtKind::BreakStmt: return out << llvm::cast<BreakStmt>(stmt);
-        case StmtKind::AssignStmt: return out << llvm::cast<AssignStmt>(stmt);
-        case StmtKind::CompoundStmt: return out << llvm::cast<CompoundStmt>(stmt);
+        case StmtKind::ReturnStmt: printReturnStmt(llvm::cast<ReturnStmt>(stmt)); break;
+        case StmtKind::VarStmt: printVarStmt(llvm::cast<VarStmt>(stmt)); break;
+        case StmtKind::IncrementStmt: printIncrementStmt(llvm::cast<IncrementStmt>(stmt)); break;
+        case StmtKind::DecrementStmt: printDecrementStmt(llvm::cast<DecrementStmt>(stmt)); break;
+        case StmtKind::ExprStmt: breakLine(); printExpr(llvm::cast<ExprStmt>(stmt).getExpr()); break;
+        case StmtKind::DeferStmt: printDeferStmt(llvm::cast<DeferStmt>(stmt)); break;
+        case StmtKind::IfStmt: printIfStmt(llvm::cast<IfStmt>(stmt)); break;
+        case StmtKind::SwitchStmt: printSwitchStmt(llvm::cast<SwitchStmt>(stmt)); break;
+        case StmtKind::WhileStmt: printWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
+        case StmtKind::ForStmt: printForStmt(llvm::cast<ForStmt>(stmt)); break;
+        case StmtKind::BreakStmt: printBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
+        case StmtKind::AssignStmt: printAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
+        case StmtKind::CompoundStmt: printCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
     }
-    llvm_unreachable("all cases handled");
 }
 
-std::ostream& operator<<(std::ostream& out, const ParamDecl& decl) {
-    return out << "(" << decl.getType() << " " << decl.getName() << ")";
+void ASTPrinter::printParamDecl(const ParamDecl& decl) {
+    out << "(" << decl.getType() << " " << decl.getName() << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const FunctionDecl& decl) {
-    out << br << (decl.isExtern() ? "(extern-function-decl " : "(function-decl ");
+void ASTPrinter::printFunctionDecl(const FunctionDecl& decl) {
+    breakLine();
+    out << (decl.isExtern() ? "(extern-function-decl " : "(function-decl ");
     delta::operator<<(out, decl.getName());
-    out << " " << decl.getParams() << " " << decl.getReturnType();
-    if (!decl.isExtern()) out << decl.getBody();
-    return out << ")";
+    out << " ";
+    printParams(decl.getParams());
+    out << " " << decl.getReturnType();
+    if (!decl.isExtern()) {
+        printBlock(decl.getBody());
+    }
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const InitDecl& decl) {
-    out << br << "(init-decl " << decl.getTypeDecl()->getName() << " (";
+void ASTPrinter::printInitDecl(const InitDecl& decl) {
+    breakLine();
+    out << "(init-decl " << decl.getTypeDecl()->getName() << " (";
     for (const ParamDecl& param : decl.getParams()) {
-        out << param;
+        printParamDecl(param);
         if (&param != &decl.getParams().back()) out << " ";
     }
-    return out << ")" << decl.getBody() << ")";
+    out << ")";
+    printBlock(decl.getBody());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const DeinitDecl& decl) {
-    return out << br << "(deinit-decl " << decl.getTypeDecl()->getName() << decl.getBody() << ")";
+void ASTPrinter::printDeinitDecl(const DeinitDecl& decl) {
+    breakLine();
+    out << "(deinit-decl " << decl.getTypeDecl()->getName();
+    printBlock(decl.getBody());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const FunctionTemplate& decl) {
-    out << br << "(function-template (";
-    for (const GenericParamDecl& genericParam : decl.getGenericParams()) {
-        out << genericParam.getName();
-        if (&genericParam != &decl.getGenericParams().back()) out << " ";
-    }
-    return out << ")" << decl.getFunctionDecl() << ")";
+void ASTPrinter::printFunctionTemplate(const FunctionTemplate& decl) {
+    breakLine();
+    out << "(function-template ";
+    printGenericParams(decl.getGenericParams());
+    out << decl.getFunctionDecl() << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const FieldDecl& decl) {
-    return out << br << "(field-decl " << decl.getType() << " " << decl.getName() << ")";
+void ASTPrinter::printFieldDecl(const FieldDecl& decl) {
+    breakLine();
+    out << "(field-decl " << decl.getType() << " " << decl.getName() << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const TypeDecl& decl) {
-    out << br << "(type-decl ";
+void ASTPrinter::printTypeDecl(const TypeDecl& decl) {
+    breakLine();
+    out << "(type-decl ";
     switch (decl.getTag()) {
         case TypeTag::Struct: out << "struct "; break;
         case TypeTag::Class: out << "class "; break;
@@ -317,56 +408,68 @@ std::ostream& operator<<(std::ostream& out, const TypeDecl& decl) {
 
     if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(&decl)) {
         for (auto& enumCase : enumDecl->getCases()) {
-            out << br << "(enum-case " << enumCase.getName() << " " << *enumCase.getValue() << ")";
+            breakLine();
+            out << "(enum-case " << enumCase.getName() << " ";
+            printExpr(*enumCase.getValue());
+            out << ")";
         }
     }
 
     for (const FieldDecl& field : decl.getFields()) {
-        out << field;
+        printFieldDecl(field);
     }
 
     indentLevel--;
-    return out << ")";
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const VarDecl& decl) {
-    return out << br << "(var-decl " << decl.getName() << " " << *decl.getInitializer() << ")";
+void ASTPrinter::printTypeTemplate(const TypeTemplate& decl) {
+    breakLine();
+    out << "(type-template ";
+    printGenericParams(decl.getGenericParams());
+    out << " ";
+    printTypeDecl(*decl.getTypeDecl());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const ImportDecl& decl) {
-    return out << br << "(import-decl \"" << decl.getTarget() << "\")";
+void ASTPrinter::printVarDecl(const VarDecl& decl) {
+    breakLine();
+    out << "(var-decl " << decl.getName() << " ";
+    printExpr(*decl.getInitializer());
+    out << ")";
 }
 
-std::ostream& operator<<(std::ostream& out, const Decl& decl) {
+void ASTPrinter::printImportDecl(const ImportDecl& decl) {
+    breakLine();
+    out << "(import-decl \"" << decl.getTarget() << "\")";
+}
+
+void ASTPrinter::printDecl(const Decl& decl) {
     switch (decl.getKind()) {
-        case DeclKind::ParamDecl: return out << llvm::cast<ParamDecl>(decl);
-        case DeclKind::GenericParamDecl: llvm_unreachable("handled via FunctionTemplate");
+        case DeclKind::ParamDecl: printParamDecl(llvm::cast<ParamDecl>(decl)); break;
+        case DeclKind::GenericParamDecl: llvm_unreachable("handled via FunctionTemplate"); break;
         case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl: return out << llvm::cast<FunctionDecl>(decl);
-        case DeclKind::InitDecl: return out << llvm::cast<InitDecl>(decl);
-        case DeclKind::DeinitDecl: return out << llvm::cast<DeinitDecl>(decl);
-        case DeclKind::FunctionTemplate: return out << llvm::cast<FunctionTemplate>(decl);
-        case DeclKind::TypeDecl: return out << llvm::cast<TypeDecl>(decl);
-        case DeclKind::TypeTemplate: return out << llvm::cast<TypeTemplate>(decl);
-        case DeclKind::EnumDecl: return out << llvm::cast<EnumDecl>(decl);
-        case DeclKind::VarDecl: return out << llvm::cast<VarDecl>(decl);
-        case DeclKind::FieldDecl: return out << llvm::cast<FieldDecl>(decl);
-        case DeclKind::ImportDecl: return out << llvm::cast<ImportDecl>(decl);
+        case DeclKind::MethodDecl: printFunctionDecl(llvm::cast<FunctionDecl>(decl)); break;
+        case DeclKind::InitDecl: printInitDecl(llvm::cast<InitDecl>(decl)); break;
+        case DeclKind::DeinitDecl: printDeinitDecl(llvm::cast<DeinitDecl>(decl)); break;
+        case DeclKind::FunctionTemplate: printFunctionTemplate(llvm::cast<FunctionTemplate>(decl)); break;
+        case DeclKind::TypeDecl: printTypeDecl(llvm::cast<TypeDecl>(decl)); break;
+        case DeclKind::TypeTemplate: printTypeTemplate(llvm::cast<TypeTemplate>(decl)); break;
+        case DeclKind::EnumDecl: printTypeDecl(llvm::cast<EnumDecl>(decl)); break;
+        case DeclKind::VarDecl: printVarDecl(llvm::cast<VarDecl>(decl)); break;
+        case DeclKind::FieldDecl: printFieldDecl(llvm::cast<FieldDecl>(decl)); break;
+        case DeclKind::ImportDecl: printImportDecl(llvm::cast<ImportDecl>(decl)); break;
     }
-    llvm_unreachable("all cases handled");
 }
 
-} // anonymous namespace
-
-std::ostream& delta::operator<<(std::ostream& out, const Module& module) {
+void ASTPrinter::printModule(const Module& module) {
     for (const auto& sourceFile : module.getSourceFiles()) {
         out << "(source-file " << sourceFile.getFilePath();
         indentLevel++;
         for (const auto& decl : sourceFile.getTopLevelDecls()) {
-            ::operator<<(out, *decl);
+            printDecl(*decl);
         }
         indentLevel--;
         out << ")\n";
     }
-    return out;
 }

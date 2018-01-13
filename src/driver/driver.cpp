@@ -147,7 +147,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     if (printAST) {
-        std::cout << module;
+        ASTPrinter astPrinter(std::cout);
+        astPrinter.printModule(module);
         return 0;
     }
 
