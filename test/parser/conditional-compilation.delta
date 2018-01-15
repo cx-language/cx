@@ -1,0 +1,24 @@
+// RUN: %delta -print-ast %s       | %FileCheck %s -check-prefix=CHECK-WITHOUT-FOO
+// RUN: %delta -print-ast %s -DFOO | %FileCheck %s -check-prefix=CHECK-WITH-FOO
+// RUN: %delta -print-ast %s       | %FileCheck %s -check-prefix=CHECK-WITHOUT-BAR
+// RUN: %delta -print-ast %s -DBAR | %FileCheck %s -check-prefix=CHECK-WITH-BAR
+
+#if FOO
+// CHECK-WITHOUT-FOO-NOT: foo
+// CHECK-WITH-FOO: foo
+let a = "foo";
+#endif
+
+#if BAR
+#if !UNUSED
+// CHECK-WITHOUT-BAR-NOT: bar
+// CHECK-WITH-BAR: bar
+let b = "bar";
+#endif
+#else
+#if !UNUSED
+// CHECK-WITHOUT-BAR: qux
+// CHECK-WITH-BAR-NOT: qux
+let b = "qux";
+#endif
+#endif

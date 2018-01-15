@@ -92,13 +92,15 @@ private:
 /// Container for the AST of a whole module, comprised of one or more SourceFiles.
 class Module {
 public:
-    Module(llvm::StringRef name) : name(name) {}
+    Module(llvm::StringRef name, std::vector<std::string>&& defines = {})
+    : name(name), defines(std::move(defines)) {}
     void addSourceFile(SourceFile&& file) { sourceFiles.emplace_back(std::move(file)); }
     llvm::ArrayRef<SourceFile> getSourceFiles() const { return sourceFiles; }
     llvm::MutableArrayRef<SourceFile> getSourceFiles() { return sourceFiles; }
     llvm::StringRef getName() const { return name; }
     const SymbolTable& getSymbolTable() const { return symbolTable; }
     SymbolTable& getSymbolTable() { return symbolTable; }
+    bool isDefined(llvm::StringRef define) const { return llvm::is_contained(defines, define); }
 
     std::vector<Module*> getImportedModules() const {
         std::vector<Module*> importedModules;
@@ -138,6 +140,7 @@ private:
 private:
     std::string name;
     std::vector<SourceFile> sourceFiles;
+    std::vector<std::string> defines;
     SymbolTable symbolTable;
     static llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
 };

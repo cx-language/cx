@@ -1261,32 +1261,67 @@ std::unique_ptr<ImportDecl> Parser::parseImportDecl() {
     return llvm::make_unique<ImportDecl>(std::move(importTarget), *currentModule, location);
 }
 
+void Parser::parseIfdefBody(std::vector<std::unique_ptr<Decl>>* activeDecls) {
+    if (currentToken() == Token::HashIf) {
+        parseIfdef(activeDecls);
+    } else {
+        if (activeDecls) {
+            activeDecls->emplace_back(parseTopLevelDecl(true));
+        } else {
+            parseTopLevelDecl(false);
+        }
+    }
+}
+
+void Parser::parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls) {
+    ASSERT(currentToken() == Token::HashIf);
+    consumeToken();
+    bool negate = currentToken() == Token::Not;
+    if (negate) consumeToken();
+    auto identifier = parse(Token::Identifier);
+    bool condition = currentModule->isDefined(identifier.getString());
+    if (negate) condition = !condition;
+
+    while (!currentToken().is(Token::HashElse, Token::HashEndif)) {
+        parseIfdefBody(condition ? activeDecls : nullptr);
+    }
+
+    if (currentToken() == Token::HashElse) {
+        consumeToken();
+        while (currentToken() != Token::HashEndif) {
+            parseIfdefBody(condition ? nullptr : activeDecls);
+        }
+    }
+
+    consumeToken();
+}
+
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | import-decl | var-decl
-std::unique_ptr<Decl> Parser::parseTopLevelDecl() {
+std::unique_ptr<Decl> Parser::parseTopLevelDecl(bool addToSymbolTable) {
     switch (currentToken()) {
         case Token::Func:
             if (lookAhead(2) == Token::Less) {
                 auto decl = parseFunctionTemplate(nullptr);
-                currentModule->addToSymbolTable(*decl);
+                if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
                 return std::move(decl);
             } else {
                 auto decl = parseFunctionDecl(nullptr);
-                currentModule->addToSymbolTable(*decl);
+                if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
                 return std::move(decl);
             }
         case Token::Extern: {
             auto decl = parseExternFunctionDecl();
-            currentModule->addToSymbolTable(*decl);
+            if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
             return std::move(decl);
         }
         case Token::Class: case Token::Struct: case Token::Interface: {
             if (lookAhead(2) == Token::Less) {
                 auto decl = parseTypeTemplate();
-                currentModule->addToSymbolTable(*decl);
+                if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
                 return std::move(decl);
             } else {
                 auto decl = parseTypeDecl(nullptr);
-                currentModule->addToSymbolTable(*decl);
+                if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
                 return std::move(decl);
             }
         }
@@ -1295,13 +1330,13 @@ std::unique_ptr<Decl> Parser::parseTopLevelDecl() {
                 error(getCurrentLocation(), "generic enums not implemented yet");
             } else {
                 auto decl = parseEnumDecl(nullptr);
-                currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
+                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
                 return std::move(decl);
             }
         }
         case Token::Let: case Token::Var: {
             auto decl = parseVarDecl(true, nullptr);
-            currentModule->addToSymbolTable(*decl, true);
+            if (addToSymbolTable) currentModule->addToSymbolTable(*decl, true);
             return std::move(decl);
         }
         case Token::Import:
@@ -1316,7 +1351,11 @@ void Parser::parse() {
     SourceFile sourceFile(lexer.getFilePath());
 
     while (currentToken() != Token::None) {
-        topLevelDecls.emplace_back(parseTopLevelDecl());
+        if (currentToken() == Token::HashIf) {
+            parseIfdef(&topLevelDecls);
+        } else {
+            topLevelDecls.emplace_back(parseTopLevelDecl(true));
+        }
     }
 
     sourceFile.setDecls(std::move(topLevelDecls));

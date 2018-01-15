@@ -242,6 +242,9 @@ static const llvm::StringMap<Token::Kind> keywords = {
     {"var",           Token::Var},
     {"while",         Token::While},
     {"_",             Token::Underscore},
+    {"#if",           Token::HashIf},
+    {"#else",         Token::HashElse},
+    {"#endif",        Token::HashEndif},
 };
 
 Token Lexer::nextToken() {
@@ -396,7 +399,7 @@ Token Lexer::nextToken() {
             case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g':
             case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
             case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
-            case 'v': case 'w': case 'x': case 'y': case 'z': case '_': {
+            case 'v': case 'w': case 'x': case 'y': case 'z': case '_': case '#': {
                 const char* begin = currentFilePosition;
                 const char* end = begin;
                 do {

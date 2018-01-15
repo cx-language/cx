@@ -116,6 +116,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     bool emitLLVMBitcode = checkFlag("-emit-llvm-bitcode", args);
     bool emitPositionIndependentCode = checkFlag("-fPIC", args);
     treatWarningsAsErrors = checkFlag("-Werror", args);
+    auto defines = collectStringOptionValues("-D", args);
     auto importSearchPaths = collectStringOptionValues("-I", args);
     auto frameworkSearchPaths = collectStringOptionValues("-F", args);
     importSearchPaths.push_back(DELTA_ROOT_DIR); // For development.
@@ -130,7 +131,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         printErrorAndExit("no input files");
     }
 
-    Module module("main");
+    Module module("main", std::move(defines));
     llvm::StringSet<> relativeImportSearchPaths;
 
     for (llvm::StringRef filePath : files) {

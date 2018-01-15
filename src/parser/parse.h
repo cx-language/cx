@@ -152,7 +152,9 @@ private:
     std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams);
     std::unique_ptr<EnumDecl> parseEnumDecl(std::vector<GenericParamDecl>* genericParams);
     std::unique_ptr<ImportDecl> parseImportDecl();
-    std::unique_ptr<Decl> parseTopLevelDecl();
+    void parseIfdefBody(std::vector<std::unique_ptr<Decl>>* activeDecls);
+    void parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls);
+    std::unique_ptr<Decl> parseTopLevelDecl(bool addToSymbolTable);
 
 private:
     Lexer lexer;
