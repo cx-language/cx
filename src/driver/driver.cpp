@@ -117,6 +117,9 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     bool emitPositionIndependentCode = checkFlag("-fPIC", args);
     treatWarningsAsErrors = checkFlag("-Werror", args);
     auto defines = collectStringOptionValues("-D", args);
+#ifdef _WIN32
+    defines.push_back("Windows");
+#endif
     auto importSearchPaths = collectStringOptionValues("-I", args);
     auto frameworkSearchPaths = collectStringOptionValues("-F", args);
     importSearchPaths.push_back(DELTA_ROOT_DIR); // For development.

@@ -662,17 +662,6 @@ static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef direct
 
     for (; it != end; it.increment(error)) {
         if (error) break;
-
-        // TODO: Replace this 'if' with conditional compilation in the relevant
-        // files when conditional compilation has been implemented.
-        if (module.getName() == "std") {
-#ifdef _MSC_VER
-            if (llvm::sys::path::stem(it->path()) == "gnu") continue;
-#else
-            if (llvm::sys::path::stem(it->path()) == "windows") continue;
-#endif
-        }
-
         if (llvm::sys::path::extension(it->path()) == ".delta") {
             Parser parser(it->path(), module);
             parser.parse();
