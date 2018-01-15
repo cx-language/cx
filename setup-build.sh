@@ -20,7 +20,10 @@ if [[ "$os" == "Darwin" ]]; then
 
     brew update
 
-    brew install cmake ninja llvm
+    for package in cmake ninja llvm; do
+        brew ls --versions $package > /dev/null || brew install $package
+    done
+
     sudo easy_install pip
     sudo pip2 install lit
 
