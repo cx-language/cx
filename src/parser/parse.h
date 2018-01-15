@@ -1,14 +1,15 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/MemoryBuffer.h>
 #pragma warning(pop)
 #include "lex.h"
 
 namespace llvm {
-template<typename T> class ArrayRef;
 class StringRef;
 }
 
@@ -70,8 +71,12 @@ struct Type;
 
 class Parser {
 public:
-    Parser(llvm::StringRef filePath, Module& module);
-    Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module);
+    Parser(llvm::StringRef filePath, Module& module,
+           llvm::ArrayRef<std::string> importSearchPaths,
+           llvm::ArrayRef<std::string> frameworkSearchPaths);
+    Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module,
+           llvm::ArrayRef<std::string> importSearchPaths,
+           llvm::ArrayRef<std::string> frameworkSearchPaths);
     void parse();
     std::unique_ptr<Expr> parseExpr();
 
@@ -161,6 +166,8 @@ private:
     Module* currentModule;
     std::vector<Token> tokenBuffer;
     size_t currentTokenIndex;
+    llvm::ArrayRef<std::string> importSearchPaths;
+    llvm::ArrayRef<std::string> frameworkSearchPaths;
 };
 
 }

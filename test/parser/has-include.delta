@@ -1,0 +1,11 @@
+// RUN: %delta -print-ast %s | %FileCheck %s
+
+#if !hasInclude("stdio.h")
+// CHECK-NOT: stdio
+let a = "stdio";
+#endif
+
+#if hasInclude("should-not-exist.h")
+// CHECK-NOT: should-not-exist
+let a = "should-not-exist";
+#endif

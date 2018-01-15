@@ -298,53 +298,6 @@ private:
 
 } // anonymous namespace
 
-static void addHeaderSearchPathsFromEnvVar(clang::CompilerInstance& ci, const char* name) {
-    if (const char* pathList = std::getenv(name)) {
-        llvm::SmallVector<llvm::StringRef, 1> paths;
-        llvm::StringRef(pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
-
-        for (llvm::StringRef path : paths) {
-            ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
-        }
-    }
-}
-
-static void addHeaderSearchPathsFromCCompilerOutput(clang::CompilerInstance& ci) {
-    auto compilerPath = getCCompilerPath();
-
-    if (llvm::StringRef(compilerPath).endswith_lower("cl.exe")) {
-        if (const char* includePathsVariable = std::getenv("INCLUDE")) {
-            llvm::SmallVector<StringRef, 16> includePaths;
-            llvm::StringRef(includePathsVariable).split(includePaths, ";", -1, false);
-
-            for (llvm::StringRef path : includePaths) {
-                ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
-            }
-        }
-    } else {
-        std::string command = "echo | " + compilerPath + " -E -v - 2>&1 | grep '^ /'";
-        std::shared_ptr<FILE> process(popen(command.c_str(), "r"), pclose);
-
-        while (!std::feof(process.get())) {
-            std::string path;
-
-            while (true) {
-                int ch = std::fgetc(process.get());
-
-                if (ch == EOF || ch == '\n') {
-                    break;
-                } else if (!path.empty() || ch != ' ') {
-                    path += (char) ch;
-                }
-            }
-
-            if (llvm::sys::fs::is_directory(path)) {
-                ci.getHeaderSearchOpts().AddPath(path, clang::frontend::System, false, false);
-            }
-        }
-    }
-}
-
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
                           llvm::ArrayRef<std::string> importSearchPaths,
                           llvm::ArrayRef<std::string> frameworkSearchPaths) {
@@ -368,12 +321,6 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName,
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
 
-    addHeaderSearchPathsFromCCompilerOutput(ci);
-    ci.getHeaderSearchOpts().AddPath("/usr/include",       clang::frontend::System, false, false);
-    ci.getHeaderSearchOpts().AddPath("/usr/local/include", clang::frontend::System, false, false);
-    ci.getHeaderSearchOpts().AddPath(CLANG_BUILTIN_INCLUDE_PATH, clang::frontend::System, false, false);
-    addHeaderSearchPathsFromEnvVar(ci, "CPATH");
-    addHeaderSearchPathsFromEnvVar(ci, "C_INCLUDE_PATH");
     for (llvm::StringRef includePath : importSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(includePath,      clang::frontend::System, false, false);
     }

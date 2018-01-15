@@ -656,14 +656,16 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     typecheckType(decl.getType(), decl.getLocation());
 }
 
-static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module) {
+static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module,
+                                                          llvm::ArrayRef<std::string> importSearchPaths,
+                                                          llvm::ArrayRef<std::string> frameworkSearchPaths) {
     std::error_code error;
     llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end;
 
     for (; it != end; it.increment(error)) {
         if (error) break;
         if (llvm::sys::path::extension(it->path()) == ".delta") {
-            Parser parser(it->path(), module);
+            Parser parser(it->path(), module, importSearchPaths, frameworkSearchPaths);
             parser.parse();
         }
     }
@@ -691,7 +693,8 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     if (manifest) {
         for (auto& dependency : manifest->getDeclaredDependencies()) {
             if (dependency.getPackageIdentifier() == moduleInternalName) {
-                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module);
+                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module,
+                                                           importSearchPaths, frameworkSearchPaths);
                 goto done;
             }
         }
@@ -704,7 +707,8 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
             if (!llvm::sys::fs::is_directory(it->path())) continue;
             if (llvm::sys::path::filename(it->path()) != moduleExternalName) continue;
 
-            error = parseSourcesInDirectoryRecursively(it->path(), *module);
+            error = parseSourcesInDirectoryRecursively(it->path(), *module,
+                                                       importSearchPaths, frameworkSearchPaths);
             goto done;
         }
     }

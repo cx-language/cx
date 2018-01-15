@@ -8,6 +8,7 @@
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/FileSystem.h>
 #pragma warning(pop)
 #include "parse.h"
 #include "lex.h"
@@ -25,11 +26,16 @@ static std::unique_ptr<llvm::MemoryBuffer> getFileMemoryBuffer(llvm::StringRef f
     return std::move(*buffer);
 }
 
-Parser::Parser(llvm::StringRef filePath, Module& module)
-: Parser(getFileMemoryBuffer(filePath), module) {}
+Parser::Parser(llvm::StringRef filePath, Module& module,
+               llvm::ArrayRef<std::string> importSearchPaths,
+               llvm::ArrayRef<std::string> frameworkSearchPaths)
+: Parser(getFileMemoryBuffer(filePath), module, importSearchPaths, frameworkSearchPaths) {}
 
-Parser::Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module)
-: lexer(std::move(input)), currentModule(&module), currentTokenIndex(0) {
+Parser::Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module,
+               llvm::ArrayRef<std::string> importSearchPaths,
+               llvm::ArrayRef<std::string> frameworkSearchPaths)
+: lexer(std::move(input)), currentModule(&module), currentTokenIndex(0),
+  importSearchPaths(importSearchPaths), frameworkSearchPaths(frameworkSearchPaths) {
     tokenBuffer.emplace_back(lexer.nextToken());
 }
 
@@ -1279,7 +1285,24 @@ void Parser::parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls) {
     bool negate = currentToken() == Token::Not;
     if (negate) consumeToken();
     auto identifier = parse(Token::Identifier);
-    bool condition = currentModule->isDefined(identifier.getString());
+
+    bool condition = false;
+    if (identifier.getString() == "hasInclude") {
+        parse(Token::LeftParen);
+        auto header = parse(Token::StringLiteral);
+        parse(Token::RightParen);
+
+        for (auto& path : llvm::concat<const std::string>(importSearchPaths, frameworkSearchPaths)) {
+            auto headerPath = llvm::Twine(path) + "/" + header.getString().drop_back().drop_front();
+            if (llvm::sys::fs::exists(headerPath) && !llvm::sys::fs::is_directory(headerPath)) {
+                condition = true;
+                break;
+            }
+        }
+    } else {
+        condition = currentModule->isDefined(identifier.getString());
+    }
+
     if (negate) condition = !condition;
 
     while (!currentToken().is(Token::HashElse, Token::HashEndif)) {

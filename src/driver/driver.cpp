@@ -1,8 +1,10 @@
+#include <cstdio>
 #include <iostream>
 #include <string>
 #include <system_error>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSet.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
@@ -51,6 +53,69 @@ std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix,
         }
     }
     return values;
+}
+
+void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearchPaths, const char* name) {
+    if (const char* pathList = std::getenv(name)) {
+        llvm::SmallVector<llvm::StringRef, 16> paths;
+        llvm::StringRef(pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
+
+        for (llvm::StringRef path : paths) {
+            importSearchPaths.push_back(path);
+        }
+    }
+}
+
+void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& importSearchPaths) {
+    auto compilerPath = getCCompilerPath();
+
+    if (llvm::StringRef(compilerPath).endswith_lower("cl.exe")) {
+        addHeaderSearchPathsFromEnvVar(importSearchPaths, "INCLUDE");
+    } else {
+        std::string command = "echo | " + compilerPath + " -E -v - 2>&1 | grep '^ /'";
+        std::shared_ptr<FILE> process(popen(command.c_str(), "r"), pclose);
+
+        while (!std::feof(process.get())) {
+            std::string path;
+
+            while (true) {
+                int ch = std::fgetc(process.get());
+
+                if (ch == EOF || ch == '\n') {
+                    break;
+                } else if (!path.empty() || ch != ' ') {
+                    path += (char) ch;
+                }
+            }
+
+            if (llvm::sys::fs::is_directory(path)) {
+                importSearchPaths.push_back(path);
+            }
+        }
+    }
+}
+
+void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths,
+                                    llvm::ArrayRef<std::string> inputFiles) {
+    llvm::StringSet<> relativeImportSearchPaths;
+
+    for (llvm::StringRef filePath : inputFiles) {
+        auto directoryPath = llvm::sys::path::parent_path(filePath);
+        if (directoryPath.empty()) directoryPath = ".";
+        relativeImportSearchPaths.insert(directoryPath);
+    }
+
+    for (auto& keyValue : relativeImportSearchPaths) {
+        importSearchPaths.push_back(keyValue.getKey());
+    }
+
+    importSearchPaths.push_back(DELTA_ROOT_DIR);
+    addHeaderSearchPathsFromCCompilerOutput(importSearchPaths);
+    importSearchPaths.push_back("/usr/include");
+    importSearchPaths.push_back("/usr/local/include");
+    importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
+    addHeaderSearchPathsFromEnvVar(importSearchPaths, "CPATH");
+    addHeaderSearchPathsFromEnvVar(importSearchPaths, "C_INCLUDE_PATH");
 }
 
 void emitMachineCode(llvm::Module& module, llvm::StringRef fileName,
@@ -122,7 +187,6 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 #endif
     auto importSearchPaths = collectStringOptionValues("-I", args);
     auto frameworkSearchPaths = collectStringOptionValues("-F", args);
-    importSearchPaths.push_back(DELTA_ROOT_DIR); // For development.
 
     for (llvm::StringRef arg : args) {
         if (arg.startswith("-")) {
@@ -134,20 +198,12 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         printErrorAndExit("no input files");
     }
 
+    addPredefinedImportSearchPaths(importSearchPaths, files);
     Module module("main", std::move(defines));
-    llvm::StringSet<> relativeImportSearchPaths;
 
     for (llvm::StringRef filePath : files) {
-        Parser parser(filePath, module);
+        Parser parser(filePath, module, importSearchPaths, frameworkSearchPaths);
         parser.parse();
-
-        auto directoryPath = llvm::sys::path::parent_path(filePath);
-        if (directoryPath.empty()) directoryPath = ".";
-        relativeImportSearchPaths.insert(directoryPath);
-    }
-
-    for (auto& keyValue : relativeImportSearchPaths) {
-        importSearchPaths.push_back(keyValue.getKey());
     }
 
     if (printAST) {
