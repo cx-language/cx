@@ -3,13 +3,24 @@
 [![Build Status](https://travis-ci.org/delta-lang/delta.svg?branch=master)](https://travis-ci.org/delta-lang/delta)
 [![Coverage Status](https://coveralls.io/repos/github/delta-lang/delta/badge.svg?branch=master)](https://coveralls.io/github/delta-lang/delta?branch=master)
 
-Delta is a general-purpose programming language intended as an alternative to
-C++, C, and Rust. The project is currently in very early stages of development.
-See the (incomplete) [design](docs/design.md) and [specification](docs/spec.md)
-documents for a description of the language and its purpose, or the more
-learning-oriented (and equally incomplete) [Delta Book](https://delta-lang.gitbooks.io/delta-book/content/).
+Delta is a general-purpose systems programming language intended as an
+alternative to C++, C, and Rust. Its primary goal is to improve programmer
+productivity from what C++ offers, to make writing fast code as enjoyable as
+possible.
 
-You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/delta-sandbox). Also check out the [standard library API reference](https://delta-lang.surge.sh).
+The project is currently in very early stages of development: many language
+features are still missing, and existing ones are subject to change at any time.
+
+See the (incomplete) [design](docs/design.md) and [specification](docs/spec.md)
+documents for a more detailed description of the language and its purpose, or
+the more learning-oriented (and equally incomplete) [Delta
+Book](https://delta-lang.gitbooks.io/delta-book/content/).
+
+You can try out the language online at the [Delta
+Sandbox](https://delta-lang.github.io/delta-sandbox) (a word of warning though:
+the compiler version used by the sandbox is not automatically kept up-to-date,
+so it doesn't reflect the current state of the language). Also check out the
+[standard library API reference](https://delta-lang.surge.sh).
 
 ## Building from source
 
