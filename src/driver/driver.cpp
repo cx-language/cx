@@ -30,6 +30,11 @@
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
 
+#ifdef _MSC_VER
+#define popen _popen
+#define pclose _pclose
+#endif
+
 using namespace delta;
 
 bool delta::checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) {

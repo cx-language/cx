@@ -29,11 +29,6 @@
 #include "../ast/module.h"
 #include "../support/utility.h"
 
-#ifdef _MSC_VER
-#define popen _popen
-#define pclose _pclose
-#endif
-
 using namespace delta;
 
 namespace {
