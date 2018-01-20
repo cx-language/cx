@@ -80,6 +80,7 @@ int delta::replMain() {
         "is missing many features: currently it can only evaluate expressions, so you\n"
         "cannot e.g. declare any variables, functions, or types, or use any control flow\n"
         "statements. Furthermore, you cannot use the standard library from the REPL yet.\n\n";
+    llvm::outs().flush();
 
     llvm::LineEditor editor("", llvm::LineEditor::getDefaultHistoryPath("delta-repl"));
     int lineNumber = 0;
