@@ -16,11 +16,8 @@ documents for a more detailed description of the language and its purpose, or
 the more learning-oriented (and equally incomplete) [Delta
 Book](https://delta-lang.gitbooks.io/delta-book/content/).
 
-You can try out the language online at the [Delta
-Sandbox](https://delta-lang.github.io/delta-sandbox) (a word of warning though:
-the compiler version used by the sandbox is not automatically kept up-to-date,
-so it doesn't reflect the current state of the language). Also check out the
-[standard library API reference](https://delta-lang.surge.sh).
+You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/delta-sandbox). 
+Also check out the [standard library API reference](https://delta-lang.surge.sh).
 
 ## Building from source
 
