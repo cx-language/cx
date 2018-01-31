@@ -121,11 +121,27 @@ private:
                                                    llvm::StringRef moduleExternalName,
                                                    llvm::StringRef moduleInternalName = "");
 
+    /// Returns true if the given expression (of optional type) is guaranteed to be non-null, e.g.
+    /// if it was previously checked against null, and the type-checker can prove that it wasn't set
+    /// back to null after that check.
+    bool isGuaranteedNonNull(const Expr& expr) const;
+    bool isGuaranteedNonNull(const Expr& expr, const Stmt& currentControlStmt) const;
+
+    /// Returns true if executing the given statement/expression/block might result in 'null' being
+    /// assigned to the given variable before evaluating it. Returns false if the variable is
+    /// guaranteed to be null when evaluating it. Returns an empty optional if the expression didn't
+    /// contain the given variable, but also can't result in 'null' being assigned to it.
+    llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, const Stmt& stmt) const;
+    llvm::Optional<bool> subExprMaySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const;
+    llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const;
+    llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<std::unique_ptr<Stmt>> block) const;
+
 private:
     Module* currentModule;
     SourceFile* currentSourceFile;
     std::vector<std::pair<FieldDecl*, bool>> currentFieldDecls;
     FunctionDecl* currentFunction;
+    std::vector<Stmt*> currentControlStmts;
     Type functionReturnType;
     int breakableBlocks;
     bool isPostProcessing;

@@ -357,7 +357,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     }
 
     auto* value = codegenExpr(expr);
-    if (value->getType()->isPointerTy() && !targetType->isPointerTy()) {
+    if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == targetType) {
         value = builder.CreateLoad(value, value->getName());
     }
     return value;
@@ -542,7 +542,7 @@ llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
 
     auto* value = codegenLvalueMemberExpr(expr);
 
-    if (value->getType()->isPointerTy() && !expr.getType().isPointerType()) {
+    if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == toIR(expr.getType())) {
         value = builder.CreateLoad(value);
     }
 

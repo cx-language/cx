@@ -118,12 +118,17 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     if (!conditionType.isBool()) {
         error(ifStmt.getCondition().getLocation(), "'if' condition must have type 'bool'");
     }
+
+    currentControlStmts.push_back(&ifStmt);
+
     for (auto& stmt : ifStmt.getThenBody()) {
         typecheckStmt(*stmt);
     }
     for (auto& stmt : ifStmt.getElseBody()) {
         typecheckStmt(*stmt);
     }
+
+    currentControlStmts.pop_back();
 }
 
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
@@ -151,10 +156,15 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
     if (!conditionType.isBool()) {
         error(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool'");
     }
+
     breakableBlocks++;
+    currentControlStmts.push_back(&whileStmt);
+
     for (auto& stmt : whileStmt.getBody()) {
         typecheckStmt(*stmt);
     }
+
+    currentControlStmts.pop_back();
     breakableBlocks--;
 }
 
@@ -192,7 +202,8 @@ static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* curr
 }
 
 void Typechecker::typecheckAssignStmt(AssignStmt& stmt) {
-    Type lhsType = typecheckExpr(*stmt.getLHS(), true);
+    typecheckExpr(*stmt.getLHS(), true);
+    Type lhsType = stmt.getLHS()->getAssignableType();
     Type rhsType = stmt.getRHS() ? typecheckExpr(*stmt.getRHS()) : nullptr;
 
     if (!stmt.getRHS() && !allowAssignmentOfUndefined(*stmt.getLHS(), currentFunction)) {
@@ -279,6 +290,193 @@ void Typechecker::markFieldAsInitialized(Expr& expr) {
                 break;
         }
     }
+}
+
+static const Expr& getIfOrWhileCondition(const Stmt& ifOrWhileStmt) {
+    switch (ifOrWhileStmt.getKind()) {
+        case StmtKind::IfStmt: return llvm::cast<IfStmt>(ifOrWhileStmt).getCondition();
+        case StmtKind::WhileStmt: return llvm::cast<WhileStmt>(ifOrWhileStmt).getCondition();
+        default: llvm_unreachable("should be IfStmt or WhileStmt");
+    }
+}
+
+static llvm::ArrayRef<std::unique_ptr<Stmt>> getIfOrWhileThenBody(const Stmt& ifOrWhileStmt) {
+    switch (ifOrWhileStmt.getKind()) {
+        case StmtKind::IfStmt: return llvm::cast<IfStmt>(ifOrWhileStmt).getThenBody();
+        case StmtKind::WhileStmt: return llvm::cast<WhileStmt>(ifOrWhileStmt).getBody();
+        default: llvm_unreachable("should be IfStmt or WhileStmt");
+    }
+}
+
+static llvm::Optional<bool> memberExprChainsMatch(const MemberExpr& a, const MemberExpr& b) {
+    if (a.getMemberName() != b.getMemberName()) return false;
+
+    switch (a.getBaseExpr()->getKind()) {
+        case ExprKind::VarExpr: {
+            auto* bBaseVarExpr = llvm::dyn_cast<VarExpr>(b.getBaseExpr());
+            ASSERT(llvm::cast<VarExpr>(a.getBaseExpr())->getDecl() && bBaseVarExpr->getDecl());
+            return bBaseVarExpr && llvm::cast<VarExpr>(a.getBaseExpr())->getDecl() == bBaseVarExpr->getDecl();
+        }
+        case ExprKind::MemberExpr: {
+            auto* bBaseMemberExpr = llvm::dyn_cast<MemberExpr>(b.getBaseExpr());
+            return bBaseMemberExpr && memberExprChainsMatch(*llvm::cast<MemberExpr>(a.getBaseExpr()), *bBaseMemberExpr);
+        }
+        default:
+            return llvm::None;
+    }
+}
+
+bool Typechecker::isGuaranteedNonNull(const Expr& expr) const {
+    for (auto* currentControlStmt : llvm::reverse(currentControlStmts)) {
+        if (isGuaranteedNonNull(expr, *currentControlStmt)) return true;
+    }
+    return false;
+}
+
+bool Typechecker::isGuaranteedNonNull(const Expr& expr, const Stmt& currentControlStmt) const {
+    if (!currentControlStmt.isIfStmt() && !currentControlStmt.isWhileStmt()) return false;
+    auto* condition = llvm::dyn_cast<BinaryExpr>(&getIfOrWhileCondition(currentControlStmt));
+    if (!condition || !condition->getRHS().isNullLiteralExpr()) return false;
+
+    switch (expr.getKind()) {
+        case ExprKind::VarExpr: {
+            auto* decl = llvm::cast<VarExpr>(expr).getDecl();
+            if (!decl) return false;
+            auto* lhs = llvm::dyn_cast<VarExpr>(&condition->getLHS());
+            if (!lhs || lhs->getDecl() != decl) return false;
+            break;
+        }
+        case ExprKind::MemberExpr: {
+            auto* lhs = llvm::dyn_cast<MemberExpr>(&condition->getLHS());
+            if (!lhs) return false;
+            if (memberExprChainsMatch(llvm::cast<MemberExpr>(expr), *lhs) != true) return false;
+            break;
+        }
+        default:
+            return false;
+    }
+
+    llvm::ArrayRef<std::unique_ptr<Stmt>> stmts;
+    switch (condition->getOperator()) {
+        case Token::NotEqual:
+            stmts = getIfOrWhileThenBody(currentControlStmt);
+            break;
+        case Token::Equal:
+            if (auto* ifStmt = llvm::dyn_cast<IfStmt>(&currentControlStmt)) {
+                stmts = ifStmt->getElseBody();
+            } else {
+                return false;
+            }
+            break;
+        default:
+            return false;
+    }
+
+    for (auto& stmt : stmts) {
+        if (auto result = maySetToNullBeforeEvaluating(expr, *stmt)) return !*result;
+    }
+
+    return false;
+}
+
+llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, const Stmt& stmt) const {
+    switch (stmt.getKind()) {
+        case StmtKind::ReturnStmt:
+            if (auto* returnValue = llvm::cast<ReturnStmt>(stmt).getReturnValue()) {
+                return maySetToNullBeforeEvaluating(var, *returnValue);
+            }
+            return llvm::None;
+
+        case StmtKind::VarStmt:
+            if (auto* initializer = llvm::cast<VarStmt>(stmt).getDecl().getInitializer()) {
+                return maySetToNullBeforeEvaluating(var, *initializer);
+            }
+            return llvm::None;
+
+        case StmtKind::IncrementStmt:
+        case StmtKind::DecrementStmt:
+            return true;
+
+        case StmtKind::ExprStmt:
+            return maySetToNullBeforeEvaluating(var, llvm::cast<ExprStmt>(stmt).getExpr());
+
+        case StmtKind::DeferStmt:
+            return true;
+
+        case StmtKind::IfStmt: {
+            auto& ifStmt = llvm::cast<IfStmt>(stmt);
+            if (auto result = maySetToNullBeforeEvaluating(var, ifStmt.getCondition())) return *result;
+            if (auto result = maySetToNullBeforeEvaluating(var, ifStmt.getThenBody())) return *result;
+            if (auto result = maySetToNullBeforeEvaluating(var, ifStmt.getElseBody())) return *result;
+            return llvm::None;
+        }
+        case StmtKind::SwitchStmt:
+            return true;
+
+        case StmtKind::WhileStmt: {
+            auto& whileStmt = llvm::cast<WhileStmt>(stmt);
+            if (auto result = maySetToNullBeforeEvaluating(var, whileStmt.getCondition())) return *result;
+            if (auto result = maySetToNullBeforeEvaluating(var, whileStmt.getBody())) return *result;
+            return llvm::None;
+        }
+        case StmtKind::ForStmt:
+            llvm_unreachable("ForStmt should be lowered into a WhileStmt");
+
+        case StmtKind::BreakStmt:
+            return false;
+
+        case StmtKind::AssignStmt: {
+            auto& assignStmt = llvm::cast<AssignStmt>(stmt);
+            if (auto result = maySetToNullBeforeEvaluating(var, *assignStmt.getLHS())) return *result;
+            if (auto result = maySetToNullBeforeEvaluating(var, *assignStmt.getRHS())) return *result;
+
+            switch (var.getKind()) {
+                case ExprKind::VarExpr:
+                    if (auto* lhsVarExpr = llvm::dyn_cast<VarExpr>(assignStmt.getLHS())) {
+                        return lhsVarExpr->getDecl() == llvm::cast<VarExpr>(var).getDecl()
+                            && assignStmt.getRHS()->getType().isOptionalType();
+                    }
+                    return llvm::None;
+
+                case ExprKind::MemberExpr:
+                    if (auto* lhsMemberExpr = llvm::dyn_cast<MemberExpr>(assignStmt.getLHS())) {
+                        if (auto result = memberExprChainsMatch(*lhsMemberExpr, llvm::cast<MemberExpr>(var))) {
+                            return *result && assignStmt.getRHS()->getType().isOptionalType();
+                        }
+                    }
+                    return llvm::None;
+
+                default:
+                    llvm_unreachable("unsupported variable expression kind");
+            }
+        }
+        case StmtKind::CompoundStmt:
+            return maySetToNullBeforeEvaluating(var, llvm::cast<CompoundStmt>(stmt).getBody());
+    }
+
+    llvm_unreachable("all cases handled");
+}
+
+llvm::Optional<bool> Typechecker::subExprMaySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const {
+    for (auto* subExpr : expr.getSubExprs()) {
+        if (auto result = maySetToNullBeforeEvaluating(var, *subExpr)) return *result;
+    }
+    return llvm::None;
+}
+
+llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const {
+    if (&expr == &var) return false;
+    if (auto result = subExprMaySetToNullBeforeEvaluating(var, expr)) return *result;
+    if (expr.isCallExpr()) return true;
+    return llvm::None;
+}
+
+llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var,
+                                                               llvm::ArrayRef<std::unique_ptr<Stmt>> block) const {
+    for (auto& stmt : block) {
+        if (auto result = maySetToNullBeforeEvaluating(var, *stmt)) return *result;
+    }
+    return llvm::None;
 }
 
 void Typechecker::typecheckStmt(Stmt& stmt) {

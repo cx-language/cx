@@ -11,7 +11,7 @@ class OrderedMap<Key, Value> {
 
     deinit() {
         if (root != null) {
-            root!.deallocate();
+            root.deallocate();
         }
     }
 
@@ -44,7 +44,7 @@ class OrderedMap<Key, Value> {
         }
 
         if (n.parent != null) {
-            _rebalance(n.parent!);
+            _rebalance(n.parent);
         } else {
             root = n;
         }
@@ -57,17 +57,17 @@ class OrderedMap<Key, Value> {
         a.right = b.left;
 
         if (a.right != null) {
-            a.right!.parent = a;
+            a.right.parent = a;
         }
 
         b.left = a;
         a.parent = b;
 
         if (b.parent != null) {
-            if (b.parent!.right === a) {
-                b.parent!.right = b;
+            if (b.parent.right === a) {
+                b.parent.right = b;
             } else {
-                b.parent!.left = b;
+                b.parent.left = b;
             }
         }
 
@@ -83,17 +83,17 @@ class OrderedMap<Key, Value> {
         a.left = b.right;
 
         if (a.left != null) {
-            a.left!.parent = a;
+            a.left.parent = a;
         }
 
         b.right = a;
         a.parent = b;
 
         if (b.parent != null) {
-            if (b.parent!.right === a) {
-                b.parent!.right = b;
+            if (b.parent.right === a) {
+                b.parent.right = b;
             } else {
-                b.parent!.left = b;
+                b.parent.left = b;
             }
         }
 
@@ -132,7 +132,7 @@ class OrderedMap<Key, Value> {
     func [](key: Key*) -> Value*? {
         let found = find(key);
         if (found != null) {
-            return found!.value;
+            return found.value;
         }
         return null;
     }
@@ -142,7 +142,7 @@ class OrderedMap<Key, Value> {
         if (root == null) {
             root = allocate(AVLnode<Key, Value>(key, null, value));
         } else {
-            var n = root!;
+            var n = root;
 
             while (true) {
                 if (n.key == key) {
@@ -184,7 +184,7 @@ class OrderedMap<Key, Value> {
 
         while (child != null) {
             parent = n;
-            n = child!;
+            n = child;
             child = (*key >= n.key) ? n.right : n.left;
             if (*key == n.key) {
                 delNode = n;
@@ -192,8 +192,8 @@ class OrderedMap<Key, Value> {
         }
 
         if (delNode != null) {
-            delNode!.key = n.key;
-            delNode!.value = n.value;
+            delNode.key = n.key;
+            delNode.value = n.value;
 
             child = (n.left != null) ? n.left : n.right;
 
@@ -252,7 +252,7 @@ class OrderedMap<Key, Value> {
     func _maxInSubtree(node: AVLnode<Key, Value>*) -> AVLnode<Key, Value>* {
         var n = node;
         while (n.right != null) {
-            n = n.right!;
+            n = n.right;
         }
         return n;
     }
@@ -260,7 +260,7 @@ class OrderedMap<Key, Value> {
     func _minInSubtree(node: mutable AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>* {
         var n = node;
         while (n.left != null) {
-            n = n.left!;
+            n = n.left;
         }
         return n;
     }
@@ -269,15 +269,15 @@ class OrderedMap<Key, Value> {
     /// or null, if the key of `node` is the smallest value.
     func lowerNode(node: AVLnode<Key, Value>*) -> AVLnode<Key, Value>*? {
         if (node.left != null) {
-            return _maxInSubtree(node.left!);
+            return _maxInSubtree(node.left);
         }
 
         var n = node;
         while (n.parent != null) {
-            if (n === n.parent!.right) {
+            if (n === n.parent.right) {
                 return n.parent;
             }
-            n = n.parent!;
+            n = n.parent;
         }
         return null;
     }
@@ -302,15 +302,15 @@ class OrderedMap<Key, Value> {
     /// or null, if the key of `node` is the largest value.
     func higherNode(node: AVLnode<Key, Value>*) -> mutable AVLnode<Key, Value>*? {
         if (node.right != null) {
-            return _minInSubtree(node.right!);
+            return _minInSubtree(node.right);
         }
 
         var n = node;
         while (n.parent != null) {
-            if (n === n.parent!.left) {
+            if (n === n.parent.left) {
                 return n.parent;
             }
-            n = n.parent!;
+            n = n.parent;
         }
         return null;
     }
@@ -348,12 +348,10 @@ class OrderedMap<Key, Value> {
         return _maxInSubtree(root!);
     }
 
-
     /// Iterate over the map, in order
     func iterator() -> OrderedMapIterator<Key, Value> {
         return OrderedMapIterator(this);
     }
-
 }
 
 /// One node in the AVL tree
@@ -378,10 +376,10 @@ class AVLnode<Key, Value> {
         deallocate(this);
 
         if (left != null) {
-            left!.deallocate();
+            left.deallocate();
         }
         if (right != null) {
-            right!.deallocate();
+            right.deallocate();
         }
     }
 }

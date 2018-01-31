@@ -1479,6 +1479,11 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
         case ExprKind::IfExpr: type = typecheckIfExpr(llvm::cast<IfExpr>(expr)); break;
     }
 
-    expr.setType(*type);
+    if (type->isOptionalType() && isGuaranteedNonNull(expr)) {
+        expr.setType(type->removeOptional());
+    } else {
+        expr.setType(*type);
+    }
+    expr.setAssignableType(*type);
     return expr.getType();
 }

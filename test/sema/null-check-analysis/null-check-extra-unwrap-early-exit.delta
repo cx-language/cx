@@ -1,0 +1,11 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+// XFAIL: *
+// TODO: Implement null check analysis to handle this case.
+
+func foo(p: int*?) {
+    if (p == null) {
+        return;
+    }
+    // CHECK: [[@LINE+1]]:16: error: cannot unwrap non-optional type 'int*'
+    let a = *(p!);
+}

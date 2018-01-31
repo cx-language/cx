@@ -1,0 +1,12 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+struct S {
+    var a: mutable S*?;
+}
+
+func foo(p: mutable S*) {
+    if (p.a != null) {
+        // CHECK: [[@LINE+1]]:12: error: cannot unwrap non-optional type 'mutable S*'
+        p.a!.a = p;
+    }
+}

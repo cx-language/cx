@@ -24,13 +24,13 @@ class FileStream: InputStream, OutputStream {
 
     deinit() {
         if (file != null) {
-            fclose(file!);
+            fclose(file);
         }
     }
 
     mutating func close() {
         if (file != null) {
-            fclose(file!);
+            fclose(file);
             file = null;
         }
     }

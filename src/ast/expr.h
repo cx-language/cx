@@ -68,7 +68,9 @@ public:
     ExprKind getKind() const { return kind; }
     bool hasType() const { return type.getBase() != nullptr; }
     Type getType() const { ASSERT(type); return type; }
+    Type getAssignableType() const { ASSERT(assignableType); return assignableType; }
     void setType(Type type) { ASSERT(type); this->type = type; }
+    void setAssignableType(Type type) { ASSERT(type); assignableType = type; }
     bool isConstant() const;
     // TODO: Use llvm::APSInt instead of int64_t.
     int64_t getConstantIntegerValue() const;
@@ -77,13 +79,16 @@ public:
     SourceLocation getLocation() const { return location; }
     void setMoved(bool moved);
     std::unique_ptr<Expr> instantiate(const llvm::StringMap<Type>& genericArgs) const;
+    std::vector<const Expr*> getSubExprs() const;
 
 protected:
-    Expr(ExprKind kind, SourceLocation location) : kind(kind), type(nullptr), location(location) {}
+    Expr(ExprKind kind, SourceLocation location)
+    : kind(kind), type(nullptr), assignableType(nullptr), location(location) {}
 
 private:
     const ExprKind kind;
     Type type;
+    Type assignableType;
 
 public:
     const SourceLocation location;

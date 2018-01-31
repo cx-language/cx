@@ -1,0 +1,12 @@
+// RUN: %delta -typecheck %s | %FileCheck %s
+
+func foo(a: mutable int*?, b: mutable int*?) {
+    var p = a;
+    if (p != null) {
+        let i = *p;
+        *p = 42;
+        p = b;
+        // CHECK: [[@LINE+1]]:10: warning: dereferencing value of optional type 'mutable int*?' which may be null; unwrap the value with a postfix '!' to silence this warning
+        *p = 42;
+    }
+}

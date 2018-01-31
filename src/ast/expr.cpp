@@ -313,6 +313,82 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
     return instantiation;
 }
 
+std::vector<const Expr*> Expr::getSubExprs() const {
+    std::vector<const Expr*> subExprs;
+
+    switch (getKind()) {
+        case ExprKind::VarExpr:
+        case ExprKind::StringLiteralExpr:
+        case ExprKind::CharacterLiteralExpr:
+        case ExprKind::IntLiteralExpr:
+        case ExprKind::FloatLiteralExpr:
+        case ExprKind::BoolLiteralExpr:
+        case ExprKind::NullLiteralExpr:
+            break;
+
+        case ExprKind::ArrayLiteralExpr: {
+            auto* arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(this);
+            for (auto& element : arrayLiteralExpr->getElements()) {
+                subExprs.push_back(element.get());
+            }
+            break;
+        }
+        case ExprKind::TupleExpr: {
+            auto* tupleExpr = llvm::cast<TupleExpr>(this);
+            for (auto& element : tupleExpr->getElements()) {
+                subExprs.push_back(element.get());
+            }
+            break;
+        }
+        case ExprKind::PrefixExpr:
+        case ExprKind::BinaryExpr:
+        case ExprKind::SubscriptExpr:
+        case ExprKind::CallExpr: {
+            auto* callExpr = llvm::cast<CallExpr>(this);
+            subExprs.push_back(&callExpr->getCallee());
+            for (auto& arg : callExpr->getArgs()) {
+                subExprs.push_back(arg.getValue());
+            }
+            break;
+        }
+        case ExprKind::CastExpr: {
+            auto* castExpr = llvm::cast<CastExpr>(this);
+            subExprs.push_back(&castExpr->getExpr());
+            break;
+        }
+        case ExprKind::SizeofExpr:
+            break;
+
+        case ExprKind::AddressofExpr: {
+            auto* addressofExpr = llvm::cast<AddressofExpr>(this);
+            subExprs.push_back(&addressofExpr->getOperand());
+            break;
+        }
+        case ExprKind::MemberExpr: {
+            auto* memberExpr = llvm::cast<MemberExpr>(this);
+            subExprs.push_back(memberExpr->getBaseExpr());
+            break;
+        }
+        case ExprKind::UnwrapExpr: {
+            auto* unwrapExpr = llvm::cast<UnwrapExpr>(this);
+            subExprs.push_back(&unwrapExpr->getOperand());
+            break;
+        }
+        case ExprKind::LambdaExpr:
+            break;
+
+        case ExprKind::IfExpr: {
+            auto* ifExpr = llvm::cast<IfExpr>(this);
+            subExprs.push_back(ifExpr->getCondition());
+            subExprs.push_back(ifExpr->getThenExpr());
+            subExprs.push_back(ifExpr->getElseExpr());
+            break;
+        }
+    }
+
+    return subExprs;
+}
+
 llvm::StringRef CallExpr::getFunctionName() const {
     switch (getCallee().getKind()) {
         case ExprKind::VarExpr: return llvm::cast<VarExpr>(getCallee()).getIdentifier();
