@@ -125,24 +125,7 @@ class OrderedMap<Key, Value> {
 
     /// Checks if the given element is in the Map. Returns true if it is, otherwise false
     func contains(key: Key*) -> bool {
-        if (root == null) {
-            return false;
-        }
-        var n = root!;
-        while (true) {
-            if (n.key == *key) {
-                return true;
-            }
-
-            let goLeft = n.key > *key;
-            let newNode = goLeft ? n.left : n.right;
-
-            if (newNode == null) {
-                return false;
-            }
-            n = newNode!;
-        }
-        return false;
+        return find(key) != null;
     }
 
     /// Returns the value of the given key, if it exists in the Map. Otherwise, returns null.
