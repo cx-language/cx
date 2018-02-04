@@ -28,7 +28,7 @@ class Typechecker {
 public:
     Typechecker()
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr),
-      functionReturnType(nullptr), breakableBlocks(0), isPostProcessing(false) {}
+      functionReturnType(nullptr), isPostProcessing(false) {}
 
     Module* getCurrentModule() const { ASSERT(currentModule); return currentModule; }
     void setCurrentModule(Module* module) { currentModule = module; }
@@ -143,7 +143,6 @@ private:
     FunctionDecl* currentFunction;
     std::vector<Stmt*> currentControlStmts;
     Type functionReturnType;
-    int breakableBlocks;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
 };

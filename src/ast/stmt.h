@@ -46,7 +46,7 @@ public:
     bool isCompoundStmt() const { return getKind() == StmtKind::CompoundStmt; }
 
     StmtKind getKind() const { return kind; }
-
+    bool isBreakable() const;
     std::unique_ptr<Stmt> instantiate(const llvm::StringMap<Type>& genericArgs) const;
 
 protected:

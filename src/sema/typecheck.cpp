@@ -133,7 +133,9 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
 
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(stmt.getCondition());
-    breakableBlocks++;
+
+    currentControlStmts.push_back(&stmt);
+
     for (auto& switchCase : stmt.getCases()) {
         Type caseType = typecheckExpr(*switchCase.getValue());
 
@@ -148,7 +150,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     for (auto& defaultStmt : stmt.getDefaultStmts()) {
         typecheckStmt(*defaultStmt);
     }
-    breakableBlocks--;
+
+    currentControlStmts.pop_back();
 }
 
 void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
@@ -157,7 +160,6 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
         error(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool'");
     }
 
-    breakableBlocks++;
     currentControlStmts.push_back(&whileStmt);
 
     for (auto& stmt : whileStmt.getBody()) {
@@ -165,11 +167,10 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
     }
 
     currentControlStmts.pop_back();
-    breakableBlocks--;
 }
 
 void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {
-    if (breakableBlocks == 0) {
+    if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isBreakable(); })) {
         error(breakStmt.getLocation(), "'break' is only allowed inside 'while', 'for', and 'switch' statements");
     }
 }

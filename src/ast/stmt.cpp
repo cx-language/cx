@@ -3,6 +3,13 @@
 
 using namespace delta;
 
+bool Stmt::isBreakable() const {
+    switch (getKind()) {
+        case StmtKind::WhileStmt: case StmtKind::ForStmt: case StmtKind::SwitchStmt: return true;
+        default: return false;
+    }
+}
+
 std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     switch (getKind()) {
         case StmtKind::ReturnStmt: {
