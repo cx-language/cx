@@ -216,23 +216,21 @@ class OrderedMap<Key, Value> {
 
     /// Returns the node corresponding to `key`, or null if it doesn't exist in the Map
     func find(key: Key*) -> AVLnode<Key, Value>*? {
-        if (root == null) {
-            return null;
-        }
-
         var n = root;
+
         while (true) {
+            if (n == null) {
+                return null;
+            }
+
             if (n!.key == *key) {
                 return n!;
             }
 
             let goLeft = n!.key > *key;
             n = goLeft ? n!.left : n!.right;
-
-            if (n == null) {
-                return null;
-            }
         }
+
         return null;
     }
 
