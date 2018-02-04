@@ -170,7 +170,7 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
 
 void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {
     if (breakableBlocks == 0) {
-        error(breakStmt.getLocation(), "'break' is only allowed inside 'while' and 'switch' statements");
+        error(breakStmt.getLocation(), "'break' is only allowed inside 'while', 'for', and 'switch' statements");
     }
 }
 

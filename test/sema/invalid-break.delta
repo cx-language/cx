@@ -1,8 +1,12 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 func main() {
+    for (let i in 0..1) {
+        // CHECK-NOT: [[@LINE+1]]:9: error
+        break;
+    }
     if (false) {
-        // CHECK: [[@LINE+1]]:9: error: 'break' is only allowed inside 'while' and 'switch' statements
+        // CHECK: [[@LINE+1]]:9: error: 'break' is only allowed inside 'while', 'for', and 'switch' statements
         break;
     }
 }
