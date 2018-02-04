@@ -160,26 +160,24 @@ class OrderedMap<Key, Value> {
             root = allocate(AVLnode<Key, Value>(key, null, value));
         } else {
             var n = root!;
-            var parent: mutable AVLnode<Key, Value>*? = null;
 
             while (true) {
                 if (n.key == key) {
                     return false;
                 }
 
-                parent = n;
-
+                let parent = n;
                 let goLeft = n.key > key;
                 let newNode = goLeft ? n.left : n.right;
 
                 if (newNode == null) {
                     if (goLeft) {
-                        parent!.left = allocate(AVLnode<Key, Value>(key, parent, value));
+                        parent.left = allocate(AVLnode<Key, Value>(key, parent, value));
                     } else {
-                        parent!.right = allocate(AVLnode<Key, Value>(key, parent, value));
+                        parent.right = allocate(AVLnode<Key, Value>(key, parent, value));
                     }
 
-                    _rebalance(parent!);
+                    _rebalance(parent);
                     break;
                 }
                 n = newNode!;
@@ -197,7 +195,7 @@ class OrderedMap<Key, Value> {
         }
 
         var n = root!;
-        var parent = root;
+        var parent = root!;
         var delNode: mutable AVLnode<Key, Value>*? = null;
         var child = root;
 
@@ -219,13 +217,13 @@ class OrderedMap<Key, Value> {
             if (root!.key == *key) {
                 root = child;
             } else {
-                if (parent!.left === n) {
-                    parent!.left = child;
+                if (parent.left === n) {
+                    parent.left = child;
                 } else {
-                    parent!.right = child;
+                    parent.right = child;
                 }
 
-                _rebalance(parent!);
+                _rebalance(parent);
             }
             n.deinit();
             deallocate(n);
