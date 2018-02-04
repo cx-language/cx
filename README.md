@@ -25,7 +25,7 @@ Clone the repository including its submodules:
 
     git clone --recursive https://github.com/delta-lang/delta.git
 
-Building Delta from source requires the following dependencies: a C++11
+Building Delta from source requires the following dependencies: a C++14
 compiler, [CMake](https://cmake.org), [libedit](http://thrysoee.dk/editline/),
 and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries
 (version 5.0.0). To run the test suite, you also need

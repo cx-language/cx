@@ -18,9 +18,9 @@ addons:
             - ubuntu-toolchain-r-test
         packages:
             - clang-3.9
-            - libedit-dev
             - gcc-5
             - g++-5
+            - libstdc++-6-dev
             - libedit-dev
             - lcov
 

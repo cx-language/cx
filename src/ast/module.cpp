@@ -6,7 +6,7 @@ using namespace delta;
 llvm::StringMap<std::shared_ptr<Module>> Module::allImportedModules;
 
 std::vector<Module*> Module::getAllImportedModules() {
-    return map(allImportedModules, [](const llvm::StringMapEntry<std::shared_ptr<Module>>& p) { return p.second.get(); });
+    return map(allImportedModules, [](auto& p) { return p.second.get(); });
 }
 
 llvm::ArrayRef<std::shared_ptr<Module>> Module::getStdlibModules() {

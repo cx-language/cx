@@ -583,7 +583,7 @@ bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
         }
         case StmtKind::SwitchStmt: {
             auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-            return llvm::all_of(switchStmt.getCases(), [](const SwitchCase& c) { return allPathsReturn(c.getStmts()); }) &&
+            return llvm::all_of(switchStmt.getCases(), [](auto& c) { return allPathsReturn(c.getStmts()); }) &&
                    allPathsReturn(switchStmt.getDefaultStmts());
         }
         default:
