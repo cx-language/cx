@@ -46,14 +46,14 @@ void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
 
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(returnValue)) {
             switch (varExpr->getDecl()->getKind()) {
-                case delta::DeclKind::VarDecl: {
+                case DeclKind::VarDecl: {
                     auto* varDecl = llvm::cast<VarDecl>(varExpr->getDecl());
                     if (varDecl->getParent() && varDecl->getParent()->isFunctionDecl()) {
                         localVariableType = varDecl->getType();
                     }
                     break;
                 }
-                case delta::DeclKind::ParamDecl:
+                case DeclKind::ParamDecl:
                     localVariableType = llvm::cast<ParamDecl>(varExpr->getDecl())->getType();
                     break;
 
