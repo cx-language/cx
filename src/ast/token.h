@@ -23,6 +23,7 @@ struct Token {
         Cast,
         Class,
         Const,
+        Continue,
         Default,
         Defer,
         Deinit,

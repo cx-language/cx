@@ -119,6 +119,7 @@ private:
     void codegenSwitchStmt(const SwitchStmt& switchStmt);
     void codegenWhileStmt(const WhileStmt& whileStmt);
     void codegenBreakStmt(const BreakStmt&);
+    void codegenContinueStmt(const ContinueStmt&);
     llvm::Value* codegenAssignmentLHS(const Expr* lhs, const Expr* rhs);
     void codegenAssignStmt(const AssignStmt& stmt);
     void codegenCompoundStmt(const CompoundStmt& stmt);
@@ -169,8 +170,9 @@ private:
     llvm::StringMap<std::pair<llvm::StructType*, const TypeDecl*>> structs;
     const Decl* currentDecl;
 
-    /// The basic blocks to branch to on a 'break' statement, one element per scope.
+    /// The basic blocks to branch to on a 'break'/'continue' statement.
     llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
+    llvm::SmallVector<llvm::BasicBlock*, 4> continueTargets;
 };
 
 }

@@ -364,6 +364,7 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
     auto* body = llvm::BasicBlock::Create(ctx, "body", function);
     auto* end = llvm::BasicBlock::Create(ctx, "endwhile", function);
     breakTargets.push_back(end);
+    continueTargets.push_back(condition);
     builder.CreateBr(condition);
 
     builder.SetInsertPoint(condition);
@@ -371,12 +372,18 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
     codegenBlock(whileStmt.getBody(), body, condition);
 
     breakTargets.pop_back();
+    continueTargets.pop_back();
     builder.SetInsertPoint(end);
 }
 
 void IRGenerator::codegenBreakStmt(const BreakStmt&) {
     ASSERT(!breakTargets.empty());
     builder.CreateBr(breakTargets.back());
+}
+
+void IRGenerator::codegenContinueStmt(const ContinueStmt&) {
+    ASSERT(!continueTargets.empty());
+    builder.CreateBr(continueTargets.back());
 }
 
 llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs) {
@@ -464,6 +471,7 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
         case StmtKind::WhileStmt: codegenWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
         case StmtKind::ForStmt: llvm_unreachable("ForStmt should be lowered into a WhileStmt"); break;
         case StmtKind::BreakStmt: codegenBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
+        case StmtKind::ContinueStmt: codegenContinueStmt(llvm::cast<ContinueStmt>(stmt)); break;
         case StmtKind::AssignStmt: codegenAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
         case StmtKind::CompoundStmt: codegenCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
     }

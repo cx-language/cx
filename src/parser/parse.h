@@ -48,6 +48,7 @@ class IfStmt;
 class WhileStmt;
 class SwitchStmt;
 class BreakStmt;
+class ContinueStmt;
 class AssignStmt;
 class Decl;
 class ParamDecl;
@@ -136,6 +137,7 @@ private:
     std::unique_ptr<Stmt> parseForStmt(Decl* parent);
     std::unique_ptr<SwitchStmt> parseSwitchStmt(Decl* parent);
     std::unique_ptr<BreakStmt> parseBreakStmt();
+    std::unique_ptr<ContinueStmt> parseContinueStmt();
     std::unique_ptr<Stmt> parseStmt(Decl* parent);
     std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token::Kind end, Decl* parent);
     std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2,

@@ -23,6 +23,7 @@ enum class StmtKind {
     WhileStmt,
     ForStmt,
     BreakStmt,
+    ContinueStmt,
     AssignStmt,
     CompoundStmt
 };
@@ -42,11 +43,13 @@ public:
     bool isWhileStmt() const { return getKind() == StmtKind::WhileStmt; }
     bool isForStmt() const { return getKind() == StmtKind::ForStmt; }
     bool isBreakStmt() const { return getKind() == StmtKind::BreakStmt; }
+    bool isContinueStmt() const { return getKind() == StmtKind::ContinueStmt; }
     bool isAssignStmt() const { return getKind() == StmtKind::AssignStmt; }
     bool isCompoundStmt() const { return getKind() == StmtKind::CompoundStmt; }
 
     StmtKind getKind() const { return kind; }
     bool isBreakable() const;
+    bool isContinuable() const;
     std::unique_ptr<Stmt> instantiate(const llvm::StringMap<Type>& genericArgs) const;
 
 protected:
@@ -215,6 +218,16 @@ public:
     BreakStmt(SourceLocation location) : Stmt(StmtKind::BreakStmt), location(location) {}
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::BreakStmt; }
+
+private:
+    SourceLocation location;
+};
+
+class ContinueStmt : public Stmt {
+public:
+    ContinueStmt(SourceLocation location) : Stmt(StmtKind::ContinueStmt), location(location) {}
+    SourceLocation getLocation() const { return location; }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ContinueStmt; }
 
 private:
     SourceLocation location;

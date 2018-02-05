@@ -42,6 +42,7 @@ class SwitchStmt;
 class WhileStmt;
 class ForStmt;
 class BreakStmt;
+class ContinueStmt;
 class AssignStmt;
 class CompoundStmt;
 class Stmt;
@@ -93,6 +94,7 @@ public:
     void printWhileStmt(const WhileStmt& stmt);
     void printForStmt(const ForStmt& stmt);
     void printBreakStmt(const BreakStmt&);
+    void printContinueStmt(const ContinueStmt&);
     void printAssignStmt(const AssignStmt& stmt);
     void printCompoundStmt(const CompoundStmt& stmt);
     void printStmt(const Stmt& stmt);

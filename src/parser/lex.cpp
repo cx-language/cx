@@ -214,6 +214,7 @@ static const llvm::StringMap<Token::Kind> keywords = {
     {"cast",          Token::Cast},
     {"class",         Token::Class},
     {"const",         Token::Const},
+    {"continue",      Token::Continue},
     {"default",       Token::Default},
     {"defer",         Token::Defer},
     {"deinit",        Token::Deinit},

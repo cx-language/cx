@@ -301,6 +301,11 @@ void ASTPrinter::printBreakStmt(const BreakStmt&) {
     out << "(break-stmt)";
 }
 
+void ASTPrinter::printContinueStmt(const ContinueStmt&) {
+    breakLine();
+    out << "(continue-stmt)";
+}
+
 void ASTPrinter::printAssignStmt(const AssignStmt& stmt) {
     if (stmt.isCompoundAssignment()) {
         breakLine();
@@ -340,6 +345,7 @@ void ASTPrinter::printStmt(const Stmt& stmt) {
         case StmtKind::WhileStmt: printWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
         case StmtKind::ForStmt: printForStmt(llvm::cast<ForStmt>(stmt)); break;
         case StmtKind::BreakStmt: printBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
+        case StmtKind::ContinueStmt: printContinueStmt(llvm::cast<ContinueStmt>(stmt)); break;
         case StmtKind::AssignStmt: printAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
         case StmtKind::CompoundStmt: printCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
     }

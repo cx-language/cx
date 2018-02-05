@@ -896,9 +896,17 @@ std::unique_ptr<BreakStmt> Parser::parseBreakStmt() {
     return llvm::make_unique<BreakStmt>(location);
 }
 
+/// continue-stmt ::= 'continue' ('\n' | ';')
+std::unique_ptr<ContinueStmt> Parser::parseContinueStmt() {
+    auto location = getCurrentLocation();
+    consumeToken();
+    parseStmtTerminator();
+    return llvm::make_unique<ContinueStmt>(location);
+}
+
 /// stmt ::= var-stmt | assign-stmt | compound-assign-stmt | return-stmt |
-///          inc-stmt | dec-stmt | call-stmt | defer-stmt |
-///          if-stmt | switch-stmt | while-stmt | for-stmt | break-stmt
+///          inc-stmt | dec-stmt | call-stmt | defer-stmt | if-stmt |
+///          switch-stmt | while-stmt | for-stmt | break-stmt | continue-stmt
 std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
         case Token::Return: return parseReturnStmt();
@@ -909,6 +917,7 @@ std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
         case Token::For: return parseForStmt(parent);
         case Token::Switch: return parseSwitchStmt(parent);
         case Token::Break: return parseBreakStmt();
+        case Token::Continue: return parseContinueStmt();
         case Token::Underscore: {
             consumeToken();
             parse(Token::Assignment);

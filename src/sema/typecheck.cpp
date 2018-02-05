@@ -175,6 +175,12 @@ void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {
     }
 }
 
+void Typechecker::typecheckContinueStmt(ContinueStmt& continueStmt) {
+    if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isContinuable(); })) {
+        error(continueStmt.getLocation(), "'continue' is only allowed inside 'while' and 'for' statements");
+    }
+}
+
 static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* currentFunction) {
     if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentFunction)) {
         switch (lhs.getKind()) {
@@ -424,6 +430,7 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
             llvm_unreachable("ForStmt should be lowered into a WhileStmt");
 
         case StmtKind::BreakStmt:
+        case StmtKind::ContinueStmt:
             return false;
 
         case StmtKind::AssignStmt: {
@@ -493,6 +500,7 @@ void Typechecker::typecheckStmt(Stmt& stmt) {
         case StmtKind::WhileStmt: typecheckWhileStmt(llvm::cast<WhileStmt>(stmt)); break;
         case StmtKind::ForStmt: llvm_unreachable("ForStmt should be lowered into a WhileStmt"); break;
         case StmtKind::BreakStmt: typecheckBreakStmt(llvm::cast<BreakStmt>(stmt)); break;
+        case StmtKind::ContinueStmt: typecheckContinueStmt(llvm::cast<ContinueStmt>(stmt)); break;
         case StmtKind::AssignStmt: typecheckAssignStmt(llvm::cast<AssignStmt>(stmt)); break;
         case StmtKind::CompoundStmt: typecheckCompoundStmt(llvm::cast<CompoundStmt>(stmt)); break;
     }

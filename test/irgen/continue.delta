@@ -1,0 +1,15 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+func f(foo: bool) {
+    // CHECK: while: ; preds = %endif, %then, %0
+    // CHECK-NEXT: br i1 %foo, label %body, label %endwhile
+    while (foo) {
+        if (foo) {
+            // CHECK: then: ; preds = %body
+            // CHECK-NEXT: call void @f(i1 %foo)
+            f(foo);
+            // CHECK-NEXT: br label %while
+            continue;
+        }
+    }
+}

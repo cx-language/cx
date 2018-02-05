@@ -73,4 +73,4 @@ loop/switch with the `break` statement.
 ## continue
 
 Inside loops, you can skip the rest of the loop body and start executing the
-next iteration with the `continue` statement (not implemented yet).
+next iteration with the `continue` statement.

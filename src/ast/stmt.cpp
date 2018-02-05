@@ -10,6 +10,13 @@ bool Stmt::isBreakable() const {
     }
 }
 
+bool Stmt::isContinuable() const {
+    switch (getKind()) {
+        case StmtKind::WhileStmt: case StmtKind::ForStmt: return true;
+        default: return false;
+    }
+}
+
 std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     switch (getKind()) {
         case StmtKind::ReturnStmt: {
@@ -78,6 +85,10 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
         case StmtKind::BreakStmt: {
             auto* breakStmt = llvm::cast<BreakStmt>(this);
             return llvm::make_unique<BreakStmt>(breakStmt->getLocation());
+        }
+        case StmtKind::ContinueStmt: {
+            auto* continueStmt = llvm::cast<ContinueStmt>(this);
+            return llvm::make_unique<ContinueStmt>(continueStmt->getLocation());
         }
         case StmtKind::AssignStmt: {
             auto* assignStmt = llvm::cast<AssignStmt>(this);
