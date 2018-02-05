@@ -201,9 +201,12 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         }
     }
 
-    if (leftType.isPointerType() && rightType.isInteger() &&
-        (expr.getOperator() == Token::Plus || expr.getOperator() == Token::Minus)) {
-        return leftType;
+    if (expr.getOperator() == Token::Plus || expr.getOperator() == Token::Minus) {
+        if (leftType.isPointerType() && rightType.isInteger()) {
+            return leftType;
+        } else if (leftType.isInteger() && rightType.isPointerType()) {
+            invalidOperandsToBinaryExpr(expr);
+        }
     }
 
     if (expr.getOperator().isBitwiseOperator() &&
