@@ -305,11 +305,12 @@ bool Typechecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::
     return true;
 }
 
-bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const {
+bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target,
+                                          Type* convertedType, std::string* errorReason) const {
     bool isNullLiteral = expr && expr->isNullLiteralExpr();
 
     if (target.isOptionalType() && !isNullLiteral) {
-        if (isImplicitlyConvertible(expr, source, target.getWrappedType(), convertedType)) {
+        if (isImplicitlyConvertible(expr, source, target.getWrappedType(), convertedType, errorReason)) {
             return true;
         }
     }
@@ -340,13 +341,17 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             }
             break;
         case TypeKind::PointerType:
-            if (target.isPointerType()
-                && (source.getPointee().isMutable() || !target.getPointee().isMutable())
-                && (isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee(), nullptr)
-                    || target.getPointee().isVoid())) {
-                return true;
+            if (!target.isPointerType()) break;
+            if (!source.getPointee().isMutable() && target.getPointee().isMutable()) {
+                if (errorReason) {
+                    *errorReason = llvm::join_items("", "'", target.toString(), "' cannot point to non-mutable '",
+                                                    source.getPointee().toString(), "'");
+                }
+                break;
             }
-            break;
+            if (!(isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee(), nullptr)
+                  || target.getPointee().isVoid())) break;
+            return true;
         case TypeKind::OptionalType:
             if (target.isOptionalType()
                 && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable())

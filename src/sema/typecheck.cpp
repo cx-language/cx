@@ -213,11 +213,16 @@ void Typechecker::typecheckAssignStmt(AssignStmt& stmt) {
 
     if (stmt.getRHS()) {
         Type convertedType;
+        std::string errorReason;
 
-        if (isImplicitlyConvertible(stmt.getRHS(), rhsType, lhsType, &convertedType)) {
+        if (isImplicitlyConvertible(stmt.getRHS(), rhsType, lhsType, &convertedType, &errorReason)) {
             stmt.getRHS()->setType(convertedType ? convertedType : rhsType);
         } else {
-            error(stmt.getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+            if (!errorReason.empty()) {
+                errorReason.insert(0, " (");
+                errorReason.append(")");
+            }
+            error(stmt.getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'", errorReason);
         }
     }
 
@@ -816,8 +821,9 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
 
         if (initType) {
             Type convertedType;
+            std::string errorReason;
 
-            if (isImplicitlyConvertible(decl.getInitializer(), initType, declaredType, &convertedType)) {
+            if (isImplicitlyConvertible(decl.getInitializer(), initType, declaredType, &convertedType, &errorReason)) {
                 decl.getInitializer()->setType(convertedType ? convertedType : initType);
             } else {
                 const char* hint;
@@ -829,8 +835,13 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
                     hint = "";
                 }
 
+                if (!errorReason.empty()) {
+                    errorReason.insert(0, " (");
+                    errorReason.append(")");
+                }
+
                 error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType,
-                      "' with '", initType, "'", hint);
+                      "' with '", initType, "'", errorReason.empty() ? hint : errorReason);
             }
         }
     } else {

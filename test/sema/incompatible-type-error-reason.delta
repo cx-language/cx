@@ -1,0 +1,6 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func f(a: int*) {
+    // CHECK: [[@LINE+1]]:28: error: cannot initialize variable of type 'mutable int*?' with 'int*' ('mutable int*' cannot point to non-mutable 'int')
+    let b: mutable int*? = a;
+}
