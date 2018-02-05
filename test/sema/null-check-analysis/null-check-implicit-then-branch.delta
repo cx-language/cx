@@ -1,0 +1,12 @@
+// RUN: %delta -typecheck -Werror %s
+
+func foo(p: mutable int*?) {
+    if (p) {
+        let i = *p;
+        *p = 42;
+    }
+}
+
+func main() {
+    foo(null);
+}

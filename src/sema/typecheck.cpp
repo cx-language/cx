@@ -115,8 +115,8 @@ void Typechecker::typecheckDecrementStmt(DecrementStmt& stmt) {
 
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     Type conditionType = typecheckExpr(ifStmt.getCondition());
-    if (!conditionType.isBool()) {
-        error(ifStmt.getCondition().getLocation(), "'if' condition must have type 'bool'");
+    if (!conditionType.isBool() && !conditionType.isOptionalType()) {
+        error(ifStmt.getCondition().getLocation(), "'if' condition must have type 'bool' or optional type");
     }
 
     currentControlStmts.push_back(&ifStmt);
@@ -156,8 +156,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
 void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
     Type conditionType = typecheckExpr(whileStmt.getCondition());
-    if (!conditionType.isBool()) {
-        error(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool'");
+    if (!conditionType.isBool() && !conditionType.isOptionalType()) {
+        error(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool' or optional type");
     }
 
     currentControlStmts.push_back(&whileStmt);
@@ -340,21 +340,55 @@ bool Typechecker::isGuaranteedNonNull(const Expr& expr) const {
     return false;
 }
 
+namespace {
+struct NullCheckInfo {
+    const Expr* nullableValue = nullptr;
+    Token::Kind op = Token::None;
+    bool isNullCheck() const { return nullableValue != nullptr; }
+};
+}
+
+static NullCheckInfo analyzeNullCheck(const Expr& condition) {
+    NullCheckInfo nullCheckInfo;
+
+    if (condition.getType().isOptionalType()) {
+        nullCheckInfo.nullableValue = &condition;
+        nullCheckInfo.op = Token::NotEqual;
+    } else if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&condition)) {
+        if (binaryExpr->getRHS().isNullLiteralExpr()) {
+            nullCheckInfo.nullableValue = &binaryExpr->getLHS();
+            nullCheckInfo.op = binaryExpr->getOperator();
+        }
+    } else if (auto* prefixExpr = llvm::dyn_cast<PrefixExpr>(&condition)) {
+        if (prefixExpr->getOperator() == Token::Not) {
+            nullCheckInfo = analyzeNullCheck(prefixExpr->getOperand());
+            nullCheckInfo.op = nullCheckInfo.op == Token::Equal ? Token::NotEqual : Token::Equal;
+        }
+    }
+
+    if (nullCheckInfo.isNullCheck()) {
+        ASSERT(nullCheckInfo.op == Token::NotEqual || nullCheckInfo.op == Token::Equal);
+    }
+
+    return nullCheckInfo;
+}
+
 bool Typechecker::isGuaranteedNonNull(const Expr& expr, const Stmt& currentControlStmt) const {
     if (!currentControlStmt.isIfStmt() && !currentControlStmt.isWhileStmt()) return false;
-    auto* condition = llvm::dyn_cast<BinaryExpr>(&getIfOrWhileCondition(currentControlStmt));
-    if (!condition || !condition->getRHS().isNullLiteralExpr()) return false;
+    auto& condition = getIfOrWhileCondition(currentControlStmt);
+    NullCheckInfo nullCheckInfo = analyzeNullCheck(condition);
+    if (!nullCheckInfo.isNullCheck()) return false;
 
     switch (expr.getKind()) {
         case ExprKind::VarExpr: {
             auto* decl = llvm::cast<VarExpr>(expr).getDecl();
             if (!decl) return false;
-            auto* lhs = llvm::dyn_cast<VarExpr>(&condition->getLHS());
+            auto* lhs = llvm::dyn_cast<VarExpr>(nullCheckInfo.nullableValue);
             if (!lhs || lhs->getDecl() != decl) return false;
             break;
         }
         case ExprKind::MemberExpr: {
-            auto* lhs = llvm::dyn_cast<MemberExpr>(&condition->getLHS());
+            auto* lhs = llvm::dyn_cast<MemberExpr>(nullCheckInfo.nullableValue);
             if (!lhs) return false;
             if (memberExprChainsMatch(llvm::cast<MemberExpr>(expr), *lhs) != true) return false;
             break;
@@ -364,7 +398,7 @@ bool Typechecker::isGuaranteedNonNull(const Expr& expr, const Stmt& currentContr
     }
 
     llvm::ArrayRef<std::unique_ptr<Stmt>> stmts;
-    switch (condition->getOperator()) {
+    switch (nullCheckInfo.op) {
         case Token::NotEqual:
             stmts = getIfOrWhileThenBody(currentControlStmt);
             break;

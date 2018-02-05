@@ -133,11 +133,11 @@ Type Typechecker::typecheckPrefixExpr(PrefixExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
     if (expr.getOperator() == Token::Not) {
-        if (!operandType.isBool()) {
+        if (!operandType.isBool() && !operandType.isOptionalType()) {
             error(expr.getOperand().getLocation(), "invalid operand type '", operandType,
                   "' to logical not");
         }
-        return operandType;
+        return Type::getBool();
     }
     if (expr.getOperator() == Token::Star) { // Dereference operation
         if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
@@ -1437,8 +1437,8 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr) {
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto conditionType = typecheckExpr(*expr.getCondition());
 
-    if (!conditionType.isBool()) {
-        error(expr.getCondition()->getLocation(), "if-expression condition must have type 'bool'");
+    if (!conditionType.isBool() && !conditionType.isOptionalType()) {
+        error(expr.getCondition()->getLocation(), "if-expression condition must have type 'bool' or optional type");
     }
 
     auto thenType = typecheckExpr(*expr.getThenExpr());

@@ -81,6 +81,7 @@ private:
     llvm::Value* codegenBoolLiteralExpr(const BoolLiteralExpr& expr);
     llvm::Value* codegenNullLiteralExpr(const NullLiteralExpr& expr);
     llvm::Value* codegenArrayLiteralExpr(const ArrayLiteralExpr& expr);
+    llvm::Value* codegenImplicitNullComparison(llvm::Value* operand);
     llvm::Value* codegenNot(const PrefixExpr& expr);
     llvm::Value* codegenPrefixExpr(const PrefixExpr& expr);
     llvm::Value* codegenLvaluePrefixExpr(const PrefixExpr& expr);

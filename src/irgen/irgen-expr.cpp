@@ -85,8 +85,17 @@ llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) 
     return llvm::ConstantArray::get(arrayType, values);
 }
 
+llvm::Value* IRGenerator::codegenImplicitNullComparison(llvm::Value* operand) {
+    auto* pointerType = llvm::cast<llvm::PointerType>(operand->getType());
+    return builder.CreateICmpNE(operand, llvm::ConstantPointerNull::get(pointerType));
+}
+
 llvm::Value* IRGenerator::codegenNot(const PrefixExpr& expr) {
-    return builder.CreateNot(codegenExpr(expr.getOperand()), "");
+    auto* operand = codegenExpr(expr.getOperand());
+    if (operand->getType()->isPointerTy()) {
+        operand = codegenImplicitNullComparison(operand);
+    }
+    return builder.CreateNot(operand);
 }
 
 llvm::Value* IRGenerator::codegenPrefixExpr(const PrefixExpr& expr) {
@@ -618,6 +627,9 @@ llvm::Value* IRGenerator::codegenLambdaExpr(const LambdaExpr& expr) {
 
 llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
     auto* condition = codegenExpr(*expr.getCondition());
+    if (condition->getType()->isPointerTy()) {
+        condition = codegenImplicitNullComparison(condition);
+    }
     auto* function = builder.GetInsertBlock()->getParent();
     auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", function);
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "else");

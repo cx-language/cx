@@ -1,0 +1,22 @@
+// RUN: %delta -print-ir %s
+
+func f(foo: bool*?) {
+    // CHECK:      %1 = icmp ne i1* %foo, null
+    // CHECK-NEXT: %2 = xor i1 %1, true
+    // CHECK-NEXT: store i1 %2, i1* %b
+    let b: bool = !foo;
+
+    // CHECK-NEXT: %3 = icmp ne i1* %foo, null
+    // CHECK-NEXT: br i1 %3, label %then, label %else
+    if (foo) {}
+
+    // CHECK:      while: ; preds = %body, %endif
+    // CHECK-NEXT: %4 = icmp ne i1* %foo, null
+    // CHECK-NEXT: br i1 %4, label %body, label %endwhile
+    while (foo) {}
+
+    // CHECK:      endwhile: ; preds = %while
+    // CHECK-NEXT: %5 = icmp ne i1* %foo, null
+    // CHECK-NEXT: br i1 %5, label %then1, label %else2
+    let a = foo ? 1 : 2;
+}

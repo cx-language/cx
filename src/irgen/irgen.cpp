@@ -317,6 +317,9 @@ void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts,
 
 void IRGenerator::codegenIfStmt(const IfStmt& ifStmt) {
     auto* condition = codegenExpr(ifStmt.getCondition());
+    if (condition->getType()->isPointerTy()) {
+        condition = codegenImplicitNullComparison(condition);
+    }
     auto* function = builder.GetInsertBlock()->getParent();
     auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", function);
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", function);
@@ -368,7 +371,11 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
     builder.CreateBr(condition);
 
     builder.SetInsertPoint(condition);
-    builder.CreateCondBr(codegenExpr(whileStmt.getCondition()), body, end);
+    auto* conditionValue = codegenExpr(whileStmt.getCondition());
+    if (conditionValue->getType()->isPointerTy()) {
+        conditionValue = codegenImplicitNullComparison(conditionValue);
+    }
+    builder.CreateCondBr(conditionValue, body, end);
     codegenBlock(whileStmt.getBody(), body, condition);
 
     breakTargets.pop_back();
