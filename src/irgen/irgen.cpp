@@ -71,13 +71,7 @@ void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value,
     scopes.back().addLocalValue(std::move(name), value);
 
     if (type) {
-        if (auto* basicType = llvm::dyn_cast<BasicType>(type.getBase())) {
-            if (auto* typeDecl = basicType->getDecl()) {
-                if (auto* deinitDecl = typeDecl->getDeinitializer()) {
-                    deferDeinitCall(getFunctionProto(*deinitDecl), value, type, decl);
-                }
-            }
-        }
+        deferDeinitCall(value, type, decl);
     }
 }
 
@@ -193,8 +187,36 @@ void IRGenerator::deferEvaluationOf(const Expr& expr) {
     scopes.back().addDeferredExpr(expr);
 }
 
-void IRGenerator::deferDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl) {
-    scopes.back().addDeinitToCall(deinit, valueToDeinit, type, decl);
+/// Returns a deinitializer that only calls the deinitializers of the member variables, or null if
+/// no such deinitializer is needed because none of the member variables have deinitializers.
+static std::unique_ptr<DeinitDecl> getDefaultDeinitializer(const TypeDecl& typeDecl) {
+    ASSERT(typeDecl.getDeinitializer() == nullptr);
+
+    for (auto& field : typeDecl.getFields()) {
+        if (field.getType().getDeinitializer() != nullptr) {
+            auto deinitializer = llvm::make_unique<DeinitDecl>(const_cast<TypeDecl&>(typeDecl), typeDecl.getLocation());
+            deinitializer->setBody({});
+            return deinitializer;
+        }
+    }
+
+    return nullptr;
+}
+
+void IRGenerator::deferDeinitCall(llvm::Value* valueToDeinit, Type type, const Decl* decl) {
+    llvm::Function* proto = nullptr;
+
+    if (auto* deinitializer = type.getDeinitializer()) {
+        proto = getFunctionProto(*deinitializer);
+    } else if (auto* typeDecl = type.getDecl()) {
+        if (auto deinitializer = getDefaultDeinitializer(*typeDecl)) {
+            proto = getFunctionProto(*deinitializer);
+        }
+    }
+
+    if (proto) {
+        scopes.back().addDeinitToCall(proto, valueToDeinit, type, decl);
+    }
 }
 
 void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
@@ -589,6 +611,13 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
     for (auto& param : decl.getParams()) {
         setLocalValue(param.getType(), param.getName(), &*arg++, &param);
     }
+    if (decl.isDeinitDecl()) {
+        for (auto& field : decl.getTypeDecl()->getFields()) {
+            if (field.getType().getDeinitializer() == nullptr) continue;
+            auto* fieldValue = codegenMemberAccess(function.arg_begin(), field.getType(), field.getName());
+            deferDeinitCall(fieldValue, field.getType(), &field);
+        }
+    }
     for (auto& stmt : decl.getBody()) {
         codegenStmt(*stmt);
     }
@@ -665,6 +694,12 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
 
     for (auto& memberDecl : decl.getMemberDecls()) {
         codegenDecl(*memberDecl);
+    }
+
+    if (decl.getDeinitializer() == nullptr) {
+        if (auto deinitializer = getDefaultDeinitializer(decl)) {
+            codegenDecl(*deinitializer);
+        }
     }
 
     scopes = std::move(scopesBackup);

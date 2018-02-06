@@ -16,6 +16,7 @@ namespace delta {
 
 class ParamDecl;
 class TypeDecl;
+class DeinitDecl;
 
 enum class TypeKind {
     BasicType,
@@ -99,6 +100,8 @@ public:
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
+    TypeDecl* getDecl() const;
+    DeinitDecl* getDeinitializer() const;
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
     std::string toString(bool omitTopLevelMutable = false) const;
 

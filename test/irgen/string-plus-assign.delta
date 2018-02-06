@@ -14,5 +14,6 @@ func main() {
     // CHECK-NEXT: store %String %[[A]], %String* %a
     a += ""
 
+    // CHECK-NEXT: call void @String.deinit(%String* %a)
     // CHECK-NEXT: ret i32 0
 }

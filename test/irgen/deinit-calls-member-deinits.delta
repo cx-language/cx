@@ -1,0 +1,57 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-B
+
+extern func f() -> bool;
+
+class A {
+    let b: B;
+    let bb: B;
+    let i: int;
+    init() {}
+
+    // CHECK: define void @A.deinit(%A* %this)
+    deinit() {
+        // CHECK-NEXT: %1 = getelementptr inbounds %A, %A* %this, i32 0, i32 0
+        // CHECK-NEXT: %2 = getelementptr inbounds %A, %A* %this, i32 0, i32 1
+        // CHECK-NEXT: %3 = call i1 @f()
+        // CHECK-NEXT: br i1 %3, label %then, label %else
+        if (f()) {
+            // CHECK:      then: ; preds = %0
+            // CHECK-NEXT: call void @B.deinit(%B* %2)
+            // CHECK-NEXT: call void @B.deinit(%B* %1)
+            // CHECK-NEXT: ret void
+            return;
+        }
+        // CHECK:      endif: ; preds = %else
+        // CHECK-NEXT: call void @B.deinit(%B* %2)
+        // CHECK-NEXT: call void @B.deinit(%B* %1)
+        // CHECK-NEXT: ret void
+    }
+}
+
+class B {
+    let i: int;
+    init() {}
+    // CHECK-B: define void @B.deinit(%B* %this)
+    // CHECK-B-NEXT: ret void
+    deinit() {}
+}
+
+class C {
+    let b: B;
+    let bb: B;
+    init() {}
+    // CHECK: define void @C.deinit(%C* %this)
+    // CHECK-NEXT: %1 = getelementptr inbounds %C, %C* %this, i32 0, i32 0
+    // CHECK-NEXT: %2 = getelementptr inbounds %C, %C* %this, i32 0, i32 1
+    // CHECK-NEXT: call void @B.deinit(%B* %2)
+    // CHECK-NEXT: call void @B.deinit(%B* %1)
+    // CHECK-NEXT: ret void
+}
+
+func main() {
+    let a = A();
+    let c = C();
+    // CHECK:      call void @C.deinit(%C* %c)
+    // CHECK-NEXT: call void @A.deinit(%A* %a)
+}

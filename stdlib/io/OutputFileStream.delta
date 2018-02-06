@@ -13,10 +13,6 @@ class OutputFileStream: OutputStream {
         fs = FileStream(filename, destroyContents);
     }
 
-    deinit() {
-        fs.deinit();
-    }
-
     mutating func close() {
         fs.close();
     }

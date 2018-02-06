@@ -229,6 +229,16 @@ bool delta::operator!=(Type lhs, Type rhs) {
     return !(lhs == rhs);
 }
 
+TypeDecl* Type::getDecl() const {
+    auto* basicType = llvm::dyn_cast<BasicType>(typeBase);
+    return basicType ? basicType->getDecl() : nullptr;
+}
+
+DeinitDecl* Type::getDeinitializer() const {
+    auto* typeDecl = getDecl();
+    return typeDecl ? typeDecl->getDeinitializer() : nullptr;
+}
+
 void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
     switch (typeBase->getKind()) {
         case TypeKind::BasicType: {
