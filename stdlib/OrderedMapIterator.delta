@@ -1,5 +1,5 @@
 // TODO fix return type to tuple when tuples are implemented
-struct OrderedMapIterator<Key, Value>: Iterator<AVLnode<Key, Value>*> {
+struct OrderedMapIterator<Key, Value>: Iterator<(key: Key, value: Value)*> {
     var current: AVLnode<Key, Value>*?;
     let map: OrderedMap<Key, Value>*;
 
@@ -12,8 +12,8 @@ struct OrderedMapIterator<Key, Value>: Iterator<AVLnode<Key, Value>*> {
         return current != null;
     }
 
-    func value() -> AVLnode<Key, Value>* {
-        return current!;
+    func value() -> (key: Key, value: Value)* {
+        return current!.entry;
     }
 
     mutating func increment() {

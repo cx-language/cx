@@ -1,28 +1,11 @@
-
-
-
-/// Key-value pair used for storing in the Map
-class KeyValuePair<Key: Hashable, Value> {
-
-    var key: Key;
-    var value: Value;
-
-    init(key: Key, value: Value) {
-        this.key = key;
-        this.value = value;
-    }
-}
-
-
 class Map<Key: Hashable, Value> {
-
-    var hashTable: Array<Array<KeyValuePair<Key, Value>>>;
+    var hashTable: Array<Array<(key: Key, value: Value)>>;
     var size: uint;
 
     /// Initializes an empty map
     init() {
         size = 0;
-        hashTable = Array<Array<KeyValuePair<Key, Value>>>();
+        hashTable = Array<Array<(key: Key, value: Value)>>();
         increaseTableSize(hashTable, 128);
     }
 
@@ -33,9 +16,7 @@ class Map<Key: Hashable, Value> {
         }
 
         let hashValue = uint(key.hash()) % capacity();
-        var pair = KeyValuePair(key, value);
-
-        hashTable[hashValue].push(pair);
+        hashTable[hashValue].push((key, value));
         size++;
 
         if (loadFactor() > 0.66) {
@@ -62,9 +43,9 @@ class Map<Key: Hashable, Value> {
     }
 
     /// Expands the hash table size, needed when there's too many elements in the map
-    mutating func increaseTableSize(newTable: mutable Array<Array<KeyValuePair<Key, Value>>>*, newCapacity: uint) {
+    mutating func increaseTableSize(newTable: mutable Array<Array<(key: Key, value: Value)>>*, newCapacity: uint) {
         for (let i in 0..newCapacity) {
-            newTable.push(Array<KeyValuePair<Key, Value>>());
+            newTable.push(Array<(key: Key, value: Value)>());
         }
     }
 
@@ -78,7 +59,7 @@ class Map<Key: Hashable, Value> {
 
     /// Resizes the map. This includes copying the old table into a new, bigger one
     mutating func resize() {
-        var newTable = Array<Array<KeyValuePair<Key, Value>>>();
+        var newTable = Array<Array<(key: Key, value: Value)>>();
         let newCapacity = capacity() * 2;
 
         increaseTableSize(newTable, newCapacity);

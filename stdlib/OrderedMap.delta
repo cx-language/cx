@@ -125,14 +125,14 @@ class OrderedMap<Key, Value> {
 
     /// Checks if the given element is in the Map. Returns true if it is, otherwise false
     func contains(key: Key*) -> bool {
-        return find(key) != null;
+        return findNode(key) != null;
     }
 
     /// Returns the value of the given key, if it exists in the Map. Otherwise, returns null.
     func [](key: Key*) -> Value*? {
-        let found = find(key);
+        let found = findNode(key);
         if (found != null) {
-            return found.value;
+            return found.entry.value;
         }
         return null;
     }
@@ -145,12 +145,12 @@ class OrderedMap<Key, Value> {
             var n = root;
 
             while (true) {
-                if (n.key == key) {
+                if (n.entry.key == key) {
                     return false;
                 }
 
                 let parent = n;
-                let goLeft = n.key > key;
+                let goLeft = n.entry.key > key;
                 let newNode = goLeft ? n.left : n.right;
 
                 if (newNode == null) {
@@ -185,19 +185,19 @@ class OrderedMap<Key, Value> {
         while (child != null) {
             parent = n;
             n = child;
-            child = (*key >= n.key) ? n.right : n.left;
-            if (*key == n.key) {
+            child = (*key >= n.entry.key) ? n.right : n.left;
+            if (*key == n.entry.key) {
                 delNode = n;
             }
         }
 
         if (delNode != null) {
-            delNode.key = n.key;
-            delNode.value = n.value;
+            delNode.entry.key = n.entry.key;
+            delNode.entry.value = n.entry.value;
 
             child = (n.left != null) ? n.left : n.right;
 
-            if (root!.key == *key) {
+            if (root!.entry.key == *key) {
                 root = child;
             } else {
                 if (parent.left === n) {
@@ -214,8 +214,17 @@ class OrderedMap<Key, Value> {
         size--;
     }
 
+    /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map
+    func find(key: Key*) -> (key: Key, value: Value)*? {
+        let node = findNode(key);
+        if (node != null) {
+            return node.entry;
+        }
+        return null;
+    }
+
     /// Returns the node corresponding to `key`, or null if it doesn't exist in the Map
-    func find(key: Key*) -> AVLnode<Key, Value>*? {
+    func findNode(key: Key*) -> AVLnode<Key, Value>*? {
         var n = root;
 
         while (true) {
@@ -223,11 +232,11 @@ class OrderedMap<Key, Value> {
                 return null;
             }
 
-            if (n!.key == *key) {
+            if (n!.entry.key == *key) {
                 return n!;
             }
 
-            let goLeft = n!.key > *key;
+            let goLeft = n!.entry.key > *key;
             n = goLeft ? n!.left : n!.right;
         }
 
@@ -237,7 +246,7 @@ class OrderedMap<Key, Value> {
     /// Returns the key immediately smaller than the one given,
     /// or null, if `key` is the smallest in the Map.
     func lowerKey(key: Key*) -> Key*? {
-        let found = find(key);
+        let found = findNode(key);
         if (found == null) {
             return null;
         }
@@ -246,7 +255,7 @@ class OrderedMap<Key, Value> {
         if (lower == null) {
             return null;
         }
-        return lower!.key;
+        return lower!.entry.key;
     }
 
     func _maxInSubtree(node: AVLnode<Key, Value>*) -> AVLnode<Key, Value>* {
@@ -285,7 +294,7 @@ class OrderedMap<Key, Value> {
     /// Returns the key immediately higher than the one given,
     /// or null, if `key` is the largest in the Map.
     func higherKey(key: Key*) -> Key*? {
-        let found = find(key);
+        let found = findNode(key);
         if (found == null) {
             return null;
         }
@@ -295,7 +304,7 @@ class OrderedMap<Key, Value> {
         if (higher == null) {
             return null;
         }
-        return higher!.key;
+        return higher!.entry.key;
     }
 
     /// Returns the node that contains the key immediately larger than the key of the given node,
@@ -321,7 +330,7 @@ class OrderedMap<Key, Value> {
         if (root == null) {
             return null;
         }
-        return _minInSubtree(root!).key;
+        return _minInSubtree(root!).entry.key;
     }
 
     /// Returns the node with the smallest key in the Map, or null if the Map is empty.
@@ -337,7 +346,7 @@ class OrderedMap<Key, Value> {
         if (root == null) {
             return null;
         }
-        return _maxInSubtree(root!).key;
+        return _maxInSubtree(root!).entry.key;
     }
 
     /// Returns the node with the largest key in the Map, or null if the Map is empty.
@@ -356,16 +365,14 @@ class OrderedMap<Key, Value> {
 
 /// One node in the AVL tree
 class AVLnode<Key, Value> {
-    var key: Key;
-    var value: Value;
+    var entry: (key: Key, value: Value);
     var balance: int;
     var parent: mutable AVLnode<Key, Value>*?;
     var left: mutable AVLnode<Key, Value>*?;
     var right: mutable AVLnode<Key, Value>*?;
 
     init(key: Key, parent: mutable AVLnode<Key, Value>*?, value: Value) {
-        this.key = key;
-        this.value = value;
+        this.entry = (key, value);
         this.parent = parent;
         this.balance = 0;
         this.left = null;
