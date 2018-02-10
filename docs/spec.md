@@ -285,14 +285,18 @@ where _parameter-type-list_ is a comma-separated list of parameter types.
 
 ### Tuple types
 
-> _tuple-type_ → `(`<sub>opt</sub> _tuple-element-list_ `)`<sub>opt</sub><br>
+> _tuple-type_ → `(` _tuple-element-list_ `)`<br>
 > _tuple-element-list_ → comma-separated list of one or more _tuple-elements_<br>
 > _tuple-element_ → _name_ `:` _type_<br>
 
 Tuples behave like structs, but they're defined inline. Tuples are intended as
 a lightweight alternative for situations where defining a whole new struct feels
-overkill or inappropriate, e.g. returning multiple values from a function. The
-optional parentheses may be used for syntax disambiguation.
+overkill or inappropriate, e.g. returning multiple values from a function.
+
+While struct types are considered the same only if they have the same name,
+tuple types are considered the same if their structure is the same, i.e. if they
+have the same number of elements in the same order with the same names and
+types.
 
 #### Tuple unpacking
 
@@ -512,9 +516,7 @@ that would otherwise be emitted.
 
 ### `return` statement
 
-> _return-statement_ → `return` _return-value-list_ `;`<br>
-
-_return-value-list_ is a comma-separated list of zero or more return values.
+> _return-statement_ → `return` _expression_ `;`<br>
 
 ### `for` statement
 

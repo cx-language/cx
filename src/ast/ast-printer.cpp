@@ -77,8 +77,11 @@ void ASTPrinter::printArrayLiteralExpr(const ArrayLiteralExpr& expr) {
 void ASTPrinter::printTupleExpr(const TupleExpr& expr) {
     out << "(tuple-literal";
     for (auto& e : expr.getElements()) {
+        out << " (";
+        out << e.getName();
         out << " ";
-        printExpr(*e);
+        printExpr(*e.getValue());
+        out << ")";
     }
     out << ")";
 }
@@ -100,7 +103,7 @@ void ASTPrinter::printBinaryExpr(const BinaryExpr& expr) {
 void ASTPrinter::printCallExpr(const CallExpr& expr) {
     out << "(call ";
     printExpr(expr.getCallee());
-    for (const Argument& arg : expr.getArgs()) {
+    for (auto& arg : expr.getArgs()) {
         out << " ";
         printExpr(*arg.getValue());
     }

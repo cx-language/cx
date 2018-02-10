@@ -119,14 +119,10 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
 }
 
 Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
-    std::vector<Type> elementTypes;
-    elementTypes.reserve(expr.getElements().size());
-
-    for (auto& element : expr.getElements()) {
-        elementTypes.push_back(typecheckExpr(*element));
-    }
-
-    return TupleType::get(std::move(elementTypes));
+    auto elements = map(expr.getElements(), [&](NamedValue& namedValue) {
+        return TupleElement { namedValue.getName(), typecheckExpr(*namedValue.getValue()) };
+    });
+    return TupleType::get(std::move(elements));
 }
 
 Type Typechecker::typecheckPrefixExpr(PrefixExpr& expr) {
@@ -329,7 +325,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             }
             break;
         case TypeKind::TupleType:
-            if (target.isTupleType() && source.getSubtypes() == target.getSubtypes()) {
+            if (target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
                 return true;
             }
             break;
@@ -423,22 +419,30 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     } else if (source.isPointerType() && target.removeOptional().isPointerType()
                && target.removeOptional().getPointee().isArrayWithUnknownSize()) {
         return true;
-    } else if (source.isTupleType()) {
-        auto elements = llvm::cast<TupleExpr>(expr)->getElements();
-        std::vector<Type> convertedSubtypes;
+    } else if (source.isTupleType() && target.removePointer().isTupleType()) {
+        target = target.removePointer();
+        auto* tupleExpr = llvm::dyn_cast_or_null<TupleExpr>(expr);
+        auto elements = source.getTupleElements();
+        std::vector<TupleElement> convertedElements;
 
         for (size_t i = 0; i < elements.size(); ++i) {
+            if (elements[i].name != target.getTupleElements()[i].name) return false;
             Type convertedType;
+            auto* elementValue = tupleExpr ? tupleExpr->getElements()[i].getValue() : nullptr;
 
-            if (!isImplicitlyConvertible(elements[i].get(), source.getSubtypes()[i],
-                                         target.getSubtypes()[i], &convertedType)) {
+            if (!isImplicitlyConvertible(elementValue, elements[i].type,
+                                         target.getTupleElements()[i].type, &convertedType)) {
                 return false;
             }
 
-            convertedSubtypes.push_back(convertedType ? convertedType : source.getSubtypes()[i]);
+            if (convertedType) {
+                convertedElements.push_back({ elements[i].name, convertedType });
+            } else {
+                convertedElements.push_back(elements[i]);
+            }
         }
 
-        if (convertedType) *convertedType = TupleType::get(std::move(convertedSubtypes));
+        if (convertedType) *convertedType = TupleType::get(std::move(convertedElements));
         return true;
     }
 
@@ -886,7 +890,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr,
             });
 
             if (atLeastOneFunction) {
-                auto argTypeStrings = map(expr.getArgs(), [](const Argument& arg) {
+                auto argTypeStrings = map(expr.getArgs(), [](const NamedValue& arg) {
                     auto type = arg.getValue()->getType();
                     return type ? type.toString() : "???";
                 });
@@ -1105,9 +1109,8 @@ bool Typechecker::isImplicitlyCopyable(Type type) {
         case TypeKind::ArrayType:
             return false;
         case TypeKind::TupleType:
-            return llvm::all_of(llvm::cast<TupleType>(*type).getSubtypes(), [&](Type type) {
-                return isImplicitlyCopyable(type);
-            });
+            return llvm::all_of(llvm::cast<TupleType>(*type).getElements(),
+                                [&](const TupleElement& e) { return isImplicitlyCopyable(e.type); });
         case TypeKind::FunctionType:
             return true;
         case TypeKind::PointerType:
@@ -1369,6 +1372,14 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
                 } else {
                     return field.getType().asImmutable();
                 }
+            }
+        }
+    }
+
+    if (baseType.isTupleType()) {
+        for (auto& element : baseType.getTupleElements()) {
+            if (element.name == expr.getMemberName()) {
+                return element.type;
             }
         }
     }

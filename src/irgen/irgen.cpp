@@ -147,8 +147,11 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
         case TypeKind::ArrayType:
             ASSERT(type.isArrayWithConstantSize(), "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType(), location), type.getArraySize());
-        case TypeKind::TupleType:
-            llvm_unreachable("IRGen doesn't support tuple types yet");
+        case TypeKind::TupleType: {
+            auto elementTypes = map(type.getTupleElements(),
+                                    [&](const TupleElement& element) { return toIR(element.type); });
+            return llvm::StructType::get(ctx, elementTypes);
+        }
         case TypeKind::FunctionType: {
             auto paramTypes = map(type.getParamTypes(), [&](Type type) { return toIR(type); });
             auto* returnType = toIR(type.getReturnType());
@@ -225,9 +228,6 @@ void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
 }
 
 void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
-    ASSERT(!stmt.getReturnValue() || !stmt.getReturnValue()->isTupleExpr(),
-           "IRGen doesn't support multiple return values yet");
-
     // TODO: Emit deferred expressions and deinitializer calls after the evaluation of the return
     // value, but before emitting the return instruction. The return value expression may depend on
     // the values that the deferred expressions and/or deinitializer calls could deallocate.
@@ -543,7 +543,6 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::str
         paramTypes.emplace_back(toIR(paramType));
     }
 
-    ASSERT(!functionType->getReturnType().isTupleType(), "IRGen doesn't support tuple return values yet");
     auto* returnType = toIR(functionType->getReturnType());
     if (decl.getName() == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
@@ -772,4 +771,3 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
     ASSERT(!llvm::verifyModule(module, &llvm::errs()));
     return module;
 }
-

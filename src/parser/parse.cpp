@@ -147,9 +147,9 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
 /// argument-list ::= '(' ')' | '(' nonempty-argument-list ')'
 /// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
 /// argument ::= (id ':')? expr
-std::vector<Argument> Parser::parseArgumentList() {
+std::vector<NamedValue> Parser::parseArgumentList() {
     parse(Token::LeftParen);
-    std::vector<Argument> args;
+    std::vector<NamedValue> args;
     while (currentToken() != Token::RightParen) {
         std::string name;
         SourceLocation location = SourceLocation::invalid();
@@ -272,6 +272,25 @@ std::unique_ptr<ArrayLiteralExpr> Parser::parseArrayLiteral() {
     return llvm::make_unique<ArrayLiteralExpr>(std::move(elements), location);
 }
 
+/// tuple-literal ::= '(' tuple-literal-elements ')'
+/// tuple-literal-elements ::= tuple-literal-element | tuple-literal-elements ',' tuple-literal-element
+/// tuple-literal-element ::= id ':' expr
+std::unique_ptr<TupleExpr> Parser::parseTupleLiteral() {
+    ASSERT(currentToken() == Token::LeftParen);
+    auto location = getCurrentLocation();
+    auto elements = parseArgumentList();
+    for (auto& element : elements) {
+        if (element.getName().empty()) {
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(element.getValue())) {
+                element.setName(varExpr->getIdentifier());
+            } else {
+                error(element.getLocation(), "tuple elements must have names");
+            }
+        }
+    }
+    return llvm::make_unique<TupleExpr>(std::move(elements), location);
+}
+
 /// non-empty-type-list ::= type | type ',' non-empty-type-list
 std::vector<Type> Parser::parseNonEmptyTypeList() {
     std::vector<Type> types;
@@ -350,6 +369,25 @@ Type Parser::parseSimpleType(bool isMutable) {
     return ArrayType::get(type, parseArraySizeInBrackets());
 }
 
+/// tuple-type ::= '(' tuple-type-elements ')'
+/// tuple-type-elements ::= tuple-type-element | tuple-type-elements ',' tuple-type-element
+/// tuple-type-element ::= id ':' type
+Type Parser::parseTupleType() {
+    ASSERT(currentToken() == Token::LeftParen);
+    consumeToken();
+    std::vector<TupleElement> elements;
+
+    while (currentToken() != Token::RightParen) {
+        std::string name = parse(Token::Identifier).getString();
+        parse(Token::Colon);
+        elements.push_back({ std::move(name), parseType() });
+        if (currentToken() != Token::RightParen) parse(Token::Comma);
+    }
+
+    consumeToken();
+    return TupleType::get(std::move(elements));
+}
+
 /// function-type ::= param-type-list '->' type
 /// param-type-list ::= '(' param-types ')'
 /// param-types ::= '' | non-empty-param-types
@@ -370,7 +408,8 @@ Type Parser::parseFunctionType() {
     return FunctionType::get(returnType, std::move(paramTypes));
 }
 
-/// type ::= simple-type | 'mutable' simple-type | type 'mutable'? '*' | type 'mutable'? '?' | function-type
+/// type ::= simple-type | 'mutable' simple-type | type 'mutable'? '*' | type 'mutable'? '?' |
+///          function-type | tuple-type
 Type Parser::parseType() {
     Type type;
 
@@ -384,7 +423,11 @@ Type Parser::parseType() {
             type.setMutable(true);
             break;
         case Token::LeftParen:
-            type = parseFunctionType();
+            if (arrowAfterParentheses()) {
+                type = parseFunctionType();
+            } else {
+                type = parseTupleType();
+            }
             break;
         default:
             unexpectedToken(currentToken(), { Token::Identifier, Token::Mutable, Token::LeftParen });
@@ -494,7 +537,7 @@ std::unique_ptr<UnwrapExpr> Parser::parseUnwrapExpr(std::unique_ptr<Expr> operan
     return llvm::make_unique<UnwrapExpr>(std::move(operand), location);
 }
 
-/// call-expr ::= expr generic-argument-list? '(' arguments ')'
+/// call-expr ::= expr generic-argument-list? argument-list
 std::unique_ptr<CallExpr> Parser::parseCallExpr(std::unique_ptr<Expr> callee) {
     std::vector<Type> genericArgs;
     if (currentToken() == Token::Less) {
@@ -550,10 +593,26 @@ bool Parser::shouldParseGenericArgumentList() {
            || lookAhead(1).getLocation().column + 1 == lookAhead(2).getLocation().column;
 }
 
+/// Returns true if a right-arrow token immediately follows the current set of parentheses.
+bool Parser::arrowAfterParentheses() {
+    ASSERT(currentToken() == Token::LeftParen);
+    int offset = 1;
+
+    for (int parenDepth = 1; parenDepth > 0; ++offset) {
+        switch (lookAhead(offset)) {
+            case Token::LeftParen: ++parenDepth; break;
+            case Token::RightParen: --parenDepth; break;
+            default: break;
+        }
+    }
+
+    return lookAhead(offset) == Token::RightArrow;
+}
+
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
-///                  paren-expr | array-literal | cast-expr | subscript-expr | member-expr
-///                  unwrap-expr | lambda-expr | sizeof-expr | addressof-expr
+///                  paren-expr | array-literal | tuple-literal | cast-expr | subscript-expr |
+///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr | addressof-expr
 std::unique_ptr<Expr> Parser::parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
     switch (currentToken()) {
@@ -580,8 +639,12 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
         case Token::LeftParen:
             if (lookAhead(1) == Token::RightParen && lookAhead(2) == Token::RightArrow) {
                 expr = parseLambdaExpr();
-            } else if (lookAhead(1) == Token::Identifier && lookAhead(2) == Token::Colon) {
-                expr = parseLambdaExpr();
+            } else if (lookAhead(1) == Token::Identifier && lookAhead(2).is(Token::Colon, Token::Comma)) {
+                if (arrowAfterParentheses()) {
+                    expr = parseLambdaExpr();
+                } else {
+                    expr = parseTupleLiteral();
+                }
             } else {
                 expr = parseParenExpr();
             }
@@ -696,25 +759,15 @@ std::vector<std::unique_ptr<Expr>> Parser::parseExprList() {
     }
 }
 
-/// return-stmt ::= 'return' expr-list ('\n' | ';')
+/// return-stmt ::= 'return' expr ('\n' | ';')
 std::unique_ptr<ReturnStmt> Parser::parseReturnStmt() {
     ASSERT(currentToken() == Token::Return);
     auto location = getCurrentLocation();
     consumeToken();
 
-    auto returnValues = parseExprList();
     std::unique_ptr<Expr> returnValue;
-
-    switch (returnValues.size()) {
-        case 0:
-            break;
-        case 1:
-            returnValue = std::move(returnValues[0]);
-            break;
-        default:
-            auto location = returnValues[0]->getLocation();
-            returnValue = llvm::make_unique<TupleExpr>(std::move(returnValues), location);
-            break;
+    if (!currentToken().is(Token::Semicolon, Token::RightBrace)) {
+        returnValue = parseExpr();
     }
 
     parseStmtTerminator();
@@ -1049,10 +1102,6 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl
     if (currentToken() == Token::RightArrow) {
         consumeToken();
         returnType = parseType();
-        while (currentToken() == Token::Comma) {
-            consumeToken();
-            returnType.appendType(parseType());
-        }
     }
 
     FunctionProto proto(std::move(name), std::move(params), std::move(returnType), isVariadic, isExtern);

@@ -38,7 +38,7 @@ bool Expr::isConstant() const {
 
         case ExprKind::TupleExpr:
             for (auto& element : llvm::cast<TupleExpr>(this)->getElements()) {
-                if (!element->isConstant()) {
+                if (!element.getValue()->isConstant()) {
                     return false;
                 }
             }
@@ -207,7 +207,9 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
         }
         case ExprKind::TupleExpr: {
             auto* tupleExpr = llvm::cast<TupleExpr>(this);
-            auto elements = ::instantiate(tupleExpr->getElements(), genericArgs);
+            auto elements = map(tupleExpr->getElements(), [&](const NamedValue& element) {
+                return NamedValue(element.getName(), element.getValue()->instantiate(genericArgs));
+            });
             instantiation = llvm::make_unique<TupleExpr>(std::move(elements), tupleExpr->getLocation());
             break;
         }
@@ -229,8 +231,8 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
         case ExprKind::CallExpr: {
             auto* callExpr = llvm::cast<CallExpr>(this);
             auto callee = callExpr->getCallee().instantiate(genericArgs);
-            auto args = map(callExpr->getArgs(), [&](const Argument& arg) {
-                return Argument(arg.getName(), arg.getValue()->instantiate(genericArgs));
+            auto args = map(callExpr->getArgs(), [&](const NamedValue& arg) {
+                return NamedValue(arg.getName(), arg.getValue()->instantiate(genericArgs));
             });
             auto callGenericArgs = map(callExpr->getGenericArgs(), [&](Type type) {
                 return type.resolve(genericArgs);
@@ -336,7 +338,7 @@ std::vector<const Expr*> Expr::getSubExprs() const {
         case ExprKind::TupleExpr: {
             auto* tupleExpr = llvm::cast<TupleExpr>(this);
             for (auto& element : tupleExpr->getElements()) {
-                subExprs.push_back(element.get());
+                subExprs.push_back(element.getValue());
             }
             break;
         }

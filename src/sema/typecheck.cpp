@@ -33,41 +33,39 @@ void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> gene
                              llvm::StringRef name, SourceLocation location);
 
 void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
-    if (!functionReturnType.isTupleType()) {
-        auto* returnValue = stmt.getReturnValue();
+    auto* returnValue = stmt.getReturnValue();
 
-        if (auto* prefixExpr = llvm::dyn_cast<PrefixExpr>(returnValue)) {
-            if (prefixExpr->getOperator() == Token::And) {
-                returnValue = &prefixExpr->getOperand();
-            }
+    if (auto* prefixExpr = llvm::dyn_cast<PrefixExpr>(returnValue)) {
+        if (prefixExpr->getOperator() == Token::And) {
+            returnValue = &prefixExpr->getOperand();
         }
+    }
 
-        Type localVariableType;
+    Type localVariableType;
 
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(returnValue)) {
-            switch (varExpr->getDecl()->getKind()) {
-                case DeclKind::VarDecl: {
-                    auto* varDecl = llvm::cast<VarDecl>(varExpr->getDecl());
-                    if (varDecl->getParent() && varDecl->getParent()->isFunctionDecl()) {
-                        localVariableType = varDecl->getType();
-                    }
-                    break;
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(returnValue)) {
+        switch (varExpr->getDecl()->getKind()) {
+            case DeclKind::VarDecl: {
+                auto* varDecl = llvm::cast<VarDecl>(varExpr->getDecl());
+                if (varDecl->getParent() && varDecl->getParent()->isFunctionDecl()) {
+                    localVariableType = varDecl->getType();
                 }
-                case DeclKind::ParamDecl:
-                    localVariableType = llvm::cast<ParamDecl>(varExpr->getDecl())->getType();
-                    break;
-
-                default:
-                    break;
+                break;
             }
-        }
+            case DeclKind::ParamDecl:
+                localVariableType = llvm::cast<ParamDecl>(varExpr->getDecl())->getType();
+                break;
 
-        if (localVariableType
-            && functionReturnType.removeOptional().isPointerType()
-            && functionReturnType.removeOptional().getPointee() == localVariableType) {
-            warning(returnValue->getLocation(), "returning pointer to local variable ",
-                    "(local variables will not exist after the function returns)");
+            default:
+                break;
         }
+    }
+
+    if (localVariableType
+        && functionReturnType.removeOptional().isPointerType()
+        && functionReturnType.removeOptional().getPointee() == localVariableType) {
+        warning(returnValue->getLocation(), "returning pointer to local variable ",
+                "(local variables will not exist after the function returns)");
     }
 }
 
@@ -590,8 +588,8 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
             typecheckType(type.getElementType(), location);
             break;
         case TypeKind::TupleType:
-            for (auto subtype : type.getSubtypes()) {
-                typecheckType(subtype, location);
+            for (auto& element : type.getTupleElements()) {
+                typecheckType(element.type, location);
             }
             break;
         case TypeKind::FunctionType:

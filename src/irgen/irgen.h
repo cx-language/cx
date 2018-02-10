@@ -81,6 +81,7 @@ private:
     llvm::Value* codegenBoolLiteralExpr(const BoolLiteralExpr& expr);
     llvm::Value* codegenNullLiteralExpr(const NullLiteralExpr& expr);
     llvm::Value* codegenArrayLiteralExpr(const ArrayLiteralExpr& expr);
+    llvm::Value* codegenTupleExpr(const TupleExpr& expr);
     llvm::Value* codegenImplicitNullComparison(llvm::Value* operand);
     llvm::Value* codegenNot(const PrefixExpr& expr);
     llvm::Value* codegenPrefixExpr(const PrefixExpr& expr);
@@ -102,6 +103,7 @@ private:
     llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
     llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr);
     llvm::Value* codegenMemberExpr(const MemberExpr& expr);
+    llvm::Value* codegenTupleElementAccess(const MemberExpr& expr);
     llvm::Value* codegenLvalueSubscriptExpr(const SubscriptExpr& expr);
     llvm::Value* codegenSubscriptExpr(const SubscriptExpr& expr);
     llvm::Value* codegenUnwrapExpr(const UnwrapExpr& expr);

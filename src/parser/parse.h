@@ -15,7 +15,7 @@ class StringRef;
 
 namespace delta {
 
-class Argument;
+class NamedValue;
 class Module;
 class SourceFile;
 class Expr;
@@ -27,6 +27,7 @@ class FloatLiteralExpr;
 class BoolLiteralExpr;
 class NullLiteralExpr;
 class ArrayLiteralExpr;
+class TupleExpr;
 class CastExpr;
 class SizeofExpr;
 class AddressofExpr;
@@ -91,7 +92,7 @@ private:
     void checkStmtTerminatorConsistency(Token::Kind currentTerminator,
                                         llvm::function_ref<SourceLocation()> getLocation);
     void parseStmtTerminator(const char* contextInfo = nullptr);
-    std::vector<Argument> parseArgumentList();
+    std::vector<NamedValue> parseArgumentList();
     std::unique_ptr<VarExpr> parseVarExpr();
     std::unique_ptr<VarExpr> parseThis();
     std::unique_ptr<StringLiteralExpr> parseStringLiteral();
@@ -101,10 +102,12 @@ private:
     std::unique_ptr<BoolLiteralExpr> parseBoolLiteral();
     std::unique_ptr<NullLiteralExpr> parseNullLiteral();
     std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral();
+    std::unique_ptr<TupleExpr> parseTupleLiteral();
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<Type> parseGenericArgumentList();
     int64_t parseArraySizeInBrackets();
     Type parseSimpleType(bool isMutable);
+    Type parseTupleType();
     Type parseFunctionType();
     Type parseType();
     std::unique_ptr<CastExpr> parseCastExpr();
@@ -118,6 +121,7 @@ private:
     std::unique_ptr<Expr> parseParenExpr();
     std::unique_ptr<IfExpr> parseIfExpr(std::unique_ptr<Expr> condition);
     bool shouldParseGenericArgumentList();
+    bool arrowAfterParentheses();
     std::unique_ptr<Expr> parsePostfixExpr();
     std::unique_ptr<PrefixExpr> parsePrefixExpr();
     std::unique_ptr<Expr> parsePreOrPostfixExpr();

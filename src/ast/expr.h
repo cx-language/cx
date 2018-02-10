@@ -183,24 +183,14 @@ private:
     std::vector<std::unique_ptr<Expr>> elements;
 };
 
-class TupleExpr : public Expr {
+class NamedValue {
 public:
-    TupleExpr(std::vector<std::unique_ptr<Expr>>&& elements, SourceLocation location)
-    : Expr(ExprKind::TupleExpr, location), elements(std::move(elements)) {}
-    llvm::ArrayRef<std::unique_ptr<Expr>> getElements() const { return elements; }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::TupleExpr; }
-
-private:
-    std::vector<std::unique_ptr<Expr>> elements;
-};
-
-class Argument {
-public:
-    Argument(std::string&& name, std::shared_ptr<Expr>&& value,
-             SourceLocation location = SourceLocation::invalid())
+    NamedValue(std::string&& name, std::shared_ptr<Expr>&& value,
+               SourceLocation location = SourceLocation::invalid())
     : name(std::move(name)), value(std::move(value)),
       location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
+    void setName(std::string&& newName) { name = newName; }
     Expr* getValue() { return value.get(); }
     const Expr* getValue() const { return value.get(); }
     SourceLocation getLocation() const { return location; }
@@ -211,9 +201,21 @@ private:
     SourceLocation location;
 };
 
+class TupleExpr : public Expr {
+public:
+    TupleExpr(std::vector<NamedValue>&& elements, SourceLocation location)
+    : Expr(ExprKind::TupleExpr, location), elements(std::move(elements)) {}
+    llvm::ArrayRef<NamedValue> getElements() const { return elements; }
+    llvm::MutableArrayRef<NamedValue> getElements() { return elements; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::TupleExpr; }
+
+private:
+    std::vector<NamedValue> elements;
+};
+
 class CallExpr : public Expr {
 public:
-    CallExpr(std::unique_ptr<Expr> callee, std::vector<Argument>&& args,
+    CallExpr(std::unique_ptr<Expr> callee, std::vector<NamedValue>&& args,
              std::vector<Type>&& genericArgs, SourceLocation location)
     : Expr(ExprKind::CallExpr, location), callee(std::move(callee)), args(std::move(args)),
       genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
@@ -231,8 +233,8 @@ public:
     void setCalleeDecl(Decl* callee) { ASSERT(callee); calleeDecl = callee; }
     const Expr& getCallee() const { return *callee; }
     Expr& getCallee() { return *callee; }
-    llvm::ArrayRef<Argument> getArgs() const { return args; }
-    llvm::MutableArrayRef<Argument> getArgs() { return args; }
+    llvm::ArrayRef<NamedValue> getArgs() const { return args; }
+    llvm::MutableArrayRef<NamedValue> getArgs() { return args; }
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     void setGenericArgs(std::vector<Type>&& types) { genericArgs = std::move(types); }
     static bool classof(const Expr* e) {
@@ -248,19 +250,19 @@ public:
     }
 
 protected:
-    CallExpr(ExprKind kind, std::unique_ptr<Expr> callee, std::vector<Argument>&& args,
+    CallExpr(ExprKind kind, std::unique_ptr<Expr> callee, std::vector<NamedValue>&& args,
              SourceLocation location)
     : Expr(kind, location), callee(std::move(callee)), args(std::move(args)), calleeDecl(nullptr) {}
 
 private:
     std::unique_ptr<Expr> callee;
-    std::vector<Argument> args;
+    std::vector<NamedValue> args;
     std::vector<Type> genericArgs;
     Type receiverType;
     Decl* calleeDecl;
 };
 
-inline std::vector<Argument> addArg(std::vector<Argument>&& args, std::shared_ptr<Expr>&& arg) {
+inline std::vector<NamedValue> addArg(std::vector<NamedValue>&& args, std::shared_ptr<Expr>&& arg) {
     args.push_back({ "", std::move(arg), SourceLocation::invalid() });
     return std::move(args);
 }
@@ -360,7 +362,7 @@ class SubscriptExpr : public CallExpr {
 public:
     SubscriptExpr(std::unique_ptr<Expr> array, std::unique_ptr<Expr> index, SourceLocation location)
     : CallExpr(ExprKind::SubscriptExpr, llvm::make_unique<MemberExpr>(std::move(array), "[]", location),
-               { Argument("", std::move(index)) }, location) {}
+               { NamedValue("", std::move(index)) }, location) {}
     const Expr* getBaseExpr() const { return getReceiver(); }
     const Expr* getIndexExpr() const { return getArgs()[0].getValue(); }
     Expr* getBaseExpr() { return getReceiver(); }

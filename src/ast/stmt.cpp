@@ -126,7 +126,7 @@ std::unique_ptr<Stmt> ForStmt::lower() {
     std::vector<std::unique_ptr<Stmt>> stmts;
 
     auto iteratorMemberExpr = llvm::make_unique<MemberExpr>(std::move(range), "iterator", location);
-    auto iteratorCallExpr = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<Argument>(),
+    auto iteratorCallExpr = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<NamedValue>(),
                                                         std::vector<Type>(), location);
     auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true), std::string(iteratorVariableName),
                                                       std::move(iteratorCallExpr), variable->getParent(),
@@ -136,12 +136,12 @@ std::unique_ptr<Stmt> ForStmt::lower() {
 
     auto iteratorVarExpr = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
     auto hasValueMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr), "hasValue", location);
-    auto hasValueCallExpr = llvm::make_unique<CallExpr>(std::move(hasValueMemberExpr), std::vector<Argument>(),
+    auto hasValueCallExpr = llvm::make_unique<CallExpr>(std::move(hasValueMemberExpr), std::vector<NamedValue>(),
                                                         std::vector<Type>(), location);
 
     auto iteratorVarExpr2 = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
     auto valueMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr2), "value", location);
-    auto valueCallExpr = llvm::make_unique<CallExpr>(std::move(valueMemberExpr), std::vector<Argument>(),
+    auto valueCallExpr = llvm::make_unique<CallExpr>(std::move(valueMemberExpr), std::vector<NamedValue>(),
                                                      std::vector<Type>(), location);
     auto loopVariableVarDecl = llvm::make_unique<VarDecl>(variable->getType(), variable->getName(),
                                                           std::move(valueCallExpr), variable->getParent(),
@@ -157,7 +157,7 @@ std::unique_ptr<Stmt> ForStmt::lower() {
 
     auto iteratorVarExpr3 = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
     auto incrementMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr3), "increment", location);
-    auto incrementCallExpr = llvm::make_unique<CallExpr>(std::move(incrementMemberExpr), std::vector<Argument>(),
+    auto incrementCallExpr = llvm::make_unique<CallExpr>(std::move(incrementMemberExpr), std::vector<NamedValue>(),
                                                          std::vector<Type>(), location);
     auto incrementExprStmt = llvm::make_unique<ExprStmt>(std::move(incrementCallExpr));
     forStmtBody.push_back(std::move(incrementExprStmt));

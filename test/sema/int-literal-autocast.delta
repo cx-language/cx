@@ -3,7 +3,7 @@
 func foo(a: uint) { }
 func bar(a: uint8) { }
 func baz() -> uint { return 0; }
-func qux() -> uint, uint8 { return 0, 0; }
+func qux() -> (a: uint, b: uint8) { return (a: 0, b: 0); }
 
 func main() {
     foo(0);

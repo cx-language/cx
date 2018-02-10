@@ -1,0 +1,53 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+// CHECK: define { i1, { double } } @f()
+func f() -> (c: bool, d: (e: float64)) {
+    // CHECK-NEXT: %d = alloca { double }
+    // CHECK-NEXT: %a = alloca { i32, { i1, { double } } }
+    // CHECK-NEXT: %b = alloca { i1, { double } }
+    // CHECK-NEXT: %e = alloca double
+    // CHECK-NEXT: %p = alloca { i1, { double } }*
+
+    // CHECK-NEXT: store { double } { double -1.000000e+00 }, { double }* %d
+    let d = (e: -1.0);
+
+    // CHECK-NEXT: %d1 = load { double }, { double }* %d
+    // CHECK-NEXT: %1 = insertvalue { i1, { double } } { i1 false, { double } undef }, { double } %d1, 1
+    // CHECK-NEXT: %2 = insertvalue { i32, { i1, { double } } } { i32 42, { i1, { double } } undef }, { i1, { double } } %1, 1
+    // CHECK-NEXT: store { i32, { i1, { double } } } %2, { i32, { i1, { double } } }* %a
+    let a = (a: 42, b: (c: false, d));
+
+    // CHECK-NEXT: %3 = getelementptr inbounds { i32, { i1, { double } } }, { i32, { i1, { double } } }* %a, i32 0, i32 1
+    // CHECK-NEXT: %4 = load { i1, { double } }, { i1, { double } }* %3
+    // CHECK-NEXT: store { i1, { double } } %4, { i1, { double } }* %b
+    var b = a.b;
+
+    // CHECK-NEXT: %5 = getelementptr inbounds { i1, { double } }, { i1, { double } }* %b, i32 0, i32 1
+    // CHECK-NEXT: %6 = getelementptr inbounds { double }, { double }* %5, i32 0, i32 0
+    // CHECK-NEXT: %7 = load double, double* %6
+    // CHECK-NEXT: store double %7, double* %e
+    var e = b.d.e;
+
+    // CHECK-NEXT: %8 = getelementptr inbounds { i32, { i1, { double } } }, { i32, { i1, { double } } }* %a, i32 0, i32 1
+    // CHECK-NEXT: store { i1, { double } }* %8, { i1, { double } }** %p
+    let p = &a.b;
+
+    // CHECK-NEXT: %p2 = load { i1, { double } }*, { i1, { double } }** %p
+    // CHECK-NEXT: %9 = load { i1, { double } }, { i1, { double } }* %p2
+    // CHECK-NEXT: store { i1, { double } } %9, { i1, { double } }* %b
+    b = *p;
+
+    // CHECK-NEXT: %10 = load { i1, { double } }*, { i1, { double } }** %p
+    // CHECK-NEXT: %11 = getelementptr inbounds { i1, { double } }, { i1, { double } }* %10, i32 0, i32 1
+    // CHECK-NEXT: %12 = getelementptr inbounds { double }, { double }* %11, i32 0, i32 0
+    // CHECK-NEXT: %13 = load double, double* %12
+    // CHECK-NEXT: store double %13, double* %e
+    e = p.d.e;
+
+    // CHECK-NEXT: store double 1.000000e+00, double* %e
+    e = (x: 1.0, y: 2.0).x;
+
+    // CHECK-NEXT: %b3 = load { i1, { double } }, { i1, { double } }* %b
+    // CHECK-NEXT: ret { i1, { double } } %b3
+    return b;
+}

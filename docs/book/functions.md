@@ -28,11 +28,13 @@ let result = foo(1, 2);
 
 ## Multiple Return Values
 
-Functions can return more than one value (not fully implemented yet):
+Functions can return more than one value by returning a tuple of values:
 
 ```
-func foo() -> int, bool {
-    return 42, true;
+func foo() -> (key: int, value: bool) {
+    let key = 42;
+    let value = true;
+    return (key, value);
 }
 ```
 

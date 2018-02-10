@@ -17,6 +17,7 @@ namespace delta {
 class ParamDecl;
 class TypeDecl;
 class DeinitDecl;
+class TupleElement;
 
 enum class TypeKind {
     BasicType,
@@ -89,7 +90,6 @@ public:
     bool isNull() const;
 
     Type resolve(const llvm::StringMap<Type>& replacements) const;
-    void appendType(Type);
     bool isInteger() const { return isBasicType() && (isSigned() || isUnsigned()); }
     bool isSigned() const;
     bool isUnsigned() const;
@@ -108,7 +108,7 @@ public:
     llvm::StringRef getName() const;
     Type getElementType() const;
     int64_t getArraySize() const;
-    llvm::ArrayRef<Type> getSubtypes() const;
+    llvm::ArrayRef<TupleElement> getTupleElements() const;
     llvm::ArrayRef<Type> getGenericArgs() const;
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
@@ -187,20 +187,26 @@ private:
                   /// this type never know their size.
 };
 
+class TupleElement {
+public:
+    std::string name;
+    Type type;
+};
+
+bool operator==(const TupleElement&, const TupleElement&);
+
 class TupleType : public TypeBase {
 public:
-    llvm::ArrayRef<Type> getSubtypes() const { return subtypes; }
-    static Type get(std::vector<Type>&& subtypes, bool isMutable = false);
+    llvm::ArrayRef<TupleElement> getElements() const { return elements; }
+    static Type get(std::vector<TupleElement>&& elements, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
 
 private:
-    TupleType(std::vector<Type>&& subtypes)
-    : TypeBase(TypeKind::TupleType), subtypes(std::move(subtypes)) {
-        ASSERT(getSubtypes().size() != 1);
-    }
+    TupleType(std::vector<TupleElement>&& elements)
+    : TypeBase(TypeKind::TupleType), elements(std::move(elements)) {}
 
 private:
-    std::vector<Type> subtypes;
+    std::vector<TupleElement> elements;
 };
 
 class FunctionType : public TypeBase {

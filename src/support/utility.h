@@ -41,7 +41,7 @@ template<typename SourceContainer, typename Mapper>
 auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(mapper(*source.begin()))> {
     std::vector<decltype(mapper(*source.begin()))> result;
     result.reserve(source.size());
-    for (const auto& element : source) result.emplace_back(mapper(element));
+    for (auto& element : source) result.emplace_back(mapper(element));
     return result;
 }
 
