@@ -3,7 +3,7 @@
 class X { let i: int; }
 class Y { let i: int; }
 
-// CHECK: define i1 [[EQ:@"<\.[0-9]+"]](%X* %a, %X* %b)
+// CHECK: define i1 [[EQ:@"<[\.0-9]*"]](%X* %a, %X* %b)
 func <(a: X*, b: X*) -> bool {
     return true;
 }

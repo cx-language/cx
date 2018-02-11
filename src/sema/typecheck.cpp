@@ -841,8 +841,6 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     for (auto& enumCase : decl.getCases()) {
         typecheckExpr(*enumCase.getValue());
     }
-
-    llvm::cast<BasicType>(*decl.getEnumType()).setDecl(&decl);
 }
 
 TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {

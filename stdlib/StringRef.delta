@@ -1,4 +1,4 @@
-struct StringRef: Printable, Hashable {
+struct StringRef: Comparable, Hashable, Printable {
     var characters: ArrayRef<char>;
 
     init(pointer: char*, length: uint) {
@@ -50,4 +50,28 @@ struct StringRef: Printable, Hashable {
     func printTo(stream: mutable String*) {
         stream.write(this);
     }
+
+    func compare(other: StringRef*) -> Ordering {
+        for (let index in 0..*min(size(), other.size())) {
+            if (this[index] < other[index]) { return Ordering.Less; }
+            if (this[index] > other[index]) { return Ordering.Greater; }
+        }
+        if (size() < other.size()) { return Ordering.Less; }
+        if (size() > other.size()) { return Ordering.Greater; }
+        return Ordering.Equal;
+    }
+}
+
+func ==(a: StringRef, b: StringRef) -> bool {
+    if (a.size() != b.size()) {
+        return false;
+    }
+
+    for (let index in 0..a.size()) {
+        if (a[index] != b[index]) {
+            return false;
+        }
+    }
+
+    return true;
 }

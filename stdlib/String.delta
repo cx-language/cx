@@ -1,4 +1,4 @@
-class String: OutputStream, Printable {
+class String: Comparable, OutputStream, Printable {
     var characters: Array<char>;
 
     /// Initializes an empty string.
@@ -161,6 +161,10 @@ class String: OutputStream, Printable {
         stream.write(StringRef(this));
     }
 
+    func compare(other: String*) -> Ordering {
+        return StringRef(this).compare(StringRef(other));
+    }
+
     func _indexOutOfBounds(index: uint) {
         printf("Range index %u is out of bounds, size is %u\n", index, size());
         fatalError();
@@ -170,7 +174,6 @@ class String: OutputStream, Printable {
         printf("Range index %d is out of bounds, size is %u\n", index, size());
         fatalError();
     }
-
 }
 
 func +(a: StringRef, b: StringRef) -> String {
@@ -197,21 +200,6 @@ func +(a: String, b: StringRef) -> String {
     return result;
 }
 
-func ==(a: StringRef, b: StringRef) -> bool {
-    if (a.size() != b.size()) {
-        return false;
-    }
-
-    // TODO: Change this loop to use zip iterator when it's added.
-    for (let index in 0..a.size()) {
-        if (a[index] != b[index]) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 func ==(a: String*, b: String*) -> bool {
     return StringRef(a) == StringRef(b);
 }
@@ -222,22 +210,4 @@ func ==(a: String*, b: StringRef) -> bool {
 
 func ==(a: StringRef, b: String*) -> bool {
     return a == StringRef(b);
-}
-
-func <(a: StringRef, b: StringRef) -> bool {
-    if (a.size() != b.size()) {
-        return a.size() < b.size();
-    }
-
-    // TODO: Change this loop to use zip iterator when it's added.
-    for (let index in 0..a.size()) {
-        if (a[index] < b[index]) {
-            return true;
-        }
-        if (a[index] > b[index]) {
-            return false;
-        }
-    }
-
-    return false;
 }
