@@ -8,6 +8,10 @@ class InputFileStream: InputStream {
         fs = FileStream(filename, readOnly: true);
     }
 
+    init(fileDescriptor: int) {
+        fs = FileStream(fileDescriptor, readOnly: true);
+    }
+
     mutating func close() {
         fs.close();
     }

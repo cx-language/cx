@@ -21,8 +21,18 @@ class FileStream: InputStream, OutputStream {
         }
     }
 
+    // FIXME: Remove readOnly parameter, FileStream can both read and write.
     init(filename: StringRef, readOnly: bool) {
         file = fopen(String(filename).cString(), "r");
+    }
+
+    // FIXME: Remove readOnly parameter, FileStream can both read and write.
+    init(fileDescriptor: int, readOnly: bool) {
+        if (readOnly) {
+            file = fdopen(fileDescriptor, "r");
+        } else {
+            file = fdopen(fileDescriptor, "w");
+        }
     }
 
     deinit() {

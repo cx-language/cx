@@ -8,6 +8,7 @@ extern func abort();
 extern func printf(format: char*, ...) -> int;
 extern func getchar() -> int;
 extern func fopen(filename: char*, mode: char*) -> void*?;
+extern func fdopen(fd: int, mode: char*) -> void*?;
 extern func fgetc(file: void*) -> int;
 extern func fclose(file: void*) -> int;
 extern func exit(status: int);
