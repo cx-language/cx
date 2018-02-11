@@ -143,7 +143,7 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
             if (!constantArrayType.getSize().isIntN(64)) {
-                error(SourceLocation::invalid(), "array is too large");
+                error(SourceLocation(), "array is too large");
             }
             return ArrayType::get(toDelta(constantArrayType.getElementType()),
                                   constantArrayType.getSize().getLimitedValue(), isMutable);
@@ -160,27 +160,27 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Vector:
             return Type::getInt(); // FIXME: Temporary.
         default:
-            error(SourceLocation::invalid(), "unhandled type class '", type.getTypeClassName(), "' (importing type '",
+            error(SourceLocation(), "unhandled type class '", type.getTypeClassName(), "' (importing type '",
                   qualtype.getAsString(), "')");
     }
 }
 
 FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
     auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
-        return ParamDecl(toDelta(param->getType()), param->getNameAsString(), SourceLocation::invalid());
+        return ParamDecl(toDelta(param->getType()), param->getNameAsString(), SourceLocation());
     });
     FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()), decl.isVariadic(), true);
-    return FunctionDecl(std::move(proto), {}, *currentModule, SourceLocation::invalid());
+    return FunctionDecl(std::move(proto), {}, *currentModule, SourceLocation());
 }
 
 llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
     if (decl.getName().empty()) return llvm::None;
-    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), typeDecl, SourceLocation::invalid());
+    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), typeDecl, SourceLocation());
 }
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct, getRecordName(decl), {}, {}, *currentModule,
-                      SourceLocation::invalid());
+                      SourceLocation());
     typeDecl.getFields().reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, typeDecl)) {
@@ -193,21 +193,21 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
 }
 
 VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, *currentModule, SourceLocation::invalid());
+    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, *currentModule, SourceLocation());
 }
 
 // TODO: Use llvm::APSInt instead of int64_t.
 void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, clang::QualType type, Module& module) {
-    auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation::invalid());
+    auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation());
     initializer->setType(toDelta(type).asImmutable());
-    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr, module, SourceLocation::invalid()));
+    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr, module, SourceLocation()));
 }
 
 // TODO: Use llvm::APFloat instead of long double.
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
-    auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation::invalid());
+    auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation());
     initializer->setType(Type::getFloat64());
-    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr, module, SourceLocation::invalid()));
+    module.addToSymbolTable(VarDecl(initializer->getType(), name, initializer, nullptr, module, SourceLocation()));
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {

@@ -182,7 +182,7 @@ private:
 
 class NamedValue {
 public:
-    NamedValue(std::string&& name, std::shared_ptr<Expr>&& value, SourceLocation location = SourceLocation::invalid())
+    NamedValue(std::string&& name, std::shared_ptr<Expr>&& value, SourceLocation location = SourceLocation())
     : name(std::move(name)), value(std::move(value)),
       location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
@@ -258,7 +258,7 @@ private:
 };
 
 inline std::vector<NamedValue> addArg(std::vector<NamedValue>&& args, std::shared_ptr<Expr>&& arg) {
-    args.push_back({ "", std::move(arg), SourceLocation::invalid() });
+    args.push_back({ "", std::move(arg), SourceLocation() });
     return std::move(args);
 }
 

@@ -261,7 +261,7 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
         builder.SetInsertPoint(entryBlock, std::next(lastAlloca));
     }
 
-    auto* llvmType = toIR(type, decl ? decl->getLocation() : SourceLocation::invalid());
+    auto* llvmType = toIR(type, decl ? decl->getLocation() : SourceLocation());
     auto* alloca = builder.CreateAlloca(llvmType, arraySize, name);
     lastAlloca = alloca->getIterator();
     auto nameString = name.str();

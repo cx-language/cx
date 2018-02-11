@@ -207,7 +207,7 @@ class FunctionType : public TypeBase {
 public:
     Type getReturnType() const { return returnType; }
     llvm::ArrayRef<Type> getParamTypes() const { return paramTypes; }
-    std::vector<ParamDecl> getParamDecls(SourceLocation location = SourceLocation::invalid()) const;
+    std::vector<ParamDecl> getParamDecls(SourceLocation location = SourceLocation()) const;
     static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable = false);
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::FunctionType; }
 

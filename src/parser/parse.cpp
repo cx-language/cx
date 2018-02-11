@@ -47,7 +47,7 @@ SourceLocation Parser::getCurrentLocation() {
 }
 
 Token Parser::lookAhead(int offset) {
-    if (int(currentTokenIndex) + offset < 0) return Token(Token::None, SourceLocation::invalid());
+    if (int(currentTokenIndex) + offset < 0) return Token(Token::None, SourceLocation());
     int count = int(currentTokenIndex) + offset - int(tokenBuffer.size()) + 1;
     while (count-- > 0) {
         tokenBuffer.emplace_back(lexer.nextToken());
@@ -150,7 +150,7 @@ std::vector<NamedValue> Parser::parseArgumentList() {
     std::vector<NamedValue> args;
     while (currentToken() != Token::RightParen) {
         std::string name;
-        SourceLocation location = SourceLocation::invalid();
+        SourceLocation location = SourceLocation();
         if (lookAhead(1) == Token::Colon) {
             auto result = parse(Token::Identifier);
             name = std::move(result.getString());

@@ -52,7 +52,7 @@ public:
 
     llvm::Module& compile(const Module& sourceModule);
     llvm::Value* codegenExpr(const Expr& expr);
-    llvm::Type* toIR(Type type, SourceLocation location = SourceLocation::invalid());
+    llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
     llvm::LLVMContext& getLLVMContext() { return ctx; }
     llvm::IRBuilder<>& getBuilder() { return builder; }
 

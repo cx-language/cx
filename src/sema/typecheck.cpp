@@ -634,8 +634,8 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
             if (type.getPointee().isArrayWithRuntimeSize()) {
                 auto mangledTypeDecl = mangleTypeDecl("ArrayRef", type.getPointee().getElementType());
                 if (getCurrentModule()->findDecls(mangledTypeDecl, currentSourceFile, currentFunction).empty()) {
-                    auto& arrayRefDecl = getCurrentModule()->findDecl("ArrayRef", SourceLocation::invalid(),
-                                                                      currentSourceFile, currentFieldDecls);
+                    auto& arrayRefDecl = getCurrentModule()->findDecl("ArrayRef", SourceLocation(), currentSourceFile,
+                                                                      currentFieldDecls);
                     auto& arrayRef = llvm::cast<TypeTemplate>(arrayRefDecl);
                     auto* instantiation = arrayRef.instantiate({ type.getPointee().getElementType() });
                     getCurrentModule()->addToSymbolTable(*instantiation);

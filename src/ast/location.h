@@ -11,13 +11,9 @@ struct SourceLocation {
     IntegerType line;
     IntegerType column;
 
+    SourceLocation()
+    : SourceLocation(nullptr, std::numeric_limits<IntegerType>::min(), std::numeric_limits<IntegerType>::min()) {}
     SourceLocation(const char* file, IntegerType line, IntegerType column) : file(file), line(line), column(column) {}
-
-    static SourceLocation invalid() {
-        auto min = std::numeric_limits<IntegerType>::min();
-        return SourceLocation(nullptr, min, min);
-    }
-
     SourceLocation nextColumn() const { return SourceLocation(file, line, column + 1); }
     bool isValid() const { return line > 0 && column > 0; }
 };

@@ -102,9 +102,9 @@ private:
     bool isImplicitlyCopyable(Type type);
     bool argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {}) const;
     void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "",
-                      SourceLocation location = SourceLocation::invalid()) const;
+                      SourceLocation location = SourceLocation()) const;
     void validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params, bool isVariadic,
-                      llvm::StringRef functionName = "", SourceLocation location = SourceLocation::invalid()) const;
+                      llvm::StringRef functionName = "", SourceLocation location = SourceLocation()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
     void markFieldAsInitialized(Expr& expr);
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
