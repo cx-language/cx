@@ -355,7 +355,6 @@ public:
     : TypeDecl(DeclKind::EnumDecl, TypeTag::Enum, std::move(name), module, location), cases(std::move(cases)) {}
     llvm::ArrayRef<EnumCase> getCases() const { return cases; }
     const EnumCase* getCaseByName(llvm::StringRef name) const;
-    Type getEnumType() const { return BasicType::get(getName(), {}); }
     // TODO: Select underlying type to be able to hold all case values.
     Type getUnderlyingType() const { return Type::getInt(); }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::EnumDecl; }

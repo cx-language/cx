@@ -1314,7 +1314,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
                     error(expr.getLocation(), "enum '", enumDecl->getName(), "' has no case named '",
                           expr.getMemberName(), "'");
                 }
-                return enumDecl->getEnumType();
+                return enumDecl->getType();
             }
         }
     }
