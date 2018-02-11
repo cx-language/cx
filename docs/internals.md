@@ -23,9 +23,6 @@ following components:
    errors such as type system violations and uses of undeclared identifiers.
 4. The __type-checked AST__ is the result of semantic analysis, an AST with full
    type information at each node that represents a typed language entity.
-5. Based on the type-checked AST, we can use one of the following to generate
-   native code:
-   - __IRGen__ to first generate [LLVM](http://llvm.org) IR (intermediate
-     representation), and then have LLVM generate the machine code for it.
-   - __CGen__ (obsolete) to generate (minified) C code, that we can then pass on
-     to any C compiler to handle the machine code generation.
+5. Based on the type-checked AST, we can use __IRGen__ to first generate
+   [LLVM](http://llvm.org) IR (intermediate representation), and then have LLVM
+   generate the machine code based on the IR.
