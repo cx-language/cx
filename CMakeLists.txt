@@ -34,8 +34,8 @@ pkg_check_modules(LIBEDIT libedit)
 
 set(YAML_CPP_BUILD_TOOLS OFF)
 set(YAML_CPP_BUILD_CONTRIB OFF)
-add_subdirectory(src/yaml-cpp)
-include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/src/yaml-cpp/include)
+add_subdirectory(extlibs/yaml-cpp)
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/extlibs/yaml-cpp/include)
 
 enable_testing()
 

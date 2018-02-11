@@ -7,9 +7,8 @@ if ! clang-format --version | grep --quiet $CLANG_FORMAT_VERSION; then
     exit 1
 fi
 
-shopt -s nullglob
 ROOTDIR=$(cd "$(dirname "$0")/.."; pwd)
-FILES=$(echo $ROOTDIR/src/{ast,delta,driver,irgen,package-manager,parser,sema,support}/*.{h,cpp})
+FILES=$(echo $ROOTDIR/src/**/*.{h,cpp})
 
 if [ "$1" = "--check" ]; then
     if grep -En "(while|for|if) *\(.*\) *$" $FILES || grep -En "[^#]else *$" $FILES; then
