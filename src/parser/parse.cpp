@@ -940,7 +940,7 @@ std::unique_ptr<WhileStmt> Parser::parseWhileStmt(Decl* parent) {
 }
 
 /// for-stmt ::= 'for' '(' id 'in' expr ')' '{' stmt* '}'
-std::unique_ptr<Stmt> Parser::parseForStmt(Decl* parent) {
+std::unique_ptr<ForStmt> Parser::parseForStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
     auto location = getCurrentLocation();
     consumeToken();
@@ -952,7 +952,7 @@ std::unique_ptr<Stmt> Parser::parseForStmt(Decl* parent) {
     parse(Token::LeftBrace);
     auto body = parseStmtsUntil(Token::RightBrace, parent);
     parse(Token::RightBrace);
-    return ForStmt(std::move(variable), std::move(range), std::move(body), location).lower();
+    return llvm::make_unique<ForStmt>(std::move(variable), std::move(range), std::move(body), location);
 }
 
 /// switch-stmt ::= 'switch' '(' expr ')' '{' cases default-case? '}'

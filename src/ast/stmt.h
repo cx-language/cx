@@ -140,6 +140,8 @@ public:
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getThenBody() const { return thenBody; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getElseBody() const { return elseBody; }
+    llvm::MutableArrayRef<std::unique_ptr<Stmt>> getThenBody() { return thenBody; }
+    llvm::MutableArrayRef<std::unique_ptr<Stmt>> getElseBody() { return elseBody; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IfStmt; }
 
 private:
@@ -154,6 +156,7 @@ public:
     : value(std::move(value)), stmts(std::move(stmts)) {}
     Expr* getValue() const { return value.get(); }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getStmts() const { return stmts; }
+    llvm::MutableArrayRef<std::unique_ptr<Stmt>> getStmts() { return stmts; }
 
 private:
     std::unique_ptr<Expr> value;
@@ -168,7 +171,9 @@ public:
       defaultStmts(std::move(defaultStmts)) {}
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<SwitchCase> getCases() const { return cases; }
+    llvm::MutableArrayRef<SwitchCase> getCases() { return cases; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getDefaultStmts() const { return defaultStmts; }
+    llvm::MutableArrayRef<std::unique_ptr<Stmt>> getDefaultStmts() { return defaultStmts; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::SwitchStmt; }
 
 private:
@@ -183,6 +188,7 @@ public:
     : Stmt(StmtKind::WhileStmt), condition(std::move(condition)), body(std::move(body)) {}
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
+    llvm::MutableArrayRef<std::unique_ptr<Stmt>> getBody() { return body; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::WhileStmt; }
 
 private:
@@ -256,6 +262,7 @@ class CompoundStmt : public Stmt {
 public:
     CompoundStmt(std::vector<std::unique_ptr<Stmt>>&& body) : Stmt(StmtKind::CompoundStmt), body(std::move(body)) {}
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
+    llvm::MutableArrayRef<std::unique_ptr<Stmt>> getBody() { return body; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::CompoundStmt; }
 
 private:

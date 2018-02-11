@@ -47,6 +47,7 @@ class DecrementStmt;
 class DeferStmt;
 class IfStmt;
 class WhileStmt;
+class ForStmt;
 class SwitchStmt;
 class BreakStmt;
 class ContinueStmt;
@@ -135,7 +136,7 @@ private:
     std::unique_ptr<DeferStmt> parseDeferStmt();
     std::unique_ptr<IfStmt> parseIfStmt(Decl* parent);
     std::unique_ptr<WhileStmt> parseWhileStmt(Decl* parent);
-    std::unique_ptr<Stmt> parseForStmt(Decl* parent);
+    std::unique_ptr<ForStmt> parseForStmt(Decl* parent);
     std::unique_ptr<SwitchStmt> parseSwitchStmt(Decl* parent);
     std::unique_ptr<BreakStmt> parseBreakStmt();
     std::unique_ptr<ContinueStmt> parseContinueStmt();

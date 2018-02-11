@@ -116,6 +116,8 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
 //
 // {
 //     var __iterator = range.iterator();
+//     // or if 'range' is already an iterator:
+//     var __iterator = range;
 //
 //     while (__iterator.hasValue()) {
 //         let id = __iterator.value();
@@ -130,11 +132,21 @@ std::unique_ptr<Stmt> ForStmt::lower() {
 
     std::vector<std::unique_ptr<Stmt>> stmts;
 
-    auto iteratorMemberExpr = llvm::make_unique<MemberExpr>(std::move(range), "iterator", location);
-    auto iteratorCallExpr = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<NamedValue>(),
-                                                        std::vector<Type>(), location);
+    std::unique_ptr<Expr> iteratorValue;
+    auto* rangeTypeDecl = range->getType().removePointer().getDecl();
+    bool isIterator = rangeTypeDecl && llvm::any_of(rangeTypeDecl->getInterfaces(),
+                                                    [](Type interface) { return interface.getName() == "Iterator"; });
+
+    if (isIterator) {
+        iteratorValue = std::move(range);
+    } else {
+        auto iteratorMemberExpr = llvm::make_unique<MemberExpr>(std::move(range), "iterator", location);
+        iteratorValue = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<NamedValue>(),
+                                                    std::vector<Type>(), location);
+    }
+
     auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true), std::string(iteratorVariableName),
-                                                      std::move(iteratorCallExpr), variable->getParent(),
+                                                      std::move(iteratorValue), variable->getParent(),
                                                       *variable->getModule(), location);
     auto iteratorVarStmt = llvm::make_unique<VarStmt>(std::move(iteratorVarDecl));
     stmts.push_back(std::move(iteratorVarStmt));

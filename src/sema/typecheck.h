@@ -51,7 +51,7 @@ private:
     void typecheckFunctionTemplate(FunctionTemplate& decl);
     void typecheckMemberDecl(Decl& decl);
 
-    void typecheckStmt(Stmt& stmt);
+    void typecheckStmt(std::unique_ptr<Stmt>& stmt);
     void typecheckAssignStmt(AssignStmt& stmt);
     void typecheckCompoundStmt(CompoundStmt& stmt);
     void typecheckReturnStmt(ReturnStmt& stmt);

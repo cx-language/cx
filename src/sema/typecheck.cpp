@@ -118,10 +118,10 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     currentControlStmts.push_back(&ifStmt);
 
     for (auto& stmt : ifStmt.getThenBody()) {
-        typecheckStmt(*stmt);
+        typecheckStmt(stmt);
     }
     for (auto& stmt : ifStmt.getElseBody()) {
-        typecheckStmt(*stmt);
+        typecheckStmt(stmt);
     }
 
     currentControlStmts.pop_back();
@@ -140,11 +140,11 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
                   "' doesn't match switch condition type '", conditionType, "'");
         }
         for (auto& caseStmt : switchCase.getStmts()) {
-            typecheckStmt(*caseStmt);
+            typecheckStmt(caseStmt);
         }
     }
     for (auto& defaultStmt : stmt.getDefaultStmts()) {
-        typecheckStmt(*defaultStmt);
+        typecheckStmt(defaultStmt);
     }
 
     currentControlStmts.pop_back();
@@ -159,7 +159,7 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
     currentControlStmts.push_back(&whileStmt);
 
     for (auto& stmt : whileStmt.getBody()) {
-        typecheckStmt(*stmt);
+        typecheckStmt(stmt);
     }
 
     currentControlStmts.pop_back();
@@ -248,7 +248,7 @@ void Typechecker::typecheckCompoundStmt(CompoundStmt& stmt) {
     getCurrentModule()->getSymbolTable().pushScope();
 
     for (auto& substmt : stmt.getBody()) {
-        typecheckStmt(*substmt);
+        typecheckStmt(substmt);
     }
 
     getCurrentModule()->getSymbolTable().popScope();
@@ -522,49 +522,51 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var,
     return llvm::None;
 }
 
-void Typechecker::typecheckStmt(Stmt& stmt) {
-    switch (stmt.getKind()) {
+void Typechecker::typecheckStmt(std::unique_ptr<Stmt>& stmt) {
+    switch (stmt->getKind()) {
         case StmtKind::ReturnStmt:
-            typecheckReturnStmt(llvm::cast<ReturnStmt>(stmt));
+            typecheckReturnStmt(llvm::cast<ReturnStmt>(*stmt));
             break;
         case StmtKind::VarStmt:
-            typecheckVarStmt(llvm::cast<VarStmt>(stmt));
+            typecheckVarStmt(llvm::cast<VarStmt>(*stmt));
             break;
         case StmtKind::IncrementStmt:
-            typecheckIncrementStmt(llvm::cast<IncrementStmt>(stmt));
+            typecheckIncrementStmt(llvm::cast<IncrementStmt>(*stmt));
             break;
         case StmtKind::DecrementStmt:
-            typecheckDecrementStmt(llvm::cast<DecrementStmt>(stmt));
+            typecheckDecrementStmt(llvm::cast<DecrementStmt>(*stmt));
             break;
         case StmtKind::ExprStmt:
-            typecheckExpr(llvm::cast<ExprStmt>(stmt).getExpr());
+            typecheckExpr(llvm::cast<ExprStmt>(*stmt).getExpr());
             break;
         case StmtKind::DeferStmt:
-            typecheckExpr(llvm::cast<DeferStmt>(stmt).getExpr());
+            typecheckExpr(llvm::cast<DeferStmt>(*stmt).getExpr());
             break;
         case StmtKind::IfStmt:
-            typecheckIfStmt(llvm::cast<IfStmt>(stmt));
+            typecheckIfStmt(llvm::cast<IfStmt>(*stmt));
             break;
         case StmtKind::SwitchStmt:
-            typecheckSwitchStmt(llvm::cast<SwitchStmt>(stmt));
+            typecheckSwitchStmt(llvm::cast<SwitchStmt>(*stmt));
             break;
         case StmtKind::WhileStmt:
-            typecheckWhileStmt(llvm::cast<WhileStmt>(stmt));
+            typecheckWhileStmt(llvm::cast<WhileStmt>(*stmt));
             break;
         case StmtKind::ForStmt:
-            llvm_unreachable("ForStmt should be lowered into a WhileStmt");
+            typecheckExpr(llvm::cast<ForStmt>(*stmt).getRangeExpr());
+            stmt = llvm::cast<ForStmt>(*stmt).lower();
+            typecheckStmt(stmt);
             break;
         case StmtKind::BreakStmt:
-            typecheckBreakStmt(llvm::cast<BreakStmt>(stmt));
+            typecheckBreakStmt(llvm::cast<BreakStmt>(*stmt));
             break;
         case StmtKind::ContinueStmt:
-            typecheckContinueStmt(llvm::cast<ContinueStmt>(stmt));
+            typecheckContinueStmt(llvm::cast<ContinueStmt>(*stmt));
             break;
         case StmtKind::AssignStmt:
-            typecheckAssignStmt(llvm::cast<AssignStmt>(stmt));
+            typecheckAssignStmt(llvm::cast<AssignStmt>(*stmt));
             break;
         case StmtKind::CompoundStmt:
-            typecheckCompoundStmt(llvm::cast<CompoundStmt>(stmt));
+            typecheckCompoundStmt(llvm::cast<CompoundStmt>(*stmt));
             break;
     }
 }
@@ -734,7 +736,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
         if (decl.hasBody()) {
             for (auto& stmt : decl.getBody()) {
-                typecheckStmt(*stmt);
+                typecheckStmt(stmt);
 
                 if (!decl.isInitDecl()) continue;
 

@@ -183,6 +183,7 @@ public:
     virtual bool isMutating() const { return false; }
     bool hasBody() const { return body.hasValue(); }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return ASSERT(hasBody()), *body; }
+    llvm::MutableArrayRef<std::unique_ptr<Stmt>> getBody() { return ASSERT(hasBody()), *body; }
     void setBody(std::vector<std::unique_ptr<Stmt>>&& body) { this->body = std::move(body); }
     SourceLocation getLocation() const override { return location; }
     FunctionType* getFunctionType() const;
