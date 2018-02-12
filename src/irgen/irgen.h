@@ -146,6 +146,7 @@ private:
     void beginScope();
     void endScope();
     void deferEvaluationOf(const Expr& expr);
+    DeinitDecl* getDefaultDeinitializer(const TypeDecl& typeDecl);
     void deferDeinitCall(llvm::Value* valueToDeinit, Type type, const Decl* decl);
     Scope& globalScope() { return scopes.front(); }
 

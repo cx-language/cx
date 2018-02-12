@@ -191,14 +191,15 @@ void IRGenerator::deferEvaluationOf(const Expr& expr) {
 
 /// Returns a deinitializer that only calls the deinitializers of the member variables, or null if
 /// no such deinitializer is needed because none of the member variables have deinitializers.
-static std::unique_ptr<DeinitDecl> getDefaultDeinitializer(const TypeDecl& typeDecl) {
+DeinitDecl* IRGenerator::getDefaultDeinitializer(const TypeDecl& typeDecl) {
     ASSERT(typeDecl.getDeinitializer() == nullptr);
 
     for (auto& field : typeDecl.getFields()) {
         if (field.getType().getDeinitializer() != nullptr) {
             auto deinitializer = llvm::make_unique<DeinitDecl>(const_cast<TypeDecl&>(typeDecl), typeDecl.getLocation());
             deinitializer->setBody({});
-            return deinitializer;
+            helperDecls.push_back(std::move(deinitializer));
+            return llvm::cast<DeinitDecl>(helperDecls.back().get());
         }
     }
 
