@@ -284,6 +284,7 @@ public:
     llvm::ArrayRef<std::unique_ptr<Decl>> getMethods() const { return methods; }
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     llvm::ArrayRef<Type> getInterfaces() const { return interfaces; }
+    bool hasInterface(const TypeDecl& interface) const;
     SourceLocation getLocation() const { return location; }
     void addField(FieldDecl&& field);
     void addMethod(std::unique_ptr<Decl> decl);

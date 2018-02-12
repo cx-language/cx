@@ -35,11 +35,13 @@ func sort<T: Comparable>(array: mutable Array<T>*) {
 }
 ```
 
-If we now try to call `sort` with an array whose element type is not comparable
-with `<`, we'll get a nice error message:
+`Comparable` is an interface which specifies that instances of the type can be
+compared using e.g. `<`, among other things. If we now try to call `sort` with
+an array whose element type doesn't implement `Comparable`, we'll get a nice
+error message:
 
 ```
-main.delta:4:9: error: type 'X' doesn't implement interface 'Comparable' because it doesn't have member function '<'
+main.delta:4:9: error: type 'X' doesn't implement interface 'Comparable'
     sort(array);
         ^
 ```
@@ -47,31 +49,20 @@ main.delta:4:9: error: type 'X' doesn't implement interface 'Comparable' because
 ## Declaring Interfaces
 
 Interfaces are types that specify a set of member functions. Other types can
-implement an interface by providing those member functions. For example:
+implement an interface by listing the interface name after a colon following the
+class name, and providing the member functions required by the interface:
 
 ```go
 interface Fooable {
     func foo() -> int;
 }
 
-struct X {
+struct X: Fooable {
     func foo() -> int {
         return 42;
     }
 }
 ```
-
-Now `X` implements the interface `Fooable`. We can also explicitly declare `X`
-to implement `Fooable` like so:
-
-```go
-struct X: Fooable {
-    // ...
-}
-```
-
-Now the compiler sees that we intended `X` to be `Fooable`, and so it can check
-that we provided all the member functions required by `Fooable`.
 
 ## Default Member Functions
 
@@ -88,5 +79,5 @@ interface Fooable {
 }
 ```
 
-Now every type that explicitly implements `Fooable` gets the `fooSquared()`
-member function for free.
+Now every type that implements `Fooable` gets the `fooSquared()` member function
+for free.

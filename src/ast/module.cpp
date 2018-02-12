@@ -49,6 +49,7 @@ void Module::addToSymbolTable(TypeTemplate& decl) {
 }
 
 void Module::addToSymbolTable(TypeDecl& decl) {
+    llvm::cast<BasicType>(decl.getType().getBase())->setDecl(&decl);
     addToSymbolTableWithName(decl, mangle(decl), true);
 
     for (auto& memberDecl : decl.getMemberDecls()) {

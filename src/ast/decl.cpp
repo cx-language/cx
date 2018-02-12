@@ -116,6 +116,10 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
     }
 }
 
+bool TypeDecl::hasInterface(const TypeDecl& interface) const {
+    return llvm::any_of(getInterfaces(), [&](Type type) { return type.getDecl() == &interface; });
+}
+
 void TypeDecl::addField(FieldDecl&& field) {
     fields.emplace_back(std::move(field));
 }

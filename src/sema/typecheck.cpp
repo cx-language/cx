@@ -781,7 +781,11 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
         if (interface.isBasicType()) {
             if (auto* interfaceDecl = getTypeDecl(llvm::cast<BasicType>(*interface))) {
                 if (interfaceDecl->isInterface()) {
-                    checkImplementsInterface(decl, *interfaceDecl, decl.getLocation());
+                    std::string errorReason;
+                    if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
+                        error(decl.getLocation(), "'", decl.getName(), "' ", errorReason, " required by interface '",
+                              interfaceDecl->getName(), "'");
+                    }
 
                     for (auto& method : interfaceDecl->getMethods()) {
                         auto& methodDecl = llvm::cast<MethodDecl>(*method);
@@ -817,8 +821,6 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
     for (auto& memberDecl : realDecl->getMemberDecls()) {
         typecheckMemberDecl(*memberDecl);
     }
-
-    llvm::cast<BasicType>(*decl.getType()).setDecl(&decl);
 }
 
 void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {

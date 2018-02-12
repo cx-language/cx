@@ -90,8 +90,7 @@ private:
 
     bool isInterface(Type type);
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
-    void checkImplementsInterface(TypeDecl& type, TypeDecl& interface, SourceLocation location) const;
-    bool implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
+    bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
     bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                 llvm::ArrayRef<ParamDecl> params, bool returnOnError);

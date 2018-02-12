@@ -252,10 +252,11 @@ value outside the function. This can be accomplished by using the `inout` keywor
 
 ### Interface types
 
-The `interface` keyword declares an interface, i.e. a set of requirements (member
-functions and properties). Types that fulfill the requirements of an interface
-`I` can be used as values for a variable of type `I`. This enables runtime
-polymorphism. Like classes and structs, interfaces may be generic.
+The `interface` keyword declares an interface, i.e. a set of requirements
+(member functions and properties). Types that are declared to implement an
+interface `I` and fulfill `I`'s requirements can be used as values for a
+variable of type `I`. This enables runtime polymorphism. Like classes and
+structs, interfaces may be generic.
 
 ### Optional type
 
@@ -440,8 +441,8 @@ listing the interfaces after a `:` following the class name:
 > `class` _class-name_ `:` _interface-list_ `{` _member-list_ `}`<br>
 
 The _interface-list_ is a comma-separated list of one or more interface names.
-The compiler will emit an error if the class doesn't actually implement the
-specified interfaces.
+The compiler will emit an error if the class doesn't fulfill all the
+requirements of a specified interface.
 
 #### Generic classes
 

@@ -9,11 +9,13 @@ interface X {
 class Y {
     init() {}
     func foo() {}
+    func bar() {}
+    func qux() {}
 }
 
 func f<T: X>(t: T) {}
 
 func main() {
-    // CHECK: [[@LINE+1]]:6: error: type 'Y' doesn't implement interface 'X' because it doesn't have member function 'bar'
+    // CHECK: [[@LINE+1]]:6: error: type 'Y' doesn't implement interface 'X'
     f(Y());
 }

@@ -268,23 +268,13 @@ bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     return false;
 }
 
-void Typechecker::checkImplementsInterface(TypeDecl& type, TypeDecl& interface, SourceLocation location) const {
-    ASSERT(interface.isInterface());
-    std::string errorReason;
-
-    if (!implementsInterface(type, interface, &errorReason)) {
-        error(location, "type '", type.getName(), "' doesn't implement interface '", interface.getName(), "' because ",
-              errorReason);
-    }
-}
-
-bool Typechecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
+bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
     auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({ { "This", type.getType() } }, {}));
 
     for (auto& fieldRequirement : thisTypeResolvedInterface->getFields()) {
         if (!hasField(type, fieldRequirement)) {
             if (errorReason) {
-                *errorReason = ("it doesn't have field '" + fieldRequirement.getName() + "'").str();
+                *errorReason = ("doesn't have field '" + fieldRequirement.getName() + "'").str();
             }
             return false;
         }
@@ -296,7 +286,7 @@ bool Typechecker::implementsInterface(TypeDecl& type, TypeDecl& interface, std::
 
             if (!hasMethod(type, *functionDecl)) {
                 if (errorReason) {
-                    *errorReason = ("it doesn't have member function '" + functionDecl->getName() + "'").str();
+                    *errorReason = ("doesn't have member function '" + functionDecl->getName() + "'").str();
                 }
                 return false;
             }
@@ -609,13 +599,9 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
             if (genericArg.isBasicType()) {
                 auto* typeDecl = getTypeDecl(*llvm::cast<BasicType>(genericArg.getBase()));
 
-                if (returnOnError) {
-                    if (!typeDecl || !implementsInterface(*typeDecl, *interface, &errorReason)) {
+                if (!typeDecl || !typeDecl->hasInterface(*interface)) {
+                    if (returnOnError) {
                         return {};
-                    }
-                } else {
-                    if (typeDecl) {
-                        checkImplementsInterface(*typeDecl, *interface, call.getLocation());
                     } else {
                         error(call.getLocation(), "type '", genericArg, "' doesn't implement interface '",
                               interface->getName(), "'");
