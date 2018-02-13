@@ -413,4 +413,4 @@ private:
     std::unique_ptr<Expr> elseExpr;
 };
 
-}
+} // namespace delta

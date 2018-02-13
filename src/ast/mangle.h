@@ -8,7 +8,7 @@ class StringRef;
 template<typename T>
 class ArrayRef;
 
-}
+} // namespace llvm
 
 namespace delta {
 
@@ -29,4 +29,4 @@ std::string mangleTypeDecl(llvm::StringRef typeName, llvm::ArrayRef<Type> generi
 std::string mangle(const FieldDecl& decl);
 std::string mangle(const EnumDecl& decl);
 
-}
+} // namespace delta

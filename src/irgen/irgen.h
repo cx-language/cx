@@ -179,4 +179,4 @@ private:
     llvm::SmallVector<llvm::BasicBlock*, 4> continueTargets;
 };
 
-}
+} // namespace delta

@@ -7,7 +7,7 @@ namespace llvm {
 template<typename T>
 class ArrayRef;
 class StringRef;
-}
+} // namespace llvm
 
 namespace delta {
 
@@ -19,4 +19,4 @@ int buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args
 int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest,
                     std::vector<llvm::StringRef>& args, bool run);
 
-}
+} // namespace delta

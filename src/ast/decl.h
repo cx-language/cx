@@ -29,7 +29,7 @@ struct hash<std::vector<delta::Type>> {
         return hashValue;
     }
 };
-}
+} // namespace std
 
 namespace llvm {
 class StringRef;
@@ -422,4 +422,4 @@ private:
     Module& module;
 };
 
-}
+} // namespace delta

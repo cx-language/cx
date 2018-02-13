@@ -160,7 +160,7 @@ void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
     file.flush();
 }
 
-} // anonymous namespace
+} // namespace
 
 int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args, bool run) {
     PackageManifest manifest(packageRoot);

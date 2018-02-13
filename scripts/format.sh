@@ -16,7 +16,7 @@ if [ "$1" = "--check" ]; then
         exit 1
     fi
 
-    clang-format -output-replacements-xml $FILES | grep "<replacement " | grep --invert-match "// namespace" >/dev/null
+    clang-format -output-replacements-xml $FILES | grep "<replacement " >/dev/null
 
     if [ $? -ne 1 ]; then
         echo "Run $(basename $0) to format the code."
@@ -27,7 +27,3 @@ if [ "$1" = "--check" ]; then
 fi
 
 clang-format -i $FILES
-
-# Remove namespace end comments. Making clang-format not emit namespace end comments causes it to
-# remove the empty line before the ending brace, but we don't want that.
-perl -i -pe 's/^\} \/\/ namespace[ \w]*$/}/g' $FILES

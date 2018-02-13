@@ -33,4 +33,4 @@ private:
     static std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
 };
 
-}
+} // namespace delta

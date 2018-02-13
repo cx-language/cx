@@ -60,7 +60,7 @@ PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     }
 }
 
-}
+} // namespace
 
 Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string)
 : kind(kind), string(string), location(location) {

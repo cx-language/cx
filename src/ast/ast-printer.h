@@ -122,4 +122,4 @@ private:
     int indentLevel;
 };
 
-}
+} // namespace delta

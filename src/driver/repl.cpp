@@ -72,7 +72,7 @@ void evaluate(llvm::StringRef line) {
     llvm::outs().flush();
 }
 
-}
+} // namespace
 
 int delta::replMain() {
     llvm::outs() << "Welcome to the Delta REPL! Note: the REPL is still highly work-in-progress and\n"

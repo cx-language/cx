@@ -33,4 +33,4 @@ private:
     std::vector<Dependency> declaredDependencies;
 };
 
-}
+} // namespace delta

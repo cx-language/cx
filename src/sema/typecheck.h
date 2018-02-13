@@ -16,7 +16,7 @@ template<typename T>
 class ArrayRef;
 template<typename T, unsigned N>
 class SmallVector;
-}
+} // namespace llvm
 
 namespace delta {
 
@@ -140,4 +140,4 @@ private:
     std::vector<Decl*> declsToTypecheck;
 };
 
-}
+} // namespace delta

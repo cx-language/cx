@@ -43,7 +43,7 @@ std::string mangleWithParams(const T& decl) {
     return result;
 }
 
-} // anonymous namespace
+} // namespace
 
 void Scope::onScopeEnd() {
     for (const Expr* expr : llvm::reverse(deferredExprs)) {

@@ -144,4 +144,4 @@ private:
     static llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
 };
 
-}
+} // namespace delta

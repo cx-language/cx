@@ -347,7 +347,7 @@ struct NullCheckInfo {
     Token::Kind op = Token::None;
     bool isNullCheck() const { return nullableValue != nullptr; }
 };
-}
+} // namespace
 
 static NullCheckInfo analyzeNullCheck(const Expr& condition) {
     NullCheckInfo nullCheckInfo;

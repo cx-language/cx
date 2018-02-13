@@ -18,4 +18,4 @@ struct SourceLocation {
     bool isValid() const { return line > 0 && column > 0; }
 };
 
-}
+} // namespace delta

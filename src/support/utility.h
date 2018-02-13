@@ -166,4 +166,4 @@ void warning(SourceLocation location, Args&&... args) {
 
 std::string getCCompilerPath();
 
-}
+} // namespace delta

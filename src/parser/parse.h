@@ -174,4 +174,4 @@ private:
     llvm::ArrayRef<std::string> frameworkSearchPaths;
 };
 
-}
+} // namespace delta

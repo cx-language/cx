@@ -269,4 +269,4 @@ private:
     std::vector<std::unique_ptr<Stmt>> body;
 };
 
-}
+} // namespace delta

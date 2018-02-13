@@ -303,7 +303,7 @@ private:
     clang::Sema& clangSema;
 };
 
-} // anonymous namespace
+} // namespace
 
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, llvm::ArrayRef<std::string> importSearchPaths,
                           llvm::ArrayRef<std::string> frameworkSearchPaths) {

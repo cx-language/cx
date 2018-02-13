@@ -108,7 +108,7 @@ std::vector<std::unique_ptr<TupleType>> tupleTypes;
 std::vector<std::unique_ptr<FunctionType>> functionTypes;
 std::vector<std::unique_ptr<PointerType>> ptrTypes;
 std::vector<std::unique_ptr<OptionalType>> optionalTypes;
-}
+} // namespace
 
 #define FETCH_AND_RETURN_TYPE(TYPE, CACHE, EQUALS, ...) \
     auto it = llvm::find_if(CACHE, [&](const std::unique_ptr<TYPE>& t) { return EQUALS; }); \

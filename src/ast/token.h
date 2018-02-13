@@ -164,4 +164,4 @@ private:
 const char* toString(Token::Kind tokenKind);
 std::ostream& operator<<(std::ostream& stream, Token::Kind tokenKind);
 
-}
+} // namespace delta
