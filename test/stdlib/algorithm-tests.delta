@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 func main() {
     testInsertionSort();
@@ -22,7 +22,7 @@ func testInsertionSort() {
 
     sort(&a);
 
-    assert(ArrayRef(&a) == ArrayRef(&real), "Array is sorted");
+    assert(ArrayRef(&a) == ArrayRef(&real));
 }
 
 
@@ -42,12 +42,12 @@ func testQuickSort() {
 
     sort(&a);
 
-    assert(ArrayRef(&a) == ArrayRef(&real), "Array is sorted");
+    assert(ArrayRef(&a) == ArrayRef(&real));
 }
 
 func testMax() {
     let a = 7;
     let b = 9;
 
-    assert(*max(a, b) == 9, "max works");
+    assert(*max(a, b) == 9);
 }

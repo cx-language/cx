@@ -422,9 +422,30 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
     error(expr.getLocation(), "conversion from '", expr.getType(), "' to '", type, "' not supported");
 }
 
+void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location) {
+    condition = builder.CreateIsNull(condition, "assert.condition");
+    auto* function = builder.GetInsertBlock()->getParent();
+    auto* failBlock = llvm::BasicBlock::Create(ctx, "assert.fail", function);
+    auto* successBlock = llvm::BasicBlock::Create(ctx, "assert.success", function);
+    auto* puts = module.getOrInsertFunction("puts", llvm::Type::getInt32Ty(ctx), llvm::Type::getInt8PtrTy(ctx));
+    builder.CreateCondBr(condition, failBlock, successBlock);
+    builder.SetInsertPoint(failBlock);
+    auto message = llvm::join_items("", "Assertion failed at ", location.file, ":", std::to_string(location.line), ":",
+                                    std::to_string(location.column));
+    builder.CreateCall(puts, builder.CreateGlobalStringPtr(message));
+    builder.CreateCall(llvm::Intrinsic::getDeclaration(&module, llvm::Intrinsic::trap));
+    builder.CreateUnreachable();
+    builder.SetInsertPoint(successBlock);
+}
+
 llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit) {
     if (expr.isBuiltinConversion()) {
         return codegenBuiltinConversion(*expr.getArgs().front().getValue(), expr.getType());
+    }
+
+    if (expr.getFunctionName() == "assert") {
+        codegenAssert(codegenExpr(*expr.getArgs().front().getValue()), expr.getCallee().getLocation());
+        return nullptr;
     }
 
     if (expr.getReceiver() && expr.getReceiverType().removePointer().isArrayType()) {
@@ -648,15 +669,7 @@ llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
 
 llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {
     auto* value = codegenExpr(expr.getOperand());
-    auto* condition = builder.CreateIsNull(value, "isNull");
-    auto* function = builder.GetInsertBlock()->getParent();
-    auto* unwrapFailBlock = llvm::BasicBlock::Create(ctx, "unwrapFail", function);
-    auto* unwrapSuccessBlock = llvm::BasicBlock::Create(ctx, "unwrapSuccess", function);
-    builder.CreateCondBr(condition, unwrapFailBlock, unwrapSuccessBlock);
-    builder.SetInsertPoint(unwrapFailBlock);
-    builder.CreateCall(llvm::Intrinsic::getDeclaration(&module, llvm::Intrinsic::trap));
-    builder.CreateUnreachable();
-    builder.SetInsertPoint(unwrapSuccessBlock);
+    codegenAssert(value, expr.getLocation());
     return value;
 }
 

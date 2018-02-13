@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 func main() {
     testBytes();
@@ -19,11 +19,11 @@ func testBytes() {
     var i: uint = 0;
 
     for (let byte in f.bytes()) {
-        assert(real[i] == char(byte), "correct");
+        assert(real[i] == char(byte));
         i++;
     }
 
-    assert(i == 17, "testBytes right amount of lines read");
+    assert(i == 17);
 }
 
 func testLines() {
@@ -37,35 +37,35 @@ func testLines() {
     var i: uint = 0;
 
     for (let line in f.lines()) {
-        assert(*a[i] == StringRef(line), "line correct");
+        assert(*a[i] == StringRef(line));
         i++;
     }
 
-    assert(i == 3, "testLines right amount of lines read");
+    assert(i == 3);
 }
 
 func testReadlineTwice() {
     let f = InputFileStream("test.txt");
 
     var a = f.readLine();
-    assert(StringRef(a) == "this", "correct line");
+    assert(StringRef(a) == "this");
     a = f.readLine();
-    assert(StringRef(a) == "is the", "correct line");
+    assert(StringRef(a) == "is the");
 }
 
 func testMultipleEmptyLines() {
     let f = InputFileStream("corner.txt");
 
     var a = f.readLine();
-    assert(StringRef(a) == "", "empty line read");
+    assert(StringRef(a) == "");
 
     a = f.readLine();
-    assert(StringRef(a) == "", "empty line read");
+    assert(StringRef(a) == "");
 
     a = f.readLine();
-    assert(StringRef(a) == "", "empty line read");
+    assert(StringRef(a) == "");
 
-    assert(f.isEof(), "File is now at EOF");
+    assert(f.isEof());
 }
 
 func testIsEofWhileLoop() {
@@ -80,25 +80,25 @@ func testIsEofWhileLoop() {
 
     while (!f.isEof()) {
         let line = f.readLine();
-        assert(*a[i] == StringRef(line), "correct line");
+        assert(*a[i] == StringRef(line));
         i++;
     }
 
-    assert(i == 3, "correct number of lines read");
+    assert(i == 3);
 }
 
 func testWrite() {
     var f = FileStream("new.txt");
 
     let ret = f.write("best sentence\n");
-    assert(ret, "Successfully wrote to file");
+    assert(ret);
 
     f = FileStream("new.txt");
     var read = f.readLine();
 
     f.close();
     remove("new.txt");
-    assert(StringRef(read) == "best sentence", "Wrote to file");
+    assert(StringRef(read) == "best sentence");
 }
 
 func testInputStream() {
@@ -113,21 +113,21 @@ func testInputStream() {
     var i: uint = 0;
 
     for (let line in f.lines()) {
-        assert(*a[i] == StringRef(line), "line correct");
+        assert(*a[i] == StringRef(line));
         i++;
     }
 
-    assert(i == 3, "right amount of lines read");
+    assert(i == 3);
 }
 
 func testInputStreamIsOpenOnNonexistingFile() {
     let f = InputFileStream("doesntexist");
 
-    assert(!f.isOpen(), "File could not be opened");
+    assert(!f.isOpen());
 
     let f2 = FileStream("test.txt");
 
-    assert(f2.isOpen(), "File is open");
+    assert(f2.isOpen());
 }
 
 func testOutputStream() {
@@ -137,5 +137,5 @@ func testOutputStream() {
 
     f.close();
     remove("new.txt");
-    assert(ret, "Successfully wrote to file");
+    assert(ret);
 }

@@ -8,6 +8,7 @@ import "foo.h";
 // CHECK-DECL-DAG: %Foo = type { i32, i8* }
 // CHECK-DECL-DAG: declare i32 @getBar(%Foo*)
 
+// CHECK-LABEL: define i32 @main()
 func main() {
     // CHECK: call i32 @puts(i8*
     puts("foo bar");

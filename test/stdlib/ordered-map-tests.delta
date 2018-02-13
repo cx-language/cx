@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 func main() {
     testInsertAndContains();
@@ -14,38 +14,37 @@ func main() {
 
 func testInsertAndContains() {
     var m = OrderedMap<int, int>();
-    assert(m.size() == 0, "size ok");
+    assert(m.size() == 0);
 
     m.insert(7, 8);
-    assert(m.contains(7), "Map contains 7");
-
+    assert(m.contains(7));
 
     for (let i in 0..10) {
         m.insert(i, i);
-        assert(m.contains(i), "contains i");
+        assert(m.contains(i));
     }
 
-    assert(!m.contains(42), "doesnt contain random numbers");
-    assert(m.size() == 10, "contains 10 numbers");
+    assert(!m.contains(42));
+    assert(m.size() == 10);
 }
 
 func testInsertAndDelete() {
     var m = OrderedMap<int, int>();
 
     m.insert(42, 39);
-    assert(m.contains(42), "contains 42");
+    assert(m.contains(42));
 
     m.remove(42);
-    assert(!m.contains(42), "doesnt contain 42");
+    assert(!m.contains(42));
 
     for (let i in 42..79) {
         m.insert(i, 42);
     }
 
     for (let i in 42..79) {
-        assert(m.contains(i), "contains i");
+        assert(m.contains(i));
         m.remove(i);
-        assert(!m.contains(i), "doesnt contain i");
+        assert(!m.contains(i));
     }
 }
 
@@ -53,7 +52,7 @@ func testInsertAndSubscript() {
     var m = OrderedMap<int, int>();
 
     m.insert(42, 39);
-    assert(*m[42]! == 39, "gives correct value");
+    assert(*m[42]! == 39);
 
     m.remove(42);
 
@@ -62,10 +61,10 @@ func testInsertAndSubscript() {
     }
 
     for (let i in 42..79) {
-        assert(*m[i]! == i+7, "has correct value");
+        assert(*m[i]! == i+7);
 
         m.remove(i);
-        assert(m[i] == null, "is null after removal");
+        assert(m[i] == null);
     }
 }
 
@@ -76,14 +75,14 @@ func testLowerAndHigher() {
         m.insert(i, i+6);
     }
 
-    assert(m.lowerKey(0) == null, "lowerKey works correctly");
+    assert(m.lowerKey(0) == null);
     for (let i in 1..100) {
-        assert(*m.lowerKey(i)! == i-1, "lowerKey works correctly");
+        assert(*m.lowerKey(i)! == i-1);
     }
 
-    assert(m.higherKey(99) == null, "higherKey works correctly");
+    assert(m.higherKey(99) == null);
     for (let i in 0..99) {
-        assert(*m.higherKey(i)! == i+1, "higherKey works correctly");
+        assert(*m.higherKey(i)! == i+1);
     }
 }
 
@@ -95,17 +94,17 @@ func testFirstLast() {
     m.insert(1, 3);
     m.insert(53, 3);
 
-    assert(*m.first()! == 1, "first is 1");
-    assert(*m.last()! == 69, "last is 69");
+    assert(*m.first()! == 1);
+    assert(*m.last()! == 69);
 }
 
 func testEmptyMapFunctions() {
     var m = OrderedMap<int, int>();
 
-    assert(m.first() == null, "testEmptyMapFunctions - 1");
-    assert(m.last() == null, "testEmptyMapFunctions - 2");
-    assert(m.higherKey(48) == null, "testEmptyMapFunctions - 3");
-    assert(m.lowerKey(42) == null, "testEmptyMapFunctions - 4");
+    assert(m.first() == null);
+    assert(m.last() == null);
+    assert(m.higherKey(48) == null);
+    assert(m.lowerKey(42) == null);
 }
 
 
@@ -118,12 +117,12 @@ func testIteratorOrder() {
 
     var called = 0;
     for (let e in map) {
-        assert(e.key == called, "key has correct value");
-        assert(e.value == called - 12, "value has correct value");
+        assert(e.key == called);
+        assert(e.value == called - 12);
         called++;
     }
 
-    assert(called == 100, "Called 100 times.");
+    assert(called == 100);
 
     map = OrderedMap<int, int>();
 
@@ -134,12 +133,12 @@ func testIteratorOrder() {
     called = 0;
     // Still in correct order
     for (let e in map) {
-        assert(e.key == called, "key has correct value");
-        assert(e.value == 99 - called - 12, "value has correct value");
+        assert(e.key == called);
+        assert(e.value == 99 - called - 12);
         called++;
     }
 
-    assert(called == 100, "Called 100 times.");
+    assert(called == 100);
 
 
 }
@@ -151,7 +150,7 @@ func testEmptyMapIterator() {
     map.remove(1);
 
     for (let e in map) {
-        assert(false, "Shouldn't enter for-loop body when the map is empty");
+        assert(false);
     }
 }
 
@@ -164,8 +163,8 @@ func testUnitMapIterator() {
 
     for (let e in map) {
         count++;
-        assert(e.key == 1, "Map iterator returned an element that should not be in the map");
+        assert(e.key == 1);
     }
 
-    assert(count == 1, "Should enter for-loop body once when map contains one element");
+    assert(count == 1);
 }

@@ -579,6 +579,11 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::str
 
     auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
     if (mangledName.empty()) mangledName = mangle(decl);
+
+    if (decl.isExtern()) {
+        if (auto* function = module.getFunction(mangledName)) return function;
+    }
+
     auto* function = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, mangledName, &module);
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();

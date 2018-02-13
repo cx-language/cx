@@ -1,6 +1,0 @@
-func assert(condition: bool, testName: StringRef) {
-    if (!condition) {
-        printf("Test '%.*s' failed\n", testName.size(), testName.data())
-        exit(1)
-    }
-}

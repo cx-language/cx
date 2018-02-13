@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 // XFAIL: windows
 // testIterator() segfaults on Windows for an unknown reason.
 
@@ -20,8 +20,8 @@ func testInsert() {
 
     s.insert(42);
 
-    assert(s.contains(42), "Contains ok since it was added");
-    assert(!s.contains(39), "Doesn't contain something that isn't there");
+    assert(s.contains(42));
+    assert(!s.contains(39));
 }
 
 
@@ -29,10 +29,10 @@ func testRemoval() {
     var s = OrderedSet<int>();
 
     s.insert(42);
-    assert(s.contains(42), "Contains ok since it was added");
+    assert(s.contains(42));
 
     s.remove(42);
-    assert(!s.contains(42), "Doesn't contain ok anymore since it was removed");
+    assert(!s.contains(42));
 }
 
 func testDuplicates() {
@@ -40,10 +40,10 @@ func testDuplicates() {
 
     s.insert(42);
     s.insert(42);
-    assert(s.contains(42), "Contains ok since it was added");
+    assert(s.contains(42));
 
     s.remove(42);
-    assert(!s.contains(42), "Doesn't contain ok anymore since it was removed, even thogh it was added twice");
+    assert(!s.contains(42));
 }
 
 func testIterator() {
@@ -62,22 +62,22 @@ func testIterator() {
 
     for (let e in s) {
         if (*e == 1) {
-            assert(!a, "OrderedSet iterator returned element 1 twice");
+            assert(!a);
             a = true;
         } else if (*e == 2) {
-            assert(!bb, "OrderedSet iterator returned element 2 twice");
+            assert(!bb);
             bb = true;
         } else if (*e == 3) {
-            assert(!ccc, "OrderedSet iterator returned element 3 twice");
+            assert(!ccc);
             ccc = true;
         } else {
-            assert(false, "OrderedSet iterator returned an element that should not be in the OrderedSet");
+            assert(false);
         }
     }
 
-    assert(a, "OrderedSet iterator didn't return element 1");
-    assert(bb, "OrderedSet iterator didn't return element 2");
-    assert(ccc, "OrderedSet iterator didn't return element 3");
+    assert(a);
+    assert(bb);
+    assert(ccc);
 }
 
 func testEmptyOrderedSetIterator() {
@@ -87,7 +87,7 @@ func testEmptyOrderedSetIterator() {
     s.remove(79);
 
     for (let e in s) {
-        assert(false, "Shouldn't enter for-loop body when the OrderedSet is empty");
+        assert(false);
     }
 }
 
@@ -99,10 +99,10 @@ func testUnitOrderedSetIterator() {
 
     for (let e in s) {
         count++;
-        assert(*e == 79, "OrderedSet iterator returned an element that should not be in the OrderedSet");
+        assert(*e == 79);
     }
 
-    assert(count == 1, "Should enter for-loop body once when OrderedSet contains one element");
+    assert(count == 1);
 }
 
 func testLowerAndHigher() {
@@ -112,14 +112,14 @@ func testLowerAndHigher() {
         m.insert(i);
     }
 
-    assert(m.lower(0) == null, "lowerKey works correctly");
+    assert(m.lower(0) == null);
     for (let i in 1..100) {
-        assert(*m.lower(i)! == i-1, "lowerKey works correctly");
+        assert(*m.lower(i)! == i-1);
     }
 
-    assert(m.higher(99) == null, "higherKey works correctly");
+    assert(m.higher(99) == null);
     for (let i in 0..99) {
-        assert(*m.higher(i)! == i+1, "higherKey works correctly");
+        assert(*m.higher(i)! == i+1);
     }
 }
 
@@ -131,17 +131,17 @@ func testFirstLast() {
     s.insert(1);
     s.insert(53);
 
-    assert(*s.first()! == 1, "first is 1");
-    assert(*s.last()! == 69, "last is 69");
+    assert(*s.first()! == 1);
+    assert(*s.last()! == 69);
 }
 
 func testEmptyOrderedSetFunctions() {
     var s = OrderedSet<uint>();
 
-    assert(s.first() == null, "testEmptySetFunctions - 1");
-    assert(s.last() == null, "testEmptySetFunctions - 2");
-    assert(s.higher(48) == null, "testEmptySetFunctions - 3");
-    assert(s.lower(42) == null, "testEmptySetFunctions - 4");
+    assert(s.first() == null);
+    assert(s.last() == null);
+    assert(s.higher(48) == null);
+    assert(s.lower(42) == null);
 }
 
 func testIteratorOrder() {
@@ -153,11 +153,11 @@ func testIteratorOrder() {
 
     var called: uint = 0;
     for (let e in set) {
-        assert(*e == called, "Element has correct value");
+        assert(*e == called);
         called++;
     }
 
-    assert(called == 100, "Called 100 times.");
+    assert(called == 100);
 
     set = OrderedSet<uint>();
 
@@ -168,9 +168,9 @@ func testIteratorOrder() {
     called = 0;
     // Still in correct order
     for (let e in set) {
-        assert(*e == called, "Element has correct value");
+        assert(*e == called);
         called++;
     }
 
-    assert(called == 100, "Called 100 times.");
+    assert(called == 100);
 }

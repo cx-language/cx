@@ -1,32 +1,37 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
+// CHECK-DAG: @[[STRING_ID1:[0-9]+]] = private unnamed_addr constant [{{[0-9]+}} x i8] c"Assertion failed at {{.*}}unwrap.delta:18:58\00"
+// CHECK-DAG: @[[STRING_ID2:[0-9]+]] = private unnamed_addr constant [{{[0-9]+}} x i8] c"Assertion failed at {{.*}}unwrap.delta:35:8\00"
+
 extern func f() -> mutable void*?;
 
 func main() {
     // CHECK: %1 = call i8* @f()
-    // CHECK-NEXT: %isNull = icmp eq i8* %1, null
-    // CHECK-NEXT: br i1 %isNull, label %unwrapFail, label %unwrapSuccess
-    // CHECK: unwrapFail:                                       ; preds = %0
+    // CHECK-NEXT: %assert.condition = icmp eq i8* %1, null
+    // CHECK-NEXT: br i1 %assert.condition, label %assert.fail, label %assert.success
+    // CHECK: assert.fail:                                      ; preds = %0
+    // CHECK-NEXT: call i32 @puts(i8* getelementptr inbounds ([{{[0-9]+}} x i8], [{{[0-9]+}} x i8]* @[[STRING_ID1]], i32 0, i32 0))
     // CHECK-NEXT: call void @llvm.trap()
     // CHECK-NEXT: unreachable
-    // CHECK: unwrapSuccess:                                    ; preds = %0
+    // CHECK: assert.success:                                   ; preds = %0
     // CHECK-NEXT: store i8* %1, i8** %byte
     let byte: mutable uint8* = cast<mutable uint8*?>(f())!;
 
-    // CHECK-NEXT: %2 = call i8* @f()
-    // CHECK-NEXT: %3 = bitcast i8* %2 to [1 x i8]*
-    // CHECK-NEXT: store [1 x i8]* %3, [1 x i8]** %ptr
+    // CHECK-NEXT: %3 = call i8* @f()
+    // CHECK-NEXT: %4 = bitcast i8* %3 to [1 x i8]*
+    // CHECK-NEXT: store [1 x i8]* %4, [1 x i8]** %ptr
     let ptr: mutable uint8[1]*? = cast<mutable uint8[1]*?>(f());
 
     // CHECK-NEXT: %ptr1 = load [1 x i8]*, [1 x i8]** %ptr
-    // CHECK-NEXT: %isNull2 = icmp eq [1 x i8]* %ptr1, null
-    // CHECK-NEXT: br i1 %isNull2, label %unwrapFail3, label %unwrapSuccess4
-    // CHECK: unwrapFail3:                                      ; preds = %unwrapSuccess
+    // CHECK-NEXT: %assert.condition2 = icmp eq [1 x i8]* %ptr1, null
+    // CHECK-NEXT: br i1 %assert.condition2, label %assert.fail3, label %assert.success4
+    // CHECK: assert.fail3:                                     ; preds = %assert.success
+    // CHECK-NEXT: call i32 @puts(i8* getelementptr inbounds ([{{[0-9]+}} x i8], [{{[0-9]+}} x i8]* @[[STRING_ID2]], i32 0, i32 0))
     // CHECK-NEXT: call void @llvm.trap()
     // CHECK-NEXT: unreachable
-    // CHECK: unwrapSuccess4:                                   ; preds = %unwrapSuccess
-    // CHECK-NEXT: %4 = getelementptr [1 x i8], [1 x i8]* %ptr1, i32 0, i32 0
-    // CHECK-NEXT: store i8 1, i8* %4
+    // CHECK: assert.success4:                                  ; preds = %assert.success
+    // CHECK-NEXT: %6 = getelementptr [1 x i8], [1 x i8]* %ptr1, i32 0, i32 0
+    // CHECK-NEXT: store i8 1, i8* %6
     ptr![0] = 1;
 
     // CHECK-NEXT: ret

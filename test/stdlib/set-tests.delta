@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 func main() {
     testInsert();
@@ -14,8 +14,8 @@ func testInsert() {
 
     s.insert("ok");
 
-    assert(s.contains("ok"), "Contains ok since it was added");
-    assert(!s.contains("lol"), "Doesn't contain something that isn't there");
+    assert(s.contains("ok"));
+    assert(!s.contains("lol"));
 }
 
 
@@ -23,10 +23,10 @@ func testRemoval() {
     var s = Set<StringRef>();
 
     s.insert("ok");
-    assert(s.contains("ok"), "Contains ok since it was added");
+    assert(s.contains("ok"));
 
     s.remove("ok");
-    assert(!s.contains("ok"), "Doesn't contain ok anymore since it was removed");
+    assert(!s.contains("ok"));
 }
 
 func testDuplicates() {
@@ -34,10 +34,10 @@ func testDuplicates() {
 
     s.insert("ok");
     s.insert("ok");
-    assert(s.contains("ok"), "Contains ok since it was added");
+    assert(s.contains("ok"));
 
     s.remove("ok");
-    assert(!s.contains("ok"), "Doesn't contain ok anymore since it was removed, even thogh it was added twice");
+    assert(!s.contains("ok"));
 }
 
 func testIterator() {
@@ -56,22 +56,22 @@ func testIterator() {
 
     for (let e in s) {
         if (*e == "a") {
-            assert(!a, "Set iterator returned element \"a\" twice");
+            assert(!a);
             a = true;
         } else if (*e == "bb") {
-            assert(!bb, "Set iterator returned element \"bb\" twice");
+            assert(!bb);
             bb = true;
         } else if (*e == "ccc") {
-            assert(!ccc, "Set iterator returned element \"ccc\" twice");
+            assert(!ccc);
             ccc = true;
         } else {
-            assert(false, "Set iterator returned an element that should not be in the set");
+            assert(false);
         }
     }
 
-    assert(a, "Set iterator didn't return element \"a\"");
-    assert(bb, "Set iterator didn't return element \"bb\"");
-    assert(ccc, "Set iterator didn't return element \"ccc\"");
+    assert(a);
+    assert(bb);
+    assert(ccc);
 }
 
 func testEmptySetIterator() {
@@ -81,7 +81,7 @@ func testEmptySetIterator() {
     s.remove("foo");
 
     for (let e in s) {
-        assert(false, "Shouldn't enter for-loop body when the set is empty");
+        assert(false);
     }
 }
 
@@ -93,8 +93,8 @@ func testUnitSetIterator() {
 
     for (let e in s) {
         count++;
-        assert(*e == "foo", "Set iterator returned an element that should not be in the set");
+        assert(*e == "foo");
     }
 
-    assert(count == 1, "Should enter for-loop body once when set contains one element");
+    assert(count == 1);
 }

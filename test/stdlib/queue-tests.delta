@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 func main() {
     testPushPop();
@@ -10,47 +10,47 @@ func main() {
 func testPushPop() {
     var q = Queue<int>();
 
-    assert(q.size() == 0, "contains nothing");
+    assert(q.size() == 0);
     q.push(23);
     q.push(48);
 
-    assert(q.size() == 2, "contains 2 items");
+    assert(q.size() == 2);
 
     var elem = q.pop();
-    assert(q.size() == 1, "contains 1 item");
-    assert(elem == 23, "FIFO");
+    assert(q.size() == 1);
+    assert(elem == 23);
 
     elem = q.pop();
 
-    assert(elem == 48, "FIFO");
-    assert(q.size() == 0, "empty");
+    assert(elem == 48);
+    assert(q.size() == 0);
 }
 
 func testEmpty() {
     var q = Queue<StringRef>();
 
-    assert(q.isEmpty(), "is empty");
+    assert(q.isEmpty());
 
     q.push("foo");
-    assert(!q.isEmpty(), "is not empty");
+    assert(!q.isEmpty());
     q.push("bar");
-    assert(!q.isEmpty(), "is still not empty");
+    assert(!q.isEmpty());
     q.pop();
     q.pop();
-    assert(q.isEmpty(), "is empty again");
+    assert(q.isEmpty());
 }
 
 func testPushAfterPop() {
     var q = Queue<StringRef>();
 
     q.push("foo");
-    assert(q.size() == 1, "testPushAfterPop - 1");
+    assert(q.size() == 1);
     q.pop();
-    assert(q.size() == 0, "testPushAfterPop - 2");
+    assert(q.size() == 0);
     q.push("bar");
-    assert(q.size() == 1, "testPushAfterPop - 3");
+    assert(q.size() == 1);
     q.pop();
-    assert(q.size() == 0, "testPushAfterPop - 4");
+    assert(q.size() == 0);
 }
 
 func testFirst() {
@@ -58,8 +58,8 @@ func testFirst() {
 
     q.push("foo");
     q.push("bar");
-    assert(*q.first() == "foo", "testFirst - 1");
-    assert(q.pop() == "foo", "testFirst - 2");
-    assert(*q.first() == "bar", "testFirst - 3");
-    assert(q.pop() == "bar", "testFirst - 4");
+    assert(*q.first() == "foo");
+    assert(q.pop() == "foo");
+    assert(*q.first() == "bar");
+    assert(q.pop() == "bar");
 }

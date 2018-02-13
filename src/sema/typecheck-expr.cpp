@@ -957,6 +957,13 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         typecheckExpr(*arg.getValue());
     }
 
+    if (expr.getFunctionName() == "assert") {
+        ParamDecl assertParam(Type::getBool(), "", SourceLocation());
+        validateArgs(expr, false, assertParam, false, expr.getFunctionName(), expr.getLocation());
+        validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
+        return Type::getVoid();
+    }
+
     Decl* decl;
 
     if (expr.getCallee().isMemberExpr()) {

@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 class C: Comparable {
 
@@ -17,17 +17,17 @@ func main() {
     var a = C(6);
     var b = C(99);
 
-    assert(a <= b, "Comparison works");
-    assert(!(a >= b), "Comparison works");
-    assert(!(a > b), "Comparison works");
-    assert(a < b, "Comparison works");
-    assert(!(a == b), "Comparison works");
-    assert(a != b, "Comparison works");
+    assert(a <= b);
+    assert(!(a >= b));
+    assert(!(a > b));
+    assert(a < b);
+    assert(!(a == b));
+    assert(a != b);
 
-    assert(&a <= &b, "Comparison works");
-    assert(!(&a >= &b), "Comparison works");
-    assert(!(&a > &b), "Comparison works");
-    assert(&a < &b, "Comparison works");
-    assert(!(&a == &b), "Comparison works");
-    assert(&a != &b, "Comparison works");
+    assert(&a <= &b);
+    assert(!(&a >= &b));
+    assert(!(&a > &b));
+    assert(&a < &b);
+    assert(!(&a == &b));
+    assert(&a != &b);
 }

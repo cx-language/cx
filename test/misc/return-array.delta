@@ -1,7 +1,7 @@
 // RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:Bar
 
-extern func puts(s: uint8*);
+extern func puts(s: uint8*) -> int;
 
 func foo() -> uint8[4] {
     var buffer: uint8[4] = undefined;

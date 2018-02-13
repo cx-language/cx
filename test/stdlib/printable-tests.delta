@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 func main() {
     testCustomPrintableClass();
@@ -21,5 +21,5 @@ class A: Printable {
 }
 
 func testCustomPrintableClass() {
-    assert(StringRef(A("foo", "bar").toString()) == "foo+bar", "testCustomPrintableClass");
+    assert(StringRef(A("foo", "bar").toString()) == "foo+bar");
 }

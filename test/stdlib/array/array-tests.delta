@@ -1,4 +1,4 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 class C {
     let i: int;
@@ -24,27 +24,27 @@ func main() {
 
 func testArrayInsertionAndRemoval() {
     var a = Array<C>();
-    assert(a.size() == 0 && a.capacity() >= 0, "initial size and capacity are valid");
+    assert(a.size() == 0 && a.capacity() >= 0);
 
     a.push(C(1));
-    assert(a[0].i == 1, "appended element has correct value");
+    assert(a[0].i == 1);
 
     a.push(C(2));
     a.push(C(3));
     a.removeAt(1);
-    assert(a[0].i == 1 && a[1].i == 3, "elements after removed element are shifted towards beginning");
+    assert(a[0].i == 1 && a[1].i == 3);
 
     a.removeLast();
     a.push(C(4));
-    assert(a.size() == 2 && a.capacity() >= 2, "size and capacity are valid after adding and removing elements");
+    assert(a.size() == 2 && a.capacity() >= 2);
 }
 
 func testArrayInitFromLiteral() {
     let a = Array([1, 2, 3]);
 
-    assert(*a[0] == 1, "testArrayInitFromLiteral - 1");
-    assert(*a[1] == 2, "testArrayInitFromLiteral - 2");
-    assert(*a[2] == 3, "testArrayInitFromLiteral - 3");
+    assert(*a[0] == 1);
+    assert(*a[1] == 2);
+    assert(*a[2] == 3);
 }
 
 func testArrayIterator() {
@@ -54,15 +54,15 @@ func testArrayIterator() {
 
     var iterator = array.iterator();
 
-    assert(iterator.hasValue(), "testArrayIterator: hasValue() - 1");
-    assert(iterator.value().i == 1, "testArrayIterator: value() - 1");
+    assert(iterator.hasValue());
+    assert(iterator.value().i == 1);
 
     iterator.increment();
-    assert(iterator.hasValue(), "testArrayIterator: hasValue() - 2");
-    assert(iterator.value().i == 4, "testArrayIterator: value() - 2");
+    assert(iterator.hasValue());
+    assert(iterator.value().i == 4);
 
     iterator.increment();
-    assert(!iterator.hasValue(), "testArrayIterator: hasValue() - 3");
+    assert(!iterator.hasValue());
 }
 
 func testArrayMutatingIteration() {
@@ -75,9 +75,9 @@ func testArrayMutatingIteration() {
         *e++;
     }
 
-    assert(*a[0] == 2, "mutating iteration modified elements in the array");
-    assert(*a[1] == 3, "mutating iteration modified elements in the array");
-    assert(*a[2] == 4, "mutating iteration modified elements in the array");
+    assert(*a[0] == 2);
+    assert(*a[1] == 3);
+    assert(*a[2] == 4);
 }
 
 func testArrayEnumeratedIterator() {
@@ -88,33 +88,33 @@ func testArrayEnumeratedIterator() {
 
     var iterator = a.enumerate();
 
-    assert(iterator.hasValue(), "testArrayEnumeratedIterator: hasValue() - 1");
-    assert(iterator.value().index == 0, "testArrayEnumeratedIterator: value().index - 1");
-    assert(*iterator.value().value == 9000, "testArrayEnumeratedIterator: value().value - 1");
+    assert(iterator.hasValue());
+    assert(iterator.value().index == 0);
+    assert(*iterator.value().value == 9000);
 
     iterator.increment();
-    assert(iterator.hasValue(), "testArrayEnumeratedIterator: hasValue() - 2");
-    assert(iterator.value().index == 1, "testArrayEnumeratedIterator: value().index - 2");
-    assert(*iterator.value().value == -1234, "testArrayEnumeratedIterator: value().value - 2");
+    assert(iterator.hasValue());
+    assert(iterator.value().index == 1);
+    assert(*iterator.value().value == -1234);
 
     iterator.increment();
-    assert(iterator.hasValue(), "testArrayEnumeratedIterator: hasValue() - 3");
-    assert(iterator.value().index == 2, "testArrayEnumeratedIterator: value().index - 3");
-    assert(*iterator.value().value == 0xcafe, "testArrayEnumeratedIterator: value().value - 3");
+    assert(iterator.hasValue());
+    assert(iterator.value().index == 2);
+    assert(*iterator.value().value == 0xcafe);
 
     iterator.increment();
-    assert(iterator.value().index == 3, "testArrayEnumeratedIterator: value().index - 4");
-    assert(!iterator.hasValue(), "testArrayEnumeratedIterator: hasValue() - 4");
+    assert(iterator.value().index == 3);
+    assert(!iterator.hasValue());
 }
 
 func testEmpty() {
     var a = Array<int>();
 
-    assert(a.isEmpty(), "The array is empty");
+    assert(a.isEmpty());
 
     a.push(7);
 
-    assert(!a.isEmpty(), "The array is now not empty");
+    assert(!a.isEmpty());
 }
 
 func testMap() {
@@ -125,11 +125,11 @@ func testMap() {
     a.push(4);
 
     let b = a.map((value: int*) -> *value > 2);
-    assert(b.size() == 4, "testMap 1");
-    assert(*b[0] == false, "testMap 2");
-    assert(*b[1] == false, "testMap 3");
-    assert(*b[2] == true, "testMap 4");
-    assert(*b[3] == true, "testMap 5");
+    assert(b.size() == 4);
+    assert(*b[0] == false);
+    assert(*b[1] == false);
+    assert(*b[2] == true);
+    assert(*b[3] == true);
 }
 
 func testFilter() {
@@ -140,9 +140,9 @@ func testFilter() {
     a.push(4);
 
     let b = a.filter((value: int*) -> *value % 2 == 0);
-    assert(b.size() == 2, "testFilter 1");
-    assert(*b[0] == 2, "testFilter 2");
-    assert(*b[1] == 4, "testFilter 3");
+    assert(b.size() == 2);
+    assert(*b[0] == 2);
+    assert(*b[1] == 4);
 }
 
 var deinits = 0;
@@ -168,5 +168,5 @@ func testElementDestruction() {
     a.removeLast();
     a.removeFirst();
 
-    assert(deinits == 5, "testElementDestruction: wrong number of deinit calls");
+    assert(deinits == 5);
 }

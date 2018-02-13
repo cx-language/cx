@@ -1,9 +1,9 @@
-// RUN: check_exit_status 0 %delta run -Werror %s test-support.delta
+// RUN: check_exit_status 0 %delta run -Werror %s
 
 func main() {
-    assert("abc" == "abc", "equals");
-    assert(!("abc" == "not"), "not equals");
-    assert("abc" < "bcd", "less");
+    assert("abc" == "abc");
+    assert(!("abc" == "not"));
+    assert("abc" < "bcd");
 
     testStringIterator();
     testFind();
@@ -15,56 +15,56 @@ func main() {
 func testStringIterator() {
     var iterator = "xy".iterator();
 
-    assert(iterator.hasValue(), "testStringIterator: hasValue() - 1");
-    assert(iterator.value() == 'x', "testStringIterator: value() - 1");
+    assert(iterator.hasValue());
+    assert(iterator.value() == 'x');
 
     iterator.increment();
-    assert(iterator.hasValue(), "testStringIterator: hasValue() - 2");
-    assert(iterator.value() == 'y', "testStringIterator: value() - 2");
+    assert(iterator.hasValue());
+    assert(iterator.value() == 'y');
 
     iterator.increment();
-    assert(!iterator.hasValue(), "testStringIterator: hasValue() - 3");
+    assert(!iterator.hasValue());
 }
 
 func testFind() {
     var s = String("word");
 
     // Start from beginning
-    assert(s.find('w') == 0, "The index of w is 0");
-    assert(s.find('o') == 1, "The index of o is 1");
-    assert(s.find('r') == 2, "The index of r is 2");
-    assert(s.find('d') == 3, "The index of d is 3");
+    assert(s.find('w') == 0);
+    assert(s.find('o') == 1);
+    assert(s.find('r') == 2);
+    assert(s.find('d') == 3);
 
     // Start from index
 
-    assert(s.find('w', 1) == -1, "Not found if starting from later");
-    assert(s.find('d', 2) == 3, "Still found if starting from 2");
+    assert(s.find('w', 1) == -1);
+    assert(s.find('d', 2) == 3);
 }
 
 func testSubstr() {
     var s = String("word");
 
-    assert(s.substr(0..1) == "w", "Substring works correctly");
-    assert(s.substr(0..2) == "wo", "Substring works correctly");
-    assert(s.substr(0..3) == "wor", "Substring works correctly");
-    assert(s.substr(0..4) == "word", "Substring works correctly");
-    assert(s.substr(1..4) == "ord", "Substring works correctly");
-    assert(s.substr(2..4) == "rd", "Substring works correctly");
-    assert(s.substr(1..3) == "or", "Substring works correctly");
-    assert(s.substr(2..3) == "r", "Substring works correctly");
+    assert(s.substr(0..1) == "w");
+    assert(s.substr(0..2) == "wo");
+    assert(s.substr(0..3) == "wor");
+    assert(s.substr(0..4) == "word");
+    assert(s.substr(1..4) == "ord");
+    assert(s.substr(2..4) == "rd");
+    assert(s.substr(1..3) == "or");
+    assert(s.substr(2..3) == "r");
 
 
     var s2 = String("this is the best sentence");
 
-    assert(s2.substr(0..4) == "this" ,"Works with longer sentences");
-    assert(s2.substr(5..7) == "is", "Works with longer sentences");
-    assert(s2.substr(8..11) == "the", "Works with longer sentences");
-    assert(s2.substr(12..16) == "best", "Works with longer sentences");
-    assert(s2.substr(17..25) == "sentence", "Works with longer sentences");
+    assert(s2.substr(0..4) == "this");
+    assert(s2.substr(5..7) == "is");
+    assert(s2.substr(8..11) == "the");
+    assert(s2.substr(12..16) == "best");
+    assert(s2.substr(17..25) == "sentence");
 
     var s3 = String("best");
 
-    assert(s3.substr(0..0) == "", "Works on empty intervals");
+    assert(s3.substr(0..0) == "");
 }
 
 func testSplit() {
@@ -72,13 +72,13 @@ func testSplit() {
 
     var words = s.split();
 
-    assert(*words[0] == "this", "The 0 words match");
-    assert(*words[1] == "is", "The 1 words match");
-    assert(*words[2] == "the", "The 2 words match");
-    assert(*words[3] == "best", "The 3 words match");
-    assert(*words[4] == "sentence", "The 4 words match");
+    assert(*words[0] == "this");
+    assert(*words[1] == "is");
+    assert(*words[2] == "the");
+    assert(*words[3] == "best");
+    assert(*words[4] == "sentence");
 
-    assert(words.size() == 5, "split into 5 parts");
+    assert(words.size() == 5);
 }
 
 func testOtherSplit() {
@@ -86,40 +86,40 @@ func testOtherSplit() {
 
     var words = s.split(',');
 
-    assert(*words[0] == "this", "The 0 words match");
-    assert(*words[1] == "sentence", "The 1 words match");
-    assert(*words[2] == "is", "The 2 words match");
-    assert(*words[3] == "comma", "The 3 words match");
-    assert(*words[4] == "separated", "The 4 words match");
+    assert(*words[0] == "this");
+    assert(*words[1] == "sentence");
+    assert(*words[2] == "is");
+    assert(*words[3] == "comma");
+    assert(*words[4] == "separated");
 
-    assert(words.size() == 5, "split into 5 parts");
+    assert(words.size() == 5);
 
 
     var s2 = String(",,1,,2");
 
     words = s2.split(',');
 
-    assert(*words[0] == "", "empty 1 works");
-    assert(*words[1] == "", "empty 2 works");
-    assert(*words[2] == "1", "empty 3 works");
-    assert(*words[3] == "", "empty 4 works");
-    assert(*words[4] == "2", "empty 5 works");
+    assert(*words[0] == "");
+    assert(*words[1] == "");
+    assert(*words[2] == "1");
+    assert(*words[3] == "");
+    assert(*words[4] == "2");
 
-    assert(words.size() == 5, "Split array is the right size");
+    assert(words.size() == 5);
 
 
     var s3 = String(",,,b,a,,,");
 
     words = s3.split(',');
 
-    assert(*words[0] == "", "empty 1 works");
-    assert(*words[1] == "", "empty 2 works");
-    assert(*words[2] == "", "empty 3 works");
-    assert(*words[3] == "b", "empty 4 works");
-    assert(*words[4] == "a", "empty 5 works");
-    assert(*words[5] == "", "empty 6 works");
-    assert(*words[6] == "", "empty 7 works");
-    assert(*words[7] == "", "empty 8 works");
+    assert(*words[0] == "");
+    assert(*words[1] == "");
+    assert(*words[2] == "");
+    assert(*words[3] == "b");
+    assert(*words[4] == "a");
+    assert(*words[5] == "");
+    assert(*words[6] == "");
+    assert(*words[7] == "");
 
-    assert(words.size() == 8, "Split array the correct size");
+    assert(words.size() == 8);
 }

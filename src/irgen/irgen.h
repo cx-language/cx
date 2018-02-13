@@ -96,6 +96,7 @@ private:
     llvm::Value* codegenBinaryExpr(const BinaryExpr& expr);
     llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType);
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
+    void codegenAssert(llvm::Value* condition, SourceLocation location);
     llvm::Value* codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit = nullptr);
     llvm::Value* codegenCastExpr(const CastExpr& expr);
     llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);
