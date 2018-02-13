@@ -1,0 +1,32 @@
+// RUN: %delta -typecheck %s %p/a.delta | %FileCheck %s
+// RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta
+// RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta -check-prefix=CHECK-PRIVATE-IN-PUBLIC-DECL
+
+func main() {
+    // TODO: Fix source location:
+    // CHECK: [[@LINE+1]]:9: warning: 'A' is private
+    var a: A = undefined;
+
+    // CHECK: [[@LINE+1]]:9: warning: 'A' is private
+    a = A();
+}
+
+// TODO: Fix source location:
+// CHECK: [[@LINE+1]]:8: warning: 'A' is private
+func f(a: A) {}
+
+// TODO: Fix source location:
+// CHECK: [[@LINE+1]]:8: warning: 'A' is private
+func g(a: mutable A*?) {}
+
+// TODO: Fix source location:
+// CHECK: [[@LINE+1]]:6: warning: 'A' is private
+func h() -> A*? {
+    return null;
+}
+
+class B {
+    // TODO: Fix source location:
+    // CHECK: [[@LINE+1]]:9: warning: 'A' is private
+    var a: A;
+}

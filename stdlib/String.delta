@@ -113,7 +113,7 @@ class String: Comparable, OutputStream, Printable {
     // Returns the substring of the string in the given range, [inclusive, exclusive]
     func substr(range: Range<int>) -> StringRef {
         if (range.end > int(size())) {
-            _indexOutOfBounds(range.end);
+            indexOutOfBounds(range.end);
         }
         return StringRef(characters[uint(range.start)], uint(range.size()));
     }
@@ -121,7 +121,7 @@ class String: Comparable, OutputStream, Printable {
     // Returns the substring of the string in the given range, [inclusive, exclusive]
     func substr(range: Range<uint>) -> StringRef {
         if (range.end > size()) {
-            _indexOutOfBounds(range.end);
+            indexOutOfBounds(range.end);
         }
         return StringRef(characters[range.start], range.size());
     }
@@ -165,12 +165,12 @@ class String: Comparable, OutputStream, Printable {
         return StringRef(this).compare(StringRef(other));
     }
 
-    func _indexOutOfBounds(index: uint) {
+    private func indexOutOfBounds(index: uint) {
         printf("Range index %u is out of bounds, size is %u\n", index, size());
         fatalError();
     }
 
-    func _indexOutOfBounds(index: int) {
+    private func indexOutOfBounds(index: int) {
         printf("Range index %d is out of bounds, size is %u\n", index, size());
         fatalError();
     }

@@ -26,15 +26,15 @@ func swap<E>(a: mutable E*, b: mutable E*) {
 /// Sorts an array. Uses insertion sort if the array is small enough, and quickSort otherwise.
 func sort<E: Comparable>(array: mutable Array<E>*) {
     if (array.size() <= 32) {
-        _insertionSort(array);
+        insertionSort(array);
     } else {
-        _quickSort(array, 0, array.size() - 1);
+        quickSort(array, 0, array.size() - 1);
     }
 }
 
 /// Private members
 
-func _partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) -> uint {
+private func partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) -> uint {
     var pivot = arr[high];
     var i = (low - 1);
 
@@ -51,21 +51,21 @@ func _partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) ->
 }
 
 /// Quicksorts the given array, in place. Not stable.
-func _quickSort<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) {
+private func quickSort<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) {
     if (low < high) {
-        let index = _partition<E>(arr, low, high);
+        let index = partition<E>(arr, low, high);
 
         if (low < index) {
-            _quickSort(arr, low, index - 1);
+            quickSort(arr, low, index - 1);
         }
         if (index < high) {
-            _quickSort(arr, index + 1, high);
+            quickSort(arr, index + 1, high);
         }
     }
 }
 
 /// Insertion sorts the given array, in place. Good for small arrays
-func _insertionSort<E: Comparable>(arr: mutable Array<E>*) {
+private func insertionSort<E: Comparable>(arr: mutable Array<E>*) {
     var i: uint = 1;
     while (i < arr.size()) {
         var j: uint = i;

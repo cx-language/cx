@@ -832,7 +832,7 @@ std::unique_ptr<ReturnStmt> Parser::parseReturnStmt() {
 /// mutability-specifier ::= 'let' | 'var'
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'undefined'
-std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* parent) {
+std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel) {
     bool isMutable = parse({ Token::Let, Token::Var }) == Token::Var;
     auto name = parse(Token::Identifier);
 
@@ -854,13 +854,13 @@ std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* pa
         parseStmtTerminator();
     }
 
-    return llvm::make_unique<VarDecl>(type, name.getString(), std::move(initializer), parent, *currentModule,
-                                      name.getLocation());
+    return llvm::make_unique<VarDecl>(type, name.getString(), std::move(initializer), parent, accessLevel,
+                                      *currentModule, name.getLocation());
 }
 
 /// var-stmt ::= var-decl
 std::unique_ptr<VarStmt> Parser::parseVarStmt(Decl* parent) {
-    return llvm::make_unique<VarStmt>(parseVarDecl(true, parent));
+    return llvm::make_unique<VarStmt>(parseVarDecl(true, parent, AccessLevel::None));
 }
 
 /// call-stmt ::= call-expr ('\n' | ';')
@@ -945,7 +945,7 @@ std::unique_ptr<ForStmt> Parser::parseForStmt(Decl* parent) {
     auto location = getCurrentLocation();
     consumeToken();
     parse(Token::LeftParen);
-    auto variable = parseVarDecl(false, parent);
+    auto variable = parseVarDecl(false, parent, AccessLevel::None);
     parse(Token::In);
     auto range = parseExpr();
     parse(Token::RightParen);
@@ -1132,7 +1132,7 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
 }
 
 /// function-proto ::= 'func' id param-list ('->' type)?
-std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl,
+std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
                                                          std::vector<GenericParamDecl>* genericParams) {
     ASSERT(currentToken() == Token::Func);
     consumeToken();
@@ -1171,24 +1171,27 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl
     FunctionProto proto(std::move(name), std::move(params), std::move(returnType), isVariadic, isExtern);
 
     if (receiverTypeDecl) {
-        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<Type>(), nameLocation);
+        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<Type>(), accessLevel,
+                                             nameLocation);
     } else {
-        return llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), *currentModule, nameLocation);
+        return llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), accessLevel, *currentModule,
+                                               nameLocation);
     }
 }
 
 /// function-template-proto ::= 'func' id template-param-list param-list ('->' type)?
 /// template-param-list ::= '<' template-param-decls '>'
 /// template-param-decls ::= id | id ',' template-param-decls
-std::unique_ptr<FunctionTemplate> Parser::parseFunctionTemplateProto(TypeDecl* receiverTypeDecl) {
+std::unique_ptr<FunctionTemplate> Parser::parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel) {
     std::vector<GenericParamDecl> genericParams;
-    auto decl = parseFunctionProto(false, receiverTypeDecl, &genericParams);
-    return llvm::make_unique<FunctionTemplate>(std::move(genericParams), std::move(decl));
+    auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, &genericParams);
+    return llvm::make_unique<FunctionTemplate>(std::move(genericParams), std::move(decl), accessLevel);
 }
 
 /// function-decl ::= function-proto '{' stmt* '}'
-std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, bool requireBody) {
-    auto decl = parseFunctionProto(false, receiverTypeDecl, nullptr);
+std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
+                                                        bool requireBody) {
+    auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, nullptr);
 
     if (requireBody || currentToken() == Token::LeftBrace) {
         parse(Token::LeftBrace);
@@ -1204,8 +1207,8 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(TypeDecl* receiverTypeDe
 }
 
 /// function-template-decl ::= function-template-proto '{' stmt* '}'
-std::unique_ptr<FunctionTemplate> Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl) {
-    auto decl = parseFunctionTemplateProto(receiverTypeDecl);
+std::unique_ptr<FunctionTemplate> Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel) {
+    auto decl = parseFunctionTemplateProto(receiverTypeDecl, accessLevel);
     parse(Token::LeftBrace);
     decl->getFunctionDecl()->setBody(parseStmtsUntil(Token::RightBrace, decl.get()));
     parse(Token::RightBrace);
@@ -1216,16 +1219,16 @@ std::unique_ptr<FunctionTemplate> Parser::parseFunctionTemplate(TypeDecl* receiv
 std::unique_ptr<FunctionDecl> Parser::parseExternFunctionDecl() {
     ASSERT(currentToken() == Token::Extern);
     consumeToken();
-    auto decl = parseFunctionProto(true, nullptr, nullptr);
+    auto decl = parseFunctionProto(true, nullptr, AccessLevel::Default, nullptr);
     parseStmtTerminator();
     return decl;
 }
 
 /// init-decl ::= 'init' param-list '{' stmt* '}'
-std::unique_ptr<InitDecl> Parser::parseInitDecl(TypeDecl& receiverTypeDecl) {
+std::unique_ptr<InitDecl> Parser::parseInitDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel) {
     auto initLocation = parse(Token::Init).getLocation();
     auto params = parseParamList(nullptr, true);
-    auto decl = llvm::make_unique<InitDecl>(receiverTypeDecl, std::move(params), initLocation);
+    auto decl = llvm::make_unique<InitDecl>(receiverTypeDecl, std::move(params), accessLevel, initLocation);
     parse(Token::LeftBrace);
     decl->setBody(parseStmtsUntil(Token::RightBrace, decl.get()));
     parse(Token::RightBrace);
@@ -1246,7 +1249,7 @@ std::unique_ptr<DeinitDecl> Parser::parseDeinitDecl(TypeDecl& receiverTypeDecl) 
 }
 
 /// field-decl ::= ('let' | 'var') id ':' type ('\n' | ';')
-FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl) {
+FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel) {
     expect({ Token::Let, Token::Var }, "in field declaration");
     bool isMutable = consumeToken() == Token::Var;
     auto name = parse(Token::Identifier);
@@ -1258,14 +1261,14 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl) {
     type.setMutable(isMutable);
 
     parseStmtTerminator();
-    return FieldDecl(type, std::move(name.getString()), typeDecl, name.getLocation());
+    return FieldDecl(type, std::move(name.getString()), typeDecl, accessLevel, name.getLocation());
 }
 
 /// type-template-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
-std::unique_ptr<TypeTemplate> Parser::parseTypeTemplate() {
+std::unique_ptr<TypeTemplate> Parser::parseTypeTemplate(AccessLevel accessLevel) {
     std::vector<GenericParamDecl> genericParams;
-    auto typeDecl = parseTypeDecl(&genericParams);
-    return llvm::make_unique<TypeTemplate>(std::move(genericParams), std::move(typeDecl));
+    auto typeDecl = parseTypeDecl(&genericParams, accessLevel);
+    return llvm::make_unique<TypeTemplate>(std::move(genericParams), std::move(typeDecl), accessLevel);
 }
 
 Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams) {
@@ -1286,7 +1289,7 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
 /// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}'
 /// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl
-std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams) {
+std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     TypeTag tag;
     switch (consumeToken()) {
         case Token::Class:
@@ -1306,39 +1309,58 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
     auto name = parseTypeHeader(interfaces, genericParams);
 
     auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::vector<Type>(), std::move(interfaces),
-                                                *currentModule, name.getLocation());
+                                                typeAccessLevel, *currentModule, name.getLocation());
     parse(Token::LeftBrace);
 
     while (currentToken() != Token::RightBrace) {
+        AccessLevel accessLevel = AccessLevel::Default;
+        bool isMutating = false;
+
+    start:
         switch (currentToken()) {
             case Token::Mutating:
+                if (isMutating) {
+                    warning(getCurrentLocation(), "duplicate 'mutating' specifier");
+                }
+                isMutating = true;
                 consumeToken();
-                expect(Token::Func, "after 'mutating'");
-                LLVM_FALLTHROUGH;
+                goto start;
+            case Token::Private:
+                if (tag == TypeTag::Interface) {
+                    warning(getCurrentLocation(), "interface members cannot be private");
+                }
+                if (accessLevel != AccessLevel::Default) {
+                    warning(getCurrentLocation(), "duplicate access specifier");
+                }
+                accessLevel = AccessLevel::Private;
+                consumeToken();
+                goto start;
             case Token::Func: {
-                bool isMutating = lookAhead(-1) == Token::Mutating;
                 auto requireBody = tag != TypeTag::Interface;
 
                 if (lookAhead(2) == Token::Less) {
-                    auto decl = parseFunctionTemplate(typeDecl.get());
+                    auto decl = parseFunctionTemplate(typeDecl.get(), accessLevel);
                     llvm::cast<MethodDecl>(decl->getFunctionDecl())->setMutating(isMutating);
                     typeDecl->addMethod(std::move(decl));
                 } else {
-                    auto decl = llvm::cast<MethodDecl>(parseFunctionDecl(typeDecl.get(), requireBody));
+                    auto decl = llvm::cast<MethodDecl>(parseFunctionDecl(typeDecl.get(), accessLevel, requireBody));
                     decl->setMutating(isMutating);
                     typeDecl->addMethod(std::move(decl));
                 }
                 break;
             }
             case Token::Init:
-                typeDecl->addMethod(parseInitDecl(*typeDecl));
+                typeDecl->addMethod(parseInitDecl(*typeDecl, accessLevel));
                 break;
             case Token::Deinit:
+                if (accessLevel != AccessLevel::Default) {
+                    warning(lookAhead(-1).getLocation(), "deinitializers cannot be ", accessLevel);
+                }
                 typeDecl->addMethod(parseDeinitDecl(*typeDecl));
                 break;
             case Token::Let:
             case Token::Var:
-                typeDecl->addField(parseFieldDecl(*typeDecl));
+                typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel));
                 break;
             default:
                 unexpectedToken(currentToken());
@@ -1351,7 +1373,7 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
 
 /// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' enum-case-decl* '}'
 /// enum-case-decl ::= 'case' id ('\n' | ';')
-std::unique_ptr<EnumDecl> Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams) {
+std::unique_ptr<EnumDecl> Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
     consumeToken();
 
@@ -1372,7 +1394,8 @@ std::unique_ptr<EnumDecl> Parser::parseEnumDecl(std::vector<GenericParamDecl>* g
     }
 
     consumeToken();
-    return llvm::make_unique<EnumDecl>(name.getString(), std::move(cases), *currentModule, name.getLocation());
+    return llvm::make_unique<EnumDecl>(name.getString(), std::move(cases), typeAccessLevel, *currentModule,
+                                       name.getLocation());
 }
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')
@@ -1447,55 +1470,66 @@ void Parser::parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls) {
 
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | import-decl | var-decl
 std::unique_ptr<Decl> Parser::parseTopLevelDecl(bool addToSymbolTable) {
+    AccessLevel accessLevel = AccessLevel::Default;
+    std::unique_ptr<Decl> decl;
+
+start:
     switch (currentToken()) {
+        case Token::Private:
+            if (accessLevel != AccessLevel::Default) warning(getCurrentLocation(), "duplicate access specifier");
+            accessLevel = AccessLevel::Private;
+            consumeToken();
+            goto start;
         case Token::Func:
             if (lookAhead(2) == Token::Less) {
-                auto decl = parseFunctionTemplate(nullptr);
-                if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
-                return std::move(decl);
+                decl = parseFunctionTemplate(nullptr, accessLevel);
+                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));
             } else {
-                auto decl = parseFunctionDecl(nullptr);
-                if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
-                return std::move(decl);
+                decl = parseFunctionDecl(nullptr, accessLevel);
+                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionDecl>(*decl));
             }
-        case Token::Extern: {
-            auto decl = parseExternFunctionDecl();
-            if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
-            return std::move(decl);
-        }
+            break;
+        case Token::Extern:
+            if (accessLevel != AccessLevel::Default) {
+                warning(lookAhead(-1).getLocation(), "extern functions cannot have access specifiers");
+            }
+            decl = parseExternFunctionDecl();
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionDecl>(*decl));
+            break;
         case Token::Class:
         case Token::Struct:
-        case Token::Interface: {
+        case Token::Interface:
             if (lookAhead(2) == Token::Less) {
-                auto decl = parseTypeTemplate();
-                if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
-                return std::move(decl);
+                decl = parseTypeTemplate(accessLevel);
+                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
             } else {
-                auto decl = parseTypeDecl(nullptr);
-                if (addToSymbolTable) currentModule->addToSymbolTable(*decl);
-                return std::move(decl);
+                decl = parseTypeDecl(nullptr, accessLevel);
+                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeDecl>(*decl));
             }
-        }
-        case Token::Enum: {
+            break;
+        case Token::Enum:
             if (lookAhead(2) == Token::Less) {
                 error(getCurrentLocation(), "generic enums not implemented yet");
             } else {
-                auto decl = parseEnumDecl(nullptr);
+                decl = parseEnumDecl(nullptr, accessLevel);
                 if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
-                return std::move(decl);
             }
-        }
+            break;
         case Token::Let:
-        case Token::Var: {
-            auto decl = parseVarDecl(true, nullptr);
-            if (addToSymbolTable) currentModule->addToSymbolTable(*decl, true);
-            return std::move(decl);
-        }
+        case Token::Var:
+            decl = parseVarDecl(true, nullptr, accessLevel);
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);
+            break;
         case Token::Import:
+            if (accessLevel != AccessLevel::Default) {
+                warning(lookAhead(-1).getLocation(), "imports cannot have access specifiers");
+            }
             return parseImportDecl();
         default:
             unexpectedToken(currentToken());
     }
+
+    return decl;
 }
 
 void Parser::parse() {

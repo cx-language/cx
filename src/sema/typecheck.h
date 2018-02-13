@@ -46,7 +46,7 @@ public:
     void postProcess();
 
 private:
-    void typecheckParams(llvm::MutableArrayRef<ParamDecl> params);
+    void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
     void typecheckFunctionDecl(FunctionDecl& decl);
     void typecheckFunctionTemplate(FunctionTemplate& decl);
     void typecheckMemberDecl(Decl& decl);
@@ -63,9 +63,9 @@ private:
     void typecheckWhileStmt(WhileStmt& whileStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
-    void typecheckType(Type type, SourceLocation location);
-    void typecheckParamDecl(ParamDecl& decl);
-    void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams);
+    void typecheckType(Type type, SourceLocation location, AccessLevel userAccessLevel);
+    void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);
+    void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel);
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
     void typecheckEnumDecl(EnumDecl& decl);
@@ -107,6 +107,7 @@ private:
     TypeDecl* getTypeDecl(const BasicType& type);
     void markFieldAsInitialized(Expr& expr);
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
+    static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
 
     llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
                                                    llvm::ArrayRef<std::string> importSearchPaths,

@@ -1,0 +1,50 @@
+// RUN: true
+
+// CHECK-NOT: a.delta:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: 'A' is private
+
+private class A {
+    init() {}
+}
+
+private func i(q: A*) {
+    var a: A = undefined;
+    a = A();
+}
+
+private func j(a: A) {}
+
+private func k(a: mutable A*?) {}
+
+private func l() -> A*? {
+    return null;
+}
+
+class C {
+    private var a: A;
+}
+
+private class D {
+    // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.delta:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
+    var a: A;
+}
+
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:8: warning: using private type 'A' in public declaration
+func m(r: A*) {
+    // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.delta:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
+    var a: A = undefined;
+    // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.delta:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
+    a = A();
+}
+
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:8: warning: using private type 'A' in public declaration
+func o(a: mutable A*?) {}
+
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:6: warning: using private type 'A' in public declaration
+func p() -> A*? {
+    return null;
+}
+
+class E {
+    // CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:9: warning: using private type 'A' in public declaration
+    var a: A;
+}

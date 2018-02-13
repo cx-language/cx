@@ -5,7 +5,7 @@ struct MapIterator<Key, Value>: Iterator<(key: Key, value: Value)*> {
     init(map: Map<Key, Value>*) {
         hashTableIterator = map.hashTable.iterator();
         current = undefined;
-        _skipEmptySlots();
+        skipEmptySlots();
     }
 
     func hasValue() -> bool {
@@ -23,11 +23,11 @@ struct MapIterator<Key, Value>: Iterator<(key: Key, value: Value)*> {
 
         if (current === slotEnd) {
             hashTableIterator.increment();
-            _skipEmptySlots();
+            skipEmptySlots();
         }
     }
 
-    mutating func _skipEmptySlots() {
+    mutating private func skipEmptySlots() {
         while (hashTableIterator.hasValue()) {
             if (hashTableIterator.value().size() != 0) {
                 current = hashTableIterator.value().data();

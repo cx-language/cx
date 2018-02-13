@@ -571,7 +571,7 @@ void Typechecker::typecheckStmt(std::unique_ptr<Stmt>& stmt) {
     }
 }
 
-void Typechecker::typecheckType(Type type, SourceLocation location) {
+void Typechecker::typecheckType(Type type, SourceLocation location, AccessLevel userAccessLevel) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
             if (type.isBuiltinType()) {
@@ -582,11 +582,12 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
             auto* basicType = llvm::cast<BasicType>(type.getBase());
 
             for (auto genericArg : basicType->getGenericArgs()) {
-                typecheckType(genericArg, location);
+                typecheckType(genericArg, location, userAccessLevel);
             }
 
             auto decls = getCurrentModule()->findDecls(mangleTypeDecl(basicType->getName(), basicType->getGenericArgs()),
                                                        currentSourceFile, currentFunction);
+            Decl* decl;
 
             if (decls.empty()) {
                 auto decls = getCurrentModule()->findDecls(basicType->getName(), currentSourceFile, currentFunction);
@@ -595,18 +596,21 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
                     error(location, "unknown type '", type, "'");
                 }
 
-                auto typeTemplate = llvm::cast<TypeTemplate>(decls[0])->instantiate(basicType->getGenericArgs());
+                decl = decls[0];
+                auto typeTemplate = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs());
                 getCurrentModule()->addToSymbolTable(*typeTemplate);
                 typecheckTypeDecl(*typeTemplate);
             } else {
-                switch (decls[0]->getKind()) {
+                decl = decls[0];
+
+                switch (decl->getKind()) {
                     case DeclKind::TypeDecl:
-                        if (auto* deinitDecl = llvm::cast<TypeDecl>(decls[0])->getDeinitializer()) {
+                        if (auto* deinitDecl = llvm::cast<TypeDecl>(decl)->getDeinitializer()) {
                             typecheckFunctionDecl(*deinitDecl);
                         }
                         break;
                     case DeclKind::TypeTemplate:
-                        validateGenericArgCount(llvm::cast<TypeTemplate>(decls[0])->getGenericParams().size(),
+                        validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->getGenericParams().size(),
                                                 basicType->getGenericArgs(), basicType->getName(), location);
                         break;
                     default:
@@ -614,21 +618,22 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
                 }
             }
 
+            checkHasAccess(*decl, location, userAccessLevel);
             break;
         }
         case TypeKind::ArrayType:
-            typecheckType(type.getElementType(), location);
+            typecheckType(type.getElementType(), location, userAccessLevel);
             break;
         case TypeKind::TupleType:
             for (auto& element : type.getTupleElements()) {
-                typecheckType(element.type, location);
+                typecheckType(element.type, location, userAccessLevel);
             }
             break;
         case TypeKind::FunctionType:
             for (auto paramType : type.getParamTypes()) {
-                typecheckType(paramType, location);
+                typecheckType(paramType, location, userAccessLevel);
             }
-            typecheckType(type.getReturnType(), location);
+            typecheckType(type.getReturnType(), location, userAccessLevel);
             break;
         case TypeKind::PointerType: {
             if (type.getPointee().isArrayWithRuntimeSize()) {
@@ -642,17 +647,17 @@ void Typechecker::typecheckType(Type type, SourceLocation location) {
                     declsToTypecheck.push_back(instantiation);
                 }
             } else {
-                typecheckType(type.getPointee(), location);
+                typecheckType(type.getPointee(), location, userAccessLevel);
             }
             break;
         }
         case TypeKind::OptionalType:
-            typecheckType(type.getWrappedType(), location);
+            typecheckType(type.getWrappedType(), location, userAccessLevel);
             break;
     }
 }
 
-void Typechecker::typecheckParamDecl(ParamDecl& decl) {
+void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel) {
     if (getCurrentModule()->getSymbolTable().contains(decl.getName())) {
         error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
@@ -661,7 +666,7 @@ void Typechecker::typecheckParamDecl(ParamDecl& decl) {
         error(decl.getLocation(), "parameter types cannot be 'mutable'");
     }
 
-    typecheckType(decl.getType(), decl.getLocation());
+    typecheckType(decl.getType(), decl.getLocation(), userAccessLevel);
     getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 }
 
@@ -685,21 +690,21 @@ bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
     }
 }
 
-void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams) {
+void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel) {
     for (auto& genericParam : genericParams) {
         if (getCurrentModule()->getSymbolTable().contains(genericParam.getName())) {
             error(genericParam.getLocation(), "redefinition of '", genericParam.getName(), "'");
         }
 
         for (Type constraint : genericParam.getConstraints()) {
-            typecheckType(constraint, genericParam.getLocation());
+            typecheckType(constraint, genericParam.getLocation(), userAccessLevel);
         }
     }
 }
 
-void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params) {
+void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel) {
     for (auto& param : params) {
-        typecheckParamDecl(param);
+        typecheckParamDecl(param, userAccessLevel);
     }
 }
 
@@ -713,9 +718,9 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     SAVE_STATE(currentFunction);
     currentFunction = &decl;
 
-    typecheckParams(decl.getParams());
+    typecheckParams(decl.getParams(), decl.getAccessLevel());
 
-    typecheckType(decl.getReturnType(), decl.getLocation());
+    typecheckType(decl.getReturnType(), decl.getLocation(), decl.getAccessLevel());
     if (decl.getReturnType().isMutable()) error(decl.getLocation(), "return types cannot be 'mutable'");
 
     if (!decl.isExtern()) {
@@ -729,7 +734,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
             Type thisType = receiverTypeDecl->getTypeForPassing(decl.isMutating());
             getCurrentModule()->addToSymbolTable(
-                VarDecl(thisType, "this", nullptr, &decl, *getCurrentModule(), decl.getLocation()));
+                VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *getCurrentModule(), decl.getLocation()));
         }
 
         bool delegatedInit = false;
@@ -773,7 +778,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 }
 
 void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
-    typecheckGenericParamDecls(decl.getGenericParams());
+    typecheckGenericParamDecls(decl.getGenericParams(), decl.getAccessLevel());
 }
 
 void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
@@ -824,7 +829,7 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
 }
 
 void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
-    typecheckGenericParamDecls(decl.getGenericParams());
+    typecheckGenericParamDecls(decl.getGenericParams(), decl.getAccessLevel());
 }
 
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
@@ -882,7 +887,8 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     }
 
     if (declaredType) {
-        typecheckType(declaredType, decl.getLocation());
+        bool isLocalVariable = decl.getParent() && decl.getParent()->isFunctionDecl();
+        typecheckType(declaredType, decl.getLocation(), isLocalVariable ? AccessLevel::None : decl.getAccessLevel());
 
         if (initType) {
             Type convertedType;
@@ -922,7 +928,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
 }
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
-    typecheckType(decl.getType(), decl.getLocation());
+    typecheckType(decl.getType(), decl.getLocation(), std::min(decl.getAccessLevel(), decl.getParent()->getAccessLevel()));
 }
 
 static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module,

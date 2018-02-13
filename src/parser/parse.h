@@ -71,6 +71,7 @@ class ImportDecl;
 struct SourceLocation;
 struct Token;
 struct Type;
+enum class AccessLevel;
 
 class Parser {
 public:
@@ -128,7 +129,7 @@ private:
     std::unique_ptr<AssignStmt> parseCompoundAssignStmt(std::unique_ptr<Expr> lhs);
     std::vector<std::unique_ptr<Expr>> parseExprList();
     std::unique_ptr<ReturnStmt> parseReturnStmt();
-    std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue, Decl* parent);
+    std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel);
     std::unique_ptr<VarStmt> parseVarStmt(Decl* parent);
     std::unique_ptr<ExprStmt> parseCallStmt(std::unique_ptr<Expr> callExpr);
     std::unique_ptr<IncrementStmt> parseIncrementStmt(std::unique_ptr<Expr> operand);
@@ -147,19 +148,20 @@ private:
     ParamDecl parseParam(bool withType);
     std::vector<ParamDecl> parseParamList(bool* isVariadic, bool withTypes);
     void parseGenericParamList(std::vector<GenericParamDecl>& genericParams);
-    std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl,
+    std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
                                                      std::vector<GenericParamDecl>* genericParams);
-    std::unique_ptr<FunctionTemplate> parseFunctionTemplateProto(TypeDecl* receiverTypeDecl);
-    std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, bool requireBody = true);
-    std::unique_ptr<FunctionTemplate> parseFunctionTemplate(TypeDecl* receiverTypeDecl);
+    std::unique_ptr<FunctionTemplate> parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel);
+    std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
+                                                    bool requireBody = true);
+    std::unique_ptr<FunctionTemplate> parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel);
     std::unique_ptr<FunctionDecl> parseExternFunctionDecl();
-    std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl);
+    std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel);
     std::unique_ptr<DeinitDecl> parseDeinitDecl(TypeDecl& receiverTypeDecl);
-    FieldDecl parseFieldDecl(TypeDecl& typeDecl);
-    std::unique_ptr<TypeTemplate> parseTypeTemplate();
+    FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel);
+    std::unique_ptr<TypeTemplate> parseTypeTemplate(AccessLevel accessLevel);
     Token parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams);
-    std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams);
-    std::unique_ptr<EnumDecl> parseEnumDecl(std::vector<GenericParamDecl>* genericParams);
+    std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
+    std::unique_ptr<EnumDecl> parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
     std::unique_ptr<ImportDecl> parseImportDecl();
     void parseIfdefBody(std::vector<std::unique_ptr<Decl>>* activeDecls);
     void parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls);

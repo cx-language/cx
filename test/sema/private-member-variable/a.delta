@@ -1,0 +1,17 @@
+// RUN: true
+
+// CHECK-NOT: a.delta:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: '{{(a|A\.a)}}' is private
+
+class A {
+    private var a: int;
+    init() {}
+    mutating func f() {
+        this.a++;
+        a++;
+    }
+}
+
+func f() {
+    var a = A();
+    a.a++;
+}

@@ -264,6 +264,7 @@ const char* delta::toString(Token::Kind tokenKind) {
         "mutable",
         "mutating",
         "null",
+        "private",
         "return",
         "sizeof",
         "struct",

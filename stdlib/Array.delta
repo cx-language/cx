@@ -50,7 +50,7 @@ class Array<Element> {
     /// Returns the element at the given index.
     func [](index: uint) -> Element* {
         if (index >= size) {
-            _indexOutOfBounds(index);
+            indexOutOfBounds(index);
         }
 
         return bufferPointer + index;
@@ -59,7 +59,7 @@ class Array<Element> {
     /// Returns the element at the given index.
     mutating func [](index: uint) -> mutable Element* {
         if (index >= size) {
-            _indexOutOfBounds(index);
+            indexOutOfBounds(index);
         }
 
         return bufferPointer + index;
@@ -67,7 +67,7 @@ class Array<Element> {
 
     func first() -> Element* {
         if (size == 0) {
-            _emptyArrayFirst();
+            emptyArrayFirst();
         }
 
         return bufferPointer;
@@ -75,7 +75,7 @@ class Array<Element> {
 
     func last() -> Element* {
         if (size == 0) {
-            _emptyArrayLast();
+            emptyArrayLast();
         }
 
         return bufferPointer + size;
@@ -92,7 +92,7 @@ class Array<Element> {
     /// Adds the given element to the end of the array.
     mutating func push(newElement: Element) {
         if (size == capacity) {
-            _grow();
+            grow();
         }
 
         (bufferPointer + size).init(newElement);
@@ -123,16 +123,16 @@ class Array<Element> {
     /// Other elements are moved towards the beginning of the array by one index.
     mutating func removeFirst() {
         if (size == 0) {
-            _emptyArrayRemoveFirst();
+            emptyArrayRemoveFirst();
         }
 
-        _removeAt(0);
+        unsafeRemoveAt(0);
     }
 
     /// Removes the last element from the array.
     mutating func removeLast() {
         if (size == 0) {
-            _emptyArrayRemoveLast();
+            emptyArrayRemoveLast();
         }
 
         size--;
@@ -143,13 +143,13 @@ class Array<Element> {
     /// Elements following the removed element are moved towards the beginning of the array by one index.
     mutating func removeAt(index: uint) {
         if (index >= size) {
-            _indexOutOfBounds(index);
+            indexOutOfBounds(index);
         }
 
-        _removeAt(index);
+        unsafeRemoveAt(index);
     }
 
-    mutating func _removeAt(index: uint) {
+    mutating private func unsafeRemoveAt(index: uint) {
         (bufferPointer + index).deinit();
 
         for (let i in (index + 1)..size) {
@@ -196,7 +196,7 @@ class Array<Element> {
         return output;
     }
 
-    mutating func _grow() {
+    mutating private func grow() {
         if (capacity == 0) {
             reserve(1);
         } else {
@@ -204,27 +204,27 @@ class Array<Element> {
         }
     }
 
-    func _indexOutOfBounds(index: uint) {
+    private func indexOutOfBounds(index: uint) {
         printf("Array index %u is out of bounds, size is %u\n", index, size());
         fatalError();
     }
 
-    func _emptyArrayFirst() {
+    private func emptyArrayFirst() {
         printf("Called first() on empty Array\n");
         fatalError();
     }
 
-    func _emptyArrayLast() {
+    private func emptyArrayLast() {
         printf("Called last() on empty Array\n");
         fatalError();
     }
 
-    func _emptyArrayRemoveFirst() {
+    private func emptyArrayRemoveFirst() {
         printf("Called removeFirst() on empty Array\n");
         fatalError();
     }
 
-    func _emptyArrayRemoveLast() {
+    private func emptyArrayRemoveLast() {
         printf("Called removeLast() on empty Array\n");
         fatalError();
     }

@@ -499,7 +499,8 @@ std::unique_ptr<FunctionDecl> LambdaExpr::lower(Module& module) const {
 
     FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::vector<ParamDecl>(params), body->getType(),
                         false, false);
-    auto functionDecl = llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), module, getLocation());
+    auto functionDecl = llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), AccessLevel::Private,
+                                                        module, getLocation());
     std::vector<std::unique_ptr<Stmt>> body;
     auto returnValue = getBody()->instantiate({});
     body.push_back(llvm::make_unique<ReturnStmt>(std::move(returnValue), getBody()->getLocation()));

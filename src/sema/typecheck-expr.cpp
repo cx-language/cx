@@ -45,8 +45,19 @@ static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
     }
 }
 
+void Typechecker::checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel) {
+    // FIXME: Compare SourceFile objects instead of file path strings.
+    if (decl.getAccessLevel() == AccessLevel::Private && strcmp(decl.getLocation().file, location.file) != 0) {
+        warning(location, "'", decl.getName(), "' is private");
+    } else if (userAccessLevel != AccessLevel::None && decl.getAccessLevel() < userAccessLevel) {
+        warning(location, "using ", decl.getAccessLevel(), " type '", decl.getName(), "' in ", userAccessLevel,
+                " declaration");
+    }
+}
+
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     Decl& decl = getCurrentModule()->findDecl(expr.getIdentifier(), expr.getLocation(), currentSourceFile, currentFieldDecls);
+    checkHasAccess(decl, expr.getLocation(), AccessLevel::None);
     expr.setDecl(&decl);
 
     switch (decl.getKind()) {
@@ -84,7 +95,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
         case DeclKind::ImportDecl:
             llvm_unreachable("import statement validation not implemented yet");
     }
-    abort();
+    llvm_unreachable("all cases handled");
 }
 
 Type typecheckStringLiteralExpr(StringLiteralExpr&) {
@@ -954,9 +965,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
 
         if (receiverType.isOptionalType()) {
             warning(expr.getReceiver()->getLocation(), "calling member function through value of optional type '",
-                    receiverType,
-                    "' which may be null; unwrap the value with a postfix '!' to silence this "
-                    "warning");
+                    receiverType, "' which may be null; unwrap the value with a postfix '!' to silence this warning");
         } else if (receiverType.removePointer().isArrayType()) {
             if (expr.getFunctionName() == "size") {
                 validateArgs(expr, false, {}, false, expr.getFunctionName(), expr.getLocation());
@@ -999,6 +1008,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
                                                                              currentSourceFile, currentFieldDecls));
             expr.setReceiverType(varDecl.getType());
         }
+    }
+
+    checkHasAccess(*decl, expr.getCallee().getLocation(), AccessLevel::None);
+    if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
+        checkHasAccess(*initDecl->getTypeDecl(), expr.getCallee().getLocation(), AccessLevel::None);
     }
 
     std::vector<ParamDecl> paramsStorage;
@@ -1296,6 +1310,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
 
         if (!decls.empty()) {
             if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
+                checkHasAccess(*enumDecl, varExpr->getLocation(), AccessLevel::None);
                 if (!enumDecl->getCaseByName(expr.getMemberName())) {
                     error(expr.getLocation(), "enum '", enumDecl->getName(), "' has no case named '",
                           expr.getMemberName(), "'");
@@ -1332,6 +1347,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
 
         for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
             if (field.getName() == expr.getMemberName()) {
+                checkHasAccess(field, expr.getLocation(), AccessLevel::None);
+
                 if (baseType.isMutable()) {
                     auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr());
 
@@ -1408,7 +1425,7 @@ Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
 Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr) {
     getCurrentModule()->getSymbolTable().pushScope();
 
-    typecheckParams(expr.getParams());
+    typecheckParams(expr.getParams(), AccessLevel::None);
     auto returnType = typecheckExpr(*expr.getBody());
 
     getCurrentModule()->getSymbolTable().popScope();

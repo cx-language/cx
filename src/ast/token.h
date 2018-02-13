@@ -42,6 +42,7 @@ struct Token {
         Mutable,
         Mutating,
         Null,
+        Private,
         Return,
         Sizeof,
         Struct,

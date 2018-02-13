@@ -214,6 +214,7 @@ static const llvm::StringMap<Token::Kind> keywords = {
     { "mutable", Token::Mutable },
     { "mutating", Token::Mutating },
     { "null", Token::Null },
+    { "private", Token::Private },
     { "return", Token::Return },
     { "sizeof", Token::Sizeof },
     { "struct", Token::Struct },
