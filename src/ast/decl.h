@@ -147,6 +147,8 @@ private:
     FunctionDecl* parent;
 };
 
+std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type> genericArgs);
+
 class GenericParamDecl : public Decl {
 public:
     GenericParamDecl(std::string&& name, SourceLocation location)

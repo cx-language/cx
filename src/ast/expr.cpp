@@ -295,9 +295,7 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
         }
         case ExprKind::LambdaExpr: {
             auto* lambdaExpr = llvm::cast<LambdaExpr>(this);
-            auto params = map(lambdaExpr->getParams(), [&](const ParamDecl& p) {
-                return ParamDecl(p.getType().resolve(genericArgs), p.getName(), p.getLocation());
-            });
+            auto params = instantiateParams(lambdaExpr->getParams(), genericArgs);
             auto body = lambdaExpr->getBody()->instantiate(genericArgs);
             instantiation = llvm::make_unique<LambdaExpr>(std::move(params), std::move(body), lambdaExpr->getLocation());
             break;

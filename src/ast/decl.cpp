@@ -9,10 +9,7 @@
 using namespace delta;
 
 FunctionProto FunctionProto::instantiate(const llvm::StringMap<Type> genericArgs) const {
-    auto params = map(getParams(), [&](const ParamDecl& param) {
-        auto type = param.getType().resolve(genericArgs);
-        return ParamDecl(type, param.getName(), param.getLocation());
-    });
+    auto params = instantiateParams(getParams(), genericArgs);
     auto returnType = getReturnType().resolve(genericArgs);
     std::vector<GenericParamDecl> genericParams;
     return FunctionProto(getName().str(), std::move(params), returnType, isVarArg(), isExtern());
@@ -99,10 +96,7 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
         }
         case DeclKind::InitDecl: {
             auto* initDecl = llvm::cast<InitDecl>(this);
-            auto params = map(initDecl->getParams(), [&](const ParamDecl& param) {
-                auto type = param.getType().resolve(genericArgs);
-                return ParamDecl(type, param.getName(), param.getLocation());
-            });
+            auto params = instantiateParams(initDecl->getParams(), genericArgs);
             auto instantiation = llvm::make_unique<InitDecl>(typeDecl, std::move(params), getAccessLevel(),
                                                              initDecl->getLocation());
             instantiation->setBody(::instantiate(initDecl->getBody(), genericArgs));
@@ -117,6 +111,12 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
         default:
             llvm_unreachable("invalid method decl");
     }
+}
+
+std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type> genericArgs) {
+    return map(params, [&](const ParamDecl& param) {
+        return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.getLocation());
+    });
 }
 
 bool TypeDecl::hasInterface(const TypeDecl& interface) const {
