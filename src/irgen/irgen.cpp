@@ -238,7 +238,7 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
     if (auto* returnValue = stmt.getReturnValue()) {
         builder.CreateRet(codegenExprForPassing(*returnValue, builder.getCurrentFunctionReturnType()));
     } else {
-        if (llvm::cast<FunctionDecl>(currentDecl)->getName() != "main") {
+        if (!currentDecl->isMain()) {
             builder.CreateRetVoid();
         } else {
             builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
@@ -575,7 +575,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::str
     }
 
     auto* returnType = toIR(functionType->getReturnType());
-    if (decl.getName() == "main" && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
+    if (decl.isMain() && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
     if (mangledName.empty()) mangledName = mangle(decl);
@@ -655,7 +655,7 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
     }
 
     if (insertBlock->empty() || !llvm::isa<llvm::ReturnInst>(insertBlock->back())) {
-        if (function.getName() != "main") {
+        if (!decl.isMain()) {
             builder.CreateRetVoid();
         } else {
             builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));

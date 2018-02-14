@@ -98,6 +98,7 @@ public:
     virtual Module* getModule() const = 0;
     virtual SourceLocation getLocation() const = 0;
     virtual llvm::StringRef getName() const = 0;
+    bool isMain() const { return getName() == "main"; }
     AccessLevel getAccessLevel() const { return accessLevel; }
     virtual bool isReferenced() const { return referenced; }
     void setReferenced(bool referenced) { this->referenced = referenced; }

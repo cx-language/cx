@@ -1102,8 +1102,7 @@ static void checkUnusedDecls(const Module& module) {
             if (decl->isReferenced()) continue;
 
             if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
-                if (decl->getName() == "main") continue;
-
+                if (decl->isMain()) continue;
                 warning(decl->getLocation(), "unused declaration '", decl->getName(), "'");
             }
         }
