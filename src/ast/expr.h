@@ -82,8 +82,7 @@ public:
     std::vector<const Expr*> getSubExprs() const;
 
 protected:
-    Expr(ExprKind kind, SourceLocation location)
-    : kind(kind), type(nullptr), assignableType(nullptr), location(location) {}
+    Expr(ExprKind kind, SourceLocation location) : kind(kind), location(location) {}
 
 private:
     const ExprKind kind;

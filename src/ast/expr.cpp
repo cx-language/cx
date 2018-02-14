@@ -408,7 +408,7 @@ static Type getReceiverType(const CallExpr& call) {
     if (call.getCallee().isMemberExpr()) {
         return call.getReceiver()->getType().removeOptional().removePointer();
     }
-    return nullptr;
+    return Type();
 }
 
 std::string CallExpr::getMangledFunctionName() const {

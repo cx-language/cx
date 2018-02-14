@@ -18,7 +18,7 @@ static void appendGenericArgs(std::string& mangled, llvm::ArrayRef<Type> generic
 }
 
 std::string delta::mangle(const FunctionDecl& decl) {
-    Type receiver = decl.getTypeDecl() ? decl.getTypeDecl()->getType() : nullptr;
+    Type receiver = decl.getTypeDecl() ? decl.getTypeDecl()->getType() : Type();
     return mangleFunctionDecl(receiver, decl.getName(), decl.getGenericArgs());
 }
 

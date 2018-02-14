@@ -207,7 +207,7 @@ static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* curr
 void Typechecker::typecheckAssignStmt(AssignStmt& stmt) {
     typecheckExpr(*stmt.getLHS(), true);
     Type lhsType = stmt.getLHS()->getAssignableType();
-    Type rhsType = stmt.getRHS() ? typecheckExpr(*stmt.getRHS()) : nullptr;
+    Type rhsType = stmt.getRHS() ? typecheckExpr(*stmt.getRHS()) : Type();
 
     if (!stmt.getRHS() && !allowAssignmentOfUndefined(*stmt.getLHS(), currentFunction)) {
         error(stmt.getLocation(), "'undefined' is only allowed as an initial value");
@@ -878,7 +878,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     }
 
     Type declaredType = decl.getType();
-    Type initType = nullptr;
+    Type initType;
 
     if (decl.getInitializer()) {
         initType = typecheckExpr(*decl.getInitializer());

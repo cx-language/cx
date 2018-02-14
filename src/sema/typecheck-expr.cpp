@@ -69,7 +69,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
             return llvm::cast<ParamDecl>(decl).getType();
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-            return llvm::cast<FunctionDecl>(decl).getFunctionType();
+            return Type(llvm::cast<FunctionDecl>(decl).getFunctionType(), false);
         case DeclKind::GenericParamDecl:
             llvm_unreachable("cannot refer to generic parameters yet");
         case DeclKind::InitDecl:
@@ -539,7 +539,7 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
         return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam);
     }
 
-    return nullptr;
+    return Type();
 }
 
 std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,

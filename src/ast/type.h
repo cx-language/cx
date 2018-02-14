@@ -44,7 +44,8 @@ inline TypeBase::~TypeBase() {}
 
 struct Type {
 public:
-    Type(TypeBase* typeBase = nullptr, bool isMutable = false) : typeBase(typeBase), mutableFlag(isMutable) {}
+    Type() : typeBase(nullptr), mutableFlag(false) {}
+    Type(TypeBase* typeBase, bool isMutable) : typeBase(typeBase), mutableFlag(isMutable) {}
     TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
     TypeBase* getBase() const { return typeBase; }

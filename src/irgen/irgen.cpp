@@ -632,7 +632,7 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &function));
     beginScope();
     auto arg = function.arg_begin();
-    if (decl.getTypeDecl() != nullptr) setLocalValue(nullptr, "this", &*arg++, nullptr);
+    if (decl.getTypeDecl() != nullptr) setLocalValue(Type(), "this", &*arg++, nullptr);
     for (auto& param : decl.getParams()) {
         setLocalValue(param.getType(), param.getName(), &*arg++, &param);
     }

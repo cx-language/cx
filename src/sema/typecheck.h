@@ -29,8 +29,7 @@ struct Type;
 class Typechecker {
 public:
     Typechecker()
-    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), functionReturnType(nullptr),
-      isPostProcessing(false) {}
+    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), isPostProcessing(false) {}
 
     Module* getCurrentModule() const { return ASSERT(currentModule), currentModule; }
     void setCurrentModule(Module* module) { currentModule = module; }
