@@ -20,14 +20,14 @@ if [[ "$os" == "Darwin" ]]; then
 
     brew update
 
-    for package in cmake ninja llvm; do
+    for package in cmake llvm; do
         brew ls --versions $package > /dev/null || brew install $package
     done
 
     sudo easy_install pip
     sudo pip2 install lit
 
-    cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
+    cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
 elif [[ "$os" == "MINGW"* ]]; then
     # Tested on Windows 10 with MinGW64.
 
@@ -63,10 +63,9 @@ else
     sudo apt install libtinfo-dev
 
     sudo apt install cmake
-    sudo apt install ninja-build
     sudo apt install libedit-dev
     sudo apt install python-pip
     sudo pip install lit
 
-    cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$PWD/clang+llvm-5.0.0-linux-x86_64-ubuntu16.04"
+    cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$PWD/clang+llvm-5.0.0-linux-x86_64-ubuntu16.04"
 fi

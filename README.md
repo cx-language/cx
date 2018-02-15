@@ -32,10 +32,6 @@ and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries
 [lit](http://llvm.org/docs/CommandGuide/lit.html), which you can get with `pip
 install lit`.
 
-I recommend using [Ninja](https://ninja-build.org/) instead of Make, because it
-has cleaner output, and runs builds in parallel by default. It can be installed
-with `sudo apt install ninja-build` (Ubuntu) or `brew install ninja` (macOS).
-
 If you're on Ubuntu or macOS you can run the provided `setup-build.sh` script to
 automatically download all the dependencies and invoke the appropriate commands
 to generate a ready-to-use build system.
@@ -59,16 +55,16 @@ directory of the repository:
 
     mkdir build
     cd build
-    cmake -G Ninja ..
+    cmake -G "Unix Makefiles" ..
 
 After this, the following commands can be invoked from the `build` directory:
 
-- `ninja` builds the project.
-- `ninja check` runs the test suite and reports errors in case of failure. Note:
+- `make` builds the project (or `make -j` to run the build in parallel).
+- `make check` runs the test suite and reports errors in case of failure. Note:
   if your checks fail because of not finding C standard library headers, you can
   tell Delta where to find them with the `C_INCLUDE_PATH` or `CPATH` environment
   variable: e.g. `export C_INCLUDE_PATH=/usr/include/x86_64-linux-gnu/`.
-- `ninja coverage` generates a test coverage report under `coverage/`.
+- `make coverage` generates a test coverage report under `coverage/`.
 
 ## Documentation
 
