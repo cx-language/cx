@@ -2,7 +2,7 @@
 
 import "stdlib.h"
 
-struct C<T> {
+struct C<T>: Copyable {
     init() { }
 
     // CHECK: define void @"C<bool>.f"({} %this)

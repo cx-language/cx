@@ -1,4 +1,4 @@
-struct OrderedSetIterator<Element>: Iterator<Element*> {
+struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
     var mapIter: mutable OrderedMapIterator<Element, bool>*;
 
     init (set: OrderedSet<Element>*) {

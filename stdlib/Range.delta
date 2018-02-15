@@ -1,4 +1,4 @@
-struct Range<T> {
+struct Range<T>: Copyable {
     var start: T;
     var end: T;
 

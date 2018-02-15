@@ -1,36 +1,41 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 
 struct Foo {
-    let baz: int;
+    var baz: int;
 
-    // CHECK: define void @Foo.init
+    // CHECK: define void @Foo.init(%Foo* %this)
     // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
     // CHECK-NEXT: store i32 42, i32* %1
     // CHECK-NEXT: ret void
     init() { this.baz = 42; }
 
-    // CHECK: define void @Foo.bar(%Foo %this)
+    // CHECK: define void @Foo.bar(%Foo* %this)
+    // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
+    // CHECK-NEXT: %2 = load i32, i32* %1
+    // CHECK-NEXT: %3 = add i32 %2, 1
+    // CHECK-NEXT: store i32 %3, i32* %1
     // CHECK-NEXT: ret void
-    func bar() { }
+    mutating func bar() { this.baz++; }
 
-    // CHECK: define i32 @Foo.qux(%Foo %this)
-    // CHECK-NEXT: %1 = extractvalue %Foo %this, 0
-    // CHECK-NEXT: ret i32 %1
+    // CHECK: define i32 @Foo.qux(%Foo* %this)
+    // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
+    // CHECK-NEXT: %2 = load i32, i32* %1
+    // CHECK-NEXT: ret i32 %2
     func qux() -> int { return this.baz; }
 }
 
-// CHECK: define i32 @main()
-// CHECK-NEXT: %foo = alloca %Foo
-// CHECK-NEXT: %i = alloca i32
-// CHECK-NEXT: call void @Foo.init(%Foo* %foo)
-// CHECK-NEXT: %foo1 = load %Foo, %Foo* %foo
-// CHECK-NEXT: call void @Foo.bar(%Foo %foo1)
-// CHECK-NEXT: %foo2 = load %Foo, %Foo* %foo
-// CHECK-NEXT: %1 = call i32 @Foo.qux(%Foo %foo2)
-// CHECK-NEXT: store i32 %1, i32* %i
-// CHECK-NEXT: ret
 func main() {
+    // CHECK-MAIN: %foo = alloca %Foo
+    // CHECK-MAIN-NEXT: %i = alloca i32
+
+    // CHECK-MAIN-NEXT: call void @Foo.init(%Foo* %foo)
     var foo = Foo();
+
+    // CHECK-MAIN-NEXT: call void @Foo.bar(%Foo* %foo)
     foo.bar();
+
+    // CHECK-MAIN-NEXT: %1 = call i32 @Foo.qux(%Foo* %foo)
+    // CHECK-MAIN-NEXT: store i32 %1, i32* %i
     var i = foo.qux();
 }

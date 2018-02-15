@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-class C {
+struct C {
     let i: int;
 
     init(i: int) {
@@ -147,7 +147,7 @@ func testFilter() {
 
 var deinits = 0;
 
-class DestructionTester {
+struct DestructionTester {
     init() {}
 
     deinit() {

@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct X {
+struct X: Copyable {
     let a: int;
 
     init(a: int) {

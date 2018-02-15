@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-CALL
 
-class C<T> {
+struct C<T> {
     init() { }
 
     // CHECK: define void @"C<int>.deinit"({}* %this)

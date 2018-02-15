@@ -43,12 +43,12 @@ var foo10 = 42; // CHECK-NEXT:    (var-decl foo10 42)
 
 let foo11 = 42; // CHECK-NEXT:    (var-decl foo11 42)
 
-struct S1 {       // CHECK-NEXT:    (type-decl struct S1
-    let a: uint;  // CHECK-NEXT:        (field-decl uint a)
-    let b: char*; // CHECK-NEXT:        (field-decl char* b))
+struct S1: Copyable { // CHECK-NEXT:    (type-decl struct S1
+    let a: uint;      // CHECK-NEXT:        (field-decl uint a)
+    let b: char*;     // CHECK-NEXT:        (field-decl char* b))
 }
 
-class C1 {        // CHECK-NEXT:    (type-decl class C1
+struct C1 {       // CHECK-NEXT:    (type-decl struct C1
     let a: int8;  // CHECK-NEXT:        (field-decl int8 a)
     let b: bool*; // CHECK-NEXT:        (field-decl bool* b))
 }

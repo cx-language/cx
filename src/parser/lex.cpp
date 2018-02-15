@@ -193,7 +193,6 @@ static const llvm::StringMap<Token::Kind> keywords = {
     { "break", Token::Break },
     { "case", Token::Case },
     { "cast", Token::Cast },
-    { "class", Token::Class },
     { "const", Token::Const },
     { "continue", Token::Continue },
     { "default", Token::Default },

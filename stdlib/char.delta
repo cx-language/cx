@@ -1,4 +1,4 @@
-struct char: Comparable {
+struct char: Copyable, Comparable {
     func compare(other: char*) -> Ordering {
         return int(this).compare(int(*other));
     }

@@ -1,4 +1,4 @@
-struct ClosedRange<T> {
+struct ClosedRange<T>: Copyable {
     var start: T;
     var end: T;
 

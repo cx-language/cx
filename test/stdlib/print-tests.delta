@@ -1,6 +1,6 @@
 // RUN: %delta run -Werror %s | %FileCheck %s
 
-class A: Printable {
+struct A: Printable {
     let a: StringRef;
 
     init(a: StringRef) {

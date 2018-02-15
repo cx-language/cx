@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: %A = type { i32 }
-class A {
+struct A {
     var i: int
     // CHECK: define void @A.init(%A* %this)
     init() { }

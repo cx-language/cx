@@ -47,14 +47,14 @@ enum class DeclKind {
     GenericParamDecl,
     FunctionDecl,
     MethodDecl,
-    InitDecl, /// A struct or class initializer declaration.
-    DeinitDecl, /// A struct or class deinitializer declaration.
+    InitDecl,
+    DeinitDecl,
     FunctionTemplate,
     TypeDecl,
     TypeTemplate,
     EnumDecl,
     VarDecl,
-    FieldDecl, /// A struct or class field declaration.
+    FieldDecl,
     ImportDecl,
 };
 
@@ -286,7 +286,7 @@ private:
     std::unordered_map<std::vector<Type>, std::unique_ptr<FunctionDecl>> instantiations;
 };
 
-enum class TypeTag { Struct, Class, Interface, Union, Enum };
+enum class TypeTag { Struct, Interface, Union, Enum };
 
 /// A non-template function declaration or a function template instantiation.
 class TypeDecl : public Decl {
@@ -303,17 +303,16 @@ public:
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     llvm::ArrayRef<Type> getInterfaces() const { return interfaces; }
     bool hasInterface(const TypeDecl& interface) const;
+    bool isCopyable() const;
     SourceLocation getLocation() const { return location; }
     void addField(FieldDecl&& field);
     void addMethod(std::unique_ptr<Decl> decl);
     llvm::ArrayRef<std::unique_ptr<Decl>> getMemberDecls() const { return methods; }
     DeinitDecl* getDeinitializer() const;
     Type getType(bool isMutable = false) const;
-    /// 'T*' if this is class, or plain 'T' otherwise.
     Type getTypeForPassing(bool isMutable = false) const;
-    bool passByValue() const { return isStruct() || isUnion(); }
+    bool passByValue() const { return (isStruct() && isCopyable()) || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
-    bool isClass() const { return tag == TypeTag::Class; }
     bool isInterface() const { return tag == TypeTag::Interface; }
     bool isUnion() const { return tag == TypeTag::Union; }
     unsigned getFieldIndex(llvm::StringRef fieldName) const;

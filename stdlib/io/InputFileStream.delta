@@ -1,5 +1,5 @@
 /// A Stream that can only read from files, not write to them
-class InputFileStream: InputStream {
+struct InputFileStream: InputStream {
 
     var fs: FileStream;
 

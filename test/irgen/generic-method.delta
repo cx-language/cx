@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
 
-class X {
+struct X {
     init() {}
 
     // CHECK: define i32 @"X.f<int>"({}* %this, i32 ()* %t) {

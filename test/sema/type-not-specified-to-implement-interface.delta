@@ -6,7 +6,7 @@ interface X {
     func qux();
 }
 
-class Y {
+struct Y {
     init() {}
     func foo() {}
     func bar() {}

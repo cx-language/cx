@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class Foo {
+struct Foo {
     let i: int;
     // CHECK: define void @Foo.doStuff(%Foo* %this)
     func doStuff() { }
 }
 
-class Bar {
+struct Bar {
     let i: int;
     // CHECK: define void @Bar.doStuff(%Bar* %this) {
     func doStuff() { }

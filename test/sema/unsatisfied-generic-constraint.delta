@@ -4,7 +4,7 @@ interface Fooable {
     func foo()
 }
 
-struct F {
+struct F: Copyable {
     func foo() -> int { return 1 }
 }
 

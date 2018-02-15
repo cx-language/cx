@@ -1,4 +1,4 @@
-struct EnumeratedIterator<Element>: Iterator<EnumeratedIteratorEntry<Element>> {
+struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<Element>> {
     var base: ArrayIterator<Element>;
     var index: uint;
 
@@ -21,7 +21,7 @@ struct EnumeratedIterator<Element>: Iterator<EnumeratedIteratorEntry<Element>> {
     }
 }
 
-struct EnumeratedIteratorEntry<Value> {
+struct EnumeratedIteratorEntry<Value>: Copyable {
     let value: Value*;
     let index: uint;
 

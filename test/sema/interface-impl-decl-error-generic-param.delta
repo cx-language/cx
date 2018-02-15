@@ -1,7 +1,7 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:7: error: 'bool' is not an interface
-class Z<T>: T {
+// CHECK: [[@LINE+1]]:8: error: 'bool' is not an interface
+struct Z<T>: T {
     init() {}
 }
 

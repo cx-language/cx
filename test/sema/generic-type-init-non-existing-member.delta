@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-class A<T> {
+struct A<T> {
     // CHECK: 5:19: error: no member named 'd' in 'A<int>'
     init() { this.d = 3 }
 }

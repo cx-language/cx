@@ -1,4 +1,4 @@
-class Map<Key: Hashable, Value> {
+struct Map<Key: Hashable, Value> {
     var hashTable: Array<Array<(key: Key, value: Value)>>;
     var size: uint;
 

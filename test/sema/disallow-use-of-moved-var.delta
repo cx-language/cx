@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-class T {
+struct T {
     init() {}
 }
 

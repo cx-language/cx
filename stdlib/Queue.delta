@@ -1,5 +1,5 @@
 /// First-in-first-out data structure
-class Queue<T> {
+struct Queue<T> {
 
     var head: mutable Node<T>*?;
     var tail: mutable Node<T>*?;
@@ -66,7 +66,7 @@ class Queue<T> {
 }
 
 /// Represents a single element in the queue
-class Node<T> {
+struct Node<T> {
 
     var next: mutable Node<T>*?;
     var value: T;

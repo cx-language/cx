@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-class Foo {
+struct Foo {
     let i: int;
 
     func bar() {

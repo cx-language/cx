@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-class C {
+struct C {
     func f() {
         return
     }

@@ -11,7 +11,7 @@ func g() -> X<int> {
     return x;
 }
 
-class X<T> {
+struct X<T> {
     init() {}
 
     func g() {

@@ -2,7 +2,7 @@
 
 // CHECK-NOT: a.delta:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: '{{(a|A\.a)}}' is private
 
-class A {
+struct A {
     private var a: int;
     init() {}
     mutating func f() {

@@ -1,6 +1,6 @@
 # Arrays
 
-In Delta, the `Array` class is a dynamic array (like `std::vector` in C++) that
+In Delta, the `Array` type is a dynamic array (like `std::vector` in C++) that
 resizes dynamically and supports fast insertion to the end. It also contains
 useful functions, some of which are listed here along with sample use cases.
 

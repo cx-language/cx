@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
-class Foo { }
+struct Foo { }
 
 func main() {
     let f: Foo = undefined;

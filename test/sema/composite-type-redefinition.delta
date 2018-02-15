@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct Foo { }
+struct Foo: Copyable { }
 
-// CHECK: [[@LINE+1]]:7: error: redefinition of 'Foo'
-class Foo { }
+// CHECK: [[@LINE+1]]:8: error: redefinition of 'Foo'
+struct Foo { }

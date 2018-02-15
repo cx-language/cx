@@ -1,5 +1,5 @@
 /// A Stream that can only write to files
-class OutputFileStream: OutputStream {
+struct OutputFileStream: OutputStream {
 
     var fs: FileStream;
 

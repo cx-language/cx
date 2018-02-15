@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-struct S {
+struct S: Copyable {
     init() {
         var i = 4;
     }

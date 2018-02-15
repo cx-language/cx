@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct vec2 {
+struct vec2: Copyable {
     let x: int
     let y: int
 
@@ -40,7 +40,7 @@ func ==(a: vec2, b: vec2) -> bool {
     return a.x == b.x
 }
 
-struct A<T> {}
+struct A<T>: Copyable {}
 
 func ==<T>(a: A<T>, b: A<T>) -> bool {
     return true

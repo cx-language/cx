@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-class A<T> {
+struct A<T> {
     var a: T*?
     init() { this.a = null }
 }

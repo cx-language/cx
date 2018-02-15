@@ -6,7 +6,7 @@
 * [Operators](operators.md)
 * [Functions](functions.md)
 * [Control Flow](control-flow.md)
-* [Classes and Structs](classes-and-structs.md)
+* [Structs](structs.md)
 * [Interfaces](interfaces.md)
 * [Ranges](ranges.md)
 * [Arrays](arrays.md)

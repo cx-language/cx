@@ -1,4 +1,4 @@
-class Set<Key: Hashable> {
+struct Set<Key: Hashable> {
 
     var map: Map<Key, bool>;
 

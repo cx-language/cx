@@ -9,7 +9,7 @@ interface Interface {
     }
 }
 
-class S: Interface {
+struct S: Interface {
     func f() -> S* { return this; }
 }
 

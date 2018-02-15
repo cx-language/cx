@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct A<E> {
+struct A<E>: Copyable {
     init() { }
 
     // CHECK-DAG: define void @"A<int>.a"({}* %this, i32 %n)

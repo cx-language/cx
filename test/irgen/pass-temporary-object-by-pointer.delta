@@ -1,11 +1,11 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct A {
+struct A: Copyable {
     let i: int;
     init() {}
 }
 
-class B {
+struct B {
     let i: int;
     init() {}
 }

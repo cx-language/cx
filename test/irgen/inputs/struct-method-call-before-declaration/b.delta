@@ -1,4 +1,4 @@
-struct B {
+struct B: Copyable {
     init() {}
     func f() {}
 }

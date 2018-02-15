@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class Y {
+struct Y {
     init() {}
     deinit() {}
 }

@@ -1265,7 +1265,7 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel) {
     return FieldDecl(type, std::move(name.getString()), typeDecl, accessLevel, name.getLocation());
 }
 
-/// type-template-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? '{' member-decl* '}'
+/// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}'
 std::unique_ptr<TypeTemplate> Parser::parseTypeTemplate(AccessLevel accessLevel) {
     std::vector<GenericParamDecl> genericParams;
     auto typeDecl = parseTypeDecl(&genericParams, accessLevel);
@@ -1287,15 +1287,12 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
     return name;
 }
 
-/// type-decl ::= ('class' | 'struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}'
+/// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}'
 /// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl
 std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     TypeTag tag;
     switch (consumeToken()) {
-        case Token::Class:
-            tag = TypeTag::Class;
-            break;
         case Token::Struct:
             tag = TypeTag::Struct;
             break;
@@ -1497,7 +1494,6 @@ start:
             decl = parseExternFunctionDecl();
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionDecl>(*decl));
             break;
-        case Token::Class:
         case Token::Struct:
         case Token::Interface:
             if (lookAhead(2) == Token::Less) {

@@ -1,6 +1,6 @@
 // RUN: check_exit_status 15 %delta run %s
 
-struct vec2 {
+struct vec2: Copyable {
     var x: int;
     var y: int;
 

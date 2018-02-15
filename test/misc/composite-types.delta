@@ -1,9 +1,9 @@
 // RUN: check_exit_status 5 %delta run %s
 
-struct Foo { }
-class Bar { }
+struct Foo: Copyable { }
+struct Bar { }
 
-struct X {
+struct X: Copyable {
     let a: int;
 
     init(a: int) {
@@ -11,7 +11,7 @@ struct X {
     }
 }
 
-class Y {
+struct Y {
     let y: char*;
 }
 

@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
-class Foo {
+struct Foo {
     let i: int;
     mutating func bar() { let f: mutable Foo* = this; }
 }

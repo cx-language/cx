@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class S {
+struct S {
     var t: (a: int);
 
     // CHECK: define { i32 }* @S.f(%S* %this)

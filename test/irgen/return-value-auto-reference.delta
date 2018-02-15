@@ -8,7 +8,7 @@ func f() -> int* {
     return i;
 }
 
-class A {
+struct A {
     var b: bool[2];
 
     // CHECK: define i1* @A.ff(%A* %this) {
@@ -20,11 +20,11 @@ class A {
     }
 }
 
-struct B {
+struct B: Copyable {
     let a: char;
 
     func gg() -> char* {
-        return a; // TODO: Disallow this? Or always take struct 'this' by reference?
+        return a; // FIXME: Disallow this? Or always take Copyable struct 'this' by reference?
                   // Currently the generated IR returns a pointer to a local alloca.
     }
 }

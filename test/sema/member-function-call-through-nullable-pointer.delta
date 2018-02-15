@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s | %FileCheck %s
 
-struct Foo {
+struct Foo: Copyable {
     let i: int;
     func bar() { }
 }

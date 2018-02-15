@@ -1,6 +1,6 @@
 // RUN: check_exit_status 21 %delta run %s
 
-struct Foo {
+struct Foo: Copyable {
     let value: int;
 
     init(value: int) {

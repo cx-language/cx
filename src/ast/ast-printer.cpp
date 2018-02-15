@@ -478,9 +478,6 @@ void ASTPrinter::printTypeDecl(const TypeDecl& decl) {
         case TypeTag::Struct:
             out << "struct ";
             break;
-        case TypeTag::Class:
-            out << "class ";
-            break;
         case TypeTag::Interface:
             out << "interface ";
             break;

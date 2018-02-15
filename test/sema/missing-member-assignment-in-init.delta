@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s | %FileCheck %s
 
-class A {
+struct A {
     var i: int;
 
     // CHECK: [[@LINE+1]]:5: warning: initializer doesn't initialize member variable 'i'

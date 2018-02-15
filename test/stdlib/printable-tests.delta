@@ -1,10 +1,10 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
 func main() {
-    testCustomPrintableClass();
+    testCustomPrintablestruct();
 }
 
-class A: Printable {
+struct A: Printable {
     let a: StringRef;
     let b: StringRef;
 
@@ -20,6 +20,6 @@ class A: Printable {
     }
 }
 
-func testCustomPrintableClass() {
+func testCustomPrintablestruct() {
     assert(StringRef(A("foo", "bar").toString()) == "foo+bar");
 }

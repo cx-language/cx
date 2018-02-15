@@ -2,7 +2,7 @@
 
 func f<T>() {}
 
-class A<T> {
+struct A<T> {
     init() {}
 }
 

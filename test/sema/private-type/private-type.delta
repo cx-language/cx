@@ -21,7 +21,7 @@ func h() -> A*? {
     return null;
 }
 
-class B {
+struct B {
     // CHECK: [[@LINE+1]]:12: warning: 'A' is private
     var a: A;
 }

@@ -1,6 +1,6 @@
 import "header.h"
 
-struct A<E> {
+struct A<E>: Copyable {
     init() {
         foo()
     }

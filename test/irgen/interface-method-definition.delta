@@ -9,7 +9,7 @@ interface A {
     func g() -> int { return f() * 2; }
 }
 
-class B: A {
+struct B: A {
     init() {}
     func f() -> int { return 21; }
 }

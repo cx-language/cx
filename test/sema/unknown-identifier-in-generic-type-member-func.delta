@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct S<T> {
+struct S<T>: Copyable {
     func foo() {
         // CHECK: [[@LINE+1]]:9: error: unknown identifier 'x'
         x++

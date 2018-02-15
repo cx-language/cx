@@ -10,4 +10,4 @@ var sp: S*? = null
 
 func foo(p: S*?) { }
 
-struct S { var i: int }
+struct S: Copyable { var i: int }

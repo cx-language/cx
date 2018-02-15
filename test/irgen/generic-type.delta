@@ -4,7 +4,7 @@
 // CHECK: %"A<A<A<bool>>>" = type { %"A<A<bool>>" }
 // CHECK: %"A<A<bool>>" = type { %"A<bool>" }
 // CHECK: %"A<bool>" = type { i1 }
-class A<T> {
+struct A<T> {
     let a: T
 }
 

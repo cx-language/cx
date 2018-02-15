@@ -3,7 +3,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-S
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 
-struct S {
+struct S: Copyable {
     init() {}
 
     // CHECK-S: define void @S.foo({}* %this)
@@ -17,7 +17,7 @@ struct S {
     func bar() { }
 }
 
-class T<U> {
+struct T<U> {
     // CHECK: define void @"T<int>.init"({}* %this)
     // CHECK-NEXT: call void @"T<int>.baz"({}* %this)
     init() {

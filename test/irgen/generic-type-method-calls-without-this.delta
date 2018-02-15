@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=A
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=B
 
-struct S<T> {
+struct S<T>: Copyable {
     init() {}
 
     // A: define void @"S<int>.f"({} %this)

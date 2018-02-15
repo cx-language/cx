@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-struct S<T> {
+struct S<T>: Copyable {
     init() {}
 
     func f(t: T) {

@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
 
-class S<E> {
+struct S<E> {
     // CHECK-DAG: define void @"S<A>.init"
     init() {
         // CHECK: call void @A.init
@@ -13,7 +13,7 @@ class S<E> {
     func s() {}
 }
 
-struct A {
+struct A: Copyable {
     init() {}
 
     // CHECK-DAG: define void @A.h({} %this)

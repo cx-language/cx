@@ -1,4 +1,4 @@
-class ByteIterator<Stream: InputStream>: Iterator<uint8> {
+struct ByteIterator<Stream: InputStream>: Copyable, Iterator<uint8> {
 
     var stream: Stream*;
     var next: int;
@@ -22,7 +22,7 @@ class ByteIterator<Stream: InputStream>: Iterator<uint8> {
     }
 
     func iterator() -> ByteIterator<Stream> {
-        return *this;
+        return this;
     }
 
 }

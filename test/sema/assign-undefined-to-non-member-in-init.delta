@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-class A {
+struct A {
     var i: int;
 
     init() {

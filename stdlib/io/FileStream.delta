@@ -1,5 +1,5 @@
 /// A Stream that can both read and write to files
-class FileStream: InputStream, OutputStream {
+struct FileStream: InputStream, OutputStream {
 
     var file: void*?;
 

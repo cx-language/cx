@@ -1,25 +1,25 @@
 // TODO: Remove code duplication by declaring a 'FloatingPoint' interface that implements the
 // 'compare' function for all floating-point types.
 
-struct float: Comparable {
+struct float: Copyable, Comparable {
     func compare(other: float*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
-struct float32: Comparable {
+struct float32: Copyable, Comparable {
     func compare(other: float32*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
-struct float64: Comparable {
+struct float64: Copyable, Comparable {
     func compare(other: float64*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
-struct float80: Comparable {
+struct float80: Copyable, Comparable {
     func compare(other: float80*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }

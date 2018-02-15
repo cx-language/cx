@@ -1,5 +1,5 @@
 /// An ordered key-value container that supports fast insertion, deletion and lookup
-class OrderedMap<Key, Value> {
+struct OrderedMap<Key, Value> {
 
     var root: mutable AVLnode<Key, Value>*?;
     var size: uint;
@@ -364,7 +364,7 @@ class OrderedMap<Key, Value> {
 }
 
 /// One node in the AVL tree
-class AVLnode<Key, Value> {
+struct AVLnode<Key, Value> {
     var entry: (key: Key, value: Value);
     var balance: int;
     var parent: mutable AVLnode<Key, Value>*?;

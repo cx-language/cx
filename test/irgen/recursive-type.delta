@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: %S = type { %S* }
-struct S {
+struct S: Copyable {
     let next: S*
 }
 

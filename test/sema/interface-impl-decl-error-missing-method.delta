@@ -4,8 +4,8 @@ interface X {
     func foo();
 }
 
-// CHECK: [[@LINE+1]]:7: error: 'Z' doesn't have member function 'foo' required by interface 'X'
-class Z<T>: X {
+// CHECK: [[@LINE+1]]:8: error: 'Z' doesn't have member function 'foo' required by interface 'X'
+struct Z<T>: X {
     init() {}
 }
 

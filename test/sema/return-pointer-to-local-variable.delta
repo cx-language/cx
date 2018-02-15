@@ -12,7 +12,7 @@ func f1() -> int* {
     return a;
 }
 
-struct S {
+struct S: Copyable {
     let i: int;
 
     func f2() -> int* {

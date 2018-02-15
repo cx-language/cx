@@ -21,7 +21,6 @@ struct Token {
         Break,
         Case,
         Cast,
-        Class,
         Const,
         Continue,
         Default,

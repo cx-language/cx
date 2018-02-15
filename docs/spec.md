@@ -11,17 +11,14 @@ __Note:__ This document is incomplete.
 
 The following keywords are reserved and can't be used as identifiers.
 
-    addressof   break       case        cast        catch       class
-    const       continue    default     defer       deinit      do
-    else        enum        extern      fallthrough false       for
-    func        if          import      in          init        inout
-    interface   let         move        mutable     mutating    null
-    private     public      return      sizeof      static      struct
-    switch      this        throw       throws      true        try
-    typealias   undefined   var         while       _
-
-The keywords `class` and `struct` can be used as variable names but not as a
-type names.
+    addressof   break       case        cast        catch       const
+    continue    default     defer       deinit      do          else
+    enum        extern      fallthrough false       for         func
+    if          import      in          init        interface   let
+    mutable     mutating    null        private     public      return
+    sizeof      static      struct      switch      this        throw
+    throws      true        try         typealias   undefined   var
+    while       _
 
 ### Operators and delimiters
 
@@ -210,13 +207,13 @@ bounds-checked.
 
 The type `string` holds sequences of Unicode characters.
 
-### Composite types
+### Struct types
 
-There are two kinds of composite types: classes and structs.
+Struct types can be defined using the `struct` keyword:
 
 #### Member variables
 
-Composite types contain a set of member variables. Each member variable may
+Structs types contain a set of member variables. Each member variable may
 contain an associated getter and/or setter, that are called when the member
 variable is accessed or assigned to, respectively. The syntax of a member
 variable definition is as follows:
@@ -228,35 +225,13 @@ variable definition is as follows:
 > _getter-definition_ → `get` `{` _getter-body_ `}`<br>
 > _setter-definition_ → `set` `{` _setter-body_ `}`<br>
 
-#### Class types
-
-Types declared using the `class` keyword are _class types_, also called
-_reference types_. By default, they're allocated on the stack. When passed as
-functions arguments, they're passed by reference. When class types are returned
-from functions, they're moved if they're a local variable, or otherwise returned
-by reference.
-
-Sometimes it's useful to pass classes by explicitly moving or copying them. This
-can be accomplished by using the `move` keyword, or constructing a new object by
-calling the copy constructor.
-
-#### Struct types
-
-Types declared using the `struct` keyword are _struct types_, also called _value
-types_. They're always allocated on the stack. When passed as function arguments
-and returned from functions, they're passed by copy.
-
-Sometimes it's useful to explicitly pass structs by reference, for example in
-order to modify them inside the function, and have the changes affect the actual
-value outside the function. This can be accomplished by using the `inout` keyword.
-
 ### Interface types
 
 The `interface` keyword declares an interface, i.e. a set of requirements
 (member functions and properties). Types that are declared to implement an
 interface `I` and fulfill `I`'s requirements can be used as values for a
-variable of type `I`. This enables runtime polymorphism. Like classes and
-structs, interfaces may be generic.
+variable of type `I`. This enables runtime polymorphism. Like structs,
+interfaces may be generic.
 
 ### Optional type
 
@@ -404,21 +379,6 @@ deallocate resources allocated in an initializer. They are declared as follows:
 
 > _deinitializer-definition_ → `deinit` `(` `)` `{` _body_ `}`<br>
 
-#### Parameters
-
-Unlike C++ and C, Delta is not a copy-by-default language. When you declare a
-parameter to be of type `T`, the parameter is not automatically pass-by-value.
-Instead, whether `T` is a class or struct will determine how it's passed:
-classes are passed by reference (by default), while structs are passed by copy
-(by default).
-
-To override the default behavior, the keywords `move` and `inout` may be used:
-
-- `move` can be applied to class parameters, and forces the argument to be a
-  pass-by-value temporary, i.e. a freshly copied or moved value.
-- `inout` can be applied to struct parameters, and causes any changes to the
-  parameter to be reflected at the call site.
-
 #### Private and public functions
 
 Both member functions and global functions may be declared private or public by
@@ -428,27 +388,27 @@ functions are accessible from anywhere, including other modules. Functions not
 marked private or public are _module-private_, i.e. only accessible within the
 module they're declared in.
 
-### Classes
+### Structs
 
-Classes are defined as follows:
+Structs are defined as follows:
 
-> _class-definition_ → `class` _class-name_ `{` _member-list_ `}`<br>
+> _struct-definition_ → `struct` _struct-name_ `{` _member-list_ `}`<br>
 
-_class-name_ becomes the name of the class. _member-list_ is a list of member
-variable declarations. Classes can be declared to implement interfaces by
-listing the interfaces after a `:` following the class name:
+_struct-name_ becomes the name of the struct. _member-list_ is a list of member
+variable declarations. Structs can be declared to implement interfaces by
+listing the interfaces after a `:` following the struct name:
 
-> `class` _class-name_ `:` _interface-list_ `{` _member-list_ `}`<br>
+> `struct` _struct-name_ `:` _interface-list_ `{` _member-list_ `}`<br>
 
 The _interface-list_ is a comma-separated list of one or more interface names.
-The compiler will emit an error if the class doesn't fulfill all the
+The compiler will emit an error if the struct doesn't fulfill all the
 requirements of a specified interface.
 
-#### Generic classes
+#### Generic structs
 
-Generic classes can be declared as follows:
+Generic structs can be declared as follows:
 
-> `class` _class-name_ `<` _generic-parameter-list_ `>` `{` _member-list_ `}`<br>
+> `struct` _struct-name_ `<` _generic-parameter-list_ `>` `{` _member-list_ `}`<br>
 
 where _generic-parameter-list_ is a comma separated list of one or more generic
 parameters. A generic parameter is one of the following:
@@ -456,13 +416,7 @@ parameters. A generic parameter is one of the following:
 > _generic-type-parameter_ → _identifier_<br>
 
 The identifier of a _generic-type-parameter_ serves as a placeholder for types
-used to instantiate the generic class.
-
-### Structs
-
-The syntax for declaring structs is exactly the same as for classes, except the
-keyword `class` is substituted with `struct`. Like classes, structs can be
-generic.
+used to instantiate the generic struct.
 
 ### Type aliases
 
@@ -472,18 +426,16 @@ exactly as the target (aliased) type, except that it cannot be implicitly
 converted to or from that type. Explicit conversions on the other hand are
 allowed. This can be used to create type-safe abstractions.
 
-> _alias-declaration_ → `class` _identifier_ `=` _class-name_ `;`<br>
 > _alias-declaration_ → `struct` _identifier_ `=` _struct-name_ `;`<br>
 > _alias-declaration_ → `interface` _identifier_ `=` _interface-name_ `;`<br>
 
 Type aliases can also be generic:
 
-> _generic-alias-declaration_ → `class` _identifier_ `<` _generic-parameter-list_ `>` `=` _class-name_ `;`<br>
 > _generic-alias-declaration_ → `struct` _identifier_ `<` _generic-parameter-list_ `>` `=` _struct-name_ `;`<br>
 > _generic-alias-declaration_ → `interface` _identifier_ `<` _generic-parameter-list_ `>` `=` _interface-name_ `;`<br>
 
 Generic parameters declared in the _generic-parameter-list_ are available for
-use in the _class-name_ / _struct-name_ / _interface-name_ part.
+use in the _struct-name_ / _interface-name_ part.
 
 ## Statements
 

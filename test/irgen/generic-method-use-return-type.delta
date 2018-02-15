@@ -2,7 +2,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=X-INT-G
 
-class X<T> {
+struct X<T> {
     // CHECK-DAG: define {} @"X<int>.f<bool>"({}* %this, i1 %u)
     func f<U>(u: U) -> X<U> {
         let x: X<U> = undefined;

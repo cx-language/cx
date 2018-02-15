@@ -15,7 +15,7 @@ interface Interface {
     }
 }
 
-class S: Interface {
+struct S: Interface {
     let that: S*;
 
     init() { that = this; }

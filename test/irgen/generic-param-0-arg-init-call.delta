@@ -1,11 +1,11 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class C {
+struct C {
     var i: int;
     init() {}
 }
 
-class A<T> {
+struct A<T> {
     // CHECK: define void @"A<C>.init"
     // CHECK-NEXT: %t = alloca %C
     // CHECK-NEXT: call void @C.init(%C* %t)

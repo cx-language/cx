@@ -123,6 +123,10 @@ bool TypeDecl::hasInterface(const TypeDecl& interface) const {
     return llvm::any_of(getInterfaces(), [&](Type type) { return type.getDecl() == &interface; });
 }
 
+bool TypeDecl::isCopyable() const {
+    return llvm::any_of(getInterfaces(), [&](Type type) { return type.getName() == "Copyable"; });
+}
+
 void TypeDecl::addField(FieldDecl&& field) {
     fields.emplace_back(std::move(field));
 }
@@ -147,10 +151,14 @@ Type TypeDecl::getType(bool isMutable) const {
 Type TypeDecl::getTypeForPassing(bool isMutable) const {
     switch (tag) {
         case TypeTag::Struct:
+            if (isCopyable()) {
+                return getType(isMutable);
+            } else {
+                return PointerType::get(getType(isMutable));
+            }
         case TypeTag::Union:
         case TypeTag::Enum:
             return getType(isMutable);
-        case TypeTag::Class:
         case TypeTag::Interface:
             return PointerType::get(getType(isMutable));
     }

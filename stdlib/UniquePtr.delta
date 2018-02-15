@@ -1,4 +1,4 @@
-class UniquePtr<Pointee> {
+struct UniquePtr<Pointee> {
 	var pointer: mutable Pointee*;
 
 	init(value: Pointee) {

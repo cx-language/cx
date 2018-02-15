@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class Foo {
+struct Foo {
     var i: int;
 
     // CHECK: define void @Foo.deinit(%Foo* %this)
@@ -18,7 +18,7 @@ class Foo {
     mutating func f() {}
 }
 
-struct Bar {
+struct Bar: Copyable {
     var i: int;
 
     // CHECK: define void @Bar.deinit(%Bar* %this)

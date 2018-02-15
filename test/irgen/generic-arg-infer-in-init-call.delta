@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-CALL
 
-class C<T> {
+struct C<T> {
     let t: T;
 
     // CHECK: define void @"C<int>.init"(%"C<int>"* %this, i32 %t)

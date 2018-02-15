@@ -1,4 +1,4 @@
-struct MapIterator<Key, Value>: Iterator<(key: Key, value: Value)*> {
+struct MapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Value)*> {
     var hashTableIterator: ArrayIterator<Array<(key: Key, value: Value)>>;
     var current: (key: Key, value: Value)*;
 

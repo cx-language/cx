@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct Foo {
+struct Foo: Copyable {
     init(a: int) { }
     init(b: int) { }
 }

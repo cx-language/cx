@@ -1,4 +1,4 @@
-struct RangeIterator<T>: Iterator<T> {
+struct RangeIterator<T>: Copyable, Iterator<T> {
     var current: T;
     let end: T;
 

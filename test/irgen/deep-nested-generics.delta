@@ -4,7 +4,7 @@ interface H {
     func h() -> int;
 }
 
-struct R {
+struct R: Copyable {
     let i: int;
 
     func h() -> int {
@@ -12,7 +12,7 @@ struct R {
     }
 }
 
-class A<T> {
+struct A<T> {
     let t: T;
 
     init() {}
@@ -22,7 +22,7 @@ class A<T> {
     }
 }
 
-class S<E: H> {
+struct S<E: H> {
     var a: A<A<E>>;
 
     init() {}

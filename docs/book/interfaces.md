@@ -48,9 +48,9 @@ main.delta:4:9: error: type 'X' doesn't implement interface 'Comparable'
 
 ## Declaring Interfaces
 
-Interfaces are types that specify a set of member functions. Other types can
+Interfaces are types that specify a set of member functions. Struct types can
 implement an interface by listing the interface name after a colon following the
-class name, and providing the member functions required by the interface:
+struct name, and providing the member functions required by the interface:
 
 ```go
 interface Fooable {

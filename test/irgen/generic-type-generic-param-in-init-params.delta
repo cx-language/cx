@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class M<T> {
+struct M<T> {
     // CHECK-DAG: define void @"M<int>.init"({}* %this, %"ArrayRef<int>" %a)
     init(a: T[]*) {}
 }

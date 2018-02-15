@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-class X<T> {
+struct X<T> {
     let y: Y<T>*?;
 
     init() {
@@ -12,7 +12,7 @@ class X<T> {
     }
 }
 
-class Y<T> {
+struct Y<T> {
     let a: T;
 
     func f() {}

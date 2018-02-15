@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
 
-class X<T> {
+struct X<T> {
     init() {}
 
     // CHECK: define void @"X<int>.f<bool>"({}* %this, i32 (i1)* %u)

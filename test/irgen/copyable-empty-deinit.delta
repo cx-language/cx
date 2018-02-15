@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-struct Foo {
+struct Foo: Copyable {
     deinit() { }
 }
 

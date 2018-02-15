@@ -2,6 +2,6 @@
 func main() {
     let a = Foo(qux: 4);
 }
-struct Foo {
+struct Foo: Copyable {
     init(qux: int) { }
 }

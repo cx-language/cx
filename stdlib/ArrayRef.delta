@@ -1,4 +1,4 @@
-struct ArrayRef<Element> {
+struct ArrayRef<Element>: Copyable {
     var data: Element*;
     var size: uint;
 

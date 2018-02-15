@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-class C {
+struct C {
     // CHECK: [[@LINE+1]]:16: error: cannot call mutating function 'C.g' on immutable receiver
     func f() { g() }
     mutating func g() {}

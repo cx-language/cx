@@ -1,5 +1,5 @@
 /// An ordered Set that supports fast lookup, insertion and deletion.
-class OrderedSet<Element> {
+struct OrderedSet<Element> {
     var map: OrderedMap<Element, bool>;
 
     /// Initiates an empty Set.

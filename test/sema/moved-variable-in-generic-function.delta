@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
-class A {
+struct A {
     init() {}
 }
 

@@ -4,7 +4,7 @@ interface X {
     func foo();
 }
 
-class Z<T>: T {
+struct Z<T>: T {
     init() {}
     func foo() {}
 }

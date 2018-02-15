@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-class C: Comparable {
+struct C: Comparable {
 
     var a: int;
 

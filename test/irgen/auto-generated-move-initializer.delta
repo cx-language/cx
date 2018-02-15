@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-class X {
+struct X {
     let i: int;
 
     deinit() {}

@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct S {
+struct S: Copyable {
     let i: int;
     init() {}
     func f() {}
 }
 
-class C {
+struct C {
     let i: int;
     init() {}
     func f() {}

@@ -1,4 +1,4 @@
-class String: Comparable, OutputStream, Printable {
+struct String: Comparable, OutputStream, Printable {
     var characters: Array<char>;
 
     /// Initializes an empty string.

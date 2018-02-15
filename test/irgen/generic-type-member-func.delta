@@ -3,7 +3,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=UNUSED
 
 // CHECK: %"F<int, bool>" = type { i32, i1 }
-struct F<T, U> {
+struct F<T, U>: Copyable {
     var a: T
     var b: U
 

@@ -3,7 +3,7 @@
 
 extern func f() -> bool;
 
-class A {
+struct A {
     let b: B;
     let bb: B;
     let i: int;
@@ -29,7 +29,7 @@ class A {
     }
 }
 
-class B {
+struct B {
     let i: int;
     init() {}
     // CHECK-B: define void @B.deinit(%B* %this)
@@ -37,7 +37,7 @@ class B {
     deinit() {}
 }
 
-class C {
+struct C {
     let b: B;
     let bb: B;
     init() {}

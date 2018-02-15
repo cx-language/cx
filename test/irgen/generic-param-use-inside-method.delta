@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct S<T> {
+struct S<T>: Copyable {
     init() {}
 
     // CHECK: define void @"S<int>.f"({} %this)

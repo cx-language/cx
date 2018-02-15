@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct S {
+struct S: Copyable {
     let a: int*
 
     // CHECK: define void @S.foo(%S %this)

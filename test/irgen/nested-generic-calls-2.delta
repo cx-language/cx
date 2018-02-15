@@ -5,13 +5,13 @@ interface I {
     func i();
 }
 
-struct S {
+struct S: Copyable {
     let i: int;
     init() {}
     func i() {}
 }
 
-class A<E> {
+struct A<E> {
     init() {}
 
     // CHECK: define %S @"A<S>.a"({}* %this)
@@ -24,7 +24,7 @@ class A<E> {
     }
 }
 
-class M<T: I> {
+struct M<T: I> {
     let t: T;
 
     init() {}

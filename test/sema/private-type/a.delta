@@ -2,7 +2,7 @@
 
 // CHECK-NOT: a.delta:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: 'A' is private
 
-private class A {
+private struct A {
     init() {}
 }
 
@@ -19,11 +19,11 @@ private func l() -> A*? {
     return null;
 }
 
-class C {
+struct C {
     private var a: A;
 }
 
-private class D {
+private struct D {
     // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.delta:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
     var a: A;
 }
@@ -44,7 +44,7 @@ func p() -> mutable A*? {
     return null;
 }
 
-class E {
+struct E {
     // CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:12: warning: using private type 'A' in public declaration
     var a: mutable A*;
 }

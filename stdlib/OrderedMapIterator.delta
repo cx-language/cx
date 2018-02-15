@@ -1,5 +1,5 @@
 // TODO fix return type to tuple when tuples are implemented
-struct OrderedMapIterator<Key, Value>: Iterator<(key: Key, value: Value)*> {
+struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Value)*> {
     var current: AVLnode<Key, Value>*?;
     let map: OrderedMap<Key, Value>*;
 

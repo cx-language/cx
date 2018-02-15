@@ -1,4 +1,4 @@
-struct ClosedRangeIterator<T>: Iterator<T> {
+struct ClosedRangeIterator<T>: Copyable, Iterator<T> {
     var current: T;
     let end: T;
 

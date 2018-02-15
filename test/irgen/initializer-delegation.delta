@@ -6,7 +6,7 @@ func main() {
     let x = X(4, 2);
 }
 
-class X {
+struct X {
     // CHECK-2: define void @X.init{{[\.0-9]*}}({}* %this, i32 %a, i32 %b)
     // CHECK-2-NEXT: call void @X.init{{[\.0-9]*}}({}* %this, i32 %a)
     // CHECK-2-NEXT: ret void
