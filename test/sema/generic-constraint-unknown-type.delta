@@ -1,5 +1,4 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-// TODO: Make the error message location point to 'Foo' rather than 'T'.
-// CHECK: [[@LINE+1]]:8: error: unknown type 'Foo'
+// CHECK: [[@LINE+1]]:11: error: unknown type 'Foo'
 func f<T: Foo>() {}

@@ -62,7 +62,7 @@ private:
     void typecheckWhileStmt(WhileStmt& whileStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
-    void typecheckType(Type type, SourceLocation location, AccessLevel userAccessLevel);
+    void typecheckType(Type type, AccessLevel userAccessLevel);
     void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel);
     void typecheckTypeDecl(TypeDecl& decl);

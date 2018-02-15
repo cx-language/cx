@@ -45,10 +45,14 @@ inline TypeBase::~TypeBase() {}
 struct Type {
 public:
     Type() : typeBase(nullptr), mutableFlag(false) {}
-    Type(TypeBase* typeBase, bool isMutable) : typeBase(typeBase), mutableFlag(isMutable) {}
+    Type(TypeBase* typeBase, bool isMutable, SourceLocation location)
+    : typeBase(typeBase), mutableFlag(isMutable), location(location) {}
     TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
     TypeBase* getBase() const { return typeBase; }
+    SourceLocation getLocation() const { return location; }
+    void setLocation(SourceLocation location) { this->location = location; }
+    Type withLocation(SourceLocation location) const { return Type(typeBase, mutableFlag, location); }
 
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
     bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
@@ -92,7 +96,7 @@ public:
     bool isUnsigned() const;
     bool isMutable() const { return mutableFlag; }
     void setMutable(bool isMutable);
-    Type asMutable(bool isMutable = true) const { return Type(typeBase, isMutable); }
+    Type asMutable(bool isMutable = true) const { return Type(typeBase, isMutable, location); }
     Type asImmutable() const { return asMutable(false); }
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
@@ -112,33 +116,37 @@ public:
     Type getPointee() const;
     Type getWrappedType() const;
 
-    static Type getVoid(bool isMutable = false);
-    static Type getBool(bool isMutable = false);
-    static Type getInt(bool isMutable = false);
-    static Type getInt8(bool isMutable = false);
-    static Type getInt16(bool isMutable = false);
-    static Type getInt32(bool isMutable = false);
-    static Type getInt64(bool isMutable = false);
-    static Type getUInt(bool isMutable = false);
-    static Type getUInt8(bool isMutable = false);
-    static Type getUInt16(bool isMutable = false);
-    static Type getUInt32(bool isMutable = false);
-    static Type getUInt64(bool isMutable = false);
+    static Type getVoid(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getBool(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getInt(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getInt8(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getInt16(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getInt32(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getInt64(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getUInt(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getUInt8(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getUInt16(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getUInt32(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getUInt64(bool isMutable = false, SourceLocation location = SourceLocation());
     // TODO: Return correct uintptr type by checking target platform pointer size.
-    static Type getUIntPtr(bool isMutable = false) { return getUInt64(isMutable); }
-    static Type getFloat(bool isMutable = false);
-    static Type getFloat32(bool isMutable = false);
-    static Type getFloat64(bool isMutable = false);
-    static Type getFloat80(bool isMutable = false);
-    static Type getString(bool isMutable = false);
-    static Type getChar(bool isMutable = false);
-    static Type getNull(bool isMutable = false);
+    static Type getUIntPtr(bool isMutable = false, SourceLocation location = SourceLocation()) {
+        return getUInt64(isMutable, location);
+    }
+    static Type getFloat(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getFloat32(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getFloat64(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getFloat80(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getString(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getChar(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getNull(bool isMutable = false, SourceLocation location = SourceLocation());
 
     static bool isBuiltinScalar(llvm::StringRef typeName);
 
 private:
     TypeBase* typeBase;
     bool mutableFlag;
+    // TODO: Add a dedicated class hierarchy for storing source locations with types, like TypeLoc in Clang and Swift.
+    SourceLocation location;
 };
 
 class BasicType : public TypeBase {
@@ -147,7 +155,8 @@ public:
     llvm::StringRef getName() const { return name; }
     TypeDecl* getDecl() const { return decl; }
     void setDecl(TypeDecl* decl) { this->decl = decl; }
-    static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable = false);
+    static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable = false,
+                    SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::BasicType; }
 
 private:
@@ -170,7 +179,7 @@ public:
     static Type getIndexType() { return Type::getUInt(); }
     static const int64_t runtimeSize = -1;
     static const int64_t unknownSize = -2;
-    static Type get(Type type, int64_t size, bool isMutable = false);
+    static Type get(Type type, int64_t size, bool isMutable = false, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
 
 private:
@@ -194,7 +203,8 @@ bool operator==(const TupleElement&, const TupleElement&);
 class TupleType : public TypeBase {
 public:
     llvm::ArrayRef<TupleElement> getElements() const { return elements; }
-    static Type get(std::vector<TupleElement>&& elements, bool isMutable = false);
+    static Type get(std::vector<TupleElement>&& elements, bool isMutable = false,
+                    SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
 
 private:
@@ -209,7 +219,8 @@ public:
     Type getReturnType() const { return returnType; }
     llvm::ArrayRef<Type> getParamTypes() const { return paramTypes; }
     std::vector<ParamDecl> getParamDecls(SourceLocation location = SourceLocation()) const;
-    static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable = false);
+    static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable = false,
+                    SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::FunctionType; }
 
 private:
@@ -224,7 +235,7 @@ private:
 class PointerType : public TypeBase {
 public:
     Type getPointeeType() const { return pointeeType; }
-    static Type get(Type pointeeType, bool isMutable = false);
+    static Type get(Type pointeeType, bool isMutable = false, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PointerType; }
 
 private:
@@ -237,7 +248,7 @@ private:
 class OptionalType : public TypeBase {
 public:
     Type getWrappedType() const { return wrappedType; }
-    static Type get(Type wrappedType, bool isMutable = false);
+    static Type get(Type wrappedType, bool isMutable = false, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::OptionalType; }
 
 private:

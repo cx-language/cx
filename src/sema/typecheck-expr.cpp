@@ -69,7 +69,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
             return llvm::cast<ParamDecl>(decl).getType();
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-            return Type(llvm::cast<FunctionDecl>(decl).getFunctionType(), false);
+            return Type(llvm::cast<FunctionDecl>(decl).getFunctionType(), false, SourceLocation());
         case DeclKind::GenericParamDecl:
             llvm_unreachable("cannot refer to generic parameters yet");
         case DeclKind::InitDecl:

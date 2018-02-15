@@ -145,7 +145,7 @@ std::unique_ptr<Stmt> ForStmt::lower() {
                                                     std::vector<Type>(), location);
     }
 
-    auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true), std::string(iteratorVariableName),
+    auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true, location), std::string(iteratorVariableName),
                                                       std::move(iteratorValue), variable->getParent(),
                                                       AccessLevel::None, *variable->getModule(), location);
     auto iteratorVarStmt = llvm::make_unique<VarStmt>(std::move(iteratorVarDecl));

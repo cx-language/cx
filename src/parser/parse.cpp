@@ -373,9 +373,7 @@ int64_t Parser::parseArraySizeInBrackets() {
 
 /// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
 Type Parser::parseSimpleType(bool isMutable) {
-    llvm::StringRef id = parse(Token::Identifier).getString();
-
-    Type type;
+    auto identifier = parse(Token::Identifier);
     std::vector<Type> genericArgs;
 
     switch (currentToken()) {
@@ -383,13 +381,12 @@ Type Parser::parseSimpleType(bool isMutable) {
             genericArgs = parseGenericArgumentList();
             LLVM_FALLTHROUGH;
         default:
-            return BasicType::get(id, std::move(genericArgs), isMutable);
+            return BasicType::get(identifier.getString(), std::move(genericArgs), isMutable, identifier.getLocation());
         case Token::LeftBracket:
-            type = BasicType::get(id, {}, isMutable);
-            break;
+            auto bracketLocation = getCurrentLocation();
+            Type elementType = BasicType::get(identifier.getString(), {}, isMutable, identifier.getLocation());
+            return ArrayType::get(elementType, parseArraySizeInBrackets(), false, bracketLocation);
     }
-
-    return ArrayType::get(type, parseArraySizeInBrackets());
 }
 
 /// tuple-type ::= '(' tuple-type-elements ')'
@@ -397,6 +394,7 @@ Type Parser::parseSimpleType(bool isMutable) {
 /// tuple-type-element ::= id ':' type
 Type Parser::parseTupleType() {
     ASSERT(currentToken() == Token::LeftParen);
+    auto location = getCurrentLocation();
     consumeToken();
     std::vector<TupleElement> elements;
 
@@ -408,7 +406,7 @@ Type Parser::parseTupleType() {
     }
 
     consumeToken();
-    return TupleType::get(std::move(elements));
+    return TupleType::get(std::move(elements), false, location);
 }
 
 /// function-type ::= param-type-list '->' type
@@ -417,6 +415,7 @@ Type Parser::parseTupleType() {
 /// non-empty-param-types ::= type | type ',' non-empty-param-types
 Type Parser::parseFunctionType() {
     ASSERT(currentToken() == Token::LeftParen);
+    auto location = getCurrentLocation();
     consumeToken();
     std::vector<Type> paramTypes;
 
@@ -428,13 +427,14 @@ Type Parser::parseFunctionType() {
     consumeToken();
     parse(Token::RightArrow);
     Type returnType = parseType();
-    return FunctionType::get(returnType, std::move(paramTypes));
+    return FunctionType::get(returnType, std::move(paramTypes), false, location);
 }
 
 /// type ::= simple-type | 'mutable' simple-type | type 'mutable'? '*' | type 'mutable'? '?' |
 ///          function-type | tuple-type
 Type Parser::parseType() {
     Type type;
+    auto location = getCurrentLocation();
 
     switch (currentToken()) {
         case Token::Identifier:
@@ -459,35 +459,35 @@ Type Parser::parseType() {
     while (true) {
         switch (currentToken()) {
             case Token::Star:
-                type = PointerType::get(type);
+                type = PointerType::get(type, false, getCurrentLocation());
                 consumeToken();
                 break;
             case Token::QuestionMark:
-                type = OptionalType::get(type);
+                type = OptionalType::get(type, false, getCurrentLocation());
                 consumeToken();
                 break;
             case Token::Mutable:
                 consumeToken();
                 switch (currentToken()) {
                     case Token::Star:
-                        type = PointerType::get(type, true);
+                        type = PointerType::get(type, true, getCurrentLocation());
                         consumeToken();
                         break;
                     case Token::QuestionMark:
-                        type = OptionalType::get(type, true);
+                        type = OptionalType::get(type, true, getCurrentLocation());
                         consumeToken();
                     default:
                         unexpectedToken(currentToken(), { Token::Star, Token::QuestionMark }, "after 'mutable'");
                 }
                 break;
             case Token::LeftBracket:
-                type = ArrayType::get(type, parseArraySizeInBrackets());
+                type = ArrayType::get(type, parseArraySizeInBrackets(), false, getCurrentLocation());
                 break;
             case Token::And:
                 error(getCurrentLocation(), "Delta doesn't have C++-style references; ",
                       "use pointers ('*') instead, they are non-null by default");
             default:
-                return type;
+                return type.withLocation(location);
         }
     }
 }
@@ -1121,7 +1121,8 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
 
         if (currentToken() == Token::Colon) { // Generic type constraint.
             consumeToken();
-            genericParams.back().addConstraint(BasicType::get(parse(Token::Identifier).getString(), {}));
+            auto identifier = parse(Token::Identifier);
+            genericParams.back().addConstraint(BasicType::get(identifier.getString(), {}, false, identifier.getLocation()));
             // TODO: Add support for multiple generic type constraints.
         }
 

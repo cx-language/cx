@@ -5,7 +5,6 @@ func main() {
     // CHECK: private-enum.delta:[[@LINE+1]]:13: warning: 'A' is private
     let b = A.B;
 
-    // TODO: Fix source location:
-    // CHECK: private-enum.delta:[[@LINE+1]]:9: warning: 'A' is private
+    // CHECK: private-enum.delta:[[@LINE+1]]:12: warning: 'A' is private
     let c: A = undefined;
 }

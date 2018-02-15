@@ -28,7 +28,7 @@ private class D {
     var a: A;
 }
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:8: warning: using private type 'A' in public declaration
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:11: warning: using private type 'A' in public declaration
 func m(r: A*) {
     // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.delta:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
     var a: A = undefined;
@@ -36,15 +36,15 @@ func m(r: A*) {
     a = A();
 }
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:8: warning: using private type 'A' in public declaration
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:11: warning: using private type 'A' in public declaration
 func o(a: mutable A*?) {}
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:6: warning: using private type 'A' in public declaration
-func p() -> A*? {
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:13: warning: using private type 'A' in public declaration
+func p() -> mutable A*? {
     return null;
 }
 
 class E {
-    // CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:9: warning: using private type 'A' in public declaration
-    var a: A;
+    // CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:12: warning: using private type 'A' in public declaration
+    var a: mutable A*;
 }
