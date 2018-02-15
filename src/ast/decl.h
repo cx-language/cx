@@ -128,13 +128,10 @@ private:
 class ParamDecl : public Decl, public Movable {
 public:
     ParamDecl(Type type, std::string&& name, SourceLocation location)
-    : Decl(DeclKind::ParamDecl, AccessLevel::None), type(type), name(std::move(name)), location(location),
-      parent(nullptr) {}
+    : Decl(DeclKind::ParamDecl, AccessLevel::None), type(type), name(std::move(name)), location(location) {}
     Type getType() const { return type; }
     llvm::StringRef getName() const override { return name; }
-    FunctionDecl* getParent() const { return ASSERT(parent), parent; }
-    void setParent(FunctionDecl* parent) { this->parent = parent; }
-    Module* getModule() const override;
+    Module* getModule() const override { return nullptr; }
     SourceLocation getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
     bool operator==(const ParamDecl& other) const {
@@ -145,7 +142,6 @@ private:
     Type type;
     std::string name;
     SourceLocation location;
-    FunctionDecl* parent;
 };
 
 std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type> genericArgs);
@@ -153,20 +149,17 @@ std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const
 class GenericParamDecl : public Decl {
 public:
     GenericParamDecl(std::string&& name, SourceLocation location)
-    : Decl(DeclKind::GenericParamDecl, AccessLevel::None), name(std::move(name)), parent(nullptr), location(location) {}
+    : Decl(DeclKind::GenericParamDecl, AccessLevel::None), name(std::move(name)), location(location) {}
     llvm::StringRef getName() const override { return name; }
     llvm::ArrayRef<Type> getConstraints() const { return constraints; }
     void addConstraint(Type constraint) { constraints.push_back(constraint); }
-    Decl* getParent() const { return ASSERT(parent), parent; }
-    void setParent(Decl* parent) { this->parent = parent; }
-    Module* getModule() const override { return parent->getModule(); }
+    Module* getModule() const override { return nullptr; }
     SourceLocation getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::GenericParamDecl; }
 
 private:
     std::string name;
     llvm::SmallVector<Type, 1> constraints;
-    Decl* parent;
     SourceLocation location;
 };
 
@@ -233,10 +226,6 @@ private:
     Module& module;
     bool typechecked;
 };
-
-inline Module* ParamDecl::getModule() const {
-    return parent->getModule();
-}
 
 class MethodDecl : public FunctionDecl {
 public:
