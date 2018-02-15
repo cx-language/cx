@@ -213,17 +213,11 @@ Struct types can be defined using the `struct` keyword:
 
 #### Member variables
 
-Structs types contain a set of member variables. Each member variable may
-contain an associated getter and/or setter, that are called when the member
-variable is accessed or assigned to, respectively. The syntax of a member
-variable definition is as follows:
+Structs types contain a set of member variables. The syntax of a member variable
+definition is as follows:
 
 > _let-or-var_ → `let` | `var`<br>
 > _member-variable-declaration_ → _let-or-var_ _member-variable-name_ `:` _type_ `;`<br>
-> _member-variable-declaration_ → _let-or-var_ _member-variable-name_ `:` _type_ `{` _getter-setter-definitions_ `}`<br>
-> _getter-setter-definitions_ → _getter-definition_ | _setter-definition_ | _getter-definition_ _setter-definition__<br>
-> _getter-definition_ → `get` `{` _getter-body_ `}`<br>
-> _setter-definition_ → `set` `{` _setter-body_ `}`<br>
 
 ### Interface types
 
