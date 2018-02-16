@@ -1,0 +1,257 @@
+%!TEX root = spec.tex
+
+\chapter{Lexical structure}
+
+\section{Keywords}
+
+The following keywords are reserved and can't be used as identifiers.
+
+\begin{multicols}{3}
+\begin{itemize}[label={}]
+\item \code{addressof}
+\item \code{break}
+\item \code{case}
+\item \code{catch}
+\item \code{const}
+\item \code{continue}
+\item \code{default}
+\item \code{defer}
+\item \code{deinit}
+\item \code{do}
+\item \code{else}
+\item \code{enum}
+\item \code{extern}
+\item \code{fallthrough}
+\item \code{false}
+\item \code{for}
+\item \code{func}
+\item \code{goto}
+\item \code{if}
+\item \code{import}
+\item \code{in}
+\item \code{init}
+\item \code{interface}
+\item \code{let}
+\item \code{mutable}
+\item \code{mutating}
+\item \code{null}
+\item \code{private}
+\item \code{public}
+\item \code{return}
+\item \code{sizeof}
+\item \code{static}
+\item \code{struct}
+\item \code{switch}
+\item \code{this}
+\item \code{throw}
+\item \code{throws}
+\item \code{true}
+\item \code{try}
+\item \code{typealias}
+\item \code{undefined}
+\item \code{var}
+\item \code{while}
+\item \code{_}
+\end{itemize}
+\end{multicols}
+
+\section{Operators and delimiters}
+
+Binary arithmetic operators:
+
+\begin{multicols}{4}
+\begin{itemize}[label={}]
+\item \code{+}
+\item \code{-}
+\item \code{*}
+\item \code{/}
+\item \code{**}
+\item \code{\%}
+\item \code{\&}
+\item \code{\&\&}
+\item \code{|}
+\item \code{||}
+\item \code{\char`\^}
+\item \code{<<}
+\item \code{>>}
+\item \code{+=}
+\item \code{-=}
+\item \code{*=}
+\item \code{/=}
+\item \code{**=}
+\item \code{\%=}
+\item \code{\&=}
+\item \code{\&\&=}
+\item \code{|=}
+\item \code{||=}
+\item \code{\char`\^=}
+\item \code{<<=}
+\item \code{>>=}
+\end{itemize}
+\end{multicols}
+
+Binary comparison operators:
+
+\begin{multicols}{4}
+\begin{itemize}[label={}]
+\item \code{==}
+\item \code{!=}
+\item \code{<}
+\item \code{>}
+\item \code{<=}
+\item \code{>=}
+\end{itemize}
+\end{multicols}
+
+Miscellaneous binary operators:
+
+\begin{multicols}{4}
+\begin{itemize}[label={}]
+\item \code{=}
+\item \code{..}
+\item \code{...}
+\end{itemize}
+\end{multicols}
+
+Unary prefix operators:
+
+\begin{multicols}{4}
+\begin{itemize}[label={}]
+\item \code{+}
+\item \code{-}
+\item \code{*}
+\item \code{\&}
+\item \code{!}
+\item \code{\~}
+\end{itemize}
+\end{multicols}
+
+Unary postfix operators:
+
+\begin{multicols}{4}
+\begin{itemize}[label={}]
+\item \code{++}
+\item \code{--}
+\item \code{!}
+\end{itemize}
+\end{multicols}
+
+Delimiters:
+
+\begin{multicols}{4}
+\begin{itemize}[label={}]
+\item \code{(}
+\item \code{[}
+\item \code{\{}
+\item \code{)}
+\item \code{]}
+\item \code{\}}
+\item \code{.}
+\item \code{,}
+\item \code{:}
+\item \code{;}
+\item \code{->}
+\end{itemize}
+\end{multicols}
+
+From the above sets of operators, the following are overloadable by user code:
+\code{+} (both unary and binary), \code{-} (both unary and binary), \code{*},
+\code{/}, \code{\%}, \code{==}, \code{<}.
+
+\section{Comments}
+
+Delta has two kinds of comments:
+
+\begin{itemize}
+\item Line comments that start with \code{//} and continue until the end of the line.
+\item Block comments that start with \code{/*} and end with \code{*/}. Block comments can be nested.
+\end{itemize}
+
+\section{Literals}
+
+\subsection{Integer literal}
+
+\begin{grammar}
+\nonterminal{binary-digit} \textrightarrow{} \code{0} | \code{1}\\
+\nonterminal{octal-digit} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7}\\
+\nonterminal{decimal-digit} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
+\nonterminal{nonzero-decimal-digit} \textrightarrow{} \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
+\nonterminal{lowercase-hex-digit} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{a} | \code{b} | \code{c} | \code{d} | \code{e} | \code{f}\\
+\nonterminal{uppercase-hex-digit} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{A} | \code{B} | \code{C} | \code{D} | \code{E} | \code{F}
+
+\nonterminal{binary-integer-literal} \textrightarrow{} \code{0b}\nonterminal{binary-digit}+\\
+\nonterminal{octal-integer-literal} \textrightarrow{} \code{0o}\nonterminal{octal-digit}+\\
+\nonterminal{decimal-integer-literal} \textrightarrow{} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}* | \code{0}\\
+\nonterminal{hex-integer-literal} \textrightarrow{} \code{0x}(\nonterminal{lowercase-hex-digit}+ | \nonterminal{uppercase-hex-digit}+)
+
+\nonterminal{integer-literal} \textrightarrow{} \nonterminal{binary-integer-literal}\\
+\nonterminal{integer-literal} \textrightarrow{} \nonterminal{octal-integer-literal}\\
+\nonterminal{integer-literal} \textrightarrow{} \nonterminal{decimal-integer-literal}\\
+\nonterminal{integer-literal} \textrightarrow{} \nonterminal{hex-integer-literal}
+\end{grammar}
+
+\subsection{Floating-point literal}
+
+Floating-point literals have the following form:
+
+\begin{grammar}
+\nonterminal{floating-point-literal} \textrightarrow{} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}*\code{.}\nonterminal{decimal-digit}+\\
+\nonterminal{floating-point-literal} \textrightarrow{} \code{0}\code{.}\nonterminal{decimal-digit}+
+\end{grammar}
+
+\subsection{Boolean literal}
+
+\begin{grammar}
+\nonterminal{boolean-literal} \textrightarrow{} \code{true} | \code{false}
+\end{grammar}
+
+\subsection{Null literal}
+
+\begin{grammar}
+\nonterminal{null-literal} \textrightarrow{} \code{null}
+\end{grammar}
+
+\subsection{String literal}
+
+\begin{grammar}
+\nonterminal{string-literal} \textrightarrow{} \code{"}(\nonterminal{character} | \nonterminal{interpolated-expression})*\code{"}\\
+\nonterminal{interpolated-expression} \textrightarrow{} \code{\$\{} \nonterminal{expression} \code{\}}
+\end{grammar}
+
+\subsection{Array literal}
+
+\begin{grammar}
+\nonterminal{array-literal} \textrightarrow{} \code{[} \nonterminal{elements} \code{]}
+\end{grammar}
+
+where \nonterminal{elements} is a comma-separated list of zero or more expressions of the
+same type.
+
+\subsection{Tuple literal}
+
+\begin{grammar}
+\nonterminal{tuple-literal} \textrightarrow{} \code{(} \nonterminal{elements} \code{)}
+\end{grammar}
+
+where \nonterminal{elements} is a comma-separated list of zero or more
+\nonterminal{tuple-literal-elements}:
+
+\begin{grammar}
+\nonterminal{tuple-literal-element} \textrightarrow{} \nonterminal{identifier} \code{:} \nonterminal{expression}\\
+\nonterminal{tuple-literal-element} \textrightarrow{} \nonterminal{identifier}
+\end{grammar}
+
+The second form is a shorthand for \nonterminal{tuple-literal-elements} of the
+form `\nonterminal{identifier} \code{:} \nonterminal{identifier}'.
+
+\section{Identifiers}
+
+\begin{grammar}
+\nonterminal{identifier-first-character} \textrightarrow{} upper- or lowercase letter \code{A} through \code{Z}\\
+\nonterminal{identifier-first-character} \textrightarrow{} \code{_}
+
+\nonterminal{identifier-character} \textrightarrow{} \nonterminal{identifier-first-character}\\
+\nonterminal{identifier-character} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}
+
+\nonterminal{identifier} \textrightarrow{} \nonterminal{identifier-first-character} \nonterminal{identifier-character}*
+\end{grammar}

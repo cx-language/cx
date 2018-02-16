@@ -1,0 +1,169 @@
+%!TEX root = spec.tex
+
+\chapter{Types}
+
+\section{Integer types}
+
+There are eight built-in integer types: \code{int8}, \code{int16}, \code{int32},
+\code{int64}, and their unsigned counterparts \code{uint8}, \code{uint16},
+\code{uint32}, \code{uint64}. The standard library also provides \code{int} and
+\code{uint} which are type aliases for \code{int32} and \code{uint32},
+respectively.
+
+\section{Floating-point types}
+
+There are three built-in floating-point types: \code{float32}, \code{float64},
+and \code{float80}. The standard library also provides \code{float} and
+\code{double} which are type aliases for \code{float32} and \code{float64},
+respectively.
+
+\section{Pointer types}
+
+Pointers are values that point to other values. They can be reassigned to point
+to another value (if the pointer type itself is declared as \code{mutable}), but
+they must always refer to some value, i.e. they cannot be null by default
+(nullable pointers can be created using the optional type, see below). Member
+access, member function calls, and subscript operations via pointers are
+allowed: they will be forwarded to the pointee value.
+
+\begin{grammar}
+\nonterminal{pointer-type} \textrightarrow{} \nonterminal{pointee-type} \code{*}\\
+\nonterminal{pointer-type} \textrightarrow{} \nonterminal{pointee-type} \code{mutable} \code{*}\\
+\nonterminal{pointer-type} \textrightarrow{} \code{mutable} \nonterminal{pointee-type} \code{*}\\
+\nonterminal{pointer-type} \textrightarrow{} \code{mutable} \nonterminal{pointee-type} \code{mutable} \code{*}
+\end{grammar}
+
+Prefixing the \nonterminal{pointee-type} with \code{mutable} makes the
+\nonterminal{pointee-type} mutable. Prefixing the \code{*} with \code{mutable}
+makes the \nonterminal{pointer-type} itself mutable.
+
+\begin{samepage}
+Pointer arithmetic is supported in the form of the following operations:
+
+\begin{itemize}
+\item \nonterminal{pointer} \code{+} \nonterminal{integer}
+\item \nonterminal{pointer} \code{+=} \nonterminal{integer}
+\item \nonterminal{pointer} \code{++}
+\item \nonterminal{pointer} \code{-} \nonterminal{integer}
+\item \nonterminal{pointer} \code{-=} \nonterminal{integer}
+\item \nonterminal{pointer} \code{--}
+\item \nonterminal{pointer} \code{-} \nonterminal{pointer}
+\end{itemize}
+\end{samepage}
+
+\section{Array types}
+
+\begin{grammar}
+\nonterminal{array-type-with-constant-size} \textrightarrow{} \nonterminal{element-type} \code{[} \nonterminal{size} \code{]}\\
+\nonterminal{array-type-with-runtime-size} \textrightarrow{} \nonterminal{element-type} \code{[} \code{]}\\
+\nonterminal{array-type-with-unknown-size} \textrightarrow{} \nonterminal{element-type} \code{[} \code{?} \code{]}
+\end{grammar}
+
+\nonterminal{array-type-with-constant-size} represents a contiguous block of
+\nonterminal{size} elements of type \nonterminal{element-type}.
+\nonterminal{array-type-with-runtime-size} is conceptually a pointer-and-size
+pair. \nonterminal{array-type-with-unknown-size} can only be used through a
+pointer; such pointers are memory-layout-compatible with pointers to
+\nonterminal{element-type}, primarily for C interoperability.
+\nonterminal{array-type-with-unknown-size} is the only array type for which
+index operations are not guaranteed to be bounds-checked.
+
+\section{String type}
+
+The type \code{String} holds sequences of Unicode characters.
+
+\section{Struct types}
+
+Structs are composite data types which can be defined using the \code{struct}
+keyword.
+
+\subsection{Member variables}
+
+Structs types contain a set of member variables. The syntax of a member variable
+definition is as follows:
+
+\begin{grammar}
+\nonterminal{let-or-var} \textrightarrow{} \code{let} | \code{var}\\
+\nonterminal{member-variable-declaration} \textrightarrow{} \nonterminal{let-or-var} \nonterminal{member-variable-name} \code{:} \nonterminal{type} \code{;}
+\end{grammar}
+
+\section{Interface types}
+
+The \code{interface} keyword declares an interface, i.e. a set of requirements
+(member functions and properties). Types that are declared to implement an
+interface \code{I} and fulfill \code{I}'s requirements can be used as values for
+a variable of type \code{I}. This enables runtime polymorphism. Like structs,
+interfaces may be generic.
+
+\section{Optional type}
+
+\begin{quote}
+``I call it my billion-dollar mistake. It was the invention of the null
+reference in 1965. At that time, I was designing the first comprehensive type
+system for references in an object oriented language (ALGOL W). My goal was to
+ensure that all use of references should be absolutely safe, with checking
+performed automatically by the compiler. But I couldn't resist the temptation to
+put in a null reference, simply because it was so easy to implement. This has
+led to innumerable errors, vulnerabilities, and system crashes, which have
+probably caused a billion dollars of pain and damage in the last forty years.''
+
+--- C. A. R. Hoare
+\end{quote}
+
+An object of the optional type \code{T?} (where \code{T} is an arbitrary type)
+may contain a value of type \code{T} or the value \code{null}.
+
+\begin{grammar}
+\nonterminal{optional-type} \textrightarrow{} \nonterminal{wrapped-type} \code{?}
+\end{grammar}
+
+\section{Function types}
+
+Function types are written out as follows:
+
+\begin{grammar}
+\nonterminal{function-type} \textrightarrow{} \code{(} \nonterminal{parameter-type-list} \code{)} \code{->} \nonterminal{return-type}
+\end{grammar}
+
+where \nonterminal{parameter-type-list} is a comma-separated list of parameter
+types.
+
+\section{Tuple types}
+
+\begin{grammar}
+\nonterminal{tuple-type} \textrightarrow{} \code{(} \nonterminal{tuple-element-list} \code{)}\\
+\nonterminal{tuple-element-list} \textrightarrow{} comma-separated list of one or more \nonterminal{tuple-elements}\\
+\nonterminal{tuple-element} \textrightarrow{} \nonterminal{name} \code{:} \nonterminal{type}
+\end{grammar}
+
+Tuples behave like structs, but they're defined inline. Tuples are intended as
+a lightweight alternative for situations where defining a whole new struct feels
+overkill or inappropriate, e.g. returning multiple values from a function.
+
+While struct types are considered the same only if they have the same name,
+tuple types are considered the same if their structure is the same, i.e. if they
+have the same number of elements in the same order with the same names and
+types.
+
+\subsection{Tuple unpacking}
+
+The elements of a tuple value may be unpacked into individual variables as
+follows:
+
+\begin{grammar}
+\nonterminal{tuple-unpack-statement} \textrightarrow{} \nonterminal{variable-list} \code{=} \nonterminal{tuple-expression} \code{;}
+\end{grammar}
+
+\nonterminal{variable-list} is a comma-separated list of one or more variable
+names. The variable names must match the element names of the
+\nonterminal{tuple-expression}, and be in the same order.
+
+\section{Range types}
+
+The standard library defines the following two generic types to represent
+ranges:
+
+\begin{itemize}
+\item \code{Range<T>} for ranges with an exclusive upper bound
+\item \code{ClosedRange<T>} for ranges with an inclusive upper bound
+\end{itemize}

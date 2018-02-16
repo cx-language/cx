@@ -1,0 +1,38 @@
+\documentclass[oneside]{memoir}
+
+\usepackage{enumitem}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{multicol}
+\usepackage{textcomp}
+\usepackage{underscore}
+
+\newcommand{\code}{\texttt}
+\newcommand{\nonterminal}{\textit}
+\newcommand{\optional}{\textsubscript{opt}}
+\newenvironment{grammar}{}{}
+
+\DisableLigatures{encoding = T1, family = tt*}
+\nonzeroparskip
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\title{Delta Language Specification}
+\author{Emil Laine \\ \href{mailto:emil@cs.helsinki.fi}{emil@cs.helsinki.fi}}
+\maketitle
+
+This document describes the syntax and semantics of the Delta programming language.
+
+\textbf{Note:} This document is incomplete.
+
+\tableofcontents
+
+\include{lex}
+\include{type}
+\include{decl}
+\include{stmt}
+\include{expr}
+
+\end{document}

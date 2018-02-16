@@ -1,0 +1,153 @@
+%!TEX root = spec.tex
+
+\chapter{Declarations}
+
+\section{Variables}
+
+Variable declarations introduce a new variable into the enclosing scope. The
+syntax is as follows:
+
+\begin{grammar}
+\nonterminal{immutable-variable-declaration} \textrightarrow{} \code{let} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}\\
+\nonterminal{mutable-variable-declaration} \textrightarrow{} \code{var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}\\
+\nonterminal{immutable-variable-definition} \textrightarrow{} \code{let} \nonterminal{variable-name} (\code{:} \nonterminal{type})\optional{} \code{=} \nonterminal{initializer} \code{;}\\
+\nonterminal{mutable-variable-definition} \textrightarrow{} \code{var} \nonterminal{variable-name} (\code{:} \nonterminal{type})\optional{} \code{=} \nonterminal{initializer} \code{;}
+\end{grammar}
+
+In the first two forms, the variable is declared but not initialized. This
+allows delayed initialization, which causes the compiler to enforce that the
+variable is always initialized properly before its value is accessed.
+
+If \nonterminal{type} is present, the variable has the specified type. The
+compiler ensures that the given \nonterminal{initializer} is compatible with
+this type. If no \nonterminal{type} is given, the compiler will infer the type
+of the variable from the \nonterminal{initializer}. The
+\nonterminal{initializer} is an expression that provides the initial value for
+the variable.
+
+If \nonterminal{type} has been specified, \nonterminal{initializer} may also be
+the keyword \code{undefined}, in which case the variable is not initialized and
+all use-before-initialization warnings for the variable will be suppressed.
+Reading from an uninitialized variable causes undefined behavior.
+
+\section{Functions}
+
+A function can be defined with either of the following syntaxes:
+
+\begin{grammar}
+\code{func} \nonterminal{function-name} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{function-body} \code{\}}\\
+\code{func} \nonterminal{function-name} \code{(} \nonterminal{parameter-list} \code{)} \code{->} \nonterminal{return-type} \code{\{} \nonterminal{function-body} \code{\}}
+\end{grammar}
+
+The return type of the first version is \code{void}. The
+\nonterminal{parameter-list} is a comma-separated list of
+\nonterminal{parameters}:
+
+\begin{grammar}
+\nonterminal{parameter} \textrightarrow{} \nonterminal{parameter-name} \code{:} \nonterminal{parameter-type}
+\end{grammar}
+
+\nonterminal{parameter-name} is an identifier specifying the name of the
+parameter. A function cannot have multiple parameters with the same name.
+
+\nonterminal{return-type} defines what kind of values the function can return.
+This may be a tuple type to allow the function to return multiple values without
+having to define a whole new struct type.
+
+Parameter and return types may not have a top-level \code{mutable} modifier.
+
+\subsection{Member functions}
+
+Member functions are just like normal functions, except that they receive an
+additional parameter, called the "receiver", on the left-hand-side of the
+function call, separated by a period:
+
+\begin{grammar}
+\nonterminal{member-function-call} \textrightarrow{} \nonterminal{receiver} \code{.} \nonterminal{member-function-name} \code{(} \nonterminal{argument-list} \code{)}
+\end{grammar}
+
+Member functions are defined with the same syntax as non-member functions, but
+are written inside a type declaration. That type declaration defines the member
+function's receiver type. Inside member functions, the receiver can be accessed
+with the keyword \code{this}.
+
+\subsubsection{Initializers}
+
+Initializers are a special kind of member functions that are used for
+initializing newly created objects.
+
+\begin{grammar}
+\nonterminal{initializer-definition} \textrightarrow{} \code{init} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{body} \code{\}}
+\end{grammar}
+
+Initializers can be invoked with the following syntax:
+
+\begin{grammar}
+\nonterminal{initializer-call} \textrightarrow{} \nonterminal{receiver-type} \code{(} \nonterminal{argument-list} \code{)}
+\end{grammar}
+
+The \nonterminal{initializer-call} expression returns a new instance of the
+specified type that has been initialized by calling the initializer function
+with a matching parameter list.
+
+\subsubsection{Deinitializers}
+
+Deinitializers are another special kind of member functions. They are
+automatically called on objects when they're destroyed, but can also be called
+explicitly. They can be used e.g. to deallocate resources allocated in an
+initializer. They are declared as follows:
+
+\begin{grammar}
+\nonterminal{deinitializer-definition} \textrightarrow{} \code{deinit} \code{(} \code{)} \code{\{} \nonterminal{body} \code{\}}
+\end{grammar}
+
+\subsection{Private and public functions}
+
+Both member functions and global functions may be declared private or public by
+prefixing the function definition with the keyword \code{private} or
+\code{public}. Private functions are only accessible from the file they're
+declared in. Public functions are accessible from anywhere, including other
+modules. Functions not marked private or public are
+\nonterminal{module-private}, i.e. only accessible within the module they're
+declared in.
+
+\section{Structs}
+
+Structs are defined as follows:
+
+\begin{grammar}
+\nonterminal{struct-definition} \textrightarrow{} \code{struct} \nonterminal{struct-name} \code{\{} \nonterminal{member-list} \code{\}}
+\end{grammar}
+
+\nonterminal{struct-name} becomes the name of the struct.
+\nonterminal{member-list} is a sequence of
+\nonterminal{member-variable-declarations} and
+\nonterminal{member-function-declarations}. Structs can be declared to implement
+interfaces by listing the interfaces after a \code{:} following the struct name:
+
+\begin{grammar}
+\code{struct} \nonterminal{struct-name} \code{:} \nonterminal{interface-list} \code{\{} \nonterminal{member-list} \code{\}}
+\end{grammar}
+
+The \nonterminal{interface-list} is a comma-separated list of one or more
+interface names. The compiler will emit an error if the struct doesn't fulfill
+all the requirements of a specified interface.
+
+\subsection{Generic structs}
+
+Generic structs can be declared as follows:
+
+\begin{grammar}
+\code{struct} \nonterminal{struct-name} \code{<} \nonterminal{generic-parameter-list} \code{>} \code{\{} \nonterminal{member-list} \code{\}}
+\end{grammar}
+
+where \nonterminal{generic-parameter-list} is a comma separated list of one or
+more \nonterminal{generic-parameters}:
+
+\begin{grammar}
+\nonterminal{generic-parameter} \textrightarrow{} \nonterminal{generic-type-parameter}\\
+\nonterminal{generic-type-parameter} \textrightarrow{} \nonterminal{identifier}
+\end{grammar}
+
+The identifier of a \nonterminal{generic-type-parameter} serves as a placeholder
+for types used to instantiate the generic struct.

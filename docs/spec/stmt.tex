@@ -1,0 +1,94 @@
+%!TEX root = spec.tex
+
+\chapter{Statements}
+
+\section{Assignment statement}
+
+\begin{grammar}
+\nonterminal{assignment-statement} \textrightarrow{} \nonterminal{lvalue-expression} \code{=} \nonterminal{expression} \code{;}\\
+\nonterminal{assignment-statement} \textrightarrow{} \code{_} \code{=} \nonterminal{expression} \code{;}
+\end{grammar}
+
+Assignments in Delta don't return any value. This applies to compound
+assignments as well, including \code{++} and \code{--} (see below). Furthermore,
+this obsoletes the two different forms of \code{++} and \code{--}, so only the
+postfix versions are valid as syntactic sugar for \code{+= 1} and \code{-= 1},
+respectively.
+
+The assignment to \code{_}, called the \nonterminal{discarding-assignment}, can
+be used to ignore the result of the right-hand side expression, suppressing any
+compilation errors or warnings that would otherwise be emitted.
+
+\section{Increment and decrement statements}
+
+\begin{grammar}
+\nonterminal{increment-statement} \textrightarrow{} \nonterminal{lvalue-expression} \code{++} \code{;}\\
+\nonterminal{decrement-statement} \textrightarrow{} \nonterminal{lvalue-expression} \code{--} \code{;}
+\end{grammar}
+
+\section{Block}
+
+\begin{grammar}
+\nonterminal{block} \textrightarrow{} \code{\{} \nonterminal{statement}* \code{\}}
+\end{grammar}
+
+\section{\code{if} statement}
+
+\begin{grammar}
+\nonterminal{if-statement} \textrightarrow{} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} (\code{else} \nonterminal{block})\optional\\
+\nonterminal{if-statement} \textrightarrow{} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} \code{else} \nonterminal{if-statement}
+\end{grammar}
+
+\section{\code{return} statement}
+
+\begin{grammar}
+\nonterminal{return-statement} \textrightarrow{} \code{return} \nonterminal{expression} \code{;}
+\end{grammar}
+
+\section{\code{for} statement}
+
+The \code{for} statement loops over a range. The syntax is as follows:
+
+\begin{grammar}
+\nonterminal{for-statement} \textrightarrow{} \code{for} \code{(} \nonterminal{let-or-var} \nonterminal{identifier} \code{in} \nonterminal{range-expression} \code{)} \nonterminal{block}
+\end{grammar}
+
+\section{\code{while} statement}
+
+The \code{while} statement loops until a condition evaluates to \code{false}.
+The syntax is as follows:
+
+\begin{grammar}
+\nonterminal{while-statement} \textrightarrow{} \code{while} \code{(} \nonterminal{condition} \code{)} \nonterminal{block}
+\end{grammar}
+
+\section{\code{switch} statement}
+
+\begin{grammar}
+\nonterminal{switch-statement} \textrightarrow{} \code{switch} \code{(} \nonterminal{expression} \code{)} \code{\{} \nonterminal{case}+ \code{\}}\\
+\nonterminal{case} \textrightarrow{} \code{case} \nonterminal{expression} \code{:} \nonterminal{statement}+\\
+\nonterminal{case} \textrightarrow{} \code{default} \code{:} \nonterminal{statement}+
+\end{grammar}
+
+In addition to integer types, the \code{switch} statement can be used to match
+strings.
+
+The cases in a \code{switch} statement don't fall through by default. The
+fall-through behavior can be enabled for a individual cases with the
+\code{fallthrough} keyword.
+
+\code{switch} statements must be exhaustive if \nonterminal{expression} is of an
+enum type. This is enforced by the compiler.
+
+\section{\code{defer} statement}
+
+The \code{defer} statement has the following syntax:
+
+\begin{grammar}
+\nonterminal{defer-statement} \textrightarrow{} \code{defer} \nonterminal{block}
+\end{grammar}
+
+The \nonterminal{block} will be executed when leaving the scope where the
+\nonterminal{defer-statement} is located. Multiple deferred blocks are executed
+in the reverse of the order they were declared in. Return statements are
+disallowed inside the defer block.

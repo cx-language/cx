@@ -23,6 +23,16 @@ delta
 # Generated documentation
 docs/html/
 
+# LaTeX
+*.aux
+*.fdb_latexmk
+*.fls
+*.gz
+*.log
+*.out
+*.synctex(busy)
+*.toc
+
 # GitBook:
 
 # Node rules:
@@ -41,6 +51,7 @@ _book
 *.epub
 *.mobi
 *.pdf
+!/docs/spec/spec.pdf
 
 # VSCode
 .vscode
