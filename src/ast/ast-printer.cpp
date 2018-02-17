@@ -90,21 +90,9 @@ void ASTPrinter::printTupleExpr(const TupleExpr& expr) {
     out << ")";
 }
 
-void ASTPrinter::printPrefixExpr(const PrefixExpr& expr) {
+void ASTPrinter::printUnaryExpr(const UnaryExpr& expr) {
     out << "(" << expr.getOperator();
     printExpr(expr.getOperand());
-    out << ")";
-}
-
-void ASTPrinter::printIncrementExpr(const IncrementExpr& stmt) {
-    out << "(inc-expr ";
-    printExpr(stmt.getOperand());
-    out << ")";
-}
-
-void ASTPrinter::printDecrementExpr(const DecrementExpr& stmt) {
-    out << "(dec-expr ";
-    printExpr(stmt.getOperand());
     out << ")";
 }
 
@@ -212,14 +200,8 @@ void ASTPrinter::printExpr(const Expr& expr) {
         case ExprKind::TupleExpr:
             printTupleExpr(llvm::cast<TupleExpr>(expr));
             break;
-        case ExprKind::PrefixExpr:
-            printPrefixExpr(llvm::cast<PrefixExpr>(expr));
-            break;
-        case ExprKind::IncrementExpr:
-            printIncrementExpr(llvm::cast<IncrementExpr>(expr));
-            break;
-        case ExprKind::DecrementExpr:
-            printDecrementExpr(llvm::cast<DecrementExpr>(expr));
+        case ExprKind::UnaryExpr:
+            printUnaryExpr(llvm::cast<UnaryExpr>(expr));
             break;
         case ExprKind::BinaryExpr:
             printBinaryExpr(llvm::cast<BinaryExpr>(expr));

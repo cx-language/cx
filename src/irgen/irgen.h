@@ -84,11 +84,11 @@ private:
     llvm::Value* codegenArrayLiteralExpr(const ArrayLiteralExpr& expr);
     llvm::Value* codegenTupleExpr(const TupleExpr& expr);
     llvm::Value* codegenImplicitNullComparison(llvm::Value* operand);
-    llvm::Value* codegenNot(const PrefixExpr& expr);
-    llvm::Value* codegenPrefixExpr(const PrefixExpr& expr);
-    llvm::Value* codegenLvaluePrefixExpr(const PrefixExpr& expr);
-    llvm::Value* codegenIncrementExpr(const IncrementExpr& expr);
-    llvm::Value* codegenDecrementExpr(const DecrementExpr& expr);
+    llvm::Value* codegenNot(const UnaryExpr& expr);
+    llvm::Value* codegenUnaryExpr(const UnaryExpr& expr);
+    llvm::Value* codegenLvalueUnaryExpr(const UnaryExpr& expr);
+    llvm::Value* codegenIncrementExpr(const UnaryExpr& expr);
+    llvm::Value* codegenDecrementExpr(const UnaryExpr& expr);
     llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate0 create);
     llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate1 create);
     llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate2 create);

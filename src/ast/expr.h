@@ -28,9 +28,7 @@ enum class ExprKind {
     UndefinedLiteralExpr,
     ArrayLiteralExpr,
     TupleExpr,
-    PrefixExpr,
-    IncrementExpr,
-    DecrementExpr,
+    UnaryExpr,
     BinaryExpr,
     CallExpr,
     CastExpr,
@@ -57,9 +55,7 @@ public:
     bool isUndefinedLiteralExpr() const { return getKind() == ExprKind::UndefinedLiteralExpr; }
     bool isArrayLiteralExpr() const { return getKind() == ExprKind::ArrayLiteralExpr; }
     bool isTupleExpr() const { return getKind() == ExprKind::TupleExpr; }
-    bool isPrefixExpr() const { return getKind() == ExprKind::PrefixExpr; }
-    bool isIncrementExpr() const { return getKind() == ExprKind::IncrementExpr; }
-    bool isDecrementExpr() const { return getKind() == ExprKind::DecrementExpr; }
+    bool isUnaryExpr() const { return getKind() == ExprKind::UnaryExpr; }
     bool isBinaryExpr() const { return getKind() == ExprKind::BinaryExpr; }
     bool isCallExpr() const { return getKind() == ExprKind::CallExpr; }
     bool isCastExpr() const { return getKind() == ExprKind::CastExpr; }
@@ -78,6 +74,7 @@ public:
     void setType(Type type) { ASSERT(type), this->type = type; }
     void setAssignableType(Type type) { ASSERT(type), assignableType = type; }
     bool isAssignment() const;
+    bool isIncrementOrDecrementExpr() const;
     bool isConstant() const;
     // TODO: Use llvm::APSInt instead of int64_t.
     int64_t getConstantIntegerValue() const;
@@ -248,7 +245,7 @@ public:
     static bool classof(const Expr* e) {
         switch (e->getKind()) {
             case ExprKind::CallExpr:
-            case ExprKind::PrefixExpr:
+            case ExprKind::UnaryExpr:
             case ExprKind::BinaryExpr:
             case ExprKind::SubscriptExpr:
                 return true;
@@ -274,42 +271,20 @@ inline std::vector<NamedValue> addArg(std::vector<NamedValue>&& args, std::uniqu
     return std::move(args);
 }
 
-class PrefixExpr : public CallExpr {
+class UnaryExpr : public CallExpr {
 public:
-    PrefixExpr(PrefixOperator op, std::unique_ptr<Expr> operand, SourceLocation location)
-    : CallExpr(ExprKind::PrefixExpr, llvm::make_unique<VarExpr>(toString(op.getKind()), location),
+    UnaryExpr(UnaryOperator op, std::unique_ptr<Expr> operand, SourceLocation location)
+    : CallExpr(ExprKind::UnaryExpr, llvm::make_unique<VarExpr>(toString(op.getKind()), location),
                addArg({}, std::move(operand)), location),
       op(op) {}
-    PrefixOperator getOperator() const { return op; }
+    UnaryOperator getOperator() const { return op; }
     Expr& getOperand() { return *getArgs()[0].getValue(); }
     const Expr& getOperand() const { return *getArgs()[0].getValue(); }
     int64_t getConstantIntegerValue() const;
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::PrefixExpr; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::UnaryExpr; }
 
 private:
-    PrefixOperator op;
-};
-
-class IncrementExpr : public Expr {
-public:
-    IncrementExpr(std::unique_ptr<Expr> operand, SourceLocation location)
-    : Expr(ExprKind::IncrementExpr, location), operand(std::move(operand)) {}
-    Expr& getOperand() const { return *operand; }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::IncrementExpr; }
-
-private:
-    std::unique_ptr<Expr> operand;
-};
-
-class DecrementExpr : public Expr {
-public:
-    DecrementExpr(std::unique_ptr<Expr> operand, SourceLocation location)
-    : Expr(ExprKind::DecrementExpr, location), operand(std::move(operand)) {}
-    Expr& getOperand() const { return *operand; }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::DecrementExpr; }
-
-private:
-    std::unique_ptr<Expr> operand;
+    UnaryOperator op;
 };
 
 class BinaryExpr : public CallExpr {

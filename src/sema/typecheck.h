@@ -71,9 +71,7 @@ private:
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr);
     Type typecheckTupleExpr(TupleExpr& expr);
-    Type typecheckPrefixExpr(PrefixExpr& expr);
-    Type typecheckIncrementExpr(IncrementExpr& expr);
-    Type typecheckDecrementExpr(DecrementExpr& expr);
+    Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op);
     void typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, SourceLocation location);

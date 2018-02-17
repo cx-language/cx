@@ -25,13 +25,13 @@ func foo6() -> int { // CHECK-NEXT:    (function-decl foo6 () int
 
 func foo7() -> int { // CHECK-NEXT:    (function-decl foo7 () int
     var answer = 41; // CHECK-NEXT:        (var-stmt answer 41)
-    answer++;        // CHECK-NEXT:        (inc-expr answer)
+    answer++;        // CHECK-NEXT:        (++answer)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 
 func foo8() -> int { // CHECK-NEXT:    (function-decl foo8 () int
     var answer = 43; // CHECK-NEXT:        (var-stmt answer 43)
-    answer--;        // CHECK-NEXT:        (dec-expr answer)
+    answer--;        // CHECK-NEXT:        (--answer)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 

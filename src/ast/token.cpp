@@ -104,7 +104,7 @@ bool delta::isBinaryOperator(Token::Kind tokenKind) {
     }
 }
 
-bool delta::isPrefixOperator(Token::Kind tokenKind) {
+bool delta::isUnaryOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Plus:
         case Token::Minus:
@@ -112,6 +112,8 @@ bool delta::isPrefixOperator(Token::Kind tokenKind) {
         case Token::And:
         case Token::Not:
         case Token::Tilde:
+        case Token::Increment:
+        case Token::Decrement:
             return true;
         default:
             return false;
@@ -178,8 +180,8 @@ long double Token::getFloatingPointValue() const {
     return value;
 }
 
-PrefixOperator::PrefixOperator(Token token) : kind(token) {
-    ASSERT(isPrefixOperator(token));
+UnaryOperator::UnaryOperator(Token token) : kind(token) {
+    ASSERT(isUnaryOperator(token));
 }
 
 BinaryOperator::BinaryOperator(Token token) : kind(token) {

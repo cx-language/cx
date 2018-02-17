@@ -734,10 +734,8 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
                 expr = parseMemberExpr(std::move(expr));
                 break;
             case Token::Increment:
-                expr = parseIncrementExpr(std::move(expr));
-                break;
             case Token::Decrement:
-                expr = parseDecrementExpr(std::move(expr));
+                expr = parseIncrementOrDecrementExpr(std::move(expr));
                 break;
             case Token::Not:
                 expr = parseUnwrapExpr(std::move(expr));
@@ -752,30 +750,23 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
 }
 
 /// prefix-expr ::= prefix-operator (prefix-expr | postfix-expr)
-std::unique_ptr<PrefixExpr> Parser::parsePrefixExpr() {
-    ASSERT(isPrefixOperator(currentToken()));
+std::unique_ptr<UnaryExpr> Parser::parsePrefixExpr() {
+    ASSERT(isUnaryOperator(currentToken()));
     auto op = currentToken();
     auto location = getCurrentLocation();
     consumeToken();
-    return llvm::make_unique<PrefixExpr>(op, parsePreOrPostfixExpr(), location);
+    return llvm::make_unique<UnaryExpr>(op, parsePreOrPostfixExpr(), location);
 }
 
 std::unique_ptr<Expr> Parser::parsePreOrPostfixExpr() {
-    return isPrefixOperator(currentToken()) ? parsePrefixExpr() : parsePostfixExpr();
+    return isUnaryOperator(currentToken()) ? parsePrefixExpr() : parsePostfixExpr();
 }
 
 /// inc-expr ::= expr '++'
-std::unique_ptr<IncrementExpr> Parser::parseIncrementExpr(std::unique_ptr<Expr> operand) {
-    auto location = getCurrentLocation();
-    parse(Token::Increment);
-    return llvm::make_unique<IncrementExpr>(std::move(operand), location);
-}
-
 /// dec-expr ::= expr '--'
-std::unique_ptr<DecrementExpr> Parser::parseDecrementExpr(std::unique_ptr<Expr> operand) {
+std::unique_ptr<UnaryExpr> Parser::parseIncrementOrDecrementExpr(std::unique_ptr<Expr> operand) {
     auto location = getCurrentLocation();
-    parse(Token::Decrement);
-    return llvm::make_unique<DecrementExpr>(std::move(operand), location);
+    return llvm::make_unique<UnaryExpr>(parse({ Token::Increment, Token::Decrement }), std::move(operand), location);
 }
 
 /// binary-expr ::= expr op expr
@@ -1035,7 +1026,7 @@ std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
     // If we're here, the statement starts with an expression.
     std::unique_ptr<Expr> expr = parseExpr();
 
-    if (expr->isCallExpr() || expr->isIncrementExpr() || expr->isDecrementExpr() || expr->isAssignment()) {
+    if (expr->isCallExpr() || expr->isIncrementOrDecrementExpr() || expr->isAssignment()) {
         return parseExprStmt(std::move(expr));
     } else {
         unexpectedToken(currentToken());

@@ -151,7 +151,7 @@ Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
     return TupleType::get(std::move(elements));
 }
 
-Type Typechecker::typecheckPrefixExpr(PrefixExpr& expr) {
+Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
     if (expr.getOperator() == Token::Not) {
@@ -174,25 +174,21 @@ Type Typechecker::typecheckPrefixExpr(PrefixExpr& expr) {
     if (expr.getOperator() == Token::And) { // Address-of operation
         return PointerType::get(operandType);
     }
+    if (expr.getOperator() == Token::Increment) {
+        if (!operandType.isMutable()) {
+            error(expr.getLocation(), "cannot increment immutable value");
+        }
+        // TODO: check that operand supports increment operation.
+        return Type::getVoid();
+    }
+    if (expr.getOperator() == Token::Decrement) {
+        if (!operandType.isMutable()) {
+            error(expr.getLocation(), "cannot decrement immutable value");
+        }
+        // TODO: check that operand supports decrement operation.
+        return Type::getVoid();
+    }
     return operandType;
-}
-
-Type Typechecker::typecheckIncrementExpr(IncrementExpr& expr) {
-    auto type = typecheckExpr(expr.getOperand());
-    if (!type.isMutable()) {
-        error(expr.getLocation(), "cannot increment immutable value");
-    }
-    // TODO: check that operand supports increment operation.
-    return Type::getVoid();
-}
-
-Type Typechecker::typecheckDecrementExpr(DecrementExpr& expr) {
-    auto type = typecheckExpr(expr.getOperand());
-    if (!type.isMutable()) {
-        error(expr.getLocation(), "cannot decrement immutable value");
-    }
-    // TODO: check that operand supports decrement operation.
-    return Type::getVoid();
 }
 
 static void invalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) {
@@ -1595,14 +1591,8 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
         case ExprKind::TupleExpr:
             type = typecheckTupleExpr(llvm::cast<TupleExpr>(expr));
             break;
-        case ExprKind::PrefixExpr:
-            type = typecheckPrefixExpr(llvm::cast<PrefixExpr>(expr));
-            break;
-        case ExprKind::IncrementExpr:
-            type = typecheckIncrementExpr(llvm::cast<IncrementExpr>(expr));
-            break;
-        case ExprKind::DecrementExpr:
-            type = typecheckDecrementExpr(llvm::cast<DecrementExpr>(expr));
+        case ExprKind::UnaryExpr:
+            type = typecheckUnaryExpr(llvm::cast<UnaryExpr>(expr));
             break;
         case ExprKind::BinaryExpr:
             type = typecheckBinaryExpr(llvm::cast<BinaryExpr>(expr));

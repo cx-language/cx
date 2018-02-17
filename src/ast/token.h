@@ -128,8 +128,8 @@ private:
     SourceLocation location;
 };
 
-struct PrefixOperator {
-    PrefixOperator(Token token);
+struct UnaryOperator {
+    UnaryOperator(Token token);
     Token::Kind getKind() const { return kind; }
     operator Token::Kind() const { return kind; }
 
@@ -147,7 +147,7 @@ private:
 };
 
 bool isBinaryOperator(Token::Kind tokenKind);
-bool isPrefixOperator(Token::Kind tokenKind);
+bool isUnaryOperator(Token::Kind tokenKind);
 bool isAssignmentOperator(Token::Kind tokenKind);
 bool isCompoundAssignmentOperator(Token::Kind tokenKind);
 bool isComparisonOperator(Token::Kind tokenKind);

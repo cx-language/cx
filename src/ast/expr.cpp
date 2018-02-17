@@ -11,6 +11,11 @@ bool Expr::isAssignment() const {
     return binaryExpr && isAssignmentOperator(binaryExpr->getOperator());
 }
 
+bool Expr::isIncrementOrDecrementExpr() const {
+    auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(this);
+    return unaryExpr && (unaryExpr->getOperator() == Token::Increment || unaryExpr->getOperator() == Token::Decrement);
+}
+
 bool Expr::isConstant() const {
     switch (getKind()) {
         case ExprKind::VarExpr: {
@@ -50,12 +55,8 @@ bool Expr::isConstant() const {
             }
             return true;
 
-        case ExprKind::PrefixExpr:
-            return llvm::cast<PrefixExpr>(this)->getOperand().isConstant();
-
-        case ExprKind::IncrementExpr:
-        case ExprKind::DecrementExpr:
-            return false;
+        case ExprKind::UnaryExpr:
+            return llvm::cast<UnaryExpr>(this)->getOperand().isConstant();
 
         case ExprKind::BinaryExpr:
             return llvm::cast<BinaryExpr>(this)->getLHS().isConstant() &&
@@ -106,8 +107,8 @@ int64_t Expr::getConstantIntegerValue() const {
         case ExprKind::IntLiteralExpr:
             return llvm::cast<IntLiteralExpr>(this)->getValue();
 
-        case ExprKind::PrefixExpr:
-            return llvm::cast<PrefixExpr>(this)->getConstantIntegerValue();
+        case ExprKind::UnaryExpr:
+            return llvm::cast<UnaryExpr>(this)->getConstantIntegerValue();
 
         case ExprKind::BinaryExpr:
             return llvm::cast<BinaryExpr>(this)->getConstantIntegerValue();
@@ -142,14 +143,12 @@ bool Expr::isLvalue() const {
         case ExprKind::AddressofExpr:
         case ExprKind::CastExpr:
         case ExprKind::UnwrapExpr:
-        case ExprKind::IncrementExpr:
-        case ExprKind::DecrementExpr:
         case ExprKind::BinaryExpr:
         case ExprKind::CallExpr:
         case ExprKind::LambdaExpr:
             return false;
-        case ExprKind::PrefixExpr:
-            return llvm::cast<PrefixExpr>(this)->getOperator() == Token::Star;
+        case ExprKind::UnaryExpr:
+            return llvm::cast<UnaryExpr>(this)->getOperator() == Token::Star;
     }
     llvm_unreachable("all cases handled");
 }
@@ -240,23 +239,11 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             instantiation = llvm::make_unique<TupleExpr>(std::move(elements), tupleExpr->getLocation());
             break;
         }
-        case ExprKind::PrefixExpr: {
-            auto* prefixExpr = llvm::cast<PrefixExpr>(this);
-            auto operand = prefixExpr->getOperand().instantiate(genericArgs);
-            instantiation = llvm::make_unique<PrefixExpr>(prefixExpr->getOperator(), std::move(operand),
-                                                          prefixExpr->getLocation());
-            break;
-        }
-        case ExprKind::IncrementExpr: {
-            auto* incrementExpr = llvm::cast<IncrementExpr>(this);
-            instantiation = llvm::make_unique<IncrementExpr>(incrementExpr->getOperand().instantiate(genericArgs),
-                                                             incrementExpr->getLocation());
-            break;
-        }
-        case ExprKind::DecrementExpr: {
-            auto* decrementExpr = llvm::cast<DecrementExpr>(this);
-            instantiation = llvm::make_unique<DecrementExpr>(decrementExpr->getOperand().instantiate(genericArgs),
-                                                             decrementExpr->getLocation());
+        case ExprKind::UnaryExpr: {
+            auto* unaryExpr = llvm::cast<UnaryExpr>(this);
+            auto operand = unaryExpr->getOperand().instantiate(genericArgs);
+            instantiation = llvm::make_unique<UnaryExpr>(unaryExpr->getOperator(), std::move(operand),
+                                                         unaryExpr->getLocation());
             break;
         }
         case ExprKind::BinaryExpr: {
@@ -375,15 +362,7 @@ std::vector<const Expr*> Expr::getSubExprs() const {
             }
             break;
         }
-        case ExprKind::IncrementExpr:
-            subExprs.push_back(&llvm::cast<IncrementExpr>(this)->getOperand());
-            break;
-
-        case ExprKind::DecrementExpr:
-            subExprs.push_back(&llvm::cast<DecrementExpr>(this)->getOperand());
-            break;
-
-        case ExprKind::PrefixExpr:
+        case ExprKind::UnaryExpr:
         case ExprKind::BinaryExpr:
         case ExprKind::SubscriptExpr:
         case ExprKind::CallExpr: {
@@ -475,7 +454,7 @@ Expr* CallExpr::getReceiver() {
     return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
 }
 
-int64_t PrefixExpr::getConstantIntegerValue() const {
+int64_t UnaryExpr::getConstantIntegerValue() const {
     auto operand = getOperand().getConstantIntegerValue();
 
     switch (getOperator()) {

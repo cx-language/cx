@@ -35,9 +35,9 @@ void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> gene
 void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
     auto* returnValue = stmt.getReturnValue();
 
-    if (auto* prefixExpr = llvm::dyn_cast<PrefixExpr>(returnValue)) {
-        if (prefixExpr->getOperator() == Token::And) {
-            returnValue = &prefixExpr->getOperand();
+    if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(returnValue)) {
+        if (unaryExpr->getOperator() == Token::And) {
+            returnValue = &unaryExpr->getOperand();
         }
     }
 
@@ -277,9 +277,9 @@ static NullCheckInfo analyzeNullCheck(const Expr& condition) {
             nullCheckInfo.nullableValue = &binaryExpr->getLHS();
             nullCheckInfo.op = binaryExpr->getOperator();
         }
-    } else if (auto* prefixExpr = llvm::dyn_cast<PrefixExpr>(&condition)) {
-        if (prefixExpr->getOperator() == Token::Not) {
-            nullCheckInfo = analyzeNullCheck(prefixExpr->getOperand());
+    } else if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&condition)) {
+        if (unaryExpr->getOperator() == Token::Not) {
+            nullCheckInfo = analyzeNullCheck(unaryExpr->getOperand());
             nullCheckInfo.op = nullCheckInfo.op == Token::Equal ? Token::NotEqual : Token::Equal;
         }
     }
