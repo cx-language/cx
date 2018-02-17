@@ -723,6 +723,12 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
                 consumeToken();
                 expr = parseMemberExpr(std::move(expr));
                 break;
+            case Token::Increment:
+                expr = parseIncrementExpr(std::move(expr));
+                break;
+            case Token::Decrement:
+                expr = parseDecrementExpr(std::move(expr));
+                break;
             case Token::Not:
                 expr = parseUnwrapExpr(std::move(expr));
                 break;
@@ -746,6 +752,20 @@ std::unique_ptr<PrefixExpr> Parser::parsePrefixExpr() {
 
 std::unique_ptr<Expr> Parser::parsePreOrPostfixExpr() {
     return currentToken().isPrefixOperator() ? parsePrefixExpr() : parsePostfixExpr();
+}
+
+/// inc-expr ::= expr '++'
+std::unique_ptr<IncrementExpr> Parser::parseIncrementExpr(std::unique_ptr<Expr> operand) {
+    auto location = getCurrentLocation();
+    parse(Token::Increment);
+    return llvm::make_unique<IncrementExpr>(std::move(operand), location);
+}
+
+/// dec-expr ::= expr '--'
+std::unique_ptr<DecrementExpr> Parser::parseDecrementExpr(std::unique_ptr<Expr> operand) {
+    auto location = getCurrentLocation();
+    parse(Token::Decrement);
+    return llvm::make_unique<DecrementExpr>(std::move(operand), location);
 }
 
 /// binary-expr ::= expr op expr
@@ -863,28 +883,11 @@ std::unique_ptr<VarStmt> Parser::parseVarStmt(Decl* parent) {
     return llvm::make_unique<VarStmt>(parseVarDecl(true, parent, AccessLevel::None));
 }
 
-/// call-stmt ::= call-expr ('\n' | ';')
-std::unique_ptr<ExprStmt> Parser::parseCallStmt(std::unique_ptr<Expr> callExpr) {
-    ASSERT(callExpr->isCallExpr());
-    auto stmt = llvm::make_unique<ExprStmt>(std::move(callExpr));
+/// expr-stmt ::= expr ('\n' | ';')
+std::unique_ptr<ExprStmt> Parser::parseExprStmt(std::unique_ptr<Expr> expr) {
+    auto stmt = llvm::make_unique<ExprStmt>(std::move(expr));
     parseStmtTerminator();
     return stmt;
-}
-
-/// inc-stmt ::= expr '++' ('\n' | ';')
-std::unique_ptr<IncrementStmt> Parser::parseIncrementStmt(std::unique_ptr<Expr> operand) {
-    auto location = getCurrentLocation();
-    parse(Token::Increment);
-    parseStmtTerminator();
-    return llvm::make_unique<IncrementStmt>(std::move(operand), location);
-}
-
-/// dec-stmt ::= expr '--' ('\n' | ';')
-std::unique_ptr<DecrementStmt> Parser::parseDecrementStmt(std::unique_ptr<Expr> operand) {
-    auto location = getCurrentLocation();
-    parse(Token::Decrement);
-    parseStmtTerminator();
-    return llvm::make_unique<DecrementStmt>(std::move(operand), location);
 }
 
 /// defer-stmt ::= 'defer' call-expr ('\n' | ';')
@@ -1010,8 +1013,8 @@ std::unique_ptr<ContinueStmt> Parser::parseContinueStmt() {
 }
 
 /// stmt ::= var-stmt | assign-stmt | compound-assign-stmt | return-stmt |
-///          inc-stmt | dec-stmt | call-stmt | defer-stmt | if-stmt |
-///          switch-stmt | while-stmt | for-stmt | break-stmt | continue-stmt
+///          expr-stmt | defer-stmt | if-stmt | switch-stmt | while-stmt |
+///          for-stmt | break-stmt | continue-stmt
 std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
         case Token::Return:
@@ -1047,20 +1050,14 @@ std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
     // If we're here, the statement starts with an expression.
     std::unique_ptr<Expr> expr = parseExpr();
 
-    switch (currentToken()) {
-        case Token::Increment:
-            return parseIncrementStmt(std::move(expr));
-        case Token::Decrement:
-            return parseDecrementStmt(std::move(expr));
-        case Token::Assignment:
-            return parseAssignStmt(std::move(expr));
-        default:
-            if (currentToken().isCompoundAssignmentOperator()) {
-                return parseCompoundAssignStmt(std::move(expr));
-            }
-
-            if (!expr->isCallExpr()) unexpectedToken(currentToken());
-            return parseCallStmt(std::move(expr));
+    if (currentToken() == Token::Assignment) {
+        return parseAssignStmt(std::move(expr));
+    } else if (currentToken().isCompoundAssignmentOperator()) {
+        return parseCompoundAssignStmt(std::move(expr));
+    } else if (expr->isCallExpr() || expr->isIncrementExpr() || expr->isDecrementExpr()) {
+        return parseExprStmt(std::move(expr));
+    } else {
+        unexpectedToken(currentToken());
     }
 }
 

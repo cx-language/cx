@@ -55,8 +55,6 @@ private:
     void typecheckCompoundStmt(CompoundStmt& stmt);
     void typecheckReturnStmt(ReturnStmt& stmt);
     void typecheckVarStmt(VarStmt& stmt);
-    void typecheckIncrementStmt(IncrementStmt& stmt);
-    void typecheckDecrementStmt(DecrementStmt& stmt);
     void typecheckIfStmt(IfStmt& ifStmt);
     void typecheckSwitchStmt(SwitchStmt& stmt);
     void typecheckWhileStmt(WhileStmt& whileStmt);
@@ -75,6 +73,8 @@ private:
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr);
     Type typecheckTupleExpr(TupleExpr& expr);
     Type typecheckPrefixExpr(PrefixExpr& expr);
+    Type typecheckIncrementExpr(IncrementExpr& expr);
+    Type typecheckDecrementExpr(DecrementExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
     Type typecheckCallExpr(CallExpr& expr);
     Type typecheckBuiltinConversion(CallExpr& expr);

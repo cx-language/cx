@@ -37,16 +37,6 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
             auto instantiation = varStmt->getDecl().instantiate(genericArgs, {});
             return llvm::make_unique<VarStmt>(llvm::cast<VarDecl>(std::move(instantiation)));
         }
-        case StmtKind::IncrementStmt: {
-            auto* incrementStmt = llvm::cast<IncrementStmt>(this);
-            return llvm::make_unique<IncrementStmt>(incrementStmt->getOperand().instantiate(genericArgs),
-                                                    incrementStmt->getLocation());
-        }
-        case StmtKind::DecrementStmt: {
-            auto* decrementStmt = llvm::cast<DecrementStmt>(this);
-            return llvm::make_unique<DecrementStmt>(decrementStmt->getOperand().instantiate(genericArgs),
-                                                    decrementStmt->getLocation());
-        }
         case StmtKind::ExprStmt: {
             auto* exprStmt = llvm::cast<ExprStmt>(this);
             return llvm::make_unique<ExprStmt>(exprStmt->getExpr().instantiate(genericArgs));

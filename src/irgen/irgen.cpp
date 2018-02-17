@@ -292,35 +292,6 @@ void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     }
 }
 
-void IRGenerator::codegenIncrementStmt(const IncrementStmt& stmt) {
-    auto* alloca = codegenLvalueExpr(stmt.getOperand());
-    auto* value = builder.CreateLoad(alloca);
-    llvm::Value* result;
-
-    if (stmt.getOperand().getType().isPointerType()) {
-        result = builder.CreateConstGEP1_32(value, 1);
-    } else {
-        result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
-    }
-
-    builder.CreateStore(result, alloca);
-}
-
-void IRGenerator::codegenDecrementStmt(const DecrementStmt& stmt) {
-    auto* alloca = codegenLvalueExpr(stmt.getOperand());
-    auto* value = builder.CreateLoad(alloca);
-    llvm::Value* result;
-
-    if (stmt.getOperand().getType().isPointerType()) {
-        auto* minusOne = llvm::ConstantInt::getSigned(llvm::IntegerType::getInt32Ty(ctx), -1);
-        result = builder.CreateGEP(value, minusOne);
-    } else {
-        result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
-    }
-
-    builder.CreateStore(result, alloca);
-}
-
 void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination,
                                llvm::BasicBlock* continuation) {
     builder.SetInsertPoint(destination);
@@ -497,12 +468,6 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
             break;
         case StmtKind::VarStmt:
             codegenVarStmt(llvm::cast<VarStmt>(stmt));
-            break;
-        case StmtKind::IncrementStmt:
-            codegenIncrementStmt(llvm::cast<IncrementStmt>(stmt));
-            break;
-        case StmtKind::DecrementStmt:
-            codegenDecrementStmt(llvm::cast<DecrementStmt>(stmt));
             break;
         case StmtKind::ExprStmt:
             codegenExpr(llvm::cast<ExprStmt>(stmt).getExpr());

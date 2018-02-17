@@ -92,6 +92,18 @@ void ASTPrinter::printPrefixExpr(const PrefixExpr& expr) {
     out << ")";
 }
 
+void ASTPrinter::printIncrementExpr(const IncrementExpr& stmt) {
+    out << "(inc-expr ";
+    printExpr(stmt.getOperand());
+    out << ")";
+}
+
+void ASTPrinter::printDecrementExpr(const DecrementExpr& stmt) {
+    out << "(dec-expr ";
+    printExpr(stmt.getOperand());
+    out << ")";
+}
+
 void ASTPrinter::printBinaryExpr(const BinaryExpr& expr) {
     out << "(";
     printExpr(expr.getLHS());
@@ -196,6 +208,12 @@ void ASTPrinter::printExpr(const Expr& expr) {
         case ExprKind::PrefixExpr:
             printPrefixExpr(llvm::cast<PrefixExpr>(expr));
             break;
+        case ExprKind::IncrementExpr:
+            printIncrementExpr(llvm::cast<IncrementExpr>(expr));
+            break;
+        case ExprKind::DecrementExpr:
+            printDecrementExpr(llvm::cast<DecrementExpr>(expr));
+            break;
         case ExprKind::BinaryExpr:
             printBinaryExpr(llvm::cast<BinaryExpr>(expr));
             break;
@@ -257,20 +275,6 @@ void ASTPrinter::printVarStmt(const VarStmt& stmt) {
     } else {
         out << "undefined";
     }
-    out << ")";
-}
-
-void ASTPrinter::printIncrementStmt(const IncrementStmt& stmt) {
-    breakLine();
-    out << "(inc-stmt ";
-    printExpr(stmt.getOperand());
-    out << ")";
-}
-
-void ASTPrinter::printDecrementStmt(const DecrementStmt& stmt) {
-    breakLine();
-    out << "(dec-stmt ";
-    printExpr(stmt.getOperand());
     out << ")";
 }
 
@@ -382,12 +386,6 @@ void ASTPrinter::printStmt(const Stmt& stmt) {
             break;
         case StmtKind::VarStmt:
             printVarStmt(llvm::cast<VarStmt>(stmt));
-            break;
-        case StmtKind::IncrementStmt:
-            printIncrementStmt(llvm::cast<IncrementStmt>(stmt));
-            break;
-        case StmtKind::DecrementStmt:
-            printDecrementStmt(llvm::cast<DecrementStmt>(stmt));
             break;
         case StmtKind::ExprStmt:
             breakLine();

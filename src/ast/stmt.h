@@ -14,8 +14,6 @@ class VarDecl;
 enum class StmtKind {
     ReturnStmt,
     VarStmt,
-    IncrementStmt,
-    DecrementStmt,
     ExprStmt,
     DeferStmt,
     IfStmt,
@@ -34,8 +32,6 @@ public:
 
     bool isReturnStmt() const { return getKind() == StmtKind::ReturnStmt; }
     bool isVarStmt() const { return getKind() == StmtKind::VarStmt; }
-    bool isIncrementStmt() const { return getKind() == StmtKind::IncrementStmt; }
-    bool isDecrementStmt() const { return getKind() == StmtKind::DecrementStmt; }
     bool isExprStmt() const { return getKind() == StmtKind::ExprStmt; }
     bool isDeferStmt() const { return getKind() == StmtKind::DeferStmt; }
     bool isIfStmt() const { return getKind() == StmtKind::IfStmt; }
@@ -82,32 +78,6 @@ public:
 
 private:
     std::unique_ptr<VarDecl> decl;
-};
-
-class IncrementStmt : public Stmt {
-public:
-    IncrementStmt(std::unique_ptr<Expr> operand, SourceLocation location)
-    : Stmt(StmtKind::IncrementStmt), operand(std::move(operand)), location(location) {}
-    Expr& getOperand() const { return *operand; }
-    SourceLocation getLocation() const { return location; }
-    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::IncrementStmt; }
-
-private:
-    std::unique_ptr<Expr> operand;
-    SourceLocation location; // Location of '++'.
-};
-
-class DecrementStmt : public Stmt {
-public:
-    DecrementStmt(std::unique_ptr<Expr> operand, SourceLocation location)
-    : Stmt(StmtKind::DecrementStmt), operand(std::move(operand)), location(location) {}
-    Expr& getOperand() const { return *operand; }
-    SourceLocation getLocation() const { return location; }
-    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DecrementStmt; }
-
-private:
-    std::unique_ptr<Expr> operand;
-    SourceLocation location; // Location of '--'.
 };
 
 /// A statement that consists of the evaluation of a single expression.

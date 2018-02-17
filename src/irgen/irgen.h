@@ -86,6 +86,8 @@ private:
     llvm::Value* codegenNot(const PrefixExpr& expr);
     llvm::Value* codegenPrefixExpr(const PrefixExpr& expr);
     llvm::Value* codegenLvaluePrefixExpr(const PrefixExpr& expr);
+    llvm::Value* codegenIncrementExpr(const IncrementExpr& expr);
+    llvm::Value* codegenDecrementExpr(const DecrementExpr& expr);
     llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate0 create);
     llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate1 create);
     llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate2 create);
@@ -117,8 +119,6 @@ private:
                       llvm::BasicBlock* continuation);
     void codegenReturnStmt(const ReturnStmt& stmt);
     void codegenVarStmt(const VarStmt& stmt);
-    void codegenIncrementStmt(const IncrementStmt& stmt);
-    void codegenDecrementStmt(const DecrementStmt& stmt);
     void codegenIfStmt(const IfStmt& ifStmt);
     void codegenSwitchStmt(const SwitchStmt& switchStmt);
     void codegenWhileStmt(const WhileStmt& whileStmt);

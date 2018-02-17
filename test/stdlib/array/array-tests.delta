@@ -72,7 +72,7 @@ func testArrayMutatingIteration() {
     a.push(3);
 
     for (let e in a) {
-        *e++;
+        (*e)++;
     }
 
     assert(*a[0] == 2);

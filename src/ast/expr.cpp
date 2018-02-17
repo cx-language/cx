@@ -47,6 +47,10 @@ bool Expr::isConstant() const {
         case ExprKind::PrefixExpr:
             return llvm::cast<PrefixExpr>(this)->getOperand().isConstant();
 
+        case ExprKind::IncrementExpr:
+        case ExprKind::DecrementExpr:
+            return false;
+
         case ExprKind::BinaryExpr:
             return llvm::cast<BinaryExpr>(this)->getLHS().isConstant() &&
                    llvm::cast<BinaryExpr>(this)->getRHS().isConstant();
@@ -131,6 +135,8 @@ bool Expr::isLvalue() const {
         case ExprKind::AddressofExpr:
         case ExprKind::CastExpr:
         case ExprKind::UnwrapExpr:
+        case ExprKind::IncrementExpr:
+        case ExprKind::DecrementExpr:
         case ExprKind::BinaryExpr:
         case ExprKind::CallExpr:
         case ExprKind::LambdaExpr:
@@ -227,6 +233,18 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             auto operand = prefixExpr->getOperand().instantiate(genericArgs);
             instantiation = llvm::make_unique<PrefixExpr>(prefixExpr->getOperator(), std::move(operand),
                                                           prefixExpr->getLocation());
+            break;
+        }
+        case ExprKind::IncrementExpr: {
+            auto* incrementExpr = llvm::cast<IncrementExpr>(this);
+            instantiation = llvm::make_unique<IncrementExpr>(incrementExpr->getOperand().instantiate(genericArgs),
+                                                             incrementExpr->getLocation());
+            break;
+        }
+        case ExprKind::DecrementExpr: {
+            auto* decrementExpr = llvm::cast<DecrementExpr>(this);
+            instantiation = llvm::make_unique<DecrementExpr>(decrementExpr->getOperand().instantiate(genericArgs),
+                                                             decrementExpr->getLocation());
             break;
         }
         case ExprKind::BinaryExpr: {
@@ -344,6 +362,14 @@ std::vector<const Expr*> Expr::getSubExprs() const {
             }
             break;
         }
+        case ExprKind::IncrementExpr:
+            subExprs.push_back(&llvm::cast<IncrementExpr>(this)->getOperand());
+            break;
+
+        case ExprKind::DecrementExpr:
+            subExprs.push_back(&llvm::cast<DecrementExpr>(this)->getOperand());
+            break;
+
         case ExprKind::PrefixExpr:
         case ExprKind::BinaryExpr:
         case ExprKind::SubscriptExpr:

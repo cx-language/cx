@@ -28,6 +28,8 @@ enum class ExprKind {
     ArrayLiteralExpr,
     TupleExpr,
     PrefixExpr,
+    IncrementExpr,
+    DecrementExpr,
     BinaryExpr,
     CallExpr,
     CastExpr,
@@ -54,6 +56,8 @@ public:
     bool isArrayLiteralExpr() const { return getKind() == ExprKind::ArrayLiteralExpr; }
     bool isTupleExpr() const { return getKind() == ExprKind::TupleExpr; }
     bool isPrefixExpr() const { return getKind() == ExprKind::PrefixExpr; }
+    bool isIncrementExpr() const { return getKind() == ExprKind::IncrementExpr; }
+    bool isDecrementExpr() const { return getKind() == ExprKind::DecrementExpr; }
     bool isBinaryExpr() const { return getKind() == ExprKind::BinaryExpr; }
     bool isCallExpr() const { return getKind() == ExprKind::CallExpr; }
     bool isCastExpr() const { return getKind() == ExprKind::CastExpr; }
@@ -275,6 +279,28 @@ public:
 
 private:
     PrefixOperator op;
+};
+
+class IncrementExpr : public Expr {
+public:
+    IncrementExpr(std::unique_ptr<Expr> operand, SourceLocation location)
+    : Expr(ExprKind::IncrementExpr, location), operand(std::move(operand)) {}
+    Expr& getOperand() const { return *operand; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::IncrementExpr; }
+
+private:
+    std::unique_ptr<Expr> operand;
+};
+
+class DecrementExpr : public Expr {
+public:
+    DecrementExpr(std::unique_ptr<Expr> operand, SourceLocation location)
+    : Expr(ExprKind::DecrementExpr, location), operand(std::move(operand)) {}
+    Expr& getOperand() const { return *operand; }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::DecrementExpr; }
+
+private:
+    std::unique_ptr<Expr> operand;
 };
 
 class BinaryExpr : public CallExpr {

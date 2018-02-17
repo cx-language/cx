@@ -140,6 +140,37 @@ llvm::Value* IRGenerator::codegenLvaluePrefixExpr(const PrefixExpr& expr) {
     }
 }
 
+llvm::Value* IRGenerator::codegenIncrementExpr(const IncrementExpr& expr) {
+    auto* alloca = codegenLvalueExpr(expr.getOperand());
+    auto* value = builder.CreateLoad(alloca);
+    llvm::Value* result;
+
+    if (expr.getOperand().getType().isPointerType()) {
+        result = builder.CreateConstGEP1_32(value, 1);
+    } else {
+        result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
+    }
+
+    builder.CreateStore(result, alloca);
+    return nullptr;
+}
+
+llvm::Value* IRGenerator::codegenDecrementExpr(const DecrementExpr& expr) {
+    auto* alloca = codegenLvalueExpr(expr.getOperand());
+    auto* value = builder.CreateLoad(alloca);
+    llvm::Value* result;
+
+    if (expr.getOperand().getType().isPointerType()) {
+        auto* minusOne = llvm::ConstantInt::getSigned(llvm::IntegerType::getInt32Ty(ctx), -1);
+        result = builder.CreateGEP(value, minusOne);
+    } else {
+        result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
+    }
+
+    builder.CreateStore(result, alloca);
+    return nullptr;
+}
+
 llvm::Value* IRGenerator::codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate0 create) {
     return (builder.*create)(lhs, rhs, "");
 }
@@ -743,6 +774,10 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
             return codegenTupleExpr(llvm::cast<TupleExpr>(expr));
         case ExprKind::PrefixExpr:
             return codegenPrefixExpr(llvm::cast<PrefixExpr>(expr));
+        case ExprKind::IncrementExpr:
+            return codegenIncrementExpr(llvm::cast<IncrementExpr>(expr));
+        case ExprKind::DecrementExpr:
+            return codegenDecrementExpr(llvm::cast<DecrementExpr>(expr));
         case ExprKind::BinaryExpr:
             return codegenBinaryExpr(llvm::cast<BinaryExpr>(expr));
         case ExprKind::CallExpr:
@@ -789,6 +824,10 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
             return codegenTupleExpr(llvm::cast<TupleExpr>(expr));
         case ExprKind::PrefixExpr:
             return codegenLvaluePrefixExpr(llvm::cast<PrefixExpr>(expr));
+        case ExprKind::IncrementExpr:
+            llvm_unreachable("no lvalue increment expressions");
+        case ExprKind::DecrementExpr:
+            llvm_unreachable("no lvalue decrement expressions");
         case ExprKind::BinaryExpr:
             llvm_unreachable("no lvalue binary expressions");
         case ExprKind::CallExpr:

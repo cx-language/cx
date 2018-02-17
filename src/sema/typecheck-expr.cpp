@@ -173,6 +173,24 @@ Type Typechecker::typecheckPrefixExpr(PrefixExpr& expr) {
     return operandType;
 }
 
+Type Typechecker::typecheckIncrementExpr(IncrementExpr& expr) {
+    auto type = typecheckExpr(expr.getOperand());
+    if (!type.isMutable()) {
+        error(expr.getLocation(), "cannot increment immutable value");
+    }
+    // TODO: check that operand supports increment operation.
+    return Type::getVoid();
+}
+
+Type Typechecker::typecheckDecrementExpr(DecrementExpr& expr) {
+    auto type = typecheckExpr(expr.getOperand());
+    if (!type.isMutable()) {
+        error(expr.getLocation(), "cannot decrement immutable value");
+    }
+    // TODO: check that operand supports decrement operation.
+    return Type::getVoid();
+}
+
 static void invalidOperandsToBinaryExpr(const BinaryExpr& expr) {
     std::string hint;
 
@@ -1496,6 +1514,12 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
             break;
         case ExprKind::PrefixExpr:
             type = typecheckPrefixExpr(llvm::cast<PrefixExpr>(expr));
+            break;
+        case ExprKind::IncrementExpr:
+            type = typecheckIncrementExpr(llvm::cast<IncrementExpr>(expr));
+            break;
+        case ExprKind::DecrementExpr:
+            type = typecheckDecrementExpr(llvm::cast<DecrementExpr>(expr));
             break;
         case ExprKind::BinaryExpr:
             type = typecheckBinaryExpr(llvm::cast<BinaryExpr>(expr));

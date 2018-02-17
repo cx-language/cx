@@ -93,22 +93,6 @@ void Typechecker::typecheckVarStmt(VarStmt& stmt) {
     typecheckVarDecl(stmt.getDecl(), false);
 }
 
-void Typechecker::typecheckIncrementStmt(IncrementStmt& stmt) {
-    auto type = typecheckExpr(stmt.getOperand());
-    if (!type.isMutable()) {
-        error(stmt.getLocation(), "cannot increment immutable value");
-    }
-    // TODO: check that operand supports increment operation.
-}
-
-void Typechecker::typecheckDecrementStmt(DecrementStmt& stmt) {
-    auto type = typecheckExpr(stmt.getOperand());
-    if (!type.isMutable()) {
-        error(stmt.getLocation(), "cannot decrement immutable value");
-    }
-    // TODO: check that operand supports decrement operation.
-}
-
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     Type conditionType = typecheckExpr(ifStmt.getCondition());
     if (!conditionType.isBool() && !conditionType.isOptionalType()) {
@@ -435,10 +419,6 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
             }
             return llvm::None;
 
-        case StmtKind::IncrementStmt:
-        case StmtKind::DecrementStmt:
-            return true;
-
         case StmtKind::ExprStmt:
             return maySetToNullBeforeEvaluating(var, llvm::cast<ExprStmt>(stmt).getExpr());
 
@@ -529,12 +509,6 @@ void Typechecker::typecheckStmt(std::unique_ptr<Stmt>& stmt) {
             break;
         case StmtKind::VarStmt:
             typecheckVarStmt(llvm::cast<VarStmt>(*stmt));
-            break;
-        case StmtKind::IncrementStmt:
-            typecheckIncrementStmt(llvm::cast<IncrementStmt>(*stmt));
-            break;
-        case StmtKind::DecrementStmt:
-            typecheckDecrementStmt(llvm::cast<DecrementStmt>(*stmt));
             break;
         case StmtKind::ExprStmt:
             typecheckExpr(llvm::cast<ExprStmt>(*stmt).getExpr());

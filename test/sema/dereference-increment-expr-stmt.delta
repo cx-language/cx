@@ -1,0 +1,9 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+func f(p: int*) {
+    var a = p;
+
+    // TODO: Improve error message.
+    // CHECK: [[@LINE+1]]:11: error: unexpected ';'
+    *(a++);
+}
