@@ -198,19 +198,21 @@ VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
 }
 
 // TODO: Use llvm::APSInt instead of int64_t.
-void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, clang::QualType type, Module& module) {
-    auto initializer = std::make_shared<IntLiteralExpr>(value, SourceLocation());
-    initializer->setType(toDelta(type).asImmutable());
+void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, clang::QualType qualType, Module& module) {
+    auto initializer = llvm::make_unique<IntLiteralExpr>(value, SourceLocation());
+    auto type = toDelta(qualType).asImmutable();
+    initializer->setType(type);
     module.addToSymbolTable(
-        VarDecl(initializer->getType(), name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
+        VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 // TODO: Use llvm::APFloat instead of long double.
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
-    auto initializer = std::make_shared<FloatLiteralExpr>(value, SourceLocation());
-    initializer->setType(Type::getFloat64());
+    auto initializer = llvm::make_unique<FloatLiteralExpr>(value, SourceLocation());
+    auto type = Type::getFloat64();
+    initializer->setType(type);
     module.addToSymbolTable(
-        VarDecl(initializer->getType(), name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
+        VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {

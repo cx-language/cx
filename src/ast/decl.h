@@ -384,7 +384,7 @@ private:
 
 class VarDecl : public Decl, public Movable {
 public:
-    VarDecl(Type type, std::string&& name, std::shared_ptr<Expr>&& initializer, Decl* parent, AccessLevel accessLevel,
+    VarDecl(Type type, std::string&& name, std::unique_ptr<Expr> initializer, Decl* parent, AccessLevel accessLevel,
             Module& module, SourceLocation location)
     : Decl(DeclKind::VarDecl, accessLevel), type(type), name(std::move(name)), initializer(std::move(initializer)),
       parent(parent), location(location), module(module) {}
@@ -400,7 +400,7 @@ public:
 private:
     Type type;
     std::string name;
-    std::shared_ptr<Expr> initializer;
+    std::unique_ptr<Expr> initializer;
     Decl* parent;
     SourceLocation location;
     Module& module;

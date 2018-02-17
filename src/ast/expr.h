@@ -194,7 +194,7 @@ private:
 
 class NamedValue {
 public:
-    NamedValue(std::string&& name, std::shared_ptr<Expr>&& value, SourceLocation location = SourceLocation())
+    NamedValue(std::string&& name, std::unique_ptr<Expr> value, SourceLocation location = SourceLocation())
     : name(std::move(name)), value(std::move(value)),
       location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
@@ -269,7 +269,7 @@ private:
     Decl* calleeDecl;
 };
 
-inline std::vector<NamedValue> addArg(std::vector<NamedValue>&& args, std::shared_ptr<Expr>&& arg) {
+inline std::vector<NamedValue> addArg(std::vector<NamedValue>&& args, std::unique_ptr<Expr> arg) {
     args.push_back({ "", std::move(arg), SourceLocation() });
     return std::move(args);
 }
@@ -314,7 +314,7 @@ private:
 
 class BinaryExpr : public CallExpr {
 public:
-    BinaryExpr(BinaryOperator op, std::shared_ptr<Expr>&& left, std::unique_ptr<Expr> right, SourceLocation location)
+    BinaryExpr(BinaryOperator op, std::unique_ptr<Expr> left, std::unique_ptr<Expr> right, SourceLocation location)
     : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(delta::getFunctionName(op), location),
                addArg(addArg({}, std::move(left)), std::move(right)), location),
       op(op) {}
