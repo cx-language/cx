@@ -75,6 +75,10 @@ llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
 }
 
+llvm::Value* IRGenerator::codegenUndefinedLiteralExpr(const UndefinedLiteralExpr& expr) {
+    return llvm::UndefValue::get(toIR(expr.getType()));
+}
+
 llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) {
     auto* arrayType = llvm::ArrayType::get(toIR(expr.getElements()[0]->getType()), expr.getElements().size());
     auto values = map(expr.getElements(), [&](const std::unique_ptr<Expr>& elementExpr) {
@@ -225,7 +229,7 @@ llvm::Value* IRGenerator::codegenLogicalOr(const Expr& left, const Expr& right) 
     return phi;
 }
 
-llvm::Value* IRGenerator::codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr) {
+llvm::Value* IRGenerator::codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr) {
     if (lhs->getType()->isFloatingPointTy()) {
         switch (op) {
             case Token::Equal:
@@ -335,6 +339,11 @@ llvm::Value* IRGenerator::codegenShortCircuitBinaryOp(BinaryOperator op, const E
 }
 
 llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
+    if (expr.isAssignment()) {
+        codegenAssignment(expr);
+        return nullptr;
+    }
+
     if (expr.getCalleeDecl() != nullptr) {
         return codegenCallExpr(expr);
     }
@@ -352,6 +361,41 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
             llvm::Value* rhs = codegenExpr(expr.getRHS());
             return codegenBinaryOp(expr.getOperator(), lhs, rhs, expr.getLHS());
     }
+}
+
+void IRGenerator::codegenAssignment(const BinaryExpr& expr) {
+    llvm::Value* lhsLvalue = codegenAssignmentLHS(&expr.getLHS(), &expr.getRHS());
+    if (!lhsLvalue) return;
+    llvm::Value* rhsValue;
+
+    if (isCompoundAssignmentOperator(expr.getOperator())) {
+        auto nonCompoundOp = withoutCompoundEqSuffix(expr.getOperator());
+
+        if (!isBuiltinOp(nonCompoundOp, expr.getLHS().getType(), expr.getRHS().getType())) {
+            builder.CreateStore(codegenCallExpr(expr), lhsLvalue);
+            return;
+        }
+
+        switch (nonCompoundOp) {
+            case Token::AndAnd:
+                error(expr.getLocation(), "'&&=' not implemented yet");
+            case Token::OrOr:
+                error(expr.getLocation(), "'||=' not implemented yet");
+            default:
+                break;
+        }
+
+        if (expr.getLHS().getType().isPointerType() && expr.getRHS().getType().isInteger()) {
+            rhsValue = codegenPointerOffset(expr);
+        } else {
+            auto* lhsValue = builder.CreateLoad(lhsLvalue);
+            rhsValue = codegenBinaryOp(nonCompoundOp, lhsValue, codegenExpr(expr.getRHS()), expr.getLHS());
+        }
+    } else {
+        rhsValue = codegenExprForPassing(expr.getRHS(), lhsLvalue->getType()->getPointerElementType());
+    }
+
+    builder.CreateStore(rhsValue, lhsLvalue);
 }
 
 bool isBuiltinArrayToArrayRefConversion(Type sourceType, llvm::Type* targetType) {
@@ -613,7 +657,7 @@ llvm::Value* IRGenerator::codegenPointerOffset(const BinaryExpr& expr) {
     auto* pointer = codegenExpr(expr.getLHS());
     auto* offset = codegenExpr(expr.getRHS());
 
-    if (expr.getOperator() == Token::Minus) {
+    if (expr.getOperator() == Token::Minus || expr.getOperator() == Token::MinusEqual) {
         offset = builder.CreateNeg(offset);
     }
 
@@ -768,6 +812,8 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
             return codegenBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
         case ExprKind::NullLiteralExpr:
             return codegenNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
+        case ExprKind::UndefinedLiteralExpr:
+            return codegenUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));
         case ExprKind::ArrayLiteralExpr:
             return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
         case ExprKind::TupleExpr:
@@ -818,6 +864,8 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
             llvm_unreachable("no lvalue boolean literals");
         case ExprKind::NullLiteralExpr:
             llvm_unreachable("no lvalue null literals");
+        case ExprKind::UndefinedLiteralExpr:
+            llvm_unreachable("no lvalue undefined literals");
         case ExprKind::ArrayLiteralExpr:
             return codegenArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
         case ExprKind::TupleExpr:

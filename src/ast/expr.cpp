@@ -6,6 +6,11 @@
 
 using namespace delta;
 
+bool Expr::isAssignment() const {
+    auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(this);
+    return binaryExpr && isAssignmentOperator(binaryExpr->getOperator());
+}
+
 bool Expr::isConstant() const {
     switch (getKind()) {
         case ExprKind::VarExpr: {
@@ -26,6 +31,7 @@ bool Expr::isConstant() const {
         case ExprKind::FloatLiteralExpr:
         case ExprKind::BoolLiteralExpr:
         case ExprKind::NullLiteralExpr:
+        case ExprKind::UndefinedLiteralExpr:
             return true;
 
         case ExprKind::ArrayLiteralExpr:
@@ -131,6 +137,7 @@ bool Expr::isLvalue() const {
         case ExprKind::FloatLiteralExpr:
         case ExprKind::BoolLiteralExpr:
         case ExprKind::NullLiteralExpr:
+        case ExprKind::UndefinedLiteralExpr:
         case ExprKind::SizeofExpr:
         case ExprKind::AddressofExpr:
         case ExprKind::CastExpr:
@@ -212,6 +219,11 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
         case ExprKind::NullLiteralExpr: {
             auto* nullLiteralExpr = llvm::cast<NullLiteralExpr>(this);
             instantiation = llvm::make_unique<NullLiteralExpr>(nullLiteralExpr->getLocation());
+            break;
+        }
+        case ExprKind::UndefinedLiteralExpr: {
+            auto* undefinedLiteralExpr = llvm::cast<UndefinedLiteralExpr>(this);
+            instantiation = llvm::make_unique<UndefinedLiteralExpr>(undefinedLiteralExpr->getLocation());
             break;
         }
         case ExprKind::ArrayLiteralExpr: {
@@ -346,6 +358,7 @@ std::vector<const Expr*> Expr::getSubExprs() const {
         case ExprKind::FloatLiteralExpr:
         case ExprKind::BoolLiteralExpr:
         case ExprKind::NullLiteralExpr:
+        case ExprKind::UndefinedLiteralExpr:
             break;
 
         case ExprKind::ArrayLiteralExpr: {
@@ -477,12 +490,13 @@ int64_t PrefixExpr::getConstantIntegerValue() const {
     }
 }
 
-bool BinaryExpr::isBuiltinOp() const {
+bool delta::isBuiltinOp(Token::Kind op, Type left, Type right) {
+    if (op == Token::Assignment) return true;
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
     if (op == Token::PointerEqual || op == Token::PointerNotEqual) return true;
-    if (getLHS().getType().isPointerType() && getRHS().getType().isPointerType()) return false;
-    if (getLHS().getType().isEnumType() && getLHS().getType() == getRHS().getType()) return true;
-    return getLHS().getType().isBuiltinType() && getRHS().getType().isBuiltinType();
+    if (left.isPointerType() && right.isPointerType()) return false;
+    if (left.isEnumType() && left == right) return true;
+    return left.isBuiltinType() && right.isBuiltinType();
 }
 
 int64_t BinaryExpr::getConstantIntegerValue() const {

@@ -285,6 +285,13 @@ std::unique_ptr<NullLiteralExpr> Parser::parseNullLiteral() {
     return expr;
 }
 
+std::unique_ptr<UndefinedLiteralExpr> Parser::parseUndefinedLiteral() {
+    ASSERT(currentToken() == Token::Undefined);
+    auto expr = llvm::make_unique<UndefinedLiteralExpr>(getCurrentLocation());
+    consumeToken();
+    return expr;
+}
+
 /// array-literal ::= '[' expr-list ']'
 std::unique_ptr<ArrayLiteralExpr> Parser::parseArrayLiteral() {
     ASSERT(currentToken() == Token::LeftBracket);
@@ -707,6 +714,9 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
         case Token::Addressof:
             expr = parseAddressofExpr();
             break;
+        case Token::Undefined:
+            expr = parseUndefinedLiteral();
+            break;
         default:
             unexpectedToken(currentToken());
             break;
@@ -743,7 +753,7 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
 
 /// prefix-expr ::= prefix-operator (prefix-expr | postfix-expr)
 std::unique_ptr<PrefixExpr> Parser::parsePrefixExpr() {
-    ASSERT(currentToken().isPrefixOperator());
+    ASSERT(isPrefixOperator(currentToken()));
     auto op = currentToken();
     auto location = getCurrentLocation();
     consumeToken();
@@ -751,7 +761,7 @@ std::unique_ptr<PrefixExpr> Parser::parsePrefixExpr() {
 }
 
 std::unique_ptr<Expr> Parser::parsePreOrPostfixExpr() {
-    return currentToken().isPrefixOperator() ? parsePrefixExpr() : parsePostfixExpr();
+    return isPrefixOperator(currentToken()) ? parsePrefixExpr() : parsePostfixExpr();
 }
 
 /// inc-expr ::= expr '++'
@@ -770,16 +780,16 @@ std::unique_ptr<DecrementExpr> Parser::parseDecrementExpr(std::unique_ptr<Expr> 
 
 /// binary-expr ::= expr op expr
 std::unique_ptr<Expr> Parser::parseBinaryExpr(std::unique_ptr<Expr> lhs, int minPrecedence) {
-    while (currentToken().isBinaryOperator() && currentToken().getPrecedence() >= minPrecedence) {
+    while (isBinaryOperator(currentToken()) && getPrecedence(currentToken()) >= minPrecedence) {
         auto backtrackLocation = currentTokenIndex;
         auto op = consumeToken();
         auto expr = parsePreOrPostfixExpr();
-        if (currentToken().isAssignmentOperator()) {
+        if (isAssignmentOperator(currentToken())) {
             currentTokenIndex = backtrackLocation;
             break;
         }
 
-        while (currentToken().isBinaryOperator() && currentToken().getPrecedence() > op.getPrecedence()) {
+        while (isBinaryOperator(currentToken()) && getPrecedence(currentToken()) > getPrecedence(op)) {
             auto token = consumeToken();
             expr = llvm::make_unique<BinaryExpr>(token, std::move(expr), parsePreOrPostfixExpr(), token.getLocation());
         }
@@ -791,29 +801,6 @@ std::unique_ptr<Expr> Parser::parseBinaryExpr(std::unique_ptr<Expr> lhs, int min
 /// expr ::= prefix-expr | postfix-expr | binary-expr
 std::unique_ptr<Expr> Parser::parseExpr() {
     return parseBinaryExpr(parsePreOrPostfixExpr(), 0);
-}
-
-/// assign-stmt ::= expr '=' expr ('\n' | ';')
-std::unique_ptr<AssignStmt> Parser::parseAssignStmt(std::unique_ptr<Expr> lhs) {
-    auto location = getCurrentLocation();
-    parse(Token::Assignment);
-    auto rhs = currentToken() != Token::Undefined ? parseExpr() : nullptr;
-    if (!rhs) consumeToken();
-    parseStmtTerminator();
-    return llvm::make_unique<AssignStmt>(std::move(lhs), std::move(rhs), false, location);
-}
-
-/// compound-assign-stmt ::= expr compound-assignment-op expr ('\n' | ';')
-std::unique_ptr<AssignStmt> Parser::parseCompoundAssignStmt(std::unique_ptr<Expr> lhs) {
-    if (!lhs) lhs = parseExpr();
-    SourceLocation location = getCurrentLocation();
-    auto op = BinaryOperator(consumeToken().withoutCompoundEqSuffix());
-    auto rhs = parseExpr();
-    parseStmtTerminator();
-
-    std::shared_ptr<Expr> sharedLHS = std::move(lhs);
-    auto binaryExpr = llvm::make_unique<BinaryExpr>(op, std::shared_ptr<Expr>(sharedLHS), std::move(rhs), location);
-    return llvm::make_unique<AssignStmt>(std::move(sharedLHS), std::move(binaryExpr), true, location);
 }
 
 /// expr-list ::= '' | nonempty-expr-list
@@ -869,8 +856,7 @@ std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* pa
 
     if (requireInitialValue) {
         parse(Token::Assignment);
-        initializer = currentToken() != Token::Undefined ? parseExpr() : nullptr;
-        if (!initializer) consumeToken();
+        initializer = parseExpr();
         parseStmtTerminator();
     }
 
@@ -883,7 +869,7 @@ std::unique_ptr<VarStmt> Parser::parseVarStmt(Decl* parent) {
     return llvm::make_unique<VarStmt>(parseVarDecl(true, parent, AccessLevel::None));
 }
 
-/// expr-stmt ::= expr ('\n' | ';')
+/// expr-stmt ::= binary-expr | call-expr ('\n' | ';')
 std::unique_ptr<ExprStmt> Parser::parseExprStmt(std::unique_ptr<Expr> expr) {
     auto stmt = llvm::make_unique<ExprStmt>(std::move(expr));
     parseStmtTerminator();
@@ -1012,9 +998,8 @@ std::unique_ptr<ContinueStmt> Parser::parseContinueStmt() {
     return llvm::make_unique<ContinueStmt>(location);
 }
 
-/// stmt ::= var-stmt | assign-stmt | compound-assign-stmt | return-stmt |
-///          expr-stmt | defer-stmt | if-stmt | switch-stmt | while-stmt |
-///          for-stmt | break-stmt | continue-stmt
+/// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt |
+///          switch-stmt | while-stmt | for-stmt | break-stmt | continue-stmt
 std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
         case Token::Return:
@@ -1050,11 +1035,7 @@ std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
     // If we're here, the statement starts with an expression.
     std::unique_ptr<Expr> expr = parseExpr();
 
-    if (currentToken() == Token::Assignment) {
-        return parseAssignStmt(std::move(expr));
-    } else if (currentToken().isCompoundAssignmentOperator()) {
-        return parseCompoundAssignStmt(std::move(expr));
-    } else if (expr->isCallExpr() || expr->isIncrementExpr() || expr->isDecrementExpr()) {
+    if (expr->isCallExpr() || expr->isIncrementExpr() || expr->isDecrementExpr() || expr->isAssignment()) {
         return parseExprStmt(std::move(expr));
     } else {
         unexpectedToken(currentToken());
@@ -1135,7 +1116,7 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl
     ASSERT(currentToken() == Token::Func);
     consumeToken();
 
-    bool isValidFunctionName = currentToken() == Token::Identifier || currentToken().isOverloadable() ||
+    bool isValidFunctionName = currentToken() == Token::Identifier || isOverloadable(currentToken()) ||
                                (currentToken() == Token::LeftBracket && lookAhead(1) == Token::RightBracket);
     if (!isValidFunctionName) unexpectedToken(currentToken(), {}, "as function name");
 

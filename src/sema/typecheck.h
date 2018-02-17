@@ -51,7 +51,6 @@ private:
     void typecheckMemberDecl(Decl& decl);
 
     void typecheckStmt(std::unique_ptr<Stmt>& stmt);
-    void typecheckAssignStmt(AssignStmt& stmt);
     void typecheckCompoundStmt(CompoundStmt& stmt);
     void typecheckReturnStmt(ReturnStmt& stmt);
     void typecheckVarStmt(VarStmt& stmt);
@@ -76,6 +75,8 @@ private:
     Type typecheckIncrementExpr(IncrementExpr& expr);
     Type typecheckDecrementExpr(DecrementExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
+    Type typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op);
+    void typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, SourceLocation location);
     Type typecheckCallExpr(CallExpr& expr);
     Type typecheckBuiltinConversion(CallExpr& expr);
     Type typecheckCastExpr(CastExpr& expr);

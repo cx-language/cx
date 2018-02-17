@@ -25,6 +25,7 @@ enum class ExprKind {
     FloatLiteralExpr,
     BoolLiteralExpr,
     NullLiteralExpr,
+    UndefinedLiteralExpr,
     ArrayLiteralExpr,
     TupleExpr,
     PrefixExpr,
@@ -53,6 +54,7 @@ public:
     bool isFloatLiteralExpr() const { return getKind() == ExprKind::FloatLiteralExpr; }
     bool isBoolLiteralExpr() const { return getKind() == ExprKind::BoolLiteralExpr; }
     bool isNullLiteralExpr() const { return getKind() == ExprKind::NullLiteralExpr; }
+    bool isUndefinedLiteralExpr() const { return getKind() == ExprKind::UndefinedLiteralExpr; }
     bool isArrayLiteralExpr() const { return getKind() == ExprKind::ArrayLiteralExpr; }
     bool isTupleExpr() const { return getKind() == ExprKind::TupleExpr; }
     bool isPrefixExpr() const { return getKind() == ExprKind::PrefixExpr; }
@@ -75,6 +77,7 @@ public:
     Type getAssignableType() const { return ASSERT(assignableType), assignableType; }
     void setType(Type type) { ASSERT(type), this->type = type; }
     void setAssignableType(Type type) { ASSERT(type), assignableType = type; }
+    bool isAssignment() const;
     bool isConstant() const;
     // TODO: Use llvm::APSInt instead of int64_t.
     int64_t getConstantIntegerValue() const;
@@ -170,6 +173,12 @@ class NullLiteralExpr : public Expr {
 public:
     NullLiteralExpr(SourceLocation location) : Expr(ExprKind::NullLiteralExpr, location) {}
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::NullLiteralExpr; }
+};
+
+class UndefinedLiteralExpr : public Expr {
+public:
+    UndefinedLiteralExpr(SourceLocation location) : Expr(ExprKind::UndefinedLiteralExpr, location) {}
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::UndefinedLiteralExpr; }
 };
 
 class ArrayLiteralExpr : public Expr {
@@ -306,7 +315,7 @@ private:
 class BinaryExpr : public CallExpr {
 public:
     BinaryExpr(BinaryOperator op, std::shared_ptr<Expr>&& left, std::unique_ptr<Expr> right, SourceLocation location)
-    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(op.getFunctionName(), location),
+    : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(delta::getFunctionName(op), location),
                addArg(addArg({}, std::move(left)), std::move(right)), location),
       op(op) {}
     BinaryOperator getOperator() const { return op; }
@@ -314,13 +323,14 @@ public:
     const Expr& getRHS() const { return *getArgs()[1].getValue(); }
     Expr& getLHS() { return *getArgs()[0].getValue(); }
     Expr& getRHS() { return *getArgs()[1].getValue(); }
-    bool isBuiltinOp() const;
     int64_t getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 
 private:
     BinaryOperator op;
 };
+
+bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);
 
 /// A type cast expression using the 'cast' keyword, e.g. 'cast<type>(expr)'.
 class CastExpr : public Expr {

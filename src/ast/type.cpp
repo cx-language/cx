@@ -37,6 +37,7 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Float80, float80)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(String, String)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Char, char)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
+DEFINE_BUILTIN_TYPE_GET_AND_IS(Undefined, undefined)
 #undef DEFINE_BUILTIN_TYPE_GET_AND_IS
 
 bool Type::isArrayWithConstantSize() const {

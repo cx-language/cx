@@ -3,5 +3,5 @@
 // CHECK:(source-file {{.*}}chained-member-exprs.delta
 
 func main() { // CHECK-NEXT:    (function-decl main () void
-    a.b.c.d += e.f.g.h; // CHECK-NEXT:        (compound-assign-stmt + (member-expr (member-expr (member-expr a b) c) d) (member-expr (member-expr (member-expr e f) g) h))))
+    a.b.c.d += e.f.g.h; // CHECK-NEXT:        ((member-expr (member-expr (member-expr a b) c) d) += (member-expr (member-expr (member-expr e f) g) h))))
 }

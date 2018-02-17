@@ -400,7 +400,7 @@ public:
 private:
     Type type;
     std::string name;
-    std::shared_ptr<Expr> initializer; /// Null if the initializer is 'undefined'.
+    std::shared_ptr<Expr> initializer;
     Decl* parent;
     SourceLocation location;
     Module& module;

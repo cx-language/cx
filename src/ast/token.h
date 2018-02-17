@@ -119,20 +119,8 @@ struct Token {
     bool is(Token::Kind kind, T... kinds) const {
         return is(kind) || is(kinds...);
     }
-    bool isBinaryOperator() const;
-    bool isPrefixOperator() const;
-    bool isAssignmentOperator() const;
-    bool isCompoundAssignmentOperator() const;
-    bool isOverloadable() const;
-    int getPrecedence() const;
     int64_t getIntegerValue() const;
     long double getFloatingPointValue() const;
-
-    /// Strips the trailing '=' from a compound assignment operator.
-    /// E.g. given '+=', returns '+', and so on.
-    Token withoutCompoundEqSuffix() const {
-        return Token(static_cast<Token::Kind>(static_cast<int>(kind) - 1), location, string);
-    }
 
 private:
     Token::Kind kind;
@@ -153,13 +141,26 @@ struct BinaryOperator {
     BinaryOperator(Token token);
     Token::Kind getKind() const { return kind; }
     operator Token::Kind() const { return kind; }
-    bool isComparisonOperator() const;
-    bool isBitwiseOperator() const;
-    std::string getFunctionName() const;
 
 private:
     Token::Kind kind;
 };
+
+bool isBinaryOperator(Token::Kind tokenKind);
+bool isPrefixOperator(Token::Kind tokenKind);
+bool isAssignmentOperator(Token::Kind tokenKind);
+bool isCompoundAssignmentOperator(Token::Kind tokenKind);
+bool isComparisonOperator(Token::Kind tokenKind);
+bool isBitwiseOperator(Token::Kind tokenKind);
+bool isOverloadable(Token::Kind tokenKind);
+int getPrecedence(Token::Kind tokenKind);
+std::string getFunctionName(Token::Kind tokenKind);
+
+/// Strips the trailing '=' from a compound assignment operator.
+/// E.g. given '+=', returns '+', and so on.
+inline Token::Kind withoutCompoundEqSuffix(Token::Kind tokenKind) {
+    return static_cast<Token::Kind>(static_cast<int>(tokenKind) - 1);
+}
 
 const char* toString(Token::Kind tokenKind);
 std::ostream& operator<<(std::ostream& stream, Token::Kind tokenKind);

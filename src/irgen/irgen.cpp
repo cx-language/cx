@@ -275,19 +275,20 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
 
 void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), &stmt.getDecl(), nullptr, stmt.getDecl().getName());
+    auto* initializer = stmt.getDecl().getInitializer();
 
-    if (auto initializer = stmt.getDecl().getInitializer()) {
-        if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
-            if (callExpr->getCalleeDecl()) {
-                if (auto* initDecl = llvm::dyn_cast<InitDecl>(callExpr->getCalleeDecl())) {
-                    if (initDecl->getTypeDecl()->getType() == stmt.getDecl().getType().asImmutable()) {
-                        codegenCallExpr(*callExpr, alloca);
-                        return;
-                    }
+    if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
+        if (callExpr->getCalleeDecl()) {
+            if (auto* initDecl = llvm::dyn_cast<InitDecl>(callExpr->getCalleeDecl())) {
+                if (initDecl->getTypeDecl()->getType() == stmt.getDecl().getType().asImmutable()) {
+                    codegenCallExpr(*callExpr, alloca);
+                    return;
                 }
             }
         }
+    }
 
+    if (!initializer->isUndefinedLiteralExpr()) {
         builder.CreateStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
     }
 }
@@ -392,7 +393,7 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs)
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
             if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
                 if (fieldDecl->getParent() == initDecl->getTypeDecl()) {
-                    return rhs ? codegenLvalueExpr(*lhs) : nullptr;
+                    return rhs->isUndefinedLiteralExpr() ? nullptr : codegenLvalueExpr(*lhs);
                 }
             }
         }
@@ -403,52 +404,12 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs)
             if (auto* deinit = typeDecl->getDeinitializer()) {
                 llvm::Value* value = codegenLvalueExpr(*lhs);
                 createDeinitCall(getFunctionProto(*deinit), value, lhs->getType(), typeDecl);
-                return rhs ? value : nullptr;
+                return rhs->isUndefinedLiteralExpr() ? nullptr : value;
             }
         }
     }
 
-    return rhs ? codegenLvalueExpr(*lhs) : nullptr;
-}
-
-void IRGenerator::codegenAssignStmt(const AssignStmt& stmt) {
-    llvm::Value* lhsLvalue = codegenAssignmentLHS(stmt.getLHS(), stmt.getRHS());
-
-    if (!lhsLvalue) {
-        return;
-    }
-
-    if (stmt.isCompoundAssignment()) {
-        auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.getRHS());
-
-        if (!binaryExpr.isBuiltinOp()) {
-            builder.CreateStore(codegenCallExpr((const CallExpr&) binaryExpr), lhsLvalue);
-            return;
-        }
-
-        switch (binaryExpr.getOperator()) {
-            case Token::AndAnd:
-                error(stmt.getLocation(), "'&&=' not implemented yet");
-            case Token::OrOr:
-                error(stmt.getLocation(), "'||=' not implemented yet");
-            default:
-                break;
-        }
-
-        llvm::Value* rhsValue;
-
-        if (binaryExpr.getLHS().getType().isPointerType() && binaryExpr.getRHS().getType().isInteger()) {
-            rhsValue = codegenPointerOffset(binaryExpr);
-        } else {
-            auto* lhsValue = builder.CreateLoad(lhsLvalue);
-            rhsValue = codegenBinaryOp(binaryExpr.getOperator(), lhsValue, codegenExpr(binaryExpr.getRHS()), *stmt.getLHS());
-        }
-
-        builder.CreateStore(rhsValue, lhsLvalue);
-    } else {
-        auto* rhsValue = codegenExprForPassing(*stmt.getRHS(), lhsLvalue->getType()->getPointerElementType());
-        builder.CreateStore(rhsValue, lhsLvalue);
-    }
+    return rhs->isUndefinedLiteralExpr() ? nullptr : codegenLvalueExpr(*lhs);
 }
 
 void IRGenerator::codegenCompoundStmt(const CompoundStmt& stmt) {
@@ -492,9 +453,6 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
             break;
         case StmtKind::ContinueStmt:
             codegenContinueStmt(llvm::cast<ContinueStmt>(stmt));
-            break;
-        case StmtKind::AssignStmt:
-            codegenAssignStmt(llvm::cast<AssignStmt>(stmt));
             break;
         case StmtKind::CompoundStmt:
             codegenCompoundStmt(llvm::cast<CompoundStmt>(stmt));
@@ -702,9 +660,9 @@ llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
     auto it = globalScope().getLocalValues().find(decl.getName());
     if (it != globalScope().getLocalValues().end()) return it->second;
 
-    llvm::Value* value = decl.getInitializer() ? codegenExpr(*decl.getInitializer()) : nullptr;
+    llvm::Value* value = codegenExpr(*decl.getInitializer());
 
-    if (!value || decl.getType().isMutable() /* || decl.isPublic() */) {
+    if (decl.getType().isMutable() /* || decl.isPublic() */) {
         auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
         auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
         value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(), linkage,

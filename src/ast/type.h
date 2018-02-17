@@ -89,6 +89,7 @@ public:
     bool isString() const;
     bool isChar() const;
     bool isNull() const;
+    bool isUndefined() const;
 
     Type resolve(const llvm::StringMap<Type>& replacements) const;
     bool isInteger() const { return isBasicType() && (isSigned() || isUnsigned()); }
@@ -139,6 +140,7 @@ public:
     static Type getString(bool isMutable = false, SourceLocation location = SourceLocation());
     static Type getChar(bool isMutable = false, SourceLocation location = SourceLocation());
     static Type getNull(bool isMutable = false, SourceLocation location = SourceLocation());
+    static Type getUndefined(bool isMutable = false, SourceLocation location = SourceLocation());
 
     static bool isBuiltinScalar(llvm::StringRef typeName);
 

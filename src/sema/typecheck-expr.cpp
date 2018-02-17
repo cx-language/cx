@@ -128,6 +128,10 @@ Type typecheckNullLiteralExpr(NullLiteralExpr&) {
     return Type::getNull();
 }
 
+Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&) {
+    return Type::getUndefined();
+}
+
 Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
     Type firstType = typecheckExpr(*array.getElements()[0]);
     for (auto& element : llvm::drop_begin(array.getElements(), 1)) {
@@ -191,11 +195,11 @@ Type Typechecker::typecheckDecrementExpr(DecrementExpr& expr) {
     return Type::getVoid();
 }
 
-static void invalidOperandsToBinaryExpr(const BinaryExpr& expr) {
+static void invalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) {
     std::string hint;
 
     if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) &&
-        (expr.getOperator() == Token::Equal || expr.getOperator() == Token::NotEqual)) {
+        (op == Token::Equal || op == Token::NotEqual)) {
         hint += " (non-optional type '";
         if (expr.getRHS().isNullLiteralExpr()) {
             hint += expr.getLHS().getType().toString();
@@ -208,25 +212,59 @@ static void invalidOperandsToBinaryExpr(const BinaryExpr& expr) {
     }
 
     error(expr.getLocation(), "invalid operands '", expr.getLHS().getType(), "' and '", expr.getRHS().getType(),
-          "' to '", expr.getFunctionName(), "'", hint);
+          "' to '", toString(op), "'", hint);
+}
+
+static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* currentFunction) {
+    if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentFunction)) {
+        switch (lhs.getKind()) {
+            case ExprKind::VarExpr: {
+                auto* fieldDecl = llvm::dyn_cast<FieldDecl>(llvm::cast<VarExpr>(lhs).getDecl());
+                return fieldDecl && fieldDecl->getParent() == initDecl->getTypeDecl();
+            }
+            case ExprKind::MemberExpr: {
+                auto* varExpr = llvm::dyn_cast<VarExpr>(llvm::cast<MemberExpr>(lhs).getBaseExpr());
+                return varExpr && varExpr->getIdentifier() == "this";
+            }
+            default:
+                return false;
+        }
+    }
+    return false;
 }
 
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
+    if (expr.getOperator() == Token::Assignment) {
+        typecheckAssignment(expr.getLHS(), &expr.getRHS(), Type(), expr.getLocation());
+        return Type::getVoid();
+    }
+
+    if (isCompoundAssignmentOperator(expr.getOperator())) {
+        Type rightType = typecheckBinaryExpr(expr, withoutCompoundEqSuffix(expr.getOperator()));
+        typecheckAssignment(expr.getLHS(), nullptr, rightType, expr.getLocation());
+        return Type::getVoid();
+    }
+
+    return typecheckBinaryExpr(expr, expr.getOperator());
+}
+
+Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op) {
+    ASSERT(!isAssignmentOperator(op));
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS());
 
-    if (!expr.isBuiltinOp()) {
+    if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
     }
 
-    if (expr.getOperator() == Token::AndAnd || expr.getOperator() == Token::OrOr) {
+    if (op == Token::AndAnd || op == Token::OrOr) {
         if (leftType.isBool() && rightType.isBool()) {
             return Type::getBool();
         }
-        invalidOperandsToBinaryExpr(expr);
+        invalidOperandsToBinaryExpr(expr, op);
     }
 
-    if (expr.getOperator() == Token::PointerEqual || expr.getOperator() == Token::PointerNotEqual) {
+    if (op == Token::PointerEqual || op == Token::PointerNotEqual) {
         if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
             error(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
         }
@@ -236,16 +274,16 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         }
     }
 
-    if (expr.getOperator() == Token::Plus || expr.getOperator() == Token::Minus) {
+    if (op == Token::Plus || op == Token::Minus) {
         if (leftType.isPointerType() && rightType.isInteger()) {
             return leftType;
         } else if (leftType.isInteger() && rightType.isPointerType()) {
-            invalidOperandsToBinaryExpr(expr);
+            invalidOperandsToBinaryExpr(expr, op);
         }
     }
 
-    if (expr.getOperator().isBitwiseOperator() && (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
-        invalidOperandsToBinaryExpr(expr);
+    if (isBitwiseOperator(op) && (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
+        invalidOperandsToBinaryExpr(expr, op);
     }
 
     Type convertedType;
@@ -255,10 +293,49 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     } else if (isImplicitlyConvertible(&expr.getLHS(), leftType, rightType, &convertedType)) {
         expr.getLHS().setType(convertedType ? convertedType : leftType);
     } else if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
-        invalidOperandsToBinaryExpr(expr);
+        invalidOperandsToBinaryExpr(expr, op);
     }
 
-    return expr.getOperator().isComparisonOperator() ? Type::getBool() : leftType;
+    return isComparisonOperator(op) ? Type::getBool() : leftType;
+}
+
+void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, SourceLocation location) {
+    typecheckExpr(lhs, true);
+    Type lhsType = lhs.getAssignableType();
+    Type rhsType = rightType ? rightType : (rhs->isUndefinedLiteralExpr() ? Type() : typecheckExpr(*rhs));
+
+    if (rhs && rhs->isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(lhs, currentFunction)) {
+        error(location, "'undefined' is only allowed as an initial value");
+    }
+
+    if (!rhs || !rhs->isUndefinedLiteralExpr()) {
+        Type convertedType;
+
+        if (isImplicitlyConvertible(rhs, rhsType, lhsType, &convertedType)) {
+            if (rhs) rhs->setType(convertedType ? convertedType : rhsType);
+        } else {
+            error(location, "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
+        }
+    }
+
+    if (!lhsType.isMutable()) {
+        switch (lhs.getKind()) {
+            case ExprKind::VarExpr:
+                error(location, "cannot assign to immutable variable '", llvm::cast<VarExpr>(lhs).getIdentifier(), "'");
+            case ExprKind::MemberExpr:
+                error(location, "cannot assign to immutable variable '", llvm::cast<MemberExpr>(lhs).getMemberName(),
+                      "'");
+            default:
+                error(location, "cannot assign to immutable expression");
+        }
+    }
+
+    if (rhsType && !isImplicitlyCopyable(rhsType) && !lhsType.removeOptional().isPointerType()) {
+        if (rhs) rhs->setMoved(true);
+        lhs.setMoved(false);
+    }
+
+    markFieldAsInitialized(lhs);
 }
 
 template<int bitWidth, bool isSigned>
@@ -403,6 +480,9 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             if (convertedType) *convertedType = target;
             return true;
         } else if (expr->isNullLiteralExpr() && target.isOptionalType()) {
+            if (convertedType) *convertedType = target;
+            return true;
+        } else if (expr->isUndefinedLiteralExpr()) {
             if (convertedType) *convertedType = target;
             return true;
         } else if (expr->isStringLiteralExpr() && target.removeOptional().isPointerType() &&
@@ -1505,6 +1585,9 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
             break;
         case ExprKind::NullLiteralExpr:
             type = typecheckNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
+            break;
+        case ExprKind::UndefinedLiteralExpr:
+            type = typecheckUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));
             break;
         case ExprKind::ArrayLiteralExpr:
             type = typecheckArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));

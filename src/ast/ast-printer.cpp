@@ -65,6 +65,10 @@ void ASTPrinter::printNullLiteralExpr(const NullLiteralExpr&) {
     out << "null";
 }
 
+void ASTPrinter::printUndefinedLiteralExpr(const UndefinedLiteralExpr&) {
+    out << "undefined";
+}
+
 void ASTPrinter::printArrayLiteralExpr(const ArrayLiteralExpr& expr) {
     out << "(array-literal";
     for (auto& e : expr.getElements()) {
@@ -199,6 +203,9 @@ void ASTPrinter::printExpr(const Expr& expr) {
         case ExprKind::NullLiteralExpr:
             printNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
             break;
+        case ExprKind::UndefinedLiteralExpr:
+            printUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));
+            break;
         case ExprKind::ArrayLiteralExpr:
             printArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
             break;
@@ -270,11 +277,7 @@ void ASTPrinter::printReturnStmt(const ReturnStmt& stmt) {
 void ASTPrinter::printVarStmt(const VarStmt& stmt) {
     breakLine();
     out << "(var-stmt " << stmt.getDecl().getName() << " ";
-    if (stmt.getDecl().getInitializer()) {
-        printExpr(*stmt.getDecl().getInitializer());
-    } else {
-        out << "undefined";
-    }
+    printExpr(*stmt.getDecl().getInitializer());
     out << ")";
 }
 
@@ -353,25 +356,6 @@ void ASTPrinter::printContinueStmt(const ContinueStmt&) {
     out << "(continue-stmt)";
 }
 
-void ASTPrinter::printAssignStmt(const AssignStmt& stmt) {
-    if (stmt.isCompoundAssignment()) {
-        breakLine();
-        auto& binaryExpr = llvm::cast<BinaryExpr>(*stmt.getRHS());
-        out << "(compound-assign-stmt " << binaryExpr.getOperator() << " ";
-        printExpr(binaryExpr.getLHS());
-        out << " ";
-        printExpr(binaryExpr.getRHS());
-        out << ")";
-    } else {
-        breakLine();
-        out << "(assign-stmt ";
-        printExpr(*stmt.getLHS());
-        out << " ";
-        printExpr(*stmt.getRHS());
-        out << ")";
-    }
-}
-
 void ASTPrinter::printCompoundStmt(const CompoundStmt& stmt) {
     breakLine();
     out << "(compound-stmt ";
@@ -411,9 +395,6 @@ void ASTPrinter::printStmt(const Stmt& stmt) {
             break;
         case StmtKind::ContinueStmt:
             printContinueStmt(llvm::cast<ContinueStmt>(stmt));
-            break;
-        case StmtKind::AssignStmt:
-            printAssignStmt(llvm::cast<AssignStmt>(stmt));
             break;
         case StmtKind::CompoundStmt:
             printCompoundStmt(llvm::cast<CompoundStmt>(stmt));

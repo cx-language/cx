@@ -161,73 +161,6 @@ void Typechecker::typecheckContinueStmt(ContinueStmt& continueStmt) {
     }
 }
 
-static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* currentFunction) {
-    if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentFunction)) {
-        switch (lhs.getKind()) {
-            case ExprKind::VarExpr:
-                if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(llvm::cast<VarExpr>(lhs).getDecl())) {
-                    if (fieldDecl->getParent() == initDecl->getTypeDecl()) {
-                        return true;
-                    }
-                }
-                return false;
-
-            case ExprKind::MemberExpr:
-                if (auto* varExpr = llvm::dyn_cast<VarExpr>(llvm::cast<MemberExpr>(lhs).getBaseExpr())) {
-                    if (varExpr->getIdentifier() == "this") {
-                        return true;
-                    }
-                }
-                return false;
-
-            default:
-                return false;
-        }
-    }
-
-    return false;
-}
-
-void Typechecker::typecheckAssignStmt(AssignStmt& stmt) {
-    typecheckExpr(*stmt.getLHS(), true);
-    Type lhsType = stmt.getLHS()->getAssignableType();
-    Type rhsType = stmt.getRHS() ? typecheckExpr(*stmt.getRHS()) : Type();
-
-    if (!stmt.getRHS() && !allowAssignmentOfUndefined(*stmt.getLHS(), currentFunction)) {
-        error(stmt.getLocation(), "'undefined' is only allowed as an initial value");
-    }
-
-    if (stmt.getRHS()) {
-        Type convertedType;
-
-        if (isImplicitlyConvertible(stmt.getRHS(), rhsType, lhsType, &convertedType)) {
-            stmt.getRHS()->setType(convertedType ? convertedType : rhsType);
-        } else {
-            error(stmt.getLocation(), "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
-        }
-    }
-
-    if (!lhsType.isMutable()) {
-        switch (stmt.getLHS()->getKind()) {
-            case ExprKind::VarExpr:
-                error(stmt.getLocation(), "cannot assign to immutable variable '",
-                      llvm::cast<VarExpr>(stmt.getLHS())->getIdentifier(), "'");
-            case ExprKind::MemberExpr:
-                error(stmt.getLocation(), "cannot assign to immutable variable '",
-                      llvm::cast<MemberExpr>(stmt.getLHS())->getMemberName(), "'");
-            default:
-                error(stmt.getLocation(), "cannot assign to immutable expression");
-        }
-    }
-
-    if (rhsType && !isImplicitlyCopyable(rhsType) && !lhsType.removeOptional().isPointerType()) {
-        stmt.getRHS()->setMoved(true);
-        stmt.getLHS()->setMoved(false);
-    }
-
-    markFieldAsInitialized(*stmt.getLHS());
-}
-
 void Typechecker::typecheckCompoundStmt(CompoundStmt& stmt) {
     getCurrentModule()->getSymbolTable().pushScope();
 
@@ -414,10 +347,7 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
             return llvm::None;
 
         case StmtKind::VarStmt:
-            if (auto* initializer = llvm::cast<VarStmt>(stmt).getDecl().getInitializer()) {
-                return maySetToNullBeforeEvaluating(var, *initializer);
-            }
-            return llvm::None;
+            return maySetToNullBeforeEvaluating(var, *llvm::cast<VarStmt>(stmt).getDecl().getInitializer());
 
         case StmtKind::ExprStmt:
             return maySetToNullBeforeEvaluating(var, llvm::cast<ExprStmt>(stmt).getExpr());
@@ -448,31 +378,6 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
         case StmtKind::ContinueStmt:
             return false;
 
-        case StmtKind::AssignStmt: {
-            auto& assignStmt = llvm::cast<AssignStmt>(stmt);
-            if (auto result = maySetToNullBeforeEvaluating(var, *assignStmt.getLHS())) return *result;
-            if (auto result = maySetToNullBeforeEvaluating(var, *assignStmt.getRHS())) return *result;
-
-            switch (var.getKind()) {
-                case ExprKind::VarExpr:
-                    if (auto* lhsVarExpr = llvm::dyn_cast<VarExpr>(assignStmt.getLHS())) {
-                        return lhsVarExpr->getDecl() == llvm::cast<VarExpr>(var).getDecl() &&
-                               assignStmt.getRHS()->getType().isOptionalType();
-                    }
-                    return llvm::None;
-
-                case ExprKind::MemberExpr:
-                    if (auto* lhsMemberExpr = llvm::dyn_cast<MemberExpr>(assignStmt.getLHS())) {
-                        if (auto result = memberExprChainsMatch(*lhsMemberExpr, llvm::cast<MemberExpr>(var))) {
-                            return *result && assignStmt.getRHS()->getType().isOptionalType();
-                        }
-                    }
-                    return llvm::None;
-
-                default:
-                    llvm_unreachable("unsupported variable expression kind");
-            }
-        }
         case StmtKind::CompoundStmt:
             return maySetToNullBeforeEvaluating(var, llvm::cast<CompoundStmt>(stmt).getBody());
     }
@@ -491,6 +396,32 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
     if (&expr == &var) return false;
     if (auto result = subExprMaySetToNullBeforeEvaluating(var, expr)) return *result;
     if (expr.isCallExpr()) return true;
+    if (expr.isAssignment()) {
+        auto* lhs = &llvm::cast<BinaryExpr>(expr).getLHS();
+        auto* rhs = &llvm::cast<BinaryExpr>(expr).getRHS();
+
+        if (auto result = maySetToNullBeforeEvaluating(var, *lhs)) return *result;
+        if (auto result = maySetToNullBeforeEvaluating(var, *rhs)) return *result;
+
+        switch (var.getKind()) {
+            case ExprKind::VarExpr:
+                if (auto* lhsVarExpr = llvm::dyn_cast<VarExpr>(lhs)) {
+                    return lhsVarExpr->getDecl() == llvm::cast<VarExpr>(var).getDecl() && rhs->getType().isOptionalType();
+                }
+                return llvm::None;
+
+            case ExprKind::MemberExpr:
+                if (auto* lhsMemberExpr = llvm::dyn_cast<MemberExpr>(lhs)) {
+                    if (auto result = memberExprChainsMatch(*lhsMemberExpr, llvm::cast<MemberExpr>(var))) {
+                        return *result && rhs->getType().isOptionalType();
+                    }
+                }
+                return llvm::None;
+
+            default:
+                llvm_unreachable("unsupported variable expression kind");
+        }
+    }
     return llvm::None;
 }
 
@@ -535,9 +466,6 @@ void Typechecker::typecheckStmt(std::unique_ptr<Stmt>& stmt) {
             break;
         case StmtKind::ContinueStmt:
             typecheckContinueStmt(llvm::cast<ContinueStmt>(*stmt));
-            break;
-        case StmtKind::AssignStmt:
-            typecheckAssignStmt(llvm::cast<AssignStmt>(*stmt));
             break;
         case StmtKind::CompoundStmt:
             typecheckCompoundStmt(llvm::cast<CompoundStmt>(*stmt));
@@ -723,7 +651,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
                 if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt.get())) {
                     if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
-                        if (auto* initDecl = llvm::dyn_cast<InitDecl>(callExpr->getCalleeDecl())) {
+                        if (auto* initDecl = llvm::dyn_cast_or_null<InitDecl>(callExpr->getCalleeDecl())) {
                             if (initDecl->getTypeDecl() == receiverTypeDecl) {
                                 delegatedInit = true;
                             }
@@ -852,15 +780,12 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     if (!isGlobal && getCurrentModule()->getSymbolTable().contains(decl.getName())) {
         error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
-
-    Type declaredType = decl.getType();
-    Type initType;
-
-    if (decl.getInitializer()) {
-        initType = typecheckExpr(*decl.getInitializer());
-    } else if (isGlobal) {
+    if (isGlobal && decl.getInitializer()->isUndefinedLiteralExpr()) {
         error(decl.getLocation(), "global variables cannot be uninitialized");
     }
+
+    Type declaredType = decl.getType();
+    Type initType = typecheckExpr(*decl.getInitializer());
 
     if (declaredType) {
         bool isLocalVariable = decl.getParent() && decl.getParent()->isFunctionDecl();
@@ -898,7 +823,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
         getCurrentModule()->addToSymbolTable(decl, false);
     }
 
-    if (decl.getInitializer() && !isImplicitlyCopyable(decl.getType())) {
+    if (!isImplicitlyCopyable(decl.getType())) {
         decl.getInitializer()->setMoved(true);
     }
 }

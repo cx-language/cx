@@ -13,6 +13,7 @@ using namespace delta;
 namespace {
 
 enum class PrecedenceGroup {
+    Assignment,
     LogicalOr,
     LogicalAnd,
     Bitwise,
@@ -56,6 +57,7 @@ PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
         case Token::RightShift:
             return PrecedenceGroup::Bitwise;
         default:
+            if (isAssignmentOperator(tokenKind)) return PrecedenceGroup::Assignment;
             llvm_unreachable("invalid binary operator");
     }
 }
@@ -72,8 +74,8 @@ Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string)
 #endif
 }
 
-bool Token::isBinaryOperator() const {
-    switch (kind) {
+bool delta::isBinaryOperator(Token::Kind tokenKind) {
+    switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
         case Token::PointerEqual:
@@ -98,12 +100,12 @@ bool Token::isBinaryOperator() const {
         case Token::DotDotDot:
             return true;
         default:
-            return false;
+            return isAssignmentOperator(tokenKind);
     }
 }
 
-bool Token::isPrefixOperator() const {
-    switch (kind) {
+bool delta::isPrefixOperator(Token::Kind tokenKind) {
+    switch (tokenKind) {
         case Token::Plus:
         case Token::Minus:
         case Token::Star:
@@ -116,12 +118,12 @@ bool Token::isPrefixOperator() const {
     }
 }
 
-bool Token::isAssignmentOperator() const {
-    return kind == Token::Assignment || isCompoundAssignmentOperator();
+bool delta::isAssignmentOperator(Token::Kind tokenKind) {
+    return tokenKind == Token::Assignment || isCompoundAssignmentOperator(tokenKind);
 }
 
-bool Token::isCompoundAssignmentOperator() const {
-    switch (kind) {
+bool delta::isCompoundAssignmentOperator(Token::Kind tokenKind) {
+    switch (tokenKind) {
         case Token::PlusEqual:
         case Token::MinusEqual:
         case Token::StarEqual:
@@ -140,8 +142,8 @@ bool Token::isCompoundAssignmentOperator() const {
     }
 }
 
-bool Token::isOverloadable() const {
-    switch (kind) {
+bool delta::isOverloadable(Token::Kind tokenKind) {
+    switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
         case Token::Less:
@@ -159,8 +161,8 @@ bool Token::isOverloadable() const {
     }
 }
 
-int Token::getPrecedence() const {
-    return int(getPrecedenceGroup(kind));
+int delta::getPrecedence(Token::Kind tokenKind) {
+    return int(getPrecedenceGroup(tokenKind));
 }
 
 int64_t Token::getIntegerValue() const {
@@ -177,15 +179,15 @@ long double Token::getFloatingPointValue() const {
 }
 
 PrefixOperator::PrefixOperator(Token token) : kind(token) {
-    ASSERT(token.isPrefixOperator());
+    ASSERT(isPrefixOperator(token));
 }
 
 BinaryOperator::BinaryOperator(Token token) : kind(token) {
-    ASSERT(token.isBinaryOperator());
+    ASSERT(isBinaryOperator(token));
 }
 
-bool BinaryOperator::isComparisonOperator() const {
-    switch (kind) {
+bool delta::isComparisonOperator(Token::Kind tokenKind) {
+    switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
         case Token::PointerEqual:
@@ -200,8 +202,8 @@ bool BinaryOperator::isComparisonOperator() const {
     }
 }
 
-bool BinaryOperator::isBitwiseOperator() const {
-    switch (kind) {
+bool delta::isBitwiseOperator(Token::Kind tokenKind) {
+    switch (tokenKind) {
         case Token::And:
         case Token::AndEqual:
         case Token::Or:
@@ -219,14 +221,14 @@ bool BinaryOperator::isBitwiseOperator() const {
     }
 }
 
-std::string BinaryOperator::getFunctionName() const {
-    switch (kind) {
+std::string delta::getFunctionName(Token::Kind tokenKind) {
+    switch (tokenKind) {
         case Token::DotDot:
             return "Range";
         case Token::DotDotDot:
             return "ClosedRange";
         default:
-            return toString(kind);
+            return toString(isCompoundAssignmentOperator(tokenKind) ? withoutCompoundEqSuffix(tokenKind) : tokenKind);
     }
 }
 

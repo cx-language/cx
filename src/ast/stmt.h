@@ -22,7 +22,6 @@ enum class StmtKind {
     ForStmt,
     BreakStmt,
     ContinueStmt,
-    AssignStmt,
     CompoundStmt
 };
 
@@ -40,7 +39,6 @@ public:
     bool isForStmt() const { return getKind() == StmtKind::ForStmt; }
     bool isBreakStmt() const { return getKind() == StmtKind::BreakStmt; }
     bool isContinueStmt() const { return getKind() == StmtKind::ContinueStmt; }
-    bool isAssignStmt() const { return getKind() == StmtKind::AssignStmt; }
     bool isCompoundStmt() const { return getKind() == StmtKind::CompoundStmt; }
 
     StmtKind getKind() const { return kind; }
@@ -204,28 +202,6 @@ public:
 
 private:
     SourceLocation location;
-};
-
-/// An assignment statement, e.g. `a = b`.
-/// Also used to represent compound assignments, e.g. `a += b`, desugared as `a = a + b`.
-class AssignStmt : public Stmt {
-public:
-    AssignStmt(std::shared_ptr<Expr>&& lhs, std::unique_ptr<Expr> rhs, bool isCompoundAssignment, SourceLocation location)
-    : Stmt(StmtKind::AssignStmt), lhs(std::move(lhs)), rhs(std::move(rhs)), isCompound(isCompoundAssignment),
-      location(location) {}
-    const Expr* getLHS() const { return lhs.get(); }
-    const Expr* getRHS() const { return rhs.get(); }
-    Expr* getLHS() { return lhs.get(); }
-    Expr* getRHS() { return rhs.get(); }
-    bool isCompoundAssignment() const { return isCompound; }
-    SourceLocation getLocation() const { return location; }
-    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::AssignStmt; }
-
-private:
-    std::shared_ptr<Expr> lhs; // shared_ptr to support compound assignments.
-    std::unique_ptr<Expr> rhs; // Null if the right-hand side is 'undefined'.
-    bool isCompound;
-    SourceLocation location; // Location of operator symbol.
 };
 
 class CompoundStmt : public Stmt {

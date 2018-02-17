@@ -2,7 +2,7 @@
 
 func f() {
     // CHECK: (var-stmt m (call g))
-    // CHECK-NEXT: (assign-stmt (*a) b)
+    // CHECK-NEXT: ((*a) = b)
     let m = g()
     *a = b
 

@@ -80,6 +80,7 @@ private:
     llvm::Value* codegenFloatLiteralExpr(const FloatLiteralExpr& expr);
     llvm::Value* codegenBoolLiteralExpr(const BoolLiteralExpr& expr);
     llvm::Value* codegenNullLiteralExpr(const NullLiteralExpr& expr);
+    llvm::Value* codegenUndefinedLiteralExpr(const UndefinedLiteralExpr& expr);
     llvm::Value* codegenArrayLiteralExpr(const ArrayLiteralExpr& expr);
     llvm::Value* codegenTupleExpr(const TupleExpr& expr);
     llvm::Value* codegenImplicitNullComparison(llvm::Value* operand);
@@ -93,9 +94,10 @@ private:
     llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate2 create);
     llvm::Value* codegenLogicalAnd(const Expr& left, const Expr& right);
     llvm::Value* codegenLogicalOr(const Expr& left, const Expr& right);
-    llvm::Value* codegenBinaryOp(BinaryOperator op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr);
+    llvm::Value* codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr);
     llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, const Expr& rhs);
     llvm::Value* codegenBinaryExpr(const BinaryExpr& expr);
+    void codegenAssignment(const BinaryExpr& expr);
     llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType);
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
     void codegenAssert(llvm::Value* condition, SourceLocation location);
@@ -125,7 +127,6 @@ private:
     void codegenBreakStmt(const BreakStmt&);
     void codegenContinueStmt(const ContinueStmt&);
     llvm::Value* codegenAssignmentLHS(const Expr* lhs, const Expr* rhs);
-    void codegenAssignStmt(const AssignStmt& stmt);
     void codegenCompoundStmt(const CompoundStmt& stmt);
     void codegenStmt(const Stmt& stmt);
 
