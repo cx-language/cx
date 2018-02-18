@@ -5,8 +5,8 @@
 \section{Assignment statement}
 
 \begin{grammar}
-\nonterminal{assignment-statement} \textrightarrow{} \nonterminal{lvalue-expression} \code{=} \nonterminal{expression} \code{;}\\
-\nonterminal{assignment-statement} \textrightarrow{} \code{_} \code{=} \nonterminal{expression} \code{;}
+\rule{assignment-statement} \nonterminal{lvalue-expression} \code{=} \nonterminal{expression} \code{;}\\
+\rule{assignment-statement} \code{_} \code{=} \nonterminal{expression} \code{;}
 \end{grammar}
 
 Assignments in Delta don't return any value. This applies to compound
@@ -22,27 +22,27 @@ compilation errors or warnings that would otherwise be emitted.
 \section{Increment and decrement statements}
 
 \begin{grammar}
-\nonterminal{increment-statement} \textrightarrow{} \nonterminal{lvalue-expression} \code{++} \code{;}\\
-\nonterminal{decrement-statement} \textrightarrow{} \nonterminal{lvalue-expression} \code{--} \code{;}
+\rule{increment-statement} \nonterminal{lvalue-expression} \code{++} \code{;}\\
+\rule{decrement-statement} \nonterminal{lvalue-expression} \code{--} \code{;}
 \end{grammar}
 
 \section{Block}
 
 \begin{grammar}
-\nonterminal{block} \textrightarrow{} \code{\{} \nonterminal{statement}* \code{\}}
+\rule{block} \code{\{} \nonterminal{statement}* \code{\}}
 \end{grammar}
 
 \section{\code{if} statement}
 
 \begin{grammar}
-\nonterminal{if-statement} \textrightarrow{} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} (\code{else} \nonterminal{block})\optional\\
-\nonterminal{if-statement} \textrightarrow{} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} \code{else} \nonterminal{if-statement}
+\rule{if-statement} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} (\code{else} \nonterminal{block})\optional\\
+\rule{if-statement} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} \code{else} \nonterminal{if-statement}
 \end{grammar}
 
 \section{\code{return} statement}
 
 \begin{grammar}
-\nonterminal{return-statement} \textrightarrow{} \code{return} \nonterminal{expression} \code{;}
+\rule{return-statement} \code{return} \nonterminal{expression} \code{;}
 \end{grammar}
 
 \section{\code{for} statement}
@@ -50,7 +50,7 @@ compilation errors or warnings that would otherwise be emitted.
 The \code{for} statement loops over a range. The syntax is as follows:
 
 \begin{grammar}
-\nonterminal{for-statement} \textrightarrow{} \code{for} \code{(} \nonterminal{let-or-var} \nonterminal{identifier} \code{in} \nonterminal{range-expression} \code{)} \nonterminal{block}
+\rule{for-statement} \code{for} \code{(} \nonterminal{let-or-var} \nonterminal{identifier} \code{in} \nonterminal{range-expression} \code{)} \nonterminal{block}
 \end{grammar}
 
 \section{\code{while} statement}
@@ -59,15 +59,15 @@ The \code{while} statement loops until a condition evaluates to \code{false}.
 The syntax is as follows:
 
 \begin{grammar}
-\nonterminal{while-statement} \textrightarrow{} \code{while} \code{(} \nonterminal{condition} \code{)} \nonterminal{block}
+\rule{while-statement} \code{while} \code{(} \nonterminal{condition} \code{)} \nonterminal{block}
 \end{grammar}
 
 \section{\code{switch} statement}
 
 \begin{grammar}
-\nonterminal{switch-statement} \textrightarrow{} \code{switch} \code{(} \nonterminal{expression} \code{)} \code{\{} \nonterminal{case}+ \code{\}}\\
-\nonterminal{case} \textrightarrow{} \code{case} \nonterminal{expression} \code{:} \nonterminal{statement}+\\
-\nonterminal{case} \textrightarrow{} \code{default} \code{:} \nonterminal{statement}+
+\rule{switch-statement} \code{switch} \code{(} \nonterminal{expression} \code{)} \code{\{} \nonterminal{case}+ \code{\}}\\
+\rule{case} \code{case} \nonterminal{expression} \code{:} \nonterminal{statement}+\\
+\rule{case} \code{default} \code{:} \nonterminal{statement}+
 \end{grammar}
 
 In addition to integer types, the \code{switch} statement can be used to match
@@ -85,7 +85,7 @@ enum type. This is enforced by the compiler.
 The \code{defer} statement has the following syntax:
 
 \begin{grammar}
-\nonterminal{defer-statement} \textrightarrow{} \code{defer} \nonterminal{block}
+\rule{defer-statement} \code{defer} \nonterminal{block}
 \end{grammar}
 
 The \nonterminal{block} will be executed when leaving the scope where the

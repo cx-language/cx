@@ -8,10 +8,10 @@ Variable declarations introduce a new variable into the enclosing scope. The
 syntax is as follows:
 
 \begin{grammar}
-\nonterminal{immutable-variable-declaration} \textrightarrow{} \code{let} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}\\
-\nonterminal{mutable-variable-declaration} \textrightarrow{} \code{var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}\\
-\nonterminal{immutable-variable-definition} \textrightarrow{} \code{let} \nonterminal{variable-name} (\code{:} \nonterminal{type})\optional{} \code{=} \nonterminal{initializer} \code{;}\\
-\nonterminal{mutable-variable-definition} \textrightarrow{} \code{var} \nonterminal{variable-name} (\code{:} \nonterminal{type})\optional{} \code{=} \nonterminal{initializer} \code{;}
+\rule{immutable-variable-declaration} \code{let} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}\\
+\rule{mutable-variable-declaration} \code{var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}\\
+\rule{immutable-variable-definition} \code{let} \nonterminal{variable-name} (\code{:} \nonterminal{type})\optional{} \code{=} \nonterminal{initializer} \code{;}\\
+\rule{mutable-variable-definition} \code{var} \nonterminal{variable-name} (\code{:} \nonterminal{type})\optional{} \code{=} \nonterminal{initializer} \code{;}
 \end{grammar}
 
 In the first two forms, the variable is declared but not initialized. This
@@ -44,7 +44,7 @@ The return type of the first version is \code{void}. The
 \nonterminal{parameters}:
 
 \begin{grammar}
-\nonterminal{parameter} \textrightarrow{} \nonterminal{parameter-name} \code{:} \nonterminal{parameter-type}
+\rule{parameter} \nonterminal{parameter-name} \code{:} \nonterminal{parameter-type}
 \end{grammar}
 
 \nonterminal{parameter-name} is an identifier specifying the name of the
@@ -63,7 +63,7 @@ additional parameter, called the "receiver", on the left-hand-side of the
 function call, separated by a period:
 
 \begin{grammar}
-\nonterminal{member-function-call} \textrightarrow{} \nonterminal{receiver} \code{.} \nonterminal{member-function-name} \code{(} \nonterminal{argument-list} \code{)}
+\rule{member-function-call} \nonterminal{receiver} \code{.} \nonterminal{member-function-name} \code{(} \nonterminal{argument-list} \code{)}
 \end{grammar}
 
 Member functions are defined with the same syntax as non-member functions, but
@@ -77,13 +77,13 @@ Initializers are a special kind of member functions that are used for
 initializing newly created objects.
 
 \begin{grammar}
-\nonterminal{initializer-definition} \textrightarrow{} \code{init} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{body} \code{\}}
+\rule{initializer-definition} \code{init} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{body} \code{\}}
 \end{grammar}
 
 Initializers can be invoked with the following syntax:
 
 \begin{grammar}
-\nonterminal{initializer-call} \textrightarrow{} \nonterminal{receiver-type} \code{(} \nonterminal{argument-list} \code{)}
+\rule{initializer-call} \nonterminal{receiver-type} \code{(} \nonterminal{argument-list} \code{)}
 \end{grammar}
 
 The \nonterminal{initializer-call} expression returns a new instance of the
@@ -98,7 +98,7 @@ explicitly. They can be used e.g. to deallocate resources allocated in an
 initializer. They are declared as follows:
 
 \begin{grammar}
-\nonterminal{deinitializer-definition} \textrightarrow{} \code{deinit} \code{(} \code{)} \code{\{} \nonterminal{body} \code{\}}
+\rule{deinitializer-definition} \code{deinit} \code{(} \code{)} \code{\{} \nonterminal{body} \code{\}}
 \end{grammar}
 
 \subsection{Private and public functions}
@@ -116,7 +116,7 @@ declared in.
 Structs are defined as follows:
 
 \begin{grammar}
-\nonterminal{struct-definition} \textrightarrow{} \code{struct} \nonterminal{struct-name} \code{\{} \nonterminal{member-list} \code{\}}
+\rule{struct-definition} \code{struct} \nonterminal{struct-name} \code{\{} \nonterminal{member-list} \code{\}}
 \end{grammar}
 
 \nonterminal{struct-name} becomes the name of the struct.
@@ -145,8 +145,8 @@ where \nonterminal{generic-parameter-list} is a comma separated list of one or
 more \nonterminal{generic-parameters}:
 
 \begin{grammar}
-\nonterminal{generic-parameter} \textrightarrow{} \nonterminal{generic-type-parameter}\\
-\nonterminal{generic-type-parameter} \textrightarrow{} \nonterminal{identifier}
+\rule{generic-parameter} \nonterminal{generic-type-parameter}\\
+\rule{generic-type-parameter} \nonterminal{identifier}
 \end{grammar}
 
 The identifier of a \nonterminal{generic-type-parameter} serves as a placeholder

@@ -5,14 +5,14 @@
 \section{Unary expressions}
 
 \begin{grammar}
-\nonterminal{prefix-unary-expression} \textrightarrow{} \nonterminal{operator} \nonterminal{operand}\\
-\nonterminal{postfix-unary-expression} \textrightarrow{} \nonterminal{operand} \nonterminal{operator}
+\rule{prefix-unary-expression} \nonterminal{operator} \nonterminal{operand}\\
+\rule{postfix-unary-expression} \nonterminal{operand} \nonterminal{operator}
 \end{grammar}
 
 \subsection{Unwrap expression}
 
 \begin{grammar}
-\nonterminal{unwrap-expression} \textrightarrow{} \nonterminal{operand} \code{!}
+\rule{unwrap-expression} \nonterminal{operand} \code{!}
 \end{grammar}
 
 The \nonterminal{unwrap-expression} takes an operand of an optional type, and
@@ -23,7 +23,7 @@ that the operand is never null.
 \section{Binary expression}
 
 \begin{grammar}
-\nonterminal{binary-expression} \textrightarrow{} \nonterminal{left-hand-side} \nonterminal{binary-operator} \nonterminal{right-hand-side}
+\rule{binary-expression} \nonterminal{left-hand-side} \nonterminal{binary-operator} \nonterminal{right-hand-side}
 \end{grammar}
 
 \subsection{Integer arithmetic expressions}
@@ -35,34 +35,34 @@ behavior (for both signed and unsigned operations).
 \section{Conditional expression}
 
 \begin{grammar}
-\nonterminal{conditional-expression} \textrightarrow{} \nonterminal{condition} \code{?} \nonterminal{then-expression} \code{:} \nonterminal{else-expression}
+\rule{conditional-expression} \nonterminal{condition} \code{?} \nonterminal{then-expression} \code{:} \nonterminal{else-expression}
 \end{grammar}
 
 \section{Member access expression}
 
 \begin{grammar}
-\nonterminal{member-access-expression} \textrightarrow{} \nonterminal{expression} \code{.} \nonterminal{identifier}
+\rule{member-access-expression} \nonterminal{expression} \code{.} \nonterminal{identifier}
 \end{grammar}
 
 \section{Subscript expression}
 
 \begin{grammar}
-\nonterminal{subscript-expression} \textrightarrow{} \nonterminal{expression} \code{[} \nonterminal{expression} \code{]}
+\rule{subscript-expression} \nonterminal{expression} \code{[} \nonterminal{expression} \code{]}
 \end{grammar}
 
 \section{Function call expression}
 
 \begin{grammar}
-\nonterminal{call-expression} \textrightarrow{} \nonterminal{expression} \code{(} \nonterminal{argument-list} \code{)}
+\rule{call-expression} \nonterminal{expression} \code{(} \nonterminal{argument-list} \code{)}
 \end{grammar}
 
 \nonterminal{argument-list} is a comma-separated list of zero or more
 \nonterminal{argument-specifiers}:
 
 \begin{grammar}
-\nonterminal{argument-specifier} \textrightarrow{} \nonterminal{unnamed-argument} | \nonterminal{named-argument}\\
-\nonterminal{unnamed-argument} \textrightarrow{} \nonterminal{expression}\\
-\nonterminal{named-argument} \textrightarrow{} \nonterminal{argument-name} \code{:} \nonterminal{expression}
+\rule{argument-specifier} \nonterminal{unnamed-argument} | \nonterminal{named-argument}\\
+\rule{unnamed-argument} \nonterminal{expression}\\
+\rule{named-argument} \nonterminal{argument-name} \code{:} \nonterminal{expression}
 \end{grammar}
 
 \nonterminal{argument-name} is an identifier specifying the name of the
@@ -71,15 +71,15 @@ parameter the argument \nonterminal{expression} is being assigned to.
 \section{Range expression}
 
 \begin{grammar}
-\nonterminal{exclusive-range-expression} \textrightarrow{} \nonterminal{lower-bound} \code{..} \nonterminal{upper-bound}\\
-\nonterminal{inclusive-range-expression} \textrightarrow{} \nonterminal{lower-bound} \code{...} \nonterminal{upper-bound}
+\rule{exclusive-range-expression} \nonterminal{lower-bound} \code{..} \nonterminal{upper-bound}\\
+\rule{inclusive-range-expression} \nonterminal{lower-bound} \code{...} \nonterminal{upper-bound}
 \end{grammar}
 
 \section{Closure expression}
 
 \begin{grammar}
-\nonterminal{closure-expression} \textrightarrow{} \code{(} \nonterminal{parameter-list} \code{)} \code{->} \nonterminal{expression}\\
-\nonterminal{closure-expression} \textrightarrow{} \code{(} \nonterminal{parameter-list} \code{)} \code{->} \nonterminal{block}
+\rule{closure-expression} \code{(} \nonterminal{parameter-list} \code{)} \code{->} \nonterminal{expression}\\
+\rule{closure-expression} \code{(} \nonterminal{parameter-list} \code{)} \code{->} \nonterminal{block}
 \end{grammar}
 
 Specifying the type for parameters in a closure \nonterminal{parameter-list} is

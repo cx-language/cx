@@ -27,10 +27,10 @@ access, member function calls, and subscript operations via pointers are
 allowed: they will be forwarded to the pointee value.
 
 \begin{grammar}
-\nonterminal{pointer-type} \textrightarrow{} \nonterminal{pointee-type} \code{*}\\
-\nonterminal{pointer-type} \textrightarrow{} \nonterminal{pointee-type} \code{mutable} \code{*}\\
-\nonterminal{pointer-type} \textrightarrow{} \code{mutable} \nonterminal{pointee-type} \code{*}\\
-\nonterminal{pointer-type} \textrightarrow{} \code{mutable} \nonterminal{pointee-type} \code{mutable} \code{*}
+\rule{pointer-type} \nonterminal{pointee-type} \code{*}\\
+\rule{pointer-type} \nonterminal{pointee-type} \code{mutable} \code{*}\\
+\rule{pointer-type} \code{mutable} \nonterminal{pointee-type} \code{*}\\
+\rule{pointer-type} \code{mutable} \nonterminal{pointee-type} \code{mutable} \code{*}
 \end{grammar}
 
 Prefixing the \nonterminal{pointee-type} with \code{mutable} makes the
@@ -54,9 +54,9 @@ Pointer arithmetic is supported in the form of the following operations:
 \section{Array types}
 
 \begin{grammar}
-\nonterminal{array-type-with-constant-size} \textrightarrow{} \nonterminal{element-type} \code{[} \nonterminal{size} \code{]}\\
-\nonterminal{array-type-with-runtime-size} \textrightarrow{} \nonterminal{element-type} \code{[} \code{]}\\
-\nonterminal{array-type-with-unknown-size} \textrightarrow{} \nonterminal{element-type} \code{[} \code{?} \code{]}
+\rule{array-type-with-constant-size} \nonterminal{element-type} \code{[} \nonterminal{size} \code{]}\\
+\rule{array-type-with-runtime-size} \nonterminal{element-type} \code{[} \code{]}\\
+\rule{array-type-with-unknown-size} \nonterminal{element-type} \code{[} \code{?} \code{]}
 \end{grammar}
 
 \nonterminal{array-type-with-constant-size} represents a contiguous block of
@@ -83,8 +83,8 @@ Structs types contain a set of member variables. The syntax of a member variable
 definition is as follows:
 
 \begin{grammar}
-\nonterminal{let-or-var} \textrightarrow{} \code{let} | \code{var}\\
-\nonterminal{member-variable-declaration} \textrightarrow{} \nonterminal{let-or-var} \nonterminal{member-variable-name} \code{:} \nonterminal{type} \code{;}
+\rule{let-or-var} \code{let} | \code{var}\\
+\rule{member-variable-declaration} \nonterminal{let-or-var} \nonterminal{member-variable-name} \code{:} \nonterminal{type} \code{;}
 \end{grammar}
 
 \section{Interface types}
@@ -114,7 +114,7 @@ An object of the optional type \code{T?} (where \code{T} is an arbitrary type)
 may contain a value of type \code{T} or the value \code{null}.
 
 \begin{grammar}
-\nonterminal{optional-type} \textrightarrow{} \nonterminal{wrapped-type} \code{?}
+\rule{optional-type} \nonterminal{wrapped-type} \code{?}
 \end{grammar}
 
 \section{Function types}
@@ -122,7 +122,7 @@ may contain a value of type \code{T} or the value \code{null}.
 Function types are written out as follows:
 
 \begin{grammar}
-\nonterminal{function-type} \textrightarrow{} \code{(} \nonterminal{parameter-type-list} \code{)} \code{->} \nonterminal{return-type}
+\rule{function-type} \code{(} \nonterminal{parameter-type-list} \code{)} \code{->} \nonterminal{return-type}
 \end{grammar}
 
 where \nonterminal{parameter-type-list} is a comma-separated list of parameter
@@ -131,9 +131,9 @@ types.
 \section{Tuple types}
 
 \begin{grammar}
-\nonterminal{tuple-type} \textrightarrow{} \code{(} \nonterminal{tuple-element-list} \code{)}\\
-\nonterminal{tuple-element-list} \textrightarrow{} comma-separated list of one or more \nonterminal{tuple-elements}\\
-\nonterminal{tuple-element} \textrightarrow{} \nonterminal{name} \code{:} \nonterminal{type}
+\rule{tuple-type} \code{(} \nonterminal{tuple-element-list} \code{)}\\
+\rule{tuple-element-list} comma-separated list of one or more \nonterminal{tuple-elements}\\
+\rule{tuple-element} \nonterminal{name} \code{:} \nonterminal{type}
 \end{grammar}
 
 Tuples behave like structs, but they're defined inline. Tuples are intended as
@@ -151,7 +151,7 @@ The elements of a tuple value may be unpacked into individual variables as
 follows:
 
 \begin{grammar}
-\nonterminal{tuple-unpack-statement} \textrightarrow{} \nonterminal{variable-list} \code{=} \nonterminal{tuple-expression} \code{;}
+\rule{tuple-unpack-statement} \nonterminal{variable-list} \code{=} \nonterminal{tuple-expression} \code{;}
 \end{grammar}
 
 \nonterminal{variable-list} is a comma-separated list of one or more variable

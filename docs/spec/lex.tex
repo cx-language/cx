@@ -172,22 +172,22 @@ Delta has two kinds of comments:
 \subsection{Integer literal}
 
 \begin{grammar}
-\nonterminal{binary-digit} \textrightarrow{} \code{0} | \code{1}\\
-\nonterminal{octal-digit} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7}\\
-\nonterminal{decimal-digit} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
-\nonterminal{nonzero-decimal-digit} \textrightarrow{} \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
-\nonterminal{lowercase-hex-digit} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{a} | \code{b} | \code{c} | \code{d} | \code{e} | \code{f}\\
-\nonterminal{uppercase-hex-digit} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{A} | \code{B} | \code{C} | \code{D} | \code{E} | \code{F}
+\rule{binary-digit} \code{0} | \code{1}\\
+\rule{octal-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7}\\
+\rule{decimal-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
+\rule{nonzero-decimal-digit} \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
+\rule{lowercase-hex-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{a} | \code{b} | \code{c} | \code{d} | \code{e} | \code{f}\\
+\rule{uppercase-hex-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{A} | \code{B} | \code{C} | \code{D} | \code{E} | \code{F}
 
-\nonterminal{binary-integer-literal} \textrightarrow{} \code{0b}\nonterminal{binary-digit}+\\
-\nonterminal{octal-integer-literal} \textrightarrow{} \code{0o}\nonterminal{octal-digit}+\\
-\nonterminal{decimal-integer-literal} \textrightarrow{} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}* | \code{0}\\
-\nonterminal{hex-integer-literal} \textrightarrow{} \code{0x}(\nonterminal{lowercase-hex-digit}+ | \nonterminal{uppercase-hex-digit}+)
+\rule{binary-integer-literal} \code{0b}\nonterminal{binary-digit}+\\
+\rule{octal-integer-literal} \code{0o}\nonterminal{octal-digit}+\\
+\rule{decimal-integer-literal} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}* | \code{0}\\
+\rule{hex-integer-literal} \code{0x}(\nonterminal{lowercase-hex-digit}+ | \nonterminal{uppercase-hex-digit}+)
 
-\nonterminal{integer-literal} \textrightarrow{} \nonterminal{binary-integer-literal}\\
-\nonterminal{integer-literal} \textrightarrow{} \nonterminal{octal-integer-literal}\\
-\nonterminal{integer-literal} \textrightarrow{} \nonterminal{decimal-integer-literal}\\
-\nonterminal{integer-literal} \textrightarrow{} \nonterminal{hex-integer-literal}
+\rule{integer-literal} \nonterminal{binary-integer-literal}\\
+\rule{integer-literal} \nonterminal{octal-integer-literal}\\
+\rule{integer-literal} \nonterminal{decimal-integer-literal}\\
+\rule{integer-literal} \nonterminal{hex-integer-literal}
 \end{grammar}
 
 \subsection{Floating-point literal}
@@ -195,33 +195,33 @@ Delta has two kinds of comments:
 Floating-point literals have the following form:
 
 \begin{grammar}
-\nonterminal{floating-point-literal} \textrightarrow{} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}*\code{.}\nonterminal{decimal-digit}+\\
-\nonterminal{floating-point-literal} \textrightarrow{} \code{0}\code{.}\nonterminal{decimal-digit}+
+\rule{floating-point-literal} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}*\code{.}\nonterminal{decimal-digit}+\\
+\rule{floating-point-literal} \code{0}\code{.}\nonterminal{decimal-digit}+
 \end{grammar}
 
 \subsection{Boolean literal}
 
 \begin{grammar}
-\nonterminal{boolean-literal} \textrightarrow{} \code{true} | \code{false}
+\rule{boolean-literal} \code{true} | \code{false}
 \end{grammar}
 
 \subsection{Null literal}
 
 \begin{grammar}
-\nonterminal{null-literal} \textrightarrow{} \code{null}
+\rule{null-literal} \code{null}
 \end{grammar}
 
 \subsection{String literal}
 
 \begin{grammar}
-\nonterminal{string-literal} \textrightarrow{} \code{"}(\nonterminal{character} | \nonterminal{interpolated-expression})*\code{"}\\
-\nonterminal{interpolated-expression} \textrightarrow{} \code{\$\{} \nonterminal{expression} \code{\}}
+\rule{string-literal} \code{"}(\nonterminal{character} | \nonterminal{interpolated-expression})*\code{"}\\
+\rule{interpolated-expression} \code{\$\{} \nonterminal{expression} \code{\}}
 \end{grammar}
 
 \subsection{Array literal}
 
 \begin{grammar}
-\nonterminal{array-literal} \textrightarrow{} \code{[} \nonterminal{elements} \code{]}
+\rule{array-literal} \code{[} \nonterminal{elements} \code{]}
 \end{grammar}
 
 where \nonterminal{elements} is a comma-separated list of zero or more expressions of the
@@ -230,15 +230,15 @@ same type.
 \subsection{Tuple literal}
 
 \begin{grammar}
-\nonterminal{tuple-literal} \textrightarrow{} \code{(} \nonterminal{elements} \code{)}
+\rule{tuple-literal} \code{(} \nonterminal{elements} \code{)}
 \end{grammar}
 
 where \nonterminal{elements} is a comma-separated list of zero or more
 \nonterminal{tuple-literal-elements}:
 
 \begin{grammar}
-\nonterminal{tuple-literal-element} \textrightarrow{} \nonterminal{identifier} \code{:} \nonterminal{expression}\\
-\nonterminal{tuple-literal-element} \textrightarrow{} \nonterminal{identifier}
+\rule{tuple-literal-element} \nonterminal{identifier} \code{:} \nonterminal{expression}\\
+\rule{tuple-literal-element} \nonterminal{identifier}
 \end{grammar}
 
 The second form is a shorthand for \nonterminal{tuple-literal-elements} of the
@@ -247,11 +247,11 @@ form `\nonterminal{identifier} \code{:} \nonterminal{identifier}'.
 \section{Identifiers}
 
 \begin{grammar}
-\nonterminal{identifier-first-character} \textrightarrow{} upper- or lowercase letter \code{A} through \code{Z}\\
-\nonterminal{identifier-first-character} \textrightarrow{} \code{_}
+\rule{identifier-first-character} upper- or lowercase letter \code{A} through \code{Z}\\
+\rule{identifier-first-character} \code{_}
 
-\nonterminal{identifier-character} \textrightarrow{} \nonterminal{identifier-first-character}\\
-\nonterminal{identifier-character} \textrightarrow{} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}
+\rule{identifier-character} \nonterminal{identifier-first-character}\\
+\rule{identifier-character} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}
 
-\nonterminal{identifier} \textrightarrow{} \nonterminal{identifier-first-character} \nonterminal{identifier-character}*
+\rule{identifier} \nonterminal{identifier-first-character} \nonterminal{identifier-character}*
 \end{grammar}
