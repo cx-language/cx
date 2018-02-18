@@ -35,6 +35,11 @@ There are eight fixed-width integer types: \code{int8}, \code{int16},
 \item \code{long} and \code{ulong}, which have at least 64 bits
 \end{itemize}
 
+Overflow is undefined for all integer types, both signed and unsigned, to aid
+optimization. Overflow checks are enabled by default, and can be disabled with a
+compiler option, or by compiling in unchecked mode. The standard library
+provides arithmetic functions that have defined behavior on overflow.
+
 \subsection{Floating-point types}
 
 There are three fixed-width floating-point types: \code{float32},
