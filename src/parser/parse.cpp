@@ -15,7 +15,6 @@
 #include "../ast/token.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
-#include "../sema/typecheck.h"
 #include "../support/utility.h"
 
 using namespace delta;
