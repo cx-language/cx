@@ -24,18 +24,26 @@
 
 \subsection{Integer types}
 
-There are eight built-in integer types: \code{int8}, \code{int16}, \code{int32},
-\code{int64}, and their unsigned counterparts \code{uint8}, \code{uint16},
-\code{uint32}, \code{uint64}. The standard library also provides \code{int} and
-\code{uint} which are type aliases for \code{int32} and \code{uint32},
-respectively.
+There are eight fixed-width integer types: \code{int8}, \code{int16},
+\code{int32}, \code{int64}, and their unsigned counterparts \code{uint8},
+\code{uint16}, \code{uint32}, \code{uint64}. The language also provides:
+
+\begin{itemize}
+\item \code{byte} and \code{ubyte}, which have at least 8 bits
+\item \code{short} and \code{ushort}, which have at least 16 bits
+\item \code{int} and \code{uint}, which have at least 32 bits
+\item \code{long} and \code{ulong}, which have at least 64 bits
+\end{itemize}
 
 \subsection{Floating-point types}
 
-There are three built-in floating-point types: \code{float32}, \code{float64},
-and \code{float80}. The standard library also provides \code{float} and
-\code{double} which are type aliases for \code{float32} and \code{float64},
-respectively.
+There are three fixed-width floating-point types: \code{float32},
+\code{float64}, and \code{float80}. The language also provides:
+
+\begin{itemize}
+\item \code{float}, which has at least 32 bits
+\item \code{double}, which has at least 64 bits
+\end{itemize}
 
 \subsection{Struct types}
 
