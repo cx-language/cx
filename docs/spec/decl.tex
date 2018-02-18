@@ -8,15 +8,10 @@ Variable declarations introduce a new variable into the enclosing scope. The
 syntax is as follows:
 
 \begin{grammar}
-\rule{immutable-variable-declaration} \code{let} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}\\
-\rule{mutable-variable-declaration} \code{var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}\\
-\rule{immutable-variable-definition} \code{let} \nonterminal{variable-name} (\code{:} \nonterminal{type})\optional{} \code{=} \nonterminal{initializer} \code{;}\\
-\rule{mutable-variable-definition} \code{var} \nonterminal{variable-name} (\code{:} \nonterminal{type})\optional{} \code{=} \nonterminal{initializer} \code{;}
+\rule{implicitly-typed-variable-definition} \nonterminal{let-or-var} \nonterminal{variable-name} \code{=} \nonterminal{initializer} \code{;}\\
+\rule{explicitly-typed-variable-definition} \nonterminal{let-or-var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{=} \nonterminal{initializer} \code{;}\\
+\rule{variable-declaration} \nonterminal{let-or-var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}
 \end{grammar}
-
-In the first two forms, the variable is declared but not initialized. This
-allows delayed initialization, which causes the compiler to enforce that the
-variable is always initialized properly before its value is accessed.
 
 If \nonterminal{type} is present, the variable has the specified type. The
 compiler ensures that the given \nonterminal{initializer} is compatible with
@@ -29,6 +24,11 @@ If \nonterminal{type} has been specified, \nonterminal{initializer} may also be
 the keyword \code{undefined}, in which case the variable is not initialized and
 all use-before-initialization warnings for the variable will be suppressed.
 Reading from an uninitialized variable causes undefined behavior.
+
+In \nonterminal{variable-declaration}, the variable is declared but not
+initialized. This allows delayed initialization, which causes the compiler to
+enforce that the variable is always initialized properly before its value is
+accessed.
 
 \section{Functions}
 

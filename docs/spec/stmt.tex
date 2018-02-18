@@ -35,14 +35,15 @@ compilation errors or warnings that would otherwise be emitted.
 \section{\code{if} statement}
 
 \begin{grammar}
-\rule{if-statement} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} (\code{else} \nonterminal{block})\optional\\
+\rule{if-statement} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block}\\
+\rule{if-statement} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} \code{else} \nonterminal{block}\\
 \rule{if-statement} \code{if} \code{(} \nonterminal{expression} \code{)} \nonterminal{block} \code{else} \nonterminal{if-statement}
 \end{grammar}
 
 \section{\code{return} statement}
 
 \begin{grammar}
-\rule{return-statement} \code{return} \nonterminal{expression} \code{;}
+\rule{return-statement} \code{return} \nonterminal{expression}\optional{} \code{;}
 \end{grammar}
 
 \section{\code{for} statement}
