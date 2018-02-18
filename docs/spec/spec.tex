@@ -2,6 +2,7 @@
 
 \usepackage{enumitem}
 \usepackage[T1]{fontenc}
+\usepackage[margin=3cm]{geometry}
 \usepackage[hidelinks, linktoc=all]{hyperref}
 \usepackage{microtype}
 \usepackage{multicol}
@@ -12,7 +13,7 @@
 \newcommand{\nonterminal}{\textit}
 \renewcommand{\rule}[1]{\nonterminal{#1} \textrightarrow{}}
 \newcommand{\optional}{\textsubscript{opt}}
-\newenvironment{grammar}{}{}
+\newenvironment{grammar}{\begin{quote}}{\end{quote}}
 
 \DisableLigatures{encoding = T1, family = tt*}
 \nonzeroparskip
