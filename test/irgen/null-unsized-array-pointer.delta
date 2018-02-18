@@ -1,6 +1,6 @@
 // TODO: Add this test back when optional (nullable) ArrayRefs are implemented.
-// RUN: true
-// %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s
+// XFAIL: *
 
 func main() {
     // CHECK: @a = private global { i8*, i32 } zeroinitializer
