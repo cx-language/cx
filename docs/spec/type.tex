@@ -2,7 +2,27 @@
 
 \chapter{Types}
 
-\section{Integer types}
+\begin{grammar}
+\rule{type} \nonterminal{basic-type}\\
+\rule{type} \nonterminal{pointer-type}\\
+\rule{type} \nonterminal{optional-type}\\
+\rule{type} \nonterminal{array-type}\\
+\rule{type} \nonterminal{function-type}\\
+\rule{type} \nonterminal{tuple-type}\\
+\rule{type} \code{mutable} \nonterminal{basic-type}\\
+\rule{type} \code{mutable} \nonterminal{function-type}\\
+\rule{type} \code{mutable} \nonterminal{tuple-type}
+\end{grammar}
+
+\section{Basic types}
+
+\begin{grammar}
+\rule{basic-type} \nonterminal{identifier}\\
+\rule{basic-type} \nonterminal{identifier} \code{<} \nonterminal{generic-argument-list} \code{>}\\
+\rule{generic-argument-list} comma-separated list of one or more \nonterminal{types}
+\end{grammar}
+
+\subsection{Integer types}
 
 There are eight built-in integer types: \code{int8}, \code{int16}, \code{int32},
 \code{int64}, and their unsigned counterparts \code{uint8}, \code{uint16},
@@ -10,12 +30,39 @@ There are eight built-in integer types: \code{int8}, \code{int16}, \code{int32},
 \code{uint} which are type aliases for \code{int32} and \code{uint32},
 respectively.
 
-\section{Floating-point types}
+\subsection{Floating-point types}
 
 There are three built-in floating-point types: \code{float32}, \code{float64},
 and \code{float80}. The standard library also provides \code{float} and
 \code{double} which are type aliases for \code{float32} and \code{float64},
 respectively.
+
+\subsection{Struct types}
+
+Structs are composite data types which can be defined using the \code{struct}
+keyword.
+
+\subsubsection{String type}
+
+The type \code{String} holds sequences of Unicode characters.
+
+\subsubsection{Range types}
+
+The standard library defines the following two generic types to represent
+ranges:
+
+\begin{itemize}
+\item \code{Range<T>} for ranges with an exclusive upper bound
+\item \code{ClosedRange<T>} for ranges with an inclusive upper bound
+\end{itemize}
+
+\subsection{Interface types}
+
+The \code{interface} keyword declares an interface, i.e. a set of requirements
+(member functions and properties). Types that are declared to implement an
+interface \code{I} and fulfill \code{I}'s requirements can be used as values for
+a variable of type \code{I}. This enables runtime polymorphism. Like structs,
+interfaces may be generic.
 
 \section{Pointer types}
 
@@ -29,13 +76,11 @@ allowed: they will be forwarded to the pointee value.
 \begin{grammar}
 \rule{pointer-type} \nonterminal{pointee-type} \code{*}\\
 \rule{pointer-type} \nonterminal{pointee-type} \code{mutable} \code{*}\\
-\rule{pointer-type} \code{mutable} \nonterminal{pointee-type} \code{*}\\
-\rule{pointer-type} \code{mutable} \nonterminal{pointee-type} \code{mutable} \code{*}
+\rule{pointee-type} \nonterminal{type}
 \end{grammar}
 
-Prefixing the \nonterminal{pointee-type} with \code{mutable} makes the
-\nonterminal{pointee-type} mutable. Prefixing the \code{*} with \code{mutable}
-makes the \nonterminal{pointer-type} itself mutable.
+The \nonterminal{pointee-type} may be mutable. Prefixing the \code{*} with
+\code{mutable} makes the \nonterminal{pointer-type} itself mutable.
 
 \begin{samepage}
 Pointer arithmetic is supported in the form of the following operations:
@@ -56,7 +101,8 @@ Pointer arithmetic is supported in the form of the following operations:
 \begin{grammar}
 \rule{array-type-with-constant-size} \nonterminal{element-type} \code{[} \nonterminal{size} \code{]}\\
 \rule{array-type-with-runtime-size} \nonterminal{element-type} \code{[} \code{]}\\
-\rule{array-type-with-unknown-size} \nonterminal{element-type} \code{[} \code{?} \code{]}
+\rule{array-type-with-unknown-size} \nonterminal{element-type} \code{[} \code{?} \code{]}\\
+\rule{element-type} \nonterminal{type}
 \end{grammar}
 
 \nonterminal{array-type-with-constant-size} represents a contiguous block of
@@ -68,32 +114,7 @@ pointer; such pointers are memory-layout-compatible with pointers to
 \nonterminal{array-type-with-unknown-size} is the only array type for which
 index operations are not guaranteed to be bounds-checked.
 
-\section{String type}
-
-The type \code{String} holds sequences of Unicode characters.
-
-\section{Struct types}
-
-Structs are composite data types which can be defined using the \code{struct}
-keyword.
-
-\subsection{Member variables}
-
-Structs types contain a set of member variables. The syntax of a member variable
-definition is as follows:
-
-\begin{grammar}
-\rule{let-or-var} \code{let} | \code{var}\\
-\rule{member-variable-declaration} \nonterminal{let-or-var} \nonterminal{member-variable-name} \code{:} \nonterminal{type} \code{;}
-\end{grammar}
-
-\section{Interface types}
-
-The \code{interface} keyword declares an interface, i.e. a set of requirements
-(member functions and properties). Types that are declared to implement an
-interface \code{I} and fulfill \code{I}'s requirements can be used as values for
-a variable of type \code{I}. This enables runtime polymorphism. Like structs,
-interfaces may be generic.
+The \nonterminal{element-type} may be mutable.
 
 \section{Optional type}
 
@@ -114,7 +135,8 @@ An object of the optional type \code{T?} (where \code{T} is an arbitrary type)
 may contain a value of type \code{T} or the value \code{null}.
 
 \begin{grammar}
-\rule{optional-type} \nonterminal{wrapped-type} \code{?}
+\rule{optional-type} \nonterminal{wrapped-type} \code{?}\\
+\rule{wrapped-type} \nonterminal{type}
 \end{grammar}
 
 \section{Function types}
@@ -122,11 +144,13 @@ may contain a value of type \code{T} or the value \code{null}.
 Function types are written out as follows:
 
 \begin{grammar}
-\rule{function-type} \code{(} \nonterminal{parameter-type-list} \code{)} \code{->} \nonterminal{return-type}
+\rule{function-type} \code{(} \nonterminal{parameter-type-list} \code{)} \code{->} \nonterminal{return-type}\\
+\rule{parameter-type-list} comma-separated list of zero or more \nonterminal{types}\\
+\rule{return-type} \nonterminal{type}
 \end{grammar}
 
-where \nonterminal{parameter-type-list} is a comma-separated list of parameter
-types.
+The types in the \nonterminal{parameter-type-list} and \nonterminal{return-type}
+may not have a top-level mutable modifier.
 
 \section{Tuple types}
 
@@ -157,13 +181,3 @@ follows:
 \nonterminal{variable-list} is a comma-separated list of one or more variable
 names. The variable names must match the element names of the
 \nonterminal{tuple-expression}, and be in the same order.
-
-\section{Range types}
-
-The standard library defines the following two generic types to represent
-ranges:
-
-\begin{itemize}
-\item \code{Range<T>} for ranges with an exclusive upper bound
-\item \code{ClosedRange<T>} for ranges with an inclusive upper bound
-\end{itemize}

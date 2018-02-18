@@ -133,6 +133,16 @@ The \nonterminal{interface-list} is a comma-separated list of one or more
 interface names. The compiler will emit an error if the struct doesn't fulfill
 all the requirements of a specified interface.
 
+\subsection{Member variables}
+
+Structs can contain member variables. The syntax of a member variable definition
+is as follows:
+
+\begin{grammar}
+\rule{let-or-var} \code{let} | \code{var}\\
+\rule{member-variable-declaration} \nonterminal{let-or-var} \nonterminal{member-variable-name} \code{:} \nonterminal{type} \code{;}
+\end{grammar}
+
 \subsection{Generic structs}
 
 Generic structs can be declared as follows:
