@@ -56,6 +56,10 @@ having to define a whole new struct type.
 
 Parameter and return types may not have a top-level \code{mutable} modifier.
 
+A function declaration may optionally be prefixed with any number of
+\hyperref[sec:function-specifiers]{\nonterminal{function-specifiers}}.
+% TODO: Add full section numbers to section links for printing.
+
 \subsection{Member functions}
 
 Member functions are just like normal functions, except that they receive an
@@ -110,6 +114,20 @@ declared in. Public functions are accessible from anywhere, including other
 modules. Functions not marked private or public are
 \nonterminal{module-private}, i.e. only accessible within the module they're
 declared in.
+
+\subsection{Function specifiers}
+\label{sec:function-specifiers}
+
+\begin{grammar}
+\rule{function-specifier} \code{inline}
+\end{grammar}
+
+\subsubsection{\code{inline}}
+
+A function defined with the \code{inline} keyword is an \textit{inline
+function}. Inline functions are guaranteed to be inlined when compiling in debug
+mode (without optimizations). When compiling with optimizations, the compiler
+may choose to not inline an inline function.
 
 \section{Structs}
 
