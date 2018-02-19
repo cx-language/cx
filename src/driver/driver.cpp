@@ -1,3 +1,4 @@
+#include "driver.h"
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -15,20 +16,19 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Program.h>
-#include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #pragma warning(pop)
-#include "driver.h"
 #include "../ast/ast-printer.h"
 #include "../ast/module.h"
 #include "../irgen/irgen.h"
-#include "../support/utility.h"
 #include "../package-manager/manifest.h"
 #include "../package-manager/package-manager.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
+#include "../support/utility.h"
 
 #ifdef _MSC_VER
 #define popen _popen

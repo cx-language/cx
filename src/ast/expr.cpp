@@ -3,8 +3,8 @@
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
 #include "decl.h"
-#include "token.h"
 #include "mangle.h"
+#include "token.h"
 
 using namespace delta;
 
@@ -432,7 +432,7 @@ static Type getReceiverType(const CallExpr& call) {
 }
 
 std::string CallExpr::getMangledFunctionName() const {
-    return mangleFunctionDecl(::getReceiverType(*this), getFunctionName());
+    return mangleFunctionDecl(::getReceiverType(*this), getFunctionName(), {});
 }
 
 bool CallExpr::isMoveInit() const {

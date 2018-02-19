@@ -1,15 +1,15 @@
 #include "repl.h"
 #pragma warning(push, 0)
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/Support/Format.h>
-#include <llvm/Support/MemoryBuffer.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/LineEditor/LineEditor.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/Verifier.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/ExecutionEngine/Interpreter.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/LineEditor/LineEditor.h>
+#include <llvm/Support/Format.h>
+#include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 #include "../ast/expr.h"
 #include "../ast/module.h"

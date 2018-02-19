@@ -6,8 +6,8 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 #pragma warning(pop)
-#include "../ast/expr.h"
 #include "../ast/decl.h"
+#include "../ast/expr.h"
 #include "../ast/stmt.h"
 #include "../sema/typecheck.h"
 

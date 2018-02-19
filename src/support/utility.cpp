@@ -1,10 +1,10 @@
+#include "utility.h"
 #include <algorithm>
 #include <cctype>
 #pragma warning(push, 0)
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/Program.h>
 #pragma warning(pop)
-#include "utility.h"
 
 using namespace delta;
 

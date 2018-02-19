@@ -1,12 +1,12 @@
+#include "ast-printer.h"
 #include <iostream>
 #include <string>
 #pragma warning(push, 0)
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
-#include "ast-printer.h"
 #include "../ast/decl.h"
-#include "../ast/stmt.h"
 #include "../ast/module.h"
+#include "../ast/stmt.h"
 #include "../support/utility.h"
 
 using namespace delta;

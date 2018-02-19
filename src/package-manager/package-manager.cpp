@@ -1,3 +1,4 @@
+#include "package-manager.h"
 #include <string>
 #include <system_error>
 #include <vector>
@@ -9,7 +10,6 @@
 #include <llvm/Support/Program.h>
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
-#include "package-manager.h"
 #include "manifest.h"
 #include "../support/utility.h"
 

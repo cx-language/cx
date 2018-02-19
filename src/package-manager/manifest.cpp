@@ -1,6 +1,6 @@
+#include "manifest.h"
 #include <cstdlib>
 #include <yaml-cpp/yaml.h>
-#include "manifest.h"
 #include "../support/utility.h"
 
 using namespace delta;

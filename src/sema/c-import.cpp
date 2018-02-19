@@ -1,32 +1,32 @@
+#include "c-import.h"
 #include <cstdio>
-#include <vector>
-#include <memory>
 #include <cstdlib>
+#include <memory>
 #include <string>
+#include <vector>
 #pragma warning(push, 0)
+#include <clang/AST/Decl.h>
+#include <clang/AST/DeclGroup.h>
+#include <clang/AST/PrettyPrinter.h>
+#include <clang/AST/Type.h>
+#include <clang/Basic/TargetInfo.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Lex/HeaderSearch.h>
+#include <clang/Lex/Preprocessor.h>
+#include <clang/Parse/ParseAST.h>
+#include <clang/Sema/Sema.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
-#include <llvm/Support/Path.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
 #include <llvm/Support/Program.h>
-#include <clang/Basic/TargetInfo.h>
-#include <clang/Frontend/CompilerInstance.h>
-#include <clang/Lex/Preprocessor.h>
-#include <clang/Lex/HeaderSearch.h>
-#include <clang/Parse/ParseAST.h>
-#include <clang/AST/Decl.h>
-#include <clang/AST/DeclGroup.h>
-#include <clang/AST/Type.h>
-#include <clang/AST/PrettyPrinter.h>
-#include <clang/Sema/Sema.h>
 #pragma warning(pop)
-#include "c-import.h"
 #include "typecheck.h"
-#include "../ast/type.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
+#include "../ast/type.h"
 #include "../support/utility.h"
 
 using namespace delta;

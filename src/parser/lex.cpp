@@ -1,7 +1,7 @@
 #include "lex.h"
 #include <cctype>
-#include <vector>
 #include <string>
+#include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>

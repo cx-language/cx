@@ -1,7 +1,7 @@
+#include "mangle.h"
 #pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #pragma warning(pop)
-#include "mangle.h"
 #include "../ast/decl.h"
 
 using namespace delta;

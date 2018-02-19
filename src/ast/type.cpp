@@ -1,11 +1,11 @@
+#include "type.h"
 #include <sstream>
 #pragma warning(push, 0)
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSwitch.h>
-#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
-#include "type.h"
 #include "decl.h"
 #include "../support/utility.h"
 

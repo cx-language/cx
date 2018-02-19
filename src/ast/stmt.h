@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 #pragma warning(push, 0)
 #include <llvm/Support/Casting.h>
 #pragma warning(pop)

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
@@ -10,9 +10,9 @@
 #include <llvm/Support/Casting.h>
 #pragma warning(pop)
 #include "expr.h"
+#include "location.h"
 #include "stmt.h"
 #include "type.h"
-#include "location.h"
 #include "../support/utility.h"
 
 namespace std {

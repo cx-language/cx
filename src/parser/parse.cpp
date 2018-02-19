@@ -1,20 +1,20 @@
-#include <vector>
+#include "parse.h"
 #include <forward_list>
 #include <sstream>
+#include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
-#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/MemoryBuffer.h>
 #pragma warning(pop)
-#include "parse.h"
 #include "lex.h"
-#include "../ast/token.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
+#include "../ast/token.h"
 #include "../support/utility.h"
 
 using namespace delta;

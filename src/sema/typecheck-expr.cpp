@@ -6,9 +6,9 @@
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/APSInt.h>
-#include <llvm/ADT/iterator_range.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringExtras.h>
+#include <llvm/ADT/iterator_range.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(push, 0)
 #include "../ast/decl.h"
@@ -358,7 +358,7 @@ static bool hasField(TypeDecl& type, const FieldDecl& field) {
 }
 
 bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
-    auto decls = getCurrentModule()->findDecls(mangleFunctionDecl(type.getType(), functionDecl.getName()),
+    auto decls = getCurrentModule()->findDecls(mangleFunctionDecl(type.getType(), functionDecl.getName(), {}),
                                                currentSourceFile, currentFunction);
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
@@ -826,7 +826,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             case DeclKind::TypeDecl: {
                 isInitCall = true;
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                auto mangledName = mangleFunctionDecl(llvm::cast<TypeDecl>(decl)->getType(), "init");
+                auto mangledName = mangleFunctionDecl(llvm::cast<TypeDecl>(decl)->getType(), "init", {});
                 initDecls = getCurrentModule()->findDecls(mangledName, currentSourceFile, currentFunction);
                 ASSERT(decls.size() == 1);
                 decls = initDecls;
