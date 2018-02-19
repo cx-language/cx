@@ -1,5 +1,7 @@
 #include "expr.h"
+#pragma warning(push, 0)
 #include <llvm/Support/ErrorHandling.h>
+#pragma warning(pop)
 #include "decl.h"
 #include "token.h"
 #include "mangle.h"
