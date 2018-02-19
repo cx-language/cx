@@ -292,7 +292,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
-    return isComparisonOperator(op) ? Type::getBool() : leftType;
+    return isComparisonOperator(op) ? Type::getBool() : expr.getLHS().getType();
 }
 
 void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, SourceLocation location) {
