@@ -1,0 +1,15 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+struct S {
+    var i: int;
+    init() {}
+    func bar() {}
+    func foo(bar: () -> void) {
+        // CHECK: [[@LINE+1]]:9: error: ambiguous reference to 'bar'
+        bar();
+    }
+}
+
+func main() {
+    let s = S();
+}

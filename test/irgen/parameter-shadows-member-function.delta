@@ -1,0 +1,17 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+struct S {
+    var i: int;
+    init() {}
+    func bar() {}
+    func foo(bar: int) {
+        // CHECK: store i32 %bar, i32* %a
+        let a = bar;
+        // CHECK-NEXT: call void @S.bar(%S* %this)
+        bar();
+    }
+}
+
+func main() {
+    let s = S();
+}

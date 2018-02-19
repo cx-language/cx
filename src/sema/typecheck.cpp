@@ -560,7 +560,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
 }
 
 void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel) {
-    if (getCurrentModule()->getSymbolTable().contains(decl.getName())) {
+    if (getCurrentModule()->getSymbolTable().containsInCurrentScope(decl.getName())) {
         error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
 

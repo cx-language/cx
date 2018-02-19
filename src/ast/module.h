@@ -48,6 +48,7 @@ public:
         identifierReplacements.try_emplace(name, replacement);
     }
     bool contains(const std::string& name) const { return !find(name).empty(); }
+    bool containsInCurrentScope(const std::string& name) const { return !findInCurrentScope(name).empty(); }
 
     llvm::ArrayRef<Decl*> find(const std::string& name) const {
         auto realName = applyIdentifierReplacements(name);
@@ -55,6 +56,14 @@ public:
         for (const auto& scope : llvm::reverse(scopes)) {
             auto it = scope.find(realName);
             if (it != scope.end()) return it->second;
+        }
+        return {};
+    }
+
+    llvm::ArrayRef<Decl*> findInCurrentScope(const std::string& name) const {
+        if (!scopes.empty()) {
+            auto it = scopes.back().find(applyIdentifierReplacements(name));
+            if (it != scopes.back().end()) return it->second;
         }
         return {};
     }
