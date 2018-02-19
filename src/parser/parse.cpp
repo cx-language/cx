@@ -482,6 +482,7 @@ Type Parser::parseType() {
                     case Token::QuestionMark:
                         type = OptionalType::get(type, true, getCurrentLocation());
                         consumeToken();
+                        break;
                     default:
                         unexpectedToken(currentToken(), { Token::Star, Token::QuestionMark }, "after 'mutable'");
                 }
