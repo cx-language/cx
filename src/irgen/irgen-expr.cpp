@@ -640,12 +640,12 @@ llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type membe
             if (!baseType->isSized()) {
                 codegenTypeDecl(baseTypeDecl);
             }
-            return builder.CreateStructGEP(nullptr, baseValue, index);
+            return builder.CreateStructGEP(nullptr, baseValue, index, memberName);
         }
     } else {
         auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
         auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(memberName);
-        return builder.CreateExtractValue(baseValue, index);
+        return builder.CreateExtractValue(baseValue, index, memberName);
     }
 }
 

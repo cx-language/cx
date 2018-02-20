@@ -6,8 +6,8 @@ struct S: Copyable {
     // CHECK: define void @S.foo(%S %this)
     func foo() {
         // CHECK-NEXT: %b = alloca i32*
-        // CHECK-NEXT: %1 = extractvalue %S %this, 0
-        // CHECK-NEXT: store i32* %1, i32** %b
+        // CHECK-NEXT: %a = extractvalue %S %this, 0
+        // CHECK-NEXT: store i32* %a, i32** %b
         let b = a
     }
 }

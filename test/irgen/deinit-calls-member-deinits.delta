@@ -11,20 +11,20 @@ struct A {
 
     // CHECK: define void @A.deinit(%A* %this)
     deinit() {
-        // CHECK-NEXT: %1 = getelementptr inbounds %A, %A* %this, i32 0, i32 0
-        // CHECK-NEXT: %2 = getelementptr inbounds %A, %A* %this, i32 0, i32 1
-        // CHECK-NEXT: %3 = call i1 @f()
-        // CHECK-NEXT: br i1 %3, label %then, label %else
+        // CHECK-NEXT: %b = getelementptr inbounds %A, %A* %this, i32 0, i32 0
+        // CHECK-NEXT: %bb = getelementptr inbounds %A, %A* %this, i32 0, i32 1
+        // CHECK-NEXT: %1 = call i1 @f()
+        // CHECK-NEXT: br i1 %1, label %then, label %else
         if (f()) {
             // CHECK:      then: ; preds = %0
-            // CHECK-NEXT: call void @B.deinit(%B* %2)
-            // CHECK-NEXT: call void @B.deinit(%B* %1)
+            // CHECK-NEXT: call void @B.deinit(%B* %bb)
+            // CHECK-NEXT: call void @B.deinit(%B* %b)
             // CHECK-NEXT: ret void
             return;
         }
         // CHECK:      endif: ; preds = %else
-        // CHECK-NEXT: call void @B.deinit(%B* %2)
-        // CHECK-NEXT: call void @B.deinit(%B* %1)
+        // CHECK-NEXT: call void @B.deinit(%B* %bb)
+        // CHECK-NEXT: call void @B.deinit(%B* %b)
         // CHECK-NEXT: ret void
     }
 }
@@ -42,10 +42,10 @@ struct C {
     let bb: B;
     init() {}
     // CHECK: define void @C.deinit(%C* %this)
-    // CHECK-NEXT: %1 = getelementptr inbounds %C, %C* %this, i32 0, i32 0
-    // CHECK-NEXT: %2 = getelementptr inbounds %C, %C* %this, i32 0, i32 1
-    // CHECK-NEXT: call void @B.deinit(%B* %2)
-    // CHECK-NEXT: call void @B.deinit(%B* %1)
+    // CHECK-NEXT: %b = getelementptr inbounds %C, %C* %this, i32 0, i32 0
+    // CHECK-NEXT: %bb = getelementptr inbounds %C, %C* %this, i32 0, i32 1
+    // CHECK-NEXT: call void @B.deinit(%B* %bb)
+    // CHECK-NEXT: call void @B.deinit(%B* %b)
     // CHECK-NEXT: ret void
 }
 

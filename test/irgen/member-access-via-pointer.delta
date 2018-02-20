@@ -7,9 +7,9 @@ struct Foo {
 // CHECK-LABEL: define void @get
 func get(f: Foo*) {
     // CHECK-NEXT: %m = alloca i32
-    // CHECK-NEXT: %1 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
-    // CHECK-NEXT: %2 = load i32, i32* %1
-    // CHECK-NEXT: store i32 %2, i32* %m
+    // CHECK-NEXT: %i = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
+    // CHECK-NEXT: %1 = load i32, i32* %i
+    // CHECK-NEXT: store i32 %1, i32* %m
     var m = f.i;
     // CHECK-NEXT: ret void
 }
@@ -23,8 +23,8 @@ func main() {
     // CHECK-NEXT: store %Foo* %f, %Foo** %rf
     let rf: Foo* = f;
     // CHECK-NEXT: %1 = load %Foo*, %Foo** %rf
-    // CHECK-NEXT: %2 = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
-    // CHECK-NEXT: %3 = load i32, i32* %2
-    // CHECK-NEXT: store i32 %3, i32* %n
+    // CHECK-NEXT: %i = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
+    // CHECK-NEXT: %2 = load i32, i32* %i
+    // CHECK-NEXT: store i32 %2, i32* %n
     var n = rf.i;
 }
