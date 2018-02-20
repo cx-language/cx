@@ -779,10 +779,8 @@ std::unique_ptr<Expr> Parser::parseBinaryExpr(std::unique_ptr<Expr> lhs, int min
             currentTokenIndex = backtrackLocation;
             break;
         }
-
-        while (isBinaryOperator(currentToken()) && getPrecedence(currentToken()) > getPrecedence(op)) {
-            auto token = consumeToken();
-            expr = llvm::make_unique<BinaryExpr>(token, std::move(expr), parsePreOrPostfixExpr(), token.getLocation());
+        if (isBinaryOperator(currentToken()) && getPrecedence(currentToken()) > getPrecedence(op)) {
+            expr = parseBinaryExpr(std::move(expr), getPrecedence(op) + 1);
         }
         lhs = llvm::make_unique<BinaryExpr>(op, std::move(lhs), std::move(expr), op.getLocation());
     }
