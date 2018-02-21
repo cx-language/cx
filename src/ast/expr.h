@@ -75,6 +75,7 @@ public:
     void setAssignableType(Type type) { ASSERT(type), assignableType = type; }
     bool isAssignment() const;
     bool isIncrementOrDecrementExpr() const;
+    bool isPointerOffset() const;
     bool isConstant() const;
     // TODO: Use llvm::APSInt instead of int64_t.
     int64_t getConstantIntegerValue() const;

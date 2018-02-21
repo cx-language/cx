@@ -233,7 +233,14 @@ llvm::Value* IRGenerator::codegenLogicalOr(const Expr& left, const Expr& right) 
     return phi;
 }
 
-llvm::Value* IRGenerator::codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr) {
+llvm::Value* IRGenerator::codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, Type lhsType) {
+    if (lhs->getType()->isPointerTy() && lhs->getType()->getPointerElementType() == rhs->getType()) {
+        lhs = builder.CreateLoad(lhs);
+        lhsType = lhsType.getPointee();
+    } else if (rhs->getType()->isPointerTy() && rhs->getType()->getPointerElementType() == lhs->getType()) {
+        rhs = builder.CreateLoad(rhs);
+    }
+
     if (lhs->getType()->isFloatingPointTy()) {
         switch (op) {
             case Token::Equal:
@@ -271,25 +278,25 @@ llvm::Value* IRGenerator::codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm
         case Token::PointerNotEqual:
             return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
         case Token::Less:
-            if (leftExpr.getType().isSigned()) {
+            if (lhsType.isSigned()) {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSLT);
             } else {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpULT);
             }
         case Token::LessOrEqual:
-            if (leftExpr.getType().isSigned()) {
+            if (lhsType.isSigned()) {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSLE);
             } else {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpULE);
             }
         case Token::Greater:
-            if (leftExpr.getType().isSigned()) {
+            if (lhsType.isSigned()) {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSGT);
             } else {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpUGT);
             }
         case Token::GreaterOrEqual:
-            if (leftExpr.getType().isSigned()) {
+            if (lhsType.isSigned()) {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSGE);
             } else {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpUGE);
@@ -301,13 +308,13 @@ llvm::Value* IRGenerator::codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm
         case Token::Star:
             return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateMul);
         case Token::Slash:
-            if (leftExpr.getType().isSigned()) {
+            if (lhsType.isSigned()) {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSDiv);
             } else {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateUDiv);
             }
         case Token::Modulo:
-            if (leftExpr.getType().isSigned()) {
+            if (lhsType.isSigned()) {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSRem);
             } else {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateURem);
@@ -321,7 +328,7 @@ llvm::Value* IRGenerator::codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm
         case Token::LeftShift:
             return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateShl);
         case Token::RightShift:
-            if (leftExpr.getType().isSigned()) {
+            if (lhsType.isSigned()) {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAShr);
             } else {
                 return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateLShr);
@@ -352,7 +359,7 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
         return codegenCallExpr(expr);
     }
 
-    if (expr.getLHS().getType().isPointerType() && expr.getRHS().getType().isInteger()) {
+    if (expr.isPointerOffset()) {
         return codegenPointerOffset(expr);
     }
 
@@ -363,7 +370,7 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
         default:
             llvm::Value* lhs = codegenExpr(expr.getLHS());
             llvm::Value* rhs = codegenExpr(expr.getRHS());
-            return codegenBinaryOp(expr.getOperator(), lhs, rhs, expr.getLHS());
+            return codegenBinaryOp(expr.getOperator(), lhs, rhs, expr.getLHS().getType());
     }
 }
 
@@ -393,7 +400,7 @@ void IRGenerator::codegenAssignment(const BinaryExpr& expr) {
             rhsValue = codegenPointerOffset(expr);
         } else {
             auto* lhsValue = builder.CreateLoad(lhsLvalue);
-            rhsValue = codegenBinaryOp(nonCompoundOp, lhsValue, codegenExpr(expr.getRHS()), expr.getLHS());
+            rhsValue = codegenBinaryOp(nonCompoundOp, lhsValue, codegenExpr(expr.getRHS()), expr.getLHS().getType());
         }
     } else {
         rhsValue = codegenExprForPassing(expr.getRHS(), lhsLvalue->getType()->getPointerElementType());

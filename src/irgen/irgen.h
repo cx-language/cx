@@ -94,7 +94,7 @@ private:
     llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate2 create);
     llvm::Value* codegenLogicalAnd(const Expr& left, const Expr& right);
     llvm::Value* codegenLogicalOr(const Expr& left, const Expr& right);
-    llvm::Value* codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, const Expr& leftExpr);
+    llvm::Value* codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, Type lhsType);
     llvm::Value* codegenShortCircuitBinaryOp(BinaryOperator op, const Expr& lhs, const Expr& rhs);
     llvm::Value* codegenBinaryExpr(const BinaryExpr& expr);
     void codegenAssignment(const BinaryExpr& expr);
