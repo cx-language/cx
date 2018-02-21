@@ -39,12 +39,12 @@ private func partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: u
     var i = (low - 1);
 
     for (let j in low..high) {
-        if (arr[j].compare(*pivot) == Ordering.Less) { // TODO: Change this to use '<' instead of 'compare'.
+        if (arr[j] < pivot) {
             i++;
             swap<E>(arr[i], arr[j]);
         }
     }
-    if (arr[high].compare(*arr[i+1]) == Ordering.Less) { // TODO: Change this to use '<' instead of 'compare'.
+    if (arr[high] < arr[i+1]) {
         swap<E>(arr[i + 1], arr[high]);
     }
     return (i + 1);
@@ -69,7 +69,7 @@ private func insertionSort<E: Comparable>(arr: mutable Array<E>*) {
     var i: uint = 1;
     while (i < arr.size()) {
         var j: uint = i;
-        while (j > 0 && arr[j-1].compare(*arr[j]) == Ordering.Greater) { // TODO: Change this to use '>' instead of 'compare'.
+        while (j > 0 && arr[j-1] > arr[j]) {
             swap(arr[j], arr[j-1]);
             j--;
         }
