@@ -285,9 +285,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (compileOnly || emitAssembly) {
         llvm::SmallString<128> outputFilePath = outputDirectory;
         llvm::sys::path::append(outputFilePath, llvm::Twine("output.") + outputFileExtension);
-        if (auto error = llvm::sys::fs::rename(temporaryOutputFilePath, outputFilePath)) {
-            printErrorAndExit(error.message());
-        }
+        renameFile(temporaryOutputFilePath, outputFilePath);
         return 0;
     }
 
@@ -361,17 +359,17 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (outputFileName.empty()) {
         outputFileName = "a";
-        llvm::sys::fs::rename(temporaryExecutablePath, outputPathPrefix + outputFileName + (msvc ? ".exe" : ".out"));
+        renameFile(temporaryExecutablePath, outputPathPrefix + outputFileName + (msvc ? ".exe" : ".out"));
     } else {
-        llvm::sys::fs::rename(temporaryExecutablePath, outputPathPrefix + outputFileName + (msvc ? ".exe" : ""));
+        renameFile(temporaryExecutablePath, outputPathPrefix + outputFileName + (msvc ? ".exe" : ""));
     }
 
     if (msvc) {
         auto path = temporaryExecutablePath;
         llvm::sys::path::replace_extension(path, "ilk");
-        llvm::sys::fs::rename(path, outputPathPrefix + outputFileName + ".ilk");
+        renameFile(path, outputPathPrefix + outputFileName + ".ilk");
         llvm::sys::path::replace_extension(path, "pdb");
-        llvm::sys::fs::rename(path, outputPathPrefix + outputFileName + ".pdb");
+        renameFile(path, outputPathPrefix + outputFileName + ".pdb");
     }
 
     return 0;

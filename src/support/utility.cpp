@@ -3,6 +3,7 @@
 #include <cctype>
 #pragma warning(push, 0)
 #include <llvm/Support/ErrorOr.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Program.h>
 #pragma warning(pop)
 
@@ -36,6 +37,12 @@ std::string delta::readLineFromFile(SourceLocation location) {
     std::string lineContent;
     std::getline(file, lineContent);
     return lineContent;
+}
+
+void delta::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
+    if (auto error = llvm::sys::fs::rename(sourcePath, targetPath)) {
+        printErrorAndExit("couldn't rename '", sourcePath, "' to '", targetPath, "': ", error.message());
+    }
 }
 
 void delta::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm::raw_ostream::Colors color,
