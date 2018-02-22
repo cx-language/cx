@@ -248,7 +248,6 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
 
 llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize,
                                                       const llvm::Twine& name) {
-    static llvm::BasicBlock::iterator lastAlloca;
     auto* insertBlock = builder.GetInsertBlock();
     auto* entryBlock = &insertBlock->getParent()->getEntryBlock();
 

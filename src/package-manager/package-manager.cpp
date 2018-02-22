@@ -72,11 +72,11 @@ void delta::fetchDependencies(llvm::StringRef packageRoot) {
     }
 }
 
-std::vector<std::string> delta::getSourceFiles(llvm::StringRef packageRoot) {
+std::vector<std::string> delta::getSourceFiles(llvm::StringRef rootDirectory) {
     std::vector<std::string> sourceFiles;
     std::error_code error;
 
-    for (llvm::sys::fs::recursive_directory_iterator it(packageRoot, error), end; it != end; it.increment(error)) {
+    for (llvm::sys::fs::recursive_directory_iterator it(rootDirectory, error), end; it != end; it.increment(error)) {
         if (error) {
             llvm::errs() << error.message() << '\n';
             break;

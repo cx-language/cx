@@ -24,13 +24,18 @@ public:
     };
 
 public:
-    PackageManifest(const std::string& packageRoot);
+    PackageManifest(std::string&& packageRoot);
+    llvm::StringRef getPackageName() const { return packageName; }
     llvm::ArrayRef<Dependency> getDeclaredDependencies() const { return declaredDependencies; }
+    std::vector<std::string> getTargetRootDirectories() const;
+    bool isMultiTarget() const { return multitarget; }
     static const char manifestFileName[];
 
 private:
+    std::string packageRoot;
     std::string packageName;
     std::vector<Dependency> declaredDependencies;
+    bool multitarget;
 };
 
 } // namespace delta

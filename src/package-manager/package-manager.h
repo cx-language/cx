@@ -10,6 +10,6 @@ class StringRef;
 namespace delta {
 
 void fetchDependencies(llvm::StringRef packageRoot);
-std::vector<std::string> getSourceFiles(llvm::StringRef packageRoot);
+std::vector<std::string> getSourceFiles(llvm::StringRef rootDirectory);
 
 } // namespace delta

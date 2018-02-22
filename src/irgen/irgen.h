@@ -170,6 +170,7 @@ private:
     llvm::LLVMContext ctx;
     llvm::IRBuilder<> builder;
     llvm::Module module;
+    llvm::BasicBlock::iterator lastAlloca;
 
     llvm::StringMap<FunctionInstantiation> functionInstantiations;
     std::vector<std::unique_ptr<Decl>> helperDecls;

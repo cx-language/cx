@@ -165,14 +165,24 @@ void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
 int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args, bool run) {
     PackageManifest manifest(packageRoot);
     fetchDependencies(packageRoot);
-    auto sourceFiles = getSourceFiles(packageRoot);
 
-    // TODO: Add support for library packages.
-    return buildExecutable(sourceFiles, &manifest, args, run);
+    for (auto& targetRootDir : manifest.getTargetRootDirectories()) {
+        llvm::StringRef outputFileName;
+        if (manifest.isMultiTarget() || manifest.getPackageName().empty()) {
+            outputFileName = llvm::sys::path::filename(targetRootDir);
+        } else {
+            outputFileName = manifest.getPackageName();
+        }
+        // TODO: Add support for library packages.
+        int exitStatus = buildExecutable(getSourceFiles(targetRootDir), &manifest, args, outputFileName, run);
+        if (exitStatus != 0) return exitStatus;
+    }
+
+    return 0;
 }
 
 int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest,
-                           std::vector<llvm::StringRef>& args, bool run) {
+                           std::vector<llvm::StringRef>& args, llvm::StringRef outputFileName, bool run) {
     bool parse = checkFlag("-parse", args);
     bool typecheck = checkFlag("-typecheck", args);
     bool compileOnly = checkFlag("-c", args);
@@ -335,15 +345,19 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         return executableExitStatus;
     }
 
-    llvm::StringRef executableNameStem = "a";
-    llvm::sys::fs::rename(temporaryExecutablePath, executableNameStem + (msvc ? ".exe" : ".out"));
+    if (outputFileName.empty()) {
+        outputFileName = "a";
+        llvm::sys::fs::rename(temporaryExecutablePath, outputFileName + (msvc ? ".exe" : ".out"));
+    } else {
+        llvm::sys::fs::rename(temporaryExecutablePath, outputFileName + (msvc ? ".exe" : ""));
+    }
 
     if (msvc) {
         auto path = temporaryExecutablePath;
         llvm::sys::path::replace_extension(path, "ilk");
-        llvm::sys::fs::rename(path, executableNameStem + ".ilk");
+        llvm::sys::fs::rename(path, outputFileName + ".ilk");
         llvm::sys::path::replace_extension(path, "pdb");
-        llvm::sys::fs::rename(path, executableNameStem + ".pdb");
+        llvm::sys::fs::rename(path, outputFileName + ".pdb");
     }
 
     return 0;

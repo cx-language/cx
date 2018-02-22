@@ -17,6 +17,6 @@ class PackageManifest;
 bool checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args);
 int buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args, bool run);
 int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest,
-                    std::vector<llvm::StringRef>& args, bool run);
+                    std::vector<llvm::StringRef>& args, llvm::StringRef outputFileName, bool run);
 
 } // namespace delta
