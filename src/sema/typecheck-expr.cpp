@@ -513,6 +513,15 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                                        target.removeOptional().getPointee().getElementType(), nullptr)) {
         if (convertedType) *convertedType = source;
         return true;
+    } else if (source.isArrayType() && target.removeOptional().isPointerType() &&
+               isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee(), nullptr)) {
+        if (convertedType) *convertedType = source;
+        return true;
+    } else if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType() &&
+               isImplicitlyConvertible(nullptr, source.getPointee().getElementType(),
+                                       target.removeOptional().getPointee(), nullptr)) {
+        if (convertedType) *convertedType = source;
+        return true;
     } else if (source.isPointerType() && target.removeOptional().isPointerType() &&
                target.removeOptional().getPointee().isArrayWithUnknownSize()) {
         return true;
