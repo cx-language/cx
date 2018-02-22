@@ -6,6 +6,7 @@ extern func abort();
 // stdio.h
 // TODO using FILE pointer causes infinite loop, so we use void pointer
 extern func printf(format: char*, ...) -> int;
+extern func sprintf(str: mutable char*, format: char*, ...) -> int;
 extern func getchar() -> int;
 extern func fopen(filename: char*, mode: char*) -> void*?;
 extern func fdopen(fd: int, mode: char*) -> void*?;
