@@ -20,7 +20,6 @@ struct Token {
         Addressof,
         Break,
         Case,
-        Cast,
         Const,
         Continue,
         Default,

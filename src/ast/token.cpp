@@ -246,7 +246,6 @@ const char* delta::toString(Token::Kind tokenKind) {
         "addressof",
         "break",
         "case",
-        "cast",
         "const",
         "continue",
         "default",

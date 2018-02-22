@@ -499,20 +499,6 @@ Type Parser::parseType() {
     }
 }
 
-/// cast-expr ::= 'cast' '<' type '>' '(' expr ')'
-std::unique_ptr<CastExpr> Parser::parseCastExpr() {
-    ASSERT(currentToken() == Token::Cast);
-    auto location = getCurrentLocation();
-    consumeToken();
-    parse(Token::Less);
-    auto type = parseType();
-    parse(Token::Greater);
-    parse(Token::LeftParen);
-    auto expr = parseExpr();
-    parse(Token::RightParen);
-    return llvm::make_unique<CastExpr>(type, std::move(expr), location);
-}
-
 /// sizeof-expr ::= 'sizeof' '(' type ')'
 std::unique_ptr<SizeofExpr> Parser::parseSizeofExpr() {
     assert(currentToken() == Token::Sizeof);
@@ -645,7 +631,7 @@ bool Parser::arrowAfterParentheses() {
 
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
-///                  paren-expr | array-literal | tuple-literal | cast-expr | subscript-expr |
+///                  paren-expr | array-literal | tuple-literal | subscript-expr |
 ///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr | addressof-expr
 std::unique_ptr<Expr> Parser::parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
@@ -704,9 +690,6 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
             break;
         case Token::LeftBracket:
             expr = parseArrayLiteral();
-            break;
-        case Token::Cast:
-            expr = parseCastExpr();
             break;
         case Token::Sizeof:
             expr = parseSizeofExpr();

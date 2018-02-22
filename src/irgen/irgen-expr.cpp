@@ -529,6 +529,10 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
         return codegenBuiltinConversion(*expr.getArgs().front().getValue(), expr.getType());
     }
 
+    if (expr.isBuiltinCast()) {
+        return codegenBuiltinCast(expr);
+    }
+
     if (expr.getFunctionName() == "assert") {
         codegenAssert(codegenExpr(*expr.getArgs().front().getValue()), expr.getCallee().getLocation());
         return nullptr;
@@ -609,12 +613,12 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
     }
 }
 
-llvm::Value* IRGenerator::codegenCastExpr(const CastExpr& expr) {
-    auto* value = codegenExpr(expr.getExpr());
-    auto* type = toIR(expr.getTargetType());
+llvm::Value* IRGenerator::codegenBuiltinCast(const CallExpr& expr) {
+    auto* value = codegenExpr(*expr.getArgs().front().getValue());
+    auto* type = toIR(expr.getGenericArgs().front());
 
     if (value->getType()->isIntegerTy() && type->isIntegerTy()) {
-        return builder.CreateIntCast(value, type, expr.getExpr().getType().isSigned());
+        return builder.CreateIntCast(value, type, expr.getArgs().front().getValue()->getType().isSigned());
     }
 
     return builder.CreateBitOrPointerCast(value, type);
@@ -835,8 +839,6 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
             return codegenBinaryExpr(llvm::cast<BinaryExpr>(expr));
         case ExprKind::CallExpr:
             return codegenCallExpr(llvm::cast<CallExpr>(expr));
-        case ExprKind::CastExpr:
-            return codegenCastExpr(llvm::cast<CastExpr>(expr));
         case ExprKind::SizeofExpr:
             return codegenSizeofExpr(llvm::cast<SizeofExpr>(expr));
         case ExprKind::AddressofExpr:
@@ -883,8 +885,6 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
             llvm_unreachable("no lvalue binary expressions");
         case ExprKind::CallExpr:
             return codegenCallExpr(llvm::cast<CallExpr>(expr));
-        case ExprKind::CastExpr:
-            llvm_unreachable("IRGen doesn't support lvalue cast expressions yet");
         case ExprKind::SizeofExpr:
             llvm_unreachable("no lvalue sizeof expressions");
         case ExprKind::AddressofExpr:

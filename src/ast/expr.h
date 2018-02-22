@@ -31,7 +31,6 @@ enum class ExprKind {
     UnaryExpr,
     BinaryExpr,
     CallExpr,
-    CastExpr,
     SizeofExpr,
     AddressofExpr,
     MemberExpr,
@@ -58,7 +57,6 @@ public:
     bool isUnaryExpr() const { return getKind() == ExprKind::UnaryExpr; }
     bool isBinaryExpr() const { return getKind() == ExprKind::BinaryExpr; }
     bool isCallExpr() const { return getKind() == ExprKind::CallExpr; }
-    bool isCastExpr() const { return getKind() == ExprKind::CastExpr; }
     bool isSizeofExpr() const { return getKind() == ExprKind::SizeofExpr; }
     bool isAddressofExpr() const { return getKind() == ExprKind::AddressofExpr; }
     bool isMemberExpr() const { return getKind() == ExprKind::MemberExpr; }
@@ -230,6 +228,7 @@ public:
     std::string getMangledFunctionName() const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
     bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFunctionName()); }
+    bool isBuiltinCast() const { return getFunctionName() == "cast"; }
     bool isMoveInit() const;
     const Expr* getReceiver() const;
     Expr* getReceiver();
@@ -307,20 +306,6 @@ private:
 };
 
 bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);
-
-/// A type cast expression using the 'cast' keyword, e.g. 'cast<type>(expr)'.
-class CastExpr : public Expr {
-public:
-    CastExpr(Type type, std::unique_ptr<Expr> expr, SourceLocation location)
-    : Expr(ExprKind::CastExpr, location), type(type), expr(std::move(expr)) {}
-    Type getTargetType() const { return type; }
-    Expr& getExpr() const { return *expr; }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::CastExpr; }
-
-private:
-    Type type;
-    std::unique_ptr<Expr> expr;
-};
 
 /// A compile-time expression returning the size of a given type in bytes, e.g. 'sizeof(int)'.
 class SizeofExpr : public Expr {

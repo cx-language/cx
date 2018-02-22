@@ -102,7 +102,7 @@ private:
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
     void codegenAssert(llvm::Value* condition, SourceLocation location);
     llvm::Value* codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit = nullptr);
-    llvm::Value* codegenCastExpr(const CastExpr& expr);
+    llvm::Value* codegenBuiltinCast(const CallExpr& expr);
     llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);
     llvm::Value* codegenAddressofExpr(const AddressofExpr& expr);
     llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);

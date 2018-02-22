@@ -728,6 +728,14 @@ void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> gene
     }
 }
 
+void validateArgCount(size_t paramCount, size_t argCount, bool isVariadic, llvm::StringRef name, SourceLocation location) {
+    if (argCount < paramCount) {
+        error(location, "too few arguments to '", name, "', expected ", isVariadic ? "at least " : "", paramCount);
+    } else if (!isVariadic && argCount > paramCount) {
+        error(location, "too many arguments to '", name, "', expected ", paramCount);
+    }
+}
+
 llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                          llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
     ASSERT(!genericParams.empty());
@@ -1047,6 +1055,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         return typecheckBuiltinConversion(expr);
     }
 
+    if (expr.isBuiltinCast()) {
+        return typecheckBuiltinCast(expr);
+    }
+
     for (auto& arg : expr.getArgs()) {
         typecheckExpr(*arg.getValue());
     }
@@ -1308,13 +1320,7 @@ void Typechecker::validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<P
               expr.getReceiverType(), "'");
     }
 
-    if (args.size() < params.size()) {
-        error(location, "too few arguments to '", functionName, "', expected ", isVariadic ? "at least " : "",
-              params.size());
-    }
-    if (!isVariadic && args.size() > params.size()) {
-        error(location, "too many arguments to '", functionName, "', expected ", params.size());
-    }
+    validateArgCount(params.size(), args.size(), isVariadic, functionName, location);
 
     for (size_t i = 0; i < args.size(); ++i) {
         auto& arg = args[i];
@@ -1383,15 +1389,18 @@ static bool isValidCast(Type sourceType, Type targetType) {
     llvm_unreachable("all cases handled");
 }
 
-Type Typechecker::typecheckCastExpr(CastExpr& expr) {
-    Type sourceType = typecheckExpr(expr.getExpr());
-    Type targetType = expr.getTargetType();
+Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
+    validateGenericArgCount(1, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
+    validateArgCount(1, expr.getArgs().size(), false, expr.getFunctionName(), expr.getLocation());
+
+    Type sourceType = typecheckExpr(*expr.getArgs().front().getValue());
+    Type targetType = expr.getGenericArgs().front();
 
     if (isValidCast(sourceType, targetType)) {
         return targetType;
     }
 
-    error(expr.getLocation(), "illegal cast from '", sourceType, "' to '", targetType, "'");
+    error(expr.getCallee().getLocation(), "illegal cast from '", sourceType, "' to '", targetType, "'");
 }
 
 Type Typechecker::typecheckSizeofExpr(SizeofExpr&) {
@@ -1599,9 +1608,6 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
             break;
         case ExprKind::CallExpr:
             type = typecheckCallExpr(llvm::cast<CallExpr>(expr));
-            break;
-        case ExprKind::CastExpr:
-            type = typecheckCastExpr(llvm::cast<CastExpr>(expr));
             break;
         case ExprKind::SizeofExpr:
             type = typecheckSizeofExpr(llvm::cast<SizeofExpr>(expr));

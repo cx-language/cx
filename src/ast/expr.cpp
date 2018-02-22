@@ -73,9 +73,6 @@ bool Expr::isConstant() const {
         case ExprKind::CallExpr:
             return false;
 
-        case ExprKind::CastExpr:
-            return llvm::cast<CastExpr>(this)->getExpr().isConstant();
-
         case ExprKind::SizeofExpr:
             return false; // TODO: sizeof should be a constant expression.
 
@@ -122,7 +119,6 @@ int64_t Expr::getConstantIntegerValue() const {
             return llvm::cast<BinaryExpr>(this)->getConstantIntegerValue();
 
         case ExprKind::SizeofExpr:
-        case ExprKind::CastExpr:
         case ExprKind::IfExpr:
             llvm_unreachable("unimplemented");
 
@@ -149,7 +145,6 @@ bool Expr::isLvalue() const {
         case ExprKind::UndefinedLiteralExpr:
         case ExprKind::SizeofExpr:
         case ExprKind::AddressofExpr:
-        case ExprKind::CastExpr:
         case ExprKind::UnwrapExpr:
         case ExprKind::BinaryExpr:
         case ExprKind::CallExpr:
@@ -278,13 +273,6 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
             llvm::cast<CallExpr>(*instantiation).setReceiverType(receiverType);
             break;
         }
-        case ExprKind::CastExpr: {
-            auto* castExpr = llvm::cast<CastExpr>(this);
-            auto targetType = castExpr->getTargetType().resolve(genericArgs);
-            auto expr = castExpr->getExpr().instantiate(genericArgs);
-            instantiation = llvm::make_unique<CastExpr>(targetType, std::move(expr), castExpr->getLocation());
-            break;
-        }
         case ExprKind::SizeofExpr: {
             auto* sizeofExpr = llvm::cast<SizeofExpr>(this);
             auto type = sizeofExpr->getType().resolve(genericArgs);
@@ -379,11 +367,6 @@ std::vector<const Expr*> Expr::getSubExprs() const {
             for (auto& arg : callExpr->getArgs()) {
                 subExprs.push_back(arg.getValue());
             }
-            break;
-        }
-        case ExprKind::CastExpr: {
-            auto* castExpr = llvm::cast<CastExpr>(this);
-            subExprs.push_back(&castExpr->getExpr());
             break;
         }
         case ExprKind::SizeofExpr:

@@ -77,7 +77,7 @@ private:
     void typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, SourceLocation location);
     Type typecheckCallExpr(CallExpr& expr);
     Type typecheckBuiltinConversion(CallExpr& expr);
-    Type typecheckCastExpr(CastExpr& expr);
+    Type typecheckBuiltinCast(CallExpr& expr);
     Type typecheckSizeofExpr(SizeofExpr& expr);
     Type typecheckAddressofExpr(AddressofExpr& expr);
     Type typecheckMemberExpr(MemberExpr& expr);

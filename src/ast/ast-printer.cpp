@@ -114,12 +114,6 @@ void ASTPrinter::printCallExpr(const CallExpr& expr) {
     out << ")";
 }
 
-void ASTPrinter::printCastExpr(const CastExpr& expr) {
-    out << "(cast ";
-    printExpr(expr.getExpr());
-    out << " " << expr.getType() << ")";
-}
-
 void ASTPrinter::printSizeofExpr(const SizeofExpr& expr) {
     out << "(sizeof " << expr.getType() << ")";
 }
@@ -208,9 +202,6 @@ void ASTPrinter::printExpr(const Expr& expr) {
             break;
         case ExprKind::CallExpr:
             printCallExpr(llvm::cast<CallExpr>(expr));
-            break;
-        case ExprKind::CastExpr:
-            printCastExpr(llvm::cast<CastExpr>(expr));
             break;
         case ExprKind::SizeofExpr:
             printSizeofExpr(llvm::cast<SizeofExpr>(expr));

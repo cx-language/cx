@@ -29,7 +29,6 @@ class NullLiteralExpr;
 class UndefinedLiteralExpr;
 class ArrayLiteralExpr;
 class TupleExpr;
-class CastExpr;
 class SizeofExpr;
 class AddressofExpr;
 class MemberExpr;
@@ -108,7 +107,6 @@ private:
     Type parseTupleType();
     Type parseFunctionType();
     Type parseType();
-    std::unique_ptr<CastExpr> parseCastExpr();
     std::unique_ptr<SizeofExpr> parseSizeofExpr();
     std::unique_ptr<AddressofExpr> parseAddressofExpr();
     std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs);

@@ -24,7 +24,6 @@ class TupleExpr;
 class UnaryExpr;
 class BinaryExpr;
 class CallExpr;
-class CastExpr;
 class SizeofExpr;
 class AddressofExpr;
 class MemberExpr;
@@ -75,7 +74,6 @@ public:
     void printUnaryExpr(const UnaryExpr& expr);
     void printBinaryExpr(const BinaryExpr& expr);
     void printCallExpr(const CallExpr& expr);
-    void printCastExpr(const CastExpr& expr);
     void printSizeofExpr(const SizeofExpr& expr);
     void printAddressofExpr(const AddressofExpr& expr);
     void printMemberExpr(const MemberExpr& expr);
