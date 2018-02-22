@@ -29,6 +29,7 @@ public:
     llvm::ArrayRef<Dependency> getDeclaredDependencies() const { return declaredDependencies; }
     std::vector<std::string> getTargetRootDirectories() const;
     bool isMultiTarget() const { return multitarget; }
+    llvm::StringRef getOutputDirectory() const { return outputDirectory; }
     static const char manifestFileName[];
 
 private:
@@ -36,6 +37,7 @@ private:
     std::string packageName;
     std::vector<Dependency> declaredDependencies;
     bool multitarget;
+    std::string outputDirectory;
 };
 
 } // namespace delta

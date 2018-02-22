@@ -68,7 +68,7 @@ int main(int argc, const char** argv) {
         if (inputs.empty()) {
             return buildPackage(".", args, run);
         } else {
-            return buildExecutable(inputs, nullptr, args, "", run);
+            return buildExecutable(inputs, nullptr, args, ".", "", run);
         }
     } catch (const CompileError& error) {
         error.print();

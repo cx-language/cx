@@ -41,6 +41,7 @@ PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::m
     }
 
     multitarget = root["multitarget"].as<bool>(false);
+    outputDirectory = root["outputDirectory"].as<std::string>("bin");
 }
 
 std::vector<std::string> PackageManifest::getTargetRootDirectories() const {

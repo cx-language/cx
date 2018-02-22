@@ -174,7 +174,8 @@ int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef
             outputFileName = manifest.getPackageName();
         }
         // TODO: Add support for library packages.
-        int exitStatus = buildExecutable(getSourceFiles(targetRootDir), &manifest, args, outputFileName, run);
+        int exitStatus = buildExecutable(getSourceFiles(targetRootDir), &manifest, args, manifest.getOutputDirectory(),
+                                         outputFileName, run);
         if (exitStatus != 0) return exitStatus;
     }
 
@@ -182,7 +183,8 @@ int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef
 }
 
 int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest,
-                           std::vector<llvm::StringRef>& args, llvm::StringRef outputFileName, bool run) {
+                           std::vector<llvm::StringRef>& args, llvm::StringRef outputDirectory,
+                           llvm::StringRef outputFileName, bool run) {
     bool parse = checkFlag("-parse", args);
     bool typecheck = checkFlag("-typecheck", args);
     bool compileOnly = checkFlag("-c", args);
@@ -275,8 +277,15 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_ : llvm::Reloc::Model::Static;
     emitMachineCode(irModule, temporaryOutputFilePath, fileType, relocModel);
 
+    if (!outputDirectory.empty()) {
+        auto error = llvm::sys::fs::create_directories(outputDirectory);
+        if (error) printErrorAndExit(error.message());
+    }
+
     if (compileOnly || emitAssembly) {
-        if (auto error = llvm::sys::fs::rename(temporaryOutputFilePath, llvm::Twine("output.") + outputFileExtension)) {
+        llvm::SmallString<128> outputFilePath = outputDirectory;
+        llvm::sys::path::append(outputFilePath, llvm::Twine("output.") + outputFileExtension);
+        if (auto error = llvm::sys::fs::rename(temporaryOutputFilePath, outputFilePath)) {
             printErrorAndExit(error.message());
         }
         return 0;
@@ -345,19 +354,24 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         return executableExitStatus;
     }
 
+    llvm::SmallString<128> outputPathPrefix = outputDirectory;
+    if (!outputPathPrefix.empty()) {
+        outputPathPrefix.append(llvm::sys::path::get_separator());
+    }
+
     if (outputFileName.empty()) {
         outputFileName = "a";
-        llvm::sys::fs::rename(temporaryExecutablePath, outputFileName + (msvc ? ".exe" : ".out"));
+        llvm::sys::fs::rename(temporaryExecutablePath, outputPathPrefix + outputFileName + (msvc ? ".exe" : ".out"));
     } else {
-        llvm::sys::fs::rename(temporaryExecutablePath, outputFileName + (msvc ? ".exe" : ""));
+        llvm::sys::fs::rename(temporaryExecutablePath, outputPathPrefix + outputFileName + (msvc ? ".exe" : ""));
     }
 
     if (msvc) {
         auto path = temporaryExecutablePath;
         llvm::sys::path::replace_extension(path, "ilk");
-        llvm::sys::fs::rename(path, outputFileName + ".ilk");
+        llvm::sys::fs::rename(path, outputPathPrefix + outputFileName + ".ilk");
         llvm::sys::path::replace_extension(path, "pdb");
-        llvm::sys::fs::rename(path, outputFileName + ".pdb");
+        llvm::sys::fs::rename(path, outputPathPrefix + outputFileName + ".pdb");
     }
 
     return 0;

@@ -16,7 +16,7 @@ class PackageManifest;
 /// If `args` contains `flag`, removes it and returns true, otherwise returns false.
 bool checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args);
 int buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args, bool run);
-int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest,
-                    std::vector<llvm::StringRef>& args, llvm::StringRef outputFileName, bool run);
+int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, std::vector<llvm::StringRef>& args,
+                    llvm::StringRef outputDirectory, llvm::StringRef outputFileName, bool run);
 
 } // namespace delta
