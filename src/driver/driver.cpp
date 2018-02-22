@@ -308,6 +308,9 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs.data(), nullptr, redirects);
     llvm::sys::fs::remove(temporaryOutputFilePath);
+    uint64_t fileSize;
+    if (!llvm::sys::fs::file_size(out, fileSize) && fileSize == 0) llvm::sys::fs::remove(out);
+    if (!llvm::sys::fs::file_size(err, fileSize) && fileSize == 0) llvm::sys::fs::remove(err);
     if (ccExitStatus != 0) return ccExitStatus;
 
     if (run) {
