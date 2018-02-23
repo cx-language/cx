@@ -11,10 +11,9 @@ possible.
 The project is currently in very early stages of development: many language
 features are still missing, and existing ones are subject to change at any time.
 
-See the (incomplete) [design](docs/design.md) and [specification](docs/spec/spec.pdf)
-documents for a more detailed description of the language and its purpose, or
-the more learning-oriented (and equally incomplete) [Delta
-Book](https://delta-lang.gitbooks.io/delta-book/content/).
+For an introduction to the language, check out the [Delta book](https://delta-lang.gitbooks.io/delta-book/content/),
+the [design document](docs/design.md), and the [language specification](docs/spec/spec.pdf).
+Note that all of these documents are still incomplete.
 
 You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/sandbox).
 Also check out the [standard library API reference](https://delta-lang.github.io/stdlib).
