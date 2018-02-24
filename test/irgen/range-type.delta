@@ -2,17 +2,17 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-RANGE
 // RUN: check_exit_status 10 %delta run %s
 
-// CHECK-RANGE: define void @"Range<int>.init"(%"Range<int>"* %this, i32 %start, i32 %end)
+// CHECK-RANGE: define void @{{.*5Range.*3int.*4init.*}}(%"Range<int>"* %this, i32 %start, i32 %end)
 
-// CHECK: define i32 @f(%"Range<int>" %r)
-func f(r: Range<int>) -> int {
+// CHECK: define i32 @[[FOO:.*3foo.*]](%"Range<int>" %r)
+func foo(r: Range<int>) -> int {
     var sum = 0;
 
     // CHECK: alloca %"RangeIterator<int>"
-    // CHECK: call %"RangeIterator<int>" @"Range<int>.iterator"(%"Range<int>" %r)
-    // CHECK: call i1 @"RangeIterator<int>.hasValue"
-    // CHECK: call i32 @"RangeIterator<int>.value"
-    // CHECK: call void @"RangeIterator<int>.increment"
+    // CHECK: call %"RangeIterator<int>" @{{.*5Range.*3int.*8iterator.*}}(%"Range<int>" %r)
+    // CHECK: call i1 @{{.*13RangeIterator.*3int.*8hasValue.*}}
+    // CHECK: call i32 @{{.*13RangeIterator.*3int.*5value.*}}
+    // CHECK: call void @{{.*13RangeIterator.*3int.*9increment.*}}
     for (let i in r) {
         sum += i;
     }
@@ -22,8 +22,8 @@ func f(r: Range<int>) -> int {
 
 // CHECK-LABEL: define i32 @main()
 func main() -> int {
-    // CHECK: call void @"Range<int>.init"(%"Range<int>"* %{{[0-9]+}}, i32 0, i32 5)
+    // CHECK: call void @{{.*5Range.*3int.*4init.*}}(%"Range<int>"* %{{[0-9]+}}, i32 0, i32 5)
     // CHECK-NEXT: %{{[0-9]+}} = load %"Range<int>", %"Range<int>"* %{{[0-9]+}}
-    // CHECK-NEXT: call i32 @f(%"Range<int>" %{{[0-9]+}})
-    return f(0..5);
+    // CHECK-NEXT: call i32 @[[FOO]](%"Range<int>" %{{[0-9]+}})
+    return foo(0..5);
 }

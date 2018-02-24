@@ -9,12 +9,12 @@ struct X {
 
 // CHECK-LABEL: define i32 @main()
 // CHECK-NEXT: %lambda = alloca i32 ({}*)*
-// CHECK-NEXT: store i32 ({}*)* @__lambda0, i32 ({}*)** %lambda
+// CHECK-NEXT: store i32 ({}*)* @_EN4main9__lambda0E1xP1X, i32 ({}*)** %lambda
 // CHECK-NEXT: ret i32 0
 func main() {
     let lambda = (x: X*) -> x.foo();
 }
 
-// LAMBDA-LABEL: define i32 @__lambda0({}* %x)
-// LAMBDA-NEXT: %1 = call i32 @X.foo({}* %x)
+// LAMBDA-LABEL: define i32 @_EN4main9__lambda0E1xP1X({}* %x)
+// LAMBDA-NEXT: %1 = call i32 @_EN4main1X3fooE({}* %x)
 // LAMBDA-NEXT: ret i32 %1

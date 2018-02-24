@@ -2,7 +2,7 @@
 
 extern func foo() -> bool;
 
-// CHECK: define void @bar()
+// CHECK: define void @{{.*3bar.*}}()
 func bar() {
     if (foo()) {
         // CHECK: then:

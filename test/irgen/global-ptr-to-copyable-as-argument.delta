@@ -2,7 +2,7 @@
 
 func main() {
     // CHECK: %sp = load %S*, %S** @sp
-    // CHECK-NEXT: call void @foo(%S* %sp)
+    // CHECK-NEXT: call void @{{.*foo.*}}(%S* %sp)
     foo(sp)
 }
 

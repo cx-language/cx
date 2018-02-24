@@ -14,7 +14,7 @@ func main() {
     _ = f.i;
 
     // CHECK-NEXT: %f1 = load %Foo*, %Foo** %f
-    // CHECK-NEXT: call void @Foo.bar(%Foo* %f1)
+    // CHECK-NEXT: call void @_EN4main3Foo3barE(%Foo* %f1)
     f.bar();
 
     // CHECK-NEXT: %f2 = load %Foo*, %Foo** %f

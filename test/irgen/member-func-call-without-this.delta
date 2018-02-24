@@ -6,37 +6,37 @@
 struct S: Copyable {
     init() {}
 
-    // CHECK-S: define void @S.foo({}* %this)
+    // CHECK-S: define void @_ENM4main1S3fooE({}* %this)
     // CHECK-S-NEXT: %this1 = load {}, {}* %this
-    // CHECK-S-NEXT: call void @S.bar({} %this1)
+    // CHECK-S-NEXT: call void @_EN4main1S3barE({} %this1)
     mutating func foo() {
         bar()
     }
 
-    // CHECK-S: define void @S.bar({} %this)
+    // CHECK-S: define void @_EN4main1S3barE({} %this)
     func bar() { }
 }
 
-struct T<U> {
-    // CHECK: define void @"T<int>.init"({}* %this)
-    // CHECK-NEXT: call void @"T<int>.baz"({}* %this)
+struct Foo<U> {
+    // CHECK: define void @{{.*Foo.*int.*init.*}}({}* %this)
+    // CHECK-NEXT: call void @{{.*Foo.*int.*baz.*}}({}* %this)
     init() {
         baz()
     }
 
-    // DEINIT: define void @"T<int>.deinit"({}* %this)
-    // DEINIT-NEXT: call void @"T<int>.baz"({}* %this)
+    // DEINIT: define void @{{.*Foo.*int.*deinit.*}}({}* %this)
+    // DEINIT-NEXT: call void @{{.*Foo.*int.*baz.*}}({}* %this)
     deinit() {
         baz()
     }
 
-    // CHECK: define void @"T<int>.baz"({}* %this)
-    // CHECK-NEXT: call void @"T<int>.qux"({}* %this)
+    // CHECK: define void @{{.*Foo.*int.*baz.*}}({}* %this)
+    // CHECK-NEXT: call void @{{.*Foo.*int.*qux.*}}({}* %this)
     mutating func baz() {
         qux()
     }
 
-    // CHECK: define void @"T<int>.qux"({}* %this)
+    // CHECK: define void @{{.*Foo.*int.*qux.*}}({}* %this)
     func qux() { }
 }
 
@@ -44,7 +44,7 @@ func main() {
     var s = S()
     s.foo()
 
-    var t = T<int>()
-    // CHECK-MAIN: call void @"T<int>.baz"({}* %t)
+    var t = Foo<int>()
+    // CHECK-MAIN: call void @{{.*Foo.*int.*baz.*}}({}* %t)
     t.baz()
 }

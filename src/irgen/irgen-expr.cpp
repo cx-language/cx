@@ -32,8 +32,10 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         static int stringLiteralCounter = 0;
         auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), structs.find("StringRef")->second.second,
                                               nullptr, "__str" + std::to_string(stringLiteralCounter++));
-        auto it = functionInstantiations.find("StringRef.init$pointer:char*$length:uint");
-        builder.CreateCall(it->second.getFunction(), { alloca, stringPtr, size });
+        // TODO: Retrieve this constructor in a nicer way.
+        auto* stringRefInit = module.getFunction("_ENM3std9StringRef4initE7pointerP4char6length4uint");
+        ASSERT(stringRefInit);
+        builder.CreateCall(stringRefInit, { alloca, stringPtr, size });
         return alloca;
     } else {
         // Passing as C-string, i.e. char pointer.

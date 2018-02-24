@@ -3,23 +3,23 @@
 // CHECK: %A = type { i32 }
 struct A {
     var i: int
-    // CHECK: define void @A.init(%A* %this)
+    // CHECK: define void @_ENM4main1A4initE(%A* %this)
     init() { }
-    // CHECK: define void @A.deinit(%A* %this)
+    // CHECK: define void @_ENM4main1A6deinitE(%A* %this)
     deinit() { }
-    // CHECK: define void @A.foo(%A* %this)
+    // CHECK: define void @_EN4main1A3fooE(%A* %this)
     func foo() { }
-    // CHECK: define void @A.mutate(%A* %this)
+    // CHECK: define void @_ENM4main1A6mutateE(%A* %this)
     mutating func mutate() { }
 }
 
 func main() {
     // CHECK: %a = alloca %A
-    // CHECK: call void @A.init(%A* %a)
+    // CHECK: call void @_ENM4main1A4initE(%A* %a)
     var a = A()
-    // CHECK: call void @A.foo(%A* %a)
+    // CHECK: call void @_EN4main1A3fooE(%A* %a)
     a.foo()
-    // CHECK: call void @A.mutate(%A* %a)
+    // CHECK: call void @_ENM4main1A6mutateE(%A* %a)
     a.mutate()
-    // CHECK: call void @A.deinit(%A* %a)
+    // CHECK: call void @_ENM4main1A6deinitE(%A* %a)
 }

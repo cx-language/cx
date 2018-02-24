@@ -6,7 +6,7 @@ func main() {
     // TODO: Improve codegen here.
     // CHECK: %s = alloca %StringRef
     // CHECK-NEXT: [[LITERAL:%__str[0-9]+]] = alloca %StringRef
-    // CHECK-NEXT: call void @StringRef.init(%StringRef* [[LITERAL]], i8* getelementptr inbounds ([4 x i8], [4 x i8]* @[[ID]], i32 0, i32 0), i32 3)
+    // CHECK-NEXT: call void @{{.*9StringRef.*4init.*}}(%StringRef* [[LITERAL]], i8* getelementptr inbounds ([4 x i8], [4 x i8]* @[[ID]], i32 0, i32 0), i32 3)
     // CHECK-NEXT: [[LOADED_LITERAL:%__str[0-9]+]] = load %StringRef, %StringRef* [[LITERAL]]
     // CHECK-NEXT: store %StringRef [[LOADED_LITERAL]], %StringRef* %s
     let s = "foo";

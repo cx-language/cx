@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-// CHECK: define void @f()
-func f() {}
+// CHECK: define void @[[FOO:.*3foo.*]]()
+func foo() {}
 
-// CHECK: define i32 @f2(i32 %a, i1 %b)
+// CHECK: define i32 @[[F2:.*2f2.*]](i32 %a, i1 %b)
 func f2(a: int, b: bool) -> int { return a; }
 
-// CHECK: define void @g(void ()* %p)
+// CHECK: define void @[[G:.*1g.*]](void ()* %p)
 func g(p: () -> void) {
     // CHECK-NEXT: %p2 = alloca void ()*
     // CHECK-NEXT: store void ()* %p, void ()** %p2
@@ -17,7 +17,7 @@ func g(p: () -> void) {
     p2();
 }
 
-// CHECK: define void @g2(i32 (i32, i1)* %p)
+// CHECK: define void @[[G2:.*2g2.*]](i32 (i32, i1)* %p)
 func g2(p: (int, bool) -> int) {
     // CHECK-NEXT: %p2 = alloca i32 (i32, i1)*
     // CHECK-NEXT: %a = alloca i32
@@ -34,17 +34,17 @@ func main() {
     // CHECK-NEXT: %lf = alloca void ()*
     // CHECK-NEXT: %lf2 = alloca i32 (i32, i1)*
 
-    // CHECK-NEXT: store void ()* @f, void ()** %lf
-    let lf = f;
+    // CHECK-NEXT: store void ()* @[[FOO]], void ()** %lf
+    let lf = foo;
 
     // CHECK-NEXT: %lf1 = load void ()*, void ()** %lf
-    // CHECK-NEXT: call void @g(void ()* %lf1)
+    // CHECK-NEXT: call void @[[G]](void ()* %lf1)
     g(lf);
 
-    // CHECK-NEXT: store i32 (i32, i1)* @f2, i32 (i32, i1)** %lf2
+    // CHECK-NEXT: store i32 (i32, i1)* @[[F2]], i32 (i32, i1)** %lf2
     let lf2 = f2;
 
     // CHECK-NEXT: %lf22 = load i32 (i32, i1)*, i32 (i32, i1)** %lf2
-    // CHECK-NEXT: call void @g2(i32 (i32, i1)* %lf22)
+    // CHECK-NEXT: call void @[[G2]](i32 (i32, i1)* %lf22)
     g2(lf2);
 }

@@ -8,10 +8,10 @@ interface I {
 
 func ==<T: I>(a: T*, b: T*) {}
 
-// CHECK: define void @"==[[SUFFIX:[\.0-9]+]]"({} %a, {} %b)
+// CHECK: define void @_EN4maineqE1a1S1b1S({} %a, {} %b)
 func ==(a: S, b: S) {}
 
 func f(s: S) {
-    // CHECK: call void @"==[[SUFFIX]]"({} %s, {} %s)
+    // CHECK: call void @_EN4maineqE1a1S1b1S({} %s, {} %s)
     _ = s == s;
 }

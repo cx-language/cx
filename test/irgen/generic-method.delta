@@ -4,11 +4,11 @@
 struct X {
     init() {}
 
-    // CHECK: define i32 @"X.f<int>"({}* %this, i32 ()* %t) {
+    // CHECK: define i32 @{{.*1X.*1f.*3int.*1t.*}}({}* %this, i32 ()* %t) {
     // CHECK-NEXT: %1 = call i32 %t()
     // CHECK-NEXT: ret i32 %1
 
-    // CHECK: define i1 @"X.f<bool>"({}* %this, i1 ()* %t) {
+    // CHECK: define i1 @{{.*1X.*1f.*4bool.*1t.*}}({}* %this, i1 ()* %t) {
     // CHECK-NEXT: %1 = call i1 %t()
     // CHECK-NEXT: ret i1 %1
     func f<T>(t: () -> T) -> T {
@@ -23,9 +23,9 @@ func h() -> bool { return false; }
 func main() {
     let x = X();
 
-    // MAIN: call i32 @"X.f<int>"({}* %x, i32 ()* @g)
+    // MAIN: call i32 @{{.*1X.*1f.*3int.*1t.*}}({}* %x, i32 ()* @_EN4main1gE)
     x.f(g);
 
-    // MAIN: call i1 @"X.f<bool>"({}* %x, i1 ()* @h)
+    // MAIN: call i1 @{{.*1X.*1f.*4bool.*1t.*}}({}* %x, i1 ()* @_EN4main1hE)
     x.f(h);
 }

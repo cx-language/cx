@@ -5,22 +5,22 @@ struct A {
     deinit() {}
 }
 
-// CHECK: define void @f({}* %a)
+// CHECK: define void @{{.*f.*}}({}* %a)
 func f(a: mutable A*) {
-    // CHECK-NEXT: call void @A.deinit({}* %a)
+    // CHECK-NEXT: call void @_ENM4main1A6deinitE({}* %a)
     a.deinit();
     // CHECK-NEXT: ret void
 }
 
 struct B {}
 
-// CHECK: define void @g({}* %b)
+// CHECK: define void @{{.*g.*}}({}* %b)
 func g(b: mutable B*) {
     b.deinit();
     // CHECK-NEXT: ret void
 }
 
-// CHECK: define void @h(i8* %c)
+// CHECK: define void @{{.*h.*}}(i8* %c)
 func h(c: mutable char*) {
     c.deinit();
     // CHECK-NEXT: ret void

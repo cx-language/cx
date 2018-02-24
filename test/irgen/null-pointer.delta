@@ -1,19 +1,19 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-// CHECK: define i32* @foo()
+// CHECK: define i32* @[[FOO:.*3foo.*]]()
 // CHECK-NEXT: ret i32* null
 func foo() -> int*? { return null; }
 
 func main() {
-    // CHECK: %1 = call i32* @foo()
+    // CHECK: %1 = call i32* @[[FOO]]()
     // CHECK-NEXT: %2 = icmp eq i32* %1, null
     // CHECK-NEXT: store i1 %2, i1* %isNull
     var isNull = foo() == null;
-    // CHECK-NEXT: %3 = call i32* @foo()
+    // CHECK-NEXT: %3 = call i32* @[[FOO]]()
     // CHECK-NEXT: %4 = icmp ne i32* %3, null
     // CHECK-NEXT: store i1 %4, i1* %isNonNull
     var isNonNull = foo() != null;
-    // CHECK-NEXT: %5 = call i32* @foo()
+    // CHECK-NEXT: %5 = call i32* @[[FOO]]()
     // CHECK-NEXT: store i32* %5, i32** %ptr
     var ptr = foo();
     // CHECK-NEXT: store i1* null, i1** %ptr2

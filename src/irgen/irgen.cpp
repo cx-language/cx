@@ -22,29 +22,6 @@
 
 using namespace delta;
 
-namespace {
-
-/// Helper for storing parameter name info in 'functionInstantiations' key strings.
-template<typename T>
-std::string mangleWithParams(const T& decl) {
-    std::string result;
-
-    if (decl.isMutating() && !decl.isInitDecl() && !decl.isDeinitDecl()) {
-        result += "mutating ";
-    }
-
-    result += mangle(decl);
-
-    for (auto& param : decl.getParams()) {
-        result.append("$").append(param.getName());
-        result.append(":").append(param.getType().toString());
-    }
-
-    return result;
-}
-
-} // namespace
-
 void Scope::onScopeEnd() {
     for (const Expr* expr : llvm::reverse(deferredExprs)) {
         irGenerator->codegenExpr(*expr);
@@ -481,9 +458,9 @@ llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool is
     }
 }
 
-llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::string&& mangledName) {
-    auto it = functionInstantiations.find(mangleWithParams(decl));
-    if (it != functionInstantiations.end()) return it->second.getFunction();
+llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
+    auto mangled = newMangle(decl);
+    if (auto* function = module.getFunction(mangled)) return function;
 
     auto* functionType = decl.getFunctionType();
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
@@ -500,13 +477,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::str
     if (decl.isMain() && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
-    if (mangledName.empty()) mangledName = mangle(decl);
-
-    if (decl.isExtern()) {
-        if (auto* function = module.getFunction(mangledName)) return function;
-    }
-
-    auto* function = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, mangledName, &module);
+    auto* function = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, mangled, &module);
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
     if (decl.isMethodDecl()) arg++->setName("this");
@@ -516,8 +487,10 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl, std::str
         arg->setName(param->getName());
     }
 
-    auto mangled = mangleWithParams(decl);
-    return functionInstantiations.try_emplace(std::move(mangled), FunctionInstantiation(decl, function)).first->second.getFunction();
+    auto result = functionInstantiations.try_emplace(std::move(mangled), FunctionInstantiation(decl, function));
+    // TODO: 'result.second' should always be true.
+    // ASSERT(result.second);
+    return result.first->second.getFunction();
 }
 
 llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {

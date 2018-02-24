@@ -5,6 +5,6 @@ func f<T>(p: T*) {}
 func main() {
     let i = 42;
 
-    // CHECK: call void @"f<int>"(i32* %i)
+    // CHECK: call void @{{.*f.*int.*}}(i32* %i)
     f(i);
 }

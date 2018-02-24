@@ -3,14 +3,14 @@
 struct S {
     var t: (a: int);
 
-    // CHECK: define { i32 }* @S.f(%S* %this)
+    // CHECK: define { i32 }* @_EN4main1S1fE(%S* %this)
     func f() -> (a: int)* {
         // CHECK-NEXT: %t = getelementptr inbounds %S, %S* %this, i32 0, i32 0
         // CHECK-NEXT: ret { i32 }* %t
         return &t;
     }
 
-    // CHECK: define { i32 }* @S.g(%S* %this)
+    // CHECK: define { i32 }* @_EN4main1S1gE(%S* %this)
     func g() -> (a: int)* {
         // CHECK-NEXT: %t = getelementptr inbounds %S, %S* %this, i32 0, i32 0
         // CHECK-NEXT: ret { i32 }* %t

@@ -6,9 +6,9 @@ struct C {
 }
 
 struct A<T> {
-    // CHECK: define void @"A<C>.init"
+    // CHECK: define void @{{.*A.*C.*init.*}}
     // CHECK-NEXT: %t = alloca %C
-    // CHECK-NEXT: call void @C.init(%C* %t)
+    // CHECK-NEXT: call void @_ENM4main1C4initE(%C* %t)
     // CHECK-NEXT: ret void
     init() {
         let t = T();

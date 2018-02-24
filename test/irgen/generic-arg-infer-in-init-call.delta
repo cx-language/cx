@@ -1,17 +1,17 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-CALL
 
-struct C<T> {
+struct Foo<T> {
     let t: T;
 
-    // CHECK: define void @"C<int>.init"(%"C<int>"* %this, i32 %t)
-    // CHECK: define void @"C<StringRef>.init"(%"C<StringRef>"* %this, %StringRef %t)
+    // CHECK: define void @{{.*Foo.*int.*init.*}}(%"Foo<int>"* %this, i32 %t)
+    // CHECK: define void @{{.*Foo.*StringRef.*init.*}}(%"Foo<StringRef>"* %this, %StringRef %t)
     init(t: T) {}
 }
 
 func main() {
-    // CHECK-CALL: call void @"C<int>.init"(%"C<int>"* %i, i32 42)
-    let i = C(42);
-    // CHECK-CALL: call void @"C<StringRef>.init"(%"C<StringRef>"* %b, %StringRef %__str{{[0-9]+}})
-    let b = C("");
+    // CHECK-CALL: call void @{{.*Foo.*int.*init.*}}(%"Foo<int>"* %i, i32 42)
+    let i = Foo(42);
+    // CHECK-CALL: call void @{{.*Foo.*StringRef.*init.*}}(%"Foo<StringRef>"* %b, %StringRef %__str{{[0-9]+}})
+    let b = Foo("");
 }

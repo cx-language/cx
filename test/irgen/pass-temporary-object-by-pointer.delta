@@ -25,15 +25,15 @@ func main() {
     // CHECK-NEXT: %2 = alloca %B
     // CHECK-NEXT: %3 = alloca i32
 
-    // CHECK-NEXT: call void @A.init(%A* %1)
-    // CHECK-NEXT: call void @f(%A* %1)
+    // CHECK-NEXT: call void @_ENM4main1A4initE(%A* %1)
+    // CHECK-NEXT: call void @_EN4main1fE1aP1A(%A* %1)
     f(A());
 
-    // CHECK-NEXT: call void @B.init(%B* %2)
-    // CHECK-NEXT: call void @f{{[\.0-9]+}}(%B* %2)
+    // CHECK-NEXT: call void @_ENM4main1B4initE(%B* %2)
+    // CHECK-NEXT: call void @_EN4main1fE1bP1B(%B* %2)
     f(B());
 
     // CHECK-NEXT: store i32 0, i32* %3
-    // CHECK-NEXT: call void @f{{[\.0-9]+}}(i32* %3)
+    // CHECK-NEXT: call void @_EN4main1fE1iP3int(i32* %3)
     f(0);
 }

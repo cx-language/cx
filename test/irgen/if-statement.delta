@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func foo() { }
-func bar() { }
+extern func foo();
+extern func bar();
 
 func main() {
     // CHECK: br i1 false, label %then, label %else

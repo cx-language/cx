@@ -8,7 +8,7 @@ func main() {
     bar();
 }
 
-// CHECK: define void @foo()
+// CHECK: define void @_EN4main3fooE()
 // CHECK-NEXT: ret void
 func foo() { }
 

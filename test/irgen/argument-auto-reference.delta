@@ -1,10 +1,8 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct Foo { let i: int; }
-func ref(r: Foo*) { } // CHECK: define void @ref(%Foo* %r)
-func ptr(p: Foo*) { } // CHECK: define void @ptr(%Foo* %p)
+func ptr(p: Foo*) { } // CHECK: define void @[[PTR:.*3ptr.*]](%Foo* %p)
 func main() {
     let f: Foo = undefined; // CHECK: %f = alloca %Foo
-    ref(f); // CHECK: call void @ref(%Foo* %f)
-    ptr(f); // CHECK: call void @ptr(%Foo* %f)
+    ptr(f); // CHECK: call void @[[PTR]](%Foo* %f)
 }

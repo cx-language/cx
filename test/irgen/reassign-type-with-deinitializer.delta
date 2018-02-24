@@ -10,16 +10,16 @@ func main() {
     // CHECK-NEXT: %x = alloca {}
     // CHECK-NEXT: %1 = alloca {}
 
-    // CHECK-NEXT: call void @X.init({}* %x)
+    // CHECK-NEXT: call void @_ENM4main1X4initE({}* %x)
     var x = X();
 
-    // CHECK-NEXT: call void @X.deinit({}* %x)
+    // CHECK-NEXT: call void @_ENM4main1X6deinitE({}* %x)
 
     // TODO: Optimize this into only an init call.
-    // CHECK-NEXT: call void @X.init({}* %1)
+    // CHECK-NEXT: call void @_ENM4main1X4initE({}* %1)
     // CHECK-NEXT: %2 = load {}, {}* %1
     // CHECK-NEXT: store {} %2, {}* %x
-    // CHECK-NEXT: call void @X.deinit({}* %x)
+    // CHECK-NEXT: call void @_ENM4main1X6deinitE({}* %x)
     x = X();
 
     // CHECK-NEXT: ret i32 0

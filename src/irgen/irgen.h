@@ -136,7 +136,7 @@ private:
     llvm::Value* codegenVarDecl(const VarDecl& decl);
 
     llvm::Value* getFunctionForCall(const CallExpr& call);
-    llvm::Function* getFunctionProto(const FunctionDecl& decl, std::string&& mangledName = {});
+    llvm::Function* getFunctionProto(const FunctionDecl& decl);
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
                                              const llvm::Twine& name = "");
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);

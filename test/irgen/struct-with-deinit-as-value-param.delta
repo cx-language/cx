@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-DEINIT
 
-// CHECK: define void @foo(%"Array<int>" %a)
+// CHECK: define void @{{.*3foo.*}}(%"Array<int>" %a)
 func foo(a: Array<int>) {
     // CHECK-NEXT: %1 = alloca %"Array<int>"
     // CHECK-NEXT: store %"Array<int>" %a, %"Array<int>"* %1
-    // CHECK-NEXT: call void @"Array<int>.deinit"(%"Array<int>"* %1)
+    // CHECK-NEXT: call void @_ENM3std5ArrayI3intE6deinitE(%"Array<int>"* %1)
     // CHECK-NEXT: ret void
 }
 
-// CHECK-DEINIT: define void @"Array<int>.deinit"(%"Array<int>"* %this)
+// CHECK-DEINIT: define void @_ENM3std5ArrayI3intE6deinitE(%"Array<int>"* %this)

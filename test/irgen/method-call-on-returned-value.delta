@@ -21,22 +21,22 @@ func main() {
     // CHECK-NEXT: %2 = alloca %S
     // CHECK-NEXT: %3 = alloca %C
 
-    // CHECK-NEXT: %4 = call %S @s()
-    // CHECK-NEXT: call void @S.f(%S %4)
+    // CHECK-NEXT: %4 = call %S @_EN4main1sE()
+    // CHECK-NEXT: call void @_EN4main1S1fE(%S %4)
     s().f();
 
-    // CHECK-NEXT: %5 = call %C @c()
+    // CHECK-NEXT: %5 = call %C @_EN4main1cE()
     // CHECK-NEXT: store %C %5, %C* %1
-    // CHECK-NEXT: call void @C.f(%C* %1)
+    // CHECK-NEXT: call void @_EN4main1C1fE(%C* %1)
     c().f();
 
-    // CHECK-NEXT: call void @S.init(%S* %2)
+    // CHECK-NEXT: call void @_ENM4main1S4initE(%S* %2)
     // CHECK-NEXT: %6 = load %S, %S* %2
-    // CHECK-NEXT: call void @S.f(%S %6)
+    // CHECK-NEXT: call void @_EN4main1S1fE(%S %6)
     S().f();
 
-    // CHECK-NEXT: call void @C.init(%C* %3)
-    // CHECK-NEXT: call void @C.f(%C* %3)
+    // CHECK-NEXT: call void @_ENM4main1C4initE(%C* %3)
+    // CHECK-NEXT: call void @_EN4main1C1fE(%C* %3)
     C().f();
 
     // CHECK-NEXT: ret i32 0

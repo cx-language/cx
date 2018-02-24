@@ -4,7 +4,7 @@ struct Foo {
     let i: int;
 }
 
-// CHECK-LABEL: define void @get
+// CHECK-LABEL: define void @{{.*3get.*}}
 func get(f: Foo*) {
     // CHECK-NEXT: %m = alloca i32
     // CHECK-NEXT: %i = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0

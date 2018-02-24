@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-// CHECK: define { i1, { double } } @f()
+// CHECK: define { i1, { double } } @{{.*f.*}}()
 func f() -> (c: bool, d: (e: float64)) {
     // CHECK-NEXT: %d = alloca { double }
     // CHECK-NEXT: %a = alloca { i32, { i1, { double } } }

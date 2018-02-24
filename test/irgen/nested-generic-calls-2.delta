@@ -14,10 +14,10 @@ struct S: Copyable {
 struct A<E> {
     init() {}
 
-    // CHECK: define %S @"A<S>.a"({}* %this)
+    // CHECK: define %S @{{.*A.*S.*a.*}}({}* %this)
     func a() -> E {
         // CHECK-NEXT: %1 = alloca %S
-        // CHECK-NEXT: call void @S.init(%S* %1)
+        // CHECK-NEXT: call void @_ENM4main1S4initE(%S* %1)
         // CHECK-NEXT: %2 = load %S, %S* %1
         // CHECK-NEXT: ret %S %2
         return E();
@@ -29,11 +29,11 @@ struct M<T: I> {
 
     init() {}
 
-    // CHECK-M: define void @"M<S>.f"(%"M<S>"* %this)
+    // CHECK-M: define void @_EN4main1MI1SE1fE(%"M<S>"* %this)
     func f() {
         let a = A<T>();
-        // CHECK-M: [[TMP:%[0-9]+]] = call %S @"A<S>.a"({}* %a)
-        // CHECK-M-NEXT: call void @S.i(%S [[TMP]])
+        // CHECK-M: [[TMP:%[0-9]+]] = call %S @{{.*A.*S.*a.*}}({}* %a)
+        // CHECK-M-NEXT: call void @_EN4main1S1iE(%S [[TMP]])
         a.a().i();
     }
 }

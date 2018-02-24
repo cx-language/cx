@@ -9,7 +9,7 @@ struct X {
 struct Y<T> {
     init() {}
 
-    // CHECK: define i32 @"Y<bool>.f"({}* %this)
+    // CHECK: define i32 @_EN4main1YI4boolE1fE({}* %this)
     func f() -> int {
         // CHECK-NEXT: ret i32 1
         return 1;
@@ -19,9 +19,9 @@ struct Y<T> {
 func main() {
     var a = X();
 
-    // MAIN: call void @"Y<bool>.init"
-    // MAIN: call i32 @"Y<bool>.f"({}* %{{[0-9]+}})
+    // MAIN: call void @_ENM4main1YI4boolE4initE
+    // MAIN: call i32 @_EN4main1YI4boolE1fE({}* %{{[0-9]+}})
     Y<bool>().f();
 
-    // MAIN-NEXT: call void @X.deinit({}* %a)
+    // MAIN-NEXT: call void @_ENM4main1X6deinitE({}* %a)
 }

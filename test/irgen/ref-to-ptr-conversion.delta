@@ -1,9 +1,0 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-
-// CHECK: define void @foo([2 x i32]* %ints)
-func foo(ints: mutable int[2]* ) {
-    // CHECK-NEXT: %ptr = alloca [2 x i32]*
-    // CHECK-NEXT: store [2 x i32]* %ints, [2 x i32]** %ptr
-    let ptr: int[2]* = ints;
-    // CHECK-NEXT: ret void
-}

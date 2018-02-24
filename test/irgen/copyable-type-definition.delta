@@ -5,7 +5,7 @@ struct Foo: Copyable {
     var a: int;
     let b: bool;
 
-    // CHECK: define void @Foo.init(%Foo* %this, i32 %a, i1 %b)
+    // CHECK: define void @{{_ENM4main3Foo4initE.*}}(%Foo* %this, i32 %a, i1 %b)
     init(a: int, b: bool) {
         // CHECK-NEXT: %a1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
         // CHECK-NEXT: store i32 %a, i32* %a1
@@ -25,7 +25,7 @@ struct Foo: Copyable {
 
 func main() {
     // CHECK: %f = alloca %Foo
-    // CHECK: call void @Foo.init(%Foo* %f, i32 666, i1 true)
+    // CHECK: call void @{{_ENM4main3Foo4initE.*}}(%Foo* %f, i32 666, i1 true)
     var f = Foo(666, true);
     // CHECK-NEXT: %a = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
     // CHECK-NEXT: %1 = load i32, i32* %a

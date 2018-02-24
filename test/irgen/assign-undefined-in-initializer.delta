@@ -3,7 +3,7 @@
 struct A {
     var i: int;
 
-    // CHECK: define void @A.init(%A* %this)
+    // CHECK: define void @_ENM4main1A4initE(%A* %this)
     init() {
         i = undefined;
         // CHECK-NEXT: ret void

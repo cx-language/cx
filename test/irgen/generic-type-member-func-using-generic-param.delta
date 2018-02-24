@@ -3,12 +3,12 @@
 struct A<E>: Copyable {
     init() { }
 
-    // CHECK-DAG: define void @"A<int>.a"({}* %this, i32 %n)
+    // CHECK-DAG: define void @{{.*1A.*3int.*1a.*1n.*}}({}* %this, i32 %n)
     mutating func a(n: E) { }
 }
 
 func main() {
     var a = A<int>()
-    // CHECK-DAG: call void @"A<int>.a"({}* %a{{[0-9]*}}, i32 5)
+    // CHECK-DAG: call void @{{.*1A.*3int.*1a.*1n.*}}({}* %a{{[0-9]*}}, i32 5)
     a.a(5)
 }

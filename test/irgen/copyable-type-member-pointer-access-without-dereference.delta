@@ -3,7 +3,7 @@
 struct S: Copyable {
     let a: int*
 
-    // CHECK: define void @S.foo(%S %this)
+    // CHECK: define void @_EN4main1S3fooE(%S %this)
     func foo() {
         // CHECK-NEXT: %b = alloca i32*
         // CHECK-NEXT: %a = extractvalue %S %this, 0

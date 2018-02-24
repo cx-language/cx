@@ -3,9 +3,9 @@
 struct S<T>: Copyable {
     init() {}
 
-    // CHECK: define void @"S<int>.f"({} %this)
+    // CHECK: define void @_EN4main1SI3intE1fE({} %this)
     func f() {
-        // CHECK: %t = alloca i32
+        // CHECK-NEXT: %t = alloca i32
         g()
         var t: T = undefined
     }

@@ -5,13 +5,13 @@ import "stdlib.h"
 struct C<T>: Copyable {
     init() { }
 
-    // CHECK: define void @"C<bool>.f"({} %this)
+    // CHECK: define void @{{.*C.*bool.*f.*}}({} %this)
     func f() {
-        // CHECK-NEXT: call void @"C<bool>.g"({} %this)
+        // CHECK-NEXT: call void @{{.*C.*bool.*g.*}}({} %this)
         g()
     }
 
-    // CHECK: define void @"C<bool>.g"({} %this)
+    // CHECK: define void @{{.*C.*bool.*g.*}}({} %this)
     func g() {
         var a = sizeof(T)
     }

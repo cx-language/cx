@@ -4,7 +4,7 @@
 struct X {
     let p: (int) -> int;
 
-    // CHECK: define void @X.init(%X* %this, i32 (i32)* %p)
+    // CHECK: define void @_ENM4main1X4initE1pF3int_3int(%X* %this, i32 (i32)* %p)
     init(p: (int) -> int) {
         // CHECK-NEXT: %p1 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
         // CHECK-NEXT: store i32 (i32)* %p, i32 (i32)** %p1
@@ -12,7 +12,7 @@ struct X {
         // CHECK-NEXT: ret void
     }
 
-    // CHECK: define void @X.f(%X* %this)
+    // CHECK: define void @_EN4main1X1fE(%X* %this)
     func f() {
         // CHECK-NEXT: %p24 = alloca i32 (i32)*
 
@@ -37,22 +37,22 @@ struct X {
     }
 }
 
-// CHECK: define i32 @f(i32 %a)
-func f(a: int) -> int {
+// CHECK: define i32 @[[FOO:.*3foo.*]](i32 %a)
+func foo(a: int) -> int {
     return a;
 }
 
 // CHECK: define i32 @main()
 func main() {
     // CHECK-NEXT: %x = alloca %X
-    // CHECK-NEXT: call void @X.init(%X* %x, i32 (i32)* @f)
-    let x = X(f);
+    // CHECK-NEXT: call void @_ENM4main1X4initE1pF3int_3int(%X* %x, i32 (i32)* @[[FOO]])
+    let x = X(foo);
 
     // CHECK-NEXT: %p = getelementptr inbounds %X, %X* %x, i32 0, i32 0
     // CHECK-NEXT: %p1 = load i32 (i32)*, i32 (i32)** %p
     // CHECK-NEXT: call i32 %p1(i32 42)
     x.p(42);
 
-    // CHECK-NEXT: call void @X.f(%X* %x)
+    // CHECK-NEXT: call void @_EN4main1X1fE(%X* %x)
     x.f();
 }

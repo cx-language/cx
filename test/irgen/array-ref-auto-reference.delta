@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-// CHECK: define void @f(%"ArrayRef<int>" %a)
-func f(a: int[]*) {}
+// CHECK: define void @[[FOO:.*foo.*]](%"ArrayRef<int>" %a)
+func foo(a: int[]*) {}
 
 func g() {
     // CHECK: %a = alloca [3 x i32]
@@ -11,14 +11,14 @@ func g() {
     // CHECK-NEXT: %1 = getelementptr [3 x i32], [3 x i32]* %a, i32 0, i32 0
     // CHECK-NEXT: %2 = insertvalue %"ArrayRef<int>" undef, i32* %1, 0
     // CHECK-NEXT: %3 = insertvalue %"ArrayRef<int>" %2, i32 3, 1
-    // CHECK-NEXT: call void @f(%"ArrayRef<int>" %3)
-    f(a);
+    // CHECK-NEXT: call void @[[FOO]](%"ArrayRef<int>" %3)
+    foo(a);
 
-    // CHECK-NEXT: call void @h([3 x i32]* %a)
-    h(a);
+    // CHECK-NEXT: call void @[[BAZ:.*baz.*]]([3 x i32]* %a)
+    baz(a);
 
     // CHECK-NEXT: ret void
 }
 
-// CHECK: define void @h([3 x i32]* %b)
-func h(b: int[3]*) {}
+// CHECK: define void @[[BAZ]]([3 x i32]* %b)
+func baz(b: int[3]*) {}

@@ -6,7 +6,7 @@
 extern func f() -> mutable void*?;
 
 func main() {
-    // CHECK: %1 = call i8* @f()
+    // CHECK: %1 = call i8* @{{.*f.*}}()
     // CHECK-NEXT: %assert.condition = icmp eq i8* %1, null
     // CHECK-NEXT: br i1 %assert.condition, label %assert.fail, label %assert.success
     // CHECK: assert.fail:                                      ; preds = %0
@@ -17,7 +17,7 @@ func main() {
     // CHECK-NEXT: store i8* %1, i8** %byte
     let byte: mutable uint8* = cast<mutable uint8*?>(f())!;
 
-    // CHECK-NEXT: %3 = call i8* @f()
+    // CHECK-NEXT: %3 = call i8* @{{.*f.*}}()
     // CHECK-NEXT: %4 = bitcast i8* %3 to [1 x i8]*
     // CHECK-NEXT: store [1 x i8]* %4, [1 x i8]** %ptr
     let ptr: mutable uint8[1]*? = cast<mutable uint8[1]*?>(f());

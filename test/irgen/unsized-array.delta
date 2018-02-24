@@ -11,9 +11,9 @@ func main() {
     // CHECK-NEXT: %1 = getelementptr [3 x i32], [3 x i32]* %three, i32 0, i32 0
     // CHECK-NEXT: %2 = insertvalue %"ArrayRef<int>" undef, i32* %1, 0
     // CHECK-NEXT: %3 = insertvalue %"ArrayRef<int>" %2, i32 3, 1
-    // CHECK-NEXT: call void @foo(%"ArrayRef<int>" %3)
+    // CHECK-NEXT: call void @[[FOO:.*3foo.*]](%"ArrayRef<int>" %3)
     foo(three);
-    // CHECK-NEXT: call void @bar([3 x i32]* %three)
+    // CHECK-NEXT: call void @[[BAR:.*3bar.*]]([3 x i32]* %three)
     bar(three);
     // CHECK-NEXT: store i32 3, i32* %b
     let b = three.size();
@@ -29,7 +29,7 @@ func main() {
     // CHECK-NEXT: ret
 }
 
-// CHECK: define void @foo(%"ArrayRef<int>" %ints)
+// CHECK: define void @[[FOO]](%"ArrayRef<int>" %ints)
 func foo(ints: int[]*) {
     // CHECK-NEXT: %a = alloca i32
     // CHECK-NEXT: %b = alloca i32
@@ -47,7 +47,7 @@ func foo(ints: int[]*) {
     // CHECK-NEXT: ret void
 }
 
-// CHECK: define void @bar([3 x i32]* %ints)
+// CHECK: define void @[[BAR]]([3 x i32]* %ints)
 func bar(ints: int[3]*) {
     // CHECK-NEXT: %b = alloca i32
     // CHECK-NEXT: %ref = alloca %"ArrayRef<int>"

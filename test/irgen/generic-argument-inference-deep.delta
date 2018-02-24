@@ -6,20 +6,20 @@ struct S<T>: Copyable {
     var f: T;
 }
 
-// CHECK-DAG: define i1 @"==<int>"(%"S<int>" %a, %"S<int>" %b)
-// CHECK-DAG: define i1 @"==<bool>"(%"S<bool>" %a, %"S<bool>" %b)
+// CHECK-DAG: define i1 @_EN4maineqI3intEE1a1SI3intE1b1SI3intE(%"S<int>" %a, %"S<int>" %b)
+// CHECK-DAG: define i1 @_EN4maineqI4boolEE1a1SI4boolE1b1SI4boolE(%"S<bool>" %a, %"S<bool>" %b)
 func ==<T>(a: S<T>, b: S<T>) -> bool {
     return true;
 }
 
-// CHECK-1: define void @f{{[\.0-9]*}}(%"S<int>" %c, %"S<int>" %d)
+// CHECK-1: define void @_EN4main1fE1c1SI3intE1d1SI3intE(%"S<int>" %c, %"S<int>" %d)
 func f(c: S<int>, d: S<int>) {
-    // CHECK-1-NEXT: call i1 @"==<int>"(%"S<int>" %c, %"S<int>" %d)
+    // CHECK-1-NEXT: call i1 @_EN4maineqI3intEE1a1SI3intE1b1SI3intE(%"S<int>" %c, %"S<int>" %d)
     _ = c == d;
 }
 
-// CHECK-2: define void @f{{[\.0-9]*}}(%"S<bool>"* %c, %"S<bool>"* %d)
+// CHECK-2: define void @_EN4main1fE1cP1SI4boolE1dP1SI4boolE(%"S<bool>"* %c, %"S<bool>"* %d)
 func f(c: S<bool>* , d: S<bool>* ) {
-    // CHECK-2: call i1 @"==<bool>"(%"S<bool>" %{{[a-z0-9]+}}, %"S<bool>" %{{[a-z0-9]+}})
+    // CHECK-2: call i1 @_EN4maineqI4boolEE1a1SI4boolE1b1SI4boolE(%"S<bool>" %{{[a-z0-9]+}}, %"S<bool>" %{{[a-z0-9]+}})
     _ = *c == *d;
 }

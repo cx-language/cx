@@ -4,15 +4,15 @@ extern func a() -> bool;
 extern func b() -> bool;
 extern func c() -> bool;
 
-// CHECK-LABEL: define void @and()
+// CHECK-LABEL: define void @{{.*3and.*}}()
 func and() {
     let result = a() && b();
 
-    // CHECK:        %1 = call i1 @a()
+    // CHECK:        %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT:   br i1 %1, label %andRHS, label %andEnd
 
     // CHECK:      andRHS:                                           ; preds = %0
-    // CHECK-NEXT:   %2 = call i1 @b()
+    // CHECK-NEXT:   %2 = call i1 @{{.*b.*}}()
     // CHECK-NEXT:   br label %andEnd
 
     // CHECK:      andEnd:                                           ; preds = %andRHS, %0
@@ -21,15 +21,15 @@ func and() {
     // CHECK-NEXT:   ret void
 }
 
-// CHECK-LABEL: define void @and2()
+// CHECK-LABEL: define void @{{.*4and2.*}}()
 func and2() {
     let result = a() && b() && c();
 
-    // CHECK:        %1 = call i1 @a()
+    // CHECK:        %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT:   br i1 %1, label %andRHS1, label %andEnd2
 
     // CHECK:      andRHS:                                           ; preds = %andEnd2
-    // CHECK-NEXT:   %2 = call i1 @c()
+    // CHECK-NEXT:   %2 = call i1 @{{.*c.*}}()
     // CHECK-NEXT:   br label %andEnd
 
     // CHECK:      andEnd:                                           ; preds = %andRHS, %andEnd2
@@ -38,7 +38,7 @@ func and2() {
     // CHECK-NEXT:   ret void
 
     // CHECK:      andRHS1:                                          ; preds = %0
-    // CHECK-NEXT:   %3 = call i1 @b()
+    // CHECK-NEXT:   %3 = call i1 @{{.*b.*}}()
     // CHECK-NEXT:   br label %andEnd2
 
     // CHECK:      andEnd2:                                          ; preds = %andRHS1, %0
@@ -46,15 +46,15 @@ func and2() {
     // CHECK-NEXT:   br i1 %and, label %andRHS, label %andEnd
 }
 
-// CHECK-LABEL: define void @or()
+// CHECK-LABEL: define void @{{.*2or.*}}()
 func or() {
     let result = a() || b();
 
-    // CHECK:        %1 = call i1 @a()
+    // CHECK:        %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT:   br i1 %1, label %orEnd, label %orRHS
 
     // CHECK:      orRHS:                                            ; preds = %0
-    // CHECK-NEXT:   %2 = call i1 @b()
+    // CHECK-NEXT:   %2 = call i1 @{{.*b.*}}()
     // CHECK-NEXT:   br label %orEnd
 
     // CHECK:      orEnd:                                            ; preds = %orRHS, %0
@@ -63,15 +63,15 @@ func or() {
     // CHECK-NEXT:   ret void
 }
 
-// CHECK-LABEL: define void @or2()
+// CHECK-LABEL: define void @{{.*3or2.*}}()
 func or2() {
     let result = a() || b() || c();
 
-    // CHECK:        %1 = call i1 @a()
+    // CHECK:        %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT:   br i1 %1, label %orEnd2, label %orRHS1
 
     // CHECK:      orRHS:                                            ; preds = %orEnd2
-    // CHECK-NEXT:   %2 = call i1 @c()
+    // CHECK-NEXT:   %2 = call i1 @{{.*c.*}}()
     // CHECK-NEXT:   br label %orEnd
 
     // CHECK:      orEnd:                                            ; preds = %orRHS, %orEnd2
@@ -80,7 +80,7 @@ func or2() {
     // CHECK-NEXT:   ret void
 
     // CHECK:      orRHS1:                                           ; preds = %0
-    // CHECK-NEXT:   %3 = call i1 @b()
+    // CHECK-NEXT:   %3 = call i1 @{{.*b.*}}()
     // CHECK-NEXT:   br label %orEnd2
 
     // CHECK:      orEnd2:                                           ; preds = %orRHS1, %0

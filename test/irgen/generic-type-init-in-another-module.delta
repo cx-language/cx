@@ -4,6 +4,6 @@ import imported_generic_type_init
 
 func main() {
     // CHECK: %a = alloca %"A<int>"
-    // CHECK: call void @"A<int>.init"(%"A<int>"* %a)
+    // CHECK: call void @_ENM26imported_generic_type_init1AI3intE4initE(%"A<int>"* %a)
     var a = A<int>()
 }

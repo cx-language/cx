@@ -2,13 +2,12 @@
 
 struct X {
     let i: int;
-
     deinit() {}
 }
 
-// CHECK: define void @f(%X* %p, %X %x)
+// CHECK: define void @{{.*}}foo{{.*}}(%X* %p, %X %x)
 // CHECK-NEXT: store %X %x, %X* %p
 // CHECK-NEXT: ret void
-func f(p: mutable X*, x: X) {
+func foo(p: mutable X*, x: X) {
     p.init(x);
 }

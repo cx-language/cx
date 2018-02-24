@@ -2,30 +2,30 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
 
 struct S<E> {
-    // CHECK-DAG: define void @"S<A>.init"
+    // CHECK-DAG: define void @_ENM4main1SI1AE4initE
     init() {
-        // CHECK: call void @A.init
-        // CHECK: call void @A.h({} %{{[0-9]+}})
+        // CHECK: call void @{{.*1A.*4init.*}}
+        // CHECK: call void @_EN4main1A1hE({} %{{[0-9]+}})
         E().h();
     }
 
-    // CHECK-DAG: define void @"S<A>.s"({}* %this)
+    // CHECK-DAG: define void @_EN4main1SI1AE1sE({}* %this)
     func s() {}
 }
 
 struct A: Copyable {
     init() {}
 
-    // CHECK-DAG: define void @A.h({} %this)
+    // CHECK-DAG: define void @_EN4main1A1hE({} %this)
     func h() {}
 }
 
 // MAIN: define i32 @main()
 func main() {
     // MAIN-NEXT: %x = alloca {}
-    // MAIN-NEXT: call void @"S<A>.init"({}* %x)
+    // MAIN-NEXT: call void @_ENM4main1SI1AE4initE({}* %x)
     let x = S<A>();
 
-    // MAIN-NEXT: call void @"S<A>.s"({}* %x)
+    // MAIN-NEXT: call void @_EN4main1SI1AE1sE({}* %x)
     x.s();
 }

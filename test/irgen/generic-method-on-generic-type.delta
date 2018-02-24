@@ -4,7 +4,7 @@
 struct X<T> {
     init() {}
 
-    // CHECK: define void @"X<int>.f<bool>"({}* %this, i32 (i1)* %u)
+    // CHECK: define void @_ENM4main1XI3intE1fI4boolEE1uF4bool_3int({}* %this, i32 (i1)* %u)
     mutating func f<U>(u: (U) -> T) {}
 }
 
@@ -14,6 +14,6 @@ func g(i: bool) -> int { return int(i); }
 func main() {
     var x = X<int>();
 
-    // MAIN: call void @"X<int>.f<bool>"({}* %x, i32 (i1)* @g)
+    // MAIN: call void @_ENM4main1XI3intE1fI4boolEE1uF4bool_3int({}* %x, i32 (i1)* @_EN4main1gE1i4bool)
     x.f(g);
 }

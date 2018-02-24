@@ -1,15 +1,15 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-// CHECK: define void @f(i32 (i32, i32)* %a)
-func f(a: (int, int) -> int) {
+// CHECK: define void @[[FOO:.*3foo.*]](i32 (i32, i32)* %a)
+func foo(a: (int, int) -> int) {
     // CHECK-NEXT: call i32 %a(i32 1, i32 2)
     _ = a(1, 2);
 }
 
 // CHECK: define i32 @main()
 func main() {
-    // CHECK-NEXT: call void @f(i32 (i32, i32)* [[LAMBDA:@__lambda[0-9]+]])
-    f((a: int, b: int) -> a + b);
+    // CHECK-NEXT: call void @[[FOO]](i32 (i32, i32)* [[LAMBDA:@_EN4main9__lambda0E1a3int1b3int]])
+    foo((a: int, b: int) -> a + b);
 }
 
 // CHECK: define i32 [[LAMBDA]](i32 %a, i32 %b)

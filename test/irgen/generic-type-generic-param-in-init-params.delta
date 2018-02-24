@@ -1,13 +1,13 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct M<T> {
-    // CHECK-DAG: define void @"M<int>.init"({}* %this, %"ArrayRef<int>" %a)
+    // CHECK-DAG: define void @_ENM4main1MI3intE4initE1aPAR_3int({}* %this, %"ArrayRef<int>" %a)
     init(a: T[]*) {}
 }
 
 func main() {
     let b = [1, 2, 3];
 
-    // CHECK-DAG: call void @"M<int>.init"({}* %{{[0-9]+}}, %"ArrayRef<int>" %{{[0-9]+}})
+    // CHECK-DAG: call void @_ENM4main1MI3intE4initE1aPAR_3int({}* %{{[0-9]+}}, %"ArrayRef<int>" %{{[0-9]+}})
     _ = M<int>(b);
 }

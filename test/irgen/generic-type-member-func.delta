@@ -7,10 +7,10 @@ struct F<T, U>: Copyable {
     var a: T
     var b: U
 
-    // CHECK-DAG: define void @"F<int, bool>.init"
+    // CHECK-DAG: define void @_ENM4main1FI3int4boolE4initE
     init() { }
 
-    // CHECK-DAG: define void @"F<int, bool>.foo"(%"F<int, bool>" %this)
+    // CHECK-DAG: define void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>" %this)
     func foo() { }
 
     // TODO: Don't generate code for unused functions:
@@ -20,9 +20,9 @@ struct F<T, U>: Copyable {
 
 func main() {
     // CHECK-MAIN: %f = alloca %"F<int, bool>"
-    // CHECK-MAIN: call void @"F<int, bool>.init"
+    // CHECK-MAIN: call void @_ENM4main1FI3int4boolE4initE
     let f = F<int, bool>()
 
-    // CHECK-MAIN: call void @"F<int, bool>.foo"(%"F<int, bool>" %f1)
+    // CHECK-MAIN: call void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>" %f1)
     f.foo()
 }

@@ -4,13 +4,13 @@
 struct A {
     init() {}
 
-    // CHECK: define void @A.foo({}* %this)
+    // CHECK: define void @_EN4main1A3fooE({}* %this)
     // CHECK-NEXT: %a = alloca i32
     func foo() {
         let a = 1;
     }
 
-    // CHECK: define void @A.foo.{{[0-9]+}}({}* %this)
+    // CHECK: define void @_ENM4main1A3fooE({}* %this)
     // CHECK-NEXT: %b = alloca i32
     mutating func foo() {
         let b = 1;
@@ -21,9 +21,9 @@ func main() {
     let a = A();
     var b = A();
 
-    // MAIN: call void @A.foo({}* %a)
+    // MAIN: call void @_EN4main1A3fooE({}* %a)
     a.foo();
 
-    // MAIN-NEXT: call void @A.foo.{{[0-9]+}}({}* %b)
+    // MAIN-NEXT: call void @_ENM4main1A3fooE({}* %b)
     b.foo();
 }

@@ -2,34 +2,34 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-INIT
 
 func main() {
-    // CHECK: call void @"UniquePtr<int>.init"(%"UniquePtr<int>"* %1, i32 42)
+    // CHECK: call void @{{.*UniquePtr.*int.*init.*}}(%"UniquePtr<int>"* %1, i32 42)
     // CHECK-NEXT: %2 = load %"UniquePtr<int>", %"UniquePtr<int>"* %1
-    // CHECK-NEXT: call void @"UniquePtr<UniquePtr<int>>.init"(%"UniquePtr<UniquePtr<int>>"* %p, %"UniquePtr<int>" %2)
-    // CHECK-NEXT: call void @"UniquePtr<int>.init"(%"UniquePtr<int>"* %q, i32 42)
-    // CHECK-NEXT: call void @"UniquePtr<int>.init"(%"UniquePtr<int>"* %r, i32 42)
+    // CHECK-NEXT: call void @{{.*UniquePtr.*UniquePtr.*int.*init.*}}(%"UniquePtr<UniquePtr<int>>"* %p, %"UniquePtr<int>" %2)
+    // CHECK-NEXT: call void @{{.*UniquePtr.*int.*init.*}}(%"UniquePtr<int>"* %q, i32 42)
+    // CHECK-NEXT: call void @{{.*UniquePtr.*int.*init.*}}(%"UniquePtr<int>"* %r, i32 42)
     let p = UniquePtr(UniquePtr(42));
     var q = UniquePtr(42);
     let r = UniquePtr(42);
 
-    // CHECK-NEXT: %3 = call i32* @"UniquePtr<int>.get{{[\.0-9]*}}"(%"UniquePtr<int>"* %q)
+    // CHECK-NEXT: %3 = call i32* @{{.*UniquePtr.*int.*get.*}}(%"UniquePtr<int>"* %q)
     // CHECK-NEXT: store i32 0, i32* %3
-    // CHECK-NEXT: %4 = call i32* @"UniquePtr<int>.get{{[\.0-9]*}}"(%"UniquePtr<int>"* %r)
+    // CHECK-NEXT: %4 = call i32* @{{.*UniquePtr.*int.*get.*}}(%"UniquePtr<int>"* %r)
 
     *q.get() = 0;
     r.get();
 
-    // CHECK-NEXT: call void @"UniquePtr<int>.deinit"(%"UniquePtr<int>"* %q)
+    // CHECK-NEXT: call void @{{.*UniquePtr.*int.*deinit.*}}(%"UniquePtr<int>"* %q)
     // CHECK-NEXT: %r1 = load %"UniquePtr<int>", %"UniquePtr<int>"* %r
     // CHECK-NEXT: store %"UniquePtr<int>" %r1, %"UniquePtr<int>"* %q
     q = r;
 
-    // CHECK-NEXT: call void @"UniquePtr<int>.deinit"(%"UniquePtr<int>"* %q)
-    // CHECK-NEXT: call void @"UniquePtr<UniquePtr<int>>.deinit"(%"UniquePtr<UniquePtr<int>>"* %p)
+    // CHECK-NEXT: call void @{{.*UniquePtr.*int.*deinit.*}}(%"UniquePtr<int>"* %q)
+    // CHECK-NEXT: call void @{{.*UniquePtr.*UniquePtr.*int.*deinit.*}}(%"UniquePtr<UniquePtr<int>>"* %p)
     // CHECK-NEXT: ret i32 0
 }
 
-// CHECK-INIT: define void @"UniquePtr<UniquePtr<int>>.init{{[\.0-9]*}}"(%"UniquePtr<UniquePtr<int>>"* %this, %"UniquePtr<int>" %value) {
+// CHECK-INIT: define void @{{.*UniquePtr.*UniquePtr.*int.*init.*}}(%"UniquePtr<UniquePtr<int>>"* %this, %"UniquePtr<int>" %value) {
 // CHECK-INIT-NEXT: %pointer = getelementptr inbounds %"UniquePtr<UniquePtr<int>>", %"UniquePtr<UniquePtr<int>>"* %this, i32 0, i32 0
-// CHECK-INIT-NEXT: %1 = call %"UniquePtr<int>"* @"allocate<UniquePtr<int>>"(%"UniquePtr<int>" %value)
+// CHECK-INIT-NEXT: %1 = call %"UniquePtr<int>"* @{{.*8allocate.*UniquePtr.*int.*}}(%"UniquePtr<int>" %value)
 // CHECK-INIT-NEXT: store %"UniquePtr<int>"* %1, %"UniquePtr<int>"** %pointer
 // CHECK-INIT-NEXT: ret void

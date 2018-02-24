@@ -2,16 +2,16 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 
 func main() {
-    // CHECK-MAIN: call void @Foo.init(%Foo* %f, i32 5)
+    // CHECK-MAIN: call void @_ENM4main3Foo4initE1i3int(%Foo* %f, i32 5)
     var f = Foo(5);
-    // CHECK-MAIN: call void @Foo.deinit(%Foo* %f)
+    // CHECK-MAIN: call void @_ENM4main3Foo6deinitE(%Foo* %f)
 }
 
 // CHECK-DAG: %Foo = type { float }
 struct Foo: Copyable {
     let f: float;
-    // CHECK-DAG: define void @Foo.init(%Foo* %this, i32 %i)
+    // CHECK-DAG: define void @_ENM4main3Foo4initE1i3int(%Foo* %this, i32 %i)
     init(i: int) { }
-    // CHECK-DAG: define void @Foo.deinit(%Foo* %this)
+    // CHECK-DAG: define void @_ENM4main3Foo6deinitE(%Foo* %this)
     deinit() { }
 }

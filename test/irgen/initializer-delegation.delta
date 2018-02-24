@@ -7,21 +7,21 @@ func main() {
 }
 
 struct X {
-    // CHECK-2: define void @X.init{{[\.0-9]*}}({}* %this, i32 %a, i32 %b)
-    // CHECK-2-NEXT: call void @X.init{{[\.0-9]*}}({}* %this, i32 %a)
+    // CHECK-2: define void @_ENM4main1X4initE1a3int1b3int({}* %this, i32 %a, i32 %b)
+    // CHECK-2-NEXT: call void @_ENM4main1X4initE1a3int({}* %this, i32 %a)
     // CHECK-2-NEXT: ret void
     init(a: int, b: int) {
         init(a);
     }
 
-    // CHECK-1: define void @X.init{{[\.0-9]*}}({}* %this, i32 %a)
-    // CHECK-1-NEXT: call void @X.init{{[\.0-9]*}}({}* %this)
+    // CHECK-1: define void @_ENM4main1X4initE1a3int({}* %this, i32 %a)
+    // CHECK-1-NEXT: call void @_ENM4main1X4initE({}* %this)
     // CHECK-1-NEXT: ret void
     init(a: int) {
         init();
     }
 
-    // CHECK-0: define void @X.init{{[\.0-9]*}}({}* %this)
+    // CHECK-0: define void @_ENM4main1X4initE({}* %this)
     // CHECK-0-NEXT: ret void
     init() {}
 }

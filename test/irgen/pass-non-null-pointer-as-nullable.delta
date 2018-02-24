@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-// CHECK: define void @f(i32* %p)
-func f(p: int*?) {}
+// CHECK: define void @[[FOO:.*3foo.*]](i32* %p)
+func foo(p: int*?) {}
 
 // CHECK-LABEL: define i32 @main()
 func main() {
@@ -15,9 +15,9 @@ func main() {
     let x = &i;
 
     // CHECK-NEXT: %x1 = load i32*, i32** %x
-    // CHECK-NEXT: call void @f(i32* %x1)
-    f(x);
+    // CHECK-NEXT: call void @[[FOO]](i32* %x1)
+    foo(x);
 
-    // CHECK-NEXT: call void @f(i32* %i)
-    f(i);
+    // CHECK-NEXT: call void @[[FOO]](i32* %i)
+    foo(i);
 }

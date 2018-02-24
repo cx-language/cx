@@ -3,7 +3,7 @@
 struct X { let i: int; }
 struct Y { let i: int; }
 
-// CHECK: define i1 [[EQ:@"<[\.0-9]*"]](%X* %a, %X* %b)
+// CHECK: define i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
 func <(a: X*, b: X*) -> bool {
     return true;
 }
@@ -16,15 +16,15 @@ func < <T: Z>(a: T*, b: T*) -> bool {
     return true;
 }
 
-// CHECK: define void @fx(%X* %a, %X* %b)
-// CHECK-NEXT: call i1 [[EQ]](%X* %a, %X* %b)
-// CHECK-NEXT: call i1 [[EQ]](%X* %a, %X* %b)
+// CHECK: define void @{{.*fx.*}}(%X* %a, %X* %b)
+// CHECK-NEXT: call i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
+// CHECK-NEXT: call i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
 func fx(a: X*, b: X*) {
     _ = a < b;
     _ = *a < *b;
 }
 
-// CHECK: define void @fy(%Y* %a, %Y* %b)
+// CHECK: define void @{{.*fy.*}}(%Y* %a, %Y* %b)
 // CHECK-NEXT: %address = ptrtoint %Y* %a to i64
 // CHECK-NEXT: %address1 = ptrtoint %Y* %b to i64
 // CHECK-NEXT: %1 = icmp ult i64 %address, %address1

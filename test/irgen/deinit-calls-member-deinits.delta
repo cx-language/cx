@@ -9,22 +9,22 @@ struct A {
     let i: int;
     init() {}
 
-    // CHECK: define void @A.deinit(%A* %this)
+    // CHECK: define void @_ENM4main1A6deinitE(%A* %this)
     deinit() {
         // CHECK-NEXT: %b = getelementptr inbounds %A, %A* %this, i32 0, i32 0
         // CHECK-NEXT: %bb = getelementptr inbounds %A, %A* %this, i32 0, i32 1
-        // CHECK-NEXT: %1 = call i1 @f()
+        // CHECK-NEXT: %1 = call i1 @{{.*f.*}}()
         // CHECK-NEXT: br i1 %1, label %then, label %else
         if (f()) {
             // CHECK:      then: ; preds = %0
-            // CHECK-NEXT: call void @B.deinit(%B* %bb)
-            // CHECK-NEXT: call void @B.deinit(%B* %b)
+            // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %bb)
+            // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %b)
             // CHECK-NEXT: ret void
             return;
         }
         // CHECK:      endif: ; preds = %else
-        // CHECK-NEXT: call void @B.deinit(%B* %bb)
-        // CHECK-NEXT: call void @B.deinit(%B* %b)
+        // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %bb)
+        // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %b)
         // CHECK-NEXT: ret void
     }
 }
@@ -32,7 +32,7 @@ struct A {
 struct B {
     let i: int;
     init() {}
-    // CHECK-B: define void @B.deinit(%B* %this)
+    // CHECK-B: define void @_ENM4main1B6deinitE(%B* %this)
     // CHECK-B-NEXT: ret void
     deinit() {}
 }
@@ -41,17 +41,17 @@ struct C {
     let b: B;
     let bb: B;
     init() {}
-    // CHECK: define void @C.deinit(%C* %this)
+    // CHECK: define void @_ENM4main1C6deinitE(%C* %this)
     // CHECK-NEXT: %b = getelementptr inbounds %C, %C* %this, i32 0, i32 0
     // CHECK-NEXT: %bb = getelementptr inbounds %C, %C* %this, i32 0, i32 1
-    // CHECK-NEXT: call void @B.deinit(%B* %bb)
-    // CHECK-NEXT: call void @B.deinit(%B* %b)
+    // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %bb)
+    // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %b)
     // CHECK-NEXT: ret void
 }
 
 func main() {
     let a = A();
     let c = C();
-    // CHECK:      call void @C.deinit(%C* %c)
-    // CHECK-NEXT: call void @A.deinit(%A* %a)
+    // CHECK:      call void @_ENM4main1C6deinitE(%C* %c)
+    // CHECK-NEXT: call void @_ENM4main1A6deinitE(%A* %a)
 }

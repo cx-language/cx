@@ -10,32 +10,32 @@ struct T: Copyable {
     init() {}
 }
 
-// CHECK: define void @f(%S %a)
+// CHECK: define void @_EN4main1fE1a1S(%S %a)
 func f(a: S) {}
 
-// CHECK: define void [[F2:@f[\.0-9]*]](%T %a)
+// CHECK: define void @[[F2:_EN4main1fE1a1T]](%T %a)
 func f(a: T) {}
 
-// CHECK: define void @"+.[[S:[0-9]+]]"(%S %a, %S %b)
+// CHECK: define void @[[S:_EN4mainplE1a1S1b1S]](%S %a, %S %b)
 func +(a: S, b: S) {}
 
-// CHECK: define void @"+.[[T:[0-9]+]]"(%T %a, %T %b)
+// CHECK: define void @[[T:_EN4mainplE1a1T1b1T]](%T %a, %T %b)
 func +(a: T, b: T) {}
 
 func main() {
     let s = S()
     let t = T()
 
-    // CHECK: call void @f(%S %s{{[0-9]+}})
+    // CHECK: call void @_EN4main1fE1a1S(%S %s{{[0-9]+}})
     f(s)
 
-    // CHECK: call void [[F2]](%T %t{{[0-9]+}})
+    // CHECK: call void @[[F2]](%T %t{{[0-9]+}})
     f(t)
 
-    // CHECK: call void @"+.[[S]]"(%S %s{{[0-9]+}}, %S %s{{[0-9]+}})
+    // CHECK: call void @[[S]](%S %s{{[0-9]+}}, %S %s{{[0-9]+}})
     _ = s + s
 
-    // CHECK: call void @"+.[[T]]"(%T %t{{[0-9]+}}, %T %t{{[0-9]+}})
+    // CHECK: call void @[[T]](%T %t{{[0-9]+}}, %T %t{{[0-9]+}})
     _ = t + t
 
     _ = 1 + 1

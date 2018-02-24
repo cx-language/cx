@@ -3,21 +3,21 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=X-INT-G
 
 struct X<T> {
-    // CHECK-DAG: define {} @"X<int>.f<bool>"({}* %this, i1 %u)
+    // CHECK-DAG: define {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %this, i1 %u)
     func f<U>(u: U) -> X<U> {
         let x: X<U> = undefined;
         return x;
     }
 
-    // X-INT-G-NOT: define void @"X<int>.g"({}* %this)
-    // CHECK-DAG: define void @"X<bool>.g"({}* %this)
+    // X-INT-G-NOT: define void @{{.*1X.*3int.*1g.*}}({}* %this)
+    // CHECK-DAG: define void @{{.*1X.*4bool.*1g.*}}({}* %this)
     func g() {}
 }
 
 func main(x: X<int>) {
-    // MAIN: call {} @"X<int>.f<bool>"({}* %1, i1 false)
+    // MAIN: call {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %1, i1 false)
     let a = x.f(false);
 
-    // MAIN: call void @"X<bool>.g"({}* %a)
+    // MAIN: call void @{{.*X.*bool.*g.*}}({}* %a)
     a.g();
 }

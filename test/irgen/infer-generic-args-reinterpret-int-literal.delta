@@ -1,11 +1,11 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-F
 
-// CHECK: define void @g(i32 %u)
+// CHECK: define void @{{.*g.*}}(i32 %u)
 func g(u: uint) {
-    // CHECK-NEXT: call void @"f<uint>"(i32 0, i32 %u)
+    // CHECK-NEXT: call void @{{.*f.*uint.*}}(i32 0, i32 %u)
     f(0, u);
 }
 
-// CHECK-F: define void @"f<uint>"(i32 %a, i32 %b)
+// CHECK-F: define void @{{.*f.*uint.*}}(i32 %a, i32 %b)
 func f<T>(a: T, b: T) {}

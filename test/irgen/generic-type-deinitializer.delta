@@ -4,14 +4,14 @@
 struct C<T> {
     init() { }
 
-    // CHECK: define void @"C<int>.deinit"({}* %this)
-    // CHECK: define void @"C<bool>.deinit"({}* %this)
+    // CHECK: define void @_ENM4main1CI3intE6deinitE({}* %this)
+    // CHECK: define void @_ENM4main1CI4boolE6deinitE({}* %this)
     deinit() { }
 }
 
 func main() {
     let i = C<int>()
     let b = C<bool>()
-    // CHECK-CALL: call void @"C<bool>.deinit"({}* %b)
-    // CHECK-CALL-NEXT: call void @"C<int>.deinit"({}* %i)
+    // CHECK-CALL: call void @_ENM4main1CI4boolE6deinitE({}* %b)
+    // CHECK-CALL-NEXT: call void @_ENM4main1CI3intE6deinitE({}* %i)
 }

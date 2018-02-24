@@ -7,7 +7,7 @@ struct S {
     func foo(bar: int) {
         // CHECK: store i32 %bar, i32* %a
         let a = bar;
-        // CHECK-NEXT: call void @S.bar(%S* %this)
+        // CHECK-NEXT: call void @_EN4main1S3barE(%S* %this)
         bar();
     }
 }

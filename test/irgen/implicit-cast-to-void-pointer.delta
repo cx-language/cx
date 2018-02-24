@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-// CHECK: define void @f(i32* %p, i32* %mp)
-func f(p: int*, mp: mutable int*) {
+// CHECK: define void @{{.*foo.*}}(i32* %p, i32* %mp)
+func foo(p: int*, mp: mutable int*) {
     // CHECK-NEXT: %v = alloca i8*
     // CHECK-NEXT: %b = alloca i8*
     // CHECK-NEXT: %i = alloca i32
@@ -11,12 +11,12 @@ func f(p: int*, mp: mutable int*) {
     var v: void* = p;
 
     // CHECK-NEXT: %2 = bitcast i32* %p to i8*
-    // CHECK-NEXT: call void @g(i8* %2)
-    g(p);
+    // CHECK-NEXT: call void @{{.*bar.*}}(i8* %2)
+    bar(p);
 
     // CHECK-NEXT: %v1 = load i8*, i8** %v
-    // CHECK-NEXT: call void @g(i8* %v1)
-    g(v);
+    // CHECK-NEXT: call void @{{.*bar.*}}(i8* %v1)
+    bar(v);
 
     // CHECK-NEXT: %v2 = load i8*, i8** %v
     // CHECK-NEXT: store i8* %v2, i8** %b
@@ -27,19 +27,19 @@ func f(p: int*, mp: mutable int*) {
     v = b;
 
     // CHECK-NEXT: %3 = bitcast i32* %mp to i8*
-    // CHECK-NEXT: call void @h(i8* %3)
-    h(mp);
+    // CHECK-NEXT: call void @{{.*baz.*}}(i8* %3)
+    baz(mp);
 
     // CHECK-NEXT: store i32 0, i32* %i
     var i = 0;
 
     // CHECK-NEXT: %4 = bitcast i32* %i to i8*
-    // CHECK-NEXT: call void @h(i8* %4)
-    h(&i);
+    // CHECK-NEXT: call void @{{.*baz.*}}(i8* %4)
+    baz(&i);
 
     // CHECK-NEXT: ret void
 }
 
-func g(p: void*) {}
+func bar(p: void*) {}
 
-func h(p: void*?) {}
+func baz(p: void*?) {}

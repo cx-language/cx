@@ -13,9 +13,9 @@ func foo(i: int) {
             break;
         case -1:
             // CHECK: ; <label>:2: ; preds = %0
-            // CHECK-NEXT: call void @foo(i32 %i)
+            // CHECK-NEXT: call void @[[FOO:.*3foo.*]](i32 %i)
             foo(i);
-            // CHECK-NEXT: call void @foo(i32 %i)
+            // CHECK-NEXT: call void @[[FOO]](i32 %i)
             foo(i);
             // CHECK-NEXT: br label %endswitch
         case 42:
@@ -36,7 +36,7 @@ func foo(i: int) {
             break;
         default:
             // CHECK: default1: ; preds = %endswitch
-            // CHECK-NEXT: call void @foo(i32 %i)
+            // CHECK-NEXT: call void @[[FOO]](i32 %i)
             // CHECK-NEXT: br label %endswitch2
             foo(i);
     }

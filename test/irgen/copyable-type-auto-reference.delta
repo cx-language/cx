@@ -7,6 +7,6 @@ func foo(ref_f: Foo*) { }
 func main() {
     // CHECK: %f = alloca %Foo
     let f: Foo = undefined;
-    // CHECK-NEXT: call void @foo(%Foo* %f)
+    // CHECK-NEXT: call void @{{.*3foo.*}}(%Foo* %f)
     foo(f);
 }

@@ -1,13 +1,14 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 func main() -> int {
-    // CHECK: %1 = call i32 @foo()
+    // CHECK: %1 = call i32 @{{.*foo.*}}()
     // CHECK-NEXT: ret i32 %1
     return foo();
 }
 
+// CHECK: define i32 @{{.*foo.*}}()
 func foo() -> int {
-    // CHECK: %1 = call i32 @foo()
+    // CHECK-NEXT: %1 = call i32 @{{.*foo.*}}()
     foo();
     // CHECK-NEXT: ret i32 42
     return 42;

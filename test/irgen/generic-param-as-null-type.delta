@@ -9,8 +9,8 @@ struct S<T>: Copyable {
 }
 
 func main() {
-    // CHECK: call void @"S<int>.init"
+    // CHECK: call void @_ENM4main1SI3intE4initE
     _ = S<int>()
-    // CHECK: call void @"S<bool>.init"
+    // CHECK: call void @_ENM4main1SI4boolE4initE
     _ = S<bool>()
 }
