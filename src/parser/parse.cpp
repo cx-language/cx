@@ -848,6 +848,19 @@ std::unique_ptr<ExprStmt> Parser::parseExprStmt(std::unique_ptr<Expr> expr) {
     return stmt;
 }
 
+/// block-or-stmt ::= '{' stmt* '}' | stmt
+std::vector<std::unique_ptr<Stmt>> Parser::parseBlockOrStmt(Decl* parent) {
+    std::vector<std::unique_ptr<Stmt>> stmts;
+    if (currentToken() == Token::LeftBrace) {
+        consumeToken();
+        stmts = parseStmtsUntil(Token::RightBrace, parent);
+        consumeToken();
+    } else {
+        stmts.emplace_back(parseStmt(parent));
+    }
+    return stmts;
+}
+
 /// defer-stmt ::= 'defer' call-expr ('\n' | ';')
 std::unique_ptr<DeferStmt> Parser::parseDeferStmt() {
     ASSERT(currentToken() == Token::Defer);
@@ -858,49 +871,34 @@ std::unique_ptr<DeferStmt> Parser::parseDeferStmt() {
     return stmt;
 }
 
-/// if-stmt ::= 'if' '(' expr ')' '{' stmt* '}' ('else' else-branch)?
-/// else-branch ::= if-stmt | '{' stmt* '}'
+/// if-stmt ::= 'if' '(' expr ')' block-or-stmt ('else' block-or-stmt)?
 std::unique_ptr<IfStmt> Parser::parseIfStmt(Decl* parent) {
     ASSERT(currentToken() == Token::If);
     consumeToken();
     parse(Token::LeftParen);
     auto condition = parseExpr();
     parse(Token::RightParen);
-    parse(Token::LeftBrace);
-    auto thenStmts = parseStmtsUntil(Token::RightBrace, parent);
-    parse(Token::RightBrace);
+    auto thenStmts = parseBlockOrStmt(parent);
     std::vector<std::unique_ptr<Stmt>> elseStmts;
-    if (currentToken() != Token::Else) {
-        return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts), std::move(elseStmts));
-    }
-    consumeToken();
-    if (currentToken() == Token::LeftBrace) {
+    if (currentToken() == Token::Else) {
         consumeToken();
-        elseStmts = parseStmtsUntil(Token::RightBrace, parent);
-        parse(Token::RightBrace);
-        return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts), std::move(elseStmts));
+        elseStmts = parseBlockOrStmt(parent);
     }
-    if (currentToken() == Token::If) {
-        elseStmts.emplace_back(parseIfStmt(parent));
-        return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts), std::move(elseStmts));
-    }
-    unexpectedToken(currentToken(), { Token::LeftBrace, Token::If });
+    return llvm::make_unique<IfStmt>(std::move(condition), std::move(thenStmts), std::move(elseStmts));
 }
 
-/// while-stmt ::= 'while' '(' expr ')' '{' stmt* '}'
+/// while-stmt ::= 'while' '(' expr ')' block-or-stmt
 std::unique_ptr<WhileStmt> Parser::parseWhileStmt(Decl* parent) {
     ASSERT(currentToken() == Token::While);
     consumeToken();
     parse(Token::LeftParen);
     auto condition = parseExpr();
     parse(Token::RightParen);
-    parse(Token::LeftBrace);
-    auto body = parseStmtsUntil(Token::RightBrace, parent);
-    parse(Token::RightBrace);
+    auto body = parseBlockOrStmt(parent);
     return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
 
-/// for-stmt ::= 'for' '(' id 'in' expr ')' '{' stmt* '}'
+/// for-stmt ::= 'for' '(' id 'in' expr ')' block-or-stmt
 std::unique_ptr<ForStmt> Parser::parseForStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
     auto location = getCurrentLocation();
@@ -910,9 +908,7 @@ std::unique_ptr<ForStmt> Parser::parseForStmt(Decl* parent) {
     parse(Token::In);
     auto range = parseExpr();
     parse(Token::RightParen);
-    parse(Token::LeftBrace);
-    auto body = parseStmtsUntil(Token::RightBrace, parent);
-    parse(Token::RightBrace);
+    auto body = parseBlockOrStmt(parent);
     return llvm::make_unique<ForStmt>(std::move(variable), std::move(range), std::move(body), location);
 }
 

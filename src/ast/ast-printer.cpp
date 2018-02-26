@@ -273,12 +273,7 @@ void ASTPrinter::printIfStmt(const IfStmt& stmt) {
     if (!stmt.getElseBody().empty()) {
         breakLine();
         out << "(else";
-        indentLevel++;
-        for (const auto& substmt : stmt.getElseBody()) {
-            if (!substmt->isIfStmt()) breakLine();
-            printStmt(*substmt);
-        }
-        indentLevel--;
+        printBlock(stmt.getElseBody());
         out << ")";
     }
     indentLevel--;
