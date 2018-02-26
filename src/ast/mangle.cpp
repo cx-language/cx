@@ -86,8 +86,8 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type) {
             break;
         case TypeKind::FunctionType:
             stream << 'F';
-            for (Type type : type.getParamTypes()) {
-                mangleType(stream, type);
+            for (Type paramType : type.getParamTypes()) {
+                mangleType(stream, paramType);
             }
             stream << '_';
             mangleType(stream, type.getReturnType());
