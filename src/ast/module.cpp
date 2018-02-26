@@ -32,16 +32,16 @@ void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool glo
 
 void Module::addToSymbolTable(FunctionTemplate& decl) {
     if (getSymbolTable().findWithMatchingPrototype(*decl.getFunctionDecl())) {
-        error(decl.getLocation(), "redefinition of '", mangle(decl), "'");
+        error(decl.getLocation(), "redefinition of '", decl.getQualifiedName(), "'");
     }
-    getSymbolTable().addGlobal(mangle(decl), &decl);
+    getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
 }
 
 void Module::addToSymbolTable(FunctionDecl& decl) {
     if (getSymbolTable().findWithMatchingPrototype(decl)) {
-        error(decl.getLocation(), "redefinition of '", mangle(decl), "'");
+        error(decl.getLocation(), "redefinition of '", decl.getQualifiedName(), "'");
     }
-    getSymbolTable().addGlobal(mangle(decl), &decl);
+    getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
 }
 
 void Module::addToSymbolTable(TypeTemplate& decl) {
@@ -50,7 +50,7 @@ void Module::addToSymbolTable(TypeTemplate& decl) {
 
 void Module::addToSymbolTable(TypeDecl& decl) {
     llvm::cast<BasicType>(decl.getType().getBase())->setDecl(&decl);
-    addToSymbolTableWithName(decl, mangle(decl), true);
+    addToSymbolTableWithName(decl, decl.getQualifiedName(), true);
 
     for (auto& memberDecl : decl.getMemberDecls()) {
         if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl.get())) {
@@ -61,7 +61,7 @@ void Module::addToSymbolTable(TypeDecl& decl) {
 
 void Module::addToSymbolTable(EnumDecl& decl) {
     llvm::cast<BasicType>(decl.getType().getBase())->setDecl(&decl);
-    addToSymbolTableWithName(decl, mangle(decl), true);
+    addToSymbolTableWithName(decl, decl.getName(), true);
 }
 
 void Module::addToSymbolTable(VarDecl& decl, bool global) {
@@ -169,14 +169,15 @@ std::vector<Decl*> Module::findDecls(llvm::StringRef name, SourceFile* currentSo
                     decls.emplace_back(decl.get());
                 }
             } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl.get())) {
-                if (mangle(*functionTemplate) == name) {
+                if (functionTemplate->getQualifiedName() == name) {
                     decls.emplace_back(decl.get());
                 }
             }
         }
 
         for (auto& field : receiverTypeDecl->getFields()) {
-            if (field.getName() == name || mangle(field) == name) {
+            // TODO: Only one comparison should be needed.
+            if (field.getName() == name || field.getQualifiedName() == name) {
                 decls.emplace_back(&field);
             }
         }

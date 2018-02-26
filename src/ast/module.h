@@ -68,17 +68,16 @@ public:
         return {};
     }
 
-    template<typename T>
-    T* findWithMatchingPrototype(const T& toFind) const {
-        for (Decl* decl : find(mangle(toFind))) {
-            T* t = llvm::dyn_cast<T>(decl);
-            if (!t || t->getParams().size() != toFind.getParams().size()) continue;
-            if (t->isMutating() != toFind.isMutating()) continue;
-            if (std::equal(toFind.getParams().begin(), toFind.getParams().end(), t->getParams().begin(),
+    FunctionDecl* findWithMatchingPrototype(const FunctionDecl& toFind) const {
+        for (Decl* decl : find(toFind.getQualifiedName())) {
+            auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
+            if (!functionDecl || functionDecl->getParams().size() != toFind.getParams().size()) continue;
+            if (functionDecl->isMutating() != toFind.isMutating()) continue;
+            if (std::equal(toFind.getParams().begin(), toFind.getParams().end(), functionDecl->getParams().begin(),
                            [](const ParamDecl& a, const ParamDecl& b) {
                                return a.getName() == b.getName() && a.getType() == b.getType();
                            }))
-                return t;
+                return functionDecl;
         }
         return nullptr;
     }

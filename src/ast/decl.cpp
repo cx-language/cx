@@ -28,6 +28,24 @@ FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<Type>& generic
     return instantiations.emplace(std::move(orderedGenericArgs), std::move(instantiation)).first->second.get();
 }
 
+std::string delta::getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::ArrayRef<Type> genericArgs) {
+    std::string result;
+
+    if (receiver) {
+        result = receiver.toString(true);
+        result += '.';
+    }
+
+    result += name;
+    appendGenericArgs(result, genericArgs);
+    return result;
+}
+
+std::string FunctionDecl::getQualifiedName() const {
+    Type receiver = getTypeDecl() ? getTypeDecl()->getType() : Type();
+    return getQualifiedFunctionName(receiver, getName(), getGenericArgs());
+}
+
 FunctionType* FunctionDecl::getFunctionType() const {
     auto paramTypes = map(getParams(), [](const ParamDecl& p) -> Type { return p.getType(); });
     return &llvm::cast<FunctionType>(*FunctionType::get(getReturnType(), std::move(paramTypes)));
@@ -119,6 +137,10 @@ std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params
     });
 }
 
+std::string TypeDecl::getQualifiedName() const {
+    return getQualifiedTypeName(getName(), getGenericArgs());
+}
+
 bool TypeDecl::hasInterface(const TypeDecl& interface) const {
     return llvm::any_of(getInterfaces(), [&](Type type) { return type.getDecl() == &interface; });
 }
@@ -206,6 +228,10 @@ const EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) const {
         }
     }
     return nullptr;
+}
+
+std::string FieldDecl::getQualifiedName() const {
+    return (getParent()->getQualifiedName() + "." + getName()).str();
 }
 
 bool Decl::hasBeenMoved() const {

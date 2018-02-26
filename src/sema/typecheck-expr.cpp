@@ -358,7 +358,7 @@ static bool hasField(TypeDecl& type, const FieldDecl& field) {
 }
 
 bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
-    auto decls = getCurrentModule()->findDecls(mangleFunctionDecl(type.getType(), functionDecl.getName(), {}),
+    auto decls = getCurrentModule()->findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}),
                                                currentSourceFile, currentFunction);
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
@@ -843,8 +843,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             case DeclKind::TypeDecl: {
                 isInitCall = true;
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                auto mangledName = mangleFunctionDecl(llvm::cast<TypeDecl>(decl)->getType(), "init", {});
-                initDecls = getCurrentModule()->findDecls(mangledName, currentSourceFile, currentFunction);
+                auto qualifiedName = getQualifiedFunctionName(llvm::cast<TypeDecl>(decl)->getType(), "init", {});
+                initDecls = getCurrentModule()->findDecls(qualifiedName, currentSourceFile, currentFunction);
                 ASSERT(decls.size() == 1);
                 decls = initDecls;
 
@@ -884,8 +884,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                     TypeDecl* typeDecl = nullptr;
 
-                    auto decls = getCurrentModule()->findDecls(mangleTypeDecl(typeTemplate->getTypeDecl()->getName(),
-                                                                              expr.getGenericArgs()),
+                    auto decls = getCurrentModule()->findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(),
+                                                                                    expr.getGenericArgs()),
                                                                currentSourceFile, currentFunction);
                     if (decls.empty()) {
                         typeDecl = typeTemplate->instantiate(genericArgs);
@@ -1101,7 +1101,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
             return Type::getVoid();
         }
 
-        auto callee = expr.getMangledFunctionName();
+        auto callee = expr.getQualifiedFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
 
         if (expr.isMoveInit()) {
@@ -1460,9 +1460,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     }
 
     if (baseType.isBasicType()) {
-        Decl& typeDecl = getCurrentModule()->findDecl(mangleTypeDecl(baseType.getName(), baseType.getGenericArgs()),
-                                                      expr.getBaseExpr()->getLocation(), currentSourceFile,
-                                                      currentFieldDecls);
+        Decl& typeDecl = getCurrentModule()->findDecl(baseType.getQualifiedTypeName(), expr.getBaseExpr()->getLocation(),
+                                                      currentSourceFile, currentFieldDecls);
 
         for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
             if (field.getName() == expr.getMemberName()) {

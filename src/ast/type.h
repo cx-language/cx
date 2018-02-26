@@ -108,6 +108,7 @@ public:
     std::string toString(bool omitTopLevelMutable = false) const;
 
     llvm::StringRef getName() const;
+    std::string getQualifiedTypeName() const;
     Type getElementType() const;
     int64_t getArraySize() const;
     llvm::ArrayRef<TupleElement> getTupleElements() const;
@@ -151,10 +152,14 @@ private:
     SourceLocation location;
 };
 
+void appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> genericArgs);
+std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs);
+
 class BasicType : public TypeBase {
 public:
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     llvm::StringRef getName() const { return name; }
+    std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
     TypeDecl* getDecl() const { return decl; }
     void setDecl(TypeDecl* decl) { this->decl = decl; }
     static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable = false,

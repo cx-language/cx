@@ -153,6 +153,23 @@ bool delta::operator==(const TupleElement& a, const TupleElement& b) {
     return a.name == b.name && a.type == b.type;
 }
 
+void delta::appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> genericArgs) {
+    if (genericArgs.empty()) return;
+
+    typeName += '<';
+    for (const Type& genericArg : genericArgs) {
+        typeName += genericArg.toString();
+        if (&genericArg != &genericArgs.back()) typeName += ", ";
+    }
+    typeName += '>';
+}
+
+std::string delta::getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs) {
+    std::string result = typeName;
+    appendGenericArgs(result, genericArgs);
+    return result;
+}
+
 std::vector<ParamDecl> FunctionType::getParamDecls(SourceLocation location) const {
     std::vector<ParamDecl> paramDecls;
     paramDecls.reserve(paramTypes.size());
@@ -204,6 +221,10 @@ void Type::setMutable(bool isMutable) {
 
 llvm::StringRef Type::getName() const {
     return llvm::cast<BasicType>(typeBase)->getName();
+}
+
+std::string Type::getQualifiedTypeName() const {
+    return llvm::cast<BasicType>(typeBase)->getQualifiedName();
 }
 
 Type Type::getElementType() const {

@@ -420,8 +420,8 @@ static Type getReceiverType(const CallExpr& call) {
     return Type();
 }
 
-std::string CallExpr::getMangledFunctionName() const {
-    return mangleFunctionDecl(::getReceiverType(*this), getFunctionName(), {});
+std::string CallExpr::getQualifiedFunctionName() const {
+    return ::getQualifiedFunctionName(::getReceiverType(*this), getFunctionName(), {});
 }
 
 bool CallExpr::isMoveInit() const {

@@ -110,8 +110,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
         case TypeKind::BasicType: {
             if (auto* builtinType = getBuiltinType(type.getName())) return builtinType;
 
-            auto name = mangleTypeDecl(type.getName(), type.getGenericArgs());
-            auto it = structs.find(name);
+            auto it = structs.find(type.getQualifiedTypeName());
             if (it != structs.end()) return it->second.first;
 
             auto& basicType = llvm::cast<BasicType>(*type);
@@ -459,7 +458,7 @@ llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool is
 }
 
 llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
-    auto mangled = newMangle(decl);
+    auto mangled = mangleFunctionDecl(decl);
     if (auto* function = module.getFunction(mangled)) return function;
 
     auto* functionType = decl.getFunctionType();
@@ -572,7 +571,8 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
     if (decl.isInterface()) return nullptr;
 
     llvm::StructType* structType;
-    auto it = structs.find(mangle(decl));
+    auto qualifiedName = decl.getQualifiedName();
+    auto it = structs.find(qualifiedName);
 
     if (it != structs.end()) {
         structType = it->second.first;
@@ -580,10 +580,10 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
         if (decl.getFields().empty()) {
             structType = llvm::StructType::get(ctx);
         } else {
-            structType = llvm::StructType::create(ctx, mangle(decl));
+            structType = llvm::StructType::create(ctx, qualifiedName);
         }
 
-        structs.try_emplace(mangle(decl), std::make_pair(structType, &decl));
+        structs.try_emplace(qualifiedName, std::make_pair(structType, &decl));
     }
 
     auto fieldTypes = getFieldTypes(decl);

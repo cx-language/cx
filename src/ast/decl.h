@@ -183,6 +183,8 @@ private:
     bool external;
 };
 
+std::string getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::ArrayRef<Type> genericArgs);
+
 class FunctionDecl : public Decl {
 public:
     FunctionDecl(FunctionProto&& proto, std::vector<Type>&& genericArgs, AccessLevel accessLevel, Module& module,
@@ -191,6 +193,7 @@ public:
     bool isExtern() const { return getProto().isExtern(); }
     bool isVariadic() const { return getProto().isVarArg(); }
     llvm::StringRef getName() const override { return getProto().getName(); }
+    std::string getQualifiedName() const;
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     Type getReturnType() const { return getProto().getReturnType(); }
     llvm::ArrayRef<ParamDecl> getParams() const { return getProto().getParams(); }
@@ -272,6 +275,7 @@ public:
     : Decl(DeclKind::FunctionTemplate, accessLevel), genericParams(std::move(genericParams)),
       functionDecl(std::move(functionDecl)) {}
     llvm::StringRef getName() const override { return getFunctionDecl()->getName(); }
+    std::string getQualifiedName() const { return getFunctionDecl()->getQualifiedName(); }
     bool isReferenced() const override;
     static bool classof(const Decl* d) { return d->isFunctionTemplate(); }
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
@@ -297,6 +301,7 @@ public:
       interfaces(std::move(interfaces)), location(location), module(module) {}
     TypeTag getTag() const { return tag; }
     llvm::StringRef getName() const { return name; }
+    std::string getQualifiedName() const;
     llvm::ArrayRef<FieldDecl> getFields() const { return fields; }
     std::vector<FieldDecl>& getFields() { return fields; }
     llvm::ArrayRef<std::unique_ptr<Decl>> getMethods() const { return methods; }
@@ -412,6 +417,7 @@ public:
     : Decl(DeclKind::FieldDecl, accessLevel), type(type), name(std::move(name)), location(location), parent(parent) {}
     Type getType() const { return type; }
     llvm::StringRef getName() const override { return name; }
+    std::string getQualifiedName() const;
     Module* getModule() const override { return parent.getModule(); }
     SourceLocation getLocation() const override { return location; }
     TypeDecl* getParent() const { return &parent; }

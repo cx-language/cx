@@ -225,7 +225,7 @@ public:
       genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
-    std::string getMangledFunctionName() const;
+    std::string getQualifiedFunctionName() const;
     bool isMethodCall() const { return callee->isMemberExpr(); }
     bool isBuiltinConversion() const { return Type::isBuiltinScalar(getFunctionName()); }
     bool isBuiltinCast() const { return getFunctionName() == "cast"; }

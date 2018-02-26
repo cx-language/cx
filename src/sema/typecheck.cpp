@@ -487,8 +487,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 typecheckType(genericArg, userAccessLevel);
             }
 
-            auto decls = getCurrentModule()->findDecls(mangleTypeDecl(basicType->getName(), basicType->getGenericArgs()),
-                                                       currentSourceFile, currentFunction);
+            auto decls = getCurrentModule()->findDecls(basicType->getQualifiedName(), currentSourceFile, currentFunction);
             Decl* decl;
 
             if (decls.empty()) {
@@ -539,8 +538,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
             break;
         case TypeKind::PointerType: {
             if (type.getPointee().isArrayWithRuntimeSize()) {
-                auto mangledTypeDecl = mangleTypeDecl("ArrayRef", type.getPointee().getElementType());
-                if (getCurrentModule()->findDecls(mangledTypeDecl, currentSourceFile, currentFunction).empty()) {
+                auto qualifiedTypeName = getQualifiedTypeName("ArrayRef", type.getPointee().getElementType());
+                if (getCurrentModule()->findDecls(qualifiedTypeName, currentSourceFile, currentFunction).empty()) {
                     auto& arrayRefDecl = getCurrentModule()->findDecl("ArrayRef", SourceLocation(), currentSourceFile,
                                                                       currentFieldDecls);
                     auto& arrayRef = llvm::cast<TypeTemplate>(arrayRefDecl);
@@ -759,15 +758,14 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
         return typeDecl;
     }
 
-    auto decls = getCurrentModule()->findDecls(mangleTypeDecl(type.getName(), type.getGenericArgs()), currentSourceFile,
-                                               currentFunction);
+    auto decls = getCurrentModule()->findDecls(type.getQualifiedName(), currentSourceFile, currentFunction);
 
     if (!decls.empty()) {
         ASSERT(decls.size() == 1);
         return llvm::dyn_cast_or_null<TypeDecl>(decls[0]);
     }
 
-    decls = getCurrentModule()->findDecls(mangleTypeDecl(type.getName(), {}), currentSourceFile, currentFunction);
+    decls = getCurrentModule()->findDecls(type.getName(), currentSourceFile, currentFunction);
     if (decls.empty()) return nullptr;
     ASSERT(decls.size() == 1);
     auto instantiation = llvm::cast<TypeTemplate>(decls[0])->instantiate(type.getGenericArgs());
