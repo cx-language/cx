@@ -54,7 +54,7 @@ if(MSVC)
     set(EXTRA_LIT_FLAGS "--threads=1")
 endif()
 
-add_custom_target(check COMMAND lit --verbose --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
+add_custom_target(check COMMAND lit --verbose --succinct --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dnot_path="$<TARGET_FILE:not>"
