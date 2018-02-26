@@ -83,10 +83,12 @@ llvm::Value* IRGenerator::codegenUndefinedLiteralExpr(const UndefinedLiteralExpr
 
 llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) {
     auto* arrayType = llvm::ArrayType::get(toIR(expr.getElements()[0]->getType()), expr.getElements().size());
-    auto values = map(expr.getElements(), [&](const std::unique_ptr<Expr>& elementExpr) {
-        return llvm::cast<llvm::Constant>(codegenExpr(*elementExpr));
-    });
-    return llvm::ConstantArray::get(arrayType, values);
+    llvm::Value* array = llvm::UndefValue::get(arrayType);
+    unsigned index = 0;
+    for (auto& element : expr.getElements()) {
+        array = builder.CreateInsertValue(array, codegenExpr(*element), index++);
+    }
+    return array;
 }
 
 llvm::Value* IRGenerator::codegenTupleExpr(const TupleExpr& expr) {
