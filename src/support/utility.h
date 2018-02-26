@@ -32,11 +32,6 @@ inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
 }
 
-template<typename T, typename U>
-std::unique_ptr<T> cast_unique_ptr(std::unique_ptr<U> ptr) {
-    return std::unique_ptr<T>(llvm::cast<T>(ptr.release()));
-}
-
 template<typename SourceContainer, typename Mapper>
 auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(mapper(*source.begin()))> {
     std::vector<decltype(mapper(*source.begin()))> result;
@@ -88,9 +83,6 @@ StateSaver<T> makeStateSaver(T& state) {
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 #define SAVE_STATE(state) const auto CONCAT(stateSaver, __COUNTER__) = makeStateSaver(state)
 
-void skipWhitespace(llvm::StringRef& string);
-llvm::StringRef readWord(llvm::StringRef& string);
-llvm::StringRef readLine(llvm::StringRef& string);
 std::string readLineFromFile(SourceLocation location);
 void renameFile(llvm::Twine sourcePath, llvm::Twine targetPath);
 void printDiagnostic(SourceLocation location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message);
