@@ -74,6 +74,7 @@ inline llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, AccessLevel acce
             // TODO: Rename to "internal" when public access level is added.
             return stream << "public";
     }
+    llvm_unreachable("all cases handled");
 }
 
 class Decl {
