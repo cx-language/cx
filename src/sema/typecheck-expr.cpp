@@ -58,6 +58,7 @@ void Typechecker::checkHasAccess(const Decl& decl, SourceLocation location, Acce
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     Decl& decl = getCurrentModule()->findDecl(expr.getIdentifier(), expr.getLocation(), currentSourceFile, currentFieldDecls);
     checkHasAccess(decl, expr.getLocation(), AccessLevel::None);
+    decl.setReferenced(true);
     expr.setDecl(&decl);
 
     switch (decl.getKind()) {

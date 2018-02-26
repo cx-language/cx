@@ -131,14 +131,15 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
             auto paramTypes = map(functionProtoType.getParamTypes(),
-                                  [](clang::QualType qualType) { return toDelta(qualType); });
-            return FunctionType::get(toDelta(functionProtoType.getReturnType()), std::move(paramTypes), isMutable);
+                                  [](clang::QualType qualType) { return toDelta(qualType).asImmutable(); });
+            return FunctionType::get(toDelta(functionProtoType.getReturnType()).asImmutable(), std::move(paramTypes),
+                                     isMutable);
         }
         case clang::Type::FunctionNoProto: {
             auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
             // TODO: Allow passing any number of parameters of any types to a FunctionNoProtoType.
             // Now we're just assuming the writer meant a 0-argument function type.
-            return FunctionType::get(toDelta(functionNoProtoType.getReturnType()), {}, isMutable);
+            return FunctionType::get(toDelta(functionNoProtoType.getReturnType()).asImmutable(), {}, isMutable);
         }
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
