@@ -1,4 +1,5 @@
 #include "mangle.h"
+#include <cctype>
 #pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringSwitch.h>
