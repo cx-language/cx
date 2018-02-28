@@ -466,8 +466,11 @@ void ASTPrinter::printTypeTemplate(const TypeTemplate& decl) {
 
 void ASTPrinter::printVarDecl(const VarDecl& decl) {
     breakLine();
-    out << "(var-decl " << decl.getName() << " ";
-    printExpr(*decl.getInitializer());
+    out << "(var-decl " << decl.getName();
+    if (decl.getInitializer()) {
+        out << " ";
+        printExpr(*decl.getInitializer());
+    }
     out << ")";
 }
 
