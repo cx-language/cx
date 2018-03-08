@@ -31,11 +31,11 @@ The binary operators `..` and `...` create objects of type `Range` and
 for-loop:
 
 ```
-for (i in 0..5) {
+for (let i in 0..5) {
     // iterates from 0 to 4
 }
 
-for (i in 0...5) {
+for (let i in 0...5) {
     // iterates from 0 to 5
 }
 ```

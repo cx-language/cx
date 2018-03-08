@@ -17,10 +17,10 @@ if (a) {
 ## for
 
 There is no C-style for-loop. Instead we have a for-each, aka a range-based for-
-loop (not fully implemented yet):
+loop:
 
 ```
-for (element in range) {
+for (let element in range) {
     // ...
 }
 ```
