@@ -40,6 +40,25 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Undefined, undefined)
 #undef DEFINE_BUILTIN_TYPE_GET_AND_IS
 
+bool Type::isImplicitlyCopyable() const {
+    switch (getKind()) {
+        case TypeKind::BasicType:
+            return !getDecl() || getDecl()->passByValue();
+        case TypeKind::ArrayType:
+            return false;
+        case TypeKind::TupleType:
+            return llvm::all_of(llvm::cast<TupleType>(typeBase)->getElements(),
+                                [&](auto& element) { return element.type.isImplicitlyCopyable(); });
+        case TypeKind::FunctionType:
+            return true;
+        case TypeKind::PointerType:
+            return true;
+        case TypeKind::OptionalType:
+            return getWrappedType().isImplicitlyCopyable();
+    }
+    llvm_unreachable("all cases handled");
+}
+
 bool Type::isArrayWithConstantSize() const {
     return isArrayType() && getArraySize() >= 0;
 }

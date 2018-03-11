@@ -821,7 +821,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
         getCurrentModule()->addToSymbolTable(decl, false);
     }
 
-    if (!isImplicitlyCopyable(decl.getType())) {
+    if (!decl.getType().isImplicitlyCopyable()) {
         decl.getInitializer()->setMoved(true);
     }
 }

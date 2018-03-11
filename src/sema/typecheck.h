@@ -96,7 +96,6 @@ private:
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, bool returnNullOnError = false);
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                        llvm::ArrayRef<ParamDecl> params, bool returnOnError);
-    bool isImplicitlyCopyable(Type type);
     bool argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {}) const;
     void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation()) const;

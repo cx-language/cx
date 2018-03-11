@@ -64,6 +64,7 @@ public:
     bool isBuiltinType() const {
         return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType() || isNull() || isVoid();
     }
+    bool isImplicitlyCopyable() const;
     bool isArrayWithConstantSize() const;
     bool isArrayWithRuntimeSize() const;
     bool isArrayWithUnknownSize() const;

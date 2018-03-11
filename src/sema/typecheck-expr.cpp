@@ -327,7 +327,7 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, Sour
         }
     }
 
-    if (rhsType && !isImplicitlyCopyable(rhsType) && !lhsType.removeOptional().isPointerType()) {
+    if (rhsType && !rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
         if (rhs) rhs->setMoved(true);
         lhs.setMoved(false);
     }
@@ -1106,7 +1106,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         auto decls = findCalleeCandidates(expr, callee);
 
         if (expr.isMoveInit()) {
-            if (!isImplicitlyCopyable(expr.getArgs()[0].getValue()->getType())) {
+            if (!expr.getArgs()[0].getValue()->getType().isImplicitlyCopyable()) {
                 expr.getArgs()[0].getValue()->setMoved(true);
             }
             return Type::getVoid();
@@ -1172,7 +1172,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
     }
 
     for (auto t : llvm::zip_first(params, expr.getArgs())) {
-        if (!isImplicitlyCopyable(std::get<0>(t).getType())) {
+        if (!std::get<0>(t).getType().isImplicitlyCopyable()) {
             std::get<1>(t).getValue()->setMoved(true);
         }
     }
@@ -1211,28 +1211,6 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         default:
             llvm_unreachable("invalid callee decl");
     }
-}
-
-bool Typechecker::isImplicitlyCopyable(Type type) {
-    switch (type.getKind()) {
-        case TypeKind::BasicType:
-            if (auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(*type))) {
-                return typeDecl->passByValue();
-            }
-            return true;
-        case TypeKind::ArrayType:
-            return false;
-        case TypeKind::TupleType:
-            return llvm::all_of(llvm::cast<TupleType>(*type).getElements(),
-                                [&](const TupleElement& e) { return isImplicitlyCopyable(e.type); });
-        case TypeKind::FunctionType:
-            return true;
-        case TypeKind::PointerType:
-            return true;
-        case TypeKind::OptionalType:
-            return isImplicitlyCopyable(type.getWrappedType());
-    }
-    llvm_unreachable("all cases handled");
 }
 
 bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl,
