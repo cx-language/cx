@@ -436,15 +436,13 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
 }
 
 void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl) {
-    if (valueToDeinit->getType()->isPointerTy() && !deinit->arg_begin()->getType()->isPointerTy()) {
-        builder.CreateCall(deinit, builder.CreateLoad(valueToDeinit));
-    } else if (!valueToDeinit->getType()->isPointerTy() && deinit->arg_begin()->getType()->isPointerTy()) {
+    if (!valueToDeinit->getType()->isPointerTy()) {
         auto* alloca = createEntryBlockAlloca(type, decl);
         builder.CreateStore(valueToDeinit, alloca);
-        builder.CreateCall(deinit, alloca);
-    } else {
-        builder.CreateCall(deinit, valueToDeinit);
+        valueToDeinit = alloca;
     }
+
+    builder.CreateCall(deinit, valueToDeinit);
 }
 
 llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating) {
