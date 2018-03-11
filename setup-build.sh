@@ -20,7 +20,7 @@ if [[ "$os" == "Darwin" ]]; then
 
     brew update
 
-    for package in cmake llvm; do
+    for package in cmake llvm@5; do
         brew ls --versions $package > /dev/null || brew install $package
     done
 
