@@ -1,3 +1,5 @@
+LLVM_VERSION=6.0.1
+
 set -e
 
 os=$(uname)
@@ -16,11 +18,9 @@ mkdir -p "$build_dir"
 cd "$build_dir"
 
 if [[ "$os" == "Darwin" ]]; then
-    # Tested on macOS 10.13.
-
     brew update
 
-    for package in cmake llvm@5; do
+    for package in cmake llvm; do
         brew ls --versions $package > /dev/null || brew install $package
     done
 
@@ -29,8 +29,6 @@ if [[ "$os" == "Darwin" ]]; then
 
     cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
 elif [[ "$os" == "MINGW"* ]]; then
-    # Tested on Windows 10 with MinGW64.
-
     # Build LLVM and Clang libraries from source, because the prebuilt Windows
     # binaries provided in http://releases.llvm.org/download.html don't include
     # everything we need, e.g. header files.
@@ -49,14 +47,14 @@ elif [[ "$os" == "MINGW"* ]]; then
     cd "$build_dir"
     cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$llvm_install_dir"
 else
-    # Tested on Ubuntu 17.04 and Windows Subsystem for Linux (running Ubuntu 16.04).
+    LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-16.04
 
     sudo apt-get update
 
     # The libclang packages in apt don't contain ClangConfig.cmake
     # which we need so download a tarball from llvm.org instead.
-    if [ ! -d clang+llvm-5.0.0-linux-x86_64-ubuntu16.04 ]; then
-        curl http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu16.04.tar.xz | tar xJ
+    if [ ! -d "$LLVM_TARBALL_NAME" ]; then
+        curl http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz | tar xJ
     fi
 
     # Install LLVM dependencies manually because we didn't use apt.
@@ -67,5 +65,5 @@ else
     sudo apt install python-pip
     sudo pip install lit
 
-    cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$PWD/clang+llvm-5.0.0-linux-x86_64-ubuntu16.04"
+    cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$PWD/$LLVM_TARBALL_NAME"
 fi

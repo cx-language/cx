@@ -33,7 +33,9 @@ matrix:
 
 env:
     global:
-        secure: "B1EM2bHUOTeDkMSP4Yl2MBfzsDFpoDy/GGIfWUFhya5KUI1L6vwXPAfWi6jP8w0UGBZAx9x5XFJXKMGKs4Ark4YOlhdtMmwKjflVOFLoIiqjKshr/791XiA77axL3L5dO90noeOFzXL7NBOGry8zF1TjELuNk2JWJZpqU00pB9fnq8ruy6H3VQ+9jZ/eAnB9OVzCB7tQXj3P3bNoUbgz3ZoEKkEi7n9rHug9erXcbbogDKP0PQ9s6mlCmD1jq3gx1oZDeflLCdXJ3bFE7krG69Vi745OnaDhMpDcJm0qV9EAZWD41cX1qd1VCfwnUwCt7w5CP2P+uyotmQnUc0d572HzU9suGw/YINmEXLsX1Yqumm7d9gto5kuQE37D6GAo8duGEeFZVRv4uTX+AlBaL6nhRKNnQqhgKjKHpsPHzU/mBO3SsfL2wLMvUFGdw7lum/RRemritx7YUdXyUVwZV5fiFLNg2go0WMZd9UkX+WnM1isBMpxCL492wKe/8uECpfnamed1ECnHAYUGVT25tEEky4Frh0HD37CCmZ3f6YmZhEmnvrZGdqmwkf8VO7MXTS/u8HqWw2eS6/SjcpAwgs5RCH0E/dD6LuepvPmy2igBn4EBgKTjyAUCHt7M9T+PpsiOZ/+VwK29A+RLlk5SxGDjSVQHYwVJ7t0LXObMHFs="
+        - secure: "B1EM2bHUOTeDkMSP4Yl2MBfzsDFpoDy/GGIfWUFhya5KUI1L6vwXPAfWi6jP8w0UGBZAx9x5XFJXKMGKs4Ark4YOlhdtMmwKjflVOFLoIiqjKshr/791XiA77axL3L5dO90noeOFzXL7NBOGry8zF1TjELuNk2JWJZpqU00pB9fnq8ruy6H3VQ+9jZ/eAnB9OVzCB7tQXj3P3bNoUbgz3ZoEKkEi7n9rHug9erXcbbogDKP0PQ9s6mlCmD1jq3gx1oZDeflLCdXJ3bFE7krG69Vi745OnaDhMpDcJm0qV9EAZWD41cX1qd1VCfwnUwCt7w5CP2P+uyotmQnUc0d572HzU9suGw/YINmEXLsX1Yqumm7d9gto5kuQE37D6GAo8duGEeFZVRv4uTX+AlBaL6nhRKNnQqhgKjKHpsPHzU/mBO3SsfL2wLMvUFGdw7lum/RRemritx7YUdXyUVwZV5fiFLNg2go0WMZd9UkX+WnM1isBMpxCL492wKe/8uECpfnamed1ECnHAYUGVT25tEEky4Frh0HD37CCmZ3f6YmZhEmnvrZGdqmwkf8VO7MXTS/u8HqWw2eS6/SjcpAwgs5RCH0E/dD6LuepvPmy2igBn4EBgKTjyAUCHt7M9T+PpsiOZ/+VwK29A+RLlk5SxGDjSVQHYwVJ7t0LXObMHFs="
+        - LLVM_VERSION=6.0.1
+        - LLVM_TARBALL_NAME=clang+llvm-6.0.1-x86_64-linux-gnu-ubuntu-14.04
     matrix:
         - BUILD_SHARED_LIBS=OFF
         - BUILD_SHARED_LIBS=ON
@@ -46,15 +48,15 @@ before_install:
 
 install:
     - if [ $TRAVIS_OS_NAME == "linux" ]; then
-          wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz;
-          tar -xvf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz;
-          export LLVMDIR="$PWD/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04";
+          wget http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz;
+          tar -xvf $LLVM_TARBALL_NAME.tar.xz;
+          export LLVMDIR="$PWD/$LLVM_TARBALL_NAME";
           pip install --user lit cpp-coveralls;
       fi
     - if [ $TRAVIS_OS_NAME == "osx" ]; then
           brew update;
-          brew install cmake llvm@5;
-          export LLVMDIR="$(brew --prefix llvm@5)";
+          brew install cmake llvm;
+          export LLVMDIR="$(brew --prefix llvm)";
           pip2 install lit;
       fi
 
@@ -72,6 +74,6 @@ script:
 
 after_success:
     - if [ $CXX == "g++-5" ]; then
-          coveralls --exclude clang+llvm-5.0.0-linux-x86_64-ubuntu14.04 --exclude CMakeFiles --exclude extlibs;
+          coveralls --exclude $LLVM_TARBALL_NAME --exclude CMakeFiles --exclude extlibs;
           scripts/update-delta-sandbox.sh;
       fi

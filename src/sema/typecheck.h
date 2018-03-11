@@ -5,6 +5,7 @@
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/StringMap.h>
+#include <llvm/Support/ErrorOr.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
 #include "../ast/expr.h"

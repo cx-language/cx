@@ -28,7 +28,7 @@ Clone the repository including its submodules:
 Building Delta from source requires the following dependencies: a C++14
 compiler, [CMake](https://cmake.org), [libedit](http://thrysoee.dk/editline/),
 and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries
-(version 5.0.0). To run the test suite, you also need
+(version 6.0). To run the test suite, you also need
 [lit](http://llvm.org/docs/CommandGuide/lit.html), which you can get with `pip
 install lit`.
 
@@ -38,8 +38,8 @@ to generate a ready-to-use build system.
 
 If you're on Windows, do the following:
 
-1. Download and extract LLVM sources from http://releases.llvm.org/5.0.0/llvm-5.0.0.src.tar.xz.
-2. Download and extract Clang sources from http://releases.llvm.org/5.0.0/cfe-5.0.0.src.tar.xz.
+1. Download and extract LLVM sources from http://releases.llvm.org/6.0.1/llvm-6.0.1.src.tar.xz.
+2. Download and extract Clang sources from http://releases.llvm.org/6.0.1/cfe-6.0.1.src.tar.xz.
 3. Rename the extracted Clang source directory to `clang`, and move it inside
    the `tools` subdirectory inside the LLVM source directory.
 4. During this step, LLVM and Clang will be built from source, which requires

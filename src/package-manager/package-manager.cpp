@@ -33,7 +33,7 @@ static void cloneGitRepository(const std::string& repositoryUrl, const std::stri
     };
 
     std::string error;
-    int status = llvm::sys::ExecuteAndWait(gitPath, args, nullptr, nullptr, 0, 0, &error);
+    int status = llvm::sys::ExecuteAndWait(gitPath, args, nullptr, {}, 0, 0, &error);
 
     if (status != 0 || !error.empty()) {
         if (!error.empty()) error.insert(0, ": ");
@@ -51,7 +51,7 @@ static void checkoutGitRevision(const std::string& path, const std::string& revi
     };
 
     std::string error;
-    int status = llvm::sys::ExecuteAndWait(gitPath, args, nullptr, nullptr, 0, 0, &error);
+    int status = llvm::sys::ExecuteAndWait(gitPath, args, nullptr, {}, 0, 0, &error);
 
     if (status != 0 || !error.empty()) {
         if (!error.empty()) error.insert(0, ": ");

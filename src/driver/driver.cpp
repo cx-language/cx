@@ -321,7 +321,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     // Redirect stdout and stderr to files to prevent them from interfering with tests.
     llvm::StringRef out = "c-compiler-stdout.txt";
     llvm::StringRef err = "c-compiler-stderr.txt";
-    const llvm::StringRef* redirects[3] = { nullptr, &out, &err };
+    llvm::Optional<llvm::StringRef> redirects[3] = { llvm::None, out, err };
 
     int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs.data(), nullptr, redirects);
     llvm::sys::fs::remove(temporaryOutputFilePath);
@@ -333,8 +333,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (run) {
         std::string error;
         const char* executableArgs[] = { temporaryExecutablePath.c_str(), nullptr };
-        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs, nullptr, nullptr, 0, 0,
-                                                             &error);
+        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs, nullptr, {}, 0, 0, &error);
         llvm::sys::fs::remove(temporaryExecutablePath);
 
         if (msvc) {
