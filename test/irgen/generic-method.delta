@@ -11,16 +11,16 @@ struct X {
     // CHECK: define i1 @{{.*1X.*1f.*4bool.*1t.*}}({}* %this, i1 ()* %t) {
     // CHECK-NEXT: %1 = call i1 %t()
     // CHECK-NEXT: ret i1 %1
-    func f<T>(t: () -> T) -> T {
+    def f<T>(t: () -> T) -> T {
         return t();
     }
 }
 
-func g() -> int { return 0; }
-func h() -> bool { return false; }
+def g() -> int { return 0; }
+def h() -> bool { return false; }
 
 // MAIN: define i32 @main()
-func main() {
+def main() {
     let x = X();
 
     // MAIN: call i32 @{{.*1X.*1f.*3int.*1t.*}}({}* %x, i32 ()* @_EN4main1gE)

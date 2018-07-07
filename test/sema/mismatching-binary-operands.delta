@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:17: error: invalid operands 'int' and 'bool' to '+'
     var foo = 4 + false;
 }

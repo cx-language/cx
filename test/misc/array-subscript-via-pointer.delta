@@ -4,7 +4,7 @@
 import "stdlib.h";
 import "stdio.h";
 
-func main() {
+def main() {
     let buffer = cast<mutable uint8[4]*>(malloc(4)!);
     buffer[0] = 70;
     buffer[1] = 0x6f;

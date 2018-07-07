@@ -2,7 +2,7 @@
 
 import "c-enum.h";
 
-func main() {
+def main() {
     let u: uint = FOO;
     let i: int = FOO;
 }

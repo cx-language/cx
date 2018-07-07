@@ -1,11 +1,11 @@
 // RUN: %delta -typecheck %s
 
-func foo(a: uint) { }
-func bar(a: uint8) { }
-func baz() -> uint { return 0; }
-func qux() -> (a: uint, b: uint8) { return (a: 0, b: 0); }
+def foo(a: uint) { }
+def bar(a: uint8) { }
+def baz() -> uint { return 0; }
+def qux() -> (a: uint, b: uint8) { return (a: 0, b: 0); }
 
-func main() {
+def main() {
     foo(0);
     foo(1);
     bar(0);

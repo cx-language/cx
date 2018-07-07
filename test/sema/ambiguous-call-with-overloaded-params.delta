@@ -1,14 +1,14 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func foo(a: int) { }
-func foo(b: int) { }
+def foo(a: int) { }
+def foo(b: int) { }
 
-func main() {
+def main() {
     // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'foo'
-    // CHECK: 3:6: note: candidate function:
-    // CHECK-NEXT: func foo(a: int) { }
-    // CHECK: 4:6: note: candidate function:
-    // CHECK-NEXT: func foo(b: int) { }
+    // CHECK: 3:5: note: candidate function:
+    // CHECK-NEXT: def foo(a: int) { }
+    // CHECK: 4:5: note: candidate function:
+    // CHECK-NEXT: def foo(b: int) { }
     // CHECK-NOT: note
     foo(1)
 }

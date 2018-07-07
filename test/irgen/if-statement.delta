@@ -1,9 +1,9 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern func foo();
-extern func bar();
+extern def foo();
+extern def bar();
 
-func main() {
+def main() {
     // CHECK: br i1 false, label %then, label %else
     if (false) {
         // CHECK: then: ; preds = %0

@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func foo(i: uint16) {
+def foo(i: uint16) {
     // CHECK: %f = alloca float
     // CHECK-NEXT: %u = alloca i64
     // CHECK-NEXT: %s = alloca i32

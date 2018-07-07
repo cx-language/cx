@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func foo(i: int) {
+def foo(i: int) {
     // CHECK:      switch i32 %i, label %default [
     // CHECK-NEXT:   i32 0, label %1
     // CHECK-NEXT:   i32 -1, label %2

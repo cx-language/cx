@@ -11,14 +11,14 @@ struct F<T, U>: Copyable {
     init() { }
 
     // CHECK-DAG: define void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>" %this)
-    func foo() { }
+    def foo() { }
 
     // TODO: Don't generate code for unused functions:
     // UNUSED: unused
-    func unused() { }
+    def unused() { }
 }
 
-func main() {
+def main() {
     // CHECK-MAIN: %f = alloca %"F<int, bool>"
     // CHECK-MAIN: call void @_ENM4main1FI3int4boolE4initE
     let f = F<int, bool>()

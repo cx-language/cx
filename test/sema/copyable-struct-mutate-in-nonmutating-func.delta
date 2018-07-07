@@ -3,7 +3,7 @@
 struct A: Copyable {
     var s: int
 
-    func a() {
+    def a() {
         // CHECK: 8:10: error: cannot increment immutable value
         s++
     }

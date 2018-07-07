@@ -6,16 +6,16 @@ private struct A {
     init() {}
 }
 
-private func i(q: A*) {
+private def i(q: A*) {
     var a: A = undefined;
     a = A();
 }
 
-private func j(a: A) {}
+private def j(a: A) {}
 
-private func k(a: mutable A*?) {}
+private def k(a: mutable A*?) {}
 
-private func l() -> A*? {
+private def l() -> A*? {
     return null;
 }
 
@@ -28,19 +28,19 @@ private struct D {
     var a: A;
 }
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:11: warning: using private type 'A' in public declaration
-func m(r: A*) {
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:10: warning: using private type 'A' in public declaration
+def m(r: A*) {
     // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.delta:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
     var a: A = undefined;
     // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.delta:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
     a = A();
 }
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:11: warning: using private type 'A' in public declaration
-func o(a: mutable A*?) {}
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:10: warning: using private type 'A' in public declaration
+def o(a: mutable A*?) {}
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:13: warning: using private type 'A' in public declaration
-func p() -> mutable A*? {
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:12: warning: using private type 'A' in public declaration
+def p() -> mutable A*? {
     return null;
 }
 

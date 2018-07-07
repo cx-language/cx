@@ -1,7 +1,7 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func bar() {}
-func foo(bar: int) {
+def bar() {}
+def foo(bar: int) {
     // TODO: Should call bar().
     // CHECK: [[@LINE+1]]:5: error: 'bar' is not a function
     bar();

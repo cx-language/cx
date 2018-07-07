@@ -3,13 +3,13 @@
 struct S {
     var i: int;
     init() {}
-    func bar() {}
-    func foo(bar: () -> void) {
+    def bar() {}
+    def foo(bar: () -> void) {
         // CHECK: [[@LINE+1]]:9: error: ambiguous reference to 'bar'
         bar();
     }
 }
 
-func main() {
+def main() {
     let s = S();
 }

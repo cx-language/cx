@@ -12,24 +12,24 @@ struct Range<T>: Copyable {
     }
 
     // Returns the number of elements this range contains.
-    func size() -> T {
+    def size() -> T {
         return end - start;
     }
 
     // Alias for size
-    func length() -> T {
+    def length() -> T {
         return size();
     }
 
-    func start() -> T {
+    def start() -> T {
         return start;
     }
 
-    func end() -> T {
+    def end() -> T {
         return end;
     }
 
-    func iterator() -> RangeIterator<T> {
+    def iterator() -> RangeIterator<T> {
         return RangeIterator(this);
     }
 }

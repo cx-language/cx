@@ -2,7 +2,7 @@
 
 struct Foo { }
 
-func main() {
+def main() {
     let f: Foo = undefined;
     let f2: Foo = f;
 }

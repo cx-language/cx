@@ -7,7 +7,7 @@ struct A: Printable {
         this.a = a;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         stream.write(a);
         stream.write(a);
         stream.write("!");
@@ -15,7 +15,7 @@ struct A: Printable {
 }
 
 
-func main() {
+def main() {
     // CHECK: foofoo!
     print(A("foo"));
 }

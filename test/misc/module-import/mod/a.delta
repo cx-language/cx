@@ -2,6 +2,6 @@
 
 import "stdio.h"
 
-func foo() {
+def foo() {
     puts("foo!!!")
 }

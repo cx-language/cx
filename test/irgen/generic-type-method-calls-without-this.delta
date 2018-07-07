@@ -8,12 +8,12 @@ struct S<T>: Copyable {
     // A-NEXT: call void @{{.*S.*int.*g.*}}({} %this)
     // B: define void @{{.*S.*float.*f.*}}({} %this)
     // B-NEXT: call void @{{.*S.*float.*g.*}}({} %this)
-    func f() { g() }
+    def f() { g() }
 
-    func g() {}
+    def g() {}
 }
 
-func main() {
+def main() {
     S<int>().f()
     S<float>().f()
 }

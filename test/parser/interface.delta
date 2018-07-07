@@ -1,6 +1,6 @@
 // RUN: %delta -parse %s
 
 interface I {
-    func i();
-    func j() -> mutable int*;
+    def i();
+    def j() -> mutable int*;
 }

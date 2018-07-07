@@ -3,7 +3,7 @@
 struct S: Copyable { }
 struct C { }
 
-func main() {
+def main() {
     // CHECK: %s = alloca {}
     let s: S = undefined;
     // CHECK-NEXT: %c = alloca {}

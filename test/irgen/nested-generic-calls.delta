@@ -3,7 +3,7 @@
 // CHECK: define i32 @main()
 // CHECK-NEXT: call void @_EN4main1gI3intEE1t3int(i32 42)
 // CHECK-NEXT: call void @_EN4main1gI4boolEE1t4bool(i1 false)
-func main() {
+def main() {
     g(42);
     g(false);
 }
@@ -12,10 +12,10 @@ func main() {
 // CHECK-NEXT: call void @_EN4main1fI3intEE1t3int(i32 %t)
 // CHECK: define void @_EN4main1gI4boolEE1t4bool(i1 %t)
 // CHECK-NEXT: call void @_EN4main1fI4boolEE1t4bool(i1 %t)
-func g<T>(t: T) {
+def g<T>(t: T) {
     f(t);
 }
 
 // CHECK-DAG: define void @_EN4main1fI3intEE1t3int(i32 %t)
 // CHECK-DAG: define void @_EN4main1fI4boolEE1t4bool(i1 %t)
-func f<T>(t: T) {}
+def f<T>(t: T) {}

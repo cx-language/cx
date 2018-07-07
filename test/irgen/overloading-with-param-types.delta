@@ -11,18 +11,18 @@ struct T: Copyable {
 }
 
 // CHECK: define void @_EN4main1fE1a1S(%S %a)
-func f(a: S) {}
+def f(a: S) {}
 
 // CHECK: define void @[[F2:_EN4main1fE1a1T]](%T %a)
-func f(a: T) {}
+def f(a: T) {}
 
 // CHECK: define void @[[S:_EN4mainplE1a1S1b1S]](%S %a, %S %b)
-func +(a: S, b: S) {}
+def +(a: S, b: S) {}
 
 // CHECK: define void @[[T:_EN4mainplE1a1T1b1T]](%T %a, %T %b)
-func +(a: T, b: T) {}
+def +(a: T, b: T) {}
 
-func main() {
+def main() {
     let s = S()
     let t = T()
 

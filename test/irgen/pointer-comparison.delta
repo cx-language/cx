@@ -4,22 +4,22 @@ struct X { let i: int; }
 struct Y { let i: int; }
 
 // CHECK: define i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
-func <(a: X*, b: X*) -> bool {
+def <(a: X*, b: X*) -> bool {
     return true;
 }
 
 interface Z {
-    func z();
+    def z();
 }
 
-func < <T: Z>(a: T*, b: T*) -> bool {
+def < <T: Z>(a: T*, b: T*) -> bool {
     return true;
 }
 
 // CHECK: define void @{{.*fx.*}}(%X* %a, %X* %b)
 // CHECK-NEXT: call i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
 // CHECK-NEXT: call i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
-func fx(a: X*, b: X*) {
+def fx(a: X*, b: X*) {
     _ = a < b;
     _ = *a < *b;
 }
@@ -29,6 +29,6 @@ func fx(a: X*, b: X*) {
 // CHECK-NEXT: %address1 = ptrtoint %Y* %b to i64
 // CHECK-NEXT: %1 = icmp ult i64 %address, %address1
 // CHECK-NEXT: ret void
-func fy(a: Y*, b: Y*) {
+def fy(a: Y*, b: Y*) {
     _ = addressof(a) < addressof(b);
 }

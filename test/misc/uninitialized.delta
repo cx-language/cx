@@ -1,6 +1,6 @@
 // RUN: check_exit_status 70 %delta run %s
 
-func main() -> int {
+def main() -> int {
     var buffer: uint8[4] = undefined;
     buffer[0] = 70;
     buffer[1] = 0x6f;

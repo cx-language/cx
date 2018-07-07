@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-B
 
-extern func f() -> bool;
+extern def f() -> bool;
 
 struct A {
     let b: B;
@@ -49,7 +49,7 @@ struct C {
     // CHECK-NEXT: ret void
 }
 
-func main() {
+def main() {
     let a = A();
     let c = C();
     // CHECK:      call void @_ENM4main1C6deinitE(%C* %c)

@@ -1,23 +1,23 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func and(a: int, b: int) -> int {
+def and(a: int, b: int) -> int {
     return a & b; // CHECK: and i32 %a, %b
 }
-func or(a: int, b: int) -> int {
+def or(a: int, b: int) -> int {
     return a | b; // CHECK: or i32 %a, %b
 }
-func xor(a: int, b: int) -> int {
+def xor(a: int, b: int) -> int {
     return a ^ b; // CHECK: xor i32 %a, %b
 }
-func shl(a: int, b: int) -> int {
+def shl(a: int, b: int) -> int {
     return a << b; // CHECK: shl i32 %a, %b
 }
-func ashr(a: int, b: int) -> int {
+def ashr(a: int, b: int) -> int {
     return a >> b; // CHECK: ashr i32 %a, %b
 }
-func lshr(a: uint, b: uint) -> uint {
+def lshr(a: uint, b: uint) -> uint {
     return a >> b; // CHECK: lshr i32 %a, %b
 }
-func compl(a: int) -> int {
+def compl(a: int) -> int {
     return ~a; // CHECK: xor i32 %a, -1
 }

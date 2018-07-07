@@ -2,7 +2,7 @@
 
 import "import-c-pointer-to-pointer-null-conversion.h";
 
-func main() {
+def main() {
     // CHECK: call void @foo(i8** null)
     foo(p: null);
 }

@@ -9,7 +9,7 @@ struct Foo<T> {
     init(t: T) {}
 }
 
-func main() {
+def main() {
     // CHECK-CALL: call void @{{.*Foo.*int.*init.*}}(%"Foo<int>"* %i, i32 42)
     let i = Foo(42);
     // CHECK-CALL: call void @{{.*Foo.*StringRef.*init.*}}(%"Foo<StringRef>"* %b, %StringRef %__str{{[0-9]+}})

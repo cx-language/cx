@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: define void @{{.*foo.*}}(i32* %p, i32* %mp)
-func foo(p: int*, mp: mutable int*) {
+def foo(p: int*, mp: mutable int*) {
     // CHECK-NEXT: %v = alloca i8*
     // CHECK-NEXT: %b = alloca i8*
     // CHECK-NEXT: %i = alloca i32
@@ -40,6 +40,6 @@ func foo(p: int*, mp: mutable int*) {
     // CHECK-NEXT: ret void
 }
 
-func bar(p: void*) {}
+def bar(p: void*) {}
 
-func baz(p: void*?) {}
+def baz(p: void*?) {}

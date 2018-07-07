@@ -3,7 +3,7 @@
 struct Foo {
     let i: int;
 
-    func bar() {
+    def bar() {
         // CHECK: [[@LINE+1]]:31: error: cannot initialize variable of type 'mutable Foo*' with 'Foo*'
         let f: mutable Foo* = this;
     }

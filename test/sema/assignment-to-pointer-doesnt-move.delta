@@ -2,7 +2,7 @@
 
 struct X {}
 
-func f(x: X) {
+def f(x: X) {
     var p: X*? = null;
     p = x;
     p = x;

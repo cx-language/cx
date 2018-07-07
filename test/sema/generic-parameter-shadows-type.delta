@@ -2,5 +2,5 @@
 
 struct Foo: Copyable { }
 
-// CHECK: [[@LINE+1]]:10: error: redefinition of 'Foo'
-func bar<Foo>() { }
+// CHECK: [[@LINE+1]]:9: error: redefinition of 'Foo'
+def bar<Foo>() { }

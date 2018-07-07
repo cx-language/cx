@@ -2,7 +2,7 @@
 
 import "import-c-const-typedef-type.h";
 
-func main() {
+def main() {
     let i = 0;
     bar(&i);
 }

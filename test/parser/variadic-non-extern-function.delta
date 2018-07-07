@@ -1,4 +1,4 @@
 // RUN: not %delta -parse %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:16: error: expected identifier, got '...'
-func f(i: int, ...) {}
+// CHECK: [[@LINE+1]]:15: error: expected identifier, got '...'
+def f(i: int, ...) {}

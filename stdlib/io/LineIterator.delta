@@ -9,20 +9,20 @@ struct LineIterator<Stream: InputStream>: Iterator<String> {
         increment();
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return !stream.isEof() || !next.isEmpty();
     }
 
-    func value() -> String {
+    def value() -> String {
         return next;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         let next = stream.readLine();
         this.next = next;
     }
 
-    func iterator() -> LineIterator<Stream> {
+    def iterator() -> LineIterator<Stream> {
         return *this;
     }
 

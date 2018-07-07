@@ -1,11 +1,11 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern func a() -> bool;
-extern func b() -> bool;
-extern func c() -> bool;
+extern def a() -> bool;
+extern def b() -> bool;
+extern def c() -> bool;
 
 // CHECK-LABEL: define void @{{.*3and.*}}()
-func and() {
+def and() {
     let result = a() && b();
 
     // CHECK:        %1 = call i1 @{{.*a.*}}()
@@ -22,7 +22,7 @@ func and() {
 }
 
 // CHECK-LABEL: define void @{{.*4and2.*}}()
-func and2() {
+def and2() {
     let result = a() && b() && c();
 
     // CHECK:        %1 = call i1 @{{.*a.*}}()
@@ -47,7 +47,7 @@ func and2() {
 }
 
 // CHECK-LABEL: define void @{{.*2or.*}}()
-func or() {
+def or() {
     let result = a() || b();
 
     // CHECK:        %1 = call i1 @{{.*a.*}}()
@@ -64,7 +64,7 @@ func or() {
 }
 
 // CHECK-LABEL: define void @{{.*3or2.*}}()
-func or2() {
+def or2() {
     let result = a() || b() || c();
 
     // CHECK:        %1 = call i1 @{{.*a.*}}()

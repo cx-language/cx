@@ -2,6 +2,6 @@
 
 import "stdlib.h"
 
-func main() -> int {
+def main() -> int {
     return abs(-42)
 }

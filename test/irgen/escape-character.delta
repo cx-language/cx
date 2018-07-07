@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: private unnamed_addr constant [3 x i8] c"\5Cn\00"
     _ = "\\n"
 }

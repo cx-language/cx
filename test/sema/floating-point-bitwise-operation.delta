@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:17: error: invalid operands 'float64' and 'float64' to '&'
     let a = 5.0 & 2.0;
 }

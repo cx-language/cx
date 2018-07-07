@@ -7,15 +7,15 @@ struct ClosedRangeIterator<T>: Copyable, Iterator<T> {
         end = range.end();
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return current <= end;
     }
 
-    func value() -> T {
+    def value() -> T {
         return current;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         current++;
     }
 }

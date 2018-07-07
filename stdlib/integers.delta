@@ -3,114 +3,114 @@
 
 // TODO: Improve printTo() implementations: optimize + don't depend on libc + don't assume size of int.
 
-func printSigned<T>(value: T, stream: mutable String*) {
+def printSigned<T>(value: T, stream: mutable String*) {
     var result: char[22] = undefined;
     sprintf(result, "%lld", value);
     stream.write(StringRef(result));
 }
 
-func printUnsigned<T>(value: T, stream: mutable String*) {
+def printUnsigned<T>(value: T, stream: mutable String*) {
     var result: char[22] = undefined;
     sprintf(result, "%llu", value);
     stream.write(StringRef(result));
 }
 
 struct int: Copyable, Comparable, Printable {
-    func compare(other: int*) -> Ordering {
+    def compare(other: int*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
 }
 
 struct int8: Copyable, Comparable, Printable {
-    func compare(other: int8*) -> Ordering {
+    def compare(other: int8*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
 }
 
 struct int16: Copyable, Comparable, Printable {
-    func compare(other: int16*) -> Ordering {
+    def compare(other: int16*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
 }
 
 struct int32: Copyable, Comparable, Printable {
-    func compare(other: int32*) -> Ordering {
+    def compare(other: int32*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
 }
 
 struct int64: Copyable, Comparable, Printable {
-    func compare(other: int64*) -> Ordering {
+    def compare(other: int64*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
 }
 
 struct uint: Copyable, Comparable, Printable {
-    func compare(other: uint*) -> Ordering {
+    def compare(other: uint*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
 }
 
 struct uint8: Copyable, Comparable, Printable {
-    func compare(other: uint8*) -> Ordering {
+    def compare(other: uint8*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
 }
 
 struct uint16: Copyable, Comparable, Printable {
-    func compare(other: uint16*) -> Ordering {
+    def compare(other: uint16*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
 }
 
 struct uint32: Copyable, Comparable, Printable {
-    func compare(other: uint32*) -> Ordering {
+    def compare(other: uint32*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
 }
 
 struct uint64: Copyable, Comparable, Printable {
-    func compare(other: uint64*) -> Ordering {
+    def compare(other: uint64*) -> Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
 }

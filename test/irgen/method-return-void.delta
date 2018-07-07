@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s
 
 struct C {
-    func f() {
+    def f() {
         return
     }
 }

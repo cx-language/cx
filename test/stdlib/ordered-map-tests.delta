@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     testInsertAndContains();
     testInsertAndDelete();
     testInsertAndSubscript();
@@ -12,7 +12,7 @@ func main() {
     testUnitMapIterator();
 }
 
-func testInsertAndContains() {
+def testInsertAndContains() {
     var m = OrderedMap<int, int>();
     assert(m.size() == 0);
 
@@ -28,7 +28,7 @@ func testInsertAndContains() {
     assert(m.size() == 10);
 }
 
-func testInsertAndDelete() {
+def testInsertAndDelete() {
     var m = OrderedMap<int, int>();
 
     m.insert(42, 39);
@@ -48,7 +48,7 @@ func testInsertAndDelete() {
     }
 }
 
-func testInsertAndSubscript() {
+def testInsertAndSubscript() {
     var m = OrderedMap<int, int>();
 
     m.insert(42, 39);
@@ -68,7 +68,7 @@ func testInsertAndSubscript() {
     }
 }
 
-func testLowerAndHigher() {
+def testLowerAndHigher() {
     var m = OrderedMap<int, int>();
 
     for (let i in 0..100) {
@@ -86,7 +86,7 @@ func testLowerAndHigher() {
     }
 }
 
-func testFirstLast() {
+def testFirstLast() {
     var m = OrderedMap<int, int>();
 
     m.insert(63, 3);
@@ -98,7 +98,7 @@ func testFirstLast() {
     assert(*m.last()! == 69);
 }
 
-func testEmptyMapFunctions() {
+def testEmptyMapFunctions() {
     var m = OrderedMap<int, int>();
 
     assert(m.first() == null);
@@ -108,7 +108,7 @@ func testEmptyMapFunctions() {
 }
 
 
-func testIteratorOrder() {
+def testIteratorOrder() {
     var map = OrderedMap<int, int>();
 
     for (let i in 0..100) {
@@ -143,7 +143,7 @@ func testIteratorOrder() {
 
 }
 
-func testEmptyMapIterator() {
+def testEmptyMapIterator() {
     var map = OrderedMap<int, int>();
     map.insert(1, 2);
     map.insert(1, 2);
@@ -154,7 +154,7 @@ func testEmptyMapIterator() {
     }
 }
 
-func testUnitMapIterator() {
+def testUnitMapIterator() {
     var map = OrderedMap<int, int>();
     map.insert(1, 2);
     map.insert(1, 4);

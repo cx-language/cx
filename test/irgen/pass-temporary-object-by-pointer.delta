@@ -10,11 +10,11 @@ struct B {
     init() {}
 }
 
-func f(a: A*) {}
-func f(b: B*) {}
-func f(i: int*) {}
+def f(a: A*) {}
+def f(b: B*) {}
+def f(i: int*) {}
 
-func main() {
+def main() {
     // CHECK: %a = alloca %A
     let a: A = undefined;
 

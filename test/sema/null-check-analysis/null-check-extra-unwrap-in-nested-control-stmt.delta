@@ -4,7 +4,7 @@ struct S: Copyable {
     var a: mutable S*?;
 }
 
-func foo(p: mutable S*) -> mutable S*? {
+def foo(p: mutable S*) -> mutable S*? {
     var n = p;
 
     while (n.a != null) {

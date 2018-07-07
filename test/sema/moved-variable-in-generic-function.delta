@@ -4,16 +4,16 @@ struct A {
     init() {}
 }
 
-func f<T>() {
+def f<T>() {
     let t = T();
     let a = t;
 }
 
-func g<T>(t: T) {
+def g<T>(t: T) {
     let a = t;
 }
 
-func main() {
+def main() {
     f<A>();
     f<A>();
     g(A());

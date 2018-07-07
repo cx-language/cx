@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func foo() -> int {
+def foo() -> int {
     // CHECK: [[@LINE+1]]:5: error: expected return statement to return a value of type 'int'
     return;
 }

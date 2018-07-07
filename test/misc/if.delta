@@ -3,7 +3,7 @@
 // CHECK-NEXT:c
 // CHECK-NEXT:e
 
-func main() {
+def main() {
     if (true) {
         print("a");
     }

@@ -1,8 +1,8 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern func foo(a: uint8);
+extern def foo(a: uint8);
 
-func main() {
+def main() {
     // CHECK: call void @foo(i8 1)
     foo(1);
 

@@ -10,7 +10,7 @@ struct C {
     deinit() {}
 }
 
-func main() {
+def main() {
     testArrayInsertionAndRemoval();
     testArrayInitFromLiteral();
     testArrayIterator();
@@ -22,7 +22,7 @@ func main() {
     testElementDestruction();
 }
 
-func testArrayInsertionAndRemoval() {
+def testArrayInsertionAndRemoval() {
     var a = Array<C>();
     assert(a.size() == 0 && a.capacity() >= 0);
 
@@ -39,7 +39,7 @@ func testArrayInsertionAndRemoval() {
     assert(a.size() == 2 && a.capacity() >= 2);
 }
 
-func testArrayInitFromLiteral() {
+def testArrayInitFromLiteral() {
     let a = Array([1, 2, 3]);
 
     assert(*a[0] == 1);
@@ -47,7 +47,7 @@ func testArrayInitFromLiteral() {
     assert(*a[2] == 3);
 }
 
-func testArrayIterator() {
+def testArrayIterator() {
     var array = Array<C>();
     array.push(C(1));
     array.push(C(4));
@@ -65,7 +65,7 @@ func testArrayIterator() {
     assert(!iterator.hasValue());
 }
 
-func testArrayMutatingIteration() {
+def testArrayMutatingIteration() {
     var a = Array<int>();
     a.push(1);
     a.push(2);
@@ -80,7 +80,7 @@ func testArrayMutatingIteration() {
     assert(*a[2] == 4);
 }
 
-func testArrayEnumeratedIterator() {
+def testArrayEnumeratedIterator() {
     var a = Array<int>();
     a.push(9000);
     a.push(-1234);
@@ -107,7 +107,7 @@ func testArrayEnumeratedIterator() {
     assert(!iterator.hasValue());
 }
 
-func testEmpty() {
+def testEmpty() {
     var a = Array<int>();
 
     assert(a.isEmpty());
@@ -117,7 +117,7 @@ func testEmpty() {
     assert(!a.isEmpty());
 }
 
-func testMap() {
+def testMap() {
     var a = Array<int>();
     a.push(1);
     a.push(2);
@@ -132,7 +132,7 @@ func testMap() {
     assert(*b[3] == true);
 }
 
-func testFilter() {
+def testFilter() {
     var a = Array<int>();
     a.push(1);
     a.push(2);
@@ -155,7 +155,7 @@ struct DestructionTester {
     }
 }
 
-func testElementDestruction() {
+def testElementDestruction() {
     var a = Array<DestructionTester>();
 
     for (let i in 0..50) {

@@ -3,18 +3,18 @@
 
 // INSTANTIATIONS-DAG: define void @{{.*foo.*int.*}}(i32 %t)
 // INSTANTIATIONS-DAG: define void @{{.*foo.*bool.*}}(i1 %t)
-func foo<T>(t: T) { }
+def foo<T>(t: T) { }
 
 // INSTANTIATIONS-DAG: define %StringRef @{{.*bar.*StringRef.*}}(%StringRef %t)
-func bar<T>(t: T) -> T { return t; }
+def bar<T>(t: T) -> T { return t; }
 
 // INSTANTIATIONS-DAG: define i32 @{{.*qux.*int.*}}(i32 %t)
-func qux<T>(t: T) -> T {
+def qux<T>(t: T) -> T {
     if (t < 0) { return -t; }
     return t;
 }
 
-func main() {
+def main() {
     // CHECK: call void @{{.*foo.*int.*}}(i32 1)
     foo<int>(1);
     // CHECK-NEXT: call void @{{.*foo.*bool.*}}(i1 false)

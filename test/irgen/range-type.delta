@@ -5,7 +5,7 @@
 // CHECK-RANGE: define void @{{.*5Range.*3int.*4init.*}}(%"Range<int>"* %this, i32 %start, i32 %end)
 
 // CHECK: define i32 @[[FOO:.*3foo.*]](%"Range<int>" %r)
-func foo(r: Range<int>) -> int {
+def foo(r: Range<int>) -> int {
     var sum = 0;
 
     // CHECK: alloca %"RangeIterator<int>"
@@ -21,7 +21,7 @@ func foo(r: Range<int>) -> int {
 }
 
 // CHECK-LABEL: define i32 @main()
-func main() -> int {
+def main() -> int {
     // CHECK: call void @{{.*5Range.*3int.*4init.*}}(%"Range<int>"* %{{[0-9]+}}, i32 0, i32 5)
     // CHECK-NEXT: %{{[0-9]+}} = load %"Range<int>", %"Range<int>"* %{{[0-9]+}}
     // CHECK-NEXT: call i32 @[[FOO]](%"Range<int>" %{{[0-9]+}})

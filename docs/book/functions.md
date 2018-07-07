@@ -1,21 +1,21 @@
 # Functions
 
-Functions are declared using the `func` keyword:
+Functions are declared using the `def` keyword:
 
 ```
-func foo() { }
+def foo() { }
 ```
 
 Parameters go inside the parentheses, like so:
 
 ```
-func foo(a: int, b: int) { }
+def foo(a: int, b: int) { }
 ```
 
 If the function has a return type, it is specified after the parameter list:
 
 ```
-func foo(a: int, b: int) -> int {
+def foo(a: int, b: int) -> int {
     return a + b;
 }
 ```
@@ -31,7 +31,7 @@ let result = foo(1, 2);
 Functions can return more than one value by returning a tuple of values:
 
 ```
-func foo() -> (key: int, value: bool) {
+def foo() -> (key: int, value: bool) {
     let key = 42;
     let value = true;
     return (key, value);
@@ -43,7 +43,7 @@ func foo() -> (key: int, value: bool) {
 Parameters can be declared to have a default value:
 
 ```
-func foo(i: int = 42) {
+def foo(i: int = 42) {
     // ...
 }
 ```
@@ -62,7 +62,7 @@ To define generic functions, specify the type parameters inside angle brackets
 after the function name:
 
 ```
-func foo<T>() { }
+def foo<T>() { }
 ```
 
 `T` is a now a placeholder for a type that can be used in the definition of `foo`.

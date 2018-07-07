@@ -6,7 +6,7 @@ struct Y {
 }
 
 // CHECK: define void @{{.*f.*}}({} %a, {}* %b)
-func f(a: Y, b: mutable Y*) {
+def f(a: Y, b: mutable Y*) {
     // CHECK-NEXT: all void @_ENM4main1Y6deinitE({}* %b)
     // CHECK-NEXT: store {} %a, {}* %b
     *b = a;
@@ -14,7 +14,7 @@ func f(a: Y, b: mutable Y*) {
 }
 
 // CHECK: define void @{{.*g.*}}({} %a)
-func g(a: Y) {
+def g(a: Y) {
     // CHECK-NEXT: %b = alloca {}
     // CHECK-NEXT: store {} %a, {}* %b
     // CHECK-NEXT: call void @_ENM4main1Y6deinitE({}* %b)

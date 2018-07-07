@@ -4,7 +4,7 @@ struct Foo: Copyable {
     let i: int;
 }
 
-func main() {
+def main() {
     let p: Foo*? = null;
     // CHECK: [[@LINE+1]]:10: warning: dereferencing value of optional type 'Foo*?' which may be null; unwrap the value with a postfix '!' to silence this warning
     _ = *p;

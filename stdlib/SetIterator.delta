@@ -5,15 +5,15 @@ struct SetIterator<Element>: Copyable, Iterator<Element*> {
         iterator = MapIterator<Element, bool>(set.map);
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return iterator.hasValue();
     }
 
-    func value() -> Element* {
+    def value() -> Element* {
         return iterator.value().key;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         iterator.increment();
     }
 }

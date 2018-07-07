@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: define void @{{.*f.*}}(i32* %p)
-func f(p: int*) {
+def f(p: int*) {
     // CHECK: %a = alloca i32*
     // CHECK-NEXT: %1 = getelementptr i32, i32* %p, i32 4
     // CHECK-NEXT: %2 = getelementptr i32, i32* %1, i32 -1

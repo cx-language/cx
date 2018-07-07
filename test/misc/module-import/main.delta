@@ -4,7 +4,7 @@
 
 import mod
 
-func main() {
+def main() {
     foo()
     bar()
 }

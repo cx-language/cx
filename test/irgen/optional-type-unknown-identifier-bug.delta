@@ -15,9 +15,9 @@ struct X<T> {
 struct Y<T> {
     let a: T;
 
-    func f() {}
+    def f() {}
 }
 
-func main() {
+def main() {
     let x = X<int>();
 }

@@ -9,12 +9,12 @@ struct vec2: Copyable {
         this.y = y;
     }
 
-    func add(that: vec2) -> vec2 {
+    def add(that: vec2) -> vec2 {
         return vec2(this.x + that.x, this.y + that.y);
     }
 }
 
-func main() -> int {
+def main() -> int {
     let foo = vec2(5, 8);
     let foo2 = foo.add(vec2(3, -1));
     return foo2.x + foo2.y;

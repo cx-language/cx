@@ -5,15 +5,15 @@ struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
         this.mapIter = set.map.iterator();
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return mapIter.hasValue();
     }
 
-    func value() -> Element* {
+    def value() -> Element* {
         return mapIter.value().key;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         mapIter.increment();
     }
 }

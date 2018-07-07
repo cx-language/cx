@@ -1,18 +1,18 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 interface Interface {
-    func f() -> S*;
+    def f() -> S*;
 
-    func bar() -> This* {
+    def bar() -> This* {
         // CHECK: [[@LINE+1]]:9: error: mismatching return type 'S*', expected 'Interface*'
         return f();
     }
 }
 
 struct S: Interface {
-    func f() -> S* { return this; }
+    def f() -> S* { return this; }
 }
 
-func f(s: S*) {
+def f(s: S*) {
     s.bar();
 }

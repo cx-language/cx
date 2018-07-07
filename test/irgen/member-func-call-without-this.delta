@@ -9,12 +9,12 @@ struct S: Copyable {
     // CHECK-S: define void @_ENM4main1S3fooE({}* %this)
     // CHECK-S-NEXT: %this1 = load {}, {}* %this
     // CHECK-S-NEXT: call void @_EN4main1S3barE({} %this1)
-    mutating func foo() {
+    mutating def foo() {
         bar()
     }
 
     // CHECK-S: define void @_EN4main1S3barE({} %this)
-    func bar() { }
+    def bar() { }
 }
 
 struct Foo<U> {
@@ -32,15 +32,15 @@ struct Foo<U> {
 
     // CHECK: define void @{{.*Foo.*int.*baz.*}}({}* %this)
     // CHECK-NEXT: call void @{{.*Foo.*int.*qux.*}}({}* %this)
-    mutating func baz() {
+    mutating def baz() {
         qux()
     }
 
     // CHECK: define void @{{.*Foo.*int.*qux.*}}({}* %this)
-    func qux() { }
+    def qux() { }
 }
 
-func main() {
+def main() {
     var s = S()
     s.foo()
 

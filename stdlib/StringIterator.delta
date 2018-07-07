@@ -7,15 +7,15 @@ struct StringIterator: Copyable, Iterator<char> {
         end = string.data() + string.size();
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return current !== end;
     }
 
-    func value() -> char {
+    def value() -> char {
         return *current;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         current++;
     }
 }

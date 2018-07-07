@@ -3,11 +3,11 @@
 struct Foo {
     let i: int;
     // CHECK: define void @{{.*Foo.*doStuff.*}}(%Foo* %this)
-    func doStuff() { }
+    def doStuff() { }
 }
 
 struct Bar {
     let i: int;
     // CHECK: define void @{{.*Bar.*doStuff.*}}(%Bar* %this) {
-    func doStuff() { }
+    def doStuff() { }
 }

@@ -11,12 +11,12 @@ struct Foo: Copyable {
 
     // CHECK: define void @_EN4main3Foo3barE(%Foo %this)
     // CHECK-NEXT: ret void
-    func bar() { }
+    def bar() { }
 
     // CHECK: define i32 @_EN4main3Foo3quxE(%Foo %this)
     // CHECK-NEXT: %baz = extractvalue %Foo %this, 0
     // CHECK-NEXT: ret i32 %baz
-    func qux() -> int { return this.baz; }
+    def qux() -> int { return this.baz; }
 }
 
 // CHECK: define i32 @main()
@@ -29,7 +29,7 @@ struct Foo: Copyable {
 // CHECK-NEXT: %1 = call i32 @_EN4main3Foo3quxE(%Foo %foo2)
 // CHECK-NEXT: store i32 %1, i32* %i
 // CHECK-NEXT: ret
-func main() {
+def main() {
     var foo = Foo();
     foo.bar();
     var i = foo.qux();

@@ -2,7 +2,7 @@
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta -check-prefix=CHECK-PRIVATE-IN-PUBLIC-DECL
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:12: warning: 'A' is private
     var a: A = undefined;
 
@@ -10,14 +10,14 @@ func main() {
     a = A();
 }
 
-// CHECK: [[@LINE+1]]:11: warning: 'A' is private
-func f(a: A) {}
+// CHECK: [[@LINE+1]]:10: warning: 'A' is private
+def f(a: A) {}
 
-// CHECK: [[@LINE+1]]:11: warning: 'A' is private
-func g(a: mutable A*?) {}
+// CHECK: [[@LINE+1]]:10: warning: 'A' is private
+def g(a: mutable A*?) {}
 
-// CHECK: [[@LINE+1]]:13: warning: 'A' is private
-func h() -> A*? {
+// CHECK: [[@LINE+1]]:12: warning: 'A' is private
+def h() -> A*? {
     return null;
 }
 

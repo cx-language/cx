@@ -1,5 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func foo<T>() { }
-// CHECK: 5:18: error: can't infer generic parameters without function arguments
-func main() { foo() }
+def foo<T>() { }
+
+// CHECK: [[@LINE+1]]:17: error: can't infer generic parameters without function arguments
+def main() { foo() }

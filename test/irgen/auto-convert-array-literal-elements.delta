@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK-LABEL: define i32 @main()
-func main() {
+def main() {
     // CHECK-NEXT: %foo = alloca [1 x float]
     // CHECK-NEXT: %bar = alloca [2 x i16]
 

@@ -1,5 +1,5 @@
 struct char: Copyable, Comparable {
-    func compare(other: char*) -> Ordering {
+    def compare(other: char*) -> Ordering {
         return int(this).compare(int(*other));
     }
 }

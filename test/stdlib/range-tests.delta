@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     let a = 1..5;
     let b = 1...5;
 

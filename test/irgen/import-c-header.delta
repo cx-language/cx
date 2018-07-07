@@ -9,7 +9,7 @@ import "foo.h";
 // CHECK-DECL-DAG: declare i32 @getBar(%Foo*)
 
 // CHECK-LABEL: define i32 @main()
-func main() {
+def main() {
     // CHECK: call i32 @puts(i8*
     puts("foo bar");
     var f: Foo = undefined;

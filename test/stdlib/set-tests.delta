@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     testInsert();
     testRemoval();
     testDuplicates();
@@ -9,7 +9,7 @@ func main() {
     testUnitSetIterator();
 }
 
-func testInsert() {
+def testInsert() {
     var s = Set<StringRef>();
 
     s.insert("ok");
@@ -19,7 +19,7 @@ func testInsert() {
 }
 
 
-func testRemoval() {
+def testRemoval() {
     var s = Set<StringRef>();
 
     s.insert("ok");
@@ -29,7 +29,7 @@ func testRemoval() {
     assert(!s.contains("ok"));
 }
 
-func testDuplicates() {
+def testDuplicates() {
     var s = Set<StringRef>();
 
     s.insert("ok");
@@ -40,7 +40,7 @@ func testDuplicates() {
     assert(!s.contains("ok"));
 }
 
-func testIterator() {
+def testIterator() {
     var s = Set<StringRef>();
 
     s.insert("a");
@@ -74,7 +74,7 @@ func testIterator() {
     assert(ccc);
 }
 
-func testEmptySetIterator() {
+def testEmptySetIterator() {
     var s = Set<StringRef>();
     s.insert("foo");
     s.insert("foo");
@@ -85,7 +85,7 @@ func testEmptySetIterator() {
     }
 }
 
-func testUnitSetIterator() {
+def testUnitSetIterator() {
     var s = Set<StringRef>();
     s.insert("foo");
     s.insert("foo");

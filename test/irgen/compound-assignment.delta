@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK-LABEL: define i32 @main
-func main() {
+def main() {
     // CHECK: %i = alloca i32
     // CHECK-NEXT: store i32 0, i32* %i
     var i = 0;

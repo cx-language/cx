@@ -10,14 +10,14 @@ struct Foo {
     init(qux: int) { }
 
     // CHECK: define void @_EN4main3Foo3fooE1i3int(%Foo* %this, i32 %i)
-    func foo(i: int) { }
+    def foo(i: int) { }
 
     // CHECK: define void @_EN4main3Foo3fooE3qux3int(%Foo* %this, i32 %qux)
-    func foo(qux: int) { }
+    def foo(qux: int) { }
 }
 
 // CHECK: define void @_EN4main3fooE1i3int(i32 %i)
-func foo(i: int) { }
+def foo(i: int) { }
 
 // CHECK: define void @_EN4main3fooE3qux3int(i32 %qux)
-func foo(qux: int) { }
+def foo(qux: int) { }

@@ -1,4 +1,4 @@
-func fatalError() {
+def fatalError() {
     printStackTrace();
     setAbortBehavior();
     abort();

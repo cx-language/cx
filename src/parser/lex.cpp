@@ -202,7 +202,7 @@ static const llvm::StringMap<Token::Kind> keywords = {
     { "extern", Token::Extern },
     { "false", Token::False },
     { "for", Token::For },
-    { "func", Token::Func },
+    { "def", Token::Def },
     { "if", Token::If },
     { "import", Token::Import },
     { "in", Token::In },

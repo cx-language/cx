@@ -2,12 +2,12 @@
 // RUN: %delta -print-ir -Werror %s | %FileCheck %s -check-prefix=MAIN
 
 // CHECK: define void @{{.*f.*int.*}}(%"ArrayRef<int>" %a)
-func f<T>(a: T[]*) {
+def f<T>(a: T[]*) {
     let s = a.size();
 }
 
 // MAIN-LABEL: define i32 @main()
-func main() {
+def main() {
     // MAIN-NEXT: %__temporaryArray0 = alloca [3 x i32]
     // MAIN-NEXT: %__temporaryArray1 = alloca [3 x i32]
     // MAIN-NEXT: %__temporaryArray2 = alloca [3 x i32]

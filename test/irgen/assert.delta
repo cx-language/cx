@@ -2,7 +2,7 @@
 
 // CHECK: @[[STRING_ID:[0-9]+]] = private unnamed_addr constant [{{[0-9]+}} x i8] c"Assertion failed at {{.*}}assert.delta:6:5\00"
 
-func f(foo: bool) {
+def f(foo: bool) {
     assert(foo);
 
     // CHECK:        %assert.condition = icmp eq i1 %foo, false

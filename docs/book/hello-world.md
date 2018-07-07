@@ -1,7 +1,7 @@
 # Hello, World!
 
 ```
-func main() {
+def main() {
     print("Hello, World");
 }
 ```

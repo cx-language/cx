@@ -2,6 +2,6 @@
 
 import inputs
 
-func main() {
+def main() {
     A<int>().f()
 }

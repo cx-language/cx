@@ -23,7 +23,7 @@ struct Foo: Copyable {
     }
 }
 
-func main() {
+def main() {
     // CHECK: %f = alloca %Foo
     // CHECK: call void @{{_ENM4main3Foo4initE.*}}(%Foo* %f, i32 666, i1 true)
     var f = Foo(666, true);

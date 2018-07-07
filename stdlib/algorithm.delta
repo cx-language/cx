@@ -1,7 +1,7 @@
 /// Public members
 
 /// Gives the maximum of the two elements
-func max<T>(a: T*, b: T*) -> T* {
+def max<T>(a: T*, b: T*) -> T* {
     if (*a >= *b) {
         return a;
     }
@@ -9,7 +9,7 @@ func max<T>(a: T*, b: T*) -> T* {
 }
 
 /// Gives the minimum of the two elements
-func min<T>(a: T*, b: T*) -> T* {
+def min<T>(a: T*, b: T*) -> T* {
     if (*a < *b) {
         return a;
     }
@@ -17,14 +17,14 @@ func min<T>(a: T*, b: T*) -> T* {
 }
 
 /// Swaps two items in place
-func swap<E>(a: mutable E*, b: mutable E*) {
+def swap<E>(a: mutable E*, b: mutable E*) {
     let t = *a;
     *a = *b;
     *b = t;
 }
 
 /// Sorts an array. Uses insertion sort if the array is small enough, and quickSort otherwise.
-func sort<E: Comparable>(array: mutable Array<E>*) {
+def sort<E: Comparable>(array: mutable Array<E>*) {
     if (array.size() <= 32) {
         insertionSort(array);
     } else {
@@ -34,7 +34,7 @@ func sort<E: Comparable>(array: mutable Array<E>*) {
 
 /// Private members
 
-private func partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) -> uint {
+private def partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) -> uint {
     var pivot = arr[high];
     var i = (low - 1);
 
@@ -51,7 +51,7 @@ private func partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: u
 }
 
 /// Quicksorts the given array, in place. Not stable.
-private func quickSort<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) {
+private def quickSort<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) {
     if (low < high) {
         let index = partition<E>(arr, low, high);
 
@@ -65,7 +65,7 @@ private func quickSort<E: Comparable>(arr: mutable Array<E>*, low: uint, high: u
 }
 
 /// Insertion sorts the given array, in place. Good for small arrays
-private func insertionSort<E: Comparable>(arr: mutable Array<E>*) {
+private def insertionSort<E: Comparable>(arr: mutable Array<E>*) {
     var i: uint = 1;
     while (i < arr.size()) {
         var j: uint = i;

@@ -7,8 +7,8 @@ let baz = 42;
 // CHECK: @qux = private global i32 42
 var qux: int = 42;
 
-func a() { foo = 43; } // CHECK: store i32 43, i32* @foo
-func c() { var d = bar; } // CHECK: store i32 42, i32* %d
+def a() { foo = 43; } // CHECK: store i32 43, i32* @foo
+def c() { var d = bar; } // CHECK: store i32 42, i32* %d
 
 // CHECK-NOT: @bar = private global i32 42
 let bar = 42;

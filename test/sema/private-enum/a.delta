@@ -7,6 +7,6 @@ private enum A {
     case C;
 }
 
-func f() {
+def f() {
     let a: A = A.C;
 }

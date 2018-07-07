@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s | %FileCheck %s
 
-func foo(a: mutable int*?, b: mutable int*?) {
+def foo(a: mutable int*?, b: mutable int*?) {
     var p = a;
     if (p != null) {
         let i = *p;

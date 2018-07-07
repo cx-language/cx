@@ -1,10 +1,10 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func f<T>(a: T) -> T {
+def f<T>(a: T) -> T {
     // CHECK: fsub
     return -a
 }
 
-func main() {
+def main() {
     f(0.0)
 }

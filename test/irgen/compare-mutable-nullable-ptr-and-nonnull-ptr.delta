@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func f(foo: int*, bar: mutable int*?) {
+def f(foo: int*, bar: mutable int*?) {
     // CHECK: icmp eq i32* %foo, %bar
     if (foo == bar) {}
 }

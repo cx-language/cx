@@ -2,7 +2,7 @@
 // XFAIL: windows
 // testIterator() segfaults on Windows for an unknown reason.
 
-func main() {
+def main() {
     testInsert();
     testRemoval();
     testDuplicates();
@@ -15,7 +15,7 @@ func main() {
     testIteratorOrder();
 }
 
-func testInsert() {
+def testInsert() {
     var s = OrderedSet<int>();
 
     s.insert(42);
@@ -25,7 +25,7 @@ func testInsert() {
 }
 
 
-func testRemoval() {
+def testRemoval() {
     var s = OrderedSet<int>();
 
     s.insert(42);
@@ -35,7 +35,7 @@ func testRemoval() {
     assert(!s.contains(42));
 }
 
-func testDuplicates() {
+def testDuplicates() {
     var s = OrderedSet<int>();
 
     s.insert(42);
@@ -46,7 +46,7 @@ func testDuplicates() {
     assert(!s.contains(42));
 }
 
-func testIterator() {
+def testIterator() {
     var s = OrderedSet<int>();
 
     s.insert(1);
@@ -80,7 +80,7 @@ func testIterator() {
     assert(ccc);
 }
 
-func testEmptyOrderedSetIterator() {
+def testEmptyOrderedSetIterator() {
     var s = OrderedSet<int>();
     s.insert(79);
     s.insert(79);
@@ -91,7 +91,7 @@ func testEmptyOrderedSetIterator() {
     }
 }
 
-func testUnitOrderedSetIterator() {
+def testUnitOrderedSetIterator() {
     var s = OrderedSet<int>();
     s.insert(79);
     s.insert(79);
@@ -105,7 +105,7 @@ func testUnitOrderedSetIterator() {
     assert(count == 1);
 }
 
-func testLowerAndHigher() {
+def testLowerAndHigher() {
     var m = OrderedSet<int>();
 
     for (let i in 0..100) {
@@ -123,7 +123,7 @@ func testLowerAndHigher() {
     }
 }
 
-func testFirstLast() {
+def testFirstLast() {
     var s = OrderedSet<uint>();
 
     s.insert(63);
@@ -135,7 +135,7 @@ func testFirstLast() {
     assert(*s.last()! == 69);
 }
 
-func testEmptyOrderedSetFunctions() {
+def testEmptyOrderedSetFunctions() {
     var s = OrderedSet<uint>();
 
     assert(s.first() == null);
@@ -144,7 +144,7 @@ func testEmptyOrderedSetFunctions() {
     assert(s.lower(42) == null);
 }
 
-func testIteratorOrder() {
+def testIteratorOrder() {
     var set = OrderedSet<uint>();
 
     for (let i in 0..100) {

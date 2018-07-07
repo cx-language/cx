@@ -1,6 +1,6 @@
 // RUN: not %delta run %s | %FileCheck %s
 
-func main() {
+def main() {
     var array = Array<int>();
     array.removeLast();
 }

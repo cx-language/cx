@@ -1,8 +1,8 @@
 // RUN: %delta -typecheck %s
 
 struct Foo { }
-func bar(b: Foo) { }
-func main() {
+def bar(b: Foo) { }
+def main() {
     let f: Foo = undefined;
     bar(f);
 }

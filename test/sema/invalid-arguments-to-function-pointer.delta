@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func f(a: (int, int) -> void) {
+def f(a: (int, int) -> void) {
     // CHECK: [[@LINE+1]]:11: error: invalid argument #2 type 'bool' to 'a', expected 'int'
     a(42, false);
 }

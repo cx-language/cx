@@ -3,7 +3,7 @@
 // CHECK: define void @{{.*3foo.*}}(i32* %a, i32* %b)
 // CHECK-NEXT: icmp eq i32* %a, %b
 // CHECK-NEXT: icmp ne i32* %a, %b
-func foo(a: int*?, b: mutable int*) {
+def foo(a: int*?, b: mutable int*) {
     _ = a === b;
     _ = a !== b;
 }

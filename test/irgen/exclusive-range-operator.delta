@@ -2,7 +2,7 @@
 // RUN: check_exit_status 6 %delta run %s
 
 // CHECK-LABEL: define i32 @main()
-func main() -> int {
+def main() -> int {
     var p = 9;
 
     // CHECK: alloca %"RangeIterator<int>"

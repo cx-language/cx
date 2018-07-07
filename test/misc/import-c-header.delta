@@ -3,6 +3,6 @@
 
 import "stdio.h";
 
-func main() {
+def main() {
     printf("foo bar");
 }

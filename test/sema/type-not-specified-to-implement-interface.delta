@@ -1,21 +1,21 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 interface X {
-    func foo();
-    func bar();
-    func qux();
+    def foo();
+    def bar();
+    def qux();
 }
 
 struct Y {
     init() {}
-    func foo() {}
-    func bar() {}
-    func qux() {}
+    def foo() {}
+    def bar() {}
+    def qux() {}
 }
 
-func f<T: X>(t: T) {}
+def f<T: X>(t: T) {}
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:6: error: type 'Y' doesn't implement interface 'X'
     f(Y());
 }

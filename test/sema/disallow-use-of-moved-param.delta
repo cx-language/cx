@@ -2,9 +2,9 @@
 
 struct T {}
 
-func f(t: T) {}
+def f(t: T) {}
 
-func g(t: T) {
+def g(t: T) {
     f(t);
     let a = t; // CHECK: [[@LINE]]:13: error: use of moved value
 }

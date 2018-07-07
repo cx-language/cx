@@ -3,8 +3,8 @@
 struct S {
     var i: int;
     init() {}
-    func bar() {}
-    func foo(bar: int) {
+    def bar() {}
+    def foo(bar: int) {
         // CHECK: store i32 %bar, i32* %a
         let a = bar;
         // CHECK-NEXT: call void @_EN4main1S3barE(%S* %this)
@@ -12,6 +12,6 @@ struct S {
     }
 }
 
-func main() {
+def main() {
     let s = S();
 }

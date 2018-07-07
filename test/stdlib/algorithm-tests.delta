@@ -1,12 +1,12 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     testInsertionSort();
     testQuickSort();
     testMax();
 }
 
-func testInsertionSort() {
+def testInsertionSort() {
     var a = Array<int>();
 
     for (let i in 0..5) {
@@ -26,7 +26,7 @@ func testInsertionSort() {
 }
 
 
-func testQuickSort() {
+def testQuickSort() {
     var a = Array<int>();
 
     for (let i in 0..64) {
@@ -45,7 +45,7 @@ func testQuickSort() {
     assert(ArrayRef(&a) == ArrayRef(&real));
 }
 
-func testMax() {
+def testMax() {
     let a = 7;
     let b = 9;
 

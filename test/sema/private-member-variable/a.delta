@@ -5,13 +5,13 @@
 struct A {
     private var a: int;
     init() {}
-    mutating func f() {
+    mutating def f() {
         this.a++;
         a++;
     }
 }
 
-func f() {
+def f() {
     var a = A();
     a.a++;
 }

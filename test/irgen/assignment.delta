@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: store i32 0, i32* %foo
     var foo = 0;
 

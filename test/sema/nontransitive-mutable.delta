@@ -4,7 +4,7 @@ struct Foo: Copyable {
     var a: int
 }
 
-func bar(foo: Foo*) {
+def bar(foo: Foo*) {
     // CHECK: [[@LINE+1]]:11: error: cannot assign to immutable variable 'a'
     foo.a = 42
 }

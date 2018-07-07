@@ -7,12 +7,12 @@ struct Foo {
         this.i = 0;
     }
 
-    mutating func add(amount: int) {
+    mutating def add(amount: int) {
         this.i = this.i + amount;
     }
 }
 
-func main() -> int {
+def main() -> int {
     var f = Foo();
     f.add(21);
     f.add(21);

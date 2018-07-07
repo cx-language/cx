@@ -9,6 +9,6 @@ struct C<T> {
     }
 }
 
-func main() {
+def main() {
     let c = C<int>()
 }

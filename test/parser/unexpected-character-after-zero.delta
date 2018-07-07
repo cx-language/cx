@@ -1,6 +1,6 @@
 // RUN: not %delta -parse %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:14: error: expected newline or ';', got '_'
     var i = 0_;
 }

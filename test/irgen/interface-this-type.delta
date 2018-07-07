@@ -4,13 +4,13 @@
 interface Interface {
     let that: This*;
 
-    func foo(a: This*) -> This*;
+    def foo(a: This*) -> This*;
 
     // CHECK-BAR: define %S* @_EN4main1S3barE(%S* %this)
     // CHECK-BAR-NEXT: %1 = call %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %this)
     // CHECK-BAR-NEXT: %2 = call %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %1)
     // CHECK-BAR-NEXT: ret %S* %2
-    func bar() -> This* {
+    def bar() -> This* {
         return foo(foo(this));
     }
 }
@@ -21,12 +21,12 @@ struct S: Interface {
     init() { that = this; }
 
     // CHECK: define %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %a)
-    func foo(a: S*) -> S* {
+    def foo(a: S*) -> S* {
         return this;
     }
 }
 
-func main() {
+def main() {
     let a = S();
     let b = S();
 
@@ -38,6 +38,6 @@ func main() {
 // CHECK: define void @{{.*f.*S.*}}(%S* %a)
 // CHECK-NEXT: %1 = call %S* @_EN4main1S3fooE1aP1S(%S* %a, %S* %a)
 // CHECK-NEXT: %2 = call %S* @_EN4main1S3fooE1aP1S(%S* %a, %S* %1)
-func f<T: Interface>(a: T*) {
+def f<T: Interface>(a: T*) {
     a.foo(a.foo(a));
 }

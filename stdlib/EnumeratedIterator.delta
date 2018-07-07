@@ -7,15 +7,15 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
         index = 0;
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return base.hasValue();
     }
 
-    func value() -> EnumeratedIteratorEntry<Element> {
+    def value() -> EnumeratedIteratorEntry<Element> {
         return EnumeratedIteratorEntry(base.value(), index);
     }
 
-    mutating func increment() {
+    mutating def increment() {
         base.increment();
         index++;
     }

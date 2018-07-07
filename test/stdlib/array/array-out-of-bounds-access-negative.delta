@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func main() -> int {
+def main() -> int {
     var array = Array<int>();
     array.push(42);
     // CHECK: [[@LINE+1]]:19: error: -1 is out of range for type 'uint'

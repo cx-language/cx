@@ -6,10 +6,10 @@
 
 import "stdio.h"
 
-func foo() -> char* { return "foo" }
-func bar() -> StringRef { return "bar" }
+def foo() -> char* { return "foo" }
+def bar() -> StringRef { return "bar" }
 
-func main() {
+def main() {
     puts(foo())
     print(bar())
     puts("baz")

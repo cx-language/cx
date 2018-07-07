@@ -5,7 +5,7 @@ struct Foo {
     init() { }
 }
 
-func main() {
+def main() {
     var foo = Foo();
     // CHECK: [[@LINE+1]]:19: error: no member named 'bar' in 'Foo'
     var bar = foo.bar;

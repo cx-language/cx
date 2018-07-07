@@ -3,7 +3,7 @@
 // CHECK-NEXT:foo
 // CHECK-NEXT:foo
 
-func main() {
+def main() {
     var i = 0;
     while (i < 3) {
         print("foo");

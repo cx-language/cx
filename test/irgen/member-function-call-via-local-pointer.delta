@@ -2,10 +2,10 @@
 
 struct Foo {
     let i: int;
-    func bar() { }
+    def bar() { }
 }
 
-func main() {
+def main() {
     let f: Foo = undefined;
     let rf: Foo* = f;
     // CHECK: %rf1 = load %Foo*, %Foo** %rf

@@ -1,7 +1,7 @@
 // RUN: not --crash %delta run %s
 // REQUIRES: windows
 
-func main() {
+def main() {
     let p: mutable int*? = null;
     let pp = p!;
 }

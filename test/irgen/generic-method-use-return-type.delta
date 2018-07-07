@@ -4,17 +4,17 @@
 
 struct X<T> {
     // CHECK-DAG: define {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %this, i1 %u)
-    func f<U>(u: U) -> X<U> {
+    def f<U>(u: U) -> X<U> {
         let x: X<U> = undefined;
         return x;
     }
 
     // X-INT-G-NOT: define void @{{.*1X.*3int.*1g.*}}({}* %this)
     // CHECK-DAG: define void @{{.*1X.*4bool.*1g.*}}({}* %this)
-    func g() {}
+    def g() {}
 }
 
-func main(x: X<int>) {
+def main(x: X<int>) {
     // MAIN: call {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %1, i1 false)
     let a = x.f(false);
 

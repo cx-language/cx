@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
 
-func main() {
+def main() {
     // CHECK-MAIN: call void @_ENM4main3Foo4initE1i3int(%Foo* %f, i32 5)
     var f = Foo(5);
     // CHECK-MAIN: call void @_ENM4main3Foo6deinitE(%Foo* %f)

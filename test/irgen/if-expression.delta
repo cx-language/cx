@@ -1,13 +1,13 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern func a() -> bool;
-extern func b() -> bool;
-extern func c() -> bool;
-extern func d() -> bool;
-extern func e() -> bool;
+extern def a() -> bool;
+extern def b() -> bool;
+extern def c() -> bool;
+extern def d() -> bool;
+extern def e() -> bool;
 
 // CHECK: define void @{{.*foo.*}}()
-func foo() {
+def foo() {
     // CHECK-NEXT: %x = alloca i1
     // CHECK-NEXT: %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT: br i1 %1, label %then, label %else

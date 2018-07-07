@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func main() {
+def main() {
     let i = 42;
     let p = &i;
     // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'null' to '==' (non-optional type 'int*' cannot be null)

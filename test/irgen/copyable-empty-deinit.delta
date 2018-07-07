@@ -4,6 +4,6 @@ struct Foo: Copyable {
     deinit() { }
 }
 
-func main() {
+def main() {
     let foo: Foo = undefined;
 }

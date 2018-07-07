@@ -1,5 +1,5 @@
 // RUN: %delta -parse %s
 
-func main() {
+def main() {
     var a = 5
 }

@@ -2,10 +2,10 @@
 
 struct Foo {
     let i: int;
-    func bar() { }
+    def bar() { }
 }
 
-func main() {
+def main() {
     let f: mutable Foo*? = null;
 
     // CHECK: %1 = load %Foo*, %Foo** %f

@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK-LABEL: define i32 @main()
-func main() {
+def main() {
     // CHECK-DAG: %three = alloca [3 x i32]
     // CHECK-DAG: %b = alloca i32
     // CHECK-DAG: %ref = alloca %"ArrayRef<int>"
@@ -30,7 +30,7 @@ func main() {
 }
 
 // CHECK: define void @[[FOO]](%"ArrayRef<int>" %ints)
-func foo(ints: int[]*) {
+def foo(ints: int[]*) {
     // CHECK-NEXT: %a = alloca i32
     // CHECK-NEXT: %b = alloca i32
     // CHECK-NEXT: %c = alloca %"ArrayRef<int>"
@@ -48,7 +48,7 @@ func foo(ints: int[]*) {
 }
 
 // CHECK: define void @[[BAR]]([3 x i32]* %ints)
-func bar(ints: int[3]*) {
+def bar(ints: int[3]*) {
     // CHECK-NEXT: %b = alloca i32
     // CHECK-NEXT: %ref = alloca %"ArrayRef<int>"
     // CHECK-NEXT: store i32 3, i32* %b

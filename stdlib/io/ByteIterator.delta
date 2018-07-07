@@ -9,19 +9,19 @@ struct ByteIterator<Stream: InputStream>: Copyable, Iterator<uint8> {
         increment();
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return !stream.isEof() || next >= 0;
     }
 
-    func value() -> uint8 {
+    def value() -> uint8 {
         return uint8(next);
     }
 
-    mutating func increment() {
+    mutating def increment() {
         next = stream.readByte();
     }
 
-    func iterator() -> ByteIterator<Stream> {
+    def iterator() -> ByteIterator<Stream> {
         return this;
     }
 

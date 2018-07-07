@@ -2,7 +2,7 @@
 
 struct X {}
 
-func fx(a: X*, b: X*) {
+def fx(a: X*, b: X*) {
     // CHECK: [[@LINE+1]]:11: error: type 'X' doesn't implement interface 'Comparable'
     _ = a < b;
 }

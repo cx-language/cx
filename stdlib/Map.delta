@@ -10,7 +10,7 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Inserts an element into the map. If the element exists already, nothing is done.
-    mutating func insert(key: Key, value: Value) {
+    mutating def insert(key: Key, value: Value) {
         if (contains(key)) {
             return;
         }
@@ -25,7 +25,7 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Removes an element from the map, if it exists there.
-    mutating func remove(e: Key*) {
+    mutating def remove(e: Key*) {
         let hashValue = uint(e.hash()) % capacity();
         let slot = hashTable[hashValue];
 
@@ -43,22 +43,22 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Expands the hash table size, needed when there's too many elements in the map
-    mutating func increaseTableSize(newTable: mutable Array<Array<(key: Key, value: Value)>>*, newCapacity: uint) {
+    mutating def increaseTableSize(newTable: mutable Array<Array<(key: Key, value: Value)>>*, newCapacity: uint) {
         for (let i in 0..newCapacity) {
             newTable.push(Array<(key: Key, value: Value)>());
         }
     }
 
-    func size() -> uint {
+    def size() -> uint {
         return size;
     }
 
-    func capacity() -> uint {
+    def capacity() -> uint {
         return hashTable.size();
     }
 
     /// Resizes the map. This includes copying the old table into a new, bigger one
-    mutating func resize() {
+    mutating def resize() {
         var newTable = Array<Array<(key: Key, value: Value)>>();
         let newCapacity = capacity() * 2;
 
@@ -75,7 +75,7 @@ struct Map<Key: Hashable, Value> {
         hashTable = newTable;
     }
 
-    func [](e: Key*) -> Value*? {
+    def [](e: Key*) -> Value*? {
         let hashValue = uint(e.hash()) % capacity();
         let slot = hashTable[hashValue];
 
@@ -88,7 +88,7 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Checks if e is part of the map.
-    func contains(e: Key*) -> bool {
+    def contains(e: Key*) -> bool {
         let hashValue = uint(e.hash()) % capacity();
         let slot = hashTable[hashValue];
 
@@ -105,18 +105,18 @@ struct Map<Key: Hashable, Value> {
         return false;
     }
 
-    func isEmpty() -> bool {
+    def isEmpty() -> bool {
         return size == 0;
     }
 
     /// Returns the load factor for the map. This is used to increase the map size once
     /// the load factor gets too big.
-    func loadFactor() -> float64 {
+    def loadFactor() -> float64 {
         return float64(size) / (float64(capacity()));
     }
 
     /// Iterate over the map
-    func iterator() -> MapIterator<Key, Value> {
+    def iterator() -> MapIterator<Key, Value> {
         return MapIterator(this);
     }
 }

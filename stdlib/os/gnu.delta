@@ -2,10 +2,10 @@
 
 #if hasInclude("execinfo.h")
 
-extern func backtrace(array: mutable void mutable**, size: int) -> int;
-extern func backtrace_symbols(array: mutable void**, size: int) -> mutable char mutable**?;
+extern def backtrace(array: mutable void mutable**, size: int) -> int;
+extern def backtrace_symbols(array: mutable void**, size: int) -> mutable char mutable**?;
 
-func printStackTrace() {
+def printStackTrace() {
     var callstack: mutable void*[128] = undefined;
 
     let frames = backtrace(&callstack[0], int(callstack.size()));
@@ -24,12 +24,12 @@ func printStackTrace() {
 
 #else
 
-func printStackTrace() {
+def printStackTrace() {
 }
 
 #endif
 
-func setAbortBehavior() {
+def setAbortBehavior() {
 }
 
 #endif

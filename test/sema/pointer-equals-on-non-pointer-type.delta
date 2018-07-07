@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func f(a: int, b: int) {
+def f(a: int, b: int) {
 	// CHECK: [[@LINE+1]]:8: error: both operands to pointer comparison operator must have pointer type
 	_ = a !== b;
 }

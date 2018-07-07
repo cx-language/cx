@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s
 
-func f() {
+def f() {
     let index = 0;
     let x = g();
     X<int>().g();
 }
 
-func g() -> X<int> {
+def g() -> X<int> {
     var x = X<int>();
     return x;
 }
@@ -14,7 +14,7 @@ func g() -> X<int> {
 struct X<T> {
     init() {}
 
-    func g() {
+    def g() {
         let index = 0;
     }
 }

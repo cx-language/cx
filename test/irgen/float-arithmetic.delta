@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: store double 1.000000e+00, double* %a
     let a = 1.0;
     // CHECK-NEXT: %a1 = load double, double* %a

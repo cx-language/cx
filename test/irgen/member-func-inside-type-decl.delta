@@ -8,12 +8,12 @@ struct A {
     // CHECK: define void @_ENM4main1A6deinitE(%A* %this)
     deinit() { }
     // CHECK: define void @_EN4main1A3fooE(%A* %this)
-    func foo() { }
+    def foo() { }
     // CHECK: define void @_ENM4main1A6mutateE(%A* %this)
-    mutating func mutate() { }
+    mutating def mutate() { }
 }
 
-func main() {
+def main() {
     // CHECK: %a = alloca %A
     // CHECK: call void @_ENM4main1A4initE(%A* %a)
     var a = A()

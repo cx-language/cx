@@ -8,11 +8,11 @@ struct A {
         j = 42 // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
     }
 
-    func foo() {
+    def foo() {
         _ = j // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
     }
 
-    mutating func bar() {
+    mutating def bar() {
         j = 1 // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
     }
 }
@@ -25,11 +25,11 @@ struct B: Copyable {
         j = 42 // CHECK: getelementptr inbounds %B, %B* %this, i32 0, i32 1
     }
 
-    func foo() {
+    def foo() {
         _ = j // CHECK: extractvalue %B %this, 1
     }
 
-    mutating func bar() {
+    mutating def bar() {
         j = 1 // CHECK: getelementptr inbounds %B, %B* %this, i32 0, i32 1
     }
 }

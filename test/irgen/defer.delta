@@ -1,9 +1,9 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern func foo();
-extern func bar();
+extern def foo();
+extern def bar();
 
-func main() {
+def main() {
     defer foo();
     if (false) {
         defer bar();
@@ -40,4 +40,4 @@ func main() {
 
 // CHECK: define void @_EN4main13shouldBeEmptyE()
 // CHECK-NEXT: ret void
-func shouldBeEmpty() { }
+def shouldBeEmpty() { }

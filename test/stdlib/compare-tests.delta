@@ -8,12 +8,12 @@ struct C: Comparable {
         this.a = a;
     }
 
-    func compare(other: C*) -> Ordering {
+    def compare(other: C*) -> Ordering {
         return this.a.compare(other.a);
     }
 }
 
-func main() {
+def main() {
     var a = C(6);
     var b = C(99);
 

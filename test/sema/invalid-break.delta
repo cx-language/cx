@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func main() {
+def main() {
     for (let i in 0..1) {
         // CHECK-NOT: [[@LINE+1]]:9: error
         break;

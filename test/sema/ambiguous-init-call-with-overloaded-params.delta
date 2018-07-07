@@ -5,7 +5,7 @@ struct Foo: Copyable {
     init(b: int) { }
 }
 
-func main() {
+def main() {
     // CHECK: [[@LINE+6]]:9: error: ambiguous reference to 'Foo.init'
     // CHECK: 4:5: note: candidate function:
     // CHECK-NEXT: init(a: int) { }

@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     assert("abc" == "abc");
     assert(!("abc" == "not"));
     assert("abc" < "bcd");
@@ -12,7 +12,7 @@ func main() {
     testOtherSplit();
 }
 
-func testStringIterator() {
+def testStringIterator() {
     var iterator = "xy".iterator();
 
     assert(iterator.hasValue());
@@ -26,7 +26,7 @@ func testStringIterator() {
     assert(!iterator.hasValue());
 }
 
-func testFind() {
+def testFind() {
     var s = String("word");
 
     // Start from beginning
@@ -41,7 +41,7 @@ func testFind() {
     assert(s.find('d', 2) == 3);
 }
 
-func testSubstr() {
+def testSubstr() {
     var s = String("word");
 
     assert(s.substr(0..1) == "w");
@@ -67,7 +67,7 @@ func testSubstr() {
     assert(s3.substr(0..0) == "");
 }
 
-func testSplit() {
+def testSplit() {
     var s = String("this is the best sentence");
 
     var words = s.split();
@@ -81,7 +81,7 @@ func testSplit() {
     assert(words.size() == 5);
 }
 
-func testOtherSplit() {
+def testOtherSplit() {
     var s = String("this,sentence,is,comma,separated");
 
     var words = s.split(',');

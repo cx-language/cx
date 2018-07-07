@@ -10,18 +10,18 @@ struct S<E> {
     }
 
     // CHECK-DAG: define void @_EN4main1SI1AE1sE({}* %this)
-    func s() {}
+    def s() {}
 }
 
 struct A: Copyable {
     init() {}
 
     // CHECK-DAG: define void @_EN4main1A1hE({} %this)
-    func h() {}
+    def h() {}
 }
 
 // MAIN: define i32 @main()
-func main() {
+def main() {
     // MAIN-NEXT: %x = alloca {}
     // MAIN-NEXT: call void @_ENM4main1SI1AE4initE({}* %x)
     let x = S<A>();

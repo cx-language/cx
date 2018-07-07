@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: store i1 false, i1* %b
     var b = !!false;
     // CHECK-NEXT: %b1 = load i1, i1* %b

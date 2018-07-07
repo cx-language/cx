@@ -9,7 +9,7 @@ struct C<T> {
     deinit() { }
 }
 
-func main() {
+def main() {
     let i = C<int>()
     let b = C<bool>()
     // CHECK-CALL: call void @_ENM4main1CI4boolE6deinitE({}* %b)

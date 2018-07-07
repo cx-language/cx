@@ -1,6 +1,6 @@
 // RUN: not %delta -parse %s | %FileCheck %s
 
 struct Foo: Copyable {
-    // CHECK: 5:10: error: operator functions other than subscript must be non-member functions
-    func ==(f: Foo) -> bool { return false }
+    // CHECK: 5:9: error: operator functions other than subscript must be non-member functions
+    def ==(f: Foo) -> bool { return false }
 }

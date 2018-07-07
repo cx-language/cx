@@ -1,13 +1,13 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 interface H {
-    func h() -> int;
+    def h() -> int;
 }
 
 struct R: Copyable {
     let i: int;
 
-    func h() -> int {
+    def h() -> int {
         return i;
     }
 }
@@ -17,7 +17,7 @@ struct A<T> {
 
     init() {}
 
-    func [](i: int) -> T {
+    def [](i: int) -> T {
         return t;
     }
 }
@@ -27,7 +27,7 @@ struct S<E: H> {
 
     init() {}
 
-    func s() {
+    def s() {
         // CHECK: %[[T_VALUE:[a-z0-9]+]] = call %"A<R>" @_EN4main1AI1AI1REEixE1i3int(%"A<A<R>>"* %{{[a-z0-9]+}}, i32 0)
         // CHECK-NEXT: store %"A<R>" %[[T_VALUE]], %"A<R>"* %t
         let t = a[0];
@@ -42,7 +42,7 @@ struct S<E: H> {
     }
 }
 
-func main() {
+def main() {
     let s = S<R>();
     s.s();
 }

@@ -1,7 +1,7 @@
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %s
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta
 
-func main() {
+def main() {
     let a = A();
     // CHECK: [[@LINE+1]]:7: warning: 'f' is private
     a.f();

@@ -1,26 +1,26 @@
-func stdin() -> InputFileStream {
+def stdin() -> InputFileStream {
     return InputFileStream(fileDescriptor: 0);
 }
 
-func stdout() -> OutputFileStream {
+def stdout() -> OutputFileStream {
     return OutputFileStream(fileDescriptor: 1);
 }
 
-func stderr() -> OutputFileStream {
+def stderr() -> OutputFileStream {
     return OutputFileStream(fileDescriptor: 2);
 }
 
-func print<T: Printable>(value: T*) {
+def print<T: Printable>(value: T*) {
     let string = value.toString();
     printf("%.*s\n", string.size(), string.data());
 }
 
-func print<T: Printable>(value: T) {
+def print<T: Printable>(value: T) {
     let string = value.toString();
     printf("%.*s\n", string.size(), string.data());
 }
 
-func readLine() -> String {
+def readLine() -> String {
     var line = String();
 
     while (true) {

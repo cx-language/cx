@@ -2,7 +2,7 @@
 
 // CHECK: @[[ID:[0-9]+]] = private unnamed_addr constant [4 x i8] c"foo\00"
 
-func main() {
+def main() {
     // TODO: Improve codegen here.
     // CHECK: %s = alloca %StringRef
     // CHECK-NEXT: [[LITERAL:%__str[0-9]+]] = alloca %StringRef

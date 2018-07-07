@@ -1,12 +1,12 @@
 // RUN: %delta -typecheck -Werror %s | %FileCheck %s -allow-empty
 
-func f<T>() {}
+def f<T>() {}
 
 struct A<T> {
     init() {}
 }
 
-func main() {
+def main() {
     f<int>();
     let a = A<int>();
 }

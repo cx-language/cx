@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     testCustomPrintablestruct();
 }
 
@@ -13,13 +13,13 @@ struct A: Printable {
         this.b = b;
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         stream.write(a);
         stream.write("+");
         stream.write(b);
     }
 }
 
-func testCustomPrintablestruct() {
+def testCustomPrintablestruct() {
     assert(StringRef(A("foo", "bar").toString()) == "foo+bar");
 }

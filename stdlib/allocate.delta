@@ -5,7 +5,7 @@
 /// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
 /// undefined behavior (when compiled in unchecked mode).
 ///
-func allocate<Type>(value: Type) -> mutable Type* {
+def allocate<Type>(value: Type) -> mutable Type* {
     let allocation = cast<mutable Type*>(malloc(sizeof(Type))!);
     allocation.init(value);
     return allocation;
@@ -17,7 +17,7 @@ func allocate<Type>(value: Type) -> mutable Type* {
 ///
 /// If the memory allocation fails, null is returned.
 ///
-func safeAllocate<Type>(value: Type) -> mutable Type*? {
+def safeAllocate<Type>(value: Type) -> mutable Type*? {
     let allocation = cast<mutable Type*?>(malloc(sizeof(Type)));
     if (allocation != null) {
         allocation.init(value);
@@ -32,7 +32,7 @@ func safeAllocate<Type>(value: Type) -> mutable Type*? {
 /// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
 /// undefined behavior (when compiled in unchecked mode).
 ///
-func allocateArray<Type>(size: uint) -> mutable Type* {
+def allocateArray<Type>(size: uint) -> mutable Type* {
     return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size))!);
 }
 
@@ -42,19 +42,19 @@ func allocateArray<Type>(size: uint) -> mutable Type* {
 ///
 /// If the memory allocation fails, null is returned.
 ///
-func safeAllocateArray<Type>(size: uint) -> mutable Type*? {
+def safeAllocateArray<Type>(size: uint) -> mutable Type*? {
     return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size)));
 }
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
 /// `allocateArray`, `safeAllocate`, or `safeAllocateArray`.
-func deallocate<Type>(allocation: mutable Type*) {
+def deallocate<Type>(allocation: mutable Type*) {
     free(allocation);
 }
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
 /// `allocateArray`, `safeAllocate`, or `safeAllocateArray`. If the argument is null, no operation
 /// is performed.
-func deallocate<Type>(allocation: mutable Type*?) {
+def deallocate<Type>(allocation: mutable Type*?) {
     free(allocation);
 }

@@ -4,12 +4,12 @@
 import "c-callback-function.h";
 
 // CHECK-NOT: unused declaration
-func f(a: int) -> int {
+def f(a: int) -> int {
     return a;
 }
 
 // CHECK: define i32 @main()
-func main() {
+def main() {
     // CHECK-NEXT: call void @foo(i32 (i32)* @_EN4main1fE1a3int)
     // CHECK-NEXT: call void @bar(i32 (i32)* @_EN4main1fE1a3int)
     // CHECK-NEXT: call void @baz(i32 (i32)* @_EN4main1fE1a3int)

@@ -2,7 +2,7 @@
 
 private var i = 6;
 
-func f() {
+def f() {
     // CHECK-NOT: a.delta:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: 'i' is private
     i++;
 }

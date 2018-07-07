@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func foo(i: int, u: uint) {
+def foo(i: int, u: uint) {
     var a = i < i; // CHECK: icmp slt i32 %i, %i
     a = u < u; // CHECK: icmp ult i32 %u, %u
     a = i > i; // CHECK: icmp sgt i32 %i, %i

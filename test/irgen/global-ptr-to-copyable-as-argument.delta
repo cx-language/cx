@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: %sp = load %S*, %S** @sp
     // CHECK-NEXT: call void @{{.*foo.*}}(%S* %sp)
     foo(sp)
@@ -8,6 +8,6 @@ func main() {
 
 var sp: S*? = null
 
-func foo(p: S*?) { }
+def foo(p: S*?) { }
 
 struct S: Copyable { var i: int }

@@ -1,9 +1,9 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: define void @[[FOO:.*foo.*]](%"ArrayRef<int>" %a)
-func foo(a: int[]*) {}
+def foo(a: int[]*) {}
 
-func g() {
+def g() {
     // CHECK: %a = alloca [3 x i32]
     // CHECK-NEXT: store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %a
     let a = [1, 2, 3];
@@ -21,4 +21,4 @@ func g() {
 }
 
 // CHECK: define void @[[BAZ]]([3 x i32]* %b)
-func baz(b: int[3]*) {}
+def baz(b: int[3]*) {}

@@ -8,29 +8,29 @@ struct Set<Key: Hashable> {
     }
 
     /// Inserts an element into the set. If the element exists already, nothing is done.
-    mutating func insert(key: Key) {
+    mutating def insert(key: Key) {
         map.insert(key, false);
     }
 
     /// Removes an element from the set, if it exists there.
-    mutating func remove(key: Key*) {
+    mutating def remove(key: Key*) {
         map.remove(key);
     }
 
     /// Checks if e is part of the set.
-    func contains(key: Key*) -> bool {
+    def contains(key: Key*) -> bool {
         return map.contains(key);
     }
 
-    func size() -> uint {
+    def size() -> uint {
         return map.size();
     }
 
-    func isEmpty() -> bool {
+    def isEmpty() -> bool {
         return map.isEmpty();
     }
 
-    func iterator() -> SetIterator<Key> {
+    def iterator() -> SetIterator<Key> {
         return SetIterator(this);
     }
 }

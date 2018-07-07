@@ -5,7 +5,7 @@ struct Foo {
 }
 
 // CHECK-LABEL: define void @{{.*3get.*}}
-func get(f: Foo*) {
+def get(f: Foo*) {
     // CHECK-NEXT: %m = alloca i32
     // CHECK-NEXT: %i = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
     // CHECK-NEXT: %1 = load i32, i32* %i
@@ -15,7 +15,7 @@ func get(f: Foo*) {
 }
 
 // CHECK-LABEL: define i32 @main
-func main() {
+def main() {
     // CHECK: %f = alloca %Foo
     // CHECK-NEXT: %rf = alloca %Foo*
     // CHECK-NEXT: %n = alloca i32

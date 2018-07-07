@@ -2,9 +2,9 @@
 
 // CHECK: define i32* @[[FOO:.*3foo.*]]()
 // CHECK-NEXT: ret i32* null
-func foo() -> int*? { return null; }
+def foo() -> int*? { return null; }
 
-func main() {
+def main() {
     // CHECK: %1 = call i32* @[[FOO]]()
     // CHECK-NEXT: %2 = icmp eq i32* %1, null
     // CHECK-NEXT: store i1 %2, i1* %isNull

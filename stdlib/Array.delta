@@ -33,22 +33,22 @@ struct Array<Element> {
     }
 
     /// Returns the number of elements in the array.
-    func size() -> uint {
+    def size() -> uint {
         return size;
     }
 
     /// Returns true if the array has no elements, otherwise false
-    func isEmpty() -> bool {
+    def isEmpty() -> bool {
         return size == 0;
     }
 
     /// Returns the number of elements the array can store without allocating more memory.
-    func capacity() -> uint {
+    def capacity() -> uint {
         return capacity;
     }
 
     /// Returns the element at the given index.
-    func [](index: uint) -> Element* {
+    def [](index: uint) -> Element* {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -57,7 +57,7 @@ struct Array<Element> {
     }
 
     /// Returns the element at the given index.
-    mutating func [](index: uint) -> mutable Element* {
+    mutating def [](index: uint) -> mutable Element* {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -65,7 +65,7 @@ struct Array<Element> {
         return bufferPointer + index;
     }
 
-    func first() -> Element* {
+    def first() -> Element* {
         if (size == 0) {
             emptyArrayFirst();
         }
@@ -73,7 +73,7 @@ struct Array<Element> {
         return bufferPointer;
     }
 
-    func last() -> Element* {
+    def last() -> Element* {
         if (size == 0) {
             emptyArrayLast();
         }
@@ -81,16 +81,16 @@ struct Array<Element> {
         return bufferPointer + size;
     }
 
-    func data() -> Element* {
+    def data() -> Element* {
         return bufferPointer;
     }
 
-    mutating func data() -> mutable Element* {
+    mutating def data() -> mutable Element* {
         return bufferPointer;
     }
 
     /// Adds the given element to the end of the array.
-    mutating func push(newElement: Element) {
+    mutating def push(newElement: Element) {
         if (size == capacity) {
             grow();
         }
@@ -100,7 +100,7 @@ struct Array<Element> {
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
-    mutating func reserve(minimumCapacity: uint) {
+    mutating def reserve(minimumCapacity: uint) {
         if (minimumCapacity > capacity) {
             let newBufferPointer = allocateArray<Element>(size: minimumCapacity);
 
@@ -121,7 +121,7 @@ struct Array<Element> {
 
     /// Removes the first element from the array.
     /// Other elements are moved towards the beginning of the array by one index.
-    mutating func removeFirst() {
+    mutating def removeFirst() {
         if (size == 0) {
             emptyArrayRemoveFirst();
         }
@@ -130,7 +130,7 @@ struct Array<Element> {
     }
 
     /// Removes the last element from the array.
-    mutating func removeLast() {
+    mutating def removeLast() {
         if (size == 0) {
             emptyArrayRemoveLast();
         }
@@ -141,7 +141,7 @@ struct Array<Element> {
 
     /// Removes the element at the given index from the array.
     /// Elements following the removed element are moved towards the beginning of the array by one index.
-    mutating func removeAt(index: uint) {
+    mutating def removeAt(index: uint) {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -149,7 +149,7 @@ struct Array<Element> {
         unsafeRemoveAt(index);
     }
 
-    mutating private func unsafeRemoveAt(index: uint) {
+    mutating private def unsafeRemoveAt(index: uint) {
         (bufferPointer + index).deinit();
 
         for (let i in (index + 1)..size) {
@@ -161,20 +161,20 @@ struct Array<Element> {
         size--;
     }
 
-    func iterator() -> ArrayIterator<Element> {
+    def iterator() -> ArrayIterator<Element> {
         // TODO: When implicit initializers have been implemented, remove the ArrayRef() call below.
         return ArrayIterator(ArrayRef(this));
     }
 
-    mutating func iterator() -> MutableArrayIterator<Element> {
+    mutating def iterator() -> MutableArrayIterator<Element> {
         return MutableArrayIterator(this);
     }
 
-    func enumerate() -> EnumeratedIterator<Element> {
+    def enumerate() -> EnumeratedIterator<Element> {
         return EnumeratedIterator(iterator());
     }
 
-    func map<Input, Output>(transform: (Input) -> Output) -> Array<Output> {
+    def map<Input, Output>(transform: (Input) -> Output) -> Array<Output> {
         var output = Array<Output>(capacity: this.size);
 
         for (let element in this) {
@@ -184,7 +184,7 @@ struct Array<Element> {
         return output;
     }
 
-    func filter<Input>(include: (Input) -> bool) -> Array<Element> {
+    def filter<Input>(include: (Input) -> bool) -> Array<Element> {
         var output = Array<Element>();
 
         for (let element in this) {
@@ -196,7 +196,7 @@ struct Array<Element> {
         return output;
     }
 
-    mutating private func grow() {
+    mutating private def grow() {
         if (capacity == 0) {
             reserve(1);
         } else {
@@ -204,33 +204,33 @@ struct Array<Element> {
         }
     }
 
-    private func indexOutOfBounds(index: uint) {
+    private def indexOutOfBounds(index: uint) {
         printf("Array index %u is out of bounds, size is %u\n", index, size());
         fatalError();
     }
 
-    private func emptyArrayFirst() {
+    private def emptyArrayFirst() {
         printf("Called first() on empty Array\n");
         fatalError();
     }
 
-    private func emptyArrayLast() {
+    private def emptyArrayLast() {
         printf("Called last() on empty Array\n");
         fatalError();
     }
 
-    private func emptyArrayRemoveFirst() {
+    private def emptyArrayRemoveFirst() {
         printf("Called removeFirst() on empty Array\n");
         fatalError();
     }
 
-    private func emptyArrayRemoveLast() {
+    private def emptyArrayRemoveLast() {
         printf("Called removeLast() on empty Array\n");
         fatalError();
     }
 }
 
-func ==<T>(a: ArrayRef<T>, b: ArrayRef<T>) -> bool {
+def ==<T>(a: ArrayRef<T>, b: ArrayRef<T>) -> bool {
     if (a.size() != b.size()) {
         return false;
     }

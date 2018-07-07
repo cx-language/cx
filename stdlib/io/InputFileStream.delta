@@ -12,37 +12,37 @@ struct InputFileStream: InputStream {
         fs = FileStream(fileDescriptor, readOnly: true);
     }
 
-    mutating func close() {
+    mutating def close() {
         fs.close();
     }
 
     /// Returns true if the file is open for reading
-    func isOpen() -> bool {
+    def isOpen() -> bool {
         return fs.isOpen();
     }
 
     /// Returns an iterator that can be used to iterate over lines in the file
-    func lines() -> LineIterator<InputFileStream> {
+    def lines() -> LineIterator<InputFileStream> {
         return LineIterator(this);
     }
 
     /// Returns an iterator that can be used to iterate over each byte in the file
-    func bytes() -> ByteIterator<InputFileStream> {
+    def bytes() -> ByteIterator<InputFileStream> {
         return ByteIterator(this);
     }
 
     /// Reads one byte from the file
-    func readByte() -> int {
+    def readByte() -> int {
         return fs.readByte();
     }
 
     /// Reads one line from the file, separated by \n
-    func readLine() -> String {
+    def readLine() -> String {
         return fs.readLine();
     }
 
     /// Returns true if we have reached the end of the file
-    func isEof() -> bool {
+    def isEof() -> bool {
         return fs.isEof();
     }
 }

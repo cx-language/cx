@@ -15,7 +15,7 @@ struct Foo {
         this.f();
     }
 
-    mutating func f() {}
+    mutating def f() {}
 }
 
 struct Bar: Copyable {
@@ -33,10 +33,10 @@ struct Bar: Copyable {
         this.f();
     }
 
-    mutating func f() {}
+    mutating def f() {}
 }
 
-func main() {
+def main() {
     let f: Foo = undefined;
     if (false) {
         let f2: Foo = undefined;

@@ -1,8 +1,8 @@
 // RUN: %delta -typecheck %s
 
-extern func foo() -> int[5]*;
+extern def foo() -> int[5]*;
 
-func main() {
+def main() {
     let p = foo();
     var i: uint = 5;
     i--;

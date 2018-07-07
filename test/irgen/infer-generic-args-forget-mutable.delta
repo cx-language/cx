@@ -1,8 +1,8 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func f(r: Range<int>) {}
+def f(r: Range<int>) {}
 
-func main() {
+def main() {
     var foo = 0;
     var bar = 0;
     // CHECK: call void @{{.*Range.*int.*init.*}}(%"Range<int>"* %{{[0-9]+}}, i32 %foo{{[0-9]*}}, i32 %bar{{[0-9]*}})

@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
-func main() {
+def main() {
     while (false) {
         while (false) {
         }

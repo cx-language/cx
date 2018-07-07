@@ -2,15 +2,15 @@
 
 struct Foo {
     let i: int;
-    func foo() { }
+    def foo() { }
 }
 
 struct Bar: Copyable {
     let i: int;
-    func bar() { }
+    def bar() { }
 }
 
-func qux(f: Foo*, b: Bar*) {
+def qux(f: Foo*, b: Bar*) {
     // CHECK: call void @_EN4main3Foo3fooE(%Foo* %f)
     f.foo();
     // CHECK-NEXT: %1 = load %Bar, %Bar* %b

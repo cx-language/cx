@@ -22,7 +22,7 @@ struct Queue<T> {
     }
 
     /// Add to the front of the queue
-    mutating func push(value: T) {
+    mutating def push(value: T) {
         let newNode = allocate(Node(value));
 
         if (isEmpty()) {
@@ -36,7 +36,7 @@ struct Queue<T> {
     }
 
     /// Retrieve and remove head of the queue
-    mutating func pop() -> T {
+    mutating def pop() -> T {
         let value = head!.value;
         let next = head!.next;
         deallocate(head!);
@@ -51,16 +51,16 @@ struct Queue<T> {
     }
 
     /// Access element in the front of the queue
-    func first() -> T* {
+    def first() -> T* {
         return head!.value;
     }
 
-    func size() -> uint {
+    def size() -> uint {
         return size;
     }
 
     /// Check if queue is empty
-    func isEmpty() -> bool {
+    def isEmpty() -> bool {
         return head == null;
     }
 }

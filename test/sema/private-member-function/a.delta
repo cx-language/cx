@@ -4,14 +4,14 @@
 
 struct A {
     init() {}
-    private func f() {}
-    func g() {
+    private def f() {}
+    def g() {
         this.f();
         f();
     }
 }
 
-func g() {
+def g() {
     let a = A();
     a.g();
 }

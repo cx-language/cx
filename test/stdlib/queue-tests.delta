@@ -1,13 +1,13 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     testPushPop();
     testEmpty();
     testPushAfterPop();
     testFirst();
 }
 
-func testPushPop() {
+def testPushPop() {
     var q = Queue<int>();
 
     assert(q.size() == 0);
@@ -26,7 +26,7 @@ func testPushPop() {
     assert(q.size() == 0);
 }
 
-func testEmpty() {
+def testEmpty() {
     var q = Queue<StringRef>();
 
     assert(q.isEmpty());
@@ -40,7 +40,7 @@ func testEmpty() {
     assert(q.isEmpty());
 }
 
-func testPushAfterPop() {
+def testPushAfterPop() {
     var q = Queue<StringRef>();
 
     q.push("foo");
@@ -53,7 +53,7 @@ func testPushAfterPop() {
     assert(q.size() == 0);
 }
 
-func testFirst() {
+def testFirst() {
     var q = Queue<StringRef>();
 
     q.push("foo");

@@ -4,7 +4,7 @@ Let's suppose we are writing a generic sort function that can sort an array of
 any type:
 
 ```go
-func sort<T>(array: mutable Array<T>*) {
+def sort<T>(array: mutable Array<T>*) {
     // ...
 }
 ```
@@ -30,7 +30,7 @@ substituted for `T` must be comparable with the `<` operator using the
 `Comparable` interface as a _generic constraint_:
 
 ```go
-func sort<T: Comparable>(array: mutable Array<T>*) {
+def sort<T: Comparable>(array: mutable Array<T>*) {
     // ...
 }
 ```
@@ -54,11 +54,11 @@ struct name, and providing the member functions required by the interface:
 
 ```go
 interface Fooable {
-    func foo() -> int;
+    def foo() -> int;
 }
 
 struct X: Fooable {
-    func foo() -> int {
+    def foo() -> int {
         return 42;
     }
 }
@@ -71,9 +71,9 @@ _default member functions_:
 
 ```go
 interface Fooable {
-    func foo() -> int;
+    def foo() -> int;
 
-    func fooSquared() -> int {
+    def fooSquared() -> int {
         return foo() * foo();
     }
 }

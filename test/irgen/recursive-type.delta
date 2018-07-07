@@ -5,4 +5,4 @@ struct S: Copyable {
     let next: S*
 }
 
-func f(s: S) {}
+def f(s: S) {}

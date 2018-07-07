@@ -1,7 +1,7 @@
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %s
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta
 
-func main() {
+def main() {
     // CHECK: private-enum.delta:[[@LINE+1]]:13: warning: 'A' is private
     let b = A.B;
 

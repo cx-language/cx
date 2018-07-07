@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func sum(a: int, b: int) -> int { return a + b; }
+def sum(a: int, b: int) -> int { return a + b; }
 
-// CHECK: [[@LINE+1]]:25: error: too many arguments to 'sum', expected 2
-func main() { var foo = sum(1, 2, 3); }
+// CHECK: [[@LINE+1]]:24: error: too many arguments to 'sum', expected 2
+def main() { var foo = sum(1, 2, 3); }

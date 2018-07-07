@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func f(foo: mutable float64*, bar: float64, baz: float64) {
+def f(foo: mutable float64*, bar: float64, baz: float64) {
     // CHECK: %1 = load double, double* %foo
     // CHECK-NEXT: %2 = fmul double %bar, %baz
     // CHECK-NEXT: %3 = fsub double 1.000000e+00, %2

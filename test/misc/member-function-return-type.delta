@@ -7,12 +7,12 @@ struct Foo: Copyable {
         this.value = value;
     }
 
-    func add(number: int) -> int {
+    def add(number: int) -> int {
         return this.value + number;
     }
 }
 
-func main() -> int {
+def main() -> int {
     let foo = Foo(42);
     return foo.add(-21);
 }

@@ -1,6 +1,6 @@
 // RUN: not %delta -parse %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:15: error: newline inside string literal
     var i = "a
     ";

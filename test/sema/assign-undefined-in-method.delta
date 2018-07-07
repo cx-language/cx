@@ -3,7 +3,7 @@
 struct A {
     var i: int;
 
-    mutating func f() {
+    mutating def f() {
         // CHECK: [[@LINE+1]]:11: error: 'undefined' is only allowed as an initial value
         i = undefined;
     }

@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-func f(foo: bool*?) {
+def f(foo: bool*?) {
     // CHECK:      %1 = icmp ne i1* %foo, null
     // CHECK-NEXT: %2 = xor i1 %1, true
     // CHECK-NEXT: store i1 %2, i1* %b

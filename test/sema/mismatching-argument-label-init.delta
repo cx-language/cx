@@ -4,7 +4,7 @@ struct X: Copyable {
     init(a: int) { }
 }
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:15: error: invalid argument name 'bar' for parameter 'a'
     var x = X(bar: 5);
 }

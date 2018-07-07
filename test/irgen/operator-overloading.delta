@@ -10,17 +10,17 @@ struct vec2: Copyable {
     }
 
     // CHECK: define i32 @_EN4main4vec2ixE5index3int(%vec2 %this, i32 %index)
-    func [](index: int) -> int {
+    def [](index: int) -> int {
         return index
     }
 }
 
 // CHECK: define %vec2 @_EN4mainmlE1a4vec21b4vec2(%vec2 %a, %vec2 %b)
-func *(a: vec2, b: vec2) -> vec2 {
+def *(a: vec2, b: vec2) -> vec2 {
     return vec2(a.x * b.x, a.y * b.y)
 }
 
-func main() {
+def main() {
     var v = vec2(3, 2)
 
     // CHECK: call %vec2 @_EN4mainmlE1a4vec21b4vec2(%vec2 %{{[0-9]+}}, %vec2 %v1)
@@ -36,12 +36,12 @@ func main() {
 }
 
 // CHECK-DAG: define i1 [[EQ]](%vec2 %a, %vec2 %b)
-func ==(a: vec2, b: vec2) -> bool {
+def ==(a: vec2, b: vec2) -> bool {
     return a.x == b.x
 }
 
 struct A<T>: Copyable {}
 
-func ==<T>(a: A<T>, b: A<T>) -> bool {
+def ==<T>(a: A<T>, b: A<T>) -> bool {
     return true
 }

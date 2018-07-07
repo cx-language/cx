@@ -1,13 +1,13 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: define void @[[FOO:.*3foo.*]]()
-func foo() {}
+def foo() {}
 
 // CHECK: define i32 @[[F2:.*2f2.*]](i32 %a, i1 %b)
-func f2(a: int, b: bool) -> int { return a; }
+def f2(a: int, b: bool) -> int { return a; }
 
 // CHECK: define void @[[G:.*1g.*]](void ()* %p)
-func g(p: () -> void) {
+def g(p: () -> void) {
     // CHECK-NEXT: %p2 = alloca void ()*
     // CHECK-NEXT: store void ()* %p, void ()** %p2
     let p2 = p;
@@ -18,7 +18,7 @@ func g(p: () -> void) {
 }
 
 // CHECK: define void @[[G2:.*2g2.*]](i32 (i32, i1)* %p)
-func g2(p: (int, bool) -> int) {
+def g2(p: (int, bool) -> int) {
     // CHECK-NEXT: %p2 = alloca i32 (i32, i1)*
     // CHECK-NEXT: %a = alloca i32
     // CHECK-NEXT: store i32 (i32, i1)* %p, i32 (i32, i1)** %p2
@@ -30,7 +30,7 @@ func g2(p: (int, bool) -> int) {
 }
 
 // CHECK: define i32 @main()
-func main() {
+def main() {
     // CHECK-NEXT: %lf = alloca void ()*
     // CHECK-NEXT: %lf2 = alloca i32 (i32, i1)*
 

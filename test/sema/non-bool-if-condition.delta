@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:9: error: 'if' condition must have type 'bool'
     if (0) {}
 }

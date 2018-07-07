@@ -8,7 +8,7 @@ struct A<T> {
     let a: T
 }
 
-func main() {
+def main() {
     // CHECK: %a = alloca %"A<int>"
     let a: A<int> = undefined
 

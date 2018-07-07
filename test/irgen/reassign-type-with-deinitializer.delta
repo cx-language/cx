@@ -6,7 +6,7 @@ struct X {
 }
 
 // CHECK: define i32 @main()
-func main() {
+def main() {
     // CHECK-NEXT: %x = alloca {}
     // CHECK-NEXT: %1 = alloca {}
 

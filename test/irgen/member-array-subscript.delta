@@ -3,7 +3,7 @@
 struct C {
     var a: int[]*
 
-    func foo() {
+    def foo() {
         // CHECK: %[[A:[[:alnum:]_]+]] = getelementptr inbounds %C, %C* %this, i32 0, i32 0
         // CHECK-NEXT: %[[B:[[:alnum:]_]+]] = load %"ArrayRef<int>", %"ArrayRef<int>"* %[[A]]
         // CHECK-NEXT: %[[C:[[:alnum:]_]+]] = extractvalue %"ArrayRef<int>" %[[B]], 0

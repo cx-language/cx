@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK:      %b = alloca i1
     // CHECK-NEXT: %c = alloca i1
     // CHECK-NEXT: store i1 false, i1* %b

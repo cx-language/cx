@@ -10,13 +10,13 @@ struct Y<T> {
     init() {}
 
     // CHECK: define i32 @_EN4main1YI4boolE1fE({}* %this)
-    func f() -> int {
+    def f() -> int {
         // CHECK-NEXT: ret i32 1
         return 1;
     }
 }
 
-func main() {
+def main() {
     var a = X();
 
     // MAIN: call void @_ENM4main1YI4boolE4initE

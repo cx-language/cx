@@ -2,7 +2,7 @@
 
 import imported_generic_type_init
 
-func main() {
+def main() {
     // CHECK: %a = alloca %"A<int>"
     // CHECK: call void @_ENM26imported_generic_type_init1AI3intE4initE(%"A<int>"* %a)
     var a = A<int>()

@@ -3,13 +3,13 @@
 struct S<T>: Copyable {
     init() { }
 
-    func f(t: T) {
+    def f(t: T) {
         let p: mutable T*? = null;
         *(p!) = t;
     }
 }
 
-func main() {
+def main() {
     let s = S<int>();
     s.f(1);
 }

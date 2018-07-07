@@ -30,7 +30,7 @@ struct Token {
         Extern,
         False,
         For,
-        Func,
+        Def,
         If,
         Import,
         In,

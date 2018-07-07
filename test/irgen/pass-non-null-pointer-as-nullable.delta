@@ -1,10 +1,10 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: define void @[[FOO:.*3foo.*]](i32* %p)
-func foo(p: int*?) {}
+def foo(p: int*?) {}
 
 // CHECK-LABEL: define i32 @main()
-func main() {
+def main() {
     // CHECK: %i = alloca i32
     // CHECK-NEXT: %x = alloca i32*
 

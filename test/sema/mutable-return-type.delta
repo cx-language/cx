@@ -1,4 +1,4 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:6: error: return types cannot be 'mutable'
-func foo() -> mutable int { return 42; }
+// CHECK: [[@LINE+1]]:5: error: return types cannot be 'mutable'
+def foo() -> mutable int { return 42; }

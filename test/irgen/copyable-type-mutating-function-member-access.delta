@@ -4,7 +4,7 @@ struct S: Copyable {
     let a: int
 
     // CHECK: define void @_ENM4main1S3fooE(%S* %this)
-    mutating func foo() {
+    mutating def foo() {
         // CHECK-NEXT: %b = alloca i32
         // CHECK-NEXT: %a = getelementptr inbounds %S, %S* %this, i32 0, i32 0
         // CHECK-NEXT: %a1 = load i32, i32* %a

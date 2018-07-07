@@ -15,6 +15,6 @@ struct A<T> {
     }
 }
 
-func main() {
+def main() {
     let a = A<C>();
 }

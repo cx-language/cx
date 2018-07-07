@@ -8,7 +8,7 @@ struct X: Copyable {
     }
 }
 
-func main() {
+def main() {
     var x = X(5);
     // CHECK: [[@LINE+1]]:8: error: cannot decrement immutable value
     x.a--;

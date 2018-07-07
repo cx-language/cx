@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:19: error: cannot initialize variable of type 'int*' with 'null'
     let p: int* = null;
 }

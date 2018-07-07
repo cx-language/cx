@@ -13,11 +13,11 @@ struct UniquePtr<Pointee> {
 		deallocate(pointer);
 	}
 
-	func get() -> Pointee* {
+	def get() -> Pointee* {
 		return pointer;
 	}
 
-	mutating func get() -> mutable Pointee* {
+	mutating def get() -> mutable Pointee* {
 		return pointer;
 	}
 }

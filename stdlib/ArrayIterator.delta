@@ -8,15 +8,15 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
         end = array.data() + array.size();
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return current !== end;
     }
 
-    func value() -> Element* {
+    def value() -> Element* {
         return current;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         current++;
     }
 }
@@ -31,15 +31,15 @@ struct MutableArrayIterator<Element>: Copyable {
         end = array.data() + array.size();
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return current !== end;
     }
 
-    func value() -> mutable Element* {
+    def value() -> mutable Element* {
         return current;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         current++;
     }
 }

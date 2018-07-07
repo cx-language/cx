@@ -1,5 +1,5 @@
 // RUN: %delta -print-ir %s
-func main() {
+def main() {
     let a = Foo(qux: 4);
 }
 struct Foo: Copyable {

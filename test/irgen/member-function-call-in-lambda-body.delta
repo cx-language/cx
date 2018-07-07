@@ -2,7 +2,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=LAMBDA
 
 struct X {
-    func foo() -> int {
+    def foo() -> int {
         return 42;
     }
 }
@@ -11,7 +11,7 @@ struct X {
 // CHECK-NEXT: %lambda = alloca i32 ({}*)*
 // CHECK-NEXT: store i32 ({}*)* @_EN4main9__lambda0E1xP1X, i32 ({}*)** %lambda
 // CHECK-NEXT: ret i32 0
-func main() {
+def main() {
     let lambda = (x: X*) -> x.foo();
 }
 

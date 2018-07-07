@@ -1,8 +1,8 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func foo(ref_i: int*) { }
+def foo(ref_i: int*) { }
 
-func main() {
+def main() {
     // CHECK: %bar = alloca i32
     // CHECK-NEXT: store i32 42, i32* %bar
     let bar = 42;

@@ -1,9 +1,9 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern func foo() -> bool;
+extern def foo() -> bool;
 
 // CHECK: define void @{{.*3bar.*}}()
-func bar() {
+def bar() {
     if (foo()) {
         // CHECK: then:
         return; // CHECK-NEXT: ret void

@@ -3,9 +3,9 @@
 // CHECK-DAG: @[[STRING_ID1:[0-9]+]] = private unnamed_addr constant [{{[0-9]+}} x i8] c"Assertion failed at {{.*}}unwrap.delta:18:58\00"
 // CHECK-DAG: @[[STRING_ID2:[0-9]+]] = private unnamed_addr constant [{{[0-9]+}} x i8] c"Assertion failed at {{.*}}unwrap.delta:35:8\00"
 
-extern func f() -> mutable void*?;
+extern def f() -> mutable void*?;
 
-func main() {
+def main() {
     // CHECK: %1 = call i8* @{{.*f.*}}()
     // CHECK-NEXT: %assert.condition = icmp eq i8* %1, null
     // CHECK-NEXT: br i1 %assert.condition, label %assert.fail, label %assert.success

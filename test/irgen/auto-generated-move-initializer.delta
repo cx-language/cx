@@ -8,6 +8,6 @@ struct X {
 // CHECK: define void @{{.*}}foo{{.*}}(%X* %p, %X %x)
 // CHECK-NEXT: store %X %x, %X* %p
 // CHECK-NEXT: ret void
-func foo(p: mutable X*, x: X) {
+def foo(p: mutable X*, x: X) {
     p.init(x);
 }

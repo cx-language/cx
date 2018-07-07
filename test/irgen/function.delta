@@ -4,13 +4,13 @@
 // CHECK: define i32 @main() {
 // CHECK-NEXT: call void @bar()
 // CHECK-NEXT: ret i32 0
-func main() {
+def main() {
     bar();
 }
 
 // CHECK: define void @_EN4main3fooE()
 // CHECK-NEXT: ret void
-func foo() { }
+def foo() { }
 
 // CHECK-EXTERN: declare void @bar()
-extern func bar();
+extern def bar();

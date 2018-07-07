@@ -2,7 +2,7 @@
 
 import "stdlib.h";
 
-func main() {
+def main() {
     var buffer = malloc(1);
     buffer = realloc(buffer, 4);
     free(buffer);

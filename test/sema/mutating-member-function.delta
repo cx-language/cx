@@ -2,5 +2,5 @@
 
 struct Foo {
     let i: int;
-    mutating func bar() { let f: mutable Foo* = this; }
+    mutating def bar() { let f: mutable Foo* = this; }
 }

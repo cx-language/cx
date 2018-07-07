@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-func baz(foo: bool) {
+def baz(foo: bool) {
     // CHECK: while: ; preds = %endif, %then, %0
     // CHECK-NEXT: br i1 %foo, label %body, label %endwhile
     while (foo) {

@@ -8,15 +8,15 @@ struct MapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Value)*> {
         skipEmptySlots();
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return hashTableIterator.hasValue();
     }
 
-    func value() -> (key: Key, value: Value)* {
+    def value() -> (key: Key, value: Value)* {
         return current;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         let slot = hashTableIterator.value();
         let slotEnd = slot.data() + slot.size();
         current++;
@@ -27,7 +27,7 @@ struct MapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Value)*> {
         }
     }
 
-    mutating private func skipEmptySlots() {
+    mutating private def skipEmptySlots() {
         while (hashTableIterator.hasValue()) {
             if (hashTableIterator.value().size() != 0) {
                 current = hashTableIterator.value().data();

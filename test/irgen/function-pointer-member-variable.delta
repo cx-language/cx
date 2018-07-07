@@ -13,7 +13,7 @@ struct X {
     }
 
     // CHECK: define void @_EN4main1X1fE(%X* %this)
-    func f() {
+    def f() {
         // CHECK-NEXT: %p24 = alloca i32 (i32)*
 
         // CHECK-NEXT: %p = getelementptr inbounds %X, %X* %this, i32 0, i32 0
@@ -38,12 +38,12 @@ struct X {
 }
 
 // CHECK: define i32 @[[FOO:.*3foo.*]](i32 %a)
-func foo(a: int) -> int {
+def foo(a: int) -> int {
     return a;
 }
 
 // CHECK: define i32 @main()
-func main() {
+def main() {
     // CHECK-NEXT: %x = alloca %X
     // CHECK-NEXT: call void @_ENM4main1X4initE1pF3int_3int(%X* %x, i32 (i32)* @[[FOO]])
     let x = X(foo);

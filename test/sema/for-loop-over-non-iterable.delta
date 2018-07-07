@@ -4,7 +4,7 @@ struct A {
     init() {}
 }
 
-func main() {
+def main() {
     // TODO: Improve this error message.
     // CHECK: [[@LINE+1]]:5: error: unknown identifier 'A.iterator'
     for (let i in A()) {}

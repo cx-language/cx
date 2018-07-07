@@ -32,41 +32,41 @@ struct String: Comparable, OutputStream, Printable {
         init(StringRef(cString, uint(strlen(cString))));
     }
 
-    func size() -> uint {
+    def size() -> uint {
         return characters.size() - 1;
     }
 
     /// Returns the character at the given index.
-    func [](index: uint) -> char {
+    def [](index: uint) -> char {
         return *characters[index];
     }
 
     /// Returns the string as a C-style, i.e. null-terminated, string.
     /// Modifying `this` after calling this function invalidates the returned pointer.
-    func cString() -> char* {
+    def cString() -> char* {
         return data();
     }
 
     /// Returns a pointer to the first character in the string.
-    func data() -> char* {
+    def data() -> char* {
         return characters.data();
     }
 
-    func isEmpty() -> bool {
+    def isEmpty() -> bool {
         return size() == 0;
     }
 
     /// Returns a pointer to the first character in the string.
-    mutating func data() -> mutable char* {
+    mutating def data() -> mutable char* {
         return characters.data();
     }
 
-    mutating func push(character: char) {
+    mutating def push(character: char) {
         *characters[size()] = character;
         characters.push('\0');
     }
 
-    mutating func write(string: StringRef) -> bool {
+    mutating def write(string: StringRef) -> bool {
         for (let ch in string) {
             push(ch);
         }
@@ -75,33 +75,33 @@ struct String: Comparable, OutputStream, Printable {
 
     /// Removes the first character from the string.
     /// Other characters are moved towards the beginning of the string by one index.
-    mutating func removeFirst() {
+    mutating def removeFirst() {
         characters.removeFirst();
     }
 
     /// Removes the last character from the string.
-    mutating func removeLast() {
+    mutating def removeLast() {
         characters.removeAt(characters.size() - 2);
     }
 
     /// Supports using strings with sets and dicts
-    func hash() -> uint64 {
+    def hash() -> uint64 {
         return StringRef(this).hash();
     }
 
-    func iterator() -> StringIterator {
+    def iterator() -> StringIterator {
         // TODO: When implicit initializers have been implemented, remove the StringRef() call below.
         return StringIterator(StringRef(this));
     }
 
     /// Returns the index of the given character, or -1 if it's not found
-    func find(c: char) -> int {
+    def find(c: char) -> int {
         return find(c, 0);
     }
 
     /// Returns the index of the given character, or -1 if it's not found.
     /// Starts from start
-    func find(c: char, start: uint) -> int {
+    def find(c: char, start: uint) -> int {
         for (let i in start..size()) {
             if (*characters[i] == c) {
                 return int(i);
@@ -111,7 +111,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Returns the substring of the string in the given range, [inclusive, exclusive]
-    func substr(range: Range<int>) -> StringRef {
+    def substr(range: Range<int>) -> StringRef {
         if (range.end > int(size())) {
             indexOutOfBounds(range.end);
         }
@@ -119,7 +119,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Returns the substring of the string in the given range, [inclusive, exclusive]
-    func substr(range: Range<uint>) -> StringRef {
+    def substr(range: Range<uint>) -> StringRef {
         if (range.end > size()) {
             indexOutOfBounds(range.end);
         }
@@ -127,7 +127,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Splits the string by the given delimiter
-    func split(delim: char) -> Array<StringRef> {
+    def split(delim: char) -> Array<StringRef> {
         var tokens = Array<StringRef>();
 
         var prev: int = 0;
@@ -153,30 +153,30 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Splits the string by whitespace
-    func split() -> Array<StringRef> {
+    def split() -> Array<StringRef> {
         return split(' ');
     }
 
-    func printTo(stream: mutable String*) {
+    def printTo(stream: mutable String*) {
         stream.write(StringRef(this));
     }
 
-    func compare(other: String*) -> Ordering {
+    def compare(other: String*) -> Ordering {
         return StringRef(this).compare(StringRef(other));
     }
 
-    private func indexOutOfBounds(index: uint) {
+    private def indexOutOfBounds(index: uint) {
         printf("Range index %u is out of bounds, size is %u\n", index, size());
         fatalError();
     }
 
-    private func indexOutOfBounds(index: int) {
+    private def indexOutOfBounds(index: int) {
         printf("Range index %d is out of bounds, size is %u\n", index, size());
         fatalError();
     }
 }
 
-func +(a: StringRef, b: StringRef) -> String {
+def +(a: StringRef, b: StringRef) -> String {
     var result = String();
 
     for (let ch in a) {
@@ -190,7 +190,7 @@ func +(a: StringRef, b: StringRef) -> String {
     return result;
 }
 
-func +(a: String, b: StringRef) -> String {
+def +(a: String, b: StringRef) -> String {
     var result = a;
 
     for (let ch in b) {
@@ -200,14 +200,14 @@ func +(a: String, b: StringRef) -> String {
     return result;
 }
 
-func ==(a: String*, b: String*) -> bool {
+def ==(a: String*, b: String*) -> bool {
     return StringRef(a) == StringRef(b);
 }
 
-func ==(a: String*, b: StringRef) -> bool {
+def ==(a: String*, b: StringRef) -> bool {
     return StringRef(a) == b;
 }
 
-func ==(a: StringRef, b: String*) -> bool {
+def ==(a: StringRef, b: String*) -> bool {
     return a == StringRef(b);
 }

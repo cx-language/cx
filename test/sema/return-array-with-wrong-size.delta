@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func foo() -> int[1] {
+def foo() -> int[1] {
     let buffer: int[2] = undefined;
     // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int[2]', expected 'int[1]'
     return buffer;

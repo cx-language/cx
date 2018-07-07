@@ -8,15 +8,15 @@ struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Valu
         this.map = map;
     }
 
-    func hasValue() -> bool {
+    def hasValue() -> bool {
         return current != null;
     }
 
-    func value() -> (key: Key, value: Value)* {
+    def value() -> (key: Key, value: Value)* {
         return current!.entry;
     }
 
-    mutating func increment() {
+    mutating def increment() {
         current = map.higherNode(current!);
     }
 }

@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     testInsert();
     testRemoval();
     testDuplicates();
@@ -12,7 +12,7 @@ func main() {
     testUnitMapIterator();
 }
 
-func testInsert() {
+def testInsert() {
     var map = Map<StringRef, int>();
 
     map.insert("ok", 1);
@@ -21,7 +21,7 @@ func testInsert() {
     assert(!map.contains("lol"));
 }
 
-func testSize() {
+def testSize() {
     var map = Map<StringRef, StringRef>();
 
     assert(map.size() == 0);
@@ -29,14 +29,14 @@ func testSize() {
     assert(map.size() == 1);
 }
 
-func testGetter() {
+def testGetter() {
     var map = Map<StringRef, int>();
 
     map.insert("ok", 42);
     assert(*(map["ok"]!) == 42);
 }
 
-func testResize() {
+def testResize() {
     var map = Map<String, int>();
 
     for (let i in 0..255) {
@@ -53,7 +53,7 @@ func testResize() {
 }
 
 
-func testRemoval() {
+def testRemoval() {
     var map = Map<StringRef, int>();
     assert(map.size() == 0);
 
@@ -67,7 +67,7 @@ func testRemoval() {
     assert(map.size() == 0);
 }
 
-func testDuplicates() {
+def testDuplicates() {
     var map = Map<StringRef, int>();
 
     map.insert("ok", 1);
@@ -81,7 +81,7 @@ func testDuplicates() {
     assert(map["ok"] == null);
 }
 
-func testIterator() {
+def testIterator() {
     var map = Map<StringRef, StringRef>();
 
     map.insert("a", "a");
@@ -115,7 +115,7 @@ func testIterator() {
     assert(ccc);
 }
 
-func testEmptyMapIterator() {
+def testEmptyMapIterator() {
     var map = Map<StringRef, StringRef>();
     map.insert("foo", "foo");
     map.insert("foo", "foo");
@@ -126,7 +126,7 @@ func testEmptyMapIterator() {
     }
 }
 
-func testUnitMapIterator() {
+def testUnitMapIterator() {
     var map = Map<StringRef, StringRef>();
     map.insert("foo", "foo");
     map.insert("foo", "foo");

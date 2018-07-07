@@ -6,18 +6,18 @@ struct C<T>: Copyable {
     init() { }
 
     // CHECK: define void @{{.*C.*bool.*f.*}}({} %this)
-    func f() {
+    def f() {
         // CHECK-NEXT: call void @{{.*C.*bool.*g.*}}({} %this)
         g()
     }
 
     // CHECK: define void @{{.*C.*bool.*g.*}}({} %this)
-    func g() {
+    def g() {
         var a = sizeof(T)
     }
 }
 
-func main() {
+def main() {
     var c = C<bool>()
     c.f()
 }

@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func foo(a: uint8) { }
+def foo(a: uint8) { }
 
-func main() {
+def main() {
     // CHECK: [[@LINE+1]]:9: error: 256 is out of range for type 'uint8'
     foo(256);
 }

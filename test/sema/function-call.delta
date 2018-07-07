@@ -1,9 +1,9 @@
 // RUN: %delta -typecheck %s
 
-func foo() -> int { return 42; }
-func bar() { }
+def foo() -> int { return 42; }
+def bar() { }
 
-func main() {
+def main() {
     var i = foo();
     bar();
     foo();

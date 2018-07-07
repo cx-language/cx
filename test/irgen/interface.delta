@@ -3,5 +3,5 @@
 interface I {
     // CHECK-NOT: define void @{{(I\.)?}}f(
     // CHECK-NOT: declare void @{{(I\.)?}}f(
-    func f();
+    def f();
 }

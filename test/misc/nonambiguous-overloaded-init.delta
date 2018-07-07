@@ -5,6 +5,6 @@ struct Foo: Copyable {
     init(a: int, b: int) { }
 }
 
-func main() {
+def main() {
     let f = Foo(1)
 }

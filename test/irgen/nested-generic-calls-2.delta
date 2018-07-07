@@ -2,20 +2,20 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-M
 
 interface I {
-    func i();
+    def i();
 }
 
 struct S: Copyable {
     let i: int;
     init() {}
-    func i() {}
+    def i() {}
 }
 
 struct A<E> {
     init() {}
 
     // CHECK: define %S @{{.*A.*S.*a.*}}({}* %this)
-    func a() -> E {
+    def a() -> E {
         // CHECK-NEXT: %1 = alloca %S
         // CHECK-NEXT: call void @_ENM4main1S4initE(%S* %1)
         // CHECK-NEXT: %2 = load %S, %S* %1
@@ -30,7 +30,7 @@ struct M<T: I> {
     init() {}
 
     // CHECK-M: define void @_EN4main1MI1SE1fE(%"M<S>"* %this)
-    func f() {
+    def f() {
         let a = A<T>();
         // CHECK-M: [[TMP:%[0-9]+]] = call %S @{{.*A.*S.*a.*}}({}* %a)
         // CHECK-M-NEXT: call void @_EN4main1S1iE(%S [[TMP]])
@@ -38,7 +38,7 @@ struct M<T: I> {
     }
 }
 
-func main() {
+def main() {
     let m = M<S>();
     m.f();
 }

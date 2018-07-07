@@ -2,7 +2,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 // XFAIL: *
 
-func main() {
+def main() {
     // CHECK: %a = alloca { i64*, i32 }
     // CHECK: store { i64*, i32 } zeroinitializer, { i64*, i32 }* %a
     let a: uint64[]*? = null

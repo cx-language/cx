@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK: define i32 @main()
-func main() {
+def main() {
     // CHECK-NEXT: %a = alloca %String
     // CHECK-NEXT: [[LITERAL:%__str[0-9]+]] = alloca %StringRef
     // CHECK-NEXT: call void @{{.*String.*init.*}}(%String* %a)

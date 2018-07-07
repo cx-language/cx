@@ -4,7 +4,7 @@ struct A {
     init() {}
 }
 
-func main() {
+def main() {
     var a = A();
     let b = a;
     a = A();

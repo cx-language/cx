@@ -3,7 +3,7 @@
 struct S: Copyable {}
 
 // CHECK: define void @{{.*f.*}}({} %s)
-func f(s: S) {
+def f(s: S) {
     // CHECK-NEXT: %1 = alloca {}
     // CHECK-NEXT: store {} %s, {}* %1
     // CHECK-NEXT: call void @{{.*g.*}}({}* %1)
@@ -11,4 +11,4 @@ func f(s: S) {
     // CHECK-NEXT: ret void
 }
 
-func g(s: S*) {}
+def g(s: S*) {}

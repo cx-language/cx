@@ -6,7 +6,7 @@
 // CHECK-NEXT:i
 // CHECK-NEXT:k
 
-func main() {
+def main() {
     if (1 == 1) { print("a"); }
     if (1 == 2) { print("b"); }
     if (0 != 1) { print("c"); }

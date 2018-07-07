@@ -1,9 +1,9 @@
 // RUN: %delta -print-ir %s
 
-func foo<T>(t: T) -> bool {
+def foo<T>(t: T) -> bool {
     return t < 0;
 }
 
-func main() {
+def main() {
     _ = foo(5.0);
 }

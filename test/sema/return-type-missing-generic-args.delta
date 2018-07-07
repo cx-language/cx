@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:13: error: too few generic arguments to 'Array', expected 1
-func f() -> Array {
+// CHECK: [[@LINE+1]]:12: error: too few generic arguments to 'Array', expected 1
+def f() -> Array {
     return Array<int>();
 }

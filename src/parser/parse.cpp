@@ -1078,10 +1078,10 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
     parse(Token::Greater);
 }
 
-/// function-proto ::= 'func' id param-list ('->' type)?
+/// function-proto ::= 'def' id param-list ('->' type)?
 std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
                                                          std::vector<GenericParamDecl>* genericParams) {
-    ASSERT(currentToken() == Token::Func);
+    ASSERT(currentToken() == Token::Def);
     consumeToken();
 
     bool isValidFunctionName = currentToken() == Token::Identifier || isOverloadable(currentToken()) ||
@@ -1126,7 +1126,7 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl
     }
 }
 
-/// function-template-proto ::= 'func' id template-param-list param-list ('->' type)?
+/// function-template-proto ::= 'def' id template-param-list param-list ('->' type)?
 /// template-param-list ::= '<' template-param-decls '>'
 /// template-param-decls ::= id | id ',' template-param-decls
 std::unique_ptr<FunctionTemplate> Parser::parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel) {
@@ -1279,7 +1279,7 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
                 accessLevel = AccessLevel::Private;
                 consumeToken();
                 goto start;
-            case Token::Func: {
+            case Token::Def: {
                 auto requireBody = tag != TypeTag::Interface;
 
                 if (lookAhead(2) == Token::Less) {
@@ -1424,7 +1424,7 @@ start:
             accessLevel = AccessLevel::Private;
             consumeToken();
             goto start;
-        case Token::Func:
+        case Token::Def:
             if (lookAhead(2) == Token::Less) {
                 decl = parseFunctionTemplate(nullptr, accessLevel);
                 if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));

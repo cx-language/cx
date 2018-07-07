@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
-func main() {
+def main() {
     testBytes();
     testLines();
     testWrite();
@@ -12,7 +12,7 @@ func main() {
     testIsEofWhileLoop();
 }
 
-func testBytes() {
+def testBytes() {
     let f = FileStream("test.txt");
 
     let real = "this\nis the\nbest\n";
@@ -26,7 +26,7 @@ func testBytes() {
     assert(i == 17);
 }
 
-func testLines() {
+def testLines() {
     let f = FileStream("test.txt");
 
     var a = Array<StringRef>();
@@ -44,7 +44,7 @@ func testLines() {
     assert(i == 3);
 }
 
-func testReadlineTwice() {
+def testReadlineTwice() {
     let f = InputFileStream("test.txt");
 
     var a = f.readLine();
@@ -53,7 +53,7 @@ func testReadlineTwice() {
     assert(StringRef(a) == "is the");
 }
 
-func testMultipleEmptyLines() {
+def testMultipleEmptyLines() {
     let f = InputFileStream("corner.txt");
 
     var a = f.readLine();
@@ -68,7 +68,7 @@ func testMultipleEmptyLines() {
     assert(f.isEof());
 }
 
-func testIsEofWhileLoop() {
+def testIsEofWhileLoop() {
     let f = InputFileStream("test.txt");
 
     var a = Array<StringRef>();
@@ -87,7 +87,7 @@ func testIsEofWhileLoop() {
     assert(i == 3);
 }
 
-func testWrite() {
+def testWrite() {
     var f = FileStream("new.txt");
 
     let ret = f.write("best sentence\n");
@@ -101,7 +101,7 @@ func testWrite() {
     assert(StringRef(read) == "best sentence");
 }
 
-func testInputStream() {
+def testInputStream() {
     var f = InputFileStream("test.txt");
 
     var a = Array<StringRef>();
@@ -120,7 +120,7 @@ func testInputStream() {
     assert(i == 3);
 }
 
-func testInputStreamIsOpenOnNonexistingFile() {
+def testInputStreamIsOpenOnNonexistingFile() {
     let f = InputFileStream("doesntexist");
 
     assert(!f.isOpen());
@@ -130,7 +130,7 @@ func testInputStreamIsOpenOnNonexistingFile() {
     assert(f2.isOpen());
 }
 
-func testOutputStream() {
+def testOutputStream() {
     var f = OutputFileStream("new.txt");
 
     let ret = f.write("best sentence\n");

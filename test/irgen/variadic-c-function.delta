@@ -3,7 +3,7 @@
 // CHECK-DAG: declare i32 @printf(i8*, ...)
 import "stdio.h"
 
-func main() {
+def main() {
     // CHECK: %f = alloca double
     // CHECK-NEXT: store double 4.200000e+00, double* %f
     let f = 4.2;

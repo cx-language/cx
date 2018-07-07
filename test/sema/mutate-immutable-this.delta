@@ -2,6 +2,6 @@
 
 struct Foo {
     let i: int;
-    // CHECK: [[@LINE+1]]:24: error: cannot increment immutable value
-    func bar() { this.i++; }
+    // CHECK: [[@LINE+1]]:23: error: cannot increment immutable value
+    def bar() { this.i++; }
 }

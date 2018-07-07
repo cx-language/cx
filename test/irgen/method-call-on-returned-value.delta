@@ -3,20 +3,20 @@
 struct S: Copyable {
     let i: int;
     init() {}
-    func f() {}
+    def f() {}
 }
 
 struct C {
     let i: int;
     init() {}
-    func f() {}
+    def f() {}
 }
 
-func s() -> S { return S(); }
-func c() -> C { return C(); }
+def s() -> S { return S(); }
+def c() -> C { return C(); }
 
 // CHECK-LABEL: define i32 @main()
-func main() {
+def main() {
     // CHECK-NEXT: %1 = alloca %C
     // CHECK-NEXT: %2 = alloca %S
     // CHECK-NEXT: %3 = alloca %C

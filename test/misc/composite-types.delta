@@ -15,7 +15,7 @@ struct Y {
     let y: char*;
 }
 
-func main() -> int {
+def main() -> int {
     var x = X(5);
     return x.a;
 }

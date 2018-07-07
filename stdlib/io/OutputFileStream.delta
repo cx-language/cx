@@ -17,17 +17,17 @@ struct OutputFileStream: OutputStream {
         fs = FileStream(fileDescriptor, readOnly: false);
     }
 
-    mutating func close() {
+    mutating def close() {
         fs.close();
     }
 
     /// Returns true if the file is open for writing
-    func isOpen() -> bool {
+    def isOpen() -> bool {
         return fs.isOpen();
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    mutating func write(string: StringRef) -> bool {
+    mutating def write(string: StringRef) -> bool {
         return fs.write(string);
     }
 }

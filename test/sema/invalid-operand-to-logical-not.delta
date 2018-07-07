@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-func main() {
+def main() {
     var foo = 42;
     // CHECK: [[@LINE+1]]:10: error: invalid operand type 'int' to logical not
     if (!foo) { }

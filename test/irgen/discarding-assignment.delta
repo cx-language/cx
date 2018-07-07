@@ -1,9 +1,9 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern func foo() -> int;
+extern def foo() -> int;
 
 // CHECK: define i32 @main()
-func main() {
+def main() {
     // CHECK-NEXT: %1 = call i32 @foo()
     _ = foo();
     // CHECK-NEXT: ret

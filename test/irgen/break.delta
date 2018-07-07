@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 // CHECK-LABEL: define i32 @main()
-func main() {
+def main() {
     while (true) {
         if (true) {
             // CHECK:      then:
