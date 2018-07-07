@@ -1,0 +1,15 @@
+// RUN: %delta -print-ir %s | %FileCheck %s
+
+def main() { 
+    // CHECK: %a = alloca [2 x %StringRef] 
+    // CHECK-NEXT: %__str0 = alloca %StringRef
+    // CHECK-NEXT: %__str1 = alloca %StringRef
+    // CHECK-NEXT: call void @{{.*StringRef.*init.*}}(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @{{[0-9]+}}, i32 0, i32 0), i32 3)
+    // CHECK-NEXT: %1 = load %StringRef, %StringRef* %__str0
+    // CHECK-NEXT: %2 = insertvalue [2 x %StringRef] undef, %StringRef %1, 0
+    // CHECK-NEXT: call void @{{.*StringRef.*init.*}}(%StringRef* %__str1, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @{{[0-9]+}}, i32 0, i32 0), i32 3)
+    // CHECK-NEXT: %3 = load %StringRef, %StringRef* %__str1
+    // CHECK-NEXT: %4 = insertvalue [2 x %StringRef] %2, %StringRef %3, 1
+    // CHECK-NEXT: store [2 x %StringRef] %4, [2 x %StringRef]* %a
+    let a = ["foo", "bar"]
+}

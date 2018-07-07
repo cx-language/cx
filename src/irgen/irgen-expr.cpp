@@ -86,7 +86,7 @@ llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) 
     llvm::Value* array = llvm::UndefValue::get(arrayType);
     unsigned index = 0;
     for (auto& element : expr.getElements()) {
-        array = builder.CreateInsertValue(array, codegenExpr(*element), index++);
+        array = builder.CreateInsertValue(array, loadIfAlloca(codegenExpr(*element)), index++);
     }
     return array;
 }

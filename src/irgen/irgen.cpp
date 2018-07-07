@@ -248,6 +248,13 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
     return alloca;
 }
 
+llvm::Value* IRGenerator::loadIfAlloca(llvm::Value* value) {
+    if (llvm::isa<llvm::AllocaInst>(value)) {
+        return builder.CreateLoad(value);
+    } 
+    return value;
+}
+
 void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), &stmt.getDecl(), nullptr, stmt.getDecl().getName());
     auto* initializer = stmt.getDecl().getInitializer();
