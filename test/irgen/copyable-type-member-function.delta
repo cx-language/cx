@@ -16,7 +16,7 @@ struct Foo: Copyable {
     // CHECK: define i32 @_EN4main3Foo3quxE(%Foo %this)
     // CHECK-NEXT: %baz = extractvalue %Foo %this, 0
     // CHECK-NEXT: ret i32 %baz
-    def qux() -> int { return this.baz; }
+    def qux(): int { return this.baz; }
 }
 
 // CHECK: define i32 @main()

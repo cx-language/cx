@@ -38,7 +38,7 @@ struct X {
 }
 
 // CHECK: define i32 @[[FOO:.*3foo.*]](i32 %a)
-def foo(a: int) -> int {
+def foo(a: int): int {
     return a;
 }
 

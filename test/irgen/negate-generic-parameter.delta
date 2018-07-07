@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-def f<T>(a: T) -> T {
+def f<T>(a: T): T {
     // CHECK: fsub
     return -a
 }

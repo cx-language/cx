@@ -36,7 +36,7 @@ struct Queue<T> {
     }
 
     /// Retrieve and remove head of the queue
-    mutating def pop() -> T {
+    mutating def pop(): T {
         let value = head!.value;
         let next = head!.next;
         deallocate(head!);
@@ -51,16 +51,16 @@ struct Queue<T> {
     }
 
     /// Access element in the front of the queue
-    def first() -> T* {
+    def first(): T* {
         return head!.value;
     }
 
-    def size() -> uint {
+    def size(): uint {
         return size;
     }
 
     /// Check if queue is empty
-    def isEmpty() -> bool {
+    def isEmpty(): bool {
         return head == null;
     }
 }

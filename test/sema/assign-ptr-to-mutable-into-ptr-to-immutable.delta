@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
-extern def foo() -> mutable int*;
+extern def foo(): mutable int*;
 
 def main() {
     let p: int* = foo();

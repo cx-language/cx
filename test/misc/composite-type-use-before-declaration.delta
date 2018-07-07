@@ -1,5 +1,5 @@
 // RUN: check_exit_status 2 %delta run %s
 
-def main() -> int { return 2; }
+def main(): int { return 2; }
 def foo(a: Foo) { }
 struct Foo { let i: int; }

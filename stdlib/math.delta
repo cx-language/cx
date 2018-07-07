@@ -1,4 +1,4 @@
-def abs<T>(value: T) -> T {
+def abs<T>(value: T): T {
     if (value < 0) {
         return -value;
     } else {

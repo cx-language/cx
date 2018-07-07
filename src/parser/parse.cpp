@@ -1078,7 +1078,7 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
     parse(Token::Greater);
 }
 
-/// function-proto ::= 'def' id param-list ('->' type)?
+/// function-proto ::= 'def' id param-list (':' type)?
 std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
                                                          std::vector<GenericParamDecl>* genericParams) {
     ASSERT(currentToken() == Token::Def);
@@ -1110,7 +1110,7 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl
     auto params = parseParamList(isExtern ? &isVariadic : nullptr, true);
 
     Type returnType = Type::getVoid();
-    if (currentToken() == Token::RightArrow) {
+    if (currentToken() == Token::Colon) {
         consumeToken();
         returnType = parseType();
     }
@@ -1126,7 +1126,7 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl
     }
 }
 
-/// function-template-proto ::= 'def' id template-param-list param-list ('->' type)?
+/// function-template-proto ::= 'def' id template-param-list param-list (':' type)?
 /// template-param-list ::= '<' template-param-decls '>'
 /// template-param-decls ::= id | id ',' template-param-decls
 std::unique_ptr<FunctionTemplate> Parser::parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel) {

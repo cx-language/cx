@@ -15,7 +15,7 @@ struct A<E> {
     init() {}
 
     // CHECK: define %S @{{.*A.*S.*a.*}}({}* %this)
-    def a() -> E {
+    def a(): E {
         // CHECK-NEXT: %1 = alloca %S
         // CHECK-NEXT: call void @_ENM4main1S4initE(%S* %1)
         // CHECK-NEXT: %2 = load %S, %S* %1

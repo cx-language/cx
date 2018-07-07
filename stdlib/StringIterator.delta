@@ -7,11 +7,11 @@ struct StringIterator: Copyable, Iterator<char> {
         end = string.data() + string.size();
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return current !== end;
     }
 
-    def value() -> char {
+    def value(): char {
         return *current;
     }
 

@@ -1,10 +1,10 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern def a() -> bool;
-extern def b() -> bool;
-extern def c() -> bool;
-extern def d() -> bool;
-extern def e() -> bool;
+extern def a(): bool;
+extern def b(): bool;
+extern def c(): bool;
+extern def d(): bool;
+extern def e(): bool;
 
 // CHECK: define void @{{.*foo.*}}()
 def foo() {

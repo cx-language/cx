@@ -5,11 +5,11 @@ struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
         this.mapIter = set.map.iterator();
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return mapIter.hasValue();
     }
 
-    def value() -> Element* {
+    def value(): Element* {
         return mapIter.value().key;
     }
 

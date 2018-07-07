@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def foo(a: int) -> int { return a; }
+def foo(a: int): int { return a; }
 
 def main() {
     var f = false;

@@ -6,8 +6,8 @@
 
 import "stdio.h"
 
-def foo() -> char* { return "foo" }
-def bar() -> StringRef { return "bar" }
+def foo(): char* { return "foo" }
+def bar(): StringRef { return "bar" }
 
 def main() {
     puts(foo())

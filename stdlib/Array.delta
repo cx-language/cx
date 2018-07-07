@@ -33,22 +33,22 @@ struct Array<Element> {
     }
 
     /// Returns the number of elements in the array.
-    def size() -> uint {
+    def size(): uint {
         return size;
     }
 
     /// Returns true if the array has no elements, otherwise false
-    def isEmpty() -> bool {
+    def isEmpty(): bool {
         return size == 0;
     }
 
     /// Returns the number of elements the array can store without allocating more memory.
-    def capacity() -> uint {
+    def capacity(): uint {
         return capacity;
     }
 
     /// Returns the element at the given index.
-    def [](index: uint) -> Element* {
+    def [](index: uint): Element* {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -57,7 +57,7 @@ struct Array<Element> {
     }
 
     /// Returns the element at the given index.
-    mutating def [](index: uint) -> mutable Element* {
+    mutating def [](index: uint): mutable Element* {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -65,7 +65,7 @@ struct Array<Element> {
         return bufferPointer + index;
     }
 
-    def first() -> Element* {
+    def first(): Element* {
         if (size == 0) {
             emptyArrayFirst();
         }
@@ -73,7 +73,7 @@ struct Array<Element> {
         return bufferPointer;
     }
 
-    def last() -> Element* {
+    def last(): Element* {
         if (size == 0) {
             emptyArrayLast();
         }
@@ -81,11 +81,11 @@ struct Array<Element> {
         return bufferPointer + size;
     }
 
-    def data() -> Element* {
+    def data(): Element* {
         return bufferPointer;
     }
 
-    mutating def data() -> mutable Element* {
+    mutating def data(): mutable Element* {
         return bufferPointer;
     }
 
@@ -161,20 +161,20 @@ struct Array<Element> {
         size--;
     }
 
-    def iterator() -> ArrayIterator<Element> {
+    def iterator(): ArrayIterator<Element> {
         // TODO: When implicit initializers have been implemented, remove the ArrayRef() call below.
         return ArrayIterator(ArrayRef(this));
     }
 
-    mutating def iterator() -> MutableArrayIterator<Element> {
+    mutating def iterator(): MutableArrayIterator<Element> {
         return MutableArrayIterator(this);
     }
 
-    def enumerate() -> EnumeratedIterator<Element> {
+    def enumerate(): EnumeratedIterator<Element> {
         return EnumeratedIterator(iterator());
     }
 
-    def map<Input, Output>(transform: (Input) -> Output) -> Array<Output> {
+    def map<Input, Output>(transform: (Input) -> Output): Array<Output> {
         var output = Array<Output>(capacity: this.size);
 
         for (let element in this) {
@@ -184,7 +184,7 @@ struct Array<Element> {
         return output;
     }
 
-    def filter<Input>(include: (Input) -> bool) -> Array<Element> {
+    def filter<Input>(include: (Input) -> bool): Array<Element> {
         var output = Array<Element>();
 
         for (let element in this) {
@@ -230,7 +230,7 @@ struct Array<Element> {
     }
 }
 
-def ==<T>(a: ArrayRef<T>, b: ArrayRef<T>) -> bool {
+def ==<T>(a: ArrayRef<T>, b: ArrayRef<T>): bool {
     if (a.size() != b.size()) {
         return false;
     }

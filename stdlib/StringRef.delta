@@ -19,21 +19,21 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         characters = ArrayRef<char>(string.data(), string.size());
     }
 
-    def size() -> uint {
+    def size(): uint {
         return characters.size();
     }
 
     /// Returns the character at the given index.
-    def [](index: uint) -> char {
+    def [](index: uint): char {
         return *characters[index];
     }
 
-    def data() -> char* {
+    def data(): char* {
         return characters.data();
     }
 
     /// Supports using strings with sets and dicts
-    def hash() -> uint64 {
+    def hash(): uint64 {
         var hashValue: uint64 = 5381;
 
         for (let index in 0..characters.size()) {
@@ -43,7 +43,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         return hashValue;
     }
 
-    def iterator() -> StringIterator {
+    def iterator(): StringIterator {
         return StringIterator(this);
     }
 
@@ -51,7 +51,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         stream.write(this);
     }
 
-    def compare(other: StringRef*) -> Ordering {
+    def compare(other: StringRef*): Ordering {
         for (let index in 0..*min(size(), other.size())) {
             if (this[index] < other[index]) { return Ordering.Less; }
             if (this[index] > other[index]) { return Ordering.Greater; }
@@ -62,7 +62,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     }
 }
 
-def ==(a: StringRef, b: StringRef) -> bool {
+def ==(a: StringRef, b: StringRef): bool {
     if (a.size() != b.size()) {
         return false;
     }

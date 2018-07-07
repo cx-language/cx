@@ -1,6 +1,6 @@
 // RUN: not %delta run %s | %FileCheck %s
 
-def main() -> int {
+def main(): int {
     return *Array<int>()[0];
 }
 

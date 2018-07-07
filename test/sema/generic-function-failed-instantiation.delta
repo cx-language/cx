@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def foo<T>(t: T) -> bool {
+def foo<T>(t: T): bool {
     // CHECK: [[@LINE+1]]:14: error: invalid operands 'bool' and 'int' to '<'
     return t < 3;
 }

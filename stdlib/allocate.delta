@@ -5,7 +5,7 @@
 /// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
 /// undefined behavior (when compiled in unchecked mode).
 ///
-def allocate<Type>(value: Type) -> mutable Type* {
+def allocate<Type>(value: Type): mutable Type* {
     let allocation = cast<mutable Type*>(malloc(sizeof(Type))!);
     allocation.init(value);
     return allocation;
@@ -17,7 +17,7 @@ def allocate<Type>(value: Type) -> mutable Type* {
 ///
 /// If the memory allocation fails, null is returned.
 ///
-def safeAllocate<Type>(value: Type) -> mutable Type*? {
+def safeAllocate<Type>(value: Type): mutable Type*? {
     let allocation = cast<mutable Type*?>(malloc(sizeof(Type)));
     if (allocation != null) {
         allocation.init(value);
@@ -32,7 +32,7 @@ def safeAllocate<Type>(value: Type) -> mutable Type*? {
 /// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
 /// undefined behavior (when compiled in unchecked mode).
 ///
-def allocateArray<Type>(size: uint) -> mutable Type* {
+def allocateArray<Type>(size: uint): mutable Type* {
     return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size))!);
 }
 
@@ -42,7 +42,7 @@ def allocateArray<Type>(size: uint) -> mutable Type* {
 ///
 /// If the memory allocation fails, null is returned.
 ///
-def safeAllocateArray<Type>(size: uint) -> mutable Type*? {
+def safeAllocateArray<Type>(size: uint): mutable Type*? {
     return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size)));
 }
 

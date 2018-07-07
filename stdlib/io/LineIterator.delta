@@ -9,11 +9,11 @@ struct LineIterator<Stream: InputStream>: Iterator<String> {
         increment();
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return !stream.isEof() || !next.isEmpty();
     }
 
-    def value() -> String {
+    def value(): String {
         return next;
     }
 
@@ -22,7 +22,7 @@ struct LineIterator<Stream: InputStream>: Iterator<String> {
         this.next = next;
     }
 
-    def iterator() -> LineIterator<Stream> {
+    def iterator(): LineIterator<Stream> {
         return *this;
     }
 

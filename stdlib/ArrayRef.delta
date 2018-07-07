@@ -22,20 +22,20 @@ struct ArrayRef<Element>: Copyable {
     }
 
     /// Returns the number of elements in the array.
-    def size() -> uint {
+    def size(): uint {
         return size;
     }
 
     /// Returns a reference to the element at the given index.
-    def [](index: uint) -> Element* {
+    def [](index: uint): Element* {
         return data + index;
     }
 
-    def data() -> Element* {
+    def data(): Element* {
         return data;
     }
 
-    def iterator() -> ArrayIterator<Element> {
+    def iterator(): ArrayIterator<Element> {
         return ArrayIterator(this);
     }
 }

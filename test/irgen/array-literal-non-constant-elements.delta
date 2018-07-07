@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-def f(foo: int, bar: int) -> int[2] {
+def f(foo: int, bar: int): int[2] {
     // CHECK:      %1 = add i32 %foo, %bar
     // CHECK-NEXT: %2 = insertvalue [2 x i32] undef, i32 %1, 0
     // CHECK-NEXT: %3 = sub i32 %foo, %bar
@@ -9,7 +9,7 @@ def f(foo: int, bar: int) -> int[2] {
     return [foo + bar, foo - bar];
 }
 
-def g(foo: int, bar: int) -> int[2] {
+def g(foo: int, bar: int): int[2] {
     // TODO: Insert elements straight into alloca.
     // CHECK:      %c = alloca [2 x i32]
     // CHECK-NEXT: %1 = add i32 %foo, %bar

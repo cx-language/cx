@@ -2,8 +2,8 @@
 
 #if hasInclude("execinfo.h")
 
-extern def backtrace(array: mutable void mutable**, size: int) -> int;
-extern def backtrace_symbols(array: mutable void**, size: int) -> mutable char mutable**?;
+extern def backtrace(array: mutable void mutable**, size: int): int;
+extern def backtrace_symbols(array: mutable void**, size: int): mutable char mutable**?;
 
 def printStackTrace() {
     var callstack: mutable void*[128] = undefined;

@@ -54,11 +54,11 @@ struct name, and providing the member functions required by the interface:
 
 ```go
 interface Fooable {
-    def foo() -> int;
+    def foo(): int;
 }
 
 struct X: Fooable {
-    def foo() -> int {
+    def foo(): int {
         return 42;
     }
 }
@@ -71,9 +71,9 @@ _default member functions_:
 
 ```go
 interface Fooable {
-    def foo() -> int;
+    def foo(): int;
 
-    def fooSquared() -> int {
+    def fooSquared(): int {
         return foo() * foo();
     }
 }

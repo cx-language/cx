@@ -4,7 +4,7 @@
 import "c-callback-function.h";
 
 // CHECK-NOT: unused declaration
-def f(a: int) -> int {
+def f(a: int): int {
     return a;
 }
 

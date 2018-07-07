@@ -4,7 +4,7 @@ struct X { let i: int; }
 struct Y { let i: int; }
 
 // CHECK: define i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
-def <(a: X*, b: X*) -> bool {
+def <(a: X*, b: X*): bool {
     return true;
 }
 
@@ -12,7 +12,7 @@ interface Z {
     def z();
 }
 
-def < <T: Z>(a: T*, b: T*) -> bool {
+def < <T: Z>(a: T*, b: T*): bool {
     return true;
 }
 

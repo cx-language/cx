@@ -9,11 +9,11 @@ struct ByteIterator<Stream: InputStream>: Copyable, Iterator<uint8> {
         increment();
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return !stream.isEof() || next >= 0;
     }
 
-    def value() -> uint8 {
+    def value(): uint8 {
         return uint8(next);
     }
 
@@ -21,7 +21,7 @@ struct ByteIterator<Stream: InputStream>: Copyable, Iterator<uint8> {
         next = stream.readByte();
     }
 
-    def iterator() -> ByteIterator<Stream> {
+    def iterator(): ByteIterator<Stream> {
         return this;
     }
 

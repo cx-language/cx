@@ -5,7 +5,7 @@ interface Fooable {
 }
 
 struct F: Copyable {
-    def foo() -> int { return 1 }
+    def foo(): int { return 1 }
 }
 
 def main() {

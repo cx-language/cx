@@ -22,12 +22,12 @@ struct OutputFileStream: OutputStream {
     }
 
     /// Returns true if the file is open for writing
-    def isOpen() -> bool {
+    def isOpen(): bool {
         return fs.isOpen();
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    mutating def write(string: StringRef) -> bool {
+    mutating def write(string: StringRef): bool {
         return fs.write(string);
     }
 }

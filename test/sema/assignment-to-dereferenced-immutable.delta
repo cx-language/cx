@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-extern def calloc(count: uint64, size: uint64) -> void*;
+extern def calloc(count: uint64, size: uint64): void*;
 
 def main() {
     var buffer = cast<int*>(calloc(1, 8));

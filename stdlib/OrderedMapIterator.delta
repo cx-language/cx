@@ -8,11 +8,11 @@ struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Valu
         this.map = map;
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return current != null;
     }
 
-    def value() -> (key: Key, value: Value)* {
+    def value(): (key: Key, value: Value)* {
         return current!.entry;
     }
 

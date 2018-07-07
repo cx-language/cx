@@ -1,7 +1,7 @@
 // RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:Bar
 
-extern def puts(s: uint8*) -> int;
+extern def puts(s: uint8*): int;
 
 def main() {
     var buffer: uint8[4] = undefined;

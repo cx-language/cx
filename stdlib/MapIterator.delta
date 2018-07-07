@@ -8,11 +8,11 @@ struct MapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Value)*> {
         skipEmptySlots();
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return hashTableIterator.hasValue();
     }
 
-    def value() -> (key: Key, value: Value)* {
+    def value(): (key: Key, value: Value)* {
         return current;
     }
 

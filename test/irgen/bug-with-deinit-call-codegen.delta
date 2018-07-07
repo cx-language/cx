@@ -10,7 +10,7 @@ struct Y<T> {
     init() {}
 
     // CHECK: define i32 @_EN4main1YI4boolE1fE({}* %this)
-    def f() -> int {
+    def f(): int {
         // CHECK-NEXT: ret i32 1
         return 1;
     }

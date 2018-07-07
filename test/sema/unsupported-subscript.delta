@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-extern def f() -> mutable void*?;
+extern def f(): mutable void*?;
 
 def main() {
     let p = cast<mutable uint8*?>(f());

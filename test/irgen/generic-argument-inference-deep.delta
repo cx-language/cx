@@ -8,7 +8,7 @@ struct S<T>: Copyable {
 
 // CHECK-DAG: define i1 @_EN4maineqI3intEE1a1SI3intE1b1SI3intE(%"S<int>" %a, %"S<int>" %b)
 // CHECK-DAG: define i1 @_EN4maineqI4boolEE1a1SI4boolE1b1SI4boolE(%"S<bool>" %a, %"S<bool>" %b)
-def ==<T>(a: S<T>, b: S<T>) -> bool {
+def ==<T>(a: S<T>, b: S<T>): bool {
     return true;
 }
 

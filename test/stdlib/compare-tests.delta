@@ -8,7 +8,7 @@ struct C: Comparable {
         this.a = a;
     }
 
-    def compare(other: C*) -> Ordering {
+    def compare(other: C*): Ordering {
         return this.a.compare(other.a);
     }
 }

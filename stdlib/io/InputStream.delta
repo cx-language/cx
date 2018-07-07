@@ -1,5 +1,5 @@
 interface InputStream {
-    def readByte() -> int;
-    def readLine() -> String;
-    def isEof() -> bool;
+    def readByte(): int;
+    def readLine(): String;
+    def isEof(): bool;
 }

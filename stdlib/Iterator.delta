@@ -3,11 +3,11 @@ interface Iterator<Element> {
 
     /// Returns true if there's at least one element remaining in the sequence, i.e. if calling
     /// `value()` is allowed.
-    def hasValue() -> bool;
+    def hasValue(): bool;
 
     /// Returns the next element from the sequence. Calling this function is not allowed if
     /// `hasValue()` returns false.
-    def value() -> Element;
+    def value(): Element;
 
     /// Advances the iterator to the next element in the sequence. Calling this function is not
     /// allowed if `hasValue()` returns false.

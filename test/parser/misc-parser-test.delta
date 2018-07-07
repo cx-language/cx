@@ -10,32 +10,32 @@ def foo2(a: int) { } // CHECK-NEXT:    (function-decl foo2 ((int a)) void)
 
 def foo3(a: int, b: int) { } // CHECK-NEXT:    (function-decl foo3 ((int a) (int b)) void)
 
-def foo4() -> int { // CHECK-NEXT:    (function-decl foo4 () int
+def foo4(): int { // CHECK-NEXT:    (function-decl foo4 () int
     return 42;       // CHECK-NEXT:        (return-stmt 42))
 }
 
-def foo5() -> (a: int, b: bool) { // CHECK-NEXT:    (function-decl foo5 () (a: int, b: bool)
+def foo5(): (a: int, b: bool) { // CHECK-NEXT:    (function-decl foo5 () (a: int, b: bool)
     return (a: 42, b: false);      // CHECK-NEXT:        (return-stmt (tuple-literal (a 42) (b false))))
 }
 
-def foo6() -> int { // CHECK-NEXT:    (function-decl foo6 () int
+def foo6(): int { // CHECK-NEXT:    (function-decl foo6 () int
     let answer = 42; // CHECK-NEXT:        (var-stmt answer 42)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 
-def foo7() -> int { // CHECK-NEXT:    (function-decl foo7 () int
+def foo7(): int { // CHECK-NEXT:    (function-decl foo7 () int
     var answer = 41; // CHECK-NEXT:        (var-stmt answer 41)
     answer++;        // CHECK-NEXT:        (++answer)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 
-def foo8() -> int { // CHECK-NEXT:    (function-decl foo8 () int
+def foo8(): int { // CHECK-NEXT:    (function-decl foo8 () int
     var answer = 43; // CHECK-NEXT:        (var-stmt answer 43)
     answer--;        // CHECK-NEXT:        (--answer)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 
-def foo9() -> int {                      // CHECK-NEXT:    (function-decl foo9 () int
+def foo9(): int {                      // CHECK-NEXT:    (function-decl foo9 () int
     return (0 - -0xC) / (0o4 + 0b11 * 2); // CHECK-NEXT:        (return-stmt ((0 - (-12)) / (4 + (3 * 2)))))
 }
 
@@ -53,7 +53,7 @@ struct C1 {       // CHECK-NEXT:    (type-decl struct C1
     let b: bool*; // CHECK-NEXT:        (field-decl bool* b))
 }
 
-def foo12(a: int*, b: int) -> bool { // CHECK-NEXT:    (function-decl foo12 ((int* a) (int b)) bool
+def foo12(a: int*, b: int): bool { // CHECK-NEXT:    (function-decl foo12 ((int* a) (int b)) bool
     return *a == b;                   // CHECK-NEXT:        (return-stmt ((*a) == b)))
 }
 

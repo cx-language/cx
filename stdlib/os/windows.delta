@@ -1,6 +1,6 @@
 #if Windows
 
-extern def _set_abort_behavior(flags: uint, mask: uint) -> uint;
+extern def _set_abort_behavior(flags: uint, mask: uint): uint;
 let _CALL_REPORTFAULT = 0x2;
 
 def printStackTrace() {

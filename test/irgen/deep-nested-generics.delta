@@ -1,13 +1,13 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 interface H {
-    def h() -> int;
+    def h(): int;
 }
 
 struct R: Copyable {
     let i: int;
 
-    def h() -> int {
+    def h(): int {
         return i;
     }
 }
@@ -17,7 +17,7 @@ struct A<T> {
 
     init() {}
 
-    def [](i: int) -> T {
+    def [](i: int): T {
         return t;
     }
 }

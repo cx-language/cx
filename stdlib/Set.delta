@@ -18,19 +18,19 @@ struct Set<Key: Hashable> {
     }
 
     /// Checks if e is part of the set.
-    def contains(key: Key*) -> bool {
+    def contains(key: Key*): bool {
         return map.contains(key);
     }
 
-    def size() -> uint {
+    def size(): uint {
         return map.size();
     }
 
-    def isEmpty() -> bool {
+    def isEmpty(): bool {
         return map.isEmpty();
     }
 
-    def iterator() -> SetIterator<Key> {
+    def iterator(): SetIterator<Key> {
         return SetIterator(this);
     }
 }

@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def f() -> (a: int, b: int) {
+def f(): (a: int, b: int) {
     // CHECK: [[@LINE+1]]:5: error: mismatching return type '(a: int, c: int)', expected '(a: int, b: int)'
     return (a: 0, c: 0);
 }

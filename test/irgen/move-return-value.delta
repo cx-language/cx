@@ -5,7 +5,7 @@ struct X {
     deinit() {}
 }
 
-def f() -> X {
+def f(): X {
     let x = X();
 
     // CHECK-NOT: call void @X.deinit

@@ -17,32 +17,32 @@ struct InputFileStream: InputStream {
     }
 
     /// Returns true if the file is open for reading
-    def isOpen() -> bool {
+    def isOpen(): bool {
         return fs.isOpen();
     }
 
     /// Returns an iterator that can be used to iterate over lines in the file
-    def lines() -> LineIterator<InputFileStream> {
+    def lines(): LineIterator<InputFileStream> {
         return LineIterator(this);
     }
 
     /// Returns an iterator that can be used to iterate over each byte in the file
-    def bytes() -> ByteIterator<InputFileStream> {
+    def bytes(): ByteIterator<InputFileStream> {
         return ByteIterator(this);
     }
 
     /// Reads one byte from the file
-    def readByte() -> int {
+    def readByte(): int {
         return fs.readByte();
     }
 
     /// Reads one line from the file, separated by \n
-    def readLine() -> String {
+    def readLine(): String {
         return fs.readLine();
     }
 
     /// Returns true if we have reached the end of the file
-    def isEof() -> bool {
+    def isEof(): bool {
         return fs.isEof();
     }
 }

@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern def foo() -> bool;
+extern def foo(): bool;
 
 // CHECK: define void @{{.*3bar.*}}()
 def bar() {

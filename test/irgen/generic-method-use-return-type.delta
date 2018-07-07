@@ -4,7 +4,7 @@
 
 struct X<T> {
     // CHECK-DAG: define {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %this, i1 %u)
-    def f<U>(u: U) -> X<U> {
+    def f<U>(u: U): X<U> {
         let x: X<U> = undefined;
         return x;
     }

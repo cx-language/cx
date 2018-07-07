@@ -1,6 +1,6 @@
 // RUN: %delta -print-ast %s | %FileCheck %s
 
-def main() -> int {
+def main(): int {
     // TODO: Emit warning for dangling else.
     // CHECK:      (if-stmt true
     // CHECK-NEXT:     (then

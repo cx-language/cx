@@ -49,27 +49,27 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Returns true if the file is open for reading or writing
-    def isOpen() -> bool {
+    def isOpen(): bool {
         return file != null;
     }
 
     /// Returns an iterator that can be used to iterate over lines in the file
-    def lines() -> LineIterator<FileStream> {
+    def lines(): LineIterator<FileStream> {
         return LineIterator(this);
     }
 
     /// Returns an iterator that can be used to iterate over each byte in the file
-    def bytes() -> ByteIterator<FileStream> {
+    def bytes(): ByteIterator<FileStream> {
         return ByteIterator(this);
     }
 
     /// Reads one byte from the file
-    def readByte() -> int {
+    def readByte(): int {
         return fgetc(file!);
     }
 
     /// Reads one line from the file, separated by \n
-    def readLine() -> String {
+    def readLine(): String {
         var ret = String();
         for (let i in bytes()) {
             if (i == '\n') {
@@ -81,7 +81,7 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Returns true if we have reached the end of the file
-    def isEof() -> bool {
+    def isEof(): bool {
         let ret = fgetc(file!);
         if (ret < 0) {
             return true;
@@ -91,7 +91,7 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    mutating def write(string: StringRef) -> bool {
+    mutating def write(string: StringRef): bool {
         for (let c in string) {
             let ret = fputc(int(c), file!);
             if (ret <= 0) {

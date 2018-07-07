@@ -15,7 +15,7 @@ private def j(a: A) {}
 
 private def k(a: mutable A*?) {}
 
-private def l() -> A*? {
+private def l(): A*? {
     return null;
 }
 
@@ -39,8 +39,8 @@ def m(r: A*) {
 // CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:10: warning: using private type 'A' in public declaration
 def o(a: mutable A*?) {}
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:12: warning: using private type 'A' in public declaration
-def p() -> mutable A*? {
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:10: warning: using private type 'A' in public declaration
+def p(): mutable A*? {
     return null;
 }
 

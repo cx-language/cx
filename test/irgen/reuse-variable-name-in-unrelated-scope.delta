@@ -6,7 +6,7 @@ def f() {
     X<int>().g();
 }
 
-def g() -> X<int> {
+def g(): X<int> {
     var x = X<int>();
     return x;
 }

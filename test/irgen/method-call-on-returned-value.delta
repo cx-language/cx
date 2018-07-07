@@ -12,8 +12,8 @@ struct C {
     def f() {}
 }
 
-def s() -> S { return S(); }
-def c() -> C { return C(); }
+def s(): S { return S(); }
+def c(): C { return C(); }
 
 // CHECK-LABEL: define i32 @main()
 def main() {

@@ -11,13 +11,13 @@ struct X {
     // CHECK: define i1 @{{.*1X.*1f.*4bool.*1t.*}}({}* %this, i1 ()* %t) {
     // CHECK-NEXT: %1 = call i1 %t()
     // CHECK-NEXT: ret i1 %1
-    def f<T>(t: () -> T) -> T {
+    def f<T>(t: () -> T): T {
         return t();
     }
 }
 
-def g() -> int { return 0; }
-def h() -> bool { return false; }
+def g(): int { return 0; }
+def h(): bool { return false; }
 
 // MAIN: define i32 @main()
 def main() {

@@ -16,7 +16,7 @@ def printUnsigned<T>(value: T, stream: mutable String*) {
 }
 
 struct int: Copyable, Comparable, Printable {
-    def compare(other: int*) -> Ordering {
+    def compare(other: int*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -26,7 +26,7 @@ struct int: Copyable, Comparable, Printable {
 }
 
 struct int8: Copyable, Comparable, Printable {
-    def compare(other: int8*) -> Ordering {
+    def compare(other: int8*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -36,7 +36,7 @@ struct int8: Copyable, Comparable, Printable {
 }
 
 struct int16: Copyable, Comparable, Printable {
-    def compare(other: int16*) -> Ordering {
+    def compare(other: int16*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -46,7 +46,7 @@ struct int16: Copyable, Comparable, Printable {
 }
 
 struct int32: Copyable, Comparable, Printable {
-    def compare(other: int32*) -> Ordering {
+    def compare(other: int32*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -56,7 +56,7 @@ struct int32: Copyable, Comparable, Printable {
 }
 
 struct int64: Copyable, Comparable, Printable {
-    def compare(other: int64*) -> Ordering {
+    def compare(other: int64*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -66,7 +66,7 @@ struct int64: Copyable, Comparable, Printable {
 }
 
 struct uint: Copyable, Comparable, Printable {
-    def compare(other: uint*) -> Ordering {
+    def compare(other: uint*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -76,7 +76,7 @@ struct uint: Copyable, Comparable, Printable {
 }
 
 struct uint8: Copyable, Comparable, Printable {
-    def compare(other: uint8*) -> Ordering {
+    def compare(other: uint8*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -86,7 +86,7 @@ struct uint8: Copyable, Comparable, Printable {
 }
 
 struct uint16: Copyable, Comparable, Printable {
-    def compare(other: uint16*) -> Ordering {
+    def compare(other: uint16*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -96,7 +96,7 @@ struct uint16: Copyable, Comparable, Printable {
 }
 
 struct uint32: Copyable, Comparable, Printable {
-    def compare(other: uint32*) -> Ordering {
+    def compare(other: uint32*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
@@ -106,7 +106,7 @@ struct uint32: Copyable, Comparable, Printable {
 }
 
 struct uint64: Copyable, Comparable, Printable {
-    def compare(other: uint64*) -> Ordering {
+    def compare(other: uint64*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 

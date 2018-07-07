@@ -1,12 +1,12 @@
-def stdin() -> InputFileStream {
+def stdin(): InputFileStream {
     return InputFileStream(fileDescriptor: 0);
 }
 
-def stdout() -> OutputFileStream {
+def stdout(): OutputFileStream {
     return OutputFileStream(fileDescriptor: 1);
 }
 
-def stderr() -> OutputFileStream {
+def stderr(): OutputFileStream {
     return OutputFileStream(fileDescriptor: 2);
 }
 
@@ -20,7 +20,7 @@ def print<T: Printable>(value: T) {
     printf("%.*s\n", string.size(), string.data());
 }
 
-def readLine() -> String {
+def readLine(): String {
     var line = String();
 
     while (true) {

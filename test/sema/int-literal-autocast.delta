@@ -2,8 +2,8 @@
 
 def foo(a: uint) { }
 def bar(a: uint8) { }
-def baz() -> uint { return 0; }
-def qux() -> (a: uint, b: uint8) { return (a: 0, b: 0); }
+def baz(): uint { return 0; }
+def qux(): (a: uint, b: uint8) { return (a: 0, b: 0); }
 
 def main() {
     foo(0);

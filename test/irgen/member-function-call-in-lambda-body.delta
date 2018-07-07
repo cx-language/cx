@@ -2,7 +2,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=LAMBDA
 
 struct X {
-    def foo() -> int {
+    def foo(): int {
         return 42;
     }
 }

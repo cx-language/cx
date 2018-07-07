@@ -1,7 +1,7 @@
 // RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:foo
 
-def main() -> int {
+def main(): int {
     putchar(102);
     putchar(111);
     putchar(111);
@@ -9,4 +9,4 @@ def main() -> int {
     return 0;
 }
 
-extern def putchar(ch: int) -> int;
+extern def putchar(ch: int): int;

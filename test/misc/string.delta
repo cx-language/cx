@@ -1,15 +1,15 @@
 // RUN: check_exit_status 11 %delta run %s
 
-def main() -> uint {
+def main(): uint {
     return "abc".size() + foo("quux");
 }
 
-def foo(x: StringRef) -> uint {
+def foo(x: StringRef): uint {
     var s = x;
     s = bar(x);
     return x.size() + bar(s).size();
 }
 
-def bar(z: StringRef) -> StringRef {
+def bar(z: StringRef): StringRef {
     return z;
 }

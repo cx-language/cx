@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern def foo() -> bool;
+extern def foo(): bool;
 
 // CHECK-LABEL: define i32 @main()
 def main() {

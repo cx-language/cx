@@ -1,6 +1,6 @@
 // RUN: not %delta run %s | %FileCheck %s
 
-def main() -> int {
+def main(): int {
     var s = String("ok");
     s.substr(0..5);
     return 0;

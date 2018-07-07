@@ -4,14 +4,14 @@ struct S {
     var t: (a: int);
 
     // CHECK: define { i32 }* @_EN4main1S1fE(%S* %this)
-    def f() -> (a: int)* {
+    def f(): (a: int)* {
         // CHECK-NEXT: %t = getelementptr inbounds %S, %S* %this, i32 0, i32 0
         // CHECK-NEXT: ret { i32 }* %t
         return &t;
     }
 
     // CHECK: define { i32 }* @_EN4main1S1gE(%S* %this)
-    def g() -> (a: int)* {
+    def g(): (a: int)* {
         // CHECK-NEXT: %t = getelementptr inbounds %S, %S* %this, i32 0, i32 0
         // CHECK-NEXT: ret { i32 }* %t
         return t;

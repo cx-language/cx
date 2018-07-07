@@ -5,11 +5,11 @@ struct SetIterator<Element>: Copyable, Iterator<Element*> {
         iterator = MapIterator<Element, bool>(set.map);
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return iterator.hasValue();
     }
 
-    def value() -> Element* {
+    def value(): Element* {
         return iterator.value().key;
     }
 

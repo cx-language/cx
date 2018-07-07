@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-extern def foo() -> int*;
+extern def foo(): int*;
 
 def main() {
     // CHECK: [[@LINE+1]]:30: error: cannot initialize variable of type 'mutable int*' with 'int*'

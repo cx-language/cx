@@ -4,13 +4,13 @@
 interface Interface {
     let that: This*;
 
-    def foo(a: This*) -> This*;
+    def foo(a: This*): This*;
 
     // CHECK-BAR: define %S* @_EN4main1S3barE(%S* %this)
     // CHECK-BAR-NEXT: %1 = call %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %this)
     // CHECK-BAR-NEXT: %2 = call %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %1)
     // CHECK-BAR-NEXT: ret %S* %2
-    def bar() -> This* {
+    def bar(): This* {
         return foo(foo(this));
     }
 }
@@ -21,7 +21,7 @@ struct S: Interface {
     init() { that = this; }
 
     // CHECK: define %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %a)
-    def foo(a: S*) -> S* {
+    def foo(a: S*): S* {
         return this;
     }
 }

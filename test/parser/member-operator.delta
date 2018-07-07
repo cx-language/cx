@@ -2,5 +2,5 @@
 
 struct Foo: Copyable {
     // CHECK: 5:9: error: operator functions other than subscript must be non-member functions
-    def ==(f: Foo) -> bool { return false }
+    def ==(f: Foo): bool { return false }
 }

@@ -49,11 +49,11 @@ struct Map<Key: Hashable, Value> {
         }
     }
 
-    def size() -> uint {
+    def size(): uint {
         return size;
     }
 
-    def capacity() -> uint {
+    def capacity(): uint {
         return hashTable.size();
     }
 
@@ -75,7 +75,7 @@ struct Map<Key: Hashable, Value> {
         hashTable = newTable;
     }
 
-    def [](e: Key*) -> Value*? {
+    def [](e: Key*): Value*? {
         let hashValue = uint(e.hash()) % capacity();
         let slot = hashTable[hashValue];
 
@@ -88,7 +88,7 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Checks if e is part of the map.
-    def contains(e: Key*) -> bool {
+    def contains(e: Key*): bool {
         let hashValue = uint(e.hash()) % capacity();
         let slot = hashTable[hashValue];
 
@@ -105,18 +105,18 @@ struct Map<Key: Hashable, Value> {
         return false;
     }
 
-    def isEmpty() -> bool {
+    def isEmpty(): bool {
         return size == 0;
     }
 
     /// Returns the load factor for the map. This is used to increase the map size once
     /// the load factor gets too big.
-    def loadFactor() -> float64 {
+    def loadFactor(): float64 {
         return float64(size) / (float64(capacity()));
     }
 
     /// Iterate over the map
-    def iterator() -> MapIterator<Key, Value> {
+    def iterator(): MapIterator<Key, Value> {
         return MapIterator(this);
     }
 }

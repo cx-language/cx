@@ -4,7 +4,7 @@ interface Comparable {
 
     /// Returns `Ordering.Less` if `this` is less than `other`, `Ordering.Equal` if `this` is equal
     /// to `other`, or `Ordering.Greater` if `this` is greater than `other`.
-    def compare(other: This*) -> Ordering;
+    def compare(other: This*): Ordering;
 }
 
 enum Ordering {
@@ -13,26 +13,26 @@ enum Ordering {
     case Greater;
 }
 
-def == <T: Comparable>(a: T*, b: T*) -> bool {
+def == <T: Comparable>(a: T*, b: T*): bool {
     return a.compare(b) == Ordering.Equal;
 }
 
-def != <T: Comparable>(a: T*, b: T*) -> bool {
+def != <T: Comparable>(a: T*, b: T*): bool {
     return a.compare(b) != Ordering.Equal;
 }
 
-def < <T: Comparable>(a: T*, b: T*) -> bool {
+def < <T: Comparable>(a: T*, b: T*): bool {
     return a.compare(b) == Ordering.Less;
 }
 
-def > <T: Comparable>(a: T*, b: T*) -> bool {
+def > <T: Comparable>(a: T*, b: T*): bool {
     return a.compare(b) == Ordering.Greater;
 }
 
-def >= <T: Comparable>(a: T*, b: T*) -> bool {
+def >= <T: Comparable>(a: T*, b: T*): bool {
     return a.compare(b) != Ordering.Less;
 }
 
-def <= <T: Comparable>(a: T*, b: T*) -> bool {
+def <= <T: Comparable>(a: T*, b: T*): bool {
     return a.compare(b) != Ordering.Greater;
 }

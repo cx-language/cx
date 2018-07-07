@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:12: error: too many generic arguments to 'int', expected 0
-def f() -> int<bool> {
+// CHECK: [[@LINE+1]]:10: error: too many generic arguments to 'int', expected 0
+def f(): int<bool> {
     return 42;
 }

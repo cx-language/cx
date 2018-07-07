@@ -2,16 +2,16 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
 
 interface A {
-    def f() -> int;
+    def f(): int;
 
     // CHECK: define i32 @_EN4main1B1gE({}* %this)
     // CHECK-NEXT: call i32 @_EN4main1B1fE({}* %this)
-    def g() -> int { return f() * 2; }
+    def g(): int { return f() * 2; }
 }
 
 struct B: A {
     init() {}
-    def f() -> int { return 21; }
+    def f(): int { return 21; }
 }
 
 def main() {

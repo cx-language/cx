@@ -2,5 +2,5 @@
 
 interface I {
     def i();
-    def j() -> mutable int*;
+    def j(): mutable int*;
 }

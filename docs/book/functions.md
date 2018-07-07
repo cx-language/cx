@@ -15,7 +15,7 @@ def foo(a: int, b: int) { }
 If the function has a return type, it is specified after the parameter list:
 
 ```
-def foo(a: int, b: int) -> int {
+def foo(a: int, b: int): int {
     return a + b;
 }
 ```
@@ -31,7 +31,7 @@ let result = foo(1, 2);
 Functions can return more than one value by returning a tuple of values:
 
 ```
-def foo() -> (key: int, value: bool) {
+def foo(): (key: int, value: bool) {
     let key = 42;
     let value = true;
     return (key, value);

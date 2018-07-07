@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
-def foo() -> int { return 42; }
+def foo(): int { return 42; }
 def bar() { }
 
 def main() {

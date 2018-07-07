@@ -7,11 +7,11 @@ struct ClosedRangeIterator<T>: Copyable, Iterator<T> {
         end = range.end();
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return current <= end;
     }
 
-    def value() -> T {
+    def value(): T {
         return current;
     }
 

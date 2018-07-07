@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
-extern def foo() -> int[5]*;
+extern def foo(): int[5]*;
 
 def main() {
     let p = foo();

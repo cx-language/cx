@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def fooz() -> int { return 42; }
+def fooz(): int { return 42; }
 
 // CHECK: [[@LINE+1]]:22: error: unknown identifier 'foo'
 def main() { var i = foo(); }

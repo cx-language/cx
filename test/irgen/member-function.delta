@@ -22,7 +22,7 @@ struct Foo {
     // CHECK-NEXT: %baz = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
     // CHECK-NEXT: %1 = load i32, i32* %baz
     // CHECK-NEXT: ret i32 %1
-    def qux() -> int { return this.baz; }
+    def qux(): int { return this.baz; }
 }
 
 def main() {

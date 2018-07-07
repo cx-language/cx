@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-def foo<T>(t: T) -> bool {
+def foo<T>(t: T): bool {
     return t < 0;
 }
 

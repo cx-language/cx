@@ -2,7 +2,7 @@
 
 // CHECK: define i32* @[[FOO:.*3foo.*]]()
 // CHECK-NEXT: ret i32* null
-def foo() -> int*? { return null; }
+def foo(): int*? { return null; }
 
 def main() {
     // CHECK: %1 = call i32* @[[FOO]]()

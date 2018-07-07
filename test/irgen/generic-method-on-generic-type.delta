@@ -8,7 +8,7 @@ struct X<T> {
     mutating def f<U>(u: (U) -> T) {}
 }
 
-def g(i: bool) -> int { return int(i); }
+def g(i: bool): int { return int(i); }
 
 // MAIN: define i32 @main()
 def main() {

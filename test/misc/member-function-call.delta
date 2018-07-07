@@ -12,7 +12,7 @@ struct Foo {
     }
 }
 
-def main() -> int {
+def main(): int {
     var f = Foo();
     f.add(21);
     f.add(21);

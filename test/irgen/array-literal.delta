@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-def main() -> int {
+def main(): int {
     // CHECK: %a = alloca [3 x i32]
     // CHECK: store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %a
     var a = [1, 2, 3];

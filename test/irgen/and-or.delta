@@ -1,8 +1,8 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-extern def a() -> bool;
-extern def b() -> bool;
-extern def c() -> bool;
+extern def a(): bool;
+extern def b(): bool;
+extern def c(): bool;
 
 // CHECK-LABEL: define void @{{.*3and.*}}()
 def and() {

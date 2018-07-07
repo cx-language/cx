@@ -7,11 +7,11 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
         index = 0;
     }
 
-    def hasValue() -> bool {
+    def hasValue(): bool {
         return base.hasValue();
     }
 
-    def value() -> EnumeratedIteratorEntry<Element> {
+    def value(): EnumeratedIteratorEntry<Element> {
         return EnumeratedIteratorEntry(base.value(), index);
     }
 

@@ -8,12 +8,12 @@ struct OrderedSet<Element> {
     }
 
     /// Inserts an element into the Set.
-    mutating def insert(e: Element) -> bool {
+    mutating def insert(e: Element): bool {
         return map.insert(e, false);
     }
 
     /// Returns true if the Set contains `e`, otherwise false.
-    def contains(e: Element*) -> bool {
+    def contains(e: Element*): bool {
         return map.contains(e);
     }
 
@@ -24,38 +24,38 @@ struct OrderedSet<Element> {
 
     /// Returns the value immediately lower than `e`, or `null` if
     /// `e` is the smallest element in the Set.
-    def lower(e: Element*) -> Element*? {
+    def lower(e: Element*): Element*? {
         return map.lowerKey(e);
     }
 
     /// Returns the value immediately higher than `e`, or `null` if
     /// `e` is the largest element in the Set.
-    def higher(e: Element*) -> Element*? {
+    def higher(e: Element*): Element*? {
         return map.higherKey(e);
     }
 
     /// Returns the smallest element in the Set, or `null` if the Set is empty.
-    def first() -> Element*? {
+    def first(): Element*? {
         return map.first();
     }
 
     /// Returns the largest element in the Set, or `null` if the Set is empty.
-    def last() -> Element*? {
+    def last(): Element*? {
         return map.last();
     }
 
     /// Returns the size of the Set.
-    def size() -> uint {
+    def size(): uint {
         return map.size();
     }
 
     /// Returns true if the Set is empty, otherwise false.
-    def isEmpty() -> bool {
+    def isEmpty(): bool {
         return map.size() == 0;
     }
 
     /// Iterate over the map, in order
-    def iterator() -> OrderedSetIterator<Element> {
+    def iterator(): OrderedSetIterator<Element> {
         return OrderedSetIterator(this);
     }
 }
