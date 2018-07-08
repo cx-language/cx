@@ -16,8 +16,8 @@ documents for a more detailed description of the language and its purpose, or
 the more learning-oriented (and equally incomplete) [Delta
 Book](https://delta-lang.gitbooks.io/delta-book/content/).
 
-You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/delta-sandbox).
-Also check out the [standard library API reference](https://delta-lang.surge.sh).
+You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/sandbox).
+Also check out the [standard library API reference](https://delta-lang.github.io/stdlib).
 
 ## Building from source
 
@@ -69,8 +69,6 @@ After this, the following commands can be invoked from the `build` directory:
 ## Documentation
 
 To learn how to compile Delta programs, see the [compiler manual](docs/compiler-manual.md).
-
-Auto-generated API documentation for the compiler is available at https://delta-lang.github.io/delta/doc.
 
 To generate HTML for the API documentation locally, run `doxygen docs/doxyfile`
 in the project root directory. The output is generated under `docs/html` and can be
