@@ -2,6 +2,7 @@
 
 #include <ostream>
 #pragma warning(push, 0)
+#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/StringRef.h>
 #pragma warning(pop)
 #include "../ast/location.h"
@@ -118,7 +119,7 @@ struct Token {
     bool is(Token::Kind kind, T... kinds) const {
         return is(kind) || is(kinds...);
     }
-    int64_t getIntegerValue() const;
+    llvm::APSInt getIntegerValue() const;
     long double getFloatingPointValue() const;
 
 private:

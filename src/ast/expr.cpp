@@ -92,7 +92,7 @@ bool Expr::isConstant() const {
     llvm_unreachable("all cases handled");
 }
 
-int64_t Expr::getConstantIntegerValue() const {
+llvm::APSInt Expr::getConstantIntegerValue() const {
     switch (getKind()) {
         case ExprKind::VarExpr: {
             auto* decl = llvm::cast<VarExpr>(this)->getDecl();
@@ -107,10 +107,12 @@ int64_t Expr::getConstantIntegerValue() const {
         }
 
         case ExprKind::CharacterLiteralExpr:
-            return static_cast<unsigned char>(llvm::cast<CharacterLiteralExpr>(this)->getValue());
+            return llvm::APSInt::get(llvm::cast<CharacterLiteralExpr>(this)->getValue());
 
-        case ExprKind::IntLiteralExpr:
-            return llvm::cast<IntLiteralExpr>(this)->getValue();
+        case ExprKind::IntLiteralExpr: {
+            auto& value = llvm::cast<IntLiteralExpr>(this)->getValue();
+            return llvm::APSInt(value, value.isSignBitSet());
+        }
 
         case ExprKind::UnaryExpr:
             return llvm::cast<UnaryExpr>(this)->getConstantIntegerValue();
@@ -445,7 +447,7 @@ Expr* CallExpr::getReceiver() {
     return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
 }
 
-int64_t UnaryExpr::getConstantIntegerValue() const {
+llvm::APSInt UnaryExpr::getConstantIntegerValue() const {
     auto operand = getOperand().getConstantIntegerValue();
 
     switch (getOperator()) {
@@ -469,7 +471,7 @@ bool delta::isBuiltinOp(Token::Kind op, Type left, Type right) {
     return left.isBuiltinType() && right.isBuiltinType();
 }
 
-int64_t BinaryExpr::getConstantIntegerValue() const {
+llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
     // TODO: Add overflow checks.
     // TODO: Handle signedness for '>>' operator;
 
@@ -494,9 +496,9 @@ int64_t BinaryExpr::getConstantIntegerValue() const {
         case Token::Xor:
             return lhs ^ rhs;
         case Token::LeftShift:
-            return lhs << rhs;
+            return lhs << static_cast<unsigned>(rhs.getZExtValue());
         case Token::RightShift:
-            return lhs >> rhs;
+            return lhs >> static_cast<unsigned>(rhs.getZExtValue());
         default:
             llvm_unreachable("invalid constant integer binary operator");
     }

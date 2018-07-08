@@ -108,10 +108,10 @@ Type typecheckCharacterLiteralExpr(CharacterLiteralExpr&) {
 }
 
 Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
-    if (expr.getValue() >= std::numeric_limits<int32_t>::min() && expr.getValue() <= std::numeric_limits<int32_t>::max()) {
+    if (expr.getValue().isSignedIntN(32)) {
         return Type::getInt();
-    } else if (expr.getValue() >= std::numeric_limits<int64_t>::min() &&
-               expr.getValue() <= std::numeric_limits<int64_t>::max()) {
+    }
+    if (expr.getValue().isSignedIntN(64)) {
         return Type::getInt64();
     }
     error(expr.getLocation(), "integer literal is too large");
@@ -336,9 +336,9 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, Sour
 }
 
 template<int bitWidth, bool isSigned>
-bool checkRange(const Expr& expr, int64_t value, Type type, Type* convertedType) {
-    if ((isSigned && !llvm::APSInt::get(value).isSignedIntN(bitWidth)) ||
-        (!isSigned && !llvm::APSInt::get(value).isIntN(bitWidth))) {
+bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, Type* convertedType) {
+    if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(bitWidth, !isSigned)) < 0 ||
+        llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(bitWidth, !isSigned)) > 0) {
         error(expr.getLocation(), value, " is out of range for type '", type, "'");
     }
 
@@ -452,7 +452,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if (expr) {
         // Autocast integer constants to parameter type if within range, error out if not within range.
         if ((expr->getType().isInteger() || expr->getType().isChar()) && expr->isConstant() && target.isBasicType()) {
-            auto value = expr->getConstantIntegerValue();
+            const auto& value = expr->getConstantIntegerValue();
 
             if (target.isInteger()) {
                 if (target.isInt()) return checkRange<32, true>(*expr, value, target, convertedType);

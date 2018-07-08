@@ -251,7 +251,7 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
 llvm::Value* IRGenerator::loadIfAlloca(llvm::Value* value) {
     if (llvm::isa<llvm::AllocaInst>(value)) {
         return builder.CreateLoad(value);
-    } 
+    }
     return value;
 }
 

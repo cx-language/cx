@@ -360,7 +360,7 @@ int64_t Parser::parseArraySizeInBrackets() {
 
     switch (currentToken()) {
         case Token::IntegerLiteral:
-            arraySize = consumeToken().getIntegerValue();
+            arraySize = consumeToken().getIntegerValue().getExtValue();
             break;
         case Token::RightBracket:
             arraySize = ArrayType::runtimeSize;
@@ -1331,7 +1331,7 @@ std::unique_ptr<EnumDecl> Parser::parseEnumDecl(std::vector<GenericParamDecl>* g
     while (currentToken() != Token::RightBrace) {
         parse(Token::Case);
         auto caseName = parse(Token::Identifier);
-        auto value = llvm::make_unique<IntLiteralExpr>(valueCounter.getExtValue(), caseName.getLocation());
+        auto value = llvm::make_unique<IntLiteralExpr>(valueCounter, caseName.getLocation());
         cases.emplace_back(caseName.getString(), std::move(value), caseName.getLocation());
         parseStmtTerminator("after enum case");
         ++valueCounter;

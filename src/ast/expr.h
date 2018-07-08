@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Casting.h>
 #pragma warning(pop)
@@ -75,8 +76,7 @@ public:
     bool isIncrementOrDecrementExpr() const;
     bool isPointerOffset() const;
     bool isConstant() const;
-    // TODO: Use llvm::APSInt instead of int64_t.
-    int64_t getConstantIntegerValue() const;
+    llvm::APSInt getConstantIntegerValue() const;
     bool isLvalue() const;
     bool isRvalue() const { return !isLvalue(); }
     SourceLocation getLocation() const { return location; }
@@ -136,12 +136,13 @@ private:
 
 class IntLiteralExpr : public Expr {
 public:
-    IntLiteralExpr(int64_t value, SourceLocation location) : Expr(ExprKind::IntLiteralExpr, location), value(value) {}
-    int64_t getValue() const { return value; }
+    IntLiteralExpr(llvm::APSInt value, SourceLocation location)
+    : Expr(ExprKind::IntLiteralExpr, location), value(std::move(value)) {}
+    const llvm::APSInt& getValue() const { return value; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::IntLiteralExpr; }
 
 private:
-    int64_t value;
+    llvm::APSInt value;
 };
 
 class FloatLiteralExpr : public Expr {
@@ -280,7 +281,7 @@ public:
     UnaryOperator getOperator() const { return op; }
     Expr& getOperand() { return *getArgs()[0].getValue(); }
     const Expr& getOperand() const { return *getArgs()[0].getValue(); }
-    int64_t getConstantIntegerValue() const;
+    llvm::APSInt getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::UnaryExpr; }
 
 private:
@@ -298,7 +299,7 @@ public:
     const Expr& getRHS() const { return *getArgs()[1].getValue(); }
     Expr& getLHS() { return *getArgs()[0].getValue(); }
     Expr& getRHS() { return *getArgs()[1].getValue(); }
-    int64_t getConstantIntegerValue() const;
+    llvm::APSInt getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 
 private:

@@ -167,11 +167,11 @@ int delta::getPrecedence(Token::Kind tokenKind) {
     return int(getPrecedenceGroup(tokenKind));
 }
 
-int64_t Token::getIntegerValue() const {
-    int64_t value;
+llvm::APSInt Token::getIntegerValue() const {
+    llvm::APInt value;
     bool fail = string.getAsInteger(0, value);
     ASSERT(!fail, "invalid integer literal");
-    return value;
+    return llvm::APSInt(value);
 }
 
 long double Token::getFloatingPointValue() const {

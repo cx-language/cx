@@ -50,7 +50,7 @@ void ASTPrinter::printCharacterLiteralExpr(const CharacterLiteralExpr& expr) {
 }
 
 void ASTPrinter::printIntLiteralExpr(const IntLiteralExpr& expr) {
-    out << expr.getValue();
+    out << expr.getValue().toString(10, false);
 }
 
 void ASTPrinter::printFloatLiteralExpr(const FloatLiteralExpr& expr) {

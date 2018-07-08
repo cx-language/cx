@@ -49,13 +49,14 @@ llvm::Value* IRGenerator::codegenCharacterLiteralExpr(const CharacterLiteralExpr
 }
 
 llvm::Value* IRGenerator::codegenIntLiteralExpr(const IntLiteralExpr& expr) {
+    auto type = toIR(expr.getType());
     // Integer literals may be typed as floating-point when used in a context
     // that requires a floating-point value. It might make sense to combine
     // IntLiteralExpr and FloatLiteralExpr into a single class.
     if (expr.getType().isFloatingPoint()) {
-        return llvm::ConstantFP::get(toIR(expr.getType()), static_cast<double>(expr.getValue()));
+        return llvm::ConstantFP::get(type, expr.getValue().roundToDouble());
     }
-    return llvm::ConstantInt::getSigned(toIR(expr.getType()), expr.getValue());
+    return llvm::ConstantInt::get(type, expr.getValue().trunc(type->getIntegerBitWidth()));
 }
 
 llvm::Value* IRGenerator::codegenFloatLiteralExpr(const FloatLiteralExpr& expr) {

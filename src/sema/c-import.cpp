@@ -198,9 +198,8 @@ VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
                    SourceLocation());
 }
 
-// TODO: Use llvm::APSInt instead of int64_t.
-void addIntegerConstantToSymbolTable(llvm::StringRef name, int64_t value, clang::QualType qualType, Module& module) {
-    auto initializer = llvm::make_unique<IntLiteralExpr>(value, SourceLocation());
+void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
+    auto initializer = llvm::make_unique<IntLiteralExpr>(std::move(value), SourceLocation());
     auto type = toDelta(qualType).asImmutable();
     initializer->setType(type);
     module.addToSymbolTable(
@@ -240,7 +239,7 @@ public:
                 case clang::Decl::Enum: {
                     auto& enumDecl = llvm::cast<clang::EnumDecl>(*decl);
                     for (auto* enumerator : enumDecl.enumerators()) {
-                        auto value = enumerator->getInitVal().getExtValue();
+                        auto& value = enumerator->getInitVal();
                         addIntegerConstantToSymbolTable(enumerator->getName(), value, enumDecl.getIntegerType(), module);
                     }
                     break;
@@ -296,7 +295,7 @@ private:
 
         if (auto* intLiteral = llvm::dyn_cast<clang::IntegerLiteral>(parsed)) {
             llvm::APSInt value(intLiteral->getValue(), parsed->getType()->isUnsignedIntegerType());
-            addIntegerConstantToSymbolTable(name, value.getExtValue(), parsed->getType(), module);
+            addIntegerConstantToSymbolTable(name, std::move(value), parsed->getType(), module);
         } else if (auto* floatLiteral = llvm::dyn_cast<clang::FloatingLiteral>(parsed)) {
             // TODO: Use llvm::APFloat instead of lossy conversion to double.
             auto value = floatLiteral->getValueAsApproximateDouble();
