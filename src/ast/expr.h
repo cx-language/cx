@@ -68,10 +68,10 @@ public:
 
     ExprKind getKind() const { return kind; }
     bool hasType() const { return type.getBase() != nullptr; }
-    Type getType() const { return ASSERT(type), type; }
-    Type getAssignableType() const { return ASSERT(assignableType), assignableType; }
-    void setType(Type type) { ASSERT(type), this->type = type; }
-    void setAssignableType(Type type) { ASSERT(type), assignableType = type; }
+    Type getType() const { return NOTNULL(type); }
+    Type getAssignableType() const { return NOTNULL(assignableType); }
+    void setType(Type type) { this->type = NOTNULL(type); }
+    void setAssignableType(Type type) { assignableType = NOTNULL(type); }
     bool isAssignment() const;
     bool isIncrementOrDecrementExpr() const;
     bool isPointerOffset() const;
@@ -236,7 +236,7 @@ public:
     Type getReceiverType() const { return receiverType; }
     void setReceiverType(Type type) { receiverType = type; }
     Decl* getCalleeDecl() const { return calleeDecl; }
-    void setCalleeDecl(Decl* callee) { ASSERT(callee), calleeDecl = callee; }
+    void setCalleeDecl(Decl* callee) { calleeDecl = NOTNULL(callee); }
     const Expr& getCallee() const { return *callee; }
     Expr& getCallee() { return *callee; }
     llvm::ArrayRef<NamedValue> getArgs() const { return args; }

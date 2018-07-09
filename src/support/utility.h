@@ -83,6 +83,8 @@ StateSaver<T> makeStateSaver(T& state) {
 #define CONCAT(a, b) CONCAT_IMPL(a, b)
 #define SAVE_STATE(state) const auto CONCAT(stateSaver, __COUNTER__) = makeStateSaver(state)
 
+#define NOTNULL(x) (ASSERT(x), x)
+
 std::string readLineFromFile(SourceLocation location);
 void renameFile(llvm::Twine sourcePath, llvm::Twine targetPath);
 void printDiagnostic(SourceLocation location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message);

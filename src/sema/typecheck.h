@@ -31,7 +31,7 @@ public:
     Typechecker()
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), isPostProcessing(false) {}
 
-    Module* getCurrentModule() const { return ASSERT(currentModule), currentModule; }
+    Module* getCurrentModule() const { return NOTNULL(currentModule); }
     void setCurrentModule(Module* module) { currentModule = module; }
     const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
 
