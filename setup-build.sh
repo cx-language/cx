@@ -13,7 +13,8 @@ fi
 
 set -x
 
-build_dir="$(dirname "$0")/build"
+root_dir="$(dirname "$0")"
+build_dir="$(cd "$(dirname "$root_dir")"; pwd)/$(basename "$root_dir")/build" # Convert to absolute path
 mkdir -p "$build_dir"
 cd "$build_dir"
 
