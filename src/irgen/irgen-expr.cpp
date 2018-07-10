@@ -56,7 +56,7 @@ llvm::Value* IRGenerator::codegenIntLiteralExpr(const IntLiteralExpr& expr) {
     if (expr.getType().isFloatingPoint()) {
         return llvm::ConstantFP::get(type, expr.getValue().roundToDouble());
     }
-    return llvm::ConstantInt::get(type, expr.getValue().trunc(type->getIntegerBitWidth()));
+    return llvm::ConstantInt::get(type, expr.getValue().extOrTrunc(type->getIntegerBitWidth()));
 }
 
 llvm::Value* IRGenerator::codegenFloatLiteralExpr(const FloatLiteralExpr& expr) {
