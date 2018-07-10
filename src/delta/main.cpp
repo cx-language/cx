@@ -50,6 +50,7 @@ static void segfaultHandler(int signal) {
 
 int main(int argc, const char** argv) {
     std::signal(SIGSEGV, segfaultHandler);
+    const char* argv0 = argv[0];
 
     --argc;
     ++argv;
@@ -85,9 +86,9 @@ int main(int argc, const char** argv) {
 
     try {
         if (inputs.empty()) {
-            return buildPackage(".", args, run);
+            return buildPackage(".", argv0, args, run);
         } else {
-            return buildExecutable(inputs, nullptr, args, ".", "", run);
+            return buildExecutable(inputs, nullptr, argv0, args, ".", "", run);
         }
     } catch (const CompileError& error) {
         error.print();

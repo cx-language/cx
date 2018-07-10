@@ -76,5 +76,5 @@ std::string delta::getCCompilerPath() {
             return std::move(*path);
         }
     }
-    printErrorAndExit("couldn't find C compiler");
+    return "";
 }

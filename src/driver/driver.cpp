@@ -21,6 +21,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #pragma warning(pop)
+#include "clang.h"
 #include "../ast/ast-printer.h"
 #include "../ast/module.h"
 #include "../irgen/irgen.h"
@@ -72,6 +73,7 @@ void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearchPaths,
 
 void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& importSearchPaths) {
     auto compilerPath = getCCompilerPath();
+    if (compilerPath.empty()) return;
 
     if (llvm::StringRef(compilerPath).endswith_lower("cl.exe")) {
         addHeaderSearchPathsFromEnvVar(importSearchPaths, "INCLUDE");
@@ -162,7 +164,7 @@ void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
 
 } // namespace
 
-int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef>& args, bool run) {
+int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vector<llvm::StringRef>& args, bool run) {
     PackageManifest manifest(packageRoot);
     fetchDependencies(packageRoot);
 
@@ -174,15 +176,15 @@ int delta::buildPackage(llvm::StringRef packageRoot, std::vector<llvm::StringRef
             outputFileName = manifest.getPackageName();
         }
         // TODO: Add support for library packages.
-        int exitStatus = buildExecutable(getSourceFiles(targetRootDir), &manifest, args, manifest.getOutputDirectory(),
-                                         outputFileName, run);
+        int exitStatus = buildExecutable(getSourceFiles(targetRootDir), &manifest, argv0, args,
+                                         manifest.getOutputDirectory(), outputFileName, run);
         if (exitStatus != 0) return exitStatus;
     }
 
     return 0;
 }
 
-int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest,
+int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
                            std::vector<llvm::StringRef>& args, llvm::StringRef outputDirectory,
                            llvm::StringRef outputFileName, bool run) {
     bool parse = checkFlag("-parse", args);
@@ -299,7 +301,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     std::vector<const char*> ccArgs = {
-        ccPath.c_str(),
+        msvc ? ccPath.c_str() : argv0,
         temporaryOutputFilePath.c_str(),
     };
 
@@ -323,7 +325,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     llvm::StringRef err = "c-compiler-stderr.txt";
     llvm::Optional<llvm::StringRef> redirects[3] = { llvm::None, out, err };
 
-    int ccExitStatus = llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs.data(), nullptr, redirects);
+    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs.data(), nullptr, redirects) : invokeClang(ccArgs);
+
     llvm::sys::fs::remove(temporaryOutputFilePath);
     uint64_t fileSize;
     if (!llvm::sys::fs::file_size(out, fileSize) && fileSize == 0) llvm::sys::fs::remove(out);
