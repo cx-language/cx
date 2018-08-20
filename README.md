@@ -15,7 +15,7 @@ For an introduction to the language, check out the [Delta book](https://delta-la
 the [design document](docs/design.md), and the [language specification](docs/spec/spec.pdf).
 Note that all of these documents are still incomplete.
 
-You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/sandbox).
+You can try out the language online at the [Delta Sandbox](https://delta-lang.github.io/sandbox) (currently not working).
 Also check out the [standard library API reference](https://delta-lang.github.io/stdlib).
 
 ## Building from source
