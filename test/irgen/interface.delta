@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -allow-empty
 
 interface I {
     // CHECK-NOT: define void @{{(I\.)?}}f(

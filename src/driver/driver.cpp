@@ -260,6 +260,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     auto& mainModule = irGenerator.compile(module);
 
     if (printIR) {
+        mainModule.setModuleIdentifier("");
+        mainModule.setSourceFileName("");
         mainModule.print(llvm::outs(), nullptr);
         return 0;
     }
