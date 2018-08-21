@@ -1,1 +1,1 @@
-// RUN: %delta -print-ir %s %p/inputs/struct-method-call-before-declaration/a.delta %p/inputs/struct-method-call-before-declaration/b.delta
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s inputs/struct-method-call-before-declaration/a.delta inputs/struct-method-call-before-declaration/b.delta

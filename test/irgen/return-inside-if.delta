@@ -1,35 +1,28 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 extern def foo(): bool;
 
-// CHECK: define void @{{.*3bar.*}}()
 def bar() {
     if (foo()) {
-        // CHECK: then:
-        return; // CHECK-NEXT: ret void
+        return;
     } else {
-        // CHECK: else:
-        return; // CHECK-NEXT: ret void
+        return;
     }
 
     if (foo()) {
-        // CHECK: then1:
-        return; // CHECK-NEXT: ret void
-        var i = 4; // CHECK-NOT: %i
+        return;
+        var i = 4;
     } else {
-        // CHECK: else2:
-        return; // CHECK-NEXT: ret void
-        var j = 4; // CHECK-NOT: %j
+        return;
+        var j = 4;
     }
 
     while (foo()) {
-        // CHECK: body:
-        return; // CHECK-NEXT: ret void
+        return;
     }
 
     while (foo()) {
-        // CHECK: body5:
-        return; // CHECK-NEXT: ret void
-        var k = 4; // CHECK-NOT: %k
+        return;
+        var k = 4;
     }
 }

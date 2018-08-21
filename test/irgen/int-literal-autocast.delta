@@ -1,19 +1,10 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 extern def foo(a: uint8);
 
 def main() {
-    // CHECK: call void @foo(i8 1)
     foo(1);
-
-    // CHECK: store i64 42, i64* %b
     var b: uint64 = 42;
-
-    // CHECK-NEXT: store i8 -42, i8* %c
     var c: int8 = -42;
-
-    // CHECK-NEXT: %b1 = load i64, i64* %b
-    // CHECK-NEXT: %1 = add i64 %b1, 1
-    // CHECK-NEXT: store i64 %1, i64* %b
     b = b + 1;
 }

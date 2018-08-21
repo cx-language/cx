@@ -1,5 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=LAMBDA
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X {
     def foo(): int {
@@ -7,14 +6,6 @@ struct X {
     }
 }
 
-// CHECK-LABEL: define i32 @main()
-// CHECK-NEXT: %lambda = alloca i32 ({}*)*
-// CHECK-NEXT: store i32 ({}*)* @_EN4main9__lambda0E1xP1X, i32 ({}*)** %lambda
-// CHECK-NEXT: ret i32 0
 def main() {
     var lambda = (x: X*) -> x.foo();
 }
-
-// LAMBDA-LABEL: define i32 @_EN4main9__lambda0E1xP1X({}* %x)
-// LAMBDA-NEXT: %1 = call i32 @_EN4main1X3fooE({}* %x)
-// LAMBDA-NEXT: ret i32 %1

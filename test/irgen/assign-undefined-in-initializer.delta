@@ -1,11 +1,9 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct A {
     var i: int;
 
-    // CHECK: define void @_ENM4main1A4initE(%A* %this)
     init() {
         i = undefined;
-        // CHECK-NEXT: ret void
     }
 }

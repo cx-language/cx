@@ -1,7 +1,6 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 def f<T>(a: T): T {
-    // CHECK: fsub
     return -a
 }
 

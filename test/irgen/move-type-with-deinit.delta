@@ -1,23 +1,14 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct Y {
     init() {}
     deinit() {}
 }
 
-// CHECK: define void @{{.*f.*}}({} %a, {}* %b)
 def f(a: Y, b: mutable Y*) {
-    // CHECK-NEXT: all void @_ENM4main1Y6deinitE({}* %b)
-    // CHECK-NEXT: store {} %a, {}* %b
     *b = a;
-    // CHECK-NEXT: ret void
 }
 
-// CHECK: define void @{{.*g.*}}({} %a)
 def g(a: Y) {
-    // CHECK-NEXT: %b = alloca {}
-    // CHECK-NEXT: store {} %a, {}* %b
-    // CHECK-NEXT: call void @_ENM4main1Y6deinitE({}* %b)
     var b = a;
-    // CHECK-NEXT: ret void
 }

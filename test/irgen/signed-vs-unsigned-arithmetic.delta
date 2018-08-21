@@ -1,14 +1,14 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 def foo(i: int, u: uint) {
-    var a = i < i; // CHECK: icmp slt i32 %i, %i
-    a = u < u; // CHECK: icmp ult i32 %u, %u
-    a = i > i; // CHECK: icmp sgt i32 %i, %i
-    a = u > u; // CHECK: icmp ugt i32 %u, %u
-    a = i <= i; // CHECK: icmp sle i32 %i, %i
-    a = u <= u; // CHECK: icmp ule i32 %u, %u
-    a = i >= i; // CHECK: icmp sge i32 %i, %i
-    a = u >= u; // CHECK: icmp uge i32 %u, %u
-    var b = i / i; // CHECK: sdiv i32 %i, %i
-    var c = u / u; // CHECK: udiv i32 %u, %u
+    var a = i < i;
+    a = u < u;
+    a = i > i;
+    a = u > u;
+    a = i <= i;
+    a = u <= u;
+    a = i >= i;
+    a = u >= u;
+    var b = i / i;
+    var c = u / u;
 }

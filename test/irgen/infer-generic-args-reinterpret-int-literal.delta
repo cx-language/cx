@@ -1,11 +1,8 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-F
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: define void @{{.*g.*}}(i32 %u)
-def g(u: uint) {
-    // CHECK-NEXT: call void @{{.*f.*uint.*}}(i32 0, i32 %u)
+def main() {
+    var u: uint = undefined;
     f(0, u);
 }
 
-// CHECK-F: define void @{{.*f.*uint.*}}(i32 %a, i32 %b)
 def f<T>(a: T, b: T) {}

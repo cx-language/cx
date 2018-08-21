@@ -1,28 +1,18 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: define void @[[F:.*1f.*]]()
 def f() {}
 
-// CHECK: define i32 @[[F2:.*2f2.*]](i32 %a, i1 %b)
 def f2(a: int, b: bool): int { return a; }
 
-// CHECK: define void @[[G:.*1g.*]](void ()* %p)
 def g(p: () -> void) {
-    // CHECK-NEXT: call void %p()
     p();
 }
 
-// CHECK: define void @[[G2:.*2g2.*]](i32 (i32, i1)* %p)
 def g2(p: (int, bool) -> int) {
-    // CHECK: call i32 %p(i32 42, i1 false)
     var a = p(42, !true) + 1;
 }
 
-// CHECK: define i32 @main()
 def main() {
-    // CHECK-NEXT: call void @[[G]](void ()* @[[F]])
     g(f);
-
-    // CHECK-NEXT: call void @[[G2]](i32 (i32, i1)* @[[F2]])
     g2(f2);
 }

@@ -1,26 +1,11 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X {
     init() {}
     deinit() {}
 }
 
-// CHECK: define i32 @main()
 def main() {
-    // CHECK-NEXT: %x = alloca {}
-    // CHECK-NEXT: %1 = alloca {}
-
-    // CHECK-NEXT: call void @_ENM4main1X4initE({}* %x)
     var x = X();
-
-    // CHECK-NEXT: call void @_ENM4main1X6deinitE({}* %x)
-
-    // TODO: Optimize this into only an init call.
-    // CHECK-NEXT: call void @_ENM4main1X4initE({}* %1)
-    // CHECK-NEXT: %2 = load {}, {}* %1
-    // CHECK-NEXT: store {} %2, {}* %x
-    // CHECK-NEXT: call void @_ENM4main1X6deinitE({}* %x)
     x = X();
-
-    // CHECK-NEXT: ret i32 0
 }

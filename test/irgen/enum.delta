@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 var x = 0;
 
@@ -8,23 +8,10 @@ enum A {
     case z;
 }
 
-// CHECK-LABEL: define i32 @main()
 def main() {
-    // CHECK-NEXT: %foo = alloca i32
-    // CHECK-NEXT: store i32 2, i32* %foo
     var foo = A.z;
-
-    // CHECK: icmp eq i32 %foo{{[0-9]+}}, 1
     if (foo == A.y) {}
-
-    // CHECK: icmp ne i32 %foo{{[0-9]+}}, 0
     if (foo != A.x) {}
-
-    // CHECK: switch i32 %foo{{[0-9]+}}, label %default [
-    // CHECK-NEXT: i32 0, label %{{[0-9]+}}
-    // CHECK-NEXT: i32 1, label %{{[0-9]+}}
-    // CHECK-NEXT: i32 2, label %{{[0-9]+}}
-    // CHECK-NEXT: ]
     switch (foo) {
         case A.x: return;
         case A.y: return;

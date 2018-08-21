@@ -1,9 +1,6 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 def main() {
-    // CHECK: store float 4.200000e+01, float* %f
     var f: float = 42.0;
-
-    // CHECK-NEXT: store float -4.200000e+01, float* %g
     var g: float = -42.0;
 }

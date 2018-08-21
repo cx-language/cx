@@ -1,42 +1,28 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=DEINIT
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-S
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable {
     init() {}
 
-    // CHECK-S: define void @_ENM4main1S3fooE({}* %this)
-    // CHECK-S-NEXT: %this1 = load {}, {}* %this
-    // CHECK-S-NEXT: call void @_EN4main1S3barE({} %this1)
     mutating def foo() {
         bar()
     }
 
-    // CHECK-S: define void @_EN4main1S3barE({} %this)
     def bar() { }
 }
 
 struct Foo<U> {
-    // CHECK: define void @{{.*Foo.*int.*init.*}}({}* %this)
-    // CHECK-NEXT: call void @{{.*Foo.*int.*baz.*}}({}* %this)
     init() {
         baz()
     }
 
-    // DEINIT: define void @{{.*Foo.*int.*deinit.*}}({}* %this)
-    // DEINIT-NEXT: call void @{{.*Foo.*int.*baz.*}}({}* %this)
     deinit() {
         baz()
     }
 
-    // CHECK: define void @{{.*Foo.*int.*baz.*}}({}* %this)
-    // CHECK-NEXT: call void @{{.*Foo.*int.*qux.*}}({}* %this)
     mutating def baz() {
         qux()
     }
 
-    // CHECK: define void @{{.*Foo.*int.*qux.*}}({}* %this)
     def qux() { }
 }
 
@@ -45,6 +31,5 @@ def main() {
     s.foo()
 
     var t = Foo<int>()
-    // CHECK-MAIN: call void @{{.*Foo.*int.*baz.*}}({}* %t)
     t.baz()
 }

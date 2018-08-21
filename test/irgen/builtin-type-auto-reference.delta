@@ -1,11 +1,8 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 def foo(ref_i: int*) { }
 
 def main() {
-    // CHECK: %bar = alloca i32
-    // CHECK-NEXT: store i32 42, i32* %bar
     var bar = 42;
-    // CHECK-NEXT: call void @{{.*foo.*}}(i32* %bar)
     foo(bar);
 }

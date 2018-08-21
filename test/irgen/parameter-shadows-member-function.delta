@@ -1,13 +1,11 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct S {
     var i: int;
     init() {}
     def bar() {}
     def foo(bar: int) {
-        // CHECK: store i32 %bar, i32* %a
         var a = bar;
-        // CHECK-NEXT: call void @_EN4main1S3barE(%S* %this)
         bar();
     }
 }

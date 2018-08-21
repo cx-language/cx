@@ -1,17 +1,14 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 import "stdlib.h"
 
 struct C<T>: Copyable {
     init() { }
 
-    // CHECK: define void @{{.*C.*bool.*f.*}}({} %this)
     def f() {
-        // CHECK-NEXT: call void @{{.*C.*bool.*g.*}}({} %this)
         g()
     }
 
-    // CHECK: define void @{{.*C.*bool.*g.*}}({} %this)
     def g() {
         var a = sizeof(T)
     }

@@ -1,9 +1,8 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct X { var i: int; }
 struct Y { var i: int; }
 
-// CHECK: define i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
 def <(a: X*, b: X*): bool {
     return true;
 }
@@ -16,19 +15,11 @@ def < <T: Z>(a: T*, b: T*): bool {
     return true;
 }
 
-// CHECK: define void @{{.*fx.*}}(%X* %a, %X* %b)
-// CHECK-NEXT: call i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
-// CHECK-NEXT: call i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
 def fx(a: X*, b: X*) {
     _ = a < b;
     _ = *a < *b;
 }
 
-// CHECK: define void @{{.*fy.*}}(%Y* %a, %Y* %b)
-// CHECK-NEXT: %address = ptrtoint %Y* %a to i64
-// CHECK-NEXT: %address1 = ptrtoint %Y* %b to i64
-// CHECK-NEXT: %1 = icmp ult i64 %address, %address1
-// CHECK-NEXT: ret void
 def fy(a: Y*, b: Y*) {
     _ = addressof(a) < addressof(b);
 }

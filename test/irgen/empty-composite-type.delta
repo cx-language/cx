@@ -1,12 +1,9 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable { }
 struct C { }
 
 def main() {
-    // CHECK: %s = alloca {}
     var s: S = undefined;
-    // CHECK-NEXT: %c = alloca {}
     var c: C = undefined;
-    // CHECK-NEXT: ret
 }

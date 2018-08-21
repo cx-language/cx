@@ -1,11 +1,9 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S<T>: Copyable {
     init() {}
 
-    // CHECK: define void @_EN4main1SI3intE1fE({} %this)
     def f() {
-        // CHECK-NEXT: %t = alloca i32
         g()
         var t: T = undefined
     }

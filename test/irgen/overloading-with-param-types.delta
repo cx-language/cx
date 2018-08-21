@@ -1,42 +1,26 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable {
     var i: int
-    init() {}
+    init() { i = 0 }
 }
 
 struct T: Copyable {
     var i: int
-    init() {}
+    init() { i = 0 }
 }
 
-// CHECK: define void @_EN4main1fE1a1S(%S %a)
 def f(a: S) {}
-
-// CHECK: define void @[[F2:_EN4main1fE1a1T]](%T %a)
 def f(a: T) {}
-
-// CHECK: define void @[[S:_EN4mainplE1a1S1b1S]](%S %a, %S %b)
 def +(a: S, b: S) {}
-
-// CHECK: define void @[[T:_EN4mainplE1a1T1b1T]](%T %a, %T %b)
 def +(a: T, b: T) {}
 
 def main() {
     var s = S()
     var t = T()
-
-    // CHECK: call void @_EN4main1fE1a1S(%S %s{{[0-9]+}})
     f(s)
-
-    // CHECK: call void @[[F2]](%T %t{{[0-9]+}})
     f(t)
-
-    // CHECK: call void @[[S]](%S %s{{[0-9]+}}, %S %s{{[0-9]+}})
     _ = s + s
-
-    // CHECK: call void @[[T]](%T %t{{[0-9]+}}, %T %t{{[0-9]+}})
     _ = t + t
-
     _ = 1 + 1
 }

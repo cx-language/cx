@@ -1,12 +1,9 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable {
     var i: int
 
-    // CHECK: define void @_ENM4main1S1sE(%S* %this)
     mutating def s() {
-        // CHECK: %i = getelementptr inbounds %S, %S* %this, i32 0, i32 0
-        // CHECK: store i32 2, i32* %i
         this.i = 2
     }
 }

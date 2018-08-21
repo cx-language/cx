@@ -1,17 +1,12 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-CALL
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo<T> {
     var t: T;
 
-    // CHECK: define void @{{.*Foo.*int.*init.*}}(%"Foo<int>"* %this, i32 %t)
-    // CHECK: define void @{{.*Foo.*StringRef.*init.*}}(%"Foo<StringRef>"* %this, %StringRef %t)
-    init(t: T) {}
+    init(t: T) { this.t = t; }
 }
 
 def main() {
-    // CHECK-CALL: call void @{{.*Foo.*int.*init.*}}(%"Foo<int>"* %i, i32 42)
     var i = Foo(42);
-    // CHECK-CALL: call void @{{.*Foo.*StringRef.*init.*}}(%"Foo<StringRef>"* %b, %StringRef %__str{{[0-9]+}})
     var b = Foo("");
 }

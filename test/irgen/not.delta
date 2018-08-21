@@ -1,10 +1,6 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 def main() {
-    // CHECK: store i1 false, i1* %b
     var b = !!false;
-    // CHECK-NEXT: %b1 = load i1, i1* %b
-    // CHECK-NEXT: %1 = xor i1 %b1, true
-    // CHECK-NEXT: store i1 %1, i1* %b
     b = !b;
 }

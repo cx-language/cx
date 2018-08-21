@@ -1,41 +1,17 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
     var baz: int;
 
-    // CHECK: define void @_ENM4main3Foo4initE(%Foo* %this)
-    // CHECK-NEXT: %baz = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-    // CHECK-NEXT: store i32 42, i32* %baz
-    // CHECK-NEXT: ret void
     init() { this.baz = 42; }
 
-    // CHECK: define void @_ENM4main3Foo3barE(%Foo* %this)
-    // CHECK-NEXT: %baz = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-    // CHECK-NEXT: %1 = load i32, i32* %baz
-    // CHECK-NEXT: %2 = add i32 %1, 1
-    // CHECK-NEXT: store i32 %2, i32* %baz
-    // CHECK-NEXT: ret void
     mutating def bar() { this.baz++; }
 
-    // CHECK: define i32 @_EN4main3Foo3quxE(%Foo* %this)
-    // CHECK-NEXT: %baz = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-    // CHECK-NEXT: %1 = load i32, i32* %baz
-    // CHECK-NEXT: ret i32 %1
     def qux(): int { return this.baz; }
 }
 
 def main() {
-    // CHECK-MAIN: %foo = alloca %Foo
-    // CHECK-MAIN-NEXT: %i = alloca i32
-
-    // CHECK-MAIN-NEXT: call void @_ENM4main3Foo4initE(%Foo* %foo)
     var foo = Foo();
-
-    // CHECK-MAIN-NEXT: call void @_ENM4main3Foo3barE(%Foo* %foo)
     foo.bar();
-
-    // CHECK-MAIN-NEXT: %1 = call i32 @_EN4main3Foo3quxE(%Foo* %foo)
-    // CHECK-MAIN-NEXT: store i32 %1, i32* %i
     var i = foo.qux();
 }

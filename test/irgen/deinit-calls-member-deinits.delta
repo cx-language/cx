@@ -1,5 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-B
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 extern def f(): bool;
 
@@ -7,51 +6,36 @@ struct A {
     var b: B;
     var bb: B;
     var i: int;
-    init() {}
 
-    // CHECK: define void @_ENM4main1A6deinitE(%A* %this)
+    init() {
+        b = undefined;
+        bb = undefined;
+        i = undefined;
+    }
+
     deinit() {
-        // CHECK-NEXT: %b = getelementptr inbounds %A, %A* %this, i32 0, i32 0
-        // CHECK-NEXT: %bb = getelementptr inbounds %A, %A* %this, i32 0, i32 1
-        // CHECK-NEXT: %1 = call i1 @{{.*f.*}}()
-        // CHECK-NEXT: br i1 %1, label %then, label %else
         if (f()) {
-            // CHECK:      then: ; preds = %0
-            // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %bb)
-            // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %b)
-            // CHECK-NEXT: ret void
             return;
         }
-        // CHECK:      endif: ; preds = %else
-        // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %bb)
-        // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %b)
-        // CHECK-NEXT: ret void
     }
 }
 
 struct B {
     var i: int;
-    init() {}
-    // CHECK-B: define void @_ENM4main1B6deinitE(%B* %this)
-    // CHECK-B-NEXT: ret void
+    init() { i = 0; }
     deinit() {}
 }
 
 struct C {
     var b: B;
     var bb: B;
-    init() {}
-    // CHECK: define void @_ENM4main1C6deinitE(%C* %this)
-    // CHECK-NEXT: %b = getelementptr inbounds %C, %C* %this, i32 0, i32 0
-    // CHECK-NEXT: %bb = getelementptr inbounds %C, %C* %this, i32 0, i32 1
-    // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %bb)
-    // CHECK-NEXT: call void @_ENM4main1B6deinitE(%B* %b)
-    // CHECK-NEXT: ret void
+    init() {
+        b = undefined;
+        bb = undefined;
+    }
 }
 
 def main() {
     var a = A();
     var c = C();
-    // CHECK:      call void @_ENM4main1C6deinitE(%C* %c)
-    // CHECK-NEXT: call void @_ENM4main1A6deinitE(%A* %a)
 }

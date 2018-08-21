@@ -1,19 +1,24 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
     var i: int;
+    init() { i = 0; }
     def foo() { }
 }
 
 struct Bar: Copyable {
     var i: int;
+    init() { i = 0; }
     def bar() { }
 }
 
 def qux(f: Foo*, b: Bar*) {
-    // CHECK: call void @_EN4main3Foo3fooE(%Foo* %f)
     f.foo();
-    // CHECK-NEXT: %1 = load %Bar, %Bar* %b
-    // CHECK-NEXT: call void @_EN4main3Bar3barE(%Bar %1)
     b.bar();
+}
+
+def main() {
+    var f = Foo();
+    var b = Bar();
+    qux(f, b);
 }

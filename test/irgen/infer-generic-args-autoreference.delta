@@ -1,10 +1,8 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 def f<T>(p: T*) {}
 
 def main() {
     var i = 42;
-
-    // CHECK: call void @{{.*f.*int.*}}(i32* %i)
     f(i);
 }

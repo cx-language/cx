@@ -1,33 +1,8 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK-LABEL: define i32 @main()
 def main() {
     var sum = 0;
-
-    // CHECK: [[ITERATOR:%__iterator[0-9]*]] = alloca %"ClosedRangeIterator<int>"
-    // CHECK-NEXT: %1 = alloca %"ClosedRange<int>"
-    // CHECK-NEXT: %i = alloca i32
-    // CHECK: call void @{{.*11ClosedRange.*3int.*4init.*5start.*3end.*}}(%"ClosedRange<int>"* %1, i32 68, i32 75)
-    // CHECK-NEXT: %2 = load %"ClosedRange<int>", %"ClosedRange<int>"* %1
-    // CHECK-NEXT: [[TEMP_ITERATOR:%[a-z0-9]+]] = call %"ClosedRangeIterator<int>" @{{.*11ClosedRange.*3int.*8iterator.*}}(%"ClosedRange<int>" %2)
-    // CHECK-NEXT: store %"ClosedRangeIterator<int>" [[TEMP_ITERATOR]], %"ClosedRangeIterator<int>"* [[ITERATOR]]
-    // CHECK-NEXT: br label %[[LOOP:(for|while)]]
     for (var i in 68...75) {
-        // CHECK: [[LOOP]]: ; preds = %body, %0
-        // CHECK-NEXT: [[LOADED_ITERATOR:%[_a-z0-9]+]] = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* [[ITERATOR]]
-        // CHECK-NEXT: [[CMP:%[a-z0-9]+]] = call i1 @{{.*19ClosedRangeIterator.*3int.*8hasValue.*}}(%"ClosedRangeIterator<int>" [[LOADED_ITERATOR]])
-        // CHECK-NEXT: br i1 [[CMP]], label %body, label %end[[LOOP]]
-
-        // CHECK: body: ; preds = %[[LOOP]]
-        // CHECK-NEXT: [[LOADED_ITERATOR2:%[_a-z0-9]+]] = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* [[ITERATOR]]
-        // CHECK-NEXT: [[NEXT:%[a-z0-9]+]] = call i32 @{{.*19ClosedRangeIterator.*3int.*5value.*}}(%"ClosedRangeIterator<int>" [[LOADED_ITERATOR2]])
-        // CHECK-NEXT: store i32 [[NEXT]], i32* %i
-        // CHECK-NEXT: [[LOADED_SUM:%[a-z0-9]+]] = load i32, i32* %sum
-        // CHECK-NEXT: [[LOADED_I:%i[0-9]+]] = load i32, i32* %i
-        // CHECK-NEXT: [[NEW_SUM:%[a-z0-9]+]] = add i32 [[LOADED_SUM]], [[LOADED_I]]
-        // CHECK-NEXT: store i32 [[NEW_SUM]], i32* %sum
-        // CHECK-NEXT: call void @{{.*19ClosedRangeIterator.*3int.*9increment.*}}(%"ClosedRangeIterator<int>"* [[ITERATOR]])
-        // CHECK-NEXT: br label %[[LOOP]]
         sum += i;
     }
 }

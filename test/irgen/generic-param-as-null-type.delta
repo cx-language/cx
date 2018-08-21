@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S<T>: Copyable {
     var p: T*?
@@ -9,8 +9,6 @@ struct S<T>: Copyable {
 }
 
 def main() {
-    // CHECK: call void @_ENM4main1SI3intE4initE
     _ = S<int>()
-    // CHECK: call void @_ENM4main1SI4boolE4initE
     _ = S<bool>()
 }

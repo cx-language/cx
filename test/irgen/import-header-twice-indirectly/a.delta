@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir -Iinputs %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Iinputs
 
 import "header.h"
 

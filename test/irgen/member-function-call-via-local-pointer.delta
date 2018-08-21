@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
     var i: int;
@@ -8,7 +8,5 @@ struct Foo {
 def main() {
     var f: Foo = undefined;
     var rf: Foo* = f;
-    // CHECK: %rf1 = load %Foo*, %Foo** %rf
-    // CHECK-NEXT: call void @_EN4main3Foo3barE(%Foo* %rf1)
     rf.bar();
 }

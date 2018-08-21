@@ -1,4 +1,5 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: define i32 @main()
-def main() { return; } // CHECK-NEXT: ret i32 0
+def main() {
+    return;
+}

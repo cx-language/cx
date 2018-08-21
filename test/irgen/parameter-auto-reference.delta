@@ -1,14 +1,9 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct S: Copyable {}
 
-// CHECK: define void @{{.*f.*}}({} %s)
 def f(s: S) {
-    // CHECK-NEXT: %1 = alloca {}
-    // CHECK-NEXT: store {} %s, {}* %1
-    // CHECK-NEXT: call void @{{.*g.*}}({}* %1)
     g(s);
-    // CHECK-NEXT: ret void
 }
 
 def g(s: S*) {}

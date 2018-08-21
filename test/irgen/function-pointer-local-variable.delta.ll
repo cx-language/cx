@@ -1,0 +1,39 @@
+
+define void @_EN4main3fooE() {
+  ret void
+}
+
+define i32 @_EN4main2f2E1a3int1b4bool(i32 %a, i1 %b) {
+  ret i32 %a
+}
+
+define void @_EN4main1gE1pF_4void(void ()* %p) {
+  %p2 = alloca void ()*
+  store void ()* %p, void ()** %p2
+  %p21 = load void ()*, void ()** %p2
+  call void %p21()
+  ret void
+}
+
+define void @_EN4main2g2E1pF3int4bool_3int(i32 (i32, i1)* %p) {
+  %p2 = alloca i32 (i32, i1)*
+  %a = alloca i32
+  store i32 (i32, i1)* %p, i32 (i32, i1)** %p2
+  %p21 = load i32 (i32, i1)*, i32 (i32, i1)** %p2
+  %1 = call i32 %p21(i32 42, i1 false)
+  %2 = add i32 %1, 1
+  store i32 %2, i32* %a
+  ret void
+}
+
+define i32 @main() {
+  %lf = alloca void ()*
+  %lf2 = alloca i32 (i32, i1)*
+  store void ()* @_EN4main3fooE, void ()** %lf
+  %lf1 = load void ()*, void ()** %lf
+  call void @_EN4main1gE1pF_4void(void ()* %lf1)
+  store i32 (i32, i1)* @_EN4main2f2E1a3int1b4bool, i32 (i32, i1)** %lf2
+  %lf22 = load i32 (i32, i1)*, i32 (i32, i1)** %lf2
+  call void @_EN4main2g2E1pF3int4bool_3int(i32 (i32, i1)* %lf22)
+  ret i32 0
+}

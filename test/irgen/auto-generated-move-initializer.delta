@@ -1,13 +1,19 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X {
     var i: int;
+    init() {
+        i = 0;
+    }
     deinit() {}
 }
 
-// CHECK: define void @{{.*}}foo{{.*}}(%X* %p, %X %x)
-// CHECK-NEXT: store %X %x, %X* %p
-// CHECK-NEXT: ret void
 def foo(p: mutable X*, x: X) {
     p.init(x);
+}
+
+def main() {
+    var x = X();
+    var y = X();
+    foo(x, y);
 }

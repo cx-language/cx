@@ -1,25 +1,12 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-DECL
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 import "stdio.h";
-// CHECK-DECL-DAG: declare i32 @puts(i8*)
-
 import "foo.h";
-// CHECK-DECL-DAG: %Foo = type { i32, i8* }
-// CHECK-DECL-DAG: declare i32 @getBar(%Foo*)
 
-// CHECK-LABEL: define i32 @main()
 def main() {
-    // CHECK: call i32 @puts(i8*
     puts("foo bar");
     var f: Foo = undefined;
-    // CHECK-NEXT: %bar = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
-    // CHECK-NEXT: store i32 47, i32* %bar
     f.bar = MAGIC_NUMBER + ANSWER;
-    // CHECK-NEXT: %baz = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 1
-    // CHECK-NEXT: store i8* getelementptr inbounds ([4 x i8], [4 x i8]* @{{[0-9]+}}, i32 0, i32 0), i8** %baz
     f.baz = "foo";
-    // CHECK-NEXT: %2 = call i32 @getBar(%Foo* %f)
-    // CHECK-NEXT: store i32 %2, i32* %bar
     var bar = getBar(f);
 }

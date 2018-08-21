@@ -1,8 +1,7 @@
-// RUN: %delta -print-ir %s -Iinputs | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Iinputs
 
 import "import-c-defined-integer-hex-constant.h";
 
 def main() {
-    // CHECK: store i32 35044, i32* %foo
     var foo: int = FOO;
 }

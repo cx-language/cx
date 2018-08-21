@@ -1,15 +1,10 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-BAR
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 interface Interface {
     var that: This*;
 
     def foo(a: This*): This*;
 
-    // CHECK-BAR: define %S* @_EN4main1S3barE(%S* %this)
-    // CHECK-BAR-NEXT: %1 = call %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %this)
-    // CHECK-BAR-NEXT: %2 = call %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %1)
-    // CHECK-BAR-NEXT: ret %S* %2
     def bar(): This* {
         return foo(foo(this));
     }
@@ -20,7 +15,6 @@ struct S: Interface {
 
     init() { that = this; }
 
-    // CHECK: define %S* @_EN4main1S3fooE1aP1S(%S* %this, %S* %a)
     def foo(a: S*): S* {
         return this;
     }
@@ -29,15 +23,9 @@ struct S: Interface {
 def main() {
     var a = S();
     var b = S();
-
-    // CHECK: %1 = call %S* @_EN4main1S3fooE1aP1S(%S* %a, %S* %b)
-    // CHECK-NEXT: call void @{{.*f.*S.*}}(%S* %1)
     f(a.foo(b));
 }
 
-// CHECK: define void @{{.*f.*S.*}}(%S* %a)
-// CHECK-NEXT: %1 = call %S* @_EN4main1S3fooE1aP1S(%S* %a, %S* %a)
-// CHECK-NEXT: %2 = call %S* @_EN4main1S3fooE1aP1S(%S* %a, %S* %1)
 def f<T: Interface>(a: T*) {
     a.foo(a.foo(a));
 }

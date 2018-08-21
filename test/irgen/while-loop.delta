@@ -1,19 +1,9 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 extern def foo(): bool;
 
-// CHECK-LABEL: define i32 @main()
 def main() {
-    // CHECK: br label %while
-    // CHECK: while: ; preds = %body, %0
-    // CHECK-NEXT: %1 = call i1 @foo()
-    // CHECK-NEXT: br i1 %1, label %body, label %endwhile
     while (foo()) {
-        // CHECK: body: ; preds = %while
-        // CHECK-NEXT: %2 = call i1 @foo()
         foo();
-        // CHECK-NEXT: br label %while
     }
-    // CHECK: endwhile: ; preds = %while
-    // CHECK-NEXT: ret
 }

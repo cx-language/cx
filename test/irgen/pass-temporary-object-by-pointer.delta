@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct A: Copyable {
     var i: int;
@@ -15,25 +15,9 @@ def f(b: B*) {}
 def f(i: int*) {}
 
 def main() {
-    // CHECK: %a = alloca %A
     var a: A = undefined;
-
-    // CHECK-NEXT: %b = alloca %B
     var b: B = undefined;
-
-    // CHECK-NEXT: %1 = alloca %A
-    // CHECK-NEXT: %2 = alloca %B
-    // CHECK-NEXT: %3 = alloca i32
-
-    // CHECK-NEXT: call void @_ENM4main1A4initE(%A* %1)
-    // CHECK-NEXT: call void @_EN4main1fE1aP1A(%A* %1)
     f(A());
-
-    // CHECK-NEXT: call void @_ENM4main1B4initE(%B* %2)
-    // CHECK-NEXT: call void @_EN4main1fE1bP1B(%B* %2)
     f(B());
-
-    // CHECK-NEXT: store i32 0, i32* %3
-    // CHECK-NEXT: call void @_EN4main1fE1iP3int(i32* %3)
     f(0);
 }

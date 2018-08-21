@@ -1,43 +1,23 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable {
     var i: int;
-    init() {}
+    init() { i = 0; }
     def f() {}
 }
 
 struct C {
     var i: int;
-    init() {}
+    init() { i = 0; }
     def f() {}
 }
 
 def s(): S { return S(); }
 def c(): C { return C(); }
 
-// CHECK-LABEL: define i32 @main()
 def main() {
-    // CHECK-NEXT: %1 = alloca %C
-    // CHECK-NEXT: %2 = alloca %S
-    // CHECK-NEXT: %3 = alloca %C
-
-    // CHECK-NEXT: %4 = call %S @_EN4main1sE()
-    // CHECK-NEXT: call void @_EN4main1S1fE(%S %4)
     s().f();
-
-    // CHECK-NEXT: %5 = call %C @_EN4main1cE()
-    // CHECK-NEXT: store %C %5, %C* %1
-    // CHECK-NEXT: call void @_EN4main1C1fE(%C* %1)
     c().f();
-
-    // CHECK-NEXT: call void @_ENM4main1S4initE(%S* %2)
-    // CHECK-NEXT: %6 = load %S, %S* %2
-    // CHECK-NEXT: call void @_EN4main1S1fE(%S %6)
     S().f();
-
-    // CHECK-NEXT: call void @_ENM4main1C4initE(%C* %3)
-    // CHECK-NEXT: call void @_EN4main1C1fE(%C* %3)
     C().f();
-
-    // CHECK-NEXT: ret i32 0
 }

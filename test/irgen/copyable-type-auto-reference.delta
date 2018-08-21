@@ -1,12 +1,10 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo: Copyable { var i: int; }
 
 def foo(ref_f: Foo*) { }
 
 def main() {
-    // CHECK: %f = alloca %Foo
     var f: Foo = undefined;
-    // CHECK-NEXT: call void @{{.*3foo.*}}(%Foo* %f)
     foo(f);
 }

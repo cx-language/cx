@@ -1,23 +1,15 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=X-INT-G
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X<T> {
-    // CHECK-DAG: define {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %this, i1 %u)
     def f<U>(u: U): X<U> {
         var x: X<U> = undefined;
         return x;
     }
 
-    // X-INT-G-NOT: define void @{{.*1X.*3int.*1g.*}}({}* %this)
-    // CHECK-DAG: define void @{{.*1X.*4bool.*1g.*}}({}* %this)
     def g() {}
 }
 
 def main(x: X<int>) {
-    // MAIN: call {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %1, i1 false)
     var a = x.f(false);
-
-    // MAIN: call void @{{.*X.*bool.*g.*}}({}* %a)
     a.g();
 }

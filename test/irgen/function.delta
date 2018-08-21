@@ -1,16 +1,10 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-EXTERN
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: define i32 @main() {
-// CHECK-NEXT: call void @bar()
-// CHECK-NEXT: ret i32 0
 def main() {
     bar();
+    foo();
 }
 
-// CHECK: define void @_EN4main3fooE()
-// CHECK-NEXT: ret void
 def foo() { }
 
-// CHECK-EXTERN: declare void @bar()
 extern def bar();

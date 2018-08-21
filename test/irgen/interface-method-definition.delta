@@ -1,11 +1,7 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 interface A {
     def f(): int;
-
-    // CHECK: define i32 @_EN4main1B1gE({}* %this)
-    // CHECK-NEXT: call i32 @_EN4main1B1fE({}* %this)
     def g(): int { return f() * 2; }
 }
 
@@ -16,7 +12,5 @@ struct B: A {
 
 def main() {
     var b = B();
-
-    // MAIN: call i32 @_EN4main1B1gE({}* %b)
     var x = b.g();
 }

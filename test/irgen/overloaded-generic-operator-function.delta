@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct S: Copyable {}
 
@@ -8,10 +8,8 @@ interface I {
 
 def ==<T: I>(a: T*, b: T*) {}
 
-// CHECK: define void @_EN4maineqE1a1S1b1S({} %a, {} %b)
 def ==(a: S, b: S) {}
 
 def f(s: S) {
-    // CHECK: call void @_EN4maineqE1a1S1b1S({} %s, {} %s)
     _ = s == s;
 }

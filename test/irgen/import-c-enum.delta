@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s -Iinputs | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Iinputs
 
 import "import-c-enum.h";
 
@@ -7,9 +7,4 @@ def main() {
     var bar: uint = BarA;
     var qux: uint64 = QuxA;
     var qux2: int8 = QuxA;
-
-    // CHECK:      store i32 -1, i32* %foo
-    // CHECK-NEXT: store i32 0, i32* %bar
-    // CHECK-NEXT: store i64 0, i64* %qux
-    // CHECK-NEXT: store i8 0, i8* %qux2
 }

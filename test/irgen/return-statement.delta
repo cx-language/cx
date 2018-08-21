@@ -1,15 +1,10 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 def main(): int {
-    // CHECK: %1 = call i32 @{{.*foo.*}}()
-    // CHECK-NEXT: ret i32 %1
     return foo();
 }
 
-// CHECK: define i32 @{{.*foo.*}}()
 def foo(): int {
-    // CHECK-NEXT: %1 = call i32 @{{.*foo.*}}()
     foo();
-    // CHECK-NEXT: ret i32 42
     return 42;
 }

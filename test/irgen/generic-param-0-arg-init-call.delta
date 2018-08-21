@@ -1,15 +1,11 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct C {
     var i: int;
-    init() {}
+    init() { i = 0; }
 }
 
 struct A<T> {
-    // CHECK: define void @{{.*A.*C.*init.*}}
-    // CHECK-NEXT: %t = alloca %C
-    // CHECK-NEXT: call void @_ENM4main1C4initE(%C* %t)
-    // CHECK-NEXT: ret void
     init() {
         var t = T();
     }

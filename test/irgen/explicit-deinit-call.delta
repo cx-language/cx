@@ -1,27 +1,20 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct A {
     init() {}
     deinit() {}
 }
 
-// CHECK: define void @{{.*f.*}}({}* %a)
 def f(a: mutable A*) {
-    // CHECK-NEXT: call void @_ENM4main1A6deinitE({}* %a)
     a.deinit();
-    // CHECK-NEXT: ret void
 }
 
 struct B {}
 
-// CHECK: define void @{{.*g.*}}({}* %b)
 def g(b: mutable B*) {
     b.deinit();
-    // CHECK-NEXT: ret void
 }
 
-// CHECK: define void @{{.*h.*}}(i8* %c)
 def h(c: mutable char*) {
     c.deinit();
-    // CHECK-NEXT: ret void
 }

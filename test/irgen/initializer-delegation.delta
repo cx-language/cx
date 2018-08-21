@@ -1,27 +1,17 @@
-// RUN: %delta -print-ir -Werror %s | %FileCheck %s -check-prefix=CHECK-0
-// RUN: %delta -print-ir -Werror %s | %FileCheck %s -check-prefix=CHECK-1
-// RUN: %delta -print-ir -Werror %s | %FileCheck %s -check-prefix=CHECK-2
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 def main() {
     var x = X(4, 2);
 }
 
 struct X {
-    // CHECK-2: define void @_ENM4main1X4initE1a3int1b3int({}* %this, i32 %a, i32 %b)
-    // CHECK-2-NEXT: call void @_ENM4main1X4initE1a3int({}* %this, i32 %a)
-    // CHECK-2-NEXT: ret void
     init(a: int, b: int) {
         init(a);
     }
 
-    // CHECK-1: define void @_ENM4main1X4initE1a3int({}* %this, i32 %a)
-    // CHECK-1-NEXT: call void @_ENM4main1X4initE({}* %this)
-    // CHECK-1-NEXT: ret void
     init(a: int) {
         init();
     }
 
-    // CHECK-0: define void @_ENM4main1X4initE({}* %this)
-    // CHECK-0-NEXT: ret void
     init() {}
 }

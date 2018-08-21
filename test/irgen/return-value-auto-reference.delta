@@ -1,21 +1,15 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 var i = 42;
 
-// CHECK: define i32* @{{.*foo.*}}()
 def foo(): int* {
-    // CHECK-NEXT: ret i32* @i
     return i;
 }
 
 struct A {
     var b: bool[2];
 
-    // CHECK: define i1* @{{.*A.*ff.*}}(%A* %this) {
     def ff(): bool* {
-        // CHECK-NEXT: %b = getelementptr inbounds %A, %A* %this, i32 0, i32 0
-        // CHECK-NEXT: %1 = getelementptr [2 x i1], [2 x i1]* %b, i32 0, i32 1
-        // CHECK-NEXT: ret i1* %1
         return b[1];
     }
 }

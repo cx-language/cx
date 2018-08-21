@@ -1,25 +1,15 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: %A = type { i32 }
 struct A {
     var i: int
-    // CHECK: define void @_ENM4main1A4initE(%A* %this)
-    init() { }
-    // CHECK: define void @_ENM4main1A6deinitE(%A* %this)
+    init() { i = 0 }
     deinit() { }
-    // CHECK: define void @_EN4main1A3fooE(%A* %this)
     def foo() { }
-    // CHECK: define void @_ENM4main1A6mutateE(%A* %this)
     mutating def mutate() { }
 }
 
 def main() {
-    // CHECK: %a = alloca %A
-    // CHECK: call void @_ENM4main1A4initE(%A* %a)
     var a = A()
-    // CHECK: call void @_EN4main1A3fooE(%A* %a)
     a.foo()
-    // CHECK: call void @_ENM4main1A6mutateE(%A* %a)
     a.mutate()
-    // CHECK: call void @_ENM4main1A6deinitE(%A* %a)
 }

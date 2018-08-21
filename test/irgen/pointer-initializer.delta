@@ -1,21 +1,8 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
-// CHECK-LABEL: define void @{{.*3foo.*}}(i8** %p, i8* %x)
 def foo(p: char mutable**, x: char*) {
-    // CHECK-NEXT: %pp = alloca i8**
     var pp: char mutable** = undefined;
-
-    // CHECK-NEXT: store i8** %p, i8*** %pp
     (&pp).init(p);
-
-    // CHECK-NEXT: %pp1 = load i8**, i8*** %pp
-    // CHECK-NEXT: store i8* %x, i8** %pp1
     pp.init(x);
-
-    // CHECK-NEXT: %pp2 = load i8**, i8*** %pp
-    // CHECK-NEXT: %1 = load i8*, i8** %pp2
-    // CHECK-NEXT: store i8 120, i8* %1
     (*pp).init('x');
-
-    // CHECK-NEXT: ret void
 }

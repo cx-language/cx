@@ -1,10 +1,7 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 extern def foo(): int;
 
-// CHECK: define i32 @main()
 def main() {
-    // CHECK-NEXT: %1 = call i32 @foo()
     _ = foo();
-    // CHECK-NEXT: ret
 }

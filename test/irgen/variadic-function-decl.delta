@@ -1,4 +1,3 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
-// CHECK: declare void @{{.*f.*}}(i32, ...)
 extern def f(i: int, ...);

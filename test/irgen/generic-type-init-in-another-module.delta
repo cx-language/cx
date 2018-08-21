@@ -1,9 +1,7 @@
-// RUN: %delta -print-ir %s -I%p/inputs | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Iinputs
 
 import imported_generic_type_init
 
 def main() {
-    // CHECK: %a = alloca %"A<int>"
-    // CHECK: call void @_ENM26imported_generic_type_init1AI3intE4initE(%"A<int>"* %a)
     var a = A<int>()
 }

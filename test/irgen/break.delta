@@ -1,29 +1,16 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK-LABEL: define i32 @main()
 def main() {
     while (true) {
         if (true) {
-            // CHECK:      then:
-            // CHECK-NEXT:   br label %endwhile
             break;
-            // CHECK-NOT: %a
-            // CHECK-NOT: alloca
-            // CHECK-NOT: 1
             var a = 1;
         }
-        // CHECK:      endif:
-        // CHECK-NEXT:   br label %endwhile
         break;
     }
     switch (1) {
         default:
-            // CHECK:      default:
-            // CHECK-NEXT:   br label %endswitch
             break;
-            // CHECK-NOT: %b
-            // CHECK-NOT: alloca
-            // CHECK-NOT: 1
             var b = 1;
     }
 }

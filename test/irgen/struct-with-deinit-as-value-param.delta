@@ -1,12 +1,8 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-DEINIT
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
-// CHECK: define void @{{.*3foo.*}}(%"Array<int>" %a)
-def foo(a: Array<int>) {
-    // CHECK-NEXT: %1 = alloca %"Array<int>"
-    // CHECK-NEXT: store %"Array<int>" %a, %"Array<int>"* %1
-    // CHECK-NEXT: call void @_ENM3std5ArrayI3intE6deinitE(%"Array<int>"* %1)
-    // CHECK-NEXT: ret void
+def foo(a: A<int>) {}
+
+struct A<T> {
+    var i: T;
+    deinit() {}
 }
-
-// CHECK-DEINIT: define void @_ENM3std5ArrayI3intE6deinitE(%"Array<int>"* %this)

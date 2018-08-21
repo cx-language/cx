@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X {
     init() {}
@@ -7,7 +7,9 @@ struct X {
 
 def f(): X {
     var x = X();
-
-    // CHECK-NOT: call void @X.deinit
     return x;
+}
+
+def main() {
+    var a = f();
 }

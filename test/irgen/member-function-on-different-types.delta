@@ -1,13 +1,11 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
     var i: int;
-    // CHECK: define void @{{.*Foo.*doStuff.*}}(%Foo* %this)
     def doStuff() { }
 }
 
 struct Bar {
     var i: int;
-    // CHECK: define void @{{.*Bar.*doStuff.*}}(%Bar* %this) {
     def doStuff() { }
 }

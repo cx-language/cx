@@ -1,58 +1,26 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: %X = type { i32 (i32)* }
 struct X {
     var p: (int) -> int;
 
-    // CHECK: define void @_ENM4main1X4initE1pF3int_3int(%X* %this, i32 (i32)* %p)
     init(p: (int) -> int) {
-        // CHECK-NEXT: %p1 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
-        // CHECK-NEXT: store i32 (i32)* %p, i32 (i32)** %p1
         this.p = p;
-        // CHECK-NEXT: ret void
     }
 
-    // CHECK: define void @_EN4main1X1fE(%X* %this)
     def f() {
-        // CHECK-NEXT: %p24 = alloca i32 (i32)*
-
-        // CHECK-NEXT: %p = getelementptr inbounds %X, %X* %this, i32 0, i32 0
-        // CHECK-NEXT: %p1 = load i32 (i32)*, i32 (i32)** %p
-        // CHECK-NEXT: %1 = call i32 %p1(i32 42)
         this.p(42);
-
-        // CHECK-NEXT: %p2 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
-        // CHECK-NEXT: %p23 = load i32 (i32)*, i32 (i32)** %p2
-        // CHECK-NEXT: %2 = call i32 %p23(i32 42)
         p(42);
-
-        // CHECK-NEXT: %p5 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
-        // CHECK-NEXT: %p6 = load i32 (i32)*, i32 (i32)** %p5
-        // CHECK-NEXT: store i32 (i32)* %p6, i32 (i32)** %p24
         var p2 = p;
-
-        // CHECK-NEXT: %p247 = load i32 (i32)*, i32 (i32)** %p24
-        // CHECK-NEXT: %3 = call i32 %p247(i32 42)
         p2(42);
     }
 }
 
-// CHECK: define i32 @[[FOO:.*3foo.*]](i32 %a)
 def foo(a: int): int {
     return a;
 }
 
-// CHECK: define i32 @main()
 def main() {
-    // CHECK-NEXT: %x = alloca %X
-    // CHECK-NEXT: call void @_ENM4main1X4initE1pF3int_3int(%X* %x, i32 (i32)* @[[FOO]])
     var x = X(foo);
-
-    // CHECK-NEXT: %p = getelementptr inbounds %X, %X* %x, i32 0, i32 0
-    // CHECK-NEXT: %p1 = load i32 (i32)*, i32 (i32)** %p
-    // CHECK-NEXT: call i32 %p1(i32 42)
     x.p(42);
-
-    // CHECK-NEXT: call void @_EN4main1X1fE(%X* %x)
     x.f();
 }

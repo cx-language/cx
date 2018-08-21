@@ -1,7 +1,5 @@
-// RUN: %delta -print-ir %s | %FileCheck %s -allow-empty
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 interface I {
-    // CHECK-NOT: define void @{{(I\.)?}}f(
-    // CHECK-NOT: declare void @{{(I\.)?}}f(
     def f();
 }

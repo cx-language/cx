@@ -1,5 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X {
     init() {}
@@ -9,19 +8,12 @@ struct X {
 struct Y<T> {
     init() {}
 
-    // CHECK: define i32 @_EN4main1YI4boolE1fE({}* %this)
     def f(): int {
-        // CHECK-NEXT: ret i32 1
         return 1;
     }
 }
 
 def main() {
     var a = X();
-
-    // MAIN: call void @_ENM4main1YI4boolE4initE
-    // MAIN: call i32 @_EN4main1YI4boolE1fE({}* %{{[0-9]+}})
     Y<bool>().f();
-
-    // MAIN-NEXT: call void @_ENM4main1X6deinitE({}* %a)
 }

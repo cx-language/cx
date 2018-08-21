@@ -1,23 +1,11 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def and(a: int, b: int): int {
-    return a & b; // CHECK: and i32 %a, %b
-}
-def or(a: int, b: int): int {
-    return a | b; // CHECK: or i32 %a, %b
-}
-def xor(a: int, b: int): int {
-    return a ^ b; // CHECK: xor i32 %a, %b
-}
-def shl(a: int, b: int): int {
-    return a << b; // CHECK: shl i32 %a, %b
-}
-def ashr(a: int, b: int): int {
-    return a >> b; // CHECK: ashr i32 %a, %b
-}
-def lshr(a: uint, b: uint): uint {
-    return a >> b; // CHECK: lshr i32 %a, %b
-}
-def compl(a: int): int {
-    return ~a; // CHECK: xor i32 %a, -1
+def main(a: int, b: int, c: uint, d: uint) {
+    _ = a & b;
+    _ = a | b;
+    _ = a ^ b;
+    _ = a << b;
+    _ = a >> b;
+    _ = c >> d;
+    _ = ~a;
 }

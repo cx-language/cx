@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 extern def foo();
 extern def bar();
@@ -7,37 +7,21 @@ def main() {
     defer foo();
     if (false) {
         defer bar();
-        // CHECK: call void @bar()
-        // CHECK-NEXT: call void @foo()
-        // CHECK-NEXT ret i32 0
         return;
     }
     if (false) {
         defer bar();
-        // CHECK: call void @bar()
-        // CHECK-NEXT: br label %endif3
     }
     while (false) {
         defer foo();
-        // CHECK: call void @bar()
         bar();
-        // CHECK-NEXT: call void @foo()
-        // CHECK-NEXT: br label %while
     }
     defer bar();
     if (true) {
-        // CHECK: call void @bar()
-        // CHECK-NEXT: call void @foo()
-        // CHECK-NEXT: ret i32 0
         return;
     }
     foo();
-    // CHECK: call void @foo()
-    // CHECK-NEXT: call void @bar()
-    // CHECK-NEXT: call void @foo()
-    // CHECK-NEXT: ret i32 0
+    shouldBeEmpty();
 }
 
-// CHECK: define void @_EN4main13shouldBeEmptyE()
-// CHECK-NEXT: ret void
 def shouldBeEmpty() { }

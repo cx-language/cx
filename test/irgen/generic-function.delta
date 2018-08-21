@@ -1,29 +1,18 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=INSTANTIATIONS
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// INSTANTIATIONS-DAG: define void @{{.*foo.*int.*}}(i32 %t)
-// INSTANTIATIONS-DAG: define void @{{.*foo.*bool.*}}(i1 %t)
 def foo<T>(t: T) { }
 
-// INSTANTIATIONS-DAG: define %StringRef @{{.*bar.*StringRef.*}}(%StringRef %t)
 def bar<T>(t: T): T { return t; }
 
-// INSTANTIATIONS-DAG: define i32 @{{.*qux.*int.*}}(i32 %t)
 def qux<T>(t: T): T {
     if (t < 0) { return -t; }
     return t;
 }
 
 def main() {
-    // CHECK: call void @{{.*foo.*int.*}}(i32 1)
     foo<int>(1);
-    // CHECK-NEXT: call void @{{.*foo.*bool.*}}(i1 false)
     foo<bool>(false);
-    // CHECK-NEXT: call void @{{.*foo.*bool.*}}(i1 true)
     foo<bool>(true);
-    // CHECK-NEXT: call void @{{.*9StringRef.*4init.*}}
-    // CHECK: call %StringRef @{{.*bar.*StringRef.*}}
     var b = bar("bar");
-    // CHECK: call i32 @{{.*qux.*int.*}}(i32 -5)
     var five = qux(-5);
 }

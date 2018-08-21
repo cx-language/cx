@@ -1,14 +1,9 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 def baz(foo: bool) {
-    // CHECK: while: ; preds = %endif, %then, %0
-    // CHECK-NEXT: br i1 %foo, label %body, label %endwhile
     while (foo) {
         if (foo) {
-            // CHECK: then: ; preds = %body
-            // CHECK-NEXT: call void @{{.*baz.*}}(i1 %foo)
             baz(foo);
-            // CHECK-NEXT: br label %while
             continue;
         }
     }

@@ -1,24 +1,11 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: define void @[[FOO:.*foo.*]](%"ArrayRef<int>" %a)
 def foo(a: int[]*) {}
 
-def g() {
-    // CHECK: %a = alloca [3 x i32]
-    // CHECK-NEXT: store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %a
+def main() {
     var a = [1, 2, 3];
-
-    // CHECK-NEXT: %1 = getelementptr [3 x i32], [3 x i32]* %a, i32 0, i32 0
-    // CHECK-NEXT: %2 = insertvalue %"ArrayRef<int>" undef, i32* %1, 0
-    // CHECK-NEXT: %3 = insertvalue %"ArrayRef<int>" %2, i32 3, 1
-    // CHECK-NEXT: call void @[[FOO]](%"ArrayRef<int>" %3)
     foo(a);
-
-    // CHECK-NEXT: call void @[[BAZ:.*baz.*]]([3 x i32]* %a)
     baz(a);
-
-    // CHECK-NEXT: ret void
 }
 
-// CHECK: define void @[[BAZ]]([3 x i32]* %b)
 def baz(b: int[3]*) {}

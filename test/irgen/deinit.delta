@@ -1,14 +1,8 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
     var i: int;
 
-    // CHECK: define void @_ENM4main3Foo6deinitE(%Foo* %this)
-    // CHECK-NEXT: %i = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-    // CHECK-NEXT: store i32 0, i32* %i
-    // CHECK-NEXT: call void @_ENM4main3Foo1fE(%Foo* %this)
-    // CHECK-NEXT: call void @_ENM4main3Foo1fE(%Foo* %this)
-    // CHECK-NEXT: ret void
     deinit() {
         i = 0;
         f();
@@ -21,12 +15,6 @@ struct Foo {
 struct Bar: Copyable {
     var i: int;
 
-    // CHECK: define void @_ENM4main3Bar6deinitE(%Bar* %this)
-    // CHECK-NEXT: %i = getelementptr inbounds %Bar, %Bar* %this, i32 0, i32 0
-    // CHECK-NEXT: store i32 0, i32* %i
-    // CHECK-NEXT: call void @_ENM4main3Bar1fE(%Bar* %this)
-    // CHECK-NEXT: call void @_ENM4main3Bar1fE(%Bar* %this)
-    // CHECK-NEXT: ret void
     deinit() {
         i = 0;
         f();
@@ -40,22 +28,11 @@ def main() {
     var f: Foo = undefined;
     if (false) {
         var f2: Foo = undefined;
-        // CHECK: then:                                             ; preds = %0
-        // CHECK-NEXT: call void @_ENM4main3Foo6deinitE(%Foo* %f2)
-        // CHECK-NEXT: br label %endif
     }
     var b: Bar = undefined;
     while (false) {
         var b2: Bar = undefined;
-        // CHECK: call void @_ENM4main3Bar6deinitE(%Bar* %b2)
-        // CHECK-NEXT: call void @_ENM4main3Bar6deinitE(%Bar* %b)
-        // CHECK-NEXT: call void @_ENM4main3Foo6deinitE(%Foo* %f)
-        // CHECK-NEXT: ret i32 0
         return;
     }
     var i = 1;
-    // CHECK: store i32 1, i32* %i
-    // CHECK-NEXT: call void @_ENM4main3Bar6deinitE(%Bar* %b)
-    // CHECK-NEXT: call void @_ENM4main3Foo6deinitE(%Foo* %f)
-    // CHECK-NEXT: ret i32 0
 }

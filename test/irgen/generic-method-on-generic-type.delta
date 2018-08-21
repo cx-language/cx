@@ -1,19 +1,13 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=MAIN
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X<T> {
     init() {}
-
-    // CHECK: define void @_ENM4main1XI3intE1fI4boolEE1uF4bool_3int({}* %this, i32 (i1)* %u)
     mutating def f<U>(u: (U) -> T) {}
 }
 
 def g(i: bool): int { return int(i); }
 
-// MAIN: define i32 @main()
 def main() {
     var x = X<int>();
-
-    // MAIN: call void @_ENM4main1XI3intE1fI4boolEE1uF4bool_3int({}* %x, i32 (i1)* @_EN4main1gE1i4bool)
     x.f(g);
 }

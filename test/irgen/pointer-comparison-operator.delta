@@ -1,8 +1,5 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
-// CHECK: define void @{{.*3foo.*}}(i32* %a, i32* %b)
-// CHECK-NEXT: icmp eq i32* %a, %b
-// CHECK-NEXT: icmp ne i32* %a, %b
 def foo(a: int*?, b: mutable int*) {
     _ = a === b;
     _ = a !== b;

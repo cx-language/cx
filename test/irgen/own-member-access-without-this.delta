@@ -1,19 +1,19 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct A {
     var i: int
     var j: int
 
     init() {
-        j = 42 // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
+        j = 42
     }
 
     def foo() {
-        _ = j // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
+        _ = j
     }
 
     mutating def bar() {
-        j = 1 // CHECK: getelementptr inbounds %A, %A* %this, i32 0, i32 1
+        j = 1
     }
 }
 
@@ -22,14 +22,14 @@ struct B: Copyable {
     var j: int
 
     init() {
-        j = 42 // CHECK: getelementptr inbounds %B, %B* %this, i32 0, i32 1
+        j = 42
     }
 
     def foo() {
-        _ = j // CHECK: extractvalue %B %this, 1
+        _ = j
     }
 
     mutating def bar() {
-        j = 1 // CHECK: getelementptr inbounds %B, %B* %this, i32 0, i32 1
+        j = 1
     }
 }

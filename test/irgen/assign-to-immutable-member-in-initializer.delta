@@ -1,18 +1,13 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct F {
     var v: int;
     var a: int[1];
 
-    // CHECK: define void @{{.*1F.*4init.*}}
     init() {
-        // CHECK: store i32 42, i32* %{{[a-z0-9]+}}
         this.v = 42;
-
-        // CHECK: store i32 43, i32* %{{[a-z0-9]+}}
         v = 43;
-
-        // CHECK: store i32 44, i32* %{{[a-z0-9]+}}
+        a = [1];
         a[0] = 44;
     }
 }

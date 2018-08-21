@@ -1,17 +1,10 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: %"A<int>" = type { i32 }
-// CHECK: %"A<A<A<bool>>>" = type { %"A<A<bool>>" }
-// CHECK: %"A<A<bool>>" = type { %"A<bool>" }
-// CHECK: %"A<bool>" = type { i1 }
 struct A<T> {
     var a: T
 }
 
 def main() {
-    // CHECK: %a = alloca %"A<int>"
     var a: A<int> = undefined
-
-    // CHECK: %aaa = alloca %"A<A<A<bool>>>"
     var aaa: A<A<A<bool>>> = undefined
 }

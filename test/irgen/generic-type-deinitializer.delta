@@ -1,17 +1,11 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-CALL
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct C<T> {
     init() { }
-
-    // CHECK: define void @_ENM4main1CI3intE6deinitE({}* %this)
-    // CHECK: define void @_ENM4main1CI4boolE6deinitE({}* %this)
     deinit() { }
 }
 
 def main() {
     var i = C<int>()
     var b = C<bool>()
-    // CHECK-CALL: call void @_ENM4main1CI4boolE6deinitE({}* %b)
-    // CHECK-CALL-NEXT: call void @_ENM4main1CI3intE6deinitE({}* %i)
 }

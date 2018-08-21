@@ -1,21 +1,12 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: define i32 @main()
-// CHECK-NEXT: call void @_EN4main1gI3intEE1t3int(i32 42)
-// CHECK-NEXT: call void @_EN4main1gI4boolEE1t4bool(i1 false)
 def main() {
     g(42);
     g(false);
 }
 
-// CHECK: define void @_EN4main1gI3intEE1t3int(i32 %t)
-// CHECK-NEXT: call void @_EN4main1fI3intEE1t3int(i32 %t)
-// CHECK: define void @_EN4main1gI4boolEE1t4bool(i1 %t)
-// CHECK-NEXT: call void @_EN4main1fI4boolEE1t4bool(i1 %t)
 def g<T>(t: T) {
     f(t);
 }
 
-// CHECK-DAG: define void @_EN4main1fI3intEE1t3int(i32 %t)
-// CHECK-DAG: define void @_EN4main1fI4boolEE1t4bool(i1 %t)
 def f<T>(t: T) {}

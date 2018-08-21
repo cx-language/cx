@@ -1,20 +1,12 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 extern def foo();
 extern def bar();
 
 def main() {
-    // CHECK: br i1 false, label %then, label %else
     if (false) {
-        // CHECK: then: ; preds = %0
-        // CHECK-NEXT: call void @foo()
-        // CHECK-NEXT: br label %endif
         foo();
     } else {
-        // CHECK: else: ; preds = %0
-        // CHECK-NEXT: call void @bar()
-        // CHECK-NEXT: br label %endif
         bar();
     }
-    // CHECK: endif: ; preds = %else, %then
 }

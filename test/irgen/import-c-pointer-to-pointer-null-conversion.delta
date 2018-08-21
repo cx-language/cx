@@ -1,8 +1,7 @@
-// RUN: %delta -print-ir %s -Iinputs | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Iinputs
 
 import "import-c-pointer-to-pointer-null-conversion.h";
 
 def main() {
-    // CHECK: call void @foo(i8** null)
     foo(p: null);
 }

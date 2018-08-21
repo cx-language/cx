@@ -1,43 +1,16 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: define void @{{.*foo.*}}(i32* %p, i32* %mp)
-def foo(p: int*, mp: mutable int*) {
-    // CHECK-NEXT: %v = alloca i8*
-    // CHECK-NEXT: %b = alloca i8*
-    // CHECK-NEXT: %i = alloca i32
-
-    // CHECK-NEXT: %1 = bitcast i32* %p to i8*
-    // CHECK-NEXT: store i8* %1, i8** %v
+def main() {
+    var p: int* = undefined;
+    var mp: mutable int* = undefined;
     var v: void* = p;
-
-    // CHECK-NEXT: %2 = bitcast i32* %p to i8*
-    // CHECK-NEXT: call void @{{.*bar.*}}(i8* %2)
     bar(p);
-
-    // CHECK-NEXT: %v1 = load i8*, i8** %v
-    // CHECK-NEXT: call void @{{.*bar.*}}(i8* %v1)
     bar(v);
-
-    // CHECK-NEXT: %v2 = load i8*, i8** %v
-    // CHECK-NEXT: store i8* %v2, i8** %b
     var b = cast<int8*>(v);
-
-    // CHECK-NEXT: %b3 = load i8*, i8** %b
-    // CHECK-NEXT: store i8* %b3, i8** %v
     v = b;
-
-    // CHECK-NEXT: %3 = bitcast i32* %mp to i8*
-    // CHECK-NEXT: call void @{{.*baz.*}}(i8* %3)
     baz(mp);
-
-    // CHECK-NEXT: store i32 0, i32* %i
     var i = 0;
-
-    // CHECK-NEXT: %4 = bitcast i32* %i to i8*
-    // CHECK-NEXT: call void @{{.*baz.*}}(i8* %4)
     baz(&i);
-
-    // CHECK-NEXT: ret void
 }
 
 def bar(p: void*) {}

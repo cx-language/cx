@@ -1,28 +1,17 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-MAIN
-// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=UNUSED
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: %"F<int, bool>" = type { i32, i1 }
 struct F<T, U>: Copyable {
     var a: T
     var b: U
-
-    // CHECK-DAG: define void @_ENM4main1FI3int4boolE4initE
-    init() { }
-
-    // CHECK-DAG: define void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>" %this)
+    init() {
+        a = undefined
+        b = undefined
+    }
     def foo() { }
-
-    // TODO: Don't generate code for unused functions:
-    // UNUSED: unused
     def unused() { }
 }
 
 def main() {
-    // CHECK-MAIN: %f = alloca %"F<int, bool>"
-    // CHECK-MAIN: call void @_ENM4main1FI3int4boolE4initE
     var f = F<int, bool>()
-
-    // CHECK-MAIN: call void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>" %f1)
     f.foo()
 }

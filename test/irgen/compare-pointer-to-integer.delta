@@ -1,7 +1,7 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def f(foo: int*, bar: int) {
-    // CHECK: %1 = load i32, i32* %foo
-    // CHECK-NEXT: %2 = icmp slt i32 %1, %bar
+def main() {
+    var foo: int* = undefined;
+    var bar: int = undefined;
     _ = foo < bar;
 }

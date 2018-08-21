@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct Foo {
     var i: int;
@@ -7,21 +7,7 @@ struct Foo {
 
 def main() {
     var f: mutable Foo*? = null;
-
-    // CHECK: %1 = load %Foo*, %Foo** %f
-    // CHECK-NEXT: %i = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
-    // CHECK-NEXT: %2 = load i32, i32* %i
     _ = f.i;
-
-    // CHECK-NEXT: %f1 = load %Foo*, %Foo** %f
-    // CHECK-NEXT: call void @_EN4main3Foo3barE(%Foo* %f1)
     f.bar();
-
-    // CHECK-NEXT: %f2 = load %Foo*, %Foo** %f
-    // CHECK-NEXT: %f3 = load %Foo*, %Foo** %f
-    // CHECK-NEXT: %3 = load %Foo, %Foo* %f3
-    // CHECK-NEXT: store %Foo %3, %Foo* %f2
     *f = *f;
-
-    // CHECK-NEXT: ret i32 0
 }

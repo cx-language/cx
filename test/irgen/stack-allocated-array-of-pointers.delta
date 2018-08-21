@@ -1,12 +1,7 @@
-// RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-// CHECK: define i32 @main()
 def main() {
-    // CHECK-NEXT: %a = alloca [3 x i8*]
     var a: void*[3] = undefined;
-    // CHECK-NEXT: %b = alloca [2 x i32*]
     var b: mutable int*[2] = undefined;
-    // CHECK-NEXT: %c = alloca [1 x float**]
     var c: mutable float32 mutable**[1] = undefined;
-    // CHECK-NEXT: ret i32 0
 }
