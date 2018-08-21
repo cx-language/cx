@@ -33,8 +33,9 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), structs.find("StringRef")->second.second,
                                               nullptr, "__str" + std::to_string(stringLiteralCounter++));
         // TODO: Retrieve this constructor in a nicer way.
-        auto* stringRefInit = module.getFunction("_ENM3std9StringRef4initE7pointerP4char6length4uint");
-        ASSERT(stringRefInit);
+        auto* stringRefInit = module->getOrInsertFunction("_ENM3std9StringRef4initE7pointerP4char6length4uint",
+                                                          llvm::Type::getVoidTy(ctx), alloca->getType(),
+                                                          stringPtr->getType(), size->getType());
         builder.CreateCall(stringRefInit, { alloca, stringPtr, size });
         return alloca;
     } else {
@@ -518,13 +519,13 @@ void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location)
     auto* function = builder.GetInsertBlock()->getParent();
     auto* failBlock = llvm::BasicBlock::Create(ctx, "assert.fail", function);
     auto* successBlock = llvm::BasicBlock::Create(ctx, "assert.success", function);
-    auto* puts = module.getOrInsertFunction("puts", llvm::Type::getInt32Ty(ctx), llvm::Type::getInt8PtrTy(ctx));
+    auto* puts = module->getOrInsertFunction("puts", llvm::Type::getInt32Ty(ctx), llvm::Type::getInt8PtrTy(ctx));
     builder.CreateCondBr(condition, failBlock, successBlock);
     builder.SetInsertPoint(failBlock);
     auto message = llvm::join_items("", "Assertion failed at ", location.file, ":", std::to_string(location.line), ":",
                                     std::to_string(location.column));
     builder.CreateCall(puts, builder.CreateGlobalStringPtr(message));
-    builder.CreateCall(llvm::Intrinsic::getDeclaration(&module, llvm::Intrinsic::trap));
+    builder.CreateCall(llvm::Intrinsic::getDeclaration(&*module, llvm::Intrinsic::trap));
     builder.CreateUnreachable();
     builder.SetInsertPoint(successBlock);
 }

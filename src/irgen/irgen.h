@@ -55,6 +55,7 @@ public:
     llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
     llvm::LLVMContext& getLLVMContext() { return ctx; }
     llvm::IRBuilder<>& getBuilder() { return builder; }
+    std::vector<std::unique_ptr<llvm::Module>> getGeneratedModules() { return std::move(generatedModules); }
 
 private:
     friend struct Scope;
@@ -66,7 +67,6 @@ private:
 
     void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
-    llvm::Module& getIRModule() { return module; }
 
     /// @param type The Delta type of the variable, or null if the variable is 'this'.
     void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
@@ -170,7 +170,8 @@ private:
 
     llvm::LLVMContext ctx;
     llvm::IRBuilder<> builder;
-    llvm::Module module;
+    std::unique_ptr<llvm::Module> module;
+    std::vector<std::unique_ptr<llvm::Module>> generatedModules;
     llvm::BasicBlock::iterator lastAlloca;
 
     llvm::StringMap<FunctionInstantiation> functionInstantiations;

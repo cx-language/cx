@@ -11,6 +11,7 @@
 #include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
+#include <llvm/Linker/Linker.h>
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
@@ -251,18 +252,28 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (typecheck) return 0;
 
     IRGenerator irGenerator;
+
     for (auto* module : Module::getAllImportedModules()) {
         irGenerator.compile(*module);
     }
-    auto& irModule = irGenerator.compile(module);
+
+    auto& mainModule = irGenerator.compile(module);
 
     if (printIR) {
-        irModule.print(llvm::outs(), nullptr);
+        mainModule.print(llvm::outs(), nullptr);
         return 0;
     }
 
+    llvm::Module linkedModule("", irGenerator.getLLVMContext());
+    llvm::Linker linker(linkedModule);
+
+    for (auto& module : irGenerator.getGeneratedModules()) {
+        bool error = linker.linkInModule(std::move(module));
+        if (error) printErrorAndExit("LLVM module linking failed");
+    }
+
     if (emitLLVMBitcode) {
-        ::emitLLVMBitcode(irModule, "output.bc");
+        ::emitLLVMBitcode(linkedModule, "output.bc");
         return 0;
     }
 
@@ -277,7 +288,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile : llvm::TargetMachine::CGFT_ObjectFile;
     auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_ : llvm::Reloc::Model::Static;
-    emitMachineCode(irModule, temporaryOutputFilePath, fileType, relocModel);
+    emitMachineCode(linkedModule, temporaryOutputFilePath, fileType, relocModel);
 
     if (!outputDirectory.empty()) {
         auto error = llvm::sys::fs::create_directories(outputDirectory);

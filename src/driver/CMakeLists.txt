@@ -1,6 +1,6 @@
 file(GLOB SOURCES *.h *.cpp)
 add_library(deltaDriver ${SOURCES})
 target_link_libraries(deltaDriver deltaParser deltaSema deltaIRGen deltaPackageManager deltaSupport)
-llvm_map_components_to_libnames(LLVM_LIBS native mc lineeditor executionengine interpreter bitwriter)
+llvm_map_components_to_libnames(LLVM_LIBS native mc lineeditor executionengine interpreter bitwriter linker)
 target_link_libraries(deltaDriver ${LLVM_LIBS})
 add_definitions(-DDELTA_ROOT_DIR="${PROJECT_SOURCE_DIR}")

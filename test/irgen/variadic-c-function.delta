@@ -1,6 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-STDIO
 
-// CHECK-DAG: declare i32 @printf(i8*, ...)
+// CHECK-STDIO: declare i32 @printf(i8*, ...)
 import "stdio.h"
 
 def main() {

@@ -38,7 +38,7 @@ void Scope::clear() {
     deinitsToCall.clear();
 }
 
-IRGenerator::IRGenerator() : builder(ctx), module("", ctx) {
+IRGenerator::IRGenerator() : builder(ctx) {
     scopes.push_back(Scope(*this));
 }
 
@@ -464,7 +464,7 @@ llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool is
 
 llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
     auto mangled = mangleFunctionDecl(decl);
-    if (auto* function = module.getFunction(mangled)) return function;
+    if (auto* function = module->getFunction(mangled)) return function;
 
     auto* functionType = decl.getFunctionType();
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
@@ -481,7 +481,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
     if (decl.isMain() && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
-    auto* function = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, mangled, &module);
+    auto* function = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, mangled, &*module);
 
     auto arg = function->arg_begin(), argsEnd = function->arg_end();
     if (decl.isMethodDecl()) arg++->setName("this");
@@ -494,6 +494,12 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
     auto result = functionInstantiations.try_emplace(std::move(mangled), FunctionInstantiation(decl, function));
     // TODO: 'result.second' should always be true.
     // ASSERT(result.second);
+
+    // If the function is from a different module, return the declaration generated in the current module.
+    if (result.first->second.getFunction()->getParent() != &*module) {
+        return function;
+    }
+
     return result.first->second.getFunction();
 }
 
@@ -632,7 +638,7 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
 }
 
 llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
-    if (auto* value = module.getGlobalVariable(decl.getName(), true)) return value;
+    if (auto* value = module->getGlobalVariable(decl.getName(), true)) return value;
 
     auto it = globalScope().getLocalValues().find(decl.getName());
     if (it != globalScope().getLocalValues().end()) return it->second;
@@ -642,7 +648,7 @@ llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
     if (decl.getType().isMutable() /* || decl.isPublic() */) {
         auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
         auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
-        value = new llvm::GlobalVariable(module, toIR(decl.getType()), !decl.getType().isMutable(), linkage,
+        value = new llvm::GlobalVariable(*module, toIR(decl.getType()), !decl.getType().isMutable(), linkage,
                                          initializer, decl.getName());
     }
 
@@ -689,6 +695,9 @@ void IRGenerator::codegenDecl(const Decl& decl) {
 }
 
 llvm::Module& IRGenerator::compile(const Module& sourceModule) {
+    ASSERT(!module);
+    module = llvm::make_unique<llvm::Module>(sourceModule.getName(), ctx);
+
     for (const auto& sourceFile : sourceModule.getSourceFiles()) {
         for (const auto& decl : sourceFile.getTopLevelDecls()) {
             codegenDecl(*decl);
@@ -709,6 +718,7 @@ llvm::Module& IRGenerator::compile(const Module& sourceModule) {
         if (functionInstantiations.size() == currentFunctionInstantiations.size()) break;
     }
 
-    ASSERT(!llvm::verifyModule(module, &llvm::errs()));
-    return module;
+    ASSERT(!llvm::verifyModule(*module, &llvm::errs()));
+    generatedModules.push_back(std::move(module));
+    return *generatedModules.back();
 }
