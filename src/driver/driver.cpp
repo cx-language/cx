@@ -203,7 +203,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     // /usr/bin/ld: final link failed: Nonrepresentable section on output
     emitPositionIndependentCode = true;
 #endif
-    treatWarningsAsErrors = checkFlag("-Werror", args);
+    if (checkFlag("-w", args)) warningMode = WarningMode::Suppress;
+    if (checkFlag("-Werror", args)) warningMode = WarningMode::TreatAsErrors;
     auto defines = collectStringOptionValues("-D", args);
 #ifdef _WIN32
     defines.push_back("Windows");

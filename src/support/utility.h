@@ -144,12 +144,23 @@ template<typename... Args>
     errorWithNotes(location, std::vector<Note>(), std::forward<Args>(args)...);
 }
 
-extern bool treatWarningsAsErrors;
+enum class WarningMode {
+    Default,
+    Suppress,
+    TreatAsErrors
+};
+
+extern WarningMode warningMode;
 
 template<typename... Args>
 void warning(SourceLocation location, Args&&... args) {
-    if (treatWarningsAsErrors) {
-        error(location, std::forward<Args>(args)...);
+    switch (warningMode) {
+        case WarningMode::Default:
+            break;
+        case WarningMode::Suppress:
+            return;
+        case WarningMode::TreatAsErrors:
+            return error(location, std::forward<Args>(args)...);
     }
 
     std::string message;

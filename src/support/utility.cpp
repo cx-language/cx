@@ -9,7 +9,7 @@
 
 using namespace delta;
 
-bool delta::treatWarningsAsErrors;
+WarningMode delta::warningMode = WarningMode::Default;
 
 std::string delta::readLineFromFile(SourceLocation location) {
     std::ifstream file(location.file);
