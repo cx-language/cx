@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct S: Copyable {
-    let a: int
+    var a: int
 
     // CHECK: define void @_ENM4main1S3fooE(%S* %this)
     mutating def foo() {
@@ -9,6 +9,6 @@ struct S: Copyable {
         // CHECK-NEXT: %a = getelementptr inbounds %S, %S* %this, i32 0, i32 0
         // CHECK-NEXT: %a1 = load i32, i32* %a
         // CHECK-NEXT: store i32 %a1, i32* %b
-        let b = a
+        var b = a
     }
 }

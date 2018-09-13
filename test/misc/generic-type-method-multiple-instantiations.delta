@@ -4,7 +4,7 @@ struct S<T>: Copyable {
     init() {}
 
     def f(t: T) {
-        let v = t
+        var v = t
     }
 }
 

@@ -21,7 +21,7 @@ struct F<T, U>: Copyable {
 def main() {
     // CHECK-MAIN: %f = alloca %"F<int, bool>"
     // CHECK-MAIN: call void @_ENM4main1FI3int4boolE4initE
-    let f = F<int, bool>()
+    var f = F<int, bool>()
 
     // CHECK-MAIN: call void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>" %f1)
     f.foo()

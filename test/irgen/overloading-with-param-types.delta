@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct S: Copyable {
-    let i: int
+    var i: int
     init() {}
 }
 
 struct T: Copyable {
-    let i: int
+    var i: int
     init() {}
 }
 
@@ -23,8 +23,8 @@ def +(a: S, b: S) {}
 def +(a: T, b: T) {}
 
 def main() {
-    let s = S()
-    let t = T()
+    var s = S()
+    var t = T()
 
     // CHECK: call void @_EN4main1fE1a1S(%S %s{{[0-9]+}})
     f(s)

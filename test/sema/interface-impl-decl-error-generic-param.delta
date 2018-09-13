@@ -6,5 +6,5 @@ struct Z<T>: T {
 }
 
 def main() {
-    let z = Z<bool>();
+    var z = Z<bool>();
 }

@@ -1,6 +1,6 @@
 struct StringIterator: Copyable, Iterator<char> {
     var current: char*;
-    let end: char*;
+    var end: char*;
 
     init(string: StringRef) {
         current = string.data();

@@ -15,12 +15,12 @@ def main() {
     // CHECK-NEXT: unreachable
     // CHECK: assert.success:                                   ; preds = %0
     // CHECK-NEXT: store i8* %1, i8** %byte
-    let byte: mutable uint8* = cast<mutable uint8*?>(f())!;
+    var byte: mutable uint8* = cast<mutable uint8*?>(f())!;
 
     // CHECK-NEXT: %3 = call i8* @{{.*f.*}}()
     // CHECK-NEXT: %4 = bitcast i8* %3 to [1 x i8]*
     // CHECK-NEXT: store [1 x i8]* %4, [1 x i8]** %ptr
-    let ptr: mutable uint8[1]*? = cast<mutable uint8[1]*?>(f());
+    var ptr: mutable uint8[1]*? = cast<mutable uint8[1]*?>(f());
 
     // CHECK-NEXT: %ptr1 = load [1 x i8]*, [1 x i8]** %ptr
     // CHECK-NEXT: %assert.condition2 = icmp eq [1 x i8]* %ptr1, null

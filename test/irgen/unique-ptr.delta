@@ -7,9 +7,9 @@ def main() {
     // CHECK-NEXT: call void @{{.*UniquePtr.*UniquePtr.*int.*init.*}}(%"UniquePtr<UniquePtr<int>>"* %p, %"UniquePtr<int>" %2)
     // CHECK-NEXT: call void @{{.*UniquePtr.*int.*init.*}}(%"UniquePtr<int>"* %q, i32 42)
     // CHECK-NEXT: call void @{{.*UniquePtr.*int.*init.*}}(%"UniquePtr<int>"* %r, i32 42)
-    let p = UniquePtr(UniquePtr(42));
+    var p = UniquePtr(UniquePtr(42));
     var q = UniquePtr(42);
-    let r = UniquePtr(42);
+    var r = UniquePtr(42);
 
     // CHECK-NEXT: %3 = call i32* @{{.*UniquePtr.*int.*get.*}}(%"UniquePtr<int>"* %q)
     // CHECK-NEXT: store i32 0, i32* %3

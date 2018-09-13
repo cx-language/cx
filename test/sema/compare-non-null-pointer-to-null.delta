@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 def main() {
-    let i = 42;
-    let p = &i;
-    // CHECK: [[@LINE+1]]:11: error: invalid operands 'int*' and 'null' to '==' (non-optional type 'int*' cannot be null)
+    var i = 42;
+    var p = &i;
+    // CHECK: [[@LINE+1]]:11: error: invalid operands 'mutable int*' and 'null' to '==' (non-optional type 'mutable int*' cannot be null)
     if (p == null) { }
 }

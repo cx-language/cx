@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct Foo {
-    let i: int;
+    var i: int;
 }
 
 // CHECK-LABEL: define void @{{.*3get.*}}
@@ -19,9 +19,9 @@ def main() {
     // CHECK: %f = alloca %Foo
     // CHECK-NEXT: %rf = alloca %Foo*
     // CHECK-NEXT: %n = alloca i32
-    let f: Foo = undefined;
+    var f: Foo = undefined;
     // CHECK-NEXT: store %Foo* %f, %Foo** %rf
-    let rf: Foo* = f;
+    var rf: Foo* = f;
     // CHECK-NEXT: %1 = load %Foo*, %Foo** %rf
     // CHECK-NEXT: %i = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0
     // CHECK-NEXT: %2 = load i32, i32* %i

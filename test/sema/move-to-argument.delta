@@ -3,6 +3,6 @@
 struct Foo { }
 def bar(b: Foo) { }
 def main() {
-    let f: Foo = undefined;
+    var f: Foo = undefined;
     bar(f);
 }

@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 def main() {
-    let a = Foo(qux: 4);
+    var a = Foo(qux: 4);
 }
 struct Foo: Copyable {
     init(qux: int) { }

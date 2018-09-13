@@ -5,13 +5,13 @@
 // CHECK: %"A<A<bool>>" = type { %"A<bool>" }
 // CHECK: %"A<bool>" = type { i1 }
 struct A<T> {
-    let a: T
+    var a: T
 }
 
 def main() {
     // CHECK: %a = alloca %"A<int>"
-    let a: A<int> = undefined
+    var a: A<int> = undefined
 
     // CHECK: %aaa = alloca %"A<A<A<bool>>>"
-    let aaa: A<A<A<bool>>> = undefined
+    var aaa: A<A<A<bool>>> = undefined
 }

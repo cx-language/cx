@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct Foo {
-    let i: int;
+    var i: int;
     def bar() { }
 }
 
 def main() {
-    let f: mutable Foo*? = null;
+    var f: mutable Foo*? = null;
 
     // CHECK: %1 = load %Foo*, %Foo** %f
     // CHECK-NEXT: %i = getelementptr inbounds %Foo, %Foo* %1, i32 0, i32 0

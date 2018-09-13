@@ -16,16 +16,16 @@ def main() {
     // CHECK-NEXT: call void @[[BAR:.*3bar.*]]([3 x i32]* %three)
     bar(three);
     // CHECK-NEXT: store i32 3, i32* %b
-    let b = three.size();
+    var b = three.size();
     // CHECK-NEXT: %4 = getelementptr [3 x i32], [3 x i32]* %three, i32 0, i32 0
     // CHECK-NEXT: %5 = insertvalue %"ArrayRef<int>" undef, i32* %4, 0
     // CHECK-NEXT: %6 = insertvalue %"ArrayRef<int>" %5, i32 3, 1
     // CHECK-NEXT: store %"ArrayRef<int>" %6, %"ArrayRef<int>"* %ref
-    let ref: int[]* = three;
+    var ref: int[]* = three;
     // CHECK-NEXT: %ref1 = load %"ArrayRef<int>", %"ArrayRef<int>"* %ref
     // CHECK-NEXT: %size = extractvalue %"ArrayRef<int>" %ref1, 1
     // CHECK-NEXT: store i32 %size, i32* %bb
-    let bb = ref.size();
+    var bb = ref.size();
     // CHECK-NEXT: ret
 }
 
@@ -38,12 +38,12 @@ def foo(ints: int[]*) {
     // CHECK-NEXT: %2 = getelementptr i32, i32* %1, i32 1
     // CHECK-NEXT: %3 = load i32, i32* %2
     // CHECK-NEXT: store i32 %3, i32* %a
-    let a = ints[1];
+    var a = ints[1];
     // CHECK-NEXT: %size = extractvalue %"ArrayRef<int>" %ints, 1
     // CHECK-NEXT: store i32 %size, i32* %b
-    let b = ints.size();
+    var b = ints.size();
     // CHECK-NEXT: store %"ArrayRef<int>" %ints, %"ArrayRef<int>"* %c
-    let c: int[]* = ints;
+    var c: int[]* = ints;
     // CHECK-NEXT: ret void
 }
 
@@ -52,11 +52,11 @@ def bar(ints: int[3]*) {
     // CHECK-NEXT: %b = alloca i32
     // CHECK-NEXT: %ref = alloca %"ArrayRef<int>"
     // CHECK-NEXT: store i32 3, i32* %b
-    let b = ints.size();
+    var b = ints.size();
     // CHECK-NEXT: %1 = getelementptr [3 x i32], [3 x i32]* %ints, i32 0, i32 0
     // CHECK-NEXT: %2 = insertvalue %"ArrayRef<int>" undef, i32* %1, 0
     // CHECK-NEXT: %3 = insertvalue %"ArrayRef<int>" %2, i32 3, 1
     // CHECK-NEXT: store %"ArrayRef<int>" %3, %"ArrayRef<int>"* %ref
-    let ref: int[]* = ints;
+    var ref: int[]* = ints;
     // CHECK-NEXT: ret void
 }

@@ -54,7 +54,7 @@ def testIterator() {
     var bb = false;
     var ccc = false;
 
-    for (let e in s) {
+    for (var e in s) {
         if (*e == "a") {
             assert(!a);
             a = true;
@@ -80,7 +80,7 @@ def testEmptySetIterator() {
     s.insert("foo");
     s.remove("foo");
 
-    for (let e in s) {
+    for (var e in s) {
         assert(false);
     }
 }
@@ -91,7 +91,7 @@ def testUnitSetIterator() {
     s.insert("foo");
     var count = 0;
 
-    for (let e in s) {
+    for (var e in s) {
         count++;
         assert(*e == "foo");
     }

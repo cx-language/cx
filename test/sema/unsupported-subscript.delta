@@ -3,7 +3,7 @@
 extern def f(): mutable void*?;
 
 def main() {
-    let p = cast<mutable uint8*?>(f());
+    var p = cast<mutable uint8*?>(f());
     // CHECK: [[@LINE+1]]:6: error: 'mutable uint8*?' doesn't provide a subscript operator
     p[0] = 64;
 }

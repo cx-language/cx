@@ -4,12 +4,12 @@ struct S<T>: Copyable {
     init() { }
 
     def f(t: T) {
-        let p: mutable T*? = null;
+        var p: mutable T*? = null;
         *(p!) = t;
     }
 }
 
 def main() {
-    let s = S<int>();
+    var s = S<int>();
     s.f(1);
 }

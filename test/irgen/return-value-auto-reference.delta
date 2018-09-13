@@ -21,7 +21,7 @@ struct A {
 }
 
 struct B: Copyable {
-    let a: char;
+    var a: char;
 
     def gg(): char* {
         return a; // FIXME: Disallow this? Or always take Copyable struct 'this' by reference?

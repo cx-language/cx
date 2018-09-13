@@ -1,23 +1,23 @@
 // RUN: %delta -print-ir %s
 
 struct X<T> {
-    let y: Y<T>*?;
+    var y: Y<T>*?;
 
     init() {
         y = null;
     }
 
     deinit() {
-        let a = y!.a;
+        var a = y!.a;
     }
 }
 
 struct Y<T> {
-    let a: T;
+    var a: T;
 
     def f() {}
 }
 
 def main() {
-    let x = X<int>();
+    var x = X<int>();
 }

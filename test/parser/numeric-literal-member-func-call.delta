@@ -2,4 +2,4 @@
 
 // CHECK:(source-file {{.*}}numeric-literal-member-func-call.delta
 
-let foo = 0.bar(); // CHECK-NEXT:    (var-decl foo (call (member-expr 0 bar))))
+var foo = 0.bar(); // CHECK-NEXT:    (var-decl foo (call (member-expr 0 bar))))

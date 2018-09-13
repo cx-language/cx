@@ -6,7 +6,7 @@ extern def c(): bool;
 
 // CHECK-LABEL: define void @{{.*3and.*}}()
 def and() {
-    let result = a() && b();
+    var result = a() && b();
 
     // CHECK:        %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT:   br i1 %1, label %andRHS, label %andEnd
@@ -23,7 +23,7 @@ def and() {
 
 // CHECK-LABEL: define void @{{.*4and2.*}}()
 def and2() {
-    let result = a() && b() && c();
+    var result = a() && b() && c();
 
     // CHECK:        %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT:   br i1 %1, label %andRHS1, label %andEnd2
@@ -48,7 +48,7 @@ def and2() {
 
 // CHECK-LABEL: define void @{{.*2or.*}}()
 def or() {
-    let result = a() || b();
+    var result = a() || b();
 
     // CHECK:        %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT:   br i1 %1, label %orEnd, label %orRHS
@@ -65,7 +65,7 @@ def or() {
 
 // CHECK-LABEL: define void @{{.*3or2.*}}()
 def or2() {
-    let result = a() || b() || c();
+    var result = a() || b() || c();
 
     // CHECK:        %1 = call i1 @{{.*a.*}}()
     // CHECK-NEXT:   br i1 %1, label %orEnd2, label %orRHS1

@@ -1,13 +1,13 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct Foo {
-    let i: int;
+    var i: int;
     // CHECK: define void @{{.*Foo.*doStuff.*}}(%Foo* %this)
     def doStuff() { }
 }
 
 struct Bar {
-    let i: int;
+    var i: int;
     // CHECK: define void @{{.*Bar.*doStuff.*}}(%Bar* %this) {
     def doStuff() { }
 }

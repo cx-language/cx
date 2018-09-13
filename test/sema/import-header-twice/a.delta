@@ -2,4 +2,4 @@
 
 import "header.h"
 
-let a = 42
+var a = 42

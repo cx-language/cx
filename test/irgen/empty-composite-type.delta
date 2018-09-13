@@ -5,8 +5,8 @@ struct C { }
 
 def main() {
     // CHECK: %s = alloca {}
-    let s: S = undefined;
+    var s: S = undefined;
     // CHECK-NEXT: %c = alloca {}
-    let c: C = undefined;
+    var c: C = undefined;
     // CHECK-NEXT: ret
 }

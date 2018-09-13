@@ -15,7 +15,7 @@ struct Map<Key: Hashable, Value> {
             return;
         }
 
-        let hashValue = uint(key.hash()) % capacity();
+        var hashValue = uint(key.hash()) % capacity();
         hashTable[hashValue].push((key, value));
         size++;
 
@@ -26,14 +26,14 @@ struct Map<Key: Hashable, Value> {
 
     /// Removes an element from the map, if it exists there.
     mutating def remove(e: Key*) {
-        let hashValue = uint(e.hash()) % capacity();
-        let slot = hashTable[hashValue];
+        var hashValue = uint(e.hash()) % capacity();
+        var slot = hashTable[hashValue];
 
         if (slot.size() == 0) {
             return;
         }
 
-        for (let i in 0..slot.size()) {
+        for (var i in 0..slot.size()) {
             if (slot[i].key == *e) {
                 slot.removeAt(i);
                 size--;
@@ -44,7 +44,7 @@ struct Map<Key: Hashable, Value> {
 
     /// Expands the hash table size, needed when there's too many elements in the map
     mutating def increaseTableSize(newTable: mutable Array<Array<(key: Key, value: Value)>>*, newCapacity: uint) {
-        for (let i in 0..newCapacity) {
+        for (var i in 0..newCapacity) {
             newTable.push(Array<(key: Key, value: Value)>());
         }
     }
@@ -60,14 +60,14 @@ struct Map<Key: Hashable, Value> {
     /// Resizes the map. This includes copying the old table into a new, bigger one
     mutating def resize() {
         var newTable = Array<Array<(key: Key, value: Value)>>();
-        let newCapacity = capacity() * 2;
+        var newCapacity = capacity() * 2;
 
         increaseTableSize(newTable, newCapacity);
 
-        for (let i in 0..capacity()) {
-            let slot = hashTable[i];
+        for (var i in 0..capacity()) {
+            var slot = hashTable[i];
 
-            for (let el in slot) {
+            for (var el in slot) {
                 newTable[uint(el.key.hash()) % newCapacity].push(*el);
             }
         }
@@ -76,10 +76,10 @@ struct Map<Key: Hashable, Value> {
     }
 
     def [](e: Key*): Value*? {
-        let hashValue = uint(e.hash()) % capacity();
-        let slot = hashTable[hashValue];
+        var hashValue = uint(e.hash()) % capacity();
+        var slot = hashTable[hashValue];
 
-        for (let element in slot) {
+        for (var element in slot) {
             if (element.key == *e) {
                 return &element.value;
             }
@@ -89,14 +89,14 @@ struct Map<Key: Hashable, Value> {
 
     /// Checks if e is part of the map.
     def contains(e: Key*): bool {
-        let hashValue = uint(e.hash()) % capacity();
-        let slot = hashTable[hashValue];
+        var hashValue = uint(e.hash()) % capacity();
+        var slot = hashTable[hashValue];
 
         if (slot.size() == 0) {
             return false;
         }
 
-        for (let element in slot) {
+        for (var element in slot) {
             if (element.key == *e) {
                 return true;
             }

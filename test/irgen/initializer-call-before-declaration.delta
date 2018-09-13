@@ -9,7 +9,7 @@ def main() {
 
 // CHECK-DAG: %Foo = type { float }
 struct Foo: Copyable {
-    let f: float;
+    var f: float;
     // CHECK-DAG: define void @_ENM4main3Foo4initE1i3int(%Foo* %this, i32 %i)
     init(i: int) { }
     // CHECK-DAG: define void @_ENM4main3Foo6deinitE(%Foo* %this)

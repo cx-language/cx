@@ -5,5 +5,5 @@ struct Foo: Copyable {
 }
 
 def main() {
-    let foo: Foo = undefined;
+    var foo: Foo = undefined;
 }

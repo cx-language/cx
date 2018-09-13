@@ -2,5 +2,5 @@
 
 def f(a: uint) {
     // CHECK: [[@LINE+1]]:22: error: couldn't infer generic parameter 'T' of 'Range' because of conflicting argument types 'float64' and 'uint'
-    for (let i in 0.0..a) {}
+    for (var i in 0.0..a) {}
 }

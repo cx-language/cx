@@ -1,14 +1,23 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
+// RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-BAR
 
 // CHECK: @foo = private global i32 42
 var foo = 42;
+
+// TODO: Implement 'const' declarations and uncomment the following test:
 // CHECK-NOT: @baz = private global i32 42
-let baz = 42;
+// const baz = 42;
+
 // CHECK: @qux = private global i32 42
 var qux: int = 42;
 
 def a() { foo = 43; } // CHECK: store i32 43, i32* @foo
-def c() { var d = bar; } // CHECK: store i32 42, i32* %d
 
-// CHECK-NOT: @bar = private global i32 42
-let bar = 42;
+def c() {
+    // CHECK: %bar = load i32, i32* @bar
+    // CHECK-NEXT: store i32 %bar, i32* %d
+    var d = bar;
+}
+
+// CHECK-BAR: @bar = private global i32 42
+var bar = 42;

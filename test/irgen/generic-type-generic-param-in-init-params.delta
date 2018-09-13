@@ -6,7 +6,7 @@ struct M<T> {
 }
 
 def main() {
-    let b = [1, 2, 3];
+    var b = [1, 2, 3];
 
     // CHECK-DAG: call void @_ENM4main1MI3intE4initE1aPAR_3int({}* %{{[0-9]+}}, %"ArrayRef<int>" %{{[0-9]+}})
     _ = M<int>(b);

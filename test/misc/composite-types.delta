@@ -4,7 +4,7 @@ struct Foo: Copyable { }
 struct Bar { }
 
 struct X: Copyable {
-    let a: int;
+    var a: int;
 
     init(a: int) {
         this.a = a;
@@ -12,7 +12,7 @@ struct X: Copyable {
 }
 
 struct Y {
-    let y: char*;
+    var y: char*;
 }
 
 def main(): int {

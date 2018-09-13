@@ -6,7 +6,7 @@
 /// undefined behavior (when compiled in unchecked mode).
 ///
 def allocate<Type>(value: Type): mutable Type* {
-    let allocation = cast<mutable Type*>(malloc(sizeof(Type))!);
+    var allocation = cast<mutable Type*>(malloc(sizeof(Type))!);
     allocation.init(value);
     return allocation;
 }
@@ -18,7 +18,7 @@ def allocate<Type>(value: Type): mutable Type* {
 /// If the memory allocation fails, null is returned.
 ///
 def safeAllocate<Type>(value: Type): mutable Type*? {
-    let allocation = cast<mutable Type*?>(malloc(sizeof(Type)));
+    var allocation = cast<mutable Type*?>(malloc(sizeof(Type)));
     if (allocation != null) {
         allocation.init(value);
     }

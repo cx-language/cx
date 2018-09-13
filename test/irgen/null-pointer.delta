@@ -17,6 +17,6 @@ def main() {
     // CHECK-NEXT: store i32* %5, i32** %ptr
     var ptr = foo();
     // CHECK-NEXT: store i1* null, i1** %ptr2
-    let ptr2: bool*? = null;
+    var ptr2: bool*? = null;
     // CHECK-NEXT: ret
 }

@@ -38,7 +38,7 @@ static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
         std::string typeInfo;
 
         if (expr.hasType()) {
-            typeInfo = " of type '" + expr.getType().toString() + "'";
+            typeInfo = " of type '" + expr.getType().toString(true) + "'";
         }
 
         error(expr.getLocation(), "use of moved value '", expr.getIdentifier(), "'", typeInfo);
@@ -199,9 +199,9 @@ static void invalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) 
         (op == Token::Equal || op == Token::NotEqual)) {
         hint += " (non-optional type '";
         if (expr.getRHS().isNullLiteralExpr()) {
-            hint += expr.getLHS().getType().toString();
+            hint += expr.getLHS().getType().toString(true);
         } else {
-            hint += expr.getRHS().getType().toString();
+            hint += expr.getRHS().getType().toString(true);
         }
         hint += "' cannot be null)";
     } else {
@@ -992,7 +992,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             if (atLeastOneFunction) {
                 auto argTypeStrings = map(expr.getArgs(), [](const NamedValue& arg) {
                     auto type = arg.getValue()->getType();
-                    return type ? type.toString() : "???";
+                    return type ? type.toString(true) : "???";
                 });
 
                 errorWithNotes(expr.getCallee().getLocation(), getCandidateNotes(decls), "no matching ",
@@ -1096,8 +1096,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
                 return Type::getUInt();
             }
 
-            error(expr.getReceiver()->getLocation(), "type '", receiverType, "' has no member function '",
-                  expr.getFunctionName(), "'");
+            error(expr.getReceiver()->getLocation(), "type '", receiverType.removePointer(),
+                  "' has no member function '", expr.getFunctionName(), "'");
         } else if (receiverType.removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
         }

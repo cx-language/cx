@@ -78,7 +78,7 @@ copy assignment operators in C++.
 Delta's syntax is clean, consistent, and similar to the C family of languages.
 
 Function and variable declarations are easy to locate outside an IDE, because
-the name is always prefixed with either `let`, `var`, `const`, or `def` in the
+the name is always prefixed with either `var`, `const`, or `def` in the
 declaration.
 
 No C-style cast syntax, only C++-style casts and built-in type constructors.
@@ -218,7 +218,7 @@ While iterating a map, the key and value from the key-value tuple can be
 destructured into separate variables:
 
 ```swift
-for (let (key, value) in myMap) {
+for (var (key, value) in myMap) {
     ...
 }
 ```
@@ -227,13 +227,13 @@ Destructure the return value of a function returning multiple values as a tuple:
 
 ```swift
 def foo(): (a: int, b: bool) {
-    let a = 42;
-    let b = false;
+    var a = 42;
+    var b = false;
     return (a, b);
 }
 
 def main() {
-    let (a, b) = foo();
+    var (a, b) = foo();
 }
 ```
 

@@ -1,8 +1,8 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct F {
-    let v: int;
-    let a: int[1];
+    var v: int;
+    var a: int[1];
 
     // CHECK: define void @{{.*1F.*4init.*}}
     init() {

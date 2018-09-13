@@ -18,7 +18,7 @@ def min<T>(a: T*, b: T*): T* {
 
 /// Swaps two items in place
 def swap<E>(a: mutable E*, b: mutable E*) {
-    let t = *a;
+    var t = *a;
     *a = *b;
     *b = t;
 }
@@ -38,7 +38,7 @@ private def partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: ui
     var pivot = arr[high];
     var i = (low - 1);
 
-    for (let j in low..high) {
+    for (var j in low..high) {
         if (arr[j] < pivot) {
             i++;
             swap<E>(arr[i], arr[j]);
@@ -53,7 +53,7 @@ private def partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: ui
 /// Quicksorts the given array, in place. Not stable.
 private def quickSort<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) {
     if (low < high) {
-        let index = partition<E>(arr, low, high);
+        var index = partition<E>(arr, low, high);
 
         if (low < index) {
             quickSort(arr, low, index - 1);

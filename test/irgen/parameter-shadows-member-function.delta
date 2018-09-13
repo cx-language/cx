@@ -6,12 +6,12 @@ struct S {
     def bar() {}
     def foo(bar: int) {
         // CHECK: store i32 %bar, i32* %a
-        let a = bar;
+        var a = bar;
         // CHECK-NEXT: call void @_EN4main1S3barE(%S* %this)
         bar();
     }
 }
 
 def main() {
-    let s = S();
+    var s = S();
 }

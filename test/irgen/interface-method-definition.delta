@@ -15,8 +15,8 @@ struct B: A {
 }
 
 def main() {
-    let b = B();
+    var b = B();
 
     // MAIN: call i32 @_EN4main1B1gE({}* %b)
-    let x = b.g();
+    var x = b.g();
 }

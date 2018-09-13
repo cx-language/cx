@@ -6,7 +6,7 @@ struct X {
 }
 
 def f(): X {
-    let x = X();
+    var x = X();
 
     // CHECK-NOT: call void @X.deinit
     return x;

@@ -36,7 +36,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     def hash(): uint64 {
         var hashValue: uint64 = 5381;
 
-        for (let index in 0..characters.size()) {
+        for (var index in 0..characters.size()) {
             hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
         }
 
@@ -52,7 +52,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     }
 
     def compare(other: StringRef*): Ordering {
-        for (let index in 0..*min(size(), other.size())) {
+        for (var index in 0..*min(size(), other.size())) {
             if (this[index] < other[index]) { return Ordering.Less; }
             if (this[index] > other[index]) { return Ordering.Greater; }
         }
@@ -67,7 +67,7 @@ def ==(a: StringRef, b: StringRef): bool {
         return false;
     }
 
-    for (let index in 0..a.size()) {
+    for (var index in 0..a.size()) {
         if (a[index] != b[index]) {
             return false;
         }

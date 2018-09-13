@@ -3,7 +3,7 @@
 extern def foo(): int[5]*;
 
 def main() {
-    let p = foo();
+    var p = foo();
     // CHECK: [[@LINE+1]]:15: error: illegal subscript index type 'bool', expected 'uint'
-    let e = p[false];
+    var e = p[false];
 }

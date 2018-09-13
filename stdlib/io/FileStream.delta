@@ -71,7 +71,7 @@ struct FileStream: InputStream, OutputStream {
     /// Reads one line from the file, separated by \n
     def readLine(): String {
         var ret = String();
-        for (let i in bytes()) {
+        for (var i in bytes()) {
             if (i == '\n') {
                 break;
             }
@@ -82,7 +82,7 @@ struct FileStream: InputStream, OutputStream {
 
     /// Returns true if we have reached the end of the file
     def isEof(): bool {
-        let ret = fgetc(file!);
+        var ret = fgetc(file!);
         if (ret < 0) {
             return true;
         }
@@ -92,8 +92,8 @@ struct FileStream: InputStream, OutputStream {
 
     /// Writes the given string into the file. Returns true on success, false on failure
     mutating def write(string: StringRef): bool {
-        for (let c in string) {
-            let ret = fputc(int(c), file!);
+        for (var c in string) {
+            var ret = fputc(int(c), file!);
             if (ret <= 0) {
                 return false;
             }

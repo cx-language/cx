@@ -3,5 +3,5 @@
 
 def main() {
     // CHECK: [[@LINE+1]]:18: error: conversion from 'int' to 'bool' not supported
-    let b = bool(1);
+    var b = bool(1);
 }

@@ -8,7 +8,7 @@ struct A<T> {
 
 def main() {
     f<int>();
-    let a = A<int>();
+    var a = A<int>();
 }
 
 // CHECK-NOT: unused

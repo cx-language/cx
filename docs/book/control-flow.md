@@ -20,7 +20,7 @@ There is no C-style for-loop. Instead we have a for-each, aka a range-based for-
 loop:
 
 ```
-for (let element in range) {
+for (var element in range) {
     // ...
 }
 ```

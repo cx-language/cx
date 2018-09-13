@@ -13,6 +13,6 @@ def foo(): uint8[4] {
 }
 
 def main() {
-    let array = foo();
+    var array = foo();
     puts(&array[0]);
 }

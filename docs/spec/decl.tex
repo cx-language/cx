@@ -8,9 +8,9 @@ Variable declarations introduce a new variable into the enclosing scope. The
 syntax is as follows:
 
 \begin{grammar}
-\rule{implicitly-typed-variable-definition} \nonterminal{let-or-var} \nonterminal{variable-name} \code{=} \nonterminal{initializer} \code{;}\\
-\rule{explicitly-typed-variable-definition} \nonterminal{let-or-var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{=} \nonterminal{initializer} \code{;}\\
-\rule{variable-declaration} \nonterminal{let-or-var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}
+\rule{implicitly-typed-variable-definition} \code{var} \nonterminal{variable-name} \code{=} \nonterminal{initializer} \code{;}\\
+\rule{explicitly-typed-variable-definition} \code{var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{=} \nonterminal{initializer} \code{;}\\
+\rule{variable-declaration} \code{var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}
 \end{grammar}
 
 If \nonterminal{type} is present, the variable has the specified type. The
@@ -157,8 +157,7 @@ Structs can contain member variables. The syntax of a member variable definition
 is as follows:
 
 \begin{grammar}
-\rule{let-or-var} \code{let} | \code{var}\\
-\rule{member-variable-declaration} \nonterminal{let-or-var} \nonterminal{member-variable-name} \code{:} \nonterminal{type} \code{;}
+\rule{member-variable-declaration} \code{var} \nonterminal{member-variable-name} \code{:} \nonterminal{type} \code{;}
 \end{grammar}
 
 \subsection{Generic structs}

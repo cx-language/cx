@@ -1,6 +1,6 @@
 struct RangeIterator<T>: Copyable, Iterator<T> {
     var current: T;
-    let end: T;
+    var end: T;
 
     init(range: Range<T>) {
         current = range.start();

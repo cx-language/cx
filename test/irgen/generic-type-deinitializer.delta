@@ -10,8 +10,8 @@ struct C<T> {
 }
 
 def main() {
-    let i = C<int>()
-    let b = C<bool>()
+    var i = C<int>()
+    var b = C<bool>()
     // CHECK-CALL: call void @_ENM4main1CI4boolE6deinitE({}* %b)
     // CHECK-CALL-NEXT: call void @_ENM4main1CI3intE6deinitE({}* %i)
 }

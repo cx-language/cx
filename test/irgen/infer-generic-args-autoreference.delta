@@ -3,7 +3,7 @@
 def f<T>(p: T*) {}
 
 def main() {
-    let i = 42;
+    var i = 42;
 
     // CHECK: call void @{{.*f.*int.*}}(i32* %i)
     f(i);

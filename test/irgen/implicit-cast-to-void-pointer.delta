@@ -20,7 +20,7 @@ def foo(p: int*, mp: mutable int*) {
 
     // CHECK-NEXT: %v2 = load i8*, i8** %v
     // CHECK-NEXT: store i8* %v2, i8** %b
-    let b = cast<int8*>(v);
+    var b = cast<int8*>(v);
 
     // CHECK-NEXT: %b3 = load i8*, i8** %b
     // CHECK-NEXT: store i8* %b3, i8** %v

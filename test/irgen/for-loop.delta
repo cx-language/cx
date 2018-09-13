@@ -12,7 +12,7 @@ def main() {
     // CHECK-NEXT: [[TEMP_ITERATOR:%[a-z0-9]+]] = call %"ClosedRangeIterator<int>" @{{.*11ClosedRange.*3int.*8iterator.*}}(%"ClosedRange<int>" %2)
     // CHECK-NEXT: store %"ClosedRangeIterator<int>" [[TEMP_ITERATOR]], %"ClosedRangeIterator<int>"* [[ITERATOR]]
     // CHECK-NEXT: br label %[[LOOP:(for|while)]]
-    for (let i in 68...75) {
+    for (var i in 68...75) {
         // CHECK: [[LOOP]]: ; preds = %body, %0
         // CHECK-NEXT: [[LOADED_ITERATOR:%[_a-z0-9]+]] = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* [[ITERATOR]]
         // CHECK-NEXT: [[CMP:%[a-z0-9]+]] = call i1 @{{.*19ClosedRangeIterator.*3int.*8hasValue.*}}(%"ClosedRangeIterator<int>" [[LOADED_ITERATOR]])

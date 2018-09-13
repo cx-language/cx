@@ -1,11 +1,11 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct Foo { let i: int; }
+struct Foo { var i: int; }
 def main() {
     // CHECK: %f = alloca %Foo
     // CHECK-NEXT: %rf = alloca %Foo*
     // CHECK-NEXT: %pf = alloca %Foo*
-    let f: Foo = undefined;
-    let rf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %rf
-    let pf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %pf
+    var f: Foo = undefined;
+    var rf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %rf
+    var pf: Foo* = f; // CHECK-NEXT: store %Foo* %f, %Foo** %pf
 }

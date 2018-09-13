@@ -6,19 +6,19 @@
 #if FOO
 // CHECK-WITHOUT-FOO-NOT: foo
 // CHECK-WITH-FOO: foo
-let a = "foo";
+var a = "foo";
 #endif
 
 #if BAR
 #if !UNUSED
 // CHECK-WITHOUT-BAR-NOT: bar
 // CHECK-WITH-BAR: bar
-let b = "bar";
+var b = "bar";
 #endif
 #else
 #if !UNUSED
 // CHECK-WITHOUT-BAR: qux
 // CHECK-WITH-BAR-NOT: qux
-let b = "qux";
+var b = "qux";
 #endif
 #endif

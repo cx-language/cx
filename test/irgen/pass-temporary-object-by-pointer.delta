@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct A: Copyable {
-    let i: int;
+    var i: int;
     init() {}
 }
 
 struct B {
-    let i: int;
+    var i: int;
     init() {}
 }
 
@@ -16,10 +16,10 @@ def f(i: int*) {}
 
 def main() {
     // CHECK: %a = alloca %A
-    let a: A = undefined;
+    var a: A = undefined;
 
     // CHECK-NEXT: %b = alloca %B
-    let b: B = undefined;
+    var b: B = undefined;
 
     // CHECK-NEXT: %1 = alloca %A
     // CHECK-NEXT: %2 = alloca %B

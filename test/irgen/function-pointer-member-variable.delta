@@ -2,7 +2,7 @@
 
 // CHECK: %X = type { i32 (i32)* }
 struct X {
-    let p: (int) -> int;
+    var p: (int) -> int;
 
     // CHECK: define void @_ENM4main1X4initE1pF3int_3int(%X* %this, i32 (i32)* %p)
     init(p: (int) -> int) {
@@ -29,7 +29,7 @@ struct X {
         // CHECK-NEXT: %p5 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
         // CHECK-NEXT: %p6 = load i32 (i32)*, i32 (i32)** %p5
         // CHECK-NEXT: store i32 (i32)* %p6, i32 (i32)** %p24
-        let p2 = p;
+        var p2 = p;
 
         // CHECK-NEXT: %p247 = load i32 (i32)*, i32 (i32)** %p24
         // CHECK-NEXT: %3 = call i32 %p247(i32 42)
@@ -46,7 +46,7 @@ def foo(a: int): int {
 def main() {
     // CHECK-NEXT: %x = alloca %X
     // CHECK-NEXT: call void @_ENM4main1X4initE1pF3int_3int(%X* %x, i32 (i32)* @[[FOO]])
-    let x = X(foo);
+    var x = X(foo);
 
     // CHECK-NEXT: %p = getelementptr inbounds %X, %X* %x, i32 0, i32 0
     // CHECK-NEXT: %p1 = load i32 (i32)*, i32 (i32)** %p

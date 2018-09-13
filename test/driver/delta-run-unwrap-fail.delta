@@ -2,8 +2,8 @@
 // UNSUPPORTED: windows
 
 def main() {
-    let p: mutable int*? = null;
-    let pp = p!;
+    var p: mutable int*? = null;
+    var pp = p!;
 }
 
 // CHECK: Illegal instruction

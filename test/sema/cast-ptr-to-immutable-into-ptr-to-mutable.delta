@@ -2,5 +2,5 @@
 
 def f(v: void*) {
     // CHECK: [[@LINE+1]]:13: error: illegal cast from 'void*' to 'mutable int*'
-    let p = cast<mutable int*>(v);
+    var p = cast<mutable int*>(v);
 }

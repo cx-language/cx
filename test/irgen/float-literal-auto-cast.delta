@@ -2,8 +2,8 @@
 
 def main() {
     // CHECK: store float 4.200000e+01, float* %f
-    let f: float = 42.0;
+    var f: float = 42.0;
 
     // CHECK-NEXT: store float -4.200000e+01, float* %g
-    let g: float = -42.0;
+    var g: float = -42.0;
 }

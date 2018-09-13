@@ -17,8 +17,8 @@ struct MapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Value)*> {
     }
 
     mutating def increment() {
-        let slot = hashTableIterator.value();
-        let slotEnd = slot.data() + slot.size();
+        var slot = hashTableIterator.value();
+        var slotEnd = slot.data() + slot.size();
         current++;
 
         if (current === slotEnd) {

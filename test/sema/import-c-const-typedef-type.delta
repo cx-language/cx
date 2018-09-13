@@ -3,6 +3,6 @@
 import "import-c-const-typedef-type.h";
 
 def main() {
-    let i = 0;
+    var i = 0;
     bar(&i);
 }

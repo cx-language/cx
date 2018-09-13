@@ -3,7 +3,7 @@
 // CHECK: %Foo = type { i32, i1 }
 struct Foo: Copyable {
     var a: int;
-    let b: bool;
+    var b: bool;
 
     // CHECK: define void @{{_ENM4main3Foo4initE.*}}(%Foo* %this, i32 %a, i1 %b)
     init(a: int, b: bool) {

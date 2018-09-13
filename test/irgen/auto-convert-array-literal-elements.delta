@@ -6,8 +6,8 @@ def main() {
     // CHECK-NEXT: %bar = alloca [2 x i16]
 
     // CHECK-NEXT: store [1 x float] [float 1.000000e+00], [1 x float]* %foo
-    let foo: float[1] = [1.0];
+    var foo: float[1] = [1.0];
 
     // CHECK-NEXT: store [2 x i16] [i16 50, i16 100], [2 x i16]* %bar
-    let bar: uint16[2] = [50, 100];
+    var bar: uint16[2] = [50, 100];
 }

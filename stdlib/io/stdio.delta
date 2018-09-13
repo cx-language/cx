@@ -11,12 +11,12 @@ def stderr(): OutputFileStream {
 }
 
 def print<T: Printable>(value: T*) {
-    let string = value.toString();
+    var string = value.toString();
     printf("%.*s\n", string.size(), string.data());
 }
 
 def print<T: Printable>(value: T) {
-    let string = value.toString();
+    var string = value.toString();
     printf("%.*s\n", string.size(), string.data());
 }
 
@@ -24,7 +24,7 @@ def readLine(): String {
     var line = String();
 
     while (true) {
-        let character = getchar();
+        var character = getchar();
         // TODO: handle EOF
         if (character == '\n') { break; }
         line.push(char(character));

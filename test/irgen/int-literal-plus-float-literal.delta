@@ -6,7 +6,7 @@ def main() {
     // CHECK-NEXT: %b = alloca double
     // CHECK-NEXT: store double 8.000000e+00, double* %a
     // CHECK-NEXT: store double 8.000000e+00, double* %b
-    let a = 4.0 + 4;
-    let b = 4 + 4.0;
+    var a = 4.0 + 4;
+    var b = 4 + 4.0;
     // CHECK-NEXT: ret
 }

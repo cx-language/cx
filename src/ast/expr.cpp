@@ -467,7 +467,7 @@ bool delta::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
     if (op == Token::PointerEqual || op == Token::PointerNotEqual) return true;
     if (left.isPointerType() && right.isPointerType()) return false;
-    if (left.isEnumType() && left == right) return true;
+    if (left.isEnumType() && left.asImmutable() == right.asImmutable()) return true;
     return left.isBuiltinType() && right.isBuiltinType();
 }
 

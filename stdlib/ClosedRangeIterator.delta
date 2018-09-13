@@ -1,6 +1,6 @@
 struct ClosedRangeIterator<T>: Copyable, Iterator<T> {
     var current: T;
-    let end: T;
+    var end: T;
 
     init(range: ClosedRange<T>) {
         current = range.start();

@@ -6,5 +6,5 @@ struct Foo: Copyable {
 }
 
 def main() {
-    let f = Foo(1)
+    var f = Foo(1)
 }

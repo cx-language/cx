@@ -177,7 +177,7 @@ void delta::appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> generi
 
     typeName += '<';
     for (const Type& genericArg : genericArgs) {
-        typeName += genericArg.toString();
+        typeName += genericArg.toString(false);
         if (&genericArg != &genericArgs.back()) typeName += ", ";
     }
     typeName += '>';

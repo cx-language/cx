@@ -1,7 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
-    let i = 1
-    // CHECK: [[@LINE+1]]:7: error: cannot assign to immutable variable 'i'
-    i += 1
+def foo(i: int*) {
+    // CHECK: [[@LINE+1]]:8: error: cannot assign to immutable expression
+    *i += 1
 }

@@ -3,7 +3,7 @@
 
 // CHECK: define void @{{.*f.*int.*}}(%"ArrayRef<int>" %a)
 def f<T>(a: T[]*) {
-    let s = a.size();
+    var s = a.size();
 }
 
 // MAIN-LABEL: define i32 @main()

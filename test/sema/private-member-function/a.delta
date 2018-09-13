@@ -12,6 +12,6 @@ struct A {
 }
 
 def g() {
-    let a = A();
+    var a = A();
     a.g();
 }

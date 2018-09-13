@@ -3,10 +3,10 @@
 import "import-c-enum.h";
 
 def main() {
-    let foo: int = FooA;
-    let bar: uint = BarA;
-    let qux: uint64 = QuxA;
-    let qux2: int8 = QuxA;
+    var foo: int = FooA;
+    var bar: uint = BarA;
+    var qux: uint64 = QuxA;
+    var qux2: int8 = QuxA;
 
     // CHECK:      store i32 -1, i32* %foo
     // CHECK-NEXT: store i32 0, i32* %bar

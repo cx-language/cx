@@ -12,7 +12,7 @@ struct X {
 // CHECK-NEXT: store i32 ({}*)* @_EN4main9__lambda0E1xP1X, i32 ({}*)** %lambda
 // CHECK-NEXT: ret i32 0
 def main() {
-    let lambda = (x: X*) -> x.foo();
+    var lambda = (x: X*) -> x.foo();
 }
 
 // LAMBDA-LABEL: define i32 @_EN4main9__lambda0E1xP1X({}* %x)

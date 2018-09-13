@@ -36,7 +36,7 @@ def foo() {
     // CHECK-NEXT: %phi4 = phi i1 [ %2, %then ], [ %phi, %endif ]
     // CHECK-NEXT: store i1 %phi4, i1* %x
 
-    let x = a() ? b() : c() ? d() : e();
+    var x = a() ? b() : c() ? d() : e();
 
     // CHECK-NEXT: ret void
 }

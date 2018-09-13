@@ -21,7 +21,7 @@ struct Array<Element> {
         init(capacity: elements.size());
 
         // TODO: Change this to a for-each loop when arrays can be iterated.
-        for (let index in 0..elements.size()) {
+        for (var index in 0..elements.size()) {
             push(elements[index]);
         }
     }
@@ -102,11 +102,11 @@ struct Array<Element> {
     /// Ensures that the capacity is large enough to store the given number of elements.
     mutating def reserve(minimumCapacity: uint) {
         if (minimumCapacity > capacity) {
-            let newBufferPointer = allocateArray<Element>(size: minimumCapacity);
+            var newBufferPointer = allocateArray<Element>(size: minimumCapacity);
 
-            for (let index in 0..size) {
-                let source = bufferPointer + index;
-                let target = newBufferPointer + index;
+            for (var index in 0..size) {
+                var source = bufferPointer + index;
+                var target = newBufferPointer + index;
                 target.init(*source);
             }
 
@@ -152,9 +152,9 @@ struct Array<Element> {
     mutating private def unsafeRemoveAt(index: uint) {
         (bufferPointer + index).deinit();
 
-        for (let i in (index + 1)..size) {
-            let source = bufferPointer + i;
-            let target = bufferPointer + (i - 1);
+        for (var i in (index + 1)..size) {
+            var source = bufferPointer + i;
+            var target = bufferPointer + (i - 1);
             target.init(*source);
         }
 
@@ -177,7 +177,7 @@ struct Array<Element> {
     def map<Input, Output>(transform: (Input) -> Output): Array<Output> {
         var output = Array<Output>(capacity: this.size);
 
-        for (let element in this) {
+        for (var element in this) {
             output.push(transform(element));
         }
 
@@ -187,7 +187,7 @@ struct Array<Element> {
     def filter<Input>(include: (Input) -> bool): Array<Element> {
         var output = Array<Element>();
 
-        for (let element in this) {
+        for (var element in this) {
             if (include(element)) {
                 output.push(*element);
             }
@@ -235,7 +235,7 @@ def ==<T>(a: ArrayRef<T>, b: ArrayRef<T>): bool {
         return false;
     }
 
-    for (let i in 0..a.size()) {
+    for (var i in 0..a.size()) {
         if (*a[i] != *b[i]) {
             return false;
         }

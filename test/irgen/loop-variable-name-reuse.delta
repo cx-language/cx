@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
 def main() {
-    for (let i in 0...5) { }
-    for (let i in 0...5) { }
+    for (var i in 0...5) { }
+    for (var i in 0...5) { }
 }

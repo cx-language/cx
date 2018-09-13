@@ -5,7 +5,7 @@
 def main() {
     // CHECK: %a = alloca { i64*, i32 }
     // CHECK: store { i64*, i32 } zeroinitializer, { i64*, i32 }* %a
-    let a: uint64[]*? = null
+    var a: uint64[]*? = null
 
     // CHECK: %a1 = load { i64*, i32 }, { i64*, i32 }* %a
     // CHECK: %1 = extractvalue { i64*, i32 } %a1, 0

@@ -3,7 +3,7 @@
 def foo(p: mutable int*?) {
     if (p == null) {
     } else {
-        let i = *p;
+        var i = *p;
         *p = 42;
     }
 }

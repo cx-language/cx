@@ -2,10 +2,10 @@
 
 // CHECK:(source-file {{.*}}variable-of-array-type.delta
 
-let foo: int[3] = [0, 1, 2]; // CHECK-NEXT:    (var-decl foo (array-literal 0 1 2))
+var foo: int[3] = [0, 1, 2]; // CHECK-NEXT:    (var-decl foo (array-literal 0 1 2))
 
 def main() {               // CHECK-NEXT:    (function-decl main () void
-    let qux: int[1] = [42]; // CHECK-NEXT:        (var-stmt qux (array-literal 42))
+    var qux: int[1] = [42]; // CHECK-NEXT:        (var-stmt qux (array-literal 42))
     foo[0] = 3;             // CHECK-NEXT:        ((subscript foo 0) = 3)
     foo[1].bar();           // CHECK-NEXT:        (call (member-expr (subscript foo 1) bar))))
 }

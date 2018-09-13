@@ -2,5 +2,5 @@
 
 def main() {
     // CHECK: [[@LINE+1]]:21: error: -42 is out of range for type 'uint64'
-    let a: uint64 = -42
+    var a: uint64 = -42
 }

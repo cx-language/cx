@@ -6,7 +6,7 @@ interface I {
 }
 
 struct S: Copyable {
-    let i: int;
+    var i: int;
     init() {}
     def i() {}
 }
@@ -25,13 +25,13 @@ struct A<E> {
 }
 
 struct M<T: I> {
-    let t: T;
+    var t: T;
 
     init() {}
 
     // CHECK-M: define void @_EN4main1MI1SE1fE(%"M<S>"* %this)
     def f() {
-        let a = A<T>();
+        var a = A<T>();
         // CHECK-M: [[TMP:%[0-9]+]] = call %S @{{.*A.*S.*a.*}}({}* %a)
         // CHECK-M-NEXT: call void @_EN4main1S1iE(%S [[TMP]])
         a.a().i();
@@ -39,6 +39,6 @@ struct M<T: I> {
 }
 
 def main() {
-    let m = M<S>();
+    var m = M<S>();
     m.f();
 }

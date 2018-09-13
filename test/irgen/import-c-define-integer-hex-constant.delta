@@ -4,5 +4,5 @@ import "import-c-defined-integer-hex-constant.h";
 
 def main() {
     // CHECK: store i32 35044, i32* %foo
-    let foo: int = FOO;
+    var foo: int = FOO;
 }

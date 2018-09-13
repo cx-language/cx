@@ -1,8 +1,8 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct vec2: Copyable {
-    let x: int
-    let y: int
+    var x: int
+    var y: int
 
     init(x: int, y: int) {
         this.x = x

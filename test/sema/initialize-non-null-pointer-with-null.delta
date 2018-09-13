@@ -2,5 +2,5 @@
 
 def main() {
     // CHECK: [[@LINE+1]]:19: error: cannot initialize variable of type 'int*' with 'null'
-    let p: int* = null;
+    var p: int* = null;
 }

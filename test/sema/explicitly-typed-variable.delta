@@ -2,5 +2,5 @@
 
 def main() {
     // CHECK: [[@LINE+1]]:18: error: cannot initialize variable of type 'int' with 'bool'
-    let i: int = false;
+    var i: int = false;
 }

@@ -4,9 +4,9 @@
 extern def f(): bool;
 
 struct A {
-    let b: B;
-    let bb: B;
-    let i: int;
+    var b: B;
+    var bb: B;
+    var i: int;
     init() {}
 
     // CHECK: define void @_ENM4main1A6deinitE(%A* %this)
@@ -30,7 +30,7 @@ struct A {
 }
 
 struct B {
-    let i: int;
+    var i: int;
     init() {}
     // CHECK-B: define void @_ENM4main1B6deinitE(%B* %this)
     // CHECK-B-NEXT: ret void
@@ -38,8 +38,8 @@ struct B {
 }
 
 struct C {
-    let b: B;
-    let bb: B;
+    var b: B;
+    var bb: B;
     init() {}
     // CHECK: define void @_ENM4main1C6deinitE(%C* %this)
     // CHECK-NEXT: %b = getelementptr inbounds %C, %C* %this, i32 0, i32 0
@@ -50,8 +50,8 @@ struct C {
 }
 
 def main() {
-    let a = A();
-    let c = C();
+    var a = A();
+    var c = C();
     // CHECK:      call void @_ENM4main1C6deinitE(%C* %c)
     // CHECK-NEXT: call void @_ENM4main1A6deinitE(%A* %a)
 }

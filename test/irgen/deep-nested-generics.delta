@@ -5,7 +5,7 @@ interface H {
 }
 
 struct R: Copyable {
-    let i: int;
+    var i: int;
 
     def h(): int {
         return i;
@@ -13,7 +13,7 @@ struct R: Copyable {
 }
 
 struct A<T> {
-    let t: T;
+    var t: T;
 
     init() {}
 
@@ -30,11 +30,11 @@ struct S<E: H> {
     def s() {
         // CHECK: %[[T_VALUE:[a-z0-9]+]] = call %"A<R>" @_EN4main1AI1AI1REEixE1i3int(%"A<A<R>>"* %{{[a-z0-9]+}}, i32 0)
         // CHECK-NEXT: store %"A<R>" %[[T_VALUE]], %"A<R>"* %t
-        let t = a[0];
+        var t = a[0];
 
         // CHECK-NEXT: %[[TT_VALUE:[a-z0-9]+]] = call %R @_EN4main1AI1REixE1i3int(%"A<R>"* %t, i32 0)
         // CHECK-NEXT: store %R %[[TT_VALUE]], %R* %tt
-        let tt = t[0];
+        var tt = t[0];
 
         // CHECK: %[[INDEX:[a-z0-9]+]] = call i32 @_EN4main1R1hE(%R %tt{{[0-9]+}})
         // CHECK-NEXT: call %"A<R>" @_EN4main1AI1AI1REEixE1i3int(%"A<A<R>>"* %{{[a-z0-9]+}}, i32 %[[INDEX]])
@@ -43,6 +43,6 @@ struct S<E: H> {
 }
 
 def main() {
-    let s = S<R>();
+    var s = S<R>();
     s.s();
 }

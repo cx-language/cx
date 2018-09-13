@@ -18,6 +18,6 @@ def g(a: Y) {
     // CHECK-NEXT: %b = alloca {}
     // CHECK-NEXT: store {} %a, {}* %b
     // CHECK-NEXT: call void @_ENM4main1Y6deinitE({}* %b)
-    let b = a;
+    var b = a;
     // CHECK-NEXT: ret void
 }

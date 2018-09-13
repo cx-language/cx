@@ -1,13 +1,13 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct Foo {
-    let i: int;
+    var i: int;
     def bar() { }
 }
 
 def main() {
-    let f: Foo = undefined;
-    let rf: Foo* = f;
+    var f: Foo = undefined;
+    var rf: Foo* = f;
     // CHECK: %rf1 = load %Foo*, %Foo** %rf
     // CHECK-NEXT: call void @_EN4main3Foo3barE(%Foo* %rf1)
     rf.bar();

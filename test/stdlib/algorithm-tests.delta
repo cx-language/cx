@@ -9,14 +9,14 @@ def main() {
 def testInsertionSort() {
     var a = Array<int>();
 
-    for (let i in 0..5) {
+    for (var i in 0..5) {
 
         a.push(5 - i);
     }
 
     var real = Array<int>();
 
-    for (let i in 0..5) {
+    for (var i in 0..5) {
         real.push(i+1);
     }
 
@@ -29,14 +29,14 @@ def testInsertionSort() {
 def testQuickSort() {
     var a = Array<int>();
 
-    for (let i in 0..64) {
+    for (var i in 0..64) {
 
         a.push(64 - i);
     }
 
     var real = Array<int>();
 
-    for (let i in 0..64) {
+    for (var i in 0..64) {
         real.push(i+1);
     }
 
@@ -46,8 +46,8 @@ def testQuickSort() {
 }
 
 def testMax() {
-    let a = 7;
-    let b = 9;
+    var a = 7;
+    var b = 9;
 
     assert(*max(a, b) == 9);
 }

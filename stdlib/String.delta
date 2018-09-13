@@ -10,7 +10,7 @@ struct String: Comparable, OutputStream, Printable {
     init(string: StringRef) {
         characters = Array<char>(capacity: string.size() + 1);
 
-        for (let ch in string) {
+        for (var ch in string) {
             characters.push(ch);
         }
 
@@ -67,7 +67,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     mutating def write(string: StringRef): bool {
-        for (let ch in string) {
+        for (var ch in string) {
             push(ch);
         }
         return true;
@@ -102,7 +102,7 @@ struct String: Comparable, OutputStream, Printable {
     /// Returns the index of the given character, or -1 if it's not found.
     /// Starts from start
     def find(c: char, start: uint): int {
-        for (let i in start..size()) {
+        for (var i in start..size()) {
             if (*characters[i] == c) {
                 return int(i);
             }
@@ -140,7 +140,7 @@ struct String: Comparable, OutputStream, Printable {
                 pos = int(size());
             }
 
-            let token = substr(prev..pos);
+            var token = substr(prev..pos);
             tokens.push(token);
 
             prev = pos + 1;
@@ -179,11 +179,11 @@ struct String: Comparable, OutputStream, Printable {
 def +(a: StringRef, b: StringRef): String {
     var result = String();
 
-    for (let ch in a) {
+    for (var ch in a) {
         result.push(ch);
     }
 
-    for (let ch in b) {
+    for (var ch in b) {
         result.push(ch);
     }
 
@@ -193,7 +193,7 @@ def +(a: StringRef, b: StringRef): String {
 def +(a: String, b: StringRef): String {
     var result = a;
 
-    for (let ch in b) {
+    for (var ch in b) {
         result.push(ch);
     }
 

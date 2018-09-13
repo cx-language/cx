@@ -2,7 +2,7 @@
 
 // CHECK: %S = type { %S* }
 struct S: Copyable {
-    let next: S*
+    var next: S*
 }
 
 def f(s: S) {}

@@ -19,7 +19,7 @@ def testInsertAndContains() {
     m.insert(7, 8);
     assert(m.contains(7));
 
-    for (let i in 0..10) {
+    for (var i in 0..10) {
         m.insert(i, i);
         assert(m.contains(i));
     }
@@ -37,11 +37,11 @@ def testInsertAndDelete() {
     m.remove(42);
     assert(!m.contains(42));
 
-    for (let i in 42..79) {
+    for (var i in 42..79) {
         m.insert(i, 42);
     }
 
-    for (let i in 42..79) {
+    for (var i in 42..79) {
         assert(m.contains(i));
         m.remove(i);
         assert(!m.contains(i));
@@ -56,11 +56,11 @@ def testInsertAndSubscript() {
 
     m.remove(42);
 
-    for (let i in 42..79) {
+    for (var i in 42..79) {
         m.insert(i, i+7);
     }
 
-    for (let i in 42..79) {
+    for (var i in 42..79) {
         assert(*m[i]! == i+7);
 
         m.remove(i);
@@ -71,17 +71,17 @@ def testInsertAndSubscript() {
 def testLowerAndHigher() {
     var m = OrderedMap<int, int>();
 
-    for (let i in 0..100) {
+    for (var i in 0..100) {
         m.insert(i, i+6);
     }
 
     assert(m.lowerKey(0) == null);
-    for (let i in 1..100) {
+    for (var i in 1..100) {
         assert(*m.lowerKey(i)! == i-1);
     }
 
     assert(m.higherKey(99) == null);
-    for (let i in 0..99) {
+    for (var i in 0..99) {
         assert(*m.higherKey(i)! == i+1);
     }
 }
@@ -111,12 +111,12 @@ def testEmptyMapFunctions() {
 def testIteratorOrder() {
     var map = OrderedMap<int, int>();
 
-    for (let i in 0..100) {
+    for (var i in 0..100) {
         map.insert(i, i-12);
     }
 
     var called = 0;
-    for (let e in map) {
+    for (var e in map) {
         assert(e.key == called);
         assert(e.value == called - 12);
         called++;
@@ -126,13 +126,13 @@ def testIteratorOrder() {
 
     map = OrderedMap<int, int>();
 
-    for (let i in 0..100) {
+    for (var i in 0..100) {
         map.insert(99 - i, i-12);
     }
 
     called = 0;
     // Still in correct order
-    for (let e in map) {
+    for (var e in map) {
         assert(e.key == called);
         assert(e.value == 99 - called - 12);
         called++;
@@ -149,7 +149,7 @@ def testEmptyMapIterator() {
     map.insert(1, 2);
     map.remove(1);
 
-    for (let e in map) {
+    for (var e in map) {
         assert(false);
     }
 }
@@ -161,7 +161,7 @@ def testUnitMapIterator() {
 
     var count = 0;
 
-    for (let e in map) {
+    for (var e in map) {
         count++;
         assert(e.key == 1);
     }

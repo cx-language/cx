@@ -208,7 +208,6 @@ static const llvm::StringMap<Token::Kind> keywords = {
     { "in", Token::In },
     { "init", Token::Init },
     { "interface", Token::Interface },
-    { "let", Token::Let },
     { "mutable", Token::Mutable },
     { "mutating", Token::Mutating },
     { "null", Token::Null },

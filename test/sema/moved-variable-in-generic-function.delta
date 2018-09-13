@@ -5,12 +5,12 @@ struct A {
 }
 
 def f<T>() {
-    let t = T();
-    let a = t;
+    var t = T();
+    var a = t;
 }
 
 def g<T>(t: T) {
-    let a = t;
+    var a = t;
 }
 
 def main() {

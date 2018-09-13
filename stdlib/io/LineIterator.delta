@@ -18,7 +18,7 @@ struct LineIterator<Stream: InputStream>: Iterator<String> {
     }
 
     mutating def increment() {
-        let next = stream.readLine();
+        var next = stream.readLine();
         this.next = next;
     }
 

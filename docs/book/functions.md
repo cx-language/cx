@@ -23,7 +23,7 @@ def foo(a: int, b: int): int {
 To call the function and assign its return value to a variable:
 
 ```
-let result = foo(1, 2);
+var result = foo(1, 2);
 ```
 
 ## Multiple Return Values
@@ -32,8 +32,8 @@ Functions can return more than one value by returning a tuple of values:
 
 ```
 def foo(): (key: int, value: bool) {
-    let key = 42;
-    let value = true;
+    var key = 42;
+    var value = true;
     return (key, value);
 }
 ```

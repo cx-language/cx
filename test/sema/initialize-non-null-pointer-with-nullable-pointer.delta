@@ -4,5 +4,5 @@ extern def foo(): int*?;
 
 def main() {
     // CHECK: [[@LINE+1]]:22: error: cannot initialize variable of type 'int*' with 'int*?'
-    let f: int* = foo();
+    var f: int* = foo();
 }

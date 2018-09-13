@@ -1,10 +1,12 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
+// XFAIL: *
+// TODO: Implement data-flow analysis to detect this kind of out-of-bounds access at compile time.
 
 extern def foo(): int[5]*;
 
 def main() {
-    let p = foo();
-    let i: uint = 5;
+    var p = foo();
+    var i: uint = 5;
     // CHECK: [[@LINE+1]]:15: error: accessing array out-of-bounds with index 5, array size is 5
-    let e = p[i];
+    var e = p[i];
 }

@@ -5,7 +5,7 @@
 struct X<T> {
     // CHECK-DAG: define {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %this, i1 %u)
     def f<U>(u: U): X<U> {
-        let x: X<U> = undefined;
+        var x: X<U> = undefined;
         return x;
     }
 
@@ -16,7 +16,7 @@ struct X<T> {
 
 def main(x: X<int>) {
     // MAIN: call {} @{{_EN4main1XI3intE1fI4boolEE.*}}({}* %1, i1 false)
-    let a = x.f(false);
+    var a = x.f(false);
 
     // MAIN: call void @{{.*X.*bool.*g.*}}({}* %a)
     a.g();

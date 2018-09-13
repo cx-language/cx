@@ -24,7 +24,7 @@ struct A: Copyable {
 def main() {
     // MAIN-NEXT: %x = alloca {}
     // MAIN-NEXT: call void @_ENM4main1SI1AE4initE({}* %x)
-    let x = S<A>();
+    var x = S<A>();
 
     // MAIN-NEXT: call void @_EN4main1SI1AE1sE({}* %x)
     x.s();

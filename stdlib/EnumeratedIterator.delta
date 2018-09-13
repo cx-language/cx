@@ -22,8 +22,8 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
 }
 
 struct EnumeratedIteratorEntry<Value>: Copyable {
-    let value: Value*;
-    let index: uint;
+    var value: Value*;
+    var index: uint;
 
     init(value: Value*, index: uint) {
         this.value = value;

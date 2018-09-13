@@ -10,7 +10,7 @@ def main() {
             // CHECK-NOT: %a
             // CHECK-NOT: alloca
             // CHECK-NOT: 1
-            let a = 1;
+            var a = 1;
         }
         // CHECK:      endif:
         // CHECK-NEXT:   br label %endwhile
@@ -24,6 +24,6 @@ def main() {
             // CHECK-NOT: %b
             // CHECK-NOT: alloca
             // CHECK-NOT: 1
-            let b = 1;
+            var b = 1;
     }
 }

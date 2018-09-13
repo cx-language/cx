@@ -11,5 +11,5 @@ struct S {
 }
 
 def main() {
-    let s = S();
+    var s = S();
 }

@@ -1,7 +1,7 @@
 // RUN: check_exit_status 21 %delta run %s
 
 struct Foo: Copyable {
-    let value: int;
+    var value: int;
 
     init(value: int) {
         this.value = value;
@@ -13,6 +13,6 @@ struct Foo: Copyable {
 }
 
 def main(): int {
-    let foo = Foo(42);
+    var foo = Foo(42);
     return foo.add(-21);
 }

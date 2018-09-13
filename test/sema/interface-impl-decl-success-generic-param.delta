@@ -10,5 +10,5 @@ struct Z<T>: T {
 }
 
 def main() {
-    let z = Z<X>();
+    var z = Z<X>();
 }

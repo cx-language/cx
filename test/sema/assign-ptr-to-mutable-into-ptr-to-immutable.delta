@@ -3,5 +3,5 @@
 extern def foo(): mutable int*;
 
 def main() {
-    let p: int* = foo();
+    var p: int* = foo();
 }

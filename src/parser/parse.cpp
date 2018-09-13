@@ -807,12 +807,11 @@ std::unique_ptr<ReturnStmt> Parser::parseReturnStmt() {
     return llvm::make_unique<ReturnStmt>(std::move(returnValue), location);
 }
 
-/// var-decl ::= mutability-specifier id type-specifier? '=' initializer ('\n' | ';')
-/// mutability-specifier ::= 'let' | 'var'
+/// var-decl ::= 'var' id type-specifier? '=' initializer ('\n' | ';')
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'undefined'
 std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel) {
-    bool isMutable = parse({ Token::Let, Token::Var }) == Token::Var;
+    parse(Token::Var);
     auto name = parse(Token::Identifier);
 
     Type type;
@@ -822,7 +821,7 @@ std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* pa
         type = parseType();
         if (type.isMutable()) error(typeLocation, "type specifier cannot specify mutability");
     }
-    type.setMutable(isMutable);
+    type.setMutable(true);
 
     std::unique_ptr<Expr> initializer;
 
@@ -898,7 +897,7 @@ std::unique_ptr<WhileStmt> Parser::parseWhileStmt(Decl* parent) {
     return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
 
-/// for-stmt ::= 'for' '(' id 'in' expr ')' block-or-stmt
+/// for-stmt ::= 'for' '(' 'var' id 'in' expr ')' block-or-stmt
 std::unique_ptr<ForStmt> Parser::parseForStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
     auto location = getCurrentLocation();
@@ -972,7 +971,6 @@ std::unique_ptr<Stmt> Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
         case Token::Return:
             return parseReturnStmt();
-        case Token::Let:
         case Token::Var:
             return parseVarStmt(parent);
         case Token::Defer:
@@ -1195,9 +1193,9 @@ std::unique_ptr<DeinitDecl> Parser::parseDeinitDecl(TypeDecl& receiverTypeDecl) 
     return decl;
 }
 
-/// field-decl ::= ('let' | 'var') id ':' type ('\n' | ';')
+/// field-decl ::= 'var' id ':' type ('\n' | ';')
 FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel) {
-    expect({ Token::Let, Token::Var }, "in field declaration");
+    expect(Token::Var, "in field declaration");
     bool isMutable = consumeToken() == Token::Var;
     auto name = parse(Token::Identifier);
 
@@ -1302,7 +1300,6 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
                 }
                 typeDecl->addMethod(parseDeinitDecl(*typeDecl));
                 break;
-            case Token::Let:
             case Token::Var:
                 typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel));
                 break;
@@ -1458,7 +1455,6 @@ start:
                 if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
             }
             break;
-        case Token::Let:
         case Token::Var:
             decl = parseVarDecl(true, nullptr, accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);

@@ -5,8 +5,8 @@ def main() {
 }
 
 struct A: Printable {
-    let a: StringRef;
-    let b: StringRef;
+    var a: StringRef;
+    var b: StringRef;
 
     init(a: StringRef, b: StringRef) {
         this.a = a;

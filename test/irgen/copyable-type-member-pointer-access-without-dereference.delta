@@ -1,13 +1,13 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct S: Copyable {
-    let a: int*
+    var a: int*
 
     // CHECK: define void @_EN4main1S3fooE(%S %this)
     def foo() {
         // CHECK-NEXT: %b = alloca i32*
         // CHECK-NEXT: %a = extractvalue %S %this, 0
         // CHECK-NEXT: store i32* %a, i32** %b
-        let b = a
+        var b = a
     }
 }

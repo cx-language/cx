@@ -2,7 +2,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-BAR
 
 interface Interface {
-    let that: This*;
+    var that: This*;
 
     def foo(a: This*): This*;
 
@@ -16,7 +16,7 @@ interface Interface {
 }
 
 struct S: Interface {
-    let that: S*;
+    var that: S*;
 
     init() { that = this; }
 
@@ -27,8 +27,8 @@ struct S: Interface {
 }
 
 def main() {
-    let a = S();
-    let b = S();
+    var a = S();
+    var b = S();
 
     // CHECK: %1 = call %S* @_EN4main1S3fooE1aP1S(%S* %a, %S* %b)
     // CHECK-NEXT: call void @{{.*f.*S.*}}(%S* %1)

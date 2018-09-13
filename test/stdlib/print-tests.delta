@@ -1,7 +1,7 @@
 // RUN: %delta run -Werror %s | %FileCheck %s
 
 struct A: Printable {
-    let a: StringRef;
+    var a: StringRef;
 
     init(a: StringRef) {
         this.a = a;

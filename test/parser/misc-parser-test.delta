@@ -19,7 +19,7 @@ def foo5(): (a: int, b: bool) { // CHECK-NEXT:    (function-decl foo5 () (a: int
 }
 
 def foo6(): int { // CHECK-NEXT:    (function-decl foo6 () int
-    let answer = 42; // CHECK-NEXT:        (var-stmt answer 42)
+    var answer = 42; // CHECK-NEXT:        (var-stmt answer 42)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 
@@ -41,16 +41,16 @@ def foo9(): int {                      // CHECK-NEXT:    (function-decl foo9 () 
 
 var foo10 = 42; // CHECK-NEXT:    (var-decl foo10 42)
 
-let foo11 = 42; // CHECK-NEXT:    (var-decl foo11 42)
+var foo11 = 42; // CHECK-NEXT:    (var-decl foo11 42)
 
 struct S1: Copyable { // CHECK-NEXT:    (type-decl struct S1
-    let a: uint;      // CHECK-NEXT:        (field-decl uint a)
-    let b: char*;     // CHECK-NEXT:        (field-decl char* b))
+    var a: uint;      // CHECK-NEXT:        (field-decl uint a)
+    var b: char*;     // CHECK-NEXT:        (field-decl char* b))
 }
 
 struct C1 {       // CHECK-NEXT:    (type-decl struct C1
-    let a: int8;  // CHECK-NEXT:        (field-decl int8 a)
-    let b: bool*; // CHECK-NEXT:        (field-decl bool* b))
+    var a: int8;  // CHECK-NEXT:        (field-decl int8 a)
+    var b: bool*; // CHECK-NEXT:        (field-decl bool* b))
 }
 
 def foo12(a: int*, b: int): bool { // CHECK-NEXT:    (function-decl foo12 ((int* a) (int b)) bool

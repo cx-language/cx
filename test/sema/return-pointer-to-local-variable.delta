@@ -1,19 +1,19 @@
 // RUN: %delta -typecheck %s | %FileCheck %s
 
 def f0(): int* {
-    let a = 3;
+    var a = 3;
     // CHECK: [[@LINE+1]]:13: warning: returning pointer to local variable
     return &a;
 }
 
 def f1(): int* {
-    let a = 3;
+    var a = 3;
     // CHECK: [[@LINE+1]]:12: warning: returning pointer to local variable
     return a;
 }
 
 struct S: Copyable {
-    let i: int;
+    var i: int;
 
     def f2(): int* {
         // CHECK-NOT: [[@LINE+1]]:17: warning: returning pointer to local variable

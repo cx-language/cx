@@ -1,7 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
-    let i = 5;
-    // CHECK: [[@LINE+1]]:6: error: cannot increment immutable value
-    i++;
+def foo(i: int*) {
+    // CHECK: [[@LINE+1]]:9: error: cannot increment immutable value
+    (*i)++;
 }

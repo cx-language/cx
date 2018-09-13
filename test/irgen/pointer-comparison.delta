@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct X { let i: int; }
-struct Y { let i: int; }
+struct X { var i: int; }
+struct Y { var i: int; }
 
 // CHECK: define i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b)
 def <(a: X*, b: X*): bool {

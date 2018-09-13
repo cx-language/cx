@@ -1,12 +1,12 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct Foo {
-    let i: int;
+    var i: int;
     def foo() { }
 }
 
 struct Bar: Copyable {
-    let i: int;
+    var i: int;
     def bar() { }
 }
 

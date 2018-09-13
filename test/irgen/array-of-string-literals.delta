@@ -11,5 +11,5 @@ def main() {
     // CHECK-NEXT: %3 = load %StringRef, %StringRef* %__str1
     // CHECK-NEXT: %4 = insertvalue [2 x %StringRef] %2, %StringRef %3, 1
     // CHECK-NEXT: store [2 x %StringRef] %4, [2 x %StringRef]* %a
-    let a = ["foo", "bar"]
+    var a = ["foo", "bar"]
 }

@@ -3,6 +3,6 @@
 import "c-enum.h";
 
 def main() {
-    let u: uint = FOO;
-    let i: int = FOO;
+    var u: uint = FOO;
+    var i: int = FOO;
 }

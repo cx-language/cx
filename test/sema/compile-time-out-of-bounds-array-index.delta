@@ -3,7 +3,7 @@
 extern def foo(): int[5]*;
 
 def main() {
-    let p = foo();
+    var p = foo();
     // CHECK: [[@LINE+1]]:15: error: accessing array out-of-bounds with index 5, array size is 5
-    let e = p[5];
+    var e = p[5];
 }

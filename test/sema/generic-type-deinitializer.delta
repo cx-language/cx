@@ -5,10 +5,10 @@ struct C<T> {
 
     deinit() {
         // CHECK: [[@LINE+1]]:17: error: unknown identifier 'b'
-        let a = b
+        var a = b
     }
 }
 
 def main() {
-    let c = C<int>()
+    var c = C<int>()
 }

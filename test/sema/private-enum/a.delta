@@ -8,5 +8,5 @@ private enum A {
 }
 
 def f() {
-    let a: A = A.C;
+    var a: A = A.C;
 }

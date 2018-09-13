@@ -5,7 +5,7 @@ extern def puts(s: uint8*): int;
 
 def main() {
     var buffer: uint8[4] = undefined;
-    let ptr = &buffer;
+    var ptr = &buffer;
     ptr[0] = 66;
     ptr[1] = 0x61;
     ptr[2] = 0o162;

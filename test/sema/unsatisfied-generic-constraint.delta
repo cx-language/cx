@@ -9,7 +9,7 @@ struct F: Copyable {
 }
 
 def main() {
-    let f: F = undefined;
+    var f: F = undefined;
 
     // CHECK: 15:8: error: type 'F' doesn't implement interface 'Fooable'
     bar(f);

@@ -4,5 +4,5 @@ def f(p: int*) {
     var a = p;
 
     // CHECK: [[@LINE+1]]:16: error: cannot dereference non-pointer type 'void'
-    let b = *(a++);
+    var b = *(a++);
 }

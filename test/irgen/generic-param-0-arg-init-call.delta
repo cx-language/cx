@@ -11,10 +11,10 @@ struct A<T> {
     // CHECK-NEXT: call void @_ENM4main1C4initE(%C* %t)
     // CHECK-NEXT: ret void
     init() {
-        let t = T();
+        var t = T();
     }
 }
 
 def main() {
-    let a = A<C>();
+    var a = A<C>();
 }

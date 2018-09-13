@@ -13,12 +13,12 @@ def main() {
 }
 
 def testBytes() {
-    let f = FileStream("test.txt");
+    var f = FileStream("test.txt");
 
-    let real = "this\nis the\nbest\n";
+    var real = "this\nis the\nbest\n";
     var i: uint = 0;
 
-    for (let byte in f.bytes()) {
+    for (var byte in f.bytes()) {
         assert(real[i] == char(byte));
         i++;
     }
@@ -27,7 +27,7 @@ def testBytes() {
 }
 
 def testLines() {
-    let f = FileStream("test.txt");
+    var f = FileStream("test.txt");
 
     var a = Array<StringRef>();
     a.push("this");
@@ -36,7 +36,7 @@ def testLines() {
 
     var i: uint = 0;
 
-    for (let line in f.lines()) {
+    for (var line in f.lines()) {
         assert(*a[i] == StringRef(line));
         i++;
     }
@@ -45,7 +45,7 @@ def testLines() {
 }
 
 def testReadlineTwice() {
-    let f = InputFileStream("test.txt");
+    var f = InputFileStream("test.txt");
 
     var a = f.readLine();
     assert(StringRef(a) == "this");
@@ -54,7 +54,7 @@ def testReadlineTwice() {
 }
 
 def testMultipleEmptyLines() {
-    let f = InputFileStream("corner.txt");
+    var f = InputFileStream("corner.txt");
 
     var a = f.readLine();
     assert(StringRef(a) == "");
@@ -69,7 +69,7 @@ def testMultipleEmptyLines() {
 }
 
 def testIsEofWhileLoop() {
-    let f = InputFileStream("test.txt");
+    var f = InputFileStream("test.txt");
 
     var a = Array<StringRef>();
     a.push("this");
@@ -79,7 +79,7 @@ def testIsEofWhileLoop() {
     var i: uint = 0;
 
     while (!f.isEof()) {
-        let line = f.readLine();
+        var line = f.readLine();
         assert(*a[i] == StringRef(line));
         i++;
     }
@@ -90,7 +90,7 @@ def testIsEofWhileLoop() {
 def testWrite() {
     var f = FileStream("new.txt");
 
-    let ret = f.write("best sentence\n");
+    var ret = f.write("best sentence\n");
     assert(ret);
 
     f = FileStream("new.txt");
@@ -112,7 +112,7 @@ def testInputStream() {
 
     var i: uint = 0;
 
-    for (let line in f.lines()) {
+    for (var line in f.lines()) {
         assert(*a[i] == StringRef(line));
         i++;
     }
@@ -121,11 +121,11 @@ def testInputStream() {
 }
 
 def testInputStreamIsOpenOnNonexistingFile() {
-    let f = InputFileStream("doesntexist");
+    var f = InputFileStream("doesntexist");
 
     assert(!f.isOpen());
 
-    let f2 = FileStream("test.txt");
+    var f2 = FileStream("test.txt");
 
     assert(f2.isOpen());
 }
@@ -133,7 +133,7 @@ def testInputStreamIsOpenOnNonexistingFile() {
 def testOutputStream() {
     var f = OutputFileStream("new.txt");
 
-    let ret = f.write("best sentence\n");
+    var ret = f.write("best sentence\n");
 
     f.close();
     remove("new.txt");

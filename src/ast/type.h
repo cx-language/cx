@@ -106,7 +106,7 @@ public:
     TypeDecl* getDecl() const;
     DeinitDecl* getDeinitializer() const;
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
-    std::string toString(bool omitTopLevelMutable = false) const;
+    std::string toString(bool omitTopLevelMutable) const;
 
     llvm::StringRef getName() const;
     std::string getQualifiedTypeName() const;

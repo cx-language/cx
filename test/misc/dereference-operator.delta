@@ -3,7 +3,7 @@
 extern def calloc(count: uint64, size: uint64): mutable void*;
 
 def main(): int {
-    let buffer = cast<mutable int*>(calloc(1, 8));
+    var buffer = cast<mutable int*>(calloc(1, 8));
     *buffer = 41;
     (*buffer)++;
     return *buffer;

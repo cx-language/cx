@@ -19,6 +19,6 @@ def g(foo: int, bar: int): int[2] {
     // CHECK-NEXT: store [2 x i32] %4, [2 x i32]* %c
     // CHECK-NEXT: %c1 = load [2 x i32], [2 x i32]* %c
     // CHECK-NEXT: ret [2 x i32] %c1
-    let c = [foo + bar, foo - bar];
+    var c = [foo + bar, foo - bar];
     return c;
 }

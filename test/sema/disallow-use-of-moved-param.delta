@@ -6,5 +6,5 @@ def f(t: T) {}
 
 def g(t: T) {
     f(t);
-    let a = t; // CHECK: [[@LINE]]:13: error: use of moved value
+    var a = t; // CHECK: [[@LINE]]:13: error: use of moved value
 }

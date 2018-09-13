@@ -2,7 +2,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s -check-prefix=CHECK-CALL
 
 struct Foo<T> {
-    let t: T;
+    var t: T;
 
     // CHECK: define void @{{.*Foo.*int.*init.*}}(%"Foo<int>"* %this, i32 %t)
     // CHECK: define void @{{.*Foo.*StringRef.*init.*}}(%"Foo<StringRef>"* %this, %StringRef %t)
@@ -11,7 +11,7 @@ struct Foo<T> {
 
 def main() {
     // CHECK-CALL: call void @{{.*Foo.*int.*init.*}}(%"Foo<int>"* %i, i32 42)
-    let i = Foo(42);
+    var i = Foo(42);
     // CHECK-CALL: call void @{{.*Foo.*StringRef.*init.*}}(%"Foo<StringRef>"* %b, %StringRef %__str{{[0-9]+}})
-    let b = Foo("");
+    var b = Foo("");
 }

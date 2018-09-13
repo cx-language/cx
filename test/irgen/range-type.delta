@@ -13,7 +13,7 @@ def foo(r: Range<int>): int {
     // CHECK: call i1 @{{.*13RangeIterator.*3int.*8hasValue.*}}
     // CHECK: call i32 @{{.*13RangeIterator.*3int.*5value.*}}
     // CHECK: call void @{{.*13RangeIterator.*3int.*9increment.*}}
-    for (let i in r) {
+    for (var i in r) {
         sum += i;
     }
 

@@ -1,7 +1,7 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
 
 struct C {
-    let i: int;
+    var i: int;
 
     init(i: int) {
         this.i = i;
@@ -40,7 +40,7 @@ def testArrayInsertionAndRemoval() {
 }
 
 def testArrayInitFromLiteral() {
-    let a = Array([1, 2, 3]);
+    var a = Array([1, 2, 3]);
 
     assert(*a[0] == 1);
     assert(*a[1] == 2);
@@ -71,7 +71,7 @@ def testArrayMutatingIteration() {
     a.push(2);
     a.push(3);
 
-    for (let e in a) {
+    for (var e in a) {
         (*e)++;
     }
 
@@ -124,7 +124,7 @@ def testMap() {
     a.push(3);
     a.push(4);
 
-    let b = a.map((value: int*) -> *value > 2);
+    var b = a.map((value: int*) -> *value > 2);
     assert(b.size() == 4);
     assert(*b[0] == false);
     assert(*b[1] == false);
@@ -139,7 +139,7 @@ def testFilter() {
     a.push(3);
     a.push(4);
 
-    let b = a.filter((value: int*) -> *value % 2 == 0);
+    var b = a.filter((value: int*) -> *value % 2 == 0);
     assert(b.size() == 2);
     assert(*b[0] == 2);
     assert(*b[1] == 4);
@@ -158,7 +158,7 @@ struct DestructionTester {
 def testElementDestruction() {
     var a = Array<DestructionTester>();
 
-    for (let i in 0..50) {
+    for (var i in 0..50) {
         a.push(DestructionTester());
     }
 

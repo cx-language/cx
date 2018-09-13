@@ -262,7 +262,6 @@ const char* delta::toString(Token::Kind tokenKind) {
         "in",
         "init",
         "interface",
-        "let",
         "mutable",
         "mutating",
         "null",

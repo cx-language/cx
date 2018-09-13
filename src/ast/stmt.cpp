@@ -95,7 +95,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
     llvm_unreachable("all cases handled");
 }
 
-// Lowers 'for (let id in range) { ... }' into:
+// Lowers 'for (var id in range) { ... }' into:
 //
 // {
 //     var __iterator = range.iterator();
@@ -103,7 +103,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
 //     var __iterator = range;
 //
 //     while (__iterator.hasValue()) {
-//         let id = __iterator.value();
+//         var id = __iterator.value();
 //         ...
 //         __iterator.increment();
 //     }

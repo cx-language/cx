@@ -7,7 +7,7 @@ import "stdio.h"
 def main() {
     // CHECK: %f = alloca double
     // CHECK-NEXT: store double 4.200000e+00, double* %f
-    let f = 4.2;
+    var f = 4.2;
     // CHECK-NEXT: %f1 = load double, double* %f
     // CHECK-NEXT: call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @{{[0-9]+}}, i32 0, i32 0), i32 -3, double %f1)
     printf("%d %f", -3, f);

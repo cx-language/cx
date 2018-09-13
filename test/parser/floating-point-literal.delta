@@ -2,4 +2,4 @@
 
 // CHECK:(source-file {{.*}}floating-point-literal.delta
 
-let a = 0.009; // CHECK-NEXT:    (var-decl a 0.009))
+var a = 0.009; // CHECK-NEXT:    (var-decl a 0.009))

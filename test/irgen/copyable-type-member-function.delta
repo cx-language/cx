@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
 struct Foo: Copyable {
-    let baz: int;
+    var baz: int;
 
     // CHECK: define void @{{.*Foo.*init}}
     // CHECK-NEXT: %baz = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0

@@ -1,8 +1,8 @@
 // RUN: %delta -print-ir %s | %FileCheck %s
 
-struct Foo { let i: int; }
+struct Foo { var i: int; }
 def ptr(p: Foo*) { } // CHECK: define void @[[PTR:.*3ptr.*]](%Foo* %p)
 def main() {
-    let f: Foo = undefined; // CHECK: %f = alloca %Foo
+    var f: Foo = undefined; // CHECK: %f = alloca %Foo
     ptr(f); // CHECK: call void @[[PTR]](%Foo* %f)
 }

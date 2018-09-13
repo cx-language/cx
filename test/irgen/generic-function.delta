@@ -25,5 +25,5 @@ def main() {
     // CHECK: call %StringRef @{{.*bar.*StringRef.*}}
     var b = bar("bar");
     // CHECK: call i32 @{{.*qux.*int.*}}(i32 -5)
-    let five = qux(-5);
+    var five = qux(-5);
 }

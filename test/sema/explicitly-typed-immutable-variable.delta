@@ -1,7 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-def main() {
-    let m: int = 4;
-    // CHECK: [[@LINE+1]]:6: error: cannot decrement immutable value
-    m--;
-}

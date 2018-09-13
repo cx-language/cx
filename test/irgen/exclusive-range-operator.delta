@@ -13,7 +13,7 @@ def main(): int {
     // CHECK: call i1 @{{.*RangeIterator.*int.*hasValue.*}}
     // CHECK: call i32 @{{.*RangeIterator.*int.*value.*}}
     // CHECK: call void @{{.*RangeIterator.*int.*increment.*}}
-    for (let i in 0..3) {
+    for (var i in 0..3) {
         p -= i;
     }
 

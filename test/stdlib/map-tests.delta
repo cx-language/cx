@@ -39,10 +39,10 @@ def testGetter() {
 def testResize() {
     var map = Map<String, int>();
 
-    for (let i in 0..255) {
+    for (var i in 0..255) {
         var lol = String();
 
-        for (let j in 0..(i+1)) {
+        for (var j in 0..(i+1)) {
             lol.push('a');
         }
 
@@ -95,7 +95,7 @@ def testIterator() {
     var bb = false;
     var ccc = false;
 
-    for (let e in map) {
+    for (var e in map) {
         if (e.key == "a") {
             assert(!a);
             a = true;
@@ -121,7 +121,7 @@ def testEmptyMapIterator() {
     map.insert("foo", "foo");
     map.remove("foo");
 
-    for (let e in map) {
+    for (var e in map) {
         assert(false);
     }
 }
@@ -132,7 +132,7 @@ def testUnitMapIterator() {
     map.insert("foo", "foo");
     var count = 0;
 
-    for (let e in map) {
+    for (var e in map) {
         count++;
         assert(e.key == "foo");
     }

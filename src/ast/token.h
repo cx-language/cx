@@ -37,7 +37,6 @@ struct Token {
         In,
         Init,
         Interface,
-        Let,
         Mutable,
         Mutating,
         Null,

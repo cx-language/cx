@@ -130,7 +130,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the value of the given key, if it exists in the Map. Otherwise, returns null.
     def [](key: Key*): Value*? {
-        let found = findNode(key);
+        var found = findNode(key);
         if (found != null) {
             return found.entry.value;
         }
@@ -149,9 +149,9 @@ struct OrderedMap<Key, Value> {
                     return false;
                 }
 
-                let parent = n;
-                let goLeft = n.entry.key > key;
-                let newNode = goLeft ? n.left : n.right;
+                var parent = n;
+                var goLeft = n.entry.key > key;
+                var newNode = goLeft ? n.left : n.right;
 
                 if (newNode == null) {
                     if (goLeft) {
@@ -216,7 +216,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map
     def find(key: Key*): (key: Key, value: Value)*? {
-        let node = findNode(key);
+        var node = findNode(key);
         if (node != null) {
             return node.entry;
         }
@@ -236,7 +236,7 @@ struct OrderedMap<Key, Value> {
                 return n!;
             }
 
-            let goLeft = n!.entry.key > *key;
+            var goLeft = n!.entry.key > *key;
             n = goLeft ? n!.left : n!.right;
         }
 
@@ -246,11 +246,11 @@ struct OrderedMap<Key, Value> {
     /// Returns the key immediately smaller than the one given,
     /// or null, if `key` is the smallest in the Map.
     def lowerKey(key: Key*): Key*? {
-        let found = findNode(key);
+        var found = findNode(key);
         if (found == null) {
             return null;
         }
-        let lower = lowerNode(found!);
+        var lower = lowerNode(found!);
 
         if (lower == null) {
             return null;
@@ -294,12 +294,12 @@ struct OrderedMap<Key, Value> {
     /// Returns the key immediately higher than the one given,
     /// or null, if `key` is the largest in the Map.
     def higherKey(key: Key*): Key*? {
-        let found = findNode(key);
+        var found = findNode(key);
         if (found == null) {
             return null;
         }
 
-        let higher = higherNode(found!);
+        var higher = higherNode(found!);
 
         if (higher == null) {
             return null;

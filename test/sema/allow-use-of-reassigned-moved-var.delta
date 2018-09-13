@@ -6,7 +6,7 @@ struct A {
 
 def main() {
     var a = A();
-    let b = a;
+    var b = a;
     a = A();
-    let c = a;
+    var c = a;
 }

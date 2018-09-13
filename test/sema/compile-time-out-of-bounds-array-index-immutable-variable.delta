@@ -3,8 +3,8 @@
 extern def foo(): int[5]*;
 
 def main() {
-    let p = foo();
+    var p = foo();
     var i: uint = 5;
     i--;
-    let e = p[i];
+    var e = p[i];
 }
