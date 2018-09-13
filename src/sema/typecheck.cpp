@@ -62,7 +62,7 @@ void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
     }
 
     if (localVariableType && functionReturnType.removeOptional().isPointerType() &&
-        functionReturnType.removeOptional().getPointee().asImmutable() == localVariableType.asImmutable()) {
+        functionReturnType.removeOptional().getPointee().equalsIgnoreTopLevelMutable(localVariableType)) {
         warning(returnValue->getLocation(), "returning pointer to local variable ",
                 "(local variables will not exist after the function returns)");
     }

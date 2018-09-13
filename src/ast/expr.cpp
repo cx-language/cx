@@ -431,7 +431,7 @@ bool CallExpr::isMoveInit() const {
     if (getArgs().size() != 1) return false;
 
     if (Type receiverType = ::getReceiverType(*this)) {
-        return getArgs()[0].getValue()->getType().asImmutable() == receiverType.asImmutable();
+        return getArgs()[0].getValue()->getType().equalsIgnoreTopLevelMutable(receiverType);
     }
 
     return false;
@@ -467,7 +467,7 @@ bool delta::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
     if (op == Token::PointerEqual || op == Token::PointerNotEqual) return true;
     if (left.isPointerType() && right.isPointerType()) return false;
-    if (left.isEnumType() && left.asImmutable() == right.asImmutable()) return true;
+    if (left.isEnumType() && left.equalsIgnoreTopLevelMutable(right)) return true;
     return left.isBuiltinType() && right.isBuiltinType();
 }
 

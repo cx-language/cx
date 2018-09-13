@@ -105,6 +105,7 @@ public:
     TypeKind getKind() const { return typeBase->getKind(); }
     TypeDecl* getDecl() const;
     DeinitDecl* getDeinitializer() const;
+    bool equalsIgnoreTopLevelMutable(Type) const;
     void printTo(std::ostream& stream, bool omitTopLevelMutable) const;
     std::string toString(bool omitTopLevelMutable) const;
 

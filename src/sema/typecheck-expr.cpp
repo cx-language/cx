@@ -265,8 +265,8 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op) {
         if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
             error(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
         }
-        if (leftType.removeOptional().removePointer().asImmutable() !=
-            rightType.removeOptional().removePointer().asImmutable()) {
+        if (!leftType.removeOptional().removePointer().equalsIgnoreTopLevelMutable(
+                rightType.removeOptional().removePointer())) {
             warning(expr.getLocation(), "pointers to different types are not allowed to be equal");
         }
     }

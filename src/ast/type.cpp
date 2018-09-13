@@ -280,21 +280,25 @@ Type Type::getWrappedType() const {
 
 bool delta::operator==(Type lhs, Type rhs) {
     if (lhs.isMutable() != rhs.isMutable()) return false;
-    switch (lhs.getKind()) {
+    return lhs.equalsIgnoreTopLevelMutable(rhs);
+}
+
+bool Type::equalsIgnoreTopLevelMutable(Type other) const {
+    switch (getKind()) {
         case TypeKind::BasicType:
-            return rhs.isBasicType() && lhs.getName() == rhs.getName() && lhs.getGenericArgs() == rhs.getGenericArgs();
+            return other.isBasicType() && getName() == other.getName() && getGenericArgs() == other.getGenericArgs();
         case TypeKind::ArrayType:
-            return rhs.isArrayType() && lhs.getElementType() == rhs.getElementType() &&
-                   lhs.getArraySize() == rhs.getArraySize();
+            return other.isArrayType() && getElementType() == other.getElementType() &&
+                   getArraySize() == other.getArraySize();
         case TypeKind::TupleType:
-            return rhs.isTupleType() && lhs.getTupleElements() == rhs.getTupleElements();
+            return other.isTupleType() && getTupleElements() == other.getTupleElements();
         case TypeKind::FunctionType:
-            return rhs.isFunctionType() && lhs.getReturnType() == rhs.getReturnType() &&
-                   lhs.getParamTypes() == rhs.getParamTypes();
+            return other.isFunctionType() && getReturnType() == other.getReturnType() &&
+                   getParamTypes() == other.getParamTypes();
         case TypeKind::PointerType:
-            return rhs.isPointerType() && lhs.getPointee() == rhs.getPointee();
+            return other.isPointerType() && getPointee() == other.getPointee();
         case TypeKind::OptionalType:
-            return rhs.isOptionalType() && lhs.getWrappedType() == rhs.getWrappedType();
+            return other.isOptionalType() && getWrappedType() == other.getWrappedType();
     }
     llvm_unreachable("all cases handled");
 }
