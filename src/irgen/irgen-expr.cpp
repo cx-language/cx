@@ -1,4 +1,5 @@
 #include "irgen.h"
+#include <llvm/Support/Path.h>
 #include "../support/utility.h"
 
 using namespace delta;
@@ -522,8 +523,8 @@ void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location)
     auto* puts = module->getOrInsertFunction("puts", llvm::Type::getInt32Ty(ctx), llvm::Type::getInt8PtrTy(ctx));
     builder.CreateCondBr(condition, failBlock, successBlock);
     builder.SetInsertPoint(failBlock);
-    auto message = llvm::join_items("", "Assertion failed at ", location.file, ":", std::to_string(location.line), ":",
-                                    std::to_string(location.column));
+    auto message = llvm::join_items("", "Assertion failed at ", llvm::sys::path::filename(location.file), ":",
+                                    std::to_string(location.line), ":", std::to_string(location.column));
     builder.CreateCall(puts, builder.CreateGlobalStringPtr(message));
     builder.CreateCall(llvm::Intrinsic::getDeclaration(&*module, llvm::Intrinsic::trap));
     builder.CreateUnreachable();

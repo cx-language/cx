@@ -1,5 +1,5 @@
 
-@0 = private unnamed_addr constant [71 x i8] c"Assertion failed at /Users/emlai/src/delta/test/irgen/assert.delta:6:5\00"
+@0 = private unnamed_addr constant [37 x i8] c"Assertion failed at assert.delta:6:5\00"
 
 declare i1 @b()
 
@@ -9,7 +9,7 @@ define i32 @main() {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([71 x i8], [71 x i8]* @0, i32 0, i32 0))
+  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @0, i32 0, i32 0))
   call void @llvm.trap()
   unreachable
 

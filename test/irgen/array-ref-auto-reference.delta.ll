@@ -13,7 +13,7 @@
 @2 = private unnamed_addr constant [30 x i8] c"Called last() on empty Array\0A\00"
 @3 = private unnamed_addr constant [37 x i8] c"Called removeFirst() on empty Array\0A\00"
 @4 = private unnamed_addr constant [36 x i8] c"Called removeLast() on empty Array\0A\00"
-@5 = private unnamed_addr constant [71 x i8] c"Assertion failed at /Users/emlai/src/delta/stdlib/allocate.delta:36:67\00"
+@5 = private unnamed_addr constant [41 x i8] c"Assertion failed at allocate.delta:36:67\00"
 
 define void @_ENM3std8ArrayRefI3intE4initE(%"ArrayRef<int>"* %this) {
   %size = getelementptr inbounds %"ArrayRef<int>", %"ArrayRef<int>"* %this, i32 0, i32 1
@@ -371,7 +371,7 @@ define i32* @_EN3std13allocateArrayI3intEE4size4uint(i32 %size) {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %4 = call i32 @puts(i8* getelementptr inbounds ([71 x i8], [71 x i8]* @5, i32 0, i32 0))
+  %4 = call i32 @puts(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @5, i32 0, i32 0))
   call void @llvm.trap()
   unreachable
 
