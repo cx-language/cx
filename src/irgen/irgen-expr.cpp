@@ -743,7 +743,9 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
         if (value->getType()->isPointerTy()) {
             value = builder.CreateLoad(value);
         }
-        return builder.CreateGEP(builder.CreateExtractValue(value, 0), codegenExpr(*expr.getIndexExpr()));
+        auto* ptr = builder.CreateExtractValue(value, 0);
+        auto* index = codegenExpr(*expr.getIndexExpr());
+        return builder.CreateGEP(ptr, index);
     }
 
     if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
