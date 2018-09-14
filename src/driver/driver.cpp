@@ -205,6 +205,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 #endif
     if (checkFlag("-w", args)) warningMode = WarningMode::Suppress;
     if (checkFlag("-Werror", args)) warningMode = WarningMode::TreatAsErrors;
+    auto disabledWarnings = collectStringOptionValues("-Wno-", args);
     auto defines = collectStringOptionValues("-D", args);
 #ifdef _WIN32
     defines.push_back("Windows");
@@ -238,7 +239,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (parse) return 0;
 
-    Typechecker typechecker;
+    Typechecker typechecker(std::move(disabledWarnings));
     for (auto& importedModule : module.getImportedModules()) {
         typechecker.typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr,
                                     importSearchPaths, frameworkSearchPaths);

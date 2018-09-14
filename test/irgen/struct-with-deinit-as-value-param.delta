@@ -1,4 +1,4 @@
-// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 def foo(a: A<int>) {}
 

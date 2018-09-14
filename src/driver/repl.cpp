@@ -26,7 +26,7 @@ void evaluate(llvm::StringRef line) {
     Module module("main");
     module.addSourceFile(SourceFile(llvm::StringRef()));
     Parser parser(llvm::MemoryBuffer::getMemBuffer(line, "", false), module, {}, {});
-    Typechecker typechecker;
+    Typechecker typechecker({});
     typechecker.setCurrentModule(&module);
     IRGenerator irGenerator;
 

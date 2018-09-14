@@ -1627,3 +1627,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
     expr.setAssignableType(*type);
     return expr.getType();
 }
+
+bool Typechecker::isWarningEnabled(llvm::StringRef warning) const {
+    return !llvm::is_contained(disabledWarnings, warning);
+}

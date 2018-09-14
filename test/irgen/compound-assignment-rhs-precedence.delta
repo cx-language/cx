@@ -1,4 +1,4 @@
-// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 def f(foo: mutable float64*, bar: float64, baz: float64) {
     *foo *= 1.0 - bar * baz;

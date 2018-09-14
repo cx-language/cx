@@ -1,4 +1,4 @@
-// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 def f(foo: int, bar: int): int[2] {
     return [foo + bar, foo - bar];
@@ -7,9 +7,4 @@ def f(foo: int, bar: int): int[2] {
 def g(foo: int, bar: int): int[2] {
     var c = [foo + bar, foo - bar];
     return c;
-}
-
-def main() {
-    f(1, 2);
-    g(1, 2);
 }

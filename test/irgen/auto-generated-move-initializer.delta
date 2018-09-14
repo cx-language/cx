@@ -1,19 +1,10 @@
-// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 struct X {
     var i: int;
-    init() {
-        i = 0;
-    }
     deinit() {}
 }
 
 def foo(p: mutable X*, x: X) {
     p.init(x);
-}
-
-def main() {
-    var x = X();
-    var y = X();
-    foo(x, y);
 }

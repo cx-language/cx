@@ -17,9 +17,3 @@ define [2 x i32] @_EN4main1gE3foo3int3bar3int(i32 %foo, i32 %bar) {
   %c1 = load [2 x i32], [2 x i32]* %c
   ret [2 x i32] %c1
 }
-
-define i32 @main() {
-  %1 = call [2 x i32] @_EN4main1fE3foo3int3bar3int(i32 1, i32 2)
-  %2 = call [2 x i32] @_EN4main1gE3foo3int3bar3int(i32 1, i32 2)
-  ret i32 0
-}

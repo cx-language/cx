@@ -29,8 +29,9 @@ struct Type;
 
 class Typechecker {
 public:
-    Typechecker()
-    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), isPostProcessing(false) {}
+    Typechecker(std::vector<std::string>&& disabledWarnings)
+    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), isPostProcessing(false),
+      disabledWarnings(std::move(disabledWarnings)) {}
 
     Module* getCurrentModule() const { return NOTNULL(currentModule); }
     void setCurrentModule(Module* module) { currentModule = module; }
@@ -128,6 +129,8 @@ private:
     llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const;
     llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<std::unique_ptr<Stmt>> block) const;
 
+    bool isWarningEnabled(llvm::StringRef warning) const;
+
 private:
     Module* currentModule;
     SourceFile* currentSourceFile;
@@ -137,6 +140,7 @@ private:
     Type functionReturnType;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
+    std::vector<std::string> disabledWarnings;
 };
 
 } // namespace delta

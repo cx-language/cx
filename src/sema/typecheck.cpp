@@ -1042,7 +1042,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         }
     }
 
-    if (module.getName() != "std") {
+    if (module.getName() != "std" && isWarningEnabled("unused")) {
         checkUnusedDecls(module);
     }
 

@@ -1,7 +1,5 @@
-// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-def main() {
-    var foo: int* = undefined;
-    var bar: int = undefined;
+def f(foo: int*, bar: int) {
     _ = foo < bar;
 }

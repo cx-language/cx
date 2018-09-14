@@ -1,9 +1,8 @@
-// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 import "constant-macro.h"
 
-def main() {
-    var i = 4
+def foo(i: int) {
     switch (i) {
         case FOO: return
     }

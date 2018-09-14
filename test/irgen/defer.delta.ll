@@ -48,7 +48,6 @@ else5:                                            ; preds = %endwhile
 
 endif6:                                           ; preds = %else5
   call void @foo()
-  call void @_EN4main13shouldBeEmptyE()
   call void @bar()
   call void @foo()
   ret i32 0
