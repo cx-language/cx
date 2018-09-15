@@ -30,6 +30,18 @@ initialized. This allows delayed initialization, which causes the compiler to
 enforce that the variable is always initialized properly before its value is
 accessed.
 
+\section{Constants}
+
+Constant declarations introduce a named compile-time constant into the enclosing
+scope:
+
+\begin{grammar}
+\rule{implicitly-typed-constant-definition} \code{const} \nonterminal{constant-name} \code{=} \nonterminal{initializer} \code{;}\\
+\rule{explicitly-typed-constant-definition} \code{const} \nonterminal{constant-name} \code{:} \nonterminal{type} \code{=} \nonterminal{initializer} \code{;}
+\end{grammar}
+
+Constant declarations must always have an initializer. The compiler evaluates the initializer at compile time.
+
 \section{Functions}
 
 A function can be defined with either of the following syntaxes:

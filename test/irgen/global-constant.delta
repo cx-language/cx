@@ -1,11 +1,9 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-var foo = 42;
-var qux: int = 42;
+const qux: int = 42;
 
 def main() {
-    foo = 43;
     var d = bar;
 }
 
-var bar = 42;
+const bar = 42;

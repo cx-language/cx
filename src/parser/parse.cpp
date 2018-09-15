@@ -807,11 +807,11 @@ std::unique_ptr<ReturnStmt> Parser::parseReturnStmt() {
     return llvm::make_unique<ReturnStmt>(std::move(returnValue), location);
 }
 
-/// var-decl ::= 'var' id type-specifier? '=' initializer ('\n' | ';')
+/// var-decl ::= ('var' | 'const') id type-specifier? '=' initializer ('\n' | ';')
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'undefined'
 std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel) {
-    parse(Token::Var);
+    auto keyword = parse({Token::Var, Token::Const});
     auto name = parse(Token::Identifier);
 
     Type type;
@@ -821,7 +821,7 @@ std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* pa
         type = parseType();
         if (type.isMutable()) error(typeLocation, "type specifier cannot specify mutability");
     }
-    type.setMutable(true);
+    type.setMutable(keyword == Token::Var);
 
     std::unique_ptr<Expr> initializer;
 
@@ -1456,6 +1456,7 @@ start:
             }
             break;
         case Token::Var:
+        case Token::Const:
             decl = parseVarDecl(true, nullptr, accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);
             break;
