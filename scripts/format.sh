@@ -19,7 +19,7 @@ if [ "$1" = "--check" ]; then
     clang-format -output-replacements-xml $FILES | grep "<replacement " >/dev/null
 
     if [ $? -ne 1 ]; then
-        echo "Run $(basename $0) to format the code."
+        echo "Run $0 to format the code."
         exit 1
     else
         exit 0

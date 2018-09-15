@@ -112,3 +112,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 add_custom_target(fmt COMMAND ${PROJECT_SOURCE_DIR}/scripts/format.sh)
+
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit")
+    message(STATUS "Installing git pre-commit hook")
+    file(COPY "${PROJECT_SOURCE_DIR}/scripts/pre-commit" DESTINATION "${PROJECT_SOURCE_DIR}/.git/hooks")
+endif()

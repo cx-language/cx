@@ -811,7 +811,7 @@ std::unique_ptr<ReturnStmt> Parser::parseReturnStmt() {
 /// type-specifier ::= ':' type
 /// initializer ::= expr | 'undefined'
 std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel) {
-    auto keyword = parse({Token::Var, Token::Const});
+    auto keyword = parse({ Token::Var, Token::Const });
     auto name = parse(Token::Identifier);
 
     Type type;

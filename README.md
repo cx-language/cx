@@ -83,8 +83,9 @@ to chat, join our Telegram group: [t.me/deltalang](https://t.me/deltalang).
 
 The C++ code style is enforced by `scripts/format.sh`, which requires
 clang-format version 6.0.0. The script can also be run with the `fmt` CMake
-target. `scripts/format.sh --check` can be set as a git pre-commit hook to
-verify that the code is formatted.
+target. The CMake build system installs a git pre-commit hook to check that the
+code is formatted. You can also manually check if the code is formatted by
+running `scripts/format.sh --check`.
 
 ## License
 
