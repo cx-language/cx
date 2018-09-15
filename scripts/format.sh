@@ -3,8 +3,7 @@
 CLANG_FORMAT_VERSION=6.0.0
 
 if ! clang-format --version | grep --quiet $CLANG_FORMAT_VERSION; then
-    echo "Wrong clang-format version, expected $CLANG_FORMAT_VERSION."
-    exit 1
+    echo "WARNING: Wrong clang-format version, expected $CLANG_FORMAT_VERSION."
 fi
 
 ROOTDIR=$(cd "$(dirname "$0")/.."; pwd)
