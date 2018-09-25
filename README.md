@@ -23,7 +23,7 @@ Also check out the [standard library API reference](https://delta-lang.github.io
 Building Delta from source requires the following dependencies: a C++14
 compiler, [CMake](https://cmake.org), [libedit](http://thrysoee.dk/editline/) (only on Linux),
 and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries
-(version 6.0). To run the test suite, you also need
+(version 7.0). To run the test suite, you also need
 [lit](http://llvm.org/docs/CommandGuide/lit.html), which you can get with `pip
 install lit`.
 
@@ -33,8 +33,8 @@ to generate a ready-to-use build system.
 
 If you're on Windows, do the following:
 
-1. Download and extract LLVM sources from http://releases.llvm.org/6.0.1/llvm-6.0.1.src.tar.xz.
-2. Download and extract Clang sources from http://releases.llvm.org/6.0.1/cfe-6.0.1.src.tar.xz.
+1. Download and extract LLVM sources from http://releases.llvm.org/7.0.0/llvm-7.0.0.src.tar.xz.
+2. Download and extract Clang sources from http://releases.llvm.org/7.0.0/cfe-7.0.0.src.tar.xz.
 3. Rename the extracted Clang source directory to `clang`, and move it inside
    the `tools` subdirectory inside the LLVM source directory.
 4. During this step, LLVM and Clang will be built from source, which requires
@@ -78,7 +78,7 @@ need to be done. All contributors are expected to follow the Delta
 to chat, join our Telegram group: [t.me/deltalang](https://t.me/deltalang).
 
 The C++ code style is enforced by `scripts/format.sh`, which requires
-clang-format version 6.0.0. The script can also be run with the `fmt` CMake
+clang-format version 7.0.0. The script can also be run with the `fmt` CMake
 target. The CMake build system installs a git pre-commit hook to check that the
 code is formatted. You can also manually check if the code is formatted by
 running `scripts/format.sh --check`.

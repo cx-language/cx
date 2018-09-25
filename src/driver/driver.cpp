@@ -147,7 +147,7 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::Targe
     if (error) printErrorAndExit(error.message());
 
     llvm::legacy::PassManager passManager;
-    if (targetMachine->addPassesToEmitFile(passManager, file, fileType)) {
+    if (targetMachine->addPassesToEmitFile(passManager, file, nullptr, fileType)) {
         printErrorAndExit("TargetMachine can't emit a file of this type");
     }
 
@@ -159,7 +159,7 @@ void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::F_None);
     if (error) printErrorAndExit(error.message());
-    llvm::WriteBitcodeToFile(&module, file);
+    llvm::WriteBitcodeToFile(module, file);
     file.flush();
 }
 
@@ -334,14 +334,14 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         ccArgs.push_back("msvcrt.lib");
     }
 
-    ccArgs.push_back(nullptr);
-
     // Redirect stdout and stderr to files to prevent them from interfering with tests.
     llvm::StringRef out = "c-compiler-stdout.txt";
     llvm::StringRef err = "c-compiler-stderr.txt";
     llvm::Optional<llvm::StringRef> redirects[3] = { llvm::None, out, err };
 
-    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgs.data(), nullptr, redirects) : invokeClang(ccArgs);
+    std::vector<llvm::StringRef> ccArgStringRefs(ccArgs.begin(), ccArgs.end());
+    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, llvm::None, redirects)
+                            : invokeClang(ccArgs);
 
     llvm::sys::fs::remove(temporaryOutputFilePath);
     uint64_t fileSize;
@@ -351,8 +351,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (run) {
         std::string error;
-        const char* executableArgs[] = { temporaryExecutablePath.c_str(), nullptr };
-        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs, nullptr, {}, 0, 0, &error);
+        llvm::StringRef executableArgs[] = { temporaryExecutablePath };
+        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs, llvm::None, {}, 0, 0, &error);
         llvm::sys::fs::remove(temporaryExecutablePath);
 
         if (msvc) {
