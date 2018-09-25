@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-CLANG_FORMAT_VERSION=6.0.0
+CLANG_FORMAT_VERSION=7.0.0
 
 if ! clang-format --version | grep --quiet $CLANG_FORMAT_VERSION; then
     echo "WARNING: Wrong clang-format version, expected $CLANG_FORMAT_VERSION."

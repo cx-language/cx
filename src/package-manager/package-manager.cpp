@@ -27,13 +27,10 @@ static std::string getGitPath() {
 
 static void cloneGitRepository(const std::string& repositoryUrl, const std::string& path) {
     auto gitPath = getGitPath();
-
-    const char* args[] = {
-        gitPath.c_str(), "clone", repositoryUrl.c_str(), path.c_str(), nullptr,
-    };
+    llvm::StringRef args[] = { gitPath, "clone", repositoryUrl, path };
 
     std::string error;
-    int status = llvm::sys::ExecuteAndWait(gitPath, args, nullptr, {}, 0, 0, &error);
+    int status = llvm::sys::ExecuteAndWait(gitPath, args, llvm::None, {}, 0, 0, &error);
 
     if (status != 0 || !error.empty()) {
         if (!error.empty()) error.insert(0, ": ");
@@ -45,13 +42,10 @@ static void checkoutGitRevision(const std::string& path, const std::string& revi
     auto gitPath = getGitPath();
     auto gitDir = "--git-dir=" + path + "/.git";
     auto workTree = "--work-tree=" + path;
-
-    const char* args[] = {
-        gitPath.c_str(), gitDir.c_str(), workTree.c_str(), "checkout", revision.c_str(), "--quiet", nullptr,
-    };
+    llvm::StringRef args[] = { gitPath, gitDir, workTree, "checkout", revision, "--quiet" };
 
     std::string error;
-    int status = llvm::sys::ExecuteAndWait(gitPath, args, nullptr, {}, 0, 0, &error);
+    int status = llvm::sys::ExecuteAndWait(gitPath, args, llvm::None, {}, 0, 0, &error);
 
     if (status != 0 || !error.empty()) {
         if (!error.empty()) error.insert(0, ": ");

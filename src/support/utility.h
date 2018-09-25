@@ -144,12 +144,7 @@ template<typename... Args>
     errorWithNotes(location, std::vector<Note>(), std::forward<Args>(args)...);
 }
 
-enum class WarningMode {
-    Default,
-    Suppress,
-    TreatAsErrors
-};
-
+enum class WarningMode { Default, Suppress, TreatAsErrors };
 extern WarningMode warningMode;
 
 template<typename... Args>

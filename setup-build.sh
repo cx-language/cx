@@ -1,4 +1,4 @@
-LLVM_VERSION=6.0.1
+LLVM_VERSION=7.0.0
 
 set -e
 
