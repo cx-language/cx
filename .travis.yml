@@ -48,8 +48,8 @@ before_install:
 
 install:
     - if [ $TRAVIS_OS_NAME == "linux" ]; then
-          wget http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz;
-          tar -xvf $LLVM_TARBALL_NAME.tar.xz;
+          wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz;
+          tar -xf $LLVM_TARBALL_NAME.tar.xz;
           export LLVMDIR="$PWD/$LLVM_TARBALL_NAME";
           pip install --user lit cpp-coveralls;
       fi
