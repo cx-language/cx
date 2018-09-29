@@ -55,8 +55,9 @@ install:
       fi
     - if [ $TRAVIS_OS_NAME == "osx" ]; then
           brew update;
-          brew install cmake llvm;
-          export LLVMDIR="$(brew --prefix llvm)";
+          LLVM_PACKAGE=llvm@6;
+          brew install cmake $LLVM_PACKAGE;
+          export LLVMDIR="$(brew --prefix $LLVM_PACKAGE)";
           pip2 install lit;
       fi
 
