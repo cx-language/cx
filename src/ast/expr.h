@@ -212,6 +212,7 @@ public:
     : Expr(ExprKind::TupleExpr, location), elements(std::move(elements)) {}
     llvm::ArrayRef<NamedValue> getElements() const { return elements; }
     llvm::MutableArrayRef<NamedValue> getElements() { return elements; }
+    const Expr* getElementByName(llvm::StringRef name) const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::TupleExpr; }
 
 private:

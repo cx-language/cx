@@ -166,6 +166,7 @@ void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
 } // namespace
 
 int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vector<llvm::StringRef>& args, bool run) {
+    auto manifestPath = (packageRoot + "/" + PackageManifest::manifestFileName).str();
     PackageManifest manifest(packageRoot);
     fetchDependencies(packageRoot);
 
@@ -177,7 +178,7 @@ int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vec
             outputFileName = manifest.getPackageName();
         }
         // TODO: Add support for library packages.
-        int exitStatus = buildExecutable(getSourceFiles(targetRootDir), &manifest, argv0, args,
+        int exitStatus = buildExecutable(getSourceFiles(targetRootDir, manifestPath), &manifest, argv0, args,
                                          manifest.getOutputDirectory(), outputFileName, run);
         if (exitStatus != 0) return exitStatus;
     }

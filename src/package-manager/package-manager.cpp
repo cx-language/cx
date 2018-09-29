@@ -72,7 +72,7 @@ void delta::fetchDependencies(llvm::StringRef packageRoot) {
     }
 }
 
-std::vector<std::string> delta::getSourceFiles(llvm::StringRef rootDirectory) {
+std::vector<std::string> delta::getSourceFiles(llvm::StringRef rootDirectory, llvm::StringRef packageManifestPath) {
     std::vector<std::string> sourceFiles;
     std::error_code error;
 
@@ -82,7 +82,7 @@ std::vector<std::string> delta::getSourceFiles(llvm::StringRef rootDirectory) {
             break;
         }
 
-        if (llvm::sys::path::extension(it->path()) == ".delta") {
+        if (llvm::sys::path::extension(it->path()) == ".delta" && it->path() != packageManifestPath) {
             sourceFiles.push_back(it->path());
         }
     }

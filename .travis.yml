@@ -75,6 +75,6 @@ script:
 
 after_success:
     - if [ $CXX == "g++-5" ]; then
-          coveralls --exclude test --exclude llvm --exclude $LLVM_TARBALL_NAME --exclude CMakeFiles --exclude extlibs;
+          coveralls --exclude test --exclude llvm --exclude $LLVM_TARBALL_NAME --exclude CMakeFiles;
           scripts/update-delta-sandbox.sh;
       fi

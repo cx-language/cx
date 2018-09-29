@@ -10,6 +10,7 @@
 #pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 #include "../driver/driver.h"
@@ -86,7 +87,11 @@ int main(int argc, const char** argv) {
 
     try {
         if (inputs.empty()) {
-            return buildPackage(".", argv0, args, run);
+            llvm::SmallString<128> currentPath;
+            if (auto error = llvm::sys::fs::current_path(currentPath)) {
+                printErrorAndExit(error.message());
+            }
+            return buildPackage(currentPath, argv0, args, run);
         } else {
             return buildExecutable(inputs, nullptr, argv0, args, ".", "", run);
         }

@@ -60,6 +60,18 @@ public:
         return {};
     }
 
+    Decl* findOne(const std::string& name) const {
+        auto results = find(name);
+        switch (results.size()) {
+            case 1:
+                return results[0];
+            case 0:
+                return nullptr;
+            default:
+                throw std::runtime_error("Found multiple occurrences of '" + name + "'");
+        }
+    }
+
     llvm::ArrayRef<Decl*> findInCurrentScope(const std::string& name) const {
         if (!scopes.empty()) {
             auto it = scopes.back().find(applyIdentifierReplacements(name));

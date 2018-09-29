@@ -1,14 +1,15 @@
 #include "manifest.h"
 #include <cstdlib>
-#include <yaml-cpp/yaml.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
+#include "../ast/module.h"
+#include "../parser/parse.h"
 #include "../support/utility.h"
 
 using namespace delta;
 
-const char PackageManifest::manifestFileName[] = "package.yml";
+const char PackageManifest::manifestFileName[] = "package.delta";
 
 std::string PackageManifest::Dependency::getGitRepositoryUrl() const {
     return "https://github.com/" + packageIdentifier + ".git";
@@ -22,26 +23,32 @@ std::string PackageManifest::Dependency::getFileSystemPath() const {
     return std::string(home) + "/.delta/dependencies/" + packageIdentifier + "@" + packageVersion;
 }
 
+template<typename DeclT, typename DefaultValueT>
+static auto getConfigValue(Decl* decl, DefaultValueT defaultValue) {
+    return decl ? llvm::cast<DeclT>(llvm::cast<VarDecl>(decl)->getInitializer())->getValue() : defaultValue;
+}
+
 PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::move(packageRoot)) {
-    YAML::Node root;
     auto manifestPath = this->packageRoot + "/" + manifestFileName;
+    Module module(manifestFileName);
+    Parser parser(manifestPath, module, {}, {});
+    parser.parse();
+    // TODO: Type-check package manifest.
 
-    try {
-        root = YAML::LoadFile(manifestPath);
-    } catch (const YAML::BadFile&) {
-        printErrorAndExit("couldn't open file '", manifestPath, "'");
+    auto& symbols = module.getSymbolTable();
+    packageName = getConfigValue<StringLiteralExpr>(symbols.findOne("name"), "");
+    multitarget = getConfigValue<BoolLiteralExpr>(symbols.findOne("multitarget"), false);
+    outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), "bin");
+
+    if (auto* dependencies = symbols.findOne("dependencies")) {
+        auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(dependencies)->getInitializer());
+        for (auto& element : array->getElements()) {
+            auto* tuple = llvm::cast<TupleExpr>(&*element);
+            auto* package = llvm::cast<StringLiteralExpr>(tuple->getElementByName("package"));
+            auto* version = llvm::cast<StringLiteralExpr>(tuple->getElementByName("version"));
+            declaredDependencies.emplace_back(package->getValue(), version->getValue());
+        }
     }
-
-    if (auto name = root["name"]) {
-        packageName = name.as<std::string>();
-    }
-
-    for (auto dependency : root["dependencies"]) {
-        declaredDependencies.emplace_back(dependency.first.as<std::string>(), dependency.second.as<std::string>());
-    }
-
-    multitarget = root["multitarget"].as<bool>(false);
-    outputDirectory = root["outputDirectory"].as<std::string>("bin");
 }
 
 std::vector<std::string> PackageManifest::getTargetRootDirectories() const {

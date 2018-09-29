@@ -517,3 +517,12 @@ std::unique_ptr<FunctionDecl> LambdaExpr::lower(Module& module) const {
     functionDecl->setBody(std::move(body));
     return functionDecl;
 }
+
+const Expr* TupleExpr::getElementByName(llvm::StringRef name) const {
+    for (auto& element : getElements()) {
+        if (element.getName() == name) {
+            return element.getValue();
+        }
+    }
+    return nullptr;
+}
