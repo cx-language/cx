@@ -33,8 +33,8 @@ to generate a ready-to-use build system.
 
 If you're on Windows, do the following:
 
-1. Download and extract LLVM sources from http://releases.llvm.org/7.0.0/llvm-7.0.0.src.tar.xz.
-2. Download and extract Clang sources from http://releases.llvm.org/7.0.0/cfe-7.0.0.src.tar.xz.
+1. Download and extract LLVM sources from http://releases.llvm.org/7.0.1/llvm-7.0.1.src.tar.xz.
+2. Download and extract Clang sources from http://releases.llvm.org/7.0.1/cfe-7.0.1.src.tar.xz.
 3. Rename the extracted Clang source directory to `clang`, and move it inside
    the `tools` subdirectory inside the LLVM source directory.
 4. During this step, LLVM and Clang will be built from source, which requires
