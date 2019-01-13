@@ -1,4 +1,4 @@
-// RUN: %delta run -Werror %s | %FileCheck %s
+// RUN: compile_and_run -Werror %s | %FileCheck %s
 
 struct A: Printable {
     var a: StringRef;

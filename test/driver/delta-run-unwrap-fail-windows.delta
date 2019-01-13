@@ -1,4 +1,4 @@
-// RUN: not --crash %delta run %s
+// RUN: not --crash compile_and_run %s
 // REQUIRES: windows
 
 def main() {

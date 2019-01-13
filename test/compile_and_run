@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+import os
+import platform
+import sys
+import subprocess
+import uuid
+
+delta_path = sys.argv[1]
+
+unique_filename = str(uuid.uuid4())
+
+try:
+    compiler_output = subprocess.check_output([delta_path, "-o" + unique_filename] + sys.argv[2:], stderr=subprocess.STDOUT)
+except subprocess.CalledProcessError as error:
+    print(error.output)
+    sys.exit(error.returncode)
+
+executable = unique_filename
+
+if platform.system() == "Windows":
+    executable += ".exe"
+
+executable_path = os.path.join(os.getcwd(), executable)
+
+try:
+    executable_output = subprocess.check_output([executable_path], stderr=subprocess.STDOUT, shell=True)
+except subprocess.CalledProcessError as error:
+    print(error.output)
+    sys.exit(error.returncode)
+finally:
+    os.remove(executable_path)
+
+print(executable_output)
