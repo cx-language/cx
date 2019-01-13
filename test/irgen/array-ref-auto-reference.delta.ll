@@ -37,7 +37,7 @@ define void @_ENM3std5ArrayI3intE4initE8capacity4uint(%"Array<int>"* %this, i32 
 
 define void @_ENM3std5ArrayI3intE7reserveE15minimumCapacity4uint(%"Array<int>"* %this, i32 %minimumCapacity) {
   %newBufferPointer = alloca i32*
-  %__iterator19 = alloca %"RangeIterator<uint>"
+  %__iterator107 = alloca %"RangeIterator<uint>"
   %1 = alloca %"Range<uint>"
   %index = alloca i32
   %source = alloca i32*
@@ -55,7 +55,7 @@ then:                                             ; preds = %0
   call void @_ENM3std5RangeI4uintE4initE5start4uint3end4uint(%"Range<uint>"* %1, i32 0, i32 %size2)
   %4 = load %"Range<uint>", %"Range<uint>"* %1
   %5 = call %"RangeIterator<uint>" @_EN3std5RangeI4uintE8iteratorE(%"Range<uint>" %4)
-  store %"RangeIterator<uint>" %5, %"RangeIterator<uint>"* %__iterator19
+  store %"RangeIterator<uint>" %5, %"RangeIterator<uint>"* %__iterator107
   br label %while
 
 else:                                             ; preds = %0
@@ -65,13 +65,13 @@ endif:                                            ; preds = %else, %endif15
   ret void
 
 while:                                            ; preds = %body, %then
-  %__iterator193 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator19
-  %6 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator193)
+  %__iterator1073 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator107
+  %6 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator1073)
   br i1 %6, label %body, label %endwhile
 
 body:                                             ; preds = %while
-  %__iterator194 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator19
-  %7 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator194)
+  %__iterator1074 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator107
+  %7 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator1074)
   store i32 %7, i32* %index
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer5 = load i32*, i32** %bufferPointer
@@ -86,7 +86,7 @@ body:                                             ; preds = %while
   %source10 = load i32*, i32** %source
   %10 = load i32, i32* %source10
   store i32 %10, i32* %target9
-  call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator19)
+  call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator107)
   br label %while
 
 endwhile:                                         ; preds = %while
@@ -114,7 +114,7 @@ endif15:                                          ; preds = %else14, %then13
 }
 
 define void @_ENM3std5ArrayI3intE4initE8elementsPAR_3int(%"Array<int>"* %this, %"ArrayRef<int>" %elements) {
-  %__iterator18 = alloca %"RangeIterator<uint>"
+  %__iterator24 = alloca %"RangeIterator<uint>"
   %1 = alloca %"Range<uint>"
   %index = alloca i32
   %size = extractvalue %"ArrayRef<int>" %elements, 1
@@ -123,24 +123,24 @@ define void @_ENM3std5ArrayI3intE4initE8elementsPAR_3int(%"Array<int>"* %this, %
   call void @_ENM3std5RangeI4uintE4initE5start4uint3end4uint(%"Range<uint>"* %1, i32 0, i32 %size1)
   %2 = load %"Range<uint>", %"Range<uint>"* %1
   %3 = call %"RangeIterator<uint>" @_EN3std5RangeI4uintE8iteratorE(%"Range<uint>" %2)
-  store %"RangeIterator<uint>" %3, %"RangeIterator<uint>"* %__iterator18
+  store %"RangeIterator<uint>" %3, %"RangeIterator<uint>"* %__iterator24
   br label %while
 
 while:                                            ; preds = %body, %0
-  %__iterator182 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator18
-  %4 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator182)
+  %__iterator242 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator24
+  %4 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator242)
   br i1 %4, label %body, label %endwhile
 
 body:                                             ; preds = %while
-  %__iterator183 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator18
-  %5 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator183)
+  %__iterator243 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator24
+  %5 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator243)
   store i32 %5, i32* %index
   %6 = extractvalue %"ArrayRef<int>" %elements, 0
   %index4 = load i32, i32* %index
   %7 = getelementptr i32, i32* %6, i32 %index4
   %8 = load i32, i32* %7
   call void @_ENM3std5ArrayI3intE4pushE10newElement3int(%"Array<int>"* %this, i32 %8)
-  call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator18)
+  call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator24)
   br label %while
 
 endwhile:                                         ; preds = %while
@@ -405,7 +405,7 @@ define void @_EN3std5ArrayI3intE21emptyArrayRemoveFirstE(%"Array<int>"* %this) {
 }
 
 define void @_ENM3std5ArrayI3intE14unsafeRemoveAtE5index4uint(%"Array<int>"* %this, i32 %index) {
-  %__iterator20 = alloca %"RangeIterator<uint>"
+  %__iterator155 = alloca %"RangeIterator<uint>"
   %1 = alloca %"Range<uint>"
   %i = alloca i32
   %source = alloca i32*
@@ -416,17 +416,17 @@ define void @_ENM3std5ArrayI3intE14unsafeRemoveAtE5index4uint(%"Array<int>"* %th
   call void @_ENM3std5RangeI4uintE4initE5start4uint3end4uint(%"Range<uint>"* %1, i32 %2, i32 %size1)
   %3 = load %"Range<uint>", %"Range<uint>"* %1
   %4 = call %"RangeIterator<uint>" @_EN3std5RangeI4uintE8iteratorE(%"Range<uint>" %3)
-  store %"RangeIterator<uint>" %4, %"RangeIterator<uint>"* %__iterator20
+  store %"RangeIterator<uint>" %4, %"RangeIterator<uint>"* %__iterator155
   br label %while
 
 while:                                            ; preds = %body, %0
-  %__iterator202 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator20
-  %5 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator202)
+  %__iterator1552 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator155
+  %5 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator1552)
   br i1 %5, label %body, label %endwhile
 
 body:                                             ; preds = %while
-  %__iterator203 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator20
-  %6 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator203)
+  %__iterator1553 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator155
+  %6 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator1553)
   store i32 %6, i32* %i
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer4 = load i32*, i32** %bufferPointer
@@ -443,7 +443,7 @@ body:                                             ; preds = %while
   %source10 = load i32*, i32** %source
   %10 = load i32, i32* %source10
   store i32 %10, i32* %target9
-  call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator20)
+  call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator155)
   br label %while
 
 endwhile:                                         ; preds = %while

@@ -4,30 +4,30 @@
 
 define i32 @main() {
   %sum = alloca i32
-  %__iterator18 = alloca %"ClosedRangeIterator<int>"
+  %__iterator5 = alloca %"ClosedRangeIterator<int>"
   %1 = alloca %"ClosedRange<int>"
   %i = alloca i32
   store i32 0, i32* %sum
   call void @_ENM3std11ClosedRangeI3intE4initE5start3int3end3int(%"ClosedRange<int>"* %1, i32 68, i32 75)
   %2 = load %"ClosedRange<int>", %"ClosedRange<int>"* %1
   %3 = call %"ClosedRangeIterator<int>" @_EN3std11ClosedRangeI3intE8iteratorE(%"ClosedRange<int>" %2)
-  store %"ClosedRangeIterator<int>" %3, %"ClosedRangeIterator<int>"* %__iterator18
+  store %"ClosedRangeIterator<int>" %3, %"ClosedRangeIterator<int>"* %__iterator5
   br label %while
 
 while:                                            ; preds = %body, %0
-  %__iterator181 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator18
-  %4 = call i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(%"ClosedRangeIterator<int>" %__iterator181)
+  %__iterator51 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator5
+  %4 = call i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(%"ClosedRangeIterator<int>" %__iterator51)
   br i1 %4, label %body, label %endwhile
 
 body:                                             ; preds = %while
-  %__iterator182 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator18
-  %5 = call i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(%"ClosedRangeIterator<int>" %__iterator182)
+  %__iterator52 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator5
+  %5 = call i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(%"ClosedRangeIterator<int>" %__iterator52)
   store i32 %5, i32* %i
   %6 = load i32, i32* %sum
   %i3 = load i32, i32* %i
   %7 = add i32 %6, %i3
   store i32 %7, i32* %sum
-  call void @_ENM3std19ClosedRangeIteratorI3intE9incrementE(%"ClosedRangeIterator<int>"* %__iterator18)
+  call void @_ENM3std19ClosedRangeIteratorI3intE9incrementE(%"ClosedRangeIterator<int>"* %__iterator5)
   br label %while
 
 endwhile:                                         ; preds = %while
