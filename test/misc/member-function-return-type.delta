@@ -1,4 +1,4 @@
-// RUN: check_exit_status 21 %delta run %s
+// RUN: check_exit_status 21 compile_and_run %s
 
 struct Foo: Copyable {
     var value: int;

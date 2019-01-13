@@ -1,4 +1,4 @@
-// RUN: check_exit_status 15 %delta run %s
+// RUN: check_exit_status 15 compile_and_run %s
 
 struct vec2: Copyable {
     var x: int;

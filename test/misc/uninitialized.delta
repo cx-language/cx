@@ -1,4 +1,4 @@
-// RUN: check_exit_status 70 %delta run %s
+// RUN: check_exit_status 70 compile_and_run %s
 
 def main(): int {
     var buffer: uint8[4] = undefined;
