@@ -48,7 +48,8 @@ elif [[ "$os" == "MINGW"* ]]; then
     cd "$build_dir"
     cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$llvm_install_dir"
 else
-    LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-16.04
+    UBUNTU_VERSION=$(lsb_release -r -s)
+    LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-$UBUNTU_VERSION
 
     sudo apt-get update
 
