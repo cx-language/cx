@@ -61,6 +61,15 @@ std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix, s
     return values;
 }
 
+std::string collectStringOptionValue(llvm::StringRef flagPrefix, std::vector<llvm::StringRef>& args) {
+    auto values = collectStringOptionValues(flagPrefix, args);
+    if (values.empty()) {
+        return "";
+    } else {
+        return std::move(values.back());
+    }
+}
+
 void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearchPaths, const char* name) {
     if (const char* pathList = std::getenv(name)) {
         llvm::SmallVector<llvm::StringRef, 16> paths;
@@ -213,6 +222,10 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 #endif
     auto importSearchPaths = collectStringOptionValues("-I", args);
     auto frameworkSearchPaths = collectStringOptionValues("-F", args);
+    auto specifiedOutputFileName = collectStringOptionValue("-o", args);
+    if (!specifiedOutputFileName.empty()) {
+        outputFileName = specifiedOutputFileName;
+    }
 
     for (llvm::StringRef arg : args) {
         if (arg.startswith("-")) {
