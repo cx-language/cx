@@ -109,8 +109,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
 //     }
 // }
 std::unique_ptr<Stmt> ForStmt::lower() {
-    static uint64_t iteratorVariableNameCounter = 0;
-    auto iteratorVariableName = "__iterator" + std::to_string(iteratorVariableNameCounter++);
+    auto iteratorVariableName = "__iterator" + std::to_string(location.line);
     auto location = getLocation();
 
     std::vector<std::unique_ptr<Stmt>> stmts;
