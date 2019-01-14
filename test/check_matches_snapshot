@@ -4,6 +4,11 @@ import os
 import sys
 import subprocess
 
+
+def convert_newlines(string):
+    return string.replace("\r\n", "\n")
+
+
 snapshot_path = sys.argv[1]
 
 try:
@@ -18,7 +23,7 @@ if "UPDATE_SNAPSHOTS" in os.environ:
     sys.exit(0)
 
 with open(snapshot_path, "r") as snapshot_file:
-    snapshot = snapshot_file.read()
+    snapshot = convert_newlines(snapshot_file.read())
 
 if output != snapshot:
     print("FAIL: output doesn't match snapshot\n")
