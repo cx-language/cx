@@ -86,7 +86,7 @@ Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
     int ch;
 
     while ((ch = readChar()) != delimiter || *(end - 2) == '\\') {
-        if (ch == '\n') {
+        if (ch == '\n' || ch == '\r') {
             SourceLocation newlineLocation = firstLocation;
             newlineLocation.column += end - begin - 1;
             error(newlineLocation, "newline inside ", toString(literalKind));
