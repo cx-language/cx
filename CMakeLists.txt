@@ -59,9 +59,11 @@ add_custom_target(check COMMAND lit --verbose --succinct --incremental ${EXTRA_L
 if(MSVC)
     # If we try to set '-Ox' here, we get the error "'/Ox' and '/RTC1' command-line options are incompatible",
     # and there seems to be no easy way to override compile flags for a specific target for MSVC from CMake.
-    set(UTILITY_PROGRAM_COMPILE_FLAGS "-w")
+    set(FILECHECK_COMPILE_FLAGS "-w")
+    set(NOT_COMPILE_FLAGS "-w")
 else()
-    set(UTILITY_PROGRAM_COMPILE_FLAGS "-w -O3")
+    set(FILECHECK_COMPILE_FLAGS "-w -O3")
+    set(NOT_COMPILE_FLAGS "-w -O0") # Don't optimize 'not', otherwise it segfaults on CI (since LLVM 7).
 endif()
 
 # Download the LLVM FileCheck utility for tests.
@@ -73,7 +75,7 @@ if(NOT EXISTS "${FILECHECK_SRC_FILE}")
     file(DOWNLOAD "${FILECHECK_SRC_URL}" "${FILECHECK_SRC_FILE}")
 endif()
 add_executable(FileCheck ${FILECHECK_SRC_FILE})
-set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS ${UTILITY_PROGRAM_COMPILE_FLAGS})
+set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS ${FILECHECK_COMPILE_FLAGS})
 llvm_map_components_to_libnames(FILECHECK_NEEDED_LIBS support)
 target_link_libraries(FileCheck PRIVATE ${FILECHECK_NEEDED_LIBS})
 
@@ -86,7 +88,7 @@ if(NOT EXISTS "${NOT_SRC_FILE}")
     file(DOWNLOAD "${NOT_SRC_URL}" "${NOT_SRC_FILE}")
 endif()
 add_executable(not ${NOT_SRC_FILE})
-set_target_properties(not PROPERTIES COMPILE_FLAGS ${UTILITY_PROGRAM_COMPILE_FLAGS})
+set_target_properties(not PROPERTIES COMPILE_FLAGS ${NOT_COMPILE_FLAGS})
 llvm_map_components_to_libnames(NOT_NEEDED_LIBS support)
 target_link_libraries(not PRIVATE ${NOT_NEEDED_LIBS})
 
