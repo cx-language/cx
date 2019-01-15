@@ -394,7 +394,7 @@ define i32* @_EN3std13allocateArrayI3intEE4size4uint(i32 %size) {
 
 assert.fail:                                      ; preds = %0
   %4 = call i32 @puts(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @5, i32 0, i32 0))
-  call void @llvm.trap()
+  call void @abort()
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -728,9 +728,6 @@ declare i8* @malloc(i64)
 
 declare i32 @puts(i8*)
 
-; Function Attrs: noreturn nounwind
-declare void @llvm.trap() #0
+declare void @abort()
 
 declare void @free(i8*)
-
-attributes #0 = { noreturn nounwind }

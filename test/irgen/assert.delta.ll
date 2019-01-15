@@ -10,7 +10,7 @@ define i32 @main() {
 
 assert.fail:                                      ; preds = %0
   %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @0, i32 0, i32 0))
-  call void @llvm.trap()
+  call void @abort()
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -19,7 +19,4 @@ assert.success:                                   ; preds = %0
 
 declare i32 @puts(i8*)
 
-; Function Attrs: noreturn nounwind
-declare void @llvm.trap() #0
-
-attributes #0 = { noreturn nounwind }
+declare void @abort()

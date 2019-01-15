@@ -41,7 +41,7 @@ define i32* @_EN3std8allocateI3intEE5value3int(i32 %value) {
 
 assert.fail:                                      ; preds = %0
   %2 = call i32 @puts(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @1, i32 0, i32 0))
-  call void @llvm.trap()
+  call void @abort()
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -99,7 +99,7 @@ define %"UniquePtr<int>"* @_EN3std8allocateI9UniquePtrI3intEEE5value9UniquePtrI3
 
 assert.fail:                                      ; preds = %0
   %2 = call i32 @puts(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @0, i32 0, i32 0))
-  call void @llvm.trap()
+  call void @abort()
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -146,9 +146,6 @@ declare i8* @malloc(i64)
 
 declare i32 @puts(i8*)
 
-; Function Attrs: noreturn nounwind
-declare void @llvm.trap() #0
+declare void @abort()
 
 declare void @free(i8*)
-
-attributes #0 = { noreturn nounwind }
