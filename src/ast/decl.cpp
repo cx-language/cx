@@ -8,7 +8,7 @@
 
 using namespace delta;
 
-FunctionProto FunctionProto::instantiate(const llvm::StringMap<Type> genericArgs) const {
+FunctionProto FunctionProto::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     auto params = instantiateParams(getParams(), genericArgs);
     auto returnType = getReturnType().resolve(genericArgs);
     std::vector<GenericParamDecl> genericParams;
@@ -131,7 +131,7 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
     }
 }
 
-std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type> genericArgs) {
+std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
     return map(params, [&](const ParamDecl& param) {
         return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.getLocation());
     });

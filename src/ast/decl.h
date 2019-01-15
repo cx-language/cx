@@ -145,7 +145,7 @@ private:
     SourceLocation location;
 };
 
-std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type> genericArgs);
+std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs);
 
 class GenericParamDecl : public Decl {
 public:
@@ -174,7 +174,7 @@ public:
     Type getReturnType() const { return returnType; }
     bool isVarArg() const { return varArg; }
     bool isExtern() const { return external; }
-    FunctionProto instantiate(const llvm::StringMap<Type> genericArgs) const;
+    FunctionProto instantiate(const llvm::StringMap<Type>& genericArgs) const;
 
 private:
     std::string name;
