@@ -27,6 +27,11 @@ addons:
             - libstdc++-6-dev
             - libedit-dev
             - lcov
+    homebrew:
+        packages:
+            - cmake
+            - llvm@7
+        update: true
 
 env:
     global:
@@ -48,10 +53,7 @@ install:
           pip install --user lit cpp-coveralls;
       fi
     - if [ $TRAVIS_OS_NAME == "osx" ]; then
-          brew update;
-          LLVM_PACKAGE=llvm@7;
-          brew install cmake $LLVM_PACKAGE;
-          export LLVMDIR="$(brew --prefix $LLVM_PACKAGE)";
+          export LLVMDIR="$(brew --prefix llvm)";
           pip2 install lit;
       fi
 
