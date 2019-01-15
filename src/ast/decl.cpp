@@ -314,7 +314,6 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
             auto initializer = varDecl->getInitializer() ? varDecl->getInitializer()->instantiate(genericArgs) : nullptr;
             return llvm::make_unique<VarDecl>(type, varDecl->getName(), std::move(initializer), varDecl->getParent(),
                                               getAccessLevel(), *varDecl->getModule(), varDecl->getLocation());
-            break;
         }
         case DeclKind::FieldDecl:
             llvm_unreachable("handled via TypeDecl");

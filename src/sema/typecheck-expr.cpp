@@ -1279,6 +1279,7 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
                 auto paramDecls = functionType->getParamDecls(varDecl->getLocation());
                 validateArgs(expr, false, paramDecls, false, functionName, location);
             }
+            break;
         }
         case DeclKind::ParamDecl: {
             auto* paramDecl = llvm::cast<ParamDecl>(&calleeDecl);
@@ -1286,6 +1287,7 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
                 auto paramDecls = functionType->getParamDecls(paramDecl->getLocation());
                 validateArgs(expr, false, paramDecls, false, functionName, location);
             }
+            break;
         }
         case DeclKind::FieldDecl: {
             auto* fieldDecl = llvm::cast<FieldDecl>(&calleeDecl);
@@ -1293,6 +1295,7 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
                 auto paramDecls = functionType->getParamDecls(fieldDecl->getLocation());
                 validateArgs(expr, false, paramDecls, false, functionName, location);
             }
+            break;
         }
         default:
             llvm_unreachable("invalid callee decl");
