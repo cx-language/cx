@@ -42,8 +42,8 @@ If you're on Windows, do the following:
    `setup-build.sh`, passing the path to your LLVM source directory as an
    argument.
 5. For running the tests, install [lit](http://llvm.org/docs/CommandGuide/lit.html)
-   by running `pip install lit` (you need [pip](https://pip.pypa.io/en/stable/)
-   installed). You might have to do this as an administrator.
+   by running `sudo pip install lit` (you need [pip](https://pip.pypa.io/en/stable/)
+   installed).
 
 Otherwise, install the dependencies manually and do the following in the root
 directory of the repository:
