@@ -1,12 +1,19 @@
 language: cpp
 
-os:
-    - linux
-    - osx
+matrix:
+    include:
+        - os: linux
+          compiler: clang
 
-compiler:
-    - clang
-    - gcc
+        - os: linux
+          compiler: gcc
+
+        - os: osx
+          compiler: clang
+
+        - os: osx
+          compiler: clang
+          env: BUILD_SHARED_LIBS=ON
 
 addons:
     apt:
@@ -21,21 +28,11 @@ addons:
             - libedit-dev
             - lcov
 
-matrix:
-    exclude:
-        - os: linux
-          env: BUILD_SHARED_LIBS=ON
-        - os: osx
-          compiler: gcc
-
 env:
     global:
         - secure: "B1EM2bHUOTeDkMSP4Yl2MBfzsDFpoDy/GGIfWUFhya5KUI1L6vwXPAfWi6jP8w0UGBZAx9x5XFJXKMGKs4Ark4YOlhdtMmwKjflVOFLoIiqjKshr/791XiA77axL3L5dO90noeOFzXL7NBOGry8zF1TjELuNk2JWJZpqU00pB9fnq8ruy6H3VQ+9jZ/eAnB9OVzCB7tQXj3P3bNoUbgz3ZoEKkEi7n9rHug9erXcbbogDKP0PQ9s6mlCmD1jq3gx1oZDeflLCdXJ3bFE7krG69Vi745OnaDhMpDcJm0qV9EAZWD41cX1qd1VCfwnUwCt7w5CP2P+uyotmQnUc0d572HzU9suGw/YINmEXLsX1Yqumm7d9gto5kuQE37D6GAo8duGEeFZVRv4uTX+AlBaL6nhRKNnQqhgKjKHpsPHzU/mBO3SsfL2wLMvUFGdw7lum/RRemritx7YUdXyUVwZV5fiFLNg2go0WMZd9UkX+WnM1isBMpxCL492wKe/8uECpfnamed1ECnHAYUGVT25tEEky4Frh0HD37CCmZ3f6YmZhEmnvrZGdqmwkf8VO7MXTS/u8HqWw2eS6/SjcpAwgs5RCH0E/dD6LuepvPmy2igBn4EBgKTjyAUCHt7M9T+PpsiOZ/+VwK29A+RLlk5SxGDjSVQHYwVJ7t0LXObMHFs="
         - LLVM_VERSION=7.0.1
         - LLVM_TARBALL_NAME=clang+llvm-7.0.1-x86_64-linux-gnu-ubuntu-14.04
-    matrix:
-        - BUILD_SHARED_LIBS=OFF
-        - BUILD_SHARED_LIBS=ON
 
 before_install:
     - if [ $TRAVIS_OS_NAME == "linux" ]; then
@@ -62,7 +59,7 @@ script:
     - set -e # Error out immediately if any of the following commands fails.
     - cmake -G "Unix Makefiles"
       -DCMAKE_PREFIX_PATH="$LLVMDIR"
-      -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS
+      -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
       -DCMAKE_CXX_FLAGS="$CXXFLAGS" -DCMAKE_BUILD_TYPE=Debug .
     - make
     - make check
