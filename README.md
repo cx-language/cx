@@ -20,7 +20,7 @@ Also check out the [standard library API reference](https://delta-lang.github.io
 
 ## Building from source
 
-Building Delta from source requires the following dependencies: a C++14
+Building Delta from source requires the following dependencies: a C++17
 compiler, [CMake](https://cmake.org), [libedit](http://thrysoee.dk/editline/) (only on Linux),
 and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries
 (version 7.0). To run the test suite, you also need
