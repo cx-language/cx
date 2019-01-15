@@ -71,3 +71,12 @@ after_success:
           coveralls --exclude test --exclude llvm --exclude $LLVM_TARBALL_NAME --exclude CMakeFiles;
           scripts/update-delta-sandbox.sh;
       fi
+
+cache:
+    directories:
+        - $HOME/Library/Caches/Homebrew
+
+before_cache:
+    - if [ $TRAVIS_OS_NAME == "osx" ]; then
+          brew cleanup;
+      fi
