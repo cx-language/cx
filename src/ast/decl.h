@@ -43,7 +43,6 @@ class FieldDecl;
 class FunctionDecl;
 
 enum class DeclKind {
-    ParamDecl,
     GenericParamDecl,
     FunctionDecl,
     MethodDecl,
@@ -55,6 +54,7 @@ enum class DeclKind {
     EnumDecl,
     VarDecl,
     FieldDecl,
+    ParamDecl,
     ImportDecl,
 };
 
@@ -81,6 +81,7 @@ class Decl {
 public:
     virtual ~Decl() = 0;
 
+    bool isVariableDecl() const { return getKind() >= DeclKind::VarDecl && getKind() <= DeclKind::ParamDecl; }
     bool isParamDecl() const { return getKind() == DeclKind::ParamDecl; }
     bool isFunctionDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::DeinitDecl; }
     bool isMethodDecl() const { return getKind() >= DeclKind::MethodDecl && getKind() <= DeclKind::DeinitDecl; }
@@ -126,11 +127,24 @@ private:
     bool moved = false;
 };
 
-class ParamDecl : public Decl, public Movable {
+/// Represents any variable declaration, including local variables, global variables, member variables, and parameters.
+class VariableDecl : public Decl {
+public:
+    Type getType() const { return type; }
+    void setType(Type type) { this->type = type; }
+    static bool classof(const Decl* d) { return d->isVariableDecl(); }
+
+protected:
+    VariableDecl(DeclKind kind, AccessLevel accessLevel, Type type) : Decl(kind, accessLevel), type(type) {}
+
+private:
+    Type type;
+};
+
+class ParamDecl : public VariableDecl, public Movable {
 public:
     ParamDecl(Type type, std::string&& name, SourceLocation location)
-    : Decl(DeclKind::ParamDecl, AccessLevel::None), type(type), name(std::move(name)), location(location) {}
-    Type getType() const { return type; }
+    : VariableDecl(DeclKind::ParamDecl, AccessLevel::None, type), name(std::move(name)), location(location) {}
     llvm::StringRef getName() const override { return name; }
     Module* getModule() const override { return nullptr; }
     SourceLocation getLocation() const override { return location; }
@@ -140,7 +154,6 @@ public:
     }
 
 private:
-    Type type;
     std::string name;
     SourceLocation location;
 };
@@ -388,14 +401,12 @@ private:
     std::vector<EnumCase> cases;
 };
 
-class VarDecl : public Decl, public Movable {
+class VarDecl : public VariableDecl, public Movable {
 public:
     VarDecl(Type type, std::string&& name, std::unique_ptr<Expr> initializer, Decl* parent, AccessLevel accessLevel,
             Module& module, SourceLocation location)
-    : Decl(DeclKind::VarDecl, accessLevel), type(type), name(std::move(name)), initializer(std::move(initializer)),
+    : VariableDecl(DeclKind::VarDecl, accessLevel, type), name(std::move(name)), initializer(std::move(initializer)),
       parent(parent), location(location), module(module) {}
-    Type getType() const { return type; }
-    void setType(Type type) { this->type = type; }
     llvm::StringRef getName() const override { return name; }
     Expr* getInitializer() const { return initializer.get(); }
     Decl* getParent() const { return parent; }
@@ -404,7 +415,6 @@ public:
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }
 
 private:
-    Type type;
     std::string name;
     std::unique_ptr<Expr> initializer;
     Decl* parent;
@@ -412,11 +422,10 @@ private:
     Module& module;
 };
 
-class FieldDecl : public Decl {
+class FieldDecl : public VariableDecl {
 public:
     FieldDecl(Type type, std::string&& name, TypeDecl& parent, AccessLevel accessLevel, SourceLocation location)
-    : Decl(DeclKind::FieldDecl, accessLevel), type(type), name(std::move(name)), location(location), parent(parent) {}
-    Type getType() const { return type; }
+    : VariableDecl(DeclKind::FieldDecl, accessLevel, type), name(std::move(name)), location(location), parent(parent) {}
     llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
     Module* getModule() const override { return parent.getModule(); }
@@ -425,7 +434,6 @@ public:
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }
 
 private:
-    Type type;
     std::string name;
     SourceLocation location;
     TypeDecl& parent;

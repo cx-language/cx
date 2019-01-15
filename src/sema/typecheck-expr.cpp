@@ -914,50 +914,20 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
                 break;
             }
-            case DeclKind::VarDecl: {
-                auto* varDecl = llvm::cast<VarDecl>(decl);
-
-                if (auto* functionType = llvm::dyn_cast<FunctionType>(varDecl->getType().getBase())) {
-                    auto paramDecls = functionType->getParamDecls(varDecl->getLocation());
-
-                    if (decls.size() == 1 && !returnNullOnError) {
-                        validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
-                        return varDecl;
-                    }
-                    if (argumentsMatch(expr, nullptr, paramDecls)) {
-                        matches.push_back(varDecl);
-                    }
-                }
-                break;
-            }
-            case DeclKind::ParamDecl: {
-                auto* paramDecl = llvm::cast<ParamDecl>(decl);
-
-                if (auto* functionType = llvm::dyn_cast<FunctionType>(paramDecl->getType().getBase())) {
-                    auto paramDecls = functionType->getParamDecls(paramDecl->getLocation());
-
-                    if (decls.size() == 1 && !returnNullOnError) {
-                        validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
-                        return paramDecl;
-                    }
-                    if (argumentsMatch(expr, nullptr, paramDecls)) {
-                        matches.push_back(paramDecl);
-                    }
-                }
-                break;
-            }
+            case DeclKind::VarDecl:
+            case DeclKind::ParamDecl:
             case DeclKind::FieldDecl: {
-                auto* fieldDecl = llvm::cast<FieldDecl>(decl);
+                auto* variableDecl = llvm::cast<VariableDecl>(decl);
 
-                if (auto* functionType = llvm::dyn_cast<FunctionType>(fieldDecl->getType().getBase())) {
-                    auto paramDecls = functionType->getParamDecls(fieldDecl->getLocation());
+                if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->getType().getBase())) {
+                    auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
 
                     if (decls.size() == 1 && !returnNullOnError) {
                         validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
-                        return fieldDecl;
+                        return variableDecl;
                     }
                     if (argumentsMatch(expr, nullptr, paramDecls)) {
-                        matches.push_back(fieldDecl);
+                        matches.push_back(variableDecl);
                     }
                 }
                 break;
@@ -1149,20 +1119,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
             params = llvm::cast<FunctionDecl>(decl)->getParams();
             break;
 
-        case DeclKind::VarDecl: {
-            auto type = llvm::cast<VarDecl>(decl)->getType();
-            paramsStorage = llvm::cast<FunctionType>(type.getBase())->getParamDecls();
-            params = paramsStorage;
-            break;
-        }
-        case DeclKind::ParamDecl: {
-            auto type = llvm::cast<ParamDecl>(decl)->getType();
-            paramsStorage = llvm::cast<FunctionType>(type.getBase())->getParamDecls();
-            params = paramsStorage;
-            break;
-        }
+        case DeclKind::VarDecl:
+        case DeclKind::ParamDecl:
         case DeclKind::FieldDecl: {
-            auto type = llvm::cast<FieldDecl>(decl)->getType();
+            auto type = llvm::cast<VariableDecl>(decl)->getType();
             paramsStorage = llvm::cast<FunctionType>(type.getBase())->getParamDecls();
             params = paramsStorage;
             break;
@@ -1200,13 +1160,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
             return llvm::cast<InitDecl>(decl)->getTypeDecl()->getType();
 
         case DeclKind::VarDecl:
-            return llvm::cast<FunctionType>(llvm::cast<VarDecl>(decl)->getType().getBase())->getReturnType();
-
         case DeclKind::ParamDecl:
-            return llvm::cast<FunctionType>(llvm::cast<ParamDecl>(decl)->getType().getBase())->getReturnType();
-
         case DeclKind::FieldDecl:
-            return llvm::cast<FunctionType>(llvm::cast<FieldDecl>(decl)->getType().getBase())->getReturnType();
+            return llvm::cast<FunctionType>(llvm::cast<VariableDecl>(decl)->getType().getBase())->getReturnType();
 
         default:
             llvm_unreachable("invalid callee decl");
@@ -1273,26 +1229,12 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
                          functionName, location);
             break;
         }
-        case DeclKind::VarDecl: {
-            auto* varDecl = llvm::cast<VarDecl>(&calleeDecl);
-            if (auto* functionType = llvm::dyn_cast<FunctionType>(varDecl->getType().getBase())) {
-                auto paramDecls = functionType->getParamDecls(varDecl->getLocation());
-                validateArgs(expr, false, paramDecls, false, functionName, location);
-            }
-            break;
-        }
-        case DeclKind::ParamDecl: {
-            auto* paramDecl = llvm::cast<ParamDecl>(&calleeDecl);
-            if (auto* functionType = llvm::dyn_cast<FunctionType>(paramDecl->getType().getBase())) {
-                auto paramDecls = functionType->getParamDecls(paramDecl->getLocation());
-                validateArgs(expr, false, paramDecls, false, functionName, location);
-            }
-            break;
-        }
+        case DeclKind::VarDecl:
+        case DeclKind::ParamDecl:
         case DeclKind::FieldDecl: {
-            auto* fieldDecl = llvm::cast<FieldDecl>(&calleeDecl);
-            if (auto* functionType = llvm::dyn_cast<FunctionType>(fieldDecl->getType().getBase())) {
-                auto paramDecls = functionType->getParamDecls(fieldDecl->getLocation());
+            auto* variableDecl = llvm::cast<VariableDecl>(&calleeDecl);
+            if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->getType().getBase())) {
+                auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
                 validateArgs(expr, false, paramDecls, false, functionName, location);
             }
             break;
