@@ -1,4 +1,5 @@
 // RUN: not compile_and_run %s | %FileCheck %s
+// UNSUPPORTED: wsl
 
 def main() {
     var array = Array<int>();

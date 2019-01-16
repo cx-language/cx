@@ -1,5 +1,5 @@
 // RUN: not compile_and_run %s | %FileCheck %s
-// UNSUPPORTED: windows
+// UNSUPPORTED: windows, wsl
 
 def main() {
     var p: mutable int*? = null;
