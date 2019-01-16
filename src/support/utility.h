@@ -54,17 +54,6 @@ static void append(TargetContainer& target, const SourceContainer& source) {
 }
 
 template<typename T>
-std::string toDisjunctiveList(llvm::ArrayRef<T> values, std::string (&stringifier)(T)) {
-    std::string string;
-    for (const T& value : values) {
-        string += stringifier(value);
-        if (values.size() > 2) string += ',';
-        if (&value == values.end() - 2) string += " or ";
-    }
-    return string;
-}
-
-template<typename T>
 struct StateSaver {
     StateSaver(T& state) : state(state), savedState(std::move(state)) {}
     ~StateSaver() { state = std::move(savedState); }

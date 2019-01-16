@@ -74,12 +74,33 @@ static std::string quote(Token::Kind tokenKind) {
     return stream.str();
 }
 
+static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
+    std::string result;
+
+    for (auto& token : tokens) {
+        result += quote(token);
+
+        if (tokens.size() > 2 && &token != &tokens.back()) {
+            result += ", ";
+        }
+
+        if (&token == &tokens.back() - 1) {
+            if (tokens.size() == 2) {
+                result += " ";
+            }
+            result += "or ";
+        }
+    }
+
+    return result;
+}
+
 [[noreturn]] static void unexpectedToken(Token token, llvm::ArrayRef<Token::Kind> expected = {},
                                          const char* contextInfo = nullptr) {
     if (expected.size() == 0) {
         error(token.getLocation(), "unexpected ", quote(token), contextInfo ? " " : "", contextInfo ? contextInfo : "");
     } else {
-        error(token.getLocation(), "expected ", toDisjunctiveList(expected, quote), contextInfo ? " " : "",
+        error(token.getLocation(), "expected ", formatList(expected), contextInfo ? " " : "",
               contextInfo ? contextInfo : "", ", got ", quote(token));
     }
 }
