@@ -4,7 +4,7 @@ struct A: Copyable {
     var s: int
 
     def a() {
-        // CHECK: 8:10: error: cannot increment immutable value
+        // CHECK: 8:10: error: cannot increment immutable value of type 'int'
         s++
     }
 }

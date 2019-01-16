@@ -2,6 +2,6 @@
 
 struct Foo {
     var i: int;
-    // CHECK: [[@LINE+1]]:23: error: cannot increment immutable value
+    // CHECK: [[@LINE+1]]:23: error: cannot increment immutable value of type 'int'
     def bar() { this.i++; }
 }

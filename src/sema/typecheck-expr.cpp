@@ -177,14 +177,14 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     }
     if (expr.getOperator() == Token::Increment) {
         if (!operandType.isMutable()) {
-            error(expr.getLocation(), "cannot increment immutable value");
+            error(expr.getLocation(), "cannot increment immutable value of type '", operandType, "'");
         }
         // TODO: check that operand supports increment operation.
         return Type::getVoid();
     }
     if (expr.getOperator() == Token::Decrement) {
         if (!operandType.isMutable()) {
-            error(expr.getLocation(), "cannot decrement immutable value");
+            error(expr.getLocation(), "cannot decrement immutable value of type '", operandType, "'");
         }
         // TODO: check that operand supports decrement operation.
         return Type::getVoid();
