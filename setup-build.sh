@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 LLVM_VERSION=7.0.1
 
 set -e
