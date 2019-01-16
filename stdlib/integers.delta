@@ -3,19 +3,19 @@
 
 // TODO: Improve printTo() implementations: optimize + don't depend on libc + don't assume size of int.
 
-def printSigned<T>(value: T, stream: mutable String*) {
+private def printSigned<T>(value: T, stream: mutable String*) {
     var result: char[22] = undefined;
     sprintf(result, "%lld", value);
     stream.write(StringRef(result));
 }
 
-def printUnsigned<T>(value: T, stream: mutable String*) {
+private def printUnsigned<T>(value: T, stream: mutable String*) {
     var result: char[22] = undefined;
     sprintf(result, "%llu", value);
     stream.write(StringRef(result));
 }
 
-struct int: Copyable, Comparable, Printable {
+struct int: Copyable, Comparable, Printable, Hashable {
     def compare(other: int*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -23,9 +23,13 @@ struct int: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct int8: Copyable, Comparable, Printable {
+struct int8: Copyable, Comparable, Printable, Hashable {
     def compare(other: int8*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -33,9 +37,13 @@ struct int8: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct int16: Copyable, Comparable, Printable {
+struct int16: Copyable, Comparable, Printable, Hashable {
     def compare(other: int16*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -43,9 +51,13 @@ struct int16: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct int32: Copyable, Comparable, Printable {
+struct int32: Copyable, Comparable, Printable, Hashable {
     def compare(other: int32*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -53,9 +65,13 @@ struct int32: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct int64: Copyable, Comparable, Printable {
+struct int64: Copyable, Comparable, Printable, Hashable {
     def compare(other: int64*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -63,9 +79,13 @@ struct int64: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printSigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct uint: Copyable, Comparable, Printable {
+struct uint: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -73,9 +93,13 @@ struct uint: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct uint8: Copyable, Comparable, Printable {
+struct uint8: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint8*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -83,9 +107,13 @@ struct uint8: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct uint16: Copyable, Comparable, Printable {
+struct uint16: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint16*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -93,9 +121,13 @@ struct uint16: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct uint32: Copyable, Comparable, Printable {
+struct uint32: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint32*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
@@ -103,14 +135,22 @@ struct uint32: Copyable, Comparable, Printable {
     def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
     }
+
+    def hash(): uint64 {
+        return uint64(this);
+    }
 }
 
-struct uint64: Copyable, Comparable, Printable {
+struct uint64: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint64*): Ordering {
         return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
         printUnsigned(this, stream);
+    }
+
+    def hash(): uint64 {
+        return uint64(this);
     }
 }
