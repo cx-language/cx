@@ -147,6 +147,10 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
     }
 
     currentControlStmts.pop_back();
+
+    if (auto* increment = whileStmt.getIncrement()) {
+        typecheckExpr(*increment);
+    }
 }
 
 void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {

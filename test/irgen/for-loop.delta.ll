@@ -14,7 +14,7 @@ define i32 @main() {
   store %"ClosedRangeIterator<int>" %3, %"ClosedRangeIterator<int>"* %__iterator5
   br label %while
 
-while:                                            ; preds = %body, %0
+while:                                            ; preds = %loop.increment, %0
   %__iterator51 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator5
   %4 = call i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(%"ClosedRangeIterator<int>" %__iterator51)
   br i1 %4, label %body, label %endwhile
@@ -27,6 +27,9 @@ body:                                             ; preds = %while
   %i3 = load i32, i32* %i
   %7 = add i32 %6, %i3
   store i32 %7, i32* %sum
+  br label %loop.increment
+
+loop.increment:                                   ; preds = %body
   call void @_ENM3std19ClosedRangeIteratorI3intE9incrementE(%"ClosedRangeIterator<int>"* %__iterator5)
   br label %while
 

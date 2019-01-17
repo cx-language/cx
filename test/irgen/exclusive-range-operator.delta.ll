@@ -14,7 +14,7 @@ define i32 @main() {
   store %"RangeIterator<int>" %3, %"RangeIterator<int>"* %__iterator6
   br label %while
 
-while:                                            ; preds = %body, %0
+while:                                            ; preds = %loop.increment, %0
   %__iterator61 = load %"RangeIterator<int>", %"RangeIterator<int>"* %__iterator6
   %4 = call i1 @_EN3std13RangeIteratorI3intE8hasValueE(%"RangeIterator<int>" %__iterator61)
   br i1 %4, label %body, label %endwhile
@@ -27,6 +27,9 @@ body:                                             ; preds = %while
   %i3 = load i32, i32* %i
   %7 = sub i32 %6, %i3
   store i32 %7, i32* %p
+  br label %loop.increment
+
+loop.increment:                                   ; preds = %body
   call void @_ENM3std13RangeIteratorI3intE9incrementE(%"RangeIterator<int>"* %__iterator6)
   br label %while
 

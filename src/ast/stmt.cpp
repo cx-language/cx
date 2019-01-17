@@ -67,7 +67,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
             auto* whileStmt = llvm::cast<WhileStmt>(this);
             auto condition = whileStmt->getCondition().instantiate(genericArgs);
             auto body = ::instantiate(whileStmt->getBody(), genericArgs);
-            return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body));
+            return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body), nullptr);
         }
         case StmtKind::ForStmt: {
             auto* forStmt = llvm::cast<ForStmt>(this);
@@ -158,10 +158,9 @@ std::unique_ptr<Stmt> ForStmt::lower() {
     auto incrementMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr3), "increment", location);
     auto incrementCallExpr = llvm::make_unique<CallExpr>(std::move(incrementMemberExpr), std::vector<NamedValue>(),
                                                          std::vector<Type>(), location);
-    auto incrementExprStmt = llvm::make_unique<ExprStmt>(std::move(incrementCallExpr));
-    forStmtBody.push_back(std::move(incrementExprStmt));
 
-    auto whileStmt = llvm::make_unique<WhileStmt>(std::move(hasValueCallExpr), std::move(forStmtBody));
+    auto whileStmt = llvm::make_unique<WhileStmt>(std::move(hasValueCallExpr), std::move(forStmtBody),
+                                                  std::move(incrementCallExpr));
     stmts.push_back(std::move(whileStmt));
 
     return llvm::make_unique<CompoundStmt>(std::move(stmts));

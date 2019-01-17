@@ -1,0 +1,9 @@
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s
+
+def main() {
+    for (var ch in "abc") {
+        if (ch == 'b') {
+            continue;
+        }
+    }
+}

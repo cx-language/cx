@@ -915,7 +915,7 @@ std::unique_ptr<WhileStmt> Parser::parseWhileStmt(Decl* parent) {
     auto condition = parseExpr();
     parse(Token::RightParen);
     auto body = parseBlockOrStmt(parent);
-    return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body));
+    return llvm::make_unique<WhileStmt>(std::move(condition), std::move(body), nullptr);
 }
 
 /// for-stmt ::= 'for' '(' 'var' id 'in' expr ')' block-or-stmt

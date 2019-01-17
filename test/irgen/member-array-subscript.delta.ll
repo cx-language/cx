@@ -65,7 +65,7 @@ else:                                             ; preds = %0
 endif:                                            ; preds = %else, %endif15
   ret void
 
-while:                                            ; preds = %body, %then
+while:                                            ; preds = %loop.increment, %then
   %__iterator1073 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator107
   %6 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator1073)
   br i1 %6, label %body, label %endwhile
@@ -87,6 +87,9 @@ body:                                             ; preds = %while
   %source10 = load i32*, i32** %source
   %10 = load i32, i32* %source10
   store i32 %10, i32* %target9
+  br label %loop.increment
+
+loop.increment:                                   ; preds = %body
   call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator107)
   br label %while
 
@@ -127,7 +130,7 @@ define void @_ENM3std5ArrayI3intE4initE8elementsPAR_3int(%"Array<int>"* %this, %
   store %"RangeIterator<uint>" %3, %"RangeIterator<uint>"* %__iterator24
   br label %while
 
-while:                                            ; preds = %body, %0
+while:                                            ; preds = %loop.increment, %0
   %__iterator242 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator24
   %4 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator242)
   br i1 %4, label %body, label %endwhile
@@ -141,6 +144,9 @@ body:                                             ; preds = %while
   %7 = getelementptr i32, i32* %6, i32 %index4
   %8 = load i32, i32* %7
   call void @_ENM3std5ArrayI3intE4pushE10newElement3int(%"Array<int>"* %this, i32 %8)
+  br label %loop.increment
+
+loop.increment:                                   ; preds = %body
   call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator24)
   br label %while
 
@@ -420,7 +426,7 @@ define void @_ENM3std5ArrayI3intE14unsafeRemoveAtE5index4uint(%"Array<int>"* %th
   store %"RangeIterator<uint>" %4, %"RangeIterator<uint>"* %__iterator155
   br label %while
 
-while:                                            ; preds = %body, %0
+while:                                            ; preds = %loop.increment, %0
   %__iterator1552 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator155
   %5 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator1552)
   br i1 %5, label %body, label %endwhile
@@ -444,6 +450,9 @@ body:                                             ; preds = %while
   %source10 = load i32*, i32** %source
   %10 = load i32, i32* %source10
   store i32 %10, i32* %target9
+  br label %loop.increment
+
+loop.increment:                                   ; preds = %body
   call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator155)
   br label %while
 

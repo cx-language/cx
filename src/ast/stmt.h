@@ -152,16 +152,18 @@ private:
 
 class WhileStmt : public Stmt {
 public:
-    WhileStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& body)
-    : Stmt(StmtKind::WhileStmt), condition(std::move(condition)), body(std::move(body)) {}
+    WhileStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& body, std::unique_ptr<Expr> increment)
+    : Stmt(StmtKind::WhileStmt), condition(std::move(condition)), body(std::move(body)), increment(std::move(increment)) {}
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
     llvm::MutableArrayRef<std::unique_ptr<Stmt>> getBody() { return body; }
+    Expr* getIncrement() const { return increment.get(); }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::WhileStmt; }
 
 private:
     std::unique_ptr<Expr> condition;
     std::vector<std::unique_ptr<Stmt>> body;
+    std::unique_ptr<Expr> increment; // Used in 'for' loop lowering.
 };
 
 class ForStmt : public Stmt {

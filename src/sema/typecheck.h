@@ -113,7 +113,7 @@ private:
                                                    llvm::ArrayRef<std::string> frameworkSearchPaths,
                                                    llvm::StringRef moduleName);
 
-    /// Returns true if the given expression (of optional type) is guaranteed to be non-null, .g.
+    /// Returns true if the given expression (of optional type) is guaranteed to be non-null, e.g.
     /// if it was previously checked against null, and the type-checker can prove that it wasn't set
     /// back to null after that check.
     bool isGuaranteedNonNull(const Expr& expr) const;

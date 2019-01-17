@@ -339,12 +339,14 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
 }
 
 void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
+    auto* increment = whileStmt.getIncrement();
     auto* function = builder.GetInsertBlock()->getParent();
     auto* condition = llvm::BasicBlock::Create(ctx, "while", function);
     auto* body = llvm::BasicBlock::Create(ctx, "body", function);
+    auto* afterBody = increment ? llvm::BasicBlock::Create(ctx, "loop.increment", function) : condition;
     auto* end = llvm::BasicBlock::Create(ctx, "endwhile", function);
     breakTargets.push_back(end);
-    continueTargets.push_back(condition);
+    continueTargets.push_back(afterBody);
     builder.CreateBr(condition);
 
     builder.SetInsertPoint(condition);
@@ -353,7 +355,13 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
         conditionValue = codegenImplicitNullComparison(conditionValue);
     }
     builder.CreateCondBr(conditionValue, body, end);
-    codegenBlock(whileStmt.getBody(), body, condition);
+    codegenBlock(whileStmt.getBody(), body, afterBody);
+
+    if (increment) {
+        builder.SetInsertPoint(afterBody);
+        codegenExpr(*increment);
+        builder.CreateBr(condition);
+    }
 
     breakTargets.pop_back();
     continueTargets.pop_back();

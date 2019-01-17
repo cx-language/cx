@@ -11,7 +11,7 @@ define i32 @_EN4main3fooE1r5RangeI3intE(%"Range<int>" %r) {
   store %"RangeIterator<int>" %1, %"RangeIterator<int>"* %__iterator5
   br label %while
 
-while:                                            ; preds = %body, %0
+while:                                            ; preds = %loop.increment, %0
   %__iterator51 = load %"RangeIterator<int>", %"RangeIterator<int>"* %__iterator5
   %2 = call i1 @_EN3std13RangeIteratorI3intE8hasValueE(%"RangeIterator<int>" %__iterator51)
   br i1 %2, label %body, label %endwhile
@@ -24,6 +24,9 @@ body:                                             ; preds = %while
   %i3 = load i32, i32* %i
   %5 = add i32 %4, %i3
   store i32 %5, i32* %sum
+  br label %loop.increment
+
+loop.increment:                                   ; preds = %body
   call void @_ENM3std13RangeIteratorI3intE9incrementE(%"RangeIterator<int>"* %__iterator5)
   br label %while
 
