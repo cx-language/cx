@@ -49,6 +49,11 @@ if(MSVC)
     set(EXTRA_LIT_FLAGS "--threads=1")
 endif()
 
+if(DEFINED ENV{CI})
+    # Work around occasional "error: couldn't import the standard library: No such file or directory" in CI.
+    set(EXTRA_LIT_FLAGS "--threads=1")
+endif()
+
 add_custom_target(check COMMAND lit --verbose --succinct --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
