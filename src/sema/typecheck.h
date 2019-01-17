@@ -111,10 +111,9 @@ private:
     llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
                                                    llvm::ArrayRef<std::string> importSearchPaths,
                                                    llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                                   llvm::StringRef moduleExternalName,
-                                                   llvm::StringRef moduleInternalName = "");
+                                                   llvm::StringRef moduleName);
 
-    /// Returns true if the given expression (of optional type) is guaranteed to be non-null, e.g.
+    /// Returns true if the given expression (of optional type) is guaranteed to be non-null, .g.
     /// if it was previously checked against null, and the type-checker can prove that it wasn't set
     /// back to null after that check.
     bool isGuaranteedNonNull(const Expr& expr) const;

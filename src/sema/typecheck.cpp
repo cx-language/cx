@@ -850,22 +850,19 @@ static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef direct
 llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
                                                             llvm::ArrayRef<std::string> importSearchPaths,
                                                             llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                                            llvm::StringRef moduleExternalName,
-                                                            llvm::StringRef moduleInternalName) {
-    if (moduleInternalName.empty()) moduleInternalName = moduleExternalName;
-
-    auto it = Module::getAllImportedModulesMap().find(moduleInternalName);
+                                                            llvm::StringRef moduleName) {
+    auto it = Module::getAllImportedModulesMap().find(moduleName);
     if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);
         return *it->second;
     }
 
-    auto module = std::make_shared<Module>(moduleInternalName);
+    auto module = std::make_shared<Module>(moduleName);
     std::error_code error;
 
     if (manifest) {
         for (auto& dependency : manifest->getDeclaredDependencies()) {
-            if (dependency.getPackageIdentifier() == moduleInternalName) {
+            if (dependency.getPackageIdentifier() == moduleName) {
                 error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, importSearchPaths,
                                                            frameworkSearchPaths);
                 goto done;
@@ -878,7 +875,7 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
         for (; it != end; it.increment(error)) {
             if (error) goto done;
             if (!llvm::sys::fs::is_directory(it->path())) continue;
-            if (llvm::sys::path::filename(it->path()) != moduleExternalName) continue;
+            if (llvm::sys::path::filename(it->path()) != moduleName) continue;
 
             error = parseSourcesInDirectoryRecursively(it->path(), *module, importSearchPaths, frameworkSearchPaths);
             goto done;
@@ -1011,9 +1008,9 @@ static void checkUnusedDecls(const Module& module) {
 void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest,
                                   llvm::ArrayRef<std::string> importSearchPaths,
                                   llvm::ArrayRef<std::string> frameworkSearchPaths) {
-    auto stdlibModule = importDeltaModule(nullptr, nullptr, importSearchPaths, frameworkSearchPaths, "stdlib", "std");
-    if (!stdlibModule) {
-        printErrorAndExit("couldn't import the standard library: ", stdlibModule.getError().message());
+    auto stdModule = importDeltaModule(nullptr, nullptr, importSearchPaths, frameworkSearchPaths, "std");
+    if (!stdModule) {
+        printErrorAndExit("couldn't import the standard library: ", stdModule.getError().message());
     }
 
     // Infer the types of global variables for use before their declaration.
