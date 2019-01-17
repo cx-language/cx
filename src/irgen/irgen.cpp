@@ -1,24 +1,10 @@
 #include "irgen.h"
-#include <iterator>
-#include <memory>
-#include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringSwitch.h>
-#include <llvm/IR/CFG.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Verifier.h>
-#include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
-#include "../ast/decl.h"
-#include "../ast/expr.h"
-#include "../ast/mangle.h"
 #include "../ast/module.h"
-#include "../ast/token.h"
-#include "../sema/typecheck.h"
-#include "../support/utility.h"
 
 using namespace delta;
 
@@ -205,23 +191,6 @@ void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
     scopes.back().clear();
 }
 
-void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
-    // TODO: Emit deferred expressions and deinitializer calls after the evaluation of the return
-    // value, but before emitting the return instruction. The return value expression may depend on
-    // the values that the deferred expressions and/or deinitializer calls could deallocate.
-    codegenDeferredExprsAndDeinitCallsForReturn();
-
-    if (auto* returnValue = stmt.getReturnValue()) {
-        builder.CreateRet(codegenExprForPassing(*returnValue, builder.getCurrentFunctionReturnType()));
-    } else {
-        if (!currentDecl->isMain()) {
-            builder.CreateRetVoid();
-        } else {
-            builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
-        }
-    }
-}
-
 llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize,
                                                       const llvm::Twine& name) {
     auto* insertBlock = builder.GetInsertBlock();
@@ -255,129 +224,6 @@ llvm::Value* IRGenerator::loadIfAlloca(llvm::Value* value) {
     return value;
 }
 
-void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), &stmt.getDecl(), nullptr, stmt.getDecl().getName());
-    auto* initializer = stmt.getDecl().getInitializer();
-
-    if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
-        if (callExpr->getCalleeDecl()) {
-            if (auto* initDecl = llvm::dyn_cast<InitDecl>(callExpr->getCalleeDecl())) {
-                if (initDecl->getTypeDecl()->getType() == stmt.getDecl().getType().asImmutable()) {
-                    codegenCallExpr(*callExpr, alloca);
-                    return;
-                }
-            }
-        }
-    }
-
-    if (!initializer->isUndefinedLiteralExpr()) {
-        builder.CreateStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
-    }
-}
-
-void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination,
-                               llvm::BasicBlock* continuation) {
-    builder.SetInsertPoint(destination);
-
-    beginScope();
-    for (const auto& stmt : stmts) {
-        codegenStmt(*stmt);
-        if (stmt->isReturnStmt() || stmt->isBreakStmt()) break;
-    }
-    endScope();
-
-    llvm::BasicBlock* insertBlock = builder.GetInsertBlock();
-    if (insertBlock->empty() ||
-        (!llvm::isa<llvm::ReturnInst>(insertBlock->back()) && !llvm::isa<llvm::BranchInst>(insertBlock->back())))
-        builder.CreateBr(continuation);
-}
-
-void IRGenerator::codegenIfStmt(const IfStmt& ifStmt) {
-    auto* condition = codegenExpr(ifStmt.getCondition());
-    if (condition->getType()->isPointerTy()) {
-        condition = codegenImplicitNullComparison(condition);
-    }
-    auto* function = builder.GetInsertBlock()->getParent();
-    auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", function);
-    auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", function);
-    auto* endIfBlock = llvm::BasicBlock::Create(ctx, "endif", function);
-    builder.CreateCondBr(condition, thenBlock, elseBlock);
-    codegenBlock(ifStmt.getThenBody(), thenBlock, endIfBlock);
-    codegenBlock(ifStmt.getElseBody(), elseBlock, endIfBlock);
-    builder.SetInsertPoint(endIfBlock);
-}
-
-void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
-    auto* condition = codegenExpr(switchStmt.getCondition());
-    auto* function = builder.GetInsertBlock()->getParent();
-    auto* insertBlockBackup = builder.GetInsertBlock();
-
-    auto cases = map(switchStmt.getCases(), [&](const SwitchCase& switchCase) {
-        auto* value = codegenExpr(*switchCase.getValue());
-        auto* block = llvm::BasicBlock::Create(ctx, "", function);
-        return std::make_pair(llvm::cast<llvm::ConstantInt>(value), block);
-    });
-
-    builder.SetInsertPoint(insertBlockBackup);
-    auto* defaultBlock = llvm::BasicBlock::Create(ctx, "default", function);
-    auto* end = llvm::BasicBlock::Create(ctx, "endswitch", function);
-    breakTargets.push_back(end);
-    auto* switchInst = builder.CreateSwitch(condition, defaultBlock);
-
-    auto casesIterator = cases.begin();
-    for (auto& switchCase : switchStmt.getCases()) {
-        auto* value = casesIterator->first;
-        auto* block = casesIterator->second;
-        codegenBlock(switchCase.getStmts(), block, end);
-        switchInst->addCase(value, block);
-        ++casesIterator;
-    }
-
-    codegenBlock(switchStmt.getDefaultStmts(), defaultBlock, end);
-    breakTargets.pop_back();
-    builder.SetInsertPoint(end);
-}
-
-void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
-    auto* increment = whileStmt.getIncrement();
-    auto* function = builder.GetInsertBlock()->getParent();
-    auto* condition = llvm::BasicBlock::Create(ctx, "while", function);
-    auto* body = llvm::BasicBlock::Create(ctx, "body", function);
-    auto* afterBody = increment ? llvm::BasicBlock::Create(ctx, "loop.increment", function) : condition;
-    auto* end = llvm::BasicBlock::Create(ctx, "endwhile", function);
-    breakTargets.push_back(end);
-    continueTargets.push_back(afterBody);
-    builder.CreateBr(condition);
-
-    builder.SetInsertPoint(condition);
-    auto* conditionValue = codegenExpr(whileStmt.getCondition());
-    if (conditionValue->getType()->isPointerTy()) {
-        conditionValue = codegenImplicitNullComparison(conditionValue);
-    }
-    builder.CreateCondBr(conditionValue, body, end);
-    codegenBlock(whileStmt.getBody(), body, afterBody);
-
-    if (increment) {
-        builder.SetInsertPoint(afterBody);
-        codegenExpr(*increment);
-        builder.CreateBr(condition);
-    }
-
-    breakTargets.pop_back();
-    continueTargets.pop_back();
-    builder.SetInsertPoint(end);
-}
-
-void IRGenerator::codegenBreakStmt(const BreakStmt&) {
-    ASSERT(!breakTargets.empty());
-    builder.CreateBr(breakTargets.back());
-}
-
-void IRGenerator::codegenContinueStmt(const ContinueStmt&) {
-    ASSERT(!continueTargets.empty());
-    builder.CreateBr(continueTargets.back());
-}
-
 llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs) {
     if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentDecl)) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
@@ -402,54 +248,6 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs)
     return rhs->isUndefinedLiteralExpr() ? nullptr : codegenLvalueExpr(*lhs);
 }
 
-void IRGenerator::codegenCompoundStmt(const CompoundStmt& stmt) {
-    beginScope();
-
-    for (auto& substmt : stmt.getBody()) {
-        codegenStmt(*substmt);
-    }
-
-    endScope();
-}
-
-void IRGenerator::codegenStmt(const Stmt& stmt) {
-    switch (stmt.getKind()) {
-        case StmtKind::ReturnStmt:
-            codegenReturnStmt(llvm::cast<ReturnStmt>(stmt));
-            break;
-        case StmtKind::VarStmt:
-            codegenVarStmt(llvm::cast<VarStmt>(stmt));
-            break;
-        case StmtKind::ExprStmt:
-            codegenExpr(llvm::cast<ExprStmt>(stmt).getExpr());
-            break;
-        case StmtKind::DeferStmt:
-            deferEvaluationOf(llvm::cast<DeferStmt>(stmt).getExpr());
-            break;
-        case StmtKind::IfStmt:
-            codegenIfStmt(llvm::cast<IfStmt>(stmt));
-            break;
-        case StmtKind::SwitchStmt:
-            codegenSwitchStmt(llvm::cast<SwitchStmt>(stmt));
-            break;
-        case StmtKind::WhileStmt:
-            codegenWhileStmt(llvm::cast<WhileStmt>(stmt));
-            break;
-        case StmtKind::ForStmt:
-            llvm_unreachable("ForStmt should be lowered into a WhileStmt");
-            break;
-        case StmtKind::BreakStmt:
-            codegenBreakStmt(llvm::cast<BreakStmt>(stmt));
-            break;
-        case StmtKind::ContinueStmt:
-            codegenContinueStmt(llvm::cast<ContinueStmt>(stmt));
-            break;
-        case StmtKind::CompoundStmt:
-            codegenCompoundStmt(llvm::cast<CompoundStmt>(stmt));
-            break;
-    }
-}
-
 void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl) {
     if (!valueToDeinit->getType()->isPointerTy()) {
         auto* alloca = createEntryBlockAlloca(type, decl);
@@ -468,47 +266,6 @@ llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool is
     } else {
         return llvm::PointerType::get(structType, 0);
     }
-}
-
-llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
-    auto mangled = mangleFunctionDecl(decl);
-    if (auto* function = module->getFunction(mangled)) return function;
-
-    auto* functionType = decl.getFunctionType();
-    llvm::SmallVector<llvm::Type*, 16> paramTypes;
-
-    if (decl.isMethodDecl()) {
-        paramTypes.emplace_back(getLLVMTypeForPassing(*decl.getTypeDecl(), decl.isMutating()));
-    }
-
-    for (auto& paramType : functionType->getParamTypes()) {
-        paramTypes.emplace_back(toIR(paramType));
-    }
-
-    auto* returnType = toIR(functionType->getReturnType());
-    if (decl.isMain() && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
-
-    auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
-    auto* function = llvm::Function::Create(llvmFunctionType, llvm::Function::ExternalLinkage, mangled, &*module);
-
-    auto arg = function->arg_begin(), argsEnd = function->arg_end();
-    if (decl.isMethodDecl()) arg++->setName("this");
-
-    ASSERT(decl.getParams().size() == size_t(std::distance(arg, argsEnd)));
-    for (auto param = decl.getParams().begin(); arg != argsEnd; ++param, ++arg) {
-        arg->setName(param->getName());
-    }
-
-    auto result = functionInstantiations.try_emplace(std::move(mangled), FunctionInstantiation(decl, function));
-    // TODO: 'result.second' should always be true.
-    // ASSERT(result.second);
-
-    // If the function is from a different module, return the declaration generated in the current module.
-    if (result.first->second.getFunction()->getParent() != &*module) {
-        return function;
-    }
-
-    return result.first->second.getFunction();
 }
 
 llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
@@ -538,167 +295,6 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
             }
         default:
             llvm_unreachable("invalid callee decl");
-    }
-}
-
-void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function) {
-    builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &function));
-    beginScope();
-    auto arg = function.arg_begin();
-    if (decl.getTypeDecl() != nullptr) setLocalValue(Type(), "this", &*arg++, nullptr);
-    for (auto& param : decl.getParams()) {
-        setLocalValue(param.getType(), param.getName(), &*arg++, &param);
-    }
-    if (decl.isDeinitDecl()) {
-        for (auto& field : decl.getTypeDecl()->getFields()) {
-            if (field.getType().getDeinitializer() == nullptr) continue;
-            auto* fieldValue = codegenMemberAccess(function.arg_begin(), field.getType(), field.getName());
-            deferDeinitCall(fieldValue, field.getType(), &field);
-        }
-    }
-    for (auto& stmt : decl.getBody()) {
-        codegenStmt(*stmt);
-    }
-    endScope();
-
-    auto* insertBlock = builder.GetInsertBlock();
-    if (insertBlock != &function.getEntryBlock() && llvm::pred_empty(insertBlock)) {
-        insertBlock->eraseFromParent();
-        return;
-    }
-
-    if (insertBlock->empty() || !llvm::isa<llvm::ReturnInst>(insertBlock->back())) {
-        if (!decl.isMain()) {
-            builder.CreateRetVoid();
-        } else {
-            builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0));
-        }
-    }
-}
-
-void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
-    llvm::Function* function = getFunctionProto(decl);
-    if (!decl.isExtern()) codegenFunctionBody(decl, *function);
-    ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
-}
-
-std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
-    return map(decl.getFields(), [&](const FieldDecl& field) { return toIR(field.getType(), field.getLocation()); });
-}
-
-llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
-    if (decl.isInterface()) return nullptr;
-
-    llvm::StructType* structType;
-    auto qualifiedName = decl.getQualifiedName();
-    auto it = structs.find(qualifiedName);
-
-    if (it != structs.end()) {
-        structType = it->second.first;
-    } else {
-        if (decl.getFields().empty()) {
-            structType = llvm::StructType::get(ctx);
-        } else {
-            structType = llvm::StructType::create(ctx, qualifiedName);
-        }
-
-        structs.try_emplace(qualifiedName, std::make_pair(structType, &decl));
-    }
-
-    auto fieldTypes = getFieldTypes(decl);
-
-    if (!structType->isOpaque()) {
-        return structType;
-    }
-
-    structType->setBody(std::move(fieldTypes));
-
-    auto insertBlockBackup = builder.GetInsertBlock();
-    auto insertPointBackup = builder.GetInsertPoint();
-    auto scopesBackup = std::move(scopes);
-
-    if (!decl.getFields().empty()) {
-        for (llvm::Type* element : structType->elements()) {
-            if (auto* elementStruct = llvm::dyn_cast<llvm::StructType>(element)) {
-                if (elementStruct->isLiteral()) continue;
-                auto it = structs.find(elementStruct->getName());
-                if (it != structs.end()) {
-                    codegenTypeDecl(*it->second.second);
-                }
-            }
-        }
-    }
-
-    for (auto& memberDecl : decl.getMemberDecls()) {
-        codegenDecl(*memberDecl);
-    }
-
-    if (decl.getDeinitializer() == nullptr) {
-        if (auto deinitializer = getDefaultDeinitializer(decl)) {
-            codegenDecl(*deinitializer);
-        }
-    }
-
-    scopes = std::move(scopesBackup);
-    if (insertBlockBackup) builder.SetInsertPoint(insertBlockBackup, insertPointBackup);
-
-    return structType;
-}
-
-llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
-    if (auto* value = module->getGlobalVariable(decl.getName(), true)) return value;
-
-    auto it = globalScope().getLocalValues().find(decl.getName());
-    if (it != globalScope().getLocalValues().end()) return it->second;
-
-    llvm::Value* value = codegenExpr(*decl.getInitializer());
-
-    if (decl.getType().isMutable() /* || decl.isPublic() */) {
-        auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
-        auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
-        value = new llvm::GlobalVariable(*module, toIR(decl.getType()), !decl.getType().isMutable(), linkage,
-                                         initializer, decl.getName());
-    }
-
-    globalScope().addLocalValue(decl.getName(), value);
-    return value;
-}
-
-void IRGenerator::codegenDecl(const Decl& decl) {
-    SAVE_STATE(currentDecl);
-    currentDecl = &decl;
-
-    switch (decl.getKind()) {
-        case DeclKind::ParamDecl:
-            llvm_unreachable("handled via FunctionDecl");
-        case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl:
-            codegenFunctionDecl(llvm::cast<FunctionDecl>(decl));
-            break;
-        case DeclKind::GenericParamDecl:
-            llvm_unreachable("cannot codegen generic parameter declaration");
-        case DeclKind::InitDecl:
-            codegenFunctionDecl(llvm::cast<InitDecl>(decl));
-            break;
-        case DeclKind::DeinitDecl:
-            codegenFunctionDecl(llvm::cast<DeinitDecl>(decl));
-            break;
-        case DeclKind::FunctionTemplate:
-            break;
-        case DeclKind::TypeDecl:
-            codegenTypeDecl(llvm::cast<TypeDecl>(decl));
-            break;
-        case DeclKind::TypeTemplate:
-            break;
-        case DeclKind::EnumDecl:
-            break;
-        case DeclKind::VarDecl:
-            codegenVarDecl(llvm::cast<VarDecl>(decl));
-            break;
-        case DeclKind::FieldDecl:
-            llvm_unreachable("handled via TypeDecl");
-        case DeclKind::ImportDecl:
-            break;
     }
 }
 
