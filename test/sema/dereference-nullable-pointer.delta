@@ -6,6 +6,6 @@ struct Foo: Copyable {
 
 def main() {
     var p: Foo*? = null;
-    // CHECK: [[@LINE+1]]:10: warning: dereferencing value of optional type 'Foo*?' which may be null; unwrap the value with a postfix '!' to silence this warning
+    // CHECK: [[@LINE+1]]:9: warning: dereferencing value of optional type 'Foo*?' which may be null; unwrap the value with a postfix '!' to silence this warning
     _ = *p;
 }

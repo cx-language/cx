@@ -3,6 +3,6 @@
 def f(p: int*) {
     var a = p;
 
-    // CHECK: [[@LINE+1]]:16: error: cannot dereference non-pointer type 'void'
+    // CHECK: [[@LINE+1]]:13: error: cannot dereference non-pointer type 'void'
     var b = *(a++);
 }

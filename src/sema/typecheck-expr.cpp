@@ -161,12 +161,12 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     }
     if (expr.getOperator() == Token::Star) { // Dereference operation
         if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
-            warning(expr.getOperand().getLocation(), "dereferencing value of optional type '", operandType,
+            warning(expr.getLocation(), "dereferencing value of optional type '", operandType,
                     "' which may be null; unwrap the value with a postfix '!' to silence this "
                     "warning");
             operandType = operandType.getWrappedType();
         } else if (!operandType.isPointerType()) {
-            error(expr.getOperand().getLocation(), "cannot dereference non-pointer type '", operandType, "'");
+            error(expr.getLocation(), "cannot dereference non-pointer type '", operandType, "'");
         }
         return operandType.getPointee();
     }
