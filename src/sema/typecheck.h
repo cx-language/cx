@@ -142,4 +142,7 @@ private:
     std::vector<std::string> disabledWarnings;
 };
 
+void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name,
+                             SourceLocation location);
+
 } // namespace delta

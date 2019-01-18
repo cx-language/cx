@@ -51,7 +51,7 @@ IncludeCategories:
     Priority: 4
   - Regex: '.*'
     Priority: 3
-IncludeIsMainRegex: '(-expr)?$'
+IncludeIsMainRegex: '(-decl|-stmt|-expr)?$'
 IndentCaseLabels: true
 IndentWidth: 4
 IndentWrappedFunctionNames: false

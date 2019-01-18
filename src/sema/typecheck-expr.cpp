@@ -729,8 +729,8 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
     return inferredGenericArgs;
 }
 
-void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name,
-                             SourceLocation location) {
+void delta::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name,
+                                    SourceLocation location) {
     if (genericArgs.size() < genericParamCount) {
         error(location, "too few generic arguments to '", name, "', expected ", genericParamCount);
     } else if (genericArgs.size() > genericParamCount) {
@@ -738,7 +738,8 @@ void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> gene
     }
 }
 
-void validateArgCount(size_t paramCount, size_t argCount, bool isVariadic, llvm::StringRef name, SourceLocation location) {
+static void validateArgCount(size_t paramCount, size_t argCount, bool isVariadic, llvm::StringRef name,
+                             SourceLocation location) {
     if (argCount < paramCount) {
         error(location, "too few arguments to '", name, "', expected ", isVariadic ? "at least " : "", paramCount);
     } else if (!isVariadic && argCount > paramCount) {
