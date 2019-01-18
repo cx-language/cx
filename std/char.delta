@@ -1,6 +1,11 @@
-struct char: Copyable, Comparable, Hashable {
+struct char: Copyable, Comparable, Printable, Hashable {
     def compare(other: char*): Ordering {
         return int(this).compare(int(*other));
+    }
+
+    def printTo(stream: mutable String*) {
+        // TODO: Use char overload of 'write' when it's implemented.
+        stream.write(StringRef(this, 1));
     }
 
     def hash(): uint64 {

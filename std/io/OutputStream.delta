@@ -1,3 +1,4 @@
 interface OutputStream {
     mutating def write(string: StringRef): bool;
+    // TODO: Add 'write' overload for char.
 }

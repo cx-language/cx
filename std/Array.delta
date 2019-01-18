@@ -1,4 +1,5 @@
 struct Array<Element> {
+    // FIXME: Convert to pointer-to-array type and use indexing instead of pointer arithmetic.
     var bufferPointer: mutable Element*;
     var size: uint;
     var capacity: uint;
@@ -28,6 +29,7 @@ struct Array<Element> {
 
     deinit() {
         if (capacity != 0) {
+            // FIXME: Call deinitializers of remaining elements.
             deallocate(bufferPointer);
         }
     }
@@ -137,6 +139,16 @@ struct Array<Element> {
 
         size--;
         (bufferPointer + size).deinit();
+    }
+
+    /// Removes and returns the last element.
+    mutating def pop(): Element {
+        if (size == 0) {
+            emptyArrayRemoveLast();
+        }
+
+        size--;
+        return *(bufferPointer + size);
     }
 
     /// Removes the element at the given index from the array.

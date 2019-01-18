@@ -9,6 +9,7 @@ struct Map<Key: Hashable, Value> {
         increaseTableSize(hashTable, 128);
     }
 
+    // FIXME: Should assert that the key is not in the map, instead of no-oping.
     /// Inserts an element into the map. If the element exists already, nothing is done.
     mutating def insert(key: Key, value: Value) {
         if (contains(key)) {
@@ -21,6 +22,17 @@ struct Map<Key: Hashable, Value> {
 
         if (loadFactor() > 0.66) {
             resize();
+        }
+    }
+
+    /// Inserts, or updates an existing value.
+    mutating def set(key: Key, value: Value) {
+        var existing = this[key];
+
+        if (existing) {
+            *existing = value;
+        } else {
+            insert(key, value);
         }
     }
 
@@ -81,9 +93,23 @@ struct Map<Key: Hashable, Value> {
 
         for (var element in slot) {
             if (element.key == *e) {
-                return &element.value;
+                return element.value;
             }
         }
+
+        return null;
+    }
+
+    mutating def [](e: Key*): mutable Value*? {
+        var hashValue = uint(e.hash()) % capacity();
+        var slot = hashTable[hashValue];
+
+        for (var element in slot) {
+            if (element.key == *e) {
+                return element.value;
+            }
+        }
+
         return null;
     }
 

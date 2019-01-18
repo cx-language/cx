@@ -94,6 +94,10 @@ struct String: Comparable, OutputStream, Printable {
         return StringIterator(StringRef(this));
     }
 
+    def contains(c: char): bool {
+        return find(c, 0) != -1;
+    }
+
     /// Returns the index of the given character, or -1 if it's not found
     def find(c: char): int {
         return find(c, 0);

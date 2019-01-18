@@ -12,6 +12,7 @@ extern def fopen(filename: char*, mode: char*): void*?;
 extern def fdopen(fd: int, mode: char*): void*?;
 extern def fgetc(file: void*): int;
 extern def fclose(file: void*): int;
+extern def fflush(file: void*): int;
 extern def exit(status: int);
 extern def feof(file: void*): int;
 extern def fputc(c: int, file: void*): int;

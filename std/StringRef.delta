@@ -32,6 +32,26 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         return characters.data();
     }
 
+    def contains(c: char): bool {
+        return find(c, 0) != -1;
+    }
+
+    /// Returns the index of the given character, or -1 if it's not found
+    def find(c: char): int {
+        return find(c, 0);
+    }
+
+    /// Returns the index of the given character, or -1 if it's not found.
+    /// Starts from start
+    def find(c: char, start: uint): int {
+        for (var i in start..size()) {
+            if (*characters[i] == c) {
+                return int(i);
+            }
+        }
+        return -1;
+    }
+
     /// Supports using strings with sets and dicts
     def hash(): uint64 {
         var hashValue: uint64 = 5381;
