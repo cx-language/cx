@@ -74,11 +74,12 @@ need to be done. All contributors are expected to follow the Delta
 [code of conduct](docs/CODE_OF_CONDUCT.md). If you have any questions or just want
 to chat, join our Telegram group: [t.me/deltalang](https://t.me/deltalang).
 
-The C++ code style is enforced by `scripts/format.sh`, which requires
-clang-format version 7.0.0. The script can also be run with the `fmt` CMake
-target. The CMake build system installs a git pre-commit hook to check that the
-code is formatted. You can also manually check if the code is formatted by
-running `scripts/format.sh --check`.
+The C++ code style is enforced by ClangFormat and ClangTidy:
+
+- Run the `format` CMake target to format the code.
+- Run the `lint` CMake target to check if the code is formatted.
+
+The build system also installs a git pre-commit hook that runs `lint`.
 
 ## License
 

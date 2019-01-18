@@ -50,11 +50,12 @@ install:
       fi
     - if [ $TRAVIS_OS_NAME == "osx" ]; then
           export LLVMDIR="$(brew --prefix llvm)";
-          pip2 install lit;
+          pip2 install lit pyyaml;
       fi
+    - export PATH="$LLVMDIR/bin:$PATH"
 
 script:
-    - set -e # Error out immediately if any of the following commands fails.
+    - set -e
     - cmake -G "Unix Makefiles"
       -DCMAKE_PREFIX_PATH="$LLVMDIR"
       -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
@@ -62,6 +63,7 @@ script:
       -DCMAKE_BUILD_TYPE=Debug .
     - make
     - make check
+    - make lint
     - if [[ $CXXFLAGS == *"--coverage"* ]]; then
           make coverage;
       fi

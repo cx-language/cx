@@ -86,8 +86,9 @@ public:
             if (!functionDecl || functionDecl->getParams().size() != toFind.getParams().size()) continue;
             if (functionDecl->isMutating() != toFind.isMutating()) continue;
             if (std::equal(toFind.getParams().begin(), toFind.getParams().end(), functionDecl->getParams().begin(),
-                           [](auto& a, auto& b) { return a.getName() == b.getName() && a.getType() == b.getType(); }))
+                           [](auto& a, auto& b) { return a.getName() == b.getName() && a.getType() == b.getType(); })) {
                 return functionDecl;
+            }
         }
         return nullptr;
     }

@@ -1,28 +1,30 @@
 #!/usr/bin/env bash
 
-CLANG_FORMAT_VERSION=7.0.0
+BUILD_PATH="$1"
+CLANG_TOOLS_VERSION=7.0.0
 
-if ! clang-format --version | grep --quiet $CLANG_FORMAT_VERSION; then
-    echo "WARNING: Wrong clang-format version, expected $CLANG_FORMAT_VERSION."
-fi
+check_version() {
+    if ! $1 --version | grep --quiet $CLANG_TOOLS_VERSION; then
+        echo "WARNING: Wrong $1 version, expected $CLANG_TOOLS_VERSION."
+    fi
+}
+
+check_version clang-format
+check_version clang-tidy
 
 ROOTDIR=$(cd "$(dirname "$0")/.."; pwd)
 FILES=$(echo $ROOTDIR/src/**/*.{h,cpp})
 
-if [ "$1" = "--check" ]; then
-    if grep -En "(while|for|if) *\(.*\) *$" $FILES || grep -En "[^#]else *$" $FILES; then
-        echo "Add braces to multiline while/for/if/else statements."
-        exit 1
-    fi
+if [ "$2" = "--check" ]; then
+    python "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet $FILES \
+        && ! (clang-format -output-replacements-xml $FILES | grep "<replacement " >/dev/null)
 
-    clang-format -output-replacements-xml $FILES | grep "<replacement " >/dev/null
-
-    if [ $? -ne 1 ]; then
-        echo "Run $0 to format the code."
+    if [ $? -ne 0 ]; then
+        echo "Run the 'format' target to format the code."
         exit 1
     else
         exit 0
     fi
 fi
 
-clang-format -i $FILES
+python "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet -fix -format $FILES
