@@ -1,0 +1,128 @@
+struct Tape
+{
+    var tape: Array<int>;
+    var pos: uint;
+
+    init()
+    {
+        tape = Array<int>([0]);
+        pos = 0;
+    }
+
+    def value(): int
+    {
+        return *tape[pos];
+    }
+
+    mutating def increment()
+    {
+        (*tape[pos])++;
+    }
+
+    mutating def decrement()
+    {
+        (*tape[pos])--;
+    }
+
+    mutating def forward()
+    {
+        pos++;
+
+        if (pos >= tape.size())
+            tape.push(0);
+    }
+
+    mutating def backward()
+    {
+        if (pos > 0)
+            pos--;
+    }
+}
+
+struct Program
+{
+    var code: String;
+    var bracketMap: Map<uint, uint>;
+
+    init(text: String)
+    {
+        this.code = String();
+        this.bracketMap = Map<uint, uint>();
+
+        var leftStack = Array<uint>();
+        var pc: uint = 0;
+
+        for (var ch in text)
+        {
+            if (!"+-><[].,".contains(ch))
+                continue;
+
+            switch (ch)
+            {
+                case '[':
+                    leftStack.push(pc);
+
+                case ']':
+                    if (!leftStack.isEmpty())
+                    {
+                        var left = leftStack.pop();
+                        var right = pc;
+                        bracketMap.set(left, right);
+                        bracketMap.set(right, left);
+                    }
+            }
+
+            pc++;
+            code.push(ch);
+        }
+    }
+
+    def run()
+    {
+        var tape = Tape();
+        var pc: uint = 0;
+        var size = code.size();
+
+        while (pc < size)
+        {
+            switch (code[pc])
+            {
+                case '+':
+                    tape.increment();
+
+                case '-':
+                    tape.decrement();
+
+                case '>':
+                    tape.forward();
+
+                case '<':
+                    tape.backward();
+
+                case '[':
+                    if (tape.value() == 0)
+                        pc = *(bracketMap[pc]!);
+
+                case ']':
+                    if (tape.value() != 0)
+                        pc = *(bracketMap[pc]!);
+
+                case '.':
+                    printf("%c", char(tape.value()));
+            }
+
+            pc++;
+        }
+    }
+}
+
+def main()
+{
+    var file = FileStream("./inputs/mandel.b");
+    var text = String();
+
+    for (var byte in file.bytes())
+        text.push(char(byte));
+
+    Program(text).run();
+}
