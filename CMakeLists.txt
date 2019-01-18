@@ -55,12 +55,15 @@ if(DEFINED ENV{CI})
     set(EXTRA_LIT_FLAGS "--threads=1")
 endif()
 
-add_custom_target(check COMMAND lit --verbose --succinct --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
+add_custom_target(check_lit COMMAND lit --verbose --succinct --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dnot_path="$<TARGET_FILE:not>"
     -Dtest_helper_scripts_path="${PROJECT_SOURCE_DIR}/test"
     USES_TERMINAL)
+add_custom_target(check_examples COMMAND "${PROJECT_SOURCE_DIR}/examples/build_examples.sh" "$<TARGET_FILE:delta>")
+add_custom_target(check)
+add_dependencies(check check_lit check_examples)
 
 if(MSVC)
     # If we try to set '-Ox' here, we get the error "'/Ox' and '/RTC1' command-line options are incompatible",
