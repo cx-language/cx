@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -o pipefail
+
 BUILD_PATH="$1"
 CLANG_TOOLS_VERSION=7.0.0
 
@@ -16,7 +18,8 @@ ROOTDIR=$(cd "$(dirname "$0")/.."; pwd)
 FILES=$(echo $ROOTDIR/src/**/*.{h,cpp})
 
 if [ "$2" = "--check" ]; then
-    python "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet $FILES \
+    python "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet $FILES 2>&1 \
+        | sed -E '/^($|clang-tidy|[0-9]+ warnings generated)/d' \
         && ! (clang-format -output-replacements-xml $FILES | grep "<replacement " >/dev/null)
 
     if [ $? -ne 0 ]; then
