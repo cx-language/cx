@@ -58,8 +58,7 @@ llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
             return codegenVarDecl(*llvm::cast<VarDecl>(decl));
 
         case DeclKind::FieldDecl:
-            return codegenMemberAccess(findValue("this", nullptr), llvm::cast<FieldDecl>(decl)->getType(),
-                                       llvm::cast<FieldDecl>(decl)->getName());
+            return codegenMemberAccess(findValue("this", nullptr), llvm::cast<FieldDecl>(decl)->getType(), llvm::cast<FieldDecl>(decl)->getName());
 
         case DeclKind::FunctionDecl:
             return getFunctionProto(*llvm::cast<FunctionDecl>(decl));
@@ -110,8 +109,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             ASSERT(type.isArrayWithConstantSize(), "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType(), location), type.getArraySize());
         case TypeKind::TupleType: {
-            auto elementTypes = map(type.getTupleElements(),
-                                    [&](const TupleElement& element) { return toIR(element.type); });
+            auto elementTypes = map(type.getTupleElements(), [&](const TupleElement& element) { return toIR(element.type); });
             return llvm::StructType::get(ctx, elementTypes);
         }
         case TypeKind::FunctionType: {
@@ -191,8 +189,7 @@ void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
     scopes.back().clear();
 }
 
-llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize,
-                                                      const llvm::Twine& name) {
+llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize, const llvm::Twine& name) {
     auto* insertBlock = builder.GetInsertBlock();
     auto* entryBlock = &insertBlock->getParent()->getEntryBlock();
 

@@ -42,8 +42,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                         }
                         break;
                     case DeclKind::TypeTemplate:
-                        validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->getGenericParams().size(),
-                                                basicType->getGenericArgs(), basicType->getName(), type.getLocation());
+                        validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->getGenericParams().size(), basicType->getGenericArgs(),
+                                                basicType->getName(), type.getLocation());
                         break;
                     default:
                         break;
@@ -71,8 +71,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
             if (type.getPointee().isArrayWithRuntimeSize()) {
                 auto qualifiedTypeName = getQualifiedTypeName("ArrayRef", type.getPointee().getElementType());
                 if (getCurrentModule()->findDecls(qualifiedTypeName, currentSourceFile, currentFunction).empty()) {
-                    auto& arrayRefDecl = getCurrentModule()->findDecl("ArrayRef", SourceLocation(), currentSourceFile,
-                                                                      currentFieldDecls);
+                    auto& arrayRefDecl = getCurrentModule()->findDecl("ArrayRef", SourceLocation(), currentSourceFile, currentFieldDecls);
                     auto& arrayRef = llvm::cast<TypeTemplate>(arrayRefDecl);
                     auto* instantiation = arrayRef.instantiate({ type.getPointee().getElementType() });
                     getCurrentModule()->addToSymbolTable(*instantiation);
@@ -167,8 +166,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             }
 
             Type thisType = receiverTypeDecl->getTypeForPassing(decl.isMutating());
-            getCurrentModule()->addToSymbolTable(
-                VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *getCurrentModule(), decl.getLocation()));
+            getCurrentModule()->addToSymbolTable(VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *getCurrentModule(), decl.getLocation()));
         }
 
         bool delegatedInit = false;
@@ -194,8 +192,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         if (decl.isInitDecl() && !delegatedInit) {
             for (auto& fieldAndInitialized : currentFieldDecls) {
                 if (!fieldAndInitialized.second) {
-                    warning(decl.getLocation(), "initializer doesn't initialize member variable '",
-                            fieldAndInitialized.first->getName(), "'");
+                    warning(decl.getLocation(), "initializer doesn't initialize member variable '", fieldAndInitialized.first->getName(),
+                            "'");
                 }
             }
         }
@@ -203,8 +201,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     getCurrentModule()->getSymbolTable().popScope();
 
-    if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() &&
-        !allPathsReturn(decl.getBody())) {
+    if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(decl.getBody())) {
         error(decl.getLocation(), "'", decl.getName(), "' is missing a return statement");
     }
 
@@ -269,8 +266,7 @@ void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     std::vector<const EnumCase*> cases = map(decl.getCases(), [](const EnumCase& c) { return &c; });
     std::sort(cases.begin(), cases.end(), [](auto* a, auto* b) { return a->getName() < b->getName(); });
-    auto it = std::adjacent_find(cases.begin(), cases.end(),
-                                 [](auto* a, auto* b) { return a->getName() == b->getName(); });
+    auto it = std::adjacent_find(cases.begin(), cases.end(), [](auto* a, auto* b) { return a->getName() == b->getName(); });
 
     if (it != cases.end()) {
         error((*it)->getLocation(), "duplicate enum case '", (*it)->getName(), "'");
@@ -311,8 +307,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
                     hint = "";
                 }
 
-                error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType,
-                      "' with '", initType, "'", hint);
+                error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType, "' with '", initType, "'", hint);
             }
         }
     } else {
@@ -337,8 +332,7 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     typecheckType(decl.getType(), std::min(decl.getAccessLevel(), decl.getParent()->getAccessLevel()));
 }
 
-void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest,
-                                      llvm::ArrayRef<std::string> importSearchPaths,
+void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
                                       llvm::ArrayRef<std::string> frameworkSearchPaths) {
     if (importDeltaModule(currentSourceFile, manifest, importSearchPaths, frameworkSearchPaths, decl.getTarget())) {
         return;
@@ -349,8 +343,7 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* m
     }
 }
 
-void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest,
-                                        llvm::ArrayRef<std::string> importSearchPaths,
+void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
                                         llvm::ArrayRef<std::string> frameworkSearchPaths) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl:

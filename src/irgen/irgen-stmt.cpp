@@ -39,8 +39,7 @@ void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     }
 }
 
-void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination,
-                               llvm::BasicBlock* continuation) {
+void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination, llvm::BasicBlock* continuation) {
     builder.SetInsertPoint(destination);
 
     beginScope();
@@ -51,9 +50,9 @@ void IRGenerator::codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm
     endScope();
 
     llvm::BasicBlock* insertBlock = builder.GetInsertBlock();
-    if (insertBlock->empty() ||
-        (!llvm::isa<llvm::ReturnInst>(insertBlock->back()) && !llvm::isa<llvm::BranchInst>(insertBlock->back())))
+    if (insertBlock->empty() || (!llvm::isa<llvm::ReturnInst>(insertBlock->back()) && !llvm::isa<llvm::BranchInst>(insertBlock->back()))) {
         builder.CreateBr(continuation);
+    }
 }
 
 void IRGenerator::codegenIfStmt(const IfStmt& ifStmt) {

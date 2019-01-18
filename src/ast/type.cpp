@@ -139,13 +139,11 @@ std::vector<std::unique_ptr<OptionalType>> optionalTypes;
     return Type(CACHE.back().get(), isMutable, location);
 
 Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(BasicType, basicTypes, t->getName() == name && t->getGenericArgs() == genericArgs, name,
-                          genericArgs);
+    FETCH_AND_RETURN_TYPE(BasicType, basicTypes, t->getName() == name && t->getGenericArgs() == genericArgs, name, genericArgs);
 }
 
 Type ArrayType::get(Type elementType, int64_t size, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(ArrayType, arrayTypes, t->getElementType() == elementType && t->getSize() == size,
-                          elementType, size);
+    FETCH_AND_RETURN_TYPE(ArrayType, arrayTypes, t->getElementType() == elementType && t->getSize() == size, elementType, size);
 }
 
 Type TupleType::get(std::vector<TupleElement>&& elements, bool isMutable, SourceLocation location) {
@@ -153,8 +151,7 @@ Type TupleType::get(std::vector<TupleElement>&& elements, bool isMutable, Source
 }
 
 Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(FunctionType, functionTypes,
-                          t->getReturnType() == returnType && t->getParamTypes() == llvm::makeArrayRef(paramTypes),
+    FETCH_AND_RETURN_TYPE(FunctionType, functionTypes, t->getReturnType() == returnType && t->getParamTypes() == llvm::makeArrayRef(paramTypes),
                           returnType, std::move(paramTypes));
 }
 
@@ -288,13 +285,11 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
         case TypeKind::BasicType:
             return other.isBasicType() && getName() == other.getName() && getGenericArgs() == other.getGenericArgs();
         case TypeKind::ArrayType:
-            return other.isArrayType() && getElementType() == other.getElementType() &&
-                   getArraySize() == other.getArraySize();
+            return other.isArrayType() && getElementType() == other.getElementType() && getArraySize() == other.getArraySize();
         case TypeKind::TupleType:
             return other.isTupleType() && getTupleElements() == other.getTupleElements();
         case TypeKind::FunctionType:
-            return other.isFunctionType() && getReturnType() == other.getReturnType() &&
-                   getParamTypes() == other.getParamTypes();
+            return other.isFunctionType() && getReturnType() == other.getReturnType() && getParamTypes() == other.getParamTypes();
         case TypeKind::PointerType:
             return other.isPointerType() && getPointee() == other.getPointee();
         case TypeKind::OptionalType:

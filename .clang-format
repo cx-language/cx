@@ -34,7 +34,7 @@ BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
 BreakStringLiterals: true
-ColumnLimit: 120
+ColumnLimit: 140
 CommentPragmas: '^ IWYU pragma:'
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 0
@@ -61,11 +61,11 @@ MacroBlockEnd: ''
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
 PenaltyBreakAssignment: 50
-PenaltyBreakBeforeFirstCallParameter: 55
+PenaltyBreakBeforeFirstCallParameter: 1000
 PenaltyBreakComment: 300
 PenaltyBreakFirstLessLess: 0
 PenaltyBreakString: 100
-PenaltyExcessCharacter: 3
+PenaltyExcessCharacter: 1
 PenaltyReturnTypeOnItsOwnLine: 60
 PointerAlignment: Left
 ReflowComments: true

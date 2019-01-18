@@ -125,8 +125,7 @@ private:
 
 class CharacterLiteralExpr : public Expr {
 public:
-    CharacterLiteralExpr(char value, SourceLocation location)
-    : Expr(ExprKind::CharacterLiteralExpr, location), value(value) {}
+    CharacterLiteralExpr(char value, SourceLocation location) : Expr(ExprKind::CharacterLiteralExpr, location), value(value) {}
     char getValue() const { return value; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::CharacterLiteralExpr; }
 
@@ -136,8 +135,7 @@ private:
 
 class IntLiteralExpr : public Expr {
 public:
-    IntLiteralExpr(llvm::APSInt value, SourceLocation location)
-    : Expr(ExprKind::IntLiteralExpr, location), value(std::move(value)) {}
+    IntLiteralExpr(llvm::APSInt value, SourceLocation location) : Expr(ExprKind::IntLiteralExpr, location), value(std::move(value)) {}
     const llvm::APSInt& getValue() const { return value; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::IntLiteralExpr; }
 
@@ -147,8 +145,7 @@ private:
 
 class FloatLiteralExpr : public Expr {
 public:
-    FloatLiteralExpr(long double value, SourceLocation location)
-    : Expr(ExprKind::FloatLiteralExpr, location), value(value) {}
+    FloatLiteralExpr(long double value, SourceLocation location) : Expr(ExprKind::FloatLiteralExpr, location), value(value) {}
     long double getValue() const { return value; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::FloatLiteralExpr; }
 
@@ -192,8 +189,7 @@ private:
 class NamedValue {
 public:
     NamedValue(std::string&& name, std::unique_ptr<Expr> value, SourceLocation location = SourceLocation())
-    : name(std::move(name)), value(std::move(value)),
-      location(location.isValid() ? location : this->value->getLocation()) {}
+    : name(std::move(name)), value(std::move(value)), location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
     void setName(std::string&& newName) { name = newName; }
     Expr* getValue() { return value.get(); }
@@ -221,10 +217,9 @@ private:
 
 class CallExpr : public Expr {
 public:
-    CallExpr(std::unique_ptr<Expr> callee, std::vector<NamedValue>&& args, std::vector<Type>&& genericArgs,
-             SourceLocation location)
-    : Expr(ExprKind::CallExpr, location), callee(std::move(callee)), args(std::move(args)),
-      genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
+    CallExpr(std::unique_ptr<Expr> callee, std::vector<NamedValue>&& args, std::vector<Type>&& genericArgs, SourceLocation location)
+    : Expr(ExprKind::CallExpr, location), callee(std::move(callee)), args(std::move(args)), genericArgs(std::move(genericArgs)),
+      calleeDecl(nullptr) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
     std::string getQualifiedFunctionName() const;
@@ -276,8 +271,7 @@ inline std::vector<NamedValue> addArg(std::vector<NamedValue>&& args, std::uniqu
 class UnaryExpr : public CallExpr {
 public:
     UnaryExpr(UnaryOperator op, std::unique_ptr<Expr> operand, SourceLocation location)
-    : CallExpr(ExprKind::UnaryExpr, llvm::make_unique<VarExpr>(toString(op.getKind()), location),
-               addArg({}, std::move(operand)), location),
+    : CallExpr(ExprKind::UnaryExpr, llvm::make_unique<VarExpr>(toString(op.getKind()), location), addArg({}, std::move(operand)), location),
       op(op) {}
     UnaryOperator getOperator() const { return op; }
     Expr& getOperand() { return *getArgs()[0].getValue(); }
@@ -353,8 +347,7 @@ private:
 class SubscriptExpr : public CallExpr {
 public:
     SubscriptExpr(std::unique_ptr<Expr> array, std::unique_ptr<Expr> index, SourceLocation location)
-    : CallExpr(ExprKind::SubscriptExpr, llvm::make_unique<MemberExpr>(std::move(array), "[]", location),
-               { NamedValue("", std::move(index)) }, location) {}
+    : CallExpr(ExprKind::SubscriptExpr, llvm::make_unique<MemberExpr>(std::move(array), "[]", location), { NamedValue("", std::move(index)) }, location) {}
     const Expr* getBaseExpr() const { return getReceiver(); }
     const Expr* getIndexExpr() const { return getArgs()[0].getValue(); }
     Expr* getBaseExpr() { return getReceiver(); }
@@ -393,10 +386,8 @@ private:
 
 class IfExpr : public Expr {
 public:
-    IfExpr(std::unique_ptr<Expr> condition, std::unique_ptr<Expr> thenExpr, std::unique_ptr<Expr> elseExpr,
-           SourceLocation location)
-    : Expr(ExprKind::IfExpr, location), condition(std::move(condition)), thenExpr(std::move(thenExpr)),
-      elseExpr(std::move(elseExpr)) {}
+    IfExpr(std::unique_ptr<Expr> condition, std::unique_ptr<Expr> thenExpr, std::unique_ptr<Expr> elseExpr, SourceLocation location)
+    : Expr(ExprKind::IfExpr, location), condition(std::move(condition)), thenExpr(std::move(thenExpr)), elseExpr(std::move(elseExpr)) {}
     Expr* getCondition() { return condition.get(); }
     Expr* getThenExpr() { return thenExpr.get(); }
     Expr* getElseExpr() { return elseExpr.get(); }

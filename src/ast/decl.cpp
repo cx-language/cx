@@ -18,9 +18,7 @@ FunctionProto FunctionProto::instantiate(const llvm::StringMap<Type>& genericArg
 FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {
     ASSERT(!genericParams.empty() && !genericArgs.empty());
 
-    auto orderedGenericArgs = map(genericParams, [&](const GenericParamDecl& genericParam) {
-        return genericArgs.find(genericParam.getName())->second;
-    });
+    auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
 
     auto it = instantiations.find(orderedGenericArgs);
     if (it != instantiations.end()) return it->second.get();
@@ -60,20 +58,17 @@ bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceive
     return true;
 }
 
-std::unique_ptr<FunctionDecl> FunctionDecl::instantiate(const llvm::StringMap<Type>& genericArgs,
-                                                        llvm::ArrayRef<Type> genericArgsArray) {
+std::unique_ptr<FunctionDecl> FunctionDecl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray) {
     auto proto = getProto().instantiate(genericArgs);
     auto body = ::instantiate(getBody(), genericArgs);
 
     std::unique_ptr<FunctionDecl> instantiation;
 
     if (isMethodDecl()) {
-        instantiation = llvm::make_unique<MethodDecl>(std::move(proto), *getTypeDecl(), genericArgsArray,
-                                                      getAccessLevel(), location);
+        instantiation = llvm::make_unique<MethodDecl>(std::move(proto), *getTypeDecl(), genericArgsArray, getAccessLevel(), location);
         llvm::cast<MethodDecl>(*instantiation).setMutating(isMutating());
     } else {
-        instantiation = llvm::make_unique<FunctionDecl>(std::move(proto), genericArgsArray, getAccessLevel(), module,
-                                                        location);
+        instantiation = llvm::make_unique<FunctionDecl>(std::move(proto), genericArgsArray, getAccessLevel(), module, location);
     }
 
     instantiation->setBody(std::move(body));
@@ -94,18 +89,17 @@ bool FunctionTemplate::isReferenced() const {
     return false;
 }
 
-MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs,
-                       AccessLevel accessLevel, SourceLocation location)
-: FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location),
-  typeDecl(&typeDecl), mutating(false) {}
+MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel, SourceLocation location)
+: FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl),
+  mutating(false) {}
 
 std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) {
     switch (getKind()) {
         case DeclKind::MethodDecl: {
             auto* methodDecl = llvm::cast<MethodDecl>(this);
             auto proto = methodDecl->getProto().instantiate(genericArgs);
-            auto instantiation = llvm::make_unique<MethodDecl>(std::move(proto), typeDecl, std::vector<Type>(),
-                                                               getAccessLevel(), methodDecl->getLocation());
+            auto instantiation = llvm::make_unique<MethodDecl>(std::move(proto), typeDecl, std::vector<Type>(), getAccessLevel(),
+                                                               methodDecl->getLocation());
             instantiation->setMutating(methodDecl->isMutating());
             if (methodDecl->hasBody()) {
                 instantiation->setBody(::instantiate(methodDecl->getBody(), genericArgs));
@@ -115,8 +109,7 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
         case DeclKind::InitDecl: {
             auto* initDecl = llvm::cast<InitDecl>(this);
             auto params = instantiateParams(initDecl->getParams(), genericArgs);
-            auto instantiation = llvm::make_unique<InitDecl>(typeDecl, std::move(params), getAccessLevel(),
-                                                             initDecl->getLocation());
+            auto instantiation = llvm::make_unique<InitDecl>(typeDecl, std::move(params), getAccessLevel(), initDecl->getLocation());
             instantiation->setBody(::instantiate(initDecl->getBody(), genericArgs));
             return std::move(instantiation);
         }
@@ -132,9 +125,8 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
 }
 
 std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
-    return map(params, [&](const ParamDecl& param) {
-        return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.getLocation());
-    });
+    return map(params,
+               [&](const ParamDecl& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.getLocation()); });
 }
 
 std::string TypeDecl::getQualifiedName() const {
@@ -199,9 +191,8 @@ unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
 TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {
     ASSERT(!genericParams.empty() && !genericArgs.empty());
 
-    auto orderedGenericArgs = map(getGenericParams(), [&](const GenericParamDecl& genericParam) {
-        return genericArgs.find(genericParam.getName())->second;
-    });
+    auto orderedGenericArgs = map(getGenericParams(),
+                                  [&](const GenericParamDecl& genericParam) { return genericArgs.find(genericParam.getName())->second; });
 
     auto it = instantiations.find(orderedGenericArgs);
     if (it != instantiations.end()) return it->second.get();
@@ -267,9 +258,8 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
         case DeclKind::TypeDecl: {
             auto* typeDecl = llvm::cast<TypeDecl>(this);
             auto interfaces = map(typeDecl->getInterfaces(), [&](Type type) { return type.resolve(genericArgs); });
-            auto instantiation = llvm::make_unique<TypeDecl>(typeDecl->getTag(), typeDecl->getName(), genericArgsArray,
-                                                             std::move(interfaces), getAccessLevel(),
-                                                             *typeDecl->getModule(), typeDecl->getLocation());
+            auto instantiation = llvm::make_unique<TypeDecl>(typeDecl->getTag(), typeDecl->getName(), genericArgsArray, std::move(interfaces),
+                                                             getAccessLevel(), *typeDecl->getModule(), typeDecl->getLocation());
             for (auto& field : typeDecl->getFields()) {
                 instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName(), *instantiation,
                                                   field.getAccessLevel(), field.getLocation()));
@@ -295,8 +285,7 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
                     }
 
                     auto accessLevel = methodInstantiation->getAccessLevel();
-                    instantiation->addMethod(llvm::make_unique<FunctionTemplate>(
-                        std::move(genericParams), std::move(methodInstantiation), accessLevel));
+                    instantiation->addMethod(llvm::make_unique<FunctionTemplate>(std::move(genericParams), std::move(methodInstantiation), accessLevel));
                 }
             }
 
@@ -312,8 +301,8 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
             auto* varDecl = llvm::cast<VarDecl>(this);
             auto type = varDecl->getType().resolve(genericArgs);
             auto initializer = varDecl->getInitializer() ? varDecl->getInitializer()->instantiate(genericArgs) : nullptr;
-            return llvm::make_unique<VarDecl>(type, varDecl->getName(), std::move(initializer), varDecl->getParent(),
-                                              getAccessLevel(), *varDecl->getModule(), varDecl->getLocation());
+            return llvm::make_unique<VarDecl>(type, varDecl->getName(), std::move(initializer), varDecl->getParent(), getAccessLevel(),
+                                              *varDecl->getModule(), varDecl->getLocation());
         }
         case DeclKind::FieldDecl:
             llvm_unreachable("handled via TypeDecl");

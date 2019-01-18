@@ -130,10 +130,8 @@ Type toDelta(clang::QualType qualtype) {
             return toDelta(llvm::cast<clang::ParenType>(type).getInnerType());
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
-            auto paramTypes = map(functionProtoType.getParamTypes(),
-                                  [](clang::QualType qualType) { return toDelta(qualType).asImmutable(); });
-            return FunctionType::get(toDelta(functionProtoType.getReturnType()).asImmutable(), std::move(paramTypes),
-                                     isMutable);
+            auto paramTypes = map(functionProtoType.getParamTypes(), [](clang::QualType qualType) { return toDelta(qualType).asImmutable(); });
+            return FunctionType::get(toDelta(functionProtoType.getReturnType()).asImmutable(), std::move(paramTypes), isMutable);
         }
         case clang::Type::FunctionNoProto: {
             auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
@@ -146,12 +144,10 @@ Type toDelta(clang::QualType qualtype) {
             if (!constantArrayType.getSize().isIntN(64)) {
                 error(SourceLocation(), "array is too large");
             }
-            return ArrayType::get(toDelta(constantArrayType.getElementType()),
-                                  constantArrayType.getSize().getLimitedValue(), isMutable);
+            return ArrayType::get(toDelta(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue(), isMutable);
         }
         case clang::Type::IncompleteArray:
-            return ArrayType::get(toDelta(llvm::cast<clang::IncompleteArrayType>(type).getElementType()),
-                                  ArrayType::unknownSize);
+            return ArrayType::get(toDelta(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::unknownSize);
         case clang::Type::Attributed:
             return toDelta(llvm::cast<clang::AttributedType>(type).getEquivalentType());
         case clang::Type::Decayed:
@@ -161,8 +157,7 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Vector:
             return Type::getInt(); // FIXME: Temporary.
         default:
-            error(SourceLocation(), "unhandled type class '", type.getTypeClassName(), "' (importing type '",
-                  qualtype.getAsString(), "')");
+            error(SourceLocation(), "unhandled type class '", type.getTypeClassName(), "' (importing type '", qualtype.getAsString(), "')");
     }
 }
 
@@ -180,8 +175,8 @@ llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDe
 }
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
-    TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct, getRecordName(decl), {}, {},
-                      AccessLevel::Default, *currentModule, SourceLocation());
+    TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct, getRecordName(decl), {}, {}, AccessLevel::Default, *currentModule,
+                      SourceLocation());
     typeDecl.getFields().reserve(16); // TODO: Reserve based on the field count of `decl`.
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, typeDecl)) {
@@ -194,16 +189,14 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
 }
 
 VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, *currentModule,
-                   SourceLocation());
+    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, *currentModule, SourceLocation());
 }
 
 void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
     auto initializer = llvm::make_unique<IntLiteralExpr>(std::move(value), SourceLocation());
     auto type = toDelta(qualType).asImmutable();
     initializer->setType(type);
-    module.addToSymbolTable(
-        VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
+    module.addToSymbolTable(VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 // TODO: Use llvm::APFloat instead of long double.
@@ -211,8 +204,7 @@ void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Modu
     auto initializer = llvm::make_unique<FloatLiteralExpr>(value, SourceLocation());
     auto type = Type::getFloat64();
     initializer->setType(type);
-    module.addToSymbolTable(
-        VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
+    module.addToSymbolTable(VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 class CToDeltaConverter : public clang::ASTConsumer {
@@ -349,8 +341,8 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, llvm
     pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
 
     const clang::DirectoryLookup* curDir = nullptr;
-    const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(
-        headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr, nullptr);
+    const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {},
+                                                                                              nullptr, nullptr, nullptr, nullptr, nullptr);
     if (!fileEntry) return false;
 
     auto fileID = ci.getSourceManager().createFileID(fileEntry, clang::SourceLocation(), clang::SrcMgr::C_System);

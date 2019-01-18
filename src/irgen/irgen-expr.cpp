@@ -31,12 +31,11 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
         static int stringLiteralCounter = 0;
-        auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), structs.find("StringRef")->second.second,
-                                              nullptr, "__str" + std::to_string(stringLiteralCounter++));
+        auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), structs.find("StringRef")->second.second, nullptr,
+                                              "__str" + std::to_string(stringLiteralCounter++));
         // TODO: Retrieve this constructor in a nicer way.
-        auto* stringRefInit = module->getOrInsertFunction("_ENM3std9StringRef4initE7pointerP4char6length4uint",
-                                                          llvm::Type::getVoidTy(ctx), alloca->getType(),
-                                                          stringPtr->getType(), size->getType());
+        auto* stringRefInit = module->getOrInsertFunction("_ENM3std9StringRef4initE7pointerP4char6length4uint", llvm::Type::getVoidTy(ctx),
+                                                          alloca->getType(), stringPtr->getType(), size->getType());
         builder.CreateCall(stringRefInit, { alloca, stringPtr, size });
         return alloca;
     } else {
@@ -124,8 +123,7 @@ llvm::Value* IRGenerator::codegenUnaryExpr(const UnaryExpr& expr) {
             if (expr.getOperand().getType().isFloatingPoint()) {
                 return builder.CreateFPCast(builder.CreateFNeg(codegenExpr(expr.getOperand())), toIR(expr.getType()));
             } else {
-                return builder.CreateIntCast(builder.CreateNeg(codegenExpr(expr.getOperand())), toIR(expr.getType()),
-                                             expr.getType().isSigned());
+                return builder.CreateIntCast(builder.CreateNeg(codegenExpr(expr.getOperand())), toIR(expr.getType()), expr.getType().isSigned());
             }
         case Token::Star:
             return builder.CreateLoad(codegenExpr(expr.getOperand()));
@@ -447,8 +445,8 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     }
 
     // Handle implicit conversions to void pointer.
-    if (targetType && expr.getType().isPointerType() && !expr.getType().getPointee().isVoid() &&
-        targetType->isPointerTy() && targetType->getPointerElementType()->isIntegerTy(8)) {
+    if (targetType && expr.getType().isPointerType() && !expr.getType().getPointee().isVoid() && targetType->isPointerTy() &&
+        targetType->getPointerElementType()->isIntegerTy(8)) {
         return builder.CreateBitCast(codegenExpr(expr), targetType);
     }
 
@@ -501,8 +499,7 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
         return builder.CreateZExtOrTrunc(codegenExpr(expr), toIR(type));
     } else if (expr.getType().isSigned() && type.isInteger()) {
         return builder.CreateSExtOrTrunc(codegenExpr(expr), toIR(type));
-    } else if ((expr.getType().isInteger() || expr.getType().isChar() || expr.getType().isBool()) &&
-               (type.isInteger() || type.isChar())) {
+    } else if ((expr.getType().isInteger() || expr.getType().isChar() || expr.getType().isBool()) && (type.isInteger() || type.isChar())) {
         return builder.CreateIntCast(codegenExpr(expr), toIR(type), expr.getType().isSigned());
     } else if (expr.getType().isFloatingPoint()) {
         if (type.isSigned()) return builder.CreateFPToSI(codegenExpr(expr), toIR(type));
@@ -754,8 +751,7 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
         return builder.CreateGEP(value, codegenExpr(*expr.getIndexExpr()));
     }
 
-    return builder.CreateGEP(value, { llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0),
-                                      codegenExpr(*expr.getIndexExpr()) });
+    return builder.CreateGEP(value, { llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegenExpr(*expr.getIndexExpr()) });
 }
 
 llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {

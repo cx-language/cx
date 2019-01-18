@@ -16,8 +16,7 @@ void Typechecker::markFieldAsInitialized(Expr& expr) {
                 auto* varExpr = llvm::cast<VarExpr>(&expr);
 
                 if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
-                    auto it = llvm::find_if(currentFieldDecls,
-                                            [&](std::pair<FieldDecl*, bool>& p) { return p.first == fieldDecl; });
+                    auto it = llvm::find_if(currentFieldDecls, [&](auto& p) { return p.first == fieldDecl; });
 
                     if (it != currentFieldDecls.end()) {
                         it->second = true; // Mark member variable as initialized.
@@ -263,8 +262,7 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
     return llvm::None;
 }
 
-llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var,
-                                                               llvm::ArrayRef<std::unique_ptr<Stmt>> block) const {
+llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<std::unique_ptr<Stmt>> block) const {
     for (auto& stmt : block) {
         if (auto result = maySetToNullBeforeEvaluating(var, *stmt)) return *result;
     }
@@ -292,8 +290,7 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     return instantiation;
 }
 
-static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module,
-                                                          llvm::ArrayRef<std::string> importSearchPaths,
+static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
                                                           llvm::ArrayRef<std::string> frameworkSearchPaths) {
     std::error_code error;
     llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end;
@@ -311,8 +308,7 @@ static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef direct
 
 llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
                                                             llvm::ArrayRef<std::string> importSearchPaths,
-                                                            llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                                            llvm::StringRef moduleName) {
+                                                            llvm::ArrayRef<std::string> frameworkSearchPaths, llvm::StringRef moduleName) {
     auto it = Module::getAllImportedModulesMap().find(moduleName);
     if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);
@@ -325,8 +321,7 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     if (manifest) {
         for (auto& dependency : manifest->getDeclaredDependencies()) {
             if (dependency.getPackageIdentifier() == moduleName) {
-                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, importSearchPaths,
-                                                           frameworkSearchPaths);
+                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, importSearchPaths, frameworkSearchPaths);
                 goto done;
             }
         }
@@ -351,8 +346,7 @@ done:
 
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->getName()] = module;
-    typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr, importSearchPaths,
-                    frameworkSearchPaths);
+    typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr, importSearchPaths, frameworkSearchPaths);
     return *module;
 }
 
@@ -397,8 +391,7 @@ static void checkUnusedDecls(const Module& module) {
     }
 }
 
-void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest,
-                                  llvm::ArrayRef<std::string> importSearchPaths,
+void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
                                   llvm::ArrayRef<std::string> frameworkSearchPaths) {
     auto stdModule = importDeltaModule(nullptr, nullptr, importSearchPaths, frameworkSearchPaths, "std");
     if (!stdModule) {

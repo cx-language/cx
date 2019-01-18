@@ -117,8 +117,7 @@ private:
     llvm::Value* codegenLvalueExpr(const Expr& expr);
 
     void codegenDeferredExprsAndDeinitCallsForReturn();
-    void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination,
-                      llvm::BasicBlock* continuation);
+    void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination, llvm::BasicBlock* continuation);
     void codegenReturnStmt(const ReturnStmt& stmt);
     void codegenVarStmt(const VarStmt& stmt);
     void codegenIfStmt(const IfStmt& ifStmt);
@@ -137,8 +136,7 @@ private:
 
     llvm::Value* getFunctionForCall(const CallExpr& call);
     llvm::Function* getFunctionProto(const FunctionDecl& decl);
-    llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr,
-                                             const llvm::Twine& name = "");
+    llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr, const llvm::Twine& name = "");
     llvm::Value* loadIfAlloca(llvm::Value* value);
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);

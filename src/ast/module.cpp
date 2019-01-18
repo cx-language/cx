@@ -154,8 +154,7 @@ Decl& Module::findDecl(llvm::StringRef name, SourceLocation location, SourceFile
     error(location, "unknown identifier '", name, "'");
 }
 
-std::vector<Decl*> Module::findDecls(llvm::StringRef name, SourceFile* currentSourceFile, FunctionDecl* currentFunction,
-                                     TypeDecl* receiverTypeDecl) const {
+std::vector<Decl*> Module::findDecls(llvm::StringRef name, SourceFile* currentSourceFile, FunctionDecl* currentFunction, TypeDecl* receiverTypeDecl) const {
     std::vector<Decl*> decls;
 
     if (!receiverTypeDecl && currentFunction) {

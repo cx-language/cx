@@ -163,8 +163,7 @@ llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
     if (decl.getType().isMutable() /* || decl.isPublic() */) {
         auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
         auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
-        value = new llvm::GlobalVariable(*module, toIR(decl.getType()), !decl.getType().isMutable(), linkage,
-                                         initializer, decl.getName());
+        value = new llvm::GlobalVariable(*module, toIR(decl.getType()), !decl.getType().isMutable(), linkage, initializer, decl.getName());
     }
 
     globalScope().addLocalValue(decl.getName(), value);

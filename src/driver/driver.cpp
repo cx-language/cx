@@ -133,8 +133,7 @@ void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths,
     addHeaderSearchPathsFromEnvVar(importSearchPaths, "C_INCLUDE_PATH");
 }
 
-void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType,
-                     llvm::Reloc::Model relocModel) {
+void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
@@ -187,8 +186,8 @@ int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vec
             outputFileName = manifest.getPackageName();
         }
         // TODO: Add support for library packages.
-        int exitStatus = buildExecutable(getSourceFiles(targetRootDir, manifestPath), &manifest, argv0, args,
-                                         manifest.getOutputDirectory(), outputFileName, run);
+        int exitStatus = buildExecutable(getSourceFiles(targetRootDir, manifestPath), &manifest, argv0, args, manifest.getOutputDirectory(),
+                                         outputFileName, run);
         if (exitStatus != 0) return exitStatus;
     }
 
@@ -196,8 +195,7 @@ int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vec
 }
 
 int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
-                           std::vector<llvm::StringRef>& args, llvm::StringRef outputDirectory,
-                           llvm::StringRef outputFileName, bool run) {
+                           std::vector<llvm::StringRef>& args, llvm::StringRef outputDirectory, llvm::StringRef outputFileName, bool run) {
     bool parse = checkFlag("-parse", args);
     bool typecheck = checkFlag("-typecheck", args);
     bool compileOnly = checkFlag("-c", args);
@@ -255,8 +253,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     Typechecker typechecker(std::move(disabledWarnings));
     for (auto& importedModule : module.getImportedModules()) {
-        typechecker.typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr,
-                                    importSearchPaths, frameworkSearchPaths);
+        typechecker.typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr, importSearchPaths,
+                                    frameworkSearchPaths);
     }
     typechecker.typecheckModule(module, manifest, importSearchPaths, frameworkSearchPaths);
 
@@ -353,8 +351,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     llvm::Optional<llvm::StringRef> redirects[3] = { llvm::None, out, err };
 
     std::vector<llvm::StringRef> ccArgStringRefs(ccArgs.begin(), ccArgs.end());
-    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, llvm::None, redirects)
-                            : invokeClang(ccArgs);
+    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, llvm::None, redirects) : invokeClang(ccArgs);
 
     llvm::sys::fs::remove(temporaryOutputFilePath);
     uint64_t fileSize;

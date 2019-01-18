@@ -64,8 +64,7 @@ PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
 
 } // namespace
 
-Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string)
-: kind(kind), string(string), location(location) {
+Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string) : kind(kind), string(string), location(location) {
     ASSERT(!string.empty() || kind == Token::None || kind >= Token::Break);
     ASSERT(location.isValid());
 #ifndef NDEBUG

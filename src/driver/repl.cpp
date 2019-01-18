@@ -50,8 +50,7 @@ void evaluate(llvm::StringRef line) {
     if (!error.empty()) llvm::outs() << error << '\n';
 
     llvm::FunctionType* functionType = llvm::FunctionType::get(irGenerator.toIR(expr->getType()), {}, false);
-    llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "__anon_expr",
-                                                      &irModuleRef);
+    llvm::Function* function = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "__anon_expr", &irModuleRef);
     irGenerator.getBuilder().SetInsertPoint(llvm::BasicBlock::Create(irGenerator.getLLVMContext(), "", function));
     irGenerator.getBuilder().CreateRet(irGenerator.codegenExpr(*expr));
     ASSERT(!llvm::verifyModule(irModuleRef, &llvm::errs()));

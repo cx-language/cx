@@ -184,8 +184,7 @@ end:
         end--;
     }
 
-    return Token(isFloat ? Token::FloatLiteral : Token::IntegerLiteral, getCurrentLocation(),
-                 llvm::StringRef(begin, end - begin));
+    return Token(isFloat ? Token::FloatLiteral : Token::IntegerLiteral, getCurrentLocation(), llvm::StringRef(begin, end - begin));
 }
 
 static const llvm::StringMap<Token::Kind> keywords = {

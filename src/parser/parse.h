@@ -72,8 +72,7 @@ enum class AccessLevel;
 
 class Parser {
 public:
-    Parser(llvm::StringRef filePath, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
-           llvm::ArrayRef<std::string> frameworkSearchPaths);
+    Parser(llvm::StringRef filePath, Module& module, llvm::ArrayRef<std::string> importSearchPaths, llvm::ArrayRef<std::string> frameworkSearchPaths);
     Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
            llvm::ArrayRef<std::string> frameworkSearchPaths);
     void parse();
@@ -138,16 +137,14 @@ private:
     std::unique_ptr<Stmt> parseStmt(Decl* parent);
     std::vector<std::unique_ptr<Stmt>> parseBlockOrStmt(Decl* parent);
     std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token::Kind end, Decl* parent);
-    std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3,
-                                                            Decl* parent);
+    std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent);
     ParamDecl parseParam(bool withType);
     std::vector<ParamDecl> parseParamList(bool* isVariadic, bool withTypes);
     void parseGenericParamList(std::vector<GenericParamDecl>& genericParams);
     std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
                                                      std::vector<GenericParamDecl>* genericParams);
     std::unique_ptr<FunctionTemplate> parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel);
-    std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
-                                                    bool requireBody = true);
+    std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody = true);
     std::unique_ptr<FunctionTemplate> parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel);
     std::unique_ptr<FunctionDecl> parseExternFunctionDecl();
     std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel);

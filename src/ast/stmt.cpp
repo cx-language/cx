@@ -28,8 +28,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
     switch (getKind()) {
         case StmtKind::ReturnStmt: {
             auto* returnStmt = llvm::cast<ReturnStmt>(this);
-            auto returnValue = returnStmt->getReturnValue() ? returnStmt->getReturnValue()->instantiate(genericArgs)
-                                                            : nullptr;
+            auto returnValue = returnStmt->getReturnValue() ? returnStmt->getReturnValue()->instantiate(genericArgs) : nullptr;
             return llvm::make_unique<ReturnStmt>(std::move(returnValue), returnStmt->getLocation());
         }
         case StmtKind::VarStmt: {
@@ -75,8 +74,7 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
             auto variable = llvm::cast<VarDecl>(forStmt->getVariable()->instantiate(genericArgs, {}));
             auto range = forStmt->getRangeExpr().instantiate(genericArgs);
             auto body = ::instantiate(forStmt->getBody(), genericArgs);
-            return llvm::make_unique<ForStmt>(std::move(variable), std::move(range), std::move(body),
-                                              forStmt->getLocation());
+            return llvm::make_unique<ForStmt>(std::move(variable), std::move(range), std::move(body), forStmt->getLocation());
         }
         case StmtKind::BreakStmt: {
             auto* breakStmt = llvm::cast<BreakStmt>(this);
@@ -116,35 +114,30 @@ std::unique_ptr<Stmt> ForStmt::lower() {
 
     std::unique_ptr<Expr> iteratorValue;
     auto* rangeTypeDecl = range->getType().removePointer().getDecl();
-    bool isIterator = rangeTypeDecl && llvm::any_of(rangeTypeDecl->getInterfaces(),
-                                                    [](Type interface) { return interface.getName() == "Iterator"; });
+    bool isIterator = rangeTypeDecl &&
+                      llvm::any_of(rangeTypeDecl->getInterfaces(), [](Type interface) { return interface.getName() == "Iterator"; });
 
     if (isIterator) {
         iteratorValue = std::move(range);
     } else {
         auto iteratorMemberExpr = llvm::make_unique<MemberExpr>(std::move(range), "iterator", location);
-        iteratorValue = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<NamedValue>(),
-                                                    std::vector<Type>(), location);
+        iteratorValue = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<NamedValue>(), std::vector<Type>(), location);
     }
 
-    auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true, location), std::string(iteratorVariableName),
-                                                      std::move(iteratorValue), variable->getParent(),
-                                                      AccessLevel::None, *variable->getModule(), location);
+    auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true, location), std::string(iteratorVariableName), std::move(iteratorValue),
+                                                      variable->getParent(), AccessLevel::None, *variable->getModule(), location);
     auto iteratorVarStmt = llvm::make_unique<VarStmt>(std::move(iteratorVarDecl));
     stmts.push_back(std::move(iteratorVarStmt));
 
     auto iteratorVarExpr = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
     auto hasValueMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr), "hasValue", location);
-    auto hasValueCallExpr = llvm::make_unique<CallExpr>(std::move(hasValueMemberExpr), std::vector<NamedValue>(),
-                                                        std::vector<Type>(), location);
+    auto hasValueCallExpr = llvm::make_unique<CallExpr>(std::move(hasValueMemberExpr), std::vector<NamedValue>(), std::vector<Type>(), location);
 
     auto iteratorVarExpr2 = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
     auto valueMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr2), "value", location);
-    auto valueCallExpr = llvm::make_unique<CallExpr>(std::move(valueMemberExpr), std::vector<NamedValue>(),
-                                                     std::vector<Type>(), location);
-    auto loopVariableVarDecl = llvm::make_unique<VarDecl>(variable->getType(), variable->getName(),
-                                                          std::move(valueCallExpr), variable->getParent(), AccessLevel::None,
-                                                          *variable->getModule(), variable->getLocation());
+    auto valueCallExpr = llvm::make_unique<CallExpr>(std::move(valueMemberExpr), std::vector<NamedValue>(), std::vector<Type>(), location);
+    auto loopVariableVarDecl = llvm::make_unique<VarDecl>(variable->getType(), variable->getName(), std::move(valueCallExpr), variable->getParent(),
+                                                          AccessLevel::None, *variable->getModule(), variable->getLocation());
     auto loopVariableVarStmt = llvm::make_unique<VarStmt>(std::move(loopVariableVarDecl));
 
     std::vector<std::unique_ptr<Stmt>> forStmtBody;
@@ -156,11 +149,9 @@ std::unique_ptr<Stmt> ForStmt::lower() {
 
     auto iteratorVarExpr3 = llvm::make_unique<VarExpr>(std::string(iteratorVariableName), location);
     auto incrementMemberExpr = llvm::make_unique<MemberExpr>(std::move(iteratorVarExpr3), "increment", location);
-    auto incrementCallExpr = llvm::make_unique<CallExpr>(std::move(incrementMemberExpr), std::vector<NamedValue>(),
-                                                         std::vector<Type>(), location);
+    auto incrementCallExpr = llvm::make_unique<CallExpr>(std::move(incrementMemberExpr), std::vector<NamedValue>(), std::vector<Type>(), location);
 
-    auto whileStmt = llvm::make_unique<WhileStmt>(std::move(hasValueCallExpr), std::move(forStmtBody),
-                                                  std::move(incrementCallExpr));
+    auto whileStmt = llvm::make_unique<WhileStmt>(std::move(hasValueCallExpr), std::move(forStmtBody), std::move(incrementCallExpr));
     stmts.push_back(std::move(whileStmt));
 
     return llvm::make_unique<CompoundStmt>(std::move(stmts));

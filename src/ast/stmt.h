@@ -101,10 +101,8 @@ private:
 
 class IfStmt : public Stmt {
 public:
-    IfStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& thenBody,
-           std::vector<std::unique_ptr<Stmt>>&& elseBody)
-    : Stmt(StmtKind::IfStmt), condition(std::move(condition)), thenBody(std::move(thenBody)),
-      elseBody(std::move(elseBody)) {}
+    IfStmt(std::unique_ptr<Expr> condition, std::vector<std::unique_ptr<Stmt>>&& thenBody, std::vector<std::unique_ptr<Stmt>>&& elseBody)
+    : Stmt(StmtKind::IfStmt), condition(std::move(condition)), thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) {}
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getThenBody() const { return thenBody; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getElseBody() const { return elseBody; }
@@ -133,10 +131,8 @@ private:
 
 class SwitchStmt : public Stmt {
 public:
-    SwitchStmt(std::unique_ptr<Expr> condition, std::vector<SwitchCase>&& cases,
-               std::vector<std::unique_ptr<Stmt>>&& defaultStmts)
-    : Stmt(StmtKind::SwitchStmt), condition(std::move(condition)), cases(std::move(cases)),
-      defaultStmts(std::move(defaultStmts)) {}
+    SwitchStmt(std::unique_ptr<Expr> condition, std::vector<SwitchCase>&& cases, std::vector<std::unique_ptr<Stmt>>&& defaultStmts)
+    : Stmt(StmtKind::SwitchStmt), condition(std::move(condition)), cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) {}
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<SwitchCase> getCases() const { return cases; }
     llvm::MutableArrayRef<SwitchCase> getCases() { return cases; }
@@ -168,10 +164,8 @@ private:
 
 class ForStmt : public Stmt {
 public:
-    ForStmt(std::unique_ptr<VarDecl> variable, std::unique_ptr<Expr> range, std::vector<std::unique_ptr<Stmt>>&& body,
-            SourceLocation location)
-    : Stmt(StmtKind::ForStmt), variable(std::move(variable)), range(std::move(range)), body(std::move(body)),
-      location(location) {}
+    ForStmt(std::unique_ptr<VarDecl> variable, std::unique_ptr<Expr> range, std::vector<std::unique_ptr<Stmt>>&& body, SourceLocation location)
+    : Stmt(StmtKind::ForStmt), variable(std::move(variable)), range(std::move(range)), body(std::move(body)), location(location) {}
     VarDecl* getVariable() const { return variable.get(); }
     Expr& getRangeExpr() const { return *range; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }

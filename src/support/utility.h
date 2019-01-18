@@ -81,8 +81,7 @@ void printDiagnostic(SourceLocation location, llvm::StringRef type, llvm::raw_os
 class Note {
 public:
     template<typename... Args>
-    Note(SourceLocation location, Args&&... args)
-    : location(location), message(llvm::join_items("", std::forward<Args>(args)...)) {}
+    Note(SourceLocation location, Args&&... args) : location(location), message(llvm::join_items("", std::forward<Args>(args)...)) {}
     SourceLocation getLocation() const { return location; }
     llvm::StringRef getMessage() const { return message; }
 

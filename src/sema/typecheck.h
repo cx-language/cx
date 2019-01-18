@@ -96,22 +96,18 @@ private:
                                                 llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, bool returnNullOnError = false);
-    std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
-                                       llvm::ArrayRef<ParamDecl> params, bool returnOnError);
+    std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     bool argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {}) const;
-    void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "",
+    void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", SourceLocation location = SourceLocation()) const;
+    void validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation()) const;
-    void validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params, bool isVariadic,
-                      llvm::StringRef functionName = "", SourceLocation location = SourceLocation()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
     void markFieldAsInitialized(Expr& expr);
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
 
-    llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
-                                                   llvm::ArrayRef<std::string> importSearchPaths,
-                                                   llvm::ArrayRef<std::string> frameworkSearchPaths,
-                                                   llvm::StringRef moduleName);
+    llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
+                                                   llvm::ArrayRef<std::string> frameworkSearchPaths, llvm::StringRef moduleName);
 
     /// Returns true if the given expression (of optional type) is guaranteed to be non-null, e.g.
     /// if it was previously checked against null, and the type-checker can prove that it wasn't set
@@ -142,7 +138,6 @@ private:
     std::vector<std::string> disabledWarnings;
 };
 
-void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name,
-                             SourceLocation location);
+void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, SourceLocation location);
 
 } // namespace delta

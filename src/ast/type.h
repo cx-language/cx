@@ -45,8 +45,7 @@ inline TypeBase::~TypeBase() {}
 struct Type {
 public:
     Type() : typeBase(nullptr), mutableFlag(false) {}
-    Type(TypeBase* typeBase, bool isMutable, SourceLocation location)
-    : typeBase(typeBase), mutableFlag(isMutable), location(location) {}
+    Type(TypeBase* typeBase, bool isMutable, SourceLocation location) : typeBase(typeBase), mutableFlag(isMutable), location(location) {}
     TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
     TypeBase* getBase() const { return typeBase; }
@@ -133,9 +132,7 @@ public:
     static Type getUInt32(bool isMutable = false, SourceLocation location = SourceLocation());
     static Type getUInt64(bool isMutable = false, SourceLocation location = SourceLocation());
     // TODO: Return correct uintptr type by checking target platform pointer size.
-    static Type getUIntPtr(bool isMutable = false, SourceLocation location = SourceLocation()) {
-        return getUInt64(isMutable, location);
-    }
+    static Type getUIntPtr(bool isMutable = false, SourceLocation location = SourceLocation()) { return getUInt64(isMutable, location); }
     static Type getFloat(bool isMutable = false, SourceLocation location = SourceLocation());
     static Type getFloat32(bool isMutable = false, SourceLocation location = SourceLocation());
     static Type getFloat64(bool isMutable = false, SourceLocation location = SourceLocation());
@@ -164,8 +161,7 @@ public:
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
     TypeDecl* getDecl() const { return decl; }
     void setDecl(TypeDecl* decl) { this->decl = decl; }
-    static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable = false,
-                    SourceLocation location = SourceLocation());
+    static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable = false, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::BasicType; }
 
 private:
@@ -212,8 +208,7 @@ bool operator==(const TupleElement&, const TupleElement&);
 class TupleType : public TypeBase {
 public:
     llvm::ArrayRef<TupleElement> getElements() const { return elements; }
-    static Type get(std::vector<TupleElement>&& elements, bool isMutable = false,
-                    SourceLocation location = SourceLocation());
+    static Type get(std::vector<TupleElement>&& elements, bool isMutable = false, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
 
 private:
@@ -228,8 +223,7 @@ public:
     Type getReturnType() const { return returnType; }
     llvm::ArrayRef<Type> getParamTypes() const { return paramTypes; }
     std::vector<ParamDecl> getParamDecls(SourceLocation location = SourceLocation()) const;
-    static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable = false,
-                    SourceLocation location = SourceLocation());
+    static Type get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable = false, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::FunctionType; }
 
 private:

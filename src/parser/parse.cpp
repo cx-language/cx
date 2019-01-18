@@ -25,8 +25,7 @@ static std::unique_ptr<llvm::MemoryBuffer> getFileMemoryBuffer(llvm::StringRef f
     return std::move(*buffer);
 }
 
-Parser::Parser(llvm::StringRef filePath, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
-               llvm::ArrayRef<std::string> frameworkSearchPaths)
+Parser::Parser(llvm::StringRef filePath, Module& module, llvm::ArrayRef<std::string> importSearchPaths, llvm::ArrayRef<std::string> frameworkSearchPaths)
 : Parser(getFileMemoryBuffer(filePath), module, importSearchPaths, frameworkSearchPaths) {}
 
 Parser::Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
@@ -95,13 +94,11 @@ static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
     return result;
 }
 
-[[noreturn]] static void unexpectedToken(Token token, llvm::ArrayRef<Token::Kind> expected = {},
-                                         const char* contextInfo = nullptr) {
+[[noreturn]] static void unexpectedToken(Token token, llvm::ArrayRef<Token::Kind> expected = {}, const char* contextInfo = nullptr) {
     if (expected.size() == 0) {
         error(token.getLocation(), "unexpected ", quote(token), contextInfo ? " " : "", contextInfo ? contextInfo : "");
     } else {
-        error(token.getLocation(), "expected ", formatList(expected), contextInfo ? " " : "",
-              contextInfo ? contextInfo : "", ", got ", quote(token));
+        error(token.getLocation(), "expected ", formatList(expected), contextInfo ? " " : "", contextInfo ? contextInfo : "", ", got ", quote(token));
     }
 }
 
@@ -355,8 +352,7 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
 
         if (currentToken() == Token::RightShift) {
             tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().getLocation());
-            tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1,
-                               Token(Token::Greater, currentToken().getLocation().nextColumn()));
+            tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().getLocation().nextColumn()));
         }
 
         break;
@@ -852,8 +848,7 @@ std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* pa
         parseStmtTerminator();
     }
 
-    return llvm::make_unique<VarDecl>(type, name.getString(), std::move(initializer), parent, accessLevel,
-                                      *currentModule, name.getLocation());
+    return llvm::make_unique<VarDecl>(type, name.getString(), std::move(initializer), parent, accessLevel, *currentModule, name.getLocation());
 }
 
 /// var-stmt ::= var-decl
@@ -1037,8 +1032,7 @@ std::vector<std::unique_ptr<Stmt>> Parser::parseStmtsUntil(Token::Kind end, Decl
     return stmts;
 }
 
-std::vector<std::unique_ptr<Stmt>> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3,
-                                                                Decl* parent) {
+std::vector<std::unique_ptr<Stmt>> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent) {
     std::vector<std::unique_ptr<Stmt>> stmts;
     while (currentToken() != end1 && currentToken() != end2 && currentToken() != end3) {
         stmts.emplace_back(parseStmt(parent));
@@ -1137,11 +1131,9 @@ std::unique_ptr<FunctionDecl> Parser::parseFunctionProto(bool isExtern, TypeDecl
     FunctionProto proto(std::move(name), std::move(params), std::move(returnType), isVariadic, isExtern);
 
     if (receiverTypeDecl) {
-        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<Type>(), accessLevel,
-                                             nameLocation);
+        return llvm::make_unique<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<Type>(), accessLevel, nameLocation);
     } else {
-        return llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), accessLevel, *currentModule,
-                                               nameLocation);
+        return llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), accessLevel, *currentModule, nameLocation);
     }
 }
 
@@ -1155,8 +1147,7 @@ std::unique_ptr<FunctionTemplate> Parser::parseFunctionTemplateProto(TypeDecl* r
 }
 
 /// function-decl ::= function-proto '{' stmt* '}'
-std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
-                                                        bool requireBody) {
+std::unique_ptr<FunctionDecl> Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody) {
     auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, nullptr);
 
     if (requireBody || currentToken() == Token::LeftBrace) {
@@ -1271,8 +1262,8 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
     std::vector<Type> interfaces;
     auto name = parseTypeHeader(interfaces, genericParams);
 
-    auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::vector<Type>(), std::move(interfaces),
-                                                typeAccessLevel, *currentModule, name.getLocation());
+    auto typeDecl = llvm::make_unique<TypeDecl>(tag, name.getString(), std::vector<Type>(), std::move(interfaces), typeAccessLevel,
+                                                *currentModule, name.getLocation());
     parse(Token::LeftBrace);
 
     while (currentToken() != Token::RightBrace) {
@@ -1356,8 +1347,7 @@ std::unique_ptr<EnumDecl> Parser::parseEnumDecl(std::vector<GenericParamDecl>* g
     }
 
     consumeToken();
-    return llvm::make_unique<EnumDecl>(name.getString(), std::move(cases), typeAccessLevel, *currentModule,
-                                       name.getLocation());
+    return llvm::make_unique<EnumDecl>(name.getString(), std::move(cases), typeAccessLevel, *currentModule, name.getLocation());
 }
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')
