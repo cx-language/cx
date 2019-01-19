@@ -178,6 +178,6 @@ struct uint64: Copyable, Comparable, Printable, Hashable {
     }
 
     def hash(): uint64 {
-        return uint64(this);
+        return this;
     }
 }

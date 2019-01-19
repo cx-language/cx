@@ -8,7 +8,7 @@ extern def backtrace_symbols(array: mutable void**, size: int): mutable char mut
 def printStackTrace() {
     var callstack: mutable void*[128] = undefined;
 
-    var frames = backtrace(&callstack[0], int(callstack.size()));
+    var frames = backtrace(&callstack[0], callstack.size());
     var strings = backtrace_symbols(&callstack[0], frames);
 
     if (strings == null) {

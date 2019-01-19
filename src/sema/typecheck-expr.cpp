@@ -761,8 +761,15 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
     if (!expr.getArgs().front().getName().empty()) {
         error(expr.getLocation(), "expected unnamed argument to converting initializer");
     }
-    typecheckExpr(*expr.getArgs().front().getValue());
-    expr.setType(BasicType::get(expr.getFunctionName(), {}));
+
+    auto sourceType = typecheckExpr(*expr.getArgs().front().getValue());
+    auto targetType = BasicType::get(expr.getFunctionName(), {});
+
+    if (sourceType == targetType) {
+        warning(expr.getCallee().getLocation(), "unnecessary conversion to same type");
+    }
+
+    expr.setType(targetType);
     return expr.getType();
 }
 

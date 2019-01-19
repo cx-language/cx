@@ -1,0 +1,6 @@
+// RUN: %delta -typecheck %s | %FileCheck %s
+
+def a(i: int) {
+    // CHECK: [[@LINE+1]]:13: warning: unnecessary conversion to same type
+    var j = int(i);
+}

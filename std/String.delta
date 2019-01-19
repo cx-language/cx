@@ -116,7 +116,7 @@ struct String: Comparable, OutputStream, Printable {
 
     // Returns the substring of the string in the given range, [inclusive, exclusive]
     def substr(range: Range<int>): StringRef {
-        if (range.end > int(size())) {
+        if (range.end > size()) {
             indexOutOfBounds(range.end);
         }
         return StringRef(characters[range.start], range.size());
@@ -141,8 +141,7 @@ struct String: Comparable, OutputStream, Printable {
 
             prev = pos + 1;
 
-            // TODO: Warn about unnecessary casts.
-            if (pos > int(size()) || prev > int(size())) {
+            if (pos > size() || prev > size()) {
                 break;
             }
         }
