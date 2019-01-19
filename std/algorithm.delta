@@ -34,7 +34,7 @@ def sort<E: Comparable>(array: mutable Array<E>*) {
 
 /// Private members
 
-private def partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint): uint {
+private def partition<E: Comparable>(arr: mutable Array<E>*, low: int, high: int): int {
     var pivot = arr[high];
     var i = (low - 1);
 
@@ -51,7 +51,7 @@ private def partition<E: Comparable>(arr: mutable Array<E>*, low: uint, high: ui
 }
 
 /// Quicksorts the given array, in place. Not stable.
-private def quickSort<E: Comparable>(arr: mutable Array<E>*, low: uint, high: uint) {
+private def quickSort<E: Comparable>(arr: mutable Array<E>*, low: int, high: int) {
     if (low < high) {
         var index = partition<E>(arr, low, high);
 
@@ -66,9 +66,9 @@ private def quickSort<E: Comparable>(arr: mutable Array<E>*, low: uint, high: ui
 
 /// Insertion sorts the given array, in place. Good for small arrays
 private def insertionSort<E: Comparable>(arr: mutable Array<E>*) {
-    var i: uint = 1;
+    var i = 1;
     while (i < arr.size()) {
-        var j: uint = i;
+        var j = i;
         while (j > 0 && arr[j-1] > arr[j]) {
             swap(arr[j], arr[j-1]);
             j--;

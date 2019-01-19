@@ -1042,7 +1042,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
             if (expr.getFunctionName() == "size") {
                 validateArgs(expr, false, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                return Type::getUInt();
+                return ArrayType::getIndexType();
             }
 
             error(expr.getReceiver()->getLocation(), "type '", receiverType.removePointer(), "' has no member function '",

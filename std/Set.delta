@@ -1,5 +1,4 @@
 struct Set<Key: Hashable> {
-
     var map: Map<Key, bool>;
 
     /// Initializes an empty set
@@ -22,7 +21,7 @@ struct Set<Key: Hashable> {
         return map.contains(key);
     }
 
-    def size(): uint {
+    def size(): int {
         return map.size();
     }
 

@@ -34,7 +34,7 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), structs.find("StringRef")->second.second, nullptr,
                                               "__str" + std::to_string(stringLiteralCounter++));
         // TODO: Retrieve this constructor in a nicer way.
-        auto* stringRefInit = module->getOrInsertFunction("_ENM3std9StringRef4initE7pointerP4char6length4uint", llvm::Type::getVoidTy(ctx),
+        auto* stringRefInit = module->getOrInsertFunction("_ENM3std9StringRef4initE7pointerP4char6length3int", llvm::Type::getVoidTy(ctx),
                                                           alloca->getType(), stringPtr->getType(), size->getType());
         builder.CreateCall(stringRefInit, { alloca, stringPtr, size });
         return alloca;

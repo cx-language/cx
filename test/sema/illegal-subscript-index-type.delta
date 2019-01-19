@@ -4,6 +4,6 @@ extern def foo(): int[5]*;
 
 def main() {
     var p = foo();
-    // CHECK: [[@LINE+1]]:15: error: illegal subscript index type 'bool', expected 'uint'
+    // CHECK: [[@LINE+1]]:15: error: illegal subscript index type 'bool', expected 'int'
     var e = p[false];
 }

@@ -1,6 +1,6 @@
 struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<Element>> {
     var base: ArrayIterator<Element>;
-    var index: uint;
+    var index: int;
 
     init(iterator: ArrayIterator<Element>) {
         base = iterator;
@@ -23,9 +23,9 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
 
 struct EnumeratedIteratorEntry<Value>: Copyable {
     var value: Value*;
-    var index: uint;
+    var index: int;
 
-    init(value: Value*, index: uint) {
+    init(value: Value*, index: int) {
         this.value = value;
         this.index = index;
     }

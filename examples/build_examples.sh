@@ -6,7 +6,7 @@ delta=${1:-delta}
 
 cd "$(dirname "$0")"
 
-for file in ./*.delta; do
+for file in *.delta; do
     output="${file%.delta}.out"
     $delta $file -o$output
 done

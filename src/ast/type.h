@@ -181,7 +181,7 @@ public:
     int64_t getSize() const { return size; }
     bool hasRuntimeSize() const { return size == runtimeSize; }
     bool hasUnknownSize() const { return size == unknownSize; }
-    static Type getIndexType() { return Type::getUInt(); }
+    static Type getIndexType() { return Type::getInt(); }
     static const int64_t runtimeSize = -1;
     static const int64_t unknownSize = -2;
     static Type get(Type type, int64_t size, bool isMutable = false, SourceLocation location = SourceLocation());

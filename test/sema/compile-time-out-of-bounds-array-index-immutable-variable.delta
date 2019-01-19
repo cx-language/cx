@@ -4,7 +4,7 @@ extern def foo(): int[5]*;
 
 def main() {
     var p = foo();
-    var i: uint = 5;
+    var i = 5;
     i--;
     var e = p[i];
 }

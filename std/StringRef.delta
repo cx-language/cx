@@ -1,7 +1,7 @@
 struct StringRef: Copyable, Comparable, Hashable, Printable {
     var characters: ArrayRef<char>;
 
-    init(pointer: char*, length: uint) {
+    init(pointer: char*, length: int) {
         characters = ArrayRef<char>(pointer, length);
     }
 
@@ -12,19 +12,19 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     /// `StringRef.init(pointer: char*, length: uint)` instead.
     ///
     init(cString: char*) {
-        characters = ArrayRef<char>(cString, uint(strlen(cString)));
+        characters = ArrayRef<char>(cString, int(strlen(cString)));
     }
 
     init (string: String*) {
         characters = ArrayRef<char>(string.data(), string.size());
     }
 
-    def size(): uint {
+    def size(): int {
         return characters.size();
     }
 
     /// Returns the character at the given index.
-    def [](index: uint): char {
+    def [](index: int): char {
         return *characters[index];
     }
 
@@ -43,7 +43,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
 
     /// Returns the index of the given character, or -1 if it's not found.
     /// Starts from start
-    def find(c: char, start: uint): int {
+    def find(c: char, start: int): int {
         for (var i in start..size()) {
             if (*characters[i] == c) {
                 return int(i);

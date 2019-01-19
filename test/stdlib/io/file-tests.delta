@@ -17,7 +17,7 @@ def testBytes() {
     var f = FileStream("test.txt");
 
     var real = "this\nis the\nbest\n";
-    var i: uint = 0;
+    var i = 0;
 
     for (var byte in f.bytes()) {
         assert(real[i] == char(byte));
@@ -35,7 +35,7 @@ def testLines() {
     a.push("is the");
     a.push("best");
 
-    var i: uint = 0;
+    var i = 0;
 
     for (var line in f.lines()) {
         assert(*a[i] == StringRef(line));
@@ -77,7 +77,7 @@ def testIsEofWhileLoop() {
     a.push("is the");
     a.push("best");
 
-    var i: uint = 0;
+    var i = 0;
 
     while (!f.isEof()) {
         var line = f.readLine();
@@ -111,7 +111,7 @@ def testInputStream() {
     a.push("is the");
     a.push("best");
 
-    var i: uint = 0;
+    var i = 0;
 
     for (var line in f.lines()) {
         assert(*a[i] == StringRef(line));

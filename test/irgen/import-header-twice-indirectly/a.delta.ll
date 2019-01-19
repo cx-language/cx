@@ -9,7 +9,7 @@
 
 define i32 @main() {
   %__str0 = alloca %StringRef
-  call void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   call void @_EN3std5printI9StringRefEE5valueP9StringRef(%StringRef* %__str0)
   ret i32 0
 }
@@ -26,7 +26,7 @@ define void @_EN3std5printI9StringRefEE5valueP9StringRef(%StringRef* %value) {
   ret void
 }
 
-declare void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef*, i8*, i32)
+declare void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)
 
 declare void @_ENM3std6String6deinitE(%String*)
 

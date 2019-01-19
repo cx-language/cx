@@ -32,7 +32,7 @@ def safeAllocate<Type>(value: Type): mutable Type*? {
 /// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
 /// undefined behavior (when compiled in unchecked mode).
 ///
-def allocateArray<Type>(size: uint): mutable Type[?]* {
+def allocateArray<Type>(size: int): mutable Type[?]* {
     return cast<mutable Type[?]*>(malloc(sizeof(Type) * uint64(size))!);
 }
 
@@ -42,7 +42,7 @@ def allocateArray<Type>(size: uint): mutable Type[?]* {
 ///
 /// If the memory allocation fails, null is returned.
 ///
-def safeAllocateArray<Type>(size: uint): mutable Type[?]*? {
+def safeAllocateArray<Type>(size: int): mutable Type[?]*? {
     return cast<mutable Type[?]*>(malloc(sizeof(Type) * uint64(size)));
 }
 

@@ -1,7 +1,7 @@
 struct Tape
 {
     var tape: Array<int>;
-    var pos: uint;
+    var pos: int;
 
     init()
     {
@@ -42,15 +42,15 @@ struct Tape
 struct Program
 {
     var code: String;
-    var bracketMap: Map<uint, uint>;
+    var bracketMap: Map<int, int>;
 
     init(text: String)
     {
         this.code = String();
-        this.bracketMap = Map<uint, uint>();
+        this.bracketMap = Map<int, int>();
 
-        var leftStack = Array<uint>();
-        var pc: uint = 0;
+        var leftStack = Array<int>();
+        var pc = 0;
 
         for (var ch in text)
         {
@@ -80,7 +80,7 @@ struct Program
     def run()
     {
         var tape = Tape();
-        var pc: uint = 0;
+        var pc = 0;
         var size = code.size();
 
         while (pc < size)

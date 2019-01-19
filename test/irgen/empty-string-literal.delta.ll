@@ -6,7 +6,7 @@
 
 define i32 @main() {
   %__str0 = alloca %StringRef
-  call void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef* %__str0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
+  call void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
   %__str0.load = load %StringRef, %StringRef* %__str0
   %1 = call i32 @_EN3std9StringRef4sizeE(%StringRef %__str0.load)
   ret i32 %1
@@ -14,4 +14,4 @@ define i32 @main() {
 
 declare i32 @_EN3std9StringRef4sizeE(%StringRef)
 
-declare void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef*, i8*, i32)
+declare void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)

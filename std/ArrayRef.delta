@@ -1,6 +1,6 @@
 struct ArrayRef<Element>: Copyable {
     var data: Element*;
-    var size: uint;
+    var size: int;
 
     /// Initializes an ArrayRef referring to an empty array.
     init() {
@@ -16,18 +16,18 @@ struct ArrayRef<Element>: Copyable {
 
     /// Initializes an ArrayRef referring to an array of the given size located at the given memory
     /// address.
-    init(data: Element*, size: uint) {
+    init(data: Element*, size: int) {
         this.data = data;
         this.size = size;
     }
 
     /// Returns the number of elements in the array.
-    def size(): uint {
+    def size(): int {
         return size;
     }
 
     /// Returns a reference to the element at the given index.
-    def [](index: uint): Element* {
+    def [](index: int): Element* {
         return data + index;
     }
 

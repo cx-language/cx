@@ -18,7 +18,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     /// Initializes a string with the characters from a character array of known length.
-    init(pointer: char*, length: uint) {
+    init(pointer: char*, length: int) {
         init(StringRef(pointer, length));
     }
 
@@ -29,15 +29,15 @@ struct String: Comparable, OutputStream, Printable {
     /// `String.init(pointer: char*, length: uint)` instead.
     ///
     init(cString: char*) {
-        init(StringRef(cString, uint(strlen(cString))));
+        init(StringRef(cString, int(strlen(cString))));
     }
 
-    def size(): uint {
+    def size(): int {
         return characters.size() - 1;
     }
 
     /// Returns the character at the given index.
-    def [](index: uint): char {
+    def [](index: int): char {
         return *characters[index];
     }
 
@@ -105,7 +105,7 @@ struct String: Comparable, OutputStream, Printable {
 
     /// Returns the index of the given character, or -1 if it's not found.
     /// Starts from start
-    def find(c: char, start: uint): int {
+    def find(c: char, start: int): int {
         for (var i in start..size()) {
             if (*characters[i] == c) {
                 return int(i);
@@ -119,14 +119,6 @@ struct String: Comparable, OutputStream, Printable {
         if (range.end > int(size())) {
             indexOutOfBounds(range.end);
         }
-        return StringRef(characters[uint(range.start)], uint(range.size()));
-    }
-
-    // Returns the substring of the string in the given range, [inclusive, exclusive]
-    def substr(range: Range<uint>): StringRef {
-        if (range.end > size()) {
-            indexOutOfBounds(range.end);
-        }
         return StringRef(characters[range.start], range.size());
     }
 
@@ -134,14 +126,14 @@ struct String: Comparable, OutputStream, Printable {
     def split(delim: char): Array<StringRef> {
         var tokens = Array<StringRef>();
 
-        var prev: int = 0;
-        var pos: int = 0;
+        var prev = 0;
+        var pos = 0;
 
         while (true) {
-            pos = find(delim, uint(prev));
+            pos = find(delim, prev);
 
             if (pos == -1) {
-                pos = int(size());
+                pos = size();
             }
 
             var token = substr(prev..pos);
@@ -149,6 +141,7 @@ struct String: Comparable, OutputStream, Printable {
 
             prev = pos + 1;
 
+            // TODO: Warn about unnecessary casts.
             if (pos > int(size()) || prev > int(size())) {
                 break;
             }
@@ -169,13 +162,8 @@ struct String: Comparable, OutputStream, Printable {
         return StringRef(this).compare(StringRef(other));
     }
 
-    private def indexOutOfBounds(index: uint) {
-        printf("Range index %u is out of bounds, size is %u\n", index, size());
-        fatalError();
-    }
-
     private def indexOutOfBounds(index: int) {
-        printf("Range index %d is out of bounds, size is %u\n", index, size());
+        printf("Range index %d is out of bounds, size is %d\n", index, size());
         fatalError();
     }
 }

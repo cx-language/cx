@@ -1,7 +1,7 @@
 struct Array<Element> {
     var buffer: mutable Element[?]*;
-    var size: uint;
-    var capacity: uint;
+    var size: int;
+    var capacity: int;
 
     /// Initializes an empty array.
     init() {
@@ -11,7 +11,7 @@ struct Array<Element> {
     }
 
     /// Initializes an empty array with pre-allocated capacity.
-    init(capacity: uint) {
+    init(capacity: int) {
         init();
         reserve(capacity);
     }
@@ -34,7 +34,7 @@ struct Array<Element> {
     }
 
     /// Returns the number of elements in the array.
-    def size(): uint {
+    def size(): int {
         return size;
     }
 
@@ -44,12 +44,12 @@ struct Array<Element> {
     }
 
     /// Returns the number of elements the array can store without allocating more memory.
-    def capacity(): uint {
+    def capacity(): int {
         return capacity;
     }
 
     /// Returns the element at the given index.
-    def [](index: uint): Element* {
+    def [](index: int): Element* {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -58,7 +58,7 @@ struct Array<Element> {
     }
 
     /// Returns the element at the given index.
-    mutating def [](index: uint): mutable Element* {
+    mutating def [](index: int): mutable Element* {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -102,7 +102,7 @@ struct Array<Element> {
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
-    mutating def reserve(minimumCapacity: uint) {
+    mutating def reserve(minimumCapacity: int) {
         if (minimumCapacity > capacity) {
             var newBuffer = allocateArray<Element>(size: minimumCapacity);
 
@@ -153,7 +153,7 @@ struct Array<Element> {
 
     /// Removes the element at the given index from the array.
     /// Elements following the removed element are moved towards the beginning of the array by one index.
-    mutating def removeAt(index: uint) {
+    mutating def removeAt(index: int) {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -161,7 +161,7 @@ struct Array<Element> {
         unsafeRemoveAt(index);
     }
 
-    mutating private def unsafeRemoveAt(index: uint) {
+    mutating private def unsafeRemoveAt(index: int) {
         buffer[index].deinit();
 
         for (var i in (index + 1)..size) {
@@ -216,8 +216,8 @@ struct Array<Element> {
         }
     }
 
-    private def indexOutOfBounds(index: uint) {
-        printf("Array index %u is out of bounds, size is %u\n", index, size());
+    private def indexOutOfBounds(index: int) {
+        printf("Array index %d is out of bounds, size is %d\n", index, size());
         fatalError();
     }
 

@@ -45,7 +45,7 @@ struct OrderedSet<Element> {
     }
 
     /// Returns the size of the Set.
-    def size(): uint {
+    def size(): int {
         return map.size();
     }
 

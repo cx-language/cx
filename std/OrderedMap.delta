@@ -2,7 +2,7 @@
 struct OrderedMap<Key, Value> {
 
     var root: mutable AVLnode<Key, Value>*?;
-    var size: uint;
+    var size: int;
 
     init() {
         root = null;
@@ -16,7 +16,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the size of the Map
-    def size(): uint {
+    def size(): int {
         return size;
     }
 
