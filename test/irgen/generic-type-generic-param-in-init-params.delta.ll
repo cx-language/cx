@@ -47,7 +47,7 @@ define void @_ENM3std5ArrayI3intE4initE8capacity4uint(%"Array<int>"* %this, i32 
 }
 
 define void @_ENM3std5ArrayI3intE7reserveE15minimumCapacity4uint(%"Array<int>"* %this, i32 %minimumCapacity) {
-  %newBufferPointer = alloca i32*
+  %newBuffer = alloca i32*
   %__iterator = alloca %"RangeIterator<uint>"
   %1 = alloca %"Range<uint>"
   %index = alloca i32
@@ -60,7 +60,7 @@ define void @_ENM3std5ArrayI3intE7reserveE15minimumCapacity4uint(%"Array<int>"* 
 
 if.then:                                          ; preds = %0
   %3 = call i32* @_EN3std13allocateArrayI3intEE4size4uint(i32 %minimumCapacity)
-  store i32* %3, i32** %newBufferPointer
+  store i32* %3, i32** %newBuffer
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size.load = load i32, i32* %size
   call void @_ENM3std5RangeI4uintE4initE5start4uint3end4uint(%"Range<uint>"* %1, i32 0, i32 %size.load)
@@ -84,14 +84,14 @@ loop.body:                                        ; preds = %loop.condition
   %__iterator.load1 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator
   %6 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator.load1)
   store i32 %6, i32* %index
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
   %index.load = load i32, i32* %index
-  %7 = getelementptr i32, i32* %bufferPointer.load, i32 %index.load
+  %7 = getelementptr i32, i32* %buffer.load, i32 %index.load
   store i32* %7, i32** %source
-  %newBufferPointer.load = load i32*, i32** %newBufferPointer
+  %newBuffer.load = load i32*, i32** %newBuffer
   %index.load2 = load i32, i32* %index
-  %8 = getelementptr i32, i32* %newBufferPointer.load, i32 %index.load2
+  %8 = getelementptr i32, i32* %newBuffer.load, i32 %index.load2
   store i32* %8, i32** %target
   %target.load = load i32*, i32** %target
   %source.load = load i32*, i32** %source
@@ -110,18 +110,18 @@ loop.end:                                         ; preds = %loop.condition
   br i1 %9, label %if.then4, label %if.else5
 
 if.then4:                                         ; preds = %loop.end
-  %bufferPointer7 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer7.load = load i32*, i32** %bufferPointer7
-  call void @_EN3std10deallocateIAU_3intEE10allocationPMAU_M3int(i32* %bufferPointer7.load)
+  %buffer7 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer7.load = load i32*, i32** %buffer7
+  call void @_EN3std10deallocateIAU_3intEE10allocationPMAU_M3int(i32* %buffer7.load)
   br label %if.end6
 
 if.else5:                                         ; preds = %loop.end
   br label %if.end6
 
 if.end6:                                          ; preds = %if.else5, %if.then4
-  %bufferPointer8 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %newBufferPointer.load9 = load i32*, i32** %newBufferPointer
-  store i32* %newBufferPointer.load9, i32** %bufferPointer8
+  %buffer8 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %newBuffer.load9 = load i32*, i32** %newBuffer
+  store i32* %newBuffer.load9, i32** %buffer8
   %capacity10 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 2
   store i32 %minimumCapacity, i32* %capacity10
   br label %if.end
@@ -188,11 +188,11 @@ if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
   %size1 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1.load = load i32, i32* %size1
-  %2 = getelementptr i32, i32* %bufferPointer.load, i32 %size1.load
+  %2 = getelementptr i32, i32* %buffer.load, i32 %size1.load
   store i32 %newElement, i32* %2
   %size2 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size2.load = load i32, i32* %size2
@@ -210,9 +210,9 @@ define void @_ENM3std5ArrayI3intE6deinitE(%"Array<int>"* %this) {
   br i1 %1, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
-  call void @_EN3std10deallocateIAU_3intEE10allocationPMAU_M3int(i32* %bufferPointer.load)
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
+  call void @_EN3std10deallocateIAU_3intEE10allocationPMAU_M3int(i32* %buffer.load)
   br label %if.end
 
 if.else:                                          ; preds = %0
@@ -261,9 +261,9 @@ if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
-  %2 = getelementptr i32, i32* %bufferPointer.load, i32 %index
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
+  %2 = getelementptr i32, i32* %buffer.load, i32 %index
   ret i32* %2
 }
 
@@ -288,9 +288,9 @@ if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
-  %2 = getelementptr i32, i32* %bufferPointer.load, i32 %index
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
+  %2 = getelementptr i32, i32* %buffer.load, i32 %index
   ret i32* %2
 }
 
@@ -308,9 +308,9 @@ if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
-  %2 = getelementptr i32, i32* %bufferPointer.load, i32 0
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
+  %2 = getelementptr i32, i32* %buffer.load, i32 0
   ret i32* %2
 }
 
@@ -334,12 +334,12 @@ if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
   %size1 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1.load = load i32, i32* %size1
   %2 = sub i32 %size1.load, 1
-  %3 = getelementptr i32, i32* %bufferPointer.load, i32 %2
+  %3 = getelementptr i32, i32* %buffer.load, i32 %2
   ret i32* %3
 }
 
@@ -350,15 +350,15 @@ define void @_EN3std5ArrayI3intE14emptyArrayLastE(%"Array<int>"* %this) {
 }
 
 define i32* @_EN3std5ArrayI3intE4dataE(%"Array<int>"* %this) {
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
-  ret i32* %bufferPointer.load
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
+  ret i32* %buffer.load
 }
 
 define i32* @_ENM3std5ArrayI3intE4dataE(%"Array<int>"* %this) {
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
-  ret i32* %bufferPointer.load
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
+  ret i32* %buffer.load
 }
 
 define void @_ENM3std5ArrayI3intE4growE(%"Array<int>"* %this) {
@@ -447,16 +447,16 @@ loop.body:                                        ; preds = %loop.condition
   %__iterator.load1 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator
   %5 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator.load1)
   store i32 %5, i32* %i
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
   %i.load = load i32, i32* %i
-  %6 = getelementptr i32, i32* %bufferPointer.load, i32 %i.load
+  %6 = getelementptr i32, i32* %buffer.load, i32 %i.load
   store i32* %6, i32** %source
-  %bufferPointer2 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer2.load = load i32*, i32** %bufferPointer2
+  %buffer2 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer2.load = load i32*, i32** %buffer2
   %i.load3 = load i32, i32* %i
   %7 = sub i32 %i.load3, 1
-  %8 = getelementptr i32, i32* %bufferPointer2.load, i32 %7
+  %8 = getelementptr i32, i32* %buffer2.load, i32 %7
   store i32* %8, i32** %target
   %target.load = load i32*, i32** %target
   %source.load = load i32*, i32** %source
@@ -521,11 +521,11 @@ if.end:                                           ; preds = %if.else, %if.then
   %size1.load = load i32, i32* %size1
   %2 = sub i32 %size1.load, 1
   store i32 %2, i32* %size1
-  %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
-  %bufferPointer.load = load i32*, i32** %bufferPointer
+  %buffer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
+  %buffer.load = load i32*, i32** %buffer
   %size2 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size2.load = load i32, i32* %size2
-  %3 = getelementptr i32, i32* %bufferPointer.load, i32 %size2.load
+  %3 = getelementptr i32, i32* %buffer.load, i32 %size2.load
   %.load = load i32, i32* %3
   ret i32 %.load
 }

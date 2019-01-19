@@ -1,11 +1,11 @@
 struct Array<Element> {
-    var bufferPointer: mutable Element[?]*;
+    var buffer: mutable Element[?]*;
     var size: uint;
     var capacity: uint;
 
     /// Initializes an empty array.
     init() {
-        bufferPointer = undefined;
+        buffer = undefined;
         size = 0;
         capacity = 0;
     }
@@ -29,7 +29,7 @@ struct Array<Element> {
     deinit() {
         if (capacity != 0) {
             // FIXME: Call deinitializers of remaining elements.
-            deallocate(bufferPointer);
+            deallocate(buffer);
         }
     }
 
@@ -54,7 +54,7 @@ struct Array<Element> {
             indexOutOfBounds(index);
         }
 
-        return bufferPointer[index];
+        return buffer[index];
     }
 
     /// Returns the element at the given index.
@@ -63,7 +63,7 @@ struct Array<Element> {
             indexOutOfBounds(index);
         }
 
-        return bufferPointer[index];
+        return buffer[index];
     }
 
     def first(): Element* {
@@ -71,7 +71,7 @@ struct Array<Element> {
             emptyArrayFirst();
         }
 
-        return bufferPointer[0];
+        return buffer[0];
     }
 
     def last(): Element* {
@@ -79,15 +79,15 @@ struct Array<Element> {
             emptyArrayLast();
         }
 
-        return bufferPointer[size - 1];
+        return buffer[size - 1];
     }
 
     def data(): Element* {
-        return bufferPointer;
+        return buffer;
     }
 
     mutating def data(): mutable Element* {
-        return bufferPointer;
+        return buffer;
     }
 
     /// Adds the given element to the end of the array.
@@ -97,26 +97,26 @@ struct Array<Element> {
         }
 
         // TODO: Shouldn't need '&' here.
-        (&bufferPointer[size]).init(newElement);
+        (&buffer[size]).init(newElement);
         size++;
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
     mutating def reserve(minimumCapacity: uint) {
         if (minimumCapacity > capacity) {
-            var newBufferPointer = allocateArray<Element>(size: minimumCapacity);
+            var newBuffer = allocateArray<Element>(size: minimumCapacity);
 
             for (var index in 0..size) {
-                var source = &bufferPointer[index];
-                var target = &newBufferPointer[index];
+                var source = &buffer[index];
+                var target = &newBuffer[index];
                 target.init(*source);
             }
 
             if (capacity != 0) {
-                deallocate(bufferPointer);
+                deallocate(buffer);
             }
 
-            bufferPointer = newBufferPointer;
+            buffer = newBuffer;
             capacity = minimumCapacity;
         }
     }
@@ -138,7 +138,7 @@ struct Array<Element> {
         }
 
         size--;
-        bufferPointer[size].deinit();
+        buffer[size].deinit();
     }
 
     /// Removes and returns the last element.
@@ -148,7 +148,7 @@ struct Array<Element> {
         }
 
         size--;
-        return bufferPointer[size];
+        return buffer[size];
     }
 
     /// Removes the element at the given index from the array.
@@ -162,11 +162,11 @@ struct Array<Element> {
     }
 
     mutating private def unsafeRemoveAt(index: uint) {
-        bufferPointer[index].deinit();
+        buffer[index].deinit();
 
         for (var i in (index + 1)..size) {
-            var source = &bufferPointer[i];
-            var target = &bufferPointer[i - 1];
+            var source = &buffer[i];
+            var target = &buffer[i - 1];
             target.init(*source);
         }
 
