@@ -11,6 +11,18 @@ check_version() {
     fi
 }
 
+run_clang_tidy() {
+    if [ -n "$SKIP_CLANG_TIDY" ]; then
+        return 0
+    fi
+    python "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet $FILES 2>&1 \
+        | sed -E '/^($|clang-tidy|[0-9]+ warnings generated)/d'
+}
+
+run_clang_format() {
+    ! (clang-format -output-replacements-xml $FILES | grep "<replacement " >/dev/null)
+}
+
 check_version clang-format
 check_version clang-tidy
 
@@ -18,9 +30,7 @@ ROOTDIR=$(cd "$(dirname "$0")/.."; pwd)
 FILES=$(echo $ROOTDIR/src/**/*.{h,cpp})
 
 if [ "$2" = "--check" ]; then
-    python "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet $FILES 2>&1 \
-        | sed -E '/^($|clang-tidy|[0-9]+ warnings generated)/d' \
-        && ! (clang-format -output-replacements-xml $FILES | grep "<replacement " >/dev/null)
+    run_clang_tidy && run_clang_format
 
     if [ $? -ne 0 ]; then
         echo "Run the 'format' target to format the code."
