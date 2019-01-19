@@ -1,6 +1,6 @@
 
-@0 = private unnamed_addr constant [38 x i8] c"Assertion failed at unwrap.delta:6:58\00"
-@1 = private unnamed_addr constant [37 x i8] c"Assertion failed at unwrap.delta:8:8\00"
+@0 = private unnamed_addr constant [35 x i8] c"Unwrap failed at unwrap.delta:6:58\00"
+@1 = private unnamed_addr constant [34 x i8] c"Unwrap failed at unwrap.delta:8:8\00"
 
 declare i8* @f()
 
@@ -12,7 +12,7 @@ define i32 @main() {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([38 x i8], [38 x i8]* @0, i32 0, i32 0))
+  %2 = call i32 @puts(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @0, i32 0, i32 0))
   call void @abort()
   unreachable
 
@@ -26,7 +26,7 @@ assert.success:                                   ; preds = %0
   br i1 %assert.condition2, label %assert.fail3, label %assert.success4
 
 assert.fail3:                                     ; preds = %assert.success
-  %5 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @1, i32 0, i32 0))
+  %5 = call i32 @puts(i8* getelementptr inbounds ([34 x i8], [34 x i8]* @1, i32 0, i32 0))
   call void @abort()
   unreachable
 

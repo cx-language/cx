@@ -100,7 +100,7 @@ private:
     void codegenAssignment(const BinaryExpr& expr);
     llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType);
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
-    void codegenAssert(llvm::Value* condition, SourceLocation location);
+    void codegenAssert(llvm::Value* condition, SourceLocation location, llvm::StringRef message = "Assertion failed");
     llvm::Value* codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit = nullptr);
     llvm::Value* codegenBuiltinCast(const CallExpr& expr);
     llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);

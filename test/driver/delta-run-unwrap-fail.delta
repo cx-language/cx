@@ -3,6 +3,6 @@
 
 def main() {
     var p: mutable int*? = null;
-    // CHECK: Assertion failed at delta-run-unwrap-fail.delta:[[@LINE+1]]:15
+    // CHECK: Unwrap failed at delta-run-unwrap-fail.delta:[[@LINE+1]]:15
     var pp = p!;
 }

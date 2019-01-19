@@ -2,8 +2,8 @@
 %"UniquePtr<UniquePtr<int>>" = type { %"UniquePtr<int>"* }
 %"UniquePtr<int>" = type { i32* }
 
-@0 = private unnamed_addr constant [40 x i8] c"Assertion failed at allocate.delta:9:62\00"
-@1 = private unnamed_addr constant [40 x i8] c"Assertion failed at allocate.delta:9:62\00"
+@0 = private unnamed_addr constant [37 x i8] c"Unwrap failed at allocate.delta:9:62\00"
+@1 = private unnamed_addr constant [37 x i8] c"Unwrap failed at allocate.delta:9:62\00"
 
 define i32 @main() {
   %p = alloca %"UniquePtr<UniquePtr<int>>"
@@ -40,7 +40,7 @@ define i32* @_EN3std8allocateI3intEE5value3int(i32 %value) {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @1, i32 0, i32 0))
+  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @1, i32 0, i32 0))
   call void @abort()
   unreachable
 
@@ -98,7 +98,7 @@ define %"UniquePtr<int>"* @_EN3std8allocateI9UniquePtrI3intEEE5value9UniquePtrI3
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @0, i32 0, i32 0))
+  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @0, i32 0, i32 0))
   call void @abort()
   unreachable
 

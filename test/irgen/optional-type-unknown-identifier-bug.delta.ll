@@ -2,7 +2,7 @@
 %"X<int>" = type { %"Y<int>"* }
 %"Y<int>" = type { i32 }
 
-@0 = private unnamed_addr constant [69 x i8] c"Assertion failed at optional-type-unknown-identifier-bug.delta:11:18\00"
+@0 = private unnamed_addr constant [66 x i8] c"Unwrap failed at optional-type-unknown-identifier-bug.delta:11:18\00"
 
 define i32 @main() {
   %x = alloca %"X<int>"
@@ -29,7 +29,7 @@ define void @_ENM4main1XI3intE6deinitE(%"X<int>"* %this) {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %1 = call i32 @puts(i8* getelementptr inbounds ([69 x i8], [69 x i8]* @0, i32 0, i32 0))
+  %1 = call i32 @puts(i8* getelementptr inbounds ([66 x i8], [66 x i8]* @0, i32 0, i32 0))
   call void @abort()
   unreachable
 

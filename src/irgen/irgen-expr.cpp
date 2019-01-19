@@ -512,7 +512,7 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
     error(expr.getLocation(), "conversion from '", expr.getType(), "' to '", type, "' not supported");
 }
 
-void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location) {
+void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location, llvm::StringRef message) {
     condition = builder.CreateIsNull(condition, "assert.condition");
     auto* function = builder.GetInsertBlock()->getParent();
     auto* failBlock = llvm::BasicBlock::Create(ctx, "assert.fail", function);
@@ -520,9 +520,9 @@ void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location)
     auto* puts = module->getOrInsertFunction("puts", llvm::Type::getInt32Ty(ctx), llvm::Type::getInt8PtrTy(ctx));
     builder.CreateCondBr(condition, failBlock, successBlock);
     builder.SetInsertPoint(failBlock);
-    auto message = llvm::join_items("", "Assertion failed at ", llvm::sys::path::filename(location.file), ":",
-                                    std::to_string(location.line), ":", std::to_string(location.column));
-    builder.CreateCall(puts, builder.CreateGlobalStringPtr(message));
+    auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":",
+                                               std::to_string(location.line), ":", std::to_string(location.column));
+    builder.CreateCall(puts, builder.CreateGlobalStringPtr(messageAndLocation));
     builder.CreateCall(module->getOrInsertFunction("abort", llvm::Type::getVoidTy(ctx)));
     builder.CreateUnreachable();
     builder.SetInsertPoint(successBlock);
@@ -764,7 +764,7 @@ llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
 
 llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {
     auto* value = codegenExpr(expr.getOperand());
-    codegenAssert(value, expr.getLocation());
+    codegenAssert(value, expr.getLocation(), "Unwrap failed");
     return value;
 }
 
