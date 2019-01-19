@@ -170,7 +170,7 @@ public:
     Expr& getRangeExpr() const { return *range; }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return body; }
     SourceLocation getLocation() const { return location; }
-    std::unique_ptr<Stmt> lower();
+    std::unique_ptr<Stmt> lower(int nestLevel);
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
 
 private:

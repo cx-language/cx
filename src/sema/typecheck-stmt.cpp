@@ -172,11 +172,13 @@ void Typechecker::typecheckStmt(std::unique_ptr<Stmt>& stmt) {
         case StmtKind::WhileStmt:
             typecheckWhileStmt(llvm::cast<WhileStmt>(*stmt));
             break;
-        case StmtKind::ForStmt:
+        case StmtKind::ForStmt: {
             typecheckExpr(llvm::cast<ForStmt>(*stmt).getRangeExpr());
-            stmt = llvm::cast<ForStmt>(*stmt).lower();
+            auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isWhileStmt(); });
+            stmt = llvm::cast<ForStmt>(*stmt).lower(nestLevel);
             typecheckStmt(stmt);
             break;
+        }
         case StmtKind::BreakStmt:
             typecheckBreakStmt(llvm::cast<BreakStmt>(*stmt));
             break;

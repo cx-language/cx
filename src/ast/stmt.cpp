@@ -94,7 +94,6 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
 }
 
 // Lowers 'for (var id in range) { ... }' into:
-//
 // {
 //     var __iterator = range.iterator();
 //     // or if 'range' is already an iterator:
@@ -106,8 +105,8 @@ std::unique_ptr<Stmt> Stmt::instantiate(const llvm::StringMap<Type>& genericArgs
 //         __iterator.increment();
 //     }
 // }
-std::unique_ptr<Stmt> ForStmt::lower() {
-    auto iteratorVariableName = "__iterator" + std::to_string(location.line);
+std::unique_ptr<Stmt> ForStmt::lower(int nestLevel) {
+    auto iteratorVariableName = "__iterator" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
     auto location = getLocation();
 
     std::vector<std::unique_ptr<Stmt>> stmts;

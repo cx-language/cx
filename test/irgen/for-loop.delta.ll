@@ -4,24 +4,24 @@
 
 define i32 @main() {
   %sum = alloca i32
-  %__iterator5 = alloca %"ClosedRangeIterator<int>"
+  %__iterator = alloca %"ClosedRangeIterator<int>"
   %1 = alloca %"ClosedRange<int>"
   %i = alloca i32
   store i32 0, i32* %sum
   call void @_ENM3std11ClosedRangeI3intE4initE5start3int3end3int(%"ClosedRange<int>"* %1, i32 68, i32 75)
   %2 = load %"ClosedRange<int>", %"ClosedRange<int>"* %1
   %3 = call %"ClosedRangeIterator<int>" @_EN3std11ClosedRangeI3intE8iteratorE(%"ClosedRange<int>" %2)
-  store %"ClosedRangeIterator<int>" %3, %"ClosedRangeIterator<int>"* %__iterator5
+  store %"ClosedRangeIterator<int>" %3, %"ClosedRangeIterator<int>"* %__iterator
   br label %loop.condition
 
 loop.condition:                                   ; preds = %loop.increment, %0
-  %__iterator51 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator5
-  %4 = call i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(%"ClosedRangeIterator<int>" %__iterator51)
+  %__iterator1 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator
+  %4 = call i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(%"ClosedRangeIterator<int>" %__iterator1)
   br i1 %4, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %__iterator52 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator5
-  %5 = call i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(%"ClosedRangeIterator<int>" %__iterator52)
+  %__iterator2 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator
+  %5 = call i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(%"ClosedRangeIterator<int>" %__iterator2)
   store i32 %5, i32* %i
   %6 = load i32, i32* %sum
   %i3 = load i32, i32* %i
@@ -30,7 +30,7 @@ loop.body:                                        ; preds = %loop.condition
   br label %loop.increment
 
 loop.increment:                                   ; preds = %loop.body
-  call void @_ENM3std19ClosedRangeIteratorI3intE9incrementE(%"ClosedRangeIterator<int>"* %__iterator5)
+  call void @_ENM3std19ClosedRangeIteratorI3intE9incrementE(%"ClosedRangeIterator<int>"* %__iterator)
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
