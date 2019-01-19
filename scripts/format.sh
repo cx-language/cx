@@ -31,3 +31,4 @@ if [ "$2" = "--check" ]; then
 fi
 
 python "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet -fix -format $FILES
+clang-format -i $FILES
