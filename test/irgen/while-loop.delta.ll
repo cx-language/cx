@@ -2,16 +2,16 @@
 declare i1 @foo()
 
 define i32 @main() {
-  br label %while
+  br label %loop.condition
 
-while:                                            ; preds = %body, %0
+loop.condition:                                   ; preds = %loop.body, %0
   %1 = call i1 @foo()
-  br i1 %1, label %body, label %endwhile
+  br i1 %1, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   %2 = call i1 @foo()
-  br label %while
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   ret i32 0
 }

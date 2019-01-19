@@ -4,49 +4,49 @@ declare void @foo()
 declare void @bar()
 
 define i32 @main() {
-  br i1 false, label %then, label %else
+  br i1 false, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @bar()
   call void @foo()
   ret i32 0
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else
-  br i1 false, label %then1, label %else2
+if.end:                                           ; preds = %if.else
+  br i1 false, label %if.then1, label %if.else2
 
-then1:                                            ; preds = %endif
+if.then1:                                         ; preds = %if.end
   call void @bar()
-  br label %endif3
+  br label %if.end3
 
-else2:                                            ; preds = %endif
-  br label %endif3
+if.else2:                                         ; preds = %if.end
+  br label %if.end3
 
-endif3:                                           ; preds = %else2, %then1
-  br label %while
+if.end3:                                          ; preds = %if.else2, %if.then1
+  br label %loop.condition
 
-while:                                            ; preds = %body, %endif3
-  br i1 false, label %body, label %endwhile
+loop.condition:                                   ; preds = %loop.body, %if.end3
+  br i1 false, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   call void @bar()
   call void @foo()
-  br label %while
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
-  br i1 true, label %then4, label %else5
+loop.end:                                         ; preds = %loop.condition
+  br i1 true, label %if.then4, label %if.else5
 
-then4:                                            ; preds = %endwhile
+if.then4:                                         ; preds = %loop.end
   call void @bar()
   call void @foo()
   ret i32 0
 
-else5:                                            ; preds = %endwhile
-  br label %endif6
+if.else5:                                         ; preds = %loop.end
+  br label %if.end6
 
-endif6:                                           ; preds = %else5
+if.end6:                                          ; preds = %if.else5
   call void @foo()
   call void @bar()
   call void @foo()

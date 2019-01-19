@@ -1,37 +1,37 @@
 
 define void @_EN4main3fooE1i3int(i32 %i) {
-  switch i32 %i, label %default [
-    i32 0, label %1
-    i32 -1, label %2
-    i32 42, label %3
+  switch i32 %i, label %switch.default [
+    i32 0, label %switch.case.0
+    i32 -1, label %switch.case.1
+    i32 42, label %switch.case.2
   ]
 
-; <label>:1:                                      ; preds = %0
-  br label %endswitch
+switch.case.0:                                    ; preds = %0
+  br label %switch.end
 
-; <label>:2:                                      ; preds = %0
+switch.case.1:                                    ; preds = %0
   call void @_EN4main3fooE1i3int(i32 %i)
   call void @_EN4main3fooE1i3int(i32 %i)
-  br label %endswitch
+  br label %switch.end
 
-; <label>:3:                                      ; preds = %0
-  br label %endswitch
+switch.case.2:                                    ; preds = %0
+  br label %switch.end
 
-default:                                          ; preds = %0
-  br label %endswitch
+switch.default:                                   ; preds = %0
+  br label %switch.end
 
-endswitch:                                        ; preds = %default, %3, %2, %1
-  switch i32 %i, label %default1 [
-    i32 0, label %4
+switch.end:                                       ; preds = %switch.default, %switch.case.2, %switch.case.1, %switch.case.0
+  switch i32 %i, label %switch.default2 [
+    i32 0, label %switch.case.01
   ]
 
-; <label>:4:                                      ; preds = %endswitch
-  br label %endswitch2
+switch.case.01:                                   ; preds = %switch.end
+  br label %switch.end3
 
-default1:                                         ; preds = %endswitch
+switch.default2:                                  ; preds = %switch.end
   call void @_EN4main3fooE1i3int(i32 %i)
-  br label %endswitch2
+  br label %switch.end3
 
-endswitch2:                                       ; preds = %default1, %4
+switch.end3:                                      ; preds = %switch.default2, %switch.case.01
   ret void
 }

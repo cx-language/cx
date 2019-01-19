@@ -36,15 +36,15 @@ declare void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef*, i8
 
 define i32 @_EN4main3quxI3intEE1t3int(i32 %t) {
   %1 = icmp slt i32 %t, 0
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   %2 = sub i32 0, %t
   ret i32 %2
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else
+if.end:                                           ; preds = %if.else
   ret i32 %t
 }

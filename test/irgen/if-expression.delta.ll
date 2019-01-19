@@ -12,30 +12,30 @@ declare i1 @e()
 define i32 @main() {
   %x = alloca i1
   %1 = call i1 @a()
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   %2 = call i1 @b()
-  br label %endif3
+  br label %if.end3
 
-else:                                             ; preds = %0
+if.else:                                          ; preds = %0
   %3 = call i1 @c()
-  br i1 %3, label %then1, label %else2
+  br i1 %3, label %if.then1, label %if.else2
 
-then1:                                            ; preds = %else
+if.then1:                                         ; preds = %if.else
   %4 = call i1 @d()
-  br label %endif
+  br label %if.end
 
-else2:                                            ; preds = %else
+if.else2:                                         ; preds = %if.else
   %5 = call i1 @e()
-  br label %endif
+  br label %if.end
 
-endif:                                            ; preds = %else2, %then1
-  %phi = phi i1 [ %4, %then1 ], [ %5, %else2 ]
-  br label %endif3
+if.end:                                           ; preds = %if.else2, %if.then1
+  %phi = phi i1 [ %4, %if.then1 ], [ %5, %if.else2 ]
+  br label %if.end3
 
-endif3:                                           ; preds = %endif, %then
-  %phi4 = phi i1 [ %2, %then ], [ %phi, %endif ]
+if.end3:                                          ; preds = %if.end, %if.then
+  %phi4 = phi i1 [ %2, %if.then ], [ %phi, %if.end ]
   store i1 %phi4, i1* %x
   ret i32 0
 }

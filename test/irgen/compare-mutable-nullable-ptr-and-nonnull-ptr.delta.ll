@@ -1,14 +1,14 @@
 
 define void @_EN4main1fE3fooP3int3barOPM3int(i32* %foo, i32* %bar) {
   %1 = icmp eq i32* %foo, %bar
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
-  br label %endif
+if.then:                                          ; preds = %0
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   ret void
 }

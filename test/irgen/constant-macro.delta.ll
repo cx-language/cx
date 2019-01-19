@@ -1,15 +1,15 @@
 
 define void @_EN4main3fooE1i3int(i32 %i) {
-  switch i32 %i, label %default [
-    i32 42, label %1
+  switch i32 %i, label %switch.default [
+    i32 42, label %switch.case.0
   ]
 
-; <label>:1:                                      ; preds = %0
+switch.case.0:                                    ; preds = %0
   ret void
 
-default:                                          ; preds = %0
-  br label %endswitch
+switch.default:                                   ; preds = %0
+  br label %switch.end
 
-endswitch:                                        ; preds = %default
+switch.end:                                       ; preds = %switch.default
   ret void
 }

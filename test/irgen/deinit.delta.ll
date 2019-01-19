@@ -32,28 +32,28 @@ define i32 @main() {
   %b = alloca %Bar
   %b2 = alloca %Bar
   %i = alloca i32
-  br i1 false, label %then, label %else
+  br i1 false, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_ENM4main3Foo6deinitE(%Foo* %f2)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
-  br label %while
+if.end:                                           ; preds = %if.else, %if.then
+  br label %loop.condition
 
-while:                                            ; preds = %endif
-  br i1 false, label %body, label %endwhile
+loop.condition:                                   ; preds = %if.end
+  br i1 false, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   call void @_ENM4main3Bar6deinitE(%Bar* %b2)
   call void @_ENM4main3Bar6deinitE(%Bar* %b)
   call void @_ENM4main3Foo6deinitE(%Foo* %f)
   ret i32 0
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   store i32 1, i32* %i
   call void @_ENM4main3Bar6deinitE(%Bar* %b)
   call void @_ENM4main3Foo6deinitE(%Foo* %f)

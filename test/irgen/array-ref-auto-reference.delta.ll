@@ -45,9 +45,9 @@ define void @_ENM3std5ArrayI3intE7reserveE15minimumCapacity4uint(%"Array<int>"* 
   %capacity = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 2
   %capacity1 = load i32, i32* %capacity
   %2 = icmp ugt i32 %minimumCapacity, %capacity1
-  br i1 %2, label %then, label %else
+  br i1 %2, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   %3 = call i32* @_EN3std13allocateArrayI3intEE4size4uint(i32 %minimumCapacity)
   store i32* %3, i32** %newBufferPointer
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
@@ -56,20 +56,20 @@ then:                                             ; preds = %0
   %4 = load %"Range<uint>", %"Range<uint>"* %1
   %5 = call %"RangeIterator<uint>" @_EN3std5RangeI4uintE8iteratorE(%"Range<uint>" %4)
   store %"RangeIterator<uint>" %5, %"RangeIterator<uint>"* %__iterator109
-  br label %while
+  br label %loop.condition
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %endif15
+if.end:                                           ; preds = %if.else, %if.end15
   ret void
 
-while:                                            ; preds = %loop.increment, %then
+loop.condition:                                   ; preds = %loop.increment, %if.then
   %__iterator1093 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator109
   %6 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator1093)
-  br i1 %6, label %body, label %endwhile
+  br i1 %6, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   %__iterator1094 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator109
   %7 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator1094)
   store i32 %7, i32* %index
@@ -88,32 +88,32 @@ body:                                             ; preds = %while
   store i32 %10, i32* %target9
   br label %loop.increment
 
-loop.increment:                                   ; preds = %body
+loop.increment:                                   ; preds = %loop.body
   call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator109)
-  br label %while
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   %capacity11 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 2
   %capacity12 = load i32, i32* %capacity11
   %11 = icmp ne i32 %capacity12, 0
-  br i1 %11, label %then13, label %else14
+  br i1 %11, label %if.then13, label %if.else14
 
-then13:                                           ; preds = %endwhile
+if.then13:                                        ; preds = %loop.end
   %bufferPointer16 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer17 = load i32*, i32** %bufferPointer16
   call void @_EN3std10deallocateI3intEE10allocationPM3int(i32* %bufferPointer17)
-  br label %endif15
+  br label %if.end15
 
-else14:                                           ; preds = %endwhile
-  br label %endif15
+if.else14:                                        ; preds = %loop.end
+  br label %if.end15
 
-endif15:                                          ; preds = %else14, %then13
+if.end15:                                         ; preds = %if.else14, %if.then13
   %bufferPointer18 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %newBufferPointer19 = load i32*, i32** %newBufferPointer
   store i32* %newBufferPointer19, i32** %bufferPointer18
   %capacity20 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 2
   store i32 %minimumCapacity, i32* %capacity20
-  br label %endif
+  br label %if.end
 }
 
 define void @_ENM3std5ArrayI3intE4initE8elementsPAR_3int(%"Array<int>"* %this, %"ArrayRef<int>" %elements) {
@@ -127,14 +127,14 @@ define void @_ENM3std5ArrayI3intE4initE8elementsPAR_3int(%"Array<int>"* %this, %
   %2 = load %"Range<uint>", %"Range<uint>"* %1
   %3 = call %"RangeIterator<uint>" @_EN3std5RangeI4uintE8iteratorE(%"Range<uint>" %2)
   store %"RangeIterator<uint>" %3, %"RangeIterator<uint>"* %__iterator25
-  br label %while
+  br label %loop.condition
 
-while:                                            ; preds = %loop.increment, %0
+loop.condition:                                   ; preds = %loop.increment, %0
   %__iterator252 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator25
   %4 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator252)
-  br i1 %4, label %body, label %endwhile
+  br i1 %4, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   %__iterator253 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator25
   %5 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator253)
   store i32 %5, i32* %index
@@ -145,11 +145,11 @@ body:                                             ; preds = %while
   call void @_ENM3std5ArrayI3intE4pushE10newElement3int(%"Array<int>"* %this, i32 %8)
   br label %loop.increment
 
-loop.increment:                                   ; preds = %body
+loop.increment:                                   ; preds = %loop.body
   call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator25)
-  br label %while
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   ret void
 }
 
@@ -167,16 +167,16 @@ define void @_ENM3std5ArrayI3intE4pushE10newElement3int(%"Array<int>"* %this, i3
   %capacity = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 2
   %capacity2 = load i32, i32* %capacity
   %1 = icmp eq i32 %size1, %capacity2
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_ENM3std5ArrayI3intE4growE(%"Array<int>"* %this)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer3 = load i32*, i32** %bufferPointer
   %size4 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
@@ -196,18 +196,18 @@ define void @_ENM3std5ArrayI3intE6deinitE(%"Array<int>"* %this) {
   %capacity = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 2
   %capacity1 = load i32, i32* %capacity
   %1 = icmp ne i32 %capacity1, 0
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer2 = load i32*, i32** %bufferPointer
   call void @_EN3std10deallocateI3intEE10allocationPM3int(i32* %bufferPointer2)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   ret void
 }
 
@@ -240,16 +240,16 @@ define i32* @_EN3std5ArrayI3intEixE5index4uint(%"Array<int>"* %this, i32 %index)
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1 = load i32, i32* %size
   %1 = icmp uge i32 %index, %size1
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_EN3std5ArrayI3intE16indexOutOfBoundsE5index4uint(%"Array<int>"* %this, i32 %index)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer2 = load i32*, i32** %bufferPointer
   %2 = getelementptr i32, i32* %bufferPointer2, i32 %index
@@ -267,16 +267,16 @@ define i32* @_ENM3std5ArrayI3intEixE5index4uint(%"Array<int>"* %this, i32 %index
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1 = load i32, i32* %size
   %1 = icmp uge i32 %index, %size1
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_EN3std5ArrayI3intE16indexOutOfBoundsE5index4uint(%"Array<int>"* %this, i32 %index)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer2 = load i32*, i32** %bufferPointer
   %2 = getelementptr i32, i32* %bufferPointer2, i32 %index
@@ -287,16 +287,16 @@ define i32* @_EN3std5ArrayI3intE5firstE(%"Array<int>"* %this) {
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1 = load i32, i32* %size
   %1 = icmp eq i32 %size1, 0
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_EN3std5ArrayI3intE15emptyArrayFirstE(%"Array<int>"* %this)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer2 = load i32*, i32** %bufferPointer
   ret i32* %bufferPointer2
@@ -312,16 +312,16 @@ define i32* @_EN3std5ArrayI3intE4lastE(%"Array<int>"* %this) {
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1 = load i32, i32* %size
   %1 = icmp eq i32 %size1, 0
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_EN3std5ArrayI3intE14emptyArrayLastE(%"Array<int>"* %this)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer2 = load i32*, i32** %bufferPointer
   %size3 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
@@ -352,20 +352,20 @@ define void @_ENM3std5ArrayI3intE4growE(%"Array<int>"* %this) {
   %capacity = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 2
   %capacity1 = load i32, i32* %capacity
   %1 = icmp eq i32 %capacity1, 0
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_ENM3std5ArrayI3intE7reserveE15minimumCapacity4uint(%"Array<int>"* %this, i32 1)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
+if.else:                                          ; preds = %0
   %capacity2 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 2
   %capacity3 = load i32, i32* %capacity2
   %2 = mul i32 %capacity3, 2
   call void @_ENM3std5ArrayI3intE7reserveE15minimumCapacity4uint(%"Array<int>"* %this, i32 %2)
-  br label %endif
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   ret void
 }
 
@@ -390,16 +390,16 @@ define void @_ENM3std5ArrayI3intE11removeFirstE(%"Array<int>"* %this) {
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1 = load i32, i32* %size
   %1 = icmp eq i32 %size1, 0
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_EN3std5ArrayI3intE21emptyArrayRemoveFirstE(%"Array<int>"* %this)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   call void @_ENM3std5ArrayI3intE14unsafeRemoveAtE5index4uint(%"Array<int>"* %this, i32 0)
   ret void
 }
@@ -423,14 +423,14 @@ define void @_ENM3std5ArrayI3intE14unsafeRemoveAtE5index4uint(%"Array<int>"* %th
   %3 = load %"Range<uint>", %"Range<uint>"* %1
   %4 = call %"RangeIterator<uint>" @_EN3std5RangeI4uintE8iteratorE(%"Range<uint>" %3)
   store %"RangeIterator<uint>" %4, %"RangeIterator<uint>"* %__iterator167
-  br label %while
+  br label %loop.condition
 
-while:                                            ; preds = %loop.increment, %0
+loop.condition:                                   ; preds = %loop.increment, %0
   %__iterator1672 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator167
   %5 = call i1 @_EN3std13RangeIteratorI4uintE8hasValueE(%"RangeIterator<uint>" %__iterator1672)
-  br i1 %5, label %body, label %endwhile
+  br i1 %5, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   %__iterator1673 = load %"RangeIterator<uint>", %"RangeIterator<uint>"* %__iterator167
   %6 = call i32 @_EN3std13RangeIteratorI4uintE5valueE(%"RangeIterator<uint>" %__iterator1673)
   store i32 %6, i32* %i
@@ -451,11 +451,11 @@ body:                                             ; preds = %while
   store i32 %10, i32* %target9
   br label %loop.increment
 
-loop.increment:                                   ; preds = %body
+loop.increment:                                   ; preds = %loop.body
   call void @_ENM3std13RangeIteratorI4uintE9incrementE(%"RangeIterator<uint>"* %__iterator167)
-  br label %while
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   %size11 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %11 = load i32, i32* %size11
   %12 = sub i32 %11, 1
@@ -467,16 +467,16 @@ define void @_ENM3std5ArrayI3intE10removeLastE(%"Array<int>"* %this) {
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1 = load i32, i32* %size
   %1 = icmp eq i32 %size1, 0
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_EN3std5ArrayI3intE20emptyArrayRemoveLastE(%"Array<int>"* %this)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   %size2 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %2 = load i32, i32* %size2
   %3 = sub i32 %2, 1
@@ -494,16 +494,16 @@ define i32 @_ENM3std5ArrayI3intE3popE(%"Array<int>"* %this) {
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1 = load i32, i32* %size
   %1 = icmp eq i32 %size1, 0
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_EN3std5ArrayI3intE20emptyArrayRemoveLastE(%"Array<int>"* %this)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   %size2 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %2 = load i32, i32* %size2
   %3 = sub i32 %2, 1
@@ -521,16 +521,16 @@ define void @_ENM3std5ArrayI3intE8removeAtE5index4uint(%"Array<int>"* %this, i32
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1 = load i32, i32* %size
   %1 = icmp uge i32 %index, %size1
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_EN3std5ArrayI3intE16indexOutOfBoundsE5index4uint(%"Array<int>"* %this, i32 %index)
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   call void @_ENM3std5ArrayI3intE14unsafeRemoveAtE5index4uint(%"Array<int>"* %this, i32 %index)
   ret void
 }

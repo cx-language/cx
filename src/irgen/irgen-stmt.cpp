@@ -61,9 +61,9 @@ void IRGenerator::codegenIfStmt(const IfStmt& ifStmt) {
         condition = codegenImplicitNullComparison(condition);
     }
     auto* function = builder.GetInsertBlock()->getParent();
-    auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", function);
-    auto* elseBlock = llvm::BasicBlock::Create(ctx, "else", function);
-    auto* endIfBlock = llvm::BasicBlock::Create(ctx, "endif", function);
+    auto* thenBlock = llvm::BasicBlock::Create(ctx, "if.then", function);
+    auto* elseBlock = llvm::BasicBlock::Create(ctx, "if.else", function);
+    auto* endIfBlock = llvm::BasicBlock::Create(ctx, "if.end", function);
     builder.CreateCondBr(condition, thenBlock, elseBlock);
     codegenBlock(ifStmt.getThenBody(), thenBlock, endIfBlock);
     codegenBlock(ifStmt.getElseBody(), elseBlock, endIfBlock);
@@ -74,16 +74,17 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
     auto* condition = codegenExpr(switchStmt.getCondition());
     auto* function = builder.GetInsertBlock()->getParent();
     auto* insertBlockBackup = builder.GetInsertBlock();
+    auto caseIndex = 0;
 
     auto cases = map(switchStmt.getCases(), [&](const SwitchCase& switchCase) {
         auto* value = codegenExpr(*switchCase.getValue());
-        auto* block = llvm::BasicBlock::Create(ctx, "", function);
+        auto* block = llvm::BasicBlock::Create(ctx, llvm::Twine("switch.case.", std::to_string(caseIndex++)), function);
         return std::make_pair(llvm::cast<llvm::ConstantInt>(value), block);
     });
 
     builder.SetInsertPoint(insertBlockBackup);
-    auto* defaultBlock = llvm::BasicBlock::Create(ctx, "default", function);
-    auto* end = llvm::BasicBlock::Create(ctx, "endswitch", function);
+    auto* defaultBlock = llvm::BasicBlock::Create(ctx, "switch.default", function);
+    auto* end = llvm::BasicBlock::Create(ctx, "switch.end", function);
     breakTargets.push_back(end);
     auto* switchInst = builder.CreateSwitch(condition, defaultBlock);
 
@@ -104,10 +105,10 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
 void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
     auto* increment = whileStmt.getIncrement();
     auto* function = builder.GetInsertBlock()->getParent();
-    auto* condition = llvm::BasicBlock::Create(ctx, "while", function);
-    auto* body = llvm::BasicBlock::Create(ctx, "body", function);
+    auto* condition = llvm::BasicBlock::Create(ctx, "loop.condition", function);
+    auto* body = llvm::BasicBlock::Create(ctx, "loop.body", function);
     auto* afterBody = increment ? llvm::BasicBlock::Create(ctx, "loop.increment", function) : condition;
-    auto* end = llvm::BasicBlock::Create(ctx, "endwhile", function);
+    auto* end = llvm::BasicBlock::Create(ctx, "loop.end", function);
 
     breakTargets.push_back(end);
     continueTargets.push_back(afterBody);

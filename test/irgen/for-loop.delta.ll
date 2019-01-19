@@ -12,14 +12,14 @@ define i32 @main() {
   %2 = load %"ClosedRange<int>", %"ClosedRange<int>"* %1
   %3 = call %"ClosedRangeIterator<int>" @_EN3std11ClosedRangeI3intE8iteratorE(%"ClosedRange<int>" %2)
   store %"ClosedRangeIterator<int>" %3, %"ClosedRangeIterator<int>"* %__iterator5
-  br label %while
+  br label %loop.condition
 
-while:                                            ; preds = %loop.increment, %0
+loop.condition:                                   ; preds = %loop.increment, %0
   %__iterator51 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator5
   %4 = call i1 @_EN3std19ClosedRangeIteratorI3intE8hasValueE(%"ClosedRangeIterator<int>" %__iterator51)
-  br i1 %4, label %body, label %endwhile
+  br i1 %4, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   %__iterator52 = load %"ClosedRangeIterator<int>", %"ClosedRangeIterator<int>"* %__iterator5
   %5 = call i32 @_EN3std19ClosedRangeIteratorI3intE5valueE(%"ClosedRangeIterator<int>" %__iterator52)
   store i32 %5, i32* %i
@@ -29,11 +29,11 @@ body:                                             ; preds = %while
   store i32 %7, i32* %sum
   br label %loop.increment
 
-loop.increment:                                   ; preds = %body
+loop.increment:                                   ; preds = %loop.body
   call void @_ENM3std19ClosedRangeIteratorI3intE9incrementE(%"ClosedRangeIterator<int>"* %__iterator5)
-  br label %while
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   ret i32 0
 }
 

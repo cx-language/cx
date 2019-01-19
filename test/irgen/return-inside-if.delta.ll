@@ -3,44 +3,44 @@ declare i1 @foo()
 
 define void @_EN4main3barE() {
   %1 = call i1 @foo()
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   ret void
 
-else:                                             ; preds = %0
+if.else:                                          ; preds = %0
   ret void
 
-endif:                                            ; No predecessors!
+if.end:                                           ; No predecessors!
   %2 = call i1 @foo()
-  br i1 %2, label %then1, label %else2
+  br i1 %2, label %if.then1, label %if.else2
 
-then1:                                            ; preds = %endif
+if.then1:                                         ; preds = %if.end
   ret void
 
-else2:                                            ; preds = %endif
+if.else2:                                         ; preds = %if.end
   ret void
 
-endif3:                                           ; No predecessors!
-  br label %while
+if.end3:                                          ; No predecessors!
+  br label %loop.condition
 
-while:                                            ; preds = %endif3
+loop.condition:                                   ; preds = %if.end3
   %3 = call i1 @foo()
-  br i1 %3, label %body, label %endwhile
+  br i1 %3, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   ret void
 
-endwhile:                                         ; preds = %while
-  br label %while4
+loop.end:                                         ; preds = %loop.condition
+  br label %loop.condition4
 
-while4:                                           ; preds = %endwhile
+loop.condition4:                                  ; preds = %loop.end
   %4 = call i1 @foo()
-  br i1 %4, label %body5, label %endwhile6
+  br i1 %4, label %loop.body5, label %loop.end6
 
-body5:                                            ; preds = %while4
+loop.body5:                                       ; preds = %loop.condition4
   ret void
 
-endwhile6:                                        ; preds = %while4
+loop.end6:                                        ; preds = %loop.condition4
   ret void
 }

@@ -13,35 +13,35 @@ define i32 @main() {
   %__str01 = load %StringRef, %StringRef* %__str0
   %1 = call %StringIterator @_EN3std9StringRef8iteratorE(%StringRef %__str01)
   store %StringIterator %1, %StringIterator* %__iterator4
-  br label %while
+  br label %loop.condition
 
-while:                                            ; preds = %loop.increment, %0
+loop.condition:                                   ; preds = %loop.increment, %0
   %__iterator42 = load %StringIterator, %StringIterator* %__iterator4
   %2 = call i1 @_EN3std14StringIterator8hasValueE(%StringIterator %__iterator42)
-  br i1 %2, label %body, label %endwhile
+  br i1 %2, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   %__iterator43 = load %StringIterator, %StringIterator* %__iterator4
   %3 = call i8 @_EN3std14StringIterator5valueE(%StringIterator %__iterator43)
   store i8 %3, i8* %ch
   %ch4 = load i8, i8* %ch
   %4 = icmp eq i8 %ch4, 98
-  br i1 %4, label %then, label %else
+  br i1 %4, label %if.then, label %if.else
 
-loop.increment:                                   ; preds = %endif, %then
+loop.increment:                                   ; preds = %if.end, %if.then
   call void @_ENM3std14StringIterator9incrementE(%StringIterator* %__iterator4)
-  br label %while
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   ret i32 0
 
-then:                                             ; preds = %body
+if.then:                                          ; preds = %loop.body
   br label %loop.increment
 
-else:                                             ; preds = %body
-  br label %endif
+if.else:                                          ; preds = %loop.body
+  br label %if.end
 
-endif:                                            ; preds = %else
+if.end:                                           ; preds = %if.else
   br label %loop.increment
 }
 

@@ -23,17 +23,17 @@ define void @_ENM4main1A6deinitE(%A* %this) {
   %b = getelementptr inbounds %A, %A* %this, i32 0, i32 0
   %bb = getelementptr inbounds %A, %A* %this, i32 0, i32 1
   %1 = call i1 @f()
-  br i1 %1, label %then, label %else
+  br i1 %1, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @_ENM4main1B6deinitE(%B* %bb)
   call void @_ENM4main1B6deinitE(%B* %b)
   ret void
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else
+if.end:                                           ; preds = %if.else
   call void @_ENM4main1B6deinitE(%B* %bb)
   call void @_ENM4main1B6deinitE(%B* %b)
   ret void

@@ -197,13 +197,12 @@ llvm::Value* IRGenerator::codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, Bi
 }
 
 llvm::Value* IRGenerator::codegenLogicalAnd(const Expr& left, const Expr& right) {
-    auto* lhsBlock = builder.GetInsertBlock();
-    auto* rhsBlock = llvm::BasicBlock::Create(ctx, "andRHS", builder.GetInsertBlock()->getParent());
-    auto* endBlock = llvm::BasicBlock::Create(ctx, "andEnd", builder.GetInsertBlock()->getParent());
+    auto* rhsBlock = llvm::BasicBlock::Create(ctx, "and.rhs", builder.GetInsertBlock()->getParent());
+    auto* endBlock = llvm::BasicBlock::Create(ctx, "and.end", builder.GetInsertBlock()->getParent());
 
     llvm::Value* lhs = codegenExpr(left);
     builder.CreateCondBr(lhs, rhsBlock, endBlock);
-    lhsBlock = builder.GetInsertBlock();
+    auto* lhsBlock = builder.GetInsertBlock();
 
     builder.SetInsertPoint(rhsBlock);
     llvm::Value* rhs = codegenExpr(right);
@@ -219,8 +218,8 @@ llvm::Value* IRGenerator::codegenLogicalAnd(const Expr& left, const Expr& right)
 
 llvm::Value* IRGenerator::codegenLogicalOr(const Expr& left, const Expr& right) {
     auto* lhsBlock = builder.GetInsertBlock();
-    auto* rhsBlock = llvm::BasicBlock::Create(ctx, "orRHS", builder.GetInsertBlock()->getParent());
-    auto* endBlock = llvm::BasicBlock::Create(ctx, "orEnd", builder.GetInsertBlock()->getParent());
+    auto* rhsBlock = llvm::BasicBlock::Create(ctx, "or.rhs", builder.GetInsertBlock()->getParent());
+    auto* endBlock = llvm::BasicBlock::Create(ctx, "or.end", builder.GetInsertBlock()->getParent());
 
     llvm::Value* lhs = codegenExpr(left);
     builder.CreateCondBr(lhs, endBlock, rhsBlock);
@@ -792,9 +791,9 @@ llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
         condition = codegenImplicitNullComparison(condition);
     }
     auto* function = builder.GetInsertBlock()->getParent();
-    auto* thenBlock = llvm::BasicBlock::Create(ctx, "then", function);
-    auto* elseBlock = llvm::BasicBlock::Create(ctx, "else");
-    auto* endIfBlock = llvm::BasicBlock::Create(ctx, "endif");
+    auto* thenBlock = llvm::BasicBlock::Create(ctx, "if.then", function);
+    auto* elseBlock = llvm::BasicBlock::Create(ctx, "if.else");
+    auto* endIfBlock = llvm::BasicBlock::Create(ctx, "if.end");
     builder.CreateCondBr(condition, thenBlock, elseBlock);
 
     builder.SetInsertPoint(thenBlock);

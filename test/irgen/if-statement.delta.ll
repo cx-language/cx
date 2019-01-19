@@ -4,16 +4,16 @@ declare void @foo()
 declare void @bar()
 
 define i32 @main() {
-  br i1 false, label %then, label %else
+  br i1 false, label %if.then, label %if.else
 
-then:                                             ; preds = %0
+if.then:                                          ; preds = %0
   call void @foo()
-  br label %endif
+  br label %if.end
 
-else:                                             ; preds = %0
+if.else:                                          ; preds = %0
   call void @bar()
-  br label %endif
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
+if.end:                                           ; preds = %if.else, %if.then
   ret i32 0
 }

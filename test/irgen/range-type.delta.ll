@@ -9,14 +9,14 @@ define i32 @_EN4main3fooE1r5RangeI3intE(%"Range<int>" %r) {
   store i32 0, i32* %sum
   %1 = call %"RangeIterator<int>" @_EN3std5RangeI3intE8iteratorE(%"Range<int>" %r)
   store %"RangeIterator<int>" %1, %"RangeIterator<int>"* %__iterator5
-  br label %while
+  br label %loop.condition
 
-while:                                            ; preds = %loop.increment, %0
+loop.condition:                                   ; preds = %loop.increment, %0
   %__iterator51 = load %"RangeIterator<int>", %"RangeIterator<int>"* %__iterator5
   %2 = call i1 @_EN3std13RangeIteratorI3intE8hasValueE(%"RangeIterator<int>" %__iterator51)
-  br i1 %2, label %body, label %endwhile
+  br i1 %2, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
+loop.body:                                        ; preds = %loop.condition
   %__iterator52 = load %"RangeIterator<int>", %"RangeIterator<int>"* %__iterator5
   %3 = call i32 @_EN3std13RangeIteratorI3intE5valueE(%"RangeIterator<int>" %__iterator52)
   store i32 %3, i32* %i
@@ -26,11 +26,11 @@ body:                                             ; preds = %while
   store i32 %5, i32* %sum
   br label %loop.increment
 
-loop.increment:                                   ; preds = %body
+loop.increment:                                   ; preds = %loop.body
   call void @_ENM3std13RangeIteratorI3intE9incrementE(%"RangeIterator<int>"* %__iterator5)
-  br label %while
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   %sum4 = load i32, i32* %sum
   ret i32 %sum4
 }

@@ -1,29 +1,29 @@
 
 define i32 @main() {
-  br label %while
+  br label %loop.condition
 
-while:                                            ; preds = %0
-  br i1 true, label %body, label %endwhile
+loop.condition:                                   ; preds = %0
+  br i1 true, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
-  br i1 true, label %then, label %else
+loop.body:                                        ; preds = %loop.condition
+  br i1 true, label %if.then, label %if.else
 
-endwhile:                                         ; preds = %endif, %then, %while
-  switch i32 1, label %default [
+loop.end:                                         ; preds = %if.end, %if.then, %loop.condition
+  switch i32 1, label %switch.default [
   ]
 
-then:                                             ; preds = %body
-  br label %endwhile
+if.then:                                          ; preds = %loop.body
+  br label %loop.end
 
-else:                                             ; preds = %body
-  br label %endif
+if.else:                                          ; preds = %loop.body
+  br label %if.end
 
-endif:                                            ; preds = %else
-  br label %endwhile
+if.end:                                           ; preds = %if.else
+  br label %loop.end
 
-default:                                          ; preds = %endwhile
-  br label %endswitch
+switch.default:                                   ; preds = %loop.end
+  br label %switch.end
 
-endswitch:                                        ; preds = %default
+switch.end:                                       ; preds = %switch.default
   ret i32 0
 }

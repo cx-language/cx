@@ -9,38 +9,38 @@ define i32 @main() {
   store i1 %2, i1* %b
   %foo2 = load i1*, i1** %foo
   %3 = icmp ne i1* %foo2, null
-  br i1 %3, label %then, label %else
+  br i1 %3, label %if.then, label %if.else
 
-then:                                             ; preds = %0
-  br label %endif
+if.then:                                          ; preds = %0
+  br label %if.end
 
-else:                                             ; preds = %0
-  br label %endif
+if.else:                                          ; preds = %0
+  br label %if.end
 
-endif:                                            ; preds = %else, %then
-  br label %while
+if.end:                                           ; preds = %if.else, %if.then
+  br label %loop.condition
 
-while:                                            ; preds = %body, %endif
+loop.condition:                                   ; preds = %loop.body, %if.end
   %foo3 = load i1*, i1** %foo
   %4 = icmp ne i1* %foo3, null
-  br i1 %4, label %body, label %endwhile
+  br i1 %4, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
-  br label %while
+loop.body:                                        ; preds = %loop.condition
+  br label %loop.condition
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   %foo4 = load i1*, i1** %foo
   %5 = icmp ne i1* %foo4, null
-  br i1 %5, label %then5, label %else6
+  br i1 %5, label %if.then5, label %if.else6
 
-then5:                                            ; preds = %endwhile
-  br label %endif7
+if.then5:                                         ; preds = %loop.end
+  br label %if.end7
 
-else6:                                            ; preds = %endwhile
-  br label %endif7
+if.else6:                                         ; preds = %loop.end
+  br label %if.end7
 
-endif7:                                           ; preds = %else6, %then5
-  %phi = phi i32 [ 1, %then5 ], [ 2, %else6 ]
+if.end7:                                          ; preds = %if.else6, %if.then5
+  %phi = phi i32 [ 1, %if.then5 ], [ 2, %if.else6 ]
   store i32 %phi, i32* %a
   ret i32 0
 }

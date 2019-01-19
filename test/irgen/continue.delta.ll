@@ -1,23 +1,23 @@
 
 define void @_EN4main3bazE3foo4bool(i1 %foo) {
-  br label %while
+  br label %loop.condition
 
-while:                                            ; preds = %endif, %then, %0
-  br i1 %foo, label %body, label %endwhile
+loop.condition:                                   ; preds = %if.end, %if.then, %0
+  br i1 %foo, label %loop.body, label %loop.end
 
-body:                                             ; preds = %while
-  br i1 %foo, label %then, label %else
+loop.body:                                        ; preds = %loop.condition
+  br i1 %foo, label %if.then, label %if.else
 
-endwhile:                                         ; preds = %while
+loop.end:                                         ; preds = %loop.condition
   ret void
 
-then:                                             ; preds = %body
+if.then:                                          ; preds = %loop.body
   call void @_EN4main3bazE3foo4bool(i1 %foo)
-  br label %while
+  br label %loop.condition
 
-else:                                             ; preds = %body
-  br label %endif
+if.else:                                          ; preds = %loop.body
+  br label %if.end
 
-endif:                                            ; preds = %else
-  br label %while
+if.end:                                           ; preds = %if.else
+  br label %loop.condition
 }
