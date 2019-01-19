@@ -13,7 +13,7 @@
 @2 = private unnamed_addr constant [30 x i8] c"Called last() on empty Array\0A\00"
 @3 = private unnamed_addr constant [37 x i8] c"Called removeFirst() on empty Array\0A\00"
 @4 = private unnamed_addr constant [36 x i8] c"Called removeLast() on empty Array\0A\00"
-@5 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:36:67\00"
+@5 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:36:70\00"
 
 define i32 @main() {
   %b = alloca i32
@@ -123,7 +123,7 @@ loop.end:                                         ; preds = %loop.condition
 if.then4:                                         ; preds = %loop.end
   %bufferPointer7 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer7.load = load i32*, i32** %bufferPointer7
-  call void @_EN3std10deallocateI3intEE10allocationPM3int(i32* %bufferPointer7.load)
+  call void @_EN3std10deallocateIAU_3intEE10allocationPMAU_M3int(i32* %bufferPointer7.load)
   br label %if.end6
 
 if.else5:                                         ; preds = %loop.end
@@ -223,7 +223,7 @@ define void @_ENM3std5ArrayI3intE6deinitE(%"Array<int>"* %this) {
 if.then:                                          ; preds = %0
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer.load = load i32*, i32** %bufferPointer
-  call void @_EN3std10deallocateI3intEE10allocationPM3int(i32* %bufferPointer.load)
+  call void @_EN3std10deallocateIAU_3intEE10allocationPMAU_M3int(i32* %bufferPointer.load)
   br label %if.end
 
 if.else:                                          ; preds = %0
@@ -233,7 +233,7 @@ if.end:                                           ; preds = %if.else, %if.then
   ret void
 }
 
-define void @_EN3std10deallocateI3intEE10allocationPM3int(i32* %allocation) {
+define void @_EN3std10deallocateIAU_3intEE10allocationPMAU_M3int(i32* %allocation) {
   %1 = bitcast i32* %allocation to i8*
   call void @free(i8* %1)
   ret void
@@ -321,7 +321,8 @@ if.else:                                          ; preds = %0
 if.end:                                           ; preds = %if.else, %if.then
   %bufferPointer = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 0
   %bufferPointer.load = load i32*, i32** %bufferPointer
-  ret i32* %bufferPointer.load
+  %2 = getelementptr i32, i32* %bufferPointer.load, i32 0
+  ret i32* %2
 }
 
 define void @_EN3std5ArrayI3intE15emptyArrayFirstE(%"Array<int>"* %this) {
@@ -348,8 +349,9 @@ if.end:                                           ; preds = %if.else, %if.then
   %bufferPointer.load = load i32*, i32** %bufferPointer
   %size1 = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size1.load = load i32, i32* %size1
-  %2 = getelementptr i32, i32* %bufferPointer.load, i32 %size1.load
-  ret i32* %2
+  %2 = sub i32 %size1.load, 1
+  %3 = getelementptr i32, i32* %bufferPointer.load, i32 %2
+  ret i32* %3
 }
 
 define void @_EN3std5ArrayI3intE14emptyArrayLastE(%"Array<int>"* %this) {

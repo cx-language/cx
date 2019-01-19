@@ -32,8 +32,8 @@ def safeAllocate<Type>(value: Type): mutable Type*? {
 /// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
 /// undefined behavior (when compiled in unchecked mode).
 ///
-def allocateArray<Type>(size: uint): mutable Type* {
-    return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size))!);
+def allocateArray<Type>(size: uint): mutable Type[?]* {
+    return cast<mutable Type[?]*>(malloc(sizeof(Type) * uint64(size))!);
 }
 
 /// Allocates a block of dynamic memory to hold an array with the given element type and size, and
@@ -42,8 +42,8 @@ def allocateArray<Type>(size: uint): mutable Type* {
 ///
 /// If the memory allocation fails, null is returned.
 ///
-def safeAllocateArray<Type>(size: uint): mutable Type*? {
-    return cast<mutable Type*>(malloc(sizeof(Type) * uint64(size)));
+def safeAllocateArray<Type>(size: uint): mutable Type[?]*? {
+    return cast<mutable Type[?]*>(malloc(sizeof(Type) * uint64(size)));
 }
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,

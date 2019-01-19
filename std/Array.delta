@@ -1,6 +1,5 @@
 struct Array<Element> {
-    // FIXME: Convert to pointer-to-array type and use indexing instead of pointer arithmetic.
-    var bufferPointer: mutable Element*;
+    var bufferPointer: mutable Element[?]*;
     var size: uint;
     var capacity: uint;
 
@@ -55,7 +54,7 @@ struct Array<Element> {
             indexOutOfBounds(index);
         }
 
-        return bufferPointer + index;
+        return bufferPointer[index];
     }
 
     /// Returns the element at the given index.
@@ -64,7 +63,7 @@ struct Array<Element> {
             indexOutOfBounds(index);
         }
 
-        return bufferPointer + index;
+        return bufferPointer[index];
     }
 
     def first(): Element* {
@@ -72,7 +71,7 @@ struct Array<Element> {
             emptyArrayFirst();
         }
 
-        return bufferPointer;
+        return bufferPointer[0];
     }
 
     def last(): Element* {
@@ -80,7 +79,7 @@ struct Array<Element> {
             emptyArrayLast();
         }
 
-        return bufferPointer + size;
+        return bufferPointer[size - 1];
     }
 
     def data(): Element* {
@@ -97,7 +96,8 @@ struct Array<Element> {
             grow();
         }
 
-        (bufferPointer + size).init(newElement);
+        // TODO: Shouldn't need '&' here.
+        (&bufferPointer[size]).init(newElement);
         size++;
     }
 
@@ -107,8 +107,8 @@ struct Array<Element> {
             var newBufferPointer = allocateArray<Element>(size: minimumCapacity);
 
             for (var index in 0..size) {
-                var source = bufferPointer + index;
-                var target = newBufferPointer + index;
+                var source = &bufferPointer[index];
+                var target = &newBufferPointer[index];
                 target.init(*source);
             }
 
@@ -138,7 +138,7 @@ struct Array<Element> {
         }
 
         size--;
-        (bufferPointer + size).deinit();
+        bufferPointer[size].deinit();
     }
 
     /// Removes and returns the last element.
@@ -148,7 +148,7 @@ struct Array<Element> {
         }
 
         size--;
-        return *(bufferPointer + size);
+        return bufferPointer[size];
     }
 
     /// Removes the element at the given index from the array.
@@ -162,11 +162,11 @@ struct Array<Element> {
     }
 
     mutating private def unsafeRemoveAt(index: uint) {
-        (bufferPointer + index).deinit();
+        bufferPointer[index].deinit();
 
         for (var i in (index + 1)..size) {
-            var source = bufferPointer + i;
-            var target = bufferPointer + (i - 1);
+            var source = &bufferPointer[i];
+            var target = &bufferPointer[i - 1];
             target.init(*source);
         }
 
