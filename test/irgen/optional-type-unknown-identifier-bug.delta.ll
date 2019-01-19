@@ -24,8 +24,8 @@ define void @_ENM4main1XI3intE4initE(%"X<int>"* %this) {
 define void @_ENM4main1XI3intE6deinitE(%"X<int>"* %this) {
   %a = alloca i32
   %y = getelementptr inbounds %"X<int>", %"X<int>"* %this, i32 0, i32 0
-  %y1 = load %"Y<int>"*, %"Y<int>"** %y
-  %assert.condition = icmp eq %"Y<int>"* %y1, null
+  %y.load = load %"Y<int>"*, %"Y<int>"** %y
+  %assert.condition = icmp eq %"Y<int>"* %y.load, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
@@ -34,9 +34,9 @@ assert.fail:                                      ; preds = %0
   unreachable
 
 assert.success:                                   ; preds = %0
-  %a2 = getelementptr inbounds %"Y<int>", %"Y<int>"* %y1, i32 0, i32 0
-  %2 = load i32, i32* %a2
-  store i32 %2, i32* %a
+  %a1 = getelementptr inbounds %"Y<int>", %"Y<int>"* %y.load, i32 0, i32 0
+  %a1.load = load i32, i32* %a1
+  store i32 %a1.load, i32* %a
   ret void
 }
 

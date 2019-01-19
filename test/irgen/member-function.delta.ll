@@ -9,16 +9,16 @@ define void @_ENM4main3Foo4initE(%Foo* %this) {
 
 define void @_ENM4main3Foo3barE(%Foo* %this) {
   %baz = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-  %1 = load i32, i32* %baz
-  %2 = add i32 %1, 1
-  store i32 %2, i32* %baz
+  %baz.load = load i32, i32* %baz
+  %1 = add i32 %baz.load, 1
+  store i32 %1, i32* %baz
   ret void
 }
 
 define i32 @_EN4main3Foo3quxE(%Foo* %this) {
   %baz = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-  %1 = load i32, i32* %baz
-  ret i32 %1
+  %baz.load = load i32, i32* %baz
+  ret i32 %baz.load
 }
 
 define i32 @main() {

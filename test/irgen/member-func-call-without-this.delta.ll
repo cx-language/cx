@@ -15,8 +15,8 @@ define void @_ENM4main1S4initE({}* %this) {
 }
 
 define void @_ENM4main1S3fooE({}* %this) {
-  %this1 = load {}, {}* %this
-  call void @_EN4main1S3barE({} %this1)
+  %this.load = load {}, {}* %this
+  call void @_EN4main1S3barE({} %this.load)
   ret void
 }
 

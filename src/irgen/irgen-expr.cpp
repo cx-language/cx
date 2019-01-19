@@ -9,7 +9,7 @@ llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
 
     if (llvm::isa<llvm::AllocaInst>(value) || llvm::isa<llvm::GetElementPtrInst>(value) ||
         (llvm::isa<llvm::GlobalValue>(value) && !llvm::isa<llvm::Function>(value))) {
-        value = builder.CreateLoad(value, expr.getIdentifier());
+        value = load(value);
     }
 
     if (value->getType()->isFloatingPointTy()) {
@@ -126,7 +126,7 @@ llvm::Value* IRGenerator::codegenUnaryExpr(const UnaryExpr& expr) {
                 return builder.CreateIntCast(builder.CreateNeg(codegenExpr(expr.getOperand())), toIR(expr.getType()), expr.getType().isSigned());
             }
         case Token::Star:
-            return builder.CreateLoad(codegenExpr(expr.getOperand()));
+            return load(codegenExpr(expr.getOperand()));
         case Token::And:
             return codegenLvalueExpr(expr.getOperand());
         case Token::Not:
@@ -155,7 +155,7 @@ llvm::Value* IRGenerator::codegenLvalueUnaryExpr(const UnaryExpr& expr) {
 
 llvm::Value* IRGenerator::codegenIncrementExpr(const UnaryExpr& expr) {
     auto* alloca = codegenLvalueExpr(expr.getOperand());
-    auto* value = builder.CreateLoad(alloca);
+    auto* value = load(alloca);
     llvm::Value* result;
 
     if (expr.getOperand().getType().isPointerType()) {
@@ -170,7 +170,7 @@ llvm::Value* IRGenerator::codegenIncrementExpr(const UnaryExpr& expr) {
 
 llvm::Value* IRGenerator::codegenDecrementExpr(const UnaryExpr& expr) {
     auto* alloca = codegenLvalueExpr(expr.getOperand());
-    auto* value = builder.CreateLoad(alloca);
+    auto* value = load(alloca);
     llvm::Value* result;
 
     if (expr.getOperand().getType().isPointerType()) {
@@ -239,10 +239,10 @@ llvm::Value* IRGenerator::codegenLogicalOr(const Expr& left, const Expr& right) 
 
 llvm::Value* IRGenerator::codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, Type lhsType) {
     if (lhs->getType()->isPointerTy() && lhs->getType()->getPointerElementType() == rhs->getType()) {
-        lhs = builder.CreateLoad(lhs);
+        lhs = load(lhs);
         lhsType = lhsType.getPointee();
     } else if (rhs->getType()->isPointerTy() && rhs->getType()->getPointerElementType() == lhs->getType()) {
-        rhs = builder.CreateLoad(rhs);
+        rhs = load(rhs);
     }
 
     if (lhs->getType()->isFloatingPointTy()) {
@@ -403,7 +403,7 @@ void IRGenerator::codegenAssignment(const BinaryExpr& expr) {
         if (expr.getLHS().getType().isPointerType() && expr.getRHS().getType().isInteger()) {
             rhsValue = codegenPointerOffset(expr);
         } else {
-            auto* lhsValue = builder.CreateLoad(lhsLvalue);
+            auto* lhsValue = load(lhsLvalue);
             rhsValue = codegenBinaryOp(nonCompoundOp, lhsValue, codegenExpr(expr.getRHS()), expr.getLHS().getType());
         }
     } else {
@@ -464,7 +464,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
             builder.CreateStore(value, alloca);
             return alloca;
         } else if (targetType && value->getType()->isPointerTy() && !targetType->isPointerTy()) {
-            return builder.CreateLoad(value, value->getName());
+            return load(value);
         } else {
             return value;
         }
@@ -472,7 +472,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
 
     if (!targetType->isPointerTy()) {
         if (expr.getType().isPointerType()) {
-            return builder.CreateLoad(codegenExpr(expr));
+            return load(codegenExpr(expr));
         }
     } else if (!expr.getType().isPointerType()) {
         auto* value = codegenLvalueExpr(expr);
@@ -488,7 +488,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
 
     auto* value = codegenExpr(expr);
     if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == targetType) {
-        value = builder.CreateLoad(value, value->getName());
+        value = load(value);
     }
     return value;
 }
@@ -567,7 +567,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
         functionType = function->getFunctionType();
     } else {
         if (!llvm::isa<llvm::FunctionType>(calleeValue->getType()->getPointerElementType())) {
-            calleeValue = builder.CreateLoad(calleeValue, calleeValue->getName());
+            calleeValue = load(calleeValue);
         }
         functionType = llvm::cast<llvm::FunctionType>(calleeValue->getType()->getPointerElementType());
     }
@@ -596,7 +596,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
         } else {
             auto* thisValue = findValue("this", nullptr);
             if (thisValue->getType()->isPointerTy() && !(*param)->isPointerTy()) {
-                thisValue = builder.CreateLoad(thisValue, thisValue->getName());
+                thisValue = load(thisValue);
             }
             args.emplace_back(thisValue);
         }
@@ -643,7 +643,7 @@ llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type membe
         baseType = baseType->getPointerElementType();
         if (baseType->isPointerTy()) {
             baseType = baseType->getPointerElementType();
-            baseValue = builder.CreateLoad(baseValue);
+            baseValue = load(baseValue);
         }
         auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
 
@@ -702,7 +702,7 @@ llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
     auto* value = codegenLvalueMemberExpr(expr);
 
     if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == toIR(expr.getType())) {
-        value = builder.CreateLoad(value);
+        value = load(value);
     }
 
     return value;
@@ -717,7 +717,7 @@ llvm::Value* IRGenerator::codegenTupleElementAccess(const MemberExpr& expr) {
 
     auto* baseValue = codegenLvalueExpr(*expr.getBaseExpr());
     if (baseValue->getType()->isPointerTy() && baseValue->getType()->getPointerElementType()->isPointerTy()) {
-        baseValue = builder.CreateLoad(baseValue);
+        baseValue = load(baseValue);
     }
 
     if (baseValue->getType()->isPointerTy()) {
@@ -737,14 +737,14 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
 
     if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithRuntimeSize()) {
         if (value->getType()->isPointerTy()) {
-            value = builder.CreateLoad(value);
+            value = load(value);
         }
         auto* ptr = builder.CreateExtractValue(value, 0);
         auto* index = codegenExpr(*expr.getIndexExpr());
         return builder.CreateGEP(ptr, index);
     }
 
-    if (value->getType()->getPointerElementType()->isPointerTy()) value = builder.CreateLoad(value);
+    if (value->getType()->getPointerElementType()->isPointerTy()) value = load(value);
 
     if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithUnknownSize()) {
         return builder.CreateGEP(value, codegenExpr(*expr.getIndexExpr()));
@@ -758,7 +758,7 @@ llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
         return codegenCallExpr(expr);
     }
 
-    return builder.CreateLoad(codegenLvalueSubscriptExpr(expr));
+    return load(codegenLvalueSubscriptExpr(expr));
 }
 
 llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {

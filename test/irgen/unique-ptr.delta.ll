@@ -11,16 +11,16 @@ define i32 @main() {
   %q = alloca %"UniquePtr<int>"
   %r = alloca %"UniquePtr<int>"
   call void @_ENM3std9UniquePtrI3intE4initE5value3int(%"UniquePtr<int>"* %1, i32 42)
-  %2 = load %"UniquePtr<int>", %"UniquePtr<int>"* %1
-  call void @_ENM3std9UniquePtrI9UniquePtrI3intEE4initE5value9UniquePtrI3intE(%"UniquePtr<UniquePtr<int>>"* %p, %"UniquePtr<int>" %2)
+  %.load = load %"UniquePtr<int>", %"UniquePtr<int>"* %1
+  call void @_ENM3std9UniquePtrI9UniquePtrI3intEE4initE5value9UniquePtrI3intE(%"UniquePtr<UniquePtr<int>>"* %p, %"UniquePtr<int>" %.load)
   call void @_ENM3std9UniquePtrI3intE4initE5value3int(%"UniquePtr<int>"* %q, i32 42)
   call void @_ENM3std9UniquePtrI3intE4initE5value3int(%"UniquePtr<int>"* %r, i32 42)
-  %3 = call i32* @_ENM3std9UniquePtrI3intE3getE(%"UniquePtr<int>"* %q)
-  store i32 0, i32* %3
-  %4 = call i32* @_ENM3std9UniquePtrI3intE3getE(%"UniquePtr<int>"* %r)
+  %2 = call i32* @_ENM3std9UniquePtrI3intE3getE(%"UniquePtr<int>"* %q)
+  store i32 0, i32* %2
+  %3 = call i32* @_ENM3std9UniquePtrI3intE3getE(%"UniquePtr<int>"* %r)
   call void @_ENM3std9UniquePtrI3intE6deinitE(%"UniquePtr<int>"* %q)
-  %r1 = load %"UniquePtr<int>", %"UniquePtr<int>"* %r
-  store %"UniquePtr<int>" %r1, %"UniquePtr<int>"* %q
+  %r.load = load %"UniquePtr<int>", %"UniquePtr<int>"* %r
+  store %"UniquePtr<int>" %r.load, %"UniquePtr<int>"* %q
   call void @_ENM3std9UniquePtrI3intE6deinitE(%"UniquePtr<int>"* %q)
   call void @_ENM3std9UniquePtrI9UniquePtrI3intEE6deinitE(%"UniquePtr<UniquePtr<int>>"* %p)
   ret i32 0
@@ -47,10 +47,10 @@ assert.fail:                                      ; preds = %0
 assert.success:                                   ; preds = %0
   %3 = bitcast i8* %1 to i32*
   store i32* %3, i32** %allocation
-  %allocation1 = load i32*, i32** %allocation
-  store i32 %value, i32* %allocation1
-  %allocation2 = load i32*, i32** %allocation
-  ret i32* %allocation2
+  %allocation.load = load i32*, i32** %allocation
+  store i32 %value, i32* %allocation.load
+  %allocation.load1 = load i32*, i32** %allocation
+  ret i32* %allocation.load1
 }
 
 define void @_ENM3std9UniquePtrI3intE4initE7pointerPM3int(%"UniquePtr<int>"* %this, i32* %pointer) {
@@ -61,8 +61,8 @@ define void @_ENM3std9UniquePtrI3intE4initE7pointerPM3int(%"UniquePtr<int>"* %th
 
 define void @_ENM3std9UniquePtrI3intE6deinitE(%"UniquePtr<int>"* %this) {
   %pointer = getelementptr inbounds %"UniquePtr<int>", %"UniquePtr<int>"* %this, i32 0, i32 0
-  %pointer1 = load i32*, i32** %pointer
-  call void @_EN3std10deallocateI3intEE10allocationPM3int(i32* %pointer1)
+  %pointer.load = load i32*, i32** %pointer
+  call void @_EN3std10deallocateI3intEE10allocationPM3int(i32* %pointer.load)
   ret void
 }
 
@@ -74,14 +74,14 @@ define void @_EN3std10deallocateI3intEE10allocationPM3int(i32* %allocation) {
 
 define i32* @_EN3std9UniquePtrI3intE3getE(%"UniquePtr<int>"* %this) {
   %pointer = getelementptr inbounds %"UniquePtr<int>", %"UniquePtr<int>"* %this, i32 0, i32 0
-  %pointer1 = load i32*, i32** %pointer
-  ret i32* %pointer1
+  %pointer.load = load i32*, i32** %pointer
+  ret i32* %pointer.load
 }
 
 define i32* @_ENM3std9UniquePtrI3intE3getE(%"UniquePtr<int>"* %this) {
   %pointer = getelementptr inbounds %"UniquePtr<int>", %"UniquePtr<int>"* %this, i32 0, i32 0
-  %pointer1 = load i32*, i32** %pointer
-  ret i32* %pointer1
+  %pointer.load = load i32*, i32** %pointer
+  ret i32* %pointer.load
 }
 
 define void @_ENM3std9UniquePtrI9UniquePtrI3intEE4initE5value9UniquePtrI3intE(%"UniquePtr<UniquePtr<int>>"* %this, %"UniquePtr<int>" %value) {
@@ -105,10 +105,10 @@ assert.fail:                                      ; preds = %0
 assert.success:                                   ; preds = %0
   %3 = bitcast i8* %1 to %"UniquePtr<int>"*
   store %"UniquePtr<int>"* %3, %"UniquePtr<int>"** %allocation
-  %allocation1 = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %allocation
-  store %"UniquePtr<int>" %value, %"UniquePtr<int>"* %allocation1
-  %allocation2 = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %allocation
-  ret %"UniquePtr<int>"* %allocation2
+  %allocation.load = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %allocation
+  store %"UniquePtr<int>" %value, %"UniquePtr<int>"* %allocation.load
+  %allocation.load1 = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %allocation
+  ret %"UniquePtr<int>"* %allocation.load1
 }
 
 define void @_ENM3std9UniquePtrI9UniquePtrI3intEE4initE7pointerPM9UniquePtrI3intE(%"UniquePtr<UniquePtr<int>>"* %this, %"UniquePtr<int>"* %pointer) {
@@ -119,8 +119,8 @@ define void @_ENM3std9UniquePtrI9UniquePtrI3intEE4initE7pointerPM9UniquePtrI3int
 
 define void @_ENM3std9UniquePtrI9UniquePtrI3intEE6deinitE(%"UniquePtr<UniquePtr<int>>"* %this) {
   %pointer = getelementptr inbounds %"UniquePtr<UniquePtr<int>>", %"UniquePtr<UniquePtr<int>>"* %this, i32 0, i32 0
-  %pointer1 = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %pointer
-  call void @_EN3std10deallocateI9UniquePtrI3intEEE10allocationPM9UniquePtrI3intE(%"UniquePtr<int>"* %pointer1)
+  %pointer.load = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %pointer
+  call void @_EN3std10deallocateI9UniquePtrI3intEEE10allocationPM9UniquePtrI3intE(%"UniquePtr<int>"* %pointer.load)
   ret void
 }
 
@@ -132,14 +132,14 @@ define void @_EN3std10deallocateI9UniquePtrI3intEEE10allocationPM9UniquePtrI3int
 
 define %"UniquePtr<int>"* @_EN3std9UniquePtrI9UniquePtrI3intEE3getE(%"UniquePtr<UniquePtr<int>>"* %this) {
   %pointer = getelementptr inbounds %"UniquePtr<UniquePtr<int>>", %"UniquePtr<UniquePtr<int>>"* %this, i32 0, i32 0
-  %pointer1 = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %pointer
-  ret %"UniquePtr<int>"* %pointer1
+  %pointer.load = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %pointer
+  ret %"UniquePtr<int>"* %pointer.load
 }
 
 define %"UniquePtr<int>"* @_ENM3std9UniquePtrI9UniquePtrI3intEE3getE(%"UniquePtr<UniquePtr<int>>"* %this) {
   %pointer = getelementptr inbounds %"UniquePtr<UniquePtr<int>>", %"UniquePtr<UniquePtr<int>>"* %this, i32 0, i32 0
-  %pointer1 = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %pointer
-  ret %"UniquePtr<int>"* %pointer1
+  %pointer.load = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %pointer
+  ret %"UniquePtr<int>"* %pointer.load
 }
 
 declare i8* @malloc(i64)

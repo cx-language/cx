@@ -3,8 +3,8 @@
 
 define i32 @main() {
   %x = alloca %Foo
-  %x1 = load %Foo, %Foo* %x
-  call void @foo(%Foo %x1)
+  %x.load = load %Foo, %Foo* %x
+  call void @foo(%Foo %x.load)
   ret i32 0
 }
 

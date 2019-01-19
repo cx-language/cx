@@ -10,9 +10,9 @@ define i32 @main() {
   store i32* %2, i32** %p
   %3 = bitcast [3 x i32]* %a to i32*
   store i32* %3, i32** %p
-  %4 = load i32*, i32** %p
-  %5 = getelementptr i32, i32* %4, i32 1
-  %6 = load i32, i32* %5
-  store i32 %6, i32* %t
+  %p.load = load i32*, i32** %p
+  %4 = getelementptr i32, i32* %p.load, i32 1
+  %.load = load i32, i32* %4
+  store i32 %.load, i32* %t
   ret i32 0
 }

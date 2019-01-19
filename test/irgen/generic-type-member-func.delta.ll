@@ -4,8 +4,8 @@
 define i32 @main() {
   %f = alloca %"F<int, bool>"
   call void @_ENM4main1FI3int4boolE4initE(%"F<int, bool>"* %f)
-  %f1 = load %"F<int, bool>", %"F<int, bool>"* %f
-  call void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>" %f1)
+  %f.load = load %"F<int, bool>", %"F<int, bool>"* %f
+  call void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>" %f.load)
   ret i32 0
 }
 

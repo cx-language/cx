@@ -5,8 +5,8 @@ define i32 @main() {
   call void @_ENM4main1X4initE({}* %x)
   call void @_ENM4main1X6deinitE({}* %x)
   call void @_ENM4main1X4initE({}* %1)
-  %2 = load {}, {}* %1
-  store {} %2, {}* %x
+  %.load = load {}, {}* %1
+  store {} %.load, {}* %x
   call void @_ENM4main1X6deinitE({}* %x)
   ret i32 0
 }

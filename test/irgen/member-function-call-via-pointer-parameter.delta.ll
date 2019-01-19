@@ -24,8 +24,8 @@ define void @_EN4main3Bar3barE(%Bar %this) {
 
 define void @_EN4main3quxE1fP3Foo1bP3Bar(%Foo* %f, %Bar* %b) {
   call void @_EN4main3Foo3fooE(%Foo* %f)
-  %1 = load %Bar, %Bar* %b
-  call void @_EN4main3Bar3barE(%Bar %1)
+  %b.load = load %Bar, %Bar* %b
+  call void @_EN4main3Bar3barE(%Bar %b.load)
   ret void
 }
 

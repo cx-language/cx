@@ -36,6 +36,6 @@ define void @_ENM4main1AI1SE4initE({}* %this) {
 define %S @_EN4main1AI1SE1aE({}* %this) {
   %1 = alloca %S
   call void @_ENM4main1S4initE(%S* %1)
-  %2 = load %S, %S* %1
-  ret %S %2
+  %.load = load %S, %S* %1
+  ret %S %.load
 }

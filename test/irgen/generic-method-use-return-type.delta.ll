@@ -11,8 +11,8 @@ define i32 @main({} %x) {
 
 define {} @_EN4main1XI3intE1fI4boolEE1u4bool({}* %this, i1 %u) {
   %x = alloca {}
-  %x1 = load {}, {}* %x
-  ret {} %x1
+  %x.load = load {}, {}* %x
+  ret {} %x.load
 }
 
 define void @_EN4main1XI4boolE1gE({}* %this) {

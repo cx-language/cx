@@ -16,12 +16,12 @@ define i32 @main() {
 
 define void @_EN3std5printI9StringRefEE5valueP9StringRef(%StringRef* %value) {
   %string = alloca %String
-  %1 = load %StringRef, %StringRef* %value
-  %2 = call %String @_EN3std9StringRef8toStringE(%StringRef %1)
-  store %String %2, %String* %string
-  %3 = call i32 @_EN3std6String4sizeE(%String* %string)
-  %4 = call i8* @_EN3std6String4dataE(%String* %string)
-  %5 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i32 %3, i8* %4)
+  %value.load = load %StringRef, %StringRef* %value
+  %1 = call %String @_EN3std9StringRef8toStringE(%StringRef %value.load)
+  store %String %1, %String* %string
+  %2 = call i32 @_EN3std6String4sizeE(%String* %string)
+  %3 = call i8* @_EN3std6String4dataE(%String* %string)
+  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i32 %2, i8* %3)
   call void @_ENM3std6String6deinitE(%String* %string)
   ret void
 }

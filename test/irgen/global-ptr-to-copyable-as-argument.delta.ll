@@ -4,8 +4,8 @@
 @sp = private global %S* null
 
 define i32 @main() {
-  %sp = load %S*, %S** @sp
-  call void @_EN4main3fooE1pOP1S(%S* %sp)
+  %sp.load = load %S*, %S** @sp
+  call void @_EN4main3fooE1pOP1S(%S* %sp.load)
   ret i32 0
 }
 

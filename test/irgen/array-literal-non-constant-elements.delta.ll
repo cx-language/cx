@@ -14,6 +14,6 @@ define [2 x i32] @_EN4main1gE3foo3int3bar3int(i32 %foo, i32 %bar) {
   %3 = sub i32 %foo, %bar
   %4 = insertvalue [2 x i32] %2, i32 %3, 1
   store [2 x i32] %4, [2 x i32]* %c
-  %c1 = load [2 x i32], [2 x i32]* %c
-  ret [2 x i32] %c1
+  %c.load = load [2 x i32], [2 x i32]* %c
+  ret [2 x i32] %c.load
 }

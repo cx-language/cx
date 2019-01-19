@@ -35,15 +35,15 @@ define i32 @main() {
   %t = alloca %T
   call void @_ENM4main1S4initE(%S* %s)
   call void @_ENM4main1T4initE(%T* %t)
-  %s1 = load %S, %S* %s
-  call void @_EN4main1fE1a1S(%S %s1)
-  %t2 = load %T, %T* %t
-  call void @_EN4main1fE1a1T(%T %t2)
-  %s3 = load %S, %S* %s
-  %s4 = load %S, %S* %s
-  call void @_EN4mainplE1a1S1b1S(%S %s3, %S %s4)
-  %t5 = load %T, %T* %t
-  %t6 = load %T, %T* %t
-  call void @_EN4mainplE1a1T1b1T(%T %t5, %T %t6)
+  %s.load = load %S, %S* %s
+  call void @_EN4main1fE1a1S(%S %s.load)
+  %t.load = load %T, %T* %t
+  call void @_EN4main1fE1a1T(%T %t.load)
+  %s.load1 = load %S, %S* %s
+  %s.load2 = load %S, %S* %s
+  call void @_EN4mainplE1a1S1b1S(%S %s.load1, %S %s.load2)
+  %t.load3 = load %T, %T* %t
+  %t.load4 = load %T, %T* %t
+  call void @_EN4mainplE1a1T1b1T(%T %t.load3, %T %t.load4)
   ret i32 0
 }

@@ -10,22 +10,22 @@ define i32 @main() {
   %__str0 = alloca %StringRef
   %ch = alloca i8
   call void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  %__str01 = load %StringRef, %StringRef* %__str0
-  %1 = call %StringIterator @_EN3std9StringRef8iteratorE(%StringRef %__str01)
+  %__str0.load = load %StringRef, %StringRef* %__str0
+  %1 = call %StringIterator @_EN3std9StringRef8iteratorE(%StringRef %__str0.load)
   store %StringIterator %1, %StringIterator* %__iterator
   br label %loop.condition
 
 loop.condition:                                   ; preds = %loop.increment, %0
-  %__iterator2 = load %StringIterator, %StringIterator* %__iterator
-  %2 = call i1 @_EN3std14StringIterator8hasValueE(%StringIterator %__iterator2)
+  %__iterator.load = load %StringIterator, %StringIterator* %__iterator
+  %2 = call i1 @_EN3std14StringIterator8hasValueE(%StringIterator %__iterator.load)
   br i1 %2, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %__iterator3 = load %StringIterator, %StringIterator* %__iterator
-  %3 = call i8 @_EN3std14StringIterator5valueE(%StringIterator %__iterator3)
+  %__iterator.load1 = load %StringIterator, %StringIterator* %__iterator
+  %3 = call i8 @_EN3std14StringIterator5valueE(%StringIterator %__iterator.load1)
   store i8 %3, i8* %ch
-  %ch4 = load i8, i8* %ch
-  %4 = icmp eq i8 %ch4, 98
+  %ch.load = load i8, i8* %ch
+  %4 = icmp eq i8 %ch.load, 98
   br i1 %4, label %if.then, label %if.else
 
 loop.increment:                                   ; preds = %if.end, %if.then

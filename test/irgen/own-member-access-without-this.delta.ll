@@ -10,7 +10,7 @@ define void @_ENM4main1A4initE(%A* %this) {
 
 define void @_EN4main1A3fooE(%A* %this) {
   %j = getelementptr inbounds %A, %A* %this, i32 0, i32 1
-  %j1 = load i32, i32* %j
+  %j.load = load i32, i32* %j
   ret void
 }
 

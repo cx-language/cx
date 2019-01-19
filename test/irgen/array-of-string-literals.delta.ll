@@ -10,12 +10,12 @@ define i32 @main() {
   %__str0 = alloca %StringRef
   %__str1 = alloca %StringRef
   call void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  %1 = load %StringRef, %StringRef* %__str0
-  %2 = insertvalue [2 x %StringRef] undef, %StringRef %1, 0
+  %__str0.load = load %StringRef, %StringRef* %__str0
+  %1 = insertvalue [2 x %StringRef] undef, %StringRef %__str0.load, 0
   call void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef* %__str1, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0), i32 3)
-  %3 = load %StringRef, %StringRef* %__str1
-  %4 = insertvalue [2 x %StringRef] %2, %StringRef %3, 1
-  store [2 x %StringRef] %4, [2 x %StringRef]* %a
+  %__str1.load = load %StringRef, %StringRef* %__str1
+  %2 = insertvalue [2 x %StringRef] %1, %StringRef %__str1.load, 1
+  store [2 x %StringRef] %2, [2 x %StringRef]* %a
   ret i32 0
 }
 

@@ -3,11 +3,11 @@ define i32 @main() {
   %1 = alloca {}
   %2 = alloca {}
   call void @_ENM4main1SI3intE4initE({}* %1)
-  %3 = load {}, {}* %1
-  call void @_EN4main1SI3intE1fE({} %3)
+  %.load = load {}, {}* %1
+  call void @_EN4main1SI3intE1fE({} %.load)
   call void @_ENM4main1SI5floatE4initE({}* %2)
-  %4 = load {}, {}* %2
-  call void @_EN4main1SI5floatE1fE({} %4)
+  %.load1 = load {}, {}* %2
+  call void @_EN4main1SI5floatE1fE({} %.load1)
   ret i32 0
 }
 

@@ -25,15 +25,15 @@ define void @_EN4main1C1fE(%C* %this) {
 define %S @_EN4main1sE() {
   %1 = alloca %S
   call void @_ENM4main1S4initE(%S* %1)
-  %2 = load %S, %S* %1
-  ret %S %2
+  %.load = load %S, %S* %1
+  ret %S %.load
 }
 
 define %C @_EN4main1cE() {
   %1 = alloca %C
   call void @_ENM4main1C4initE(%C* %1)
-  %2 = load %C, %C* %1
-  ret %C %2
+  %.load = load %C, %C* %1
+  ret %C %.load
 }
 
 define i32 @main() {
@@ -46,8 +46,8 @@ define i32 @main() {
   store %C %5, %C* %1
   call void @_EN4main1C1fE(%C* %1)
   call void @_ENM4main1S4initE(%S* %2)
-  %6 = load %S, %S* %2
-  call void @_EN4main1S1fE(%S %6)
+  %.load = load %S, %S* %2
+  call void @_EN4main1S1fE(%S %.load)
   call void @_ENM4main1C4initE(%C* %3)
   call void @_EN4main1C1fE(%C* %3)
   ret i32 0

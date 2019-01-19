@@ -12,8 +12,8 @@ define i32 @main() {
   call void @_EN4main3fooI4boolEE1t4bool(i1 false)
   call void @_EN4main3fooI4boolEE1t4bool(i1 true)
   call void @_ENM3std9StringRef4initE7pointerP4char6length4uint(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  %__str01 = load %StringRef, %StringRef* %__str0
-  %1 = call %StringRef @_EN4main3barI9StringRefEE1t9StringRef(%StringRef %__str01)
+  %__str0.load = load %StringRef, %StringRef* %__str0
+  %1 = call %StringRef @_EN4main3barI9StringRefEE1t9StringRef(%StringRef %__str0.load)
   store %StringRef %1, %StringRef* %b
   %2 = call i32 @_EN4main3quxI3intEE1t3int(i32 -5)
   store i32 %2, i32* %five

@@ -22,8 +22,8 @@ define void @_ENM4main1AI1RE4initE(%"A<R>"* %this) {
 
 define %R @_EN4main1AI1REixE1i3int(%"A<R>"* %this, i32 %i) {
   %t = getelementptr inbounds %"A<R>", %"A<R>"* %this, i32 0, i32 0
-  %t1 = load %R, %R* %t
-  ret %R %t1
+  %t.load = load %R, %R* %t
+  ret %R %t.load
 }
 
 define void @_ENM4main1AI1AI1REE4initE(%"A<A<R>>"* %this) {
@@ -32,8 +32,8 @@ define void @_ENM4main1AI1AI1REE4initE(%"A<A<R>>"* %this) {
 
 define %"A<R>" @_EN4main1AI1AI1REEixE1i3int(%"A<A<R>>"* %this, i32 %i) {
   %t = getelementptr inbounds %"A<A<R>>", %"A<A<R>>"* %this, i32 0, i32 0
-  %t1 = load %"A<R>", %"A<R>"* %t
-  ret %"A<R>" %t1
+  %t.load = load %"A<R>", %"A<R>"* %t
+  ret %"A<R>" %t.load
 }
 
 define void @_ENM4main1SI1RE4initE(%"S<R>"* %this) {
@@ -49,8 +49,8 @@ define void @_EN4main1SI1RE1sE(%"S<R>"* %this) {
   %2 = call %R @_EN4main1AI1REixE1i3int(%"A<R>"* %t, i32 0)
   store %R %2, %R* %tt
   %a1 = getelementptr inbounds %"S<R>", %"S<R>"* %this, i32 0, i32 0
-  %tt2 = load %R, %R* %tt
-  %3 = call i32 @_EN4main1R1hE(%R %tt2)
+  %tt.load = load %R, %R* %tt
+  %3 = call i32 @_EN4main1R1hE(%R %tt.load)
   %4 = call %"A<R>" @_EN4main1AI1AI1REEixE1i3int(%"A<A<R>>"* %a1, i32 %3)
   ret void
 }

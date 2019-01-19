@@ -2,8 +2,8 @@
 define i32 @main() {
   %c = alloca {}
   call void @_ENM4main1CI4boolE4initE({}* %c)
-  %c1 = load {}, {}* %c
-  call void @_EN4main1CI4boolE1fE({} %c1)
+  %c.load = load {}, {}* %c
+  call void @_EN4main1CI4boolE1fE({} %c.load)
   ret i32 0
 }
 

@@ -14,8 +14,8 @@ define void @_EN4main1fE() {
 define {} @_EN4main1gE() {
   %x = alloca {}
   call void @_ENM4main1XI3intE4initE({}* %x)
-  %x1 = load {}, {}* %x
-  ret {} %x1
+  %x.load = load {}, {}* %x
+  ret {} %x.load
 }
 
 define void @_EN4main1XI3intE1gE({}* %this) {
