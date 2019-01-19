@@ -1,5 +1,5 @@
 struct ArrayRef<Element>: Copyable {
-    var data: Element*;
+    var data: Element[?]*;
     var size: int;
 
     /// Initializes an ArrayRef referring to an empty array.
@@ -28,10 +28,10 @@ struct ArrayRef<Element>: Copyable {
 
     /// Returns a reference to the element at the given index.
     def [](index: int): Element* {
-        return data + index;
+        return &data[index];
     }
 
-    def data(): Element* {
+    def data(): Element[?]* {
         return data;
     }
 

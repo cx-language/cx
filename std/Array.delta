@@ -82,11 +82,11 @@ struct Array<Element> {
         return buffer[size - 1];
     }
 
-    def data(): Element* {
+    def data(): Element[?]* {
         return buffer;
     }
 
-    mutating def data(): mutable Element* {
+    mutating def data(): mutable Element[?]* {
         return buffer;
     }
 

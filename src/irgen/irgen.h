@@ -143,7 +143,6 @@ private:
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
-    llvm::Value* codegenPointerOffset(const BinaryExpr& expr);
 
     void beginScope();
     void endScope();

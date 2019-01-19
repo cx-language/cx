@@ -266,14 +266,6 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op) {
         }
     }
 
-    if (op == Token::Plus || op == Token::Minus) {
-        if (leftType.isPointerType() && rightType.isInteger()) {
-            return leftType;
-        } else if (leftType.isInteger() && rightType.isPointerType()) {
-            invalidOperandsToBinaryExpr(expr, op);
-        }
-    }
-
     if (isBitwiseOperator(op) && (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
         invalidOperandsToBinaryExpr(expr, op);
     }

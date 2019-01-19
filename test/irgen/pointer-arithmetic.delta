@@ -1,9 +1,0 @@
-// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
-
-def f(p: int*) {
-    var a = p + 4 - 1;
-    a += 3;
-    a -= 3;
-    a++;
-    a--;
-}

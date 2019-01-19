@@ -505,7 +505,7 @@ Type Parser::parseType() {
                 }
                 break;
             case Token::LeftBracket:
-                type = ArrayType::get(type, parseArraySizeInBrackets(), false, getCurrentLocation());
+                type = ArrayType::get(type, parseArraySizeInBrackets(), type.isMutable(), getCurrentLocation());
                 break;
             case Token::And:
                 error(getCurrentLocation(), "Delta doesn't have C++-style references; ",

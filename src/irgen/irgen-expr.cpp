@@ -363,10 +363,6 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
         return codegenCallExpr(expr);
     }
 
-    if (expr.isPointerOffset()) {
-        return codegenPointerOffset(expr);
-    }
-
     switch (expr.getOperator()) {
         case Token::AndAnd:
         case Token::OrOr:
@@ -400,12 +396,8 @@ void IRGenerator::codegenAssignment(const BinaryExpr& expr) {
                 break;
         }
 
-        if (expr.getLHS().getType().isPointerType() && expr.getRHS().getType().isInteger()) {
-            rhsValue = codegenPointerOffset(expr);
-        } else {
-            auto* lhsValue = load(lhsLvalue);
-            rhsValue = codegenBinaryOp(nonCompoundOp, lhsValue, codegenExpr(expr.getRHS()), expr.getLHS().getType());
-        }
+        auto* lhsValue = load(lhsLvalue);
+        rhsValue = codegenBinaryOp(nonCompoundOp, lhsValue, codegenExpr(expr.getRHS()), expr.getLHS().getType());
     } else {
         rhsValue = codegenExprForPassing(expr.getRHS(), lhsLvalue->getType()->getPointerElementType());
     }
@@ -669,17 +661,6 @@ llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
     } else {
         return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), objectType.getArraySize());
     }
-}
-
-llvm::Value* IRGenerator::codegenPointerOffset(const BinaryExpr& expr) {
-    auto* pointer = codegenExpr(expr.getLHS());
-    auto* offset = codegenExpr(expr.getRHS());
-
-    if (expr.getOperator() == Token::Minus || expr.getOperator() == Token::MinusEqual) {
-        offset = builder.CreateNeg(offset);
-    }
-
-    return builder.CreateGEP(pointer, offset);
 }
 
 llvm::Value* IRGenerator::codegenLvalueMemberExpr(const MemberExpr& expr) {

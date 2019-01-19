@@ -1,6 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-def f(a: int, b: int*) {
-    var c = b + a;
-    var d = a + b; // CHECK: [[@LINE]]:15: error: invalid operands 'int' and 'int*' to '+'
-}

@@ -48,7 +48,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     /// Returns a pointer to the first character in the string.
-    def data(): char* {
+    def data(): char[?]* {
         return characters.data();
     }
 
@@ -57,7 +57,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     /// Returns a pointer to the first character in the string.
-    mutating def data(): mutable char* {
+    mutating def data(): mutable char[?]* {
         return characters.data();
     }
 

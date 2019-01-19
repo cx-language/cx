@@ -4,7 +4,7 @@ struct StringIterator: Copyable, Iterator<char> {
 
     init(string: StringRef) {
         current = string.data();
-        end = string.data() + string.size();
+        end = &string.data()[string.size()];
     }
 
     def hasValue(): bool {

@@ -28,7 +28,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         return *characters[index];
     }
 
-    def data(): char* {
+    def data(): char[?]* {
         return characters.data();
     }
 

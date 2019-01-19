@@ -74,7 +74,6 @@ public:
     void setAssignableType(Type type) { assignableType = NOTNULL(type); }
     bool isAssignment() const;
     bool isIncrementOrDecrementExpr() const;
-    bool isPointerOffset() const;
     bool isConstant() const;
     llvm::APSInt getConstantIntegerValue() const;
     bool isLvalue() const;

@@ -5,7 +5,7 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
     // TODO: Fix bug that prevents writing 'Element[]*' here.
     init(array: ArrayRef<Element>) {
         current = array.data();
-        end = array.data() + array.size();
+        end = &array.data()[array.size()];
     }
 
     def hasValue(): bool {
@@ -28,7 +28,7 @@ struct MutableArrayIterator<Element>: Copyable {
 
     init(array: mutable Array<Element>*) {
         current = array.data();
-        end = array.data() + array.size();
+        end = &array.data()[array.size()];
     }
 
     def hasValue(): bool {

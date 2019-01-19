@@ -18,12 +18,6 @@ bool Expr::isIncrementOrDecrementExpr() const {
     return unaryExpr && (unaryExpr->getOperator() == Token::Increment || unaryExpr->getOperator() == Token::Decrement);
 }
 
-bool Expr::isPointerOffset() const {
-    auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(this);
-    return binaryExpr && binaryExpr->getLHS().getType().isPointerType() && binaryExpr->getRHS().getType().isInteger() &&
-           (binaryExpr->getOperator() == Token::Plus || binaryExpr->getOperator() == Token::Minus);
-}
-
 bool Expr::isConstant() const {
     switch (getKind()) {
         case ExprKind::VarExpr: {

@@ -82,17 +82,9 @@ The \nonterminal{pointee-type} may be mutable. Prefixing the \code{*} with
 \code{mutable} makes the \nonterminal{pointer-type} itself mutable.
 
 \begin{samepage}
-Pointer arithmetic is supported in the form of the following operations:
+Pointer arithmetic is supported as subscript operations on operands of a
+pointer-to-array type.
 
-\begin{itemize}
-\item \nonterminal{pointer} \code{+} \nonterminal{integer}
-\item \nonterminal{pointer} \code{+=} \nonterminal{integer}
-\item \nonterminal{pointer} \code{++}
-\item \nonterminal{pointer} \code{-} \nonterminal{integer}
-\item \nonterminal{pointer} \code{-=} \nonterminal{integer}
-\item \nonterminal{pointer} \code{--}
-\item \nonterminal{pointer} \code{-} \nonterminal{pointer}
-\end{itemize}
 \end{samepage}
 
 \section{Array types}
