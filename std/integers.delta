@@ -1,3 +1,30 @@
+// TODO: Convert these to static members of the corresponding integer type:
+const int_max = 2147483647;
+const int8_max = 127;
+const int16_max = 32767;
+const int32_max = 2147483647;
+const int64_max = 9223372036854775807;
+
+const int_min = -2147483648;
+const int8_min = -128;
+const int16_min = -32768;
+const int32_min = -2147483648;
+// TODO: Fix "error: integer literal is too large"
+// const int64_min = -9223372036854775808;
+
+const uint_max = 4294967295;
+const uint8_max = 255;
+const uint16_max = 65535;
+const uint32_max = 4294967295;
+// TODO: Fix "error: integer literal is too large"
+// const uint64_max = 18446744073709551615;
+
+const uint_min = 0;
+const uint8_min = 0;
+const uint16_min = 0;
+const uint32_min = 0;
+const uint64_min = 0;
+
 // TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
 // function for all integer types.
 
