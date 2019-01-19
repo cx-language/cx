@@ -725,7 +725,10 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
         return builder.CreateGEP(ptr, index);
     }
 
-    if (value->getType()->getPointerElementType()->isPointerTy()) value = load(value);
+    if (value->getType()->isPointerTy() && value->getType()->getPointerElementType()->isPointerTy() &&
+        value->getType()->getPointerElementType() == toIR(lhsType)) {
+        value = load(value);
+    }
 
     if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithUnknownSize()) {
         return builder.CreateGEP(value, codegenExpr(*expr.getIndexExpr()));
