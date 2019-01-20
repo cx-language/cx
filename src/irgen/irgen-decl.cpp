@@ -86,7 +86,15 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
 void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
     llvm::Function* function = getFunctionProto(decl);
     if (!decl.isExtern()) codegenFunctionBody(decl, *function);
-    ASSERT(!llvm::verifyFunction(*function, &llvm::errs()));
+
+#ifndef NDEBUG
+    if (llvm::verifyFunction(*function, &llvm::errs())) {
+        llvm::errs() << '\n';
+        function->print(llvm::errs(), nullptr, false, true);
+        llvm::errs() << '\n';
+        ASSERT(false && "llvm::verifyFunction failed");
+    }
+#endif
 }
 
 std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
