@@ -797,7 +797,6 @@ std::unique_ptr<Expr> Parser::parseExpr() {
 std::vector<std::unique_ptr<Expr>> Parser::parseExprList() {
     std::vector<std::unique_ptr<Expr>> exprs;
 
-    // TODO: Handle empty expression list.
     if (currentToken() == Token::Semicolon || currentToken() == Token::RightBrace) {
         return exprs;
     }
@@ -876,12 +875,11 @@ std::vector<std::unique_ptr<Stmt>> Parser::parseBlockOrStmt(Decl* parent) {
     return stmts;
 }
 
-/// defer-stmt ::= 'defer' call-expr ('\n' | ';')
+/// defer-stmt ::= 'defer' expr ('\n' | ';')
 std::unique_ptr<DeferStmt> Parser::parseDeferStmt() {
     ASSERT(currentToken() == Token::Defer);
     consumeToken();
-    // FIXME: Doesn't have to be a variable expression.
-    auto stmt = llvm::make_unique<DeferStmt>(parseCallExpr(parseVarExpr()));
+    auto stmt = llvm::make_unique<DeferStmt>(parseExpr());
     parseStmtTerminator();
     return stmt;
 }
@@ -1082,7 +1080,6 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
             consumeToken();
             auto identifier = parse(Token::Identifier);
             genericParams.back().addConstraint(BasicType::get(identifier.getString(), {}, false, identifier.getLocation()));
-            // TODO: Add support for multiple generic type constraints.
         }
 
         if (currentToken() == Token::Greater) break;

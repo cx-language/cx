@@ -135,8 +135,7 @@ Type toDelta(clang::QualType qualtype) {
         }
         case clang::Type::FunctionNoProto: {
             auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
-            // TODO: Allow passing any number of parameters of any types to a FunctionNoProtoType.
-            // Now we're just assuming the writer meant a 0-argument function type.
+            // This treats it as a zero-argument function, but really it should accept any number of arguments of any types.
             return FunctionType::get(toDelta(functionNoProtoType.getReturnType()).asImmutable(), {}, isMutable);
         }
         case clang::Type::ConstantArray: {
@@ -155,7 +154,7 @@ Type toDelta(clang::QualType qualtype) {
         case clang::Type::Enum:
             return toDelta(llvm::cast<clang::EnumType>(type).getDecl()->getIntegerType());
         case clang::Type::Vector:
-            return Type::getInt(); // FIXME: Temporary.
+            return Type::getInt(); // TODO: Handle vector types properly.
         default:
             error(SourceLocation(), "unhandled type class '", type.getTypeClassName(), "' (importing type '", qualtype.getAsString(), "')");
     }
@@ -175,9 +174,9 @@ llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDe
 }
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
-    TypeDecl typeDecl(decl.isUnion() ? TypeTag::Union : TypeTag::Struct, getRecordName(decl), {}, {}, AccessLevel::Default, *currentModule,
-                      SourceLocation());
-    typeDecl.getFields().reserve(16); // TODO: Reserve based on the field count of `decl`.
+    auto tag = decl.isUnion() ? TypeTag::Union : TypeTag::Struct;
+    TypeDecl typeDecl(tag, getRecordName(decl), {}, {}, AccessLevel::Default, *currentModule, SourceLocation());
+
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, typeDecl)) {
             typeDecl.getFields().emplace_back(std::move(*fieldDecl));
@@ -185,6 +184,7 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
             return llvm::None;
         }
     }
+
     return std::move(typeDecl);
 }
 

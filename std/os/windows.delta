@@ -4,7 +4,7 @@ extern def _set_abort_behavior(flags: uint, mask: uint): uint;
 var _CALL_REPORTFAULT = 0x2;
 
 def printStackTrace() {
-    // TODO
+    // TODO: Implement stack trace on Windows.
 }
 
 def setAbortBehavior() {

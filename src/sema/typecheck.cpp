@@ -346,7 +346,7 @@ done:
 
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->getName()] = module;
-    typecheckModule(*module, /* TODO: Pass the package manifest of `module` here. */ nullptr, importSearchPaths, frameworkSearchPaths);
+    typecheckModule(*module, nullptr, importSearchPaths, frameworkSearchPaths);
     return *module;
 }
 

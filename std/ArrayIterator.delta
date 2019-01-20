@@ -21,7 +21,6 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
     }
 }
 
-// TODO: Figure out how to get rid of this code duplication.
 struct MutableArrayIterator<Element>: Copyable {
     var current: mutable Element*;
     var end: mutable Element*;

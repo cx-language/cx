@@ -1,6 +1,5 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 // XFAIL: *
-// TODO: Implement data-flow analysis to detect this kind of out-of-bounds access at compile time.
 
 extern def foo(): int[5]*;
 

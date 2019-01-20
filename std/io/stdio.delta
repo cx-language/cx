@@ -24,10 +24,13 @@ def readLine(): String {
     var line = String();
 
     while (true) {
-        var character = getchar();
-        // TODO: handle EOF
-        if (character == '\n') { break; }
-        line.push(char(character));
+        var c = getchar();
+
+        if (c == '\n' || c < 0) {
+            break;
+        }
+
+        line.push(char(c));
     }
 
     return line;

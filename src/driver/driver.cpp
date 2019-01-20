@@ -253,8 +253,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     Typechecker typechecker(std::move(disabledWarnings));
     for (auto& importedModule : module.getImportedModules()) {
-        typechecker.typecheckModule(*importedModule, /* TODO: Pass the manifest of `*importedModule` here. */ nullptr, importSearchPaths,
-                                    frameworkSearchPaths);
+        typechecker.typecheckModule(*importedModule, nullptr, importSearchPaths, frameworkSearchPaths);
     }
     typechecker.typecheckModule(module, manifest, importSearchPaths, frameworkSearchPaths);
 
@@ -338,8 +337,6 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (msvc) {
         ccArgs.push_back("-link");
         ccArgs.push_back("-DEBUG");
-
-        // TODO: This probably won't work with pre-2015 Visual Studio.
         ccArgs.push_back("legacy_stdio_definitions.lib");
         ccArgs.push_back("ucrt.lib");
         ccArgs.push_back("msvcrt.lib");

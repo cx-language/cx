@@ -636,8 +636,7 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
             Type paramType = std::get<0>(tuple).getType();
 
             if (containsGenericParam(paramType, genericParam.getName())) {
-                // FIXME: The args will also be typechecked by validateArgs()
-                // after this function. Get rid of this duplicated typechecking.
+                // FIXME: The args will also be typechecked by validateArgs() after this function. Get rid of this duplicated typechecking.
                 auto* argValue = std::get<1>(tuple).getValue();
                 Type argType = typecheckExpr(*argValue);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
