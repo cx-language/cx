@@ -222,7 +222,7 @@ public:
                     auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl), &module);
                     if (typeDecl) {
                         // Skip redefinitions caused by different modules including the same headers.
-                        if (module.findDecls(typeDecl->getName(), nullptr, nullptr).empty()) {
+                        if (module.getSymbolTable().find(typeDecl->getName()).empty()) {
                             module.addToSymbolTable(std::move(*typeDecl));
                         }
                     }

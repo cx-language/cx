@@ -18,11 +18,11 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 typecheckType(genericArg, userAccessLevel);
             }
 
-            auto decls = getCurrentModule()->findDecls(basicType->getQualifiedName(), currentSourceFile, currentFunction);
+            auto decls = findDecls(basicType->getQualifiedName());
             Decl* decl;
 
             if (decls.empty()) {
-                auto decls = getCurrentModule()->findDecls(basicType->getName(), currentSourceFile, currentFunction);
+                auto decls = findDecls(basicType->getName());
 
                 if (decls.empty()) {
                     error(type.getLocation(), "unknown type '", type, "'");
@@ -70,9 +70,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
         case TypeKind::PointerType: {
             if (type.getPointee().isArrayWithRuntimeSize()) {
                 auto qualifiedTypeName = getQualifiedTypeName("ArrayRef", type.getPointee().getElementType());
-                if (getCurrentModule()->findDecls(qualifiedTypeName, currentSourceFile, currentFunction).empty()) {
-                    auto& arrayRefDecl = getCurrentModule()->findDecl("ArrayRef", SourceLocation(), currentSourceFile, currentFieldDecls);
-                    auto& arrayRef = llvm::cast<TypeTemplate>(arrayRefDecl);
+                if (findDecls(qualifiedTypeName).empty()) {
+                    auto& arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation()));
                     auto* instantiation = arrayRef.instantiate({ type.getPointee().getElementType() });
                     getCurrentModule()->addToSymbolTable(*instantiation);
                     declsToTypecheck.push_back(instantiation);

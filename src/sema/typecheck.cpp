@@ -274,14 +274,14 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
         return typeDecl;
     }
 
-    auto decls = getCurrentModule()->findDecls(type.getQualifiedName(), currentSourceFile, currentFunction);
+    auto decls = findDecls(type.getQualifiedName());
 
     if (!decls.empty()) {
         ASSERT(decls.size() == 1);
         return llvm::dyn_cast_or_null<TypeDecl>(decls[0]);
     }
 
-    decls = getCurrentModule()->findDecls(type.getName(), currentSourceFile, currentFunction);
+    decls = findDecls(type.getName());
     if (decls.empty()) return nullptr;
     ASSERT(decls.size() == 1);
     auto instantiation = llvm::cast<TypeTemplate>(decls[0])->instantiate(type.getGenericArgs());
@@ -430,4 +430,107 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
 
     currentModule = nullptr;
     currentSourceFile = nullptr;
+}
+
+bool Typechecker::isWarningEnabled(llvm::StringRef warning) const {
+    return !llvm::is_contained(disabledWarnings, warning);
+}
+
+template<typename ModuleContainer>
+static llvm::SmallVector<Decl*, 1> findDeclsInModules(llvm::StringRef name, const ModuleContainer& modules) {
+    llvm::SmallVector<Decl*, 1> decls;
+
+    for (auto& module : modules) {
+        llvm::ArrayRef<Decl*> matches = module->getSymbolTable().find(name);
+        decls.append(matches.begin(), matches.end());
+    }
+
+    return decls;
+}
+
+template<typename ModuleContainer>
+static Decl* findDeclInModules(llvm::StringRef name, SourceLocation location, const ModuleContainer& modules) {
+    auto decls = findDeclsInModules(name, modules);
+
+    switch (decls.size()) {
+        case 1:
+            return decls[0];
+        case 0:
+            return nullptr;
+        default:
+            error(location, "ambiguous reference to '", name, "'");
+    }
+}
+
+Decl& Typechecker::findDecl(llvm::StringRef name, SourceLocation location) const {
+    ASSERT(!name.empty());
+
+    if (Decl* match = findDeclInModules(name, location, llvm::ArrayRef(currentModule))) {
+        return *match;
+    }
+
+    for (auto& field : currentFieldDecls) {
+        if (field.first->getName() == name) {
+            return *field.first;
+        }
+    }
+
+    if (Decl* match = findDeclInModules(name, location, currentModule->getStdlibModules())) {
+        return *match;
+    }
+
+    if (currentSourceFile) {
+        if (Decl* match = findDeclInModules(name, location, currentSourceFile->getImportedModules())) {
+            return *match;
+        }
+    } else {
+        if (Decl* match = findDeclInModules(name, location, currentModule->getAllImportedModules())) {
+            return *match;
+        }
+    }
+
+    error(location, "unknown identifier '", name, "'");
+}
+
+std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl, bool inAllImportedModules) const {
+    std::vector<Decl*> decls;
+
+    if (!receiverTypeDecl && currentFunction) {
+        receiverTypeDecl = currentFunction->getTypeDecl();
+    }
+
+    if (receiverTypeDecl) {
+        for (auto& decl : receiverTypeDecl->getMemberDecls()) {
+            if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl.get())) {
+                if (functionDecl->getName() == name) {
+                    decls.emplace_back(decl.get());
+                }
+            } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl.get())) {
+                if (functionTemplate->getQualifiedName() == name) {
+                    decls.emplace_back(decl.get());
+                }
+            }
+        }
+
+        for (auto& field : receiverTypeDecl->getFields()) {
+            // TODO: Only one comparison should be needed.
+            if (field.getName() == name || field.getQualifiedName() == name) {
+                decls.emplace_back(&field);
+            }
+        }
+    }
+
+    if (currentModule->getName() != "std") {
+        append(decls, findDeclsInModules(name, llvm::ArrayRef(currentModule)));
+    }
+
+    append(decls, findDeclsInModules(name, currentModule->getStdlibModules()));
+
+    if (currentSourceFile && !inAllImportedModules) {
+        append(decls, findDeclsInModules(name, currentSourceFile->getImportedModules()));
+    } else {
+        append(decls, findDeclsInModules(name, currentModule->getAllImportedModules()));
+    }
+
+    return decls;
 }

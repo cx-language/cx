@@ -141,11 +141,6 @@ public:
     void addToSymbolTable(VarDecl&& decl);
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
 
-    Decl& findDecl(llvm::StringRef name, SourceLocation location, SourceFile* currentSourceFile,
-                   llvm::ArrayRef<std::pair<FieldDecl*, bool>> currentFieldDecls) const;
-    std::vector<Decl*> findDecls(llvm::StringRef name, SourceFile* currentSourceFile, FunctionDecl* currentFunction,
-                                 TypeDecl* receiverTypeDecl = nullptr) const;
-
     static std::vector<Module*> getAllImportedModules();
     static llvm::StringMap<std::shared_ptr<Module>>& getAllImportedModulesMap() { return allImportedModules; }
     static llvm::ArrayRef<std::shared_ptr<Module>> getStdlibModules();

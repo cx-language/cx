@@ -94,6 +94,8 @@ private:
     bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                 llvm::ArrayRef<ParamDecl> params, bool returnOnError);
+    Decl& findDecl(llvm::StringRef name, SourceLocation location) const;
+    std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false) const;
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, bool returnNullOnError = false);
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params, bool returnOnError);

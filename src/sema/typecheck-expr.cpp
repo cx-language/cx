@@ -55,7 +55,7 @@ void Typechecker::checkHasAccess(const Decl& decl, SourceLocation location, Acce
 }
 
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
-    Decl& decl = getCurrentModule()->findDecl(expr.getIdentifier(), expr.getLocation(), currentSourceFile, currentFieldDecls);
+    auto& decl = findDecl(expr.getIdentifier(), expr.getLocation());
     checkHasAccess(decl, expr.getLocation(), AccessLevel::None);
     decl.setReferenced(true);
     expr.setDecl(&decl);
@@ -345,7 +345,8 @@ static bool hasField(TypeDecl& type, const FieldDecl& field) {
 }
 
 bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
-    auto decls = getCurrentModule()->findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}), currentSourceFile, currentFunction);
+    auto decls = findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}));
+
     for (Decl* decl : decls) {
         if (!decl->isFunctionDecl()) continue;
         if (!llvm::cast<FunctionDecl>(decl)->getTypeDecl()) continue;
@@ -353,6 +354,7 @@ bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
         if (!llvm::cast<FunctionDecl>(decl)->signatureMatches(functionDecl, /* matchReceiver: */ false)) continue;
         return true;
     }
+
     return false;
 }
 
@@ -821,7 +823,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 isInitCall = true;
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 auto qualifiedName = getQualifiedFunctionName(llvm::cast<TypeDecl>(decl)->getType(), "init", {});
-                initDecls = getCurrentModule()->findDecls(qualifiedName, currentSourceFile, currentFunction);
+                initDecls = findDecls(qualifiedName);
                 ASSERT(decls.size() == 1);
                 decls = initDecls;
 
@@ -865,8 +867,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                     TypeDecl* typeDecl = nullptr;
 
-                    auto decls = getCurrentModule()->findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(), expr.getGenericArgs()),
-                                                               currentSourceFile, currentFunction);
+                    auto decls = findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(), expr.getGenericArgs()));
                     if (decls.empty()) {
                         typeDecl = typeTemplate->instantiate(genericArgs);
                         getCurrentModule()->addToSymbolTable(*typeDecl);
@@ -1000,7 +1001,7 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
         receiverTypeDecl = nullptr;
     }
 
-    return getCurrentModule()->findDecls(callee, isPostProcessing ? nullptr : currentSourceFile, currentFunction, receiverTypeDecl);
+    return findDecls(callee, receiverTypeDecl, isPostProcessing);
 }
 
 Type Typechecker::typecheckCallExpr(CallExpr& expr) {
@@ -1074,7 +1075,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
             expr.setReceiverType(initDecl->getTypeDecl()->getType());
         } else if (decl->isMethodDecl()) {
-            auto& varDecl = llvm::cast<VarDecl>(getCurrentModule()->findDecl("this", expr.getCallee().getLocation(), currentSourceFile, currentFieldDecls));
+            auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
             expr.setReceiverType(varDecl.getType());
         }
     }
@@ -1321,7 +1322,7 @@ Type Typechecker::typecheckAddressofExpr(AddressofExpr& expr) {
 
 Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr())) {
-        auto decls = getCurrentModule()->findDecls(varExpr->getIdentifier(), currentSourceFile, currentFunction);
+        auto decls = findDecls(varExpr->getIdentifier());
 
         if (!decls.empty()) {
             if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
@@ -1354,11 +1355,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
         }
     }
 
-    if (baseType.isBasicType()) {
-        Decl& typeDecl = getCurrentModule()->findDecl(baseType.getQualifiedTypeName(), expr.getBaseExpr()->getLocation(), currentSourceFile,
-                                                      currentFieldDecls);
-
-        for (auto& field : llvm::cast<TypeDecl>(typeDecl).getFields()) {
+    if (auto* typeDecl = baseType.getDecl()) {
+        for (auto& field : typeDecl->getFields()) {
             if (field.getName() == expr.getMemberName()) {
                 checkHasAccess(field, expr.getLocation(), AccessLevel::None);
 
@@ -1541,8 +1539,4 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
     }
     expr.setAssignableType(*type);
     return expr.getType();
-}
-
-bool Typechecker::isWarningEnabled(llvm::StringRef warning) const {
-    return !llvm::is_contained(disabledWarnings, warning);
 }
