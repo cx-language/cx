@@ -469,9 +469,13 @@ Decl& Typechecker::findDecl(llvm::StringRef name, SourceLocation location) const
         return *match;
     }
 
-    for (auto& field : currentFieldDecls) {
-        if (field.first->getName() == name) {
-            return *field.first;
+    if (currentFunction) {
+        if (auto* typeDecl = currentFunction->getTypeDecl()) {
+            for (auto& field : typeDecl->getFields()) {
+                if (field.getName() == name) {
+                    return field;
+                }
+            }
         }
     }
 
