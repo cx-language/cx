@@ -9,45 +9,6 @@
 
 using namespace delta;
 
-void Typechecker::markFieldAsInitialized(Expr& expr) {
-    if (currentFunction->isInitDecl()) {
-        switch (expr.getKind()) {
-            case ExprKind::VarExpr: {
-                auto* varExpr = llvm::cast<VarExpr>(&expr);
-
-                if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
-                    auto it = llvm::find_if(currentFieldDecls, [&](auto& p) { return p.first == fieldDecl; });
-
-                    if (it != currentFieldDecls.end()) {
-                        it->second = true; // Mark member variable as initialized.
-                    }
-                }
-
-                break;
-            }
-            case ExprKind::MemberExpr: {
-                auto* memberExpr = llvm::cast<MemberExpr>(&expr);
-
-                if (auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->getBaseExpr())) {
-                    if (varExpr->getIdentifier() == "this") {
-                        auto it = llvm::find_if(currentFieldDecls, [&](std::pair<FieldDecl*, bool>& p) {
-                            return p.first->getName() == memberExpr->getMemberName();
-                        });
-
-                        if (it != currentFieldDecls.end()) {
-                            it->second = true; // Mark member variable as initialized.
-                        }
-                    }
-                }
-
-                break;
-            }
-            default:
-                break;
-        }
-    }
-}
-
 static const Expr& getIfOrWhileCondition(const Stmt& ifOrWhileStmt) {
     switch (ifOrWhileStmt.getKind()) {
         case StmtKind::IfStmt:

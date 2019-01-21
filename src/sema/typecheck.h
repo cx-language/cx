@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -104,7 +105,6 @@ private:
     void validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
-    void markFieldAsInitialized(Expr& expr);
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
 
@@ -129,9 +129,9 @@ private:
     bool isWarningEnabled(llvm::StringRef warning) const;
 
 private:
+    std::function<void(Expr&)> onAssign;
     Module* currentModule;
     SourceFile* currentSourceFile;
-    std::vector<std::pair<FieldDecl*, bool>> currentFieldDecls;
     FunctionDecl* currentFunction;
     std::vector<Stmt*> currentControlStmts;
     Type functionReturnType;

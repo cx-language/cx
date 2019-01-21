@@ -10,7 +10,7 @@
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/ADT/iterator_range.h>
 #include <llvm/Support/ErrorHandling.h>
-#pragma warning(push, 0)
+#pragma warning(pop)
 #include "../ast/decl.h"
 #include "../ast/expr.h"
 #include "../ast/mangle.h"
@@ -318,7 +318,7 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, Sour
         lhs.setMoved(false);
     }
 
-    markFieldAsInitialized(lhs);
+    if (onAssign) onAssign(lhs);
 }
 
 template<int bitWidth, bool isSigned>
@@ -1359,6 +1359,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
         for (auto& field : typeDecl->getFields()) {
             if (field.getName() == expr.getMemberName()) {
                 checkHasAccess(field, expr.getLocation(), AccessLevel::None);
+                expr.setFieldDecl(field);
 
                 if (baseType.isMutable()) {
                     auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr());

@@ -386,6 +386,19 @@ std::vector<const Expr*> Expr::getSubExprs() const {
     return subExprs;
 }
 
+FieldDecl* Expr::getFieldDecl() const {
+    switch (getKind()) {
+        case ExprKind::VarExpr:
+            return llvm::dyn_cast<FieldDecl>(llvm::cast<VarExpr>(this)->getDecl());
+
+        case ExprKind::MemberExpr:
+            return llvm::cast<MemberExpr>(this)->getFieldDecl();
+
+        default:
+            return nullptr;
+    }
+}
+
 llvm::StringRef CallExpr::getFunctionName() const {
     switch (getCallee().getKind()) {
         case ExprKind::VarExpr:

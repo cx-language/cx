@@ -15,6 +15,7 @@
 namespace delta {
 
 class Decl;
+class FieldDecl;
 class FunctionDecl;
 class Module;
 
@@ -82,6 +83,7 @@ public:
     void setMoved(bool moved);
     std::unique_ptr<Expr> instantiate(const llvm::StringMap<Type>& genericArgs) const;
     std::vector<const Expr*> getSubExprs() const;
+    FieldDecl* getFieldDecl() const;
 
 protected:
     Expr(ExprKind kind, SourceLocation location) : kind(kind), location(location) {}
@@ -335,11 +337,14 @@ public:
     const Expr* getBaseExpr() const { return base.get(); }
     Expr* getBaseExpr() { return base.get(); }
     llvm::StringRef getMemberName() const { return member; }
+    FieldDecl* getFieldDecl() const { return fieldDecl; }
+    void setFieldDecl(FieldDecl& decl) { fieldDecl = &decl; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::MemberExpr; }
 
 private:
     std::unique_ptr<Expr> base;
     std::string member;
+    FieldDecl* fieldDecl;
 };
 
 /// An array element access expression using the element's index in brackets, e.g. 'array[index]'.

@@ -1,4 +1,7 @@
 #include "typecheck.h"
+#pragma warning(push, 0)
+#include <llvm/ADT/SmallPtrSet.h>
+#pragma warning(pop)
 #include "c-import.h"
 #include "../ast/module.h"
 
@@ -158,12 +161,12 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (!decl.isExtern()) {
         SAVE_STATE(functionReturnType);
         functionReturnType = decl.getReturnType();
-        SAVE_STATE(currentFieldDecls);
-        if (receiverTypeDecl) {
-            for (auto& field : receiverTypeDecl->getFields()) {
-                currentFieldDecls.emplace_back(&field, false);
-            }
 
+        llvm::SmallPtrSet<FieldDecl*, 32> initializedFields;
+        SAVE_STATE(onAssign);
+        onAssign = [&](Expr& lhs) { initializedFields.insert(lhs.getFieldDecl()); };
+
+        if (receiverTypeDecl) {
             Type thisType = receiverTypeDecl->getTypeForPassing(decl.isMutating());
             getCurrentModule()->addToSymbolTable(VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *getCurrentModule(), decl.getLocation()));
         }
@@ -189,10 +192,9 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         }
 
         if (decl.isInitDecl() && !delegatedInit) {
-            for (auto& fieldAndInitialized : currentFieldDecls) {
-                if (!fieldAndInitialized.second) {
-                    warning(decl.getLocation(), "initializer doesn't initialize member variable '", fieldAndInitialized.first->getName(),
-                            "'");
+            for (auto& field : decl.getTypeDecl()->getFields()) {
+                if (initializedFields.count(&field) == 0) {
+                    warning(decl.getLocation(), "initializer doesn't initialize member variable '", field.getName(), "'");
                 }
             }
         }
