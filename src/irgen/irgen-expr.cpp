@@ -69,13 +69,6 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
-    auto pointeeType = expr.getType().getWrappedType().getPointee();
-
-    if (pointeeType.isArrayWithUnknownSize()) {
-        auto* pointerType = toIR(pointeeType.getElementType())->getPointerTo();
-        return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(pointerType));
-    }
-
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
 }
 
@@ -730,7 +723,7 @@ llvm::Value* IRGenerator::codegenLvalueSubscriptExpr(const SubscriptExpr& expr) 
         value = load(value);
     }
 
-    if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithUnknownSize()) {
+    if (lhsType.isPointerToUnsizedArrayType()) {
         return builder.CreateGEP(value, codegenExpr(*expr.getIndexExpr()));
     }
 

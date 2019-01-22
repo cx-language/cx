@@ -146,7 +146,8 @@ Type toDelta(clang::QualType qualtype) {
             return ArrayType::get(toDelta(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue(), isMutable);
         }
         case clang::Type::IncompleteArray:
-            return ArrayType::get(toDelta(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::unknownSize);
+            // TODO: Should this be an ArrayType?
+            return PointerToUnsizedArrayType::get(toDelta(llvm::cast<clang::IncompleteArrayType>(type).getElementType()));
         case clang::Type::Attributed:
             return toDelta(llvm::cast<clang::AttributedType>(type).getEquivalentType());
         case clang::Type::Decayed:

@@ -63,17 +63,11 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type) {
             break;
         case TypeKind::ArrayType:
             stream << 'A';
-            switch (type.getArraySize()) {
-                case ArrayType::runtimeSize:
-                    stream << 'R';
-                    break;
-                case ArrayType::unknownSize:
-                    stream << 'U';
-                    break;
-                default:
-                    ASSERT(type.getArraySize() > 0);
-                    stream << type.getArraySize();
-                    break;
+            if (type.getArraySize() == ArrayType::runtimeSize) {
+                stream << 'R';
+            } else {
+                ASSERT(type.getArraySize() > 0);
+                stream << type.getArraySize();
             }
             stream << '_';
             mangleType(stream, type.getElementType());
@@ -96,6 +90,10 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type) {
         case TypeKind::PointerType:
             stream << 'P';
             mangleType(stream, type.getPointee());
+            break;
+        case TypeKind::PointerToUnsizedArrayType:
+            stream << 'U';
+            mangleType(stream, type.getElementType());
             break;
         case TypeKind::OptionalType:
             stream << 'O';

@@ -108,6 +108,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
         case TypeKind::ArrayType:
             ASSERT(type.isArrayWithConstantSize(), "unimplemented");
             return llvm::ArrayType::get(toIR(type.getElementType(), location), type.getArraySize());
+
         case TypeKind::TupleType: {
             auto elementTypes = map(type.getTupleElements(), [&](const TupleElement& element) { return toIR(element.type); });
             return llvm::StructType::get(ctx, elementTypes);
@@ -120,13 +121,13 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
         case TypeKind::PointerType: {
             if (type.getPointee().isArrayWithRuntimeSize()) {
                 return toIR(BasicType::get("ArrayRef", type.getPointee().getElementType()), location);
-            } else if (type.getPointee().isArrayWithUnknownSize()) {
-                return llvm::PointerType::get(toIR(type.getPointee().getElementType(), location), 0);
             }
-
             auto* pointeeType = toIR(type.getPointee(), location);
             return llvm::PointerType::get(pointeeType->isVoidTy() ? llvm::Type::getInt8Ty(ctx) : pointeeType, 0);
         }
+        case TypeKind::PointerToUnsizedArrayType:
+            return llvm::PointerType::get(toIR(type.getUnsizedArrayElementType()), 0);
+
         case TypeKind::OptionalType:
             if (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType()) {
                 return toIR(type.getWrappedType());

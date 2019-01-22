@@ -161,15 +161,15 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     }
 
     if (expr.getOperator() == Token::Star) { // Dereference operation
-        if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
+        if (operandType.isOptionalType() && operandType.getWrappedType().isAnyPointerType()) {
             warning(expr.getLocation(), "dereferencing value of optional type '", operandType,
                     "' which may be null; unwrap the value with a postfix '!' to silence this "
                     "warning");
             operandType = operandType.getWrappedType();
-        } else if (!operandType.isPointerType()) {
+        } else if (!operandType.isAnyPointerType()) {
             error(expr.getLocation(), "cannot dereference non-pointer type '", operandType, "'");
         }
-        return operandType.getPointee().removeArrayWithUnknownSize();
+        return operandType.getAnyPointerPointee();
     }
 
     if (expr.getOperator() == Token::And) { // Address-of operation
@@ -180,8 +180,8 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         if (!operandType.isMutable()) {
             error(expr.getLocation(), "cannot increment immutable value of type '", operandType, "'");
         }
-        if (operandType.isPointerType() && !operandType.getPointee().isArrayWithUnknownSize()) {
-            auto expectedType = PointerType::get(ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().isMutable()));
+        if (operandType.isPointerType()) {
+            auto expectedType = PointerToUnsizedArrayType::get(operandType.getPointee());
             error(expr.getLocation(), "cannot increment '", operandType, "', should be '", expectedType, "'");
         }
         // TODO: check that operand supports increment operation.
@@ -192,8 +192,8 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         if (!operandType.isMutable()) {
             error(expr.getLocation(), "cannot decrement immutable value of type '", operandType, "'");
         }
-        if (operandType.isPointerType() && !operandType.getPointee().isArrayWithUnknownSize()) {
-            auto expectedType = PointerType::get(ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().isMutable()));
+        if (operandType.isPointerType()) {
+            auto expectedType = PointerToUnsizedArrayType::get(operandType.getPointee());
             error(expr.getLocation(), "cannot decrement '", operandType, "', should be '", expectedType, "'");
         }
         // TODO: check that operand supports decrement operation.
@@ -271,12 +271,12 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op) {
     }
 
     if (op == Token::PointerEqual || op == Token::PointerNotEqual) {
-        if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
+        if (!leftType.removeOptional().isAnyPointerType() || !rightType.removeOptional().isAnyPointerType()) {
             error(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
         }
 
-        auto leftPointeeType = leftType.removeOptional().removePointer().removeArrayWithUnknownSize();
-        auto rightPointeeType = rightType.removeOptional().removePointer().removeArrayWithUnknownSize();
+        auto leftPointeeType = leftType.removeOptional().removeAnyPointer();
+        auto rightPointeeType = rightType.removeOptional().removeAnyPointer();
 
         if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
             warning(expr.getLocation(), "pointers to different types are not allowed to be equal (got '", leftType, "' and '", rightType,
@@ -443,6 +443,12 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                 return true;
             }
             break;
+        case TypeKind::PointerToUnsizedArrayType:
+            if (target.isPointerToUnsizedArrayType() && (source.getUnsizedArrayElementType().isMutable() || !target.getUnsizedArrayElementType().isMutable()) &&
+                (isImplicitlyConvertible(nullptr, source.getUnsizedArrayElementType(), target.getUnsizedArrayElementType(), nullptr))) {
+                return true;
+            }
+            break;
         case TypeKind::OptionalType:
             if (target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable()) &&
                 isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), nullptr)) {
@@ -520,8 +526,6 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                isImplicitlyConvertible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee(), nullptr)) {
         if (convertedType) *convertedType = source;
         return true;
-    } else if (source.isPointerType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayWithUnknownSize()) {
-        return true;
     } else if (source.isTupleType() && target.removePointer().isTupleType()) {
         target = target.removePointer();
         auto* tupleExpr = llvm::dyn_cast_or_null<TupleExpr>(expr);
@@ -578,6 +582,9 @@ static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
         case TypeKind::PointerType:
             return containsGenericParam(type.getPointee(), genericParam);
 
+        case TypeKind::PointerToUnsizedArrayType:
+            return containsGenericParam(type.getUnsizedArrayElementType(), genericParam);
+
         case TypeKind::OptionalType:
             return containsGenericParam(type.getWrappedType(), genericParam);
     }
@@ -625,6 +632,12 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
         case TypeKind::PointerType:
             if (paramType.isPointerType()) {
                 return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
+            }
+            break;
+
+        case TypeKind::PointerToUnsizedArrayType:
+            if (paramType.isPointerToUnsizedArrayType()) {
+                return findGenericArg(argType.getUnsizedArrayElementType(), paramType.getUnsizedArrayElementType(), genericParam);
             }
             break;
 
@@ -1278,11 +1291,12 @@ static bool isValidCast(Type sourceType, Type targetType) {
         case TypeKind::FunctionType:
             return false;
 
-        case TypeKind::PointerType: {
-            Type sourcePointee = sourceType.getPointee();
+        case TypeKind::PointerType:
+        case TypeKind::PointerToUnsizedArrayType: {
+            Type sourcePointee = sourceType.getAnyPointerPointee();
 
-            if (targetType.isPointerType()) {
-                Type targetPointee = targetType.getPointee();
+            if (targetType.isAnyPointerType()) {
+                Type targetPointee = targetType.getAnyPointerPointee();
 
                 if (sourcePointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
                     return true; // (mutable) void* -> T* / mutable void* -> mutable T*
@@ -1413,6 +1427,8 @@ Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
         arrayType = lhsType;
     } else if (lhsType.isPointerType() && lhsType.getPointee().isArrayType()) {
         arrayType = lhsType.getPointee();
+    } else if (lhsType.isPointerToUnsizedArrayType()) {
+        arrayType = lhsType.getUnsizedArrayElementType();
     } else if (lhsType.removePointer().isBuiltinType()) {
         error(expr.getLocation(), "'", lhsType, "' doesn't provide a subscript operator");
     } else {

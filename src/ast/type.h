@@ -25,6 +25,7 @@ enum class TypeKind {
     TupleType,
     FunctionType,
     PointerType,
+    PointerToUnsizedArrayType,
     OptionalType,
 };
 
@@ -59,14 +60,16 @@ public:
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
+    bool isPointerToUnsizedArrayType() const { return getKind() == TypeKind::PointerToUnsizedArrayType; }
     bool isOptionalType() const { return getKind() == TypeKind::OptionalType; }
     bool isBuiltinType() const {
         return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType() || isNull() || isVoid();
     }
+    bool isAnyPointerType() const { return isPointerType() || isPointerToUnsizedArrayType(); }
+    Type getAnyPointerPointee() const { return isPointerType() ? getPointee() : getUnsizedArrayElementType(); }
     bool isImplicitlyCopyable() const;
     bool isArrayWithConstantSize() const;
     bool isArrayWithRuntimeSize() const;
-    bool isArrayWithUnknownSize() const;
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
@@ -100,8 +103,8 @@ public:
     Type asMutable(bool isMutable = true) const { return Type(typeBase, isMutable, location); }
     Type asImmutable() const { return asMutable(false); }
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
+    Type removeAnyPointer() const { return isAnyPointerType() ? getAnyPointerPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
-    Type removeArrayWithUnknownSize() const { return isArrayWithUnknownSize() ? getElementType() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     TypeDecl* getDecl() const;
     DeinitDecl* getDeinitializer() const;
@@ -118,6 +121,7 @@ public:
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
     Type getPointee() const;
+    Type getUnsizedArrayElementType() const;
     Type getWrappedType() const;
 
     static Type getVoid(bool isMutable = false, SourceLocation location = SourceLocation());
@@ -181,10 +185,8 @@ public:
     Type getElementType() const { return elementType; }
     int64_t getSize() const { return size; }
     bool hasRuntimeSize() const { return size == runtimeSize; }
-    bool hasUnknownSize() const { return size == unknownSize; }
     static Type getIndexType() { return Type::getInt(); }
     static const int64_t runtimeSize = -1;
-    static const int64_t unknownSize = -2;
     static Type get(Type type, int64_t size, bool isMutable = false, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
 
@@ -194,8 +196,7 @@ private:
 private:
     Type elementType;
     int64_t size; ///< Equal to ArrayType::runtimeSize if values of this type know their size at
-                  ///< runtime (i.e. this is an ArrayRef), or ArrayType::unknownSize if values of
-                  /// this type never know their size.
+                  ///< runtime (i.e. this is an ArrayRef).
 };
 
 class TupleElement {
@@ -247,6 +248,19 @@ private:
 
 private:
     Type pointeeType;
+};
+
+class PointerToUnsizedArrayType : public TypeBase {
+public:
+    Type getElementType() const { return elementType; }
+    static Type get(Type elementType, bool isMutable = false, SourceLocation location = SourceLocation());
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PointerToUnsizedArrayType; }
+
+private:
+    PointerToUnsizedArrayType(Type elementType) : TypeBase(TypeKind::PointerToUnsizedArrayType), elementType(elementType) {}
+
+private:
+    Type elementType;
 };
 
 class OptionalType : public TypeBase {

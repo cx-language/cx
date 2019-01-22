@@ -101,7 +101,6 @@ private:
     std::unique_ptr<TupleExpr> parseTupleLiteral();
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<Type> parseGenericArgumentList();
-    int64_t parseArraySizeInBrackets();
     Type parseSimpleType(bool isMutable);
     Type parseTupleType();
     Type parseFunctionType();

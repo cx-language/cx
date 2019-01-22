@@ -50,8 +50,8 @@ bool Type::isImplicitlyCopyable() const {
             return llvm::all_of(llvm::cast<TupleType>(typeBase)->getElements(),
                                 [&](auto& element) { return element.type.isImplicitlyCopyable(); });
         case TypeKind::FunctionType:
-            return true;
         case TypeKind::PointerType:
+        case TypeKind::PointerToUnsizedArrayType:
             return true;
         case TypeKind::OptionalType:
             return getWrappedType().isImplicitlyCopyable();
@@ -65,10 +65,6 @@ bool Type::isArrayWithConstantSize() const {
 
 bool Type::isArrayWithRuntimeSize() const {
     return isArrayType() && getArraySize() == ArrayType::runtimeSize;
-}
-
-bool Type::isArrayWithUnknownSize() const {
-    return isArrayType() && getArraySize() == ArrayType::unknownSize;
 }
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
@@ -117,6 +113,9 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
         }
         case TypeKind::PointerType:
             return PointerType::get(getPointee().resolve(replacements), isMutable(), location);
+        case TypeKind::PointerToUnsizedArrayType: {
+            return PointerToUnsizedArrayType::get(getUnsizedArrayElementType().resolve(replacements), isMutable(), location);
+        }
         case TypeKind::OptionalType:
             return OptionalType::get(getWrappedType().resolve(replacements), isMutable(), location);
     }
@@ -129,6 +128,7 @@ std::vector<std::unique_ptr<ArrayType>> arrayTypes;
 std::vector<std::unique_ptr<TupleType>> tupleTypes;
 std::vector<std::unique_ptr<FunctionType>> functionTypes;
 std::vector<std::unique_ptr<PointerType>> ptrTypes;
+std::vector<std::unique_ptr<PointerToUnsizedArrayType>> ptrToUnsizedArrayTypes;
 std::vector<std::unique_ptr<OptionalType>> optionalTypes;
 } // namespace
 
@@ -157,6 +157,10 @@ Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isM
 
 Type PointerType::get(Type pointeeType, bool isMutable, SourceLocation location) {
     FETCH_AND_RETURN_TYPE(PointerType, ptrTypes, t->getPointeeType() == pointeeType, pointeeType);
+}
+
+Type PointerToUnsizedArrayType::get(Type elementType, bool isMutable, SourceLocation location) {
+    FETCH_AND_RETURN_TYPE(PointerToUnsizedArrayType, ptrToUnsizedArrayTypes, t->getElementType() == elementType, elementType);
 }
 
 Type OptionalType::get(Type wrappedType, bool isMutable, SourceLocation location) {
@@ -271,6 +275,10 @@ Type Type::getPointee() const {
     return llvm::cast<PointerType>(typeBase)->getPointeeType().withLocation(location);
 }
 
+Type Type::getUnsizedArrayElementType() const {
+    return llvm::cast<PointerToUnsizedArrayType>(typeBase)->getElementType().withLocation(location);
+}
+
 Type Type::getWrappedType() const {
     return llvm::cast<OptionalType>(typeBase)->getWrappedType().withLocation(location);
 }
@@ -292,6 +300,8 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
             return other.isFunctionType() && getReturnType() == other.getReturnType() && getParamTypes() == other.getParamTypes();
         case TypeKind::PointerType:
             return other.isPointerType() && getPointee() == other.getPointee();
+        case TypeKind::PointerToUnsizedArrayType:
+            return other.isPointerToUnsizedArrayType() && getUnsizedArrayElementType() == other.getUnsizedArrayElementType();
         case TypeKind::OptionalType:
             return other.isOptionalType() && getWrappedType() == other.getWrappedType();
     }
@@ -333,15 +343,8 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
         case TypeKind::ArrayType:
             getElementType().printTo(stream, omitTopLevelMutable);
             stream << "[";
-            switch (getArraySize()) {
-                case ArrayType::runtimeSize:
-                    break;
-                case ArrayType::unknownSize:
-                    stream << "?";
-                    break;
-                default:
-                    stream << getArraySize();
-                    break;
+            if (getArraySize() != ArrayType::runtimeSize) {
+                stream << getArraySize();
             }
             stream << "]";
             break;
@@ -368,13 +371,17 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
                 stream << '(';
             }
             getPointee().printTo(stream, false);
-            if (isMutable() && !omitTopLevelMutable) {
-                stream << " mutable";
-            }
             if (getPointee().isFunctionType()) {
                 stream << ')';
             }
+            if (isMutable() && !omitTopLevelMutable) {
+                stream << " mutable";
+            }
             stream << '*';
+            break;
+        case TypeKind::PointerToUnsizedArrayType:
+            getUnsizedArrayElementType().printTo(stream, false);
+            stream << "[?]*";
             break;
         case TypeKind::OptionalType:
             if (getWrappedType().isFunctionType()) {

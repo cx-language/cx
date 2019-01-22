@@ -84,6 +84,9 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
             }
             break;
         }
+        case TypeKind::PointerToUnsizedArrayType:
+            typecheckType(type.getUnsizedArrayElementType(), userAccessLevel);
+            break;
         case TypeKind::OptionalType:
             typecheckType(type.getWrappedType(), userAccessLevel);
             break;

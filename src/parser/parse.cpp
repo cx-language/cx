@@ -370,46 +370,16 @@ std::vector<Type> Parser::parseGenericArgumentList() {
     return genericArgs;
 }
 
-int64_t Parser::parseArraySizeInBrackets() {
-    ASSERT(currentToken() == Token::LeftBracket);
-    consumeToken();
-    int64_t arraySize;
-
-    switch (currentToken()) {
-        case Token::IntegerLiteral:
-            arraySize = consumeToken().getIntegerValue().getExtValue();
-            break;
-        case Token::RightBracket:
-            arraySize = ArrayType::runtimeSize;
-            break;
-        case Token::QuestionMark:
-            consumeToken();
-            arraySize = ArrayType::unknownSize;
-            break;
-        default:
-            error(getCurrentLocation(), "non-literal array bounds not implemented yet");
-    }
-
-    parse(Token::RightBracket);
-    return arraySize;
-}
-
-/// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
+/// simple-type ::= id | id generic-argument-list
 Type Parser::parseSimpleType(bool isMutable) {
     auto identifier = parse(Token::Identifier);
     std::vector<Type> genericArgs;
 
-    switch (currentToken()) {
-        case Token::Less:
-            genericArgs = parseGenericArgumentList();
-            LLVM_FALLTHROUGH;
-        default:
-            return BasicType::get(identifier.getString(), std::move(genericArgs), isMutable, identifier.getLocation());
-        case Token::LeftBracket:
-            auto bracketLocation = getCurrentLocation();
-            Type elementType = BasicType::get(identifier.getString(), {}, isMutable, identifier.getLocation());
-            return ArrayType::get(elementType, parseArraySizeInBrackets(), false, bracketLocation);
+    if (currentToken() == Token::Less) {
+        genericArgs = parseGenericArgumentList();
     }
+
+    return BasicType::get(identifier.getString(), std::move(genericArgs), isMutable, identifier.getLocation());
 }
 
 /// tuple-type ::= '(' tuple-type-elements ')'
@@ -505,7 +475,28 @@ Type Parser::parseType() {
                 }
                 break;
             case Token::LeftBracket:
-                type = ArrayType::get(type, parseArraySizeInBrackets(), type.isMutable(), getCurrentLocation());
+                consumeToken();
+                if (currentToken() == Token::QuestionMark) {
+                    consumeToken();
+                    parse(Token::RightBracket);
+                    type = PointerToUnsizedArrayType::get(type, type.isMutable(), getCurrentLocation());
+                } else {
+                    int64_t arraySize;
+
+                    switch (currentToken()) {
+                        case Token::IntegerLiteral:
+                            arraySize = consumeToken().getIntegerValue().getExtValue();
+                            break;
+                        case Token::RightBracket:
+                            arraySize = ArrayType::runtimeSize;
+                            break;
+                        default:
+                            error(getCurrentLocation(), "non-literal array bounds not implemented yet");
+                    }
+
+                    parse(Token::RightBracket);
+                    type = ArrayType::get(type, arraySize, type.isMutable(), getCurrentLocation());
+                }
                 break;
             case Token::And:
                 error(getCurrentLocation(), "Delta doesn't have C++-style references; ",
