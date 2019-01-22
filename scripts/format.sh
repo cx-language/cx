@@ -2,8 +2,23 @@
 
 set -o pipefail
 
-BUILD_PATH="$1"
+ROOTDIR=$(cd "$(dirname "$0")/.."; pwd)
+FILES=$(echo $ROOTDIR/src/**/*.{h,cpp})
 CLANG_TOOLS_VERSION=7.0.0
+
+while test $# -gt 0; do
+    case "$1" in
+        --check) CHECK=1
+            ;;
+        --skip-clang-tidy) SKIP_CLANG_TIDY=1
+            ;;
+        --*) echo "bad option $1"
+            ;;
+        *) BUILD_PATH="$1"
+            ;;
+    esac
+    shift
+done
 
 check_version() {
     if ! $1 --version | grep --quiet $CLANG_TOOLS_VERSION; then
@@ -26,10 +41,7 @@ run_clang_format() {
 check_version clang-format
 check_version clang-tidy
 
-ROOTDIR=$(cd "$(dirname "$0")/.."; pwd)
-FILES=$(echo $ROOTDIR/src/**/*.{h,cpp})
-
-if [ "$2" = "--check" ]; then
+if [ -n "$CHECK" ]; then
     run_clang_tidy && run_clang_format
 
     if [ $? -ne 0 ]; then
