@@ -11,6 +11,8 @@
 
 using namespace delta;
 
+static std::vector<std::unique_ptr<TypeBase>> typeBases;
+
 #define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
     Type Type::get##TYPE(bool isMutable, SourceLocation location) { \
         static BasicType type(#NAME, /*genericArgs*/ {}); \
@@ -123,47 +125,44 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
     llvm_unreachable("all cases handled");
 }
 
-namespace {
-std::vector<std::unique_ptr<BasicType>> basicTypes;
-std::vector<std::unique_ptr<ArrayType>> arrayTypes;
-std::vector<std::unique_ptr<TupleType>> tupleTypes;
-std::vector<std::unique_ptr<FunctionType>> functionTypes;
-std::vector<std::unique_ptr<PointerType>> ptrTypes;
-std::vector<std::unique_ptr<OptionalType>> optionalTypes;
-} // namespace
+template<typename T>
+static Type getType(T&& typeBase, bool isMutable, SourceLocation location) {
+    Type newType(&typeBase, isMutable, location);
 
-#define FETCH_AND_RETURN_TYPE(TYPE, CACHE, EQUALS, ...) \
-    auto it = llvm::find_if(CACHE, [&](const std::unique_ptr<TYPE>& t) { return EQUALS; }); \
-    if (it != CACHE.end()) return Type(it->get(), isMutable, location); \
-    CACHE.emplace_back(new TYPE(__VA_ARGS__)); \
-    return Type(CACHE.back().get(), isMutable, location);
+    for (auto& existingTypeBase : typeBases) {
+        Type existingType(&*existingTypeBase, isMutable, location);
+        if (existingType.equalsIgnoreTopLevelMutable(newType)) {
+            return existingType;
+        }
+    }
+
+    typeBases.push_back(llvm::make_unique<T>(std::forward<T>(typeBase)));
+    return Type(&*typeBases.back(), isMutable, location);
+}
 
 Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(BasicType, basicTypes, t->getName() == name && t->getGenericArgs() == genericArgs, name, genericArgs);
+    return getType(BasicType(name, genericArgs), isMutable, location);
 }
 
 Type ArrayType::get(Type elementType, int64_t size, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(ArrayType, arrayTypes, t->getElementType() == elementType && t->getSize() == size, elementType, size);
+    return getType(ArrayType(elementType, size), isMutable, location);
 }
 
 Type TupleType::get(std::vector<TupleElement>&& elements, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(TupleType, tupleTypes, t->getElements() == llvm::makeArrayRef(elements), std::move(elements));
+    return getType(TupleType(std::move(elements)), isMutable, location);
 }
 
 Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(FunctionType, functionTypes, t->getReturnType() == returnType && t->getParamTypes() == llvm::makeArrayRef(paramTypes),
-                          returnType, std::move(paramTypes));
+    return getType(FunctionType(returnType, std::move(paramTypes)), isMutable, location);
 }
 
 Type PointerType::get(Type pointeeType, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(PointerType, ptrTypes, t->getPointeeType() == pointeeType, pointeeType);
+    return getType(PointerType(pointeeType), isMutable, location);
 }
 
 Type OptionalType::get(Type wrappedType, bool isMutable, SourceLocation location) {
-    FETCH_AND_RETURN_TYPE(OptionalType, optionalTypes, t->getWrappedType() == wrappedType, wrappedType);
+    return getType(OptionalType(wrappedType), isMutable, location);
 }
-
-#undef FETCH_AND_RETURN_TYPE
 
 bool delta::operator==(const TupleElement& a, const TupleElement& b) {
     return a.name == b.name && a.type == b.type;
