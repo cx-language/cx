@@ -36,24 +36,24 @@ def sort<E: Comparable>(array: mutable Array<E>*) {
 
 private def partition<E: Comparable>(arr: mutable Array<E>*, low: int, high: int): int {
     var pivot = arr[high];
-    var i = (low - 1);
+    var i = low - 1;
 
     for (var j in low..high) {
         if (arr[j] < pivot) {
             i++;
-            swap<E>(arr[i], arr[j]);
+            swap(arr[i], arr[j]);
         }
     }
     if (arr[high] < arr[i+1]) {
-        swap<E>(arr[i + 1], arr[high]);
+        swap(arr[i + 1], arr[high]);
     }
-    return (i + 1);
+    return i + 1;
 }
 
 /// Quicksorts the given array, in place. Not stable.
 private def quickSort<E: Comparable>(arr: mutable Array<E>*, low: int, high: int) {
     if (low < high) {
-        var index = partition<E>(arr, low, high);
+        var index = partition(arr, low, high);
 
         if (low < index) {
             quickSort(arr, low, index - 1);
