@@ -159,6 +159,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         }
         return Type::getBool();
     }
+
     if (expr.getOperator() == Token::Star) { // Dereference operation
         if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
             warning(expr.getLocation(), "dereferencing value of optional type '", operandType,
@@ -168,25 +169,37 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         } else if (!operandType.isPointerType()) {
             error(expr.getLocation(), "cannot dereference non-pointer type '", operandType, "'");
         }
-        return operandType.getPointee();
+        return operandType.getPointee().removeArrayWithUnknownSize();
     }
+
     if (expr.getOperator() == Token::And) { // Address-of operation
         return PointerType::get(operandType);
     }
+
     if (expr.getOperator() == Token::Increment) {
         if (!operandType.isMutable()) {
             error(expr.getLocation(), "cannot increment immutable value of type '", operandType, "'");
         }
+        if (operandType.isPointerType() && !operandType.getPointee().isArrayWithUnknownSize()) {
+            auto expectedType = PointerType::get(ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().isMutable()));
+            error(expr.getLocation(), "cannot increment '", operandType, "', should be '", expectedType, "'");
+        }
         // TODO: check that operand supports increment operation.
         return Type::getVoid();
     }
+
     if (expr.getOperator() == Token::Decrement) {
         if (!operandType.isMutable()) {
             error(expr.getLocation(), "cannot decrement immutable value of type '", operandType, "'");
         }
+        if (operandType.isPointerType() && !operandType.getPointee().isArrayWithUnknownSize()) {
+            auto expectedType = PointerType::get(ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().isMutable()));
+            error(expr.getLocation(), "cannot decrement '", operandType, "', should be '", expectedType, "'");
+        }
         // TODO: check that operand supports decrement operation.
         return Type::getVoid();
     }
+
     return operandType;
 }
 
@@ -261,8 +274,13 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op) {
         if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
             error(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
         }
-        if (!leftType.removeOptional().removePointer().equalsIgnoreTopLevelMutable(rightType.removeOptional().removePointer())) {
-            warning(expr.getLocation(), "pointers to different types are not allowed to be equal");
+
+        auto leftPointeeType = leftType.removeOptional().removePointer().removeArrayWithUnknownSize();
+        auto rightPointeeType = rightType.removeOptional().removePointer().removeArrayWithUnknownSize();
+
+        if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
+            warning(expr.getLocation(), "pointers to different types are not allowed to be equal (got '", leftType, "' and '", rightType,
+                    "')");
         }
     }
 

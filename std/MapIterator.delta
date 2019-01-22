@@ -1,6 +1,6 @@
 struct MapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Value)*> {
     var hashTableIterator: ArrayIterator<Array<(key: Key, value: Value)>>;
-    var current: (key: Key, value: Value)*;
+    var current: (key: Key, value: Value)[?]*;
 
     init(map: Map<Key, Value>*) {
         hashTableIterator = map.hashTable.iterator();

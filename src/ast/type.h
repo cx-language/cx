@@ -101,6 +101,7 @@ public:
     Type asImmutable() const { return asMutable(false); }
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
+    Type removeArrayWithUnknownSize() const { return isArrayWithUnknownSize() ? getElementType() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     TypeDecl* getDecl() const;
     DeinitDecl* getDeinitializer() const;

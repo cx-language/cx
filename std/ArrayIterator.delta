@@ -1,6 +1,6 @@
 struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
-    var current: Element*;
-    var end: Element*;
+    var current: Element[?]*;
+    var end: Element[?]*;
 
     // TODO: Fix bug that prevents writing 'Element[]*' here.
     init(array: ArrayRef<Element>) {
@@ -22,8 +22,8 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
 }
 
 struct MutableArrayIterator<Element>: Copyable {
-    var current: mutable Element*;
-    var end: mutable Element*;
+    var current: mutable Element[?]*;
+    var end: mutable Element[?]*;
 
     init(array: mutable Array<Element>*) {
         current = array.data();
