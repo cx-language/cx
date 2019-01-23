@@ -215,7 +215,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map
-    def find(key: Key*): (key: Key, value: Value)*? {
+    def find(key: Key*): (key: Key, value: mutable Value)*? {
         var node = findNode(key);
         if (node != null) {
             return node.entry;
@@ -365,7 +365,7 @@ struct OrderedMap<Key, Value> {
 
 /// One node in the AVL tree
 struct AVLnode<Key, Value> {
-    var entry: (key: Key, value: Value);
+    var entry: (key: Key, value: mutable Value);
     var balance: int;
     var parent: mutable AVLnode<Key, Value>*?;
     var left: mutable AVLnode<Key, Value>*?;

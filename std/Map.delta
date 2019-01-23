@@ -1,11 +1,11 @@
 struct Map<Key: Hashable, Value> {
-    var hashTable: Array<Array<(key: Key, value: Value)>>;
+    var hashTable: Array<Array<(key: Key, value: mutable Value)>>;
     var size: int;
 
     /// Initializes an empty map
     init() {
         size = 0;
-        hashTable = Array<Array<(key: Key, value: Value)>>();
+        hashTable = Array<Array<(key: Key, value: mutable Value)>>();
         increaseTableSize(hashTable, 128);
     }
 
@@ -55,9 +55,9 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Expands the hash table size, needed when there's too many elements in the map
-    mutating def increaseTableSize(newTable: mutable Array<Array<(key: Key, value: Value)>>*, newCapacity: int) {
+    mutating def increaseTableSize(newTable: mutable Array<Array<(key: Key, value: mutable Value)>>*, newCapacity: int) {
         for (var i in 0..newCapacity) {
-            newTable.push(Array<(key: Key, value: Value)>());
+            newTable.push(Array<(key: Key, value: mutable Value)>());
         }
     }
 
@@ -71,7 +71,7 @@ struct Map<Key: Hashable, Value> {
 
     /// Resizes the map. This includes copying the old table into a new, bigger one
     mutating def resize() {
-        var newTable = Array<Array<(key: Key, value: Value)>>();
+        var newTable = Array<Array<(key: Key, value: mutable Value)>>();
         var newCapacity = capacity() * 2;
 
         increaseTableSize(newTable, newCapacity);

@@ -1,4 +1,4 @@
-struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Value)*> {
+struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: mutable Value)*> {
     var current: AVLnode<Key, Value>*?;
     var map: OrderedMap<Key, Value>*;
 
@@ -11,7 +11,7 @@ struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: Valu
         return current != null;
     }
 
-    def value(): (key: Key, value: Value)* {
+    def value(): (key: Key, value: mutable Value)* {
         return current!.entry;
     }
 

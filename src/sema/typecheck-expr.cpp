@@ -527,7 +527,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
     }
 
-    if (source.isBasicType() && target.removeOptional().isPointerType() &&
+    if (source.isBasicType() && target.removeOptional().isPointerType() && (source.isMutable() || !target.removeOptional().getPointee().isMutable()) &&
         isImplicitlyConvertible(expr, source, target.removeOptional().getPointee(), nullptr)) {
         if (convertedType) *convertedType = source;
         return true;
