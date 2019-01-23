@@ -38,12 +38,20 @@ enable_testing()
 file(GLOB LIBRARY_SOURCES src/ast/*.h src/ast/*.cpp src/driver/*.h src/driver/*.cpp src/irgen/*.h src/irgen/*.cpp src/package-manager/*.h
     src/package-manager/*.cpp src/parser/*.h src/parser/*.cpp src/sema/*.h src/sema/*.cpp src/support/*.h src/support/*.cpp)
 file(GLOB DELTA_SOURCES src/delta/*.h src/delta/*.cpp)
-add_library(libdelta ${LIBRARY_SOURCES})
-add_executable(delta ${DELTA_SOURCES})
+
 llvm_map_components_to_libnames(LLVM_LIBS core native mc lineeditor executionengine interpreter bitwriter linker support)
-target_link_libraries(libdelta ${LLVM_LIBS} clangAST clangBasic clangFrontend clangLex clangParse clangSema)
-target_link_libraries(delta libdelta)
-set_target_properties(libdelta PROPERTIES PREFIX "")
+list(APPEND LLVM_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema)
+
+if(BUILD_LIBDELTA)
+    add_library(libdelta ${LIBRARY_SOURCES})
+    add_executable(delta ${DELTA_SOURCES})
+    target_link_libraries(libdelta ${LLVM_LIBS})
+    target_link_libraries(delta libdelta)
+    set_target_properties(libdelta PROPERTIES PREFIX "")
+else()
+    add_executable(delta ${LIBRARY_SOURCES} ${DELTA_SOURCES})
+    target_link_libraries(delta ${LLVM_LIBS})
+endif()
 
 if(MSVC)
     # For some reason running the tests multi-threadedly on Windows causes random tests to fail occasionally.

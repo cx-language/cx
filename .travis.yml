@@ -54,6 +54,7 @@ script:
     - set -e
     - cmake -G "Unix Makefiles"
       -DCMAKE_PREFIX_PATH="$LLVMDIR"
+      -DBUILD_LIBDELTA=ON
       -DCMAKE_CXX_FLAGS="$CXXFLAGS"
       -DCMAKE_BUILD_TYPE=Debug .
     - make
