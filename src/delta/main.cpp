@@ -40,7 +40,7 @@ static void printHelp() {
                     "  -Werror               - Treat warnings as errors\n";
 }
 
-static void segfaultHandler(int signal) {
+extern "C" void signalHandler(int signal) {
 #ifndef _WIN32
     void* stacktrace[128];
     int size = backtrace(stacktrace, 128);
@@ -51,7 +51,13 @@ static void segfaultHandler(int signal) {
 }
 
 int main(int argc, const char** argv) {
-    std::signal(SIGSEGV, segfaultHandler);
+    std::signal(SIGINT, signalHandler);
+    std::signal(SIGILL, signalHandler);
+    std::signal(SIGABRT, signalHandler);
+    std::signal(SIGFPE, signalHandler);
+    std::signal(SIGSEGV, signalHandler);
+    std::signal(SIGTERM, signalHandler);
+
     const char* argv0 = argv[0];
 
     --argc;
