@@ -23,7 +23,7 @@ struct LineIterator<Stream: InputStream>: Iterator<String> {
     }
 
     def iterator(): LineIterator<Stream> {
-        return *this;
+        return this;
     }
 
 }

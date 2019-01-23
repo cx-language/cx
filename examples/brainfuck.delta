@@ -11,17 +11,17 @@ struct Tape
 
     def value(): int
     {
-        return *tape[pos];
+        return tape[pos];
     }
 
     mutating def increment()
     {
-        (*tape[pos])++;
+        tape[pos]++;
     }
 
     mutating def decrement()
     {
-        (*tape[pos])--;
+        tape[pos]--;
     }
 
     mutating def forward()

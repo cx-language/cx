@@ -1,0 +1,7 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+def f(a: mutable bool*) {
+    var p = a;
+    // CHECK: [[@LINE+1]]:6: error: cannot increment 'bool'
+    p++;
+}

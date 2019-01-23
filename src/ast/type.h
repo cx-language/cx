@@ -70,6 +70,8 @@ public:
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
+    bool isIncrementable() const { return isInteger() || isFloatingPoint() || (isPointerType() && getPointee().isArrayWithUnknownSize()); }
+    bool isDecrementable() const { return isInteger() || isFloatingPoint() || (isPointerType() && getPointee().isArrayWithUnknownSize()); }
     bool isVoid() const;
     bool isBool() const;
     bool isInt() const;

@@ -2,7 +2,7 @@
 
 /// Gives the maximum of the two elements
 def max<T>(a: T*, b: T*): T* {
-    if (*a >= *b) {
+    if (a >= b) {
         return a;
     }
     return b;
@@ -10,7 +10,7 @@ def max<T>(a: T*, b: T*): T* {
 
 /// Gives the minimum of the two elements
 def min<T>(a: T*, b: T*): T* {
-    if (*a < *b) {
+    if (a < b) {
         return a;
     }
     return b;

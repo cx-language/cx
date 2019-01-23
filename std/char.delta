@@ -1,6 +1,6 @@
 struct char: Copyable, Comparable, Printable, Hashable {
     def compare(other: char*): Ordering {
-        return int(this).compare(int(*other));
+        return int(this).compare(int(other));
     }
 
     def printTo(stream: mutable String*) {

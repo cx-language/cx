@@ -44,7 +44,7 @@ private def printUnsigned<T>(value: T, stream: mutable String*) {
 
 struct int: Copyable, Comparable, Printable, Hashable {
     def compare(other: int*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -58,7 +58,7 @@ struct int: Copyable, Comparable, Printable, Hashable {
 
 struct int8: Copyable, Comparable, Printable, Hashable {
     def compare(other: int8*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -72,7 +72,7 @@ struct int8: Copyable, Comparable, Printable, Hashable {
 
 struct int16: Copyable, Comparable, Printable, Hashable {
     def compare(other: int16*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -86,7 +86,7 @@ struct int16: Copyable, Comparable, Printable, Hashable {
 
 struct int32: Copyable, Comparable, Printable, Hashable {
     def compare(other: int32*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -100,7 +100,7 @@ struct int32: Copyable, Comparable, Printable, Hashable {
 
 struct int64: Copyable, Comparable, Printable, Hashable {
     def compare(other: int64*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -114,7 +114,7 @@ struct int64: Copyable, Comparable, Printable, Hashable {
 
 struct uint: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -128,7 +128,7 @@ struct uint: Copyable, Comparable, Printable, Hashable {
 
 struct uint8: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint8*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -142,7 +142,7 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
 
 struct uint16: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint16*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -156,7 +156,7 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
 
 struct uint32: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint32*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {
@@ -170,7 +170,7 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
 
 struct uint64: Copyable, Comparable, Printable, Hashable {
     def compare(other: uint64*): Ordering {
-        return (this < *other) ? Ordering.Less : (this > *other) ? Ordering.Greater : Ordering.Equal;
+        return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
     def printTo(stream: mutable String*) {

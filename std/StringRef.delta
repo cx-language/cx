@@ -25,7 +25,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
 
     /// Returns the character at the given index.
     def [](index: int): char {
-        return *characters[index];
+        return characters[index];
     }
 
     def data(): char[?]* {
@@ -45,7 +45,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     /// Starts from start
     def find(c: char, start: int): int {
         for (var i in start..size()) {
-            if (*characters[i] == c) {
+            if (characters[i] == c) {
                 return int(i);
             }
         }
@@ -72,7 +72,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     }
 
     def compare(other: StringRef*): Ordering {
-        for (var index in 0..*min(size(), other.size())) {
+        for (var index in 0..min(size(), other.size())) {
             if (this[index] < other[index]) { return Ordering.Less; }
             if (this[index] > other[index]) { return Ordering.Greater; }
         }

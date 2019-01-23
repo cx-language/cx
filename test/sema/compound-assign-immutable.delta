@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 def foo(i: int*) {
-    // CHECK: [[@LINE+1]]:8: error: cannot assign to immutable expression
+    // CHECK: [[@LINE+1]]:8: error: cannot assign to immutable expression of type 'int'
     *i += 1
 }

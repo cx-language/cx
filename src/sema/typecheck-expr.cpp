@@ -150,8 +150,20 @@ Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
     return TupleType::get(std::move(elements));
 }
 
+static bool isPointerOp(const UnaryExpr& expr) {
+    if (expr.getOperator() == Token::Star || expr.getOperator() == Token::And) return true;
+    auto operandType = expr.getOperand().getType();
+    if (!operandType.isPointerType()) return false;
+    if (!operandType.getPointee().isArrayWithUnknownSize()) return false;
+    return expr.getOperator() == Token::Increment || expr.getOperator() == Token::Decrement;
+}
+
 Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
+
+    if (!isPointerOp(expr)) {
+        operandType = operandType.removePointer();
+    }
 
     if (expr.getOperator() == Token::Not) {
         if (!operandType.isBool() && !operandType.isOptionalType()) {
@@ -163,8 +175,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     if (expr.getOperator() == Token::Star) { // Dereference operation
         if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
             warning(expr.getLocation(), "dereferencing value of optional type '", operandType,
-                    "' which may be null; unwrap the value with a postfix '!' to silence this "
-                    "warning");
+                    "' which may be null; unwrap the value with a postfix '!' to silence this warning");
             operandType = operandType.getWrappedType();
         } else if (!operandType.isPointerType()) {
             error(expr.getLocation(), "cannot dereference non-pointer type '", operandType, "'");
@@ -184,7 +195,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             auto expectedType = PointerType::get(ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().isMutable()));
             error(expr.getLocation(), "cannot increment '", operandType, "', should be '", expectedType, "'");
         }
-        // TODO: check that operand supports increment operation.
+        if (!operandType.isIncrementable()) {
+            error(expr.getLocation(), "cannot increment '", operandType, "'");
+        }
         return Type::getVoid();
     }
 
@@ -196,7 +209,9 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             auto expectedType = PointerType::get(ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().isMutable()));
             error(expr.getLocation(), "cannot decrement '", operandType, "', should be '", expectedType, "'");
         }
-        // TODO: check that operand supports decrement operation.
+        if (!operandType.isDecrementable()) {
+            error(expr.getLocation(), "cannot decrement '", operandType, "'");
+        }
         return Type::getVoid();
     }
 
@@ -306,6 +321,10 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, Sour
     Type lhsType = lhs.getAssignableType();
     Type rhsType = rightType ? rightType : (rhs->isUndefinedLiteralExpr() ? Type() : typecheckExpr(*rhs));
 
+    if (rhsType && lhsType.isPointerType() && rhsType.equalsIgnoreTopLevelMutable(lhsType.getPointee())) {
+        lhsType = lhsType.getPointee();
+    }
+
     if (rhs && rhs->isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(lhs, currentFunction)) {
         error(location, "'undefined' is only allowed as an initial value");
     }
@@ -322,12 +341,16 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, Sour
 
     if (!lhsType.isMutable()) {
         switch (lhs.getKind()) {
-            case ExprKind::VarExpr:
-                error(location, "cannot assign to immutable variable '", llvm::cast<VarExpr>(lhs).getIdentifier(), "'");
-            case ExprKind::MemberExpr:
-                error(location, "cannot assign to immutable variable '", llvm::cast<MemberExpr>(lhs).getMemberName(), "'");
+            case ExprKind::VarExpr: {
+                auto identifier = llvm::cast<VarExpr>(lhs).getIdentifier();
+                error(location, "cannot assign to immutable variable '", identifier, "' of type '", lhsType, "'");
+            }
+            case ExprKind::MemberExpr: {
+                auto memberName = llvm::cast<MemberExpr>(lhs).getMemberName();
+                error(location, "cannot assign to immutable variable '", memberName, "' of type '", lhsType, "'");
+            }
             default:
-                error(location, "cannot assign to immutable expression");
+                error(location, "cannot assign to immutable expression of type '", lhsType, "'");
         }
     }
 
@@ -452,7 +475,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (expr) {
-        // Autocast integer constants to parameter type if within range, error out if not within range.
+        // Auto-cast integer constants to parameter type if within range, error out if not within range.
         if ((expr->getType().isInteger() || expr->getType().isChar()) && expr->isConstant() && target.isBasicType()) {
             const auto& value = expr->getConstantIntegerValue();
 
@@ -507,6 +530,10 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if (source.isBasicType() && target.removeOptional().isPointerType() &&
         isImplicitlyConvertible(expr, source, target.removeOptional().getPointee(), nullptr)) {
         if (convertedType) *convertedType = source;
+        return true;
+    } else if (source.isPointerType() && source.getPointee() == target) {
+        // Auto-dereference.
+        if (convertedType) *convertedType = target;
         return true;
     } else if (source.isArrayType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayType() &&
                isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee().getElementType(), nullptr)) {

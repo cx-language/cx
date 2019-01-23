@@ -154,33 +154,40 @@ llvm::Value* IRGenerator::codegenLvalueUnaryExpr(const UnaryExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenIncrementExpr(const UnaryExpr& expr) {
-    auto* alloca = codegenLvalueExpr(expr.getOperand());
-    auto* value = load(alloca);
+    auto operandType = expr.getOperand().getType();
+    auto* ptr = codegenLvalueExpr(expr.getOperand());
+    if (operandType.isPointerType()) {
+        ptr = loadIfAlloca(ptr);
+    }
+    auto* value = load(ptr);
     llvm::Value* result;
 
-    if (expr.getOperand().getType().isPointerType()) {
+    if (operandType.isPointerType() && operandType.getPointee().isArrayWithUnknownSize()) {
         result = builder.CreateConstGEP1_32(value, 1);
     } else {
         result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
     }
 
-    builder.CreateStore(result, alloca);
+    builder.CreateStore(result, ptr);
     return nullptr;
 }
 
 llvm::Value* IRGenerator::codegenDecrementExpr(const UnaryExpr& expr) {
-    auto* alloca = codegenLvalueExpr(expr.getOperand());
-    auto* value = load(alloca);
+    auto operandType = expr.getOperand().getType();
+    auto* ptr = codegenLvalueExpr(expr.getOperand());
+    if (operandType.isPointerType()) {
+        ptr = loadIfAlloca(ptr);
+    }
+    auto* value = load(ptr);
     llvm::Value* result;
 
-    if (expr.getOperand().getType().isPointerType()) {
-        auto* minusOne = llvm::ConstantInt::getSigned(llvm::IntegerType::getInt32Ty(ctx), -1);
-        result = builder.CreateGEP(value, minusOne);
+    if (operandType.isPointerType() && operandType.getPointee().isArrayWithUnknownSize()) {
+        result = builder.CreateGEP(value, llvm::ConstantInt::getSigned(llvm::IntegerType::getInt32Ty(ctx), -1));
     } else {
         result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
     }
 
-    builder.CreateStore(result, alloca);
+    builder.CreateStore(result, ptr);
     return nullptr;
 }
 

@@ -38,7 +38,7 @@ struct String: Comparable, OutputStream, Printable {
 
     /// Returns the character at the given index.
     def [](index: int): char {
-        return *characters[index];
+        return characters[index];
     }
 
     /// Returns the string as a C-style, i.e. null-terminated, string.
@@ -62,7 +62,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     mutating def push(character: char) {
-        *characters[size()] = character;
+        characters[size()] = character;
         characters.push('\0');
     }
 
@@ -107,7 +107,7 @@ struct String: Comparable, OutputStream, Printable {
     /// Starts from start
     def find(c: char, start: int): int {
         for (var i in start..size()) {
-            if (*characters[i] == c) {
+            if (characters[i] == c) {
                 return int(i);
             }
         }
