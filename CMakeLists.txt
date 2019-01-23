@@ -72,6 +72,7 @@ add_custom_target(check_lit COMMAND lit --verbose --succinct --incremental ${EXT
     USES_TERMINAL)
 add_custom_target(check_examples COMMAND "${PROJECT_SOURCE_DIR}/examples/build_examples.sh" "$<TARGET_FILE:delta>")
 add_custom_target(check)
+add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check check_lit check_examples)
 
 if(MSVC)
