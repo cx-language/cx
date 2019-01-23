@@ -13,10 +13,6 @@ matrix:
         - os: osx
           compiler: clang
 
-        - os: osx
-          compiler: clang
-          env: BUILD_SHARED_LIBS=ON
-
 addons:
     apt:
         sources:
@@ -58,7 +54,6 @@ script:
     - set -e
     - cmake -G "Unix Makefiles"
       -DCMAKE_PREFIX_PATH="$LLVMDIR"
-      -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
       -DCMAKE_CXX_FLAGS="$CXXFLAGS"
       -DCMAKE_BUILD_TYPE=Debug .
     - make
