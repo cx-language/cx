@@ -214,7 +214,7 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
     return alloca;
 }
 
-llvm::Value* IRGenerator::load(llvm::Value* value) {
+llvm::Value* IRGenerator::createLoad(llvm::Value* value) {
     return builder.CreateLoad(value, value->getName() + ".load");
 }
 

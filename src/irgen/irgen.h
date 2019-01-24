@@ -137,7 +137,7 @@ private:
     llvm::Value* getFunctionForCall(const CallExpr& call);
     llvm::Function* getFunctionProto(const FunctionDecl& decl);
     llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr, const llvm::Twine& name = "");
-    llvm::Value* load(llvm::Value* value);
+    llvm::Value* createLoad(llvm::Value* value);
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating);
