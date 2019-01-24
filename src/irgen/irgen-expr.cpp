@@ -88,7 +88,11 @@ llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) 
     llvm::Value* array = llvm::UndefValue::get(arrayType);
     unsigned index = 0;
     for (auto& element : expr.getElements()) {
-        array = builder.CreateInsertValue(array, loadIfAlloca(codegenExpr(*element)), index++);
+        auto* value = codegenExpr(*element);
+        if (llvm::isa<llvm::AllocaInst>(value)) {
+            value = load(value);
+        }
+        array = builder.CreateInsertValue(array, value, index++);
     }
     return array;
 }
@@ -156,8 +160,8 @@ llvm::Value* IRGenerator::codegenLvalueUnaryExpr(const UnaryExpr& expr) {
 llvm::Value* IRGenerator::codegenIncrementExpr(const UnaryExpr& expr) {
     auto operandType = expr.getOperand().getType();
     auto* ptr = codegenLvalueExpr(expr.getOperand());
-    if (operandType.isPointerType()) {
-        ptr = loadIfAlloca(ptr);
+    if (operandType.isPointerType() && llvm::isa<llvm::AllocaInst>(ptr)) {
+        ptr = load(ptr);
     }
     auto* value = load(ptr);
     llvm::Value* result;
@@ -175,8 +179,8 @@ llvm::Value* IRGenerator::codegenIncrementExpr(const UnaryExpr& expr) {
 llvm::Value* IRGenerator::codegenDecrementExpr(const UnaryExpr& expr) {
     auto operandType = expr.getOperand().getType();
     auto* ptr = codegenLvalueExpr(expr.getOperand());
-    if (operandType.isPointerType()) {
-        ptr = loadIfAlloca(ptr);
+    if (operandType.isPointerType() && llvm::isa<llvm::AllocaInst>(ptr)) {
+        ptr = load(ptr);
     }
     auto* value = load(ptr);
     llvm::Value* result;

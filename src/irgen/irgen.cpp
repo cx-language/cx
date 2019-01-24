@@ -218,13 +218,6 @@ llvm::Value* IRGenerator::load(llvm::Value* value) {
     return builder.CreateLoad(value, value->getName() + ".load");
 }
 
-llvm::Value* IRGenerator::loadIfAlloca(llvm::Value* value) {
-    if (llvm::isa<llvm::AllocaInst>(value)) {
-        return load(value);
-    }
-    return value;
-}
-
 llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs) {
     if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentDecl)) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
