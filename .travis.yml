@@ -13,6 +13,9 @@ matrix:
         - os: osx
           compiler: clang
 
+        - os: windows
+          before_install: EXTRA_CMAKE_FLAGS=(-G "Visual Studio 15 2017 Win64" -Thost=x64)
+
 addons:
     apt:
         sources:
@@ -49,21 +52,30 @@ install:
           export LLVMDIR="$(brew --prefix llvm@7)";
           pip2 install lit pyyaml;
       fi
-    - export PATH="$LLVMDIR/bin:$PATH"
+    - if [ $TRAVIS_OS_NAME == "windows" ]; then
+          curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/llvm-$LLVM_VERSION/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg.7z" --output llvm.7z && 7z x llvm.7z;
+          curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/clang-$LLVM_VERSION/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg.7z" --output clang.7z && 7z x clang.7z;
+          export LLVMDIR="$PWD/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg";
+          export CLANGDIR="$PWD/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg";
+      fi
+    - export PATH="$LLVMDIR/bin:$CLANGDIR/bin:$PATH"
 
 script:
     - set -e
     - printenv
-    - cmake -G "Unix Makefiles"
-      -DCMAKE_PREFIX_PATH="$LLVMDIR"
+    - cmake .
+      -DCMAKE_PREFIX_PATH="$LLVMDIR;$CLANGDIR"
       -DBUILD_LIBDELTA=ON
       -DCMAKE_CXX_FLAGS="$CXXFLAGS"
-      -DCMAKE_BUILD_TYPE=Debug .
-    - make
-    - make check
-    - make lint
+      -DCMAKE_BUILD_TYPE=Debug
+      "${EXTRA_CMAKE_FLAGS[@]}"
+    - cmake --build .
+    - if [ $TRAVIS_OS_NAME != "windows" ]; then
+          cmake --build . --target check;
+          cmake --build . --target lint;
+      fi
     - if [[ $CXXFLAGS == *"--coverage"* ]]; then
-          make coverage;
+          cmake --build . --target coverage;
       fi
 
 after_success:
