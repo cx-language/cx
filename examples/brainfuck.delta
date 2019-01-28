@@ -63,7 +63,7 @@ struct Program
                     leftStack.push(pc);
 
                 case ']':
-                    if (!leftStack.isEmpty())
+                    if (!leftStack.empty())
                     {
                         var left = leftStack.pop();
                         var right = pc;

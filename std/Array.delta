@@ -39,7 +39,7 @@ struct Array<Element> {
     }
 
     /// Returns true if the array has no elements, otherwise false
-    def isEmpty(): bool {
+    def empty(): bool {
         return size == 0;
     }
 

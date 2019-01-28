@@ -21,7 +21,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns true if the Map is empty, otherwise false
-    def isEmpty(): bool {
+    def empty(): bool {
         return size == 0;
     }
 

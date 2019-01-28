@@ -65,7 +65,7 @@ def testMultipleEmptyLines() {
     a = f.readLine();
     assert(StringRef(a) == "");
 
-    assert(f.isEof());
+    assert(f.eof());
 }
 
 def testIsEofWhileLoop() {
@@ -78,7 +78,7 @@ def testIsEofWhileLoop() {
 
     var i = 0;
 
-    while (!f.isEof()) {
+    while (!f.eof()) {
         var line = f.readLine();
         assert(*a[i] == StringRef(line));
         i++;

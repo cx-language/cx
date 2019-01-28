@@ -29,15 +29,15 @@ def testPushPop() {
 def testEmpty() {
     var q = Queue<StringRef>();
 
-    assert(q.isEmpty());
+    assert(q.empty());
 
     q.push("foo");
-    assert(!q.isEmpty());
+    assert(!q.empty());
     q.push("bar");
-    assert(!q.isEmpty());
+    assert(!q.empty());
     q.pop();
     q.pop();
-    assert(q.isEmpty());
+    assert(q.empty());
 }
 
 def testPushAfterPop() {

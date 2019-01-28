@@ -52,7 +52,7 @@ struct String: Comparable, OutputStream, Printable {
         return characters.data();
     }
 
-    def isEmpty(): bool {
+    def empty(): bool {
         return size() == 0;
     }
 

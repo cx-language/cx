@@ -50,7 +50,7 @@ struct OrderedSet<Element> {
     }
 
     /// Returns true if the Set is empty, otherwise false.
-    def isEmpty(): bool {
+    def empty(): bool {
         return map.size() == 0;
     }
 

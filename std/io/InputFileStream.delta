@@ -42,7 +42,7 @@ struct InputFileStream: InputStream {
     }
 
     /// Returns true if we have reached the end of the file
-    def isEof(): bool {
-        return fs.isEof();
+    def eof(): bool {
+        return fs.eof();
     }
 }

@@ -131,7 +131,7 @@ struct Map<Key: Hashable, Value> {
         return false;
     }
 
-    def isEmpty(): bool {
+    def empty(): bool {
         return size == 0;
     }
 

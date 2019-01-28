@@ -224,7 +224,7 @@ define i32 @_EN3std5ArrayI3intE4sizeE(%"Array<int>"* %this) {
   ret i32 %size.load
 }
 
-define i1 @_EN3std5ArrayI3intE7isEmptyE(%"Array<int>"* %this) {
+define i1 @_EN3std5ArrayI3intE5emptyE(%"Array<int>"* %this) {
   %size = getelementptr inbounds %"Array<int>", %"Array<int>"* %this, i32 0, i32 1
   %size.load = load i32, i32* %size
   %1 = icmp eq i32 %size.load, 0

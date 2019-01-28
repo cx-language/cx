@@ -110,11 +110,11 @@ def testArrayEnumeratedIterator() {
 def testEmpty() {
     var a = Array<int>();
 
-    assert(a.isEmpty());
+    assert(a.empty());
 
     a.push(7);
 
-    assert(!a.isEmpty());
+    assert(!a.empty());
 }
 
 def testMap() {

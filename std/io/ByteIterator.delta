@@ -10,7 +10,7 @@ struct ByteIterator<Stream: InputStream>: Copyable, Iterator<uint8> {
     }
 
     def hasValue(): bool {
-        return !stream.isEof() || next >= 0;
+        return !stream.eof() || next >= 0;
     }
 
     def value(): uint8 {

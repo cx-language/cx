@@ -81,7 +81,7 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Returns true if we have reached the end of the file
-    def isEof(): bool {
+    def eof(): bool {
         var ret = fgetc(file!);
         if (ret < 0) {
             return true;

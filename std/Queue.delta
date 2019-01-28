@@ -12,7 +12,7 @@ struct Queue<T> {
     }
 
     deinit() {
-        while (!isEmpty()) {
+        while (!empty()) {
             var next = head!.next;
             deallocate(head!);
             head = next;
@@ -23,7 +23,7 @@ struct Queue<T> {
     mutating def push(value: T) {
         var newNode = allocate(Node(value));
 
-        if (isEmpty()) {
+        if (empty()) {
             head = newNode;
             tail = newNode;
         } else {
@@ -60,7 +60,7 @@ struct Queue<T> {
     }
 
     /// Check if queue is empty
-    def isEmpty(): bool {
+    def empty(): bool {
         return head == null;
     }
 }

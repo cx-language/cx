@@ -25,8 +25,8 @@ struct Set<Key: Hashable> {
         return map.size();
     }
 
-    def isEmpty(): bool {
-        return map.isEmpty();
+    def empty(): bool {
+        return map.empty();
     }
 
     def iterator(): SetIterator<Key> {

@@ -10,7 +10,7 @@ struct LineIterator<Stream: InputStream>: Iterator<String> {
     }
 
     def hasValue(): bool {
-        return !stream.isEof() || !next.isEmpty();
+        return !stream.eof() || !next.empty();
     }
 
     def value(): String {
