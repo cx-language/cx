@@ -32,23 +32,9 @@ if [[ "$os" == "Darwin" ]]; then
 
     cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
 elif [[ "$os" == "MINGW"* ]]; then
-    # Build LLVM and Clang libraries from source, because the prebuilt Windows
-    # binaries provided in http://releases.llvm.org/download.html don't include
-    # everything we need, e.g. header files.
-
     llvm_dir="$1"
-    llvm_build_dir="$llvm_dir/build"
-    llvm_install_dir="$llvm_dir/install"
-
-    mkdir -p "$llvm_build_dir"
-    cd "$llvm_build_dir"
-    cmake "$llvm_dir" -DCMAKE_INSTALL_PREFIX="$llvm_install_dir" -DCMAKE_BUILD_TYPE=Debug \
-        -DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS_TO_BUILD:-X86}" -DLLVM_OPTIMIZED_TABLEGEN=ON
-    cmake --build .
-    cmake --build . --target install
-
-    cd "$build_dir"
-    cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$llvm_install_dir"
+    clang_dir="$2"
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$llvm_dir;$clang_dir" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64
 else
     UBUNTU_VERSION=$(lsb_release -r -s)
     LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-$UBUNTU_VERSION

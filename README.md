@@ -24,21 +24,17 @@ and the [LLVM](http://llvm.org) and [Clang](http://clang.llvm.org) libraries
 [lit](http://llvm.org/docs/CommandGuide/lit.html), which you can get with `pip
 install lit`.
 
-If you're on Ubuntu or macOS you can run the provided `setup-build.sh` script to
-automatically download all the dependencies and invoke the appropriate commands
-to generate a ready-to-use build system.
+### Ubuntu/macOS
 
-If you're on Windows, do the following:
+Run the provided `setup-build.sh` script to automatically download all the dependencies
+and invoke the appropriate commands to generate a ready-to-use build system.
 
-1. Download and extract LLVM sources from http://releases.llvm.org/7.0.1/llvm-7.0.1.src.tar.xz.
-2. Download and extract Clang sources from http://releases.llvm.org/7.0.1/cfe-7.0.1.src.tar.xz.
-3. Rename the extracted Clang source directory to `clang`, and move it inside
-   the `tools` subdirectory inside the LLVM source directory.
-4. During this step, LLVM and Clang will be built from source, which requires
-   about 24 GB of free disk space, and will take some time to complete. Run
-   `setup-build.sh`, passing the path to your LLVM source directory as an
-   argument.
-5. For running the tests, install [lit](http://llvm.org/docs/CommandGuide/lit.html)
+### Windows with Visual Studio 15
+
+1. Download and extract LLVM sources from https://github.com/vovkos/llvm-package-windows/releases/download/llvm-7.1.0/llvm-7.1.0-windows-amd64-msvc15-msvcrt-dbg.7z.
+2. Download and extract Clang sources from https://github.com/vovkos/llvm-package-windows/releases/download/clang-7.1.0/clang-7.1.0-windows-amd64-msvc15-msvcrt-dbg.7z.
+3. Run `setup-build.sh`, passing the paths to the LLVM and Clang source directories as arguments.
+4. For running the tests, install [lit](http://llvm.org/docs/CommandGuide/lit.html)
    by running `sudo pip install lit` (you need [pip](https://pip.pypa.io/en/stable/)
    installed).
 
