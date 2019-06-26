@@ -45,7 +45,7 @@ install:
           pip install --user lit cpp-coveralls;
       fi
     - if [ $TRAVIS_OS_NAME == "osx" ]; then
-          export LLVMDIR="$(brew --prefix llvm)";
+          export LLVMDIR="$(brew --prefix llvm@7)";
           pip2 install lit pyyaml;
       fi
     - export PATH="$LLVMDIR/bin:$PATH"
