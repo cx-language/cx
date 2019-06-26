@@ -52,6 +52,7 @@ install:
 
 script:
     - set -e
+    - printenv
     - cmake -G "Unix Makefiles"
       -DCMAKE_PREFIX_PATH="$LLVMDIR"
       -DBUILD_LIBDELTA=ON
