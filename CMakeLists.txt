@@ -26,7 +26,7 @@ find_package(Clang REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-add_definitions(${LLVM_DEFINITIONS} -DDELTA_ROOT_DIR="${PROJECT_SOURCE_DIR}")
+add_definitions(${LLVM_DEFINITIONS} -DDELTA_ROOT_DIR="${PROJECT_SOURCE_DIR}" -D_GLIBCXX_USE_CXX11_ABI=0)
 
 # Define the include path of the Clang builtin headers, to be used by the compiler to avoid errors
 # about missing C headers when importing C headers from Delta code. For more information, see e.g.
