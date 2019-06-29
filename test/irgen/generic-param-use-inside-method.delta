@@ -3,17 +3,17 @@
 struct S<T>: Copyable {
     init() {}
 
-    def f() {
-        g()
-        var t: T = undefined
+    void f() {
+        g();
+        T t = undefined;
     }
 
-    def g() {
-        var t2: T = undefined
+    void g() {
+        T t2 = undefined;
     }
 }
 
-def main() {
-    var s = S<int>()
-    s.f()
+void main() {
+    var s = S<int>();
+    s.f();
 }

@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct A<T> {
-    var a: T
+    T a
 }
 
-def main() {
-    var a: A<int> = undefined
-    var aaa: A<A<A<bool>>> = undefined
+void main() {
+    A<int> a = undefined
+    A<A<A<bool>>> aaa = undefined
 }

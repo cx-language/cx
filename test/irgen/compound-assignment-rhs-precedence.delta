@@ -1,5 +1,5 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-def f(foo: mutable float64*, bar: float64, baz: float64) {
+void f(mutable float64* foo, float64 bar, float64 baz) {
     *foo *= 1.0 - bar * baz;
 }

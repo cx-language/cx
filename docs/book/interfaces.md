@@ -3,8 +3,8 @@
 Let's suppose we are writing a generic sort function that can sort an array of
 any type:
 
-```go
-def sort<T>(array: mutable Array<T>*) {
+```
+void sort<T>(mutable Array<T>* array) {
     // ...
 }
 ```
@@ -29,8 +29,8 @@ When declaring the `sort` function, we can specify that the types that will be
 substituted for `T` must be comparable with the `<` operator using the
 `Comparable` interface as a _generic constraint_:
 
-```go
-def sort<T: Comparable>(array: mutable Array<T>*) {
+```
+void sort<T: Comparable>(mutable Array<T>* array)  {
     // ...
 }
 ```
@@ -52,13 +52,13 @@ Interfaces are types that specify a set of member functions. Struct types can
 implement an interface by listing the interface name after a colon following the
 struct name, and providing the member functions required by the interface:
 
-```go
+```
 interface Fooable {
-    def foo(): int;
+    int foo();
 }
 
 struct X: Fooable {
-    def foo(): int {
+    int foo() {
         return 42;
     }
 }
@@ -69,11 +69,11 @@ struct X: Fooable {
 Interfaces may also contain member functions with implementations, called
 _default member functions_:
 
-```go
+```
 interface Fooable {
-    def foo(): int;
+    int foo();
 
-    def fooSquared(): int {
+    int fooSquared() {
         return foo() * foo();
     }
 }

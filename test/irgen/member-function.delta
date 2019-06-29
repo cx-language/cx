@@ -1,16 +1,16 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
-    var baz: int;
+    int baz;
 
     init() { this.baz = 42; }
 
-    mutating def bar() { this.baz++; }
+    mutating void bar() { this.baz++; }
 
-    def qux(): int { return this.baz; }
+    int qux() { return this.baz; }
 }
 
-def main() {
+void main() {
     var foo = Foo();
     foo.bar();
     var i = foo.qux();

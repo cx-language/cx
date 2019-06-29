@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     bar();
     foo();
 }
 
-def foo() { }
+void foo() { }
 
-extern def bar();
+extern void bar();

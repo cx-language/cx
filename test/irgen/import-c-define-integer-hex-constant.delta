@@ -2,6 +2,6 @@
 
 import "import-c-defined-integer-hex-constant.h";
 
-def main() {
-    var foo: int = FOO;
+void main() {
+    int foo = FOO;
 }

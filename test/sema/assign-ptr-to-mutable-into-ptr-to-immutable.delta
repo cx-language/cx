@@ -1,7 +1,7 @@
 // RUN: %delta -typecheck %s
 
-extern def foo(): mutable int*;
+extern mutable int* foo();
 
-def main() {
-    var p: int* = foo();
+void main() {
+    int* p = foo();
 }

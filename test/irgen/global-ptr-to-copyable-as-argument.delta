@@ -1,11 +1,13 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     foo(sp)
 }
 
-var sp: S*? = null
+S*? sp = null
 
-def foo(p: S*?) { }
+void foo(S*? p) { }
 
-struct S: Copyable { var i: int }
+struct S: Copyable {
+    int i
+}

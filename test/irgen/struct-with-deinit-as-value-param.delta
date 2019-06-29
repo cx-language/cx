@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-def foo(a: A<int>) {}
+void foo(A<int> a) {}
 
 struct A<T> {
-    var i: T;
+    T i;
     deinit() {}
 }

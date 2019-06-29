@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
-    // CHECK: [[@LINE+1]]:21: error: -42 is out of range for type 'uint64'
-    var a: uint64 = -42
+void main() {
+    // CHECK: [[@LINE+1]]:16: error: -42 is out of range for type 'uint64'
+    uint64 a = -42
 }

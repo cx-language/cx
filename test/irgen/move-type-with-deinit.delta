@@ -5,10 +5,10 @@ struct Y {
     deinit() {}
 }
 
-def f(a: Y, b: mutable Y*) {
+void f(Y a, mutable Y* b) {
     *b = a;
 }
 
-def g(a: Y) {
+void g(Y a) {
     var b = a;
 }

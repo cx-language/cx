@@ -4,16 +4,16 @@ struct A {
     init() {}
 }
 
-def f<T>() {
+void f<T>() {
     var t = T();
     var a = t;
 }
 
-def g<T>(t: T) {
+void g<T>(T t) {
     var a = t;
 }
 
-def main() {
+void main() {
     f<A>();
     f<A>();
     g(A());

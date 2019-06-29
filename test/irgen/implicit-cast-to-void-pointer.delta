@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
-    var p: int* = undefined;
-    var mp: mutable int* = undefined;
-    var v: void* = p;
+void main() {
+    int* p = undefined;
+    mutable int* mp = undefined;
+    void* v = p;
     bar(p);
     bar(v);
     var b = cast<int8*>(v);
@@ -13,6 +13,6 @@ def main() {
     baz(&i);
 }
 
-def bar(p: void*) {}
+void bar(void* p) {}
 
-def baz(p: void*?) {}
+void baz(void*? p) {}

@@ -2,5 +2,5 @@
 
 struct Foo: Copyable {
     // CHECK: [[@LINE+1]]:12: error: deinitializers cannot have parameters
-    deinit(i: int) { }
+    deinit(int i) { }
 }

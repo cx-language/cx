@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct F {
-    var v: int;
-    var a: int[1];
+    int v;
+    int[1] a;
 
     init() {
         this.v = 42;

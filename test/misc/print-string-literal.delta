@@ -4,14 +4,14 @@
 // CHECK-NEXT:baz
 // CHECK-NEXT:qux
 
-import "stdio.h"
+import "stdio.h";
 
-def foo(): char* { return "foo" }
-def bar(): StringRef { return "bar" }
+char* foo() { return "foo"; }
+StringRef bar() { return "bar"; }
 
-def main() {
-    puts(foo())
-    print(bar())
-    puts("baz")
-    print("qux")
+void main() {
+    puts(foo());
+    print(bar());
+    puts("baz");
+    print("qux");
 }

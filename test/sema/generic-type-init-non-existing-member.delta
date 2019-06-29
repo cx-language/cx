@@ -5,4 +5,4 @@ struct A<T> {
     init() { this.d = 3 }
 }
 
-def main() { var a = A<int>() }
+void main() { var a = A<int>() }

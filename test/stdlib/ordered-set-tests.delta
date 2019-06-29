@@ -2,7 +2,7 @@
 // XFAIL: windows
 // testIterator() segfaults on Windows for an unknown reason.
 
-def main() {
+void main() {
     testInsert();
     testRemoval();
     testDuplicates();
@@ -15,7 +15,7 @@ def main() {
     testIteratorOrder();
 }
 
-def testInsert() {
+void testInsert() {
     var s = OrderedSet<int>();
 
     s.insert(42);
@@ -25,7 +25,7 @@ def testInsert() {
 }
 
 
-def testRemoval() {
+void testRemoval() {
     var s = OrderedSet<int>();
 
     s.insert(42);
@@ -35,7 +35,7 @@ def testRemoval() {
     assert(!s.contains(42));
 }
 
-def testDuplicates() {
+void testDuplicates() {
     var s = OrderedSet<int>();
 
     s.insert(42);
@@ -46,7 +46,7 @@ def testDuplicates() {
     assert(!s.contains(42));
 }
 
-def testIterator() {
+void testIterator() {
     var s = OrderedSet<int>();
 
     s.insert(1);
@@ -80,7 +80,7 @@ def testIterator() {
     assert(ccc);
 }
 
-def testEmptyOrderedSetIterator() {
+void testEmptyOrderedSetIterator() {
     var s = OrderedSet<int>();
     s.insert(79);
     s.insert(79);
@@ -91,7 +91,7 @@ def testEmptyOrderedSetIterator() {
     }
 }
 
-def testUnitOrderedSetIterator() {
+void testUnitOrderedSetIterator() {
     var s = OrderedSet<int>();
     s.insert(79);
     s.insert(79);
@@ -105,7 +105,7 @@ def testUnitOrderedSetIterator() {
     assert(count == 1);
 }
 
-def testLowerAndHigher() {
+void testLowerAndHigher() {
     var m = OrderedSet<int>();
 
     for (var i in 0..100) {
@@ -123,7 +123,7 @@ def testLowerAndHigher() {
     }
 }
 
-def testFirstLast() {
+void testFirstLast() {
     var s = OrderedSet<uint>();
 
     s.insert(63);
@@ -135,7 +135,7 @@ def testFirstLast() {
     assert(*s.last()! == 69);
 }
 
-def testEmptyOrderedSetFunctions() {
+void testEmptyOrderedSetFunctions() {
     var s = OrderedSet<uint>();
 
     assert(s.first() == null);
@@ -144,14 +144,14 @@ def testEmptyOrderedSetFunctions() {
     assert(s.lower(42) == null);
 }
 
-def testIteratorOrder() {
+void testIteratorOrder() {
     var set = OrderedSet<uint>();
 
     for (var i in 0..100) {
         set.insert(uint(i));
     }
 
-    var called: uint = 0;
+    uint called = 0;
     for (var e in set) {
         assert(*e == called);
         called++;

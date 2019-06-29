@@ -1,16 +1,16 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
-    var i: int;
+    int i;
 }
 
-def get(f: Foo*) {
+void get(Foo* f) {
     var m = f.i;
 }
 
-def main() {
-    var f: Foo = undefined;
-    var rf: Foo* = f;
+void main() {
+    Foo f = undefined;
+    Foo* rf = f;
     var n = rf.i;
     get(rf);
 }

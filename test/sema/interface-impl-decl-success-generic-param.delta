@@ -1,14 +1,14 @@
 // RUN: %delta -typecheck %s
 
 interface X {
-    def foo();
+    void foo();
 }
 
 struct Z<T>: T {
     init() {}
-    def foo() {}
+    void foo() {}
 }
 
-def main() {
+void main() {
     var z = Z<X>();
 }

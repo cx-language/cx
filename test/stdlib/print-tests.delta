@@ -1,13 +1,13 @@
 // RUN: compile_and_run -Werror %s | %FileCheck %s
 
 struct A: Printable {
-    var a: StringRef;
+    StringRef a;
 
-    init(a: StringRef) {
+    init(StringRef a) {
         this.a = a;
     }
 
-    def printTo(stream: mutable String*) {
+    void printTo(mutable String* stream) {
         stream.write(a);
         stream.write(a);
         stream.write("!");
@@ -15,7 +15,7 @@ struct A: Printable {
 }
 
 
-def main() {
+void main() {
     // CHECK: foofoo!
     print(A("foo"));
 }

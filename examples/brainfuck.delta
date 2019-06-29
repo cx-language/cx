@@ -1,7 +1,7 @@
 struct Tape
 {
-    var tape: Array<int>;
-    var pos: int;
+    Array<int> tape;
+    int pos;
 
     init()
     {
@@ -9,22 +9,22 @@ struct Tape
         pos = 0;
     }
 
-    def value(): int
+    int value()
     {
         return tape[pos];
     }
 
-    mutating def increment()
+    mutating void increment()
     {
         tape[pos]++;
     }
 
-    mutating def decrement()
+    mutating void decrement()
     {
         tape[pos]--;
     }
 
-    mutating def forward()
+    mutating void forward()
     {
         pos++;
 
@@ -32,7 +32,7 @@ struct Tape
             tape.push(0);
     }
 
-    mutating def backward()
+    mutating void backward()
     {
         if (pos > 0)
             pos--;
@@ -41,10 +41,10 @@ struct Tape
 
 struct Program
 {
-    var code: String;
-    var bracketMap: Map<int, int>;
+    String code;
+    Map<int, int> bracketMap;
 
-    init(text: String)
+    init(String text)
     {
         this.code = String();
         this.bracketMap = Map<int, int>();
@@ -77,7 +77,7 @@ struct Program
         }
     }
 
-    def run()
+    void run()
     {
         var tape = Tape();
         var pc = 0;
@@ -116,7 +116,7 @@ struct Program
     }
 }
 
-def main()
+void main()
 {
     var file = FileStream("./inputs/mandel.b");
     var text = String();

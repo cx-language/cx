@@ -1,7 +1,7 @@
 // RUN: compile_and_run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:foo
 
-def main(): int {
+int main() {
     putchar(102);
     putchar(111);
     putchar(111);
@@ -9,4 +9,4 @@ def main(): int {
     return 0;
 }
 
-extern def putchar(ch: int): int;
+extern int putchar(int ch);

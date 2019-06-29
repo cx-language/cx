@@ -1,12 +1,12 @@
 // RUN: check_exit_status 0 compile_and_run -Werror %s
 
-def main() {
+void main() {
     testInsertionSort();
     testQuickSort();
     testMax();
 }
 
-def testInsertionSort() {
+void testInsertionSort() {
     var a = Array<int>();
 
     for (var i in 0..5) {
@@ -26,7 +26,7 @@ def testInsertionSort() {
 }
 
 
-def testQuickSort() {
+void testQuickSort() {
     var a = Array<int>();
 
     for (var i in 0..64) {
@@ -45,7 +45,7 @@ def testQuickSort() {
     assert(ArrayRef(&a) == ArrayRef(&real));
 }
 
-def testMax() {
+void testMax() {
     var a = 7;
     var b = 9;
 

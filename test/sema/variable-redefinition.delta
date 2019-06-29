@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
+void main() {
     var foo = 1;
     // CHECK: [[@LINE+1]]:9: error: redefinition of 'foo'
     var foo = 2;

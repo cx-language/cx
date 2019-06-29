@@ -1,11 +1,11 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-extern def f(): bool;
+extern bool f();
 
 struct A {
-    var b: B;
-    var bb: B;
-    var i: int;
+    B b;
+    B bb;
+    int i;
 
     init() {
         b = undefined;
@@ -21,21 +21,21 @@ struct A {
 }
 
 struct B {
-    var i: int;
+    int i;
     init() { i = 0; }
     deinit() {}
 }
 
 struct C {
-    var b: B;
-    var bb: B;
+    B b;
+    B bb;
     init() {
         b = undefined;
         bb = undefined;
     }
 }
 
-def main() {
+void main() {
     var a = A();
     var c = C();
 }

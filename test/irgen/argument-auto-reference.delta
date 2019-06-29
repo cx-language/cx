@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-struct Foo { var i: int; }
-def ptr(p: Foo*) { }
-def main() {
-    var f: Foo = undefined;
+struct Foo { int i; }
+void ptr(Foo* p) { }
+void main() {
+    Foo f = undefined;
     ptr(f);
 }

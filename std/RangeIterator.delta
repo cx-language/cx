@@ -1,21 +1,21 @@
 struct RangeIterator<T>: Copyable, Iterator<T> {
-    var current: T;
-    var end: T;
+    T current;
+    T end;
 
-    init(range: Range<T>) {
+    init(Range<T> range) {
         current = range.start();
         end = range.end();
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return current != end;
     }
 
-    def value(): T {
+    T value() {
         return current;
     }
 
-    mutating def increment() {
+    mutating void increment() {
         current++;
     }
 }

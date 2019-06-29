@@ -1,17 +1,17 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo: Copyable {
-    var a: int;
-    var b: bool;
+    int a;
+    bool b;
 
-    init(a: int, b: bool) {
+    init(int a, bool b) {
         this.a = a;
         this.b = b;
         this.a++;
     }
 }
 
-def main() {
+void main() {
     var f = Foo(666, true);
     f.a++;
     var bar = f.a;

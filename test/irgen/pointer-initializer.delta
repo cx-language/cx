@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 // TODO: Should work even if 'p' and 'x' point to mutable chars.
-def foo(p: char**, x: char*) {
-    var pp: char** = undefined;
+void foo(char** p, char* x) {
+    char** pp = undefined;
     (&pp).init(p);
     pp.init(x);
     (*pp).init('x');

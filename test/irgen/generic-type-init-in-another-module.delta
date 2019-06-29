@@ -2,6 +2,6 @@
 
 import imported_generic_type_init
 
-def main() {
+void main() {
     var a = A<int>()
 }

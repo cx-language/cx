@@ -5,7 +5,7 @@ struct C<T> {
     deinit() { }
 }
 
-def main() {
+void main() {
     var i = C<int>()
     var b = C<bool>()
 }

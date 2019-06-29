@@ -255,7 +255,6 @@ const char* delta::toString(Token::Kind tokenKind) {
         "extern",
         "false",
         "for",
-        "def",
         "if",
         "import",
         "in",

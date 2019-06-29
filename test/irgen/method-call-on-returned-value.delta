@@ -1,21 +1,21 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable {
-    var i: int;
+    int i;
     init() { i = 0; }
-    def f() {}
+    void f() {}
 }
 
 struct C {
-    var i: int;
+    int i;
     init() { i = 0; }
-    def f() {}
+    void f() {}
 }
 
-def s(): S { return S(); }
-def c(): C { return C(); }
+S s() { return S(); }
+C c() { return C(); }
 
-def main() {
+void main() {
     s().f();
     c().f();
     S().f();

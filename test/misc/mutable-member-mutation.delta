@@ -1,14 +1,14 @@
 // RUN: check_exit_status 6 compile_and_run %s
 
 struct X: Copyable {
-    var a: int;
+    int a;
 
-    init(a: int) {
+    init(int a) {
         this.a = a;
     }
 }
 
-def main(): int {
+int main() {
     var x = X(0);
     x.a = 5;
     x.a++;

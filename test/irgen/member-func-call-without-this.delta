@@ -3,11 +3,11 @@
 struct S: Copyable {
     init() {}
 
-    mutating def foo() {
+    mutating void foo() {
         bar()
     }
 
-    def bar() { }
+    void bar() { }
 }
 
 struct Foo<U> {
@@ -19,14 +19,14 @@ struct Foo<U> {
         baz()
     }
 
-    mutating def baz() {
+    mutating void baz() {
         qux()
     }
 
-    def qux() { }
+    void qux() { }
 }
 
-def main() {
+void main() {
     var s = S()
     s.foo()
 

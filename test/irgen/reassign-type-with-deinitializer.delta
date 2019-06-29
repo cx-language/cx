@@ -5,7 +5,7 @@ struct X {
     deinit() {}
 }
 
-def main() {
+void main() {
     var x = X();
     x = X();
 }

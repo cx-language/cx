@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def foo(a: uint8) { }
+void foo(uint8 a) { }
 
-def main() {
+void main() {
     // CHECK: [[@LINE+1]]:9: error: 256 is out of range for type 'uint8'
     foo(256);
 }

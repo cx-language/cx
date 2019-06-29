@@ -1,17 +1,17 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct F<T, U>: Copyable {
-    var a: T
-    var b: U
+    T a
+    U b
     init() {
         a = undefined
         b = undefined
     }
-    def foo() { }
-    def unused() { }
+    void foo() { }
+    void unused() { }
 }
 
-def main() {
+void main() {
     var f = F<int, bool>()
     f.foo()
 }

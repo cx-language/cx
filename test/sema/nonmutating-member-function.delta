@@ -1,10 +1,10 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct Foo {
-    var i: int;
+    int i;
 
-    def bar() {
-        // CHECK: [[@LINE+1]]:31: error: cannot initialize variable of type 'mutable Foo*' with 'Foo*'
-        var f: mutable Foo* = this;
+    void bar() {
+        // CHECK: [[@LINE+1]]:26: error: cannot initialize variable of type 'mutable Foo*' with 'Foo*'
+        mutable Foo* f = this;
     }
 }

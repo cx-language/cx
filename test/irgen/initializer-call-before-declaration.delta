@@ -1,11 +1,11 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     var f = Foo(5);
 }
 
 struct Foo: Copyable {
-    var f: float;
-    init(i: int) { f = 0.0; }
+    float f;
+    init(int i) { f = 0.0; }
     deinit() { }
 }

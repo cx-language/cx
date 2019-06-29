@@ -1,7 +1,7 @@
 // RUN: %delta -print-ir %s
-def main() {
+void main() {
     var a = Foo(qux: 4);
 }
 struct Foo: Copyable {
-    init(qux: int) { }
+    init(int qux) { }
 }

@@ -1,11 +1,11 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
-    var i: int;
-    def doStuff() { }
+    int i;
+    void doStuff() { }
 }
 
 struct Bar {
-    var i: int;
-    def doStuff() { }
+    int i;
+    void doStuff() { }
 }

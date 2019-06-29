@@ -1,4 +1,4 @@
 // RUN: check_exit_status 0 compile_and_run %s
 
 import "stdarg.h";
-def main() { }
+void main() { }

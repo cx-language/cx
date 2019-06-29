@@ -1,19 +1,19 @@
 struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
-    var mapIter: mutable OrderedMapIterator<Element, bool>*;
+    mutable OrderedMapIterator<Element, bool>* mapIter;
 
-    init (set: OrderedSet<Element>*) {
+    init (OrderedSet<Element>* set) {
         this.mapIter = set.map.iterator();
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return mapIter.hasValue();
     }
 
-    def value(): Element* {
+    Element* value() {
         return mapIter.value().key;
     }
 
-    mutating def increment() {
+    mutating void increment() {
         mapIter.increment();
     }
 }

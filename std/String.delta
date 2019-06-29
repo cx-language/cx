@@ -1,5 +1,5 @@
 struct String: Comparable, OutputStream, Printable {
-    var characters: Array<char>;
+    Array<char> characters;
 
     /// Initializes an empty string.
     init() {
@@ -7,7 +7,7 @@ struct String: Comparable, OutputStream, Printable {
         characters.push('\0');
     }
 
-    init(string: StringRef) {
+    init(StringRef string) {
         characters = Array<char>(capacity: string.size() + 1);
 
         for (var ch in string) {
@@ -18,7 +18,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     /// Initializes a string with the characters from a character array of known length.
-    init(pointer: char*, length: int) {
+    init(char* pointer, int length) {
         init(StringRef(pointer, length));
     }
 
@@ -26,47 +26,47 @@ struct String: Comparable, OutputStream, Printable {
     ///
     /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
     /// length of the argument string. If you know the length beforehand, consider using
-    /// `String.init(pointer: char*, length: uint)` instead.
+    /// `String.init(char* pointer, uint length)` instead.
     ///
-    init(cString: char*) {
+    init(char* cString) {
         init(StringRef(cString, int(strlen(cString))));
     }
 
-    def size(): int {
+    int size() {
         return characters.size() - 1;
     }
 
     /// Returns the character at the given index.
-    def [](index: int): char {
+    char operator[](int index) {
         return characters[index];
     }
 
     /// Returns the string as a C-style, i.e. null-terminated, string.
     /// Modifying `this` after calling this function invalidates the returned pointer.
-    def cString(): char* {
+    char* cString() {
         return data();
     }
 
     /// Returns a pointer to the first character in the string.
-    def data(): char[?]* {
+    char[?]* data() {
         return characters.data();
     }
 
-    def empty(): bool {
+    bool empty() {
         return size() == 0;
     }
 
     /// Returns a pointer to the first character in the string.
-    mutating def data(): mutable char[?]* {
+    mutating mutable char[?]* data() {
         return characters.data();
     }
 
-    mutating def push(character: char) {
+    mutating void push(char character) {
         characters[size()] = character;
         characters.push('\0');
     }
 
-    mutating def write(string: StringRef): bool {
+    mutating bool write(StringRef string) {
         for (var ch in string) {
             push(ch);
         }
@@ -75,37 +75,37 @@ struct String: Comparable, OutputStream, Printable {
 
     /// Removes the first character from the string.
     /// Other characters are moved towards the beginning of the string by one index.
-    mutating def removeFirst() {
+    mutating void removeFirst() {
         characters.removeFirst();
     }
 
     /// Removes the last character from the string.
-    mutating def removeLast() {
+    mutating void removeLast() {
         characters.removeAt(characters.size() - 2);
     }
 
     /// Supports using strings with sets and dicts
-    def hash(): uint64 {
+    uint64 hash() {
         return StringRef(this).hash();
     }
 
-    def iterator(): StringIterator {
+    StringIterator iterator() {
         // TODO: When implicit initializers have been implemented, remove the StringRef() call below.
         return StringIterator(StringRef(this));
     }
 
-    def contains(c: char): bool {
+    bool contains(char c) {
         return find(c, 0) != -1;
     }
 
     /// Returns the index of the given character, or -1 if it's not found
-    def find(c: char): int {
+    int find(char c) {
         return find(c, 0);
     }
 
     /// Returns the index of the given character, or -1 if it's not found.
     /// Starts from start
-    def find(c: char, start: int): int {
+    int find(char c, int start) {
         for (var i in start..size()) {
             if (characters[i] == c) {
                 return int(i);
@@ -115,7 +115,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Returns the substring of the string in the given range, [inclusive, exclusive]
-    def substr(range: Range<int>): StringRef {
+    StringRef substr(Range<int> range) {
         if (range.end > size()) {
             indexOutOfBounds(range.end);
         }
@@ -123,7 +123,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Splits the string by the given delimiter
-    def split(delim: char): Array<StringRef> {
+    Array<StringRef> split(char delim) {
         var tokens = Array<StringRef>();
 
         var prev = 0;
@@ -149,25 +149,25 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Splits the string by whitespace
-    def split(): Array<StringRef> {
+    Array<StringRef> split() {
         return split(' ');
     }
 
-    def printTo(stream: mutable String*) {
+    void printTo(mutable String* stream) {
         stream.write(StringRef(this));
     }
 
-    def compare(other: String*): Ordering {
+    Ordering compare(String* other) {
         return StringRef(this).compare(StringRef(other));
     }
 
-    private def indexOutOfBounds(index: int) {
+    private void indexOutOfBounds(int index) {
         printf("Range index %d is out of bounds, size is %d\n", index, size());
         fatalError();
     }
 }
 
-def +(a: StringRef, b: StringRef): String {
+String operator+(StringRef a, StringRef b) {
     var result = String();
 
     for (var ch in a) {
@@ -181,7 +181,7 @@ def +(a: StringRef, b: StringRef): String {
     return result;
 }
 
-def +(a: String, b: StringRef): String {
+String operator+(String a, StringRef b) {
     var result = a;
 
     for (var ch in b) {
@@ -191,14 +191,14 @@ def +(a: String, b: StringRef): String {
     return result;
 }
 
-def ==(a: String*, b: String*): bool {
+bool operator==(String* a, String* b) {
     return StringRef(a) == StringRef(b);
 }
 
-def ==(a: String*, b: StringRef): bool {
+bool operator==(String* a, StringRef b) {
     return StringRef(a) == b;
 }
 
-def ==(a: StringRef, b: String*): bool {
+bool operator==(StringRef a, String* b) {
     return a == StringRef(b);
 }

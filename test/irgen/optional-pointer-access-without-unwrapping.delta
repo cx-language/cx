@@ -1,12 +1,12 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct Foo {
-    var i: int;
-    def bar() { }
+    int i;
+    void bar() { }
 }
 
-def main() {
-    var f: mutable Foo*? = null;
+void main() {
+    mutable Foo*? f = null;
     _ = f.i;
     f.bar();
     *f = *f;

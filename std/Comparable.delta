@@ -1,10 +1,9 @@
 /// A type whose instances have an inherent sort-order, i.e. can be compared with the `<`, `<=`,
 /// `>`, `>=` operators.
 interface Comparable {
-
     /// Returns `Ordering.Less` if `this` is less than `other`, `Ordering.Equal` if `this` is equal
     /// to `other`, or `Ordering.Greater` if `this` is greater than `other`.
-    def compare(other: This*): Ordering;
+    Ordering compare(This* other);
 }
 
 enum Ordering {
@@ -13,26 +12,26 @@ enum Ordering {
     case Greater;
 }
 
-def == <T: Comparable>(a: T*, b: T*): bool {
+bool operator== <T: Comparable>(T* a, T* b) {
     return a.compare(b) == Ordering.Equal;
 }
 
-def != <T: Comparable>(a: T*, b: T*): bool {
+bool operator!= <T: Comparable>(T* a, T* b) {
     return a.compare(b) != Ordering.Equal;
 }
 
-def < <T: Comparable>(a: T*, b: T*): bool {
+bool operator< <T: Comparable>(T* a, T* b) {
     return a.compare(b) == Ordering.Less;
 }
 
-def > <T: Comparable>(a: T*, b: T*): bool {
+bool operator> <T: Comparable>(T* a, T* b) {
     return a.compare(b) == Ordering.Greater;
 }
 
-def >= <T: Comparable>(a: T*, b: T*): bool {
+bool operator>= <T: Comparable>(T* a, T* b) {
     return a.compare(b) != Ordering.Less;
 }
 
-def <= <T: Comparable>(a: T*, b: T*): bool {
+bool operator<= <T: Comparable>(T* a, T* b) {
     return a.compare(b) != Ordering.Greater;
 }

@@ -1,7 +1,7 @@
 struct StringRef: Copyable, Comparable, Hashable, Printable {
-    var characters: ArrayRef<char>;
+    ArrayRef<char> characters;
 
-    init(pointer: char*, length: int) {
+    init(char* pointer, int length) {
         characters = ArrayRef<char>(pointer, length);
     }
 
@@ -9,41 +9,41 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     ///
     /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
     /// length of the argument string. If you know the length beforehand, consider using
-    /// `StringRef.init(pointer: char*, length: uint)` instead.
+    /// `StringRef.init(char* pointer, uint length)` instead.
     ///
-    init(cString: char*) {
+    init(char* cString) {
         characters = ArrayRef<char>(cString, int(strlen(cString)));
     }
 
-    init (string: String*) {
+    init (String* string) {
         characters = ArrayRef<char>(string.data(), string.size());
     }
 
-    def size(): int {
+    int size() {
         return characters.size();
     }
 
     /// Returns the character at the given index.
-    def [](index: int): char {
+    char operator[](int index) {
         return characters[index];
     }
 
-    def data(): char[?]* {
+    char[?]* data() {
         return characters.data();
     }
 
-    def contains(c: char): bool {
+    bool contains(char c) {
         return find(c, 0) != -1;
     }
 
     /// Returns the index of the given character, or -1 if it's not found
-    def find(c: char): int {
+    int find(char c) {
         return find(c, 0);
     }
 
     /// Returns the index of the given character, or -1 if it's not found.
     /// Starts from start
-    def find(c: char, start: int): int {
+    int find(char c, int start) {
         for (var i in start..size()) {
             if (characters[i] == c) {
                 return int(i);
@@ -53,8 +53,8 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     }
 
     /// Supports using strings with sets and dicts
-    def hash(): uint64 {
-        var hashValue: uint64 = 5381;
+    uint64 hash() {
+        uint64 hashValue = 5381;
 
         for (var index in 0..characters.size()) {
             hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
@@ -63,15 +63,15 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         return hashValue;
     }
 
-    def iterator(): StringIterator {
+    StringIterator iterator() {
         return StringIterator(this);
     }
 
-    def printTo(stream: mutable String*) {
+    void printTo(mutable String* stream) {
         stream.write(this);
     }
 
-    def compare(other: StringRef*): Ordering {
+    Ordering compare(StringRef* other) {
         for (var index in 0..min(size(), other.size())) {
             if (this[index] < other[index]) { return Ordering.Less; }
             if (this[index] > other[index]) { return Ordering.Greater; }
@@ -82,7 +82,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     }
 }
 
-def ==(a: StringRef, b: StringRef): bool {
+bool operator==(StringRef a, StringRef b) {
     if (a.size() != b.size()) {
         return false;
     }

@@ -3,15 +3,15 @@
 // CHECK-NOT: a.delta:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: '{{(a|A\.a)}}' is private
 
 struct A {
-    private var a: int;
+    private int a;
     init() {}
-    mutating def f() {
+    mutating void f() {
         this.a++;
         a++;
     }
 }
 
-def f() {
+void f() {
     var a = A();
     a.a++;
 }

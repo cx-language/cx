@@ -1,7 +1,7 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct Foo {
-    var i: int;
-    // CHECK: [[@LINE+1]]:23: error: cannot increment immutable value of type 'int'
-    def bar() { this.i++; }
+    int i;
+    // CHECK: [[@LINE+1]]:24: error: cannot increment immutable value of type 'int'
+    void bar() { this.i++; }
 }

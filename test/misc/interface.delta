@@ -1,18 +1,18 @@
 // RUN: %delta -print-ir %s
 
 interface Fooable {
-    def foo()
+    void foo();
 }
 
 struct F: Copyable, Fooable {
-    def foo() { }
+    void foo() { }
 }
 
-def main() {
-    var f: F = undefined;
+void main() {
+    F f = undefined;
     bar(f);
 }
 
-def bar<T: Fooable>(t: T) {
-    t.foo()
+void bar<T: Fooable>(T t) {
+    t.foo();
 }

@@ -1,44 +1,44 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 interface H {
-    def h(): int;
+    int h();
 }
 
 struct R: Copyable {
-    var i: int;
+    int i;
 
-    def h(): int {
+    int h() {
         return i;
     }
 }
 
 struct A<T> {
-    var t: T;
+    T t;
 
     init() {
         t = undefined;
     }
 
-    def [](i: int): T {
+    T operator[](int i) {
         return t;
     }
 }
 
 struct S<E: H> {
-    var a: A<A<E>>;
+    A<A<E>> a;
 
     init() {
         a = undefined;
     }
 
-    def s() {
+    void s() {
         var t = a[0];
         var tt = t[0];
         _ = a[tt.h()];
     }
 }
 
-def main() {
+void main() {
     var s = S<R>();
     s.s();
 }

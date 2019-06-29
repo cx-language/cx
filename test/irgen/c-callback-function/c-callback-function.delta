@@ -2,11 +2,11 @@
 
 import "c-callback-function.h";
 
-def f(a: int): int {
+int f(int a) {
     return a;
 }
 
-def main() {
+void main() {
     foo(f);
     bar(f);
     baz(f);

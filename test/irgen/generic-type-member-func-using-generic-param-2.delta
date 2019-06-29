@@ -5,16 +5,16 @@ import "stdlib.h"
 struct C<T>: Copyable {
     init() { }
 
-    def f() {
+    void f() {
         g()
     }
 
-    def g() {
+    void g() {
         var a = sizeof(T)
     }
 }
 
-def main() {
+void main() {
     var c = C<bool>()
     c.f()
 }

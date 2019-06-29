@@ -1,16 +1,16 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct Foo: Copyable {
-    init(a: int) { }
-    init(b: int) { }
+    init(int a) { }
+    init(int b) { }
 }
 
-def main() {
+void main() {
     // CHECK: [[@LINE+6]]:9: error: ambiguous reference to 'Foo.init'
     // CHECK: 4:5: note: candidate function:
-    // CHECK-NEXT: init(a: int) { }
+    // CHECK-NEXT: init(int a) { }
     // CHECK: 5:5: note: candidate function:
-    // CHECK-NEXT: init(b: int) { }
+    // CHECK-NEXT: init(int b) { }
     // CHECK-NOT: note
     _ = Foo(1)
 }

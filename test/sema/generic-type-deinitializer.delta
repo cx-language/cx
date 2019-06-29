@@ -9,6 +9,6 @@ struct C<T> {
     }
 }
 
-def main() {
+void main() {
     var c = C<int>()
 }

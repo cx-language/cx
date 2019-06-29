@@ -1,26 +1,26 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable {
-    var i: int
-    init() { i = 0 }
+    int i;
+    init() { i = 0; }
 }
 
 struct T: Copyable {
-    var i: int
-    init() { i = 0 }
+    int i;
+    init() { i = 0; }
 }
 
-def f(a: S) {}
-def f(a: T) {}
-def +(a: S, b: S) {}
-def +(a: T, b: T) {}
+void f(S a) {}
+void f(T a) {}
+void operator+(S a, S b) {}
+void operator+(T a, T b) {}
 
-def main() {
-    var s = S()
-    var t = T()
-    f(s)
-    f(t)
-    _ = s + s
-    _ = t + t
-    _ = 1 + 1
+void main() {
+    var s = S();
+    var t = T();
+    f(s);
+    f(t);
+    _ = s + s;
+    _ = t + t;
+    _ = 1 + 1;
 }

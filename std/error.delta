@@ -1,4 +1,4 @@
-def fatalError() {
+void fatalError() {
     printStackTrace();
     setAbortBehavior();
     abort();

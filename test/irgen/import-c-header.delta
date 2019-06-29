@@ -3,9 +3,9 @@
 import "stdio.h";
 import "foo.h";
 
-def main() {
+void main() {
     puts("foo bar");
-    var f: Foo = undefined;
+    Foo f = undefined;
     f.bar = MAGIC_NUMBER + ANSWER;
     f.baz = "foo";
     var bar = getBar(f);

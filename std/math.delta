@@ -1,4 +1,4 @@
-def abs<T>(value: T): T {
+T abs<T>(T value) {
     if (value < 0) {
         return -value;
     } else {

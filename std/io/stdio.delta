@@ -1,26 +1,26 @@
-def stdin(): InputFileStream {
+InputFileStream stdin() {
     return InputFileStream(fileDescriptor: 0);
 }
 
-def stdout(): OutputFileStream {
+OutputFileStream stdout() {
     return OutputFileStream(fileDescriptor: 1);
 }
 
-def stderr(): OutputFileStream {
+OutputFileStream stderr() {
     return OutputFileStream(fileDescriptor: 2);
 }
 
-def print<T: Printable>(value: T*) {
+void print<T: Printable>(T* value) {
     var string = value.toString();
     printf("%.*s\n", string.size(), string.data());
 }
 
-def print<T: Printable>(value: T) {
+void print<T: Printable>(T value) {
     var string = value.toString();
     printf("%.*s\n", string.size(), string.data());
 }
 
-def readLine(): String {
+String readLine() {
     var line = String();
 
     while (true) {

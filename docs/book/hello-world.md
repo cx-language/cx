@@ -1,7 +1,7 @@
 # Hello, World!
 
 ```
-def main() {
+void main() {
     print("Hello, World");
 }
 ```

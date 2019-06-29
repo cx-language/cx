@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def foo(i: int) {
+void foo(int i) {
     switch (i) {
         case 0:
             break;

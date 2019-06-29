@@ -1,15 +1,15 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def foo<T>(t: T) { }
+void foo<T>(T t) { }
 
-def bar<T>(t: T): T { return t; }
+T bar<T>(T t) { return t; }
 
-def qux<T>(t: T): T {
+T qux<T>(T t) {
     if (t < 0) { return -t; }
     return t;
 }
 
-def main() {
+void main() {
     foo<int>(1);
     foo<bool>(false);
     foo<bool>(true);

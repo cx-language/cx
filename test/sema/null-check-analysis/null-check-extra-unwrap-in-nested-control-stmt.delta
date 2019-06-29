@@ -1,10 +1,10 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct S: Copyable {
-    var a: mutable S*?;
+    mutable S*? a;
 }
 
-def foo(p: mutable S*): mutable S*? {
+mutable S*? foo(mutable S* p) {
     var n = p;
 
     while (n.a != null) {

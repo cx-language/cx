@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main(): int {
+int main() {
     return foo();
 }
 
-def foo(): int {
+int foo() {
     foo();
     return 42;
 }

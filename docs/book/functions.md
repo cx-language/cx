@@ -1,21 +1,21 @@
 # Functions
 
-Functions are declared using the `def` keyword:
+Functions are declared as follows:
 
 ```
-def foo() { }
+void foo() { }
 ```
 
 Parameters go inside the parentheses, like so:
 
 ```
-def foo(a: int, b: int) { }
+void foo(int a, int b) { }
 ```
 
 If the function has a return type, it is specified after the parameter list:
 
 ```
-def foo(a: int, b: int): int {
+int foo(int a, int b) {
     return a + b;
 }
 ```
@@ -31,7 +31,7 @@ var result = foo(1, 2);
 Functions can return more than one value by returning a tuple of values:
 
 ```
-def foo(): (key: int, value: bool) {
+(int key, bool value) foo() {
     var key = 42;
     var value = true;
     return (key, value);
@@ -43,7 +43,7 @@ def foo(): (key: int, value: bool) {
 Parameters can be declared to have a default value:
 
 ```
-def foo(i: int = 42) {
+void foo(int i = 42) {
     // ...
 }
 ```
@@ -62,7 +62,7 @@ To define generic functions, specify the type parameters inside angle brackets
 after the function name:
 
 ```
-def foo<T>() { }
+void foo<T>() { }
 ```
 
 `T` is a now a placeholder for a type that can be used in the definition of `foo`.

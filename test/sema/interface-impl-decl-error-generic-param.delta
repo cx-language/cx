@@ -5,6 +5,6 @@ struct Z<T>: T {
     init() {}
 }
 
-def main() {
+void main() {
     var z = Z<bool>();
 }

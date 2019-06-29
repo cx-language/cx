@@ -7,6 +7,6 @@ private enum A {
     case C;
 }
 
-def f() {
-    var a: A = A.C;
+void f() {
+    A a = A.C;
 }

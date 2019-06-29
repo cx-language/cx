@@ -1,4 +1,4 @@
 interface Hashable {
     // TODO: Should probably return int since Map just casts it to int anyway.
-    def hash(): uint64;
+    uint64 hash();
 }

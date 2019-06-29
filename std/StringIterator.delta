@@ -1,21 +1,21 @@
 struct StringIterator: Copyable, Iterator<char> {
-    var current: char[?]*;
-    var end: char[?]*;
+    char[?]* current;
+    char[?]* end;
 
-    init(string: StringRef) {
+    init(StringRef string) {
         current = string.data();
         end = &string.data()[string.size()];
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return current !== end;
     }
 
-    def value(): char {
+    char value() {
         return *current;
     }
 
-    mutating def increment() {
+    mutating void increment() {
         current++;
     }
 }

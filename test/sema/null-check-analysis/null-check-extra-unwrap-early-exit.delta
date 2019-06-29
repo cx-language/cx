@@ -2,7 +2,7 @@
 // XFAIL: *
 // TODO: Implement null check analysis to handle this case.
 
-def foo(p: int*?) {
+void foo(int*? p) {
     if (p == null) {
         return;
     }

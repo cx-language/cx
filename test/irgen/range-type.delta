@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def foo(r: Range<int>): int {
+int foo(Range<int> r) {
     var sum = 0;
     for (var i in r) {
         sum += i;
@@ -8,6 +8,6 @@ def foo(r: Range<int>): int {
     return sum;
 }
 
-def main(): int {
+int main() {
     return foo(0..5);
 }

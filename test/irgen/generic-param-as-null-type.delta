@@ -1,14 +1,14 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S<T>: Copyable {
-    var p: T*?
+    T*? p
 
     init() {
         p = null
     }
 }
 
-def main() {
+void main() {
     _ = S<int>()
     _ = S<bool>()
 }

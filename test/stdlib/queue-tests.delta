@@ -1,13 +1,13 @@
 // RUN: check_exit_status 0 compile_and_run -Werror %s
 
-def main() {
+void main() {
     testPushPop();
     testEmpty();
     testPushAfterPop();
     testFirst();
 }
 
-def testPushPop() {
+void testPushPop() {
     var q = Queue<int>();
 
     assert(q.size() == 0);
@@ -26,7 +26,7 @@ def testPushPop() {
     assert(q.size() == 0);
 }
 
-def testEmpty() {
+void testEmpty() {
     var q = Queue<StringRef>();
 
     assert(q.empty());
@@ -40,7 +40,7 @@ def testEmpty() {
     assert(q.empty());
 }
 
-def testPushAfterPop() {
+void testPushAfterPop() {
     var q = Queue<StringRef>();
 
     q.push("foo");
@@ -53,7 +53,7 @@ def testPushAfterPop() {
     assert(q.size() == 0);
 }
 
-def testFirst() {
+void testFirst() {
     var q = Queue<StringRef>();
 
     q.push("foo");

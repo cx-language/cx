@@ -1,12 +1,12 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct S<T>: Copyable {
-    def foo() {
+    void foo() {
         // CHECK: [[@LINE+1]]:9: error: unknown identifier 'x'
         x++
     }
 }
 
-def bar(s: S<int>) {
+void bar(S<int> s) {
     s.foo()
 }

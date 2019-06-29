@@ -1,12 +1,12 @@
 // RUN: %delta -typecheck -Werror %s
 
-def foo(p: mutable int*?) {
+void foo(mutable int*? p) {
     if (p) {
         var i = *p;
         *p = 42;
     }
 }
 
-def main() {
+void main() {
     foo(null);
 }

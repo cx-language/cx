@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable {
-    var i: int
+    int i
 
-    mutating def s() {
+    mutating void s() {
         this.i = 2
     }
 }

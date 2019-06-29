@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
-    var i: int;
+    int i;
 
     deinit() {
         i = 0;
@@ -9,11 +9,11 @@ struct Foo {
         this.f();
     }
 
-    mutating def f() {}
+    mutating void f() {}
 }
 
 struct Bar: Copyable {
-    var i: int;
+    int i;
 
     deinit() {
         i = 0;
@@ -21,17 +21,17 @@ struct Bar: Copyable {
         this.f();
     }
 
-    mutating def f() {}
+    mutating void f() {}
 }
 
-def main() {
-    var f: Foo = undefined;
+void main() {
+    Foo f = undefined;
     if (false) {
-        var f2: Foo = undefined;
+        Foo f2 = undefined;
     }
-    var b: Bar = undefined;
+    Bar b = undefined;
     while (false) {
-        var b2: Bar = undefined;
+        Bar b2 = undefined;
         return;
     }
     var i = 1;

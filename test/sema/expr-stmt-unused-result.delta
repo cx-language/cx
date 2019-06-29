@@ -1,6 +1,6 @@
 // RUN: not %delta -print-ir %s | %FileCheck %s
 
-def main() {
+void main() {
     // CHECK: [[@LINE+1]]:10: error: unexpected ';'
     2 + 2;
 }

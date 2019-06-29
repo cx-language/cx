@@ -2,12 +2,12 @@
 
 import "union-member-access.h"
 
-def foo(u: U): int {
+int foo(U u) {
     return u.b
 }
 
-def main(): int {
-    var u: U = undefined
+int main() {
+    U u = undefined
     u.a = 21
     return foo(u) + u.b
 }

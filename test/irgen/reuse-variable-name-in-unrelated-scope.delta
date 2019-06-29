@@ -1,12 +1,12 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-def f() {
+void f() {
     var index = 0;
     var x = g();
     X<int>().g();
 }
 
-def g(): X<int> {
+X<int> g() {
     var x = X<int>();
     return x;
 }
@@ -14,7 +14,7 @@ def g(): X<int> {
 struct X<T> {
     init() {}
 
-    def g() {
+    void g() {
         var index = 0;
     }
 }

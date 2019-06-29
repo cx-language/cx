@@ -1,10 +1,9 @@
 /// A Stream that can both read and write to files
 struct FileStream: InputStream, OutputStream {
-
-    var file: void*?;
+    void*? file;
 
     /// Initiates a stream that can both read and write to file
-    init(filename: StringRef) {
+    init(StringRef filename) {
         file = fopen(String(filename).cString(), "a+");
 
         if (file != null) {
@@ -13,7 +12,7 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// TODO when we have default params, switch to that
-    init(filename: StringRef, destroyContents: bool) {
+    init(StringRef filename, bool destroyContents) {
         if (destroyContents) {
             file = fopen(String(filename).cString(), "w+");
         } else {
@@ -22,12 +21,12 @@ struct FileStream: InputStream, OutputStream {
     }
 
     // FIXME: Remove readOnly parameter, FileStream can both read and write.
-    init(filename: StringRef, readOnly: bool) {
+    init(StringRef filename, bool readOnly) {
         file = fopen(String(filename).cString(), "r");
     }
 
     // FIXME: Remove readOnly parameter, FileStream can both read and write.
-    init(fileDescriptor: int, readOnly: bool) {
+    init(int fileDescriptor, bool readOnly) {
         if (readOnly) {
             file = fdopen(fileDescriptor, "r");
         } else {
@@ -41,7 +40,7 @@ struct FileStream: InputStream, OutputStream {
         }
     }
 
-    mutating def close() {
+    mutating void close() {
         if (file != null) {
             fclose(file);
             file = null;
@@ -49,27 +48,27 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Returns true if the file is open for reading or writing
-    def isOpen(): bool {
+    bool isOpen() {
         return file != null;
     }
 
     /// Returns an iterator that can be used to iterate over lines in the file
-    def lines(): LineIterator<FileStream> {
+    LineIterator<FileStream> lines() {
         return LineIterator(this);
     }
 
     /// Returns an iterator that can be used to iterate over each byte in the file
-    def bytes(): ByteIterator<FileStream> {
+    ByteIterator<FileStream> bytes() {
         return ByteIterator(this);
     }
 
     /// Reads one byte from the file
-    def readByte(): int {
+    int readByte() {
         return fgetc(file!);
     }
 
     /// Reads one line from the file, separated by \n
-    def readLine(): String {
+    String readLine() {
         var ret = String();
         for (var i in bytes()) {
             if (i == '\n') {
@@ -81,7 +80,7 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Returns true if we have reached the end of the file
-    def eof(): bool {
+    bool eof() {
         var ret = fgetc(file!);
         if (ret < 0) {
             return true;
@@ -91,7 +90,7 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    mutating def write(string: StringRef): bool {
+    mutating bool write(StringRef string) {
         for (var c in string) {
             var ret = fputc(int(c), file!);
             if (ret <= 0) {

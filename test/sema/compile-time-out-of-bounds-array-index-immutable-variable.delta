@@ -1,8 +1,8 @@
 // RUN: %delta -typecheck %s
 
-extern def foo(): int[5]*;
+extern int[5]* foo();
 
-def main() {
+void main() {
     var p = foo();
     var i = 5;
     i--;

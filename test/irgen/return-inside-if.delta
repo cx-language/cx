@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-extern def foo(): bool;
+extern bool foo();
 
-def bar() {
+void bar() {
     if (foo()) {
         return;
     } else {

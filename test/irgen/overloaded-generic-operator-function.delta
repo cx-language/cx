@@ -3,13 +3,13 @@
 struct S: Copyable {}
 
 interface I {
-    def foo();
+    void foo();
 }
 
-def ==<T: I>(a: T*, b: T*) {}
+void operator==<T: I>(T* a, T* b) {}
 
-def ==(a: S, b: S) {}
+void operator==(S a, S b) {}
 
-def f(s: S) {
+void f(S s) {
     _ = s == s;
 }

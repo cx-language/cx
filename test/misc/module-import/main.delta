@@ -2,9 +2,9 @@
 // CHECK:foo!!!
 // CHECK-NEXT:bar!!!
 
-import mod
+import mod;
 
-def main() {
-    foo()
-    bar()
+void main() {
+    foo();
+    bar();
 }

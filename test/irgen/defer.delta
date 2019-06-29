@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-extern def foo();
-extern def bar();
+extern void foo();
+extern void bar();
 
-def main() {
+void main() {
     defer foo();
     if (false) {
         defer bar();
@@ -23,4 +23,4 @@ def main() {
     foo();
 }
 
-def shouldBeEmpty() { }
+void shouldBeEmpty() { }

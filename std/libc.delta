@@ -1,24 +1,24 @@
 // stdlib.h
-extern def malloc(size: uint64): mutable void*?;
-extern def free(ptr: mutable void*?);
-extern def abort();
+extern mutable void*? malloc(uint64 size);
+extern void free(mutable void*? ptr);
+extern void abort();
 
 // stdio.h
 // TODO using FILE pointer causes infinite loop, so we use void pointer
-extern def printf(format: char*, ...): int;
-extern def sprintf(str: mutable char*, format: char*, ...): int;
-extern def getchar(): int;
-extern def fopen(filename: char*, mode: char*): void*?;
-extern def fdopen(fd: int, mode: char*): void*?;
-extern def fgetc(file: void*): int;
-extern def fclose(file: void*): int;
-extern def fflush(file: void*): int;
-extern def exit(status: int);
-extern def feof(file: void*): int;
-extern def fputc(c: int, file: void*): int;
-extern def remove(filename: char*): int;
-extern def ungetc(c: int, file: void*): int;
-extern def rewind(file: void*);
+extern int printf(char* format, ...);
+extern int sprintf(mutable char* str, char* format, ...);
+extern int getchar();
+extern void*? fopen(char* filename, char* mode);
+extern void*? fdopen(int fd, char* mode);
+extern int fgetc(void* file);
+extern int fclose(void* file);
+extern int fflush(void* file);
+extern void exit(int status);
+extern int feof(void* file);
+extern int fputc(int c, void* file);
+extern int remove(char* filename);
+extern int ungetc(int c, void* file);
+extern void rewind(void* file);
 
 // string.h
-extern def strlen(string: char*): uint64;
+extern uint64 strlen(char* string);

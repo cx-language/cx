@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 compile_and_run -Werror %s
 
-def main() {
+void main() {
     assert("abc" == "abc");
     assert(!("abc" == "not"));
     assert("abc" < "bcd");
@@ -12,7 +12,7 @@ def main() {
     testOtherSplit();
 }
 
-def testStringIterator() {
+void testStringIterator() {
     var iterator = "xy".iterator();
 
     assert(iterator.hasValue());
@@ -26,7 +26,7 @@ def testStringIterator() {
     assert(!iterator.hasValue());
 }
 
-def testFind() {
+void testFind() {
     var s = String("word");
 
     // Start from beginning
@@ -41,7 +41,7 @@ def testFind() {
     assert(s.find('d', 2) == 3);
 }
 
-def testSubstr() {
+void testSubstr() {
     var s = String("word");
 
     assert(s.substr(0..1) == "w");
@@ -67,7 +67,7 @@ def testSubstr() {
     assert(s3.substr(0..0) == "");
 }
 
-def testSplit() {
+void testSplit() {
     var s = String("this is the best sentence");
 
     var words = s.split();
@@ -81,7 +81,7 @@ def testSplit() {
     assert(words.size() == 5);
 }
 
-def testOtherSplit() {
+void testOtherSplit() {
     var s = String("this,sentence,is,comma,separated");
 
     var words = s.split(',');

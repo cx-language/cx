@@ -3,7 +3,7 @@
 struct S: Copyable { }
 struct C { }
 
-def main() {
-    var s: S = undefined;
-    var c: C = undefined;
+void main() {
+    S s = undefined;
+    C c = undefined;
 }

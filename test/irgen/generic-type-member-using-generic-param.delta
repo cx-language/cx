@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct A<T> {
-    var a: T*?
+    T*? a
     init() { this.a = null }
 }
 
-def main() { var a = A<int>() }
+void main() { var a = A<int>() }

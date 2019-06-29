@@ -1,6 +1,6 @@
 // RUN: check_exit_status 5 compile_and_run %s
 
-def f(a: int, b: bool): int { return a; }
-def main(): int {
+int f(int a, bool b) { return a; }
+int main() {
     return f(a: 5, b: false);
 }

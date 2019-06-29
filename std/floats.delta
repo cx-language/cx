@@ -2,25 +2,25 @@
 // 'compare' function for all floating-point types.
 
 struct float: Copyable, Comparable {
-    def compare(other: float*): Ordering {
+    Ordering compare(float* other) {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct float32: Copyable, Comparable {
-    def compare(other: float32*): Ordering {
+    Ordering compare(float32* other) {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct float64: Copyable, Comparable {
-    def compare(other: float64*): Ordering {
+    Ordering compare(float64* other) {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 }
 
 struct float80: Copyable, Comparable {
-    def compare(other: float80*): Ordering {
+    Ordering compare(float80* other) {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 }

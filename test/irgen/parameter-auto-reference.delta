@@ -2,8 +2,8 @@
 
 struct S: Copyable {}
 
-def f(s: S) {
+void f(S s) {
     g(s);
 }
 
-def g(s: S*) {}
+void g(S* s) {}

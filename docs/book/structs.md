@@ -19,7 +19,7 @@ definition:
 
 ```
 struct Foo {
-    def bar() {
+    void bar() {
         // ...
     }
 }
@@ -41,7 +41,7 @@ declared `mutating`:
 
 ```
 struct Foo {
-    mutating def bar() {
+    mutating void bar() {
         // ...
     }
 }
@@ -54,7 +54,7 @@ receiver, can be declared with the `static` keyword (not implemented yet):
 
 ```
 struct Foo {
-    static def bar() {
+    static void bar() {
         // ...
     }
 }

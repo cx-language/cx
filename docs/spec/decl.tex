@@ -9,8 +9,8 @@ syntax is as follows:
 
 \begin{grammar}
 \rule{implicitly-typed-variable-definition} \code{var} \nonterminal{variable-name} \code{=} \nonterminal{initializer} \code{;}\\
-\rule{explicitly-typed-variable-definition} \code{var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{=} \nonterminal{initializer} \code{;}\\
-\rule{variable-declaration} \code{var} \nonterminal{variable-name} \code{:} \nonterminal{type} \code{;}
+\rule{explicitly-typed-variable-definition} \nonterminal{type} \nonterminal{variable-name} \code{=} \nonterminal{initializer} \code{;}\\
+\rule{variable-declaration} \nonterminal{type} \nonterminal{variable-name} \code{;}
 \end{grammar}
 
 If \nonterminal{type} is present, the variable has the specified type. The
@@ -36,27 +36,26 @@ Constant declarations introduce a named compile-time constant into the enclosing
 scope:
 
 \begin{grammar}
-\rule{implicitly-typed-constant-definition} \code{const} \nonterminal{constant-name} \code{=} \nonterminal{initializer} \code{;}\\
-\rule{explicitly-typed-constant-definition} \code{const} \nonterminal{constant-name} \code{:} \nonterminal{type} \code{=} \nonterminal{initializer} \code{;}
+\rule{implicitly-typed-constant-definition} \code{const} \code{var} \nonterminal{constant-name} \code{=} \nonterminal{initializer} \code{;}\\
+\rule{explicitly-typed-constant-definition} \code{const} \nonterminal{type} \nonterminal{constant-name} \code{=} \nonterminal{initializer} \code{;}
 \end{grammar}
 
 Constant declarations must always have an initializer. The compiler evaluates the initializer at compile time.
 
 \section{Functions}
 
-A function can be defined with either of the following syntaxes:
+A function is defined with the following syntax:
 
 \begin{grammar}
-\code{def} \nonterminal{function-name} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{function-body} \code{\}}\\
-\code{def} \nonterminal{function-name} \code{(} \nonterminal{parameter-list} \code{)} \code{:} \nonterminal{return-type} \code{\{} \nonterminal{function-body} \code{\}}
+\nonterminal{return-type} \nonterminal{function-name} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{function-body} \code{\}}
 \end{grammar}
 
-The return type of the first version is \code{void}. The
+The return type should be \code{void} if the function doesn't return a value. The
 \nonterminal{parameter-list} is a comma-separated list of
 \nonterminal{parameters}:
 
 \begin{grammar}
-\rule{parameter} \nonterminal{parameter-name} \code{:} \nonterminal{parameter-type}
+\rule{parameter} \nonterminal{parameter-type} \nonterminal{parameter-name}
 \end{grammar}
 
 \nonterminal{parameter-name} is an identifier specifying the name of the
@@ -169,7 +168,7 @@ Structs can contain member variables. The syntax of a member variable definition
 is as follows:
 
 \begin{grammar}
-\rule{member-variable-declaration} \code{var} \nonterminal{member-variable-name} \code{:} \nonterminal{type} \code{;}
+\rule{member-variable-declaration} \nonterminal{type} \nonterminal{member-variable-name} \code{;}
 \end{grammar}
 
 \subsection{Generic structs}

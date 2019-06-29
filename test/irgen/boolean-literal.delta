@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     var b = false;
     var c = b == true;
 }

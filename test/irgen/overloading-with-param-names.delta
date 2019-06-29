@@ -1,12 +1,12 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct Foo {
-    var i: int
-    init(i: int) { }
-    init(qux: int) { }
-    def foo(i: int) { }
-    def foo(qux: int) { }
+    int i
+    init(int i) { }
+    init(int qux) { }
+    void foo(int i) { }
+    void foo(int qux) { }
 }
 
-def foo(i: int) { }
-def foo(qux: int) { }
+void foo(int i) { }
+void foo(int qux) { }

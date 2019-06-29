@@ -1,35 +1,35 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct A {
-    var i: int
-    var j: int
+    int i
+    int j
 
     init() {
         j = 42
     }
 
-    def foo() {
+    void foo() {
         _ = j
     }
 
-    mutating def bar() {
+    mutating void bar() {
         j = 1
     }
 }
 
 struct B: Copyable {
-    var i: int
-    var j: int
+    int i
+    int j
 
     init() {
         j = 42
     }
 
-    def foo() {
+    void foo() {
         _ = j
     }
 
-    mutating def bar() {
+    mutating void bar() {
         j = 1
     }
 }

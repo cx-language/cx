@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
-    // CHECK: [[@LINE+1]]:19: error: cannot initialize variable of type 'int*' with 'null'
-    var p: int* = null;
+void main() {
+    // CHECK: [[@LINE+1]]:14: error: cannot initialize variable of type 'int*' with 'null'
+    int* p = null;
 }

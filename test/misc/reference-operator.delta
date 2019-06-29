@@ -1,10 +1,10 @@
 // RUN: compile_and_run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:Bar
 
-extern def puts(s: uint8*): int;
+extern int puts(uint8* s);
 
-def main() {
-    var buffer: uint8[4] = undefined;
+void main() {
+    uint8[4] buffer = undefined;
     var ptr = &buffer;
     ptr[0] = 66;
     ptr[1] = 0x61;

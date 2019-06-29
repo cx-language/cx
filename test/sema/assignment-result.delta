@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
+void main() {
     var a = 1;
     // CHECK: [[@LINE+1]]:7: error: cannot assign 'void' to variable of type 'int'
     a = (a = 2);

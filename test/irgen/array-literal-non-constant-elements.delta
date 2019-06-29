@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-def f(foo: int, bar: int): int[2] {
+int[2] f(int foo, int bar) {
     return [foo + bar, foo - bar];
 }
 
-def g(foo: int, bar: int): int[2] {
+int[2] g(int foo, int bar) {
     var c = [foo + bar, foo - bar];
     return c;
 }

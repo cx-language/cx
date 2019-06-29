@@ -5,11 +5,11 @@ struct X {
     deinit() {}
 }
 
-def f(): X {
+X f() {
     var x = X();
     return x;
 }
 
-def main() {
+void main() {
     var a = f();
 }

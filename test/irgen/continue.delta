@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def baz(foo: bool) {
+void baz(bool foo) {
     while (foo) {
         if (foo) {
             baz(foo);

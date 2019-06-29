@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
+void main() {
     var foo = 0;
     var bar = true;
     // CHECK: [[@LINE+1]]:13: error: invalid operands 'int' and 'bool' to '&&'

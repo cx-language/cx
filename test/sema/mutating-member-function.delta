@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
 struct Foo {
-    var i: int;
-    mutating def bar() { var f: mutable Foo* = this; }
+    int i;
+    mutating void bar() { mutable Foo* f = this; }
 }

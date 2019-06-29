@@ -1,6 +1,6 @@
 // RUN: %delta -print-ast %s | %FileCheck %s
 
-def main() {
+void main() {
     // CHECK:      (if-stmt false
     // CHECK-NEXT:     (then
     // CHECK-NEXT:         (return-stmt)))

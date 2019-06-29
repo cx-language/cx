@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct C {
-    var i: int;
+    int i;
     init() { i = 0; }
 }
 
@@ -11,6 +11,6 @@ struct A<T> {
     }
 }
 
-def main() {
+void main() {
     var a = A<C>();
 }

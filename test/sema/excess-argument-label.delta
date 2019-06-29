@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def f(a: int) { }
+void f(int a) { }
 
-def main() {
+void main() {
     // CHECK: [[@LINE+1]]:7: error: invalid argument name 'foo' for parameter 'a'
     f(foo: 0);
 }

@@ -1,18 +1,18 @@
 // RUN: check_exit_status 21 compile_and_run %s
 
 struct Foo: Copyable {
-    var value: int;
+    int value;
 
-    init(value: int) {
+    init(int value) {
         this.value = value;
     }
 
-    def add(number: int): int {
+    int add(int number) {
         return this.value + number;
     }
 }
 
-def main(): int {
+int main() {
     var foo = Foo(42);
     return foo.add(-21);
 }

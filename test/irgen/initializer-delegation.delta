@@ -1,15 +1,15 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     var x = X(4, 2);
 }
 
 struct X {
-    init(a: int, b: int) {
+    init(int a, int b) {
         init(a);
     }
 
-    init(a: int) {
+    init(int a) {
         init();
     }
 

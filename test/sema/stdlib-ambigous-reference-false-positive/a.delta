@@ -2,7 +2,7 @@
 
 import "a.h"
 
-def main() {
+void main() {
     var a = Array<int>()
     a.push(1)
 }

@@ -1,8 +1,8 @@
 // RUN: not compile_and_run %s | %FileCheck %s
 // UNSUPPORTED: windows, wsl
 
-def main() {
-    var p: mutable int*? = null;
+void main() {
+    mutable int*? p = null;
     // CHECK: Unwrap failed at delta-run-unwrap-fail.delta:[[@LINE+1]]:15
     var pp = p!;
 }

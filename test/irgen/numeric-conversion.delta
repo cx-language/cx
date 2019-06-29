@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
-    var i: uint16 = 42;
+void main() {
+    uint16 i = 42;
     var f = float32(i);
     var u = int64(f);
     var s = uint(true);

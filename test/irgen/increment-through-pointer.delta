@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-def f(a: mutable int*) {
+void f(mutable int* a) {
     var p = a;
     p++;
     a--;

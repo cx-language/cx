@@ -3,15 +3,15 @@
 struct X {
     init() {}
 
-    def f<T>(t: () -> T): T {
+    T f<T>(T() t) {
         return t();
     }
 }
 
-def g(): int { return 0; }
-def h(): bool { return false; }
+int g() { return 0; }
+bool h() { return false; }
 
-def main() {
+void main() {
     var x = X();
     x.f(g);
     x.f(h);

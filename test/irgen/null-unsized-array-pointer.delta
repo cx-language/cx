@@ -2,6 +2,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 // XFAIL: *
 
-def main() {
-    var a: int8[]*? = null
+void main() {
+    int8[]*? a = null
 }

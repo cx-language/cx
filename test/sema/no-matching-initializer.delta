@@ -2,15 +2,15 @@
 
 struct Foo: Copyable {
     init() { }
-    init(i: int) { }
+    init(int i) { }
 }
 
-def main() {
+void main() {
     // CHECK: no matching initializer for 'Foo'
     // CHECK: 4:5: note: candidate function:
     // CHECK-NEXT: init() { }
     // CHECK: 5:5: note: candidate function:
-    // CHECK-NEXT: init(i: int) { }
+    // CHECK-NEXT: init(int i) { }
     // CHECK-NOT: note
     _ = Foo(3.14)
 }

@@ -1,11 +1,11 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 // XFAIL: *
 
-extern def foo(): int[5]*;
+extern int[5]* foo();
 
-def main() {
+void main() {
     var p = foo();
-    var i: uint = 5;
+    uint i = 5;
     // CHECK: [[@LINE+1]]:15: error: accessing array out-of-bounds with index 5, array size is 5
     var e = p[i];
 }

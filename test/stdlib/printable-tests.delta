@@ -1,25 +1,25 @@
 // RUN: check_exit_status 0 compile_and_run -Werror %s
 
-def main() {
+void main() {
     testCustomPrintablestruct();
 }
 
 struct A: Printable {
-    var a: StringRef;
-    var b: StringRef;
+    StringRef a;
+    StringRef b;
 
-    init(a: StringRef, b: StringRef) {
+    init(StringRef a, StringRef b) {
         this.a = a;
         this.b = b;
     }
 
-    def printTo(stream: mutable String*) {
+    void printTo(mutable String* stream) {
         stream.write(a);
         stream.write("+");
         stream.write(b);
     }
 }
 
-def testCustomPrintablestruct() {
+void testCustomPrintablestruct() {
     assert(StringRef(A("foo", "bar").toString()) == "foo+bar");
 }

@@ -1,4 +1,0 @@
-// RUN: not %delta -parse %s | %FileCheck %s
-
-// CHECK: 4:8: error: type specifier cannot specify mutability
-var a: mutable int = 1

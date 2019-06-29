@@ -2,18 +2,18 @@
 
 struct C: Comparable {
 
-    var a: int;
+    int a;
 
-    init(a: int) {
+    init(int a) {
         this.a = a;
     }
 
-    def compare(other: C*): Ordering {
+    Ordering compare(C* other) {
         return this.a.compare(other.a);
     }
 }
 
-def main() {
+void main() {
     var a = C(6);
     var b = C(99);
 

@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def f(v: void*) {
+void f(void* v) {
     // CHECK: [[@LINE+1]]:13: error: illegal cast from 'void*' to 'mutable int*'
     var p = cast<mutable int*>(v);
 }

@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     for (var i in 0...5) { }
     for (var i in 0...5) { }
 }

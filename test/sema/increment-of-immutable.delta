@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def foo(i: int*) {
+void foo(int* i) {
     // CHECK: [[@LINE+1]]:9: error: cannot increment immutable value of type 'int'
     (*i)++;
 }

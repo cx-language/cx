@@ -1,12 +1,12 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
-    var i: int;
-    def bar() { }
+    int i;
+    void bar() { }
 }
 
-def main() {
-    var f: Foo = undefined;
-    var rf: Foo* = f;
+void main() {
+    Foo f = undefined;
+    Foo* rf = f;
     rf.bar();
 }

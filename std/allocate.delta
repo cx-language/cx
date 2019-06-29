@@ -5,7 +5,7 @@
 /// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
 /// undefined behavior (when compiled in unchecked mode).
 ///
-def allocate<Type>(value: Type): mutable Type* {
+mutable Type* allocate<Type>(Type value) {
     var allocation = cast<mutable Type*>(malloc(sizeof(Type))!);
     allocation.init(value);
     return allocation;
@@ -17,7 +17,7 @@ def allocate<Type>(value: Type): mutable Type* {
 ///
 /// If the memory allocation fails, null is returned.
 ///
-def safeAllocate<Type>(value: Type): mutable Type*? {
+mutable Type*? safeAllocate<Type>(Type value) {
     var allocation = cast<mutable Type*?>(malloc(sizeof(Type)));
     if (allocation != null) {
         allocation.init(value);
@@ -32,7 +32,7 @@ def safeAllocate<Type>(value: Type): mutable Type*? {
 /// If the memory allocation fails, the program crashes (when compiled in checked mode) or invokes
 /// undefined behavior (when compiled in unchecked mode).
 ///
-def allocateArray<Type>(size: int): mutable Type[?]* {
+mutable Type[?]* allocateArray<Type>(int size) {
     return cast<mutable Type[?]*>(malloc(sizeof(Type) * uint64(size))!);
 }
 
@@ -42,19 +42,19 @@ def allocateArray<Type>(size: int): mutable Type[?]* {
 ///
 /// If the memory allocation fails, null is returned.
 ///
-def safeAllocateArray<Type>(size: int): mutable Type[?]*? {
+mutable Type[?]*? safeAllocateArray<Type>(int size) {
     return cast<mutable Type[?]*>(malloc(sizeof(Type) * uint64(size)));
 }
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
 /// `allocateArray`, `safeAllocate`, or `safeAllocateArray`.
-def deallocate<Type>(allocation: mutable Type*) {
+void deallocate<Type>(mutable Type* allocation) {
     free(allocation);
 }
 
 /// Deallocates a block of dynamic memory that was previously allocated by a call to `allocate`,
 /// `allocateArray`, `safeAllocate`, or `safeAllocateArray`. If the argument is null, no operation
 /// is performed.
-def deallocate<Type>(allocation: mutable Type*?) {
+void deallocate<Type>(mutable Type*? allocation) {
     free(allocation);
 }

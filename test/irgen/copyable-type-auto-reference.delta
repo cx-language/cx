@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-struct Foo: Copyable { var i: int; }
+struct Foo: Copyable { int i; }
 
-def foo(ref_f: Foo*) { }
+void foo(Foo* ref_f) { }
 
-def main() {
-    var f: Foo = undefined;
+void main() {
+    Foo f = undefined;
     foo(f);
 }

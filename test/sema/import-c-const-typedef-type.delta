@@ -2,7 +2,7 @@
 
 import "import-c-const-typedef-type.h";
 
-def main() {
+void main() {
     var i = 0;
     bar(&i);
 }

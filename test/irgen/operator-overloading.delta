@@ -1,36 +1,36 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 struct vec2: Copyable {
-    var x: int
-    var y: int
+    int x
+    int y
 
-    init(x: int, y: int) {
+    init(int x, int y) {
         this.x = x
         this.y = y
     }
 
-    def [](index: int): int {
+    int operator[](int index) {
         return index
     }
 }
 
-def *(a: vec2, b: vec2): vec2 {
+vec2 operator*(vec2 a, vec2 b) {
     return vec2(a.x * b.x, a.y * b.y)
 }
 
-def main() {
+void main() {
     var v = vec2(3, 2)
     v = vec2(2, 4) * v
     _ = v == vec2(-1, 3)
     _ = v[v.x]
 }
 
-def ==(a: vec2, b: vec2): bool {
+bool operator==(vec2 a, vec2 b) {
     return a.x == b.x
 }
 
 struct A<T>: Copyable {}
 
-def ==<T>(a: A<T>, b: A<T>): bool {
+bool operator==<T>(A<T> a, A<T> b) {
     return true
 }

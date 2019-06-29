@@ -5,7 +5,7 @@ struct S: Copyable {
         var i = 4;
     }
 
-    init(foo: int) {
+    init(int foo) {
         var j = 5;
     }
 }

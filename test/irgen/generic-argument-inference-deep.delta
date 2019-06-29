@@ -1,17 +1,17 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 struct S<T>: Copyable {
-    var f: T;
+    T f;
 }
 
-def ==<T>(a: S<T>, b: S<T>): bool {
+bool operator==<T>(S<T> a, S<T> b) {
     return true;
 }
 
-def f(c: S<int>, d: S<int>) {
+void f(S<int> c, S<int> d) {
     _ = c == d;
 }
 
-def f(c: S<bool>* , d: S<bool>* ) {
+void f(S<bool>*  c, S<bool>*  d) {
     _ = *c == *d;
 }

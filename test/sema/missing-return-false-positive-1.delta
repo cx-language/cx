@@ -1,6 +1,6 @@
 // RUN: %delta -print-ir %s
 
-def foo(b: bool): int {
+int foo(bool b) {
     if (b) {
         return 1;
     } else {

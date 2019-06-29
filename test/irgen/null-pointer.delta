@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def foo(): int*? { return null; }
+int*? foo() { return null; }
 
-def main() {
+void main() {
     var isNull = foo() == null;
     var isNonNull = foo() != null;
     var ptr = foo();
-    var ptr2: bool*? = null;
+    bool*? ptr2 = null;
 }

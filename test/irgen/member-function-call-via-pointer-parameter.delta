@@ -1,23 +1,23 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo {
-    var i: int;
+    int i;
     init() { i = 0; }
-    def foo() { }
+    void foo() { }
 }
 
 struct Bar: Copyable {
-    var i: int;
+    int i;
     init() { i = 0; }
-    def bar() { }
+    void bar() { }
 }
 
-def qux(f: Foo*, b: Bar*) {
+void qux(Foo* f, Bar* b) {
     f.foo();
     b.bar();
 }
 
-def main() {
+void main() {
     var f = Foo();
     var b = Bar();
     qux(f, b);

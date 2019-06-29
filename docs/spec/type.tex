@@ -148,7 +148,7 @@ may not have a top-level mutable modifier.
 \begin{grammar}
 \rule{tuple-type} \code{(} \nonterminal{tuple-element-list} \code{)}\\
 \rule{tuple-element-list} comma-separated list of one or more \nonterminal{tuple-elements}\\
-\rule{tuple-element} \nonterminal{name} \code{:} \nonterminal{type}
+\rule{tuple-element} \nonterminal{type} \nonterminal{name}
 \end{grammar}
 
 Tuples behave like structs, but they're defined inline. Tuples are intended as

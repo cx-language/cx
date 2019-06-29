@@ -2,7 +2,7 @@
 
 import "header.h"
 
-def main() {
+void main() {
     // CHECK-NOT: error: ambiguous reference to 'foo'
     foo(a)
 }

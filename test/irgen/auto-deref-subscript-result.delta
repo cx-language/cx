@@ -1,13 +1,13 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 struct S<T> {
-    var t: T;
+    T t;
 
-    mutating def [](i: int): mutable T* {
+    mutating mutable T* operator[](int i) {
         return t;
     }
 }
 
-def f(s: mutable S<int>*) {
+void f(mutable S<int>* s) {
     s[0]++;
 }

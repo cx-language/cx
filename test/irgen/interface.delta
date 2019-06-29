@@ -1,5 +1,5 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 interface I {
-    def f();
+    void f();
 }

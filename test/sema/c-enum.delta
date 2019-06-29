@@ -2,7 +2,7 @@
 
 import "c-enum.h";
 
-def main() {
-    var u: uint = FOO;
-    var i: int = FOO;
+void main() {
+    uint u = FOO;
+    int i = FOO;
 }

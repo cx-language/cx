@@ -1,12 +1,12 @@
 // RUN: %delta -typecheck %s | %FileCheck %s
 
 struct Foo: Copyable {
-    var i: int;
-    def bar() { }
+    int i;
+    void bar() { }
 }
 
-def main() {
-    var f: Foo*? = null;
+void main() {
+    Foo*? f = null;
     // CHECK: [[@LINE+1]]:5: warning: calling member function through value of optional type 'Foo*?' which may be null; unwrap the value with a postfix '!' to silence this warning
     f.bar();
 }

@@ -2,8 +2,8 @@
 
 struct X {}
 
-def f(x: X) {
-    var p: X*? = null;
+void f(X x) {
+    X*? p = null;
     p = x;
     p = x;
 }

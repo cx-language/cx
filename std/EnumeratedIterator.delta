@@ -1,31 +1,31 @@
 struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<Element>> {
-    var base: ArrayIterator<Element>;
-    var index: int;
+    ArrayIterator<Element> base;
+    int index;
 
-    init(iterator: ArrayIterator<Element>) {
+    init(ArrayIterator<Element> iterator) {
         base = iterator;
         index = 0;
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return base.hasValue();
     }
 
-    def value(): EnumeratedIteratorEntry<Element> {
+    EnumeratedIteratorEntry<Element> value() {
         return EnumeratedIteratorEntry(base.value(), index);
     }
 
-    mutating def increment() {
+    mutating void increment() {
         base.increment();
         index++;
     }
 }
 
 struct EnumeratedIteratorEntry<Value>: Copyable {
-    var value: Value*;
-    var index: int;
+    Value* value;
+    int index;
 
-    init(value: Value*, index: int) {
+    init(Value* value, int index) {
         this.value = value;
         this.index = index;
     }

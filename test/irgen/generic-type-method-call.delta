@@ -4,15 +4,15 @@ struct S<E> {
     init() {
         E().h();
     }
-    def s() {}
+    void s() {}
 }
 
 struct A: Copyable {
     init() {}
-    def h() {}
+    void h() {}
 }
 
-def main() {
+void main() {
     var x = S<A>();
     x.s();
 }

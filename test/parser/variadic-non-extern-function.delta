@@ -1,4 +1,5 @@
 // RUN: not %delta -parse %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:15: error: expected identifier, got '...'
-def f(i: int, ...) {}
+// TODO: Improve error message to say "expected type, got '...'"
+// CHECK: [[@LINE+1]]:15: error: unexpected '...'
+void f(int i, ...) {}

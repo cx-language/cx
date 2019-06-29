@@ -1,25 +1,25 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-struct X { var i: int; }
-struct Y { var i: int; }
+struct X { int i; }
+struct Y { int i; }
 
-def <(a: X*, b: X*): bool {
+bool operator<(X* a, X* b) {
     return true;
 }
 
 interface Z {
-    def z();
+    void z();
 }
 
-def < <T: Z>(a: T*, b: T*): bool {
+bool operator< <T: Z>(T* a, T* b) {
     return true;
 }
 
-def fx(a: X*, b: X*) {
+void fx(X* a, X* b) {
     _ = a < b;
     _ = *a < *b;
 }
 
-def fy(a: Y*, b: Y*) {
+void fy(Y* a, Y* b) {
     _ = addressof(a) < addressof(b);
 }

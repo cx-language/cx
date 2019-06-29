@@ -1,28 +1,27 @@
 struct LineIterator<Stream: InputStream>: Iterator<String> {
+    Stream* stream;
+    String next;
 
-    var stream: Stream*;
-    var next: String;
-
-    init(stream: Stream*) {
+    init(Stream* stream) {
         this.stream = stream;
         next = undefined;
         increment();
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return !stream.eof() || !next.empty();
     }
 
-    def value(): String {
+    String value() {
         return next;
     }
 
-    mutating def increment() {
+    mutating void increment() {
         var next = stream.readLine();
         this.next = next;
     }
 
-    def iterator(): LineIterator<Stream> {
+    LineIterator<Stream> iterator() {
         return this;
     }
 

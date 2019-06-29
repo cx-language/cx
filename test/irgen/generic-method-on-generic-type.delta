@@ -2,12 +2,12 @@
 
 struct X<T> {
     init() {}
-    mutating def f<U>(u: (U) -> T) {}
+    mutating void f<U>(T(U) u) {}
 }
 
-def g(i: bool): int { return int(i); }
+int g(bool i) { return int(i); }
 
-def main() {
+void main() {
     var x = X<int>();
     x.f(g);
 }

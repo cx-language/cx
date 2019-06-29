@@ -1,15 +1,15 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X<T> {
-    def f<U>(u: U): X<U> {
-        var x: X<U> = undefined;
+    X<U> f<U>(U u) {
+        X<U> x = undefined;
         return x;
     }
 
-    def g() {}
+    void g() {}
 }
 
-def main(x: X<int>) {
+void main(X<int> x) {
     var a = x.f(false);
     a.g();
 }

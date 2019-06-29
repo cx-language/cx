@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def foo() { }
+void foo() { }
 
-// CHECK: [[@LINE+1]]:5: error: redefinition of 'foo'
-def foo() { }
+// CHECK: [[@LINE+1]]:6: error: redefinition of 'foo'
+void foo() { }

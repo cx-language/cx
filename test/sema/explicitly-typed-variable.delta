@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
-    // CHECK: [[@LINE+1]]:18: error: cannot initialize variable of type 'int' with 'bool'
-    var i: int = false;
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: cannot initialize variable of type 'int' with 'bool'
+    int i = false;
 }

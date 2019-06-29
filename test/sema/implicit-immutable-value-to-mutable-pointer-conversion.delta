@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main(i: int) {
-    // CHECK: [[@LINE+1]]:27: error: cannot initialize variable of type 'mutable int*' with 'int'
-    var p: mutable int* = i;
+void main(int i) {
+    // CHECK: [[@LINE+1]]:22: error: cannot initialize variable of type 'mutable int*' with 'int'
+    mutable int* p = i;
 }

@@ -1,8 +1,8 @@
 interface Printable {
     // TODO: Make this member function take any OutputStream as an argument once the compiler supports it.
-    def printTo(stream: mutable String*);
+    void printTo(mutable String* stream);
 
-    def toString(): String {
+    String toString() {
         var string = String();
         printTo(string);
         return string;

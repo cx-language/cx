@@ -1,7 +1,7 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 interface X {
-    def foo();
+    void foo();
 }
 
 // CHECK: [[@LINE+1]]:8: error: 'Z' doesn't have member function 'foo' required by interface 'X'
@@ -9,6 +9,6 @@ struct Z<T>: X {
     init() {}
 }
 
-def main() {
+void main() {
     var z = Z<int>();
 }

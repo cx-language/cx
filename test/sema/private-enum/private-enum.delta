@@ -1,10 +1,10 @@
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %s
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta
 
-def main() {
+void main() {
     // CHECK: private-enum.delta:[[@LINE+1]]:13: warning: 'A' is private
     var b = A.B;
 
-    // CHECK: private-enum.delta:[[@LINE+1]]:12: warning: 'A' is private
-    var c: A = undefined;
+    // CHECK: private-enum.delta:[[@LINE+1]]:5: warning: 'A' is private
+    A c = undefined;
 }

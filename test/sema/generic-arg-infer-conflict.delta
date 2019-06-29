@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def foo<T>(a: T, b: T) { }
+void foo<T>(T a, T b) { }
 
-// CHECK: [[@LINE+1]]:17: error: couldn't infer generic parameter 'T' of 'foo' because of conflicting argument types 'int' and 'bool'
-def main() { foo(1, false) }
+// CHECK: [[@LINE+1]]:18: error: couldn't infer generic parameter 'T' of 'foo' because of conflicting argument types 'int' and 'bool'
+void main() { foo(1, false) }

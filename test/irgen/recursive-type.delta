@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 struct S: Copyable {
-    var next: S*
+    S* next
 }
 
-def f(s: S) {}
+void f(S s) {}

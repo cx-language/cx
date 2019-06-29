@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def f<T>(a: T[]*) {
+void f<T>(T[]* a) {
     var s = a.size();
 }
 
-def main() {
+void main() {
     f(&[1,2,3]);
     f<int>([1,2,3]);
     f([1,2,3]);

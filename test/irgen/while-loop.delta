@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-extern def foo(): bool;
+extern bool foo();
 
-def main() {
+void main() {
     while (foo()) {
         foo();
     }

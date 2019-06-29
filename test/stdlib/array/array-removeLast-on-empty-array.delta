@@ -1,7 +1,7 @@
 // RUN: not compile_and_run %s | %FileCheck %s
 // UNSUPPORTED: wsl
 
-def main() {
+void main() {
     var array = Array<int>();
     array.removeLast();
 }

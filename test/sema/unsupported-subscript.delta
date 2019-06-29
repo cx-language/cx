@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-extern def f(): mutable void*?;
+extern mutable void*? f();
 
-def main() {
+void main() {
     var p = cast<mutable uint8*?>(f());
     // CHECK: [[@LINE+1]]:6: error: 'mutable uint8*?' doesn't provide a subscript operator
     p[0] = 64;

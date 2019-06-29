@@ -347,20 +347,20 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
         case TypeKind::TupleType:
             stream << "(";
             for (auto& element : getTupleElements()) {
-                stream << element.name << ": ";
                 element.type.printTo(stream, omitTopLevelMutable);
+                stream << " " << element.name;
                 if (&element != &getTupleElements().back()) stream << ", ";
             }
             stream << ")";
             break;
         case TypeKind::FunctionType:
+            getReturnType().printTo(stream, true);
             stream << "(";
             for (const Type& paramType : getParamTypes()) {
                 stream << paramType;
                 if (&paramType != &getParamTypes().back()) stream << ", ";
             }
-            stream << ") -> ";
-            getReturnType().printTo(stream, true);
+            stream << ")";
             break;
         case TypeKind::PointerType:
             if (getPointee().isFunctionType()) {

@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-def foo(a: int*?, b: mutable int*) {
+void foo(int*? a, mutable int* b) {
     _ = a === b;
     _ = a !== b;
 }

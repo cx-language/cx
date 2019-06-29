@@ -1,33 +1,32 @@
 /// A Stream that can only write to files
 struct OutputFileStream: OutputStream {
-
-    var fs: FileStream;
+    FileStream fs;
 
     /// Initiates a stream that can only write to files
-    init(filename: StringRef) {
+    init(StringRef filename) {
         init(filename, false);
     }
 
     /// TODO when we have default params, switch to that
-    init(filename: StringRef, destroyContents: bool) {
+    init(StringRef filename, bool destroyContents) {
         fs = FileStream(filename, destroyContents);
     }
 
-    init(fileDescriptor: int) {
+    init(int fileDescriptor) {
         fs = FileStream(fileDescriptor, readOnly: false);
     }
 
-    mutating def close() {
+    mutating void close() {
         fs.close();
     }
 
     /// Returns true if the file is open for writing
-    def isOpen(): bool {
+    bool isOpen() {
         return fs.isOpen();
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    mutating def write(string: StringRef): bool {
+    mutating bool write(StringRef string) {
         return fs.write(string);
     }
 }

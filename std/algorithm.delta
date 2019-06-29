@@ -1,7 +1,7 @@
 /// Public members
 
 /// Gives the maximum of the two elements
-def max<T>(a: T*, b: T*): T* {
+T* max<T>(T* a, T* b) {
     if (a >= b) {
         return a;
     }
@@ -9,7 +9,7 @@ def max<T>(a: T*, b: T*): T* {
 }
 
 /// Gives the minimum of the two elements
-def min<T>(a: T*, b: T*): T* {
+T* min<T>(T* a, T* b) {
     if (a < b) {
         return a;
     }
@@ -17,14 +17,14 @@ def min<T>(a: T*, b: T*): T* {
 }
 
 /// Swaps two items in place
-def swap<E>(a: mutable E*, b: mutable E*) {
+void swap<E>(mutable E* a, mutable E* b) {
     var t = *a;
     *a = *b;
     *b = t;
 }
 
 /// Sorts an array. Uses insertion sort if the array is small enough, and quickSort otherwise.
-def sort<E: Comparable>(array: mutable Array<E>*) {
+void sort<E: Comparable>(mutable Array<E>* array)  {
     if (array.size() <= 32) {
         insertionSort(array);
     } else {
@@ -34,7 +34,7 @@ def sort<E: Comparable>(array: mutable Array<E>*) {
 
 /// Private members
 
-private def partition<E: Comparable>(arr: mutable Array<E>*, low: int, high: int): int {
+private int partition<E: Comparable>(mutable Array<E>* arr, int low, int high) {
     var pivot = arr[high];
     var i = low - 1;
 
@@ -51,7 +51,7 @@ private def partition<E: Comparable>(arr: mutable Array<E>*, low: int, high: int
 }
 
 /// Quicksorts the given array, in place. Not stable.
-private def quickSort<E: Comparable>(arr: mutable Array<E>*, low: int, high: int) {
+private void quickSort<E: Comparable>(mutable Array<E>* arr, int low, int high) {
     if (low < high) {
         var index = partition(arr, low, high);
 
@@ -65,7 +65,7 @@ private def quickSort<E: Comparable>(arr: mutable Array<E>*, low: int, high: int
 }
 
 /// Insertion sorts the given array, in place. Good for small arrays
-private def insertionSort<E: Comparable>(arr: mutable Array<E>*) {
+private void insertionSort<E: Comparable>(mutable Array<E>* arr) {
     var i = 1;
     while (i < arr.size()) {
         var j = i;

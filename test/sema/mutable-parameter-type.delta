@@ -1,4 +1,4 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:9: error: parameter types cannot be 'mutable'
-def foo(i: mutable int) { }
+// CHECK: [[@LINE+1]]:22: error: parameter types cannot be 'mutable'
+void foo(mutable int i) { }

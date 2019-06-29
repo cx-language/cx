@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def f(r: Range<int>) {}
+void f(Range<int> r) {}
 
-def main() {
+void main() {
     var foo = 0;
     var bar = 0;
     f(foo..bar);

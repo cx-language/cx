@@ -1,21 +1,21 @@
-struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(key: Key, value: mutable Value)*> {
-    var current: AVLnode<Key, Value>*?;
-    var map: OrderedMap<Key, Value>*;
+struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(Key key, mutable Value value)*> {
+    AVLnode<Key, Value>*? current;
+    OrderedMap<Key, Value>* map;
 
-    init (map: OrderedMap<Key, Value>*) {
+    init(OrderedMap<Key, Value>* map) {
         current = map.firstNode();
         this.map = map;
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return current != null;
     }
 
-    def value(): (key: Key, value: mutable Value)* {
+    (Key key, mutable Value value)* value() {
         return current!.entry;
     }
 
-    mutating def increment() {
+    mutating void increment() {
         current = map.higherNode(current!);
     }
 }

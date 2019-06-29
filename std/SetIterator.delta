@@ -1,19 +1,19 @@
 struct SetIterator<Element>: Copyable, Iterator<Element*> {
-    var iterator: MapIterator<Element, bool>;
+    MapIterator<Element, bool> iterator;
 
-    init(set: Set<Element>* ) {
+    init(Set<Element>*  set) {
         iterator = MapIterator<Element, bool>(set.map);
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return iterator.hasValue();
     }
 
-    def value(): Element* {
+    Element* value() {
         return iterator.value().key;
     }
 
-    mutating def increment() {
+    mutating void increment() {
         iterator.increment();
     }
 }

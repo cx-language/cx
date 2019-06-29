@@ -1,16 +1,16 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 interface A {
-    def f(): int;
-    def g(): int { return f() * 2; }
+    int f();
+    int g() { return f() * 2; }
 }
 
 struct B: A {
     init() {}
-    def f(): int { return 21; }
+    int f() { return 21; }
 }
 
-def main() {
+void main() {
     var b = B();
     var x = b.g();
 }

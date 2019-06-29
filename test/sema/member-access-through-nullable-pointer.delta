@@ -1,11 +1,11 @@
 // RUN: %delta -typecheck %s | %FileCheck %s
 
 struct Foo: Copyable {
-    var i: int;
+    int i;
 }
 
-def main() {
-    var p: Foo*? = null;
+void main() {
+    Foo*? p = null;
     // CHECK: [[@LINE+1]]:9: warning: accessing member through value of optional type 'Foo*?' which may be null; unwrap the value with a postfix '!' to silence this warning
     _ = p.i;
 }

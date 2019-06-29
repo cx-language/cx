@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def foo<T>(a: T, b: T): T { return b; }
+T foo<T>(T a, T b) { return b; }
 
-// CHECK: [[@LINE+1]]:35: error: too many generic arguments to 'foo', expected 1
-def main() { var f = foo<int, int>(1, 2); }
+// CHECK: [[@LINE+1]]:36: error: too many generic arguments to 'foo', expected 1
+void main() { var f = foo<int, int>(1, 2); }

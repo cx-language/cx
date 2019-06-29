@@ -1,7 +1,7 @@
 // RUN: not compile_and_run %s | %FileCheck %s
 // UNSUPPORTED: wsl
 
-def main(): int {
+int main() {
     var s = String("ok");
     s.substr(0..5);
     return 0;

@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def foo(a: (int, int) -> int) {
+void foo(int(int, int) a) {
     _ = a(1, 2);
 }
 
-def main() {
-    foo((a: int, b: int) -> a + b);
+void main() {
+    foo((int a, int b) -> a + b);
 }

@@ -2,7 +2,7 @@
 
 import "import-c-typedefed-anonymous-struct.h";
 
-def main() {
-    var x: Foo = undefined;
+void main() {
+    Foo x = undefined;
     foo(x);
 }

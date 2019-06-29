@@ -9,7 +9,7 @@ struct A<E>: Copyable {
         foo()
     }
 
-    def f() {
+    void f() {
         foo()
     }
 }

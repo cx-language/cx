@@ -2,7 +2,7 @@
 
 struct Foo {}
 
-def main() {
+void main() {
     // CHECK: [[@LINE+1]]:15: error: 'Foo' is not a variable
     var bar = Foo.bar;
 }

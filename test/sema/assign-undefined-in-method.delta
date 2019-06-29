@@ -1,9 +1,9 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct A {
-    var i: int;
+    int i;
 
-    mutating def f() {
+    mutating void f() {
         // CHECK: [[@LINE+1]]:11: error: 'undefined' is only allowed as an initial value
         i = undefined;
     }

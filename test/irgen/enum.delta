@@ -8,7 +8,7 @@ enum A {
     case z;
 }
 
-def main() {
+void main() {
     var foo = A.z;
     if (foo == A.y) {}
     if (foo != A.x) {}

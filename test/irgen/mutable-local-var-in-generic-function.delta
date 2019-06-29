@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def f<T>() {
+void f<T>() {
     var i = 0;
     i++;
 }
 
-def main() {
+void main() {
     f<int>();
 }

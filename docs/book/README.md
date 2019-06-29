@@ -1,3 +1,5 @@
+__Note:__ This document is incomplete and parts of it may be out of date.
+
 # Introduction
 
 Delta is a modern system programming language designed as an alternative to C++,
@@ -77,10 +79,6 @@ copy assignment operators in C++.
 
 Delta's syntax is clean, consistent, and similar to the C family of languages.
 
-Function and variable declarations are easy to locate outside an IDE, because
-the name is always prefixed with either `var`, `const`, or `def` in the
-declaration.
-
 No C-style cast syntax, only C++-style casts and built-in type constructors.
 
 ### Examples of syntax
@@ -90,13 +88,13 @@ type inference:
 
 C++                                         | Delta
 --------------------------------------------|-----------------------------------
-`a([&](auto& b) { return b.c(); });`        | `a(b -> b.c())`
+`a([&](auto& b) { return b.c(); });`        | `a(b -> b.c());`
 
 Function pointer declaration:
 
 C and C++                                   | Delta
 --------------------------------------------|-----------------------------------
-`void (*foo)(int);`                         | `var foo: int -> void`
+`void (*foo)(int);`                         | `void(int) foo;`
 
 ## Simple and expressive language
 
@@ -217,7 +215,7 @@ Modern type system features for convenience and performance:
 While iterating a map, the key and value from the key-value tuple can be
 destructured into separate variables:
 
-```swift
+```
 for (var (key, value) in myMap) {
     ...
 }
@@ -225,14 +223,14 @@ for (var (key, value) in myMap) {
 
 Destructure the return value of a function returning multiple values as a tuple:
 
-```swift
-def foo(): (a: int, b: bool) {
+```
+(int a, bool b) foo() {
     var a = 42;
     var b = false;
     return (a, b);
 }
 
-def main() {
+void main() {
     var (a, b) = foo();
 }
 ```

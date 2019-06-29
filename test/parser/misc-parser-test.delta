@@ -4,38 +4,38 @@
 
 import "math.h"; // CHECK-NEXT:    (import-decl "math.h")
 
-def foo1() { } // CHECK-NEXT:    (function-decl foo1 () void)
+void foo1() { } // CHECK-NEXT:    (function-decl foo1 () void)
 
-def foo2(a: int) { } // CHECK-NEXT:    (function-decl foo2 ((int a)) void)
+void foo2(int a) { } // CHECK-NEXT:    (function-decl foo2 ((int a)) void)
 
-def foo3(a: int, b: int) { } // CHECK-NEXT:    (function-decl foo3 ((int a) (int b)) void)
+void foo3(int a, int b) { } // CHECK-NEXT:    (function-decl foo3 ((int a) (int b)) void)
 
-def foo4(): int { // CHECK-NEXT:    (function-decl foo4 () int
-    return 42;       // CHECK-NEXT:        (return-stmt 42))
+int foo4() { // CHECK-NEXT:    (function-decl foo4 () int
+    return 42;    // CHECK-NEXT:        (return-stmt 42))
 }
 
-def foo5(): (a: int, b: bool) { // CHECK-NEXT:    (function-decl foo5 () (a: int, b: bool)
-    return (a: 42, b: false);      // CHECK-NEXT:        (return-stmt (tuple-literal (a 42) (b false))))
+(int a, bool b) foo5() { // CHECK-NEXT:    (function-decl foo5 () (int a, bool b)
+    return (a: 42, b: false); // CHECK-NEXT:        (return-stmt (tuple-literal (a 42) (b false))))
 }
 
-def foo6(): int { // CHECK-NEXT:    (function-decl foo6 () int
+int foo6() {    // CHECK-NEXT:    (function-decl foo6 () int
     var answer = 42; // CHECK-NEXT:        (var-stmt answer 42)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 
-def foo7(): int { // CHECK-NEXT:    (function-decl foo7 () int
+int foo7() {    // CHECK-NEXT:    (function-decl foo7 () int
     var answer = 41; // CHECK-NEXT:        (var-stmt answer 41)
     answer++;        // CHECK-NEXT:        (++answer)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 
-def foo8(): int { // CHECK-NEXT:    (function-decl foo8 () int
+int foo8() {    // CHECK-NEXT:    (function-decl foo8 () int
     var answer = 43; // CHECK-NEXT:        (var-stmt answer 43)
     answer--;        // CHECK-NEXT:        (--answer)
     return answer;   // CHECK-NEXT:        (return-stmt answer))
 }
 
-def foo9(): int {                      // CHECK-NEXT:    (function-decl foo9 () int
+int foo9() {                         // CHECK-NEXT:    (function-decl foo9 () int
     return (0 - -0xC) / (0o4 + 0b11 * 2); // CHECK-NEXT:        (return-stmt ((0 - (-12)) / (4 + (3 * 2)))))
 }
 
@@ -44,20 +44,20 @@ var foo10 = 42; // CHECK-NEXT:    (var-decl foo10 42)
 var foo11 = 42; // CHECK-NEXT:    (var-decl foo11 42)
 
 struct S1: Copyable { // CHECK-NEXT:    (type-decl struct S1
-    var a: uint;      // CHECK-NEXT:        (field-decl uint a)
-    var b: char*;     // CHECK-NEXT:        (field-decl char* b))
+    uint a;           // CHECK-NEXT:        (field-decl uint a)
+    char* b;          // CHECK-NEXT:        (field-decl char* b))
 }
 
 struct C1 {       // CHECK-NEXT:    (type-decl struct C1
-    var a: int8;  // CHECK-NEXT:        (field-decl int8 a)
-    var b: bool*; // CHECK-NEXT:        (field-decl bool* b))
+    int8 a;       // CHECK-NEXT:        (field-decl int8 a)
+    bool* b;      // CHECK-NEXT:        (field-decl bool* b))
 }
 
-def foo12(a: int*, b: int): bool { // CHECK-NEXT:    (function-decl foo12 ((int* a) (int b)) bool
-    return *a == b;                   // CHECK-NEXT:        (return-stmt ((*a) == b)))
+bool foo12(int* a, int b) { // CHECK-NEXT:    (function-decl foo12 ((int* a) (int b)) bool
+    return *a == b;              // CHECK-NEXT:        (return-stmt ((*a) == b)))
 }
 
-def foo13(a: int) {   // CHECK-NEXT:    (function-decl foo13 ((int a)) void
+void foo13(int a) {     // CHECK-NEXT:    (function-decl foo13 ((int a)) void
     defer foo13(a);    // CHECK-NEXT:        (defer-stmt (call foo13 a))
     var i = [1, 2, 3]; // CHECK-NEXT:        (var-stmt i (array-literal 1 2 3))
     switch (a) {       // CHECK-NEXT:        (switch-stmt a

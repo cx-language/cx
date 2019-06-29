@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-extern def f(p: char*, ...);
+extern void f(char* p, ...);
 
-def main() {
+void main() {
     // CHECK: [[@LINE+1]]:5: error: too few arguments to 'f', expected at least 1
     f();
 }

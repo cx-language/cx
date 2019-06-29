@@ -1,8 +1,8 @@
 /// An ordered key-value container that supports fast insertion, deletion and lookup
 struct OrderedMap<Key, Value> {
 
-    var root: mutable AVLnode<Key, Value>*?;
-    var size: int;
+    mutable AVLnode<Key, Value>*? root;
+    int size;
 
     init() {
         root = null;
@@ -16,16 +16,16 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the size of the Map
-    def size(): int {
+    int size() {
         return size;
     }
 
     /// Returns true if the Map is empty, otherwise false
-    def empty(): bool {
+    bool empty() {
         return size == 0;
     }
 
-    mutating private def rebalance(node: mutable AVLnode<Key, Value>*) {
+    mutating private void rebalance(mutable AVLnode<Key, Value>* node) {
         var n = node;
         setBalance(n);
 
@@ -50,7 +50,7 @@ struct OrderedMap<Key, Value> {
         }
     }
 
-    private def rotateLeft(node: mutable AVLnode<Key, Value>*): mutable AVLnode<Key, Value>* {
+    private mutable AVLnode<Key, Value>* rotateLeft(mutable AVLnode<Key, Value>* node) {
         var a = node;
         var b = a.right!;
         b.parent = a.parent;
@@ -76,7 +76,7 @@ struct OrderedMap<Key, Value> {
         return b;
     }
 
-    private def rotateRight(node: mutable AVLnode<Key, Value>*): mutable AVLnode<Key, Value>* {
+    private mutable AVLnode<Key, Value>* rotateRight(mutable AVLnode<Key, Value>* node) {
         var a = node;
         var b = a.left!;
         b.parent = a.parent;
@@ -102,34 +102,34 @@ struct OrderedMap<Key, Value> {
         return b;
     }
 
-    private def rotateLeftThenRight(n: mutable AVLnode<Key, Value>*): mutable AVLnode<Key, Value>* {
+    private mutable AVLnode<Key, Value>* rotateLeftThenRight(mutable AVLnode<Key, Value>* n) {
         n.left = rotateLeft(n.left!);
         return rotateRight(n);
     }
 
-    private def rotateRightThenLeft(n: mutable AVLnode<Key, Value>*): mutable AVLnode<Key, Value>* {
+    private mutable AVLnode<Key, Value>* rotateRightThenLeft(mutable AVLnode<Key, Value>* n) {
         n.right = rotateRight(n.right!);
         return rotateLeft(n);
     }
 
-    private def height(n: AVLnode<Key, Value>*?): int {
+    private int height(AVLnode<Key, Value>*? n) {
         if (n == null) {
             return -1;
         }
         return 1 + *max(height(n!.left), height(n!.right));
     }
 
-    private def setBalance(n: mutable AVLnode<Key, Value>*) {
+    private void setBalance(mutable AVLnode<Key, Value>* n) {
         n.balance = height(n.right) - height(n.left);
     }
 
     /// Checks if the given element is in the Map. Returns true if it is, otherwise false
-    def contains(key: Key*): bool {
+    bool contains(Key* key) {
         return findNode(key) != null;
     }
 
     /// Returns the value of the given key, if it exists in the Map. Otherwise, returns null.
-    def [](key: Key*): Value*? {
+    Value*? operator[](Key* key) {
         var found = findNode(key);
         if (found != null) {
             return found.entry.value;
@@ -138,7 +138,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Inserts a key-value pair into the Map.
-    mutating def insert(key: Key, value: Value): bool {
+    mutating bool insert(Key key, Value value) {
         if (root == null) {
             root = allocate(AVLnode<Key, Value>(key, null, value));
         } else {
@@ -172,14 +172,14 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Removes a key and it's associated value from the Map
-    mutating def remove(key: Key*) {
+    mutating void remove(Key* key) {
         if (root == null) {
             return;
         }
 
         var n = root!;
         var parent = root!;
-        var delNode: mutable AVLnode<Key, Value>*? = null;
+        mutable AVLnode<Key, Value>*? delNode = null;
         var child = root;
 
         while (child != null) {
@@ -215,7 +215,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map
-    def find(key: Key*): (key: Key, value: mutable Value)*? {
+    (Key key, mutable Value value)*? find(Key* key) {
         var node = findNode(key);
         if (node != null) {
             return node.entry;
@@ -224,7 +224,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the node corresponding to `key`, or null if it doesn't exist in the Map
-    def findNode(key: Key*): AVLnode<Key, Value>*? {
+    AVLnode<Key, Value>*? findNode(Key* key) {
         var n = root;
 
         while (true) {
@@ -245,7 +245,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the key immediately smaller than the one given,
     /// or null, if `key` is the smallest in the Map.
-    def lowerKey(key: Key*): Key*? {
+    Key*? lowerKey(Key* key) {
         var found = findNode(key);
         if (found == null) {
             return null;
@@ -258,7 +258,7 @@ struct OrderedMap<Key, Value> {
         return lower!.entry.key;
     }
 
-    private def maxInSubtree(node: AVLnode<Key, Value>*): AVLnode<Key, Value>* {
+    private AVLnode<Key, Value>* maxInSubtree(AVLnode<Key, Value>* node) {
         var n = node;
         while (n.right != null) {
             n = n.right;
@@ -266,7 +266,7 @@ struct OrderedMap<Key, Value> {
         return n;
     }
 
-    private def minInSubtree(node: mutable AVLnode<Key, Value>*): mutable AVLnode<Key, Value>* {
+    private mutable AVLnode<Key, Value>* minInSubtree(mutable AVLnode<Key, Value>* node) {
         var n = node;
         while (n.left != null) {
             n = n.left;
@@ -276,7 +276,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the node that contains the key immediately smaller than the key of the given node,
     /// or null, if the key of `node` is the smallest value.
-    def lowerNode(node: AVLnode<Key, Value>*): AVLnode<Key, Value>*? {
+    AVLnode<Key, Value>*? lowerNode(AVLnode<Key, Value>* node) {
         if (node.left != null) {
             return maxInSubtree(node.left);
         }
@@ -293,7 +293,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the key immediately higher than the one given,
     /// or null, if `key` is the largest in the Map.
-    def higherKey(key: Key*): Key*? {
+    Key*? higherKey(Key* key) {
         var found = findNode(key);
         if (found == null) {
             return null;
@@ -309,7 +309,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the node that contains the key immediately larger than the key of the given node,
     /// or null, if the key of `node` is the largest value.
-    def higherNode(node: AVLnode<Key, Value>*): mutable AVLnode<Key, Value>*? {
+    mutable AVLnode<Key, Value>*? higherNode(AVLnode<Key, Value>* node) {
         if (node.right != null) {
             return minInSubtree(node.right);
         }
@@ -326,7 +326,7 @@ struct OrderedMap<Key, Value> {
 
 
     /// Returns the smallest element in the Map, or null if the Map is empty.
-    def first(): Key*? {
+    Key*? first() {
         if (root == null) {
             return null;
         }
@@ -334,7 +334,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the node with the smallest key in the Map, or null if the Map is empty.
-    def firstNode(): mutable AVLnode<Key, Value>*? {
+    mutable AVLnode<Key, Value>*? firstNode() {
         if (root == null) {
             return null;
         }
@@ -342,7 +342,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the largest element in the Map, or null if the map is empty.
-    def last(): Key*? {
+    Key*? last() {
         if (root == null) {
             return null;
         }
@@ -350,7 +350,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the node with the largest key in the Map, or null if the Map is empty.
-    def lastNode(): AVLnode<Key, Value>*? {
+    AVLnode<Key, Value>*? lastNode() {
         if (root == null) {
             return null;
         }
@@ -358,20 +358,20 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Iterate over the map, in order
-    def iterator(): OrderedMapIterator<Key, Value> {
+    OrderedMapIterator<Key, Value> iterator() {
         return OrderedMapIterator(this);
     }
 }
 
 /// One node in the AVL tree
 struct AVLnode<Key, Value> {
-    var entry: (key: Key, value: mutable Value);
-    var balance: int;
-    var parent: mutable AVLnode<Key, Value>*?;
-    var left: mutable AVLnode<Key, Value>*?;
-    var right: mutable AVLnode<Key, Value>*?;
+    (Key key, mutable Value value) entry;
+    int balance;
+    mutable AVLnode<Key, Value>*? parent;
+    mutable AVLnode<Key, Value>*? left;
+    mutable AVLnode<Key, Value>*? right;
 
-    init(key: Key, parent: mutable AVLnode<Key, Value>*?, value: Value) {
+    init(Key key, mutable AVLnode<Key, Value>*? parent, Value value) {
         this.entry = (key, value);
         this.parent = parent;
         this.balance = 0;
@@ -379,7 +379,7 @@ struct AVLnode<Key, Value> {
         this.right = null;
     }
 
-    mutating def deallocate() {
+    mutating void deallocate() {
         deallocate(this);
 
         if (left != null) {

@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
+void main() {
     for (var i in 0..1) {
         // CHECK-NOT: [[@LINE+1]]:9: error
         break;

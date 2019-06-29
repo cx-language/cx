@@ -1,8 +1,8 @@
 // RUN: %delta -typecheck %s | %FileCheck %s
 
 struct A {
-    var i: int;
-    var j: int*;
+    int i;
+    int* j;
 
     // CHECK: [[@LINE+2]]:5: warning: initializer doesn't initialize member variable 'i'
     // CHECK: [[@LINE+1]]:5: warning: initializer doesn't initialize member variable 'j'

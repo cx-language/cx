@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-extern def a(): bool;
-extern def b(): bool;
-extern def c(): bool;
+extern bool a();
+extern bool b();
+extern bool c();
 
-def main() {
+void main() {
     var and = a() && b();
     var and2 = a() && b() && c();
     var or = a() || b();

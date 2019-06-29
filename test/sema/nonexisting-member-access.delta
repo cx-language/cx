@@ -1,11 +1,11 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct Foo {
-    var qux: int;
+    int qux;
     init() { }
 }
 
-def main() {
+void main() {
     var foo = Foo();
     // CHECK: [[@LINE+1]]:19: error: no member named 'bar' in 'Foo'
     var bar = foo.bar;

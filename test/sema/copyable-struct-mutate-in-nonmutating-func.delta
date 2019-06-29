@@ -1,9 +1,9 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct A: Copyable {
-    var s: int
+    int s
 
-    def a() {
+    void a() {
         // CHECK: 8:10: error: cannot increment immutable value of type 'int'
         s++
     }

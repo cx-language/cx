@@ -1,22 +1,22 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 struct A: Copyable {
-    var i: int;
+    int i;
     init() {}
 }
 
 struct B {
-    var i: int;
+    int i;
     init() {}
 }
 
-def f(a: A*) {}
-def f(b: B*) {}
-def f(i: int*) {}
+void f(A* a) {}
+void f(B* b) {}
+void f(int* i) {}
 
-def main() {
-    var a: A = undefined;
-    var b: B = undefined;
+void main() {
+    A a = undefined;
+    B b = undefined;
     f(A());
     f(B());
     f(0);

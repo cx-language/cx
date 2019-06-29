@@ -1,31 +1,31 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 interface Interface {
-    var that: This*;
+    This* that;
 
-    def foo(a: This*): This*;
+    This* foo(This* a);
 
-    def bar(): This* {
+    This* bar() {
         return foo(foo(this));
     }
 }
 
 struct S: Interface {
-    var that: S*;
+    S* that;
 
     init() { that = this; }
 
-    def foo(a: S*): S* {
+    S* foo(S* a) {
         return this;
     }
 }
 
-def main() {
+void main() {
     var a = S();
     var b = S();
     f(a.foo(b));
 }
 
-def f<T: Interface>(a: T*) {
+void f<T: Interface>(T* a) {
     a.foo(a.foo(a));
 }

@@ -1,14 +1,14 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct A {
-    var i: int
+    int i
     init() { i = 0 }
     deinit() { }
-    def foo() { }
-    mutating def mutate() { }
+    void foo() { }
+    mutating void mutate() { }
 }
 
-def main() {
+void main() {
     var a = A()
     a.foo()
     a.mutate()

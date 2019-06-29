@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-extern def foo(): int*?;
+extern int*? foo();
 
-def main() {
-    // CHECK: [[@LINE+1]]:22: error: cannot initialize variable of type 'int*' with 'int*?'
-    var f: int* = foo();
+void main() {
+    // CHECK: [[@LINE+1]]:17: error: cannot initialize variable of type 'int*' with 'int*?'
+    int* f = foo();
 }

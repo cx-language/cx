@@ -1,13 +1,13 @@
 #if Windows
 
-extern def _set_abort_behavior(flags: uint, mask: uint): uint;
+extern uint _set_abort_behavior(uint flags, uint mask);
 var _CALL_REPORTFAULT = 0x2;
 
-def printStackTrace() {
+void printStackTrace() {
     // TODO: Implement stack trace on Windows.
 }
 
-def setAbortBehavior() {
+void setAbortBehavior() {
     // Disable "*.exe has stopped working" popup window which prevents testing the output of the program.
     _set_abort_behavior(0, _CALL_REPORTFAULT);
 }

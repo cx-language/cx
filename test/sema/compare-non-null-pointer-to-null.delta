@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def main() {
+void main() {
     var i = 42;
     var p = &i;
     // CHECK: [[@LINE+1]]:11: error: invalid operands 'mutable int*' and 'null' to '==' (non-optional type 'mutable int*' cannot be null)

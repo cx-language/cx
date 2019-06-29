@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
 struct X {
-    var i: int;
+    int i;
     deinit() {}
 }
 
-def foo(p: mutable X*, x: X) {
+void foo(mutable X* p, X x) {
     p.init(x);
 }

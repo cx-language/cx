@@ -1,11 +1,11 @@
 struct UniquePtr<Pointee> {
-	var pointer: mutable Pointee*;
+	mutable Pointee* pointer;
 
-	init(value: Pointee) {
+	init(Pointee value) {
 		this.pointer = allocate(value);
 	}
 
-	init(pointer: mutable Pointee*) {
+	init(mutable Pointee* pointer) {
 		this.pointer = pointer;
 	}
 
@@ -13,11 +13,11 @@ struct UniquePtr<Pointee> {
 		deallocate(pointer);
 	}
 
-	def get(): Pointee* {
+	Pointee* get() {
 		return pointer;
 	}
 
-	mutating def get(): mutable Pointee* {
+	mutating mutable Pointee* get() {
 		return pointer;
 	}
 }

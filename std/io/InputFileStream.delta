@@ -1,48 +1,47 @@
 /// A Stream that can only read from files, not write to them
 struct InputFileStream: InputStream {
-
-    var fs: FileStream;
+    FileStream fs;
 
     /// Initiates a stream that can read from files
-    init(filename: StringRef) {
+    init(StringRef filename) {
         fs = FileStream(filename, readOnly: true);
     }
 
-    init(fileDescriptor: int) {
+    init(int fileDescriptor) {
         fs = FileStream(fileDescriptor, readOnly: true);
     }
 
-    mutating def close() {
+    mutating void close() {
         fs.close();
     }
 
     /// Returns true if the file is open for reading
-    def isOpen(): bool {
+    bool isOpen() {
         return fs.isOpen();
     }
 
     /// Returns an iterator that can be used to iterate over lines in the file
-    def lines(): LineIterator<InputFileStream> {
+    LineIterator<InputFileStream> lines() {
         return LineIterator(this);
     }
 
     /// Returns an iterator that can be used to iterate over each byte in the file
-    def bytes(): ByteIterator<InputFileStream> {
+    ByteIterator<InputFileStream> bytes() {
         return ByteIterator(this);
     }
 
     /// Reads one byte from the file
-    def readByte(): int {
+    int readByte() {
         return fs.readByte();
     }
 
     /// Reads one line from the file, separated by \n
-    def readLine(): String {
+    String readLine() {
         return fs.readLine();
     }
 
     /// Returns true if we have reached the end of the file
-    def eof(): bool {
+    bool eof() {
         return fs.eof();
     }
 }

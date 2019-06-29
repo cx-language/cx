@@ -3,12 +3,12 @@
 struct S<T>: Copyable {
     init() {}
 
-    def f(t: T) {
+    void f(T t) {
         var v = t
     }
 }
 
-def main() {
+void main() {
     S<int>().f(1)
     S<bool>().f(false)
 }

@@ -1,20 +1,20 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def foo() {}
+void foo() {}
 
-def f2(a: int, b: bool): int { return a; }
+int f2(int a, bool b) { return a; }
 
-def g(p: () -> void) {
+void g(void() p) {
     var p2 = p;
     p2();
 }
 
-def g2(p: (int, bool) -> int) {
+void g2(int(int, bool) p) {
     var p2 = p;
     var a = p2(42, !true) + 1;
 }
 
-def main() {
+void main() {
     var lf = foo;
     g(lf);
     var lf2 = f2;

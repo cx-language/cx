@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-extern def foo(): int[5]*;
+extern int[5]* foo();
 
-def main() {
+void main() {
     var p = foo();
     // CHECK: [[@LINE+1]]:15: error: illegal subscript index type 'bool', expected 'int'
     var e = p[false];

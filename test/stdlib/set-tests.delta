@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 compile_and_run -Werror %s
 
-def main() {
+void main() {
     testInsert();
     testRemoval();
     testDuplicates();
@@ -9,7 +9,7 @@ def main() {
     testUnitSetIterator();
 }
 
-def testInsert() {
+void testInsert() {
     var s = Set<StringRef>();
 
     s.insert("ok");
@@ -19,7 +19,7 @@ def testInsert() {
 }
 
 
-def testRemoval() {
+void testRemoval() {
     var s = Set<StringRef>();
 
     s.insert("ok");
@@ -29,7 +29,7 @@ def testRemoval() {
     assert(!s.contains("ok"));
 }
 
-def testDuplicates() {
+void testDuplicates() {
     var s = Set<StringRef>();
 
     s.insert("ok");
@@ -40,7 +40,7 @@ def testDuplicates() {
     assert(!s.contains("ok"));
 }
 
-def testIterator() {
+void testIterator() {
     var s = Set<StringRef>();
 
     s.insert("a");
@@ -74,7 +74,7 @@ def testIterator() {
     assert(ccc);
 }
 
-def testEmptySetIterator() {
+void testEmptySetIterator() {
     var s = Set<StringRef>();
     s.insert("foo");
     s.insert("foo");
@@ -85,7 +85,7 @@ def testEmptySetIterator() {
     }
 }
 
-def testUnitSetIterator() {
+void testUnitSetIterator() {
     var s = Set<StringRef>();
     s.insert("foo");
     s.insert("foo");

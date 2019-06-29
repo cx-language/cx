@@ -1,13 +1,13 @@
 // RUN: check_exit_status 70 compile_and_run %s
 
-def main(): int {
-    var buffer: uint8[4] = undefined;
+int main() {
+    uint8[4] buffer = undefined;
     buffer[0] = 70;
     buffer[1] = 0x6f;
     buffer[2] = 0o157;
     buffer[3] = 0b0;
 
-    var magic: uint8 = undefined;
+    uint8 magic = undefined;
     if (buffer[0] == 0) {
         magic = 0;
     } else {

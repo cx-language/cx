@@ -1,7 +1,7 @@
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %s
 // RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta
 
-def main() {
+void main() {
     // CHECK-NOT: 'g' is private
     g();
     // CHECK: private-global-function.delta:[[@LINE+1]]:5: warning: 'f' is private

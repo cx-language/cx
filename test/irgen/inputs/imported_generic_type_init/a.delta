@@ -1,4 +1,4 @@
 struct A<T> {
-    var a: T*?
+    T*? a
     init() { this.a = null }
 }

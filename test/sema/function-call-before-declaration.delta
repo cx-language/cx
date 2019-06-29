@@ -1,4 +1,4 @@
 // RUN: %delta -typecheck %s
 
-def main() { foo(); }
-def foo() { }
+void main() { foo(); }
+void foo() { }

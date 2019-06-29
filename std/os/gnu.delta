@@ -2,11 +2,11 @@
 
 #if hasInclude("execinfo.h")
 
-extern def backtrace(array: mutable void mutable**, size: int): int;
-extern def backtrace_symbols(array: mutable void**, size: int): mutable char mutable*[?]*?;
+extern int backtrace(mutable void mutable** array, int size);
+extern mutable char mutable*[?]*? backtrace_symbols(mutable void** array, int size);
 
-def printStackTrace() {
-    var callstack: mutable void*[128] = undefined;
+void printStackTrace() {
+    mutable void*[128] callstack = undefined;
     var frames = backtrace(&callstack[0], callstack.size());
     var strings = backtrace_symbols(&callstack[0], frames);
 
@@ -23,12 +23,12 @@ def printStackTrace() {
 
 #else
 
-def printStackTrace() {
+void printStackTrace() {
 }
 
 #endif
 
-def setAbortBehavior() {
+void setAbortBehavior() {
 }
 
 #endif

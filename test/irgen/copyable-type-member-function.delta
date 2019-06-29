@@ -1,13 +1,13 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct Foo: Copyable {
-    var baz: int;
+    int baz;
     init() { this.baz = 42; }
-    def bar() { }
-    def qux(): int { return this.baz; }
+    void bar() { }
+    int qux() { return this.baz; }
 }
 
-def main() {
+void main() {
     var foo = Foo();
     foo.bar();
     var i = foo.qux();

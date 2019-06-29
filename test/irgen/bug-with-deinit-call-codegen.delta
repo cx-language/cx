@@ -8,12 +8,12 @@ struct X {
 struct Y<T> {
     init() {}
 
-    def f(): int {
+    int f() {
         return 1;
     }
 }
 
-def main() {
+void main() {
     var a = X();
     Y<bool>().f();
 }

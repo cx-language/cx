@@ -1,7 +1,7 @@
 // RUN: not --crash compile_and_run %s
 // REQUIRES: windows
 
-def main() {
-    var p: mutable int*? = null;
+void main() {
+    mutable int*? p = null;
     var pp = p!;
 }

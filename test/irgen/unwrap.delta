@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-extern def f(): mutable void*?;
+extern mutable void*? f();
 
-def main() {
-    var byte: mutable uint8* = cast<mutable uint8*?>(f())!;
-    var ptr: mutable uint8[1]*? = cast<mutable uint8[1]*?>(f());
+void main() {
+    mutable uint8* byte = cast<mutable uint8*?>(f())!;
+    mutable uint8[1]*? ptr = cast<mutable uint8[1]*?>(f());
     ptr![0] = 1;
 }

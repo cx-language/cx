@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-extern def foo(): int;
+extern int foo();
 
-def main() {
+void main() {
     _ = foo();
 }

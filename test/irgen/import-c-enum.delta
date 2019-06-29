@@ -2,9 +2,9 @@
 
 import "import-c-enum.h";
 
-def main() {
-    var foo: int = FooA;
-    var bar: uint = BarA;
-    var qux: uint64 = QuxA;
-    var qux2: int8 = QuxA;
+void main() {
+    int foo = FooA;
+    uint bar = BarA;
+    uint64 qux = QuxA;
+    int8 qux2 = QuxA;
 }

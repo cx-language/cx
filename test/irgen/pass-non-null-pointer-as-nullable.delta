@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def foo(p: int*?) {}
+void foo(int*? p) {}
 
-def main() {
+void main() {
     var i = 42;
     var x = &i;
     foo(x);

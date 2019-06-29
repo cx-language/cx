@@ -1,8 +1,8 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-def foo(a: int): int { return a; }
+int foo(int a) { return a; }
 
-def main() {
+void main() {
     var f = false;
     // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'bool' to 'foo', expected 'int'
     var z = foo(f);

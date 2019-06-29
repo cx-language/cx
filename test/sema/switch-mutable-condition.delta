@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck %s
 
-def main() {
+void main() {
     var i = 5
 
     switch (i) {

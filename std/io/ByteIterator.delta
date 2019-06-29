@@ -1,27 +1,27 @@
 struct ByteIterator<Stream: InputStream>: Copyable, Iterator<uint8> {
 
-    var stream: Stream*;
-    var next: int;
+    Stream* stream;
+    int next;
 
-    init(stream: Stream*) {
+    init(Stream* stream) {
         this.stream = stream;
         next = undefined;
         increment();
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return !stream.eof() || next >= 0;
     }
 
-    def value(): uint8 {
+    uint8 value() {
         return uint8(next);
     }
 
-    mutating def increment() {
+    mutating void increment() {
         next = stream.readByte();
     }
 
-    def iterator(): ByteIterator<Stream> {
+    ByteIterator<Stream> iterator() {
         return this;
     }
 

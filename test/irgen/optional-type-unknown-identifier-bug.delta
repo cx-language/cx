@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X<T> {
-    var y: Y<T>*?;
+    Y<T>*? y;
 
     init() {
         y = null;
@@ -13,11 +13,11 @@ struct X<T> {
 }
 
 struct Y<T> {
-    var a: T;
+    T a;
 
-    def f() {}
+    void f() {}
 }
 
-def main() {
+void main() {
     var x = X<int>();
 }

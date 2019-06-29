@@ -155,7 +155,6 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     if (!decl.isInitDecl() && !decl.isDeinitDecl()) {
         typecheckType(decl.getReturnType(), decl.getAccessLevel());
-        if (decl.getReturnType().isMutable()) error(decl.getLocation(), "return types cannot be 'mutable'");
     }
 
     if (!decl.isExtern()) {

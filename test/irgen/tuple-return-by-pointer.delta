@@ -1,13 +1,13 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S {
-    var t: (a: int);
+    (int a) t;
 
-    def f(): (a: int)* {
+    (int a)* f() {
         return &t;
     }
 
-    def g(): (a: int)* {
+    (int a)* g() {
         return t;
     }
 }

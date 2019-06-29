@@ -1,6 +1,6 @@
 // RUN: check_exit_status 0 compile_and_run -Werror %s
 
-def main() {
+void main() {
     testInsertAndContains();
     testInsertAndDelete();
     testInsertAndSubscript();
@@ -12,7 +12,7 @@ def main() {
     testUnitMapIterator();
 }
 
-def testInsertAndContains() {
+void testInsertAndContains() {
     var m = OrderedMap<int, int>();
     assert(m.size() == 0);
 
@@ -28,7 +28,7 @@ def testInsertAndContains() {
     assert(m.size() == 10);
 }
 
-def testInsertAndDelete() {
+void testInsertAndDelete() {
     var m = OrderedMap<int, int>();
 
     m.insert(42, 39);
@@ -48,7 +48,7 @@ def testInsertAndDelete() {
     }
 }
 
-def testInsertAndSubscript() {
+void testInsertAndSubscript() {
     var m = OrderedMap<int, int>();
 
     m.insert(42, 39);
@@ -68,7 +68,7 @@ def testInsertAndSubscript() {
     }
 }
 
-def testLowerAndHigher() {
+void testLowerAndHigher() {
     var m = OrderedMap<int, int>();
 
     for (var i in 0..100) {
@@ -86,7 +86,7 @@ def testLowerAndHigher() {
     }
 }
 
-def testFirstLast() {
+void testFirstLast() {
     var m = OrderedMap<int, int>();
 
     m.insert(63, 3);
@@ -98,7 +98,7 @@ def testFirstLast() {
     assert(*m.last()! == 69);
 }
 
-def testEmptyMapFunctions() {
+void testEmptyMapFunctions() {
     var m = OrderedMap<int, int>();
 
     assert(m.first() == null);
@@ -108,7 +108,7 @@ def testEmptyMapFunctions() {
 }
 
 
-def testIteratorOrder() {
+void testIteratorOrder() {
     var map = OrderedMap<int, int>();
 
     for (var i in 0..100) {
@@ -143,7 +143,7 @@ def testIteratorOrder() {
 
 }
 
-def testEmptyMapIterator() {
+void testEmptyMapIterator() {
     var map = OrderedMap<int, int>();
     map.insert(1, 2);
     map.insert(1, 2);
@@ -154,7 +154,7 @@ def testEmptyMapIterator() {
     }
 }
 
-def testUnitMapIterator() {
+void testUnitMapIterator() {
     var map = OrderedMap<int, int>();
     map.insert(1, 2);
     map.insert(1, 4);

@@ -2,6 +2,6 @@
 
 import "stdio.h"
 
-def bar() {
+void bar() {
     puts("bar!!!")
 }

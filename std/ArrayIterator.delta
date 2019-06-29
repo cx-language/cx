@@ -1,44 +1,44 @@
 struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
-    var current: Element[?]*;
-    var end: Element[?]*;
+    Element[?]* current;
+    Element[?]* end;
 
     // TODO: Fix bug that prevents writing 'Element[]*' here.
-    init(array: ArrayRef<Element>) {
+    init(ArrayRef<Element> array) {
         current = array.data();
         end = &array.data()[array.size()];
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return current !== end;
     }
 
-    def value(): Element* {
+    Element* value() {
         return current;
     }
 
-    mutating def increment() {
+    mutating void increment() {
         current++;
     }
 }
 
 struct MutableArrayIterator<Element>: Copyable {
-    var current: mutable Element[?]*;
-    var end: mutable Element[?]*;
+    mutable Element[?]* current;
+    mutable Element[?]* end;
 
-    init(array: mutable Array<Element>*) {
+    init(mutable Array<Element>* array) {
         current = array.data();
         end = &array.data()[array.size()];
     }
 
-    def hasValue(): bool {
+    bool hasValue() {
         return current !== end;
     }
 
-    def value(): mutable Element* {
+    mutable Element* value() {
         return current;
     }
 
-    mutating def increment() {
+    mutating void increment() {
         current++;
     }
 }

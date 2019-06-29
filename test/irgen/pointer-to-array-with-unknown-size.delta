@@ -1,8 +1,8 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     var a = [1, 2, 3];
-    var p: int[?]* = &a[0];
+    int[?]* p = &a[0];
     p = a;
     p = &a;
     var t = p[1];

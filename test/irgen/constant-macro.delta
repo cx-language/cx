@@ -2,7 +2,7 @@
 
 import "constant-macro.h"
 
-def foo(i: int) {
+void foo(int i) {
     switch (i) {
         case FOO: return
     }

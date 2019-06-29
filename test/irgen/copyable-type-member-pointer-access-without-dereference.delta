@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct S: Copyable {
-    var a: int*
+    int* a
 
-    def foo() {
+    void foo() {
         var b = a
     }
 }

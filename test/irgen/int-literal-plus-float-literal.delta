@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     var a = 4.0 + 4;
     var b = 4 + 4.0;
 }

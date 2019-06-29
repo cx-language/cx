@@ -5,6 +5,6 @@ struct Z<T>: String {
     init() {}
 }
 
-def main() {
+void main() {
     var z = Z<int>();
 }

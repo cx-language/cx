@@ -2,9 +2,9 @@
 
 struct T {}
 
-def f(t: T) {}
+void f(T t) {}
 
-def g(t: T) {
+void g(T t) {
     f(t);
     var a = t; // CHECK: [[@LINE]]:13: error: use of moved value
 }

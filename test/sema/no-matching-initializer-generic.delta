@@ -2,15 +2,15 @@
 
 struct Foo<T>: Copyable {
     init() { }
-    init(a: T, b: T) { }
+    init(T a, T b) { }
 }
 
-def main() {
+void main() {
     // CHECK: [[@LINE+6]]:9: error: no matching initializer for 'Foo' with argument list of type '(int)'
     // CHECK: 4:5: note: candidate function:
     // CHECK-NEXT: init() { }
     // CHECK: 5:5: note: candidate function:
-    // CHECK-NEXT: init(a: T, b: T) { }
+    // CHECK-NEXT: init(T a, T b) { }
     // CHECK-NOT: note
     _ = Foo(42)
 }

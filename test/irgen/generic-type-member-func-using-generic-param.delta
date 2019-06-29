@@ -2,10 +2,10 @@
 
 struct A<E>: Copyable {
     init() { }
-    mutating def a(n: E) { }
+    mutating void a(E n) { }
 }
 
-def main() {
+void main() {
     var a = A<int>()
     a.a(5)
 }

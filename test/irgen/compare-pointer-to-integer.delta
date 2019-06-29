@@ -1,5 +1,5 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-def f(foo: int*, bar: int) {
+void f(int* foo, int bar) {
     _ = foo < bar;
 }

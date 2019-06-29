@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
-    var a: void*[3] = undefined;
-    var b: mutable int*[2] = undefined;
-    var c: mutable float32 mutable**[1] = undefined;
+void main() {
+    void*[3] a = undefined;
+    mutable int*[2] b = undefined;
+    mutable float32 mutable**[1] c = undefined;
 }

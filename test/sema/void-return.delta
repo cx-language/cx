@@ -1,5 +1,5 @@
 // RUN: %delta -typecheck %s
 
-def foo() {
+void foo() {
     return;
 }

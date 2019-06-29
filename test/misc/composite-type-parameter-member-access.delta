@@ -1,20 +1,20 @@
 // RUN: check_exit_status 15 compile_and_run %s
 
 struct vec2: Copyable {
-    var x: int;
-    var y: int;
+    int x;
+    int y;
 
-    init(x: int, y: int) {
+    init(int x, int y) {
         this.x = x;
         this.y = y;
     }
 
-    def add(that: vec2): vec2 {
+    vec2 add(vec2 that) {
         return vec2(this.x + that.x, this.y + that.y);
     }
 }
 
-def main(): int {
+int main() {
     var foo = vec2(5, 8);
     var foo2 = foo.add(vec2(3, -1));
     return foo2.x + foo2.y;

@@ -1,35 +1,35 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -w
 
 interface I {
-    def i();
+    void i();
 }
 
 struct S: Copyable {
-    var i: int;
+    int i;
     init() {}
-    def i() {}
+    void i() {}
 }
 
 struct A<E> {
     init() {}
 
-    def a(): E {
+    E a() {
         return E();
     }
 }
 
 struct M<T: I> {
-    var t: T;
+    T t;
 
     init() {}
 
-    def f() {
+    void f() {
         var a = A<T>();
         a.a().i();
     }
 }
 
-def main() {
+void main() {
     var m = M<S>();
     m.f();
 }

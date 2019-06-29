@@ -1,35 +1,35 @@
 struct ClosedRange<T>: Copyable {
-    var start: T;
-    var end: T;
+    T start;
+    T end;
 
-    init(start: T, end: T) {
+    init(T start, T end) {
         this.start = start;
         this.end = end;
     }
 
-    init (end: T) {
+    init (T end) {
         init(0, end);
     }
 
     // Returns the number of elements this range contains.
-    def size(): T {
+    T size() {
         return end - start + 1;
     }
 
     // Alias for size
-    def length(): T {
+    T length() {
         return size();
     }
 
-    def start(): T {
+    T start() {
         return start;
     }
 
-    def end(): T {
+    T end() {
         return end;
     }
 
-    def iterator(): ClosedRangeIterator<T> {
+    ClosedRangeIterator<T> iterator() {
         return ClosedRangeIterator(this);
     }
 }

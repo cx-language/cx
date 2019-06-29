@@ -1,6 +1,6 @@
 // RUN: %delta -print-ast %s | %FileCheck %s
 
-def f() {
+void f() {
     // CHECK: (var-stmt m (call g))
     // CHECK-NEXT: ((*a) = b)
     var m = g()

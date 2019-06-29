@@ -1,20 +1,20 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 interface Fooable {
-    def foo()
+    void foo()
 }
 
 struct F: Copyable {
-    def foo(): int { return 1 }
+    int foo() { return 1 }
 }
 
-def main() {
-    var f: F = undefined;
+void main() {
+    F f = undefined;
 
     // CHECK: 15:8: error: type 'F' doesn't implement interface 'Fooable'
     bar(f);
 }
 
-def bar<T: Fooable>(t: T) {
+void bar<T: Fooable>(T t) {
     t.foo()
 }

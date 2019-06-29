@@ -1,16 +1,16 @@
 // RUN: check_exit_status 0 compile_and_run -Werror %s
 
 struct C {
-    var i: int;
+    int i;
 
-    init(i: int) {
+    init(int i) {
         this.i = i;
     }
 
     deinit() {}
 }
 
-def main() {
+void main() {
     testArrayInsertionAndRemoval();
     testArrayInitFromLiteral();
     testArrayIterator();
@@ -22,7 +22,7 @@ def main() {
     testElementDestruction();
 }
 
-def testArrayInsertionAndRemoval() {
+void testArrayInsertionAndRemoval() {
     var a = Array<C>();
     assert(a.size() == 0 && a.capacity() >= 0);
 
@@ -39,7 +39,7 @@ def testArrayInsertionAndRemoval() {
     assert(a.size() == 2 && a.capacity() >= 2);
 }
 
-def testArrayInitFromLiteral() {
+void testArrayInitFromLiteral() {
     var a = Array([1, 2, 3]);
 
     assert(*a[0] == 1);
@@ -47,7 +47,7 @@ def testArrayInitFromLiteral() {
     assert(*a[2] == 3);
 }
 
-def testArrayIterator() {
+void testArrayIterator() {
     var array = Array<C>();
     array.push(C(1));
     array.push(C(4));
@@ -65,7 +65,7 @@ def testArrayIterator() {
     assert(!iterator.hasValue());
 }
 
-def testArrayMutatingIteration() {
+void testArrayMutatingIteration() {
     var a = Array<int>();
     a.push(1);
     a.push(2);
@@ -80,7 +80,7 @@ def testArrayMutatingIteration() {
     assert(*a[2] == 4);
 }
 
-def testArrayEnumeratedIterator() {
+void testArrayEnumeratedIterator() {
     var a = Array<int>();
     a.push(9000);
     a.push(-1234);
@@ -107,7 +107,7 @@ def testArrayEnumeratedIterator() {
     assert(!iterator.hasValue());
 }
 
-def testEmpty() {
+void testEmpty() {
     var a = Array<int>();
 
     assert(a.empty());
@@ -117,14 +117,14 @@ def testEmpty() {
     assert(!a.empty());
 }
 
-def testMap() {
+void testMap() {
     var a = Array<int>();
     a.push(1);
     a.push(2);
     a.push(3);
     a.push(4);
 
-    var b = a.map((value: int*) -> *value > 2);
+    var b = a.map((int* value) -> *value > 2);
     assert(b.size() == 4);
     assert(*b[0] == false);
     assert(*b[1] == false);
@@ -132,14 +132,14 @@ def testMap() {
     assert(*b[3] == true);
 }
 
-def testFilter() {
+void testFilter() {
     var a = Array<int>();
     a.push(1);
     a.push(2);
     a.push(3);
     a.push(4);
 
-    var b = a.filter((value: int*) -> *value % 2 == 0);
+    var b = a.filter((int* value) -> *value % 2 == 0);
     assert(b.size() == 2);
     assert(*b[0] == 2);
     assert(*b[1] == 4);
@@ -155,7 +155,7 @@ struct DestructionTester {
     }
 }
 
-def testElementDestruction() {
+void testElementDestruction() {
     var a = Array<DestructionTester>();
 
     for (var i in 0..50) {

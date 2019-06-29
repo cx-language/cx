@@ -1,10 +1,10 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-extern def foo(a: uint8);
+extern void foo(uint8 a);
 
-def main() {
+void main() {
     foo(1);
-    var b: uint64 = 42;
-    var c: int8 = -42;
+    uint64 b = 42;
+    int8 c = -42;
     b = b + 1;
 }

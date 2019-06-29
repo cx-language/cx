@@ -1,21 +1,21 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-def main() {
+void main() {
     var three = [0, 42, 0];
     foo(three);
     bar(three);
     var b = three.size();
-    var ref: int[]* = three;
+    int[]* ref = three;
     var bb = ref.size();
 }
 
-def foo(ints: int[]*) {
+void foo(int[]* ints) {
     var a = ints[1];
     var b = ints.size();
-    var c: int[]* = ints;
+    int[]* c = ints;
 }
 
-def bar(ints: int[3]*) {
+void bar(int[3]* ints) {
     var b = ints.size();
-    var ref: int[]* = ints;
+    int[]* ref = ints;
 }

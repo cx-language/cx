@@ -1,10 +1,10 @@
 // RUN: %delta -print-ir %s
 
 struct Foo: Copyable {
-    init(a: int) { }
-    init(a: int, b: int) { }
+    init(int a) { }
+    init(int a, int b) { }
 }
 
-def main() {
+void main() {
     var f = Foo(1)
 }

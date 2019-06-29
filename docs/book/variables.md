@@ -11,7 +11,7 @@ var foo = 42;
 We can also specify the type of the variable explicitly:
 
 ```
-var foo: int8 = 42;
+int8 foo = 42;
 ```
 
 ## Assignment

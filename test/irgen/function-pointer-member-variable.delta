@@ -1,13 +1,13 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 struct X {
-    var p: (int) -> int;
+    int(int) p;
 
-    init(p: (int) -> int) {
+    init(int(int) p) {
         this.p = p;
     }
 
-    def f() {
+    void f() {
         this.p(42);
         p(42);
         var p2 = p;
@@ -15,11 +15,11 @@ struct X {
     }
 }
 
-def foo(a: int): int {
+int foo(int a) {
     return a;
 }
 
-def main() {
+void main() {
     var x = X(foo);
     x.p(42);
     x.f();

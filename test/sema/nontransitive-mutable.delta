@@ -1,10 +1,10 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct Foo: Copyable {
-    var a: int
+    int a
 }
 
-def bar(foo: Foo*) {
+void bar(Foo* foo) {
     // CHECK: [[@LINE+1]]:11: error: cannot assign to immutable variable 'a' of type 'int'
     foo.a = 42
 }

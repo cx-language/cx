@@ -2,22 +2,22 @@
 
 var i = 42;
 
-def foo(): int* {
+int* foo() {
     return i;
 }
 
 struct A {
-    var b: bool[2];
+    bool[2] b;
 
-    def ff(): bool* {
+    bool* ff() {
         return b[1];
     }
 }
 
 struct B: Copyable {
-    var a: char;
+    char a;
 
-    def gg(): char* {
+    char* gg() {
         return a; // FIXME: Disallow this? Or always take Copyable struct 'this' by reference?
                   // Currently the generated IR returns a pointer to a local alloca.
     }

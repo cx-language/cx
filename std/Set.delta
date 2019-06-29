@@ -1,5 +1,5 @@
 struct Set<Key: Hashable> {
-    var map: Map<Key, bool>;
+    Map<Key, bool> map;
 
     /// Initializes an empty set
     init() {
@@ -7,29 +7,29 @@ struct Set<Key: Hashable> {
     }
 
     /// Inserts an element into the set. If the element exists already, nothing is done.
-    mutating def insert(key: Key) {
+    mutating void insert(Key key) {
         map.insert(key, false);
     }
 
     /// Removes an element from the set, if it exists there.
-    mutating def remove(key: Key*) {
+    mutating void remove(Key* key) {
         map.remove(key);
     }
 
     /// Checks if e is part of the set.
-    def contains(key: Key*): bool {
+    bool contains(Key* key) {
         return map.contains(key);
     }
 
-    def size(): int {
+    int size() {
         return map.size();
     }
 
-    def empty(): bool {
+    bool empty() {
         return map.empty();
     }
 
-    def iterator(): SetIterator<Key> {
+    SetIterator<Key> iterator() {
         return SetIterator(this);
     }
 }
