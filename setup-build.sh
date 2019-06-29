@@ -23,14 +23,14 @@ cd "$build_dir"
 if [[ "$os" == "Darwin" ]]; then
     brew update
 
-    for package in cmake llvm@6; do
+    for package in cmake llvm@7; do
         brew ls --versions $package > /dev/null || brew install $package
     done
 
     sudo easy_install pip
     sudo pip2 install lit
 
-    cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix llvm)"
+    cmake -G "Unix Makefiles" .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix llvm@7)"
 elif [[ "$os" == "MINGW"* ]]; then
     llvm_dir="$1"
     clang_dir="$2"
