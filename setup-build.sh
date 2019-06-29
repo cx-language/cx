@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-LLVM_VERSION=7.1.0
+LLVM_VERSION=7.0.1
 
 set -e
 
@@ -49,6 +49,7 @@ else
 
     # Install LLVM dependencies manually because we didn't use apt.
     sudo apt install libtinfo-dev
+    sudo apt install zlib1g-dev
 
     sudo apt install cmake
     sudo apt install libedit-dev

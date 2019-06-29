@@ -42,6 +42,7 @@ install:
           wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz;
           tar -xf $LLVM_TARBALL_NAME.tar.xz;
           export LLVMDIR="$PWD/$LLVM_TARBALL_NAME";
+          export CXXFLAGS="$CXXFLAGS -D_GLIBCXX_USE_CXX11_ABI=0";
           pip install --user lit cpp-coveralls;
       fi
     - if [ $TRAVIS_OS_NAME == "osx" ]; then
