@@ -125,10 +125,10 @@ void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths,
     }
 
     importSearchPaths.push_back(DELTA_ROOT_DIR);
+    importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
     addHeaderSearchPathsFromCCompilerOutput(importSearchPaths);
     importSearchPaths.push_back("/usr/include");
     importSearchPaths.push_back("/usr/local/include");
-    importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
     addHeaderSearchPathsFromEnvVar(importSearchPaths, "CPATH");
     addHeaderSearchPathsFromEnvVar(importSearchPaths, "C_INCLUDE_PATH");
 }
