@@ -24,8 +24,11 @@ std::string delta::readLineFromFile(SourceLocation location) {
 }
 
 void delta::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
-    if (auto error = llvm::sys::fs::rename(sourcePath, targetPath)) {
-        printErrorAndExit("couldn't rename '", sourcePath, "' to '", targetPath, "': ", error.message());
+    if (auto error = llvm::sys::fs::copy_file(sourcePath, targetPath)) {
+        printErrorAndExit("couldn't copy '", sourcePath, "' to '", targetPath, "': ", error.message());
+    }
+    if (auto error = llvm::sys::fs::remove(sourcePath)) {
+        printErrorAndExit("couldn't remove '", sourcePath, "': ", error.message());
     }
 }
 
