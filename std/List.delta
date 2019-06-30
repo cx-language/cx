@@ -1,22 +1,22 @@
-struct Array<Element> {
+struct List<Element> {
     mutable Element[?]* buffer;
     int size;
     int capacity;
 
-    /// Initializes an empty array.
+    /// Initializes an empty list.
     init() {
         buffer = undefined;
         size = 0;
         capacity = 0;
     }
 
-    /// Initializes an empty array with pre-allocated capacity.
+    /// Initializes an empty list with pre-allocated capacity.
     init(int capacity) {
         init();
         reserve(capacity);
     }
 
-    /// Initializes an array containing the elements of the given array.
+    /// Initializes an list containing the elements of the given array.
     init(Element[]* elements) {
         init(capacity: elements.size());
 
@@ -33,17 +33,17 @@ struct Array<Element> {
         }
     }
 
-    /// Returns the number of elements in the array.
+    /// Returns the number of elements in the list.
     int size() {
         return size;
     }
 
-    /// Returns true if the array has no elements, otherwise false
+    /// Returns true if the list has no elements, otherwise false
     bool empty() {
         return size == 0;
     }
 
-    /// Returns the number of elements the array can store without allocating more memory.
+    /// Returns the number of elements the list can store without allocating more memory.
     int capacity() {
         return capacity;
     }
@@ -68,7 +68,7 @@ struct Array<Element> {
 
     Element* first() {
         if (size == 0) {
-            emptyArrayFirst();
+            emptyListFirst();
         }
 
         return buffer[0];
@@ -76,7 +76,7 @@ struct Array<Element> {
 
     Element* last() {
         if (size == 0) {
-            emptyArrayLast();
+            emptyListLast();
         }
 
         return buffer[size - 1];
@@ -90,7 +90,7 @@ struct Array<Element> {
         return buffer;
     }
 
-    /// Adds the given element to the end of the array.
+    /// Adds the given element to the end of the list.
     mutating void push(Element newElement) {
         if (size == capacity) {
             grow();
@@ -121,20 +121,20 @@ struct Array<Element> {
         }
     }
 
-    /// Removes the first element from the array.
-    /// Other elements are moved towards the beginning of the array by one index.
+    /// Removes the first element from the list.
+    /// Other elements are moved towards the beginning of the list by one index.
     mutating void removeFirst() {
         if (size == 0) {
-            emptyArrayRemoveFirst();
+            emptyListRemoveFirst();
         }
 
         unsafeRemoveAt(0);
     }
 
-    /// Removes the last element from the array.
+    /// Removes the last element from the list.
     mutating void removeLast() {
         if (size == 0) {
-            emptyArrayRemoveLast();
+            emptyListRemoveLast();
         }
 
         size--;
@@ -144,15 +144,15 @@ struct Array<Element> {
     /// Removes and returns the last element.
     mutating Element pop() {
         if (size == 0) {
-            emptyArrayRemoveLast();
+            emptyListRemoveLast();
         }
 
         size--;
         return buffer[size];
     }
 
-    /// Removes the element at the given index from the array.
-    /// Elements following the removed element are moved towards the beginning of the array by one index.
+    /// Removes the element at the given index from the list.
+    /// Elements following the removed element are moved towards the beginning of the list by one index.
     mutating void removeAt(int index) {
         if (index >= size) {
             indexOutOfBounds(index);
@@ -186,8 +186,8 @@ struct Array<Element> {
         return EnumeratedIterator(iterator());
     }
 
-    Array<Output> map<Input, Output>(Output(Input) transform) {
-        var output = Array<Output>(capacity: this.size);
+    List<Output> map<Input, Output>(Output(Input) transform) {
+        var output = List<Output>(capacity: this.size);
 
         for (var element in this) {
             output.push(transform(element));
@@ -196,8 +196,8 @@ struct Array<Element> {
         return output;
     }
 
-    Array<Element> filter<Input>(bool(Input) include) {
-        var output = Array<Element>();
+    List<Element> filter<Input>(bool(Input) include) {
+        var output = List<Element>();
 
         for (var element in this) {
             if (include(element)) {
@@ -217,27 +217,27 @@ struct Array<Element> {
     }
 
     private void indexOutOfBounds(int index) {
-        printf("Array index %d is out of bounds, size is %d\n", index, size());
+        printf("List index %d is out of bounds, size is %d\n", index, size());
         fatalError();
     }
 
-    private void emptyArrayFirst() {
-        printf("Called first() on empty Array\n");
+    private void emptyListFirst() {
+        printf("Called first() on empty List\n");
         fatalError();
     }
 
-    private void emptyArrayLast() {
-        printf("Called last() on empty Array\n");
+    private void emptyListLast() {
+        printf("Called last() on empty List\n");
         fatalError();
     }
 
-    private void emptyArrayRemoveFirst() {
-        printf("Called removeFirst() on empty Array\n");
+    private void emptyListRemoveFirst() {
+        printf("Called removeFirst() on empty List\n");
         fatalError();
     }
 
-    private void emptyArrayRemoveLast() {
-        printf("Called removeLast() on empty Array\n");
+    private void emptyListRemoveLast() {
+        printf("Called removeLast() on empty List\n");
         fatalError();
     }
 }

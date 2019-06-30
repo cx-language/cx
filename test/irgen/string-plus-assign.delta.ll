@@ -1,6 +1,6 @@
 
-%String = type { %"Array<char>" }
-%"Array<char>" = type { i8*, i32, i32 }
+%String = type { %"List<char>" }
+%"List<char>" = type { i8*, i32, i32 }
 %StringRef = type { %"ArrayRef<char>" }
 %"ArrayRef<char>" = type { i8*, i32 }
 

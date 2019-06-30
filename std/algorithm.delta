@@ -23,8 +23,9 @@ void swap<E>(mutable E* a, mutable E* b) {
     *b = t;
 }
 
-/// Sorts an array. Uses insertion sort if the array is small enough, and quickSort otherwise.
-void sort<E: Comparable>(mutable Array<E>* array)  {
+// TODO: Use mutable ArrayRef instead of List.
+/// Sorts a array. Uses insertion sort if the array is small enough, and quickSort otherwise.
+void sort<E: Comparable>(mutable List<E>* array)  {
     if (array.size() <= 32) {
         insertionSort(array);
     } else {
@@ -34,7 +35,8 @@ void sort<E: Comparable>(mutable Array<E>* array)  {
 
 /// Private members
 
-private int partition<E: Comparable>(mutable Array<E>* arr, int low, int high) {
+// TODO: Use mutable ArrayRef instead of List.
+private int partition<E: Comparable>(mutable List<E>* arr, int low, int high) {
     var pivot = arr[high];
     var i = low - 1;
 
@@ -50,8 +52,9 @@ private int partition<E: Comparable>(mutable Array<E>* arr, int low, int high) {
     return i + 1;
 }
 
+// TODO: Use mutable ArrayRef instead of List.
 /// Quicksorts the given array, in place. Not stable.
-private void quickSort<E: Comparable>(mutable Array<E>* arr, int low, int high) {
+private void quickSort<E: Comparable>(mutable List<E>* arr, int low, int high) {
     if (low < high) {
         var index = partition(arr, low, high);
 
@@ -64,8 +67,9 @@ private void quickSort<E: Comparable>(mutable Array<E>* arr, int low, int high) 
     }
 }
 
-/// Insertion sorts the given array, in place. Good for small arrays
-private void insertionSort<E: Comparable>(mutable Array<E>* arr) {
+// TODO: Use mutable ArrayRef instead of List.
+/// Insertion sorts the given array, in place. Good for small arrays.
+private void insertionSort<E: Comparable>(mutable List<E>* arr) {
     var i = 1;
     while (i < arr.size()) {
         var j = i;

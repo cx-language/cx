@@ -548,7 +548,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
         if (expr.getFunctionName() == "size") {
             return getArrayLength(*expr.getReceiver(), expr.getReceiverType().removePointer());
         }
-        llvm_unreachable("unknown static array member function");
+        llvm_unreachable("unknown array member function");
     }
 
     if (expr.isMoveInit()) {

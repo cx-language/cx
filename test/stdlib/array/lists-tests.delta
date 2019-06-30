@@ -11,19 +11,19 @@ struct C {
 }
 
 void main() {
-    testArrayInsertionAndRemoval();
-    testArrayInitFromLiteral();
+    testListInsertionAndRemoval();
+    testListInitFromLiteral();
     testArrayIterator();
-    testArrayMutatingIteration();
-    testArrayEnumeratedIterator();
+    testListMutatingIteration();
+    testListEnumeratedIterator();
     testEmpty();
     testMap();
     testFilter();
     testElementDestruction();
 }
 
-void testArrayInsertionAndRemoval() {
-    var a = Array<C>();
+void testListInsertionAndRemoval() {
+    var a = List<C>();
     assert(a.size() == 0 && a.capacity() >= 0);
 
     a.push(C(1));
@@ -39,8 +39,8 @@ void testArrayInsertionAndRemoval() {
     assert(a.size() == 2 && a.capacity() >= 2);
 }
 
-void testArrayInitFromLiteral() {
-    var a = Array([1, 2, 3]);
+void testListInitFromLiteral() {
+    var a = List([1, 2, 3]);
 
     assert(*a[0] == 1);
     assert(*a[1] == 2);
@@ -48,7 +48,7 @@ void testArrayInitFromLiteral() {
 }
 
 void testArrayIterator() {
-    var array = Array<C>();
+    var array = List<C>();
     array.push(C(1));
     array.push(C(4));
 
@@ -65,8 +65,8 @@ void testArrayIterator() {
     assert(!iterator.hasValue());
 }
 
-void testArrayMutatingIteration() {
-    var a = Array<int>();
+void testListMutatingIteration() {
+    var a = List<int>();
     a.push(1);
     a.push(2);
     a.push(3);
@@ -80,8 +80,8 @@ void testArrayMutatingIteration() {
     assert(*a[2] == 4);
 }
 
-void testArrayEnumeratedIterator() {
-    var a = Array<int>();
+void testListEnumeratedIterator() {
+    var a = List<int>();
     a.push(9000);
     a.push(-1234);
     a.push(0xcafe);
@@ -108,7 +108,7 @@ void testArrayEnumeratedIterator() {
 }
 
 void testEmpty() {
-    var a = Array<int>();
+    var a = List<int>();
 
     assert(a.empty());
 
@@ -118,7 +118,7 @@ void testEmpty() {
 }
 
 void testMap() {
-    var a = Array<int>();
+    var a = List<int>();
     a.push(1);
     a.push(2);
     a.push(3);
@@ -133,7 +133,7 @@ void testMap() {
 }
 
 void testFilter() {
-    var a = Array<int>();
+    var a = List<int>();
     a.push(1);
     a.push(2);
     a.push(3);
@@ -156,7 +156,7 @@ struct DestructionTester {
 }
 
 void testElementDestruction() {
-    var a = Array<DestructionTester>();
+    var a = List<DestructionTester>();
 
     for (var i in 0..50) {
         a.push(DestructionTester());

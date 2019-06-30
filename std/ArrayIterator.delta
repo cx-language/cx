@@ -25,7 +25,8 @@ struct MutableArrayIterator<Element>: Copyable {
     mutable Element[?]* current;
     mutable Element[?]* end;
 
-    init(mutable Array<Element>* array) {
+    // TODO: Should take mutable ArrayRef instead of List.
+    init(mutable List<Element>* array) {
         current = array.data();
         end = &array.data()[array.size()];
     }

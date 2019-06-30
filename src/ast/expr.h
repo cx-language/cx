@@ -347,11 +347,11 @@ private:
     FieldDecl* fieldDecl;
 };
 
-/// An array element access expression using the element's index in brackets, e.g. 'array[index]'.
+/// An element access expression using the element's index in brackets, e.g. 'base[index]'.
 class SubscriptExpr : public CallExpr {
 public:
-    SubscriptExpr(std::unique_ptr<Expr> array, std::unique_ptr<Expr> index, SourceLocation location)
-    : CallExpr(ExprKind::SubscriptExpr, llvm::make_unique<MemberExpr>(std::move(array), "[]", location), { NamedValue("", std::move(index)) }, location) {}
+    SubscriptExpr(std::unique_ptr<Expr> base, std::unique_ptr<Expr> index, SourceLocation location)
+    : CallExpr(ExprKind::SubscriptExpr, llvm::make_unique<MemberExpr>(std::move(base), "[]", location), { NamedValue("", std::move(index)) }, location) {}
     const Expr* getBaseExpr() const { return getReceiver(); }
     const Expr* getIndexExpr() const { return getArgs()[0].getValue(); }
     Expr* getBaseExpr() { return getReceiver(); }

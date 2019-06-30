@@ -9,4 +9,4 @@
 * [Structs](structs.md)
 * [Interfaces](interfaces.md)
 * [Ranges](ranges.md)
-* [Arrays](arrays.md)
+* [Lists](lists.md)

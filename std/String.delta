@@ -1,14 +1,14 @@
 struct String: Comparable, OutputStream, Printable {
-    Array<char> characters;
+    List<char> characters;
 
     /// Initializes an empty string.
     init() {
-        characters = Array<char>();
+        characters = List<char>();
         characters.push('\0');
     }
 
     init(StringRef string) {
-        characters = Array<char>(capacity: string.size() + 1);
+        characters = List<char>(capacity: string.size() + 1);
 
         for (var ch in string) {
             characters.push(ch);
@@ -123,8 +123,8 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Splits the string by the given delimiter
-    Array<StringRef> split(char delim) {
-        var tokens = Array<StringRef>();
+    List<StringRef> split(char delim) {
+        var tokens = List<StringRef>();
 
         var prev = 0;
         var pos = 0;
@@ -149,7 +149,7 @@ struct String: Comparable, OutputStream, Printable {
     }
 
     // Splits the string by whitespace
-    Array<StringRef> split() {
+    List<StringRef> split() {
         return split(' ');
     }
 

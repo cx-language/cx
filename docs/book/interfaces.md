@@ -1,10 +1,10 @@
 # Interfaces
 
-Let's suppose we are writing a generic sort function that can sort an array of
+Let's suppose we are writing a generic sort function that can sort a list of
 any type:
 
 ```
-void sort<T>(mutable Array<T>* array) {
+void sort<T>(mutable List<T>* list) {
     // ...
 }
 ```
@@ -30,19 +30,19 @@ substituted for `T` must be comparable with the `<` operator using the
 `Comparable` interface as a _generic constraint_:
 
 ```
-void sort<T: Comparable>(mutable Array<T>* array)  {
+void sort<T: Comparable>(mutable List<T>* list)  {
     // ...
 }
 ```
 
 `Comparable` is an interface which specifies that instances of the type can be
 compared using e.g. `<`, among other things. If we now try to call `sort` with
-an array whose element type doesn't implement `Comparable`, we'll get a nice
+a list whose element type doesn't implement `Comparable`, we'll get a nice
 error message:
 
 ```
 main.delta:4:9: error: type 'X' doesn't implement interface 'Comparable'
-    sort(array);
+    sort(list);
         ^
 ```
 

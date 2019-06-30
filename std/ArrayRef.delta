@@ -8,10 +8,10 @@ struct ArrayRef<Element>: Copyable {
         size = 0;
     }
 
-    /// Initializes an ArrayRef referring to the elements of the given Array.
-    init(Array<Element>*  array) {
-        data = array.data();
-        size = array.size();
+    /// Initializes an ArrayRef referring to the elements of the given List.
+    init(List<Element>* list) {
+        data = list.data();
+        size = list.size();
     }
 
     /// Initializes an ArrayRef referring to an array of the given size located at the given memory

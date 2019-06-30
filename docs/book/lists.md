@@ -1,25 +1,25 @@
-# Arrays
+# Lists
 
-In Delta, the `Array` type is a dynamic array (like `std::vector` in C++) that
+In Delta, the `List` type is a dynamic array (like `std::vector` in C++) that
 resizes dynamically and supports fast insertion to the end. It also contains
 useful functions, some of which are listed here along with sample use cases.
 
 ### Access and bounds
 
-Arrays are accessed using the subscript operator `[]`, and implement bounds
+Lists are accessed using the subscript operator `[]`, and implement bounds
 checking to avoid index-out-of-bounds bugs. The subscript returns a pointer to
-the array.
+the element.
 
-```swift
-var a = Array<int>();
+```
+var a = List<int>();
 var error = a[1];
-// => Array index 1 is out of bounds, size is 0
+// => List index 1 is out of bounds, size is 0
 ```
 
 We can also access elements using the short-hand functions `first` and `last`:
 
-```swift
-var a = Array([1, 2, 3]);
+```
+var a = List([1, 2, 3]);
 printf("%d", a.first());
 // => 1
 printf("%d", a.last());
@@ -28,33 +28,33 @@ printf("%d", a.last());
 
 Elements can be added with the `push` function.
 
-```swift
-var a = Array<int>();
+```
+var a = List<int>();
 a.push(7);
 ```
 
 Elements can be removed with `removeLast`, `removeAt` or `removeFirst`.
 
-Arrays can also be compared with each other, elementwise, with the `==`
+Lists can also be compared with each other, elementwise, with the `==`
 comparison operator
 
 
-```swift
-var a = Array([1, 2, 3]);
-var b = Array([1, 2, 3]);
+```
+var a = List([1, 2, 3]);
+var b = List([1, 2, 3]);
 a == b; // true
 
-var a = Array([1]);
-var b = Array([2]);
+var a = List([1]);
+var b = List([2]);
 a == b; // false
 ```
 
 ### Iteration
 
-We can iterate over arrays with the for-each style loop
+We can iterate over lists with the for-each style loop
 
-```swift
-var a = Array([1, 2, 3]);
+```
+var a = List([1, 2, 3]);
 for (var e in a) {
     // ...
 }
@@ -62,11 +62,11 @@ for (var e in a) {
 
 ### Map and filter
 
-We can use the functional `map` and `filter` operations on Arrays, using
+We can use the functional `map` and `filter` operations on lists, using
 function pointers or lambda expressions. First, let's see how filter works.
 
-```swift
-var a = Array([1, 2, 3]);
+```
+var a = List([1, 2, 3]);
 var filtered = a.filter((e: int*) -> *e > 2);
 printf("%d", *filtered[0]);
 // => 3
@@ -75,10 +75,10 @@ printf("%d", *filtered[0]);
 Note that the element `e` in the lambda expression is a pointer, and as such
 has to be dereferenced to get the value.
 
-`map` works similarly, except it returns an Array of the same size.
+`map` works similarly, except it returns a list of the same size.
 
-```swift
-var a = Array([1, 2, 3]);
+```
+var a = List([1, 2, 3]);
 var b = a.map((e: int*) -> *e * 2);
 printf("%d, %d, %d", *b[0], *b[1], *b[2]);
 // => 2, 4, 6

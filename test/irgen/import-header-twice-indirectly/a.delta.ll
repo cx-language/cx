@@ -1,8 +1,8 @@
 
 %StringRef = type { %"ArrayRef<char>" }
 %"ArrayRef<char>" = type { i8*, i32 }
-%String = type { %"Array<char>" }
-%"Array<char>" = type { i8*, i32, i32 }
+%String = type { %"List<char>" }
+%"List<char>" = type { i8*, i32, i32 }
 
 @0 = private unnamed_addr constant [4 x i8] c"foo\00"
 @1 = private unnamed_addr constant [6 x i8] c"%.*s\0A\00"

@@ -7,14 +7,14 @@ void main() {
 }
 
 void testInsertionSort() {
-    var a = Array<int>();
+    var a = List<int>();
 
     for (var i in 0..5) {
 
         a.push(5 - i);
     }
 
-    var real = Array<int>();
+    var real = List<int>();
 
     for (var i in 0..5) {
         real.push(i+1);
@@ -27,14 +27,14 @@ void testInsertionSort() {
 
 
 void testQuickSort() {
-    var a = Array<int>();
+    var a = List<int>();
 
     for (var i in 0..64) {
 
         a.push(64 - i);
     }
 
-    var real = Array<int>();
+    var real = List<int>();
 
     for (var i in 0..64) {
         real.push(i+1);

@@ -29,7 +29,7 @@ void testBytes() {
 void testLines() {
     var f = FileStream("test.txt");
 
-    var a = Array<StringRef>();
+    var a = List<StringRef>();
     a.push("this");
     a.push("is the");
     a.push("best");
@@ -71,7 +71,7 @@ void testMultipleEmptyLines() {
 void testIsEofWhileLoop() {
     var f = InputFileStream("test.txt");
 
-    var a = Array<StringRef>();
+    var a = List<StringRef>();
     a.push("this");
     a.push("is the");
     a.push("best");
@@ -104,7 +104,7 @@ void testWrite() {
 void testInputStream() {
     var f = InputFileStream("test.txt");
 
-    var a = Array<StringRef>();
+    var a = List<StringRef>();
 
     a.push("this");
     a.push("is the");

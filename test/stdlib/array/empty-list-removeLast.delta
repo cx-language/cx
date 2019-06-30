@@ -2,8 +2,8 @@
 // UNSUPPORTED: wsl
 
 void main() {
-    var array = Array<int>();
+    var array = List<int>();
     array.removeLast();
 }
 
-// CHECK: Called removeLast() on empty Array
+// CHECK: Called removeLast() on empty List

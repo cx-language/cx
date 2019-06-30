@@ -1,11 +1,11 @@
 struct Tape
 {
-    Array<int> tape;
+    List<int> tape;
     int pos;
 
     init()
     {
-        tape = Array<int>([0]);
+        tape = List<int>([0]);
         pos = 0;
     }
 
@@ -49,7 +49,7 @@ struct Program
         this.code = String();
         this.bracketMap = Map<int, int>();
 
-        var leftStack = Array<int>();
+        var leftStack = List<int>();
         var pc = 0;
 
         for (var ch in text)

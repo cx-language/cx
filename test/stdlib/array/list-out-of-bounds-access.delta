@@ -2,7 +2,7 @@
 // UNSUPPORTED: wsl
 
 int main() {
-    return *Array<int>()[0];
+    return *List<int>()[0];
 }
 
-// CHECK: Array index 0 is out of bounds, size is 0
+// CHECK: List index 0 is out of bounds, size is 0

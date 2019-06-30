@@ -1,5 +1,5 @@
 struct MapIterator<Key, Value>: Copyable, Iterator<(Key key, mutable Value value)*> {
-    ArrayIterator<Array<(Key key, mutable Value value)>> hashTableIterator;
+    ArrayIterator<List<(Key key, mutable Value value)>> hashTableIterator;
     (Key key, mutable Value value)[?]* current;
 
     init(Map<Key, Value>* map) {

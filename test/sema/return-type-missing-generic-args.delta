@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:1: error: too few generic arguments to 'Array', expected 1
-Array f() {
-    return Array<int>();
+// CHECK: [[@LINE+1]]:1: error: too few generic arguments to 'List', expected 1
+List f() {
+    return List<int>();
 }
