@@ -839,25 +839,24 @@ std::unique_ptr<ReturnStmt> Parser::parseReturnStmt() {
 }
 
 /// var-decl ::= type-specifier id '=' initializer ('\n' | ';')
-/// type-specifier ::= type | 'var' | 'const'
+/// type-specifier ::= 'const' | 'const' type | type | 'var'
 /// initializer ::= expr | 'undefined'
 std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel) {
     Type type;
+    bool isConst = false;
 
-    switch (currentToken()) {
-        case Token::Var:
-            type.setMutable(true);
-            consumeToken();
-            break;
-        case Token::Const:
-            type.setMutable(false);
-            consumeToken();
-            break;
-        default:
-            type = parseNonMutableType();
-            type.setMutable(true);
+    if (currentToken() == Token::Const) {
+        consumeToken();
+        isConst = true;
     }
 
+    if (currentToken() == Token::Var) {
+        consumeToken();
+    } else if (lookAhead(1) != Token::Assignment) {
+        type = parseNonMutableType();
+    }
+
+    type.setMutable(!isConst);
     auto name = parse(Token::Identifier);
     return parseVarDeclAfterName(requireInitialValue, parent, accessLevel, type, name.getString(), name.getLocation());
 }
