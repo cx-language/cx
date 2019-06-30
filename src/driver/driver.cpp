@@ -204,13 +204,6 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
     bool emitLLVMBitcode = checkFlag("-emit-llvm-bitcode", args);
     bool emitPositionIndependentCode = checkFlag("-fPIC", args);
-#ifdef __linux__
-    // Add -fPIC to fix linker error on Ubuntu 17.04:
-    // /usr/bin/ld: output.o: relocation R_X86_64_32 against `.rodata.str1.16' can not be used when making a shared
-    // object; recompile with -fPIC
-    // /usr/bin/ld: final link failed: Nonrepresentable section on output
-    emitPositionIndependentCode = true;
-#endif
     if (checkFlag("-w", args)) warningMode = WarningMode::Suppress;
     if (checkFlag("-Werror", args)) warningMode = WarningMode::TreatAsErrors;
     auto disabledWarnings = collectStringOptionValues("-Wno-", args);
