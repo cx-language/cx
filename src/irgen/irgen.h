@@ -72,6 +72,8 @@ private:
     void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
     llvm::Value* findValue(llvm::StringRef name, const Decl* decl);
 
+    llvm::Value* codegenExprWithoutAutoCast(const Expr& expr);
+    llvm::Value* codegenAutoCast(llvm::Value* value, const Expr& expr);
     llvm::Value* codegenVarExpr(const VarExpr& expr);
     llvm::Value* codegenLvalueVarExpr(const VarExpr& expr);
     llvm::Value* codegenStringLiteralExpr(const StringLiteralExpr& expr);

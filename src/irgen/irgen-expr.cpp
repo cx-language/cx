@@ -12,13 +12,7 @@ llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
         value = createLoad(value);
     }
 
-    if (value->getType()->isFloatingPointTy()) {
-        value = builder.CreateFPCast(value, toIR(expr.getType()));
-    } else if (value->getType()->isIntegerTy()) {
-        value = builder.CreateIntCast(value, toIR(expr.getType()), expr.getType().isSigned());
-    }
-
-    return value;
+    return codegenAutoCast(value, expr);
 }
 
 llvm::Value* IRGenerator::codegenLvalueVarExpr(const VarExpr& expr) {
@@ -123,12 +117,11 @@ llvm::Value* IRGenerator::codegenUnaryExpr(const UnaryExpr& expr) {
     switch (expr.getOperator()) {
         case Token::Plus:
             return codegenExpr(expr.getOperand());
-        case Token::Minus:
-            if (expr.getOperand().getType().isFloatingPoint()) {
-                return builder.CreateFPCast(builder.CreateFNeg(codegenExpr(expr.getOperand())), toIR(expr.getType()));
-            } else {
-                return builder.CreateIntCast(builder.CreateNeg(codegenExpr(expr.getOperand())), toIR(expr.getType()), expr.getType().isSigned());
-            }
+        case Token::Minus: {
+            auto operand = codegenExpr(expr.getOperand());
+            auto result = expr.getOperand().getType().isFloatingPoint() ? builder.CreateFNeg(operand) : builder.CreateNeg(operand);
+            return codegenAutoCast(result, expr);
+        }
         case Token::Star:
             return createLoad(codegenExpr(expr.getOperand()));
         case Token::And:
@@ -810,7 +803,7 @@ llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
     return phi;
 }
 
-llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
+llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr:
             return codegenVarExpr(llvm::cast<VarExpr>(expr));
@@ -854,6 +847,10 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
             return codegenIfExpr(llvm::cast<IfExpr>(expr));
     }
     llvm_unreachable("all cases handled");
+}
+
+llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
+    return codegenAutoCast(codegenExprWithoutAutoCast(expr), expr);
 }
 
 llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
@@ -900,4 +897,20 @@ llvm::Value* IRGenerator::codegenLvalueExpr(const Expr& expr) {
             return codegenIfExpr(llvm::cast<IfExpr>(expr));
     }
     llvm_unreachable("all cases handled");
+}
+
+llvm::Value* IRGenerator::codegenAutoCast(llvm::Value* value, const Expr& expr) {
+    if (value && expr.hasType()) {
+        auto type = toIR(expr.getType());
+
+        if (type != value->getType()) {
+            if (value->getType()->isFloatingPointTy()) {
+                return builder.CreateFPCast(value, type);
+            } else if (value->getType()->isIntegerTy()) {
+                return builder.CreateIntCast(value, type, expr.getType().isSigned());
+            }
+        }
+    }
+
+    return value;
 }
