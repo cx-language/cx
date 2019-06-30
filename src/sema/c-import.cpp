@@ -79,7 +79,7 @@ Type toDelta(const clang::BuiltinType& type) {
         case clang::BuiltinType::ULongLong:
             return getIntTypeByWidth(targetInfo->getLongLongWidth(), false);
         case clang::BuiltinType::Float:
-            return Type::getFloat32();
+            return Type::getFloat();
         case clang::BuiltinType::Double:
             return Type::getFloat64();
         case clang::BuiltinType::LongDouble:
