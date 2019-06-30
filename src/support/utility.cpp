@@ -24,8 +24,15 @@ std::string delta::readLineFromFile(SourceLocation location) {
 }
 
 void delta::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
+    auto permissions = llvm::sys::fs::getPermissions(sourcePath);
+    if (auto error = permissions.getError()) {
+        printErrorAndExit("couldn't get permissions for '", sourcePath, "': ", error.message());
+    }
     if (auto error = llvm::sys::fs::copy_file(sourcePath, targetPath)) {
         printErrorAndExit("couldn't copy '", sourcePath, "' to '", targetPath, "': ", error.message());
+    }
+    if (auto error = llvm::sys::fs::setPermissions(targetPath, *permissions)) {
+        printErrorAndExit("couldn't set permissions for '", targetPath, "': ", error.message());
     }
     if (auto error = llvm::sys::fs::remove(sourcePath)) {
         printErrorAndExit("couldn't remove '", sourcePath, "': ", error.message());
