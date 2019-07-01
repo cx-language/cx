@@ -101,11 +101,11 @@ struct Program
 
                 case '[':
                     if (tape.value() == 0)
-                        pc = *(bracketMap[pc]!);
+                        pc = *bracketMap[pc]!;
 
                 case ']':
                     if (tape.value() != 0)
-                        pc = *(bracketMap[pc]!);
+                        pc = *bracketMap[pc]!;
 
                 case '.':
                     printf("%c", char(tape.value()));
