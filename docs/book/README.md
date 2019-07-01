@@ -149,13 +149,6 @@ to ignore. The call site can also explicitly declare the return value as unused
 by assigning it to `_`, instead of casting to void. `_` is a magic identifier
 which is also used in other contexts to mean "ignore this value".
 
-## Immutability by default
-
-Instead of variables being mutable by default, and `const` explicitly declaring
-them immutable, variables in Delta are immutable by default, and can be
-explicitly declared mutable with `var` (for variable declarations) and `mutable`
-(for types). Preferring immutability helps prevent certain classes of bugs.
-
 ## Transparent interoperation with existing C APIs
 
 C headers can be imported directly from Delta code. The Clang API is used to

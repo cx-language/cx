@@ -1,11 +1,11 @@
 
 %Foo = type { i32 }
 
-define void @_ENM4main3Foo4initE1i3int(%Foo* %this, i32 %i) {
+define void @_EN4main3Foo4initE1i3int(%Foo* %this, i32 %i) {
   ret void
 }
 
-define void @_ENM4main3Foo4initE3qux3int(%Foo* %this, i32 %qux) {
+define void @_EN4main3Foo4initE3qux3int(%Foo* %this, i32 %qux) {
   ret void
 }
 

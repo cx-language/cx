@@ -9,27 +9,24 @@ define i32 @main() {
   %__iterator = alloca %StringIterator
   %__str0 = alloca %StringRef
   %ch = alloca i8
-  call void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  %__str0.load = load %StringRef, %StringRef* %__str0
-  %1 = call %StringIterator @_EN3std9StringRef8iteratorE(%StringRef %__str0.load)
+  call void @_EN3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  %1 = call %StringIterator @_EN3std9StringRef8iteratorE(%StringRef* %__str0)
   store %StringIterator %1, %StringIterator* %__iterator
   br label %loop.condition
 
 loop.condition:                                   ; preds = %loop.increment, %0
-  %__iterator.load = load %StringIterator, %StringIterator* %__iterator
-  %2 = call i1 @_EN3std14StringIterator8hasValueE(%StringIterator %__iterator.load)
+  %2 = call i1 @_EN3std14StringIterator8hasValueE(%StringIterator* %__iterator)
   br i1 %2, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  %__iterator.load1 = load %StringIterator, %StringIterator* %__iterator
-  %3 = call i8 @_EN3std14StringIterator5valueE(%StringIterator %__iterator.load1)
+  %3 = call i8 @_EN3std14StringIterator5valueE(%StringIterator* %__iterator)
   store i8 %3, i8* %ch
   %ch.load = load i8, i8* %ch
   %4 = icmp eq i8 %ch.load, 98
   br i1 %4, label %if.then, label %if.else
 
 loop.increment:                                   ; preds = %if.end, %if.then
-  call void @_ENM3std14StringIterator9incrementE(%StringIterator* %__iterator)
+  call void @_EN3std14StringIterator9incrementE(%StringIterator* %__iterator)
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
@@ -45,12 +42,12 @@ if.end:                                           ; preds = %if.else
   br label %loop.increment
 }
 
-declare %StringIterator @_EN3std9StringRef8iteratorE(%StringRef)
+declare %StringIterator @_EN3std9StringRef8iteratorE(%StringRef*)
 
-declare void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)
+declare void @_EN3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)
 
-declare i1 @_EN3std14StringIterator8hasValueE(%StringIterator)
+declare i1 @_EN3std14StringIterator8hasValueE(%StringIterator*)
 
-declare i8 @_EN3std14StringIterator5valueE(%StringIterator)
+declare i8 @_EN3std14StringIterator5valueE(%StringIterator*)
 
-declare void @_ENM3std14StringIterator9incrementE(%StringIterator*)
+declare void @_EN3std14StringIterator9incrementE(%StringIterator*)

@@ -2,7 +2,7 @@
 
 struct X<T> {
     init() {}
-    mutating void f<U>(T(U) u) {}
+    void f<U>(T(U) u) {}
 }
 
 int g(bool i) { return int(i); }

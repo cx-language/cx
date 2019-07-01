@@ -36,7 +36,7 @@ struct Asteroid {
         }
     }
 
-    mutating void update(float delta) {
+    void update(float delta) {
         position.x += velocity.x * delta;
         position.y += velocity.y * delta;
         rotation += rotationSpeed * delta;
@@ -47,7 +47,7 @@ struct Asteroid {
         while (position.y >= height) position.y -= height;
     }
 
-    void render(mutable SDL_Renderer* renderer) {
+    void render(SDL_Renderer* renderer) {
         for (var i in -1...1) {
             for (var j in -1...1) {
                 var diff = Vector2(float(i) * width, float(j) * height);

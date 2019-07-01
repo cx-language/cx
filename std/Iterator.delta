@@ -11,5 +11,5 @@ interface Iterator<Element> {
 
     /// Advances the iterator to the next element in the sequence. Calling this function is not
     /// allowed if `hasValue()` returns false.
-    mutating void increment();
+    void increment();
 }

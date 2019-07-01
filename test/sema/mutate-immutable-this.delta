@@ -1,7 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-struct Foo {
-    int i;
-    // CHECK: [[@LINE+1]]:24: error: cannot increment immutable value of type 'int'
-    void bar() { this.i++; }
-}

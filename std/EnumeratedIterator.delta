@@ -15,7 +15,7 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
         return EnumeratedIteratorEntry(base.value(), index);
     }
 
-    mutating void increment() {
+    void increment() {
         base.increment();
         index++;
     }

@@ -8,7 +8,7 @@ struct OrderedSet<Element> {
     }
 
     /// Inserts an element into the Set.
-    mutating bool insert(Element e) {
+    bool insert(Element e) {
         return map.insert(e, false);
     }
 
@@ -18,7 +18,7 @@ struct OrderedSet<Element> {
     }
 
     /// Removes an element from the Set, if it exists.
-    mutating void remove(Element* e) {
+    void remove(Element* e) {
         map.remove(e);
     }
 

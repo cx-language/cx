@@ -100,50 +100,48 @@ llvm::StringRef getRecordName(const clang::RecordDecl& recordDecl) {
 }
 
 Type toDelta(clang::QualType qualtype) {
-    const bool isMutable = !qualtype.isConstQualified();
+    auto mutability = qualtype.isConstQualified() ? Mutability::Const : Mutability::Mutable;
     auto& type = *qualtype.getTypePtr();
+
     switch (type.getTypeClass()) {
         case clang::Type::Pointer: {
             auto pointeeType = llvm::cast<clang::PointerType>(type).getPointeeType();
             if (pointeeType->isFunctionType()) {
-                return OptionalType::get(toDelta(pointeeType), isMutable);
+                return OptionalType::get(toDelta(pointeeType), mutability);
             }
-            return OptionalType::get(PointerType::get(toDelta(pointeeType), false), isMutable);
+            return OptionalType::get(PointerType::get(toDelta(pointeeType), Mutability::Mutable), mutability);
         }
-        case clang::Type::Builtin: {
-            Type deltaType = toDelta(llvm::cast<clang::BuiltinType>(type));
-            deltaType.setMutable(isMutable);
-            return deltaType;
-        }
+        case clang::Type::Builtin:
+            return toDelta(llvm::cast<clang::BuiltinType>(type)).withMutability(mutability);
         case clang::Type::Typedef: {
             auto desugared = llvm::cast<clang::TypedefType>(type).desugar();
-            if (!isMutable) desugared.addConst();
+            if (mutability == Mutability::Const) desugared.addConst();
             return toDelta(desugared);
         }
         case clang::Type::Elaborated:
             return toDelta(llvm::cast<clang::ElaboratedType>(type).getNamedType());
         case clang::Type::Record: {
             auto* recordDecl = llvm::cast<clang::RecordType>(type).getDecl();
-            return BasicType::get(getRecordName(*recordDecl), {}, isMutable);
+            return BasicType::get(getRecordName(*recordDecl), {}, mutability);
         }
         case clang::Type::Paren:
             return toDelta(llvm::cast<clang::ParenType>(type).getInnerType());
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
-            auto paramTypes = map(functionProtoType.getParamTypes(), [](clang::QualType qualType) { return toDelta(qualType).asImmutable(); });
-            return FunctionType::get(toDelta(functionProtoType.getReturnType()).asImmutable(), std::move(paramTypes), isMutable);
+            auto paramTypes = map(functionProtoType.getParamTypes(), [](clang::QualType qualType) { return toDelta(qualType); });
+            return FunctionType::get(toDelta(functionProtoType.getReturnType()), std::move(paramTypes), mutability);
         }
         case clang::Type::FunctionNoProto: {
             auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
             // This treats it as a zero-argument function, but really it should accept any number of arguments of any types.
-            return FunctionType::get(toDelta(functionNoProtoType.getReturnType()).asImmutable(), {}, isMutable);
+            return FunctionType::get(toDelta(functionNoProtoType.getReturnType()), {}, mutability);
         }
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
             if (!constantArrayType.getSize().isIntN(64)) {
                 error(SourceLocation(), "array is too large");
             }
-            return ArrayType::get(toDelta(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue(), isMutable);
+            return ArrayType::get(toDelta(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue(), mutability);
         }
         case clang::Type::IncompleteArray:
             return ArrayType::get(toDelta(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::unknownSize);
@@ -194,7 +192,7 @@ VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
 
 void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
     auto initializer = llvm::make_unique<IntLiteralExpr>(std::move(value), SourceLocation());
-    auto type = toDelta(qualType).asImmutable();
+    auto type = toDelta(qualType).withMutability(Mutability::Const);
     initializer->setType(type);
     module.addToSymbolTable(VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
 }
@@ -202,7 +200,7 @@ void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, c
 // TODO: Use llvm::APFloat instead of long double.
 void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
     auto initializer = llvm::make_unique<FloatLiteralExpr>(value, SourceLocation());
-    auto type = Type::getFloat64();
+    auto type = Type::getFloat64(Mutability::Const);
     initializer->setType(type);
     module.addToSymbolTable(VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
 }

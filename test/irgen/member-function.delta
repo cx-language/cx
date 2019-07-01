@@ -5,7 +5,7 @@ struct Foo {
 
     init() { this.baz = 42; }
 
-    mutating void bar() { this.baz++; }
+    void bar() { this.baz++; }
 
     int qux() { return this.baz; }
 }

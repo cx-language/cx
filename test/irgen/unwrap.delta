@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-extern mutable void*? f();
+extern void*? f();
 
 void main() {
-    mutable uint8* byte = cast<mutable uint8*?>(f())!;
-    mutable uint8[1]*? ptr = cast<mutable uint8[1]*?>(f());
+    uint8* byte = cast<uint8*?>(f())!;
+    uint8[1]*? ptr = cast<uint8[1]*?>(f());
     ptr![0] = 1;
 }

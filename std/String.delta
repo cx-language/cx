@@ -56,17 +56,12 @@ struct String: Comparable, OutputStream, Printable {
         return size() == 0;
     }
 
-    /// Returns a pointer to the first character in the string.
-    mutating mutable char[?]* data() {
-        return characters.data();
-    }
-
-    mutating void push(char character) {
+    void push(char character) {
         characters[size()] = character;
         characters.push('\0');
     }
 
-    mutating bool write(StringRef string) {
+    bool write(StringRef string) {
         for (var ch in string) {
             push(ch);
         }
@@ -75,12 +70,12 @@ struct String: Comparable, OutputStream, Printable {
 
     /// Removes the first character from the string.
     /// Other characters are moved towards the beginning of the string by one index.
-    mutating void removeFirst() {
+    void removeFirst() {
         characters.removeFirst();
     }
 
     /// Removes the last character from the string.
-    mutating void removeLast() {
+    void removeLast() {
         characters.removeAt(characters.size() - 2);
     }
 
@@ -108,7 +103,7 @@ struct String: Comparable, OutputStream, Printable {
     int find(char c, int start) {
         for (var i in start..size()) {
             if (characters[i] == c) {
-                return int(i);
+                return i;
             }
         }
         return -1;
@@ -153,7 +148,7 @@ struct String: Comparable, OutputStream, Printable {
         return split(' ');
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         stream.write(StringRef(this));
     }
 

@@ -2,6 +2,6 @@
 // REQUIRES: windows
 
 void main() {
-    mutable int*? p = null;
+    int*? p = null;
     var pp = p!;
 }

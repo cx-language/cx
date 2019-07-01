@@ -1,6 +1,6 @@
-struct MapIterator<Key, Value>: Copyable, Iterator<(Key key, mutable Value value)*> {
-    ArrayIterator<List<(Key key, mutable Value value)>> hashTableIterator;
-    (Key key, mutable Value value)[?]* current;
+struct MapIterator<Key, Value>: Copyable, Iterator<(Key key, Value value)*> {
+    ArrayIterator<List<(Key key, Value value)>> hashTableIterator;
+    (Key key, Value value)[?]* current;
 
     init(Map<Key, Value>* map) {
         hashTableIterator = map.hashTable.iterator();
@@ -12,11 +12,11 @@ struct MapIterator<Key, Value>: Copyable, Iterator<(Key key, mutable Value value
         return hashTableIterator.hasValue();
     }
 
-    (Key key, mutable Value value)* value() {
+    (Key key, Value value)* value() {
         return current;
     }
 
-    mutating void increment() {
+    void increment() {
         var slot = hashTableIterator.value();
         var slotEnd = &slot.data()[slot.size()];
         current++;
@@ -28,7 +28,7 @@ struct MapIterator<Key, Value>: Copyable, Iterator<(Key key, mutable Value value
         }
     }
 
-    mutating private void skipEmptySlots() {
+    private void skipEmptySlots() {
         while (hashTableIterator.hasValue()) {
             if (hashTableIterator.value().size() != 0) {
                 current = hashTableIterator.value().data();

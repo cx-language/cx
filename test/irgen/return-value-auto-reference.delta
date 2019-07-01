@@ -18,7 +18,6 @@ struct B: Copyable {
     char a;
 
     char* gg() {
-        return a; // FIXME: Disallow this? Or always take Copyable struct 'this' by reference?
-                  // Currently the generated IR returns a pointer to a local alloca.
+        return a;
     }
 }

@@ -11,7 +11,7 @@ define i32 @main() {
   call void @_EN4main3fooI3intEE1t3int(i32 1)
   call void @_EN4main3fooI4boolEE1t4bool(i1 false)
   call void @_EN4main3fooI4boolEE1t4bool(i1 true)
-  call void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   %__str0.load = load %StringRef, %StringRef* %__str0
   %1 = call %StringRef @_EN4main3barI9StringRefEE1t9StringRef(%StringRef %__str0.load)
   store %StringRef %1, %StringRef* %b
@@ -32,7 +32,7 @@ define %StringRef @_EN4main3barI9StringRefEE1t9StringRef(%StringRef %t) {
   ret %StringRef %t
 }
 
-declare void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)
+declare void @_EN3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)
 
 define i32 @_EN4main3quxI3intEE1t3int(i32 %t) {
   %1 = icmp slt i32 %t, 0

@@ -252,14 +252,8 @@ void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToD
     builder.CreateCall(deinit, valueToDeinit);
 }
 
-llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating) {
-    auto* structType = toIR(typeDecl.getType());
-
-    if (!isMutating && typeDecl.passByValue()) {
-        return structType;
-    } else {
-        return llvm::PointerType::get(structType, 0);
-    }
+llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl) {
+    return llvm::PointerType::get(toIR(typeDecl.getType()), 0);
 }
 
 llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {

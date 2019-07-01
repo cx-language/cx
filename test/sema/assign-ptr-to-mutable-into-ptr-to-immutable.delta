@@ -1,7 +1,0 @@
-// RUN: %delta -typecheck %s
-
-extern mutable int* foo();
-
-void main() {
-    int* p = foo();
-}

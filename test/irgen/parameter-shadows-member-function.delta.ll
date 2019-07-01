@@ -1,7 +1,7 @@
 
 %S = type { i32 }
 
-define void @_ENM4main1S4initE(%S* %this) {
+define void @_EN4main1S4initE(%S* %this) {
   ret void
 }
 
@@ -18,6 +18,6 @@ define void @_EN4main1S3fooE3bar3int(%S* %this, i32 %bar) {
 
 define i32 @main() {
   %s = alloca %S
-  call void @_ENM4main1S4initE(%S* %s)
+  call void @_EN4main1S4initE(%S* %s)
   ret i32 0
 }

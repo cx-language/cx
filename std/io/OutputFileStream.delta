@@ -16,7 +16,7 @@ struct OutputFileStream: OutputStream {
         fs = FileStream(fileDescriptor, readOnly: false);
     }
 
-    mutating void close() {
+    void close() {
         fs.close();
     }
 
@@ -26,7 +26,7 @@ struct OutputFileStream: OutputStream {
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    mutating bool write(StringRef string) {
+    bool write(StringRef string) {
         return fs.write(string);
     }
 }

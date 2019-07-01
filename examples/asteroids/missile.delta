@@ -13,13 +13,13 @@ struct Missile {
         this.direction = direction;
     }
 
-    void render(mutable SDL_Renderer* renderer) {
+    void render(SDL_Renderer* renderer) {
         var a = position;
         var b = tailPosition();
         SDL_RenderDrawLine(renderer, int(a.x), int(a.y), int(b.x), int(b.y));
     }
 
-    mutating void update(float delta, mutable GameState* state) {
+    void update(float delta, GameState* state) {
         var velocity = Vector2(direction) * missileSpeed;
         position = position + velocity * delta;
 

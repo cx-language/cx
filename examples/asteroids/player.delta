@@ -20,7 +20,7 @@ struct Player {
         timeSinceLastMissileShot = 0.0;
     }
 
-    void render(mutable SDL_Renderer* renderer) {
+    void render(SDL_Renderer* renderer) {
         var a = Vector2(position.x - playerSize, position.y - playerSize);
         var b = Vector2(position.x - playerSize, position.y + playerSize);
         var c = Vector2(position.x + playerSize + playerSize, position.y);
@@ -46,7 +46,7 @@ struct Player {
         }
     }
 
-    mutating void update(float delta, mutable GameState* state) {
+    void update(float delta, GameState* state) {
         if (isKeyDown(SDL_SCANCODE_RIGHT)) {
             direction += turningSpeed * delta;
         }
@@ -82,7 +82,7 @@ struct Player {
         }
     }
 
-    mutating void shootMissile() {
+    void shootMissile() {
         if (timeSinceLastMissileShot > missileCooldown) {
             var position = this.position + Vector2(direction) * playerSize * 2 + Vector2(direction) * missileSize;
             missiles.push(Missile(position, direction));

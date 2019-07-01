@@ -13,7 +13,7 @@ private void i(A* q) {
 
 private void j(A a) {}
 
-private void k(mutable A*? a) {}
+private void k(A*? a) {}
 
 private A*? l() {
     return null;
@@ -37,14 +37,14 @@ void m(A* r) {
 }
 
 // CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:8: warning: using private type 'A' in public declaration
-void o(mutable A*? a) {}
+void o(A*? a) {}
 
 // CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:1: warning: using private type 'A' in public declaration
-mutable A*? p() {
+A*? p() {
     return null;
 }
 
 struct E {
     // CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:5: warning: using private type 'A' in public declaration
-    mutable A* a;
+    A* a;
 }

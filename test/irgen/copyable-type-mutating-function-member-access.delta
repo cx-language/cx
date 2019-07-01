@@ -3,7 +3,7 @@
 struct S: Copyable {
     int a
 
-    mutating void foo() {
+    void foo() {
         var b = a
     }
 }

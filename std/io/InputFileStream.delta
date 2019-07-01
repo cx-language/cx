@@ -11,7 +11,7 @@ struct InputFileStream: InputStream {
         fs = FileStream(fileDescriptor, readOnly: true);
     }
 
-    mutating void close() {
+    void close() {
         fs.close();
     }
 

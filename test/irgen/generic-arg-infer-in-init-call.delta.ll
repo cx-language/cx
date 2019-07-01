@@ -10,23 +10,23 @@ define i32 @main() {
   %i = alloca %"Foo<int>"
   %b = alloca %"Foo<StringRef>"
   %__str0 = alloca %StringRef
-  call void @_ENM4main3FooI3intE4initE1t3int(%"Foo<int>"* %i, i32 42)
-  call void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
+  call void @_EN4main3FooI3intE4initE1t3int(%"Foo<int>"* %i, i32 42)
+  call void @_EN3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
   %__str0.load = load %StringRef, %StringRef* %__str0
-  call void @_ENM4main3FooI9StringRefE4initE1t9StringRef(%"Foo<StringRef>"* %b, %StringRef %__str0.load)
+  call void @_EN4main3FooI9StringRefE4initE1t9StringRef(%"Foo<StringRef>"* %b, %StringRef %__str0.load)
   ret i32 0
 }
 
-define void @_ENM4main3FooI3intE4initE1t3int(%"Foo<int>"* %this, i32 %t) {
+define void @_EN4main3FooI3intE4initE1t3int(%"Foo<int>"* %this, i32 %t) {
   %t1 = getelementptr inbounds %"Foo<int>", %"Foo<int>"* %this, i32 0, i32 0
   store i32 %t, i32* %t1
   ret void
 }
 
-define void @_ENM4main3FooI9StringRefE4initE1t9StringRef(%"Foo<StringRef>"* %this, %StringRef %t) {
+define void @_EN4main3FooI9StringRefE4initE1t9StringRef(%"Foo<StringRef>"* %this, %StringRef %t) {
   %t1 = getelementptr inbounds %"Foo<StringRef>", %"Foo<StringRef>"* %this, i32 0, i32 0
   store %StringRef %t, %StringRef* %t1
   ret void
 }
 
-declare void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)
+declare void @_EN3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)

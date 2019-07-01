@@ -1,6 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-void foo(int* i) {
-    // CHECK: [[@LINE+1]]:8: error: cannot assign to immutable expression of type 'int'
-    *i += 1
-}

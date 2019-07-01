@@ -260,8 +260,6 @@ const char* delta::toString(Token::Kind tokenKind) {
         "in",
         "init",
         "interface",
-        "mutable",
-        "mutating",
         "null",
         "private",
         "return",

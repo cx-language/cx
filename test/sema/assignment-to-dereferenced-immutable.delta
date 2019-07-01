@@ -1,9 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-extern void* calloc(uint64 count, uint64 size);
-
-void main() {
-    var buffer = cast<int*>(calloc(1, 8));
-    // CHECK: [[@LINE+1]]:13: error: cannot assign to immutable expression of type 'int'
-    *buffer = 41;
-}

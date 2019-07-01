@@ -5,7 +5,7 @@ struct A {
     init() { i = 0 }
     deinit() { }
     void foo() { }
-    mutating void mutate() { }
+    void mutate() { }
 }
 
 void main() {

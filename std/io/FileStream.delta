@@ -40,7 +40,7 @@ struct FileStream: InputStream, OutputStream {
         }
     }
 
-    mutating void close() {
+    void close() {
         if (file != null) {
             fclose(file);
             file = null;
@@ -90,7 +90,7 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    mutating bool write(StringRef string) {
+    bool write(StringRef string) {
         for (var c in string) {
             var ret = fputc(int(c), file!);
             if (ret <= 0) {

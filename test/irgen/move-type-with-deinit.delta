@@ -5,7 +5,7 @@ struct Y {
     deinit() {}
 }
 
-void f(Y a, mutable Y* b) {
+void f(Y a, Y* b) {
     *b = a;
 }
 

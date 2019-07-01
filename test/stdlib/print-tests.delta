@@ -7,7 +7,7 @@ struct A: Printable {
         this.a = a;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         stream.write(a);
         stream.write(a);
         stream.write("!");

@@ -4,8 +4,8 @@ struct S<T>: Copyable {
     init() { }
 
     void f(T t) {
-        mutable T*? p = null;
-        *(p!) = t;
+        T*? p = null;
+        *p! = t;
     }
 }
 

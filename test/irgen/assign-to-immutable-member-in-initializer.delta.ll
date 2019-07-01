@@ -1,7 +1,7 @@
 
 %F = type { i32, [1 x i32] }
 
-define void @_ENM4main1F4initE(%F* %this) {
+define void @_EN4main1F4initE(%F* %this) {
   %v = getelementptr inbounds %F, %F* %this, i32 0, i32 0
   store i32 42, i32* %v
   %v1 = getelementptr inbounds %F, %F* %this, i32 0, i32 0

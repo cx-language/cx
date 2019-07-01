@@ -8,10 +8,7 @@
 \rule{type} \nonterminal{optional-type}\\
 \rule{type} \nonterminal{array-type}\\
 \rule{type} \nonterminal{function-type}\\
-\rule{type} \nonterminal{tuple-type}\\
-\rule{type} \code{mutable} \nonterminal{basic-type}\\
-\rule{type} \code{mutable} \nonterminal{function-type}\\
-\rule{type} \code{mutable} \nonterminal{tuple-type}
+\rule{type} \nonterminal{tuple-type}
 \end{grammar}
 
 \section{Basic types}
@@ -66,20 +63,14 @@ interfaces may be generic.
 \section{Pointer types}
 
 Pointers are values that point to other values. They can be reassigned to point
-to another value (if the pointer type itself is declared as \code{mutable}), but
-they must always refer to some value, i.e. they cannot be null by default
-(nullable pointers can be created using the optional type, see below). Member
-access, member function calls, and subscript operations via pointers are
-allowed: they will be forwarded to the pointee value.
+to another value, but they must always refer to some value, i.e. they cannot be
+null by default (nullable pointers can be created using the optional type, see
+below). Member access, member function calls, and subscript operations via
+pointers are allowed: they will be forwarded to the pointee value.
 
 \begin{grammar}
-\rule{pointer-type} \nonterminal{pointee-type} \code{*}\\
-\rule{pointer-type} \nonterminal{pointee-type} \code{mutable} \code{*}\\
-\rule{pointee-type} \nonterminal{type}
+\rule{pointer-type} \nonterminal{type} \code{*}\\
 \end{grammar}
-
-The \nonterminal{pointee-type} may be mutable. Prefixing the \code{*} with
-\code{mutable} makes the \nonterminal{pointer-type} itself mutable.
 
 \begin{samepage}
 Pointer arithmetic is supported as subscript operations on operands of a
@@ -104,8 +95,6 @@ pointer; such pointers are memory-layout-compatible with pointers to
 \nonterminal{element-type}, primarily for C interoperability.
 \nonterminal{array-type-with-unknown-size} is the only array type for which
 index operations are not guaranteed to be bounds-checked.
-
-The \nonterminal{element-type} may be mutable.
 
 \section{Optional type}
 
@@ -139,9 +128,6 @@ Function types are written out as follows:
 \rule{parameter-type-list} comma-separated list of zero or more \nonterminal{types}\\
 \rule{return-type} \nonterminal{type}
 \end{grammar}
-
-The types in the \nonterminal{parameter-type-list} and \nonterminal{return-type}
-may not have a top-level mutable modifier.
 
 \section{Tuple types}
 

@@ -95,10 +95,6 @@ void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLeve
         error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
     }
 
-    if (decl.getType().isMutable()) {
-        error(decl.getLocation(), "parameter types cannot be 'mutable'");
-    }
-
     typecheckType(decl.getType(), userAccessLevel);
     getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 }
@@ -166,7 +162,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         onAssign = [&](Expr& lhs) { initializedFields.insert(lhs.getFieldDecl()); };
 
         if (receiverTypeDecl) {
-            Type thisType = receiverTypeDecl->getTypeForPassing(decl.isMutating());
+            Type thisType = receiverTypeDecl->getTypeForPassing();
             getCurrentModule()->addToSymbolTable(VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *getCurrentModule(), decl.getLocation()));
         }
 
@@ -286,37 +282,37 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     }
 
     Type declaredType = decl.getType();
-    Type initType = typecheckExpr(*decl.getInitializer());
+    Type initializerType = typecheckExpr(*decl.getInitializer());
 
     if (declaredType) {
         bool isLocalVariable = decl.getParent() && decl.getParent()->isFunctionDecl();
         typecheckType(declaredType, isLocalVariable ? AccessLevel::None : decl.getAccessLevel());
 
-        if (initType) {
+        if (initializerType) {
             Type convertedType;
 
-            if (isImplicitlyConvertible(decl.getInitializer(), initType, declaredType, &convertedType)) {
-                decl.getInitializer()->setType(convertedType ? convertedType : initType);
+            if (isImplicitlyConvertible(decl.getInitializer(), initializerType, declaredType, &convertedType)) {
+                decl.getInitializer()->setType(convertedType ? convertedType : initializerType);
             } else {
                 const char* hint;
 
-                if (initType.isNull()) {
+                if (initializerType.isNull()) {
                     ASSERT(!declaredType.isOptionalType());
                     hint = " (add '?' to the type to make it nullable)";
                 } else {
                     hint = "";
                 }
 
-                error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType, "' with '", initType, "'", hint);
+                error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType, "' with '",
+                      initializerType, "'", hint);
             }
         }
     } else {
-        if (initType.isNull()) {
+        if (initializerType.isNull()) {
             error(decl.getLocation(), "couldn't infer type of '", decl.getName(), "', add a type annotation");
         }
 
-        initType.setMutable(decl.getType().isMutable());
-        decl.setType(initType);
+        decl.setType(initializerType.withMutability(decl.getType().getMutability()));
     }
 
     if (!isGlobal) {

@@ -9,7 +9,7 @@ struct Foo {
         this.f();
     }
 
-    mutating void f() {}
+    void f() {}
 }
 
 struct Bar: Copyable {
@@ -21,7 +21,7 @@ struct Bar: Copyable {
         this.f();
     }
 
-    mutating void f() {}
+    void f() {}
 }
 
 void main() {

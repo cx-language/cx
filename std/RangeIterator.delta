@@ -15,7 +15,7 @@ struct RangeIterator<T>: Copyable, Iterator<T> {
         return current;
     }
 
-    mutating void increment() {
+    void increment() {
         current++;
     }
 }

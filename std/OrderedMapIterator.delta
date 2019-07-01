@@ -1,4 +1,4 @@
-struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(Key key, mutable Value value)*> {
+struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(Key key, Value value)*> {
     AVLnode<Key, Value>*? current;
     OrderedMap<Key, Value>* map;
 
@@ -11,11 +11,11 @@ struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(Key key, mutable Valu
         return current != null;
     }
 
-    (Key key, mutable Value value)* value() {
+    (Key key, Value value)* value() {
         return current!.entry;
     }
 
-    mutating void increment() {
+    void increment() {
         current = map.higherNode(current!);
     }
 }

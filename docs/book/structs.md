@@ -34,19 +34,6 @@ foo.bar();
 Inside member functions, the receiver and its member variables must be accessed
 via `this`.
 
-### Mutating Member Functions
-
-To declare a member function that can mutate `this`, the function has to be
-declared `mutating`:
-
-```
-struct Foo {
-    mutating void bar() {
-        // ...
-    }
-}
-```
-
 ### Static Member Functions
 
 Member functions that are scoped to a type, but that are not called on a

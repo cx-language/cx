@@ -3,7 +3,7 @@ struct char: Copyable, Comparable, Printable, Hashable {
         return int(this).compare(int(other));
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         // TODO: Use char overload of 'write' when it's implemented.
         stream.write(StringRef(this, 1));
     }

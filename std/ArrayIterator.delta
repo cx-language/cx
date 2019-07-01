@@ -16,30 +16,7 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
         return current;
     }
 
-    mutating void increment() {
-        current++;
-    }
-}
-
-struct MutableArrayIterator<Element>: Copyable {
-    mutable Element[?]* current;
-    mutable Element[?]* end;
-
-    // TODO: Should take mutable ArrayRef instead of List.
-    init(mutable List<Element>* array) {
-        current = array.data();
-        end = &array.data()[array.size()];
-    }
-
-    bool hasValue() {
-        return current !== end;
-    }
-
-    mutable Element* value() {
-        return current;
-    }
-
-    mutating void increment() {
+    void increment() {
         current++;
     }
 }

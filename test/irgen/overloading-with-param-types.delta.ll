@@ -2,13 +2,13 @@
 %S = type { i32 }
 %T = type { i32 }
 
-define void @_ENM4main1S4initE(%S* %this) {
+define void @_EN4main1S4initE(%S* %this) {
   %i = getelementptr inbounds %S, %S* %this, i32 0, i32 0
   store i32 0, i32* %i
   ret void
 }
 
-define void @_ENM4main1T4initE(%T* %this) {
+define void @_EN4main1T4initE(%T* %this) {
   %i = getelementptr inbounds %T, %T* %this, i32 0, i32 0
   store i32 0, i32* %i
   ret void
@@ -33,8 +33,8 @@ define void @_EN4mainplE1a1T1b1T(%T %a, %T %b) {
 define i32 @main() {
   %s = alloca %S
   %t = alloca %T
-  call void @_ENM4main1S4initE(%S* %s)
-  call void @_ENM4main1T4initE(%T* %t)
+  call void @_EN4main1S4initE(%S* %s)
+  call void @_EN4main1T4initE(%T* %t)
   %s.load = load %S, %S* %s
   call void @_EN4main1fE1a1S(%S %s.load)
   %t.load = load %T, %T* %t

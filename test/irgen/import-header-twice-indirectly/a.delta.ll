@@ -9,28 +9,27 @@
 
 define i32 @main() {
   %__str0 = alloca %StringRef
-  call void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN3std9StringRef4initE7pointerP4char6length3int(%StringRef* %__str0, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   call void @_EN3std5printI9StringRefEE5valueP9StringRef(%StringRef* %__str0)
   ret i32 0
 }
 
 define void @_EN3std5printI9StringRefEE5valueP9StringRef(%StringRef* %value) {
   %string = alloca %String
-  %value.load = load %StringRef, %StringRef* %value
-  %1 = call %String @_EN3std9StringRef8toStringE(%StringRef %value.load)
+  %1 = call %String @_EN3std9StringRef8toStringE(%StringRef* %value)
   store %String %1, %String* %string
   %2 = call i32 @_EN3std6String4sizeE(%String* %string)
   %3 = call i8* @_EN3std6String4dataE(%String* %string)
   %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @1, i32 0, i32 0), i32 %2, i8* %3)
-  call void @_ENM3std6String6deinitE(%String* %string)
+  call void @_EN3std6String6deinitE(%String* %string)
   ret void
 }
 
-declare void @_ENM3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)
+declare void @_EN3std9StringRef4initE7pointerP4char6length3int(%StringRef*, i8*, i32)
 
-declare void @_ENM3std6String6deinitE(%String*)
+declare void @_EN3std6String6deinitE(%String*)
 
-declare %String @_EN3std9StringRef8toStringE(%StringRef)
+declare %String @_EN3std9StringRef8toStringE(%StringRef*)
 
 declare i32 @printf(i8*, ...)
 

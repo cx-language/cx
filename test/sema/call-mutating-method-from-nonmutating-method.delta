@@ -1,7 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-struct C {
-    // CHECK: [[@LINE+1]]:16: error: cannot call mutating function 'C.g' on immutable receiver
-    void f() { g() }
-    mutating void g() {}
-}

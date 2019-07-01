@@ -5,6 +5,6 @@ struct X {
     deinit() {}
 }
 
-void foo(mutable X* p, X x) {
+void foo(X* p, X x) {
     p.init(x);
 }

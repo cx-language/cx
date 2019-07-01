@@ -212,7 +212,6 @@ public:
     const FunctionProto& getProto() const { return proto; }
     FunctionProto& getProto() { return proto; }
     virtual TypeDecl* getTypeDecl() const { return nullptr; }
-    virtual bool isMutating() const { return false; }
     bool hasBody() const { return body.hasValue(); }
     llvm::ArrayRef<std::unique_ptr<Stmt>> getBody() const { return *NOTNULL(body); }
     llvm::MutableArrayRef<std::unique_ptr<Stmt>> getBody() { return *NOTNULL(body); }
@@ -244,8 +243,6 @@ class MethodDecl : public FunctionDecl {
 public:
     MethodDecl(FunctionProto proto, TypeDecl& receiverTypeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel, SourceLocation location)
     : MethodDecl(DeclKind::MethodDecl, std::move(proto), receiverTypeDecl, std::move(genericArgs), accessLevel, location) {}
-    bool isMutating() const override { return mutating; }
-    void setMutating(bool mutating) { this->mutating = mutating; }
     TypeDecl* getTypeDecl() const override { return typeDecl; }
     std::unique_ptr<MethodDecl> instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl);
     static bool classof(const Decl* d) { return d->isMethodDecl(); }
@@ -255,7 +252,6 @@ protected:
 
 private:
     TypeDecl* typeDecl;
-    bool mutating;
 };
 
 class InitDecl : public MethodDecl {
@@ -263,7 +259,6 @@ public:
     InitDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, AccessLevel accessLevel, SourceLocation location)
     : MethodDecl(DeclKind::InitDecl, FunctionProto("init", std::move(params), Type::getVoid(), false, false), receiverTypeDecl, {},
                  accessLevel, location) {}
-    bool isMutating() const override { return true; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }
 };
 
@@ -271,7 +266,6 @@ class DeinitDecl : public MethodDecl {
 public:
     DeinitDecl(TypeDecl& receiverTypeDecl, SourceLocation location)
     : MethodDecl(DeclKind::DeinitDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None, location) {}
-    bool isMutating() const override { return true; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
 };
 
@@ -319,8 +313,8 @@ public:
     void addMethod(std::unique_ptr<Decl> decl);
     llvm::ArrayRef<std::unique_ptr<Decl>> getMemberDecls() const { return methods; }
     DeinitDecl* getDeinitializer() const;
-    Type getType(bool isMutable = false) const;
-    Type getTypeForPassing(bool isMutable = false) const;
+    Type getType(Mutability mutability = Mutability::Mutable) const;
+    Type getTypeForPassing() const;
     bool passByValue() const { return (isStruct() && isCopyable()) || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isInterface() const { return tag == TypeTag::Interface; }

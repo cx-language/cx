@@ -1,6 +1,9 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-void foo(int* i) {
+extern const int* f();
+
+void main() {
+    var i = f();
     // CHECK: [[@LINE+1]]:9: error: cannot increment immutable value of type 'int'
     (*i)++;
 }

@@ -2,13 +2,13 @@
 
 void main() {
     int* p = undefined;
-    mutable int* mp = undefined;
+    const int* cp = undefined;
     void* v = p;
     bar(p);
     bar(v);
     var b = cast<int8*>(v);
     v = b;
-    baz(mp);
+    baz(cp);
     var i = 0;
     baz(&i);
 }

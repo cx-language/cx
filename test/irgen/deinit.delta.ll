@@ -2,27 +2,27 @@
 %Foo = type { i32 }
 %Bar = type { i32 }
 
-define void @_ENM4main3Foo6deinitE(%Foo* %this) {
+define void @_EN4main3Foo6deinitE(%Foo* %this) {
   %i = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
   store i32 0, i32* %i
-  call void @_ENM4main3Foo1fE(%Foo* %this)
-  call void @_ENM4main3Foo1fE(%Foo* %this)
+  call void @_EN4main3Foo1fE(%Foo* %this)
+  call void @_EN4main3Foo1fE(%Foo* %this)
   ret void
 }
 
-define void @_ENM4main3Foo1fE(%Foo* %this) {
+define void @_EN4main3Foo1fE(%Foo* %this) {
   ret void
 }
 
-define void @_ENM4main3Bar6deinitE(%Bar* %this) {
+define void @_EN4main3Bar6deinitE(%Bar* %this) {
   %i = getelementptr inbounds %Bar, %Bar* %this, i32 0, i32 0
   store i32 0, i32* %i
-  call void @_ENM4main3Bar1fE(%Bar* %this)
-  call void @_ENM4main3Bar1fE(%Bar* %this)
+  call void @_EN4main3Bar1fE(%Bar* %this)
+  call void @_EN4main3Bar1fE(%Bar* %this)
   ret void
 }
 
-define void @_ENM4main3Bar1fE(%Bar* %this) {
+define void @_EN4main3Bar1fE(%Bar* %this) {
   ret void
 }
 
@@ -35,7 +35,7 @@ define i32 @main() {
   br i1 false, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
-  call void @_ENM4main3Foo6deinitE(%Foo* %f2)
+  call void @_EN4main3Foo6deinitE(%Foo* %f2)
   br label %if.end
 
 if.else:                                          ; preds = %0
@@ -48,14 +48,14 @@ loop.condition:                                   ; preds = %if.end
   br i1 false, label %loop.body, label %loop.end
 
 loop.body:                                        ; preds = %loop.condition
-  call void @_ENM4main3Bar6deinitE(%Bar* %b2)
-  call void @_ENM4main3Bar6deinitE(%Bar* %b)
-  call void @_ENM4main3Foo6deinitE(%Foo* %f)
+  call void @_EN4main3Bar6deinitE(%Bar* %b2)
+  call void @_EN4main3Bar6deinitE(%Bar* %b)
+  call void @_EN4main3Foo6deinitE(%Foo* %f)
   ret i32 0
 
 loop.end:                                         ; preds = %loop.condition
   store i32 1, i32* %i
-  call void @_ENM4main3Bar6deinitE(%Bar* %b)
-  call void @_ENM4main3Foo6deinitE(%Foo* %f)
+  call void @_EN4main3Bar6deinitE(%Bar* %b)
+  call void @_EN4main3Foo6deinitE(%Foo* %f)
   ret i32 0
 }

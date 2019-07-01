@@ -54,8 +54,6 @@ static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<T
 }
 
 static void mangleType(llvm::raw_string_ostream& stream, Type type) {
-    if (type.isMutable()) stream << 'M';
-
     switch (type.getKind()) {
         case TypeKind::BasicType:
             mangleIdentifier(stream, type.getName());
@@ -113,10 +111,6 @@ std::string delta::mangleFunctionDecl(const FunctionDecl& functionDecl) {
     } else {
         stream << deltaPrefix;
         stream << 'N';
-
-        if (functionDecl.isMutating()) {
-            stream << 'M';
-        }
 
         mangleIdentifier(stream, functionDecl.getModule()->getName());
 

@@ -8,46 +8,38 @@ void main() {
 
 void testInsertionSort() {
     var a = List<int>();
-
     for (var i in 0..5) {
-
         a.push(5 - i);
     }
 
     var real = List<int>();
-
     for (var i in 0..5) {
-        real.push(i+1);
+        real.push(i + 1);
     }
 
-    sort(&a);
+    sort(a);
 
-    assert(ArrayRef(&a) == ArrayRef(&real));
+    assert(ArrayRef(a) == ArrayRef(real));
 }
-
 
 void testQuickSort() {
     var a = List<int>();
 
     for (var i in 0..64) {
-
         a.push(64 - i);
     }
 
     var real = List<int>();
 
     for (var i in 0..64) {
-        real.push(i+1);
+        real.push(i + 1);
     }
 
-    sort(&a);
+    sort(a);
 
-    assert(ArrayRef(&a) == ArrayRef(&real));
+    assert(ArrayRef(a) == ArrayRef(real));
 }
 
 void testMax() {
-    var a = 7;
-    var b = 9;
-
-    assert(*max(a, b) == 9);
+    assert(max(7, 9) == 9);
 }

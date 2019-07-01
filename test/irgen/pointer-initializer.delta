@@ -1,6 +1,5 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
 
-// TODO: Should work even if 'p' and 'x' point to mutable chars.
 void foo(char** p, char* x) {
     char** pp = undefined;
     (&pp).init(p);

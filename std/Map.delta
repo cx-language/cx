@@ -1,17 +1,17 @@
 struct Map<Key: Hashable, Value> {
-    List<List<(Key key, mutable Value value)>> hashTable;
+    List<List<(Key key, Value value)>> hashTable;
     int size;
 
     /// Initializes an empty map
     init() {
         size = 0;
-        hashTable = List<List<(Key key, mutable Value value)>>();
+        hashTable = List<List<(Key key, Value value)>>();
         increaseTableSize(hashTable, 128);
     }
 
     // FIXME: Should assert that the key is not in the map, instead of no-oping.
     /// Inserts an element into the map. If the element exists already, nothing is done.
-    mutating void insert(Key key, Value value) {
+    void insert(Key key, Value value) {
         if (contains(key)) {
             return;
         }
@@ -26,7 +26,7 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Inserts, or updates an existing value.
-    mutating void set(Key key, Value value) {
+    void set(Key key, Value value) {
         var existing = this[key];
 
         if (existing) {
@@ -37,7 +37,7 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Removes an element from the map, if it exists there.
-    mutating void remove(Key* e) {
+    void remove(Key* e) {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = hashTable[hashValue];
 
@@ -55,9 +55,9 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Expands the hash table size, needed when there's too many elements in the map
-    mutating void increaseTableSize(mutable List<List<(Key key, mutable Value value)>>* newTable, int newCapacity) {
+    void increaseTableSize(List<List<(Key key, Value value)>>* newTable, int newCapacity) {
         for (var i in 0..newCapacity) {
-            newTable.push(List<(Key key, mutable Value value)>());
+            newTable.push(List<(Key key, Value value)>());
         }
     }
 
@@ -70,8 +70,8 @@ struct Map<Key: Hashable, Value> {
     }
 
     /// Resizes the map. This includes copying the old table into a new, bigger one
-    mutating void resize() {
-        var newTable = List<List<(Key key, mutable Value value)>>();
+    void resize() {
+        var newTable = List<List<(Key key, Value value)>>();
         var newCapacity = capacity() * 2;
 
         increaseTableSize(newTable, newCapacity);
@@ -88,19 +88,6 @@ struct Map<Key: Hashable, Value> {
     }
 
     Value*? operator[](Key* e) {
-        var hashValue = convertHash(e.hash()) % capacity();
-        var slot = hashTable[hashValue];
-
-        for (var element in slot) {
-            if (element.key == *e) {
-                return element.value;
-            }
-        }
-
-        return null;
-    }
-
-    mutating mutable Value*? operator[](Key* e) {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = hashTable[hashValue];
 

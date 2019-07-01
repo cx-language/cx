@@ -39,3 +39,17 @@ struct ArrayRef<Element>: Copyable {
         return ArrayIterator(this);
     }
 }
+
+bool operator==<T>(ArrayRef<T> a, ArrayRef<T> b) {
+    if (a.size() != b.size()) {
+        return false;
+    }
+
+    for (var i in 0..a.size()) {
+        if (*a[i] != *b[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}

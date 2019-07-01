@@ -17,7 +17,7 @@ struct GameState {
         asteroidSpawnInterval = 2000.0;
     }
 
-    mutating void update() {
+    void update() {
         var newTicks = SDL_GetTicks();
         var delta = float(newTicks - ticks);
         ticks = newTicks;
@@ -35,7 +35,7 @@ struct GameState {
         }
     }
 
-    void render(mutable SDL_Renderer* renderer) {
+    void render(SDL_Renderer* renderer) {
         player.render(renderer);
 
         for (var asteroid in asteroids) {

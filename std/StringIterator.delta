@@ -15,7 +15,7 @@ struct StringIterator: Copyable, Iterator<char> {
         return *current;
     }
 
-    mutating void increment() {
+    void increment() {
         current++;
     }
 }

@@ -60,11 +60,6 @@ public:
 private:
     friend struct Scope;
 
-    using UnaryCreate = llvm::Value* (llvm::IRBuilder<>::*) (llvm::Value*, const llvm::Twine&, bool, bool);
-    using BinaryCreate0 = llvm::Value* (llvm::IRBuilder<>::*) (llvm::Value*, llvm::Value*, const llvm::Twine&);
-    using BinaryCreate1 = llvm::Value* (llvm::IRBuilder<>::*) (llvm::Value*, llvm::Value*, const llvm::Twine&, bool);
-    using BinaryCreate2 = llvm::Value* (llvm::IRBuilder<>::*) (llvm::Value*, llvm::Value*, const llvm::Twine&, bool, bool);
-
     void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
 
@@ -91,9 +86,6 @@ private:
     llvm::Value* codegenLvalueUnaryExpr(const UnaryExpr& expr);
     llvm::Value* codegenIncrementExpr(const UnaryExpr& expr);
     llvm::Value* codegenDecrementExpr(const UnaryExpr& expr);
-    llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate0 create);
-    llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate1 create);
-    llvm::Value* codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate2 create);
     llvm::Value* codegenLogicalAnd(const Expr& left, const Expr& right);
     llvm::Value* codegenLogicalOr(const Expr& left, const Expr& right);
     llvm::Value* codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, Type lhsType);
@@ -142,7 +134,7 @@ private:
     llvm::Value* createLoad(llvm::Value* value);
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
-    llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl, bool isMutating);
+    llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
 
     void beginScope();

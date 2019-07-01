@@ -4,7 +4,7 @@ Let's suppose we are writing a generic sort function that can sort a list of
 any type:
 
 ```
-void sort<T>(mutable List<T>* list) {
+void sort<T>(List<T>* list) {
     // ...
 }
 ```
@@ -30,7 +30,7 @@ substituted for `T` must be comparable with the `<` operator using the
 `Comparable` interface as a _generic constraint_:
 
 ```
-void sort<T: Comparable>(mutable List<T>* list)  {
+void sort<T: Comparable>(List<T>* list)  {
     // ...
 }
 ```

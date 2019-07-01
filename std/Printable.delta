@@ -1,6 +1,6 @@
 interface Printable {
     // TODO: Make this member function take any OutputStream as an argument once the compiler supports it.
-    void printTo(mutable String* stream);
+    void printTo(String* stream);
 
     String toString() {
         var string = String();

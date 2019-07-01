@@ -14,17 +14,17 @@ struct Tape
         return tape[pos];
     }
 
-    mutating void increment()
+    void increment()
     {
         tape[pos]++;
     }
 
-    mutating void decrement()
+    void decrement()
     {
         tape[pos]--;
     }
 
-    mutating void forward()
+    void forward()
     {
         pos++;
 
@@ -32,7 +32,7 @@ struct Tape
             tape.push(0);
     }
 
-    mutating void backward()
+    void backward()
     {
         if (pos > 0)
             pos--;

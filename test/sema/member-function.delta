@@ -2,5 +2,5 @@
 
 struct Foo {
     int i;
-    mutating void bar() { mutable Foo* f = this; }
+    void bar() { Foo* f = this; }
 }

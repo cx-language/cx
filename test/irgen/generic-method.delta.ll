@@ -9,13 +9,13 @@ define i1 @_EN4main1hE() {
 
 define i32 @main() {
   %x = alloca {}
-  call void @_ENM4main1X4initE({}* %x)
+  call void @_EN4main1X4initE({}* %x)
   %1 = call i32 @_EN4main1X1fI3intEE1tF_3int({}* %x, i32 ()* @_EN4main1gE)
   %2 = call i1 @_EN4main1X1fI4boolEE1tF_4bool({}* %x, i1 ()* @_EN4main1hE)
   ret i32 0
 }
 
-define void @_ENM4main1X4initE({}* %this) {
+define void @_EN4main1X4initE({}* %this) {
   ret void
 }
 

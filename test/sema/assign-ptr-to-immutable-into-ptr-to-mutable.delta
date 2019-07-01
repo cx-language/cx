@@ -1,8 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-extern int* foo();
-
-void main() {
-    // CHECK: [[@LINE+1]]:25: error: cannot initialize variable of type 'mutable int*' with 'int*'
-    mutable int* p = foo();
-}

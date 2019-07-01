@@ -13,7 +13,7 @@ struct SetIterator<Element>: Copyable, Iterator<Element*> {
         return iterator.value().key;
     }
 
-    mutating void increment() {
+    void increment() {
         iterator.increment();
     }
 }

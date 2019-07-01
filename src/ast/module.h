@@ -84,7 +84,6 @@ public:
         for (Decl* decl : find(toFind.getQualifiedName())) {
             auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
             if (!functionDecl || functionDecl->getParams().size() != toFind.getParams().size()) continue;
-            if (functionDecl->isMutating() != toFind.isMutating()) continue;
             if (std::equal(toFind.getParams().begin(), toFind.getParams().end(), functionDecl->getParams().begin(),
                            [](auto& a, auto& b) { return a.getName() == b.getName() && a.getType() == b.getType(); })) {
                 return functionDecl;

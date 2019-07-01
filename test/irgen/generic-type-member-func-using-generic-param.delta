@@ -2,7 +2,7 @@
 
 struct A<E>: Copyable {
     init() { }
-    mutating void a(E n) { }
+    void a(E n) { }
 }
 
 void main() {

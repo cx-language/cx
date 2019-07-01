@@ -69,7 +69,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
             return llvm::cast<ParamDecl>(decl).getType();
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-            return Type(llvm::cast<FunctionDecl>(decl).getFunctionType(), false, SourceLocation());
+            return Type(llvm::cast<FunctionDecl>(decl).getFunctionType(), Mutability::Mutable, SourceLocation());
         case DeclKind::GenericParamDecl:
             llvm_unreachable("cannot refer to generic parameters yet");
         case DeclKind::InitDecl:
@@ -85,13 +85,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
         case DeclKind::EnumDecl:
             error(expr.getLocation(), "'", expr.getIdentifier(), "' is not a variable");
         case DeclKind::FieldDecl:
-            if (currentFunction->isInitDecl() || currentFunction->isDeinitDecl()) {
-                return llvm::cast<FieldDecl>(decl).getType().asMutable();
-            } else if (currentFunction->isMutating()) {
-                return llvm::cast<FieldDecl>(decl).getType();
-            } else {
-                return llvm::cast<FieldDecl>(decl).getType().asImmutable();
-            }
+            return llvm::cast<FieldDecl>(decl).getType();
         case DeclKind::ImportDecl:
             llvm_unreachable("import statement validation not implemented yet");
     }
@@ -192,7 +186,8 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             error(expr.getLocation(), "cannot increment immutable value of type '", operandType, "'");
         }
         if (operandType.isPointerType() && !operandType.getPointee().isArrayWithUnknownSize()) {
-            auto expectedType = PointerType::get(ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().isMutable()));
+            auto expectedType = PointerType::get(
+                ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().getMutability()));
             error(expr.getLocation(), "cannot increment '", operandType, "', should be '", expectedType, "'");
         }
         if (!operandType.isIncrementable()) {
@@ -206,7 +201,8 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             error(expr.getLocation(), "cannot decrement immutable value of type '", operandType, "'");
         }
         if (operandType.isPointerType() && !operandType.getPointee().isArrayWithUnknownSize()) {
-            auto expectedType = PointerType::get(ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().isMutable()));
+            auto expectedType = PointerType::get(
+                ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().getMutability()));
             error(expr.getLocation(), "cannot decrement '", operandType, "', should be '", expectedType, "'");
         }
         if (!operandType.isDecrementable()) {
@@ -713,7 +709,8 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
         }
 
         if (genericArg) {
-            inferredGenericArgs.push_back(genericArg.asImmutable());
+            // Always instantiate with non-const generic arguments.
+            inferredGenericArgs.push_back(genericArg.withMutability(Mutability::Mutable));
         } else {
             return {};
         }
@@ -948,7 +945,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
 
                     if (decls.size() == 1 && !returnNullOnError) {
-                        validateArgs(expr, false, paramDecls, false, callee, expr.getCallee().getLocation());
+                        validateArgs(expr, paramDecls, false, callee, expr.getCallee().getLocation());
                         return variableDecl;
                     }
                     if (argumentsMatch(expr, nullptr, paramDecls)) {
@@ -1002,21 +999,6 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 return nullptr;
             }
 
-            if (expr.getReceiver() && expr.getReceiverType().removePointer().isMutable()) {
-                llvm::SmallVector<Decl*, 1> mutatingMatches;
-
-                for (auto* match : matches) {
-                    if (!match->isMethodDecl() || llvm::cast<MethodDecl>(match)->isMutating()) {
-                        mutatingMatches.push_back(match);
-                    }
-                }
-
-                if (mutatingMatches.size() == 1) {
-                    validateArgs(expr, *mutatingMatches.front());
-                    return mutatingMatches.front();
-                }
-            }
-
             bool allMatchesAreFromC = llvm::all_of(matches, [](Decl* match) {
                 return match->getModule() && match->getModule()->getName().endswith_lower(".h");
             });
@@ -1068,7 +1050,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
 
     if (expr.getFunctionName() == "assert") {
         ParamDecl assertParam(Type::getBool(), "", SourceLocation());
-        validateArgs(expr, false, assertParam, false, expr.getFunctionName(), expr.getLocation());
+        validateArgs(expr, assertParam, false, expr.getFunctionName(), expr.getLocation());
         validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
         return Type::getVoid();
     }
@@ -1084,7 +1066,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
                     "' which may be null; unwrap the value with a postfix '!' to silence this warning");
         } else if (receiverType.removePointer().isArrayType()) {
             if (expr.getFunctionName() == "size") {
-                validateArgs(expr, false, {}, false, expr.getFunctionName(), expr.getLocation());
+                validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 return ArrayType::getIndexType();
             }
@@ -1159,16 +1141,6 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         }
     }
 
-    if (decl->isMethodDecl() && !decl->isInitDecl()) {
-        ASSERT(expr.getReceiverType());
-        auto* methodDecl = llvm::cast<MethodDecl>(decl);
-
-        if (!decl->isDeinitDecl() && !expr.getReceiverType().removePointer().isMutable() && methodDecl->isMutating()) {
-            error(expr.getCallee().getLocation(), "cannot call mutating function '", methodDecl->getTypeDecl()->getName(), ".",
-                  methodDecl->getName(), "' on immutable receiver");
-        }
-    }
-
     expr.setCalleeDecl(decl);
     decl->setReferenced(true);
 
@@ -1192,23 +1164,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
 }
 
 bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params) const {
-    bool isMutating;
-    bool isVariadic;
-
-    if (functionDecl) {
-        isMutating = functionDecl->isMutating();
-        isVariadic = functionDecl->isVariadic();
-        params = functionDecl->getParams();
-    } else {
-        isMutating = false;
-        isVariadic = false;
-    }
-
+    if (functionDecl) params = functionDecl->getParams();
+    bool isVariadic = functionDecl && functionDecl->isVariadic();
     auto args = expr.getArgs();
-
-    if (expr.getReceiver() && !expr.getReceiverType().removePointer().isMutable() && isMutating) {
-        return false;
-    }
 
     if (args.size() < params.size()) {
         return false;
@@ -1245,7 +1203,7 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
         case DeclKind::InitDecl:
         case DeclKind::DeinitDecl: {
             auto& functionDecl = llvm::cast<FunctionDecl>(calleeDecl);
-            validateArgs(expr, functionDecl.isMutating(), functionDecl.getParams(), functionDecl.isVariadic(), functionName, location);
+            validateArgs(expr, functionDecl.getParams(), functionDecl.isVariadic(), functionName, location);
             break;
         }
         case DeclKind::VarDecl:
@@ -1254,7 +1212,7 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
             auto* variableDecl = llvm::cast<VariableDecl>(&calleeDecl);
             if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->getType().getBase())) {
                 auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
-                validateArgs(expr, false, paramDecls, false, functionName, location);
+                validateArgs(expr, paramDecls, false, functionName, location);
             }
             break;
         }
@@ -1263,15 +1221,9 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
     }
 }
 
-void Typechecker::validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params, bool isVariadic,
-                               llvm::StringRef functionName, SourceLocation location) const {
+void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName,
+                               SourceLocation location) const {
     auto args = expr.getArgs();
-
-    if (expr.getReceiver() && !expr.getReceiverType().removePointer().isMutable() && isMutating) {
-        error(location, "cannot call mutating member function '", functionName, "' on immutable receiver of type '", expr.getReceiverType(),
-              "'");
-    }
-
     validateArgCount(params.size(), args.size(), isVariadic, functionName, location);
 
     for (size_t i = 0; i < args.size(); ++i) {
@@ -1312,11 +1264,11 @@ static bool isValidCast(Type sourceType, Type targetType) {
                 Type targetPointee = targetType.getPointee();
 
                 if (sourcePointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
-                    return true; // (mutable) void* -> T* / mutable void* -> mutable T*
+                    return true;
                 }
 
                 if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
-                    return true; // (mutable) T* -> void* / mutable T* -> mutable void*
+                    return true;
                 }
             }
 
@@ -1405,18 +1357,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
             if (field.getName() == expr.getMemberName()) {
                 checkHasAccess(field, expr.getLocation(), AccessLevel::None);
                 expr.setFieldDecl(field);
-
-                if (baseType.isMutable()) {
-                    auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr());
-
-                    if (varExpr && varExpr->getIdentifier() == "this" && (currentFunction->isInitDecl() || currentFunction->isDeinitDecl())) {
-                        return field.getType().asMutable(true);
-                    } else {
-                        return field.getType();
-                    }
-                } else {
-                    return field.getType().asImmutable();
-                }
+                return field.getType().withMutability(baseType.getMutability());
             }
         }
     }

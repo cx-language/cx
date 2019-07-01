@@ -1,12 +1,12 @@
 // RUN: %delta -typecheck %s | %FileCheck %s
 
-void foo(mutable int*? a, mutable int*? b) {
+void foo(int*? a, int*? b) {
     var p = a;
     if (p != null) {
         var i = *p;
         *p = 42;
         p = b;
-        // CHECK: [[@LINE+1]]:9: warning: dereferencing value of optional type 'mutable int*?' which may be null; unwrap the value with a postfix '!' to silence this warning
+        // CHECK: [[@LINE+1]]:9: warning: dereferencing value of optional type 'int*?' which may be null; unwrap the value with a postfix '!' to silence this warning
         *p = 42;
     }
 }

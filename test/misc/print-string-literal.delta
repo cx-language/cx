@@ -6,7 +6,7 @@
 
 import "stdio.h";
 
-char* foo() { return "foo"; }
+const char* foo() { return "foo"; }
 StringRef bar() { return "bar"; }
 
 void main() {

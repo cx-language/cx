@@ -1,12 +1,12 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct S: Copyable {
-    mutable S*? a;
+    S*? a;
 }
 
-void foo(mutable S* p) {
+void foo(S* p) {
     if (p.a != null) {
-        // CHECK: [[@LINE+1]]:12: error: cannot unwrap non-optional type 'mutable S*'
+        // CHECK: [[@LINE+1]]:12: error: cannot unwrap non-optional type 'S*'
         p.a!.a = p;
     }
 }

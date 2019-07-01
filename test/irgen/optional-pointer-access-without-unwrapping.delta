@@ -6,7 +6,7 @@ struct Foo {
 }
 
 void main() {
-    mutable Foo*? f = null;
+    Foo*? f = null;
     _ = f.i;
     f.bar();
     *f = *f;

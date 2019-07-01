@@ -12,6 +12,7 @@ llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
         value = createLoad(value);
     }
 
+    // TODO: Remove the codegenAutoCast call here because it's already called in codegenExpr?
     return codegenAutoCast(value, expr);
 }
 
@@ -28,7 +29,7 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), structs.find("StringRef")->second.second, nullptr,
                                               "__str" + std::to_string(stringLiteralCounter++));
         // TODO: Retrieve this constructor in a nicer way.
-        auto* stringRefInit = module->getOrInsertFunction("_ENM3std9StringRef4initE7pointerP4char6length3int", llvm::Type::getVoidTy(ctx),
+        auto* stringRefInit = module->getOrInsertFunction("_EN3std9StringRef4initE7pointerP4char6length3int", llvm::Type::getVoidTy(ctx),
                                                           alloca->getType(), stringPtr->getType(), size->getType());
         builder.CreateCall(stringRefInit, { alloca, stringPtr, size });
         return alloca;
@@ -188,18 +189,6 @@ llvm::Value* IRGenerator::codegenDecrementExpr(const UnaryExpr& expr) {
     return nullptr;
 }
 
-llvm::Value* IRGenerator::codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate0 create) {
-    return (builder.*create)(lhs, rhs, "");
-}
-
-llvm::Value* IRGenerator::codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate1 create) {
-    return (builder.*create)(lhs, rhs, "", false);
-}
-
-llvm::Value* IRGenerator::codegenBinaryOp(llvm::Value* lhs, llvm::Value* rhs, BinaryCreate2 create) {
-    return (builder.*create)(lhs, rhs, "", false, false);
-}
-
 llvm::Value* IRGenerator::codegenLogicalAnd(const Expr& left, const Expr& right) {
     auto* rhsBlock = llvm::BasicBlock::Create(ctx, "and.rhs", builder.GetInsertBlock()->getParent());
     auto* endBlock = llvm::BasicBlock::Create(ctx, "and.end", builder.GetInsertBlock()->getParent());
@@ -281,66 +270,45 @@ llvm::Value* IRGenerator::codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm
     switch (op) {
         case Token::Equal:
         case Token::PointerEqual:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpEQ);
+            return builder.CreateICmpEQ(lhs, rhs);
         case Token::NotEqual:
         case Token::PointerNotEqual:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpNE);
-        case Token::Less:
-            if (lhsType.isSigned()) {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSLT);
-            } else {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpULT);
-            }
-        case Token::LessOrEqual:
-            if (lhsType.isSigned()) {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSLE);
-            } else {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpULE);
-            }
-        case Token::Greater:
-            if (lhsType.isSigned()) {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSGT);
-            } else {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpUGT);
-            }
-        case Token::GreaterOrEqual:
-            if (lhsType.isSigned()) {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpSGE);
-            } else {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateICmpUGE);
-            }
+            return builder.CreateICmpNE(lhs, rhs);
         case Token::Plus:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAdd);
+            return builder.CreateAdd(lhs, rhs);
         case Token::Minus:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSub);
+            return builder.CreateSub(lhs, rhs);
         case Token::Star:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateMul);
-        case Token::Slash:
-            if (lhsType.isSigned()) {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSDiv);
-            } else {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateUDiv);
-            }
-        case Token::Modulo:
-            if (lhsType.isSigned()) {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateSRem);
-            } else {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateURem);
-            }
+            return builder.CreateMul(lhs, rhs);
         case Token::And:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAnd);
+            return builder.CreateAnd(lhs, rhs);
         case Token::Or:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateOr);
+            return builder.CreateOr(lhs, rhs);
         case Token::Xor:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateXor);
+            return builder.CreateXor(lhs, rhs);
         case Token::LeftShift:
-            return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateShl);
+            return builder.CreateShl(lhs, rhs);
+        default:
+            break;
+    }
+
+    bool isSigned = lhsType.isChar() ? false : lhsType.isSigned();
+
+    switch (op) {
+        case Token::Less:
+            return isSigned ? builder.CreateICmpSLT(lhs, rhs) : builder.CreateICmpULT(lhs, rhs);
+        case Token::LessOrEqual:
+            return isSigned ? builder.CreateICmpSLE(lhs, rhs) : builder.CreateICmpULE(lhs, rhs);
+        case Token::Greater:
+            return isSigned ? builder.CreateICmpSGT(lhs, rhs) : builder.CreateICmpUGT(lhs, rhs);
+        case Token::GreaterOrEqual:
+            return isSigned ? builder.CreateICmpSGE(lhs, rhs) : builder.CreateICmpUGE(lhs, rhs);
+        case Token::Slash:
+            return isSigned ? builder.CreateSDiv(lhs, rhs) : builder.CreateUDiv(lhs, rhs);
+        case Token::Modulo:
+            return isSigned ? builder.CreateSRem(lhs, rhs) : builder.CreateURem(lhs, rhs);
         case Token::RightShift:
-            if (lhsType.isSigned()) {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateAShr);
-            } else {
-                return codegenBinaryOp(lhs, rhs, &llvm::IRBuilder<>::CreateLShr);
-            }
+            return isSigned ? builder.CreateAShr(lhs, rhs) : builder.CreateLShr(lhs, rhs);
         default:
             llvm_unreachable("all cases handled");
     }
@@ -372,8 +340,8 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
         case Token::OrOr:
             return codegenShortCircuitBinaryOp(expr.getOperator(), expr.getLHS(), expr.getRHS());
         default:
-            llvm::Value* lhs = codegenExpr(expr.getLHS());
-            llvm::Value* rhs = codegenExpr(expr.getRHS());
+            llvm::Value* lhs = codegenExprForPassing(expr.getLHS(), toIR(expr.getLHS().getType()));
+            llvm::Value* rhs = codegenExprForPassing(expr.getRHS(), toIR(expr.getRHS().getType()));
             return codegenBinaryOp(expr.getOperator(), lhs, rhs, expr.getLHS().getType());
     }
 }
@@ -490,20 +458,27 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
 }
 
 llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) {
-    if (expr.getType().isUnsigned() && type.isInteger()) {
-        return builder.CreateZExtOrTrunc(codegenExpr(expr), toIR(type));
-    } else if (expr.getType().isSigned() && type.isInteger()) {
-        return builder.CreateSExtOrTrunc(codegenExpr(expr), toIR(type));
-    } else if ((expr.getType().isInteger() || expr.getType().isChar() || expr.getType().isBool()) && (type.isInteger() || type.isChar())) {
-        return builder.CreateIntCast(codegenExpr(expr), toIR(type), expr.getType().isSigned());
-    } else if (expr.getType().isFloatingPoint()) {
-        if (type.isSigned()) return builder.CreateFPToSI(codegenExpr(expr), toIR(type));
-        if (type.isUnsigned()) return builder.CreateFPToUI(codegenExpr(expr), toIR(type));
-        if (type.isFloatingPoint()) return builder.CreateFPCast(codegenExpr(expr), toIR(type));
-    } else if (type.isFloatingPoint()) {
-        if (expr.getType().isSigned()) return builder.CreateSIToFP(codegenExpr(expr), toIR(type));
-        if (expr.getType().isUnsigned()) return builder.CreateUIToFP(codegenExpr(expr), toIR(type));
+    auto value = codegenExprForPassing(expr, toIR(expr.getType()));
+
+    if (expr.getType().isUnsignedInteger() && type.isInteger()) {
+        return builder.CreateZExtOrTrunc(value, toIR(type));
     }
+    if (expr.getType().isSignedInteger() && type.isInteger()) {
+        return builder.CreateSExtOrTrunc(value, toIR(type));
+    }
+    if ((expr.getType().isInteger() || expr.getType().isChar() || expr.getType().isBool()) && (type.isInteger() || type.isChar())) {
+        return builder.CreateIntCast(value, toIR(type), expr.getType().isSignedInteger());
+    }
+    if (expr.getType().isFloatingPoint()) {
+        if (type.isSignedInteger()) return builder.CreateFPToSI(value, toIR(type));
+        if (type.isUnsignedInteger()) return builder.CreateFPToUI(value, toIR(type));
+        if (type.isFloatingPoint()) return builder.CreateFPCast(value, toIR(type));
+    }
+    if (type.isFloatingPoint()) {
+        if (expr.getType().isSignedInteger()) return builder.CreateSIToFP(value, toIR(type));
+        if (expr.getType().isUnsignedInteger()) return builder.CreateUIToFP(value, toIR(type));
+    }
+
     error(expr.getLocation(), "conversion from '", expr.getType(), "' to '", type, "' not supported");
 }
 

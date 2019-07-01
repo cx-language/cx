@@ -1,5 +1,5 @@
 struct List<Element> {
-    mutable Element[?]* buffer;
+    Element[?]* buffer;
     int size;
     int capacity;
 
@@ -57,15 +57,6 @@ struct List<Element> {
         return buffer[index];
     }
 
-    /// Returns the element at the given index.
-    mutating mutable Element* operator[](int index) {
-        if (index >= size) {
-            indexOutOfBounds(index);
-        }
-
-        return buffer[index];
-    }
-
     Element* first() {
         if (size == 0) {
             emptyListFirst();
@@ -86,12 +77,8 @@ struct List<Element> {
         return buffer;
     }
 
-    mutating mutable Element[?]* data() {
-        return buffer;
-    }
-
     /// Adds the given element to the end of the list.
-    mutating void push(Element newElement) {
+    void push(Element newElement) {
         if (size == capacity) {
             grow();
         }
@@ -102,7 +89,7 @@ struct List<Element> {
     }
 
     /// Ensures that the capacity is large enough to store the given number of elements.
-    mutating void reserve(int minimumCapacity) {
+    void reserve(int minimumCapacity) {
         if (minimumCapacity > capacity) {
             var newBuffer = allocateArray<Element>(size: minimumCapacity);
 
@@ -123,7 +110,7 @@ struct List<Element> {
 
     /// Removes the first element from the list.
     /// Other elements are moved towards the beginning of the list by one index.
-    mutating void removeFirst() {
+    void removeFirst() {
         if (size == 0) {
             emptyListRemoveFirst();
         }
@@ -132,7 +119,7 @@ struct List<Element> {
     }
 
     /// Removes the last element from the list.
-    mutating void removeLast() {
+    void removeLast() {
         if (size == 0) {
             emptyListRemoveLast();
         }
@@ -142,7 +129,7 @@ struct List<Element> {
     }
 
     /// Removes and returns the last element.
-    mutating Element pop() {
+    Element pop() {
         if (size == 0) {
             emptyListRemoveLast();
         }
@@ -153,7 +140,7 @@ struct List<Element> {
 
     /// Removes the element at the given index from the list.
     /// Elements following the removed element are moved towards the beginning of the list by one index.
-    mutating void removeAt(int index) {
+    void removeAt(int index) {
         if (index >= size) {
             indexOutOfBounds(index);
         }
@@ -161,7 +148,7 @@ struct List<Element> {
         unsafeRemoveAt(index);
     }
 
-    mutating private void unsafeRemoveAt(int index) {
+    private void unsafeRemoveAt(int index) {
         buffer[index].deinit();
 
         for (var i in (index + 1)..size) {
@@ -176,10 +163,6 @@ struct List<Element> {
     ArrayIterator<Element> iterator() {
         // TODO: When implicit initializers have been implemented, remove the ArrayRef() call below.
         return ArrayIterator(ArrayRef(this));
-    }
-
-    mutating MutableArrayIterator<Element> iterator() {
-        return MutableArrayIterator(this);
     }
 
     EnumeratedIterator<Element> enumerate() {
@@ -208,7 +191,7 @@ struct List<Element> {
         return output;
     }
 
-    mutating private void grow() {
+    private void grow() {
         if (capacity == 0) {
             reserve(1);
         } else {
@@ -240,18 +223,4 @@ struct List<Element> {
         printf("Called removeLast() on empty List\n");
         fatalError();
     }
-}
-
-bool operator==<T>(ArrayRef<T> a, ArrayRef<T> b) {
-    if (a.size() != b.size()) {
-        return false;
-    }
-
-    for (var i in 0..a.size()) {
-        if (*a[i] != *b[i]) {
-            return false;
-        }
-    }
-
-    return true;
 }

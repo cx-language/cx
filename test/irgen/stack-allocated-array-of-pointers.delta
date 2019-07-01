@@ -2,6 +2,6 @@
 
 void main() {
     void*[3] a = undefined;
-    mutable int*[2] b = undefined;
-    mutable float32 mutable**[1] c = undefined;
+    int*[2] b = undefined;
+    float32**[1] c = undefined;
 }

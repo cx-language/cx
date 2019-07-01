@@ -6,15 +6,15 @@ define i32 @_EN4main1gE1i4bool(i1 %i) {
 
 define i32 @main() {
   %x = alloca {}
-  call void @_ENM4main1XI3intE4initE({}* %x)
-  call void @_ENM4main1XI3intE1fI4boolEE1uF4bool_3int({}* %x, i32 (i1)* @_EN4main1gE1i4bool)
+  call void @_EN4main1XI3intE4initE({}* %x)
+  call void @_EN4main1XI3intE1fI4boolEE1uF4bool_3int({}* %x, i32 (i1)* @_EN4main1gE1i4bool)
   ret i32 0
 }
 
-define void @_ENM4main1XI3intE4initE({}* %this) {
+define void @_EN4main1XI3intE4initE({}* %this) {
   ret void
 }
 
-define void @_ENM4main1XI3intE1fI4boolEE1uF4bool_3int({}* %this, i32 (i1)* %u) {
+define void @_EN4main1XI3intE1fI4boolEE1uF4bool_3int({}* %this, i32 (i1)* %u) {
   ret void
 }

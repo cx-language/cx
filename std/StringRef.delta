@@ -46,7 +46,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     int find(char c, int start) {
         for (var i in start..size()) {
             if (characters[i] == c) {
-                return int(i);
+                return i;
             }
         }
         return -1;
@@ -67,7 +67,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         return StringIterator(this);
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         stream.write(this);
     }
 

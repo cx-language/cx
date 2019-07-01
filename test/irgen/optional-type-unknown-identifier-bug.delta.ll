@@ -6,8 +6,8 @@
 
 define i32 @main() {
   %x = alloca %"X<int>"
-  call void @_ENM4main1XI3intE4initE(%"X<int>"* %x)
-  call void @_ENM4main1XI3intE6deinitE(%"X<int>"* %x)
+  call void @_EN4main1XI3intE4initE(%"X<int>"* %x)
+  call void @_EN4main1XI3intE6deinitE(%"X<int>"* %x)
   ret i32 0
 }
 
@@ -15,13 +15,13 @@ define void @_EN4main1YI3intE1fE(%"Y<int>"* %this) {
   ret void
 }
 
-define void @_ENM4main1XI3intE4initE(%"X<int>"* %this) {
+define void @_EN4main1XI3intE4initE(%"X<int>"* %this) {
   %y = getelementptr inbounds %"X<int>", %"X<int>"* %this, i32 0, i32 0
   store %"Y<int>"* null, %"Y<int>"** %y
   ret void
 }
 
-define void @_ENM4main1XI3intE6deinitE(%"X<int>"* %this) {
+define void @_EN4main1XI3intE6deinitE(%"X<int>"* %this) {
   %a = alloca i32
   %y = getelementptr inbounds %"X<int>", %"X<int>"* %this, i32 0, i32 0
   %y.load = load %"Y<int>"*, %"Y<int>"** %y

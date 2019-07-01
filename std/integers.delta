@@ -30,13 +30,13 @@ const uint64 uint64_min = 0;
 
 // TODO: Improve printTo() implementations: optimize + don't depend on libc + don't assume size of int.
 
-private void printSigned<T>(T value, mutable String* stream) {
+private void printSigned<T>(T value, String* stream) {
     char[22] result = undefined;
     sprintf(result, "%lld", value);
     stream.write(StringRef(result));
 }
 
-private void printUnsigned<T>(T value, mutable String* stream) {
+private void printUnsigned<T>(T value, String* stream) {
     char[22] result = undefined;
     sprintf(result, "%llu", value);
     stream.write(StringRef(result));
@@ -47,7 +47,7 @@ struct int: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printSigned(this, stream);
     }
 
@@ -61,7 +61,7 @@ struct int8: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printSigned(this, stream);
     }
 
@@ -75,7 +75,7 @@ struct int16: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printSigned(this, stream);
     }
 
@@ -89,7 +89,7 @@ struct int32: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printSigned(this, stream);
     }
 
@@ -103,7 +103,7 @@ struct int64: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printSigned(this, stream);
     }
 
@@ -117,7 +117,7 @@ struct uint: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printUnsigned(this, stream);
     }
 
@@ -131,7 +131,7 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printUnsigned(this, stream);
     }
 
@@ -145,7 +145,7 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printUnsigned(this, stream);
     }
 
@@ -159,7 +159,7 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printUnsigned(this, stream);
     }
 
@@ -173,7 +173,7 @@ struct uint64: Copyable, Comparable, Printable, Hashable {
         return (this < other) ? Ordering.Less : (this > other) ? Ordering.Greater : Ordering.Equal;
     }
 
-    void printTo(mutable String* stream) {
+    void printTo(String* stream) {
         printUnsigned(this, stream);
     }
 

@@ -1,7 +1,7 @@
 
 define i32 @main() {
   %p = alloca i32*
-  %mp = alloca i32*
+  %cp = alloca i32*
   %v = alloca i8*
   %b = alloca i8*
   %i = alloca i32
@@ -17,8 +17,8 @@ define i32 @main() {
   store i8* %v.load2, i8** %b
   %b.load = load i8*, i8** %b
   store i8* %b.load, i8** %v
-  %mp.load = load i32*, i32** %mp
-  %3 = bitcast i32* %mp.load to i8*
+  %cp.load = load i32*, i32** %cp
+  %3 = bitcast i32* %cp.load to i8*
   call void @_EN4main3bazE1pOP4void(i8* %3)
   store i32 0, i32* %i
   %4 = bitcast i32* %i to i8*

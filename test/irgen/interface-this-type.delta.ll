@@ -1,7 +1,7 @@
 
 %S = type { %S* }
 
-define void @_ENM4main1S4initE(%S* %this) {
+define void @_EN4main1S4initE(%S* %this) {
   %that = getelementptr inbounds %S, %S* %this, i32 0, i32 0
   store %S* %this, %S** %that
   ret void
@@ -20,8 +20,8 @@ define %S* @_EN4main1S3barE(%S* %this) {
 define i32 @main() {
   %a = alloca %S
   %b = alloca %S
-  call void @_ENM4main1S4initE(%S* %a)
-  call void @_ENM4main1S4initE(%S* %b)
+  call void @_EN4main1S4initE(%S* %a)
+  call void @_EN4main1S4initE(%S* %b)
   %1 = call %S* @_EN4main1S3fooE1aP1S(%S* %a, %S* %b)
   call void @_EN4main1fI1SEE1aP1S(%S* %1)
   ret i32 0

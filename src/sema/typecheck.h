@@ -102,7 +102,7 @@ private:
     std::vector<Type> inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     bool argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {}) const;
     void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", SourceLocation location = SourceLocation()) const;
-    void validateArgs(CallExpr& expr, bool isMutating, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName = "",
+    void validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;

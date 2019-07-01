@@ -395,7 +395,7 @@ int64_t Parser::parseArraySizeInBrackets() {
 }
 
 /// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
-Type Parser::parseSimpleType(bool isMutable) {
+Type Parser::parseSimpleType(Mutability mutability) {
     auto identifier = parse(Token::Identifier);
     std::vector<Type> genericArgs;
 
@@ -404,11 +404,11 @@ Type Parser::parseSimpleType(bool isMutable) {
             genericArgs = parseGenericArgumentList();
             LLVM_FALLTHROUGH;
         default:
-            return BasicType::get(identifier.getString(), std::move(genericArgs), isMutable, identifier.getLocation());
+            return BasicType::get(identifier.getString(), std::move(genericArgs), mutability, identifier.getLocation());
         case Token::LeftBracket:
             auto bracketLocation = getCurrentLocation();
-            Type elementType = BasicType::get(identifier.getString(), {}, isMutable, identifier.getLocation());
-            return ArrayType::get(elementType, parseArraySizeInBrackets(), false, bracketLocation);
+            Type elementType = BasicType::get(identifier.getString(), {}, mutability, identifier.getLocation());
+            return ArrayType::get(elementType, parseArraySizeInBrackets(), mutability, bracketLocation);
     }
 }
 
@@ -429,7 +429,7 @@ Type Parser::parseTupleType() {
     }
 
     consumeToken();
-    return TupleType::get(std::move(elements), false, location);
+    return TupleType::get(std::move(elements), Mutability::Mutable, location);
 }
 
 /// function-type ::= type '(' param-types ')'
@@ -445,23 +445,21 @@ Type Parser::parseFunctionType(Type returnType) {
     }
 
     consumeToken();
-    return FunctionType::get(returnType, std::move(paramTypes), false, returnType.getLocation());
+    return FunctionType::get(returnType, std::move(paramTypes), Mutability::Mutable, returnType.getLocation());
 }
 
-/// type ::= simple-type | 'mutable' simple-type | type 'mutable'? '*' | type 'mutable'? '?' |
-///          function-type | tuple-type
+/// type ::= simple-type | 'const' simple-type | type '*' | type '?' | function-type | tuple-type
 Type Parser::parseType() {
     Type type;
     auto location = getCurrentLocation();
 
     switch (currentToken()) {
         case Token::Identifier:
-            type = parseSimpleType(false);
+            type = parseSimpleType(Mutability::Mutable);
             break;
-        case Token::Mutable:
+        case Token::Const:
             consumeToken();
-            type = parseSimpleType(true);
-            type.setMutable(true);
+            type = parseSimpleType(Mutability::Const);
             break;
         case Token::LeftParen:
             type = parseTupleType();
@@ -473,33 +471,18 @@ Type Parser::parseType() {
     while (true) {
         switch (currentToken()) {
             case Token::Star:
-                type = PointerType::get(type, false, getCurrentLocation());
+                type = PointerType::get(type, Mutability::Mutable, getCurrentLocation());
                 consumeToken();
                 break;
             case Token::QuestionMark:
-                type = OptionalType::get(type, false, getCurrentLocation());
+                type = OptionalType::get(type, Mutability::Mutable, getCurrentLocation());
                 consumeToken();
-                break;
-            case Token::Mutable:
-                consumeToken();
-                switch (currentToken()) {
-                    case Token::Star:
-                        type = PointerType::get(type, true, getCurrentLocation());
-                        consumeToken();
-                        break;
-                    case Token::QuestionMark:
-                        type = OptionalType::get(type, true, getCurrentLocation());
-                        consumeToken();
-                        break;
-                    default:
-                        unexpectedToken(currentToken(), { Token::Star, Token::QuestionMark }, "after 'mutable'");
-                }
                 break;
             case Token::LeftParen:
                 type = parseFunctionType(type);
                 break;
             case Token::LeftBracket:
-                type = ArrayType::get(type, parseArraySizeInBrackets(), type.isMutable(), getCurrentLocation());
+                type = ArrayType::get(type, parseArraySizeInBrackets(), type.getMutability(), getCurrentLocation());
                 break;
             case Token::And:
                 error(getCurrentLocation(), "Delta doesn't have C++-style references; ",
@@ -508,13 +491,6 @@ Type Parser::parseType() {
                 return type.withLocation(location);
         }
     }
-}
-
-Type Parser::parseNonMutableType() {
-    auto location = getCurrentLocation();
-    auto type = parseType();
-    if (type.isMutable()) error(location, "type specifier cannot specify mutability");
-    return type;
 }
 
 /// sizeof-expr ::= 'sizeof' '(' type ')'
@@ -843,22 +819,21 @@ std::unique_ptr<ReturnStmt> Parser::parseReturnStmt() {
 /// initializer ::= expr | 'undefined'
 std::unique_ptr<VarDecl> Parser::parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel) {
     Type type;
-    bool isConst = false;
+    auto mutability = Mutability::Mutable;
 
     if (currentToken() == Token::Const) {
         consumeToken();
-        isConst = true;
+        mutability = Mutability::Const;
     }
 
     if (currentToken() == Token::Var) {
         consumeToken();
     } else if (lookAhead(1) != Token::Assignment) {
-        type = parseNonMutableType();
+        type = parseType();
     }
 
-    type.setMutable(!isConst);
     auto name = parse(Token::Identifier);
-    return parseVarDeclAfterName(requireInitialValue, parent, accessLevel, type, name.getString(), name.getLocation());
+    return parseVarDeclAfterName(requireInitialValue, parent, accessLevel, type.withMutability(mutability), name.getString(), name.getLocation());
 }
 
 std::unique_ptr<VarDecl> Parser::parseVarDeclAfterName(bool requireInitialValue, Decl* parent, AccessLevel accessLevel, Type type,
@@ -1098,7 +1073,7 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
         if (currentToken() == Token::Colon) { // Generic type constraint.
             consumeToken();
             auto identifier = parse(Token::Identifier);
-            genericParams.back().addConstraint(BasicType::get(identifier.getString(), {}, false, identifier.getLocation()));
+            genericParams.back().addConstraint(BasicType::get(identifier.getString(), {}, Mutability::Mutable, identifier.getLocation()));
         }
 
         if (currentToken() == Token::Greater) break;
@@ -1219,7 +1194,6 @@ std::unique_ptr<DeinitDecl> Parser::parseDeinitDecl(TypeDecl& receiverTypeDecl) 
 
 /// field-decl ::= type id ('\n' | ';')
 FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation nameLocation) {
-    type.setMutable(true);
     parseStmtTerminator();
     return FieldDecl(type, name, typeDecl, accessLevel, nameLocation);
 }
@@ -1270,17 +1244,9 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
 
     while (currentToken() != Token::RightBrace) {
         AccessLevel accessLevel = AccessLevel::Default;
-        bool isMutating = false;
 
     start:
         switch (currentToken()) {
-            case Token::Mutating:
-                if (isMutating) {
-                    warning(getCurrentLocation(), "duplicate 'mutating' specifier");
-                }
-                isMutating = true;
-                consumeToken();
-                goto start;
             case Token::Private:
                 if (tag == TypeTag::Interface) {
                     warning(getCurrentLocation(), "interface members cannot be private");
@@ -1309,13 +1275,11 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
                 switch (currentToken()) {
                     case Token::LeftParen: {
                         auto decl = llvm::cast<MethodDecl>(parseFunctionDecl(typeDecl.get(), accessLevel, requireBody, type, name, location));
-                        decl->setMutating(isMutating);
                         typeDecl->addMethod(std::move(decl));
                         break;
                     }
                     case Token::Less: {
                         auto decl = parseFunctionTemplate(typeDecl.get(), accessLevel, type, name, location);
-                        llvm::cast<MethodDecl>(decl->getFunctionDecl())->setMutating(isMutating);
                         typeDecl->addMethod(std::move(decl));
                         break;
                     }
@@ -1466,6 +1430,10 @@ start:
             break;
         case Token::Var:
         case Token::Const:
+            // Determine if this is a constant declaration or if the const is part of a type.
+            if (currentToken() == Token::Const && lookAhead(2) != Token::Assignment) {
+                return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
+            }
             decl = parseVarDecl(true, nullptr, accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);
             break;
@@ -1483,7 +1451,7 @@ start:
 
 std::unique_ptr<Decl> Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel) {
     std::unique_ptr<Decl> decl;
-    auto type = parseNonMutableType();
+    auto type = parseType();
     auto location = getCurrentLocation();
     auto name = parseFunctionName(nullptr);
 
@@ -1501,7 +1469,6 @@ std::unique_ptr<Decl> Parser::parseTopLevelFunctionOrVariable(bool isExtern, boo
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));
             break;
         default:
-            type.setMutable(true);
             decl = parseVarDeclAfterName(true, nullptr, accessLevel, type, name, location);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);
             break;

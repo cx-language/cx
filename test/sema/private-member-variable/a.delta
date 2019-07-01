@@ -5,7 +5,7 @@
 struct A {
     private int a;
     init() {}
-    mutating void f() {
+    void f() {
         this.a++;
         a++;
     }

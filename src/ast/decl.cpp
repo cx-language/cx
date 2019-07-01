@@ -52,7 +52,6 @@ FunctionType* FunctionDecl::getFunctionType() const {
 bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceiver) const {
     if (getName() != other.getName()) return false;
     if (matchReceiver && getTypeDecl() != other.getTypeDecl()) return false;
-    if (isMutating() != other.isMutating()) return false;
     if (getReturnType() != other.getReturnType()) return false;
     if (getParams() != other.getParams()) return false;
     return true;
@@ -66,7 +65,6 @@ std::unique_ptr<FunctionDecl> FunctionDecl::instantiate(const llvm::StringMap<Ty
 
     if (isMethodDecl()) {
         instantiation = llvm::make_unique<MethodDecl>(std::move(proto), *getTypeDecl(), genericArgsArray, getAccessLevel(), location);
-        llvm::cast<MethodDecl>(*instantiation).setMutating(isMutating());
     } else {
         instantiation = llvm::make_unique<FunctionDecl>(std::move(proto), genericArgsArray, getAccessLevel(), module, location);
     }
@@ -90,8 +88,7 @@ bool FunctionTemplate::isReferenced() const {
 }
 
 MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel, SourceLocation location)
-: FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl),
-  mutating(false) {}
+: FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl) {}
 
 std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) {
     switch (getKind()) {
@@ -100,7 +97,6 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
             auto proto = methodDecl->getProto().instantiate(genericArgs);
             auto instantiation = llvm::make_unique<MethodDecl>(std::move(proto), typeDecl, std::vector<Type>(), getAccessLevel(),
                                                                methodDecl->getLocation());
-            instantiation->setMutating(methodDecl->isMutating());
             if (methodDecl->hasBody()) {
                 instantiation->setBody(::instantiate(methodDecl->getBody(), genericArgs));
             }
@@ -158,25 +154,16 @@ DeinitDecl* TypeDecl::getDeinitializer() const {
     return nullptr;
 }
 
-Type TypeDecl::getType(bool isMutable) const {
-    return BasicType::get(name, genericArgs, isMutable);
+Type TypeDecl::getType(Mutability mutability) const {
+    return BasicType::get(name, genericArgs, mutability);
 }
 
-Type TypeDecl::getTypeForPassing(bool isMutable) const {
-    switch (tag) {
-        case TypeTag::Struct:
-            if (isCopyable()) {
-                return getType(isMutable);
-            } else {
-                return PointerType::get(getType(isMutable));
-            }
-        case TypeTag::Union:
-        case TypeTag::Enum:
-            return getType(isMutable);
-        case TypeTag::Interface:
-            return PointerType::get(getType(isMutable));
+Type TypeDecl::getTypeForPassing() const {
+    if ((tag == TypeTag::Struct && !isCopyable()) || tag == TypeTag::Interface) {
+        return PointerType::get(getType());
+    } else {
+        return getType();
     }
-    llvm_unreachable("invalid type tag");
 }
 
 unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {

@@ -16,13 +16,12 @@ struct LineIterator<Stream: InputStream>: Iterator<String> {
         return next;
     }
 
-    mutating void increment() {
+    void increment() {
         var next = stream.readLine();
         this.next = next;
     }
 
     LineIterator<Stream> iterator() {
-        return this;
+        return *this;
     }
-
 }

@@ -8,6 +8,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 #pragma warning(pop)
 #include "lex.h"
+#include "../ast/type.h"
 
 namespace llvm {
 class StringRef;
@@ -102,11 +103,10 @@ private:
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<Type> parseGenericArgumentList();
     int64_t parseArraySizeInBrackets();
-    Type parseSimpleType(bool isMutable);
+    Type parseSimpleType(Mutability mutability);
     Type parseTupleType();
     Type parseFunctionType(Type returnType);
     Type parseType();
-    Type parseNonMutableType();
     std::unique_ptr<SizeofExpr> parseSizeofExpr();
     std::unique_ptr<AddressofExpr> parseAddressofExpr();
     std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs);

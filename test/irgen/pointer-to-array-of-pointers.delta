@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
-extern mutable char mutable*[?]*? b();
+extern char*[?]*? b();
 
 void main() {
     var s = b();

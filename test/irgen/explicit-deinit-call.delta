@@ -5,16 +5,16 @@ struct A {
     deinit() {}
 }
 
-void f(mutable A* a) {
+void f(A* a) {
     a.deinit();
 }
 
 struct B {}
 
-void g(mutable B* b) {
+void g(B* b) {
     b.deinit();
 }
 
-void h(mutable char* c) {
+void h(char* c) {
     c.deinit();
 }

@@ -123,8 +123,9 @@ std::unique_ptr<Stmt> ForStmt::lower(int nestLevel) {
         iteratorValue = llvm::make_unique<CallExpr>(std::move(iteratorMemberExpr), std::vector<NamedValue>(), std::vector<Type>(), location);
     }
 
-    auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, true, location), std::string(iteratorVariableName), std::move(iteratorValue),
-                                                      variable->getParent(), AccessLevel::None, *variable->getModule(), location);
+    auto iteratorVarDecl = llvm::make_unique<VarDecl>(Type(nullptr, Mutability::Mutable, location), std::string(iteratorVariableName),
+                                                      std::move(iteratorValue), variable->getParent(), AccessLevel::None,
+                                                      *variable->getModule(), location);
     auto iteratorVarStmt = llvm::make_unique<VarStmt>(std::move(iteratorVarDecl));
     stmts.push_back(std::move(iteratorVarStmt));
 

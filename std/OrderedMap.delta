@@ -1,7 +1,6 @@
 /// An ordered key-value container that supports fast insertion, deletion and lookup
 struct OrderedMap<Key, Value> {
-
-    mutable AVLnode<Key, Value>*? root;
+    AVLnode<Key, Value>*? root;
     int size;
 
     init() {
@@ -25,7 +24,7 @@ struct OrderedMap<Key, Value> {
         return size == 0;
     }
 
-    mutating private void rebalance(mutable AVLnode<Key, Value>* node) {
+    private void rebalance(AVLnode<Key, Value>* node) {
         var n = node;
         setBalance(n);
 
@@ -50,7 +49,7 @@ struct OrderedMap<Key, Value> {
         }
     }
 
-    private mutable AVLnode<Key, Value>* rotateLeft(mutable AVLnode<Key, Value>* node) {
+    private AVLnode<Key, Value>* rotateLeft(AVLnode<Key, Value>* node) {
         var a = node;
         var b = a.right!;
         b.parent = a.parent;
@@ -76,7 +75,7 @@ struct OrderedMap<Key, Value> {
         return b;
     }
 
-    private mutable AVLnode<Key, Value>* rotateRight(mutable AVLnode<Key, Value>* node) {
+    private AVLnode<Key, Value>* rotateRight(AVLnode<Key, Value>* node) {
         var a = node;
         var b = a.left!;
         b.parent = a.parent;
@@ -102,12 +101,12 @@ struct OrderedMap<Key, Value> {
         return b;
     }
 
-    private mutable AVLnode<Key, Value>* rotateLeftThenRight(mutable AVLnode<Key, Value>* n) {
+    private AVLnode<Key, Value>* rotateLeftThenRight(AVLnode<Key, Value>* n) {
         n.left = rotateLeft(n.left!);
         return rotateRight(n);
     }
 
-    private mutable AVLnode<Key, Value>* rotateRightThenLeft(mutable AVLnode<Key, Value>* n) {
+    private AVLnode<Key, Value>* rotateRightThenLeft(AVLnode<Key, Value>* n) {
         n.right = rotateRight(n.right!);
         return rotateLeft(n);
     }
@@ -119,7 +118,7 @@ struct OrderedMap<Key, Value> {
         return 1 + *max(height(n!.left), height(n!.right));
     }
 
-    private void setBalance(mutable AVLnode<Key, Value>* n) {
+    private void setBalance(AVLnode<Key, Value>* n) {
         n.balance = height(n.right) - height(n.left);
     }
 
@@ -138,7 +137,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Inserts a key-value pair into the Map.
-    mutating bool insert(Key key, Value value) {
+    bool insert(Key key, Value value) {
         if (root == null) {
             root = allocate(AVLnode<Key, Value>(key, null, value));
         } else {
@@ -172,14 +171,14 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Removes a key and it's associated value from the Map
-    mutating void remove(Key* key) {
+    void remove(Key* key) {
         if (root == null) {
             return;
         }
 
         var n = root!;
         var parent = root!;
-        mutable AVLnode<Key, Value>*? delNode = null;
+        AVLnode<Key, Value>*? delNode = null;
         var child = root;
 
         while (child != null) {
@@ -215,7 +214,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map
-    (Key key, mutable Value value)*? find(Key* key) {
+    (Key key, Value value)*? find(Key* key) {
         var node = findNode(key);
         if (node != null) {
             return node.entry;
@@ -266,7 +265,7 @@ struct OrderedMap<Key, Value> {
         return n;
     }
 
-    private mutable AVLnode<Key, Value>* minInSubtree(mutable AVLnode<Key, Value>* node) {
+    private AVLnode<Key, Value>* minInSubtree(AVLnode<Key, Value>* node) {
         var n = node;
         while (n.left != null) {
             n = n.left;
@@ -309,7 +308,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the node that contains the key immediately larger than the key of the given node,
     /// or null, if the key of `node` is the largest value.
-    mutable AVLnode<Key, Value>*? higherNode(AVLnode<Key, Value>* node) {
+    AVLnode<Key, Value>*? higherNode(AVLnode<Key, Value>* node) {
         if (node.right != null) {
             return minInSubtree(node.right);
         }
@@ -334,7 +333,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the node with the smallest key in the Map, or null if the Map is empty.
-    mutable AVLnode<Key, Value>*? firstNode() {
+    AVLnode<Key, Value>*? firstNode() {
         if (root == null) {
             return null;
         }
@@ -365,13 +364,13 @@ struct OrderedMap<Key, Value> {
 
 /// One node in the AVL tree
 struct AVLnode<Key, Value> {
-    (Key key, mutable Value value) entry;
+    (Key key, Value value) entry;
     int balance;
-    mutable AVLnode<Key, Value>*? parent;
-    mutable AVLnode<Key, Value>*? left;
-    mutable AVLnode<Key, Value>*? right;
+    AVLnode<Key, Value>*? parent;
+    AVLnode<Key, Value>*? left;
+    AVLnode<Key, Value>*? right;
 
-    init(Key key, mutable AVLnode<Key, Value>*? parent, Value value) {
+    init(Key key, AVLnode<Key, Value>*? parent, Value value) {
         this.entry = (key, value);
         this.parent = parent;
         this.balance = 0;
@@ -379,7 +378,7 @@ struct AVLnode<Key, Value> {
         this.right = null;
     }
 
-    mutating void deallocate() {
+    void deallocate() {
         deallocate(this);
 
         if (left != null) {

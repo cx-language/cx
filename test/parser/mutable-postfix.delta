@@ -1,4 +1,0 @@
-// RUN: not %delta -parse %s | %FileCheck %s
-
-// CHECK: [[@LINE+1]]:14: error: expected '*' or '?' after 'mutable', got identifier
-int* mutable p;

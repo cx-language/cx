@@ -1,6 +1,6 @@
 // RUN: %delta -typecheck -Werror %s
 
-void foo(mutable int*? p) {
+void foo(int*? p) {
     if (!p) {
     } else {
         var i = *p;

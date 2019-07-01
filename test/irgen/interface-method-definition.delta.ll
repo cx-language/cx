@@ -2,13 +2,13 @@
 define i32 @main() {
   %b = alloca {}
   %x = alloca i32
-  call void @_ENM4main1B4initE({}* %b)
+  call void @_EN4main1B4initE({}* %b)
   %1 = call i32 @_EN4main1B1gE({}* %b)
   store i32 %1, i32* %x
   ret i32 0
 }
 
-define void @_ENM4main1B4initE({}* %this) {
+define void @_EN4main1B4initE({}* %this) {
   ret void
 }
 

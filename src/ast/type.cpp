@@ -14,9 +14,9 @@ using namespace delta;
 static std::vector<std::unique_ptr<TypeBase>> typeBases;
 
 #define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
-    Type Type::get##TYPE(bool isMutable, SourceLocation location) { \
+    Type Type::get##TYPE(Mutability mutability, SourceLocation location) { \
         static BasicType type(#NAME, /*genericArgs*/ {}); \
-        return Type(&type, isMutable, location); \
+        return Type(&type, mutability, location); \
     } \
     bool Type::is##TYPE() const { return isBasicType() && getName() == #NAME; }
 
@@ -89,79 +89,79 @@ bool Type::isEnumType() const {
 }
 
 Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
-    if (!typeBase) return Type(nullptr, isMutable(), location);
+    if (!typeBase) return Type(nullptr, mutability, location);
 
     switch (getKind()) {
         case TypeKind::BasicType: {
             auto it = replacements.find(getName());
             if (it != replacements.end()) {
                 // TODO: Handle generic arguments for type placeholders.
-                Type resolved = it->second.asMutable(isMutable());
+                Type resolved = it->second.withMutability(mutability);
                 resolved.setLocation(location);
                 return resolved;
             }
 
             auto genericArgs = map(getGenericArgs(), [&](Type t) { return t.resolve(replacements); });
-            return BasicType::get(getName(), std::move(genericArgs), isMutable(), location);
+            return BasicType::get(getName(), std::move(genericArgs), mutability, location);
         }
         case TypeKind::ArrayType:
-            return ArrayType::get(getElementType().resolve(replacements), getArraySize(), isMutable(), location);
+            return ArrayType::get(getElementType().resolve(replacements), getArraySize(), mutability, location);
 
         case TypeKind::TupleType: {
             auto elements = map(getTupleElements(), [&](const TupleElement& element) {
                 return TupleElement{ element.name, element.type.resolve(replacements) };
             });
-            return TupleType::get(std::move(elements), isMutable(), location);
+            return TupleType::get(std::move(elements), mutability, location);
         }
         case TypeKind::FunctionType: {
             auto paramTypes = map(getParamTypes(), [&](Type t) { return t.resolve(replacements); });
-            return FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), isMutable(), location);
+            return FunctionType::get(getReturnType().resolve(replacements), std::move(paramTypes), mutability, location);
         }
         case TypeKind::PointerType:
-            return PointerType::get(getPointee().resolve(replacements), isMutable(), location);
+            return PointerType::get(getPointee().resolve(replacements), mutability, location);
         case TypeKind::OptionalType:
-            return OptionalType::get(getWrappedType().resolve(replacements), isMutable(), location);
+            return OptionalType::get(getWrappedType().resolve(replacements), mutability, location);
     }
     llvm_unreachable("all cases handled");
 }
 
 template<typename T>
-static Type getType(T&& typeBase, bool isMutable, SourceLocation location) {
-    Type newType(&typeBase, isMutable, location);
+static Type getType(T&& typeBase, Mutability mutability, SourceLocation location) {
+    Type newType(&typeBase, mutability, location);
 
     for (auto& existingTypeBase : typeBases) {
-        Type existingType(&*existingTypeBase, isMutable, location);
+        Type existingType(&*existingTypeBase, mutability, location);
         if (existingType.equalsIgnoreTopLevelMutable(newType)) {
             return existingType;
         }
     }
 
     typeBases.push_back(llvm::make_unique<T>(std::forward<T>(typeBase)));
-    return Type(&*typeBases.back(), isMutable, location);
+    return Type(&*typeBases.back(), mutability, location);
 }
 
-Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, bool isMutable, SourceLocation location) {
-    return getType(BasicType(name, genericArgs), isMutable, location);
+Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, Mutability mutability, SourceLocation location) {
+    return getType(BasicType(name, genericArgs), mutability, location);
 }
 
-Type ArrayType::get(Type elementType, int64_t size, bool isMutable, SourceLocation location) {
-    return getType(ArrayType(elementType, size), isMutable, location);
+Type ArrayType::get(Type elementType, int64_t size, Mutability mutability, SourceLocation location) {
+    return getType(ArrayType(elementType, size), mutability, location);
 }
 
-Type TupleType::get(std::vector<TupleElement>&& elements, bool isMutable, SourceLocation location) {
-    return getType(TupleType(std::move(elements)), isMutable, location);
+Type TupleType::get(std::vector<TupleElement>&& elements, Mutability mutability, SourceLocation location) {
+    return getType(TupleType(std::move(elements)), mutability, location);
 }
 
-Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, bool isMutable, SourceLocation location) {
-    return getType(FunctionType(returnType, std::move(paramTypes)), isMutable, location);
+Type FunctionType::get(Type returnType, std::vector<Type>&& paramTypes, Mutability mutability, SourceLocation location) {
+    return getType(FunctionType(returnType, std::move(paramTypes)), mutability, location);
 }
 
-Type PointerType::get(Type pointeeType, bool isMutable, SourceLocation location) {
-    return getType(PointerType(pointeeType), isMutable, location);
+Type PointerType::get(Type pointeeType, Mutability mutability, SourceLocation location) {
+    return getType(PointerType(pointeeType), mutability, location);
 }
 
-Type OptionalType::get(Type wrappedType, bool isMutable, SourceLocation location) {
-    return getType(OptionalType(wrappedType), isMutable, location);
+Type OptionalType::get(Type wrappedType, Mutability mutability, SourceLocation location) {
+    return getType(OptionalType(wrappedType), mutability, location);
 }
 
 bool delta::operator==(const TupleElement& a, const TupleElement& b) {
@@ -196,42 +196,22 @@ std::vector<ParamDecl> FunctionType::getParamDecls(SourceLocation location) cons
     return paramDecls;
 }
 
+constexpr auto signedInts = { "int", "int8", "int16", "int32", "int64" };
+constexpr auto unsignedInts = { "uint", "uint8", "uint16", "uint32", "uint64" };
+
+bool Type::isInteger() const {
+    if (!isBasicType()) return false;
+    return llvm::is_contained(signedInts, getName()) || llvm::is_contained(unsignedInts, getName());
+}
+
 bool Type::isSigned() const {
-    if (!isBasicType()) {
-        return false;
-    }
-    llvm::StringRef name = getName();
-    return name == "int" || name == "int8" || name == "int16" || name == "int32" || name == "int64";
+    ASSERT(isInteger());
+    return llvm::is_contained(signedInts, getName());
 }
 
 bool Type::isUnsigned() const {
-    ASSERT(isBasicType());
-    llvm::StringRef name = getName();
-    return name == "uint" || name == "uint8" || name == "uint16" || name == "uint32" || name == "uint64";
-}
-
-void Type::setMutable(bool isMutable) {
-    if (typeBase) {
-        switch (typeBase->getKind()) {
-            case TypeKind::ArrayType: {
-                auto& array = llvm::cast<ArrayType>(*typeBase);
-                *this = ArrayType::get(array.getElementType().asMutable(isMutable), array.getSize(), isMutable, location);
-                return;
-            }
-            case TypeKind::TupleType: {
-                auto& tuple = llvm::cast<TupleType>(*typeBase);
-                auto elements = map(tuple.getElements(), [&](const TupleElement& e) {
-                    return TupleElement{ e.name, e.type.asMutable(isMutable) };
-                });
-                *this = TupleType::get(std::move(elements), isMutable, location);
-                return;
-            }
-            default:
-                break;
-        }
-    }
-
-    mutableFlag = isMutable;
+    ASSERT(isInteger());
+    return llvm::is_contained(unsignedInts, getName());
 }
 
 llvm::StringRef Type::getName() const {
@@ -243,7 +223,7 @@ std::string Type::getQualifiedTypeName() const {
 }
 
 Type Type::getElementType() const {
-    return llvm::cast<ArrayType>(typeBase)->getElementType().asMutable(isMutable()).withLocation(location);
+    return llvm::cast<ArrayType>(typeBase)->getElementType().withMutability(mutability).withLocation(location);
 }
 
 int64_t Type::getArraySize() const {
@@ -311,10 +291,10 @@ DeinitDecl* Type::getDeinitializer() const {
     return typeDecl ? typeDecl->getDeinitializer() : nullptr;
 }
 
-void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
+void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
     switch (typeBase->getKind()) {
         case TypeKind::BasicType: {
-            if (isMutable() && !omitTopLevelMutable) stream << "mutable ";
+            if (!isMutable() && !omitTopLevelConst) stream << "const ";
             stream << getName();
 
             auto genericArgs = llvm::cast<BasicType>(typeBase)->getGenericArgs();
@@ -330,7 +310,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
             break;
         }
         case TypeKind::ArrayType:
-            getElementType().printTo(stream, omitTopLevelMutable);
+            getElementType().printTo(stream, omitTopLevelConst);
             stream << "[";
             switch (getArraySize()) {
                 case ArrayType::runtimeSize:
@@ -347,7 +327,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
         case TypeKind::TupleType:
             stream << "(";
             for (auto& element : getTupleElements()) {
-                element.type.printTo(stream, omitTopLevelMutable);
+                element.type.printTo(stream, omitTopLevelConst);
                 stream << " " << element.name;
                 if (&element != &getTupleElements().back()) stream << ", ";
             }
@@ -367,8 +347,8 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
                 stream << '(';
             }
             getPointee().printTo(stream, false);
-            if (isMutable() && !omitTopLevelMutable) {
-                stream << " mutable";
+            if (!isMutable() && !omitTopLevelConst) {
+                stream << " const";
             }
             if (getPointee().isFunctionType()) {
                 stream << ')';
@@ -380,8 +360,8 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelMutable) const {
                 stream << '(';
             }
             getWrappedType().printTo(stream, false);
-            if (isMutable() && !omitTopLevelMutable) {
-                stream << " mutable";
+            if (!isMutable() && !omitTopLevelConst) {
+                stream << " const";
             }
             if (getWrappedType().isFunctionType()) {
                 stream << ')';

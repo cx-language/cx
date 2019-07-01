@@ -26,7 +26,7 @@ void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
         if (callExpr->getCalleeDecl()) {
             if (auto* initDecl = llvm::dyn_cast<InitDecl>(callExpr->getCalleeDecl())) {
-                if (initDecl->getTypeDecl()->getType() == stmt.getDecl().getType().asImmutable()) {
+                if (initDecl->getTypeDecl()->getType() == stmt.getDecl().getType()) {
                     codegenCallExpr(*callExpr, alloca);
                     return;
                 }

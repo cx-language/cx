@@ -15,10 +15,10 @@ define void @_EN4main1gI4boolEE1t4bool(i1 %t) {
   ret void
 }
 
-define void @_EN4main1fI4boolEE1t4bool(i1 %t) {
+define void @_EN4main1fI3intEE1t3int(i32 %t) {
   ret void
 }
 
-define void @_EN4main1fI3intEE1t3int(i32 %t) {
+define void @_EN4main1fI4boolEE1t4bool(i1 %t) {
   ret void
 }

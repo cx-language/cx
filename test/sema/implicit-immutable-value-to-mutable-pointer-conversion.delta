@@ -1,6 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-void main(int i) {
-    // CHECK: [[@LINE+1]]:22: error: cannot initialize variable of type 'mutable int*' with 'int'
-    mutable int* p = i;
-}

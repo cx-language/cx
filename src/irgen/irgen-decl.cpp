@@ -15,7 +15,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
     if (decl.isMethodDecl()) {
-        paramTypes.emplace_back(getLLVMTypeForPassing(*decl.getTypeDecl(), decl.isMutating()));
+        paramTypes.emplace_back(getLLVMTypeForPassing(*decl.getTypeDecl()));
     }
 
     for (auto& paramType : functionType->getParamTypes()) {
@@ -171,7 +171,7 @@ llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
     if (decl.getType().isMutable() /* || decl.isPublic() */) {
         auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
         auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
-        value = new llvm::GlobalVariable(*module, toIR(decl.getType()), !decl.getType().isMutable(), linkage, initializer, decl.getName());
+        value = new llvm::GlobalVariable(*module, toIR(decl.getType()), false, linkage, initializer, decl.getName());
     }
 
     globalScope().addLocalValue(decl.getName(), value);

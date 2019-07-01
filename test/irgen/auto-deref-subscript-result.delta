@@ -3,11 +3,11 @@
 struct S<T> {
     T t;
 
-    mutating mutable T* operator[](int i) {
+    T* operator[](int i) {
         return t;
     }
 }
 
-void f(mutable S<int>* s) {
+void f(S<int>* s) {
     s[0]++;
 }

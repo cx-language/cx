@@ -1,4 +1,0 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
-
-// CHECK: [[@LINE+1]]:1: error: type specifier cannot specify mutability
-mutable int foo() { return 42; }

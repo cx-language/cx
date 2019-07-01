@@ -1,11 +1,11 @@
 struct UniquePtr<Pointee> {
-	mutable Pointee* pointer;
+	Pointee* pointer;
 
 	init(Pointee value) {
 		this.pointer = allocate(value);
 	}
 
-	init(mutable Pointee* pointer) {
+	init(Pointee* pointer) {
 		this.pointer = pointer;
 	}
 
@@ -14,10 +14,6 @@ struct UniquePtr<Pointee> {
 	}
 
 	Pointee* get() {
-		return pointer;
-	}
-
-	mutating mutable Pointee* get() {
 		return pointer;
 	}
 }

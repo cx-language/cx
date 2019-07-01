@@ -14,9 +14,7 @@ define i1* @_EN4main1A2ffE(%A* %this) {
   ret i1* %1
 }
 
-define i8* @_EN4main1B2ggE(%B %this) {
-  %1 = alloca i8
-  %a = extractvalue %B %this, 0
-  store i8 %a, i8* %1
-  ret i8* %1
+define i8* @_EN4main1B2ggE(%B* %this) {
+  %a = getelementptr inbounds %B, %B* %this, i32 0, i32 0
+  ret i8* %a
 }

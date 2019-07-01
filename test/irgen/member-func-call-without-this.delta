@@ -3,7 +3,7 @@
 struct S: Copyable {
     init() {}
 
-    mutating void foo() {
+    void foo() {
         bar()
     }
 
@@ -19,7 +19,7 @@ struct Foo<U> {
         baz()
     }
 
-    mutating void baz() {
+    void baz() {
         qux()
     }
 

@@ -1,7 +1,7 @@
 /// First-in-first-out data structure
 struct Queue<T> {
-    mutable Node<T>*? head;
-    mutable Node<T>*? tail;
+    Node<T>*? head;
+    Node<T>*? tail;
     int size;
 
     /// Initialize an empty Queue
@@ -20,7 +20,7 @@ struct Queue<T> {
     }
 
     /// Add to the back of the queue
-    mutating void push(T value) {
+    void push(T value) {
         var newNode = allocate(Node(value));
 
         if (empty()) {
@@ -35,7 +35,7 @@ struct Queue<T> {
     }
 
     /// Retrieve and remove head of the queue
-    mutating T pop() {
+    T pop() {
         var value = head!.value;
         var next = head!.next;
         deallocate(head!);
@@ -66,7 +66,7 @@ struct Queue<T> {
 }
 
 struct Node<T> {
-    mutable Node<T>*? next;
+    Node<T>*? next;
     T value;
 
     init(T val) {

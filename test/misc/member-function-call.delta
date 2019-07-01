@@ -7,7 +7,7 @@ struct Foo {
         this.i = 0;
     }
 
-    mutating void add(int amount) {
+    void add(int amount) {
         this.i = this.i + amount;
     }
 }

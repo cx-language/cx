@@ -7,12 +7,12 @@ struct Set<Key: Hashable> {
     }
 
     /// Inserts an element into the set. If the element exists already, nothing is done.
-    mutating void insert(Key key) {
+    void insert(Key key) {
         map.insert(key, false);
     }
 
     /// Removes an element from the set, if it exists there.
-    mutating void remove(Key* key) {
+    void remove(Key* key) {
         map.remove(key);
     }
 

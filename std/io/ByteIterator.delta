@@ -17,7 +17,7 @@ struct ByteIterator<Stream: InputStream>: Copyable, Iterator<uint8> {
         return uint8(next);
     }
 
-    mutating void increment() {
+    void increment() {
         next = stream.readByte();
     }
 
