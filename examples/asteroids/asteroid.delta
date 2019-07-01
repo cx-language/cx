@@ -1,0 +1,64 @@
+import "SDL.h";
+
+const maxRotationSpeed = 0.007;
+const formVariation = 0.4;
+const minSpeed = 0.05;
+const maxSpeed = 0.2;
+const minSize = 5.0;
+const maxSize = 30.0;
+
+float randomFloat(float a, float b) {
+    return a + float(rand()) / float(RAND_MAX) * (b - a);
+}
+
+struct Asteroid {
+    Vector2 position;
+    Vector2 velocity;
+    float rotation;
+    float rotationSpeed;
+    float size;
+    Vector2[8] vertices;
+
+    init() {
+        position = Vector2(randomFloat(0.0, width), randomFloat(0.0, height));
+        var direction = randomFloat(-M_PI, M_PI);
+        var speed = randomFloat(minSpeed, maxSpeed);
+        velocity = Vector2(direction) * speed;
+        rotation = 0.0;
+        rotationSpeed = randomFloat(-maxRotationSpeed, maxRotationSpeed);
+        size = randomFloat(minSize, maxSize);
+        vertices = undefined;
+
+        for (var i in 0..vertices.size()) {
+            var offset = (1.0 + randomFloat(-formVariation, formVariation));
+            var angle = float(i) / float(vertices.size()) * (M_PI * 2.0);
+            vertices[i] = Vector2(angle) * (offset * size);
+        }
+    }
+
+    mutating void update(float delta) {
+        position.x += velocity.x * delta;
+        position.y += velocity.y * delta;
+        rotation += rotationSpeed * delta;
+
+        while (position.x < 0.0) position.x += width;
+        while (position.y < 0.0) position.y += height;
+        while (position.x >= width) position.x -= width;
+        while (position.y >= height) position.y -= height;
+    }
+
+    void render(mutable SDL_Renderer* renderer) {
+        for (var i in -1...1) {
+            for (var j in -1...1) {
+                var diff = Vector2(float(i) * width, float(j) * height);
+
+                for (var k in 0..vertices.size()) {
+                    var l = (k + 1) % vertices.size();
+                    var a = position + vertices[k] + diff;
+                    var b = position + vertices[l] + diff;
+                    SDL_RenderDrawLine(renderer, int(a.x), int(a.y), int(b.x), int(b.y));
+                }
+            }
+        }
+    }
+}

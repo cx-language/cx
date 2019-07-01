@@ -1,0 +1,71 @@
+import "SDL.h";
+
+// FIXME: For some reason this is not parsed correctly from the included headers.
+const SDL_WINDOWPOS_UNDEFINED = 0x1FFF0000;
+
+const width = 640.0;
+const height = 480.0;
+
+uint8[?]*? keyState = null;
+
+// TODO: Import enum type names from C headers so we can use SDL_Scancode as the argument type here.
+bool isKeyDown(int key) {
+    return keyState![key] != 0;
+}
+
+void main() {
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        puts(SDL_GetError());
+        return;
+    }
+    defer SDL_Quit();
+
+    var window = SDL_CreateWindow("Delta Asteroids",
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        int(width), int(height), 0);
+
+    if (window == null) {
+        puts(SDL_GetError());
+        return;
+    }
+
+    defer SDL_DestroyWindow(window);
+
+    var renderer = SDL_CreateRenderer(window, -1, 0);
+
+    if (renderer == null) {
+        puts(SDL_GetError());
+        return;
+    }
+
+    defer SDL_DestroyRenderer(renderer);
+
+    mainLoop(renderer!); // FIXME: Shouldn't need to unwrap renderer here.
+}
+
+void mainLoop(mutable SDL_Renderer* renderer) {
+    SDL_Event event = undefined;
+    var state = GameState();
+    keyState = cast<uint8[?]*>(cast<void*>(SDL_GetKeyboardState(null)!)); // FIXME
+
+    while (true) {
+        if (SDL_PollEvent(event) != 0) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    return;
+                case SDL_KEYDOWN:
+                    if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        return;
+                    }
+            }
+        }
+
+        state.update();
+
+        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+        SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        state.render(renderer);
+        SDL_RenderPresent(renderer);
+    }
+}

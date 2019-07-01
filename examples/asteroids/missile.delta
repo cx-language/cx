@@ -1,0 +1,40 @@
+import "SDL.h";
+
+const missileSize = 20.0;
+const missileSpeed = 0.3;
+const missileCooldown = 200.0;
+
+struct Missile {
+    Vector2 position;
+    float direction;
+
+    init(Vector2 position, float direction) {
+        this.position = position;
+        this.direction = direction;
+    }
+
+    void render(mutable SDL_Renderer* renderer) {
+        var a = position;
+        var b = tailPosition();
+        SDL_RenderDrawLine(renderer, int(a.x), int(a.y), int(b.x), int(b.y));
+    }
+
+    mutating void update(float delta, mutable GameState* state) {
+        var velocity = Vector2(direction) * missileSpeed;
+        position = position + velocity * delta;
+
+        for (var i in 0..state.asteroids.size()) {
+            var asteroid = state.asteroids[i];
+
+            if (asteroid.position.distance(position) <= asteroid.size ||
+                asteroid.position.distance(tailPosition()) <= asteroid.size) {
+                state.asteroids.removeAt(i);
+                break; // state.asteroids has been mutated, stop iteration.
+            }
+        }
+    }
+
+    Vector2 tailPosition() {
+        return (position - Vector2(missileSize, 0)).rotated(origin: position, angle: direction);
+    }
+}

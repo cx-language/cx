@@ -1,0 +1,45 @@
+import "SDL.h";
+
+struct GameState {
+    Player player;
+    List<Asteroid> asteroids;
+    uint ticks;
+    uint timeOfLastAsteroidSpawn;
+    float asteroidSpawnInterval;
+
+    init() {
+        player = Player();
+        asteroids = List<Asteroid>();
+        asteroids.push(Asteroid());
+
+        ticks = SDL_GetTicks();
+        timeOfLastAsteroidSpawn = ticks;
+        asteroidSpawnInterval = 2000.0;
+    }
+
+    mutating void update() {
+        var newTicks = SDL_GetTicks();
+        var delta = float(newTicks - ticks);
+        ticks = newTicks;
+
+        player.update(delta, this);
+
+        for (var asteroid in asteroids) {
+            asteroid.update(delta);
+        }
+
+        if (newTicks - timeOfLastAsteroidSpawn > uint(asteroidSpawnInterval)) {
+            asteroids.push(Asteroid());
+            timeOfLastAsteroidSpawn = newTicks;
+            asteroidSpawnInterval *= 0.99;
+        }
+    }
+
+    void render(mutable SDL_Renderer* renderer) {
+        player.render(renderer);
+
+        for (var asteroid in asteroids) {
+            asteroid.render(renderer);
+        }
+    }
+}
