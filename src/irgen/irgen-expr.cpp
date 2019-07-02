@@ -882,7 +882,11 @@ llvm::Value* IRGenerator::codegenAutoCast(llvm::Value* value, const Expr& expr) 
             if (value->getType()->isFloatingPointTy()) {
                 return builder.CreateFPCast(value, type);
             } else if (value->getType()->isIntegerTy()) {
-                return builder.CreateIntCast(value, type, expr.getType().isSigned());
+                if (expr.getType().isFloatingPoint()) {
+                    return builder.CreateSIToFP(value, type); // TODO: Handle signed vs unsigned
+                } else {
+                    return builder.CreateIntCast(value, type, expr.getType().isSigned());
+                }
             }
         }
     }

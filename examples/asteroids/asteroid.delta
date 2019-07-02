@@ -4,8 +4,8 @@ const maxRotationSpeed = 0.007;
 const formVariation = 0.4;
 const minSpeed = 0.05;
 const maxSpeed = 0.2;
-const minSize = 5.0;
-const maxSize = 30.0;
+const minSize = 5;
+const maxSize = 30;
 
 float randomFloat(float a, float b) {
     return a + float(rand()) / float(RAND_MAX) * (b - a);
@@ -20,18 +20,18 @@ struct Asteroid {
     Vector2[8] vertices;
 
     init() {
-        position = Vector2(randomFloat(0.0, width), randomFloat(0.0, height));
+        position = Vector2(randomFloat(0, width), randomFloat(0, height));
         var direction = randomFloat(-M_PI, M_PI);
         var speed = randomFloat(minSpeed, maxSpeed);
         velocity = Vector2(direction) * speed;
-        rotation = 0.0;
+        rotation = 0;
         rotationSpeed = randomFloat(-maxRotationSpeed, maxRotationSpeed);
         size = randomFloat(minSize, maxSize);
         vertices = undefined;
 
         for (var i in 0..vertices.size()) {
-            var offset = (1.0 + randomFloat(-formVariation, formVariation));
-            var angle = float(i) / float(vertices.size()) * (M_PI * 2.0);
+            var offset = 1 + randomFloat(-formVariation, formVariation);
+            var angle = float(i) / float(vertices.size()) * M_PI * 2;
             vertices[i] = Vector2(angle) * (offset * size);
         }
     }
@@ -41,8 +41,8 @@ struct Asteroid {
         position.y += velocity.y * delta;
         rotation += rotationSpeed * delta;
 
-        while (position.x < 0.0) position.x += width;
-        while (position.y < 0.0) position.y += height;
+        while (position.x < 0) position.x += width;
+        while (position.y < 0) position.y += height;
         while (position.x >= width) position.x -= width;
         while (position.y >= height) position.y -= height;
     }

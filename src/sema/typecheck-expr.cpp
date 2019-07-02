@@ -488,7 +488,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                 if (target.isUInt64()) return checkRange<64, false>(*expr, value, target, convertedType);
             }
 
-            if (target.isFloatingPoint() && expr->isIntLiteralExpr()) {
+            if (target.isFloatingPoint()) {
                 // TODO: Check that the integer value is losslessly convertible to the target type?
                 if (convertedType) *convertedType = target;
                 return true;

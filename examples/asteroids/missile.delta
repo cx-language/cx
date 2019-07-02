@@ -1,8 +1,8 @@
 import "SDL.h";
 
-const missileSize = 20.0;
+const missileSize = 20;
 const missileSpeed = 0.3;
-const missileCooldown = 200.0;
+const missileCooldown = 200;
 
 struct Missile {
     Vector2 position;

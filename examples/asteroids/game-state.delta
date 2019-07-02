@@ -14,7 +14,7 @@ struct GameState {
 
         ticks = SDL_GetTicks();
         timeOfLastAsteroidSpawn = ticks;
-        asteroidSpawnInterval = 2000.0;
+        asteroidSpawnInterval = 2000;
     }
 
     void update() {
