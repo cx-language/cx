@@ -14,6 +14,7 @@ namespace {
 
 enum class PrecedenceGroup {
     Assignment,
+    IfExpr,
     LogicalOr,
     LogicalAnd,
     Bitwise,
@@ -56,6 +57,8 @@ PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
         case Token::LeftShift:
         case Token::RightShift:
             return PrecedenceGroup::Bitwise;
+        case Token::QuestionMark:
+            return PrecedenceGroup::IfExpr;
         default:
             if (isAssignmentOperator(tokenKind)) return PrecedenceGroup::Assignment;
             llvm_unreachable("invalid binary operator");

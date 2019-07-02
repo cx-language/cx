@@ -733,9 +733,6 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
             case Token::Not:
                 expr = parseUnwrapExpr(std::move(expr));
                 break;
-            case Token::QuestionMark:
-                expr = parseIfExpr(std::move(expr));
-                break;
             default:
                 return expr;
         }
@@ -766,7 +763,12 @@ std::unique_ptr<UnaryExpr> Parser::parseIncrementOrDecrementExpr(std::unique_ptr
 std::unique_ptr<Expr> Parser::parseBinaryExpr(int minPrecedence) {
     auto lhs = parsePreOrPostfixExpr();
 
-    while (isBinaryOperator(currentToken()) && getPrecedence(currentToken()) >= minPrecedence) {
+    while (((isBinaryOperator(currentToken()) || currentToken() == Token::QuestionMark) && getPrecedence(currentToken()) >= minPrecedence)) {
+        if (currentToken() == Token::QuestionMark) {
+            lhs = parseIfExpr(std::move(lhs));
+            continue;
+        }
+
         auto backtrackLocation = currentTokenIndex;
         auto op = consumeToken();
         auto rhs = parseBinaryExpr(getPrecedence(op) + 1);
@@ -782,7 +784,7 @@ std::unique_ptr<Expr> Parser::parseBinaryExpr(int minPrecedence) {
     return lhs;
 }
 
-/// expr ::= prefix-expr | postfix-expr | binary-expr
+/// expr ::= prefix-expr | postfix-expr | binary-expr | if-expr
 std::unique_ptr<Expr> Parser::parseExpr() {
     return parseBinaryExpr(0);
 }

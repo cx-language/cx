@@ -184,7 +184,7 @@ struct OrderedMap<Key, Value> {
         while (child != null) {
             parent = n;
             n = child;
-            child = (*key >= n.entry.key) ? n.right : n.left;
+            child = *key >= n.entry.key ? n.right : n.left;
             if (*key == n.entry.key) {
                 delNode = n;
             }
@@ -194,7 +194,7 @@ struct OrderedMap<Key, Value> {
             delNode.entry.key = n.entry.key;
             delNode.entry.value = n.entry.value;
 
-            child = (n.left != null) ? n.left : n.right;
+            child = n.left != null ? n.left : n.right;
 
             if (root!.entry.key == *key) {
                 root = child;
