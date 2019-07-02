@@ -1270,6 +1270,11 @@ static bool isValidCast(Type sourceType, Type targetType) {
                 if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
                     return true;
                 }
+
+                if ((targetPointee.isArrayWithConstantSize() || targetPointee.isArrayWithUnknownSize()) &&
+                    sourcePointee == targetPointee.getElementType()) {
+                    return true;
+                }
             }
 
             return false;

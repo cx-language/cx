@@ -223,7 +223,7 @@ std::string Type::getQualifiedTypeName() const {
 }
 
 Type Type::getElementType() const {
-    return llvm::cast<ArrayType>(typeBase)->getElementType().withMutability(mutability).withLocation(location);
+    return llvm::cast<ArrayType>(typeBase)->getElementType().withLocation(location);
 }
 
 int64_t Type::getArraySize() const {

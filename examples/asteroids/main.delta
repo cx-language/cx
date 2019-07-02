@@ -46,7 +46,7 @@ void main() {
 void mainLoop(SDL_Renderer* renderer) {
     SDL_Event event = undefined;
     var state = GameState();
-    keyState = cast<const uint8[?]*>(cast<const void*>(SDL_GetKeyboardState(null)!)); // FIXME
+    keyState = cast<const uint8[?]*>(SDL_GetKeyboardState(null)!);
 
     while (true) {
         if (SDL_PollEvent(event) != 0) {
