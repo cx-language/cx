@@ -192,8 +192,8 @@ TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
     ASSERT(genericArgs.size() == genericParams.size());
     llvm::StringMap<Type> genericArgsMap;
 
-    for (auto t : llvm::zip_first(genericArgs, genericParams)) {
-        genericArgsMap[std::get<1>(t).getName()] = std::get<0>(t);
+    for (auto&& [genericArg, genericParam] : llvm::zip_first(genericArgs, genericParams)) {
+        genericArgsMap[genericParam.getName()] = genericArg;
     }
 
     return instantiate(genericArgsMap);

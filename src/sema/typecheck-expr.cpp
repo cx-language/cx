@@ -617,8 +617,8 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
         case TypeKind::BasicType:
             if (!argType.getGenericArgs().empty() && paramType.isBasicType() && paramType.getName() == argType.getName()) {
                 ASSERT(argType.getGenericArgs().size() == paramType.getGenericArgs().size());
-                for (auto t : llvm::zip_first(argType.getGenericArgs(), paramType.getGenericArgs())) {
-                    if (Type type = findGenericArg(std::get<0>(t), std::get<1>(t), genericParam)) {
+                for (auto&& [argTypeGenericArg, paramTypeGenericArg] : llvm::zip_first(argType.getGenericArgs(), paramType.getGenericArgs())) {
+                    if (Type type = findGenericArg(argTypeGenericArg, paramTypeGenericArg, genericParam)) {
                         return type;
                     }
                 }
@@ -636,8 +636,8 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
 
         case TypeKind::FunctionType:
             if (paramType.isFunctionType()) {
-                for (auto t : llvm::zip_first(argType.getParamTypes(), paramType.getParamTypes())) {
-                    if (Type type = findGenericArg(std::get<0>(t), std::get<1>(t), genericParam)) {
+                for (auto&& [argTypeParamType, paramTypeParamTypes] : llvm::zip_first(argType.getParamTypes(), paramType.getParamTypes())) {
+                    if (Type type = findGenericArg(argTypeParamType, paramTypeParamTypes, genericParam)) {
                         return type;
                     }
                 }
@@ -675,12 +675,12 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
         Type genericArg;
         Expr* genericArgValue;
 
-        for (auto tuple : llvm::zip_first(params, call.getArgs())) {
-            Type paramType = std::get<0>(tuple).getType();
+        for (auto&& [param, arg] : llvm::zip_first(params, call.getArgs())) {
+            Type paramType = param.getType();
 
             if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateArgs() after this function. Get rid of this duplicated typechecking.
-                auto* argValue = std::get<1>(tuple).getValue();
+                auto* argValue = arg.getValue();
                 Type argType = typecheckExpr(*argValue);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
                 if (!maybeGenericArg) continue;
@@ -718,10 +718,7 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
 
     ASSERT(genericParams.size() == inferredGenericArgs.size());
 
-    for (auto t : llvm::zip(genericParams, inferredGenericArgs)) {
-        auto& genericParam = std::get<0>(t);
-        auto& genericArg = std::get<1>(t);
-
+    for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, inferredGenericArgs)) {
         if (!genericParam.getConstraints().empty()) {
             ASSERT(genericParam.getConstraints().size() == 1, "cannot have multiple generic constraints yet");
 
@@ -1135,9 +1132,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
             llvm_unreachable("invalid callee decl");
     }
 
-    for (auto t : llvm::zip_first(params, expr.getArgs())) {
-        if (!std::get<0>(t).getType().isImplicitlyCopyable()) {
-            std::get<1>(t).getValue()->setMoved(true);
+    for (auto&& [param, arg] : llvm::zip_first(params, expr.getArgs())) {
+        if (!param.getType().isImplicitlyCopyable()) {
+            arg.getValue()->setMoved(true);
         }
     }
 
