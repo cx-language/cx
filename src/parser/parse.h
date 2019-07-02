@@ -123,7 +123,7 @@ private:
     std::unique_ptr<UnaryExpr> parsePrefixExpr();
     std::unique_ptr<Expr> parsePreOrPostfixExpr();
     std::unique_ptr<UnaryExpr> parseIncrementOrDecrementExpr(std::unique_ptr<Expr> operand);
-    std::unique_ptr<Expr> parseBinaryExpr(std::unique_ptr<Expr> lhs, int minPrecedence);
+    std::unique_ptr<Expr> parseBinaryExpr(int minPrecedence);
     std::vector<std::unique_ptr<Expr>> parseExprList();
     std::unique_ptr<ReturnStmt> parseReturnStmt();
     std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel);

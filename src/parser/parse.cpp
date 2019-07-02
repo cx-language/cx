@@ -647,6 +647,7 @@ bool Parser::arrowAfterParentheses() {
 ///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr | addressof-expr
 std::unique_ptr<Expr> Parser::parsePostfixExpr() {
     std::unique_ptr<Expr> expr;
+
     switch (currentToken()) {
         case Token::Identifier:
         case Token::Init:
@@ -712,6 +713,7 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
             unexpectedToken(currentToken());
             break;
     }
+
     while (true) {
         switch (currentToken()) {
             case Token::LeftBracket:
@@ -761,26 +763,28 @@ std::unique_ptr<UnaryExpr> Parser::parseIncrementOrDecrementExpr(std::unique_ptr
 }
 
 /// binary-expr ::= expr op expr
-std::unique_ptr<Expr> Parser::parseBinaryExpr(std::unique_ptr<Expr> lhs, int minPrecedence) {
+std::unique_ptr<Expr> Parser::parseBinaryExpr(int minPrecedence) {
+    auto lhs = parsePreOrPostfixExpr();
+
     while (isBinaryOperator(currentToken()) && getPrecedence(currentToken()) >= minPrecedence) {
         auto backtrackLocation = currentTokenIndex;
         auto op = consumeToken();
-        auto expr = parsePreOrPostfixExpr();
+        auto rhs = parseBinaryExpr(getPrecedence(op) + 1);
+
         if (isAssignmentOperator(currentToken())) {
             currentTokenIndex = backtrackLocation;
             break;
         }
-        if (isBinaryOperator(currentToken()) && getPrecedence(currentToken()) > getPrecedence(op)) {
-            expr = parseBinaryExpr(std::move(expr), getPrecedence(op) + 1);
-        }
-        lhs = llvm::make_unique<BinaryExpr>(op, std::move(lhs), std::move(expr), op.getLocation());
+
+        lhs = llvm::make_unique<BinaryExpr>(op, std::move(lhs), std::move(rhs), op.getLocation());
     }
+
     return lhs;
 }
 
 /// expr ::= prefix-expr | postfix-expr | binary-expr
 std::unique_ptr<Expr> Parser::parseExpr() {
-    return parseBinaryExpr(parsePreOrPostfixExpr(), 0);
+    return parseBinaryExpr(0);
 }
 
 /// expr-list ::= '' | nonempty-expr-list
