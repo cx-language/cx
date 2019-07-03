@@ -63,6 +63,8 @@ install:
 script:
     - set -e
     - printenv
+    - cmake --version
+    - export CMAKE_BUILD_PARALLEL_LEVEL=""
     - cmake .
       -DCMAKE_PREFIX_PATH="$LLVMDIR;$CLANGDIR"
       -DBUILD_LIBDELTA=ON
