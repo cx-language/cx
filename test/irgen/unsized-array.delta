@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 void main() {
-    var three = [0, 42, 0];
+    var three = { 0, 42, 0 };
     foo(three);
     bar(three);
     var b = three.size();

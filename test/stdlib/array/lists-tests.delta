@@ -40,7 +40,7 @@ void testListInsertionAndRemoval() {
 }
 
 void testListInitFromLiteral() {
-    var a = List([1, 2, 3]);
+    var a = List({ 1, 2, 3 });
 
     assert(*a[0] == 1);
     assert(*a[1] == 2);

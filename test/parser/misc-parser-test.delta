@@ -59,7 +59,7 @@ bool foo12(int* a, int b) { // CHECK-NEXT:    (function-decl foo12 ((int* a) (in
 
 void foo13(int a) {     // CHECK-NEXT:    (function-decl foo13 ((int a)) void
     defer foo13(a);    // CHECK-NEXT:        (defer-stmt (call foo13 a))
-    var i = [1, 2, 3]; // CHECK-NEXT:        (var-stmt i (array-literal 1 2 3))
+    var i = { 1, 2, 3 }; // CHECK-NEXT:        (var-stmt i (array-literal 1 2 3))
     switch (a) {       // CHECK-NEXT:        (switch-stmt a
         case -1:       // CHECK-NEXT:            (case (-1)
             break;     // CHECK-NEXT:                (break-stmt))

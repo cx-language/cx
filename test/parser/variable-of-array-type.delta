@@ -2,10 +2,10 @@
 
 // CHECK:(source-file {{.*}}variable-of-array-type.delta
 
-int[3] foo = [0, 1, 2]; // CHECK-NEXT:    (var-decl foo (array-literal 0 1 2))
+int[3] foo = { 0, 1, 2 };   // CHECK-NEXT:    (var-decl foo (array-literal 0 1 2))
 
 void main() {               // CHECK-NEXT:    (function-decl main () void
-    int[1] qux = [42]; // CHECK-NEXT:        (var-stmt qux (array-literal 42))
+    int[1] qux = { 42 };    // CHECK-NEXT:        (var-stmt qux (array-literal 42))
     foo[0] = 3;             // CHECK-NEXT:        ((subscript foo 0) = 3)
     foo[1].bar();           // CHECK-NEXT:        (call (member-expr (subscript foo 1) bar))))
 }

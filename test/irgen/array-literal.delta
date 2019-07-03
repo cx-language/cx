@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 int main() {
-    var a = [1, 2, 3];
+    var a = { 1, 2, 3 };
     return a[1];
 }

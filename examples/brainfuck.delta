@@ -5,7 +5,7 @@ struct Tape
 
     init()
     {
-        tape = List<int>([0]);
+        tape = List({ 0 });
         pos = 0;
     }
 

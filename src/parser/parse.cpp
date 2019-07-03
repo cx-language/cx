@@ -309,13 +309,13 @@ std::unique_ptr<UndefinedLiteralExpr> Parser::parseUndefinedLiteral() {
     return expr;
 }
 
-/// array-literal ::= '[' expr-list ']'
+/// array-literal ::= '{' expr-list '}'
 std::unique_ptr<ArrayLiteralExpr> Parser::parseArrayLiteral() {
-    ASSERT(currentToken() == Token::LeftBracket);
+    ASSERT(currentToken() == Token::LeftBrace);
     auto location = getCurrentLocation();
     consumeToken();
     auto elements = parseExprList();
-    parse(Token::RightBracket);
+    parse(Token::RightBrace);
     return llvm::make_unique<ArrayLiteralExpr>(std::move(elements), location);
 }
 
@@ -697,7 +697,7 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
                 expr = parseParenExpr();
             }
             break;
-        case Token::LeftBracket:
+        case Token::LeftBrace:
             expr = parseArrayLiteral();
             break;
         case Token::Sizeof:

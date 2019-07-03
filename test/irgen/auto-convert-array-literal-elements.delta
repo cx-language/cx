@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %s.ll %delta -print-ir %s
 
 void main() {
-    float[1] foo = [1.0];
-    uint16[2] bar = [50, 100];
+    float[1] foo = { 1.0 };
+    uint16[2] bar = { 50, 100 };
 }
