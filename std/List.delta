@@ -28,7 +28,9 @@ struct List<Element> {
 
     deinit() {
         if (capacity != 0) {
-            // FIXME: Call deinitializers of remaining elements.
+            for (var element in this) {
+                element.deinit();
+            }
             deallocate(buffer);
         }
     }

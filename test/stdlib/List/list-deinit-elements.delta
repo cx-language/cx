@@ -1,0 +1,17 @@
+// RUN: compile_and_run %s | %FileCheck %s
+// UNSUPPORTED: wsl
+
+struct S {
+    init() {}
+    deinit() {
+        print("destructor");
+    }
+}
+
+void main() {
+    var a = List<S>();
+    a.push(S());
+    a.push(S());
+    // CHECK: destructor
+    // CHECK-NEXT: destructor
+}
