@@ -37,7 +37,7 @@ void testLines() {
     var i = 0;
 
     for (var line in f.lines()) {
-        assert(*a[i] == StringRef(line));
+        assert(a[i] == StringRef(line));
         i++;
     }
 
@@ -80,7 +80,7 @@ void testIsEofWhileLoop() {
 
     while (!f.eof()) {
         var line = f.readLine();
-        assert(*a[i] == StringRef(line));
+        assert(a[i] == StringRef(line));
         i++;
     }
 
@@ -113,7 +113,7 @@ void testInputStream() {
     var i = 0;
 
     for (var line in f.lines()) {
-        assert(*a[i] == StringRef(line));
+        assert(a[i] == StringRef(line));
         i++;
     }
 

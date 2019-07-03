@@ -58,8 +58,8 @@ void testFirst() {
 
     q.push("foo");
     q.push("bar");
-    assert(*q.first() == "foo");
+    assert(q.first() == "foo");
     assert(q.pop() == "foo");
-    assert(*q.first() == "bar");
+    assert(q.first() == "bar");
     assert(q.pop() == "bar");
 }

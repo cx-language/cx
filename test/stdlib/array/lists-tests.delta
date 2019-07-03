@@ -42,9 +42,10 @@ void testListInsertionAndRemoval() {
 void testListInitFromLiteral() {
     var a = List([1, 2, 3]);
 
-    assert(*a[0] == 1);
-    assert(*a[1] == 2);
-    assert(*a[2] == 3);
+    assert(a.size() == 3);
+    assert(a[0] == 1);
+    assert(a[1] == 2);
+    assert(a[2] == 3);
 }
 
 void testArrayIterator() {
@@ -72,12 +73,12 @@ void testListMutatingIteration() {
     a.push(3);
 
     for (var e in a) {
-        (*e)++;
+        e++;
     }
 
-    assert(*a[0] == 2);
-    assert(*a[1] == 3);
-    assert(*a[2] == 4);
+    assert(a[0] == 2);
+    assert(a[1] == 3);
+    assert(a[2] == 4);
 }
 
 void testListEnumeratedIterator() {
@@ -90,17 +91,17 @@ void testListEnumeratedIterator() {
 
     assert(iterator.hasValue());
     assert(iterator.value().index == 0);
-    assert(*iterator.value().value == 9000);
+    assert(iterator.value().value == 9000);
 
     iterator.increment();
     assert(iterator.hasValue());
     assert(iterator.value().index == 1);
-    assert(*iterator.value().value == -1234);
+    assert(iterator.value().value == -1234);
 
     iterator.increment();
     assert(iterator.hasValue());
     assert(iterator.value().index == 2);
-    assert(*iterator.value().value == 0xcafe);
+    assert(iterator.value().value == 0xcafe);
 
     iterator.increment();
     assert(iterator.value().index == 3);
@@ -109,11 +110,8 @@ void testListEnumeratedIterator() {
 
 void testEmpty() {
     var a = List<int>();
-
     assert(a.empty());
-
     a.push(7);
-
     assert(!a.empty());
 }
 
@@ -124,12 +122,12 @@ void testMap() {
     a.push(3);
     a.push(4);
 
-    var b = a.map((int* value) -> *value > 2);
+    var b = a.map((int* value) -> value > 2);
     assert(b.size() == 4);
-    assert(*b[0] == false);
-    assert(*b[1] == false);
-    assert(*b[2] == true);
-    assert(*b[3] == true);
+    assert(b[0] == false);
+    assert(b[1] == false);
+    assert(b[2] == true);
+    assert(b[3] == true);
 }
 
 void testFilter() {
@@ -139,10 +137,10 @@ void testFilter() {
     a.push(3);
     a.push(4);
 
-    var b = a.filter((int* value) -> *value % 2 == 0);
+    var b = a.filter((int* value) -> *value % 2 == 0); // FIXME: Make this compile without the dereference.
     assert(b.size() == 2);
-    assert(*b[0] == 2);
-    assert(*b[1] == 4);
+    assert(b[0] == 2);
+    assert(b[1] == 4);
 }
 
 var deinits = 0;

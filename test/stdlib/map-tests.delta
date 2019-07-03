@@ -33,7 +33,7 @@ void testGetter() {
     var map = Map<StringRef, int>();
 
     map.insert("ok", 42);
-    assert(*(map["ok"]!) == 42);
+    assert(map["ok"]! == 42); // FIXME: Fix compilation without the unwrap.
 }
 
 void testResize() {
@@ -74,7 +74,7 @@ void testDuplicates() {
     map.insert("ok", 2);
     assert(map.contains("ok"));
 
-    assert(*(map["ok"]!) == 1);
+    assert(map["ok"]! == 1); // FIXME: Fix compilation without the unwrap.
 
     map.remove("ok");
     assert(!map.contains("ok"));

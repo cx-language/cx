@@ -72,11 +72,11 @@ void testSplit() {
 
     var words = s.split();
 
-    assert(*words[0] == "this");
-    assert(*words[1] == "is");
-    assert(*words[2] == "the");
-    assert(*words[3] == "best");
-    assert(*words[4] == "sentence");
+    assert(words[0] == "this");
+    assert(words[1] == "is");
+    assert(words[2] == "the");
+    assert(words[3] == "best");
+    assert(words[4] == "sentence");
 
     assert(words.size() == 5);
 }
@@ -86,11 +86,11 @@ void testOtherSplit() {
 
     var words = s.split(',');
 
-    assert(*words[0] == "this");
-    assert(*words[1] == "sentence");
-    assert(*words[2] == "is");
-    assert(*words[3] == "comma");
-    assert(*words[4] == "separated");
+    assert(words[0] == "this");
+    assert(words[1] == "sentence");
+    assert(words[2] == "is");
+    assert(words[3] == "comma");
+    assert(words[4] == "separated");
 
     assert(words.size() == 5);
 
@@ -99,11 +99,11 @@ void testOtherSplit() {
 
     words = s2.split(',');
 
-    assert(*words[0] == "");
-    assert(*words[1] == "");
-    assert(*words[2] == "1");
-    assert(*words[3] == "");
-    assert(*words[4] == "2");
+    assert(words[0] == "");
+    assert(words[1] == "");
+    assert(words[2] == "1");
+    assert(words[3] == "");
+    assert(words[4] == "2");
 
     assert(words.size() == 5);
 
@@ -112,14 +112,14 @@ void testOtherSplit() {
 
     words = s3.split(',');
 
-    assert(*words[0] == "");
-    assert(*words[1] == "");
-    assert(*words[2] == "");
-    assert(*words[3] == "b");
-    assert(*words[4] == "a");
-    assert(*words[5] == "");
-    assert(*words[6] == "");
-    assert(*words[7] == "");
+    assert(words[0] == "");
+    assert(words[1] == "");
+    assert(words[2] == "");
+    assert(words[3] == "b");
+    assert(words[4] == "a");
+    assert(words[5] == "");
+    assert(words[6] == "");
+    assert(words[7] == "");
 
     assert(words.size() == 8);
 }

@@ -55,13 +55,13 @@ void testIterator() {
     var ccc = false;
 
     for (var e in s) {
-        if (*e == "a") {
+        if (e == "a") {
             assert(!a);
             a = true;
-        } else if (*e == "bb") {
+        } else if (e == "bb") {
             assert(!bb);
             bb = true;
-        } else if (*e == "ccc") {
+        } else if (e == "ccc") {
             assert(!ccc);
             ccc = true;
         } else {
@@ -93,7 +93,7 @@ void testUnitSetIterator() {
 
     for (var e in s) {
         count++;
-        assert(*e == "foo");
+        assert(e == "foo");
     }
 
     assert(count == 1);
