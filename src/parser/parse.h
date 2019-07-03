@@ -168,6 +168,7 @@ private:
     void parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls);
     std::unique_ptr<Decl> parseTopLevelDecl(bool addToSymbolTable);
     std::unique_ptr<Decl> parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel);
+    llvm::StringRef getCurrentSource() const;
 
 private:
     Lexer lexer;

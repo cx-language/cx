@@ -129,19 +129,20 @@ void Parser::checkStmtTerminatorConsistency(Token::Kind currentTerminator, llvm:
     }
 }
 
+bool isNewline(char ch) {
+    return ch == '\n';
+}
+
 void Parser::parseStmtTerminator(const char* contextInfo) {
     if (getCurrentLocation().line != lookAhead(-1).getLocation().line) {
         checkStmtTerminatorConsistency(Token::Newline, [this] {
-            // TODO: Use pre-existing buffer instead of reading from file here.
-            readLineFromFile(lookAhead(-1).getLocation());
-            std::ifstream file(getCurrentLocation().file);
-            for (auto line = lookAhead(-1).getLocation().line; --line;) {
-                file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            auto source = getCurrentSource();
+            auto line = lookAhead(-1).getLocation().line;
+            while (--line) {
+                source = source.drop_until(isNewline).drop_front();
             }
-            std::string line;
-            std::getline(file, line);
-            return SourceLocation(getCurrentLocation().file, lookAhead(-1).getLocation().line,
-                                  static_cast<SourceLocation::IntegerType>(line.size() + 1));
+            auto column = source.find_first_of("\r\n") + 1;
+            return SourceLocation(getCurrentLocation().file, lookAhead(-1).getLocation().line, static_cast<SourceLocation::IntegerType>(column));
         });
         return;
     }
@@ -157,6 +158,10 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
         default:
             unexpectedToken(currentToken(), { Token::Newline, Token::Semicolon }, contextInfo);
     }
+}
+
+llvm::StringRef Parser::getCurrentSource() const {
+    return Lexer::fileBuffers.back()->getBuffer();
 }
 
 /// argument-list ::= '(' ')' | '(' nonempty-argument-list ')'

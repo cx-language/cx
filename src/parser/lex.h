@@ -18,6 +18,8 @@ public:
     Token nextToken();
     const char* getFilePath() const;
 
+    static std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers; // TODO: Make this non-static.
+
 private:
     SourceLocation getCurrentLocation() const;
     char readChar();
@@ -26,11 +28,9 @@ private:
     Token readQuotedLiteral(char delimiter, Token::Kind literalKind);
     Token readNumber();
 
-private:
     const char* currentFilePosition;
     SourceLocation firstLocation;
     SourceLocation lastLocation;
-    static std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers;
 };
 
 } // namespace delta
