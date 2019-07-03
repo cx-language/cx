@@ -74,6 +74,8 @@ script:
     - cmake --build .
     - if [ $TRAVIS_OS_NAME != "windows" ]; then
           cmake --build . --target check;
+      fi
+    - if [ $TRAVIS_OS_NAME == "linux" ] && [ $TRAVIS_COMPILER == "clang" ]; then
           cmake --build . --target lint;
       fi
     - if [[ $CXXFLAGS == *"--coverage"* ]]; then
