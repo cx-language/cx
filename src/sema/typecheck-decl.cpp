@@ -143,11 +143,16 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     TypeDecl* receiverTypeDecl = decl.getTypeDecl();
 
-    getCurrentModule()->getSymbolTable().pushScope();
+    getCurrentModule()->getSymbolTable().pushScope(&decl);
     SAVE_STATE(currentFunction);
     currentFunction = &decl;
 
     typecheckParams(decl.getParams(), decl.getAccessLevel());
+
+    if (decl.isLambda()) {
+        ASSERT(decl.getBody().size() == 1);
+        decl.getProto().returnType = typecheckExpr(*llvm::cast<ReturnStmt>(decl.getBody().front().get())->getReturnValue());
+    }
 
     if (!decl.isInitDecl() && !decl.isDeinitDecl()) {
         typecheckType(decl.getReturnType(), decl.getAccessLevel());

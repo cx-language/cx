@@ -140,7 +140,7 @@ void Typechecker::typecheckContinueStmt(ContinueStmt& continueStmt) {
 }
 
 void Typechecker::typecheckCompoundStmt(CompoundStmt& compoundStmt) {
-    getCurrentModule()->getSymbolTable().pushScope();
+    getCurrentModule()->getSymbolTable().pushScope(currentFunction);
 
     for (auto& stmt : compoundStmt.getBody()) {
         typecheckStmt(stmt);

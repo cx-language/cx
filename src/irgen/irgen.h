@@ -18,8 +18,8 @@ struct Type;
 class Typechecker;
 class IRGenerator;
 
-struct Scope {
-    Scope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
+struct IRGenScope {
+    IRGenScope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
     void addDeferredExpr(const Expr& expr) { deferredExprs.emplace_back(&expr); }
     void addDeinitToCall(llvm::Function* deinit, llvm::Value* value, Type type, const Decl* decl) {
         deinitsToCall.emplace_back(DeferredDeinit{ deinit, value, type, decl });
@@ -58,7 +58,7 @@ public:
     std::vector<std::unique_ptr<llvm::Module>> getGeneratedModules() { return std::move(generatedModules); }
 
 private:
-    friend struct Scope;
+    friend struct IRGenScope;
 
     void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
@@ -142,7 +142,7 @@ private:
     void deferEvaluationOf(const Expr& expr);
     DeinitDecl* getDefaultDeinitializer(const TypeDecl& typeDecl);
     void deferDeinitCall(llvm::Value* valueToDeinit, Type type, const Decl* decl);
-    Scope& globalScope() { return scopes.front(); }
+    IRGenScope& globalScope() { return scopes.front(); }
 
 private:
     class FunctionInstantiation {
@@ -157,7 +157,7 @@ private:
     };
 
 private:
-    std::vector<Scope> scopes;
+    std::vector<IRGenScope> scopes;
 
     llvm::LLVMContext ctx;
     llvm::IRBuilder<> builder;

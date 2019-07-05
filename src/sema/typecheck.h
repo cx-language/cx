@@ -107,6 +107,7 @@ private:
     TypeDecl* getTypeDecl(const BasicType& type);
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
+    void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;
 
     llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
                                                    llvm::ArrayRef<std::string> frameworkSearchPaths, llvm::StringRef moduleName);

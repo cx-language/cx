@@ -101,6 +101,7 @@ public:
     virtual SourceLocation getLocation() const = 0;
     virtual llvm::StringRef getName() const = 0;
     bool isMain() const { return getName() == "main"; }
+    bool isLambda() const { return isFunctionDecl() && getName().startswith("__lambda"); }
     AccessLevel getAccessLevel() const { return accessLevel; }
     virtual bool isReferenced() const { return referenced; }
     void setReferenced(bool referenced) { this->referenced = referenced; }
@@ -132,19 +133,23 @@ class VariableDecl : public Decl {
 public:
     Type getType() const { return type; }
     void setType(Type type) { this->type = type; }
+    Decl* getParent() const { return parent; }
+    void setParent(Decl* p) { parent = p; }
     static bool classof(const Decl* d) { return d->isVariableDecl(); }
 
 protected:
-    VariableDecl(DeclKind kind, AccessLevel accessLevel, Type type) : Decl(kind, accessLevel), type(type) {}
+    VariableDecl(DeclKind kind, AccessLevel accessLevel, Decl* parent, Type type) : Decl(kind, accessLevel), parent(parent), type(type) {}
 
 private:
+    Decl* parent;
     Type type;
 };
 
 class ParamDecl : public VariableDecl, public Movable {
 public:
     ParamDecl(Type type, std::string&& name, SourceLocation location)
-    : VariableDecl(DeclKind::ParamDecl, AccessLevel::None, type), name(std::move(name)), location(location) {}
+    : VariableDecl(DeclKind::ParamDecl, AccessLevel::None, nullptr /* initialized by FunctionDecl constructor */, type),
+      name(std::move(name)), location(location) {}
     llvm::StringRef getName() const override { return name; }
     Module* getModule() const override { return nullptr; }
     SourceLocation getLocation() const override { return location; }
@@ -182,12 +187,11 @@ public:
     llvm::StringRef getName() const { return name; }
     llvm::ArrayRef<ParamDecl> getParams() const { return params; }
     llvm::MutableArrayRef<ParamDecl> getParams() { return params; }
-    Type getReturnType() const { return returnType; }
+    Type getReturnType() const { return NOTNULL(returnType); }
     bool isVarArg() const { return varArg; }
     bool isExtern() const { return external; }
     FunctionProto instantiate(const llvm::StringMap<Type>& genericArgs) const;
 
-private:
     std::string name;
     std::vector<ParamDecl> params;
     Type returnType;
@@ -200,7 +204,11 @@ std::string getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::
 class FunctionDecl : public Decl {
 public:
     FunctionDecl(FunctionProto&& proto, std::vector<Type>&& genericArgs, AccessLevel accessLevel, Module& module, SourceLocation location)
-    : FunctionDecl(DeclKind::FunctionDecl, std::move(proto), std::move(genericArgs), accessLevel, module, location) {}
+    : FunctionDecl(DeclKind::FunctionDecl, std::move(proto), std::move(genericArgs), accessLevel, module, location) {
+        for (auto& param : getParams()) {
+            param.setParent(this);
+        }
+    }
     bool isExtern() const { return getProto().isExtern(); }
     bool isVariadic() const { return getProto().isVarArg(); }
     llvm::StringRef getName() const override { return getProto().getName(); }
@@ -388,11 +396,10 @@ private:
 class VarDecl : public VariableDecl, public Movable {
 public:
     VarDecl(Type type, std::string&& name, std::unique_ptr<Expr> initializer, Decl* parent, AccessLevel accessLevel, Module& module, SourceLocation location)
-    : VariableDecl(DeclKind::VarDecl, accessLevel, type), name(std::move(name)), initializer(std::move(initializer)), parent(parent),
+    : VariableDecl(DeclKind::VarDecl, accessLevel, parent, type), name(std::move(name)), initializer(std::move(initializer)),
       location(location), module(module) {}
     llvm::StringRef getName() const override { return name; }
     Expr* getInitializer() const { return initializer.get(); }
-    Decl* getParent() const { return parent; }
     SourceLocation getLocation() const override { return location; }
     Module* getModule() const override { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }
@@ -400,7 +407,6 @@ public:
 private:
     std::string name;
     std::unique_ptr<Expr> initializer;
-    Decl* parent;
     SourceLocation location;
     Module& module;
 };
@@ -408,18 +414,16 @@ private:
 class FieldDecl : public VariableDecl {
 public:
     FieldDecl(Type type, std::string&& name, TypeDecl& parent, AccessLevel accessLevel, SourceLocation location)
-    : VariableDecl(DeclKind::FieldDecl, accessLevel, type), name(std::move(name)), location(location), parent(parent) {}
+    : VariableDecl(DeclKind::FieldDecl, accessLevel, &parent, type), name(std::move(name)), location(location) {}
     llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
-    Module* getModule() const override { return parent.getModule(); }
+    Module* getModule() const override { return getParent()->getModule(); }
     SourceLocation getLocation() const override { return location; }
-    TypeDecl* getParent() const { return &parent; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }
 
 private:
     std::string name;
     SourceLocation location;
-    TypeDecl& parent;
 };
 
 class ImportDecl : public Decl {

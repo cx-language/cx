@@ -731,7 +731,7 @@ llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenLambdaExpr(const LambdaExpr& expr) {
-    auto functionDecl = expr.lower(*currentDecl->getModule());
+    auto functionDecl = expr.getFunctionDecl();
 
     auto insertBlockBackup = builder.GetInsertBlock();
     auto insertPointBackup = builder.GetInsertPoint();
@@ -743,8 +743,7 @@ llvm::Value* IRGenerator::codegenLambdaExpr(const LambdaExpr& expr) {
     if (insertBlockBackup) builder.SetInsertPoint(insertBlockBackup, insertPointBackup);
 
     VarExpr varExpr(functionDecl->getName(), functionDecl->getLocation());
-    varExpr.setDecl(functionDecl.get());
-    helperDecls.push_back(std::move(functionDecl));
+    varExpr.setDecl(functionDecl);
     return codegenVarExpr(varExpr);
 }
 

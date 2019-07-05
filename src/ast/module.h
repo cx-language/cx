@@ -25,7 +25,7 @@ public:
     llvm::ArrayRef<std::shared_ptr<Module>> getImportedModules() const { return importedModules; }
     void setDecls(std::vector<std::unique_ptr<Decl>>&& decls) { topLevelDecls = std::move(decls); }
 
-    void addImportedModule(std::shared_ptr<Module> module) {
+    void addImportedModule(const std::shared_ptr<Module>& module) {
         if (!llvm::is_contained(importedModules, module)) {
             importedModules.push_back(module);
         }
@@ -37,13 +37,19 @@ private:
     std::vector<std::shared_ptr<Module>> importedModules;
 };
 
+struct Scope {
+    Decl* parent;
+    llvm::StringMap<std::vector<Decl*>> decls;
+};
+
 class SymbolTable {
 public:
     SymbolTable() : scopes(1) {}
-    void pushScope() { scopes.emplace_back(); }
+    void pushScope(Decl* parent) { scopes.emplace_back().parent = parent; }
     void popScope() { scopes.pop_back(); }
-    void add(llvm::StringRef name, Decl* decl) { scopes.back()[name].push_back(decl); }
-    void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front()[name].push_back(decl); }
+    Scope& getCurrentScope() { return scopes.back(); }
+    void add(llvm::StringRef name, Decl* decl) { scopes.back().decls[name].push_back(decl); }
+    void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front().decls[name].push_back(decl); }
     void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) {
         identifierReplacements.try_emplace(name, replacement);
     }
@@ -54,8 +60,8 @@ public:
         auto realName = applyIdentifierReplacements(name);
 
         for (const auto& scope : llvm::reverse(scopes)) {
-            auto it = scope.find(realName);
-            if (it != scope.end()) return it->second;
+            auto it = scope.decls.find(realName);
+            if (it != scope.decls.end()) return it->second;
         }
         return {};
     }
@@ -74,8 +80,8 @@ public:
 
     llvm::ArrayRef<Decl*> findInCurrentScope(const std::string& name) const {
         if (!scopes.empty()) {
-            auto it = scopes.back().find(applyIdentifierReplacements(name));
-            if (it != scopes.back().end()) return it->second;
+            auto it = scopes.back().decls.find(applyIdentifierReplacements(name));
+            if (it != scopes.back().decls.end()) return it->second;
         }
         return {};
     }
@@ -103,7 +109,7 @@ private:
         }
     }
 
-    std::vector<llvm::StringMap<std::vector<Decl*>>> scopes;
+    std::vector<Scope> scopes;
     llvm::StringMap<std::string> identifierReplacements;
 };
 

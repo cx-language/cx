@@ -1,0 +1,7 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+void foo(int a) {
+    var d = 3;
+    // CHECK: [[@LINE+1]]:28: error: lambda capturing not implemented yet
+    var b = (int c) -> c + a + d;
+}

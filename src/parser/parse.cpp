@@ -576,7 +576,7 @@ std::unique_ptr<LambdaExpr> Parser::parseLambdaExpr() {
 
     parse(Token::RightArrow);
     auto body = parseExpr();
-    return llvm::make_unique<LambdaExpr>(std::move(params), std::move(body), location);
+    return llvm::make_unique<LambdaExpr>(std::move(params), std::move(body), currentModule, location);
 }
 
 /// paren-expr ::= '(' expr ')'

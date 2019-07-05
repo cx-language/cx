@@ -375,17 +375,12 @@ private:
 
 class LambdaExpr : public Expr {
 public:
-    LambdaExpr(std::vector<ParamDecl>&& params, std::unique_ptr<Expr> body, SourceLocation location)
-    : Expr(ExprKind::LambdaExpr, location), params(std::move(params)), body(std::move(body)) {}
-    llvm::ArrayRef<ParamDecl> getParams() const { return params; }
-    llvm::MutableArrayRef<ParamDecl> getParams() { return params; }
-    Expr* getBody() const { return body.get(); }
-    std::unique_ptr<FunctionDecl> lower(Module& module) const;
+    LambdaExpr(std::vector<ParamDecl>&& params, std::unique_ptr<Expr> body, Module* module, SourceLocation location);
+    FunctionDecl* getFunctionDecl() const { return functionDecl.get(); }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::LambdaExpr; }
 
 private:
-    std::vector<ParamDecl> params;
-    std::unique_ptr<Expr> body;
+    std::unique_ptr<FunctionDecl> functionDecl;
 };
 
 class IfExpr : public Expr {

@@ -121,8 +121,7 @@ std::unique_ptr<MethodDecl> MethodDecl::instantiate(const llvm::StringMap<Type>&
 }
 
 std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
-    return map(params,
-               [&](const ParamDecl& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.getLocation()); });
+    return map(params, [&](auto& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.getLocation()); });
 }
 
 std::string TypeDecl::getQualifiedName() const {
@@ -209,7 +208,7 @@ const EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) const {
 }
 
 std::string FieldDecl::getQualifiedName() const {
-    return (getParent()->getQualifiedName() + "." + getName()).str();
+    return (llvm::cast<TypeDecl>(getParent())->getQualifiedName() + "." + getName()).str();
 }
 
 bool Decl::hasBeenMoved() const {

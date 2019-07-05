@@ -54,11 +54,22 @@ void Typechecker::checkHasAccess(const Decl& decl, SourceLocation location, Acce
     }
 }
 
+void Typechecker::checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const {
+    auto* parent = getCurrentModule()->getSymbolTable().getCurrentScope().parent;
+    if (parent && parent->isLambda() && variableDecl.getParent() != parent) {
+        error(varExpr.getLocation(), "lambda capturing not implemented yet");
+    }
+}
+
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     auto& decl = findDecl(expr.getIdentifier(), expr.getLocation());
     checkHasAccess(decl, expr.getLocation(), AccessLevel::None);
     decl.setReferenced(true);
     expr.setDecl(&decl);
+
+    if (auto variableDecl = llvm::dyn_cast<VariableDecl>(&decl)) {
+        checkLambdaCapture(*variableDecl, expr);
+    }
 
     switch (decl.getKind()) {
         case DeclKind::VarDecl:
@@ -1437,15 +1448,8 @@ Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
 }
 
 Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr) {
-    getCurrentModule()->getSymbolTable().pushScope();
-
-    typecheckParams(expr.getParams(), AccessLevel::None);
-    auto returnType = typecheckExpr(*expr.getBody());
-
-    getCurrentModule()->getSymbolTable().popScope();
-
-    auto paramTypes = map(expr.getParams(), [](const ParamDecl& p) { return p.getType(); });
-    return FunctionType::get(returnType, std::move(paramTypes));
+    typecheckFunctionDecl(*expr.getFunctionDecl());
+    return Type(expr.getFunctionDecl()->getFunctionType(), Mutability::Mutable, expr.getLocation());
 }
 
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {

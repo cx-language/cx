@@ -145,10 +145,8 @@ void ASTPrinter::printUnwrapExpr(const UnwrapExpr& expr) {
 }
 
 void ASTPrinter::printLambdaExpr(const LambdaExpr& expr) {
-    out << "(lambda ";
-    printParams(expr.getParams());
-    out << " ";
-    printExpr(*expr.getBody());
+    out << "(lambda";
+    printFunctionDecl(*expr.getFunctionDecl());
     out << ")";
 }
 

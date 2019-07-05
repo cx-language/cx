@@ -293,9 +293,11 @@ std::unique_ptr<Expr> Expr::instantiate(const llvm::StringMap<Type>& genericArgs
         }
         case ExprKind::LambdaExpr: {
             auto* lambdaExpr = llvm::cast<LambdaExpr>(this);
-            auto params = instantiateParams(lambdaExpr->getParams(), genericArgs);
-            auto body = lambdaExpr->getBody()->instantiate(genericArgs);
-            instantiation = llvm::make_unique<LambdaExpr>(std::move(params), std::move(body), lambdaExpr->getLocation());
+            auto params = instantiateParams(lambdaExpr->getFunctionDecl()->getParams(), genericArgs);
+            ASSERT(lambdaExpr->getFunctionDecl()->getBody().size() == 1);
+            auto body = llvm::cast<ReturnStmt>(*lambdaExpr->getFunctionDecl()->getBody().front()).getReturnValue()->instantiate(genericArgs);
+            instantiation = llvm::make_unique<LambdaExpr>(std::move(params), std::move(body), lambdaExpr->getFunctionDecl()->getModule(),
+                                                          lambdaExpr->getLocation());
             break;
         }
         case ExprKind::IfExpr: {
@@ -499,16 +501,14 @@ llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
     }
 }
 
-std::unique_ptr<FunctionDecl> LambdaExpr::lower(Module& module) const {
+LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, std::unique_ptr<Expr> body, Module* module, SourceLocation location)
+: Expr(ExprKind::LambdaExpr, location) {
     static uint64_t nameCounter = 0;
-
-    FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::vector<ParamDecl>(params), body->getType(), false, false);
-    auto functionDecl = llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), AccessLevel::Private, module, getLocation());
-    std::vector<std::unique_ptr<Stmt>> body;
-    auto returnValue = getBody()->instantiate({});
-    body.push_back(llvm::make_unique<ReturnStmt>(std::move(returnValue), getBody()->getLocation()));
-    functionDecl->setBody(std::move(body));
-    return functionDecl;
+    FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::move(params), Type(), false, false);
+    this->functionDecl = llvm::make_unique<FunctionDecl>(std::move(proto), std::vector<Type>(), AccessLevel::Private, *module, getLocation());
+    std::vector<std::unique_ptr<Stmt>> stmts;
+    stmts.push_back(llvm::make_unique<ReturnStmt>(std::move(body), body->getLocation()));
+    this->functionDecl->setBody(std::move(stmts));
 }
 
 const Expr* TupleExpr::getElementByName(llvm::StringRef name) const {

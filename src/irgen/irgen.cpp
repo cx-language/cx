@@ -8,7 +8,7 @@
 
 using namespace delta;
 
-void Scope::onScopeEnd() {
+void IRGenScope::onScopeEnd() {
     for (const Expr* expr : llvm::reverse(deferredExprs)) {
         irGenerator->codegenExpr(*expr);
     }
@@ -19,13 +19,13 @@ void Scope::onScopeEnd() {
     }
 }
 
-void Scope::clear() {
+void IRGenScope::clear() {
     deferredExprs.clear();
     deinitsToCall.clear();
 }
 
 IRGenerator::IRGenerator() : builder(ctx) {
-    scopes.push_back(Scope(*this));
+    scopes.push_back(IRGenScope(*this));
 }
 
 /// @param type The Delta type of the variable, or null if the variable is 'this'.
@@ -137,7 +137,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
 }
 
 void IRGenerator::beginScope() {
-    scopes.push_back(Scope(*this));
+    scopes.push_back(IRGenScope(*this));
 }
 
 void IRGenerator::endScope() {
