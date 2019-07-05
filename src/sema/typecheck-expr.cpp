@@ -709,8 +709,7 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
         }
 
         if (genericArg) {
-            // Always instantiate with non-const generic arguments.
-            inferredGenericArgs.push_back(genericArg.withMutability(Mutability::Mutable));
+            inferredGenericArgs.push_back(genericArg);
         } else {
             return {};
         }
@@ -761,20 +760,24 @@ static void validateArgCount(size_t paramCount, size_t argCount, bool isVariadic
 llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                          llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
     ASSERT(!genericParams.empty());
+    std::vector<Type> inferredGenericArgs;
+    llvm::ArrayRef<Type> genericArgTypes;
 
     if (call.getGenericArgs().empty()) {
         if (call.getArgs().empty()) {
             error(call.getLocation(), "can't infer generic parameters without function arguments");
         }
 
-        auto inferredGenericArgs = inferGenericArgs(genericParams, call, params, returnOnError);
+        inferredGenericArgs = inferGenericArgs(genericParams, call, params, returnOnError);
         if (inferredGenericArgs.empty()) return {};
-        call.setGenericArgs(std::move(inferredGenericArgs));
-        ASSERT(call.getGenericArgs().size() == genericParams.size());
+        ASSERT(inferredGenericArgs.size() == genericParams.size());
+        genericArgTypes = inferredGenericArgs;
+    } else {
+        genericArgTypes = call.getGenericArgs();
     }
 
     llvm::StringMap<Type> genericArgs;
-    auto genericArg = call.getGenericArgs().begin();
+    auto genericArg = genericArgTypes.begin();
 
     for (const GenericParamDecl& genericParam : genericParams) {
         genericArgs.try_emplace(genericParam.getName(), *genericArg++);
@@ -809,6 +812,17 @@ static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
     return map(candidates, [](Decl* candidate) { return Note(candidate->getLocation(), "candidate function:"); });
 }
 
+static std::vector<Type> getGenericArgTypes(const llvm::StringMap<Type>& genericArgs) {
+    std::vector<Type> types;
+    types.reserve(genericArgs.size());
+
+    for (auto& genericArg : genericArgs) {
+        types.emplace_back(genericArg.getValue());
+    }
+
+    return types;
+}
+
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, bool returnNullOnError) {
     llvm::SmallVector<Decl*, 1> matches;
     std::vector<Decl*> initDecls;
@@ -832,13 +846,14 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
                 auto* functionDecl = functionTemplate->instantiate(genericArgs);
-                declsToTypecheck.emplace_back(functionDecl);
 
                 if (decls.size() == 1 && !returnNullOnError) {
                     validateArgs(expr, *functionDecl, callee, expr.getCallee().getLocation());
+                    declsToTypecheck.emplace_back(functionDecl);
                     return functionDecl;
                 }
                 if (argumentsMatch(expr, functionDecl)) {
+                    declsToTypecheck.emplace_back(functionDecl); // TODO: Do this only after the final match has been selected.
                     matches.push_back(functionDecl);
                 }
                 break;
@@ -906,11 +921,11 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                     TypeDecl* typeDecl = nullptr;
 
-                    auto decls = findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(), expr.getGenericArgs()));
+                    auto decls = findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(), getGenericArgTypes(genericArgs)));
                     if (decls.empty()) {
                         typeDecl = typeTemplate->instantiate(genericArgs);
                         getCurrentModule()->addToSymbolTable(*typeDecl);
-                        declsToTypecheck.push_back(typeDecl);
+                        declsToTypecheck.push_back(typeDecl); // TODO: Can these be typechecked right away?
                     } else {
                         typeDecl = llvm::cast<TypeDecl>(decls[0]);
                     }
