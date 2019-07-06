@@ -507,6 +507,9 @@ void ASTPrinter::printDecl(const Decl& decl) {
         case DeclKind::EnumDecl:
             printTypeDecl(llvm::cast<EnumDecl>(decl));
             break;
+        case DeclKind::EnumCase:
+            llvm_unreachable("handled via EnumDecl");
+            break;
         case DeclKind::VarDecl:
             printVarDecl(llvm::cast<VarDecl>(decl));
             break;

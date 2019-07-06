@@ -392,10 +392,8 @@ FieldDecl* Expr::getFieldDecl() const {
     switch (getKind()) {
         case ExprKind::VarExpr:
             return llvm::dyn_cast<FieldDecl>(llvm::cast<VarExpr>(this)->getDecl());
-
         case ExprKind::MemberExpr:
-            return llvm::cast<MemberExpr>(this)->getFieldDecl();
-
+            return llvm::dyn_cast_or_null<FieldDecl>(llvm::cast<MemberExpr>(this)->getDecl());
         default:
             return nullptr;
     }

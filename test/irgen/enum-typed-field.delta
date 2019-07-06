@@ -1,0 +1,16 @@
+// RUN: check_matches_snapshot %s.ll %delta -print-ir %s -Wno-unused
+
+enum E { case A; }
+
+struct S {
+    E e;
+    E f;
+}
+
+E f(S s) {
+    return s.f;
+}
+
+E g(S* s) {
+    return s.f;
+}

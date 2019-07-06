@@ -372,6 +372,8 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
         case DeclKind::EnumDecl:
             typecheckEnumDecl(llvm::cast<EnumDecl>(decl));
             break;
+        case DeclKind::EnumCase:
+            llvm_unreachable("no top-level enum case declarations");
         case DeclKind::VarDecl:
             typecheckVarDecl(llvm::cast<VarDecl>(decl), true);
             break;

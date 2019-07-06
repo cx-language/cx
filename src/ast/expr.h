@@ -337,14 +337,14 @@ public:
     const Expr* getBaseExpr() const { return base.get(); }
     Expr* getBaseExpr() { return base.get(); }
     llvm::StringRef getMemberName() const { return member; }
-    FieldDecl* getFieldDecl() const { return fieldDecl; }
-    void setFieldDecl(FieldDecl& decl) { fieldDecl = &decl; }
+    Decl* getDecl() const { return decl; }
+    void setDecl(Decl& d) { decl = &d; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::MemberExpr; }
 
 private:
     std::unique_ptr<Expr> base;
     std::string member;
-    FieldDecl* fieldDecl;
+    Decl* decl;
 };
 
 /// An element access expression using the element's index in brackets, e.g. 'base[index]'.

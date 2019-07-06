@@ -41,6 +41,7 @@ class Module;
 class TypeDecl;
 class FieldDecl;
 class FunctionDecl;
+class EnumDecl;
 
 enum class DeclKind {
     GenericParamDecl,
@@ -52,6 +53,7 @@ enum class DeclKind {
     TypeDecl,
     TypeTemplate,
     EnumDecl,
+    EnumCase,
     VarDecl,
     FieldDecl,
     ParamDecl,
@@ -92,6 +94,7 @@ public:
     bool isTypeDecl() const { return getKind() == DeclKind::TypeDecl || getKind() == DeclKind::EnumDecl; }
     bool isTypeTemplate() const { return getKind() == DeclKind::TypeTemplate; }
     bool isEnumDecl() const { return getKind() == DeclKind::EnumDecl; }
+    bool isEnumCaseDecl() const { return getKind() == DeclKind::EnumCase; }
     bool isVarDecl() const { return getKind() == DeclKind::VarDecl; }
     bool isFieldDecl() const { return getKind() == DeclKind::FieldDecl; }
     bool isImportDecl() const { return getKind() == DeclKind::ImportDecl; }
@@ -365,13 +368,14 @@ private:
     std::unordered_map<std::vector<Type>, std::unique_ptr<TypeDecl>> instantiations;
 };
 
-class EnumCase {
+class EnumCase : public VariableDecl {
 public:
-    EnumCase(std::string&& name, std::unique_ptr<Expr> value, SourceLocation location)
-    : name(std::move(name)), value(std::move(value)), location(location) {}
+    EnumCase(std::string&& name, std::unique_ptr<Expr> value, AccessLevel accessLevel, SourceLocation location);
     llvm::StringRef getName() const { return name; }
     Expr* getValue() const { return value.get(); }
     SourceLocation getLocation() const { return location; }
+    Module* getModule() const override { return getParent()->getModule(); }
+    static bool classof(const Decl* d) { return d->getKind() == DeclKind::EnumCase; }
 
 private:
     std::string name;
@@ -382,9 +386,14 @@ private:
 class EnumDecl : public TypeDecl {
 public:
     EnumDecl(std::string&& name, std::vector<EnumCase>&& cases, AccessLevel accessLevel, Module& module, SourceLocation location)
-    : TypeDecl(DeclKind::EnumDecl, TypeTag::Enum, std::move(name), accessLevel, module, location), cases(std::move(cases)) {}
+    : TypeDecl(DeclKind::EnumDecl, TypeTag::Enum, std::move(name), accessLevel, module, location), cases(std::move(cases)) {
+        for (auto& enumCase : this->cases) {
+            enumCase.setParent(this);
+            enumCase.setType(getType());
+        }
+    }
     llvm::ArrayRef<EnumCase> getCases() const { return cases; }
-    const EnumCase* getCaseByName(llvm::StringRef name) const;
+    EnumCase* getCaseByName(llvm::StringRef name);
     // TODO: Select underlying type to be able to hold all case values.
     Type getUnderlyingType() const { return Type::getInt(); }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::EnumDecl; }

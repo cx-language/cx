@@ -206,6 +206,8 @@ void IRGenerator::codegenDecl(const Decl& decl) {
             break;
         case DeclKind::EnumDecl:
             break;
+        case DeclKind::EnumCase:
+            break;
         case DeclKind::VarDecl:
             codegenVarDecl(llvm::cast<VarDecl>(decl));
             break;

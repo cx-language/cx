@@ -95,6 +95,8 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
             llvm_unreachable("cannot refer to generic types yet");
         case DeclKind::EnumDecl:
             error(expr.getLocation(), "'", expr.getIdentifier(), "' is not a variable");
+        case DeclKind::EnumCase:
+            return llvm::cast<EnumCase>(decl).getType();
         case DeclKind::FieldDecl:
             return llvm::cast<FieldDecl>(decl).getType();
         case DeclKind::ImportDecl:
@@ -1350,11 +1352,15 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
         auto decls = findDecls(varExpr->getIdentifier());
 
         if (!decls.empty()) {
+            ASSERT(decls.size() == 1);
+
             if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
                 checkHasAccess(*enumDecl, varExpr->getLocation(), AccessLevel::None);
-                if (!enumDecl->getCaseByName(expr.getMemberName())) {
+                auto caseDecl = enumDecl->getCaseByName(expr.getMemberName());
+                if (!caseDecl) {
                     error(expr.getLocation(), "enum '", enumDecl->getName(), "' has no case named '", expr.getMemberName(), "'");
                 }
+                expr.setDecl(*caseDecl);
                 return enumDecl->getType();
             }
         }
@@ -1384,7 +1390,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
         for (auto& field : typeDecl->getFields()) {
             if (field.getName() == expr.getMemberName()) {
                 checkHasAccess(field, expr.getLocation(), AccessLevel::None);
-                expr.setFieldDecl(field);
+                expr.setDecl(field);
                 return field.getType().withMutability(baseType.getMutability());
             }
         }

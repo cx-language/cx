@@ -198,7 +198,11 @@ TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
     return instantiate(genericArgsMap);
 }
 
-const EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) const {
+EnumCase::EnumCase(std::string&& name, std::unique_ptr<Expr> value, AccessLevel accessLevel, SourceLocation location)
+: VariableDecl(DeclKind::EnumCase, accessLevel, nullptr, Type() /* initialized by EnumDecl constructor */), name(std::move(name)),
+  value(std::move(value)), location(location) {}
+
+EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) {
     for (auto& enumCase : cases) {
         if (enumCase.getName() == name) {
             return &enumCase;
@@ -281,6 +285,7 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
             llvm_unreachable("handled via TypeTemplate::instantiate()");
 
         case DeclKind::EnumDecl:
+        case DeclKind::EnumCase:
             llvm_unreachable("EnumDecl cannot be generic or declared inside another generic type");
 
         case DeclKind::VarDecl: {
