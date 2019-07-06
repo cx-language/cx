@@ -383,7 +383,13 @@ bool isBuiltinArrayToArrayRefConversion(Type sourceType, llvm::Type* targetType)
 }
 
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
-    if (targetType && isBuiltinArrayToArrayRefConversion(expr.getType(), targetType)) {
+    if (!targetType) {
+        return codegenExpr(expr);
+    }
+
+    // TODO: Handle implicit conversions in a separate function.
+
+    if (isBuiltinArrayToArrayRefConversion(expr.getType(), targetType)) {
         ASSERT(expr.getType().removePointer().isArrayWithConstantSize());
         auto* value = codegenLvalueExpr(expr);
 
@@ -402,59 +408,27 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     }
 
     // Handle implicit conversions to type 'T[?]*'.
-    if (targetType && expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() &&
-        !targetType->getPointerElementType()->isArrayTy()) {
+    if (expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() && !targetType->getPointerElementType()->isArrayTy()) {
         return builder.CreateBitOrPointerCast(codegenLvalueExpr(expr), targetType);
     }
 
     // Handle implicit conversions to void pointer.
-    if (targetType && expr.getType().isPointerType() && !expr.getType().getPointee().isVoid() && targetType->isPointerTy() &&
+    if (expr.getType().isPointerType() && !expr.getType().getPointee().isVoid() && targetType->isPointerTy() &&
         targetType->getPointerElementType()->isIntegerTy(8)) {
         return builder.CreateBitCast(codegenExpr(expr), targetType);
     }
 
-    Type exprType = expr.getType();
-    if (exprType.isPointerType()) exprType = exprType.getPointee();
+    auto* value = (expr.isLvalue() && targetType->isPointerTy()) ? codegenLvalueExpr(expr) : codegenExpr(expr);
 
-    if (!targetType || expr.isRvalue() || (!exprType.isBasicType() && !exprType.isTupleType())) {
-        if (expr.getType().isArrayWithConstantSize() && targetType->isPointerTy()) {
-            return codegenLvalueExpr(expr);
-        }
-
-        auto* value = codegenExpr(expr);
-
-        if (targetType && targetType->isPointerTy() && !value->getType()->isPointerTy()) {
-            auto* alloca = createEntryBlockAlloca(expr.getType(), nullptr);
-            builder.CreateStore(value, alloca);
-            return alloca;
-        } else if (targetType && value->getType()->isPointerTy() && !targetType->isPointerTy()) {
-            return createLoad(value);
-        } else {
-            return value;
-        }
+    if (targetType->isPointerTy() && value->getType() == targetType->getPointerElementType()) {
+        auto* alloca = createEntryBlockAlloca(expr.getType(), nullptr);
+        builder.CreateStore(value, alloca);
+        return alloca;
+    } else if (value->getType()->isPointerTy() && targetType == value->getType()->getPointerElementType()) {
+        return createLoad(value);
+    } else {
+        return value;
     }
-
-    if (!targetType->isPointerTy()) {
-        if (expr.getType().isPointerType()) {
-            return createLoad(codegenExpr(expr));
-        }
-    } else if (!expr.getType().isPointerType()) {
-        auto* value = codegenLvalueExpr(expr);
-
-        if (value->getType()->isPointerTy()) {
-            return value;
-        } else {
-            auto* alloca = createEntryBlockAlloca(expr.getType(), nullptr);
-            builder.CreateStore(value, alloca);
-            return alloca;
-        }
-    }
-
-    auto* value = codegenExpr(expr);
-    if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == targetType) {
-        value = createLoad(value);
-    }
-    return value;
 }
 
 llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) {
@@ -576,7 +550,9 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
 
     for (const auto& arg : expr.getArgs()) {
         auto* paramType = param != paramEnd ? *param++ : nullptr;
-        args.emplace_back(codegenExprForPassing(*arg.getValue(), paramType));
+        auto* argValue = codegenExprForPassing(*arg.getValue(), paramType);
+        ASSERT(!paramType || argValue->getType() == paramType);
+        args.push_back(argValue);
     }
 
     if (calleeDecl->isInitDecl()) {
