@@ -631,13 +631,7 @@ llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
         return codegenExpr(*enumCase->getValue());
     }
 
-    auto* value = codegenLvalueMemberExpr(expr);
-
-    if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == toIR(expr.getType())) {
-        value = createLoad(value);
-    }
-
-    return value;
+    return codegenLvalueMemberExpr(expr);
 }
 
 llvm::Value* IRGenerator::codegenTupleElementAccess(const MemberExpr& expr) {

@@ -8,6 +8,9 @@ struct Foo {
 void main() {
     Foo*? f = null;
     _ = f.i;
+    var a = f.i;
+    var b = &f.i;
+    int* c = f.i;
     f.bar();
     *f = *f;
 }
