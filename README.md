@@ -1,7 +1,6 @@
 # Delta Programming Language
 
 [![Build Status](https://travis-ci.org/delta-lang/delta.svg?branch=master)](https://travis-ci.org/delta-lang/delta)
-[![Coverage Status](https://coveralls.io/repos/github/delta-lang/delta/badge.svg?branch=master)](https://coveralls.io/github/delta-lang/delta?branch=master)
 
 Delta is a general-purpose systems programming language intended as an
 alternative to C++, C, and Rust. Its primary goal is to improve programmer
