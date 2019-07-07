@@ -1,16 +1,10 @@
-#include <csignal>
-#include <cstdlib>
 #include <string>
 #include <vector>
-#ifndef _WIN32
-#include <cstring>
-#include <execinfo.h>
-#include <unistd.h>
-#endif
 #pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 #include "../driver/driver.h"
@@ -40,26 +34,10 @@ static void printHelp() {
                     "  -Werror               - Treat warnings as errors\n";
 }
 
-extern "C" void signalHandler(int signal) {
-#ifndef _WIN32
-    void* stacktrace[128];
-    int size = backtrace(stacktrace, 128);
-    llvm::errs() << strsignal(signal) << '\n';
-    backtrace_symbols_fd(stacktrace, size, STDERR_FILENO);
-#endif
-    std::exit(signal);
-}
-
 int main(int argc, const char** argv) {
-    std::signal(SIGINT, signalHandler);
-    std::signal(SIGILL, signalHandler);
-    std::signal(SIGABRT, signalHandler);
-    std::signal(SIGFPE, signalHandler);
-    std::signal(SIGSEGV, signalHandler);
-    std::signal(SIGTERM, signalHandler);
+    llvm::InitLLVM x(argc, argv);
 
     const char* argv0 = argv[0];
-
     --argc;
     ++argv;
 
