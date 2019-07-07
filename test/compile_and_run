@@ -29,6 +29,9 @@ except subprocess.CalledProcessError as error:
     print(error.output)
     sys.exit(error.returncode)
 finally:
-    os.remove(executable_path)
+    try:
+        os.remove(executable_path)
+    except OSError:
+        pass
 
 print(executable_output)
