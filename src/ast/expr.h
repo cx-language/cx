@@ -92,8 +92,6 @@ private:
     const ExprKind kind;
     Type type;
     Type assignableType;
-
-public:
     const SourceLocation location;
 };
 

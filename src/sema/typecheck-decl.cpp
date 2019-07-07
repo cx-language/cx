@@ -151,7 +151,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     if (decl.isLambda()) {
         ASSERT(decl.getBody().size() == 1);
-        decl.getProto().returnType = typecheckExpr(*llvm::cast<ReturnStmt>(decl.getBody().front().get())->getReturnValue());
+        decl.getProto().setReturnType(typecheckExpr(*llvm::cast<ReturnStmt>(decl.getBody().front().get())->getReturnValue()));
     }
 
     if (!decl.isInitDecl() && !decl.isDeinitDecl()) {
