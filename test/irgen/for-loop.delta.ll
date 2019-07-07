@@ -3,10 +3,10 @@
 %"ClosedRange<int>" = type { i32, i32 }
 
 define i32 @main() {
-  %sum = alloca i32
   %__iterator = alloca %"ClosedRangeIterator<int>"
   %1 = alloca %"ClosedRange<int>"
   %i = alloca i32
+  %sum = alloca i32
   store i32 0, i32* %sum
   call void @_EN3std11ClosedRangeI3intE4initE5start3int3end3int(%"ClosedRange<int>"* %1, i32 68, i32 75)
   %2 = call %"ClosedRangeIterator<int>" @_EN3std11ClosedRangeI3intE8iteratorE(%"ClosedRange<int>"* %1)

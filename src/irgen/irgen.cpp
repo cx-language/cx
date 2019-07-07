@@ -15,7 +15,7 @@ void IRGenScope::onScopeEnd() {
 
     for (auto& p : llvm::reverse(deinitsToCall)) {
         if (p.decl && p.decl->hasBeenMoved()) continue;
-        irGenerator->createDeinitCall(p.function, p.value, p.type, p.decl);
+        irGenerator->createDeinitCall(p.function, p.value);
     }
 }
 
@@ -148,7 +148,7 @@ void IRGenerator::endScope() {
 }
 
 void IRGenerator::deferEvaluationOf(const Expr& expr) {
-    scopes.back().addDeferredExpr(expr);
+    scopes.back().deferredExprs.push_back(&expr);
 }
 
 /// Returns a deinitializer that only calls the deinitializers of the member variables, or null if
@@ -181,7 +181,7 @@ void IRGenerator::deferDeinitCall(llvm::Value* valueToDeinit, const VariableDecl
     }
 
     if (proto) {
-        scopes.back().addDeinitToCall(proto, valueToDeinit, type, decl);
+        scopes.back().deinitsToCall.push_back({ proto, valueToDeinit, decl });
     }
 }
 
@@ -192,7 +192,7 @@ void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
     scopes.back().clear();
 }
 
-llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize, const llvm::Twine& name) {
+llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(llvm::Type* type, llvm::Value* arraySize, const llvm::Twine& name) {
     auto* insertBlock = builder.GetInsertBlock();
     auto* entryBlock = &insertBlock->getParent()->getEntryBlock();
 
@@ -206,8 +206,7 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
         builder.SetInsertPoint(entryBlock, std::next(lastAlloca));
     }
 
-    auto* llvmType = toIR(type, decl ? decl->getLocation() : SourceLocation());
-    auto* alloca = builder.CreateAlloca(llvmType, arraySize, name);
+    auto* alloca = builder.CreateAlloca(type, arraySize, name);
     lastAlloca = alloca->getIterator();
     builder.SetInsertPoint(insertBlock);
     return alloca;
@@ -232,7 +231,7 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs)
         if (auto* typeDecl = basicType->getDecl()) {
             if (auto* deinit = typeDecl->getDeinitializer()) {
                 llvm::Value* value = codegenLvalueExpr(*lhs);
-                createDeinitCall(getFunctionProto(*deinit), value, lhs->getType(), typeDecl);
+                createDeinitCall(getFunctionProto(*deinit), value);
                 return rhs->isUndefinedLiteralExpr() ? nullptr : value;
             }
         }
@@ -241,9 +240,9 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs)
     return rhs->isUndefinedLiteralExpr() ? nullptr : codegenLvalueExpr(*lhs);
 }
 
-void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl) {
+void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
     if (!valueToDeinit->getType()->isPointerTy()) {
-        auto* alloca = createEntryBlockAlloca(type, decl);
+        auto* alloca = createEntryBlockAlloca(valueToDeinit->getType());
         builder.CreateStore(valueToDeinit, alloca);
         valueToDeinit = alloca;
     }

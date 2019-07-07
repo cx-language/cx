@@ -26,7 +26,8 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
         static int stringLiteralCounter = 0;
-        auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), nullptr, nullptr, "__str" + std::to_string(stringLiteralCounter++));
+        auto* type = toIR(BasicType::get("StringRef", {}));
+        auto* alloca = createEntryBlockAlloca(type, nullptr, "__str" + std::to_string(stringLiteralCounter++));
         // TODO: Retrieve this constructor in a nicer way.
         auto* stringRefInit = module->getOrInsertFunction("_EN3std9StringRef4initE7pointerP4char6length3int", llvm::Type::getVoidTy(ctx),
                                                           alloca->getType(), stringPtr->getType(), size->getType());
@@ -395,7 +396,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         if (!value->getType()->isPointerTy()) {
             static int temporaryArrayCounter = 0;
             auto name = "__temporaryArray" + std::to_string(temporaryArrayCounter++);
-            auto* alloca = createEntryBlockAlloca(expr.getType().removePointer(), nullptr, nullptr, name);
+            auto* alloca = createEntryBlockAlloca(value->getType(), nullptr, name);
             builder.CreateStore(value, alloca);
             value = alloca;
         }
@@ -420,7 +421,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     auto* value = (expr.isLvalue() && targetType->isPointerTy()) ? codegenLvalueExpr(expr) : codegenExpr(expr);
 
     if (targetType->isPointerTy() && value->getType() == targetType->getPointerElementType()) {
-        auto* alloca = createEntryBlockAlloca(expr.getType(), nullptr);
+        auto* alloca = createEntryBlockAlloca(value->getType());
         builder.CreateStore(value, alloca);
         return alloca;
     } else if (value->getType()->isPointerTy() && targetType == value->getType()->getPointerElementType()) {
@@ -530,8 +531,8 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
             } else if (currentDecl->isInitDecl() && expr.getFunctionName() == "init") {
                 args.emplace_back(getThis());
             } else {
-                Type type = initDecl->getTypeDecl()->getType();
-                auto* alloca = createEntryBlockAlloca(type, nullptr);
+                auto* type = toIR(initDecl->getTypeDecl()->getType());
+                auto* alloca = createEntryBlockAlloca(type);
                 args.emplace_back(alloca);
             }
         } else if (expr.getReceiver()) {

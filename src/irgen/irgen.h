@@ -21,17 +21,12 @@ class IRGenerator;
 
 struct IRGenScope {
     IRGenScope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
-    void addDeferredExpr(const Expr& expr) { deferredExprs.emplace_back(&expr); }
-    void addDeinitToCall(llvm::Function* deinit, llvm::Value* value, Type type, const Decl* decl) {
-        deinitsToCall.emplace_back(DeferredDeinit{ deinit, value, type, decl });
-    }
     void onScopeEnd();
     void clear();
 
     struct DeferredDeinit {
         llvm::Function* function;
         llvm::Value* value;
-        Type type;
         const Decl* decl;
     };
 
@@ -56,7 +51,7 @@ private:
     friend struct IRGenScope;
 
     void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
-    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
+    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
 
     /// 'decl' is null if this is the 'this' value.
     void setLocalValue(llvm::Value* value, const VariableDecl* decl);
@@ -127,7 +122,7 @@ private:
 
     llvm::Value* getFunctionForCall(const CallExpr& call);
     llvm::Function* getFunctionProto(const FunctionDecl& decl);
-    llvm::AllocaInst* createEntryBlockAlloca(Type type, const Decl* decl, llvm::Value* arraySize = nullptr, const llvm::Twine& name = "");
+    llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type, llvm::Value* arraySize = nullptr, const llvm::Twine& name = "");
     llvm::Value* createLoad(llvm::Value* value);
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
