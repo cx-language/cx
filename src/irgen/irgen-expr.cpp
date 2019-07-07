@@ -5,7 +5,7 @@
 using namespace delta;
 
 llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
-    auto* value = findValue(expr.getIdentifier(), expr.getDecl());
+    auto* value = codegenLvalueVarExpr(expr);
 
     if (llvm::isa<llvm::AllocaInst>(value) || llvm::isa<llvm::GetElementPtrInst>(value) ||
         (llvm::isa<llvm::GlobalValue>(value) && !llvm::isa<llvm::Function>(value))) {
@@ -17,7 +17,7 @@ llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenLvalueVarExpr(const VarExpr& expr) {
-    return findValue(expr.getIdentifier(), expr.getDecl());
+    return getValue(expr.getDecl());
 }
 
 llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr) {
@@ -26,8 +26,7 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
         static int stringLiteralCounter = 0;
-        auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), structs.find("StringRef")->second.second, nullptr,
-                                              "__str" + std::to_string(stringLiteralCounter++));
+        auto* alloca = createEntryBlockAlloca(BasicType::get("StringRef", {}), nullptr, nullptr, "__str" + std::to_string(stringLiteralCounter++));
         // TODO: Retrieve this constructor in a nicer way.
         auto* stringRefInit = module->getOrInsertFunction("_EN3std9StringRef4initE7pointerP4char6length3int", llvm::Type::getVoidTy(ctx),
                                                           alloca->getType(), stringPtr->getType(), size->getType());
@@ -529,7 +528,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
             if (thisAllocaForInit) {
                 args.emplace_back(thisAllocaForInit);
             } else if (currentDecl->isInitDecl() && expr.getFunctionName() == "init") {
-                args.emplace_back(findValue("this", nullptr));
+                args.emplace_back(getThis());
             } else {
                 Type type = initDecl->getTypeDecl()->getType();
                 auto* alloca = createEntryBlockAlloca(type, nullptr);
@@ -539,7 +538,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
             auto* thisValue = codegenExprForPassing(*expr.getReceiver(), *param);
             args.emplace_back(thisValue);
         } else {
-            auto* thisValue = findValue("this", nullptr);
+            auto* thisValue = getThis();
             if (thisValue->getType()->isPointerTy() && !(*param)->isPointerTy()) {
                 thisValue = createLoad(thisValue);
             }

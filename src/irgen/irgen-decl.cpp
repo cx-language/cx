@@ -52,15 +52,15 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
     builder.SetInsertPoint(llvm::BasicBlock::Create(ctx, "", &function));
     beginScope();
     auto arg = function.arg_begin();
-    if (decl.getTypeDecl() != nullptr) setLocalValue(Type(), "this", &*arg++, nullptr);
+    if (decl.getTypeDecl() != nullptr) setLocalValue(&*arg++, nullptr);
     for (auto& param : decl.getParams()) {
-        setLocalValue(param.getType(), param.getName(), &*arg++, &param);
+        setLocalValue(&*arg++, &param);
     }
     if (decl.isDeinitDecl()) {
         for (auto& field : decl.getTypeDecl()->getFields()) {
             if (field.getType().getDeinitializer() == nullptr) continue;
             auto* fieldValue = codegenMemberAccess(function.arg_begin(), field.getType(), field.getName());
-            deferDeinitCall(fieldValue, field.getType(), &field);
+            deferDeinitCall(fieldValue, &field);
         }
     }
     for (auto& stmt : decl.getBody()) {
@@ -161,11 +161,15 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
 }
 
 llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
-    if (auto* value = module->getGlobalVariable(decl.getName(), true)) return value;
+    if (decl.getName() == "this") {
+        return getThis();
+    }
 
-    auto it = globalScope().getLocalValues().find(decl.getName());
-    if (it != globalScope().getLocalValues().end()) return it->second;
+    if (auto* value = getValueOrNull(&decl)) {
+        return value;
+    }
 
+    ASSERT(decl.getInitializer());
     llvm::Value* value = codegenExpr(*decl.getInitializer());
 
     if (decl.getType().isMutable() /* || decl.isPublic() */) {
@@ -174,7 +178,8 @@ llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
         value = new llvm::GlobalVariable(*module, toIR(decl.getType()), false, linkage, initializer, decl.getName());
     }
 
-    globalScope().addLocalValue(decl.getName(), value);
+    auto it = globalScope().valuesByDecl.try_emplace(&decl, value);
+    ASSERT(it.second);
     return value;
 }
 

@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 #pragma warning(pop)
@@ -24,15 +25,9 @@ struct IRGenScope {
     void addDeinitToCall(llvm::Function* deinit, llvm::Value* value, Type type, const Decl* decl) {
         deinitsToCall.emplace_back(DeferredDeinit{ deinit, value, type, decl });
     }
-    void addLocalValue(std::string&& name, llvm::Value* value) {
-        bool didInsert = localValues.emplace(std::move(name), value).second;
-        ASSERT(didInsert);
-    }
-    const std::unordered_map<std::string, llvm::Value*>& getLocalValues() const { return localValues; }
     void onScopeEnd();
     void clear();
 
-private:
     struct DeferredDeinit {
         llvm::Function* function;
         llvm::Value* value;
@@ -42,7 +37,7 @@ private:
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
     llvm::SmallVector<DeferredDeinit, 8> deinitsToCall;
-    std::unordered_map<std::string, llvm::Value*> localValues;
+    llvm::DenseMap<const Decl*, llvm::Value*> valuesByDecl;
     IRGenerator* irGenerator;
 };
 
@@ -63,9 +58,11 @@ private:
     void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
     void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit, Type type, const Decl* decl);
 
-    /// @param type The Delta type of the variable, or null if the variable is 'this'.
-    void setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl);
-    llvm::Value* findValue(llvm::StringRef name, const Decl* decl);
+    /// 'decl' is null if this is the 'this' value.
+    void setLocalValue(llvm::Value* value, const VariableDecl* decl);
+    llvm::Value* getValueOrNull(const Decl* decl);
+    llvm::Value* getValue(const Decl* decl);
+    llvm::Value* getThis();
 
     llvm::Value* codegenExprWithoutAutoCast(const Expr& expr);
     llvm::Value* codegenAutoCast(llvm::Value* value, const Expr& expr);
@@ -141,7 +138,7 @@ private:
     void endScope();
     void deferEvaluationOf(const Expr& expr);
     DeinitDecl* getDefaultDeinitializer(const TypeDecl& typeDecl);
-    void deferDeinitCall(llvm::Value* valueToDeinit, Type type, const Decl* decl);
+    void deferDeinitCall(llvm::Value* valueToDeinit, const VariableDecl* decl);
     IRGenScope& globalScope() { return scopes.front(); }
 
 private:

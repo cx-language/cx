@@ -21,6 +21,7 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
 
 void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), &stmt.getDecl(), nullptr, stmt.getDecl().getName());
+    setLocalValue(alloca, &stmt.getDecl());
     auto* initializer = stmt.getDecl().getInitializer();
 
     if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {

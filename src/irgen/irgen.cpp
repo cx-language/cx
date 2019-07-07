@@ -28,44 +28,46 @@ IRGenerator::IRGenerator() : builder(ctx) {
     scopes.push_back(IRGenScope(*this));
 }
 
-/// @param type The Delta type of the variable, or null if the variable is 'this'.
-void IRGenerator::setLocalValue(Type type, std::string name, llvm::Value* value, const Decl* decl) {
-    scopes.back().addLocalValue(std::move(name), value);
+void IRGenerator::setLocalValue(llvm::Value* value, const VariableDecl* decl) {
+    auto it = scopes.back().valuesByDecl.try_emplace(decl, value);
+    ASSERT(it.second);
 
-    if (type) {
-        deferDeinitCall(value, type, decl);
+    if (decl) {
+        deferDeinitCall(value, decl);
     }
 }
 
-llvm::Value* IRGenerator::findValue(llvm::StringRef name, const Decl* decl) {
-    llvm::Value* value = nullptr;
-
-    for (const auto& scope : llvm::reverse(scopes)) {
-        auto it = scope.getLocalValues().find(name);
-        if (it == scope.getLocalValues().end()) continue;
-        value = it->second;
-        break;
+llvm::Value* IRGenerator::getValueOrNull(const Decl* decl) {
+    for (auto& scope : llvm::reverse(scopes)) {
+        if (auto* value = scope.valuesByDecl.lookup(decl)) {
+            return value;
+        }
     }
 
-    if (value) {
+    return nullptr;
+}
+
+llvm::Value* IRGenerator::getValue(const Decl* decl) {
+    if (auto* value = getValueOrNull(decl)) {
         return value;
     }
-
-    ASSERT(decl);
 
     switch (decl->getKind()) {
         case DeclKind::VarDecl:
             return codegenVarDecl(*llvm::cast<VarDecl>(decl));
-
-        case DeclKind::FieldDecl:
-            return codegenMemberAccess(findValue("this", nullptr), llvm::cast<FieldDecl>(decl)->getType(), llvm::cast<FieldDecl>(decl)->getName());
-
+        case DeclKind::FieldDecl: {
+            auto* fieldDecl = llvm::cast<FieldDecl>(decl);
+            return codegenMemberAccess(getThis(), fieldDecl->getType(), fieldDecl->getName());
+        }
         case DeclKind::FunctionDecl:
             return getFunctionProto(*llvm::cast<FunctionDecl>(decl));
-
         default:
             llvm_unreachable("all cases handled");
     }
+}
+
+llvm::Value* IRGenerator::getThis() {
+    return getValue(nullptr);
 }
 
 llvm::Type* IRGenerator::getBuiltinType(llvm::StringRef name) {
@@ -166,7 +168,8 @@ DeinitDecl* IRGenerator::getDefaultDeinitializer(const TypeDecl& typeDecl) {
     return nullptr;
 }
 
-void IRGenerator::deferDeinitCall(llvm::Value* valueToDeinit, Type type, const Decl* decl) {
+void IRGenerator::deferDeinitCall(llvm::Value* valueToDeinit, const VariableDecl* decl) {
+    auto type = decl->getType();
     llvm::Function* proto = nullptr;
 
     if (auto* deinitializer = type.getDeinitializer()) {
@@ -206,10 +209,6 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(Type type, const Decl* dec
     auto* llvmType = toIR(type, decl ? decl->getLocation() : SourceLocation());
     auto* alloca = builder.CreateAlloca(llvmType, arraySize, name);
     lastAlloca = alloca->getIterator();
-    auto nameString = name.str();
-    if (!nameString.empty()) {
-        setLocalValue(type, std::move(nameString), alloca, decl);
-    }
     builder.SetInsertPoint(insertBlock);
     return alloca;
 }
@@ -271,15 +270,14 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
         case DeclKind::DeinitDecl:
             return getFunctionProto(*llvm::cast<FunctionDecl>(decl));
         case DeclKind::VarDecl:
-            return findValue(llvm::cast<VarDecl>(decl)->getName(), decl);
         case DeclKind::ParamDecl:
-            return findValue(llvm::cast<ParamDecl>(decl)->getName(), decl);
+            return getValue(decl);
         case DeclKind::FieldDecl:
             if (call.getReceiver()) {
                 return codegenMemberAccess(codegenLvalueExpr(*call.getReceiver()), llvm::cast<FieldDecl>(decl)->getType(),
                                            llvm::cast<FieldDecl>(decl)->getName());
             } else {
-                return findValue(llvm::cast<FieldDecl>(decl)->getName(), decl);
+                return getValue(decl);
             }
         default:
             llvm_unreachable("invalid callee decl");
