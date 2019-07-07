@@ -344,7 +344,7 @@ public:
 private:
     std::unique_ptr<Expr> base;
     std::string member;
-    Decl* decl;
+    Decl* decl = nullptr;
 };
 
 /// An element access expression using the element's index in brackets, e.g. 'base[index]'.
