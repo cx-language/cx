@@ -35,6 +35,7 @@
 #ifdef _MSC_VER
 #define popen _popen
 #define pclose _pclose
+#define WEXITSTATUS(x) x
 #endif
 
 using namespace delta;
@@ -194,6 +195,26 @@ int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vec
     return 0;
 }
 
+int exec(const char* command, std::string& output) {
+    FILE* pipe = popen(command, "r");
+    if (!pipe) {
+        printErrorAndExit("failed to execute '", command, "'");
+    }
+
+    try {
+        char buffer[128];
+        while (fgets(buffer, sizeof buffer, pipe)) {
+            output += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+
+    int status = pclose(pipe);
+    return WEXITSTATUS(status);
+}
+
 int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
                            std::vector<llvm::StringRef>& args, llvm::StringRef outputDirectory, llvm::StringRef outputFileName, bool run) {
     bool parse = checkFlag("-parse", args);
@@ -350,9 +371,14 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (ccExitStatus != 0) return ccExitStatus;
 
     if (run) {
-        std::string error;
-        llvm::StringRef executableArgs[] = { temporaryExecutablePath };
-        int executableExitStatus = llvm::sys::ExecuteAndWait(executableArgs[0], executableArgs, llvm::None, {}, 0, 0, &error);
+        if (auto error = llvm::sys::fs::make_absolute(temporaryExecutablePath)) {
+            printErrorAndExit("couldn't make an absolute path: ", error.message());
+        }
+
+        std::string command = (temporaryExecutablePath + " 2>&1").str();
+        std::string output;
+        int executableExitStatus = exec(command.c_str(), output);
+        llvm::outs() << output;
         llvm::sys::fs::remove(temporaryExecutablePath);
 
         if (msvc) {
@@ -361,10 +387,6 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
             llvm::sys::fs::remove(path);
             llvm::sys::path::replace_extension(path, "pdb");
             llvm::sys::fs::remove(path);
-        }
-
-        if (!error.empty()) {
-            llvm::outs() << error << '\n';
         }
 
         return executableExitStatus;

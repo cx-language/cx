@@ -1,4 +1,4 @@
-// RUN: not compile_and_run %s | %FileCheck %s
+// RUN: not %delta run %s | %FileCheck %s
 // UNSUPPORTED: wsl
 
 int main() {

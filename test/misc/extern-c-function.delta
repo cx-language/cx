@@ -1,4 +1,4 @@
-// RUN: compile_and_run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
 // CHECK:foo
 
 int main() {

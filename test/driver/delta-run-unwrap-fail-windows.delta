@@ -1,4 +1,4 @@
-// RUN: not --crash compile_and_run %s
+// RUN: not --crash %delta run %s
 // REQUIRES: windows
 
 void main() {
