@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %delta -print-ir %s -Wno-unused
 
-enum E { case A; }
+enum E { A }
 
 struct S {
     E e;

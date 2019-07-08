@@ -7,9 +7,9 @@ interface Comparable {
 }
 
 enum Ordering {
-    case Less;
-    case Equal;
-    case Greater;
+    Less,
+    Equal,
+    Greater
 }
 
 bool operator== <T: Comparable>(T* a, T* b) {

@@ -2,11 +2,7 @@
 
 var x = 0;
 
-enum A {
-    case x;
-    case y;
-    case z;
-}
+enum A { x, y, z }
 
 void main() {
     var foo = A.z;
