@@ -251,7 +251,7 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     return instantiation;
 }
 
-static std::error_code parseSourcesInDirectoryRecursively(llvm::StringRef directoryPath, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
+static std::error_code parseSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
                                                           llvm::ArrayRef<std::string> frameworkSearchPaths) {
     std::error_code error;
     llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end;
@@ -289,13 +289,9 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     }
 
     for (llvm::StringRef importPath : importSearchPaths) {
-        llvm::sys::fs::directory_iterator it(importPath, error), end;
-        for (; it != end; it.increment(error)) {
-            if (error) goto done;
-            if (!llvm::sys::fs::is_directory(it->path())) continue;
-            if (llvm::sys::path::filename(it->path()) != moduleName) continue;
-
-            error = parseSourcesInDirectoryRecursively(it->path(), *module, importSearchPaths, frameworkSearchPaths);
+        auto modulePath = importPath + "/" + moduleName;
+        if (llvm::sys::fs::is_directory(modulePath)) {
+            error = parseSourcesInDirectoryRecursively(modulePath, *module, importSearchPaths, frameworkSearchPaths);
             goto done;
         }
     }
