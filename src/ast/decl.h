@@ -312,7 +312,7 @@ public:
     : Decl(DeclKind::TypeDecl, accessLevel), tag(tag), name(std::move(name)), genericArgs(std::move(genericArgs)),
       interfaces(std::move(interfaces)), location(location), module(module) {}
     TypeTag getTag() const { return tag; }
-    llvm::StringRef getName() const { return name; }
+    llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
     llvm::ArrayRef<FieldDecl> getFields() const { return fields; }
     std::vector<FieldDecl>& getFields() { return fields; }
@@ -321,7 +321,7 @@ public:
     llvm::ArrayRef<Type> getInterfaces() const { return interfaces; }
     bool hasInterface(const TypeDecl& interface) const;
     bool isCopyable() const;
-    SourceLocation getLocation() const { return location; }
+    SourceLocation getLocation() const override { return location; }
     void addField(FieldDecl&& field);
     void addMethod(std::unique_ptr<Decl> decl);
     llvm::ArrayRef<std::unique_ptr<Decl>> getMemberDecls() const { return methods; }
@@ -333,7 +333,7 @@ public:
     bool isInterface() const { return tag == TypeTag::Interface; }
     bool isUnion() const { return tag == TypeTag::Union; }
     unsigned getFieldIndex(llvm::StringRef fieldName) const;
-    Module* getModule() const { return &module; }
+    Module* getModule() const override { return &module; }
     static bool classof(const Decl* d) { return d->isTypeDecl(); }
 
 protected:
@@ -373,9 +373,9 @@ private:
 class EnumCase : public VariableDecl {
 public:
     EnumCase(std::string&& name, std::unique_ptr<Expr> value, AccessLevel accessLevel, SourceLocation location);
-    llvm::StringRef getName() const { return name; }
+    llvm::StringRef getName() const override { return name; }
     Expr* getValue() const { return value.get(); }
-    SourceLocation getLocation() const { return location; }
+    SourceLocation getLocation() const override { return location; }
     Module* getModule() const override { return getParent()->getModule(); }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::EnumCase; }
 
