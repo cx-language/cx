@@ -86,6 +86,10 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(stmt.getCondition());
 
+    if (!conditionType.isInteger() && !conditionType.isChar() && !conditionType.isEnumType()) {
+        error(stmt.getCondition().getLocation(), "switch condition must have integer, char, or enum type, got '", conditionType, "'");
+    }
+
     currentControlStmts.push_back(&stmt);
 
     for (auto& switchCase : stmt.getCases()) {

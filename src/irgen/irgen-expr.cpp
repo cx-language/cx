@@ -631,7 +631,13 @@ llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
         return codegenExpr(*enumCase->getValue());
     }
 
-    return codegenLvalueMemberExpr(expr);
+    auto* value = codegenLvalueMemberExpr(expr);
+
+    if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == toIR(expr.getType())) {
+        value = createLoad(value);
+    }
+
+    return value;
 }
 
 llvm::Value* IRGenerator::codegenTupleElementAccess(const MemberExpr& expr) {
@@ -710,6 +716,7 @@ llvm::Value* IRGenerator::codegenLambdaExpr(const LambdaExpr& expr) {
 
     VarExpr varExpr(functionDecl->getName(), functionDecl->getLocation());
     varExpr.setDecl(functionDecl);
+    varExpr.setType(expr.getType());
     return codegenVarExpr(varExpr);
 }
 
