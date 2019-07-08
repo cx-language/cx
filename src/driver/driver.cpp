@@ -398,18 +398,23 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     if (outputFileName.empty()) {
-        outputFileName = "a";
-        renameFile(temporaryExecutablePath, outputPathPrefix + outputFileName + (msvc ? ".exe" : ".out"));
-    } else {
-        renameFile(temporaryExecutablePath, outputPathPrefix + outputFileName + (msvc ? ".exe" : ""));
+        outputFileName = msvc ? "a.exe" : "a.out";
     }
+
+    renameFile(temporaryExecutablePath, outputPathPrefix + outputFileName);
 
     if (msvc) {
         auto path = temporaryExecutablePath;
+        auto outputPath = outputPathPrefix;
+        outputPath += outputFileName;
+
         llvm::sys::path::replace_extension(path, "ilk");
-        renameFile(path, outputPathPrefix + outputFileName + ".ilk");
+        llvm::sys::path::replace_extension(outputPath, "ilk");
+        renameFile(path, outputPath);
+
         llvm::sys::path::replace_extension(path, "pdb");
-        renameFile(path, outputPathPrefix + outputFileName + ".pdb");
+        llvm::sys::path::replace_extension(outputPath, "pdb");
+        renameFile(path, outputPath);
     }
 
     return 0;
