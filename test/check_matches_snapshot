@@ -31,7 +31,7 @@ if output != snapshot:
     print("+ Received\n")
 
     import difflib
-    diff = difflib.ndiff(snapshot.splitlines(1), output.splitlines(1))
+    diff = difflib.unified_diff(snapshot.splitlines(1), output.splitlines(1))
     print("".join(diff))
 
     sys.exit(1)
