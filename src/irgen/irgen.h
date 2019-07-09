@@ -40,7 +40,7 @@ class IRGenerator {
 public:
     IRGenerator();
 
-    llvm::Module& compile(const Module& sourceModule);
+    llvm::Module& codegenModule(const Module& sourceModule);
     llvm::Value* codegenExpr(const Expr& expr);
     llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
     llvm::LLVMContext& getLLVMContext() { return ctx; }

@@ -283,7 +283,7 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
     }
 }
 
-llvm::Module& IRGenerator::compile(const Module& sourceModule) {
+llvm::Module& IRGenerator::codegenModule(const Module& sourceModule) {
     ASSERT(!module);
     module = llvm::make_unique<llvm::Module>(sourceModule.getName(), ctx);
 

@@ -282,10 +282,10 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     IRGenerator irGenerator;
 
     for (auto* module : Module::getAllImportedModules()) {
-        irGenerator.compile(*module);
+        irGenerator.codegenModule(*module);
     }
 
-    auto& mainModule = irGenerator.compile(module);
+    auto& mainModule = irGenerator.codegenModule(module);
 
     if (printIR) {
         mainModule.setModuleIdentifier("");
