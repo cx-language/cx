@@ -268,10 +268,7 @@ std::unique_ptr<Decl> Decl::instantiate(const llvm::StringMap<Type>& genericArgs
 
                     for (auto& genericParam : functionTemplate->getGenericParams()) {
                         genericParams.emplace_back(genericParam.getName().str(), genericParam.getLocation());
-
-                        for (Type constraint : genericParam.getConstraints()) {
-                            genericParams.back().addConstraint(constraint);
-                        }
+                        genericParams.back().setConstraints(genericParam.getConstraints());
                     }
 
                     auto accessLevel = methodInstantiation->getAccessLevel();

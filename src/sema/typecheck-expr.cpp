@@ -382,12 +382,6 @@ bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, Type* co
     return true;
 }
 
-bool Typechecker::isInterface(Type type) {
-    if (!type.isBasicType() || type.isBuiltinType()) return false;
-    auto* typeDecl = getTypeDecl(llvm::cast<BasicType>(*type));
-    return typeDecl && typeDecl->isInterface();
-}
-
 static bool hasField(TypeDecl& type, const FieldDecl& field) {
     return llvm::any_of(type.getFields(), [&](const FieldDecl& ownField) {
         return ownField.getName() == field.getName() && ownField.getType() == field.getType();

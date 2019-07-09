@@ -127,6 +127,10 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
 
         for (Type constraint : genericParam.getConstraints()) {
             typecheckType(constraint, userAccessLevel);
+
+            if (!constraint.getDecl()->isInterface()) {
+                error(constraint.getLocation(), "only interface types can be used as generic constraints");
+            }
         }
     }
 }
@@ -215,30 +219,27 @@ void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
 
 void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
     for (Type interface : decl.getInterfaces()) {
-        if (interface.isBasicType()) {
-            if (auto* interfaceDecl = getTypeDecl(llvm::cast<BasicType>(*interface))) {
-                if (interfaceDecl->isInterface()) {
-                    std::string errorReason;
-                    if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-                        error(decl.getLocation(), "'", decl.getName(), "' ", errorReason, " required by interface '",
-                              interfaceDecl->getName(), "'");
-                    }
+        typecheckType(interface, decl.getAccessLevel());
+        auto* interfaceDecl = interface.getDecl();
 
-                    for (auto& method : interfaceDecl->getMethods()) {
-                        auto& methodDecl = llvm::cast<MethodDecl>(*method);
+        if (!interfaceDecl->isInterface()) {
+            error(interface.getLocation(), "'", interface, "' is not an interface");
+        }
 
-                        if (methodDecl.hasBody()) {
-                            auto copy = methodDecl.instantiate({ { "This", decl.getType() } }, decl);
-                            getCurrentModule()->addToSymbolTable(*copy);
-                            decl.addMethod(move(copy));
-                        }
-                    }
+        std::string errorReason;
+        if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
+            error(decl.getLocation(), "'", decl.getName(), "' ", errorReason, " required by interface '", interfaceDecl->getName(), "'");
+        }
 
-                    continue;
-                }
+        for (auto& method : interfaceDecl->getMethods()) {
+            auto& methodDecl = llvm::cast<MethodDecl>(*method);
+
+            if (methodDecl.hasBody()) {
+                auto copy = methodDecl.instantiate({ { "This", decl.getType() } }, decl);
+                getCurrentModule()->addToSymbolTable(*copy);
+                decl.addMethod(move(copy));
             }
         }
-        error(decl.getLocation(), "'", interface, "' is not an interface");
     }
 
     TypeDecl* realDecl;

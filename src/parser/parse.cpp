@@ -351,18 +351,14 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
 
         if (currentToken() == Token::Comma) {
             consumeToken();
-            continue;
+        } else {
+            if (currentToken() == Token::RightShift) {
+                tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().getLocation());
+                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().getLocation().nextColumn()));
+            }
+            return types;
         }
-
-        if (currentToken() == Token::RightShift) {
-            tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().getLocation());
-            tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().getLocation().nextColumn()));
-        }
-
-        break;
     }
-
-    return types;
 }
 
 /// generic-argument-list ::= '<' non-empty-type-list '>'
@@ -1080,10 +1076,9 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
         auto genericParamName = parse(Token::Identifier);
         genericParams.emplace_back(genericParamName.getString(), genericParamName.getLocation());
 
-        if (currentToken() == Token::Colon) { // Generic type constraint.
+        if (currentToken() == Token::Colon) {
             consumeToken();
-            auto identifier = parse(Token::Identifier);
-            genericParams.back().addConstraint(BasicType::get(identifier.getString(), {}, Mutability::Mutable, identifier.getLocation()));
+            genericParams.back().setConstraints(parseType());
         }
 
         if (currentToken() == Token::Greater) break;

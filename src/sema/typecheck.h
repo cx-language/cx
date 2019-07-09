@@ -83,7 +83,6 @@ private:
     Type typecheckLambdaExpr(LambdaExpr& expr);
     Type typecheckIfExpr(IfExpr& expr);
 
-    bool isInterface(Type type);
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
     bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const;

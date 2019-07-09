@@ -1,6 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:8: error: 'String' is not an interface
+// CHECK: [[@LINE+1]]:14: error: 'String' is not an interface
 struct Z<T>: String {
     init() {}
 }

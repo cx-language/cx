@@ -172,7 +172,7 @@ public:
     : Decl(DeclKind::GenericParamDecl, AccessLevel::None), name(std::move(name)), location(location) {}
     llvm::StringRef getName() const override { return name; }
     llvm::ArrayRef<Type> getConstraints() const { return constraints; }
-    void addConstraint(Type constraint) { constraints.push_back(constraint); }
+    void setConstraints(llvm::ArrayRef<Type> c) { constraints.assign(c.begin(), c.end()); }
     Module* getModule() const override { return nullptr; }
     SourceLocation getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::GenericParamDecl; }
