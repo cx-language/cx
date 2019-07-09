@@ -4,17 +4,18 @@ matrix:
     include:
         - os: linux
           compiler: clang
-          before_install: CC=clang-5.0 CXX=clang++-5.0
+          before_install: LLVM_VERSION=7.0.0 CC=clang-5.0 CXX=clang++-5.0
 
         - os: linux
           compiler: gcc
-          before_install: CC=gcc-7 CXX=g++-7 CXXFLAGS="--coverage"
+          before_install: LLVM_VERSION=7.0.0 CC=gcc-7 CXX=g++-7 CXXFLAGS="--coverage"
 
         - os: osx
           compiler: clang
+          before_install: LLVM_VERSION=7.0.0
 
         - os: windows
-          before_install: EXTRA_CMAKE_FLAGS=(-G "Visual Studio 15 2017 Win64" -Thost=x64)
+          before_install: LLVM_VERSION=7.1.0 EXTRA_CMAKE_FLAGS=(-G "Visual Studio 15 2017 Win64" -Thost=x64)
 
 addons:
     apt:
@@ -32,23 +33,20 @@ addons:
 env:
     global:
         - secure: "B1EM2bHUOTeDkMSP4Yl2MBfzsDFpoDy/GGIfWUFhya5KUI1L6vwXPAfWi6jP8w0UGBZAx9x5XFJXKMGKs4Ark4YOlhdtMmwKjflVOFLoIiqjKshr/791XiA77axL3L5dO90noeOFzXL7NBOGry8zF1TjELuNk2JWJZpqU00pB9fnq8ruy6H3VQ+9jZ/eAnB9OVzCB7tQXj3P3bNoUbgz3ZoEKkEi7n9rHug9erXcbbogDKP0PQ9s6mlCmD1jq3gx1oZDeflLCdXJ3bFE7krG69Vi745OnaDhMpDcJm0qV9EAZWD41cX1qd1VCfwnUwCt7w5CP2P+uyotmQnUc0d572HzU9suGw/YINmEXLsX1Yqumm7d9gto5kuQE37D6GAo8duGEeFZVRv4uTX+AlBaL6nhRKNnQqhgKjKHpsPHzU/mBO3SsfL2wLMvUFGdw7lum/RRemritx7YUdXyUVwZV5fiFLNg2go0WMZd9UkX+WnM1isBMpxCL492wKe/8uECpfnamed1ECnHAYUGVT25tEEky4Frh0HD37CCmZ3f6YmZhEmnvrZGdqmwkf8VO7MXTS/u8HqWw2eS6/SjcpAwgs5RCH0E/dD6LuepvPmy2igBn4EBgKTjyAUCHt7M9T+PpsiOZ/+VwK29A+RLlk5SxGDjSVQHYwVJ7t0LXObMHFs="
-        - LLVM_VERSION=7.1.0
-        - LLVM_TARBALL_NAME=clang+llvm-7.1.0-x86_64-linux-gnu-ubuntu-14.04
-        - LLVM_VERSION_MACOS=7.0.0
-        - LLVM_TARBALL_NAME_MACOS=clang+llvm-7.0.0-x86_64-apple-darwin
 
 install:
     - if [ $TRAVIS_OS_NAME == "linux" ]; then
+          export LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-16.04;
           wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz;
           tar -xf $LLVM_TARBALL_NAME.tar.xz;
           export LLVMDIR="$PWD/$LLVM_TARBALL_NAME";
-          export CXXFLAGS="$CXXFLAGS -D_GLIBCXX_USE_CXX11_ABI=0";
           pip install --user lit cpp-coveralls;
       fi
     - if [ $TRAVIS_OS_NAME == "osx" ]; then
-          wget --no-verbose http://releases.llvm.org/$LLVM_VERSION_MACOS/$LLVM_TARBALL_NAME_MACOS.tar.xz;
-          tar -xf $LLVM_TARBALL_NAME_MACOS.tar.xz;
-          export LLVMDIR="$PWD/$LLVM_TARBALL_NAME_MACOS";
+          export LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-apple-darwin;
+          wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz;
+          tar -xf $LLVM_TARBALL_NAME.tar.xz;
+          export LLVMDIR="$PWD/$LLVM_TARBALL_NAME";
           pip2 install lit pyyaml;
       fi
     - if [ $TRAVIS_OS_NAME == "windows" ]; then
