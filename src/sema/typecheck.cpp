@@ -4,6 +4,7 @@
 #include <llvm/Support/Path.h>
 #pragma warning(pop)
 #include "../ast/module.h"
+#include "../driver/driver.h"
 #include "../package-manager/manifest.h"
 #include "../parser/parse.h"
 
@@ -251,15 +252,14 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     return instantiation;
 }
 
-static std::error_code parseSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
-                                                          llvm::ArrayRef<std::string> frameworkSearchPaths) {
+static std::error_code parseSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, const CompileOptions& options) {
     std::error_code error;
     llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end;
 
     for (; it != end; it.increment(error)) {
         if (error) break;
         if (llvm::sys::path::extension(it->path()) == ".delta") {
-            Parser parser(it->path(), module, importSearchPaths, frameworkSearchPaths);
+            Parser parser(it->path(), module, options);
             parser.parse();
         }
     }
@@ -267,9 +267,7 @@ static std::error_code parseSourcesInDirectoryRecursively(const llvm::Twine& dir
     return error;
 }
 
-llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
-                                                            llvm::ArrayRef<std::string> importSearchPaths,
-                                                            llvm::ArrayRef<std::string> frameworkSearchPaths, llvm::StringRef moduleName) {
+llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName) {
     auto it = Module::getAllImportedModulesMap().find(moduleName);
     if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);
@@ -282,16 +280,16 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     if (manifest) {
         for (auto& dependency : manifest->getDeclaredDependencies()) {
             if (dependency.getPackageIdentifier() == moduleName) {
-                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, importSearchPaths, frameworkSearchPaths);
+                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, options);
                 goto done;
             }
         }
     }
 
-    for (llvm::StringRef importPath : importSearchPaths) {
+    for (llvm::StringRef importPath : options.importSearchPaths) {
         auto modulePath = importPath + "/" + moduleName;
         if (llvm::sys::fs::is_directory(modulePath)) {
-            error = parseSourcesInDirectoryRecursively(modulePath, *module, importSearchPaths, frameworkSearchPaths);
+            error = parseSourcesInDirectoryRecursively(modulePath, *module, options);
             goto done;
         }
     }
@@ -303,7 +301,7 @@ done:
 
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->getName()] = module;
-    typecheckModule(*module, nullptr, importSearchPaths, frameworkSearchPaths);
+    typecheckModule(*module, nullptr);
     return *module;
 }
 
@@ -348,9 +346,8 @@ static void checkUnusedDecls(const Module& module) {
     }
 }
 
-void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
-                                  llvm::ArrayRef<std::string> frameworkSearchPaths) {
-    auto stdModule = importDeltaModule(nullptr, nullptr, importSearchPaths, frameworkSearchPaths, "std");
+void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest) {
+    auto stdModule = importDeltaModule(nullptr, nullptr, "std");
     if (!stdModule) {
         printErrorAndExit("couldn't import the standard library: ", stdModule.getError().message());
     }
@@ -375,7 +372,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             currentSourceFile = &sourceFile;
 
             if (!decl->isVarDecl()) {
-                typecheckTopLevelDecl(*decl, manifest, importSearchPaths, frameworkSearchPaths);
+                typecheckTopLevelDecl(*decl, manifest);
                 postProcess();
             }
         }
@@ -390,7 +387,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
 }
 
 bool Typechecker::isWarningEnabled(llvm::StringRef warning) const {
-    return !llvm::is_contained(disabledWarnings, warning);
+    return !llvm::is_contained(options.disabledWarnings, warning);
 }
 
 template<typename ModuleContainer>

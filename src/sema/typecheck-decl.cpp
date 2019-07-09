@@ -333,19 +333,17 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     typecheckType(decl.getType(), std::min(decl.getAccessLevel(), decl.getParent()->getAccessLevel()));
 }
 
-void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
-                                      llvm::ArrayRef<std::string> frameworkSearchPaths) {
-    if (importDeltaModule(currentSourceFile, manifest, importSearchPaths, frameworkSearchPaths, decl.getTarget())) {
+void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest) {
+    if (importDeltaModule(currentSourceFile, manifest, decl.getTarget())) {
         return;
     }
 
-    if (!importCHeader(*currentSourceFile, decl.getTarget(), importSearchPaths, frameworkSearchPaths)) {
+    if (!importCHeader(*currentSourceFile, decl.getTarget(), options)) {
         error(decl.getLocation(), "couldn't find module or C header '", decl.getTarget(), "'");
     }
 }
 
-void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
-                                        llvm::ArrayRef<std::string> frameworkSearchPaths) {
+void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest) {
     switch (decl.getKind()) {
         case DeclKind::ParamDecl:
             llvm_unreachable("no top-level parameter declarations");
@@ -380,7 +378,7 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
         case DeclKind::FieldDecl:
             llvm_unreachable("no top-level field declarations");
         case DeclKind::ImportDecl:
-            typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest, importSearchPaths, frameworkSearchPaths);
+            typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest);
             break;
     }
 }

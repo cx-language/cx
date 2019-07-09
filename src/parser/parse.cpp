@@ -15,6 +15,7 @@
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../ast/token.h"
+#include "../driver/driver.h"
 #include "../support/utility.h"
 
 using namespace delta;
@@ -25,13 +26,11 @@ static std::unique_ptr<llvm::MemoryBuffer> getFileMemoryBuffer(llvm::StringRef f
     return std::move(*buffer);
 }
 
-Parser::Parser(llvm::StringRef filePath, Module& module, llvm::ArrayRef<std::string> importSearchPaths, llvm::ArrayRef<std::string> frameworkSearchPaths)
-: Parser(getFileMemoryBuffer(filePath), module, importSearchPaths, frameworkSearchPaths) {}
+Parser::Parser(llvm::StringRef filePath, Module& module, const CompileOptions& options)
+: Parser(getFileMemoryBuffer(filePath), module, options) {}
 
-Parser::Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
-               llvm::ArrayRef<std::string> frameworkSearchPaths)
-: lexer(std::move(input)), currentModule(&module), currentTokenIndex(0), importSearchPaths(importSearchPaths),
-  frameworkSearchPaths(frameworkSearchPaths) {
+Parser::Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module, const CompileOptions& options)
+: lexer(std::move(input)), currentModule(&module), currentTokenIndex(0), options(options) {
     tokenBuffer.emplace_back(lexer.nextToken());
 }
 
@@ -1375,8 +1374,8 @@ void Parser::parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls) {
         auto header = parse(Token::StringLiteral);
         parse(Token::RightParen);
 
-        for (auto& path : llvm::concat<const std::string>(importSearchPaths, frameworkSearchPaths)) {
-            auto headerPath = llvm::Twine(path) + "/" + header.getString().drop_back().drop_front();
+        for (llvm::StringRef path : llvm::concat<const std::string>(options.importSearchPaths, options.frameworkSearchPaths)) {
+            auto headerPath = path + "/" + header.getString().drop_back().drop_front();
             if (llvm::sys::fs::exists(headerPath) && !llvm::sys::fs::is_directory(headerPath)) {
                 condition = true;
                 break;

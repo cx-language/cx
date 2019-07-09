@@ -1,10 +1,8 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <vector>
 #pragma warning(push, 0)
-#include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/MemoryBuffer.h>
 #pragma warning(pop)
 #include "lex.h"
@@ -12,7 +10,9 @@
 
 namespace llvm {
 class StringRef;
-}
+template<typename T>
+class ArrayRef;
+} // namespace llvm
 
 namespace delta {
 
@@ -70,12 +70,12 @@ struct SourceLocation;
 struct Token;
 struct Type;
 enum class AccessLevel;
+struct CompileOptions;
 
 class Parser {
 public:
-    Parser(llvm::StringRef filePath, Module& module, llvm::ArrayRef<std::string> importSearchPaths, llvm::ArrayRef<std::string> frameworkSearchPaths);
-    Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module, llvm::ArrayRef<std::string> importSearchPaths,
-           llvm::ArrayRef<std::string> frameworkSearchPaths);
+    Parser(llvm::StringRef filePath, Module& module, const CompileOptions& options);
+    Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module, const CompileOptions& options);
     void parse();
     std::unique_ptr<Expr> parseExpr();
 
@@ -175,8 +175,7 @@ private:
     Module* currentModule;
     std::vector<Token> tokenBuffer;
     size_t currentTokenIndex;
-    llvm::ArrayRef<std::string> importSearchPaths;
-    llvm::ArrayRef<std::string> frameworkSearchPaths;
+    const CompileOptions& options;
 };
 
 } // namespace delta

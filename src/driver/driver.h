@@ -13,6 +13,12 @@ namespace delta {
 
 class PackageManifest;
 
+struct CompileOptions {
+    std::vector<std::string> disabledWarnings;
+    std::vector<std::string> importSearchPaths;
+    std::vector<std::string> frameworkSearchPaths;
+};
+
 /// If `args` contains `flag`, removes it and returns true, otherwise returns false.
 bool checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args);
 int buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vector<llvm::StringRef>& args, bool run);

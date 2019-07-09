@@ -4,6 +4,7 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include "../ast/module.h"
+#include "../driver/driver.h"
 #include "../parser/parse.h"
 #include "../support/utility.h"
 
@@ -31,7 +32,8 @@ static auto getConfigValue(Decl* decl, DefaultValueT defaultValue) {
 PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::move(packageRoot)) {
     auto manifestPath = this->packageRoot + "/" + manifestFileName;
     Module module(manifestFileName);
-    Parser parser(manifestPath, module, {}, {});
+    CompileOptions options;
+    Parser parser(manifestPath, module, options);
     parser.parse();
     // TODO: Type-check package manifest.
 

@@ -27,24 +27,19 @@ class PackageManifest;
 class SourceFile;
 struct SourceLocation;
 struct Type;
+struct CompileOptions;
 
 class Typechecker {
 public:
-    Typechecker(std::vector<std::string>&& disabledWarnings)
-    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), isPostProcessing(false),
-      disabledWarnings(std::move(disabledWarnings)) {}
-
+    Typechecker(const CompileOptions& options)
+    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), isPostProcessing(false), options(options) {}
     Module* getCurrentModule() const { return NOTNULL(currentModule); }
     void setCurrentModule(Module* module) { currentModule = module; }
-    const SourceFile* getCurrentSourceFile() const { return currentSourceFile; }
-
-    void typecheckModule(Module& module, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
-                         llvm::ArrayRef<std::string> frameworkSearchPaths);
+    void typecheckModule(Module& module, const PackageManifest* manifest);
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false);
     void typecheckVarDecl(VarDecl& decl, bool isGlobal);
     void typecheckFieldDecl(FieldDecl& decl);
-    void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
-                               llvm::ArrayRef<std::string> frameworkSearchPaths);
+    void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest);
     void postProcess();
 
 private:
@@ -68,8 +63,7 @@ private:
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
     void typecheckEnumDecl(EnumDecl& decl);
-    void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
-                             llvm::ArrayRef<std::string> frameworkSearchPaths);
+    void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr);
@@ -108,9 +102,7 @@ private:
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
     void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;
-
-    llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest, llvm::ArrayRef<std::string> importSearchPaths,
-                                                   llvm::ArrayRef<std::string> frameworkSearchPaths, llvm::StringRef moduleName);
+    llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName);
 
     /// Returns true if the given expression (of optional type) is guaranteed to be non-null, e.g.
     /// if it was previously checked against null, and the type-checker can prove that it wasn't set
@@ -138,7 +130,7 @@ private:
     Type functionReturnType;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
-    std::vector<std::string> disabledWarnings;
+    const CompileOptions& options;
 };
 
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, SourceLocation location);

@@ -11,6 +11,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
+#include "driver.h"
 #include "../ast/expr.h"
 #include "../ast/module.h"
 #include "../irgen/irgen.h"
@@ -25,8 +26,9 @@ namespace {
 void evaluate(llvm::StringRef line) {
     Module module("main");
     module.addSourceFile(SourceFile(llvm::StringRef()));
-    Parser parser(llvm::MemoryBuffer::getMemBuffer(line, "", false), module, {}, {});
-    Typechecker typechecker({});
+    CompileOptions options;
+    Parser parser(llvm::MemoryBuffer::getMemBuffer(line, "", false), module, options);
+    Typechecker typechecker(options);
     typechecker.setCurrentModule(&module);
     IRGenerator irGenerator;
 

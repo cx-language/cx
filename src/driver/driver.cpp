@@ -217,6 +217,7 @@ int exec(const char* command, std::string& output) {
 
 int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
                            std::vector<llvm::StringRef>& args, llvm::StringRef outputDirectory, llvm::StringRef outputFileName, bool run) {
+    CompileOptions options;
     bool parse = checkFlag("-parse", args);
     bool typecheck = checkFlag("-typecheck", args);
     bool compileOnly = checkFlag("-c", args);
@@ -227,13 +228,13 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     bool emitPositionIndependentCode = checkFlag("-fPIC", args);
     if (checkFlag("-w", args)) warningMode = WarningMode::Suppress;
     if (checkFlag("-Werror", args)) warningMode = WarningMode::TreatAsErrors;
-    auto disabledWarnings = collectStringOptionValues("-Wno-", args);
+    options.disabledWarnings = collectStringOptionValues("-Wno-", args);
     auto defines = collectStringOptionValues("-D", args);
 #ifdef _WIN32
     defines.push_back("Windows");
 #endif
-    auto importSearchPaths = collectStringOptionValues("-I", args);
-    auto frameworkSearchPaths = collectStringOptionValues("-F", args);
+    options.importSearchPaths = collectStringOptionValues("-I", args);
+    options.frameworkSearchPaths = collectStringOptionValues("-F", args);
     auto specifiedOutputFileName = collectStringOptionValue("-o", args);
     if (!specifiedOutputFileName.empty()) {
         outputFileName = specifiedOutputFileName;
@@ -249,11 +250,11 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         printErrorAndExit("no input files");
     }
 
-    addPredefinedImportSearchPaths(importSearchPaths, files);
+    addPredefinedImportSearchPaths(options.importSearchPaths, files);
     Module module("main", std::move(defines));
 
     for (llvm::StringRef filePath : files) {
-        Parser parser(filePath, module, importSearchPaths, frameworkSearchPaths);
+        Parser parser(filePath, module, options);
         parser.parse();
     }
 
@@ -265,11 +266,11 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (parse) return 0;
 
-    Typechecker typechecker(std::move(disabledWarnings));
+    Typechecker typechecker(options);
     for (auto& importedModule : module.getImportedModules()) {
-        typechecker.typecheckModule(*importedModule, nullptr, importSearchPaths, frameworkSearchPaths);
+        typechecker.typecheckModule(*importedModule, nullptr);
     }
-    typechecker.typecheckModule(module, manifest, importSearchPaths, frameworkSearchPaths);
+    typechecker.typecheckModule(module, manifest);
 
     bool treatAsLibrary = !module.getSymbolTable().contains("main") && !run;
     if (treatAsLibrary) {

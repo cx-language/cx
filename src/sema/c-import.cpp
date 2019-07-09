@@ -27,6 +27,7 @@
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../ast/type.h"
+#include "../driver/driver.h"
 #include "../support/utility.h"
 
 using namespace delta;
@@ -300,8 +301,7 @@ private:
 
 } // namespace
 
-bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, llvm::ArrayRef<std::string> importSearchPaths,
-                          llvm::ArrayRef<std::string> frameworkSearchPaths) {
+bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, const CompileOptions& options) {
     auto it = Module::getAllImportedModulesMap().find(headerName);
     if (it != Module::getAllImportedModulesMap().end()) {
         importer.addImportedModule(it->second);
@@ -322,10 +322,10 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, llvm
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
 
-    for (llvm::StringRef includePath : importSearchPaths) {
+    for (llvm::StringRef includePath : options.importSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
     }
-    for (llvm::StringRef frameworkPath : frameworkSearchPaths) {
+    for (llvm::StringRef frameworkPath : options.frameworkSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(frameworkPath, clang::frontend::System, true, false);
     }
 
