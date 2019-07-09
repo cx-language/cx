@@ -780,6 +780,6 @@ define void @_EN4main3barE4intsPA3_3int([3 x i32]* %ints) {
   ret void
 }
 
-declare i8* @malloc(i64)
-
 declare void @free(i8*)
+
+declare i8* @malloc(i64)

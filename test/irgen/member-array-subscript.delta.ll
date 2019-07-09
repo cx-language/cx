@@ -743,6 +743,6 @@ define void @_EN4main1C3fooE(%C* %this) {
   ret void
 }
 
-declare i8* @malloc(i64)
-
 declare void @free(i8*)
+
+declare i8* @malloc(i64)

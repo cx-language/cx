@@ -1,9 +1,10 @@
 #pragma once
 
-#include <unordered_map>
+#include <map>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseMap.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 #pragma warning(pop)
@@ -157,7 +158,7 @@ private:
     std::vector<std::unique_ptr<llvm::Module>> generatedModules;
     llvm::BasicBlock::iterator lastAlloca;
 
-    llvm::StringMap<FunctionInstantiation> functionInstantiations;
+    std::map<std::string, FunctionInstantiation> functionInstantiations;
     std::vector<std::unique_ptr<Decl>> helperDecls;
     llvm::StringMap<std::pair<llvm::StructType*, const TypeDecl*>> structs;
     const Decl* currentDecl;

@@ -85,7 +85,10 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
 
 void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
     llvm::Function* function = getFunctionProto(decl);
-    if (!decl.isExtern()) codegenFunctionBody(decl, *function);
+
+    if (!decl.isExtern() && function->empty()) {
+        codegenFunctionBody(decl, *function);
+    }
 
 #ifndef NDEBUG
     if (llvm::verifyFunction(*function, &llvm::errs())) {

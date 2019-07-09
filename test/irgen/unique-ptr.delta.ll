@@ -40,7 +40,7 @@ define i32* @_EN3std8allocateI3intEE5value3int(i32 %value) {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @1, i32 0, i32 0))
+  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @0, i32 0, i32 0))
   call void @abort()
   unreachable
 
@@ -92,7 +92,7 @@ define %"UniquePtr<int>"* @_EN3std8allocateI9UniquePtrI3intEEE5value9UniquePtrI3
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @0, i32 0, i32 0))
+  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @1, i32 0, i32 0))
   call void @abort()
   unreachable
 
@@ -130,10 +130,10 @@ define %"UniquePtr<int>"* @_EN3std9UniquePtrI9UniquePtrI3intEE3getE(%"UniquePtr<
   ret %"UniquePtr<int>"* %pointer.load
 }
 
+declare void @free(i8*)
+
 declare i8* @malloc(i64)
 
 declare i32 @puts(i8*)
 
 declare void @abort()
-
-declare void @free(i8*)

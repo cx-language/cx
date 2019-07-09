@@ -762,6 +762,6 @@ define void @_EN4main1fI3intEE1aPAR_3int(%"ArrayRef<int>" %a) {
   ret void
 }
 
-declare i8* @malloc(i64)
-
 declare void @free(i8*)
+
+declare i8* @malloc(i64)

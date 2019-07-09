@@ -27,10 +27,10 @@ define void @_EN4main1SI5floatE4initE({}* %this) {
   ret void
 }
 
-define void @_EN4main1SI5floatE1gE({}* %this) {
+define void @_EN4main1SI3intE1gE({}* %this) {
   ret void
 }
 
-define void @_EN4main1SI3intE1gE({}* %this) {
+define void @_EN4main1SI5floatE1gE({}* %this) {
   ret void
 }

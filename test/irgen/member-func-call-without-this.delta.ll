@@ -34,10 +34,10 @@ define void @_EN4main3FooI3intE3bazE({}* %this) {
   ret void
 }
 
-define void @_EN4main3FooI3intE3quxE({}* %this) {
+define void @_EN4main1S3barE({}* %this) {
   ret void
 }
 
-define void @_EN4main1S3barE({}* %this) {
+define void @_EN4main3FooI3intE3quxE({}* %this) {
   ret void
 }
