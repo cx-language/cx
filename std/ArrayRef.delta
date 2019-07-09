@@ -28,7 +28,7 @@ struct ArrayRef<Element>: Copyable {
 
     /// Returns a reference to the element at the given index.
     Element* operator[](int index) {
-        return &data[index];
+        return data[index];
     }
 
     Element[?]* data() {
@@ -46,7 +46,7 @@ bool operator==<T>(ArrayRef<T> a, ArrayRef<T> b) {
     }
 
     for (var i in 0..a.size()) {
-        if (*a[i] != *b[i]) {
+        if (a[i] != b[i]) {
             return false;
         }
     }

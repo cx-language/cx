@@ -8,12 +8,14 @@
 %"EnumeratedIteratorEntry<int>" = type { i32*, i32 }
 %C = type { %"ArrayRef<int>" }
 
-@0 = private unnamed_addr constant [44 x i8] c"List index %d is out of bounds, size is %d\0A\00"
-@1 = private unnamed_addr constant [30 x i8] c"Called first() on empty List\0A\00"
-@2 = private unnamed_addr constant [29 x i8] c"Called last() on empty List\0A\00"
-@3 = private unnamed_addr constant [36 x i8] c"Called removeFirst() on empty List\0A\00"
-@4 = private unnamed_addr constant [35 x i8] c"Called removeLast() on empty List\0A\00"
-@5 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:36:62\00"
+@0 = private unnamed_addr constant [37 x i8] c"Assertion failed at List.delta:112:9\00"
+@1 = private unnamed_addr constant [37 x i8] c"Assertion failed at List.delta:113:9\00"
+@2 = private unnamed_addr constant [44 x i8] c"List index %d is out of bounds, size is %d\0A\00"
+@3 = private unnamed_addr constant [30 x i8] c"Called first() on empty List\0A\00"
+@4 = private unnamed_addr constant [29 x i8] c"Called last() on empty List\0A\00"
+@5 = private unnamed_addr constant [36 x i8] c"Called removeFirst() on empty List\0A\00"
+@6 = private unnamed_addr constant [35 x i8] c"Called removeLast() on empty List\0A\00"
+@7 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:36:62\00"
 
 define void @_EN3std8ArrayRefI3intE4initE(%"ArrayRef<int>"* %this) {
   %size = getelementptr inbounds %"ArrayRef<int>", %"ArrayRef<int>"* %this, i32 0, i32 1
@@ -252,7 +254,7 @@ if.end:                                           ; preds = %if.else, %if.then
 
 define void @_EN3std4ListI3intE16indexOutOfBoundsE5index3int(%"List<int>"* %this, i32 %index) {
   %1 = call i32 @_EN3std4ListI3intE4sizeE(%"List<int>"* %this)
-  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([44 x i8], [44 x i8]* @0, i32 0, i32 0), i32 %index, i32 %1)
+  %2 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([44 x i8], [44 x i8]* @2, i32 0, i32 0), i32 %index, i32 %1)
   call void @_EN3std10fatalErrorE()
   ret void
 }
@@ -278,7 +280,7 @@ if.end:                                           ; preds = %if.else, %if.then
 }
 
 define void @_EN3std4ListI3intE14emptyListFirstE(%"List<int>"* %this) {
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @1, i32 0, i32 0))
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @3, i32 0, i32 0))
   call void @_EN3std10fatalErrorE()
   ret void
 }
@@ -307,7 +309,7 @@ if.end:                                           ; preds = %if.else, %if.then
 }
 
 define void @_EN3std4ListI3intE13emptyListLastE(%"List<int>"* %this) {
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @2, i32 0, i32 0))
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([29 x i8], [29 x i8]* @4, i32 0, i32 0))
   call void @_EN3std10fatalErrorE()
   ret void
 }
@@ -347,7 +349,7 @@ define i32* @_EN3std13allocateArrayI3intEE4size3int(i32 %size) {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %4 = call i32 @puts(i8* getelementptr inbounds ([38 x i8], [38 x i8]* @5, i32 0, i32 0))
+  %4 = call i32 @puts(i8* getelementptr inbounds ([38 x i8], [38 x i8]* @7, i32 0, i32 0))
   call void @abort()
   unreachable
 
@@ -355,6 +357,41 @@ assert.success:                                   ; preds = %0
   %5 = bitcast i8* %3 to i32*
   ret i32* %5
 }
+
+define void @_EN3std4ListI3intE19resizeUninitializedE4size3int(%"List<int>"* %this, i32 %size) {
+  %size1 = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 1
+  %size1.load = load i32, i32* %size1
+  %1 = icmp eq i32 %size1.load, 0
+  %assert.condition = icmp eq i1 %1, false
+  br i1 %assert.condition, label %assert.fail, label %assert.success
+
+assert.fail:                                      ; preds = %0
+  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @0, i32 0, i32 0))
+  call void @abort()
+  unreachable
+
+assert.success:                                   ; preds = %0
+  %capacity = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 2
+  %capacity.load = load i32, i32* %capacity
+  %3 = icmp eq i32 %capacity.load, 0
+  %assert.condition2 = icmp eq i1 %3, false
+  br i1 %assert.condition2, label %assert.fail3, label %assert.success4
+
+assert.fail3:                                     ; preds = %assert.success
+  %4 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @1, i32 0, i32 0))
+  call void @abort()
+  unreachable
+
+assert.success4:                                  ; preds = %assert.success
+  %buffer = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 0
+  %5 = call i32* @_EN3std13allocateArrayI3intEE4size3int(i32 %size)
+  store i32* %5, i32** %buffer
+  ret void
+}
+
+declare i32 @puts(i8*)
+
+declare void @abort()
 
 define void @_EN3std4ListI3intE11removeFirstE(%"List<int>"* %this) {
   %size = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 1
@@ -375,7 +412,7 @@ if.end:                                           ; preds = %if.else, %if.then
 }
 
 define void @_EN3std4ListI3intE20emptyListRemoveFirstE(%"List<int>"* %this) {
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @3, i32 0, i32 0))
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @5, i32 0, i32 0))
   call void @_EN3std10fatalErrorE()
   ret void
 }
@@ -430,6 +467,48 @@ loop.end:                                         ; preds = %loop.condition
   ret void
 }
 
+define void @_EN3std4ListI3intE11removeFirstE12shouldRemoveFP3int_4bool(%"List<int>"* %this, i1 (i32*)* %shouldRemove) {
+  %__iterator = alloca %"RangeIterator<int>"
+  %1 = alloca %"Range<int>"
+  %index = alloca i32
+  %size = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 1
+  %size.load = load i32, i32* %size
+  call void @_EN3std5RangeI3intE4initE5start3int3end3int(%"Range<int>"* %1, i32 0, i32 %size.load)
+  %2 = call %"RangeIterator<int>" @_EN3std5RangeI3intE8iteratorE(%"Range<int>"* %1)
+  store %"RangeIterator<int>" %2, %"RangeIterator<int>"* %__iterator
+  br label %loop.condition
+
+loop.condition:                                   ; preds = %loop.increment, %0
+  %3 = call i1 @_EN3std13RangeIteratorI3intE8hasValueE(%"RangeIterator<int>"* %__iterator)
+  br i1 %3, label %loop.body, label %loop.end
+
+loop.body:                                        ; preds = %loop.condition
+  %4 = call i32 @_EN3std13RangeIteratorI3intE5valueE(%"RangeIterator<int>"* %__iterator)
+  store i32 %4, i32* %index
+  %index.load = load i32, i32* %index
+  %5 = call i32* @_EN3std4ListI3intEixE5index3int(%"List<int>"* %this, i32 %index.load)
+  %6 = call i1 %shouldRemove(i32* %5)
+  br i1 %6, label %if.then, label %if.else
+
+loop.increment:                                   ; preds = %if.end
+  call void @_EN3std13RangeIteratorI3intE9incrementE(%"RangeIterator<int>"* %__iterator)
+  br label %loop.condition
+
+loop.end:                                         ; preds = %if.then, %loop.condition
+  ret void
+
+if.then:                                          ; preds = %loop.body
+  %index.load1 = load i32, i32* %index
+  call void @_EN3std4ListI3intE14unsafeRemoveAtE5index3int(%"List<int>"* %this, i32 %index.load1)
+  br label %loop.end
+
+if.else:                                          ; preds = %loop.body
+  br label %if.end
+
+if.end:                                           ; preds = %if.else
+  br label %loop.increment
+}
+
 define void @_EN3std4ListI3intE10removeLastE(%"List<int>"* %this) {
   %size = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 1
   %size.load = load i32, i32* %size
@@ -452,7 +531,7 @@ if.end:                                           ; preds = %if.else, %if.then
 }
 
 define void @_EN3std4ListI3intE19emptyListRemoveLastE(%"List<int>"* %this) {
-  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @4, i32 0, i32 0))
+  %1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @6, i32 0, i32 0))
   call void @_EN3std10fatalErrorE()
   ret void
 }
@@ -665,9 +744,5 @@ define void @_EN4main1C3fooE(%C* %this) {
 }
 
 declare i8* @malloc(i64)
-
-declare i32 @puts(i8*)
-
-declare void @abort()
 
 declare void @free(i8*)

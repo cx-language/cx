@@ -19,6 +19,7 @@ void main() {
     testEmpty();
     testMap();
     testFilter();
+    testRemoveFirstByPredicate();
     testElementDestruction();
 }
 
@@ -141,6 +142,28 @@ void testFilter() {
     assert(b.size() == 2);
     assert(b[0] == 2);
     assert(b[1] == 4);
+}
+
+void testRemoveFirstByPredicate() {
+    var a = List([0, 1, 2, 3]);
+
+    a.removeFirst((int* value) -> value > 1);
+    assert(a == List([0, 1, 3]));
+
+    a.removeFirst((int* value) -> value < 1);
+    assert(a == List([1, 3]));
+
+    a.removeFirst((int* value) -> value < 1);
+    assert(a == List([1, 3]));
+
+    a.removeFirst((int* value) -> value > 1);
+    assert(a == List([1]));
+
+    a.removeFirst((int* value) -> value == 1);
+    assert(a.empty());
+
+    a.removeFirst((int* value) -> true);
+    assert(a.empty());
 }
 
 var deinits = 0;

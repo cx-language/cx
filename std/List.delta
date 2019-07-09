@@ -108,6 +108,12 @@ struct List<Element> {
         }
     }
 
+    void resizeUninitialized(int size) {
+        assert(this.size == 0);
+        assert(this.capacity == 0);
+        buffer = allocateArray<Element>(size);
+    }
+
     /// Removes the first element from the list.
     /// Other elements are moved towards the beginning of the list by one index.
     void removeFirst() {
@@ -116,6 +122,16 @@ struct List<Element> {
         }
 
         unsafeRemoveAt(0);
+    }
+
+    /// Removes the first element satisfying the given condition.
+    void removeFirst(bool(Element*) shouldRemove) {
+        for (var index in 0..size) {
+            if (shouldRemove(this[index])) {
+                unsafeRemoveAt(index);
+                break;
+            }
+        }
     }
 
     /// Removes the last element from the list.
@@ -184,7 +200,7 @@ struct List<Element> {
 
         for (var element in this) {
             if (include(element)) {
-                output.push(*element);
+                output.push(element);
             }
         }
 
@@ -223,4 +239,8 @@ struct List<Element> {
         printf("Called removeLast() on empty List\n");
         fatalError();
     }
+}
+
+bool operator==<T>(List<T>* a, List<T>* b) {
+    return ArrayRef(a) == ArrayRef(b);
 }
