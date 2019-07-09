@@ -478,8 +478,12 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (expr) {
+        if (expr->getType().isEnumType() && llvm::cast<EnumDecl>(expr->getType().getDecl())->getUnderlyingType() == target) {
+            return true;
+        }
+
         // Auto-cast integer constants to parameter type if within range, error out if not within range.
-        if ((expr->getType().isInteger() || expr->getType().isChar()) && expr->isConstant() && target.isBasicType()) {
+        if ((expr->getType().isInteger() || expr->getType().isChar() || expr->getType().isEnumType()) && expr->isConstant()) {
             const auto& value = expr->getConstantIntegerValue();
 
             if (target.isInteger()) {
@@ -1467,7 +1471,7 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
         if (convertedType) expr.getThenExpr()->setType(convertedType);
         return elseType;
     } else if (isImplicitlyConvertible(expr.getElseExpr(), elseType, thenType, &convertedType)) {
-        if (convertedType) expr.getThenExpr()->setType(convertedType);
+        if (convertedType) expr.getElseExpr()->setType(convertedType);
         return thenType;
     } else {
         error(expr.getLocation(), "incompatible operand types ('", thenType, "' and '", elseType, "')");

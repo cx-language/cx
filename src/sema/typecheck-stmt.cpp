@@ -94,11 +94,15 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     for (auto& switchCase : stmt.getCases()) {
         Type caseType = typecheckExpr(*switchCase.getValue());
+        Type convertedType;
 
-        if (!isImplicitlyConvertible(switchCase.getValue(), caseType, conditionType, nullptr)) {
+        if (isImplicitlyConvertible(switchCase.getValue(), caseType, conditionType, &convertedType)) {
+            if (convertedType) switchCase.getValue()->setType(convertedType);
+        } else {
             error(switchCase.getValue()->getLocation(), "case value type '", caseType, "' doesn't match switch condition type '",
                   conditionType, "'");
         }
+
         for (auto& caseStmt : switchCase.getStmts()) {
             typecheckStmt(caseStmt);
         }

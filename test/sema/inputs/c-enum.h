@@ -1,5 +1,5 @@
 // RUN: %delta -print-ir -Iinputs %s | %FileCheck %s
 
-enum {
+typedef enum {
     FOO = 42
-};
+} Foo;

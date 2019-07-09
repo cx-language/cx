@@ -8,8 +8,7 @@ const height = 480;
 
 uint8[?]*? keyState = null;
 
-// TODO: Import enum type names from C headers so we can use SDL_Scancode as the argument type here.
-bool isKeyDown(int key) {
+bool isKeyDown(SDL_Scancode key) {
     return keyState![key] != 0;
 }
 

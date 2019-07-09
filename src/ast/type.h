@@ -177,7 +177,10 @@ public:
 private:
     friend Type;
     BasicType(llvm::StringRef name, std::vector<Type>&& genericArgs)
-    : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)), decl(nullptr) {}
+    : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)), decl(nullptr) {
+        // TODO: Enable this assert.
+        // ASSERT(!name.empty());
+    }
 
 private:
     std::string name;

@@ -31,25 +31,25 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                     error(type.getLocation(), "unknown type '", type, "'");
                 }
 
+                ASSERT(decls.size() == 1);
                 decl = decls[0];
                 auto typeTemplate = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs());
                 getCurrentModule()->addToSymbolTable(*typeTemplate);
                 typecheckTypeDecl(*typeTemplate);
             } else {
+                ASSERT(decls.size() == 1);
                 decl = decls[0];
 
                 switch (decl->getKind()) {
                     case DeclKind::TypeDecl:
-                        if (auto* deinitDecl = llvm::cast<TypeDecl>(decl)->getDeinitializer()) {
-                            typecheckFunctionDecl(*deinitDecl);
-                        }
+                    case DeclKind::EnumDecl:
                         break;
                     case DeclKind::TypeTemplate:
                         validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->getGenericParams().size(), basicType->getGenericArgs(),
                                                 basicType->getName(), type.getLocation());
                         break;
                     default:
-                        break;
+                        error(type.getLocation(), "'", type, "' is not a type");
                 }
             }
 

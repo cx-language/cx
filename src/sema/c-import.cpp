@@ -91,10 +91,10 @@ Type toDelta(const clang::BuiltinType& type) {
     llvm_unreachable("unsupported builtin type");
 }
 
-llvm::StringRef getRecordName(const clang::RecordDecl& recordDecl) {
-    if (!recordDecl.getName().empty()) {
-        return recordDecl.getName();
-    } else if (auto* typedefNameDecl = recordDecl.getTypedefNameForAnonDecl()) {
+llvm::StringRef getName(const clang::TagDecl& decl) {
+    if (!decl.getName().empty()) {
+        return decl.getName();
+    } else if (auto* typedefNameDecl = decl.getTypedefNameForAnonDecl()) {
         return typedefNameDecl->getName();
     }
     return "";
@@ -123,7 +123,7 @@ Type toDelta(clang::QualType qualtype) {
             return toDelta(llvm::cast<clang::ElaboratedType>(type).getNamedType());
         case clang::Type::Record: {
             auto* recordDecl = llvm::cast<clang::RecordType>(type).getDecl();
-            return BasicType::get(getRecordName(*recordDecl), {}, mutability);
+            return BasicType::get(getName(*recordDecl), {}, mutability);
         }
         case clang::Type::Paren:
             return toDelta(llvm::cast<clang::ParenType>(type).getInnerType());
@@ -150,8 +150,16 @@ Type toDelta(clang::QualType qualtype) {
             return toDelta(llvm::cast<clang::AttributedType>(type).getEquivalentType());
         case clang::Type::Decayed:
             return toDelta(llvm::cast<clang::DecayedType>(type).getDecayedType());
-        case clang::Type::Enum:
-            return toDelta(llvm::cast<clang::EnumType>(type).getDecl()->getIntegerType());
+        case clang::Type::Enum: {
+            auto& enumType = llvm::cast<clang::EnumType>(type);
+            auto name = getName(*enumType.getDecl());
+
+            if (name.empty()) {
+                return toDelta(enumType.getDecl()->getIntegerType());
+            } else {
+                return BasicType::get(name, {}, mutability);
+            }
+        }
         case clang::Type::Vector:
             return Type::getInt(); // TODO: Handle vector types properly.
         default:
@@ -174,7 +182,7 @@ llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDe
 
 llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     auto tag = decl.isUnion() ? TypeTag::Union : TypeTag::Struct;
-    TypeDecl typeDecl(tag, getRecordName(decl), {}, {}, AccessLevel::Default, *currentModule, SourceLocation());
+    TypeDecl typeDecl(tag, getName(decl), {}, {}, AccessLevel::Default, *currentModule, SourceLocation());
 
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, typeDecl)) {
@@ -229,10 +237,18 @@ public:
                 }
                 case clang::Decl::Enum: {
                     auto& enumDecl = llvm::cast<clang::EnumDecl>(*decl);
-                    for (auto* enumerator : enumDecl.enumerators()) {
+                    auto type = getName(enumDecl).empty() ? enumDecl.getIntegerType() : clang::QualType(enumDecl.getTypeForDecl(), 0);
+                    std::vector<EnumCase> cases;
+
+                    for (clang::EnumConstantDecl* enumerator : enumDecl.enumerators()) {
+                        auto enumeratorName = enumerator->getName();
                         auto& value = enumerator->getInitVal();
-                        addIntegerConstantToSymbolTable(enumerator->getName(), value, enumDecl.getIntegerType(), module);
+                        auto valueExpr = llvm::make_unique<IntLiteralExpr>(value, SourceLocation());
+                        cases.push_back(EnumCase(enumeratorName, std::move(valueExpr), AccessLevel::Default, SourceLocation()));
+                        addIntegerConstantToSymbolTable(enumeratorName, value, type, module);
                     }
+
+                    module.addToSymbolTable(EnumDecl(getName(enumDecl), std::move(cases), AccessLevel::Default, module, SourceLocation()));
                     break;
                 }
                 case clang::Decl::Var:
