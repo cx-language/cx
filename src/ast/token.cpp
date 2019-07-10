@@ -182,12 +182,12 @@ long double Token::getFloatingPointValue() const {
     return value;
 }
 
-UnaryOperator::UnaryOperator(Token token) : kind(token) {
-    ASSERT(isUnaryOperator(token));
+UnaryOperator::UnaryOperator(Token::Kind kind) : kind(kind) {
+    ASSERT(isUnaryOperator(kind));
 }
 
-BinaryOperator::BinaryOperator(Token token) : kind(token) {
-    ASSERT(isBinaryOperator(token));
+BinaryOperator::BinaryOperator(Token::Kind kind) : kind(kind) {
+    ASSERT(isBinaryOperator(kind));
 }
 
 bool delta::isComparisonOperator(Token::Kind tokenKind) {
@@ -232,7 +232,7 @@ std::string delta::getFunctionName(Token::Kind tokenKind) {
         case Token::DotDotDot:
             return "ClosedRange";
         default:
-            return toString(isCompoundAssignmentOperator(tokenKind) ? withoutCompoundEqSuffix(tokenKind) : tokenKind);
+            return toString(tokenKind);
     }
 }
 

@@ -125,7 +125,7 @@ private:
 };
 
 struct UnaryOperator {
-    UnaryOperator(Token token);
+    UnaryOperator(Token::Kind kind);
     Token::Kind getKind() const { return kind; }
     operator Token::Kind() const { return kind; }
 
@@ -134,7 +134,7 @@ private:
 };
 
 struct BinaryOperator {
-    BinaryOperator(Token token);
+    BinaryOperator(Token::Kind kind);
     Token::Kind getKind() const { return kind; }
     operator Token::Kind() const { return kind; }
 

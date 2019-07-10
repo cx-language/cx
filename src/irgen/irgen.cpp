@@ -216,28 +216,28 @@ llvm::Value* IRGenerator::createLoad(llvm::Value* value) {
     return builder.CreateLoad(value, value->getName() + ".load");
 }
 
-llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr* lhs, const Expr* rhs) {
+llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr& lhs) {
     if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentDecl)) {
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(&lhs)) {
             if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
                 if (fieldDecl->getParent() == initDecl->getTypeDecl()) {
-                    return rhs->isUndefinedLiteralExpr() ? nullptr : codegenLvalueExpr(*lhs);
+                    return codegenLvalueExpr(lhs);
                 }
             }
         }
     }
 
-    if (auto* basicType = llvm::dyn_cast<BasicType>(lhs->getType().getBase())) {
+    if (auto* basicType = llvm::dyn_cast<BasicType>(lhs.getType().getBase())) {
         if (auto* typeDecl = basicType->getDecl()) {
             if (auto* deinit = typeDecl->getDeinitializer()) {
-                llvm::Value* value = codegenLvalueExpr(*lhs);
+                llvm::Value* value = codegenLvalueExpr(lhs);
                 createDeinitCall(getFunctionProto(*deinit), value);
-                return rhs->isUndefinedLiteralExpr() ? nullptr : value;
+                return value;
             }
         }
     }
 
-    return rhs->isUndefinedLiteralExpr() ? nullptr : codegenLvalueExpr(*lhs);
+    return codegenLvalueExpr(lhs);
 }
 
 void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {

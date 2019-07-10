@@ -70,8 +70,7 @@ private:
     Type typecheckTupleExpr(TupleExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
-    Type typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op);
-    void typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, SourceLocation location);
+    void typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location);
     Type typecheckCallExpr(CallExpr& expr);
     Type typecheckBuiltinConversion(CallExpr& expr);
     Type typecheckBuiltinCast(CallExpr& expr);

@@ -264,22 +264,19 @@ static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* curr
 }
 
 Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
-    if (expr.getOperator() == Token::Assignment) {
-        typecheckAssignment(expr.getLHS(), &expr.getRHS(), Type(), expr.getLocation());
+    auto op = expr.getOperator();
+
+    if (op == Token::Assignment) {
+        typecheckAssignment(expr.getLHS(), expr.getRHS(), expr.getLocation());
         return Type::getVoid();
     }
 
-    if (isCompoundAssignmentOperator(expr.getOperator())) {
-        Type rightType = typecheckBinaryExpr(expr, withoutCompoundEqSuffix(expr.getOperator()));
-        typecheckAssignment(expr.getLHS(), nullptr, rightType, expr.getLocation());
-        return Type::getVoid();
+    if (isCompoundAssignmentOperator(op)) {
+        auto rhs = llvm::make_unique<BinaryExpr>(withoutCompoundEqSuffix(op), expr.getSharedLHS(), expr.getSharedRHS(), expr.getLocation());
+        expr = BinaryExpr(Token::Assignment, expr.getSharedLHS(), std::move(rhs), expr.getLocation());
+        return typecheckBinaryExpr(expr);
     }
 
-    return typecheckBinaryExpr(expr, expr.getOperator());
-}
-
-Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op) {
-    ASSERT(!isAssignmentOperator(op));
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS());
 
@@ -325,24 +322,24 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr, Token::Kind op) {
     return isComparisonOperator(op) ? Type::getBool() : expr.getLHS().getType();
 }
 
-void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, SourceLocation location) {
+void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location) {
     typecheckExpr(lhs, true);
     Type lhsType = lhs.getAssignableType();
-    Type rhsType = rightType ? rightType : (rhs->isUndefinedLiteralExpr() ? Type() : typecheckExpr(*rhs));
+    Type rhsType = typecheckExpr(rhs);
 
-    if (rhsType && lhsType.isPointerType() && rhsType.equalsIgnoreTopLevelMutable(lhsType.getPointee())) {
+    if (lhsType.isPointerType() && rhsType.equalsIgnoreTopLevelMutable(lhsType.getPointee())) {
         lhsType = lhsType.getPointee();
     }
 
-    if (rhs && rhs->isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(lhs, currentFunction)) {
-        error(location, "'undefined' is only allowed as an initial value");
+    if (rhs.isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(lhs, currentFunction)) {
+        error(rhs.getLocation(), "'undefined' is only allowed as an initial value");
     }
 
-    if (!rhs || !rhs->isUndefinedLiteralExpr()) {
+    if (!rhs.isUndefinedLiteralExpr()) {
         Type convertedType;
 
-        if (isImplicitlyConvertible(rhs, rhsType, lhsType, &convertedType)) {
-            if (rhs) rhs->setType(convertedType ? convertedType : rhsType);
+        if (isImplicitlyConvertible(&rhs, rhsType, lhsType, &convertedType)) {
+            rhs.setType(convertedType ? convertedType : rhsType);
         } else {
             error(location, "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
         }
@@ -363,8 +360,8 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr* rhs, Type rightType, Sour
         }
     }
 
-    if (rhsType && !rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
-        if (rhs) rhs->setMoved(true);
+    if (!rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
+        rhs.setMoved(true);
         lhs.setMoved(false);
     }
 

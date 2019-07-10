@@ -89,10 +89,10 @@ protected:
     Expr(ExprKind kind, SourceLocation location) : kind(kind), location(location) {}
 
 private:
-    const ExprKind kind;
+    ExprKind kind;
     Type type;
     Type assignableType;
-    const SourceLocation location;
+    SourceLocation location;
 };
 
 inline Expr::~Expr() {}
@@ -187,12 +187,14 @@ private:
 
 class NamedValue {
 public:
-    NamedValue(std::string&& name, std::unique_ptr<Expr> value, SourceLocation location = SourceLocation())
+    NamedValue(std::shared_ptr<Expr> value) : NamedValue("", std::move(value)) {}
+    NamedValue(std::string&& name, std::shared_ptr<Expr> value, SourceLocation location = SourceLocation())
     : name(std::move(name)), value(std::move(value)), location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
     void setName(std::string&& newName) { name = newName; }
     Expr* getValue() { return value.get(); }
     const Expr* getValue() const { return value.get(); }
+    std::shared_ptr<Expr> getSharedValue() { return value; }
     SourceLocation getLocation() const { return location; }
 
 private:
@@ -262,15 +264,10 @@ private:
     Decl* calleeDecl;
 };
 
-inline std::vector<NamedValue> addArg(std::vector<NamedValue>&& args, std::unique_ptr<Expr> arg) {
-    args.push_back({ "", std::move(arg), SourceLocation() });
-    return std::move(args);
-}
-
 class UnaryExpr : public CallExpr {
 public:
     UnaryExpr(UnaryOperator op, std::unique_ptr<Expr> operand, SourceLocation location)
-    : CallExpr(ExprKind::UnaryExpr, llvm::make_unique<VarExpr>(toString(op.getKind()), location), addArg({}, std::move(operand)), location),
+    : CallExpr(ExprKind::UnaryExpr, llvm::make_unique<VarExpr>(toString(op.getKind()), location), { NamedValue(std::move(operand)) }, location),
       op(op) {}
     UnaryOperator getOperator() const { return op; }
     Expr& getOperand() { return *getArgs()[0].getValue(); }
@@ -284,15 +281,17 @@ private:
 
 class BinaryExpr : public CallExpr {
 public:
-    BinaryExpr(BinaryOperator op, std::unique_ptr<Expr> left, std::unique_ptr<Expr> right, SourceLocation location)
+    BinaryExpr(BinaryOperator op, std::shared_ptr<Expr> left, std::shared_ptr<Expr> right, SourceLocation location)
     : CallExpr(ExprKind::BinaryExpr, llvm::make_unique<VarExpr>(delta::getFunctionName(op), location),
-               addArg(addArg({}, std::move(left)), std::move(right)), location),
+               { NamedValue(std::move(left)), NamedValue(std::move(right)) }, location),
       op(op) {}
     BinaryOperator getOperator() const { return op; }
     const Expr& getLHS() const { return *getArgs()[0].getValue(); }
     const Expr& getRHS() const { return *getArgs()[1].getValue(); }
     Expr& getLHS() { return *getArgs()[0].getValue(); }
     Expr& getRHS() { return *getArgs()[1].getValue(); }
+    std::shared_ptr<Expr> getSharedLHS() { return getArgs()[0].getSharedValue(); }
+    std::shared_ptr<Expr> getSharedRHS() { return getArgs()[1].getSharedValue(); }
     llvm::APSInt getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 

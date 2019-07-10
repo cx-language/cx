@@ -347,33 +347,10 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
 }
 
 void IRGenerator::codegenAssignment(const BinaryExpr& expr) {
-    llvm::Value* lhsLvalue = codegenAssignmentLHS(&expr.getLHS(), &expr.getRHS());
-    if (!lhsLvalue) return;
-    llvm::Value* rhsValue;
+    if (expr.getRHS().isUndefinedLiteralExpr()) return;
 
-    if (isCompoundAssignmentOperator(expr.getOperator())) {
-        auto nonCompoundOp = withoutCompoundEqSuffix(expr.getOperator());
-
-        if (!isBuiltinOp(nonCompoundOp, expr.getLHS().getType(), expr.getRHS().getType())) {
-            builder.CreateStore(codegenCallExpr(expr), lhsLvalue);
-            return;
-        }
-
-        switch (nonCompoundOp) {
-            case Token::AndAnd:
-                error(expr.getLocation(), "'&&=' not implemented yet");
-            case Token::OrOr:
-                error(expr.getLocation(), "'||=' not implemented yet");
-            default:
-                break;
-        }
-
-        auto* lhsValue = createLoad(lhsLvalue);
-        rhsValue = codegenBinaryOp(nonCompoundOp, lhsValue, codegenExpr(expr.getRHS()), expr.getLHS().getType());
-    } else {
-        rhsValue = codegenExprForPassing(expr.getRHS(), lhsLvalue->getType()->getPointerElementType());
-    }
-
+    llvm::Value* lhsLvalue = codegenAssignmentLHS(expr.getLHS());
+    auto rhsValue = codegenExprForPassing(expr.getRHS(), lhsLvalue->getType()->getPointerElementType());
     builder.CreateStore(rhsValue, lhsLvalue);
 }
 

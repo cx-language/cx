@@ -4,7 +4,7 @@ struct A {
     int i;
 
     void f() {
-        // CHECK: [[@LINE+1]]:11: error: 'undefined' is only allowed as an initial value
+        // CHECK: [[@LINE+1]]:13: error: 'undefined' is only allowed as an initial value
         i = undefined;
     }
 }

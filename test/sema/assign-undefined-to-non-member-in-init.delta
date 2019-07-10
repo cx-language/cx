@@ -5,7 +5,7 @@ struct A {
 
     init() {
         var j = 0;
-        // CHECK: [[@LINE+1]]:11: error: 'undefined' is only allowed as an initial value
+        // CHECK: [[@LINE+1]]:13: error: 'undefined' is only allowed as an initial value
         j = undefined;
     }
 }

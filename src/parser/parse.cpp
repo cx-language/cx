@@ -742,10 +742,8 @@ std::unique_ptr<Expr> Parser::parsePostfixExpr() {
 /// prefix-expr ::= prefix-operator (prefix-expr | postfix-expr)
 std::unique_ptr<UnaryExpr> Parser::parsePrefixExpr() {
     ASSERT(isUnaryOperator(currentToken()));
-    auto op = currentToken();
-    auto location = getCurrentLocation();
-    consumeToken();
-    return llvm::make_unique<UnaryExpr>(op, parsePreOrPostfixExpr(), location);
+    auto op = consumeToken();
+    return llvm::make_unique<UnaryExpr>(op.getKind(), parsePreOrPostfixExpr(), op.getLocation());
 }
 
 std::unique_ptr<Expr> Parser::parsePreOrPostfixExpr() {
@@ -755,8 +753,8 @@ std::unique_ptr<Expr> Parser::parsePreOrPostfixExpr() {
 /// inc-expr ::= expr '++'
 /// dec-expr ::= expr '--'
 std::unique_ptr<UnaryExpr> Parser::parseIncrementOrDecrementExpr(std::unique_ptr<Expr> operand) {
-    auto location = getCurrentLocation();
-    return llvm::make_unique<UnaryExpr>(parse({ Token::Increment, Token::Decrement }), std::move(operand), location);
+    auto op = parse({ Token::Increment, Token::Decrement });
+    return llvm::make_unique<UnaryExpr>(op.getKind(), std::move(operand), op.getLocation());
 }
 
 /// binary-expr ::= expr op expr
@@ -778,7 +776,7 @@ std::unique_ptr<Expr> Parser::parseBinaryExpr(int minPrecedence) {
             break;
         }
 
-        lhs = llvm::make_unique<BinaryExpr>(op, std::move(lhs), std::move(rhs), op.getLocation());
+        lhs = llvm::make_unique<BinaryExpr>(op.getKind(), std::move(lhs), std::move(rhs), op.getLocation());
     }
 
     return lhs;

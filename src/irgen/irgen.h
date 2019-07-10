@@ -112,7 +112,7 @@ private:
     void codegenWhileStmt(const WhileStmt& whileStmt);
     void codegenBreakStmt(const BreakStmt&);
     void codegenContinueStmt(const ContinueStmt&);
-    llvm::Value* codegenAssignmentLHS(const Expr* lhs, const Expr* rhs);
+    llvm::Value* codegenAssignmentLHS(const Expr& lhs);
     void codegenCompoundStmt(const CompoundStmt& stmt);
     void codegenStmt(const Stmt& stmt);
 
