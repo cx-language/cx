@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <vector>
 #pragma warning(push, 0)

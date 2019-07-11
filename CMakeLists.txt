@@ -45,7 +45,7 @@ find_package(Clang REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-add_definitions(${LLVM_DEFINITIONS} -DDELTA_ROOT_DIR="${PROJECT_SOURCE_DIR}")
+add_definitions(-DDELTA_ROOT_DIR="${PROJECT_SOURCE_DIR}")
 
 # Define the include path of the Clang builtin headers, to be used by the compiler to avoid errors
 # about missing C headers when importing C headers from Delta code. For more information, see e.g.
@@ -150,3 +150,10 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
     endif()
     configure_file("${PROJECT_SOURCE_DIR}/scripts/pre-commit" "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit" @ONLY NEWLINE_STYLE LF)
 endif()
+
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")
+    message(STATUS "Downloading 'cotire'")
+    file(DOWNLOAD "https://github.com/sakra/cotire/raw/master/CMake/cotire.cmake" "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")
+endif()
+include(cotire)
+cotire(delta)
