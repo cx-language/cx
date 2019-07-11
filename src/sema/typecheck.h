@@ -33,16 +33,14 @@ class Typechecker {
 public:
     Typechecker(const CompileOptions& options)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), isPostProcessing(false), options(options) {}
-    Module* getCurrentModule() const { return NOTNULL(currentModule); }
-    void setCurrentModule(Module* module) { currentModule = module; }
     void typecheckModule(Module& module, const PackageManifest* manifest);
+
+private:
+    Module* getCurrentModule() const { return NOTNULL(currentModule); }
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false);
     void typecheckVarDecl(VarDecl& decl, bool isGlobal);
     void typecheckFieldDecl(FieldDecl& decl);
     void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest);
-    void postProcess();
-
-private:
     void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
     void typecheckFunctionDecl(FunctionDecl& decl);
     void typecheckFunctionTemplate(FunctionTemplate& decl);
@@ -102,6 +100,7 @@ private:
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
     void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;
     llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName);
+    void postProcess();
 
     /// Returns true if the given expression (of optional type) is guaranteed to be non-null, e.g.
     /// if it was previously checked against null, and the type-checker can prove that it wasn't set

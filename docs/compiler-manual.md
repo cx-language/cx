@@ -13,7 +13,6 @@ Commands available in a package source tree:
 ### Non-Package Commands
 
 Commands available everywhere:
-- `delta` - enter the REPL
 - `delta <files>` - compile the given files into an executable
 - `delta run <files>` - compile the given files into an executable and run it
 - `delta init` - initialize a new package interactively (not implemented yet)

@@ -8,7 +8,6 @@
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 #include "../driver/driver.h"
-#include "../driver/repl.h"
 #include "../support/utility.h"
 
 using namespace delta;
@@ -42,7 +41,8 @@ int main(int argc, const char** argv) {
     ++argv;
 
     if (argc == 0) {
-        return replMain();
+        printHelp();
+        return 0;
     }
 
     llvm::StringRef command = argv[0];

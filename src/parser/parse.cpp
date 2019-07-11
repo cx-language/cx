@@ -27,10 +27,7 @@ static std::unique_ptr<llvm::MemoryBuffer> getFileMemoryBuffer(llvm::StringRef f
 }
 
 Parser::Parser(llvm::StringRef filePath, Module& module, const CompileOptions& options)
-: Parser(getFileMemoryBuffer(filePath), module, options) {}
-
-Parser::Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module, const CompileOptions& options)
-: lexer(std::move(input)), currentModule(&module), currentTokenIndex(0), options(options) {
+: lexer(getFileMemoryBuffer(filePath)), currentModule(&module), currentTokenIndex(0), options(options) {
     tokenBuffer.emplace_back(lexer.nextToken());
 }
 

@@ -52,7 +52,7 @@ file(GLOB LIBRARY_SOURCES src/ast/*.h src/ast/*.cpp src/driver/*.h src/driver/*.
     src/package-manager/*.cpp src/parser/*.h src/parser/*.cpp src/sema/*.h src/sema/*.cpp src/support/*.h src/support/*.cpp)
 file(GLOB DELTA_SOURCES src/delta/*.h src/delta/*.cpp)
 
-llvm_map_components_to_libnames(LLVM_LIBS core native mc lineeditor executionengine interpreter bitwriter linker support)
+llvm_map_components_to_libnames(LLVM_LIBS core native linker support)
 list(APPEND LLVM_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema)
 
 if(BUILD_LIBDELTA)

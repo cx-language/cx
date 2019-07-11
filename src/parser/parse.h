@@ -75,9 +75,7 @@ struct CompileOptions;
 class Parser {
 public:
     Parser(llvm::StringRef filePath, Module& module, const CompileOptions& options);
-    Parser(std::unique_ptr<llvm::MemoryBuffer> input, Module& module, const CompileOptions& options);
     void parse();
-    std::unique_ptr<Expr> parseExpr();
 
 private:
     Token currentToken();
@@ -124,6 +122,7 @@ private:
     std::unique_ptr<Expr> parsePreOrPostfixExpr();
     std::unique_ptr<UnaryExpr> parseIncrementOrDecrementExpr(std::unique_ptr<Expr> operand);
     std::unique_ptr<Expr> parseBinaryExpr(int minPrecedence);
+    std::unique_ptr<Expr> parseExpr();
     std::vector<std::unique_ptr<Expr>> parseExprList();
     std::unique_ptr<ReturnStmt> parseReturnStmt();
     std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel);

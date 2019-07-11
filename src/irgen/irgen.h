@@ -40,12 +40,8 @@ struct IRGenScope {
 class IRGenerator {
 public:
     IRGenerator();
-
     llvm::Module& codegenModule(const Module& sourceModule);
-    llvm::Value* codegenExpr(const Expr& expr);
-    llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
     llvm::LLVMContext& getLLVMContext() { return ctx; }
-    llvm::IRBuilder<>& getBuilder() { return builder; }
     std::vector<std::unique_ptr<llvm::Module>> getGeneratedModules() { return std::move(generatedModules); }
 
 private:
@@ -60,6 +56,7 @@ private:
     llvm::Value* getValue(const Decl* decl);
     llvm::Value* getThis();
 
+    llvm::Value* codegenExpr(const Expr& expr);
     llvm::Value* codegenExprWithoutAutoCast(const Expr& expr);
     llvm::Value* codegenAutoCast(llvm::Value* value, const Expr& expr);
     llvm::Value* codegenVarExpr(const VarExpr& expr);
@@ -127,6 +124,7 @@ private:
     llvm::Value* createLoad(llvm::Value* value);
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
+    llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
 
