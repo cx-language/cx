@@ -27,7 +27,6 @@ addons:
             - gcc-7
             - g++-7
             - libstdc++-7-dev
-            - libedit-dev
             - lcov
 
 env:

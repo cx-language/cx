@@ -43,9 +43,6 @@ add_definitions(${LLVM_DEFINITIONS} -DDELTA_ROOT_DIR="${PROJECT_SOURCE_DIR}")
 # CLANG_CMAKE_DIR is defined by ClangConfig.cmake during the above find_package(Clang) call.
 add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_CMAKE_DIR}/../../clang/${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}/include")
 
-find_package(PkgConfig)
-pkg_check_modules(LIBEDIT libedit)
-
 enable_testing()
 
 file(GLOB LIBRARY_SOURCES src/ast/*.h src/ast/*.cpp src/driver/*.h src/driver/*.cpp src/irgen/*.h src/irgen/*.cpp src/package-manager/*.h
