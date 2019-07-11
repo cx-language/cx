@@ -309,13 +309,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
-    Type convertedType;
+    bool converted = convert(&expr.getRHS(), leftType) || convert(&expr.getLHS(), rightType);
 
-    if (isImplicitlyConvertible(&expr.getRHS(), rightType, leftType, &convertedType)) {
-        expr.getRHS().setType(convertedType ? convertedType : rightType);
-    } else if (isImplicitlyConvertible(&expr.getLHS(), leftType, rightType, &convertedType)) {
-        expr.getLHS().setType(convertedType ? convertedType : leftType);
-    } else if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
+    if (!converted && (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType())) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
@@ -327,22 +323,12 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
     Type lhsType = lhs.getAssignableType();
     Type rhsType = typecheckExpr(rhs);
 
-    if (lhsType.isPointerType() && rhsType.equalsIgnoreTopLevelMutable(lhsType.getPointee())) {
-        lhsType = lhsType.getPointee();
-    }
-
     if (rhs.isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(lhs, currentFunction)) {
         error(rhs.getLocation(), "'undefined' is only allowed as an initial value");
     }
 
-    if (!rhs.isUndefinedLiteralExpr()) {
-        Type convertedType;
-
-        if (isImplicitlyConvertible(&rhs, rhsType, lhsType, &convertedType)) {
-            rhs.setType(convertedType ? convertedType : rhsType);
-        } else {
-            error(location, "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
-        }
+    if (!convert(&rhs, lhsType)) {
+        error(location, "cannot assign '", rhsType, "' to variable of type '", lhsType, "'");
     }
 
     if (!lhsType.isMutable()) {
@@ -429,15 +415,14 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
+bool Typechecker::convert(Expr* expr, Type type) const {
+    Type convertedType;
+    bool converted = isImplicitlyConvertible(expr, expr->getType(), type, &convertedType);
+    if (convertedType) expr->setType(convertedType);
+    return converted;
+}
+
 bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const {
-    bool isNullLiteral = expr && expr->isNullLiteralExpr();
-
-    if (target.isOptionalType() && !isNullLiteral) {
-        if (isImplicitlyConvertible(expr, source, target.getWrappedType(), convertedType)) {
-            return true;
-        }
-    }
-
     switch (source.getKind()) {
         case TypeKind::BasicType:
             if (target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
@@ -531,13 +516,16 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
     }
 
-    if (source.isBasicType() && target.removeOptional().isPointerType() && (source.isMutable() || !target.removeOptional().getPointee().isMutable()) &&
+    if (target.removeOptional().isPointerType() && (source.isMutable() || !target.removeOptional().getPointee().isMutable()) &&
         isImplicitlyConvertible(expr, source, target.removeOptional().getPointee(), nullptr)) {
         if (convertedType) *convertedType = source;
         return true;
     } else if (source.isPointerType() && source.getPointee() == target) {
         // Auto-dereference.
         if (convertedType) *convertedType = target;
+        return true;
+    } else if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) &&
+               isImplicitlyConvertible(expr, source, target.getWrappedType(), nullptr)) {
         return true;
     } else if (source.isArrayType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayType() &&
                isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee().getElementType(), nullptr)) {
@@ -553,29 +541,21 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return true;
     } else if (source.isPointerType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayWithUnknownSize()) {
         return true;
-    } else if (source.isTupleType() && target.removePointer().isTupleType()) {
-        target = target.removePointer();
+    } else if (source.isTupleType() && target.isTupleType()) {
         auto* tupleExpr = llvm::dyn_cast_or_null<TupleExpr>(expr);
-        auto elements = source.getTupleElements();
-        std::vector<TupleElement> convertedElements;
+        auto sourceElements = source.getTupleElements();
+        auto targetElements = target.getTupleElements();
 
-        for (size_t i = 0; i < elements.size(); ++i) {
-            if (elements[i].name != target.getTupleElements()[i].name) return false;
-            Type convertedType;
+        for (size_t i = 0; i < sourceElements.size(); ++i) {
+            if (sourceElements[i].name != targetElements[i].name) return false;
             auto* elementValue = tupleExpr ? tupleExpr->getElements()[i].getValue() : nullptr;
 
-            if (!isImplicitlyConvertible(elementValue, elements[i].type, target.getTupleElements()[i].type, &convertedType)) {
+            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, nullptr)) {
                 return false;
-            }
-
-            if (convertedType) {
-                convertedElements.push_back({ elements[i].name, convertedType });
-            } else {
-                convertedElements.push_back(elements[i]);
             }
         }
 
-        if (convertedType) *convertedType = TupleType::get(std::move(convertedElements));
+        if (convertedType) *convertedType = target;
         return true;
     }
 
@@ -692,7 +672,6 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
                 Type argType = typecheckExpr(*argValue);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
                 if (!maybeGenericArg) continue;
-                Type convertedType;
 
                 if (!genericArg) {
                     genericArg = maybeGenericArg;
@@ -701,11 +680,9 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
                     Type paramTypeWithGenericArg = paramType.resolve({ { genericParam.getName(), genericArg } });
                     Type paramTypeWithMaybeGenericArg = paramType.resolve({ { genericParam.getName(), maybeGenericArg } });
 
-                    if (isImplicitlyConvertible(argValue, argType, paramTypeWithGenericArg, &convertedType)) {
-                        argValue->setType(convertedType ? convertedType : argType);
+                    if (convert(argValue, paramTypeWithGenericArg)) {
                         continue;
-                    } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->getType(), paramTypeWithMaybeGenericArg, &convertedType)) {
-                        argValue->setType(convertedType ? convertedType : genericArgValue->getType());
+                    } else if (convert(genericArgValue, paramTypeWithMaybeGenericArg)) {
                         genericArg = maybeGenericArg;
                         genericArgValue = argValue;
                     } else {
@@ -1198,18 +1175,14 @@ bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* funct
 
     for (size_t i = 0; i < args.size(); ++i) {
         auto& arg = args[i];
-        const ParamDecl* param = i < params.size() ? &params[i] : nullptr;
+        auto* param = i < params.size() ? &params[i] : nullptr;
 
         if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
             return false;
         }
 
-        auto argType = arg.getValue()->getType();
-
-        if (param) {
-            if (!isImplicitlyConvertible(arg.getValue(), argType, param->getType(), nullptr)) {
-                return false;
-            }
+        if (param && !isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), nullptr)) {
+            return false;
         }
     }
 
@@ -1248,23 +1221,15 @@ void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params,
 
     for (size_t i = 0; i < args.size(); ++i) {
         auto& arg = args[i];
-        const ParamDecl* param = i < params.size() ? &params[i] : nullptr;
+        auto* param = i < params.size() ? &params[i] : nullptr;
 
         if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
             error(arg.getLocation(), "invalid argument name '", arg.getName(), "' for parameter '", param->getName(), "'");
         }
 
-        auto argType = arg.getValue()->getType();
-
-        if (param) {
-            Type convertedType;
-
-            if (isImplicitlyConvertible(arg.getValue(), argType, param->getType(), &convertedType)) {
-                arg.getValue()->setType(convertedType ? convertedType : argType);
-            } else {
-                error(arg.getLocation(), "invalid argument #", i + 1, " type '", argType, "' to '", functionName, "', expected '",
-                      param->getType(), "'");
-            }
+        if (param && !convert(arg.getValue(), param->getType())) {
+            error(arg.getLocation(), "invalid argument #", i + 1, " type '", arg.getValue()->getType(), "' to '", functionName,
+                  "', expected '", param->getType(), "'");
         }
     }
 }
@@ -1417,11 +1382,8 @@ Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
     }
 
     Type indexType = typecheckExpr(*expr.getIndexExpr());
-    Type convertedType;
 
-    if (isImplicitlyConvertible(expr.getIndexExpr(), indexType, ArrayType::getIndexType(), &convertedType)) {
-        expr.getIndexExpr()->setType(convertedType ? convertedType : indexType);
-    } else {
+    if (!convert(expr.getIndexExpr(), ArrayType::getIndexType())) {
         error(expr.getIndexExpr()->getLocation(), "illegal subscript index type '", indexType, "', expected '", ArrayType::getIndexType(),
               "'");
     }
@@ -1462,13 +1424,10 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
 
     auto thenType = typecheckExpr(*expr.getThenExpr());
     auto elseType = typecheckExpr(*expr.getElseExpr());
-    Type convertedType;
 
-    if (isImplicitlyConvertible(expr.getThenExpr(), thenType, elseType, &convertedType)) {
-        if (convertedType) expr.getThenExpr()->setType(convertedType);
+    if (convert(expr.getThenExpr(), elseType)) {
         return elseType;
-    } else if (isImplicitlyConvertible(expr.getElseExpr(), elseType, thenType, &convertedType)) {
-        if (convertedType) expr.getElseExpr()->setType(convertedType);
+    } else if (convert(expr.getElseExpr(), thenType)) {
         return thenType;
     } else {
         error(expr.getLocation(), "incompatible operand types ('", thenType, "' and '", elseType, "')");

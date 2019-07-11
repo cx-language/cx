@@ -48,13 +48,11 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     }
 
     Type returnValueType = typecheckExpr(*stmt.getReturnValue());
-    Type convertedType;
 
-    if (!isImplicitlyConvertible(stmt.getReturnValue(), returnValueType, functionReturnType, &convertedType)) {
+    if (!convert(stmt.getReturnValue(), functionReturnType)) {
         error(stmt.getLocation(), "mismatching return type '", returnValueType, "', expected '", functionReturnType, "'");
     }
 
-    stmt.getReturnValue()->setType(convertedType ? convertedType : returnValueType);
     checkReturnPointerToLocal(stmt);
     stmt.getReturnValue()->setMoved(true);
 }
@@ -94,11 +92,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
 
     for (auto& switchCase : stmt.getCases()) {
         Type caseType = typecheckExpr(*switchCase.getValue());
-        Type convertedType;
 
-        if (isImplicitlyConvertible(switchCase.getValue(), caseType, conditionType, &convertedType)) {
-            if (convertedType) switchCase.getValue()->setType(convertedType);
-        } else {
+        if (!convert(switchCase.getValue(), conditionType)) {
             error(switchCase.getValue()->getLocation(), "case value type '", caseType, "' doesn't match switch condition type '",
                   conditionType, "'");
         }

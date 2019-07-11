@@ -294,24 +294,16 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
         bool isLocalVariable = decl.getParent() && decl.getParent()->isFunctionDecl();
         typecheckType(declaredType, isLocalVariable ? AccessLevel::None : decl.getAccessLevel());
 
-        if (initializerType) {
-            Type convertedType;
+        if (!convert(decl.getInitializer(), declaredType)) {
+            const char* hint = "";
 
-            if (isImplicitlyConvertible(decl.getInitializer(), initializerType, declaredType, &convertedType)) {
-                decl.getInitializer()->setType(convertedType ? convertedType : initializerType);
-            } else {
-                const char* hint;
-
-                if (initializerType.isNull()) {
-                    ASSERT(!declaredType.isOptionalType());
-                    hint = " (add '?' to the type to make it nullable)";
-                } else {
-                    hint = "";
-                }
-
-                error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType, "' with '",
-                      initializerType, "'", hint);
+            if (initializerType.isNull()) {
+                ASSERT(!declaredType.isOptionalType());
+                hint = " (add '?' to the type to make it nullable)";
             }
+
+            error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType, "' with '", initializerType,
+                  "'", hint);
         }
     } else {
         if (initializerType.isNull()) {
