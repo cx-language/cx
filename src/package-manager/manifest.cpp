@@ -19,7 +19,7 @@ std::string PackageManifest::Dependency::getGitRepositoryUrl() const {
 std::string PackageManifest::Dependency::getFileSystemPath() const {
     const char* home = std::getenv("HOME");
     if (!home) {
-        printErrorAndExit("environment variable HOME not set");
+        ABORT("environment variable HOME not set");
     }
     return std::string(home) + "/.delta/dependencies/" + packageIdentifier + "@" + packageVersion;
 }

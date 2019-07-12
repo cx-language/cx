@@ -22,7 +22,7 @@ using namespace delta;
 
 static std::unique_ptr<llvm::MemoryBuffer> getFileMemoryBuffer(llvm::StringRef filePath) {
     auto buffer = llvm::MemoryBuffer::getFile(filePath);
-    if (!buffer) printErrorAndExit("couldn't open file '", filePath, "'");
+    if (!buffer) ABORT("couldn't open file '" << filePath << "'");
     return std::move(*buffer);
 }
 
@@ -92,9 +92,10 @@ static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
 
 [[noreturn]] static void unexpectedToken(Token token, llvm::ArrayRef<Token::Kind> expected = {}, const char* contextInfo = nullptr) {
     if (expected.size() == 0) {
-        error(token.getLocation(), "unexpected ", quote(token), contextInfo ? " " : "", contextInfo ? contextInfo : "");
+        ERROR(token.getLocation(), "unexpected " << quote(token) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : ""));
     } else {
-        error(token.getLocation(), "expected ", formatList(expected), contextInfo ? " " : "", contextInfo ? contextInfo : "", ", got ", quote(token));
+        ERROR(token.getLocation(), "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "")
+                                               << ", got " << quote(token));
     }
 }
 
@@ -121,7 +122,7 @@ void Parser::checkStmtTerminatorConsistency(Token::Kind currentTerminator, llvm:
     if (previousTerminator == Token::None) {
         previousTerminator = currentTerminator;
     } else if (previousTerminator != currentTerminator) {
-        warning(getLocation(), "inconsistent statement terminator, expected ", quote(previousTerminator));
+        WARN(getLocation(), "inconsistent statement terminator, expected " << quote(previousTerminator));
     }
 }
 
@@ -240,7 +241,7 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLoca
                 default:
                     auto itColumn = literalStartLocation.column + 1 + (it - literalContent.begin());
                     SourceLocation itLocation(literalStartLocation.file, literalStartLocation.line, itColumn);
-                    error(itLocation, "unknown escape character '\\", *it, "'");
+                    ERROR(itLocation, "unknown escape character '\\" << *it << "'");
             }
             continue;
         }
@@ -260,7 +261,7 @@ std::unique_ptr<StringLiteralExpr> Parser::parseStringLiteral() {
 std::unique_ptr<CharacterLiteralExpr> Parser::parseCharacterLiteral() {
     ASSERT(currentToken() == Token::CharacterLiteral);
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
-    if (content.size() != 1) error(getCurrentLocation(), "character literal must consist of a single UTF-8 byte");
+    if (content.size() != 1) ERROR(getCurrentLocation(), "character literal must consist of a single UTF-8 byte");
     auto expr = llvm::make_unique<CharacterLiteralExpr>(content[0], getCurrentLocation());
     consumeToken();
     return expr;
@@ -332,7 +333,7 @@ std::unique_ptr<TupleExpr> Parser::parseTupleLiteral() {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(element.getValue())) {
                 element.setName(varExpr->getIdentifier());
             } else {
-                error(element.getLocation(), "tuple elements must have names");
+                ERROR(element.getLocation(), "tuple elements must have names");
             }
         }
     }
@@ -384,7 +385,7 @@ int64_t Parser::parseArraySizeInBrackets() {
             arraySize = ArrayType::unknownSize;
             break;
         default:
-            error(getCurrentLocation(), "non-literal array bounds not implemented yet");
+            ERROR(getCurrentLocation(), "non-literal array bounds not implemented yet");
     }
 
     parse(Token::RightBracket);
@@ -482,8 +483,8 @@ Type Parser::parseType() {
                 type = ArrayType::get(type, parseArraySizeInBrackets(), type.getMutability(), getCurrentLocation());
                 break;
             case Token::And:
-                error(getCurrentLocation(), "Delta doesn't have C++-style references; ",
-                      "use pointers ('*') instead, they are non-null by default");
+                ERROR(getCurrentLocation(),
+                      "Delta doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
             default:
                 return type.withLocation(location);
         }
@@ -948,14 +949,14 @@ std::unique_ptr<SwitchStmt> Parser::parseSwitchStmt(Decl* parent) {
             cases.push_back({ std::move(value), std::move(stmts) });
         } else if (currentToken() == Token::Default) {
             if (defaultSeen) {
-                error(getCurrentLocation(), "switch-statement may only contain one 'default' case");
+                ERROR(getCurrentLocation(), "switch-statement may only contain one 'default' case");
             }
             consumeToken();
             parse(Token::Colon);
             defaultStmts = parseStmtsUntilOneOf(Token::Case, Token::Default, Token::RightBrace, parent);
             defaultSeen = true;
         } else {
-            error(getCurrentLocation(), "expected 'case' or 'default'");
+            ERROR(getCurrentLocation(), "expected 'case' or 'default'");
         }
         if (currentToken() == Token::RightBrace) break;
     }
@@ -1095,7 +1096,7 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
                 unexpectedToken(op, {}, "as function name");
             }
             if (receiverTypeDecl) {
-                error(name.getLocation(), "operator functions other than subscript must be non-member functions");
+                ERROR(name.getLocation(), "operator functions other than subscript must be non-member functions");
             }
             return toString(op);
         }
@@ -1184,7 +1185,7 @@ std::unique_ptr<DeinitDecl> Parser::parseDeinitDecl(TypeDecl& receiverTypeDecl) 
     auto deinitLocation = parse(Token::Deinit).getLocation();
     parse(Token::LeftParen);
     auto expectedRParenLocation = getCurrentLocation();
-    if (consumeToken() != Token::RightParen) error(expectedRParenLocation, "deinitializers cannot have parameters");
+    if (consumeToken() != Token::RightParen) ERROR(expectedRParenLocation, "deinitializers cannot have parameters");
     auto decl = llvm::make_unique<DeinitDecl>(receiverTypeDecl, deinitLocation);
     parse(Token::LeftBrace);
     decl->setBody(parseStmtsUntil(Token::RightBrace, decl.get()));
@@ -1249,10 +1250,10 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
         switch (currentToken()) {
             case Token::Private:
                 if (tag == TypeTag::Interface) {
-                    warning(getCurrentLocation(), "interface members cannot be private");
+                    WARN(getCurrentLocation(), "interface members cannot be private");
                 }
                 if (accessLevel != AccessLevel::Default) {
-                    warning(getCurrentLocation(), "duplicate access specifier");
+                    WARN(getCurrentLocation(), "duplicate access specifier");
                 }
                 accessLevel = AccessLevel::Private;
                 consumeToken();
@@ -1262,7 +1263,7 @@ std::unique_ptr<TypeDecl> Parser::parseTypeDecl(std::vector<GenericParamDecl>* g
                 break;
             case Token::Deinit:
                 if (accessLevel != AccessLevel::Default) {
-                    warning(lookAhead(-1).getLocation(), "deinitializers cannot be ", accessLevel);
+                    WARN(lookAhead(-1).getLocation(), "deinitializers cannot be " << accessLevel);
                 }
                 typeDecl->addMethod(parseDeinitDecl(*typeDecl));
                 break;
@@ -1399,13 +1400,13 @@ std::unique_ptr<Decl> Parser::parseTopLevelDecl(bool addToSymbolTable) {
 start:
     switch (currentToken()) {
         case Token::Private:
-            if (accessLevel != AccessLevel::Default) warning(getCurrentLocation(), "duplicate access specifier");
+            if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
             accessLevel = AccessLevel::Private;
             consumeToken();
             goto start;
         case Token::Extern:
             if (accessLevel != AccessLevel::Default) {
-                warning(lookAhead(-1).getLocation(), "extern functions cannot have access specifiers");
+                WARN(lookAhead(-1).getLocation(), "extern functions cannot have access specifiers");
             }
             consumeToken();
             return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
@@ -1421,7 +1422,7 @@ start:
             break;
         case Token::Enum:
             if (lookAhead(2) == Token::Less) {
-                error(getCurrentLocation(), "generic enums not implemented yet");
+                ERROR(getCurrentLocation(), "generic enums not implemented yet");
             } else {
                 decl = parseEnumDecl(nullptr, accessLevel);
                 if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
@@ -1438,7 +1439,7 @@ start:
             break;
         case Token::Import:
             if (accessLevel != AccessLevel::Default) {
-                warning(lookAhead(-1).getLocation(), "imports cannot have access specifiers");
+                WARN(lookAhead(-1).getLocation(), "imports cannot have access specifiers");
             }
             return parseImportDecl();
         default:

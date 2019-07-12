@@ -20,7 +20,7 @@ static std::vector<std::unique_ptr<Decl>> nonASTDecls;
 
 void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) {
     if (getSymbolTable().contains(name)) {
-        error(decl.getLocation(), "redefinition of '", name, "'");
+        ERROR(decl.getLocation(), "redefinition of '" << name << "'");
     }
 
     if (global) {
@@ -32,14 +32,14 @@ void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool glo
 
 void Module::addToSymbolTable(FunctionTemplate& decl) {
     if (getSymbolTable().findWithMatchingPrototype(*decl.getFunctionDecl())) {
-        error(decl.getLocation(), "redefinition of '", decl.getQualifiedName(), "'");
+        ERROR(decl.getLocation(), "redefinition of '" << decl.getQualifiedName() << "'");
     }
     getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
 }
 
 void Module::addToSymbolTable(FunctionDecl& decl) {
     if (getSymbolTable().findWithMatchingPrototype(decl)) {
-        error(decl.getLocation(), "redefinition of '", decl.getQualifiedName(), "'");
+        ERROR(decl.getLocation(), "redefinition of '" << decl.getQualifiedName() << "'");
     }
     getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
 }

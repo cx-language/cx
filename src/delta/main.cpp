@@ -74,7 +74,7 @@ int main(int argc, const char** argv) {
         if (inputs.empty()) {
             llvm::SmallString<128> currentPath;
             if (auto error = llvm::sys::fs::current_path(currentPath)) {
-                printErrorAndExit(error.message());
+                ABORT(error.message());
             }
             return buildPackage(currentPath, argv0, args, run);
         } else {

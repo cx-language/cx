@@ -1,6 +1,7 @@
 #include "utility.h"
 #include <algorithm>
 #include <cctype>
+#include <fstream>
 #pragma warning(push, 0)
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
@@ -26,16 +27,16 @@ std::string delta::readLineFromFile(SourceLocation location) {
 void delta::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
     auto permissions = llvm::sys::fs::getPermissions(sourcePath);
     if (auto error = permissions.getError()) {
-        printErrorAndExit("couldn't get permissions for '", sourcePath, "': ", error.message());
+        ABORT("couldn't get permissions for '" << sourcePath << "': " << error.message());
     }
     if (auto error = llvm::sys::fs::copy_file(sourcePath, targetPath)) {
-        printErrorAndExit("couldn't copy '", sourcePath, "' to '", targetPath, "': ", error.message());
+        ABORT("couldn't copy '" << sourcePath << "' to '" << targetPath << "': " << error.message());
     }
     if (auto error = llvm::sys::fs::setPermissions(targetPath, *permissions)) {
-        printErrorAndExit("couldn't set permissions for '", targetPath, "': ", error.message());
+        ABORT("couldn't set permissions for '" << targetPath << "': " << error.message());
     }
     if (auto error = llvm::sys::fs::remove(sourcePath)) {
-        printErrorAndExit("couldn't remove '", sourcePath, "': ", error.message());
+        ABORT("couldn't remove '" << sourcePath << "': " << error.message());
     }
 }
 
@@ -73,7 +74,7 @@ void CompileError::print() const {
     printDiagnostic(location, "error", llvm::raw_ostream::RED, message);
 
     for (auto& note : notes) {
-        printDiagnostic(note.getLocation(), "note", llvm::raw_ostream::BLACK, note.getMessage());
+        printDiagnostic(note.location, "note", llvm::raw_ostream::BLACK, note.message);
     }
 
     llvm::outs().flush();
@@ -86,4 +87,31 @@ std::string delta::getCCompilerPath() {
         }
     }
     return "";
+}
+
+void delta::abort(StringFormatter& message) {
+    printColored("error: ", llvm::raw_ostream::RED);
+    llvm::outs() << message.str() << '\n';
+    exit(1);
+}
+
+void delta::errorWithNotes(SourceLocation location, std::vector<Note>&& notes, StringFormatter& message) {
+    throw CompileError(location, std::move(message.str()), std::move(notes));
+}
+
+void delta::error(SourceLocation location, StringFormatter& message) {
+    throw CompileError(location, std::move(message.str()), std::vector<Note>());
+}
+
+void delta::warn(SourceLocation location, StringFormatter& message) {
+    switch (warningMode) {
+        case WarningMode::Default:
+            printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message.str());
+            break;
+        case WarningMode::Suppress:
+            break;
+        case WarningMode::TreatAsErrors:
+            error(location, message);
+            break;
+    }
 }

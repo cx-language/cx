@@ -340,7 +340,7 @@ static void checkUnusedDecls(const Module& module) {
 
             if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
                 if (decl->isMain()) continue;
-                warning(decl->getLocation(), "unused declaration '", decl->getName(), "'");
+                WARN(decl->getLocation(), "unused declaration '" << decl->getName() << "'");
             }
         }
     }
@@ -349,7 +349,7 @@ static void checkUnusedDecls(const Module& module) {
 void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest) {
     auto stdModule = importDeltaModule(nullptr, nullptr, "std");
     if (!stdModule) {
-        printErrorAndExit("couldn't import the standard library: ", stdModule.getError().message());
+        ABORT("couldn't import the standard library: " << stdModule.getError().message());
     }
 
     // Infer the types of global variables for use before their declaration.
@@ -412,7 +412,7 @@ static Decl* findDeclInModules(llvm::StringRef name, SourceLocation location, co
         case 0:
             return nullptr;
         default:
-            error(location, "ambiguous reference to '", name, "'");
+            ERROR(location, "ambiguous reference to '" << name << "'");
     }
 }
 
@@ -447,7 +447,7 @@ Decl& Typechecker::findDecl(llvm::StringRef name, SourceLocation location) const
         }
     }
 
-    error(location, "unknown identifier '", name, "'");
+    ERROR(location, "unknown identifier '" << name << "'");
 }
 
 std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl, bool inAllImportedModules) const {

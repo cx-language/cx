@@ -28,7 +28,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 auto decls = findDecls(basicType->getName());
 
                 if (decls.empty()) {
-                    error(type.getLocation(), "unknown type '", type, "'");
+                    ERROR(type.getLocation(), "unknown type '" << type << "'");
                 }
 
                 ASSERT(decls.size() == 1);
@@ -49,7 +49,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                                                 basicType->getName(), type.getLocation());
                         break;
                     default:
-                        error(type.getLocation(), "'", type, "' is not a type");
+                        ERROR(type.getLocation(), "'" << type << "' is not a type");
                 }
             }
 
@@ -92,7 +92,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
 
 void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel) {
     if (getCurrentModule()->getSymbolTable().containsInCurrentScope(decl.getName())) {
-        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
+        ERROR(decl.getLocation(), "redefinition of '" << decl.getName() << "'");
     }
 
     typecheckType(decl.getType(), userAccessLevel);
@@ -122,14 +122,14 @@ static bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
 void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel) {
     for (auto& genericParam : genericParams) {
         if (getCurrentModule()->getSymbolTable().contains(genericParam.getName())) {
-            error(genericParam.getLocation(), "redefinition of '", genericParam.getName(), "'");
+            ERROR(genericParam.getLocation(), "redefinition of '" << genericParam.getName() << "'");
         }
 
         for (Type constraint : genericParam.getConstraints()) {
             typecheckType(constraint, userAccessLevel);
 
             if (!constraint.getDecl()->isInterface()) {
-                error(constraint.getLocation(), "only interface types can be used as generic constraints");
+                ERROR(constraint.getLocation(), "only interface types can be used as generic constraints");
             }
         }
     }
@@ -198,7 +198,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         if (decl.isInitDecl() && !delegatedInit) {
             for (auto& field : decl.getTypeDecl()->getFields()) {
                 if (initializedFields.count(&field) == 0) {
-                    warning(decl.getLocation(), "initializer doesn't initialize member variable '", field.getName(), "'");
+                    WARN(decl.getLocation(), "initializer doesn't initialize member variable '" << field.getName() << "'");
                 }
             }
         }
@@ -207,7 +207,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     getCurrentModule()->getSymbolTable().popScope();
 
     if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(decl.getBody())) {
-        error(decl.getLocation(), "'", decl.getName(), "' is missing a return statement");
+        ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");
     }
 
     decl.setTypechecked(true);
@@ -223,12 +223,12 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
-            error(interface.getLocation(), "'", interface, "' is not an interface");
+            ERROR(interface.getLocation(), "'" << interface << "' is not an interface");
         }
 
         std::string errorReason;
         if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-            error(decl.getLocation(), "'", decl.getName(), "' ", errorReason, " required by interface '", interfaceDecl->getName(), "'");
+            ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
         }
 
         for (auto& method : interfaceDecl->getMethods()) {
@@ -271,7 +271,7 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     auto it = std::adjacent_find(cases.begin(), cases.end(), [](auto* a, auto* b) { return a->getName() == b->getName(); });
 
     if (it != cases.end()) {
-        error((*it)->getLocation(), "duplicate enum case '", (*it)->getName(), "'");
+        ERROR((*it)->getLocation(), "duplicate enum case '" << (*it)->getName() << "'");
     }
 
     for (auto& enumCase : decl.getCases()) {
@@ -281,10 +281,10 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 
 void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     if (!isGlobal && getCurrentModule()->getSymbolTable().contains(decl.getName())) {
-        error(decl.getLocation(), "redefinition of '", decl.getName(), "'");
+        ERROR(decl.getLocation(), "redefinition of '" << decl.getName() << "'");
     }
     if (isGlobal && decl.getInitializer()->isUndefinedLiteralExpr()) {
-        error(decl.getLocation(), "global variables cannot be uninitialized");
+        ERROR(decl.getLocation(), "global variables cannot be uninitialized");
     }
 
     Type declaredType = decl.getType();
@@ -302,12 +302,12 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
                 hint = " (add '?' to the type to make it nullable)";
             }
 
-            error(decl.getInitializer()->getLocation(), "cannot initialize variable of type '", declaredType, "' with '", initializerType,
-                  "'", hint);
+            ERROR(decl.getInitializer()->getLocation(),
+                  "cannot initialize variable of type '" << declaredType << "' with '" << initializerType << "'" << hint);
         }
     } else {
         if (initializerType.isNull()) {
-            error(decl.getLocation(), "couldn't infer type of '", decl.getName(), "', add a type annotation");
+            ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation");
         }
 
         decl.setType(initializerType.withMutability(decl.getType().getMutability()));
@@ -332,7 +332,7 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* m
     }
 
     if (!importCHeader(*currentSourceFile, decl.getTarget(), options)) {
-        error(decl.getLocation(), "couldn't find module or C header '", decl.getTarget(), "'");
+        ERROR(decl.getLocation(), "couldn't find module or C header '" << decl.getTarget() << "'");
     }
 }
 

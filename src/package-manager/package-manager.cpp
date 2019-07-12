@@ -19,7 +19,7 @@ static std::string getGitPath() {
     llvm::ErrorOr<std::string> gitPath = llvm::sys::findProgramByName("git");
 
     if (!gitPath) {
-        printErrorAndExit("couldn't find Git");
+        ABORT("couldn't find Git");
     }
 
     return *gitPath;
@@ -34,7 +34,7 @@ static void cloneGitRepository(const std::string& repositoryUrl, const std::stri
 
     if (status != 0 || !error.empty()) {
         if (!error.empty()) error.insert(0, ": ");
-        printErrorAndExit("'git clone ", repositoryUrl, " ", path, "' failed with exit status ", status, error);
+        ABORT("'git clone " << repositoryUrl << " " << path << "' failed with exit status " << status << error);
     }
 }
 
@@ -49,7 +49,7 @@ static void checkoutGitRevision(const std::string& path, const std::string& revi
 
     if (status != 0 || !error.empty()) {
         if (!error.empty()) error.insert(0, ": ");
-        printErrorAndExit("'git checkout ", revision, "' failed with exit status ", status, error);
+        ABORT("'git checkout " << revision << "' failed with exit status " << status << error);
     }
 }
 

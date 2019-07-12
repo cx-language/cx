@@ -75,7 +75,7 @@ void Lexer::readBlockComment(SourceLocation startLocation) {
                 unreadChar(next);
             }
         } else if (ch == '\0') {
-            error(startLocation, "unterminated block comment");
+            ERROR(startLocation, "unterminated block comment");
         }
     }
 }
@@ -89,7 +89,7 @@ Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
         if (ch == '\n' || ch == '\r') {
             SourceLocation newlineLocation = firstLocation;
             newlineLocation.column += end - begin - 1;
-            error(newlineLocation, "newline inside ", toString(literalKind));
+            ERROR(newlineLocation, "newline inside " << toString(literalKind));
         }
         end++;
     }
@@ -113,8 +113,8 @@ Token Lexer::readNumber() {
                     end++;
                     continue;
                 }
-                if (std::isalnum(ch)) error(lastLocation, "invalid digit '", ch, "' in binary literal");
-                if (end == begin + 2) error(firstLocation, "binary literal must have at least one digit after '0b'");
+                if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in binary literal");
+                if (end == begin + 2) ERROR(firstLocation, "binary literal must have at least one digit after '0b'");
                 goto end;
             }
             break;
@@ -127,14 +127,14 @@ Token Lexer::readNumber() {
                     end++;
                     continue;
                 }
-                if (std::isalnum(ch)) error(lastLocation, "invalid digit '", ch, "' in octal literal");
-                if (end == begin + 2) error(firstLocation, "octal literal must have at least one digit after '0o'");
+                if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in octal literal");
+                if (end == begin + 2) ERROR(firstLocation, "octal literal must have at least one digit after '0o'");
                 goto end;
             }
             break;
         default:
             if (std::isdigit(ch) && begin[0] == '0') {
-                error(firstLocation, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
+                ERROR(firstLocation, "numbers cannot start with 0[0-9], use 0o prefix for octal literal");
             }
 
             while (true) {
@@ -158,16 +158,16 @@ Token Lexer::readNumber() {
                 if (std::isdigit(ch)) {
                     end++;
                 } else if (ch >= 'a' && ch <= 'f') {
-                    if (lettercase > 0) error(lastLocation, "mixed letter case in hex literal");
+                    if (lettercase > 0) ERROR(lastLocation, "mixed letter case in hex literal");
                     end++;
                     lettercase = -1;
                 } else if (ch >= 'A' && ch <= 'F') {
-                    if (lettercase < 0) error(lastLocation, "mixed letter case in hex literal");
+                    if (lettercase < 0) ERROR(lastLocation, "mixed letter case in hex literal");
                     end++;
                     lettercase = 1;
                 } else {
-                    if (std::isalnum(ch)) error(lastLocation, "invalid digit '", ch, "' in hex literal");
-                    if (end == begin + 2) error(firstLocation, "hex literal must have at least one digit after '0x'");
+                    if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in hex literal");
+                    if (end == begin + 2) ERROR(firstLocation, "hex literal must have at least one digit after '0x'");
                     goto end;
                 }
             }
@@ -387,7 +387,7 @@ Token Lexer::nextToken() {
                 if (std::isdigit(ch)) return readNumber();
 
                 if (!std::isalpha(ch) && ch != '_' && ch != '#') {
-                    error(firstLocation, "unknown token '", (char) ch, "'");
+                    ERROR(firstLocation, "unknown token '" << (char) ch << "'");
                 }
 
                 const char* begin = currentFilePosition;

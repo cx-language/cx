@@ -256,7 +256,7 @@ llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl) {
 
 llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
     if (!call.callsNamedFunction()) {
-        error(call.getLocation(), "anonymous function calls not implemented yet");
+        ERROR(call.getLocation(), "anonymous function calls not implemented yet");
     }
 
     const Decl* decl = call.getCalleeDecl();

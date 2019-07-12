@@ -145,7 +145,7 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::Targe
 
     std::string errorMessage;
     auto* target = llvm::TargetRegistry::lookupTarget(targetTriple, errorMessage);
-    if (!target) printErrorAndExit(errorMessage);
+    if (!target) ABORT(errorMessage);
 
     llvm::TargetOptions options;
     auto* targetMachine = target->createTargetMachine(targetTriple, "generic", "", options, relocModel);
@@ -153,11 +153,11 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::Targe
 
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::F_None);
-    if (error) printErrorAndExit(error.message());
+    if (error) ABORT(error.message());
 
     llvm::legacy::PassManager passManager;
     if (targetMachine->addPassesToEmitFile(passManager, file, nullptr, fileType)) {
-        printErrorAndExit("TargetMachine can't emit a file of this type");
+        ABORT("TargetMachine can't emit a file of this type");
     }
 
     passManager.run(module);
@@ -167,7 +167,7 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::Targe
 void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::F_None);
-    if (error) printErrorAndExit(error.message());
+    if (error) ABORT(error.message());
     llvm::WriteBitcodeToFile(module, file);
     file.flush();
 }
@@ -198,7 +198,7 @@ int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vec
 int exec(const char* command, std::string& output) {
     FILE* pipe = popen(command, "r");
     if (!pipe) {
-        printErrorAndExit("failed to execute '", command, "'");
+        ABORT("failed to execute '" << command << "'");
     }
 
     try {
@@ -242,12 +242,12 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     for (llvm::StringRef arg : args) {
         if (arg.startswith("-")) {
-            printErrorAndExit("unsupported option '", arg, "'");
+            ABORT("unsupported option '" << arg << "'");
         }
     }
 
     if (files.empty()) {
-        printErrorAndExit("no input files");
+        ABORT("no input files");
     }
 
     addPredefinedImportSearchPaths(options.importSearchPaths, files);
@@ -299,7 +299,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     for (auto& module : irGenerator.getGeneratedModules()) {
         bool error = linker.linkInModule(std::move(module));
-        if (error) printErrorAndExit("LLVM module linking failed");
+        if (error) ABORT("LLVM module linking failed");
     }
 
     if (emitLLVMBitcode) {
@@ -313,7 +313,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     llvm::SmallString<128> temporaryOutputFilePath;
     auto* outputFileExtension = emitAssembly ? "s" : msvc ? "obj" : "o";
     if (auto error = llvm::sys::fs::createTemporaryFile("delta", outputFileExtension, temporaryOutputFilePath)) {
-        printErrorAndExit(error.message());
+        ABORT(error.message());
     }
 
     auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile : llvm::TargetMachine::CGFT_ObjectFile;
@@ -322,7 +322,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (!outputDirectory.empty()) {
         auto error = llvm::sys::fs::create_directories(outputDirectory);
-        if (error) printErrorAndExit(error.message());
+        if (error) ABORT(error.message());
     }
 
     if (compileOnly || emitAssembly) {
@@ -338,7 +338,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     const char* executableNamePattern = msvc ? "delta-%%%%%%%%.exe" : "delta-%%%%%%%%.out";
 
     if (auto error = llvm::sys::fs::createUniqueFile(executableNamePattern, temporaryExecutablePath)) {
-        printErrorAndExit(error.message());
+        ABORT(error.message());
     }
 
     std::vector<const char*> ccArgs = {
@@ -373,7 +373,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     if (run) {
         if (auto error = llvm::sys::fs::make_absolute(temporaryExecutablePath)) {
-            printErrorAndExit("couldn't make an absolute path: ", error.message());
+            ABORT("couldn't make an absolute path: " << error.message());
         }
 
         std::string command = (temporaryExecutablePath + " 2>&1").str();

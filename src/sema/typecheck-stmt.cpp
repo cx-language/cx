@@ -34,15 +34,14 @@ void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
 
     if (localVariableType && functionReturnType.removeOptional().isPointerType() &&
         functionReturnType.removeOptional().getPointee().equalsIgnoreTopLevelMutable(localVariableType)) {
-        warning(returnValue->getLocation(), "returning pointer to local variable ",
-                "(local variables will not exist after the function returns)");
+        WARN(returnValue->getLocation(), "returning pointer to local variable (local variables will not exist after the function returns)");
     }
 }
 
 void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     if (!stmt.getReturnValue()) {
         if (!functionReturnType.isVoid()) {
-            error(stmt.getLocation(), "expected return statement to return a value of type '", functionReturnType, "'");
+            ERROR(stmt.getLocation(), "expected return statement to return a value of type '" << functionReturnType << "'");
         }
         return;
     }
@@ -50,7 +49,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     Type returnValueType = typecheckExpr(*stmt.getReturnValue());
 
     if (!convert(stmt.getReturnValue(), functionReturnType)) {
-        error(stmt.getLocation(), "mismatching return type '", returnValueType, "', expected '", functionReturnType, "'");
+        ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
     }
 
     checkReturnPointerToLocal(stmt);
@@ -65,7 +64,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     Type conditionType = typecheckExpr(ifStmt.getCondition());
 
     if (!conditionType.isBool() && !conditionType.isOptionalType()) {
-        error(ifStmt.getCondition().getLocation(), "'if' condition must have type 'bool' or optional type");
+        ERROR(ifStmt.getCondition().getLocation(), "'if' condition must have type 'bool' or optional type");
     }
 
     currentControlStmts.push_back(&ifStmt);
@@ -85,7 +84,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(stmt.getCondition());
 
     if (!conditionType.isInteger() && !conditionType.isChar() && !conditionType.isEnumType()) {
-        error(stmt.getCondition().getLocation(), "switch condition must have integer, char, or enum type, got '", conditionType, "'");
+        ERROR(stmt.getCondition().getLocation(), "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
     }
 
     currentControlStmts.push_back(&stmt);
@@ -94,8 +93,8 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         Type caseType = typecheckExpr(*switchCase.getValue());
 
         if (!convert(switchCase.getValue(), conditionType)) {
-            error(switchCase.getValue()->getLocation(), "case value type '", caseType, "' doesn't match switch condition type '",
-                  conditionType, "'");
+            ERROR(switchCase.getValue()->getLocation(),
+                  "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }
 
         for (auto& caseStmt : switchCase.getStmts()) {
@@ -114,7 +113,7 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
     Type conditionType = typecheckExpr(whileStmt.getCondition());
 
     if (!conditionType.isBool() && !conditionType.isOptionalType()) {
-        error(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool' or optional type");
+        ERROR(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool' or optional type");
     }
 
     currentControlStmts.push_back(&whileStmt);
@@ -132,13 +131,13 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
 
 void Typechecker::typecheckBreakStmt(BreakStmt& breakStmt) {
     if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isBreakable(); })) {
-        error(breakStmt.getLocation(), "'break' is only allowed inside 'while', 'for', and 'switch' statements");
+        ERROR(breakStmt.getLocation(), "'break' is only allowed inside 'while', 'for', and 'switch' statements");
     }
 }
 
 void Typechecker::typecheckContinueStmt(ContinueStmt& continueStmt) {
     if (llvm::none_of(currentControlStmts, [](const Stmt* stmt) { return stmt->isContinuable(); })) {
-        error(continueStmt.getLocation(), "'continue' is only allowed inside 'while' and 'for' statements");
+        ERROR(continueStmt.getLocation(), "'continue' is only allowed inside 'while' and 'for' statements");
     }
 }
 
