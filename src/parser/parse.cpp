@@ -1373,7 +1373,7 @@ void Parser::parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls) {
             }
         }
     } else {
-        condition = currentModule->isDefined(identifier.getString());
+        condition = llvm::is_contained(options.defines, identifier.getString());
     }
 
     if (negate) condition = !condition;
