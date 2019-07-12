@@ -1,4 +1,6 @@
 // RUN: %delta run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// UNSUPPORTED: windows
+
 // CHECK:foo!!!
 // CHECK-NEXT:bar!!!
 

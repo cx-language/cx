@@ -308,7 +308,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     auto ccPath = getCCompilerPath();
-    bool msvc = llvm::StringRef(ccPath).endswith_lower("cl.exe");
+    bool msvc = llvm::StringRef(ccPath).endswith_lower(".exe");
 
     llvm::SmallString<128> temporaryOutputFilePath;
     auto* outputFileExtension = emitAssembly ? "s" : msvc ? "obj" : "o";
@@ -317,6 +317,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile : llvm::TargetMachine::CGFT_ObjectFile;
+    if (msvc) emitPositionIndependentCode = true;
     auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_ : llvm::Reloc::Model::Static;
     emitMachineCode(linkedModule, temporaryOutputFilePath, fileType, relocModel);
 
@@ -357,18 +358,10 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         ccArgs.push_back("msvcrt.lib");
     }
 
-    // Redirect stdout and stderr to files to prevent them from interfering with tests.
-    llvm::StringRef out = "c-compiler-stdout.txt";
-    llvm::StringRef err = "c-compiler-stderr.txt";
-    llvm::Optional<llvm::StringRef> redirects[3] = { llvm::None, out, err };
-
+    llvm::Optional<llvm::StringRef> redirects[3] = { llvm::None, llvm::StringRef(), llvm::None };
     std::vector<llvm::StringRef> ccArgStringRefs(ccArgs.begin(), ccArgs.end());
     int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, llvm::None, redirects) : invokeClang(ccArgs);
-
     llvm::sys::fs::remove(temporaryOutputFilePath);
-    uint64_t fileSize;
-    if (!llvm::sys::fs::file_size(out, fileSize) && fileSize == 0) llvm::sys::fs::remove(out);
-    if (!llvm::sys::fs::file_size(err, fileSize) && fileSize == 0) llvm::sys::fs::remove(err);
     if (ccExitStatus != 0) return ccExitStatus;
 
     if (run) {

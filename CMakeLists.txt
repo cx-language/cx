@@ -63,12 +63,6 @@ else()
     target_link_libraries(delta ${LLVM_LIBS})
 endif()
 
-if(MSVC)
-    # For some reason running the tests multi-threadedly on Windows causes random tests to fail occasionally.
-    # TODO: Figure out what's going on.
-    set(EXTRA_LIT_FLAGS "--threads=1")
-endif()
-
 add_custom_target(check_lit COMMAND lit --verbose --succinct --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"

@@ -1,6 +1,4 @@
 // RUN: check_exit_status 0 %delta run -Werror %s
-// XFAIL: windows
-// testIterator() segfaults on Windows for an unknown reason.
 
 void main() {
     testInsert();

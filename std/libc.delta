@@ -9,7 +9,12 @@ extern int printf(const char* format, ...);
 extern int sprintf(char* str, const char* format, ...);
 extern int getchar();
 extern void*? fopen(const char* filename, const char* mode);
+#if Windows
+extern void*? _fdopen(int fd, const char* mode);
+void*? fdopen(int fd, const char* mode) { return _fdopen(fd, mode); }
+#else
 extern void*? fdopen(int fd, const char* mode);
+#endif
 extern int fgetc(void* file);
 extern uint64 fread(void* data, uint64 size, uint64 count, void* file);
 extern void fwrite(const void* data, uint64 size, uint64 count, void* file);

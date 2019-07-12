@@ -53,6 +53,9 @@ install:
           curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/clang-$LLVM_VERSION/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg.7z" --output clang.7z && 7z x clang.7z;
           export LLVMDIR="$PWD/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg";
           export CLANGDIR="$PWD/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg";
+          choco install python2;
+          export PATH="/c/Python27:/c/Python27/Scripts:$PATH";
+          pip install lit;
       fi
     - export PATH="$LLVMDIR/bin:$CLANGDIR/bin:$PATH"
 
@@ -68,9 +71,7 @@ script:
       -DCMAKE_BUILD_TYPE=Debug
       "${EXTRA_CMAKE_FLAGS[@]}"
     - cmake --build .
-    - if [ $TRAVIS_OS_NAME != "windows" ]; then
-          cmake --build . --target check;
-      fi
+    - cmake --build . --target check
     - if [ $TRAVIS_OS_NAME == "linux" ] && [ $TRAVIS_COMPILER == "clang" ]; then
           cmake --build . --target lint;
       fi

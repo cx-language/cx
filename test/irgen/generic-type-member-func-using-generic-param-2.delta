@@ -1,7 +1,5 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
-import "stdlib.h"
-
 struct C<T>: Copyable {
     init() { }
 

@@ -1,7 +1,7 @@
 #if Windows
 
 extern uint _set_abort_behavior(uint flags, uint mask);
-var _CALL_REPORTFAULT = 0x2;
+const _CALL_REPORTFAULT = 0x2;
 
 void printStackTrace() {
     // TODO: Implement stack trace on Windows.
