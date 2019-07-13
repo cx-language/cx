@@ -11,7 +11,6 @@
 using namespace delta;
 
 namespace {
-
 enum class PrecedenceGroup {
     Assignment,
     IfExpr,
@@ -23,8 +22,9 @@ enum class PrecedenceGroup {
     AddSub,
     MulDiv,
 };
+}
 
-PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
+static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
@@ -64,8 +64,6 @@ PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
             llvm_unreachable("invalid binary operator");
     }
 }
-
-} // namespace
 
 Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string) : kind(kind), string(string), location(location) {
     ASSERT(!string.empty() || kind == Token::None || kind >= Token::Break);

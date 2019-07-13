@@ -47,9 +47,7 @@ bool delta::checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) 
     return contains;
 }
 
-namespace {
-
-std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix, std::vector<llvm::StringRef>& args) {
+static std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix, std::vector<llvm::StringRef>& args) {
     std::vector<std::string> values;
     for (auto arg = args.begin(); arg != args.end();) {
         if (arg->startswith(flagPrefix)) {
@@ -62,7 +60,7 @@ std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix, s
     return values;
 }
 
-std::string collectStringOptionValue(llvm::StringRef flagPrefix, std::vector<llvm::StringRef>& args) {
+static std::string collectStringOptionValue(llvm::StringRef flagPrefix, std::vector<llvm::StringRef>& args) {
     auto values = collectStringOptionValues(flagPrefix, args);
     if (values.empty()) {
         return "";
@@ -71,7 +69,7 @@ std::string collectStringOptionValue(llvm::StringRef flagPrefix, std::vector<llv
     }
 }
 
-void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearchPaths, const char* name) {
+static void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearchPaths, const char* name) {
     if (const char* pathList = std::getenv(name)) {
         llvm::SmallVector<llvm::StringRef, 16> paths;
         llvm::StringRef(pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
@@ -82,7 +80,7 @@ void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearchPaths,
     }
 }
 
-void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& importSearchPaths) {
+static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& importSearchPaths) {
     auto compilerPath = getCCompilerPath();
     if (compilerPath.empty()) return;
 
@@ -112,7 +110,7 @@ void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& importSea
     }
 }
 
-void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths, llvm::ArrayRef<std::string> inputFiles) {
+static void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths, llvm::ArrayRef<std::string> inputFiles) {
     llvm::StringSet<> relativeImportSearchPaths;
 
     for (llvm::StringRef filePath : inputFiles) {
@@ -134,7 +132,7 @@ void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths,
     addHeaderSearchPathsFromEnvVar(importSearchPaths, "C_INCLUDE_PATH");
 }
 
-void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
+static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
@@ -164,15 +162,13 @@ void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::Targe
     file.flush();
 }
 
-void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
+static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName) {
     std::error_code error;
     llvm::raw_fd_ostream file(fileName, error, llvm::sys::fs::F_None);
     if (error) ABORT(error.message());
     llvm::WriteBitcodeToFile(module, file);
     file.flush();
 }
-
-} // namespace
 
 int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vector<llvm::StringRef>& args, bool run) {
     auto manifestPath = (packageRoot + "/" + PackageManifest::manifestFileName).str();
@@ -195,7 +191,7 @@ int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vec
     return 0;
 }
 
-int exec(const char* command, std::string& output) {
+static int exec(const char* command, std::string& output) {
     FILE* pipe = popen(command, "r");
     if (!pipe) {
         ABORT("failed to execute '" << command << "'");

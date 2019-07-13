@@ -32,11 +32,9 @@
 
 using namespace delta;
 
-namespace {
+static clang::TargetInfo* targetInfo;
 
-clang::TargetInfo* targetInfo;
-
-Type getIntTypeByWidth(int widthInBits, bool asSigned) {
+static Type getIntTypeByWidth(int widthInBits, bool asSigned) {
     switch (widthInBits) {
         case 8:
             return asSigned ? Type::getInt8() : Type::getUInt8();
@@ -50,7 +48,7 @@ Type getIntTypeByWidth(int widthInBits, bool asSigned) {
     llvm_unreachable("unsupported integer width");
 }
 
-Type toDelta(const clang::BuiltinType& type) {
+static Type toDelta(const clang::BuiltinType& type) {
     switch (type.getKind()) {
         case clang::BuiltinType::Void:
             return Type::getVoid();
@@ -91,7 +89,7 @@ Type toDelta(const clang::BuiltinType& type) {
     llvm_unreachable("unsupported builtin type");
 }
 
-llvm::StringRef getName(const clang::TagDecl& decl) {
+static llvm::StringRef getName(const clang::TagDecl& decl) {
     if (!decl.getName().empty()) {
         return decl.getName();
     } else if (auto* typedefNameDecl = decl.getTypedefNameForAnonDecl()) {
@@ -100,7 +98,7 @@ llvm::StringRef getName(const clang::TagDecl& decl) {
     return "";
 }
 
-Type toDelta(clang::QualType qualtype) {
+static Type toDelta(clang::QualType qualtype) {
     auto mutability = qualtype.isConstQualified() ? Mutability::Const : Mutability::Mutable;
     auto& type = *qualtype.getTypePtr();
 
@@ -167,7 +165,7 @@ Type toDelta(clang::QualType qualtype) {
     }
 }
 
-FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
+static FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
     auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
         return ParamDecl(toDelta(param->getType()), param->getNameAsString(), SourceLocation());
     });
@@ -175,12 +173,12 @@ FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
     return FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, SourceLocation());
 }
 
-llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
+static llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
     if (decl.getName().empty()) return llvm::None;
     return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), typeDecl, AccessLevel::Default, SourceLocation());
 }
 
-llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
+static llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     auto tag = decl.isUnion() ? TypeTag::Union : TypeTag::Struct;
     TypeDecl typeDecl(tag, getName(decl), {}, {}, AccessLevel::Default, *currentModule, SourceLocation());
 
@@ -195,11 +193,11 @@ llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentM
     return std::move(typeDecl);
 }
 
-VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
+static VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
     return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, *currentModule, SourceLocation());
 }
 
-void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
+static void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
     auto initializer = llvm::make_unique<IntLiteralExpr>(std::move(value), SourceLocation());
     auto type = toDelta(qualType).withMutability(Mutability::Const);
     initializer->setType(type);
@@ -207,13 +205,14 @@ void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, c
 }
 
 // TODO: Use llvm::APFloat instead of long double.
-void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
+static void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
     auto initializer = llvm::make_unique<FloatLiteralExpr>(value, SourceLocation());
     auto type = Type::getFloat64(Mutability::Const);
     initializer->setType(type);
     module.addToSymbolTable(VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
+namespace {
 class CToDeltaConverter : public clang::ASTConsumer {
 public:
     CToDeltaConverter(Module& module) : module(module) {}
@@ -314,7 +313,6 @@ private:
     Module& module;
     clang::Sema& clangSema;
 };
-
 } // namespace
 
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, const CompileOptions& options) {
