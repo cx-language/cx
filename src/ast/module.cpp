@@ -3,20 +3,20 @@
 
 using namespace delta;
 
-llvm::StringMap<std::shared_ptr<Module>> Module::allImportedModules;
+llvm::StringMap<Module*> Module::allImportedModules;
 
 std::vector<Module*> Module::getAllImportedModules() {
-    return map(allImportedModules, [](auto& p) { return p.second.get(); });
+    return map(allImportedModules, [](auto& p) { return p.second; });
 }
 
-llvm::ArrayRef<std::shared_ptr<Module>> Module::getStdlibModules() {
+llvm::ArrayRef<Module*> Module::getStdlibModules() {
     auto it = allImportedModules.find("std");
     if (it == allImportedModules.end()) return {};
     return it->second;
 }
 
 /// Storage for Decls that are not in the AST but are referenced by the symbol table.
-static std::vector<std::unique_ptr<Decl>> nonASTDecls;
+static std::vector<Decl*> nonASTDecls;
 
 void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) {
     if (getSymbolTable().contains(name)) {
@@ -53,7 +53,7 @@ void Module::addToSymbolTable(TypeDecl& decl) {
     addToSymbolTableWithName(decl, decl.getQualifiedName(), true);
 
     for (auto& memberDecl : decl.getMemberDecls()) {
-        if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl.get())) {
+        if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl)) {
             addToSymbolTable(*nonTemplateMethod);
         }
     }
@@ -71,8 +71,8 @@ void Module::addToSymbolTable(VarDecl& decl, bool global) {
 template<typename DeclT>
 void Module::addToSymbolTableNonAST(DeclT& decl) {
     std::string name = decl.getName();
-    nonASTDecls.push_back(llvm::make_unique<DeclT>(std::move(decl)));
-    getSymbolTable().add(std::move(name), nonASTDecls.back().get());
+    nonASTDecls.push_back(new DeclT(std::move(decl)));
+    getSymbolTable().add(std::move(name), nonASTDecls.back());
 
     if (std::is_same<DeclT, TypeDecl>::value) {
         auto& typeDecl = llvm::cast<TypeDecl>(*nonASTDecls.back());

@@ -198,18 +198,18 @@ static VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
 }
 
 static void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
-    auto initializer = llvm::make_unique<IntLiteralExpr>(std::move(value), SourceLocation());
+    auto initializer = new IntLiteralExpr(std::move(value), SourceLocation());
     auto type = toDelta(qualType).withMutability(Mutability::Const);
     initializer->setType(type);
-    module.addToSymbolTable(VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
+    module.addToSymbolTable(VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 // TODO: Use llvm::APFloat instead of long double.
 static void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
-    auto initializer = llvm::make_unique<FloatLiteralExpr>(value, SourceLocation());
+    auto initializer = new FloatLiteralExpr(value, SourceLocation());
     auto type = Type::getFloat64(Mutability::Const);
     initializer->setType(type);
-    module.addToSymbolTable(VarDecl(type, name, std::move(initializer), nullptr, AccessLevel::Default, module, SourceLocation()));
+    module.addToSymbolTable(VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 namespace {
@@ -242,8 +242,8 @@ public:
                     for (clang::EnumConstantDecl* enumerator : enumDecl.enumerators()) {
                         auto enumeratorName = enumerator->getName();
                         auto& value = enumerator->getInitVal();
-                        auto valueExpr = llvm::make_unique<IntLiteralExpr>(value, SourceLocation());
-                        cases.push_back(EnumCase(enumeratorName, std::move(valueExpr), AccessLevel::Default, SourceLocation()));
+                        auto valueExpr = new IntLiteralExpr(value, SourceLocation());
+                        cases.push_back(EnumCase(enumeratorName, valueExpr, AccessLevel::Default, SourceLocation()));
                         addIntegerConstantToSymbolTable(enumeratorName, value, type, module);
                     }
 
@@ -322,7 +322,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
         return true;
     }
 
-    auto module = std::make_shared<Module>(headerName);
+    auto module = new Module(headerName);
 
     clang::CompilerInstance ci;
     clang::DiagnosticOptions diagnosticOptions;

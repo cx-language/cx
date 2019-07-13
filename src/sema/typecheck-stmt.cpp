@@ -151,7 +151,7 @@ void Typechecker::typecheckCompoundStmt(CompoundStmt& compoundStmt) {
     getCurrentModule()->getSymbolTable().popScope();
 }
 
-void Typechecker::typecheckStmt(std::unique_ptr<Stmt>& stmt) {
+void Typechecker::typecheckStmt(Stmt*& stmt) {
     switch (stmt->getKind()) {
         case StmtKind::ReturnStmt:
             typecheckReturnStmt(llvm::cast<ReturnStmt>(*stmt));

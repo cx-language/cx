@@ -2,7 +2,6 @@
 #include <cerrno>
 #include <ostream>
 #pragma warning(push, 0)
-#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)

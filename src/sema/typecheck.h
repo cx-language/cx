@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
@@ -46,7 +45,7 @@ private:
     void typecheckFunctionTemplate(FunctionTemplate& decl);
     void typecheckMemberDecl(Decl& decl);
 
-    void typecheckStmt(std::unique_ptr<Stmt>& stmt);
+    void typecheckStmt(Stmt*& stmt);
     void typecheckCompoundStmt(CompoundStmt& stmt);
     void typecheckReturnStmt(ReturnStmt& stmt);
     void typecheckVarStmt(VarStmt& stmt);
@@ -115,7 +114,7 @@ private:
     llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, const Stmt& stmt) const;
     llvm::Optional<bool> subExprMaySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const;
     llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const;
-    llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<std::unique_ptr<Stmt>> block) const;
+    llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<Stmt*> block) const;
 
     bool isWarningEnabled(llvm::StringRef warning) const;
 

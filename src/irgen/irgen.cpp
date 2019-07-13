@@ -1,6 +1,5 @@
 #include "irgen.h"
 #pragma warning(push, 0)
-#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringSwitch.h>
 #include <llvm/IR/Verifier.h>
 #pragma warning(pop)
@@ -158,10 +157,10 @@ DeinitDecl* IRGenerator::getDefaultDeinitializer(const TypeDecl& typeDecl) {
 
     for (auto& field : typeDecl.getFields()) {
         if (field.getType().getDeinitializer() != nullptr) {
-            auto deinitializer = llvm::make_unique<DeinitDecl>(const_cast<TypeDecl&>(typeDecl), typeDecl.getLocation());
+            auto deinitializer = new DeinitDecl(const_cast<TypeDecl&>(typeDecl), typeDecl.getLocation());
             deinitializer->setBody({});
-            helperDecls.push_back(std::move(deinitializer));
-            return llvm::cast<DeinitDecl>(helperDecls.back().get());
+            helperDecls.push_back(deinitializer);
+            return deinitializer;
         }
     }
 
@@ -285,7 +284,7 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
 
 llvm::Module& IRGenerator::codegenModule(const Module& sourceModule) {
     ASSERT(!module);
-    module = llvm::make_unique<llvm::Module>(sourceModule.getName(), ctx);
+    module = new llvm::Module(sourceModule.getName(), ctx);
 
     for (const auto& sourceFile : sourceModule.getSourceFiles()) {
         for (const auto& decl : sourceFile.getTopLevelDecls()) {
@@ -308,6 +307,7 @@ llvm::Module& IRGenerator::codegenModule(const Module& sourceModule) {
     }
 
     ASSERT(!llvm::verifyModule(*module, &llvm::errs()));
-    generatedModules.push_back(std::move(module));
+    generatedModules.push_back(module);
+    module = nullptr;
     return *generatedModules.back();
 }

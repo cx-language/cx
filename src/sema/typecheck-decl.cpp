@@ -99,7 +99,7 @@ void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLeve
     getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
 }
 
-static bool allPathsReturn(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
+static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
     if (block.empty()) return false;
 
     switch (block.back()->getKind()) {
@@ -155,7 +155,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     if (decl.isLambda()) {
         ASSERT(decl.getBody().size() == 1);
-        decl.getProto().setReturnType(typecheckExpr(*llvm::cast<ReturnStmt>(decl.getBody().front().get())->getReturnValue()));
+        decl.getProto().setReturnType(typecheckExpr(*llvm::cast<ReturnStmt>(decl.getBody().front())->getReturnValue()));
     }
 
     if (!decl.isInitDecl() && !decl.isDeinitDecl()) {
@@ -183,7 +183,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
                 if (!decl.isInitDecl()) continue;
 
-                if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt.get())) {
+                if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
                     if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
                         if (auto* initDecl = llvm::dyn_cast_or_null<InitDecl>(callExpr->getCalleeDecl())) {
                             if (initDecl->getTypeDecl() == receiverTypeDecl) {
@@ -237,17 +237,17 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
             if (methodDecl.hasBody()) {
                 auto copy = methodDecl.instantiate({ { "This", decl.getType() } }, decl);
                 getCurrentModule()->addToSymbolTable(*copy);
-                decl.addMethod(move(copy));
+                decl.addMethod(copy);
             }
         }
     }
 
     TypeDecl* realDecl;
-    std::unique_ptr<TypeDecl> thisTypeResolved;
+    TypeDecl* thisTypeResolved;
 
     if (decl.isInterface()) {
         thisTypeResolved = llvm::cast<TypeDecl>(decl.instantiate({ { "This", decl.getType() } }, {}));
-        realDecl = thisTypeResolved.get();
+        realDecl = thisTypeResolved;
     } else {
         realDecl = &decl;
     }

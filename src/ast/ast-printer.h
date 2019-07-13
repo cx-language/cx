@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <ostream>
 
 namespace llvm {
@@ -109,7 +108,7 @@ private:
     void breakLine();
     void printParams(llvm::ArrayRef<ParamDecl> params);
     void printGenericParams(llvm::ArrayRef<GenericParamDecl> genericParams);
-    void printBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> block);
+    void printBlock(llvm::ArrayRef<Stmt*> block);
 
 private:
     std::ostream& out;

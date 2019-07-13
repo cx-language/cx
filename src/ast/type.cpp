@@ -1,7 +1,6 @@
 #include "type.h"
 #include <sstream>
 #pragma warning(push, 0)
-#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/StringSwitch.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -11,7 +10,7 @@
 
 using namespace delta;
 
-static std::vector<std::unique_ptr<TypeBase>> typeBases;
+static std::vector<TypeBase*> typeBases;
 
 #define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
     Type Type::get##TYPE(Mutability mutability, SourceLocation location) { \
@@ -136,7 +135,7 @@ static Type getType(T&& typeBase, Mutability mutability, SourceLocation location
         }
     }
 
-    typeBases.push_back(llvm::make_unique<T>(std::forward<T>(typeBase)));
+    typeBases.push_back(new T(std::forward<T>(typeBase)));
     return Type(&*typeBases.back(), mutability, location);
 }
 

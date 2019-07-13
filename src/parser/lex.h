@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <vector>
 #include "../ast/token.h"
 
@@ -14,11 +13,11 @@ struct SourceLocation;
 
 class Lexer {
 public:
-    Lexer(std::unique_ptr<llvm::MemoryBuffer> input);
+    Lexer(llvm::MemoryBuffer* input);
     Token nextToken();
     const char* getFilePath() const;
 
-    static std::vector<std::unique_ptr<llvm::MemoryBuffer>> fileBuffers; // TODO: Make this non-static.
+    static std::vector<llvm::MemoryBuffer*> fileBuffers; // TODO: Make this non-static.
 
 private:
     SourceLocation getCurrentLocation() const;

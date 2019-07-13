@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/Support/MemoryBuffer.h>
@@ -87,17 +86,17 @@ private:
     void checkStmtTerminatorConsistency(Token::Kind currentTerminator, llvm::function_ref<SourceLocation()> getLocation);
     void parseStmtTerminator(const char* contextInfo = nullptr);
     std::vector<NamedValue> parseArgumentList();
-    std::unique_ptr<VarExpr> parseVarExpr();
-    std::unique_ptr<VarExpr> parseThis();
-    std::unique_ptr<StringLiteralExpr> parseStringLiteral();
-    std::unique_ptr<CharacterLiteralExpr> parseCharacterLiteral();
-    std::unique_ptr<IntLiteralExpr> parseIntLiteral();
-    std::unique_ptr<FloatLiteralExpr> parseFloatLiteral();
-    std::unique_ptr<BoolLiteralExpr> parseBoolLiteral();
-    std::unique_ptr<NullLiteralExpr> parseNullLiteral();
-    std::unique_ptr<UndefinedLiteralExpr> parseUndefinedLiteral();
-    std::unique_ptr<ArrayLiteralExpr> parseArrayLiteral();
-    std::unique_ptr<TupleExpr> parseTupleLiteral();
+    VarExpr* parseVarExpr();
+    VarExpr* parseThis();
+    StringLiteralExpr* parseStringLiteral();
+    CharacterLiteralExpr* parseCharacterLiteral();
+    IntLiteralExpr* parseIntLiteral();
+    FloatLiteralExpr* parseFloatLiteral();
+    BoolLiteralExpr* parseBoolLiteral();
+    NullLiteralExpr* parseNullLiteral();
+    UndefinedLiteralExpr* parseUndefinedLiteral();
+    ArrayLiteralExpr* parseArrayLiteral();
+    TupleExpr* parseTupleLiteral();
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<Type> parseGenericArgumentList();
     int64_t parseArraySizeInBrackets();
@@ -105,68 +104,66 @@ private:
     Type parseTupleType();
     Type parseFunctionType(Type returnType);
     Type parseType();
-    std::unique_ptr<SizeofExpr> parseSizeofExpr();
-    std::unique_ptr<AddressofExpr> parseAddressofExpr();
-    std::unique_ptr<MemberExpr> parseMemberExpr(std::unique_ptr<Expr> lhs);
-    std::unique_ptr<SubscriptExpr> parseSubscript(std::unique_ptr<Expr> operand);
-    std::unique_ptr<UnwrapExpr> parseUnwrapExpr(std::unique_ptr<Expr> operand);
-    std::unique_ptr<CallExpr> parseCallExpr(std::unique_ptr<Expr> callee);
-    std::unique_ptr<LambdaExpr> parseLambdaExpr();
-    std::unique_ptr<Expr> parseParenExpr();
-    std::unique_ptr<IfExpr> parseIfExpr(std::unique_ptr<Expr> condition);
+    SizeofExpr* parseSizeofExpr();
+    AddressofExpr* parseAddressofExpr();
+    MemberExpr* parseMemberExpr(Expr* lhs);
+    SubscriptExpr* parseSubscript(Expr* operand);
+    UnwrapExpr* parseUnwrapExpr(Expr* operand);
+    CallExpr* parseCallExpr(Expr* callee);
+    LambdaExpr* parseLambdaExpr();
+    Expr* parseParenExpr();
+    IfExpr* parseIfExpr(Expr* condition);
     bool shouldParseVarStmt();
     bool shouldParseGenericArgumentList();
     bool arrowAfterParentheses();
-    std::unique_ptr<Expr> parsePostfixExpr();
-    std::unique_ptr<UnaryExpr> parsePrefixExpr();
-    std::unique_ptr<Expr> parsePreOrPostfixExpr();
-    std::unique_ptr<UnaryExpr> parseIncrementOrDecrementExpr(std::unique_ptr<Expr> operand);
-    std::unique_ptr<Expr> parseBinaryExpr(int minPrecedence);
-    std::unique_ptr<Expr> parseExpr();
-    std::vector<std::unique_ptr<Expr>> parseExprList();
-    std::unique_ptr<ReturnStmt> parseReturnStmt();
-    std::unique_ptr<VarDecl> parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel);
-    std::unique_ptr<VarDecl> parseVarDeclAfterName(bool requireInitialValue, Decl* parent, AccessLevel accessLevel, Type type,
-                                                   llvm::StringRef name, SourceLocation location);
-    std::unique_ptr<VarStmt> parseVarStmt(Decl* parent);
-    std::unique_ptr<ExprStmt> parseExprStmt(std::unique_ptr<Expr> expr);
-    std::unique_ptr<DeferStmt> parseDeferStmt();
-    std::unique_ptr<IfStmt> parseIfStmt(Decl* parent);
-    std::unique_ptr<WhileStmt> parseWhileStmt(Decl* parent);
-    std::unique_ptr<ForStmt> parseForStmt(Decl* parent);
-    std::unique_ptr<SwitchStmt> parseSwitchStmt(Decl* parent);
-    std::unique_ptr<BreakStmt> parseBreakStmt();
-    std::unique_ptr<ContinueStmt> parseContinueStmt();
-    std::unique_ptr<Stmt> parseStmt(Decl* parent);
-    std::vector<std::unique_ptr<Stmt>> parseBlockOrStmt(Decl* parent);
-    std::vector<std::unique_ptr<Stmt>> parseStmtsUntil(Token::Kind end, Decl* parent);
-    std::vector<std::unique_ptr<Stmt>> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent);
+    Expr* parsePostfixExpr();
+    UnaryExpr* parsePrefixExpr();
+    Expr* parsePreOrPostfixExpr();
+    UnaryExpr* parseIncrementOrDecrementExpr(Expr* operand);
+    Expr* parseBinaryExpr(int minPrecedence);
+    Expr* parseExpr();
+    std::vector<Expr*> parseExprList();
+    ReturnStmt* parseReturnStmt();
+    VarDecl* parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel);
+    VarDecl* parseVarDeclAfterName(bool requireInitialValue, Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name,
+                                   SourceLocation location);
+    VarStmt* parseVarStmt(Decl* parent);
+    ExprStmt* parseExprStmt(Expr* expr);
+    DeferStmt* parseDeferStmt();
+    IfStmt* parseIfStmt(Decl* parent);
+    WhileStmt* parseWhileStmt(Decl* parent);
+    ForStmt* parseForStmt(Decl* parent);
+    SwitchStmt* parseSwitchStmt(Decl* parent);
+    BreakStmt* parseBreakStmt();
+    ContinueStmt* parseContinueStmt();
+    Stmt* parseStmt(Decl* parent);
+    std::vector<Stmt*> parseBlockOrStmt(Decl* parent);
+    std::vector<Stmt*> parseStmtsUntil(Token::Kind end, Decl* parent);
+    std::vector<Stmt*> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent);
     ParamDecl parseParam(bool withType);
     std::vector<ParamDecl> parseParamList(bool* isVariadic, bool withTypes);
     void parseGenericParamList(std::vector<GenericParamDecl>& genericParams);
     llvm::StringRef parseFunctionName(TypeDecl* receiverTypeDecl);
-    std::unique_ptr<FunctionDecl> parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
-                                                     std::vector<GenericParamDecl>* genericParams, Type returnType, llvm::StringRef name,
-                                                     SourceLocation location);
-    std::unique_ptr<FunctionTemplate> parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type,
-                                                                 llvm::StringRef name, SourceLocation location);
-    std::unique_ptr<FunctionDecl> parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type,
-                                                    llvm::StringRef name, SourceLocation location);
-    std::unique_ptr<FunctionTemplate> parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type,
-                                                            llvm::StringRef name, SourceLocation location);
-    std::unique_ptr<FunctionDecl> parseExternFunctionDecl(Type type, llvm::StringRef name, SourceLocation location);
-    std::unique_ptr<InitDecl> parseInitDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel);
-    std::unique_ptr<DeinitDecl> parseDeinitDecl(TypeDecl& receiverTypeDecl);
+    FunctionDecl* parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
+                                     std::vector<GenericParamDecl>* genericParams, Type returnType, llvm::StringRef name, SourceLocation location);
+    FunctionTemplate* parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name,
+                                                 SourceLocation location);
+    FunctionDecl* parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type, llvm::StringRef name,
+                                    SourceLocation location);
+    FunctionTemplate* parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation location);
+    FunctionDecl* parseExternFunctionDecl(Type type, llvm::StringRef name, SourceLocation location);
+    InitDecl* parseInitDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel);
+    DeinitDecl* parseDeinitDecl(TypeDecl& receiverTypeDecl);
     FieldDecl parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation nameLocation);
-    std::unique_ptr<TypeTemplate> parseTypeTemplate(AccessLevel accessLevel);
+    TypeTemplate* parseTypeTemplate(AccessLevel accessLevel);
     Token parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams);
-    std::unique_ptr<TypeDecl> parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
-    std::unique_ptr<EnumDecl> parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
-    std::unique_ptr<ImportDecl> parseImportDecl();
-    void parseIfdefBody(std::vector<std::unique_ptr<Decl>>* activeDecls);
-    void parseIfdef(std::vector<std::unique_ptr<Decl>>* activeDecls);
-    std::unique_ptr<Decl> parseTopLevelDecl(bool addToSymbolTable);
-    std::unique_ptr<Decl> parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel);
+    TypeDecl* parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
+    EnumDecl* parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
+    ImportDecl* parseImportDecl();
+    void parseIfdefBody(std::vector<Decl*>* activeDecls);
+    void parseIfdef(std::vector<Decl*>* activeDecls);
+    Decl* parseTopLevelDecl(bool addToSymbolTable);
+    Decl* parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel);
     llvm::StringRef getCurrentSource() const;
 
 private:

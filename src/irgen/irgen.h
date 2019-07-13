@@ -42,7 +42,7 @@ public:
     IRGenerator();
     llvm::Module& codegenModule(const Module& sourceModule);
     llvm::LLVMContext& getLLVMContext() { return ctx; }
-    std::vector<std::unique_ptr<llvm::Module>> getGeneratedModules() { return std::move(generatedModules); }
+    std::vector<llvm::Module*> getGeneratedModules() { return std::move(generatedModules); }
 
 private:
     friend struct IRGenScope;
@@ -101,7 +101,7 @@ private:
     llvm::Value* codegenLvalueExpr(const Expr& expr);
 
     void codegenDeferredExprsAndDeinitCallsForReturn();
-    void codegenBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> stmts, llvm::BasicBlock* destination, llvm::BasicBlock* continuation);
+    void codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* destination, llvm::BasicBlock* continuation);
     void codegenReturnStmt(const ReturnStmt& stmt);
     void codegenVarStmt(const VarStmt& stmt);
     void codegenIfStmt(const IfStmt& ifStmt);
@@ -152,12 +152,12 @@ private:
 
     llvm::LLVMContext ctx;
     llvm::IRBuilder<> builder;
-    std::unique_ptr<llvm::Module> module;
-    std::vector<std::unique_ptr<llvm::Module>> generatedModules;
+    llvm::Module* module = nullptr;
+    std::vector<llvm::Module*> generatedModules;
     llvm::BasicBlock::iterator lastAlloca;
 
     std::map<std::string, FunctionInstantiation> functionInstantiations;
-    std::vector<std::unique_ptr<Decl>> helperDecls;
+    std::vector<Decl*> helperDecls;
     llvm::StringMap<std::pair<llvm::StructType*, const TypeDecl*>> structs;
     const Decl* currentDecl;
 

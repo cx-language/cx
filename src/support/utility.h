@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <memory>
 #include <ostream>
 #include <string>
 #include <utility> // std::move

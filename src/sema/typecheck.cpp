@@ -21,7 +21,7 @@ static const Expr& getIfOrWhileCondition(const Stmt& ifOrWhileStmt) {
     }
 }
 
-static llvm::ArrayRef<std::unique_ptr<Stmt>> getIfOrWhileThenBody(const Stmt& ifOrWhileStmt) {
+static llvm::ArrayRef<Stmt*> getIfOrWhileThenBody(const Stmt& ifOrWhileStmt) {
     switch (ifOrWhileStmt.getKind()) {
         case StmtKind::IfStmt:
             return llvm::cast<IfStmt>(ifOrWhileStmt).getThenBody();
@@ -114,7 +114,7 @@ bool Typechecker::isGuaranteedNonNull(const Expr& expr, const Stmt& currentContr
             return false;
     }
 
-    llvm::ArrayRef<std::unique_ptr<Stmt>> stmts;
+    llvm::ArrayRef<Stmt*> stmts;
     switch (nullCheckInfo.op) {
         case Token::NotEqual:
             stmts = getIfOrWhileThenBody(currentControlStmt);
@@ -224,7 +224,7 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
     return llvm::None;
 }
 
-llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<std::unique_ptr<Stmt>> block) const {
+llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<Stmt*> block) const {
     for (auto& stmt : block) {
         if (auto result = maySetToNullBeforeEvaluating(var, *stmt)) return *result;
     }
@@ -274,7 +274,7 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
         return *it->second;
     }
 
-    auto module = std::make_shared<Module>(moduleName);
+    auto module = new Module(moduleName);
     std::error_code error;
 
     if (manifest) {
@@ -358,7 +358,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         currentSourceFile = &sourceFile;
 
         for (auto& decl : sourceFile.getTopLevelDecls()) {
-            if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl.get())) {
+            if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
                 typecheckVarDecl(*varDecl, true);
             }
         }
@@ -459,13 +459,13 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
 
     if (receiverTypeDecl) {
         for (auto& decl : receiverTypeDecl->getMemberDecls()) {
-            if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl.get())) {
+            if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
                 if (functionDecl->getName() == name) {
-                    decls.emplace_back(decl.get());
+                    decls.emplace_back(decl);
                 }
-            } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl.get())) {
+            } else if (auto* functionTemplate = llvm::dyn_cast<FunctionTemplate>(decl)) {
                 if (functionTemplate->getQualifiedName() == name) {
-                    decls.emplace_back(decl.get());
+                    decls.emplace_back(decl);
                 }
             }
         }

@@ -1,11 +1,9 @@
 #pragma once
 
-#include <memory>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
@@ -20,12 +18,12 @@ class Module;
 class SourceFile {
 public:
     explicit SourceFile(llvm::StringRef filePath) : filePath(filePath) {}
-    llvm::ArrayRef<std::unique_ptr<Decl>> getTopLevelDecls() const { return topLevelDecls; }
+    llvm::ArrayRef<Decl*> getTopLevelDecls() const { return topLevelDecls; }
     llvm::StringRef getFilePath() const { return filePath; }
-    llvm::ArrayRef<std::shared_ptr<Module>> getImportedModules() const { return importedModules; }
-    void setDecls(std::vector<std::unique_ptr<Decl>>&& decls) { topLevelDecls = std::move(decls); }
+    llvm::ArrayRef<Module*> getImportedModules() const { return importedModules; }
+    void setDecls(std::vector<Decl*>&& decls) { topLevelDecls = std::move(decls); }
 
-    void addImportedModule(const std::shared_ptr<Module>& module) {
+    void addImportedModule(Module* module) {
         if (!llvm::is_contained(importedModules, module)) {
             importedModules.push_back(module);
         }
@@ -33,8 +31,8 @@ public:
 
 private:
     std::string filePath;
-    std::vector<std::unique_ptr<Decl>> topLevelDecls;
-    std::vector<std::shared_ptr<Module>> importedModules;
+    std::vector<Decl*> topLevelDecls;
+    std::vector<Module*> importedModules;
 };
 
 struct Scope {
@@ -128,7 +126,7 @@ public:
         std::vector<Module*> importedModules;
         for (auto& sourceFile : getSourceFiles()) {
             for (auto& importedModule : sourceFile.getImportedModules()) {
-                importedModules.push_back(importedModule.get());
+                importedModules.push_back(importedModule);
             }
         }
         return importedModules;
@@ -146,8 +144,8 @@ public:
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
 
     static std::vector<Module*> getAllImportedModules();
-    static llvm::StringMap<std::shared_ptr<Module>>& getAllImportedModulesMap() { return allImportedModules; }
-    static llvm::ArrayRef<std::shared_ptr<Module>> getStdlibModules();
+    static llvm::StringMap<Module*>& getAllImportedModulesMap() { return allImportedModules; }
+    static llvm::ArrayRef<Module*> getStdlibModules();
 
 private:
     void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global);
@@ -158,7 +156,7 @@ private:
     std::string name;
     std::vector<SourceFile> sourceFiles;
     SymbolTable symbolTable;
-    static llvm::StringMap<std::shared_ptr<Module>> allImportedModules;
+    static llvm::StringMap<Module*> allImportedModules;
 };
 
 } // namespace delta

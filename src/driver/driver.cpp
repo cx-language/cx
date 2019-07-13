@@ -88,25 +88,32 @@ static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& im
         addHeaderSearchPathsFromEnvVar(importSearchPaths, "INCLUDE");
     } else {
         std::string command = "echo | " + compilerPath + " -E -v - 2>&1 | grep '^ /'";
-        std::shared_ptr<FILE> process(popen(command.c_str(), "r"), pclose);
+        FILE* process = popen(command.c_str(), "r");
 
-        while (!std::feof(process.get())) {
-            std::string path;
+        try {
+            while (!std::feof(process)) {
+                std::string path;
 
-            while (true) {
-                int ch = std::fgetc(process.get());
+                while (true) {
+                    int ch = std::fgetc(process);
 
-                if (ch == EOF || ch == '\n') {
-                    break;
-                } else if (!path.empty() || ch != ' ') {
-                    path += (char) ch;
+                    if (ch == EOF || ch == '\n') {
+                        break;
+                    } else if (!path.empty() || ch != ' ') {
+                        path += (char) ch;
+                    }
+                }
+
+                if (llvm::sys::fs::is_directory(path)) {
+                    importSearchPaths.push_back(path);
                 }
             }
-
-            if (llvm::sys::fs::is_directory(path)) {
-                importSearchPaths.push_back(path);
-            }
+        } catch (...) {
+            pclose(process);
+            throw;
         }
+
+        pclose(process);
     }
 }
 
@@ -294,7 +301,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     llvm::Linker linker(linkedModule);
 
     for (auto& module : irGenerator.getGeneratedModules()) {
-        bool error = linker.linkInModule(std::move(module));
+        bool error = linker.linkInModule(std::unique_ptr<llvm::Module>(module));
         if (error) ABORT("LLVM module linking failed");
     }
 

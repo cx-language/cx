@@ -225,7 +225,7 @@ void ASTPrinter::printExpr(const Expr& expr) {
     }
 }
 
-void ASTPrinter::printBlock(llvm::ArrayRef<std::unique_ptr<Stmt>> block) {
+void ASTPrinter::printBlock(llvm::ArrayRef<Stmt*> block) {
     indentLevel++;
     for (const auto& stmt : block) {
         printStmt(*stmt);

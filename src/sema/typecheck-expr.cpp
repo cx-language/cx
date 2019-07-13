@@ -1,7 +1,6 @@
 #include "typecheck.h"
 #include <algorithm>
 #include <limits>
-#include <memory>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
@@ -274,8 +273,8 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     if (isCompoundAssignmentOperator(op)) {
-        auto rhs = llvm::make_unique<BinaryExpr>(withoutCompoundEqSuffix(op), expr.getSharedLHS(), expr.getSharedRHS(), expr.getLocation());
-        expr = BinaryExpr(Token::Assignment, expr.getSharedLHS(), std::move(rhs), expr.getLocation());
+        auto rhs = new BinaryExpr(withoutCompoundEqSuffix(op), &expr.getLHS(), &expr.getRHS(), expr.getLocation());
+        expr = BinaryExpr(Token::Assignment, &expr.getLHS(), rhs, expr.getLocation());
         return typecheckBinaryExpr(expr);
     }
 
@@ -399,7 +398,7 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     }
 
     for (auto& requiredMethod : thisTypeResolvedInterface->getMethods()) {
-        if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod.get())) {
+        if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod)) {
             if (functionDecl->hasBody()) continue;
 
             if (!hasMethod(type, *functionDecl)) {
@@ -504,7 +503,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             return true;
         } else if (expr->isArrayLiteralExpr() && target.isArrayType()) {
             bool isConvertible = llvm::all_of(llvm::cast<ArrayLiteralExpr>(expr)->getElements(), [&](auto& element) {
-                return isImplicitlyConvertible(element.get(), source.getElementType(), target.getElementType(), nullptr);
+                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), nullptr);
             });
 
             if (isConvertible) {
@@ -892,7 +891,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 std::vector<InitDecl*> instantiatedInitDecls;
 
                 for (auto& method : typeTemplate->getTypeDecl()->getMethods()) {
-                    auto* initDecl = llvm::dyn_cast<InitDecl>(method.get());
+                    auto* initDecl = llvm::dyn_cast<InitDecl>(method);
                     if (!initDecl) continue;
                     initDecls.push_back(initDecl);
                 }
@@ -917,7 +916,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     }
 
                     for (auto& method : typeDecl->getMethods()) {
-                        auto* initDecl = llvm::dyn_cast<InitDecl>(method.get());
+                        auto* initDecl = llvm::dyn_cast<InitDecl>(method);
                         if (!initDecl) continue;
                         instantiatedInitDecls.push_back(initDecl);
                     }
