@@ -34,8 +34,8 @@ and invoke the appropriate commands to generate a ready-to-use build system.
 
 ### Windows with Visual Studio 15
 
-1. Download and extract LLVM sources from https://github.com/vovkos/llvm-package-windows/releases/download/llvm-7.1.0/llvm-7.1.0-windows-amd64-msvc15-msvcrt-dbg.7z.
-2. Download and extract Clang sources from https://github.com/vovkos/llvm-package-windows/releases/download/clang-7.1.0/clang-7.1.0-windows-amd64-msvc15-msvcrt-dbg.7z.
+1. Download and extract LLVM sources from https://github.com/vovkos/llvm-package-windows/releases/download/llvm-7.1.0/llvm-7.1.0-windows-amd64-msvc15-msvcrt.7z.
+2. Download and extract Clang sources from https://github.com/vovkos/llvm-package-windows/releases/download/clang-7.1.0/clang-7.1.0-windows-amd64-msvc15-msvcrt.7z.
 3. Run `setup-build.sh`, passing the paths to the LLVM and Clang source directories as arguments.
 4. For running the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html)
    by running `sudo pip install lit` (you need [pip](https://pip.pypa.io/en/stable/)

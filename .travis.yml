@@ -49,10 +49,10 @@ install:
           pip2 install lit pyyaml;
       fi
     - if [ $TRAVIS_OS_NAME == "windows" ]; then
-          curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/llvm-$LLVM_VERSION/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg.7z" --output llvm.7z && 7z x llvm.7z;
-          curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/clang-$LLVM_VERSION/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg.7z" --output clang.7z && 7z x clang.7z;
-          export LLVMDIR="$PWD/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg";
-          export CLANGDIR="$PWD/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt-dbg";
+          curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/llvm-$LLVM_VERSION/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt.7z" --output llvm.7z && 7z x llvm.7z;
+          curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/clang-$LLVM_VERSION/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt.7z" --output clang.7z && 7z x clang.7z;
+          export LLVMDIR="$PWD/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt";
+          export CLANGDIR="$PWD/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt";
           choco install python2;
           export PATH="/c/Python27:/c/Python27/Scripts:$PATH";
           pip install lit;
