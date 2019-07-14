@@ -40,6 +40,26 @@
 
 using namespace delta;
 
+static int exec(const char* command, std::string& output) {
+    FILE* pipe = popen(command, "r");
+    if (!pipe) {
+        ABORT("failed to execute '" << command << "'");
+    }
+
+    try {
+        char buffer[128];
+        while (fgets(buffer, sizeof buffer, pipe)) {
+            output += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+
+    int status = pclose(pipe);
+    return WEXITSTATUS(status);
+}
+
 bool delta::checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) {
     const auto it = std::find(args.begin(), args.end(), flag);
     const bool contains = it != args.end();
@@ -88,32 +108,18 @@ static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& im
         addHeaderSearchPathsFromEnvVar(importSearchPaths, "INCLUDE");
     } else {
         std::string command = "echo | " + compilerPath + " -E -v - 2>&1 | grep '^ /'";
-        FILE* process = popen(command.c_str(), "r");
+        std::string output;
+        exec(command.c_str(), output);
 
-        try {
-            while (!std::feof(process)) {
-                std::string path;
+        llvm::SmallVector<llvm::StringRef, 8> lines;
+        llvm::SplitString(output, lines, "\n");
 
-                while (true) {
-                    int ch = std::fgetc(process);
-
-                    if (ch == EOF || ch == '\n') {
-                        break;
-                    } else if (!path.empty() || ch != ' ') {
-                        path += (char) ch;
-                    }
-                }
-
-                if (llvm::sys::fs::is_directory(path)) {
-                    importSearchPaths.push_back(path);
-                }
+        for (auto line : lines) {
+            auto path = line.trim();
+            if (llvm::sys::fs::is_directory(path)) {
+                importSearchPaths.push_back(path);
             }
-        } catch (...) {
-            pclose(process);
-            throw;
         }
-
-        pclose(process);
     }
 }
 
@@ -196,26 +202,6 @@ int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vec
     }
 
     return 0;
-}
-
-static int exec(const char* command, std::string& output) {
-    FILE* pipe = popen(command, "r");
-    if (!pipe) {
-        ABORT("failed to execute '" << command << "'");
-    }
-
-    try {
-        char buffer[128];
-        while (fgets(buffer, sizeof buffer, pipe)) {
-            output += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
-    }
-
-    int status = pclose(pipe);
-    return WEXITSTATUS(status);
 }
 
 int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
