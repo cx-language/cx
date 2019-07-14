@@ -104,9 +104,7 @@ static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& im
     auto compilerPath = getCCompilerPath();
     if (compilerPath.empty()) return;
 
-    if (llvm::StringRef(compilerPath).endswith_lower("cl.exe")) {
-        addHeaderSearchPathsFromEnvVar(importSearchPaths, "INCLUDE");
-    } else {
+    if (llvm::sys::path::filename(compilerPath) != "cl.exe") {
         std::string command = "echo | " + compilerPath + " -E -v - 2>&1 | grep '^ /'";
         std::string output;
         exec(command.c_str(), output);
@@ -143,6 +141,7 @@ static void addPredefinedImportSearchPaths(std::vector<std::string>& importSearc
     importSearchPaths.push_back("/usr/local/include");
     addHeaderSearchPathsFromEnvVar(importSearchPaths, "CPATH");
     addHeaderSearchPathsFromEnvVar(importSearchPaths, "C_INCLUDE_PATH");
+    addHeaderSearchPathsFromEnvVar(importSearchPaths, "INCLUDE");
 }
 
 static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
@@ -296,7 +295,7 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     auto ccPath = getCCompilerPath();
-    bool msvc = llvm::StringRef(ccPath).endswith_lower(".exe");
+    bool msvc = llvm::sys::path::extension(ccPath) == ".exe";
 
     llvm::SmallString<128> temporaryOutputFilePath;
     auto* outputFileExtension = emitAssembly ? "s" : msvc ? "obj" : "o";
