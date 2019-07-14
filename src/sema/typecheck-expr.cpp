@@ -319,6 +319,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 }
 
 void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location) {
+    if (!lhs.isLvalue()) {
+        ERROR(lhs.getLocation(), "expression is not assignable");
+    }
+
     typecheckExpr(lhs, true);
     Type lhsType = lhs.getAssignableType();
     Type rhsType = typecheckExpr(rhs);
