@@ -325,8 +325,9 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     auto module = new Module(headerName);
 
     clang::CompilerInstance ci;
-    clang::DiagnosticOptions diagnosticOptions;
     ci.createDiagnostics();
+    auto args = map(options.cflags, [](auto& cflag) { return cflag.c_str(); });
+    clang::CompilerInvocation::CreateFromArgs(ci.getInvocation(), &*args.begin(), &*args.end(), ci.getDiagnostics());
 
     std::shared_ptr<clang::TargetOptions> pto = std::make_shared<clang::TargetOptions>();
     pto->Triple = llvm::sys::getDefaultTargetTriple();

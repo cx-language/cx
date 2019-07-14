@@ -229,10 +229,9 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         outputFileName = specifiedOutputFileName;
     }
 
+    // Pass remaining options to C compiler.
     for (llvm::StringRef arg : args) {
-        if (arg.startswith("-")) {
-            ABORT("unsupported option '" << arg << "'");
-        }
+        options.cflags.push_back(arg);
     }
 
     if (files.empty()) {
