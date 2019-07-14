@@ -347,9 +347,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         ccArgs.push_back("msvcrt.lib");
     }
 
-    llvm::Optional<llvm::StringRef> redirects[3] = { llvm::None, llvm::StringRef(), llvm::None };
     std::vector<llvm::StringRef> ccArgStringRefs(ccArgs.begin(), ccArgs.end());
-    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, llvm::None, redirects) : invokeClang(ccArgs);
+    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs) : invokeClang(ccArgs);
     llvm::sys::fs::remove(temporaryOutputFilePath);
     if (ccExitStatus != 0) return ccExitStatus;
 
