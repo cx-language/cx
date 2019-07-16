@@ -142,13 +142,10 @@ add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" "${CMAK
 add_custom_target(format COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" "${CMAKE_BINARY_DIR}" --skip-clang-tidy)
 
 if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    if(EXISTS "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit")
-        file(COPY "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit" DESTINATION "${PROJECT_SOURCE_DIR}/.git/hooks/backup")
-        message(STATUS "Updating git pre-commit hook (old hook backed up into .git/hooks/backup)")
-    else()
+    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit")
         message(STATUS "Installing git pre-commit hook")
+        configure_file("${PROJECT_SOURCE_DIR}/scripts/pre-commit" "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit" @ONLY NEWLINE_STYLE LF)
     endif()
-    configure_file("${PROJECT_SOURCE_DIR}/scripts/pre-commit" "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit" @ONLY NEWLINE_STYLE LF)
 endif()
 
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")
