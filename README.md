@@ -27,35 +27,34 @@ Compiling Delta requires a C++17 compiler, [CMake](https://cmake.org), and
 [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 7. To run the test
 suite you also need [lit](https://llvm.org/docs/CommandGuide/lit.html).
 
-### Ubuntu/macOS/WSL
+### Ubuntu / macOS / WSL
 
-Run the provided `setup-build.sh` script to automatically download all the dependencies
-and invoke the appropriate commands to generate a ready-to-use build system.
-
-### Windows with Visual Studio 15
-
-1. Download and extract LLVM sources from https://github.com/vovkos/llvm-package-windows/releases/download/llvm-7.1.0/llvm-7.1.0-windows-amd64-msvc15-msvcrt.7z.
-2. Download and extract Clang sources from https://github.com/vovkos/llvm-package-windows/releases/download/clang-7.1.0/clang-7.1.0-windows-amd64-msvc15-msvcrt.7z.
-3. Run `setup-build.sh`, passing the paths to the LLVM and Clang source directories as arguments.
-4. For running the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html)
-   by running `sudo pip install lit` (you need [pip](https://pip.pypa.io/en/stable/)
-   installed).
-
-Otherwise, install the dependencies manually and do the following in the root
-directory of the repository:
+Download and extract LLVM/Clang 7 pre-built binaries for your platform from
+https://releases.llvm.org/download.html. Then run the following commands:
 
     mkdir build
     cd build
-    cmake -G "Unix Makefiles" ..
+    cmake .. -DCMAKE_PREFIX_PATH="/path/to/llvm"
+
+### Windows with Visual Studio
+
+Download and extract LLVM/Clang pre-built binaries from
+https://github.com/vovkos/llvm-package-windows/releases/download/llvm-7.1.0/llvm-7.1.0-windows-amd64-msvc15-msvcrt.7z
+and https://github.com/vovkos/llvm-package-windows/releases/download/clang-7.1.0/clang-7.1.0-windows-amd64-msvc15-msvcrt.7z.
+Then run the following commands:
+
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_PREFIX_PATH="C:\path\to\llvm;C:\path\to\clang" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64
+
+For running the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html)
+with `sudo pip install lit` (you need [pip](https://pip.pypa.io/en/stable/) installed).
 
 After this, the following commands can be invoked from the `build` directory:
 
-- `make` builds the project (or `make -j` to run the build in parallel).
-- `make check` runs the test suite and reports errors in case of failure. Note:
-  if your checks fail because of not finding C standard library headers, you can
-  tell Delta where to find them with the `C_INCLUDE_PATH` or `CPATH` environment
-  variable: e.g. `export C_INCLUDE_PATH=/usr/include/x86_64-linux-gnu/`.
-- `make coverage` generates a test coverage report under `coverage/`.
+- `cmake --build .` builds the project.
+- `cmake --build . --target check` runs the test suite.
+- `cmake --build . --target coverage` generates a test coverage report under `coverage/`.
 
 ## Documentation
 
