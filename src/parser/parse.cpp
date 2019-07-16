@@ -492,7 +492,7 @@ Type Parser::parseType() {
 
 /// sizeof-expr ::= 'sizeof' '(' type ')'
 SizeofExpr* Parser::parseSizeofExpr() {
-    assert(currentToken() == Token::Sizeof);
+    ASSERT(currentToken() == Token::Sizeof);
     auto location = getCurrentLocation();
     consumeToken();
     parse(Token::LeftParen);
@@ -503,7 +503,7 @@ SizeofExpr* Parser::parseSizeofExpr() {
 
 /// addressof-expr ::= 'addressof' '(' expr ')'
 AddressofExpr* Parser::parseAddressofExpr() {
-    assert(currentToken() == Token::Addressof);
+    ASSERT(currentToken() == Token::Addressof);
     auto location = getCurrentLocation();
     consumeToken();
     parse(Token::LeftParen);

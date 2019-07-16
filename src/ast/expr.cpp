@@ -124,30 +124,14 @@ llvm::APSInt Expr::getConstantIntegerValue() const {
 bool Expr::isLvalue() const {
     switch (getKind()) {
         case ExprKind::VarExpr:
-        case ExprKind::StringLiteralExpr:
-        case ExprKind::CharacterLiteralExpr:
-        case ExprKind::ArrayLiteralExpr:
-        case ExprKind::TupleExpr:
         case ExprKind::MemberExpr:
         case ExprKind::SubscriptExpr:
-        case ExprKind::IfExpr:
             return true;
-        case ExprKind::IntLiteralExpr:
-        case ExprKind::FloatLiteralExpr:
-        case ExprKind::BoolLiteralExpr:
-        case ExprKind::NullLiteralExpr:
-        case ExprKind::UndefinedLiteralExpr:
-        case ExprKind::SizeofExpr:
-        case ExprKind::AddressofExpr:
-        case ExprKind::UnwrapExpr:
-        case ExprKind::BinaryExpr:
-        case ExprKind::CallExpr:
-        case ExprKind::LambdaExpr:
-            return false;
         case ExprKind::UnaryExpr:
             return llvm::cast<UnaryExpr>(this)->getOperator() == Token::Star;
+        default:
+            return false;
     }
-    llvm_unreachable("all cases handled");
 }
 
 void Expr::setMoved(bool moved) {

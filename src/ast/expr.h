@@ -76,7 +76,6 @@ public:
     bool isConstant() const;
     llvm::APSInt getConstantIntegerValue() const;
     bool isLvalue() const;
-    bool isRvalue() const { return !isLvalue(); }
     SourceLocation getLocation() const { return location; }
     void setMoved(bool moved);
     Expr* instantiate(const llvm::StringMap<Type>& genericArgs) const;

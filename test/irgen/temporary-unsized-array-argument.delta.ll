@@ -17,24 +17,24 @@
 @7 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:36:62\00"
 
 define i32 @main() {
-  %__temporaryArray0 = alloca [3 x i32]
-  %__temporaryArray1 = alloca [3 x i32]
-  %__temporaryArray2 = alloca [3 x i32]
-  store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %__temporaryArray0
-  %1 = getelementptr [3 x i32], [3 x i32]* %__temporaryArray0, i32 0, i32 0
-  %2 = insertvalue %"ArrayRef<int>" undef, i32* %1, 0
-  %3 = insertvalue %"ArrayRef<int>" %2, i32 3, 1
-  call void @_EN4main1fI3intEE1aPAR_3int(%"ArrayRef<int>" %3)
-  store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %__temporaryArray1
-  %4 = getelementptr [3 x i32], [3 x i32]* %__temporaryArray1, i32 0, i32 0
+  %1 = alloca [3 x i32]
+  %2 = alloca [3 x i32]
+  %3 = alloca [3 x i32]
+  store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %1
+  %4 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
   %5 = insertvalue %"ArrayRef<int>" undef, i32* %4, 0
   %6 = insertvalue %"ArrayRef<int>" %5, i32 3, 1
   call void @_EN4main1fI3intEE1aPAR_3int(%"ArrayRef<int>" %6)
-  store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %__temporaryArray2
-  %7 = getelementptr [3 x i32], [3 x i32]* %__temporaryArray2, i32 0, i32 0
+  store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %2
+  %7 = getelementptr [3 x i32], [3 x i32]* %2, i32 0, i32 0
   %8 = insertvalue %"ArrayRef<int>" undef, i32* %7, 0
   %9 = insertvalue %"ArrayRef<int>" %8, i32 3, 1
   call void @_EN4main1fI3intEE1aPAR_3int(%"ArrayRef<int>" %9)
+  store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %3
+  %10 = getelementptr [3 x i32], [3 x i32]* %3, i32 0, i32 0
+  %11 = insertvalue %"ArrayRef<int>" undef, i32* %10, 0
+  %12 = insertvalue %"ArrayRef<int>" %11, i32 3, 1
+  call void @_EN4main1fI3intEE1aPAR_3int(%"ArrayRef<int>" %12)
   ret i32 0
 }
 

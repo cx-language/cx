@@ -13,7 +13,6 @@ define i32 @main() {
   store %Foo* null, %Foo** %f
   %f.load = load %Foo*, %Foo** %f
   %i = getelementptr inbounds %Foo, %Foo* %f.load, i32 0, i32 0
-  %i.load = load i32, i32* %i
   %f.load1 = load %Foo*, %Foo** %f
   %i2 = getelementptr inbounds %Foo, %Foo* %f.load1, i32 0, i32 0
   %i2.load = load i32, i32* %i2

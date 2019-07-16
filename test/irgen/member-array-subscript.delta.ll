@@ -739,7 +739,6 @@ define void @_EN4main1C3fooE(%C* %this) {
   %a.load = load %"ArrayRef<int>", %"ArrayRef<int>"* %a
   %1 = extractvalue %"ArrayRef<int>" %a.load, 0
   %2 = getelementptr i32, i32* %1, i32 4
-  %.load = load i32, i32* %2
   ret void
 }
 

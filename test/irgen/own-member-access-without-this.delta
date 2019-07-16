@@ -8,8 +8,8 @@ struct A {
         j = 42
     }
 
-    void foo() {
-        _ = j
+    int foo() {
+        return j
     }
 
     void bar() {
@@ -25,8 +25,8 @@ struct B: Copyable {
         j = 42
     }
 
-    void foo() {
-        _ = j
+    int foo() {
+        return j
     }
 
     void bar() {

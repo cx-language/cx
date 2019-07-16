@@ -163,7 +163,7 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
             codegenVarStmt(llvm::cast<VarStmt>(stmt));
             break;
         case StmtKind::ExprStmt:
-            codegenExpr(llvm::cast<ExprStmt>(stmt).getExpr());
+            codegenLvalueExpr(llvm::cast<ExprStmt>(stmt).getExpr());
             break;
         case StmtKind::DeferStmt:
             deferEvaluationOf(llvm::cast<DeferStmt>(stmt).getExpr());

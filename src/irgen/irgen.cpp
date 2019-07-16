@@ -211,11 +211,18 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(llvm::Type* type, llvm::Va
     return alloca;
 }
 
+llvm::AllocaInst* IRGenerator::createTempAlloca(llvm::Value* value, const llvm::Twine& name) {
+    auto* alloca = createEntryBlockAlloca(value->getType(), nullptr, name);
+    builder.CreateStore(value, alloca);
+    return alloca;
+}
+
 llvm::Value* IRGenerator::createLoad(llvm::Value* value) {
     return builder.CreateLoad(value, value->getName() + ".load");
 }
 
 llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr& lhs) {
+    // Don't call deinitializer for LHS when assigning to fields in initializer.
     if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentDecl)) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(&lhs)) {
             if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
@@ -226,6 +233,7 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr& lhs) {
         }
     }
 
+    // Call deinitializer for LHS.
     if (auto* basicType = llvm::dyn_cast<BasicType>(lhs.getType().getBase())) {
         if (auto* typeDecl = basicType->getDecl()) {
             if (auto* deinit = typeDecl->getDeinitializer()) {
@@ -241,11 +249,8 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr& lhs) {
 
 void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
     if (!valueToDeinit->getType()->isPointerTy()) {
-        auto* alloca = createEntryBlockAlloca(valueToDeinit->getType());
-        builder.CreateStore(valueToDeinit, alloca);
-        valueToDeinit = alloca;
+        valueToDeinit = createTempAlloca(valueToDeinit);
     }
-
     builder.CreateCall(deinit, valueToDeinit);
 }
 

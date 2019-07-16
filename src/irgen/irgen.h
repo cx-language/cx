@@ -56,11 +56,15 @@ private:
     llvm::Value* getValue(const Decl* decl);
     llvm::Value* getThis();
 
+    /// Emits and loads value.
     llvm::Value* codegenExpr(const Expr& expr);
+    /// Emits value without loading.
+    llvm::Value* codegenLvalueExpr(const Expr& expr);
+    /// Emits value as a pointer, storing it in a temporary alloca if needed.
+    llvm::Value* codegenExprAsPointer(const Expr& expr);
     llvm::Value* codegenExprWithoutAutoCast(const Expr& expr);
     llvm::Value* codegenAutoCast(llvm::Value* value, const Expr& expr);
     llvm::Value* codegenVarExpr(const VarExpr& expr);
-    llvm::Value* codegenLvalueVarExpr(const VarExpr& expr);
     llvm::Value* codegenStringLiteralExpr(const StringLiteralExpr& expr);
     llvm::Value* codegenCharacterLiteralExpr(const CharacterLiteralExpr& expr);
     llvm::Value* codegenIntLiteralExpr(const IntLiteralExpr& expr);
@@ -73,7 +77,6 @@ private:
     llvm::Value* codegenImplicitNullComparison(llvm::Value* operand);
     llvm::Value* codegenNot(const UnaryExpr& expr);
     llvm::Value* codegenUnaryExpr(const UnaryExpr& expr);
-    llvm::Value* codegenLvalueUnaryExpr(const UnaryExpr& expr);
     llvm::Value* codegenIncrementExpr(const UnaryExpr& expr);
     llvm::Value* codegenDecrementExpr(const UnaryExpr& expr);
     llvm::Value* codegenLogicalAnd(const Expr& left, const Expr& right);
@@ -90,15 +93,12 @@ private:
     llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);
     llvm::Value* codegenAddressofExpr(const AddressofExpr& expr);
     llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
-    llvm::Value* codegenLvalueMemberExpr(const MemberExpr& expr);
     llvm::Value* codegenMemberExpr(const MemberExpr& expr);
     llvm::Value* codegenTupleElementAccess(const MemberExpr& expr);
-    llvm::Value* codegenLvalueSubscriptExpr(const SubscriptExpr& expr);
     llvm::Value* codegenSubscriptExpr(const SubscriptExpr& expr);
     llvm::Value* codegenUnwrapExpr(const UnwrapExpr& expr);
     llvm::Value* codegenLambdaExpr(const LambdaExpr& expr);
     llvm::Value* codegenIfExpr(const IfExpr& expr);
-    llvm::Value* codegenLvalueExpr(const Expr& expr);
 
     void codegenDeferredExprsAndDeinitCallsForReturn();
     void codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* destination, llvm::BasicBlock* continuation);
@@ -121,6 +121,7 @@ private:
     llvm::Value* getFunctionForCall(const CallExpr& call);
     llvm::Function* getFunctionProto(const FunctionDecl& decl);
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type, llvm::Value* arraySize = nullptr, const llvm::Twine& name = "");
+    llvm::AllocaInst* createTempAlloca(llvm::Value* value, const llvm::Twine& name = "");
     llvm::Value* createLoad(llvm::Value* value);
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
