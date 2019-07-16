@@ -390,8 +390,7 @@ bool Typechecker::isWarningEnabled(llvm::StringRef warning) const {
     return !llvm::is_contained(options.disabledWarnings, warning);
 }
 
-template<typename ModuleContainer>
-static llvm::SmallVector<Decl*, 1> findDeclsInModules(llvm::StringRef name, const ModuleContainer& modules) {
+static llvm::SmallVector<Decl*, 1> findDeclsInModules(llvm::StringRef name, llvm::ArrayRef<Module*> modules) {
     llvm::SmallVector<Decl*, 1> decls;
 
     for (auto& module : modules) {
@@ -402,8 +401,7 @@ static llvm::SmallVector<Decl*, 1> findDeclsInModules(llvm::StringRef name, cons
     return decls;
 }
 
-template<typename ModuleContainer>
-static Decl* findDeclInModules(llvm::StringRef name, SourceLocation location, const ModuleContainer& modules) {
+static Decl* findDeclInModules(llvm::StringRef name, SourceLocation location, llvm::ArrayRef<Module*> modules) {
     auto decls = findDeclsInModules(name, modules);
 
     switch (decls.size()) {
@@ -419,7 +417,7 @@ static Decl* findDeclInModules(llvm::StringRef name, SourceLocation location, co
 Decl& Typechecker::findDecl(llvm::StringRef name, SourceLocation location) const {
     ASSERT(!name.empty());
 
-    if (Decl* match = findDeclInModules(name, location, llvm::ArrayRef(currentModule))) {
+    if (Decl* match = findDeclInModules(name, location, currentModule)) {
         return *match;
     }
 
@@ -479,7 +477,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     }
 
     if (currentModule->getName() != "std") {
-        append(decls, findDeclsInModules(name, llvm::ArrayRef(currentModule)));
+        append(decls, findDeclsInModules(name, currentModule));
     }
 
     append(decls, findDeclsInModules(name, currentModule->getStdlibModules()));
