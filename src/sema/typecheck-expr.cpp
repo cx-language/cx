@@ -309,7 +309,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
-    bool converted = convert(&expr.getRHS(), leftType) || convert(&expr.getLHS(), rightType);
+    bool converted = convert(&expr.getRHS(), leftType, true) || convert(&expr.getLHS(), rightType, true);
 
     if (!converted && (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType())) {
         invalidOperandsToBinaryExpr(expr, op);
@@ -419,14 +419,14 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
-bool Typechecker::convert(Expr* expr, Type type) const {
+bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
     Type convertedType;
-    bool converted = isImplicitlyConvertible(expr, expr->getType(), type, &convertedType);
+    bool converted = isImplicitlyConvertible(expr, expr->getType(), type, &convertedType, allowPointerToTemporary);
     if (convertedType) expr->setType(convertedType);
     return converted;
 }
 
-bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType) const {
+bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType, bool allowPointerToTemporary) const {
     switch (source.getKind()) {
         case TypeKind::BasicType:
             if (target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
@@ -520,7 +520,8 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
     }
 
-    if (target.removeOptional().isPointerType() && (source.isMutable() || !target.removeOptional().getPointee().isMutable()) &&
+    if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.removeOptional().isPointerType() &&
+        (source.isMutable() || !target.removeOptional().getPointee().isMutable()) &&
         isImplicitlyConvertible(expr, source, target.removeOptional().getPointee(), nullptr)) {
         if (convertedType) *convertedType = source;
         return true;
@@ -684,9 +685,9 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
                     Type paramTypeWithGenericArg = paramType.resolve({ { genericParam.getName(), genericArg } });
                     Type paramTypeWithMaybeGenericArg = paramType.resolve({ { genericParam.getName(), maybeGenericArg } });
 
-                    if (convert(argValue, paramTypeWithGenericArg)) {
+                    if (convert(argValue, paramTypeWithGenericArg, true)) {
                         continue;
-                    } else if (convert(genericArgValue, paramTypeWithMaybeGenericArg)) {
+                    } else if (convert(genericArgValue, paramTypeWithMaybeGenericArg, true)) {
                         genericArg = maybeGenericArg;
                         genericArgValue = argValue;
                     } else {
@@ -1080,15 +1081,15 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
             return Type::getVoid();
         }
 
-        auto callee = expr.getQualifiedFunctionName();
-        auto decls = findCalleeCandidates(expr, callee);
-
         if (expr.isMoveInit()) {
             if (!expr.getArgs()[0].getValue()->getType().isImplicitlyCopyable()) {
                 expr.getArgs()[0].getValue()->setMoved(true);
             }
             return Type::getVoid();
         }
+
+        auto callee = expr.getQualifiedFunctionName();
+        auto decls = findCalleeCandidates(expr, callee);
 
         if (decls.empty() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
@@ -1187,7 +1188,7 @@ bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* funct
             return false;
         }
 
-        if (param && !isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), nullptr)) {
+        if (param && !isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), nullptr, true)) {
             return false;
         }
     }
@@ -1233,7 +1234,7 @@ void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params,
             ERROR(arg.getLocation(), "invalid argument name '" << arg.getName() << "' for parameter '" << param->getName() << "'");
         }
 
-        if (param && !convert(arg.getValue(), param->getType())) {
+        if (param && !convert(arg.getValue(), param->getType(), true)) {
             ERROR(arg.getLocation(), "invalid argument #" << (i + 1) << " type '" << arg.getValue()->getType() << "' to '" << functionName
                                                           << "', expected '" << param->getType() << "'");
         }
