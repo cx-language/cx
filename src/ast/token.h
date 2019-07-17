@@ -111,10 +111,7 @@ struct Token {
     llvm::StringRef getString() const { return string; }
     SourceLocation getLocation() const { return location; }
     bool is(Token::Kind kind) const { return this->kind == kind; }
-    template<typename... T>
-    bool is(Token::Kind kind, T... kinds) const {
-        return is(kind) || is(kinds...);
-    }
+    bool is(llvm::ArrayRef<Token::Kind> kinds) const;
     llvm::APSInt getIntegerValue() const;
     long double getFloatingPointValue() const;
 

@@ -186,7 +186,7 @@ std::vector<NamedValue> Parser::parseArgumentList() {
 
 /// var-expr ::= id
 VarExpr* Parser::parseVarExpr() {
-    ASSERT(currentToken().is(Token::Identifier, Token::Init));
+    ASSERT(currentToken().is({ Token::Identifier, Token::Init }));
     auto id = consumeToken();
     return new VarExpr(id.getString(), id.getLocation());
 }
@@ -517,7 +517,7 @@ MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
     auto location = getCurrentLocation();
     llvm::StringRef member;
 
-    if (currentToken().is(Token::Identifier, Token::Init, Token::Deinit)) {
+    if (currentToken().is({ Token::Identifier, Token::Init, Token::Deinit })) {
         member = consumeToken().getString();
     } else {
         unexpectedToken(currentToken(), Token::Identifier);
@@ -556,7 +556,7 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
 }
 
 LambdaExpr* Parser::parseLambdaExpr() {
-    ASSERT(currentToken().is(Token::LeftParen, Token::Identifier));
+    ASSERT(currentToken().is({ Token::LeftParen, Token::Identifier }));
     auto location = getCurrentLocation();
     std::vector<ParamDecl> params;
 
@@ -688,7 +688,7 @@ Expr* Parser::parsePostfixExpr() {
         case Token::LeftParen:
             if (arrowAfterParentheses()) {
                 expr = parseLambdaExpr();
-            } else if (lookAhead(1) == Token::Identifier && lookAhead(2).is(Token::Colon, Token::Comma)) {
+            } else if (lookAhead(1) == Token::Identifier && lookAhead(2).is({ Token::Colon, Token::Comma })) {
                 expr = parseTupleLiteral();
             } else {
                 expr = parseParenExpr();
@@ -805,7 +805,7 @@ ReturnStmt* Parser::parseReturnStmt() {
     ASSERT(currentToken() == Token::Return);
     auto location = getCurrentLocation();
     consumeToken();
-    auto returnValue = currentToken().is(Token::Semicolon, Token::RightBrace) ? nullptr : parseExpr();
+    auto returnValue = currentToken().is({ Token::Semicolon, Token::RightBrace }) ? nullptr : parseExpr();
     parseStmtTerminator();
     return new ReturnStmt(returnValue, location);
 }
@@ -1367,7 +1367,7 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
 
     if (negate) condition = !condition;
 
-    while (!currentToken().is(Token::HashElse, Token::HashEndif)) {
+    while (!currentToken().is({ Token::HashElse, Token::HashEndif })) {
         parseIfdefBody(condition ? activeDecls : nullptr);
     }
 

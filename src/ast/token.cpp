@@ -166,6 +166,10 @@ int delta::getPrecedence(Token::Kind tokenKind) {
     return int(getPrecedenceGroup(tokenKind));
 }
 
+bool Token::is(llvm::ArrayRef<Token::Kind> kinds) const {
+    return llvm::is_contained(kinds, kind);
+}
+
 llvm::APSInt Token::getIntegerValue() const {
     llvm::APInt value;
     bool fail = string.getAsInteger(0, value);
