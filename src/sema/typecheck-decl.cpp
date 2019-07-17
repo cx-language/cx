@@ -172,7 +172,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
         if (receiverTypeDecl) {
             Type thisType = receiverTypeDecl->getTypeForPassing();
-            getCurrentModule()->addToSymbolTable(VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *getCurrentModule(), decl.getLocation()));
+            auto* varDecl = new VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *getCurrentModule(), decl.getLocation());
+            getCurrentModule()->addToSymbolTable(varDecl);
         }
 
         bool delegatedInit = false;

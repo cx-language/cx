@@ -15,9 +15,6 @@ llvm::ArrayRef<Module*> Module::getStdlibModules() {
     return it->second;
 }
 
-/// Storage for Decls that are not in the AST but are referenced by the symbol table.
-static std::vector<Decl*> nonASTDecls;
-
 void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) {
     if (getSymbolTable().contains(name)) {
         ERROR(decl.getLocation(), "redefinition of '" << name << "'");
@@ -68,28 +65,12 @@ void Module::addToSymbolTable(VarDecl& decl, bool global) {
     addToSymbolTableWithName(decl, decl.getName(), global);
 }
 
-template<typename DeclT>
-void Module::addToSymbolTableNonAST(DeclT& decl) {
-    std::string name = decl.getName();
-    nonASTDecls.push_back(new DeclT(std::move(decl)));
-    getSymbolTable().add(std::move(name), nonASTDecls.back());
+void Module::addToSymbolTable(Decl* decl) {
+    getSymbolTable().add(decl->getName(), decl);
 
-    if (std::is_same<DeclT, TypeDecl>::value) {
-        auto& typeDecl = llvm::cast<TypeDecl>(*nonASTDecls.back());
-        llvm::cast<BasicType>(*typeDecl.getType()).setDecl(&typeDecl);
+    if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+        llvm::cast<BasicType>(*typeDecl->getType()).setDecl(typeDecl);
     }
-}
-
-void Module::addToSymbolTable(FunctionDecl&& decl) {
-    addToSymbolTableNonAST(decl);
-}
-
-void Module::addToSymbolTable(TypeDecl&& decl) {
-    addToSymbolTableNonAST(decl);
-}
-
-void Module::addToSymbolTable(VarDecl&& decl) {
-    addToSymbolTableNonAST(decl);
 }
 
 void Module::addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) {

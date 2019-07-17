@@ -158,7 +158,6 @@ private:
     llvm::BasicBlock::iterator lastAlloca;
 
     std::map<std::string, FunctionInstantiation> functionInstantiations;
-    std::vector<Decl*> helperDecls;
     llvm::StringMap<std::pair<llvm::StructType*, const TypeDecl*>> structs;
     const Decl* currentDecl;
 

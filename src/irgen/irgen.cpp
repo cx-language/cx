@@ -159,7 +159,6 @@ DeinitDecl* IRGenerator::getDefaultDeinitializer(const TypeDecl& typeDecl) {
         if (field.getType().getDeinitializer() != nullptr) {
             auto deinitializer = new DeinitDecl(const_cast<TypeDecl&>(typeDecl), typeDecl.getLocation());
             deinitializer->setBody({});
-            helperDecls.push_back(deinitializer);
             return deinitializer;
         }
     }

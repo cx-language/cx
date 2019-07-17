@@ -119,7 +119,6 @@ public:
     llvm::ArrayRef<SourceFile> getSourceFiles() const { return sourceFiles; }
     llvm::MutableArrayRef<SourceFile> getSourceFiles() { return sourceFiles; }
     llvm::StringRef getName() const { return name; }
-    const SymbolTable& getSymbolTable() const { return symbolTable; }
     SymbolTable& getSymbolTable() { return symbolTable; }
 
     std::vector<Module*> getImportedModules() const {
@@ -134,13 +133,11 @@ public:
 
     void addToSymbolTable(FunctionTemplate& decl);
     void addToSymbolTable(FunctionDecl& decl);
-    void addToSymbolTable(FunctionDecl&& decl);
     void addToSymbolTable(TypeTemplate& decl);
     void addToSymbolTable(TypeDecl& decl);
-    void addToSymbolTable(TypeDecl&& decl);
     void addToSymbolTable(EnumDecl& decl);
     void addToSymbolTable(VarDecl& decl, bool global);
-    void addToSymbolTable(VarDecl&& decl);
+    void addToSymbolTable(Decl* decl);
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
 
     static std::vector<Module*> getAllImportedModules();
@@ -149,8 +146,6 @@ public:
 
 private:
     void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global);
-    template<typename DeclT>
-    void addToSymbolTableNonAST(DeclT& decl);
 
 private:
     std::string name;

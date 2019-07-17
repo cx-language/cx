@@ -165,12 +165,12 @@ static Type toDelta(clang::QualType qualtype) {
     }
 }
 
-static FunctionDecl toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
+static FunctionDecl* toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
     auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
         return ParamDecl(toDelta(param->getType()), param->getNameAsString(), SourceLocation());
     });
     FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()), decl.isVariadic(), true);
-    return FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, SourceLocation());
+    return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, SourceLocation());
 }
 
 static llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
@@ -178,30 +178,30 @@ static llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl&
     return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), typeDecl, AccessLevel::Default, SourceLocation());
 }
 
-static llvm::Optional<TypeDecl> toDelta(const clang::RecordDecl& decl, Module* currentModule) {
+static TypeDecl* toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     auto tag = decl.isUnion() ? TypeTag::Union : TypeTag::Struct;
-    TypeDecl typeDecl(tag, getName(decl), {}, {}, AccessLevel::Default, *currentModule, SourceLocation());
+    auto* typeDecl = new TypeDecl(tag, getName(decl), {}, {}, AccessLevel::Default, *currentModule, SourceLocation());
 
     for (auto* field : decl.fields()) {
-        if (auto fieldDecl = toDelta(*field, typeDecl)) {
-            typeDecl.getFields().emplace_back(std::move(*fieldDecl));
+        if (auto fieldDecl = toDelta(*field, *typeDecl)) {
+            typeDecl->getFields().emplace_back(std::move(*fieldDecl));
         } else {
-            return llvm::None;
+            return nullptr;
         }
     }
 
-    return std::move(typeDecl);
+    return typeDecl;
 }
 
-static VarDecl toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, *currentModule, SourceLocation());
+static VarDecl* toDelta(const clang::VarDecl& decl, Module* currentModule) {
+    return new VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, *currentModule, SourceLocation());
 }
 
 static void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
     auto initializer = new IntLiteralExpr(std::move(value), SourceLocation());
     auto type = toDelta(qualType).withMutability(Mutability::Const);
     initializer->setType(type);
-    module.addToSymbolTable(VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
+    module.addToSymbolTable(new VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 // TODO: Use llvm::APFloat instead of long double.
@@ -209,7 +209,7 @@ static void addFloatConstantToSymbolTable(llvm::StringRef name, long double valu
     auto initializer = new FloatLiteralExpr(value, SourceLocation());
     auto type = Type::getFloat64(Mutability::Const);
     initializer->setType(type);
-    module.addToSymbolTable(VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
+    module.addToSymbolTable(new VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 namespace {
@@ -227,10 +227,8 @@ public:
                     if (!decl->isFirstDecl()) break;
                     auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl), &module);
                     if (typeDecl) {
-                        // Skip redefinitions caused by different modules including the same headers.
-                        if (module.getSymbolTable().find(typeDecl->getName()).empty()) {
-                            module.addToSymbolTable(std::move(*typeDecl));
-                        }
+                        ASSERT(module.getSymbolTable().find(typeDecl->getName()).empty());
+                        module.addToSymbolTable(typeDecl);
                     }
                     break;
                 }
@@ -247,7 +245,7 @@ public:
                         addIntegerConstantToSymbolTable(enumeratorName, value, type, module);
                     }
 
-                    module.addToSymbolTable(EnumDecl(getName(enumDecl), std::move(cases), AccessLevel::Default, module, SourceLocation()));
+                    module.addToSymbolTable(new EnumDecl(getName(enumDecl), std::move(cases), AccessLevel::Default, module, SourceLocation()));
                     break;
                 }
                 case clang::Decl::Var:
