@@ -102,6 +102,7 @@ public:
     bool isUnsigned() const;
     bool isSignedInteger() const { return isInteger() && isSigned(); }
     bool isUnsignedInteger() const { return isInteger() && isUnsigned(); }
+    int getIntegerBitWidth() const;
     bool isMutable() const { return mutability == Mutability::Mutable; }
     Mutability getMutability() const { return mutability; }
     Type withMutability(Mutability m) const { return Type(typeBase, m, location); }

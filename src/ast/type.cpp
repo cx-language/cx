@@ -213,6 +213,16 @@ bool Type::isUnsigned() const {
     return llvm::is_contained(unsignedInts, getName());
 }
 
+int Type::getIntegerBitWidth() const {
+    ASSERT(isInteger());
+    return llvm::StringSwitch<int>(getName())
+        .Cases("int", "uint", 32)
+        .Cases("int8", "uint8", 8)
+        .Cases("int16", "uint16", 16)
+        .Cases("int32", "uint32", 32)
+        .Cases("int64", "uint64", 64);
+}
+
 llvm::StringRef Type::getName() const {
     return llvm::cast<BasicType>(typeBase)->getName();
 }

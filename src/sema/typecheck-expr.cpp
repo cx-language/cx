@@ -358,10 +358,9 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
     if (onAssign) onAssign(lhs);
 }
 
-template<int bitWidth, bool isSigned>
-bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, Type* convertedType) {
-    if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(bitWidth, !isSigned)) < 0 ||
-        llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(bitWidth, !isSigned)) > 0) {
+static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, Type* convertedType) {
+    if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(type.getIntegerBitWidth(), type.isUnsigned())) < 0 ||
+        llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(type.getIntegerBitWidth(), type.isUnsigned())) > 0) {
         ERROR(expr.getLocation(), value << " is out of range for type '" << type << "'");
     }
 
@@ -473,16 +472,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             const auto& value = expr->getConstantIntegerValue();
 
             if (target.isInteger()) {
-                if (target.isInt()) return checkRange<32, true>(*expr, value, target, convertedType);
-                if (target.isUInt()) return checkRange<32, false>(*expr, value, target, convertedType);
-                if (target.isInt8()) return checkRange<8, true>(*expr, value, target, convertedType);
-                if (target.isInt16()) return checkRange<16, true>(*expr, value, target, convertedType);
-                if (target.isInt32()) return checkRange<32, true>(*expr, value, target, convertedType);
-                if (target.isInt64()) return checkRange<64, true>(*expr, value, target, convertedType);
-                if (target.isUInt8()) return checkRange<8, false>(*expr, value, target, convertedType);
-                if (target.isUInt16()) return checkRange<16, false>(*expr, value, target, convertedType);
-                if (target.isUInt32()) return checkRange<32, false>(*expr, value, target, convertedType);
-                if (target.isUInt64()) return checkRange<64, false>(*expr, value, target, convertedType);
+                return checkRange(*expr, value, target, convertedType);
             }
 
             if (target.isFloatingPoint()) {
