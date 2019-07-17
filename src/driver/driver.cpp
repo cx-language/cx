@@ -23,7 +23,6 @@
 #include <llvm/Target/TargetMachine.h>
 #pragma warning(pop)
 #include "clang.h"
-#include "../ast/ast-printer.h"
 #include "../ast/module.h"
 #include "../irgen/irgen.h"
 #include "../package-manager/manifest.h"
@@ -209,7 +208,6 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     bool parse = checkFlag("-parse", args);
     bool typecheck = checkFlag("-typecheck", args);
     bool compileOnly = checkFlag("-c", args);
-    bool printAST = checkFlag("-print-ast", args);
     bool printIR = checkFlag("-print-ir", args);
     bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
     bool emitLLVMBitcode = checkFlag("-emit-llvm-bitcode", args);
@@ -243,12 +241,6 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     for (llvm::StringRef filePath : files) {
         Parser parser(filePath, module, options);
         parser.parse();
-    }
-
-    if (printAST) {
-        ASTPrinter astPrinter(std::cout);
-        astPrinter.printModule(module);
-        return 0;
     }
 
     if (parse) return 0;

@@ -1,3 +1,1 @@
-// CHECK:(source-file {{.*}}a.delta
-
-var a = 42; // CHECK-NEXT:    (var-decl a 42))
+var a = 42;

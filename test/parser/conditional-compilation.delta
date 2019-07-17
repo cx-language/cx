@@ -1,24 +1,24 @@
-// RUN: %delta -print-ast %s       | %FileCheck %s -check-prefix=CHECK-WITHOUT-FOO
-// RUN: %delta -print-ast %s -DFOO | %FileCheck %s -check-prefix=CHECK-WITH-FOO
-// RUN: %delta -print-ast %s       | %FileCheck %s -check-prefix=CHECK-WITHOUT-BAR
-// RUN: %delta -print-ast %s -DBAR | %FileCheck %s -check-prefix=CHECK-WITH-BAR
+// RUN: %delta -print-ir %s       | %FileCheck %s -check-prefix=CHECK-WITHOUT-FOO
+// RUN: %delta -print-ir %s -DFOO | %FileCheck %s -check-prefix=CHECK-WITH-FOO
+// RUN: %delta -print-ir %s       | %FileCheck %s -check-prefix=CHECK-WITHOUT-BAR
+// RUN: %delta -print-ir %s -DBAR | %FileCheck %s -check-prefix=CHECK-WITH-BAR
 
 #if FOO
-// CHECK-WITHOUT-FOO-NOT: foo
-// CHECK-WITH-FOO: foo
-var a = "foo";
+// CHECK-WITHOUT-FOO-NOT: 666
+// CHECK-WITH-FOO: 666
+var a = 666;
 #endif
 
 #if BAR
 #if !UNUSED
-// CHECK-WITHOUT-BAR-NOT: bar
-// CHECK-WITH-BAR: bar
-var b = "bar";
+// CHECK-WITHOUT-BAR-NOT: 777
+// CHECK-WITH-BAR: 777
+var b = 777;
 #endif
 #else
 #if !UNUSED
-// CHECK-WITHOUT-BAR: qux
-// CHECK-WITH-BAR-NOT: qux
-var b = "qux";
+// CHECK-WITHOUT-BAR: 888
+// CHECK-WITH-BAR-NOT: 888
+var b = 888;
 #endif
 #endif

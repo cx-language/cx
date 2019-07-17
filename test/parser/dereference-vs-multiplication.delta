@@ -1,12 +1,12 @@
-// RUN: %delta -print-ast %s | %FileCheck %s
+// RUN: check_matches_snapshot %delta -print-ir %s -Wno-unused
 
-void f() {
-    // CHECK: (var-stmt m (call g))
-    // CHECK-NEXT: ((*a) = b)
+int g() {
+    return 1
+}
+
+void f(int* a, int b) {
     var m = g()
     *a = b
-
-    // CHECK-NEXT: (var-stmt m ((call g) * a))
-    var m = g()
-    *a
+    var n = g()
+    *b
 }

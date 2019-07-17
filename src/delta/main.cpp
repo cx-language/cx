@@ -27,7 +27,6 @@ static void printHelp() {
                     "  -I<directory>         - Add a search path for module and C header import\n"
                     "  -o<filename>          - Use the given filename for the output executable\n"
                     "  -parse                - Perform parsing\n"
-                    "  -print-ast            - Print the abstract syntax tree to stdout\n"
                     "  -print-ir             - Print the generated LLVM IR to stdout\n"
                     "  -typecheck            - Perform parsing and type checking\n"
                     "  -Werror               - Treat warnings as errors\n";

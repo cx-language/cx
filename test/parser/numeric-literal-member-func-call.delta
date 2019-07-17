@@ -1,5 +1,5 @@
-// RUN: %delta -print-ast %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: check_matches_snapshot %delta -print-ir %s
 
-// CHECK:(source-file {{.*}}numeric-literal-member-func-call.delta
-
-var foo = 0.bar(); // CHECK-NEXT:    (var-decl foo (call (member-expr 0 bar))))
+void main() {
+    var foo = 0.hash();
+}
