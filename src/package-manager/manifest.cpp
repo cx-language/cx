@@ -1,8 +1,8 @@
 #include "manifest.h"
-#include <cstdlib>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
+#include <llvm/Support/Process.h>
 #include "../ast/module.h"
 #include "../driver/driver.h"
 #include "../parser/parse.h"
@@ -17,11 +17,11 @@ std::string PackageManifest::Dependency::getGitRepositoryUrl() const {
 }
 
 std::string PackageManifest::Dependency::getFileSystemPath() const {
-    const char* home = std::getenv("HOME");
+    auto home = llvm::sys::Process::GetEnv("HOME");
     if (!home) {
         ABORT("environment variable HOME not set");
     }
-    return std::string(home) + "/.delta/dependencies/" + packageIdentifier + "@" + packageVersion;
+    return *home + "/.delta/dependencies/" + packageIdentifier + "@" + packageVersion;
 }
 
 template<typename DeclT, typename DefaultValueT>

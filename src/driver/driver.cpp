@@ -1,6 +1,5 @@
 #include "driver.h"
 #include <cstdio>
-#include <iostream>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -16,6 +15,7 @@
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
+#include <llvm/Support/Process.h>
 #include <llvm/Support/Program.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
@@ -89,9 +89,9 @@ static std::string collectStringOptionValue(llvm::StringRef flagPrefix, std::vec
 }
 
 static void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearchPaths, const char* name) {
-    if (const char* pathList = std::getenv(name)) {
+    if (auto pathList = llvm::sys::Process::GetEnv(name)) {
         llvm::SmallVector<llvm::StringRef, 16> paths;
-        llvm::StringRef(pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
+        llvm::StringRef(*pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
 
         for (llvm::StringRef path : paths) {
             importSearchPaths.push_back(path);
