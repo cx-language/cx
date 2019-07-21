@@ -934,13 +934,23 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
     std::vector<SwitchCase> cases;
     std::vector<Stmt*> defaultStmts;
     bool defaultSeen = false;
+
     while (true) {
         if (currentToken() == Token::Case) {
             consumeToken();
             auto value = parseExpr();
+
+            VarDecl* associatedValue = nullptr;
+            if (currentToken() == Token::As) {
+                consumeToken();
+                auto name = parse(Token::Identifier);
+                associatedValue = new VarDecl(Type(), name.getString(), new UndefinedLiteralExpr(name.getLocation()), nullptr,
+                                              AccessLevel::None, *currentModule, name.getLocation());
+            }
+
             parse(Token::Colon);
             auto stmts = parseStmtsUntilOneOf(Token::Case, Token::Default, Token::RightBrace, parent);
-            cases.push_back({ value, std::move(stmts) });
+            cases.push_back(SwitchCase(value, associatedValue, std::move(stmts)));
         } else if (currentToken() == Token::Default) {
             if (defaultSeen) {
                 ERROR(getCurrentLocation(), "switch-statement may only contain one 'default' case");
@@ -952,8 +962,10 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
         } else {
             ERROR(getCurrentLocation(), "expected 'case' or 'default'");
         }
+
         if (currentToken() == Token::RightBrace) break;
     }
+
     consumeToken();
     return new SwitchStmt(condition, std::move(cases), std::move(defaultStmts));
 }
@@ -1301,8 +1313,14 @@ EnumDecl* Parser::parseEnumDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     while (currentToken() != Token::RightBrace) {
         auto caseName = parse(Token::Identifier);
+        Type associatedType;
+
+        if (currentToken() == Token::LeftParen) {
+            associatedType = parseTupleType();
+        }
+
         auto value = new IntLiteralExpr(valueCounter, caseName.getLocation());
-        cases.push_back(EnumCase(caseName.getString(), value, typeAccessLevel, caseName.getLocation()));
+        cases.push_back(EnumCase(caseName.getString(), value, associatedType, typeAccessLevel, caseName.getLocation()));
         if (currentToken() != Token::RightBrace) parse(Token::Comma);
         ++valueCounter;
     }

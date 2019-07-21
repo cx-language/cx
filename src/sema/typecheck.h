@@ -95,6 +95,7 @@ private:
     void validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation()) const;
     TypeDecl* getTypeDecl(const BasicType& type);
+    EnumCase* getEnumCase(const Expr& expr);
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
     void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;

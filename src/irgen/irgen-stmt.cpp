@@ -40,9 +40,7 @@ void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     }
 }
 
-void IRGenerator::codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* destination, llvm::BasicBlock* continuation) {
-    builder.SetInsertPoint(destination);
-
+void IRGenerator::codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* continuation) {
     beginScope();
     for (const auto& stmt : stmts) {
         codegenStmt(*stmt);
@@ -66,19 +64,26 @@ void IRGenerator::codegenIfStmt(const IfStmt& ifStmt) {
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "if.else", function);
     auto* endIfBlock = llvm::BasicBlock::Create(ctx, "if.end", function);
     builder.CreateCondBr(condition, thenBlock, elseBlock);
-    codegenBlock(ifStmt.getThenBody(), thenBlock, endIfBlock);
-    codegenBlock(ifStmt.getElseBody(), elseBlock, endIfBlock);
+
+    builder.SetInsertPoint(thenBlock);
+    codegenBlock(ifStmt.getThenBody(), endIfBlock);
+
+    builder.SetInsertPoint(elseBlock);
+    codegenBlock(ifStmt.getElseBody(), endIfBlock);
+
     builder.SetInsertPoint(endIfBlock);
 }
 
 void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
-    auto* condition = codegenExpr(switchStmt.getCondition());
+    llvm::Value* enumValue = nullptr;
+    llvm::Value* condition = codegenExprOrEnumTag(switchStmt.getCondition(), &enumValue);
+
     auto* function = builder.GetInsertBlock()->getParent();
     auto* insertBlockBackup = builder.GetInsertBlock();
     auto caseIndex = 0;
 
     auto cases = map(switchStmt.getCases(), [&](const SwitchCase& switchCase) {
-        auto* value = codegenExpr(*switchCase.getValue());
+        auto* value = codegenExprOrEnumTag(*switchCase.getValue(), nullptr);
         auto* block = llvm::BasicBlock::Create(ctx, llvm::Twine("switch.case.", std::to_string(caseIndex++)), function);
         return std::make_pair(llvm::cast<llvm::ConstantInt>(value), block);
     });
@@ -93,12 +98,22 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
     for (auto& switchCase : switchStmt.getCases()) {
         auto* value = casesIterator->first;
         auto* block = casesIterator->second;
-        codegenBlock(switchCase.getStmts(), block, end);
+        builder.SetInsertPoint(block);
+
+        if (auto* associatedValue = switchCase.getAssociatedValue()) {
+            auto* type = toIR(associatedValue->getType())->getPointerTo();
+            auto* associatedValuePtr = builder.CreatePointerCast(builder.CreateStructGEP(enumValue, 1), type, associatedValue->getName());
+            setLocalValue(associatedValuePtr, associatedValue);
+        }
+
+        codegenBlock(switchCase.getStmts(), end);
         switchInst->addCase(value, block);
         ++casesIterator;
     }
 
-    codegenBlock(switchStmt.getDefaultStmts(), defaultBlock, end);
+    builder.SetInsertPoint(defaultBlock);
+    codegenBlock(switchStmt.getDefaultStmts(), end);
+
     breakTargets.pop_back();
     builder.SetInsertPoint(end);
 }
@@ -121,7 +136,9 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
         conditionValue = codegenImplicitNullComparison(conditionValue);
     }
     builder.CreateCondBr(conditionValue, body, end);
-    codegenBlock(whileStmt.getBody(), body, afterBody);
+
+    builder.SetInsertPoint(body);
+    codegenBlock(whileStmt.getBody(), afterBody);
 
     if (increment) {
         builder.SetInsertPoint(afterBody);

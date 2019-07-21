@@ -91,6 +91,21 @@ llvm::Type* IRGenerator::getBuiltinType(llvm::StringRef name) {
         .Default(nullptr);
 }
 
+llvm::Type* IRGenerator::getEnumType(const EnumDecl& enumDecl) {
+    auto* tagType = toIR(enumDecl.getTagType());
+    if (!enumDecl.hasAssociatedValues()) return tagType;
+
+    unsigned maxSize = 0;
+    for (auto& enumCase : enumDecl.getCases()) {
+        if (auto associatedType = enumCase.getAssociatedType()) {
+            auto size = module->getDataLayout().getTypeAllocSize(toIR(associatedType));
+            if (size > maxSize) maxSize = size;
+        }
+    }
+
+    return llvm::StructType::get(tagType, llvm::ArrayType::get(llvm::Type::getInt8Ty(ctx), maxSize));
+}
+
 llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
@@ -99,12 +114,11 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             auto it = structs.find(type.getQualifiedTypeName());
             if (it != structs.end()) return it->second.first;
 
-            auto& basicType = llvm::cast<BasicType>(*type);
-            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(basicType.getDecl())) {
-                return toIR(enumDecl->getUnderlyingType());
+            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(type.getDecl())) {
+                return getEnumType(*enumDecl);
+            } else {
+                return codegenTypeDecl(*type.getDecl());
             }
-
-            return codegenTypeDecl(*basicType.getDecl());
         }
         case TypeKind::ArrayType:
             ASSERT(type.isArrayWithConstantSize(), "unimplemented");

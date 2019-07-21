@@ -56,8 +56,9 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
             auto condition = switchStmt->getCondition().instantiate(genericArgs);
             auto cases = map(switchStmt->getCases(), [&](const SwitchCase& switchCase) {
                 auto value = switchCase.getValue()->instantiate(genericArgs);
+                auto associatedValue = llvm::cast<VarDecl>(switchCase.getAssociatedValue()->instantiate(genericArgs, {}));
                 auto stmts = ::instantiate(switchCase.getStmts(), genericArgs);
-                return SwitchCase(value, std::move(stmts));
+                return SwitchCase(value, associatedValue, std::move(stmts));
             });
             auto defaultStmts = ::instantiate(switchStmt->getDefaultStmts(), genericArgs);
             return new SwitchStmt(condition, std::move(cases), std::move(defaultStmts));

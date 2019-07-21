@@ -62,6 +62,7 @@ private:
     llvm::Value* codegenLvalueExpr(const Expr& expr);
     /// Emits value as a pointer, storing it in a temporary alloca if needed.
     llvm::Value* codegenExprAsPointer(const Expr& expr);
+    llvm::Value* codegenExprOrEnumTag(const Expr& expr, llvm::Value** enumValue);
     llvm::Value* codegenExprWithoutAutoCast(const Expr& expr);
     llvm::Value* codegenAutoCast(llvm::Value* value, const Expr& expr);
     llvm::Value* codegenVarExpr(const VarExpr& expr);
@@ -88,6 +89,7 @@ private:
     llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType);
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
     void codegenAssert(llvm::Value* condition, SourceLocation location, llvm::StringRef message = "Assertion failed");
+    llvm::Value* codegenEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
     llvm::Value* codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit = nullptr);
     llvm::Value* codegenBuiltinCast(const CallExpr& expr);
     llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);
@@ -101,7 +103,7 @@ private:
     llvm::Value* codegenIfExpr(const IfExpr& expr);
 
     void codegenDeferredExprsAndDeinitCallsForReturn();
-    void codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* destination, llvm::BasicBlock* continuation);
+    void codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* continuation);
     void codegenReturnStmt(const ReturnStmt& stmt);
     void codegenVarStmt(const VarStmt& stmt);
     void codegenIfStmt(const IfStmt& ifStmt);
@@ -125,6 +127,7 @@ private:
     llvm::Value* createLoad(llvm::Value* value);
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
+    llvm::Type* getEnumType(const EnumDecl& enumDecl);
     llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);

@@ -116,13 +116,16 @@ private:
 
 class SwitchCase {
 public:
-    SwitchCase(Expr* value, std::vector<Stmt*>&& stmts) : value(value), stmts(std::move(stmts)) {}
+    SwitchCase(Expr* value, VarDecl* associatedValue, std::vector<Stmt*>&& stmts)
+    : value(value), associatedValue(associatedValue), stmts(std::move(stmts)) {}
     Expr* getValue() const { return value; }
+    VarDecl* getAssociatedValue() const { return associatedValue; }
     llvm::ArrayRef<Stmt*> getStmts() const { return stmts; }
     llvm::MutableArrayRef<Stmt*> getStmts() { return stmts; }
 
 private:
     Expr* value;
+    VarDecl* associatedValue;
     std::vector<Stmt*> stmts;
 };
 

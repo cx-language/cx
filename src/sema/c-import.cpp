@@ -241,7 +241,7 @@ public:
                         auto enumeratorName = enumerator->getName();
                         auto& value = enumerator->getInitVal();
                         auto valueExpr = new IntLiteralExpr(value, SourceLocation());
-                        cases.push_back(EnumCase(enumeratorName, valueExpr, AccessLevel::Default, SourceLocation()));
+                        cases.push_back(EnumCase(enumeratorName, valueExpr, Type(), AccessLevel::Default, SourceLocation()));
                         addIntegerConstantToSymbolTable(enumeratorName, value, type, module);
                     }
 

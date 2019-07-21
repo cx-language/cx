@@ -134,7 +134,7 @@ private:
 class VariableDecl : public Decl {
 public:
     Type getType() const { return type; }
-    void setType(Type type) { this->type = type; }
+    void setType(Type type) { this->type = NOTNULL(type); }
     Decl* getParent() const { return parent; }
     void setParent(Decl* p) { parent = p; }
     static bool classof(const Decl* d) { return d->isVariableDecl(); }
@@ -371,9 +371,11 @@ private:
 
 class EnumCase : public VariableDecl {
 public:
-    EnumCase(std::string&& name, Expr* value, AccessLevel accessLevel, SourceLocation location);
+    EnumCase(std::string&& name, Expr* value, Type associatedType, AccessLevel accessLevel, SourceLocation location);
     llvm::StringRef getName() const override { return name; }
     Expr* getValue() const { return value; }
+    Type getAssociatedType() const { return associatedType; }
+    EnumDecl* getEnumDecl() const { return llvm::cast<EnumDecl>(getParent()); }
     SourceLocation getLocation() const override { return location; }
     Module* getModule() const override { return getParent()->getModule(); }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::EnumCase; }
@@ -381,6 +383,7 @@ public:
 private:
     std::string name;
     Expr* value;
+    Type associatedType;
     SourceLocation location;
 };
 
@@ -393,10 +396,11 @@ public:
             enumCase.setType(getType());
         }
     }
+    bool hasAssociatedValues() const;
     llvm::ArrayRef<EnumCase> getCases() const { return cases; }
     EnumCase* getCaseByName(llvm::StringRef name);
-    // TODO: Select underlying type to be able to hold all case values.
-    Type getUnderlyingType() const { return Type::getInt(); }
+    // TODO: Select tag type to be able to hold all enum values.
+    Type getTagType() const { return Type::getInt(); }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::EnumDecl; }
 
 private:

@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+enum E {
+    A(int a, int b)
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:17: error: invalid argument name 'b' for parameter 'a'
+    var a = E.A(b: 1, a: 2);
+}

@@ -170,7 +170,7 @@ public:
     llvm::StringRef getName() const { return name; }
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
     TypeDecl* getDecl() const { return decl; }
-    void setDecl(TypeDecl* decl) { this->decl = decl; }
+    void setDecl(TypeDecl* decl) { this->decl = NOTNULL(decl); }
     static Type get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, Mutability mutability = Mutability::Mutable,
                     SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::BasicType; }

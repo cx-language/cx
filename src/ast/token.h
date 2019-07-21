@@ -19,6 +19,7 @@ struct Token {
         StringLiteral,
         CharacterLiteral,
         Addressof,
+        As,
         Break,
         Case,
         Const,

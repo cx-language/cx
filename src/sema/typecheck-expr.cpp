@@ -463,7 +463,7 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (expr) {
-        if (expr->getType().isEnumType() && llvm::cast<EnumDecl>(expr->getType().getDecl())->getUnderlyingType() == target) {
+        if (expr->getType().isEnumType() && llvm::cast<EnumDecl>(expr->getType().getDecl())->getTagType() == target) {
             return true;
         }
 
@@ -1050,7 +1050,10 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
 
     Decl* decl;
 
-    if (expr.getCallee().isMemberExpr()) {
+    if (auto* enumCase = getEnumCase(expr.getCallee())) {
+        decl = enumCase;
+        llvm::cast<MemberExpr>(expr.getCallee()).setDecl(*decl);
+    } else if (expr.getCallee().isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
         expr.setReceiverType(receiverType);
 
@@ -1106,8 +1109,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         checkHasAccess(*initDecl->getTypeDecl(), expr.getCallee().getLocation(), AccessLevel::None);
     }
 
-    std::vector<ParamDecl> paramsStorage;
-    llvm::ArrayRef<ParamDecl> params;
+    std::vector<ParamDecl> params;
 
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:
@@ -1121,8 +1123,13 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         case DeclKind::ParamDecl:
         case DeclKind::FieldDecl: {
             auto type = llvm::cast<VariableDecl>(decl)->getType();
-            paramsStorage = llvm::cast<FunctionType>(type.getBase())->getParamDecls();
-            params = paramsStorage;
+            params = llvm::cast<FunctionType>(type.getBase())->getParamDecls();
+            break;
+        }
+        case DeclKind::EnumCase: {
+            auto type = llvm::cast<EnumCase>(decl)->getAssociatedType();
+            params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), decl->getLocation()); });
+            validateArgs(expr, params, false, decl->getName(), decl->getLocation());
             break;
         }
         default:
@@ -1151,6 +1158,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         case DeclKind::ParamDecl:
         case DeclKind::FieldDecl:
             return llvm::cast<FunctionType>(llvm::cast<VariableDecl>(decl)->getType().getBase())->getReturnType();
+
+        case DeclKind::EnumCase:
+            return llvm::cast<EnumCase>(decl)->getType();
 
         default:
             llvm_unreachable("invalid callee decl");
@@ -1305,22 +1315,10 @@ Type Typechecker::typecheckAddressofExpr(AddressofExpr& expr) {
 }
 
 Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
-    if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.getBaseExpr())) {
-        auto decls = findDecls(varExpr->getIdentifier());
-
-        if (!decls.empty()) {
-            ASSERT(decls.size() == 1);
-
-            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
-                checkHasAccess(*enumDecl, varExpr->getLocation(), AccessLevel::None);
-                auto caseDecl = enumDecl->getCaseByName(expr.getMemberName());
-                if (!caseDecl) {
-                    ERROR(expr.getLocation(), "enum '" << enumDecl->getName() << "' has no case named '" << expr.getMemberName() << "'");
-                }
-                expr.setDecl(*caseDecl);
-                return enumDecl->getType();
-            }
-        }
+    if (auto* enumCase = getEnumCase(expr)) {
+        checkHasAccess(*enumCase->getEnumDecl(), expr.getBaseExpr()->getLocation(), AccessLevel::None);
+        expr.setDecl(*enumCase);
+        return enumCase->getType();
     }
 
     Type baseType = typecheckExpr(*expr.getBaseExpr());
@@ -1504,4 +1502,23 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
     }
     expr.setAssignableType(*type);
     return expr.getType();
+}
+
+EnumCase* Typechecker::getEnumCase(const Expr& expr) {
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) {
+        if (auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->getBaseExpr())) {
+            auto decls = findDecls(varExpr->getIdentifier());
+            if (decls.size() == 1) {
+                if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
+                    auto* enumCase = enumDecl->getCaseByName(memberExpr->getMemberName());
+                    if (!enumCase) {
+                        ERROR(expr.getLocation(), "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->getMemberName() << "'");
+                    }
+                    return enumCase;
+                }
+            }
+        }
+    }
+
+    return nullptr;
 }

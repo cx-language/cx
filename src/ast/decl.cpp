@@ -197,9 +197,9 @@ TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
     return instantiate(genericArgsMap);
 }
 
-EnumCase::EnumCase(std::string&& name, Expr* value, AccessLevel accessLevel, SourceLocation location)
+EnumCase::EnumCase(std::string&& name, Expr* value, Type associatedType, AccessLevel accessLevel, SourceLocation location)
 : VariableDecl(DeclKind::EnumCase, accessLevel, nullptr, Type() /* initialized by EnumDecl constructor */), name(std::move(name)),
-  value(value), location(location) {}
+  value(value), associatedType(associatedType), location(location) {}
 
 EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) {
     for (auto& enumCase : cases) {
@@ -208,6 +208,15 @@ EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) {
         }
     }
     return nullptr;
+}
+
+bool EnumDecl::hasAssociatedValues() const {
+    for (auto& enumCase : cases) {
+        if (enumCase.getAssociatedType()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::string FieldDecl::getQualifiedName() const {

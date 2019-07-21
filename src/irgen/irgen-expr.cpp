@@ -312,8 +312,8 @@ llvm::Value* IRGenerator::codegenBinaryExpr(const BinaryExpr& expr) {
         case Token::OrOr:
             return codegenShortCircuitBinaryOp(expr.getOperator(), expr.getLHS(), expr.getRHS());
         default:
-            llvm::Value* lhs = codegenExpr(expr.getLHS());
-            llvm::Value* rhs = codegenExpr(expr.getRHS());
+            auto* lhs = codegenExprOrEnumTag(expr.getLHS(), nullptr);
+            auto* rhs = codegenExprOrEnumTag(expr.getRHS(), nullptr);
             return codegenBinaryOp(expr.getOperator(), lhs, rhs, expr.getLHS().getType());
     }
 }
@@ -415,6 +415,30 @@ void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location,
     builder.SetInsertPoint(successBlock);
 }
 
+llvm::Value* IRGenerator::codegenEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements) {
+    auto enumDecl = enumCase.getEnumDecl();
+    auto tag = codegenExpr(*enumCase.getValue());
+    if (!enumDecl->hasAssociatedValues()) return tag;
+
+    // TODO: Could reuse variable alloca instead of always creating a new one here.
+    auto* enumValue = createEntryBlockAlloca(toIR(enumDecl->getType()), nullptr, "enum");
+    builder.CreateStore(tag, builder.CreateStructGEP(enumValue, 0, "tag"));
+
+    if (!associatedValueElements.empty()) {
+        // TODO: This is duplicated in codegenTupleExpr.
+        llvm::Value* associatedValue = llvm::UndefValue::get(toIR(enumCase.getAssociatedType()));
+        int index = 0;
+        for (auto& element : associatedValueElements) {
+            associatedValue = builder.CreateInsertValue(associatedValue, codegenExpr(*element.getValue()), index++);
+        }
+        auto* associatedValuePtr = builder.CreatePointerCast(builder.CreateStructGEP(enumValue, 1, "associatedValue"),
+                                                             associatedValue->getType()->getPointerTo());
+        builder.CreateStore(associatedValue, associatedValuePtr);
+    }
+
+    return enumValue;
+}
+
 llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit) {
     if (expr.isBuiltinConversion()) {
         return codegenBuiltinConversion(*expr.getArgs().front().getValue(), expr.getType());
@@ -427,6 +451,10 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
     if (expr.getFunctionName() == "assert") {
         codegenAssert(codegenExpr(*expr.getArgs().front().getValue()), expr.getCallee().getLocation());
         return nullptr;
+    }
+
+    if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.getCalleeDecl())) {
+        return codegenEnumCase(*enumCase, expr.getArgs());
     }
 
     if (expr.getReceiver() && expr.getReceiverType().removePointer().isArrayType()) {
@@ -556,7 +584,7 @@ llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
 
 llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
     if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(expr.getDecl())) {
-        return codegenExpr(*enumCase->getValue());
+        return codegenEnumCase(*enumCase, {});
     }
 
     if (expr.getBaseExpr()->getType().removePointer().isTupleType()) {
@@ -579,9 +607,9 @@ llvm::Value* IRGenerator::codegenTupleElementAccess(const MemberExpr& expr) {
     }
 
     if (baseValue->getType()->isPointerTy()) {
-        return builder.CreateStructGEP(nullptr, baseValue, index);
+        return builder.CreateStructGEP(nullptr, baseValue, index, expr.getMemberName());
     } else {
-        return builder.CreateExtractValue(baseValue, index);
+        return builder.CreateExtractValue(baseValue, index, expr.getMemberName());
     }
 }
 
@@ -732,6 +760,24 @@ llvm::Value* IRGenerator::codegenExprAsPointer(const Expr& expr) {
         value = createTempAlloca(value);
     }
     return value;
+}
+
+llvm::Value* IRGenerator::codegenExprOrEnumTag(const Expr& expr, llvm::Value** enumValue) {
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) {
+        if (auto* enumCase = llvm::dyn_cast_or_null<EnumCase>(memberExpr->getDecl())) {
+            return codegenExpr(*enumCase->getValue());
+        }
+    }
+
+    if (auto* enumDecl = llvm::dyn_cast_or_null<EnumDecl>(expr.getType().getDecl())) {
+        if (enumDecl->hasAssociatedValues()) {
+            auto* value = codegenLvalueExpr(expr);
+            if (enumValue) *enumValue = value;
+            return createLoad(builder.CreateStructGEP(value, 0, value->getName() + ".tag"));
+        }
+    }
+
+    return codegenExpr(expr);
 }
 
 llvm::Value* IRGenerator::codegenAutoCast(llvm::Value* value, const Expr& expr) {
