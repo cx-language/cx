@@ -1129,7 +1129,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         case DeclKind::EnumCase: {
             auto type = llvm::cast<EnumCase>(decl)->getAssociatedType();
             params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), decl->getLocation()); });
-            validateArgs(expr, params, false, decl->getName(), decl->getLocation());
+            validateArgs(expr, params, false, decl->getName(), expr.getLocation());
             break;
         }
         default:
