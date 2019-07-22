@@ -53,8 +53,8 @@ switch.case.1:                                    ; preds = %0
 
 switch.case.2:                                    ; preds = %0
   %6 = getelementptr inbounds { i32, [8 x i8] }, { i32, [8 x i8] }* %e, i32 0, i32 1
-  %ec = bitcast [8 x i8]* %6 to { i32 }*
-  %j = getelementptr inbounds { i32 }, { i32 }* %ec, i32 0, i32 0
+  %eb10 = bitcast [8 x i8]* %6 to { i32 }*
+  %j = getelementptr inbounds { i32 }, { i32 }* %eb10, i32 0, i32 0
   %j.load = load i32, i32* %j
   ret i32 %j.load
 
@@ -62,11 +62,11 @@ switch.default:                                   ; preds = %0
   br label %switch.end
 
 switch.end:                                       ; preds = %switch.default, %switch.case.0
-  %e.tag10 = getelementptr inbounds { i32, [8 x i8] }, { i32, [8 x i8] }* %e, i32 0, i32 0
-  %e.tag10.load = load i32, i32* %e.tag10
-  %7 = icmp eq i32 %e.tag10.load, 0
   %e.tag11 = getelementptr inbounds { i32, [8 x i8] }, { i32, [8 x i8] }* %e, i32 0, i32 0
   %e.tag11.load = load i32, i32* %e.tag11
-  %8 = icmp eq i32 %e.tag11.load, 1
+  %7 = icmp eq i32 %e.tag11.load, 0
+  %e.tag12 = getelementptr inbounds { i32, [8 x i8] }, { i32, [8 x i8] }* %e, i32 0, i32 0
+  %e.tag12.load = load i32, i32* %e.tag12
+  %8 = icmp eq i32 %e.tag12.load, 1
   ret i32 0
 }

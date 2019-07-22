@@ -16,8 +16,8 @@ int main() {
         case E.B as eb:
             e = E.C(j: eb.i);
             return eb.i;
-        case E.C as ec:
-            return ec.j;
+        case E.C as eb:
+            return eb.j;
     }
 
     _ = e == E.A;
