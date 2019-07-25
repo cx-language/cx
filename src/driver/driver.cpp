@@ -329,6 +329,10 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     std::string outputPathFlag = ((msvc ? "-Fe" : "-o") + temporaryExecutablePath).str();
     ccArgs.push_back(outputPathFlag.c_str());
 
+    for (auto& cflag : options.cflags) {
+        ccArgs.push_back(cflag.c_str());
+    }
+
     if (msvc) {
         ccArgs.push_back("-link");
         ccArgs.push_back("-DEBUG");
