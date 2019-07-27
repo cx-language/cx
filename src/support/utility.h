@@ -112,7 +112,6 @@ void printColored(const T& text, llvm::raw_ostream::Colors color) {
 void warn(SourceLocation location, StringFormatter& message);
 
 enum class WarningMode { Default, Suppress, TreatAsErrors };
-extern WarningMode warningMode;
 
 #define ABORT(args) \
     { \

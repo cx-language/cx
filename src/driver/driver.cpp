@@ -12,8 +12,9 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/Support/CodeGen.h>
-#include <llvm/Support/ErrorOr.h>
+#include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Process.h>
 #include <llvm/Support/Program.h>
@@ -38,6 +39,32 @@
 #endif
 
 using namespace delta;
+namespace cl = llvm::cl;
+
+namespace delta {
+cl::SubCommand build("build", "Build a Delta project");
+cl::SubCommand run("run", "Build and run a Delta executable");
+cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(*cl::AllSubCommands));
+cl::opt<bool> parse("parse", cl::desc("Parse only"));
+cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"));
+cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"));
+cl::opt<bool> printIR("print-ir", cl::desc("Print the generated LLVM IR to stdout"));
+cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"));
+cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"));
+cl::opt<bool> emitPositionIndependentCode("fPIC", cl::desc("Emit position-independent code"), cl::sub(*cl::AllSubCommands));
+cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file name"));
+cl::opt<WarningMode> warningMode(cl::desc("Warning mode:"), cl::sub(*cl::AllSubCommands),
+                                 cl::values(clEnumValN(WarningMode::Suppress, "w", "Suppress all warnings"),
+                                            clEnumValN(WarningMode::TreatAsErrors, "Werror", "Treat warnings as errors")));
+cl::list<std::string> disabledWarnings("Wno-", cl::desc("Disable warnings"), cl::value_desc("warning"), cl::Prefix, cl::sub(*cl::AllSubCommands));
+cl::list<std::string> defines("D", cl::desc("Specify defines"), cl::Prefix, cl::sub(*cl::AllSubCommands));
+cl::list<std::string> importSearchPaths("I", cl::desc("Add directory to import search paths"), cl::value_desc("path"), cl::Prefix,
+                                        cl::sub(*cl::AllSubCommands));
+cl::list<std::string> frameworkSearchPaths("F", cl::desc("Add directory framework search paths"), cl::value_desc("path"), cl::Prefix,
+                                           cl::sub(*cl::AllSubCommands));
+cl::list<std::string> cflags(cl::Sink, cl::desc("Add C compiler flags"), cl::sub(*cl::AllSubCommands));
+cl::alias emitAssemblyAlias("S", cl::aliasopt(emitAssembly));
+} // namespace delta
 
 static int exec(const char* command, std::string& output) {
     FILE* pipe = popen(command, "r");
@@ -59,36 +86,7 @@ static int exec(const char* command, std::string& output) {
     return WEXITSTATUS(status);
 }
 
-bool delta::checkFlag(llvm::StringRef flag, std::vector<llvm::StringRef>& args) {
-    const auto it = std::find(args.begin(), args.end(), flag);
-    const bool contains = it != args.end();
-    if (contains) args.erase(it);
-    return contains;
-}
-
-static std::vector<std::string> collectStringOptionValues(llvm::StringRef flagPrefix, std::vector<llvm::StringRef>& args) {
-    std::vector<std::string> values;
-    for (auto arg = args.begin(); arg != args.end();) {
-        if (arg->startswith(flagPrefix)) {
-            values.push_back(arg->substr(flagPrefix.size()));
-            arg = args.erase(arg);
-        } else {
-            ++arg;
-        }
-    }
-    return values;
-}
-
-static std::string collectStringOptionValue(llvm::StringRef flagPrefix, std::vector<llvm::StringRef>& args) {
-    auto values = collectStringOptionValues(flagPrefix, args);
-    if (values.empty()) {
-        return "";
-    } else {
-        return std::move(values.back());
-    }
-}
-
-static void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearchPaths, const char* name) {
+static void addHeaderSearchPathsFromEnvVar(const char* name) {
     if (auto pathList = llvm::sys::Process::GetEnv(name)) {
         llvm::SmallVector<llvm::StringRef, 16> paths;
         llvm::StringRef(*pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
@@ -99,7 +97,7 @@ static void addHeaderSearchPathsFromEnvVar(std::vector<std::string>& importSearc
     }
 }
 
-static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& importSearchPaths) {
+static void addHeaderSearchPathsFromCCompilerOutput() {
     auto compilerPath = getCCompilerPath();
     if (compilerPath.empty()) return;
 
@@ -120,7 +118,7 @@ static void addHeaderSearchPathsFromCCompilerOutput(std::vector<std::string>& im
     }
 }
 
-static void addPredefinedImportSearchPaths(std::vector<std::string>& importSearchPaths, llvm::ArrayRef<std::string> inputFiles) {
+static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFiles) {
     llvm::StringSet<> relativeImportSearchPaths;
 
     for (llvm::StringRef filePath : inputFiles) {
@@ -135,12 +133,12 @@ static void addPredefinedImportSearchPaths(std::vector<std::string>& importSearc
 
     importSearchPaths.push_back(DELTA_ROOT_DIR);
     importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
-    addHeaderSearchPathsFromCCompilerOutput(importSearchPaths);
+    addHeaderSearchPathsFromCCompilerOutput();
     importSearchPaths.push_back("/usr/include");
     importSearchPaths.push_back("/usr/local/include");
-    addHeaderSearchPathsFromEnvVar(importSearchPaths, "CPATH");
-    addHeaderSearchPathsFromEnvVar(importSearchPaths, "C_INCLUDE_PATH");
-    addHeaderSearchPathsFromEnvVar(importSearchPaths, "INCLUDE");
+    addHeaderSearchPathsFromEnvVar("CPATH");
+    addHeaderSearchPathsFromEnvVar("C_INCLUDE_PATH");
+    addHeaderSearchPathsFromEnvVar("INCLUDE");
 }
 
 static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
@@ -181,61 +179,20 @@ static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName
     file.flush();
 }
 
-int delta::buildPackage(llvm::StringRef packageRoot, const char* argv0, std::vector<llvm::StringRef>& args, bool run) {
-    auto manifestPath = (packageRoot + "/" + PackageManifest::manifestFileName).str();
-    PackageManifest manifest(packageRoot);
-    fetchDependencies(packageRoot);
-
-    for (auto& targetRootDir : manifest.getTargetRootDirectories()) {
-        llvm::StringRef outputFileName;
-        if (manifest.isMultiTarget() || manifest.getPackageName().empty()) {
-            outputFileName = llvm::sys::path::filename(targetRootDir);
-        } else {
-            outputFileName = manifest.getPackageName();
-        }
-        // TODO: Add support for library packages.
-        int exitStatus = buildExecutable(getSourceFiles(targetRootDir, manifestPath), &manifest, argv0, args, manifest.getOutputDirectory(),
-                                         outputFileName, run);
-        if (exitStatus != 0) return exitStatus;
-    }
-
-    return 0;
-}
-
-int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
-                           std::vector<llvm::StringRef>& args, llvm::StringRef outputDirectory, llvm::StringRef outputFileName, bool run) {
-    CompileOptions options;
-    bool parse = checkFlag("-parse", args);
-    bool typecheck = checkFlag("-typecheck", args);
-    bool compileOnly = checkFlag("-c", args);
-    bool printIR = checkFlag("-print-ir", args);
-    bool emitAssembly = checkFlag("-emit-assembly", args) || checkFlag("-S", args);
-    bool emitLLVMBitcode = checkFlag("-emit-llvm-bitcode", args);
-    bool emitPositionIndependentCode = checkFlag("-fPIC", args);
-    if (checkFlag("-w", args)) warningMode = WarningMode::Suppress;
-    if (checkFlag("-Werror", args)) warningMode = WarningMode::TreatAsErrors;
-    options.disabledWarnings = collectStringOptionValues("-Wno-", args);
-    options.defines = collectStringOptionValues("-D", args);
-#ifdef _WIN32
-    options.defines.push_back("Windows");
-#endif
-    options.importSearchPaths = collectStringOptionValues("-I", args);
-    options.frameworkSearchPaths = collectStringOptionValues("-F", args);
-    auto specifiedOutputFileName = collectStringOptionValue("-o", args);
-    if (!specifiedOutputFileName.empty()) {
-        outputFileName = specifiedOutputFileName;
-    }
-
-    // Pass remaining options to C compiler.
-    for (llvm::StringRef arg : args) {
-        options.cflags.push_back(arg);
-    }
-
+static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
+                           llvm::StringRef outputDirectory, llvm::StringRef outputFileName) {
     if (files.empty()) {
         ABORT("no input files");
     }
 
-    addPredefinedImportSearchPaths(options.importSearchPaths, files);
+    addPredefinedImportSearchPaths(files);
+
+    CompileOptions options = { disabledWarnings, importSearchPaths, frameworkSearchPaths, defines, cflags };
+
+    if (!specifiedOutputFileName.empty()) {
+        outputFileName = specifiedOutputFileName;
+    }
+
     Module module("main");
 
     for (llvm::StringRef filePath : files) {
@@ -281,8 +238,8 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         if (error) ABORT("LLVM module linking failed");
     }
 
-    if (emitLLVMBitcode) {
-        ::emitLLVMBitcode(linkedModule, "output.bc");
+    if (emitBitcode) {
+        emitLLVMBitcode(linkedModule, "output.bc");
         return 0;
     }
 
@@ -394,4 +351,51 @@ int delta::buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     return 0;
+}
+
+static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
+    auto manifestPath = (packageRoot + "/" + PackageManifest::manifestFileName).str();
+    PackageManifest manifest(packageRoot);
+    fetchDependencies(packageRoot);
+
+    for (auto& targetRootDir : manifest.getTargetRootDirectories()) {
+        llvm::StringRef outputFileName;
+        if (manifest.isMultiTarget() || manifest.getPackageName().empty()) {
+            outputFileName = llvm::sys::path::filename(targetRootDir);
+        } else {
+            outputFileName = manifest.getPackageName();
+        }
+        // TODO: Add support for library packages.
+        int exitStatus = buildExecutable(getSourceFiles(targetRootDir, manifestPath), &manifest, argv0, manifest.getOutputDirectory(), outputFileName);
+        if (exitStatus != 0) return exitStatus;
+    }
+
+    return 0;
+}
+
+static void addPlatformDefines() {
+#ifdef _WIN32
+    defines.push_back("Windows");
+#endif
+}
+
+int main(int argc, const char** argv) {
+    llvm::InitLLVM x(argc, argv);
+    cl::ParseCommandLineOptions(argc, argv, "Delta compiler\n");
+    addPlatformDefines();
+
+    try {
+        if (inputs.empty()) {
+            llvm::SmallString<128> currentPath;
+            if (auto error = llvm::sys::fs::current_path(currentPath)) {
+                ABORT(error.message());
+            }
+            return buildPackage(currentPath, argv[0]);
+        } else {
+            return buildExecutable(inputs, nullptr, argv[0], ".", "");
+        }
+    } catch (const CompileError& error) {
+        error.print();
+        return 1;
+    }
 }

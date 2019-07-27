@@ -3,14 +3,13 @@
 #include <cctype>
 #include <fstream>
 #pragma warning(push, 0)
+#include <llvm/Support/CommandLine.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Program.h>
 #pragma warning(pop)
 
 using namespace delta;
-
-WarningMode delta::warningMode = WarningMode::Default;
 
 std::string delta::readLineFromFile(SourceLocation location) {
     std::ifstream file(location.file);
@@ -109,6 +108,8 @@ void delta::error(SourceLocation location, StringFormatter& message) {
 }
 
 void delta::warn(SourceLocation location, StringFormatter& message) {
+    extern llvm::cl::opt<WarningMode> warningMode;
+
     switch (warningMode) {
         case WarningMode::Default:
             printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message.str());
