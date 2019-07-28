@@ -1,0 +1,10 @@
+// RUN: not %delta -typecheck %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:15: error: invalid argument #1 type 'float64' to 'S', expected 'int'
+    var s = S(5.4);
+}
+
+struct S {
+    int x;
+}

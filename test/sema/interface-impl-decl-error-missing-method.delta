@@ -5,9 +5,7 @@ interface X {
 }
 
 // CHECK: [[@LINE+1]]:8: error: 'Z' doesn't have member function 'foo' required by interface 'X'
-struct Z<T>: X {
-    init() {}
-}
+struct Z<T>: X {}
 
 void main() {
     var z = Z<int>();

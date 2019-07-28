@@ -24,9 +24,4 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
 struct EnumeratedIteratorEntry<Value>: Copyable {
     Value* value;
     int index;
-
-    init(Value* value, int index) {
-        this.value = value;
-        this.index = index;
-    }
 }

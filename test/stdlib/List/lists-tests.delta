@@ -2,11 +2,6 @@
 
 struct C {
     int i;
-
-    init(int i) {
-        this.i = i;
-    }
-
     deinit() {}
 }
 
@@ -169,8 +164,6 @@ void testRemoveFirstByPredicate() {
 var deinits = 0;
 
 struct DestructionTester {
-    init() {}
-
     deinit() {
         deinits++;
     }

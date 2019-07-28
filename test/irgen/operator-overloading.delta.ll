@@ -1,16 +1,16 @@
 
 %vec2 = type { i32, i32 }
 
+define i32 @_EN4main4vec2ixE5index3int(%vec2* %this, i32 %index) {
+  ret i32 %index
+}
+
 define void @_EN4main4vec24initE1x3int1y3int(%vec2* %this, i32 %x, i32 %y) {
   %x1 = getelementptr inbounds %vec2, %vec2* %this, i32 0, i32 0
   store i32 %x, i32* %x1
   %y2 = getelementptr inbounds %vec2, %vec2* %this, i32 0, i32 1
   store i32 %y, i32* %y2
   ret void
-}
-
-define i32 @_EN4main4vec2ixE5index3int(%vec2* %this, i32 %index) {
-  ret i32 %index
 }
 
 define %vec2 @_EN4mainmlE1a4vec21b4vec2(%vec2 %a, %vec2 %b) {

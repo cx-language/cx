@@ -1,8 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct T {
-    init() {}
-}
+struct T {}
 
 void f(T t) {}
 

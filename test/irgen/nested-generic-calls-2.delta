@@ -11,8 +11,6 @@ struct S: Copyable {
 }
 
 struct A<E> {
-    init() {}
-
     E a() {
         return E();
     }

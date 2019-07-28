@@ -3,10 +3,6 @@
 struct A: Printable {
     StringRef a;
 
-    init(StringRef a) {
-        this.a = a;
-    }
-
     void printTo(String* stream) {
         stream.write(a);
         stream.write(a);

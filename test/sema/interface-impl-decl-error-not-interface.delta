@@ -1,9 +1,7 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 // CHECK: [[@LINE+1]]:14: error: 'String' is not an interface
-struct Z<T>: String {
-    init() {}
-}
+struct Z<T>: String {}
 
 void main() {
     var z = Z<int>();

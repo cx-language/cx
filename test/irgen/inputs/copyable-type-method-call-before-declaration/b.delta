@@ -1,4 +1,3 @@
 struct B: Copyable {
-    init() {}
     void f() {}
 }

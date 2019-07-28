@@ -3,10 +3,6 @@
 struct Foo: Copyable {
     int value;
 
-    init(int value) {
-        this.value = value;
-    }
-
     int add(int number) {
         return this.value + number;
     }

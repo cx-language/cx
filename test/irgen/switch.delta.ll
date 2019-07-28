@@ -38,6 +38,12 @@ switch.end3:                                      ; preds = %switch.default2, %s
   ret void
 }
 
+define void @_EN4main1S4initE1i3int(%S* %this, i32 %i) {
+  %i1 = getelementptr inbounds %S, %S* %this, i32 0, i32 0
+  store i32 %i, i32* %i1
+  ret void
+}
+
 define i32 @_EN4main1fE1sP1S(%S* %s) {
   %i = getelementptr inbounds %S, %S* %s, i32 0, i32 0
   %i.load = load i32, i32* %i

@@ -5,10 +5,6 @@ struct Bar { }
 
 struct X: Copyable {
     int a;
-
-    init(int a) {
-        this.a = a;
-    }
 }
 
 struct Y {

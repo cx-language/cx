@@ -10,6 +10,12 @@ define i32 @_EN4main1R1hE(%R* %this) {
   ret i32 %i.load
 }
 
+define void @_EN4main1R4initE1i3int(%R* %this, i32 %i) {
+  %i1 = getelementptr inbounds %R, %R* %this, i32 0, i32 0
+  store i32 %i, i32* %i1
+  ret void
+}
+
 define i32 @main() {
   %s = alloca %"S<R>"
   call void @_EN4main1SI1RE4initE(%"S<R>"* %s)

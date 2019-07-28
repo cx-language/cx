@@ -3,10 +3,6 @@
 struct C: Comparable {
     int a;
 
-    init(int a) {
-        this.a = a;
-    }
-
     Ordering compare(C* other) {
         return this.a.compare(other.a);
     }

@@ -5,7 +5,6 @@ interface X {
 }
 
 struct Z<T>: T {
-    init() {}
     void foo() {}
 }
 

@@ -2,10 +2,6 @@
 
 struct X: Copyable {
     int a;
-
-    init(int a) {
-        this.a = a;
-    }
 }
 
 int main() {

@@ -4,11 +4,6 @@ struct vec2: Copyable {
     int x;
     int y;
 
-    init(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
     vec2 add(vec2 that) {
         return vec2(this.x + that.x, this.y + that.y);
     }

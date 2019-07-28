@@ -7,7 +7,6 @@ interface X {
 }
 
 struct Y {
-    init() {}
     void foo() {}
     void bar() {}
     void qux() {}

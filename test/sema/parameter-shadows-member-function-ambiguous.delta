@@ -1,8 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
 struct S {
-    int i;
-    init() {}
     void bar() {}
     void foo(void() bar) {
         // CHECK: [[@LINE+1]]:9: error: ambiguous reference to 'bar'
@@ -11,5 +9,5 @@ struct S {
 }
 
 void main() {
-    var s = S();
+    var s = S(1);
 }

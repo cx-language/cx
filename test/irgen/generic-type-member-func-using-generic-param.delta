@@ -1,7 +1,6 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 struct A<E>: Copyable {
-    init() { }
     void a(E n) { }
 }
 

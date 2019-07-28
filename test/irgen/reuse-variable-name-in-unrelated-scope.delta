@@ -12,8 +12,6 @@ X<int> g() {
 }
 
 struct X<T> {
-    init() {}
-
     void g() {
         var index = 0;
     }

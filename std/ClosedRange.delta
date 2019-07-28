@@ -7,7 +7,7 @@ struct ClosedRange<T>: Copyable {
         this.end = end;
     }
 
-    init (T end) {
+    init(T end) {
         init(0, end);
     }
 

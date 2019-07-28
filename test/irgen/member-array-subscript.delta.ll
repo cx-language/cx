@@ -742,6 +742,12 @@ define void @_EN4main1C3fooE(%C* %this) {
   ret void
 }
 
+define void @_EN4main1C4initE1aPAR_3int(%C* %this, %"ArrayRef<int>" %a) {
+  %a1 = getelementptr inbounds %C, %C* %this, i32 0, i32 0
+  store %"ArrayRef<int>" %a, %"ArrayRef<int>"* %a1
+  ret void
+}
+
 declare void @free(i8*)
 
 declare i8* @malloc(i64)

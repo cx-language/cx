@@ -1,7 +1,6 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 struct X<T> {
-    init() {}
     void f<U>(T(U) u) {}
 }
 

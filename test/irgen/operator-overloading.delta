@@ -4,11 +4,6 @@ struct vec2: Copyable {
     int x
     int y
 
-    init(int x, int y) {
-        this.x = x
-        this.y = y
-    }
-
     int operator[](int index) {
         return index
     }

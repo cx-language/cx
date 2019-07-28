@@ -8,11 +8,6 @@ struct A: Printable {
     StringRef a;
     StringRef b;
 
-    init(StringRef a, StringRef b) {
-        this.a = a;
-        this.b = b;
-    }
-
     void printTo(String* stream) {
         stream.write(a);
         stream.write("+");

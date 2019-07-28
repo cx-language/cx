@@ -1,12 +1,6 @@
 
 %X = type { i32 (i32)* }
 
-define void @_EN4main1X4initE1pF3int_3int(%X* %this, i32 (i32)* %p) {
-  %p1 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
-  store i32 (i32)* %p, i32 (i32)** %p1
-  ret void
-}
-
 define void @_EN4main1X1fE(%X* %this) {
   %p2 = alloca i32 (i32)*
   %p = getelementptr inbounds %X, %X* %this, i32 0, i32 0
@@ -20,6 +14,12 @@ define void @_EN4main1X1fE(%X* %this) {
   store i32 (i32)* %p3.load, i32 (i32)** %p2
   %p2.load = load i32 (i32)*, i32 (i32)** %p2
   %3 = call i32 %p2.load(i32 42)
+  ret void
+}
+
+define void @_EN4main1X4initE1pF3int_3int(%X* %this, i32 (i32)* %p) {
+  %p1 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
+  store i32 (i32)* %p, i32 (i32)** %p1
   ret void
 }
 

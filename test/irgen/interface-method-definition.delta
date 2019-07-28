@@ -6,7 +6,6 @@ interface A {
 }
 
 struct B: A {
-    init() {}
     int f() { return 21; }
 }
 

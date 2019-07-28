@@ -2,6 +2,18 @@
 %X = type { i32 }
 %Y = type { i32 }
 
+define void @_EN4main1X4initE1i3int(%X* %this, i32 %i) {
+  %i1 = getelementptr inbounds %X, %X* %this, i32 0, i32 0
+  store i32 %i, i32* %i1
+  ret void
+}
+
+define void @_EN4main1Y4initE1i3int(%Y* %this, i32 %i) {
+  %i1 = getelementptr inbounds %Y, %Y* %this, i32 0, i32 0
+  store i32 %i, i32* %i1
+  ret void
+}
+
 define i1 @_EN4mainltE1aP1X1bP1X(%X* %a, %X* %b) {
   ret i1 true
 }

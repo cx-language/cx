@@ -1,8 +1,6 @@
 // RUN: %delta -typecheck %s
 
-struct A {
-    init() {}
-}
+struct A {}
 
 void main() {
     var a = A();

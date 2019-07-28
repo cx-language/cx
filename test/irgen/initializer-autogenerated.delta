@@ -1,0 +1,21 @@
+// RUN: check_matches_snapshot %delta -print-ir %s
+
+void main() {
+    var b = 2;
+    var x = X(4, b);
+    var y = X(a: 4, b: b);
+    var e = Empty();
+    var g = Generic(4.5);
+    var h = Generic(4);
+}
+
+struct X {
+    int a;
+    int* b;
+}
+
+struct Empty {}
+
+struct Generic<T> {
+    T i;
+}

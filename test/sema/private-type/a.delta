@@ -2,9 +2,7 @@
 
 // CHECK-NOT: a.delta:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: 'A' is private
 
-private struct A {
-    init() {}
-}
+private struct A {}
 
 private void i(A* q) {
     A a = undefined;

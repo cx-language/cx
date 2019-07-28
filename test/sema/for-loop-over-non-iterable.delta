@@ -1,8 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct A {
-    init() {}
-}
+struct A {}
 
 void main() {
     // CHECK: [[@LINE+1]]:5: error: unknown identifier 'A.iterator'

@@ -15,7 +15,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         characters = ArrayRef<char>(cString, int(strlen(cString)));
     }
 
-    init (String* string) {
+    init(String* string) {
         characters = ArrayRef<char>(string.data(), string.size());
     }
 

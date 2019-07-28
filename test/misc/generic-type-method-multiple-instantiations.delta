@@ -1,8 +1,6 @@
 // RUN: %delta -print-ir %s
 
 struct S<T>: Copyable {
-    init() {}
-
     void f(T t) {
         var v = t
     }

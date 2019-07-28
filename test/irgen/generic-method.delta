@@ -1,8 +1,6 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 struct X {
-    init() {}
-
     T f<T>(T() t) {
         return t();
     }

@@ -2,9 +2,7 @@
 
 void f<T>() {}
 
-struct A<T> {
-    init() {}
-}
+struct A<T> {}
 
 void main() {
     f<int>();

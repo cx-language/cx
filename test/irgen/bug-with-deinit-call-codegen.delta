@@ -1,13 +1,10 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 struct X {
-    init() {}
     deinit() {}
 }
 
 struct Y<T> {
-    init() {}
-
     int f() {
         return 1;
     }

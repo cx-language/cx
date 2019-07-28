@@ -2,11 +2,10 @@
 
 struct Foo {
     int qux;
-    init() { }
 }
 
 void main() {
-    var foo = Foo();
+    var foo = Foo(1);
     // CHECK: [[@LINE+1]]:19: error: no member named 'bar' in 'Foo'
     var bar = foo.bar;
 }

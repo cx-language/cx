@@ -3,10 +3,6 @@
 struct X {
     int(int) p;
 
-    init(int(int) p) {
-        this.p = p;
-    }
-
     void f() {
         this.p(42);
         p(42);

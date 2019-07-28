@@ -1,11 +1,6 @@
 struct MapEntry<Key: Hashable, Value> {
     Key key;
     Value value;
-
-    init(Key key, Value value) {
-        this.key = key;
-        this.value = value;
-    }
 }
 
 struct Map<Key: Hashable, Value> {

@@ -8,11 +8,6 @@ struct Missile {
     Vector2 position;
     float direction;
 
-    init(Vector2 position, float direction) {
-        this.position = position;
-        this.direction = direction;
-    }
-
     void render(SDL_Renderer* renderer) {
         var a = position;
         var b = tailPosition();

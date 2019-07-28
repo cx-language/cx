@@ -1,8 +1,6 @@
 // RUN: not %delta -typecheck %s | %FileCheck %s
 
-struct C {
-    init() {}
-}
+struct C {}
 
 void main() {
     // CHECK: [[@LINE+1]]:15: error: too many generic arguments to 'C', expected 0
