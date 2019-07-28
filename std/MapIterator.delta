@@ -1,6 +1,6 @@
-struct MapIterator<Key, Value>: Copyable, Iterator<(Key key, Value value)*> {
-    ArrayIterator<List<(Key key, Value value)>> hashTableIterator;
-    (Key key, Value value)[?]* current;
+struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
+    ArrayIterator<List<MapEntry<Key, Value>>> hashTableIterator;
+    MapEntry<Key, Value>[?]* current;
 
     init(Map<Key, Value>* map) {
         hashTableIterator = map.hashTable.iterator();
@@ -12,7 +12,7 @@ struct MapIterator<Key, Value>: Copyable, Iterator<(Key key, Value value)*> {
         return hashTableIterator.hasValue();
     }
 
-    (Key key, Value value)* value() {
+    MapEntry<Key, Value>* value() {
         return current;
     }
 

@@ -139,7 +139,7 @@ struct OrderedMap<Key, Value> {
     /// Inserts a key-value pair into the Map.
     bool insert(Key key, Value value) {
         if (root == null) {
-            root = allocate(AVLnode<Key, Value>(key, null, value));
+            root = allocate(AVLnode(key, null, value));
         } else {
             var n = root;
 
@@ -154,9 +154,9 @@ struct OrderedMap<Key, Value> {
 
                 if (newNode == null) {
                     if (goLeft) {
-                        parent.left = allocate(AVLnode<Key, Value>(key, parent, value));
+                        parent.left = allocate(AVLnode(key, parent, value));
                     } else {
-                        parent.right = allocate(AVLnode<Key, Value>(key, parent, value));
+                        parent.right = allocate(AVLnode(key, parent, value));
                     }
 
                     rebalance(parent);
@@ -214,7 +214,7 @@ struct OrderedMap<Key, Value> {
     }
 
     /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map
-    (Key key, Value value)*? find(Key* key) {
+    MapEntry<Key, Value>*? find(Key* key) {
         var node = findNode(key);
         if (node != null) {
             return node.entry;
@@ -364,14 +364,14 @@ struct OrderedMap<Key, Value> {
 
 /// One node in the AVL tree
 struct AVLnode<Key, Value> {
-    (Key key, Value value) entry;
+    MapEntry<Key, Value> entry;
     int balance;
     AVLnode<Key, Value>*? parent;
     AVLnode<Key, Value>*? left;
     AVLnode<Key, Value>*? right;
 
     init(Key key, AVLnode<Key, Value>*? parent, Value value) {
-        this.entry = (key, value);
+        this.entry = MapEntry(key, value);
         this.parent = parent;
         this.balance = 0;
         this.left = null;

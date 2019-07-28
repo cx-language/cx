@@ -1,4 +1,4 @@
-struct String: Comparable, OutputStream, Printable {
+struct String: Comparable, Hashable, OutputStream, Printable {
     List<char> characters;
 
     /// Initializes an empty string.

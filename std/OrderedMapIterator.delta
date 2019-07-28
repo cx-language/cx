@@ -1,4 +1,4 @@
-struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(Key key, Value value)*> {
+struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
     AVLnode<Key, Value>*? current;
     OrderedMap<Key, Value>* map;
 
@@ -11,7 +11,7 @@ struct OrderedMapIterator<Key, Value>: Copyable, Iterator<(Key key, Value value)
         return current != null;
     }
 
-    (Key key, Value value)* value() {
+    MapEntry<Key, Value>* value() {
         return current!.entry;
     }
 
