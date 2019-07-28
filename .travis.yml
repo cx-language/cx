@@ -4,7 +4,7 @@ matrix:
     include:
         - os: linux
           compiler: clang
-          before_install: LLVM_VERSION=7.0.0 CC=clang-5.0 CXX=clang++-5.0
+          before_install: LLVM_VERSION=7.0.0 CC=clang CXX=clang++
 
         - os: linux
           compiler: gcc
@@ -20,10 +20,8 @@ matrix:
 addons:
     apt:
         sources:
-            - llvm-toolchain-xenial-5.0
             - ubuntu-toolchain-r-test
         packages:
-            - clang-5.0
             - gcc-7
             - g++-7
             - libstdc++-7-dev
