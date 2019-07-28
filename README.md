@@ -58,7 +58,7 @@ After this, the following commands can be invoked from the `build` directory:
 
 ## Documentation
 
-To learn how to compile Delta programs, see the [compiler manual](docs/compiler-manual.md).
+Run `delta -help` for a list of supported command-line options.
 
 To generate compiler API documentation in HTML format, run `doxygen docs/doxyfile`
 in the project root directory. The output is generated under `docs/html` and can be
