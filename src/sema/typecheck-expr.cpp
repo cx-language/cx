@@ -422,6 +422,19 @@ bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) c
     Type convertedType;
     bool converted = isImplicitlyConvertible(expr, expr->getType(), type, &convertedType, allowPointerToTemporary);
     if (convertedType) expr->setType(convertedType);
+
+    if (!converted) {
+        if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
+            converted = isImplicitlyConvertible(ifExpr->getThenExpr(), ifExpr->getThenExpr()->getType(), type, &convertedType) &&
+                        isImplicitlyConvertible(ifExpr->getElseExpr(), ifExpr->getElseExpr()->getType(), type, &convertedType);
+            if (convertedType) {
+                ifExpr->getThenExpr()->setType(convertedType);
+                ifExpr->getElseExpr()->setType(convertedType);
+                ifExpr->setType(convertedType);
+            }
+        }
+    }
+
     return converted;
 }
 
