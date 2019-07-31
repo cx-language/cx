@@ -14,7 +14,7 @@ following:
 - Strong type system with type inference, tagged unions, and compile-time null-safety
 - Efficient compiled code leveraging existing [LLVM](https://llvm.org) optimizations
 
-For an introduction to the language, check out the [Delta book](https://delta-lang.gitbooks.io/delta-book/content/),
+For an introduction to the language, check out the [Delta book](https://delta-lang.gitbook.io/delta-book/),
 the [design document](docs/design.md), and the [language specification](docs/spec/spec.pdf).
 
 Note that the project is still in very early stages of development, so the above
