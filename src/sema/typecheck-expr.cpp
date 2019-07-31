@@ -421,17 +421,13 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
 bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
     Type convertedType;
     bool converted = isImplicitlyConvertible(expr, expr->getType(), type, &convertedType, allowPointerToTemporary);
-    if (convertedType) expr->setType(convertedType);
 
-    if (!converted) {
+    if (convertedType) {
+        expr->setType(convertedType);
+
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            converted = isImplicitlyConvertible(ifExpr->getThenExpr(), ifExpr->getThenExpr()->getType(), type, &convertedType) &&
-                        isImplicitlyConvertible(ifExpr->getElseExpr(), ifExpr->getElseExpr()->getType(), type, &convertedType);
-            if (convertedType) {
-                ifExpr->getThenExpr()->setType(convertedType);
-                ifExpr->getElseExpr()->setType(convertedType);
-                ifExpr->setType(convertedType);
-            }
+            ifExpr->getThenExpr()->setType(convertedType);
+            ifExpr->getElseExpr()->setType(convertedType);
         }
     }
 
@@ -478,6 +474,13 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if (expr) {
         if (expr->getType().isEnumType() && llvm::cast<EnumDecl>(expr->getType().getDecl())->getTagType() == target) {
             return true;
+        }
+
+        if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
+            if (isImplicitlyConvertible(ifExpr->getThenExpr(), ifExpr->getThenExpr()->getType(), target, convertedType) &&
+                isImplicitlyConvertible(ifExpr->getElseExpr(), ifExpr->getElseExpr()->getType(), target, convertedType)) {
+                return true;
+            }
         }
 
         // Auto-cast integer constants to parameter type if within range, error out if not within range.
