@@ -17,10 +17,15 @@ if(MSVC)
             string(REGEX REPLACE "/MDd" "/MD" ${flag_var} "${${flag_var}}")
         endif(${flag_var} MATCHES "/MDd")
     endforeach(flag_var)
+
+    if(NOT DEFINED ENV{CI})
+        # Disable run-time error checks locally to speed up debug build.
+        string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+    endif()
 else()
     set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility-inlines-hidden -Wall -Wextra -Wno-unknown-pragmas ${CMAKE_CXX_FLAGS}")
 
-    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         set(CMAKE_CXX_FLAGS "-Wsuggest-override ${CMAKE_CXX_FLAGS}")
     endif()
 
