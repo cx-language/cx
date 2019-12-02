@@ -1,5 +1,4 @@
 // RUN: %delta -typecheck %s
-// UNSUPPORTED: windows
 
 import "stdlib.h"
 

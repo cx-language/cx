@@ -1,6 +1,6 @@
 
-@0 = private unnamed_addr constant [35 x i8] c"Unwrap failed at unwrap.delta:6:37\00"
-@1 = private unnamed_addr constant [34 x i8] c"Unwrap failed at unwrap.delta:8:8\00"
+@0 = private unnamed_addr constant [35 x i8] c"Unwrap failed at unwrap.delta:6:37\00", align 1
+@1 = private unnamed_addr constant [34 x i8] c"Unwrap failed at unwrap.delta:8:8\00", align 1
 
 declare i8* @f()
 

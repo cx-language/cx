@@ -7,14 +7,14 @@
 %"EnumeratedIterator<int>" = type { %"ArrayIterator<int>", i32 }
 %"EnumeratedIteratorEntry<int>" = type { i32*, i32 }
 
-@0 = private unnamed_addr constant [37 x i8] c"Assertion failed at List.delta:112:9\00"
-@1 = private unnamed_addr constant [37 x i8] c"Assertion failed at List.delta:113:9\00"
-@2 = private unnamed_addr constant [44 x i8] c"List index %d is out of bounds, size is %d\0A\00"
-@3 = private unnamed_addr constant [30 x i8] c"Called first() on empty List\0A\00"
-@4 = private unnamed_addr constant [29 x i8] c"Called last() on empty List\0A\00"
-@5 = private unnamed_addr constant [36 x i8] c"Called removeFirst() on empty List\0A\00"
-@6 = private unnamed_addr constant [35 x i8] c"Called removeLast() on empty List\0A\00"
-@7 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:36:62\00"
+@0 = private unnamed_addr constant [37 x i8] c"Assertion failed at List.delta:112:9\00", align 1
+@1 = private unnamed_addr constant [37 x i8] c"Assertion failed at List.delta:113:9\00", align 1
+@2 = private unnamed_addr constant [44 x i8] c"List index %d is out of bounds, size is %d\0A\00", align 1
+@3 = private unnamed_addr constant [30 x i8] c"Called first() on empty List\0A\00", align 1
+@4 = private unnamed_addr constant [29 x i8] c"Called last() on empty List\0A\00", align 1
+@5 = private unnamed_addr constant [36 x i8] c"Called removeFirst() on empty List\0A\00", align 1
+@6 = private unnamed_addr constant [35 x i8] c"Called removeLast() on empty List\0A\00", align 1
+@7 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:36:62\00", align 1
 
 define i32 @main() {
   %1 = alloca [3 x i32]

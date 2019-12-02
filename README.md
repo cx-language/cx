@@ -24,12 +24,12 @@ features are still unimplemented, and existing ones are subject to change at any
 ## Building from source
 
 Compiling Delta requires a C++17 compiler, [CMake](https://cmake.org), and
-[LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 7. To run the test
+[LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 9.0. To run the test
 suite you also need [lit](https://llvm.org/docs/CommandGuide/lit.html).
 
 ### Ubuntu / macOS / WSL
 
-Download and extract LLVM/Clang 7 pre-built binaries for your platform from
+Download and extract LLVM/Clang 9.0 pre-built binaries for your platform from
 https://releases.llvm.org/download.html. Then run the following commands:
 
     mkdir build
@@ -39,8 +39,8 @@ https://releases.llvm.org/download.html. Then run the following commands:
 ### Windows with Visual Studio
 
 Download and extract LLVM/Clang pre-built binaries from
-https://github.com/vovkos/llvm-package-windows/releases/download/llvm-7.1.0/llvm-7.1.0-windows-amd64-msvc15-msvcrt.7z
-and https://github.com/vovkos/llvm-package-windows/releases/download/clang-7.1.0/clang-7.1.0-windows-amd64-msvc15-msvcrt.7z.
+https://github.com/vovkos/llvm-package-windows/releases/download/llvm-master/llvm-9.0.0-windows-amd64-msvc15-msvcrt.7z
+and https://github.com/vovkos/llvm-package-windows/releases/download/clang-master/clang-9.0.0-windows-amd64-msvc15-msvcrt.7z.
 Then run the following commands:
 
     mkdir build

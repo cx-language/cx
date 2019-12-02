@@ -4,8 +4,8 @@
 %String = type { %"List<char>" }
 %"List<char>" = type { i8*, i32, i32 }
 
-@0 = private unnamed_addr constant [4 x i8] c"foo\00"
-@1 = private unnamed_addr constant [6 x i8] c"%.*s\0A\00"
+@0 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
+@1 = private unnamed_addr constant [6 x i8] c"%.*s\0A\00", align 1
 
 define i32 @main() {
   %__str0 = alloca %StringRef

@@ -1,5 +1,5 @@
 
-@0 = private unnamed_addr constant [37 x i8] c"Assertion failed at assert.delta:6:5\00"
+@0 = private unnamed_addr constant [37 x i8] c"Assertion failed at assert.delta:6:5\00", align 1
 
 declare i1 @b()
 

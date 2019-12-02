@@ -4,13 +4,13 @@
 #pragma warning(push, 0)
 #include <clang/Basic/Diagnostic.h>
 #include <clang/Basic/DiagnosticIDs.h>
-#include <clang/Basic/VirtualFileSystem.h> // Fixes "Member access into incomplete type 'clang::vfs::FileSystem'".
 #include <clang/Driver/Compilation.h>
 #include <clang/Driver/Driver.h>
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/Path.h>
+#include <llvm/Support/VirtualFileSystem.h> // Fixes "error: invalid use of incomplete type ‘class llvm::vfs::FileSystem’" on GCC.
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 

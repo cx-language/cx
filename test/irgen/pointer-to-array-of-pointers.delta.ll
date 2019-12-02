@@ -1,6 +1,6 @@
 
-@0 = private unnamed_addr constant [4 x i8] c"%s\0A\00"
-@1 = private unnamed_addr constant [57 x i8] c"Unwrap failed at pointer-to-array-of-pointers.delta:8:21\00"
+@0 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
+@1 = private unnamed_addr constant [57 x i8] c"Unwrap failed at pointer-to-array-of-pointers.delta:8:21\00", align 1
 
 declare i8** @b()
 

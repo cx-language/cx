@@ -1,8 +1,8 @@
 
 %Foo = type { i32, i8* }
 
-@0 = private unnamed_addr constant [8 x i8] c"foo bar\00"
-@1 = private unnamed_addr constant [4 x i8] c"foo\00"
+@0 = private unnamed_addr constant [8 x i8] c"foo bar\00", align 1
+@1 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
 
 define i32 @main() {
   %f = alloca %Foo

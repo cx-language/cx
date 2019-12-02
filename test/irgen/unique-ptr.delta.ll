@@ -2,8 +2,8 @@
 %"UniquePtr<UniquePtr<int>>" = type { %"UniquePtr<int>"* }
 %"UniquePtr<int>" = type { i32* }
 
-@0 = private unnamed_addr constant [37 x i8] c"Unwrap failed at allocate.delta:9:54\00"
-@1 = private unnamed_addr constant [37 x i8] c"Unwrap failed at allocate.delta:9:54\00"
+@0 = private unnamed_addr constant [37 x i8] c"Unwrap failed at allocate.delta:9:54\00", align 1
+@1 = private unnamed_addr constant [37 x i8] c"Unwrap failed at allocate.delta:9:54\00", align 1
 
 define i32 @main() {
   %p = alloca %"UniquePtr<UniquePtr<int>>"

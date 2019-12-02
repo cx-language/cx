@@ -4,7 +4,7 @@
 %StringRef = type { %"ArrayRef<char>" }
 %"ArrayRef<char>" = type { i8*, i32 }
 
-@0 = private unnamed_addr constant [1 x i8] zeroinitializer
+@0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
 
 define i32 @main() {
   %i = alloca %"Foo<int>"

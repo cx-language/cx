@@ -2,7 +2,7 @@
 %"X<int>" = type { %"Y<int>"* }
 %"Y<int>" = type { i32 }
 
-@0 = private unnamed_addr constant [66 x i8] c"Unwrap failed at optional-type-unknown-identifier-bug.delta:11:18\00"
+@0 = private unnamed_addr constant [66 x i8] c"Unwrap failed at optional-type-unknown-identifier-bug.delta:11:18\00", align 1
 
 define i32 @main() {
   %x = alloca %"X<int>"

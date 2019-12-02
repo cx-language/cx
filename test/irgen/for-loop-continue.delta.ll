@@ -3,7 +3,7 @@
 %StringRef = type { %"ArrayRef<char>" }
 %"ArrayRef<char>" = type { i8*, i32 }
 
-@0 = private unnamed_addr constant [4 x i8] c"abc\00"
+@0 = private unnamed_addr constant [4 x i8] c"abc\00", align 1
 
 define i32 @main() {
   %__iterator = alloca %StringIterator

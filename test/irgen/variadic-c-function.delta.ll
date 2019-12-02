@@ -1,5 +1,5 @@
 
-@0 = private unnamed_addr constant [6 x i8] c"%d %f\00"
+@0 = private unnamed_addr constant [6 x i8] c"%d %f\00", align 1
 
 define i32 @main() {
   %f = alloca double

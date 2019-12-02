@@ -352,7 +352,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
 
     const clang::DirectoryLookup* curDir = nullptr;
-    const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {},
+    const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr,
                                                                                               nullptr, nullptr, nullptr, nullptr, nullptr);
     if (!fileEntry) return false;
 

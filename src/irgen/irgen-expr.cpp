@@ -16,9 +16,10 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         static int stringLiteralCounter = 0;
         auto* type = toIR(BasicType::get("StringRef", {}));
         auto* alloca = createEntryBlockAlloca(type, nullptr, "__str" + std::to_string(stringLiteralCounter++));
+        auto* stringRefInitType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx),
+                                                          { alloca->getType(), stringPtr->getType(), size->getType() }, false);
         // TODO: Retrieve this constructor in a nicer way.
-        auto* stringRefInit = module->getOrInsertFunction("_EN3std9StringRef4initE7pointerP4char6length3int", llvm::Type::getVoidTy(ctx),
-                                                          alloca->getType(), stringPtr->getType(), size->getType());
+        auto* stringRefInit = module->getOrInsertFunction("_EN3std9StringRef4initE7pointerP4char6length3int", stringRefInitType).getCallee();
         builder.CreateCall(stringRefInit, { alloca, stringPtr, size });
         return alloca;
     } else {
@@ -404,7 +405,7 @@ void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location,
     auto* function = builder.GetInsertBlock()->getParent();
     auto* failBlock = llvm::BasicBlock::Create(ctx, "assert.fail", function);
     auto* successBlock = llvm::BasicBlock::Create(ctx, "assert.success", function);
-    auto* puts = module->getOrInsertFunction("puts", llvm::Type::getInt32Ty(ctx), llvm::Type::getInt8PtrTy(ctx));
+    auto* puts = module->getOrInsertFunction("puts", llvm::Type::getInt32Ty(ctx), llvm::Type::getInt8PtrTy(ctx)).getCallee();
     builder.CreateCondBr(condition, failBlock, successBlock);
     builder.SetInsertPoint(failBlock);
     auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":",
