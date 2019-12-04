@@ -385,14 +385,17 @@ int main(int argc, const char** argv) {
     addPlatformDefines();
 
     try {
-        if (inputs.empty()) {
+        if (!inputs.empty()) {
+            return buildExecutable(inputs, nullptr, argv[0], ".", "");
+        } else if (build || run) {
             llvm::SmallString<128> currentPath;
             if (auto error = llvm::sys::fs::current_path(currentPath)) {
                 ABORT(error.message());
             }
             return buildPackage(currentPath, argv[0]);
         } else {
-            return buildExecutable(inputs, nullptr, argv[0], ".", "");
+            cl::PrintHelpMessage();
+            return 0;
         }
     } catch (const CompileError& error) {
         error.print();
