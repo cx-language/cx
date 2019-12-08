@@ -12,6 +12,7 @@ struct A: Printable {
 
 
 void main() {
-    // CHECK: foofoo!
-    print(A("foo"));
+    print(true); // CHECK: true
+    print(false); // CHECK-NEXT: false
+    print(A("foo")); // CHECK-NEXT: foofoo!
 }
