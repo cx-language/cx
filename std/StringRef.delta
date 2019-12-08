@@ -67,7 +67,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         return StringIterator(this);
     }
 
-    void printTo(String* stream) {
+    void print(String* stream) {
         stream.write(this);
     }
 

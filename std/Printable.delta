@@ -1,10 +1,10 @@
 interface Printable {
     // TODO: Make this member function take any OutputStream as an argument once the compiler supports it.
-    void printTo(String* stream);
+    void print(String* stream);
 
     String toString() {
-        var string = String();
-        printTo(string);
-        return string;
+        var result = String();
+        this.print(result);
+        return result;
     }
 }

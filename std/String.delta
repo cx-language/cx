@@ -148,7 +148,7 @@ struct String: Comparable, Hashable, OutputStream, Printable {
         return split(' ');
     }
 
-    void printTo(String* stream) {
+    void print(String* stream) {
         stream.write(StringRef(this));
     }
 

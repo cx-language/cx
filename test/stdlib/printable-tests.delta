@@ -8,7 +8,7 @@ struct A: Printable {
     StringRef a;
     StringRef b;
 
-    void printTo(String* stream) {
+    void print(String* stream) {
         stream.write(a);
         stream.write("+");
         stream.write(b);
