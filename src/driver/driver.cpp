@@ -42,6 +42,7 @@ using namespace delta;
 namespace cl = llvm::cl;
 
 namespace delta {
+int errors = 0;
 cl::SubCommand build("build", "Build a Delta project");
 cl::SubCommand run("run", "Build and run a Delta executable");
 cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(*cl::AllSubCommands));
@@ -200,7 +201,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         parser.parse();
     }
 
-    if (parse) return 0;
+    if (parse) return errors ? 1 : 0;
 
     Typechecker typechecker(options);
     for (auto& importedModule : module.getImportedModules()) {
@@ -208,11 +209,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
     typechecker.typecheckModule(module, manifest);
 
-    bool treatAsLibrary = !module.getSymbolTable().contains("main") && !run;
-    if (treatAsLibrary) {
-        compileOnly = true;
-    }
-
+    if (errors) return 1;
     if (typecheck) return 0;
 
     IRGenerator irGenerator;
@@ -260,6 +257,11 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (!outputDirectory.empty()) {
         auto error = llvm::sys::fs::create_directories(outputDirectory);
         if (error) ABORT(error.message());
+    }
+
+    bool treatAsLibrary = !module.getSymbolTable().contains("main") && !run;
+    if (treatAsLibrary) {
+        compileOnly = true;
     }
 
     if (compileOnly || emitAssembly) {
@@ -384,21 +386,16 @@ int main(int argc, const char** argv) {
     cl::ParseCommandLineOptions(argc, argv, "Delta compiler\n");
     addPlatformDefines();
 
-    try {
-        if (!inputs.empty()) {
-            return buildExecutable(inputs, nullptr, argv[0], ".", "");
-        } else if (build || run) {
-            llvm::SmallString<128> currentPath;
-            if (auto error = llvm::sys::fs::current_path(currentPath)) {
-                ABORT(error.message());
-            }
-            return buildPackage(currentPath, argv[0]);
-        } else {
-            cl::PrintHelpMessage();
-            return 0;
+    if (!inputs.empty()) {
+        return buildExecutable(inputs, nullptr, argv[0], ".", "");
+    } else if (build || run) {
+        llvm::SmallString<128> currentPath;
+        if (auto error = llvm::sys::fs::current_path(currentPath)) {
+            ABORT(error.message());
         }
-    } catch (const CompileError& error) {
-        error.print();
-        return 1;
+        return buildPackage(currentPath, argv[0]);
+    } else {
+        cl::PrintHelpMessage();
+        return 0;
     }
 }

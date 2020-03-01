@@ -74,8 +74,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
             if (type.getPointee().isArrayWithRuntimeSize()) {
                 auto qualifiedTypeName = getQualifiedTypeName("ArrayRef", type.getPointee().getElementType());
                 if (findDecls(qualifiedTypeName).empty()) {
-                    auto& arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation()));
-                    auto* instantiation = arrayRef.instantiate({ type.getPointee().getElementType() });
+                    auto* arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation()));
+                    auto* instantiation = arrayRef->instantiate({ type.getPointee().getElementType() });
                     getCurrentModule()->addToSymbolTable(*instantiation);
                     declsToTypecheck.push_back(instantiation);
                 }
@@ -122,14 +122,18 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
 void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel) {
     for (auto& genericParam : genericParams) {
         if (getCurrentModule()->getSymbolTable().contains(genericParam.getName())) {
-            ERROR(genericParam.getLocation(), "redefinition of '" << genericParam.getName() << "'");
+            REPORT_ERROR(genericParam.getLocation(), "redefinition of '" << genericParam.getName() << "'");
         }
 
         for (Type constraint : genericParam.getConstraints()) {
-            typecheckType(constraint, userAccessLevel);
+            try {
+                typecheckType(constraint, userAccessLevel);
 
-            if (!constraint.getDecl()->isInterface()) {
-                ERROR(constraint.getLocation(), "only interface types can be used as generic constraints");
+                if (!constraint.getDecl()->isInterface()) {
+                    ERROR(constraint.getLocation(), "only interface types can be used as generic constraints");
+                }
+            } catch (const CompileError& error) {
+                error.print();
             }
         }
     }
@@ -180,15 +184,19 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
         if (decl.hasBody()) {
             for (auto& stmt : decl.getBody()) {
-                typecheckStmt(stmt);
+                try {
+                    typecheckStmt(stmt);
+                } catch (const CompileError& error) {
+                    error.print();
+                }
 
-                if (!decl.isInitDecl()) continue;
-
-                if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
-                    if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
-                        if (auto* initDecl = llvm::dyn_cast_or_null<InitDecl>(callExpr->getCalleeDecl())) {
-                            if (initDecl->getTypeDecl() == receiverTypeDecl) {
-                                delegatedInit = true;
+                if (decl.isInitDecl()) {
+                    if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
+                        if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
+                            if (auto* initDecl = llvm::dyn_cast_or_null<InitDecl>(callExpr->getCalleeDecl())) {
+                                if (initDecl->getTypeDecl() == receiverTypeDecl) {
+                                    delegatedInit = true;
+                                }
                             }
                         }
                     }
@@ -208,7 +216,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     getCurrentModule()->getSymbolTable().popScope();
 
     if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(decl.getBody())) {
-        ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");
+        REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");
     }
 
     decl.setTypechecked(true);
@@ -224,12 +232,14 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
-            ERROR(interface.getLocation(), "'" << interface << "' is not an interface");
+            REPORT_ERROR(interface.getLocation(), "'" << interface << "' is not an interface");
+            continue;
         }
 
         std::string errorReason;
         if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-            ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
+            REPORT_ERROR(decl.getLocation(),
+                         "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
         }
 
         for (auto& method : interfaceDecl->getMethods()) {

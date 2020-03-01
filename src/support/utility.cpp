@@ -11,6 +11,10 @@
 
 using namespace delta;
 
+namespace delta {
+extern int errors;
+}
+
 std::string delta::readLineFromFile(SourceLocation location) {
     std::ifstream file(location.file);
 
@@ -70,13 +74,9 @@ void delta::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm:
 }
 
 void CompileError::print() const {
-    printDiagnostic(location, "error", llvm::raw_ostream::RED, message);
-
-    for (auto& note : notes) {
-        printDiagnostic(note.location, "note", llvm::raw_ostream::BLACK, note.message);
-    }
-
-    llvm::outs().flush();
+    StringFormatter s;
+    s << message;
+    reportError(location, s, notes);
 }
 
 std::string delta::getCCompilerPath() {
@@ -99,15 +99,16 @@ void delta::abort(StringFormatter& message) {
     exit(1);
 }
 
-void delta::errorWithNotes(SourceLocation location, std::vector<Note>&& notes, StringFormatter& message) {
-    throw CompileError(location, std::move(message.str()), std::move(notes));
+void delta::reportError(SourceLocation location, StringFormatter& message, llvm::ArrayRef<Note> notes) {
+    errors++;
+    printDiagnostic(location, "error", llvm::raw_ostream::RED, message.str());
+
+    for (auto& note : notes) {
+        printDiagnostic(note.location, "note", llvm::raw_ostream::BLACK, note.message);
+    }
 }
 
-void delta::error(SourceLocation location, StringFormatter& message) {
-    throw CompileError(location, std::move(message.str()), std::vector<Note>());
-}
-
-void delta::warn(SourceLocation location, StringFormatter& message) {
+void delta::reportWarning(SourceLocation location, StringFormatter& message) {
     extern llvm::cl::opt<WarningMode> warningMode;
 
     switch (warningMode) {
@@ -117,7 +118,7 @@ void delta::warn(SourceLocation location, StringFormatter& message) {
         case WarningMode::Suppress:
             break;
         case WarningMode::TreatAsErrors:
-            error(location, message);
+            reportError(location, message);
             break;
     }
 }

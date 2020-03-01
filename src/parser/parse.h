@@ -81,7 +81,6 @@ private:
     SourceLocation getCurrentLocation();
     Token lookAhead(int offset);
     Token consumeToken();
-    void expect(llvm::ArrayRef<Token::Kind> expected, const char* contextInfo);
     Token parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInfo = nullptr);
     void checkStmtTerminatorConsistency(Token::Kind currentTerminator, llvm::function_ref<SourceLocation()> getLocation);
     void parseStmtTerminator(const char* contextInfo = nullptr);
@@ -158,7 +157,7 @@ private:
     TypeTemplate* parseTypeTemplate(AccessLevel accessLevel);
     Token parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams);
     TypeDecl* parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
-    EnumDecl* parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
+    EnumDecl* parseEnumDecl(AccessLevel typeAccessLevel);
     ImportDecl* parseImportDecl();
     void parseIfdefBody(std::vector<Decl*>* activeDecls);
     void parseIfdef(std::vector<Decl*>* activeDecls);

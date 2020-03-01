@@ -1,6 +1,6 @@
 // RUN: not %delta -parse %s | %FileCheck %s
 
 struct Foo: Copyable {
-    // CHECK: [[@LINE+1]]:12: error: deinitializers cannot have parameters
+    // CHECK: [[@LINE+1]]:5: error: deinitializers cannot have parameters
     deinit(int i) { }
 }

@@ -61,25 +61,25 @@ void Typechecker::checkLambdaCapture(const VariableDecl& variableDecl, const Var
 }
 
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
-    auto& decl = findDecl(expr.getIdentifier(), expr.getLocation());
-    checkHasAccess(decl, expr.getLocation(), AccessLevel::None);
-    decl.setReferenced(true);
-    expr.setDecl(&decl);
+    auto* decl = findDecl(expr.getIdentifier(), expr.getLocation());
+    checkHasAccess(*decl, expr.getLocation(), AccessLevel::None);
+    decl->setReferenced(true);
+    expr.setDecl(decl);
 
-    if (auto variableDecl = llvm::dyn_cast<VariableDecl>(&decl)) {
+    if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
         checkLambdaCapture(*variableDecl, expr);
     }
 
-    switch (decl.getKind()) {
+    switch (decl->getKind()) {
         case DeclKind::VarDecl:
-            if (!useIsWriteOnly) checkNotMoved(decl, expr);
-            return llvm::cast<VarDecl>(decl).getType();
+            if (!useIsWriteOnly) checkNotMoved(*decl, expr);
+            return llvm::cast<VarDecl>(decl)->getType();
         case DeclKind::ParamDecl:
-            if (!useIsWriteOnly) checkNotMoved(decl, expr);
-            return llvm::cast<ParamDecl>(decl).getType();
+            if (!useIsWriteOnly) checkNotMoved(*decl, expr);
+            return llvm::cast<ParamDecl>(decl)->getType();
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-            return Type(llvm::cast<FunctionDecl>(decl).getFunctionType(), Mutability::Mutable, SourceLocation());
+            return Type(llvm::cast<FunctionDecl>(decl)->getFunctionType(), Mutability::Mutable, SourceLocation());
         case DeclKind::GenericParamDecl:
             llvm_unreachable("cannot refer to generic parameters yet");
         case DeclKind::InitDecl:
@@ -95,9 +95,9 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
         case DeclKind::EnumDecl:
             ERROR(expr.getLocation(), "'" << expr.getIdentifier() << "' is not a variable");
         case DeclKind::EnumCase:
-            return llvm::cast<EnumCase>(decl).getType();
+            return llvm::cast<EnumCase>(decl)->getType();
         case DeclKind::FieldDecl:
-            return llvm::cast<FieldDecl>(decl).getType();
+            return llvm::cast<FieldDecl>(decl)->getType();
         case DeclKind::ImportDecl:
             llvm_unreachable("import statement validation not implemented yet");
     }
@@ -740,17 +740,17 @@ std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl>
 
 void delta::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, SourceLocation location) {
     if (genericArgs.size() < genericParamCount) {
-        ERROR(location, "too few generic arguments to '" << name << "', expected " << genericParamCount);
+        REPORT_ERROR(location, "too few generic arguments to '" << name << "', expected " << genericParamCount);
     } else if (genericArgs.size() > genericParamCount) {
-        ERROR(location, "too many generic arguments to '" << name << "', expected " << genericParamCount);
+        REPORT_ERROR(location, "too many generic arguments to '" << name << "', expected " << genericParamCount);
     }
 }
 
 static void validateArgCount(size_t paramCount, size_t argCount, bool isVariadic, llvm::StringRef name, SourceLocation location) {
     if (argCount < paramCount) {
-        ERROR(location, "too few arguments to '" << name << "', expected " << (isVariadic ? "at least " : "") << paramCount);
+        REPORT_ERROR(location, "too few arguments to '" << name << "', expected " << (isVariadic ? "at least " : "") << paramCount);
     } else if (!isVariadic && argCount > paramCount) {
-        ERROR(location, "too many arguments to '" << name << "', expected " << paramCount);
+        REPORT_ERROR(location, "too many arguments to '" << name << "', expected " << paramCount);
     }
 }
 
@@ -975,6 +975,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             return matches.front();
 
         case 0: {
+            // FIXME: Should returnNullOnError be renamed to reportErrors or removed completely?
             if (returnNullOnError) {
                 return nullptr;
             }
@@ -1113,8 +1114,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
             expr.setReceiverType(initDecl->getTypeDecl()->getType());
         } else if (decl->isMethodDecl()) {
-            auto& varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
-            expr.setReceiverType(varDecl.getType());
+            auto* varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
+            expr.setReceiverType(varDecl->getType());
         }
     }
 
@@ -1310,11 +1311,11 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     Type sourceType = typecheckExpr(*expr.getArgs().front().getValue());
     Type targetType = expr.getGenericArgs().front();
 
-    if (isValidCast(sourceType, targetType)) {
-        return targetType;
+    if (!isValidCast(sourceType, targetType)) {
+        ERROR(expr.getCallee().getLocation(), "illegal cast from '" << sourceType << "' to '" << targetType << "'");
     }
 
-    ERROR(expr.getCallee().getLocation(), "illegal cast from '" << sourceType << "' to '" << targetType << "'");
+    return targetType;
 }
 
 Type Typechecker::typecheckSizeofExpr(SizeofExpr&) {
@@ -1391,19 +1392,19 @@ Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
         return typecheckCallExpr(expr);
     }
 
-    Type indexType = typecheckExpr(*expr.getIndexExpr());
+    Expr* indexExpr = expr.getIndexExpr();
+    Type indexType = typecheckExpr(*indexExpr);
 
-    if (!convert(expr.getIndexExpr(), ArrayType::getIndexType())) {
-        ERROR(expr.getIndexExpr()->getLocation(), "illegal subscript index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
+    if (!convert(indexExpr, ArrayType::getIndexType())) {
+        ERROR(indexExpr->getLocation(), "illegal subscript index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
     }
 
     if (arrayType.isArrayWithConstantSize()) {
-        if (expr.getIndexExpr()->isConstant()) {
-            auto index = expr.getIndexExpr()->getConstantIntegerValue();
+        if (indexExpr->isConstant()) {
+            auto index = indexExpr->getConstantIntegerValue();
 
             if (index < 0 || index >= arrayType.getArraySize()) {
-                ERROR(expr.getIndexExpr()->getLocation(),
-                      "accessing array out-of-bounds with index " << index << ", array size is " << arrayType.getArraySize());
+                ERROR(indexExpr->getLocation(), "accessing array out-of-bounds with index " << index << ", array size is " << arrayType.getArraySize());
             }
         }
     }
@@ -1434,10 +1435,10 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto thenType = typecheckExpr(*expr.getThenExpr());
     auto elseType = typecheckExpr(*expr.getElseExpr());
 
-    if (convert(expr.getThenExpr(), elseType)) {
-        return elseType;
-    } else if (convert(expr.getElseExpr(), thenType)) {
+    if (convert(expr.getElseExpr(), thenType)) {
         return thenType;
+    } else if (convert(expr.getThenExpr(), elseType)) {
+        return elseType;
     } else {
         ERROR(expr.getLocation(), "incompatible operand types ('" << thenType << "' and '" << elseType << "')");
     }

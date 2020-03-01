@@ -75,7 +75,8 @@ void Lexer::readBlockComment(SourceLocation startLocation) {
                 unreadChar(next);
             }
         } else if (ch == '\0') {
-            ERROR(startLocation, "unterminated block comment");
+            REPORT_ERROR(startLocation, "unterminated block comment");
+            break;
         }
     }
 }
@@ -366,7 +367,7 @@ Token Lexer::nextToken() {
                 if (std::isdigit(ch)) return readNumber();
 
                 if (!std::isalpha(ch) && ch != '_' && ch != '#') {
-                    ERROR(firstLocation, "unknown token '" << (char) ch << "'");
+                    REPORT_ERROR(firstLocation, "unknown token '" << (char) ch << "'");
                 }
 
                 const char* begin = currentFilePosition;

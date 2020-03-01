@@ -87,13 +87,12 @@ struct Note {
     std::string message;
 };
 
-class CompileError {
-public:
-    CompileError(SourceLocation location, std::string&& message, std::vector<Note>&& notes)
+struct CompileError : std::exception {
+    CompileError(SourceLocation location, std::string&& message, std::vector<Note>&& notes = {})
     : location(location), message(std::move(message)), notes(std::move(notes)) {}
+    const char* what() const noexcept override { return message.c_str(); }
     void print() const;
 
-private:
     SourceLocation location;
     std::string message;
     std::vector<Note> notes;
@@ -107,9 +106,8 @@ void printColored(const T& text, llvm::raw_ostream::Colors color) {
 }
 
 [[noreturn]] void abort(StringFormatter& message);
-[[noreturn]] void errorWithNotes(SourceLocation location, std::vector<Note>&& notes, StringFormatter& message);
-[[noreturn]] void error(SourceLocation location, StringFormatter& message);
-void warn(SourceLocation location, StringFormatter& message);
+void reportError(SourceLocation location, StringFormatter& message, llvm::ArrayRef<Note> notes = {});
+void reportWarning(SourceLocation location, StringFormatter& message);
 
 enum class WarningMode { Default, Suppress, TreatAsErrors };
 
@@ -120,25 +118,32 @@ enum class WarningMode { Default, Suppress, TreatAsErrors };
         abort(s); \
     }
 
-#define ERROR_WITH_NOTES(location, notes, args) \
-    { \
-        StringFormatter s; \
-        s << args; \
-        errorWithNotes(location, notes, s); \
-    }
-
 #define ERROR(location, args) \
     { \
         StringFormatter s; \
         s << args; \
-        error(location, s); \
+        throw CompileError(location, std::move(s.str())); \
+    }
+
+#define ERROR_WITH_NOTES(location, notes, args) \
+    { \
+        StringFormatter s; \
+        s << args; \
+        throw CompileError(location, std::move(s.str()), notes); \
+    }
+
+#define REPORT_ERROR(location, args) \
+    { \
+        StringFormatter s; \
+        s << args; \
+        reportError(location, s, {}); \
     }
 
 #define WARN(location, args) \
     { \
         StringFormatter s; \
         s << args; \
-        warn(location, s); \
+        reportWarning(location, s); \
     }
 
 std::string getCCompilerPath();
