@@ -355,7 +355,9 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
         lhs.setMoved(false);
     }
 
-    if (onAssign) onAssign(lhs);
+    if (currentInitializedFields) {
+        currentInitializedFields->insert(lhs.getFieldDecl());
+    }
 }
 
 static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, Type* convertedType) {

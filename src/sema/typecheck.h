@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/Support/ErrorOr.h>
 #pragma warning(pop)
@@ -31,7 +32,8 @@ struct CompileOptions;
 class Typechecker {
 public:
     Typechecker(const CompileOptions& options)
-    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), isPostProcessing(false), options(options) {}
+    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentInitializedFields(nullptr),
+      isPostProcessing(false), options(options) {}
     void typecheckModule(Module& module, const PackageManifest* manifest);
 
 private:
@@ -120,11 +122,11 @@ private:
     bool isWarningEnabled(llvm::StringRef warning) const;
 
 private:
-    std::function<void(Expr&)> onAssign;
     Module* currentModule;
     SourceFile* currentSourceFile;
     FunctionDecl* currentFunction;
     std::vector<Stmt*> currentControlStmts;
+    llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     Type functionReturnType;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;

@@ -2,6 +2,7 @@
 #pragma warning(push, 0)
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
+#include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/module.h"
 #include "../driver/driver.h"
@@ -306,8 +307,7 @@ done:
 }
 
 void Typechecker::postProcess() {
-    SAVE_STATE(isPostProcessing);
-    isPostProcessing = true;
+    llvm::SaveAndRestore setPostProcessing(isPostProcessing, true);
 
     while (!declsToTypecheck.empty()) {
         auto currentDeclsToTypecheck = std::move(declsToTypecheck);

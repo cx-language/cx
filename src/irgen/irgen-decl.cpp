@@ -2,6 +2,7 @@
 #pragma warning(push, 0)
 #include <llvm/IR/CFG.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/mangle.h"
 
@@ -187,8 +188,7 @@ llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
 }
 
 void IRGenerator::codegenDecl(const Decl& decl) {
-    SAVE_STATE(currentDecl);
-    currentDecl = &decl;
+    llvm::SaveAndRestore setCurrentDecl(currentDecl, &decl);
 
     switch (decl.getKind()) {
         case DeclKind::ParamDecl:

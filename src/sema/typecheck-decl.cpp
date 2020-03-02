@@ -1,6 +1,7 @@
 #include "typecheck.h"
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallPtrSet.h>
+#include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "c-import.h"
 #include "../ast/module.h"
@@ -152,8 +153,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     TypeDecl* receiverTypeDecl = decl.getTypeDecl();
 
     getCurrentModule()->getSymbolTable().pushScope(&decl);
-    SAVE_STATE(currentFunction);
-    currentFunction = &decl;
+    llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
 
     typecheckParams(decl.getParams(), decl.getAccessLevel());
 
@@ -167,12 +167,9 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     }
 
     if (!decl.isExtern()) {
-        SAVE_STATE(functionReturnType);
-        functionReturnType = decl.getReturnType();
-
         llvm::SmallPtrSet<FieldDecl*, 32> initializedFields;
-        SAVE_STATE(onAssign);
-        onAssign = [&](Expr& lhs) { initializedFields.insert(lhs.getFieldDecl()); };
+        llvm::SaveAndRestore setReturnType(functionReturnType, decl.getReturnType());
+        llvm::SaveAndRestore setInitializedFields(currentInitializedFields, &initializedFields);
 
         if (receiverTypeDecl) {
             Type thisType = receiverTypeDecl->getTypeForPassing();

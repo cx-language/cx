@@ -49,25 +49,6 @@ static void append(TargetContainer& target, const SourceContainer& source) {
     target.insert(target.end(), source.begin(), source.end());
 }
 
-template<typename T>
-struct StateSaver {
-    StateSaver(T& state) : state(state), savedState(std::move(state)) {}
-    ~StateSaver() { state = std::move(savedState); }
-
-private:
-    T& state;
-    T savedState;
-};
-
-template<typename T>
-StateSaver<T> makeStateSaver(T& state) {
-    return StateSaver<T>(state);
-}
-
-#define CONCAT_IMPL(a, b) a##b
-#define CONCAT(a, b) CONCAT_IMPL(a, b)
-#define SAVE_STATE(state) const auto CONCAT(stateSaver, __COUNTER__) = makeStateSaver(state)
-
 #define NOTNULL(x) (ASSERT(x), x)
 
 class StringFormatter : public llvm::raw_string_ostream {
