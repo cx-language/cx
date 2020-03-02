@@ -106,55 +106,18 @@ Token Parser::parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInf
     return consumeToken();
 }
 
-void Parser::checkStmtTerminatorConsistency(Token::Kind currentTerminator, llvm::function_ref<SourceLocation()> getLocation) {
-    static Token::Kind previousTerminator = Token::None;
-    static const char* filePath = nullptr;
-
-    if (filePath != lexer.getFilePath()) {
-        filePath = lexer.getFilePath();
-        previousTerminator = Token::None;
-    }
-
-    if (previousTerminator == Token::None) {
-        previousTerminator = currentTerminator;
-    } else if (previousTerminator != currentTerminator) {
-        WARN(getLocation(), "inconsistent statement terminator, expected " << quote(previousTerminator));
-    }
-}
-
-bool isNewline(char ch) {
-    return ch == '\n';
-}
-
 void Parser::parseStmtTerminator(const char* contextInfo) {
-    if (getCurrentLocation().line != lookAhead(-1).getLocation().line) {
-        checkStmtTerminatorConsistency(Token::Newline, [this] {
-            auto source = getCurrentSource();
-            auto line = lookAhead(-1).getLocation().line;
-            while (--line) {
-                source = source.drop_until(isNewline).drop_front();
-            }
-            auto column = source.find_first_of("\r\n") + 1;
-            return SourceLocation(getCurrentLocation().file, lookAhead(-1).getLocation().line, static_cast<SourceLocation::IntegerType>(column));
-        });
-        return;
-    }
+    if (getCurrentLocation().line != lookAhead(-1).getLocation().line) return;
 
     switch (currentToken()) {
         case Token::RightBrace:
-            checkStmtTerminatorConsistency(Token::Newline, std::bind(&Parser::getCurrentLocation, this));
             return;
         case Token::Semicolon:
-            checkStmtTerminatorConsistency(Token::Semicolon, std::bind(&Parser::getCurrentLocation, this));
             consumeToken();
             return;
         default:
             unexpectedToken(currentToken(), { Token::Newline, Token::Semicolon }, contextInfo);
     }
-}
-
-llvm::StringRef Parser::getCurrentSource() const {
-    return Lexer::fileBuffers.back()->getBuffer();
 }
 
 /// argument-list ::= '(' ')' | '(' nonempty-argument-list ')'
