@@ -5,3 +5,8 @@ struct C {
         return
     }
 }
+
+void main() {
+    var c = C()
+    c.f()
+}

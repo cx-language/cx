@@ -9,3 +9,8 @@ struct S: Copyable {
         var j = 5;
     }
 }
+
+void main() {
+    var s = S();
+    var t = S(1);
+}
