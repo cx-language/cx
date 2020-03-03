@@ -69,6 +69,7 @@ struct Note {
 };
 
 struct CompileError : std::exception {
+    CompileError() = default;
     CompileError(SourceLocation location, std::string&& message, std::vector<Note>&& notes = {})
     : location(location), message(std::move(message)), notes(std::move(notes)) {}
     const char* what() const noexcept override { return message.c_str(); }

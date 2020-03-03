@@ -3,4 +3,5 @@
 void main() {
     var a = ff; // CHECK: [[@LINE]]:13: error: unknown identifier 'ff'
     var b = xx; // CHECK: [[@LINE]]:13: error: unknown identifier 'xx'
+    var c = b;  // CHECK-NOT: unknown identifier 'b'
 }

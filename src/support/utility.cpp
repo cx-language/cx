@@ -74,6 +74,8 @@ void delta::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm:
 }
 
 void CompileError::print() const {
+    if (message.empty()) return;
+
     StringFormatter s;
     s << message;
     reportError(location, s, notes);

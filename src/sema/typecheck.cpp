@@ -376,7 +376,12 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             currentSourceFile = &sourceFile;
 
             if (!decl->isVarDecl()) {
-                typecheckTopLevelDecl(*decl, manifest);
+                try {
+                    typecheckTopLevelDecl(*decl, manifest);
+                } catch (const CompileError& error) {
+                    error.print();
+                }
+
                 postProcess();
             }
         }

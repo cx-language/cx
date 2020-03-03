@@ -1447,11 +1447,12 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
 }
 
 Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
-    llvm::Optional<Type> type;
+    Type type;
 
     switch (expr.getKind()) {
         case ExprKind::VarExpr:
             type = typecheckVarExpr(llvm::cast<VarExpr>(expr), useIsWriteOnly);
+            if (!type) throw CompileError();
             break;
         case ExprKind::StringLiteralExpr:
             type = typecheckStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
@@ -1512,12 +1513,15 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
             break;
     }
 
-    if (type->isOptionalType() && isGuaranteedNonNull(expr)) {
-        expr.setType(type->removeOptional());
+    if (!type) return type;
+
+    if (type.isOptionalType() && isGuaranteedNonNull(expr)) {
+        expr.setType(type.removeOptional());
     } else {
-        expr.setType(*type);
+        expr.setType(type);
     }
-    expr.setAssignableType(*type);
+
+    expr.setAssignableType(type);
     return expr.getType();
 }
 

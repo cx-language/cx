@@ -162,43 +162,47 @@ void Typechecker::typecheckCompoundStmt(CompoundStmt& compoundStmt) {
 }
 
 void Typechecker::typecheckStmt(Stmt*& stmt) {
-    switch (stmt->getKind()) {
-        case StmtKind::ReturnStmt:
-            typecheckReturnStmt(llvm::cast<ReturnStmt>(*stmt));
-            break;
-        case StmtKind::VarStmt:
-            typecheckVarStmt(llvm::cast<VarStmt>(*stmt));
-            break;
-        case StmtKind::ExprStmt:
-            typecheckExpr(llvm::cast<ExprStmt>(*stmt).getExpr());
-            break;
-        case StmtKind::DeferStmt:
-            typecheckExpr(llvm::cast<DeferStmt>(*stmt).getExpr());
-            break;
-        case StmtKind::IfStmt:
-            typecheckIfStmt(llvm::cast<IfStmt>(*stmt));
-            break;
-        case StmtKind::SwitchStmt:
-            typecheckSwitchStmt(llvm::cast<SwitchStmt>(*stmt));
-            break;
-        case StmtKind::WhileStmt:
-            typecheckWhileStmt(llvm::cast<WhileStmt>(*stmt));
-            break;
-        case StmtKind::ForStmt: {
-            typecheckExpr(llvm::cast<ForStmt>(*stmt).getRangeExpr());
-            auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isWhileStmt(); });
-            stmt = llvm::cast<ForStmt>(*stmt).lower(nestLevel);
-            typecheckStmt(stmt);
-            break;
+    try {
+        switch (stmt->getKind()) {
+            case StmtKind::ReturnStmt:
+                typecheckReturnStmt(llvm::cast<ReturnStmt>(*stmt));
+                break;
+            case StmtKind::VarStmt:
+                typecheckVarStmt(llvm::cast<VarStmt>(*stmt));
+                break;
+            case StmtKind::ExprStmt:
+                typecheckExpr(llvm::cast<ExprStmt>(*stmt).getExpr());
+                break;
+            case StmtKind::DeferStmt:
+                typecheckExpr(llvm::cast<DeferStmt>(*stmt).getExpr());
+                break;
+            case StmtKind::IfStmt:
+                typecheckIfStmt(llvm::cast<IfStmt>(*stmt));
+                break;
+            case StmtKind::SwitchStmt:
+                typecheckSwitchStmt(llvm::cast<SwitchStmt>(*stmt));
+                break;
+            case StmtKind::WhileStmt:
+                typecheckWhileStmt(llvm::cast<WhileStmt>(*stmt));
+                break;
+            case StmtKind::ForStmt: {
+                typecheckExpr(llvm::cast<ForStmt>(*stmt).getRangeExpr());
+                auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isWhileStmt(); });
+                stmt = llvm::cast<ForStmt>(*stmt).lower(nestLevel);
+                typecheckStmt(stmt);
+                break;
+            }
+            case StmtKind::BreakStmt:
+                typecheckBreakStmt(llvm::cast<BreakStmt>(*stmt));
+                break;
+            case StmtKind::ContinueStmt:
+                typecheckContinueStmt(llvm::cast<ContinueStmt>(*stmt));
+                break;
+            case StmtKind::CompoundStmt:
+                typecheckCompoundStmt(llvm::cast<CompoundStmt>(*stmt));
+                break;
         }
-        case StmtKind::BreakStmt:
-            typecheckBreakStmt(llvm::cast<BreakStmt>(*stmt));
-            break;
-        case StmtKind::ContinueStmt:
-            typecheckContinueStmt(llvm::cast<ContinueStmt>(*stmt));
-            break;
-        case StmtKind::CompoundStmt:
-            typecheckCompoundStmt(llvm::cast<CompoundStmt>(*stmt));
-            break;
+    } catch (const CompileError& error) {
+        error.print();
     }
 }

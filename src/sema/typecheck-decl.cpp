@@ -181,11 +181,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
         if (decl.hasBody()) {
             for (auto& stmt : decl.getBody()) {
-                try {
-                    typecheckStmt(stmt);
-                } catch (const CompileError& error) {
-                    error.print();
-                }
+                typecheckStmt(stmt);
 
                 if (decl.isInitDecl()) {
                     if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
@@ -291,12 +287,24 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     if (!isGlobal && getCurrentModule()->getSymbolTable().contains(decl.getName())) {
         ERROR(decl.getLocation(), "redefinition of '" << decl.getName() << "'");
     }
+
     if (isGlobal && decl.getInitializer()->isUndefinedLiteralExpr()) {
         ERROR(decl.getLocation(), "global variables cannot be uninitialized");
     }
 
+    try {
+        typecheckExpr(*decl.getInitializer());
+    } catch (const CompileError&) {
+        if (!isGlobal) getCurrentModule()->addToSymbolTable(decl, false);
+        throw;
+    }
+
+    if (!isGlobal) getCurrentModule()->addToSymbolTable(decl, false);
+
     Type declaredType = decl.getType();
-    Type initializerType = typecheckExpr(*decl.getInitializer());
+    Type initializerType = decl.getInitializer()->getType();
+
+    if (!initializerType) return;
 
     if (declaredType) {
         bool isLocalVariable = decl.getParent() && decl.getParent()->isFunctionDecl();
@@ -319,10 +327,6 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
         }
 
         decl.setType(initializerType.withMutability(decl.getType().getMutability()));
-    }
-
-    if (!isGlobal) {
-        getCurrentModule()->addToSymbolTable(decl, false);
     }
 
     if (!decl.getType().isImplicitlyCopyable()) {
