@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void foo(int a) {
     var d = 3;

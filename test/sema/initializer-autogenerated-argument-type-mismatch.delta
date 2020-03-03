@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void main() {
     // CHECK: [[@LINE+1]]:15: error: invalid argument #1 type 'float64' to 'S', expected 'int'

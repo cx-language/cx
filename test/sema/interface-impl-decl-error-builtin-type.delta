@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 
 // CHECK: [[@LINE+1]]:14: error: 'int' is not an interface
 struct Z<T>: int {}

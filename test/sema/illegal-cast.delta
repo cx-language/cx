@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void main() {
     // CHECK: [[@LINE+1]]:13: error: illegal cast from 'bool' to 'int**'

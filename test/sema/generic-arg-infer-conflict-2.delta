@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void f(uint a) {
     // CHECK: [[@LINE+1]]:22: error: couldn't infer generic parameter 'T' of 'Range' because of conflicting argument types 'float64' and 'uint'

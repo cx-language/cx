@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 // XFAIL: *
 // TODO: Implement null check analysis to handle this case.
 

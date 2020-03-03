@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void f(void(int, int) a) {
     // CHECK: [[@LINE+1]]:11: error: invalid argument #2 type 'bool' to 'a', expected 'int'

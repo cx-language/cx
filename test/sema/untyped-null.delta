@@ -1,4 +1,4 @@
-// RUN: not %delta -typecheck %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void main() {
     // CHECK: [[@LINE+1]]:9: error: couldn't infer type of 'foo', add a type annotation

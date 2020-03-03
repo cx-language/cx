@@ -1,1 +1,1 @@
-// RUN: not %delta -typecheck %p/inputs/multifile-error/a.delta %p/inputs/multifile-error/b.delta | %FileCheck -match-full-lines -strict-whitespace %p/inputs/multifile-error/b.delta
+// RUN: %not %delta -typecheck %p/inputs/multifile-error/a.delta %p/inputs/multifile-error/b.delta | %FileCheck -match-full-lines -strict-whitespace %p/inputs/multifile-error/b.delta

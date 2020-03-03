@@ -1,4 +1,4 @@
-// RUN: not %delta -parse %s | %FileCheck %s
+// RUN: %not %delta -parse %s | %FileCheck %s
 
 // CHECK: [[@LINE+1]]:16: error: invalid digit '8' in octal literal
 var a = 0o000378;

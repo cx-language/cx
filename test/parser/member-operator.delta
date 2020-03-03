@@ -1,4 +1,4 @@
-// RUN: not %delta -parse %s | %FileCheck %s
+// RUN: %not %delta -parse %s | %FileCheck %s
 
 struct Foo: Copyable {
     // CHECK: 5:10: error: operator functions other than subscript must be non-member functions

@@ -1,4 +1,4 @@
-// RUN: not %delta -parse %s
+// RUN: %not %delta -parse %s
 
 // CHECK: [[@LINE+1]]:1: error: unterminated block comment
 /*
