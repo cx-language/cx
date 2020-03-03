@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cassert>
-#include <ostream>
+#include <iosfwd>
 #include <string>
 #include <utility> // std::move
 #include <vector>
@@ -24,9 +24,7 @@ namespace delta {
 
 struct Type;
 
-inline std::ostream& operator<<(std::ostream& stream, llvm::StringRef string) {
-    return stream.write(string.data(), string.size());
-}
+std::ostream& operator<<(std::ostream& stream, llvm::StringRef string);
 
 template<typename SourceContainer, typename Mapper>
 auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(mapper(*source.begin()))> {

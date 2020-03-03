@@ -3,7 +3,6 @@
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
 #include "decl.h"
-#include "mangle.h"
 #include "token.h"
 
 using namespace delta;

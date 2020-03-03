@@ -1,7 +1,7 @@
 #include "utility.h"
 #include <algorithm>
-#include <cctype>
 #include <fstream>
+#include <ostream>
 #pragma warning(push, 0)
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/ErrorOr.h>
@@ -13,6 +13,10 @@ using namespace delta;
 
 namespace delta {
 extern int errors;
+}
+
+std::ostream& delta::operator<<(std::ostream& stream, llvm::StringRef string) {
+    return stream.write(string.data(), string.size());
 }
 
 std::string delta::readLineFromFile(SourceLocation location) {

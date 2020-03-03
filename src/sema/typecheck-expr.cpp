@@ -12,10 +12,8 @@
 #pragma warning(pop)
 #include "../ast/decl.h"
 #include "../ast/expr.h"
-#include "../ast/mangle.h"
 #include "../ast/module.h"
 #include "../ast/type.h"
-#include "../support/utility.h"
 
 using namespace delta;
 

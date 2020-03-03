@@ -3,7 +3,6 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
-#include "mangle.h"
 #include "../support/utility.h"
 
 using namespace delta;
