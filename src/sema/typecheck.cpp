@@ -177,9 +177,6 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
         case StmtKind::ExprStmt:
             return maySetToNullBeforeEvaluating(var, llvm::cast<ExprStmt>(stmt).getExpr());
 
-        case StmtKind::DeferStmt:
-            return true;
-
         case StmtKind::IfStmt: {
             auto& ifStmt = llvm::cast<IfStmt>(stmt);
             if (auto result = maySetToNullBeforeEvaluating(var, ifStmt.getCondition())) return *result;
@@ -201,6 +198,7 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
 
         case StmtKind::BreakStmt:
         case StmtKind::ContinueStmt:
+        case StmtKind::DeferStmt:
             return false;
 
         case StmtKind::CompoundStmt:

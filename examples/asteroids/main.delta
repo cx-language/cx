@@ -40,7 +40,7 @@ void main() {
 
     defer SDL_DestroyRenderer(renderer);
 
-    mainLoop(renderer!); // FIXME: Shouldn't need to unwrap renderer here.
+    mainLoop(renderer);
 }
 
 void mainLoop(SDL_Renderer* renderer) {

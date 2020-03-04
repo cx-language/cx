@@ -4,6 +4,7 @@ void foo(int*? p) {
     if (p == null) {
         return;
     }
+    defer print("foo");
     // CHECK: [[@LINE+1]]:16: error: cannot unwrap non-optional type 'int*'
     var a = *(p!);
 }
