@@ -158,8 +158,12 @@ static Type toDelta(clang::QualType qualtype) {
                 return BasicType::get(name, {}, mutability);
             }
         }
+        case clang::Type::Vector: {
+            auto& vectorType = llvm::cast<clang::VectorType>(type);
+            return ArrayType::get(toDelta(vectorType.getElementType()), vectorType.getNumElements());
+        }
         default:
-            ERROR(SourceLocation(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualtype.getAsString() << "')");
+            WARN(SourceLocation(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualtype.getAsString() << "')");
             return Type::getInt();
     }
 }
