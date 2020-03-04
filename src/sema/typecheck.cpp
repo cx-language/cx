@@ -52,71 +52,83 @@ static llvm::Optional<bool> memberExprChainsMatch(const MemberExpr& a, const Mem
 }
 
 bool Typechecker::isGuaranteedNonNull(const Expr& expr) const {
-    for (auto* currentControlStmt : llvm::reverse(currentControlStmts)) {
-        if (isGuaranteedNonNull(expr, *currentControlStmt)) return true;
+    if (currentControlStmts.empty()) {
+        auto stmts = currentFunction->getBody().take_while([&](Stmt* s) { return s != currentStmt; });
+
+        for (auto* stmt : llvm::reverse(stmts)) {
+            if (auto* ifStmt = llvm::dyn_cast<IfStmt>(stmt)) {
+                if (isEarlyExitNullCheck(expr, *ifStmt)) return true;
+            } else {
+                if (auto result = maySetToNullBeforeEvaluating(expr, *stmt); result && *result) return !*result;
+            }
+        }
+    } else {
+        for (auto* currentControlStmt : llvm::reverse(currentControlStmts)) {
+            if (isGuaranteedNonNull(expr, *currentControlStmt)) return true;
+        }
     }
+
     return false;
 }
 
 namespace {
-struct NullCheckInfo {
+struct NullCheck {
     const Expr* nullableValue = nullptr;
     Token::Kind op = Token::None;
-    bool isNullCheck() const { return nullableValue != nullptr; }
+
+    bool isNullCheckFor(const Expr& expr) {
+        if (!nullableValue) return false;
+
+        switch (expr.getKind()) {
+            case ExprKind::VarExpr: {
+                auto* decl = llvm::cast<VarExpr>(expr).getDecl();
+                auto* lhs = llvm::dyn_cast<VarExpr>(nullableValue);
+                return decl && lhs && lhs->getDecl() == decl;
+            }
+            case ExprKind::MemberExpr: {
+                auto* lhs = llvm::dyn_cast<MemberExpr>(nullableValue);
+                return lhs && memberExprChainsMatch(llvm::cast<MemberExpr>(expr), *lhs) == true;
+            }
+            default:
+                return false;
+        }
+    }
 };
 } // namespace
 
-static NullCheckInfo analyzeNullCheck(const Expr& condition) {
-    NullCheckInfo nullCheckInfo;
+static NullCheck analyzeNullCheck(const Expr& condition) {
+    NullCheck nullCheck;
 
     if (condition.getType().isOptionalType()) {
-        nullCheckInfo.nullableValue = &condition;
-        nullCheckInfo.op = Token::NotEqual;
+        nullCheck.nullableValue = &condition;
+        nullCheck.op = Token::NotEqual;
     } else if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&condition)) {
         if (binaryExpr->getRHS().isNullLiteralExpr()) {
-            nullCheckInfo.nullableValue = &binaryExpr->getLHS();
-            nullCheckInfo.op = binaryExpr->getOperator();
+            nullCheck.nullableValue = &binaryExpr->getLHS();
+            nullCheck.op = binaryExpr->getOperator();
         }
     } else if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(&condition)) {
         if (unaryExpr->getOperator() == Token::Not) {
-            nullCheckInfo = analyzeNullCheck(unaryExpr->getOperand());
-            nullCheckInfo.op = nullCheckInfo.op == Token::Equal ? Token::NotEqual : Token::Equal;
+            nullCheck = analyzeNullCheck(unaryExpr->getOperand());
+            nullCheck.op = nullCheck.op == Token::Equal ? Token::NotEqual : Token::Equal;
         }
     }
 
-    if (nullCheckInfo.isNullCheck()) {
-        ASSERT(nullCheckInfo.op == Token::NotEqual || nullCheckInfo.op == Token::Equal);
+    if (nullCheck.nullableValue) {
+        ASSERT(nullCheck.op == Token::NotEqual || nullCheck.op == Token::Equal);
     }
 
-    return nullCheckInfo;
+    return nullCheck;
 }
 
 bool Typechecker::isGuaranteedNonNull(const Expr& expr, const Stmt& currentControlStmt) const {
     if (!currentControlStmt.isIfStmt() && !currentControlStmt.isWhileStmt()) return false;
     auto& condition = getIfOrWhileCondition(currentControlStmt);
-    NullCheckInfo nullCheckInfo = analyzeNullCheck(condition);
-    if (!nullCheckInfo.isNullCheck()) return false;
-
-    switch (expr.getKind()) {
-        case ExprKind::VarExpr: {
-            auto* decl = llvm::cast<VarExpr>(expr).getDecl();
-            if (!decl) return false;
-            auto* lhs = llvm::dyn_cast<VarExpr>(nullCheckInfo.nullableValue);
-            if (!lhs || lhs->getDecl() != decl) return false;
-            break;
-        }
-        case ExprKind::MemberExpr: {
-            auto* lhs = llvm::dyn_cast<MemberExpr>(nullCheckInfo.nullableValue);
-            if (!lhs) return false;
-            if (memberExprChainsMatch(llvm::cast<MemberExpr>(expr), *lhs) != true) return false;
-            break;
-        }
-        default:
-            return false;
-    }
+    NullCheck nullCheck = analyzeNullCheck(condition);
+    if (!nullCheck.isNullCheckFor(expr)) return false;
 
     llvm::ArrayRef<Stmt*> stmts;
-    switch (nullCheckInfo.op) {
+    switch (nullCheck.op) {
         case Token::NotEqual:
             stmts = getIfOrWhileThenBody(currentControlStmt);
             break;
@@ -133,6 +145,19 @@ bool Typechecker::isGuaranteedNonNull(const Expr& expr, const Stmt& currentContr
 
     for (auto& stmt : stmts) {
         if (auto result = maySetToNullBeforeEvaluating(expr, *stmt)) return !*result;
+    }
+
+    return false;
+}
+
+bool Typechecker::isEarlyExitNullCheck(const Expr& expr, const IfStmt& stmt) {
+    NullCheck nullCheck = analyzeNullCheck(stmt.getCondition());
+    if (!nullCheck.isNullCheckFor(expr)) return false;
+
+    if (nullCheck.op == Token::Equal) {
+        for (auto* childStmt : stmt.getThenBody()) {
+            if (childStmt->isReturnStmt()) return true;
+        }
     }
 
     return false;

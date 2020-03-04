@@ -32,7 +32,7 @@ struct CompileOptions;
 class Typechecker {
 public:
     Typechecker(const CompileOptions& options)
-    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentInitializedFields(nullptr),
+    : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
       isPostProcessing(false), options(options) {}
     void typecheckModule(Module& module, const PackageManifest* manifest);
 
@@ -110,6 +110,9 @@ private:
     bool isGuaranteedNonNull(const Expr& expr) const;
     bool isGuaranteedNonNull(const Expr& expr, const Stmt& currentControlStmt) const;
 
+    /// Returns true if the given if-statement returns when the given variable is null.
+    static bool isEarlyExitNullCheck(const Expr& expr, const IfStmt& stmt);
+
     /// Returns true if executing the given statement/expression/block might result in 'null' being
     /// assigned to the given variable before evaluating it. Returns false if the variable is
     /// guaranteed to be null when evaluating it. Returns an empty optional if the expression didn't
@@ -125,6 +128,7 @@ private:
     Module* currentModule;
     SourceFile* currentSourceFile;
     FunctionDecl* currentFunction;
+    Stmt* currentStmt;
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     Type functionReturnType;

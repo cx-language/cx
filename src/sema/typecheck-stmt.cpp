@@ -186,9 +186,10 @@ void Typechecker::typecheckStmt(Stmt*& stmt) {
                 typecheckWhileStmt(llvm::cast<WhileStmt>(*stmt));
                 break;
             case StmtKind::ForStmt: {
-                typecheckExpr(llvm::cast<ForStmt>(*stmt).getRangeExpr());
+                auto* forStmt = llvm::cast<ForStmt>(stmt);
+                typecheckExpr(forStmt->getRangeExpr());
                 auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isWhileStmt(); });
-                stmt = llvm::cast<ForStmt>(*stmt).lower(nestLevel);
+                stmt = forStmt->lower(nestLevel);
                 typecheckStmt(stmt);
                 break;
             }

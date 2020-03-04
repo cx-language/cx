@@ -1,6 +1,4 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
-// XFAIL: *
-// TODO: Implement null check analysis to handle this case.
 
 void foo(int*? p) {
     if (p == null) {

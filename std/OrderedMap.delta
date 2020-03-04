@@ -115,7 +115,7 @@ struct OrderedMap<Key, Value> {
         if (n == null) {
             return -1;
         }
-        return 1 + *max(height(n!.left), height(n!.right));
+        return 1 + max(height(n.left), height(n.right));
     }
 
     private void setBalance(AVLnode<Key, Value>* n) {
@@ -176,10 +176,10 @@ struct OrderedMap<Key, Value> {
             return;
         }
 
-        var n = root!;
-        var parent = root!;
+        var n = root;
+        var parent = root;
         AVLnode<Key, Value>*? delNode = null;
-        var child = root;
+        AVLnode<Key, Value>*? child = root;
 
         while (child != null) {
             parent = n;
@@ -249,12 +249,12 @@ struct OrderedMap<Key, Value> {
         if (found == null) {
             return null;
         }
-        var lower = lowerNode(found!);
+        var lower = lowerNode(found);
 
         if (lower == null) {
             return null;
         }
-        return lower!.entry.key;
+        return lower.entry.key;
     }
 
     private AVLnode<Key, Value>* maxInSubtree(AVLnode<Key, Value>* node) {
@@ -298,12 +298,12 @@ struct OrderedMap<Key, Value> {
             return null;
         }
 
-        var higher = higherNode(found!);
+        var higher = higherNode(found);
 
         if (higher == null) {
             return null;
         }
-        return higher!.entry.key;
+        return higher.entry.key;
     }
 
     /// Returns the node that contains the key immediately larger than the key of the given node,
@@ -323,13 +323,12 @@ struct OrderedMap<Key, Value> {
         return null;
     }
 
-
     /// Returns the smallest element in the Map, or null if the Map is empty.
     Key*? first() {
         if (root == null) {
             return null;
         }
-        return minInSubtree(root!).entry.key;
+        return minInSubtree(root).entry.key;
     }
 
     /// Returns the node with the smallest key in the Map, or null if the Map is empty.
@@ -337,7 +336,7 @@ struct OrderedMap<Key, Value> {
         if (root == null) {
             return null;
         }
-        return minInSubtree(root!);
+        return minInSubtree(root);
     }
 
     /// Returns the largest element in the Map, or null if the map is empty.
@@ -345,7 +344,7 @@ struct OrderedMap<Key, Value> {
         if (root == null) {
             return null;
         }
-        return maxInSubtree(root!).entry.key;
+        return maxInSubtree(root).entry.key;
     }
 
     /// Returns the node with the largest key in the Map, or null if the Map is empty.
@@ -353,7 +352,7 @@ struct OrderedMap<Key, Value> {
         if (root == null) {
             return null;
         }
-        return maxInSubtree(root!);
+        return maxInSubtree(root);
     }
 
     /// Iterate over the map, in order

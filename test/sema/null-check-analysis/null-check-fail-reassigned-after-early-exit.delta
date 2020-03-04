@@ -1,0 +1,12 @@
+// RUN: %delta -typecheck %s | %FileCheck %s
+
+extern void bar(int*?* p);
+
+void foo(int*? p) {
+    if (p == null) {
+        return;
+    }
+    bar(p);
+    // CHECK: [[@LINE+1]]:13: warning: dereferencing value of optional type 'int*?' which may be null; unwrap the value with a postfix '!' to silence this warning
+    var a = *p;
+}

@@ -181,7 +181,10 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
         if (decl.hasBody()) {
             for (auto& stmt : decl.getBody()) {
-                typecheckStmt(stmt);
+                {
+                    llvm::SaveAndRestore setCurrentStmt(currentStmt, stmt);
+                    typecheckStmt(stmt);
+                }
 
                 if (decl.isInitDecl()) {
                     if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {

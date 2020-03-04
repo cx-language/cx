@@ -1511,9 +1511,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
             break;
     }
 
-    if (!type) return type;
-
-    if (type.isOptionalType() && isGuaranteedNonNull(expr)) {
+    if (!useIsWriteOnly && type.isOptionalType() && isGuaranteedNonNull(expr)) {
         expr.setType(type.removeOptional());
     } else {
         expr.setType(type);
