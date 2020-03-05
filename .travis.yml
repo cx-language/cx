@@ -25,6 +25,7 @@ addons:
             - g++-7
             - libstdc++-7-dev
             - lcov
+            - pandoc
 
 env:
     global:
@@ -79,5 +80,5 @@ script:
 after_success:
     - if [[ $CXXFLAGS == *"--coverage"* ]]; then
           coveralls --exclude test --exclude llvm --exclude $LLVM_TARBALL_NAME --exclude CMakeFiles;
-          scripts/update-delta-sandbox.sh;
+          scripts/ci-update-website.sh;
       fi

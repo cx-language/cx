@@ -6,7 +6,7 @@
 
 \begin{grammar}
 \rule{assignment-statement} \nonterminal{lvalue-expression} \code{=} \nonterminal{expression} \code{;}\\
-\rule{assignment-statement} \code{_} \code{=} \nonterminal{expression} \code{;}
+\rule{assignment-statement} \code{\_} \code{=} \nonterminal{expression} \code{;}
 \end{grammar}
 
 Assignments in Delta don't return any value. This applies to compound
@@ -15,7 +15,7 @@ this obsoletes the two different forms of \code{++} and \code{--}, so only the
 postfix versions are valid as syntactic sugar for \code{+= 1} and \code{-= 1},
 respectively.
 
-The assignment to \code{_}, called the \nonterminal{discarding-assignment}, can
+The assignment to \code{\_}, called the \nonterminal{discarding-assignment}, can
 be used to ignore the result of the right-hand side expression, suppressing any
 compilation errors or warnings that would otherwise be emitted.
 

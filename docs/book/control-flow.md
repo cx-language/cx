@@ -1,76 +1,97 @@
-# Control Flow
-
-## if
-
-An if-statement looks like this:
-
-```
-if (a) {
-    // ...
-} else if (b) {
-    // ...
-} else {
-    // ...
-}
-```
+# Control flow
 
 ## for
 
-There is no C-style for-loop. Instead we have a for-each, aka a range-based for-
-loop:
+The for-loop iterates over each element in the range expression.
+The range may be anything that has an `iterator()` method that returns an [iterator](iterators.html).
 
-```
-for (var element in range) {
-    // ...
+```cs
+void main() {
+    println("the range can be any collection");
+    for (var element in [1, 2, 3]) {
+        println(element);
+    }
+
+    println("or an inclusive numeric range");
+    for (var element in 4...6) {
+        println(element);
+    }
+
+    println("or an exclusive numeric range");
+    for (var element in 7..9) {
+        println(element);
+    }
 }
 ```
-
-This iterates over each element in the range-expression.
 
 ## while
 
-A while-loop has the following syntax:
+The while-loop loops until its condition evaluates to false.
 
-```
-while (a) {
-    // ...
+```cs
+void main() {
+    int i = 0;
+    while (i < 3) {
+        println(i); // prints: 0 1 2
+        i++;
+    }
 }
 ```
 
-## do-while
+## if
 
-A do-while-loop (not implemented yet) is the same as a while-loop, except that
-it checks the condition at the end of each iteration:
+```cs
+void main() {
+    var answer = 42;
 
-```
-do {
-    // ...
-} while (a)
+    if (answer == 0) {
+        println("answer is zero");
+    } else if (answer < 0) {
+        println("answer is negative");
+    } else {
+        println("answer is ", answer);
+    }
+
+    // If-expression, aka conditional expression, aka ternary expression.
+    println("answer is ", answer == 42 ? "right" : "wrong");
+}
 ```
 
 ## switch
 
-```
-switch (someValue) {
+Unlike in most C-based languages, the case bodies don't fall through to the next by default,
+so you don't have to manually `break` after each case.
+
+```cs
+switch (value) {
     case 0:
-        // code to execute if someValue equals 0
+        // code to execute if value equals 0
     case 1:
-        // code to execute if someValue equals 1
+        // code to execute if value equals 1
     default:
-        // code to execute if someValue equals something else
+        // code to execute if value equals something else
 }
 ```
 
-Unlike in most C-based languages, the case bodies don't fall through to the one
-below by default. This behavior can be enabled for individual cases using the
-`fallthrough` keyword (not implemented yet).
+## defer
 
-## break
+`defer` defers the execution of a statement to the exits of the current scope.
+This is useful for example when we need to perform some cleanup before returning.
+This avoids the mistake of forgetting to add necessary cleanup calls when we add a new return statement.
 
-Inside loops and case-blocks, you can transfer the control flow outside the
-loop/switch with the `break` statement.
+```cs
+int main() {
+    var p = malloc(sizeof(int)); // allocate some resource
+    defer free(p); // defer deallocation of the resource
 
-## continue
+    if (p == null) {
+        return 1; // free(p) will be called immediately before this return
+    }
 
-Inside loops, you can skip the rest of the loop body and start executing the
-next iteration with the `continue` statement.
+    return 0; // free(p) will be called also before this return
+}
+```
+
+## Future additions
+
+- Add `fallthrough` keyword to explicitly enable switch case fallthrough behavior.

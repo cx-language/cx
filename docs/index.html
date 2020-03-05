@@ -1,0 +1,119 @@
+<div class="intro">
+    <p>
+        Delta is a programming language with the goal of making you more productive at writing efficient software.
+        It supports both low-level and high-level programming, as well as multiple paradigms.
+    </p>
+</div>
+
+<div class="features">
+    <div class="block">
+        <h4>Performance-first approach to common programming patterns</h4>
+        <ul>
+            <li>Non-allocating subtype polymorphism and dynamic dispatch using tagged unions</li>
+            <li>Non-allocating map(), filter(), etc. using lazy iterators</li>
+            <li>Non-allocating string and array operations using slices</li>
+        </ul>
+    </div>
+
+    <div class="block">
+        <h4>Full control over what your code is doing</h4>
+        <ul>
+            <li>No hidden allocations, no implicit deep copies, no runtime</li>
+            <li>Support for ownership-based, reference-counted, and manual memory management</li>
+            <li>Reference-like pointers, and array pointers supporting pointer arithmetic</li>
+        </ul>
+    </div>
+
+    <div class="block">
+        <h4>Speed up the edit-compile-run cycle</h4>
+        <ul>
+            <li>Clean syntax without unnecessary boilerplate</li>
+            <li>No compilation bottlenecks like header files or heavy meta-programming</li>
+            <li>Helpful diagnostics, prefer warnings over errors that get in the way of refactoring</li>
+        </ul>
+    </div>
+
+    <div class="block">
+        <h4>Run fast</h4>
+        <ul>
+            <li>Efficient native machine code optimized using LLVM</li>
+            <li>More optimization opportunities: destructive moves, undefined integer overflow, etc.</li>
+            <li>Follows the "pay only for what you use" principle</li>
+        </ul>
+    </div>
+
+    <div class="block">
+        <h4>Fail fast</h4>
+        <ul>
+            <li>Strongly typed, implicit conversions disallowed by default</li>
+            <li>Compile-time null-safety using nullable types</li>
+            <li>Optional arithmetic overflow checks and array bounds checks</li>
+        </ul>
+    </div>
+
+    <div class="block">
+        <h4>Use existing skills, workflows, and libraries</h4>
+        <ul>
+            <li>Minimal learning curve for C and C++ programmers</li>
+            <li>Doesn't force a specific style or paradigm, lets you choose what suits your project best</li>
+            <li>Ability to import C headers and use C libraries directly</li>
+        </ul>
+    </div>
+
+    <div class="block">
+        <h4>Trade-offs</h4>
+        <ul>
+            <li>Memory safety is the programmer's responsibility</li>
+        </ul>
+    </div>
+
+    <div class="block">
+        <h4>Planned features</h4>
+        <ul>
+            <li>Builtin dependency management and build system</li>
+            <li>Fast compilation</li>
+            <li>Static reflection</li>
+            <li>Error handling</li>
+            <li>Builtin vector types</li>
+            <li>Optional compiler-enforced memory-safe subset</li>
+            <li>Optional runtime checks to alleviate lack of memory safety</li>
+        </ul>
+    </div>
+</div>
+
+<h4>Example code</h4>
+<pre class="sourceCode cs">
+// Mandelbrot set visualizer
+
+struct Complex: Copyable {
+    float r;
+    float i;
+
+    float abs() {
+        return r * r + i * i;
+    }
+}
+
+Complex operator+(Complex* a, Complex* b) {
+    return Complex(a.r + b.r, a.i + b.i);
+}
+
+Complex operator*(Complex* a, Complex* b) {
+    return Complex(a.r * b.r - a.i * b.i, a.r * b.i + a.i * b.r);
+}
+
+void main() {
+    for (var y = -0.9; y < 0.9; y += 0.09) {
+        for (var x = -1.4; x < 0.4; x += 0.045) {
+            var z = Complex(0, 0);
+            for (var _ in 0...100) {
+                z = z * z + Complex(x, y);
+            }
+            var chars = " .:-;!/>)|&IH%*#";
+            var index = clamp(int(z.abs() * 50), 0, chars.size() - 1);
+            print(chars[index]);
+        }
+        print('\n');
+    }
+}
+</pre>

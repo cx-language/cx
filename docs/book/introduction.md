@@ -1,14 +1,12 @@
-__Note:__ This document is incomplete and parts of it may be out of date.
-
 # Introduction
+
+__Note:__ This page is incomplete and parts of it may be out of date.
 
 Delta is a modern system programming language designed as an alternative to C++,
 C, and Rust. The primary goals of Delta are programmer productivity and
 performance. Memory safety is also a priority, but while Delta improves on what
 C++ and C have to offer, it doesn't go as far as Rust at the detriment of
 ergonomics and productivity.
-
-# Why Delta?
 
 ## Better compilation model
 
@@ -57,6 +55,7 @@ supported later.
 ## Faster than C and C++
 
 More optimization opportunities:
+
 - Moves are destructive, removing the need to reset moved-from objects and call
   their destructors, as is required in C++.
 - Pointers can be declared non-aliasing either individually or globally with a
@@ -86,15 +85,23 @@ No C-style cast syntax, only C++-style casts and built-in type constructors.
 Syntax of a lambda returning the result of a single expression, with argument
 type inference:
 
-C++                                         | Delta
---------------------------------------------|-----------------------------------
-`a([&](auto& b) { return b.c(); });`        | `a(b -> b.c());`
+```
+// C++
+a([](auto& b) { return b.c(); });
+
+// Delta
+a(b -> b.c());
+```
 
 Function pointer declaration:
 
-C and C++                                   | Delta
---------------------------------------------|-----------------------------------
-`void (*foo)(int);`                         | `void(int) foo;`
+```
+// C/C++
+void (*f)(int);
+
+// Delta
+void(int) f;
+```
 
 ## Simple and expressive language
 
@@ -217,7 +224,7 @@ for (var (key, value) in myMap) {
 Destructure the return value of a function returning multiple values as a tuple:
 
 ```
-(int a, bool b) foo() {
+(int, bool) foo() {
     var a = 42;
     var b = false;
     return (a, b);

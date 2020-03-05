@@ -1,68 +1,74 @@
 # Functions
 
-Functions are declared as follows:
+Functions don't have to be declared before they're called:
 
-```
-void foo() { }
-```
+```cs
+void main() {
+    println(sum(1, 2)); // prints 3
+}
 
-Parameters go inside the parentheses, like so:
-
-```
-void foo(int a, int b) { }
-```
-
-If the function has a return type, it is specified after the parameter list:
-
-```
-int foo(int a, int b) {
+int sum(int a, int b) {
     return a + b;
 }
 ```
 
-To call the function and assign its return value to a variable:
+Function parameters can have a default value, allowing the parameter to be omitted when calling the function:
 
-```
-var result = foo(1, 2);
-```
+```cs
+void foo(int i = 0) {
+    println(i);
+}
 
-## Multiple Return Values
-
-Functions can return more than one value by returning a tuple of values:
-
-```
-(int key, bool value) foo() {
-    var key = 42;
-    var value = true;
-    return (key, value);
+void main() {
+    foo(42); // prints 42
+    foo(); // prints 0
 }
 ```
 
-## Default Parameter Values
+Functions may be overloaded on parameter types:
 
-Parameters can be declared to have a default value:
+```cs
+void foo(int i) {
+    println("int");
+}
 
-```
-void foo(int i = 42) {
-    // ...
+void foo(bool b) {
+    println("bool");
+}
+
+void main() {
+    foo(42); // prints "int"
+    foo(false); // prints "bool"
 }
 ```
 
-This allows the parameter to be omitted from the function call:
+Functions may be overloaded on parameter names:
 
+```cs
+void foo(a: int) {
+    println("a");
+}
+
+void foo(b: int) {
+    println("b");
+}
+
+void main() {
+    foo(a: 42); // prints "a"
+    foo(b: 42); // prints "b"
+}
 ```
-foo();
+
+Functions can return multiple values:
+
+```cs
+(int, bool) foo() {
+    return (42, true);
+}
+
+void main() {
+    var (i, b) = foo();
+    println(i); // prints 42
+    println(b); // prints true
+}
 ```
-
-in which case `foo` will receive `i` with the value `42`.
-
-## Generic Functions
-
-To define generic functions, specify the type parameters inside angle brackets
-after the function name:
-
-```
-void foo<T>() { }
-```
-
-`T` is a now a placeholder for a type that can be used in the definition of `foo`.

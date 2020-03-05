@@ -6,150 +6,37 @@
 
 The following keywords are reserved and can't be used as identifiers.
 
-\begin{multicols}{3}
-\begin{itemize}[label={}]
-\item \code{addressof}
-\item \code{break}
-\item \code{case}
-\item \code{catch}
-\item \code{const}
-\item \code{continue}
-\item \code{default}
-\item \code{defer}
-\item \code{deinit}
-\item \code{do}
-\item \code{else}
-\item \code{enum}
-\item \code{extern}
-\item \code{fallthrough}
-\item \code{false}
-\item \code{for}
-\item \code{goto}
-\item \code{if}
-\item \code{import}
-\item \code{in}
-\item \code{init}
-\item \code{inline}
-\item \code{interface}
-\item \code{null}
-\item \code{private}
-\item \code{public}
-\item \code{return}
-\item \code{sizeof}
-\item \code{static}
-\item \code{struct}
-\item \code{switch}
-\item \code{this}
-\item \code{throw}
-\item \code{throws}
-\item \code{true}
-\item \code{try}
-\item \code{typealias}
-\item \code{undefined}
-\item \code{var}
-\item \code{while}
-\item \code{_}
-\end{itemize}
-\end{multicols}
+\code{addressof}, \code{break}, \code{case}, \code{catch}, \code{const}, \code{continue}, \code{default}, \code{defer}, \code{deinit},
+\code{do}, \code{else}, \code{enum}, \code{extern}, \code{fallthrough}, \code{false}, \code{for}, \code{goto}, \code{if}, \code{import},
+\code{in}, \code{init}, \code{inline}, \code{interface}, \code{null}, \code{private}, \code{public}, \code{return}, \code{sizeof},
+\code{static}, \code{struct}, \code{switch}, \code{this}, \code{throw}, \code{throws}, \code{true}, \code{try}, \code{typealias},
+\code{undefined}, \code{var}, \code{while}, \code{\_}
 
 \section{Operators and delimiters}
 
 Binary arithmetic operators:
 
-\begin{multicols}{4}
-\begin{itemize}[label={}]
-\item \code{+}
-\item \code{-}
-\item \code{*}
-\item \code{/}
-\item \code{**}
-\item \code{\%}
-\item \code{\&}
-\item \code{\&\&}
-\item \code{|}
-\item \code{||}
-\item \code{\char`\^}
-\item \code{<<}
-\item \code{>>}
-\item \code{+=}
-\item \code{-=}
-\item \code{*=}
-\item \code{/=}
-\item \code{**=}
-\item \code{\%=}
-\item \code{\&=}
-\item \code{\&\&=}
-\item \code{|=}
-\item \code{||=}
-\item \code{\char`\^=}
-\item \code{<<=}
-\item \code{>>=}
-\end{itemize}
-\end{multicols}
+\code{+ - * / ** \% \& \&\& | || \string^ << >> += -= *= /= **= \%= \&= \&\&= |= ||= \string^= <<= >>=}
 
 Binary comparison operators:
 
-\begin{multicols}{4}
-\begin{itemize}[label={}]
-\item \code{==}
-\item \code{!=}
-\item \code{<}
-\item \code{>}
-\item \code{<=}
-\item \code{>=}
-\end{itemize}
-\end{multicols}
+\code{== != < > <= >=}
 
 Miscellaneous binary operators:
 
-\begin{multicols}{4}
-\begin{itemize}[label={}]
-\item \code{=}
-\item \code{..}
-\item \code{...}
-\end{itemize}
-\end{multicols}
+\code{= .. ...}
 
 Unary prefix operators:
 
-\begin{multicols}{4}
-\begin{itemize}[label={}]
-\item \code{+}
-\item \code{-}
-\item \code{*}
-\item \code{\&}
-\item \code{!}
-\item \code{\~}
-\end{itemize}
-\end{multicols}
+\code{+ - * \& ! \~{}}
 
 Unary postfix operators:
 
-\begin{multicols}{4}
-\begin{itemize}[label={}]
-\item \code{++}
-\item \code{--}
-\item \code{!}
-\end{itemize}
-\end{multicols}
+\code{++ -- !}
 
 Delimiters:
 
-\begin{multicols}{4}
-\begin{itemize}[label={}]
-\item \code{(}
-\item \code{[}
-\item \code{\{}
-\item \code{)}
-\item \code{]}
-\item \code{\}}
-\item \code{.}
-\item \code{,}
-\item \code{:}
-\item \code{;}
-\item \code{->}
-\end{itemize}
-\end{multicols}
+\code{( [ \{ ) ] \} . , : ; ->}
 
 From the above sets of operators, the following are overloadable by user code:
 \code{+} (both unary and binary), \code{-} (both unary and binary), \code{*},
@@ -160,8 +47,8 @@ From the above sets of operators, the following are overloadable by user code:
 Delta has two kinds of comments:
 
 \begin{itemize}
-\item Line comments that start with \code{//} and continue until the end of the line.
-\item Block comments that start with \code{/*} and end with \code{*/}. Block comments can be nested.
+    \item Line comments that start with \code{//} and continue until the end of the line.
+    \item Block comments that start with \code{/*} and end with \code{*/}. Block comments can be nested.
 \end{itemize}
 
 \section{Literals}
@@ -169,22 +56,22 @@ Delta has two kinds of comments:
 \subsection{Integer literal}
 
 \begin{grammar}
-\rule{binary-digit} \code{0} | \code{1}\\
-\rule{octal-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7}\\
-\rule{decimal-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
-\rule{nonzero-decimal-digit} \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
-\rule{lowercase-hex-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{a} | \code{b} | \code{c} | \code{d} | \code{e} | \code{f}\\
-\rule{uppercase-hex-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{A} | \code{B} | \code{C} | \code{D} | \code{E} | \code{F}
+    \rule{binary-digit} \code{0} | \code{1}\\
+    \rule{octal-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7}\\
+    \rule{decimal-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
+    \rule{nonzero-decimal-digit} \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}\\
+    \rule{lowercase-hex-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{a} | \code{b} | \code{c} | \code{d} | \code{e} | \code{f}\\
+    \rule{uppercase-hex-digit} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9} | \code{A} | \code{B} | \code{C} | \code{D} | \code{E} | \code{F}
 
-\rule{binary-integer-literal} \code{0b}\nonterminal{binary-digit}+\\
-\rule{octal-integer-literal} \code{0o}\nonterminal{octal-digit}+\\
-\rule{decimal-integer-literal} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}* | \code{0}\\
-\rule{hex-integer-literal} \code{0x}(\nonterminal{lowercase-hex-digit}+ | \nonterminal{uppercase-hex-digit}+)
+    \rule{binary-integer-literal} \code{0b}\nonterminal{binary-digit}+\\
+    \rule{octal-integer-literal} \code{0o}\nonterminal{octal-digit}+\\
+    \rule{decimal-integer-literal} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}* | \code{0}\\
+    \rule{hex-integer-literal} \code{0x}(\nonterminal{lowercase-hex-digit}+ | \nonterminal{uppercase-hex-digit}+)
 
-\rule{integer-literal} \nonterminal{binary-integer-literal}\\
-\rule{integer-literal} \nonterminal{octal-integer-literal}\\
-\rule{integer-literal} \nonterminal{decimal-integer-literal}\\
-\rule{integer-literal} \nonterminal{hex-integer-literal}
+    \rule{integer-literal} \nonterminal{binary-integer-literal}\\
+    \rule{integer-literal} \nonterminal{octal-integer-literal}\\
+    \rule{integer-literal} \nonterminal{decimal-integer-literal}\\
+    \rule{integer-literal} \nonterminal{hex-integer-literal}
 \end{grammar}
 
 \subsection{Floating-point literal}
@@ -192,27 +79,27 @@ Delta has two kinds of comments:
 Floating-point literals have the following form:
 
 \begin{grammar}
-\rule{floating-point-literal} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}*\code{.}\nonterminal{decimal-digit}+\\
-\rule{floating-point-literal} \code{0}\code{.}\nonterminal{decimal-digit}+
+    \rule{floating-point-literal} \nonterminal{nonzero-decimal-digit} \nonterminal{decimal-digit}*\code{.}\nonterminal{decimal-digit}+\\
+    \rule{floating-point-literal} \code{0}\code{.}\nonterminal{decimal-digit}+
 \end{grammar}
 
 \subsection{Boolean literal}
 
 \begin{grammar}
-\rule{boolean-literal} \code{true} | \code{false}
+    \rule{boolean-literal} \code{true} | \code{false}
 \end{grammar}
 
 \subsection{Null literal}
 
 \begin{grammar}
-\rule{null-literal} \code{null}
+    \rule{null-literal} \code{null}
 \end{grammar}
 
 \subsection{String literal}
 
 \begin{grammar}
-\rule{string-literal} \code{"}(\nonterminal{character} | \nonterminal{interpolated-expression})*\code{"}\\
-\rule{interpolated-expression} \code{\$\{} \nonterminal{expression} \code{\}}
+    \rule{string-literal} \code{"}(\nonterminal{character} | \nonterminal{interpolated-expression})*\code{"}\\
+    \rule{interpolated-expression} \code{\$\{} \nonterminal{expression} \code{\}}
 \end{grammar}
 
 \subsection{Array literal}
@@ -245,7 +132,7 @@ form `\nonterminal{identifier} \code{:} \nonterminal{identifier}'.
 
 \begin{grammar}
 \rule{identifier-first-character} upper- or lowercase letter \code{A} through \code{Z}\\
-\rule{identifier-first-character} \code{_}
+\rule{identifier-first-character} \code{\_}
 
 \rule{identifier-character} \nonterminal{identifier-first-character}\\
 \rule{identifier-character} \code{0} | \code{1} | \code{2} | \code{3} | \code{4} | \code{5} | \code{6} | \code{7} | \code{8} | \code{9}

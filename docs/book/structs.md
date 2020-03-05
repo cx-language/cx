@@ -1,62 +1,38 @@
 # Structs
 
-New struct types can be defined with the `struct` keyword:
+A `struct` is a user-defined data type used to group variables into a single type.
+Additionally, structs may define member functions, that can be called on instances of the struct.
+Inside member functions, `this` is a pointer to the instance that the function was called on.
 
-```
-struct Foo {
-    // member variables and functions
-}
-```
+```cs
+struct Person {
+    string name;
+    int age;
+    Person*? friend;
+    // Specify default values so we don't have to specify them when we instantiate Person
+    float x = 0;
+    float y = 0;
 
-## Member Functions
+    void moveLeft() {
+        // Members may be accessed via 'this'
+        this.x -= 0.1;
+    }
 
-Member functions are just like non-member functions, except that they receive a
-`this` parameter (aka the receiver) which is passed using the dot notation, when
-calling the function.
-
-To define a member function for a type, write a function inside the type's
-definition:
-
-```
-struct Foo {
-    void bar() {
-        // ...
+    void moveRight() {
+        // Or without 'this'
+        x += 0.1;
     }
 }
-```
 
-To call the member function on a `Foo` instance:
+void main() {
+    var foo = Person(name: "Foo", age: 42, friend: null);
+    var bar = Person(name: "Bar", age: 42, friend: foo);
+    foo.friend = bar;
 
-```
-foo.bar();
-```
+    foo.moveLeft(); // foo.x is now -0.1
+    bar.moveRight();  // bar.x is now 0.1
 
-Inside member functions, the receiver and its member variables must be accessed
-via `this`.
-
-### Static Member Functions
-
-Member functions that are scoped to a type, but that are not called on a
-receiver, can be declared with the `static` keyword (not implemented yet):
-
-```
-struct Foo {
-    static void bar() {
-        // ...
-    }
+    println(foo);
+    println(bar);
 }
-```
-
-They are called as follows:
-
-```
-Foo.bar();
-```
-
-## Generic Structs
-
-Structs can have generic type parameters:
-
-```
-struct Foo<T> { }
 ```

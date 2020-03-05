@@ -1,0 +1,194 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    margin-left: calc(100vw - 100%);
+}
+
+body {
+    position: relative;
+    max-width: 700px;
+    padding: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: 15px;
+}
+
+h1 a {
+    font-weight: normal;
+    color: unset;
+    text-decoration: unset;
+    margin-right: 20px;
+}
+
+a {
+    text-decoration: none;
+    color: #004ecc;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+a.active {
+    font-weight: bold;
+    color: unset;
+}
+
+ul {
+    margin: 0;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 30px 0;
+}
+
+pre, code, .sourceCode {
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace !important;
+}
+
+:not(pre) > code {
+    font-size: 92%;
+    font-weight: bold;
+}
+
+.sourceCode, pre code {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+pre {
+    padding: 10px;
+}
+
+pre, .editor {
+    background: #f5f5f8;
+    border: 1px solid #eaeaf0;
+}
+
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: right;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #eaeaf0;
+}
+
+.links {
+    white-space: nowrap;
+}
+
+.links a + a {
+    margin-left: 10px;
+}
+
+.side-nav {
+    margin: 30px 0;
+    padding: 0 20px;
+    white-space: nowrap;
+}
+
+.side-nav > ul {
+    padding: 0;
+    list-style-type: none;
+}
+
+@media screen and (min-width: 1120px) {
+    .side-nav {
+        width: 230px;
+        position: absolute;
+        margin-left: -230px;
+    }
+}
+
+.intro, .features {
+    margin: 25px 0;
+}
+
+/*
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-gap: 30px;
+    margin: 30px 0;
+}
+*/
+
+h4 {
+    margin-bottom: 3px;
+}
+
+.block p {
+    margin: 0;
+}
+
+button {
+    border: 1px solid #ddd;
+    background: #f5f5f8;
+    padding: 0 15px;
+    height: 30px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #e7e8e9;
+}
+
+button:focus {
+    outline: none;
+}
+
+button:active {
+    background: #ddd;
+}
+
+.editor {
+    font-family: monospace;
+    tab-size: 4;
+}
+
+.CodeMirror {
+    background: unset !important;
+    height: auto;
+    width: 100%;
+}
+
+.CodeMirror-lines {
+    padding: 10px 0 !important;
+}
+
+.CodeMirror-line,
+.CodeMirror-linewidget .error {
+    padding: 0 10px !important;
+}
+
+.error {
+    background-color: #fdd;
+    padding: 0 4px;
+    white-space: pre-wrap;
+}
+
+button.run {
+    position: absolute;
+    right: 20px;
+    margin: -40px 10px -40px -40px;
+    z-index: 10;
+}
+
+.output {
+    display: none;
+    width: 100%;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    white-space: pre-wrap;
+    overflow: auto;
+}
+
+.stderr {
+    color: red;
+}

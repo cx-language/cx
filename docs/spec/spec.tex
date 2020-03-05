@@ -5,13 +5,12 @@
 \usepackage[margin=3cm]{geometry}
 \usepackage[hidelinks, linktoc=all]{hyperref}
 \usepackage{microtype}
-\usepackage{multicol}
 \usepackage{textcomp}
 \usepackage{underscore}
 
 \newcommand{\code}{\texttt}
 \newcommand{\nonterminal}{\textit}
-\renewcommand{\rule}[1]{\nonterminal{#1} \textrightarrow{}}
+\renewcommand{\rule}[1]{\nonterminal{#1:} }
 \newcommand{\optional}{\textsubscript{opt}}
 \newenvironment{grammar}{\begin{quote}}{\end{quote}}
 
@@ -24,7 +23,6 @@
 \begin{document}
 
 \title{Delta Language Specification}
-\author{Emil Laine \\ \href{mailto:laine.emil@gmail.com}{laine.emil@gmail.com}}
 \maketitle
 
 This document describes the syntax and semantics of the Delta programming language.
