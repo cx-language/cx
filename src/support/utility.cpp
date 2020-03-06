@@ -6,7 +6,9 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Process.h>
 #include <llvm/Support/Program.h>
+#include <llvm/Support/Signals.h>
 #pragma warning(pop)
 
 using namespace delta;
@@ -102,6 +104,13 @@ std::string delta::getCCompilerPath() {
 void delta::abort(StringFormatter& message) {
     printColored("error: ", llvm::raw_ostream::RED);
     llvm::outs() << message.str() << '\n';
+
+    if (auto env = llvm::sys::Process::GetEnv("DELTA_PRINT_STACK_TRACE")) {
+        if (llvm::StringRef(*env).equals_lower("true") || *env == "1") {
+            llvm::sys::PrintStackTrace(llvm::outs());
+        }
+    }
+
     exit(1);
 }
 
