@@ -276,7 +276,7 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     return instantiation;
 }
 
-static std::error_code parseSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, const CompileOptions& options) {
+static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, const CompileOptions& options) {
     std::error_code error;
     llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end;
 
@@ -286,6 +286,11 @@ static std::error_code parseSourcesInDirectoryRecursively(const llvm::Twine& dir
             Parser parser(it->path(), module, options);
             parser.parse();
         }
+    }
+
+    if (module.getSourceFiles().empty()) {
+        REPORT_ERROR(SourceLocation(), "Module '" << module.getName() << "' import failed: no source files found in '" << directoryPath
+                                                  << "' or its subdirectories");
     }
 
     return error;
@@ -304,7 +309,7 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     if (manifest) {
         for (auto& dependency : manifest->getDeclaredDependencies()) {
             if (dependency.getPackageIdentifier() == moduleName) {
-                error = parseSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, options);
+                error = importModuleSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, options);
                 goto done;
             }
         }
@@ -313,16 +318,13 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     for (llvm::StringRef importPath : options.importSearchPaths) {
         auto modulePath = importPath + "/" + moduleName;
         if (llvm::sys::fs::is_directory(modulePath)) {
-            error = parseSourcesInDirectoryRecursively(modulePath, *module, options);
+            error = importModuleSourcesInDirectoryRecursively(modulePath, *module, options);
             goto done;
         }
     }
 
 done:
-    if (error || module->getSourceFiles().empty()) {
-        return error;
-    }
-
+    if (error) return error;
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->getName()] = module;
     typecheckModule(*module, nullptr);
