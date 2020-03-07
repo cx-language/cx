@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #pragma warning(push, 0)
 #include <clang/AST/Decl.h>
@@ -207,9 +208,8 @@ static void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt v
     module.addToSymbolTable(new VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
-// TODO: Use llvm::APFloat instead of long double.
-static void addFloatConstantToSymbolTable(llvm::StringRef name, long double value, Module& module) {
-    auto initializer = new FloatLiteralExpr(value, SourceLocation());
+static void addFloatConstantToSymbolTable(llvm::StringRef name, llvm::APFloat value, Module& module) {
+    auto initializer = new FloatLiteralExpr(std::move(value), SourceLocation());
     auto type = Type::getFloat64(Mutability::Const);
     initializer->setType(type);
     module.addToSymbolTable(new VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
@@ -304,9 +304,7 @@ private:
             llvm::APSInt value(intLiteral->getValue(), parsed->getType()->isUnsignedIntegerType());
             addIntegerConstantToSymbolTable(name, std::move(value), parsed->getType(), module);
         } else if (auto* floatLiteral = llvm::dyn_cast<clang::FloatingLiteral>(parsed)) {
-            // TODO: Use llvm::APFloat instead of lossy conversion to double.
-            auto value = floatLiteral->getValueAsApproximateDouble();
-            addFloatConstantToSymbolTable(name, value, module);
+            addFloatConstantToSymbolTable(name, floatLiteral->getValue(), module);
         }
     }
 

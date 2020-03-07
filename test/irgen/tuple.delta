@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %delta -print-ir %s -Wno-unused
 
-(bool c, (float64 e) d) f() {
+(bool c, (float e) d) f() {
     var d = (e: -1.0);
     var a = (a: 42, b: (c: false, d));
     var b = a.b;

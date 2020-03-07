@@ -1,8 +1,10 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/APFloat.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/Support/Casting.h>
 #pragma warning(pop)
@@ -141,12 +143,12 @@ private:
 
 class FloatLiteralExpr : public Expr {
 public:
-    FloatLiteralExpr(long double value, SourceLocation location) : Expr(ExprKind::FloatLiteralExpr, location), value(value) {}
-    long double getValue() const { return value; }
+    FloatLiteralExpr(llvm::APFloat value, SourceLocation location) : Expr(ExprKind::FloatLiteralExpr, location), value(std::move(value)) {}
+    const llvm::APFloat& getValue() const { return value; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::FloatLiteralExpr; }
 
 private:
-    long double value;
+    llvm::APFloat value;
 };
 
 class BoolLiteralExpr : public Expr {

@@ -1,2 +1,2 @@
 
-@a = private global double 0x3F826E978D4FDF3B
+@a = private global float 0x3F826E9780000000

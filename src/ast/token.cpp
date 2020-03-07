@@ -2,6 +2,8 @@
 #include <cerrno>
 #include <ostream>
 #pragma warning(push, 0)
+#include <llvm/ADT/APFloat.h>
+#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
@@ -67,10 +69,6 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
 Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string) : kind(kind), string(string), location(location) {
     ASSERT(!string.empty() || kind == Token::None || kind >= Token::Break);
     ASSERT(location.isValid());
-#ifndef NDEBUG
-    if (kind == Token::IntegerLiteral) (void) getIntegerValue(); // Validate the integer value.
-    if (kind == Token::FloatLiteral) (void) getFloatingPointValue(); // Validate the FP value.
-#endif
 }
 
 bool delta::isBinaryOperator(Token::Kind tokenKind) {
@@ -177,9 +175,9 @@ llvm::APSInt Token::getIntegerValue() const {
     return llvm::APSInt(value);
 }
 
-long double Token::getFloatingPointValue() const {
-    long double value = std::strtold(string.str().c_str(), nullptr);
-    ASSERT(errno != ERANGE, "invalid floating-point literal");
+llvm::APFloat Token::getFloatingPointValue() const {
+    // TODO: Which float semantics to use?
+    llvm::APFloat value(llvm::APFloat::IEEEsingle(), string);
     return value;
 }
 

@@ -1,7 +1,7 @@
 // TODO: Remove code duplication by declaring a 'FloatingPoint' interface that implements the
 // 'compare' function for all floating-point types.
 
-private void printFloat<T>(T value, String* stream) {
+private void printFloat(float64 value, String* stream) {
     // Maximum length from https://stackoverflow.com/a/1701272/3425536
     char[1080] result = undefined;
     sprintf(result, "%g", value);
@@ -14,7 +14,7 @@ struct float: Copyable, Comparable, Printable {
     }
 
     void print(String* stream) {
-        printFloat(this, stream);
+        printFloat(float64(this), stream);
     }
 }
 
@@ -24,7 +24,7 @@ struct float32: Copyable, Comparable, Printable {
     }
 
     void print(String* stream) {
-        printFloat(this, stream);
+        printFloat(float64(this), stream);
     }
 }
 

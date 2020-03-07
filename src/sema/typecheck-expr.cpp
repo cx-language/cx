@@ -121,7 +121,7 @@ Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
 }
 
 Type typecheckFloatLiteralExpr(FloatLiteralExpr&) {
-    return Type::getFloat64();
+    return Type::getFloat();
 }
 
 Type typecheckBoolLiteralExpr(BoolLiteralExpr&) {

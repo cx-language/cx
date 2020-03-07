@@ -1,8 +1,8 @@
 
 define i32 @main() {
-  %a = alloca double
-  %b = alloca double
-  store double 8.000000e+00, double* %a
-  store double 8.000000e+00, double* %b
+  %a = alloca float
+  %b = alloca float
+  store float 8.000000e+00, float* %a
+  store float 8.000000e+00, float* %b
   ret i32 0
 }

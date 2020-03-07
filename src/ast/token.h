@@ -2,10 +2,16 @@
 
 #include <ostream>
 #pragma warning(push, 0)
-#include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/StringRef.h>
 #pragma warning(pop)
 #include "../ast/location.h"
+
+namespace llvm {
+class APSInt;
+class APFloat;
+template<typename T>
+class ArrayRef;
+} // namespace llvm
 
 namespace delta {
 
@@ -114,7 +120,7 @@ struct Token {
     bool is(Token::Kind kind) const { return this->kind == kind; }
     bool is(llvm::ArrayRef<Token::Kind> kinds) const;
     llvm::APSInt getIntegerValue() const;
-    long double getFloatingPointValue() const;
+    llvm::APFloat getFloatingPointValue() const;
 
 private:
     Token::Kind kind;

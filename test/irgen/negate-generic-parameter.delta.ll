@@ -1,10 +1,10 @@
 
 define i32 @main() {
-  %1 = call double @_EN4main1fI7float64EE1a7float64(double 0.000000e+00)
+  %1 = call float @_EN4main1fI5floatEE1a5float(float 0.000000e+00)
   ret i32 0
 }
 
-define double @_EN4main1fI7float64EE1a7float64(double %a) {
-  %1 = fsub double -0.000000e+00, %a
-  ret double %1
+define float @_EN4main1fI5floatEE1a5float(float %a) {
+  %1 = fsub float -0.000000e+00, %a
+  ret float %1
 }
