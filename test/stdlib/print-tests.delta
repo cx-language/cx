@@ -1,4 +1,4 @@
-// RUN: %delta run -Werror %s | %FileCheck %s
+// RUN: %delta run -Werror %s | %FileCheck -match-full-lines %s
 
 struct A: Printable {
     StringRef a;
@@ -10,9 +10,9 @@ struct A: Printable {
     }
 }
 
-
 void main() {
     print(true); // CHECK: true
     print(false); // CHECK-NEXT: false
     print(A("foo")); // CHECK-NEXT: foofoo!
+    print(0.1 + 0.2); // CHECK-NEXT: 0.3
 }
