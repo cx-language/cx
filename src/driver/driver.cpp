@@ -181,7 +181,7 @@ static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName
 }
 
 static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
-                           llvm::StringRef outputDirectory, llvm::StringRef outputFileName) {
+                           llvm::StringRef outputDirectory, std::string outputFileName) {
     if (files.empty()) {
         ABORT("no input files");
     }
@@ -333,7 +333,12 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     if (outputFileName.empty()) {
-        outputFileName = msvc ? "a.exe" : "a.out";
+        if (files.size() == 1) {
+            outputFileName = llvm::sys::path::stem(files[0]);
+        } else {
+            outputFileName = "main";
+        }
+        outputFileName.append(msvc ? ".exe" : ".out");
     }
 
     renameFile(temporaryExecutablePath, outputPathPrefix + outputFileName);
