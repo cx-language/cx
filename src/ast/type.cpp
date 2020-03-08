@@ -35,7 +35,6 @@ DEFINE_BUILTIN_TYPE_GET_AND_IS(Float, float)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float32, float32)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float64, float64)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Float80, float80)
-DEFINE_BUILTIN_TYPE_GET_AND_IS(String, String)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Char, char)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Null, null)
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Undefined, undefined)
@@ -51,7 +50,6 @@ bool Type::isImplicitlyCopyable() const {
             return llvm::all_of(llvm::cast<TupleType>(typeBase)->getElements(),
                                 [&](auto& element) { return element.type.isImplicitlyCopyable(); });
         case TypeKind::FunctionType:
-            return true;
         case TypeKind::PointerType:
             return true;
         case TypeKind::OptionalType:

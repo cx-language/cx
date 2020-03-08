@@ -13,7 +13,7 @@ void main() {
 }
 
 void testInsert() {
-    var map = Map<StringRef, int>();
+    var map = Map<string, int>();
 
     map.insert("ok", 1);
 
@@ -22,7 +22,7 @@ void testInsert() {
 }
 
 void testSize() {
-    var map = Map<StringRef, StringRef>();
+    var map = Map<string, string>();
 
     assert(map.size() == 0);
     map.insert("best", "ok");
@@ -30,17 +30,17 @@ void testSize() {
 }
 
 void testGetter() {
-    var map = Map<StringRef, int>();
+    var map = Map<string, int>();
 
     map.insert("ok", 42);
     assert(map["ok"]! == 42); // FIXME: Fix compilation without the unwrap.
 }
 
 void testResize() {
-    var map = Map<String, int>();
+    var map = Map<StringBuffer, int>();
 
     for (var i in 0..255) {
-        var lol = String();
+        var lol = StringBuffer();
 
         for (var j in 0..(i+1)) {
             lol.push('a');
@@ -54,7 +54,7 @@ void testResize() {
 
 
 void testRemoval() {
-    var map = Map<StringRef, int>();
+    var map = Map<string, int>();
     assert(map.size() == 0);
 
     map.insert("ok", 2);
@@ -68,7 +68,7 @@ void testRemoval() {
 }
 
 void testDuplicates() {
-    var map = Map<StringRef, int>();
+    var map = Map<string, int>();
 
     map.insert("ok", 1);
     map.insert("ok", 2);
@@ -82,7 +82,7 @@ void testDuplicates() {
 }
 
 void testIterator() {
-    var map = Map<StringRef, StringRef>();
+    var map = Map<string, string>();
 
     map.insert("a", "a");
     map.insert("ccc", "ccc");
@@ -116,7 +116,7 @@ void testIterator() {
 }
 
 void testEmptyMapIterator() {
-    var map = Map<StringRef, StringRef>();
+    var map = Map<string, string>();
     map.insert("foo", "foo");
     map.insert("foo", "foo");
     map.remove("foo");
@@ -127,7 +127,7 @@ void testEmptyMapIterator() {
 }
 
 void testUnitMapIterator() {
-    var map = Map<StringRef, StringRef>();
+    var map = Map<string, string>();
     map.insert("foo", "foo");
     map.insert("foo", "foo");
     var count = 0;

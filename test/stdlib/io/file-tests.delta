@@ -29,7 +29,7 @@ void testBytes() {
 void testLines() {
     var f = FileStream("test.txt");
 
-    var a = List<StringRef>();
+    var a = List<string>();
     a.push("this");
     a.push("is the");
     a.push("best");
@@ -37,7 +37,7 @@ void testLines() {
     var i = 0;
 
     for (var line in f.lines()) {
-        assert(a[i] == StringRef(line));
+        assert(a[i] == string(line));
         i++;
     }
 
@@ -48,22 +48,22 @@ void testReadlineTwice() {
     var f = InputFileStream("test.txt");
 
     var a = f.readLine();
-    assert(StringRef(a) == "this");
+    assert(string(a) == "this");
     a = f.readLine();
-    assert(StringRef(a) == "is the");
+    assert(string(a) == "is the");
 }
 
 void testMultipleEmptyLines() {
     var f = InputFileStream("corner.txt");
 
     var a = f.readLine();
-    assert(StringRef(a) == "");
+    assert(string(a) == "");
 
     a = f.readLine();
-    assert(StringRef(a) == "");
+    assert(string(a) == "");
 
     a = f.readLine();
-    assert(StringRef(a) == "");
+    assert(string(a) == "");
 
     assert(f.eof());
 }
@@ -71,7 +71,7 @@ void testMultipleEmptyLines() {
 void testIsEofWhileLoop() {
     var f = InputFileStream("test.txt");
 
-    var a = List<StringRef>();
+    var a = List<string>();
     a.push("this");
     a.push("is the");
     a.push("best");
@@ -80,7 +80,7 @@ void testIsEofWhileLoop() {
 
     while (!f.eof()) {
         var line = f.readLine();
-        assert(a[i] == StringRef(line));
+        assert(a[i] == string(line));
         i++;
     }
 
@@ -98,13 +98,13 @@ void testWrite() {
 
     f.close();
     remove("new.txt");
-    assert(StringRef(read) == "best sentence");
+    assert(string(read) == "best sentence");
 }
 
 void testInputStream() {
     var f = InputFileStream("test.txt");
 
-    var a = List<StringRef>();
+    var a = List<string>();
 
     a.push("this");
     a.push("is the");
@@ -113,7 +113,7 @@ void testInputStream() {
     var i = 0;
 
     for (var line in f.lines()) {
-        assert(a[i] == StringRef(line));
+        assert(a[i] == string(line));
         i++;
     }
 

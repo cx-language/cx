@@ -1,6 +1,6 @@
-struct LineIterator<Stream: InputStream>: Iterator<String> {
+struct LineIterator<Stream: InputStream>: Iterator<StringBuffer> {
     Stream* stream;
-    String next;
+    StringBuffer next;
 
     init(Stream* stream) {
         this.stream = stream;
@@ -12,7 +12,7 @@ struct LineIterator<Stream: InputStream>: Iterator<String> {
         return !stream.eof() || !next.empty();
     }
 
-    String value() {
+    StringBuffer value() {
         return next;
     }
 

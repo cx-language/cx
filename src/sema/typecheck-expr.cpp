@@ -103,7 +103,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
 }
 
 Type typecheckStringLiteralExpr(StringLiteralExpr&) {
-    return BasicType::get("StringRef", {});
+    return BasicType::get("string", {});
 }
 
 Type typecheckCharacterLiteralExpr(CharacterLiteralExpr&) {

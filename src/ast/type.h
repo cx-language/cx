@@ -91,7 +91,6 @@ public:
     bool isFloat32() const;
     bool isFloat64() const;
     bool isFloat80() const;
-    bool isString() const;
     bool isChar() const;
     bool isNull() const;
     bool isUndefined() const;

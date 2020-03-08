@@ -1,4 +1,4 @@
-struct String: Comparable, Hashable, OutputStream, Printable {
+struct StringBuffer: Comparable, Hashable, OutputStream, Printable {
     List<char> characters;
 
     /// Initializes an empty string.
@@ -7,10 +7,10 @@ struct String: Comparable, Hashable, OutputStream, Printable {
         characters.push('\0');
     }
 
-    init(StringRef string) {
-        characters = List<char>(capacity: string.size() + 1);
+    init(string s) {
+        characters = List<char>(capacity: s.size() + 1);
 
-        for (var ch in string) {
+        for (var ch in s) {
             characters.push(ch);
         }
 
@@ -19,17 +19,17 @@ struct String: Comparable, Hashable, OutputStream, Printable {
 
     /// Initializes a string with the characters from a character array of known length.
     init(char* pointer, int length) {
-        init(StringRef(pointer, length));
+        init(string(pointer, length));
     }
 
     /// Initializes a string with the contents of a null-terminated C-style string.
     ///
     /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
     /// length of the argument string. If you know the length beforehand, consider using
-    /// `String.init(char* pointer, uint length)` instead.
+    /// `StringBuffer.init(char* pointer, uint length)` instead.
     ///
     init(char* cString) {
-        init(StringRef(cString, int(strlen(cString))));
+        init(string(cString, int(strlen(cString))));
     }
 
     int size() {
@@ -61,8 +61,9 @@ struct String: Comparable, Hashable, OutputStream, Printable {
         characters.push('\0');
     }
 
-    bool write(StringRef string) {
-        for (var ch in string) {
+    bool write(string s) {
+        // TODO: Optimize
+        for (var ch in s) {
             push(ch);
         }
         return true;
@@ -81,12 +82,12 @@ struct String: Comparable, Hashable, OutputStream, Printable {
 
     /// Supports using strings with sets and dicts
     uint64 hash() {
-        return StringRef(this).hash();
+        return string(this).hash();
     }
 
     StringIterator iterator() {
-        // TODO: When implicit initializers have been implemented, remove the StringRef() call below.
-        return StringIterator(StringRef(this));
+        // TODO: When implicit initializers have been implemented, remove the string() call below.
+        return StringIterator(string(this));
     }
 
     bool contains(char c) {
@@ -110,16 +111,16 @@ struct String: Comparable, Hashable, OutputStream, Printable {
     }
 
     // Returns the substring of the string in the given range, [inclusive, exclusive]
-    StringRef substr(Range<int> range) {
+    string substr(Range<int> range) {
         if (range.end > size()) {
             indexOutOfBounds(range.end);
         }
-        return StringRef(characters[range.start], range.size());
+        return string(characters[range.start], range.size());
     }
 
     // Splits the string by the given delimiter
-    List<StringRef> split(char delim) {
-        var tokens = List<StringRef>();
+    List<string> split(char delim) {
+        var tokens = List<string>();
 
         var prev = 0;
         var pos = 0;
@@ -144,16 +145,16 @@ struct String: Comparable, Hashable, OutputStream, Printable {
     }
 
     // Splits the string by whitespace
-    List<StringRef> split() {
+    List<string> split() {
         return split(' ');
     }
 
-    void print(String* stream) {
-        stream.write(StringRef(this));
+    void print(StringBuffer* stream) {
+        stream.write(string(this));
     }
 
-    Ordering compare(String* other) {
-        return StringRef(this).compare(StringRef(other));
+    Ordering compare(StringBuffer* other) {
+        return string(this).compare(string(other));
     }
 
     private void indexOutOfBounds(int index) {
@@ -162,8 +163,8 @@ struct String: Comparable, Hashable, OutputStream, Printable {
     }
 }
 
-String operator+(StringRef a, StringRef b) {
-    var result = String();
+StringBuffer operator+(string a, string b) {
+    var result = StringBuffer();
 
     for (var ch in a) {
         result.push(ch);
@@ -176,7 +177,7 @@ String operator+(StringRef a, StringRef b) {
     return result;
 }
 
-String operator+(String a, StringRef b) {
+StringBuffer operator+(StringBuffer a, string b) {
     var result = a;
 
     for (var ch in b) {
@@ -186,14 +187,14 @@ String operator+(String a, StringRef b) {
     return result;
 }
 
-bool operator==(String* a, String* b) {
-    return StringRef(a) == StringRef(b);
+bool operator==(StringBuffer* a, StringBuffer* b) {
+    return string(a) == string(b);
 }
 
-bool operator==(String* a, StringRef b) {
-    return StringRef(a) == b;
+bool operator==(StringBuffer* a, string b) {
+    return string(a) == b;
 }
 
-bool operator==(StringRef a, String* b) {
-    return a == StringRef(b);
+bool operator==(string a, StringBuffer* b) {
+    return a == string(b);
 }

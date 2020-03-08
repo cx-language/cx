@@ -5,10 +5,10 @@ void main() {
 }
 
 struct A: Printable {
-    StringRef a;
-    StringRef b;
+    string a;
+    string b;
 
-    void print(String* stream) {
+    void print(StringBuffer* stream) {
         stream.write(a);
         stream.write("+");
         stream.write(b);
@@ -16,5 +16,5 @@ struct A: Printable {
 }
 
 void testCustomPrintableStruct() {
-    assert(StringRef(A("foo", "bar").toString()) == "foo+bar");
+    assert(string(A("foo", "bar").toString()) == "foo+bar");
 }

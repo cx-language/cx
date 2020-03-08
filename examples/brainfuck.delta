@@ -41,12 +41,12 @@ struct Tape
 
 struct Program
 {
-    String code;
+    StringBuffer code;
     Map<int, int> bracketMap;
 
-    init(String text)
+    init(string text)
     {
-        this.code = String();
+        this.code = StringBuffer();
         this.bracketMap = Map<int, int>();
 
         var leftStack = List<int>();
@@ -119,10 +119,10 @@ struct Program
 void main()
 {
     var file = FileStream("./inputs/mandel.b");
-    var text = String();
+    var text = StringBuffer();
 
     for (var byte in file.bytes())
         text.push(char(byte));
 
-    Program(text).run();
+    Program(string(text)).run();
 }

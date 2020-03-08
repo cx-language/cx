@@ -3,8 +3,8 @@ struct FileStream: InputStream, OutputStream {
     void*? file;
 
     /// Initiates a stream that can both read and write to file
-    init(StringRef filename) {
-        file = fopen(String(filename).cString(), "a+");
+    init(string filename) {
+        file = fopen(StringBuffer(filename).cString(), "a+");
 
         if (file != null) {
             rewind(file);
@@ -12,17 +12,17 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// TODO when we have default params, switch to that
-    init(StringRef filename, bool destroyContents) {
+    init(string filename, bool destroyContents) {
         if (destroyContents) {
-            file = fopen(String(filename).cString(), "w+");
+            file = fopen(StringBuffer(filename).cString(), "w+");
         } else {
             init(filename);
         }
     }
 
     // FIXME: Remove readOnly parameter, FileStream can both read and write.
-    init(StringRef filename, bool readOnly) {
-        file = fopen(String(filename).cString(), "r");
+    init(string filename, bool readOnly) {
+        file = fopen(StringBuffer(filename).cString(), "r");
     }
 
     // FIXME: Remove readOnly parameter, FileStream can both read and write.
@@ -68,8 +68,8 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Reads one line from the file, separated by \n
-    String readLine() {
-        var ret = String();
+    StringBuffer readLine() {
+        var ret = StringBuffer();
         for (var i in bytes()) {
             if (i == '\n') {
                 break;
@@ -90,8 +90,8 @@ struct FileStream: InputStream, OutputStream {
     }
 
     /// Writes the given string into the file. Returns true on success, false on failure
-    bool write(StringRef string) {
-        for (var c in string) {
+    bool write(string s) {
+        for (var c in s) {
             var ret = fputc(int(c), file!);
             if (ret <= 0) {
                 return false;

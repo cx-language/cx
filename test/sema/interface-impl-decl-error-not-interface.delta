@@ -1,7 +1,7 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
 
-// CHECK: [[@LINE+1]]:14: error: 'String' is not an interface
-struct Z<T>: String {}
+// CHECK: [[@LINE+1]]:14: error: 'StringBuffer' is not an interface
+struct Z<T>: StringBuffer {}
 
 void main() {
     var z = Z<int>();

@@ -2,9 +2,9 @@ struct StringIterator: Copyable, Iterator<char> {
     char[?]* current;
     char[?]* end;
 
-    init(StringRef string) {
-        current = string.data();
-        end = &string.data()[string.size()];
+    init(string s) {
+        current = s.data();
+        end = &s.data()[s.size()];
     }
 
     bool hasValue() {

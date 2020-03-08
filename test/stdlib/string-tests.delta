@@ -27,7 +27,7 @@ void testStringIterator() {
 }
 
 void testFind() {
-    var s = String("word");
+    var s = StringBuffer("word");
 
     // Start from beginning
     assert(s.find('w') == 0);
@@ -36,14 +36,12 @@ void testFind() {
     assert(s.find('d') == 3);
 
     // Start from index
-
     assert(s.find('w', 1) == -1);
     assert(s.find('d', 2) == 3);
 }
 
 void testSubstr() {
-    var s = String("word");
-
+    var s = StringBuffer("word");
     assert(s.substr(0..1) == "w");
     assert(s.substr(0..2) == "wo");
     assert(s.substr(0..3) == "wor");
@@ -53,65 +51,50 @@ void testSubstr() {
     assert(s.substr(1..3) == "or");
     assert(s.substr(2..3) == "r");
 
-
-    var s2 = String("this is the best sentence");
-
+    var s2 = StringBuffer("this is the best sentence");
     assert(s2.substr(0..4) == "this");
     assert(s2.substr(5..7) == "is");
     assert(s2.substr(8..11) == "the");
     assert(s2.substr(12..16) == "best");
     assert(s2.substr(17..25) == "sentence");
 
-    var s3 = String("best");
-
+    var s3 = StringBuffer("best");
     assert(s3.substr(0..0) == "");
 }
 
 void testSplit() {
-    var s = String("this is the best sentence");
-
+    var s = StringBuffer("this is the best sentence");
     var words = s.split();
-
+    assert(words.size() == 5);
     assert(words[0] == "this");
     assert(words[1] == "is");
     assert(words[2] == "the");
     assert(words[3] == "best");
     assert(words[4] == "sentence");
-
-    assert(words.size() == 5);
 }
 
 void testOtherSplit() {
-    var s = String("this,sentence,is,comma,separated");
-
+    var s = StringBuffer("this,sentence,is,comma,separated");
     var words = s.split(',');
-
+    assert(words.size() == 5);
     assert(words[0] == "this");
     assert(words[1] == "sentence");
     assert(words[2] == "is");
     assert(words[3] == "comma");
     assert(words[4] == "separated");
 
-    assert(words.size() == 5);
-
-
-    var s2 = String(",,1,,2");
-
+    var s2 = StringBuffer(",,1,,2");
     words = s2.split(',');
-
+    assert(words.size() == 5);
     assert(words[0] == "");
     assert(words[1] == "");
     assert(words[2] == "1");
     assert(words[3] == "");
     assert(words[4] == "2");
 
-    assert(words.size() == 5);
-
-
-    var s3 = String(",,,b,a,,,");
-
+    var s3 = StringBuffer(",,,b,a,,,");
     words = s3.split(',');
-
+    assert(words.size() == 8);
     assert(words[0] == "");
     assert(words[1] == "");
     assert(words[2] == "");
@@ -120,6 +103,4 @@ void testOtherSplit() {
     assert(words[5] == "");
     assert(words[6] == "");
     assert(words[7] == "");
-
-    assert(words.size() == 8);
 }

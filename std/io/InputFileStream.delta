@@ -3,7 +3,7 @@ struct InputFileStream: InputStream {
     FileStream fs;
 
     /// Initiates a stream that can read from files
-    init(StringRef filename) {
+    init(string filename) {
         fs = FileStream(filename, readOnly: true);
     }
 
@@ -36,7 +36,7 @@ struct InputFileStream: InputStream {
     }
 
     /// Reads one line from the file, separated by \n
-    String readLine() {
+    StringBuffer readLine() {
         return fs.readLine();
     }
 

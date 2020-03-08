@@ -1,4 +1,4 @@
 interface OutputStream {
-    bool write(StringRef string);
+    bool write(string s);
     // TODO: Add 'write' overload for char.
 }

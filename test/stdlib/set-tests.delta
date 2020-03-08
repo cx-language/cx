@@ -10,7 +10,7 @@ void main() {
 }
 
 void testInsert() {
-    var s = Set<StringRef>();
+    var s = Set<string>();
 
     s.insert("ok");
 
@@ -20,7 +20,7 @@ void testInsert() {
 
 
 void testRemoval() {
-    var s = Set<StringRef>();
+    var s = Set<string>();
 
     s.insert("ok");
     assert(s.contains("ok"));
@@ -30,7 +30,7 @@ void testRemoval() {
 }
 
 void testDuplicates() {
-    var s = Set<StringRef>();
+    var s = Set<string>();
 
     s.insert("ok");
     s.insert("ok");
@@ -41,7 +41,7 @@ void testDuplicates() {
 }
 
 void testIterator() {
-    var s = Set<StringRef>();
+    var s = Set<string>();
 
     s.insert("a");
     s.insert("ccc");
@@ -75,7 +75,7 @@ void testIterator() {
 }
 
 void testEmptySetIterator() {
-    var s = Set<StringRef>();
+    var s = Set<string>();
     s.insert("foo");
     s.insert("foo");
     s.remove("foo");
@@ -86,7 +86,7 @@ void testEmptySetIterator() {
 }
 
 void testUnitSetIterator() {
-    var s = Set<StringRef>();
+    var s = Set<string>();
     s.insert("foo");
     s.insert("foo");
     var count = 0;

@@ -27,7 +27,7 @@ void testPushPop() {
 }
 
 void testEmpty() {
-    var q = Queue<StringRef>();
+    var q = Queue<string>();
 
     assert(q.empty());
 
@@ -41,7 +41,7 @@ void testEmpty() {
 }
 
 void testPushAfterPop() {
-    var q = Queue<StringRef>();
+    var q = Queue<string>();
 
     q.push("foo");
     assert(q.size() == 1);
@@ -54,7 +54,7 @@ void testPushAfterPop() {
 }
 
 void testFirst() {
-    var q = Queue<StringRef>();
+    var q = Queue<string>();
 
     q.push("foo");
     q.push("bar");

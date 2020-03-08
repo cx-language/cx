@@ -1,9 +1,9 @@
 // RUN: %delta run -Werror %s | %FileCheck -match-full-lines %s
 
 struct A: Printable {
-    StringRef a;
+    string a;
 
-    void print(String* stream) {
+    void print(StringBuffer* stream) {
         stream.write(a);
         stream.write(a);
         stream.write("!");

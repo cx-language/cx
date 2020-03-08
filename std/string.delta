@@ -1,21 +1,21 @@
-struct StringRef: Copyable, Comparable, Hashable, Printable {
+struct string: Copyable, Comparable, Hashable, Printable {
     ArrayRef<char> characters;
 
     init(char* pointer, int length) {
         characters = ArrayRef<char>(pointer, length);
     }
 
-    /// Initializes a StringRef referring to a null-terminated C-style string.
+    /// Initializes a string referring to a null-terminated C-style string.
     ///
     /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
     /// length of the argument string. If you know the length beforehand, consider using
-    /// `StringRef.init(char* pointer, uint length)` instead.
+    /// `string.init(char* pointer, uint length)` instead.
     ///
     init(char* cString) {
         characters = ArrayRef<char>(cString, int(strlen(cString)));
     }
 
-    init(String* string) {
+    init(StringBuffer* string) {
         characters = ArrayRef<char>(string.data(), string.size());
     }
 
@@ -67,11 +67,11 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
         return StringIterator(this);
     }
 
-    void print(String* stream) {
+    void print(StringBuffer* stream) {
         stream.write(this);
     }
 
-    Ordering compare(StringRef* other) {
+    Ordering compare(string* other) {
         for (var index in 0..min(size(), other.size())) {
             if (this[index] < other[index]) { return Ordering.Less; }
             if (this[index] > other[index]) { return Ordering.Greater; }
@@ -82,7 +82,7 @@ struct StringRef: Copyable, Comparable, Hashable, Printable {
     }
 }
 
-bool operator==(StringRef a, StringRef b) {
+bool operator==(string a, string b) {
     if (a.size() != b.size()) {
         return false;
     }

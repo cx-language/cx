@@ -6,9 +6,9 @@
 %"Range<int>" = type { i32, i32 }
 %"EnumeratedIterator<int>" = type { %"ArrayIterator<int>", i32 }
 %"EnumeratedIteratorEntry<int>" = type { i32*, i32 }
-%String = type { %"List<char>" }
+%StringBuffer = type { %"List<char>" }
 %"List<char>" = type { i8*, i32, i32 }
-%StringRef = type { %"ArrayRef<char>" }
+%string = type { %"ArrayRef<char>" }
 %"ArrayRef<char>" = type { i8*, i32 }
 
 @0 = private unnamed_addr constant [37 x i8] c"Assertion failed at List.delta:112:9\00", align 1
@@ -800,13 +800,13 @@ define %"ArrayIterator<int>" @_EN3std8ArrayRefI3intE8iteratorE(%"ArrayRef<int>"*
 declare void @_EN3std13ArrayIteratorI3intE4initE5array8ArrayRefI3intE.2(%"ArrayIterator<int>"*, %"ArrayRef<int>")
 
 define void @_EN3std5printI3intEE5valueP3int(i32* %value) {
-  %string = alloca %String
-  %1 = call %String @_EN3std3int8toStringE(i32* %value)
-  store %String %1, %String* %string
-  %2 = call i32 @_EN3std6String4sizeE(%String* %string)
-  %3 = call i8* @_EN3std6String4dataE(%String* %string)
+  %string = alloca %StringBuffer
+  %1 = call %StringBuffer @_EN3std3int8toStringE(i32* %value)
+  store %StringBuffer %1, %StringBuffer* %string
+  %2 = call i32 @_EN3std12StringBuffer4sizeE(%StringBuffer* %string)
+  %3 = call i8* @_EN3std12StringBuffer4dataE(%StringBuffer* %string)
   %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @8, i32 0, i32 0), i32 %2, i8* %3)
-  call void @_EN3std6String6deinitE(%String* %string)
+  call void @_EN3std12StringBuffer6deinitE(%StringBuffer* %string)
   ret void
 }
 
@@ -814,42 +814,42 @@ declare void @free(i8*)
 
 declare i8* @malloc(i64)
 
-declare void @_EN3std6String6deinitE(%String*)
+declare void @_EN3std12StringBuffer6deinitE(%StringBuffer*)
 
-define %String @_EN3std3int8toStringE(i32* %this) {
-  %result = alloca %String
-  call void @_EN3std6String4initE(%String* %result)
-  call void @_EN3std3int5printE6streamP6String(i32* %this, %String* %result)
-  %result.load = load %String, %String* %result
-  ret %String %result.load
+define %StringBuffer @_EN3std3int8toStringE(i32* %this) {
+  %result = alloca %StringBuffer
+  call void @_EN3std12StringBuffer4initE(%StringBuffer* %result)
+  call void @_EN3std3int5printE6streamP12StringBuffer(i32* %this, %StringBuffer* %result)
+  %result.load = load %StringBuffer, %StringBuffer* %result
+  ret %StringBuffer %result.load
 }
 
-declare i32 @_EN3std6String4sizeE(%String*)
+declare i32 @_EN3std12StringBuffer4sizeE(%StringBuffer*)
 
-declare i8* @_EN3std6String4dataE(%String*)
+declare i8* @_EN3std12StringBuffer4dataE(%StringBuffer*)
 
-declare void @_EN3std6String4initE(%String*)
+declare void @_EN3std12StringBuffer4initE(%StringBuffer*)
 
-define void @_EN3std3int5printE6streamP6String(i32* %this, %String* %stream) {
+define void @_EN3std3int5printE6streamP12StringBuffer(i32* %this, %StringBuffer* %stream) {
   %this.load = load i32, i32* %this
-  call void @_EN3std11printSignedI3intEE5value3int6streamP6String(i32 %this.load, %String* %stream)
+  call void @_EN3std11printSignedI3intEE5value3int6streamP12StringBuffer(i32 %this.load, %StringBuffer* %stream)
   ret void
 }
 
-define void @_EN3std11printSignedI3intEE5value3int6streamP6String(i32 %value, %String* %stream) {
+define void @_EN3std11printSignedI3intEE5value3int6streamP12StringBuffer(i32 %value, %StringBuffer* %stream) {
   %result = alloca [22 x i8]
-  %1 = alloca %StringRef
+  %1 = alloca %string
   %2 = bitcast [22 x i8]* %result to i8*
   %3 = call i32 (i8*, i8*, ...) @sprintf(i8* %2, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @9, i32 0, i32 0), i32 %value)
   %4 = bitcast [22 x i8]* %result to i8*
-  call void @_EN3std9StringRef4initE7cStringP4char(%StringRef* %1, i8* %4)
-  %.load = load %StringRef, %StringRef* %1
-  %5 = call i1 @_EN3std6String5writeE6string9StringRef(%String* %stream, %StringRef %.load)
+  call void @_EN3std6string4initE7cStringP4char(%string* %1, i8* %4)
+  %.load = load %string, %string* %1
+  %5 = call i1 @_EN3std12StringBuffer5writeE1s6string(%StringBuffer* %stream, %string %.load)
   ret void
 }
 
 declare i32 @sprintf(i8*, i8*, ...)
 
-declare i1 @_EN3std6String5writeE6string9StringRef(%String*, %StringRef)
+declare i1 @_EN3std12StringBuffer5writeE1s6string(%StringBuffer*, %string)
 
-declare void @_EN3std9StringRef4initE7cStringP4char(%StringRef*, i8*)
+declare void @_EN3std6string4initE7cStringP4char(%string*, i8*)

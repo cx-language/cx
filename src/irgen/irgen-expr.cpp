@@ -9,18 +9,17 @@ llvm::Value* IRGenerator::codegenVarExpr(const VarExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr) {
-    if (expr.getType().isBasicType() && expr.getType().getName() == "StringRef") {
+    if (expr.getType().isBasicType() && expr.getType().getName() == "string") {
         ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
         static int stringLiteralCounter = 0;
-        auto* type = toIR(BasicType::get("StringRef", {}));
+        auto* type = toIR(BasicType::get("string", {}));
         auto* alloca = createEntryBlockAlloca(type, nullptr, "__str" + std::to_string(stringLiteralCounter++));
-        auto* stringRefInitType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx),
-                                                          { alloca->getType(), stringPtr->getType(), size->getType() }, false);
+        auto* stringInitType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), { alloca->getType(), stringPtr->getType(), size->getType() }, false);
         // TODO: Retrieve this constructor in a nicer way.
-        auto* stringRefInit = module->getOrInsertFunction("_EN3std9StringRef4initE7pointerP4char6length3int", stringRefInitType).getCallee();
-        builder.CreateCall(stringRefInit, { alloca, stringPtr, size });
+        auto* stringInit = module->getOrInsertFunction("_EN3std6string4initE7pointerP4char6length3int", stringInitType).getCallee();
+        builder.CreateCall(stringInit, { alloca, stringPtr, size });
         return alloca;
     } else {
         // Passing as C-string, i.e. char pointer.
@@ -579,7 +578,7 @@ llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type membe
 }
 
 llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
-    if (objectType.isArrayWithRuntimeSize() || objectType.isString()) {
+    if (objectType.isArrayWithRuntimeSize()) {
         return builder.CreateExtractValue(codegenExpr(object), 1, "size");
     } else {
         return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), objectType.getArraySize());

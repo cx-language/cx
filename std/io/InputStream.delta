@@ -1,5 +1,5 @@
 interface InputStream {
     int readByte();
-    String readLine();
+    StringBuffer readLine();
     bool eof();
 }

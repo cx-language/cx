@@ -3,9 +3,9 @@ struct char: Copyable, Comparable, Printable, Hashable {
         return int(this).compare(int(other));
     }
 
-    void print(String* stream) {
+    void print(StringBuffer* stream) {
         // TODO: Use char overload of 'write' when it's implemented.
-        stream.write(StringRef(this, 1));
+        stream.write(string(this, 1));
     }
 
     uint64 hash() {

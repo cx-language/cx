@@ -2,7 +2,7 @@
 // UNSUPPORTED: wsl
 
 int main() {
-    var s = String("ok");
+    var s = StringBuffer("ok");
     s.substr(0..5);
     return 0;
 }

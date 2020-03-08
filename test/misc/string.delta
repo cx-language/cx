@@ -4,12 +4,12 @@ int main() {
     return "abc".size() + foo("quux");
 }
 
-int foo(StringRef x) {
+int foo(string x) {
     var s = x;
     s = bar(x);
     return x.size() + bar(s).size();
 }
 
-StringRef bar(StringRef z) {
+string bar(string z) {
     return z;
 }
