@@ -22,8 +22,14 @@ if "UPDATE_SNAPSHOTS" in os.environ:
         snapshot_file.write(output)
     sys.exit(0)
 
-with open(snapshot_path, "r") as snapshot_file:
-    snapshot = convert_newlines(snapshot_file.read())
+try:
+    with open(snapshot_path, "r") as snapshot_file:
+        snapshot = convert_newlines(snapshot_file.read())
+except IOError:
+    print("FAIL: snapshot file not found\n")
+    print("Output:")
+    print(output)
+    sys.exit(1)
 
 if output != snapshot:
     print("FAIL: output doesn't match snapshot\n")
