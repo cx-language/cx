@@ -1077,10 +1077,16 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
                                                         << receiverType << "' which may be null; "
                                                         << "unwrap the value with a postfix '!' to silence this warning");
         } else if (receiverType.removePointer().isArrayType()) {
+            // TODO: Move these member functions to a 'struct Array' declaration in stdlib.
             if (expr.getFunctionName() == "size") {
                 validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 return ArrayType::getIndexType();
+            }
+            if (expr.getFunctionName() == "iterator") {
+                validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
+                validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
+                return BasicType::get("ArrayIterator", receiverType.removePointer().getElementType());
             }
 
             ERROR(expr.getReceiver()->getLocation(),

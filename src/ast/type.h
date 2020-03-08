@@ -193,6 +193,7 @@ class ArrayType : public TypeBase {
 public:
     Type getElementType() const { return elementType; }
     int64_t getSize() const { return size; }
+    bool hasStaticSize() const { return size >= 0; }
     bool hasRuntimeSize() const { return size == runtimeSize; }
     bool hasUnknownSize() const { return size == unknownSize; }
     static Type getIndexType() { return Type::getInt(); }

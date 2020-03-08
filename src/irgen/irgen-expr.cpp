@@ -113,7 +113,6 @@ llvm::Value* IRGenerator::codegenUnaryExpr(const UnaryExpr& expr) {
         case Token::And:
             return codegenExprAsPointer(expr.getOperand());
         case Token::Not:
-            return codegenNot(expr);
         case Token::Tilde:
             return codegenNot(expr);
         case Token::Increment:
@@ -463,6 +462,9 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
         if (expr.getFunctionName() == "size") {
             return getArrayLength(*expr.getReceiver(), expr.getReceiverType().removePointer());
         }
+        if (expr.getFunctionName() == "iterator") {
+            return getArrayIterator(*expr.getReceiver(), expr.getReceiverType().removePointer());
+        }
         llvm_unreachable("unknown array member function");
     }
 
@@ -582,6 +584,16 @@ llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
     } else {
         return llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), objectType.getArraySize());
     }
+}
+
+llvm::Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
+    auto* type = toIR(BasicType::get("ArrayIterator", objectType.getElementType()));
+    auto* value = codegenExprAsPointer(object);
+    auto* elementPtr = builder.CreateConstInBoundsGEP2_32(nullptr, value, 0, 0);
+    auto* size = getArrayLength(object, objectType);
+    auto* end = builder.CreateInBoundsGEP(elementPtr, size);
+    auto* iterator = builder.CreateInsertValue(llvm::UndefValue::get(type), elementPtr, 0);
+    return builder.CreateInsertValue(iterator, end, 1);
 }
 
 llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {

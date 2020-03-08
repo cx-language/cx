@@ -131,6 +131,7 @@ private:
     llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
     llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
+    llvm::Value* getArrayIterator(const Expr& object, Type objectType);
 
     void beginScope();
     void endScope();
