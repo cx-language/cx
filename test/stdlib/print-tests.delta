@@ -15,4 +15,5 @@ void main() {
     print(false); // CHECK-NEXT: false
     print(A("foo")); // CHECK-NEXT: foofoo!
     print(0.1 + 0.2); // CHECK-NEXT: 0.3
+    print("f", 0, '0'); // CHECK-NEXT: f00
 }
