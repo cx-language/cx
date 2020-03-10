@@ -9,6 +9,7 @@
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "lex.h"
 #include "../ast/decl.h"
@@ -546,16 +547,30 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
 
 bool Parser::shouldParseVarStmt() {
     if (currentToken() == Token::Var) return true;
-    auto backtrackLocation = currentTokenIndex;
-    bool result;
-    try {
-        parseType();
-        result = currentToken() == Token::Identifier;
-    } catch (const CompileError&) {
-        result = false;
+    int offset = 2;
+
+    while (true) {
+        if (lookAhead(offset).is(Token::Assignment)) {
+            if (lookAhead(offset - 1).is(Token::Identifier)) {
+                if (lookAhead(offset - 2).is({ Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater })) {
+                    return true;
+                }
+                if (lookAhead(offset - 2).is(Token::Star)) {
+                    if (lookAhead(offset - 3).is(Token::Semicolon) ||
+                        lookAhead(offset - 2).getLocation().line != lookAhead(offset - 3).getLocation().line) {
+                        return false;
+                    }
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).getLocation().line != lookAhead(offset - 1).getLocation().line) {
+                return false;
+            }
+            offset++;
+        }
     }
-    currentTokenIndex = backtrackLocation;
-    return result;
 }
 
 bool Parser::shouldParseGenericArgumentList() {
