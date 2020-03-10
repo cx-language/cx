@@ -1,7 +1,8 @@
-// RUN: %not --crash %delta run %s
+// RUN: %not --crash %delta run %s 2>&1 | %FileCheck -match-full-lines %s
 // REQUIRES: windows
 
 void main() {
     int*? p = null;
+    // CHECK: Unwrap failed at delta-run-unwrap-fail-windows.delta:[[@LINE+1]]:15
     var pp = p!;
 }

@@ -6,6 +6,7 @@ extern void abort();
 // stdio.h
 // TODO using FILE pointer causes infinite loop, so we use void pointer
 extern int printf(const char* format, ...);
+extern int fprintf(void* stream, const char* format, ...);
 extern int sprintf(char* str, const char* format, ...);
 extern int getchar();
 extern void*? fopen(const char* filename, const char* mode);

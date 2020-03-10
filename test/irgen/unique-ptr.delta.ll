@@ -2,8 +2,8 @@
 %"UniquePtr<UniquePtr<int>>" = type { %"UniquePtr<int>"* }
 %"UniquePtr<int>" = type { i32* }
 
-@0 = private unnamed_addr constant [37 x i8] c"Unwrap failed at allocate.delta:9:54\00", align 1
-@1 = private unnamed_addr constant [37 x i8] c"Unwrap failed at allocate.delta:9:54\00", align 1
+@0 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:9:54\0A\00", align 1
+@1 = private unnamed_addr constant [38 x i8] c"Unwrap failed at allocate.delta:9:54\0A\00", align 1
 
 define i32 @main() {
   %p = alloca %"UniquePtr<UniquePtr<int>>"
@@ -67,13 +67,12 @@ define i32* @_EN3std8allocateI3intEE5value3int(i32 %value) {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @0, i32 0, i32 0))
-  call void @abort()
+  call void @_EN3std10assertFailE7messageP4char(i8* getelementptr inbounds ([38 x i8], [38 x i8]* @0, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
-  %3 = bitcast i8* %1 to i32*
-  store i32* %3, i32** %allocation
+  %2 = bitcast i8* %1 to i32*
+  store i32* %2, i32** %allocation
   %allocation.load = load i32*, i32** %allocation
   store i32 %value, i32* %allocation.load
   %allocation.load1 = load i32*, i32** %allocation
@@ -93,13 +92,12 @@ define %"UniquePtr<int>"* @_EN3std8allocateI9UniquePtrI3intEEE5value9UniquePtrI3
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @1, i32 0, i32 0))
-  call void @abort()
+  call void @_EN3std10assertFailE7messageP4char(i8* getelementptr inbounds ([38 x i8], [38 x i8]* @1, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
-  %3 = bitcast i8* %1 to %"UniquePtr<int>"*
-  store %"UniquePtr<int>"* %3, %"UniquePtr<int>"** %allocation
+  %2 = bitcast i8* %1 to %"UniquePtr<int>"*
+  store %"UniquePtr<int>"* %2, %"UniquePtr<int>"** %allocation
   %allocation.load = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %allocation
   store %"UniquePtr<int>" %value, %"UniquePtr<int>"* %allocation.load
   %allocation.load1 = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %allocation
@@ -116,6 +114,4 @@ declare void @free(i8*)
 
 declare i8* @malloc(i64)
 
-declare i32 @puts(i8*)
-
-declare void @abort()
+declare void @_EN3std10assertFailE7messageP4char(i8*)

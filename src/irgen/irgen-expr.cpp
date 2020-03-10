@@ -413,13 +413,12 @@ void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location,
     auto* function = builder.GetInsertBlock()->getParent();
     auto* failBlock = llvm::BasicBlock::Create(ctx, "assert.fail", function);
     auto* successBlock = llvm::BasicBlock::Create(ctx, "assert.success", function);
-    auto* puts = module->getOrInsertFunction("puts", llvm::Type::getInt32Ty(ctx), llvm::Type::getInt8PtrTy(ctx)).getCallee();
+    auto* assertFail = getFunctionProto(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->getSymbolTable().findOne("assertFail")));
     builder.CreateCondBr(condition, failBlock, successBlock);
     builder.SetInsertPoint(failBlock);
     auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":",
-                                               std::to_string(location.line), ":", std::to_string(location.column));
-    builder.CreateCall(puts, builder.CreateGlobalStringPtr(messageAndLocation));
-    builder.CreateCall(module->getOrInsertFunction("abort", llvm::Type::getVoidTy(ctx)));
+                                               std::to_string(location.line), ":", std::to_string(location.column), "\n");
+    builder.CreateCall(assertFail, builder.CreateGlobalStringPtr(messageAndLocation));
     builder.CreateUnreachable();
     builder.SetInsertPoint(successBlock);
 }

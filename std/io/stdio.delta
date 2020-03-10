@@ -68,3 +68,12 @@ StringBuffer readLine() {
 
     return line;
 }
+
+private void assertFail(char* message) {
+    var stream = fdopen(2, "w");
+    if (stream) {
+        fprintf(stream, message);
+        fclose(stream!);
+    }
+    abort();
+}

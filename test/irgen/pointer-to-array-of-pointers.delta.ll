@@ -1,6 +1,6 @@
 
 @0 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
-@1 = private unnamed_addr constant [57 x i8] c"Unwrap failed at pointer-to-array-of-pointers.delta:8:21\00", align 1
+@1 = private unnamed_addr constant [58 x i8] c"Unwrap failed at pointer-to-array-of-pointers.delta:8:21\0A\00", align 1
 
 declare i8** @b()
 
@@ -15,20 +15,17 @@ define i32 @main() {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  %2 = call i32 @puts(i8* getelementptr inbounds ([57 x i8], [57 x i8]* @1, i32 0, i32 0))
-  call void @abort()
+  call void @_EN3std10assertFailE7messageP4char(i8* getelementptr inbounds ([58 x i8], [58 x i8]* @1, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
   %i.load = load i32, i32* %i
-  %3 = getelementptr i8*, i8** %s.load, i32 %i.load
-  %.load = load i8*, i8** %3
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i8* %.load)
+  %2 = getelementptr i8*, i8** %s.load, i32 %i.load
+  %.load = load i8*, i8** %2
+  %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i8* %.load)
   ret i32 0
 }
 
 declare i32 @printf(i8*, ...)
 
-declare i32 @puts(i8*)
-
-declare void @abort()
+declare void @_EN3std10assertFailE7messageP4char(i8*)

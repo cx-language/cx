@@ -310,9 +310,8 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
             ABORT("couldn't make an absolute path: " << error.message());
         }
 
-        std::string command = (temporaryExecutablePath + " 2>&1").str();
         std::string output;
-        int executableExitStatus = exec(command.c_str(), output);
+        int executableExitStatus = exec(temporaryExecutablePath.c_str(), output);
         llvm::outs() << output;
         llvm::sys::fs::remove(temporaryExecutablePath);
 
