@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import subprocess
+import sys
 
 
 def convert_newlines(string):
     return string.replace("\r\n", "\n")
 
+
+allow_empty = '-allow-empty' in sys.argv
+if allow_empty: sys.argv.remove('-allow-empty')
 
 snapshot_path = sys.argv[1]
 
@@ -16,6 +19,10 @@ try:
 except subprocess.CalledProcessError as error:
     print(error.output)
     sys.exit(error.returncode)
+
+if output == "" and not allow_empty:
+    print("FAIL: output was empty")
+    sys.exit(1)
 
 if "UPDATE_SNAPSHOTS" in os.environ:
     with open(snapshot_path, "w") as snapshot_file:
@@ -37,6 +44,7 @@ if output != snapshot:
     print("+ Received\n")
 
     import difflib
+
     diff = difflib.unified_diff(snapshot.splitlines(1), output.splitlines(1))
     print("".join(diff))
 
