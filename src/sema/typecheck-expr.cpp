@@ -1113,8 +1113,6 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
     } else {
         auto callee = expr.getFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
-        // TODO: Prevent duplicates and remove this call:
-        decls.erase(std::unique(decls.begin(), decls.end()), decls.end());
         decl = resolveOverload(decls, expr, callee);
 
         if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {

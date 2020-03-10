@@ -480,6 +480,15 @@ Decl* Typechecker::findDecl(llvm::StringRef name, SourceLocation location) const
     ERROR(location, "unknown identifier '" << name << "'");
 }
 
+static void append(std::vector<Decl*>& target, llvm::ArrayRef<Decl*> source) {
+    for (auto& element : source) {
+        // TODO: Should this ever be false? I.e. should the same decl ever be in multiple different modules?
+        if (!llvm::is_contained(target, element)) {
+            target.push_back(element);
+        }
+    }
+}
+
 std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl, bool inAllImportedModules) const {
     std::vector<Decl*> decls;
 

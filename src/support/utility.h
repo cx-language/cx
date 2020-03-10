@@ -41,12 +41,6 @@ std::vector<T> instantiate(llvm::ArrayRef<T> elements, const llvm::StringMap<Typ
     return map(elements, [&](const T& element) { return element->instantiate(genericArgs); });
 }
 
-/// Appends the elements of `source` to `target`.
-template<typename TargetContainer, typename SourceContainer>
-static void append(TargetContainer& target, const SourceContainer& source) {
-    target.insert(target.end(), source.begin(), source.end());
-}
-
 #define NOTNULL(x) (ASSERT(x), x)
 
 class StringFormatter : public llvm::raw_string_ostream {
