@@ -67,9 +67,8 @@ struct Note {
 };
 
 struct CompileError : std::exception {
-    CompileError() = default;
-    CompileError(SourceLocation location, std::string&& message, std::vector<Note>&& notes = {})
-    : location(location), message(std::move(message)), notes(std::move(notes)) {}
+    CompileError();
+    CompileError(SourceLocation location, std::string&& message, std::vector<Note>&& notes = {});
     const char* what() const noexcept override { return message.c_str(); }
     void print() const;
 
@@ -85,6 +84,7 @@ void printColored(const T& text, llvm::raw_ostream::Colors color) {
     if (llvm::outs().has_colors()) llvm::outs().resetColor();
 }
 
+void printStackTrace();
 [[noreturn]] void abort(StringFormatter& message);
 void reportError(SourceLocation location, StringFormatter& message, llvm::ArrayRef<Note> notes = {});
 void reportWarning(SourceLocation location, StringFormatter& message);
@@ -93,6 +93,7 @@ enum class WarningMode { Default, Suppress, TreatAsErrors };
 
 #define ABORT(args) \
     { \
+        printStackTrace(); \
         StringFormatter s; \
         s << args; \
         abort(s); \
@@ -100,6 +101,7 @@ enum class WarningMode { Default, Suppress, TreatAsErrors };
 
 #define ERROR(location, args) \
     { \
+        printStackTrace(); \
         StringFormatter s; \
         s << args; \
         throw CompileError(location, std::move(s.str())); \
@@ -107,6 +109,7 @@ enum class WarningMode { Default, Suppress, TreatAsErrors };
 
 #define ERROR_WITH_NOTES(location, notes, args) \
     { \
+        printStackTrace(); \
         StringFormatter s; \
         s << args; \
         throw CompileError(location, std::move(s.str()), notes); \
@@ -114,6 +117,7 @@ enum class WarningMode { Default, Suppress, TreatAsErrors };
 
 #define REPORT_ERROR(location, args) \
     { \
+        printStackTrace(); \
         StringFormatter s; \
         s << args; \
         reportError(location, s, {}); \

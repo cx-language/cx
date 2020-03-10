@@ -79,6 +79,11 @@ void delta::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm:
     llvm::outs() << '\n';
 }
 
+CompileError::CompileError() = default;
+
+CompileError::CompileError(SourceLocation location, std::string&& message, std::vector<Note>&& notes)
+: location(location), message(std::move(message)), notes(std::move(notes)) {}
+
 void CompileError::print() const {
     if (message.empty()) return;
 
@@ -101,16 +106,17 @@ std::string delta::getCCompilerPath() {
     return "";
 }
 
-void delta::abort(StringFormatter& message) {
-    printColored("error: ", llvm::raw_ostream::RED);
-    llvm::outs() << message.str() << '\n';
-
+void delta::printStackTrace() {
     if (auto env = llvm::sys::Process::GetEnv("DELTA_PRINT_STACK_TRACE")) {
         if (llvm::StringRef(*env).equals_lower("true") || *env == "1") {
             llvm::sys::PrintStackTrace(llvm::outs());
         }
     }
+}
 
+void delta::abort(StringFormatter& message) {
+    printColored("error: ", llvm::raw_ostream::RED);
+    llvm::outs() << message.str() << '\n';
     exit(1);
 }
 
