@@ -1,4 +1,0 @@
-interface OutputStream {
-    bool write(string s);
-    // TODO: Add 'write' overload for char.
-}

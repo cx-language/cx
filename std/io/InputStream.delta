@@ -1,5 +1,0 @@
-interface InputStream {
-    int readByte();
-    StringBuffer readLine();
-    bool eof();
-}

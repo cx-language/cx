@@ -1,0 +1,23 @@
+struct ByteIterator: Copyable, Iterator<uint8> {
+    string stream;
+
+    init(string stream) {
+        this.stream = stream;
+    }
+
+    bool hasValue() {
+        return !stream.empty();
+    }
+
+    uint8 value() {
+        return uint8(stream.front());
+    }
+
+    void increment() {
+        stream = stream.substr(1);
+    }
+
+    ByteIterator iterator() {
+        return this;
+    }
+}

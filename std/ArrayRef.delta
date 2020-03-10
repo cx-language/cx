@@ -21,13 +21,24 @@ struct ArrayRef<Element>: Copyable {
         this.size = size;
     }
 
+    bool empty() {
+        return size == 0;
+    }
+
     /// Returns the number of elements in the array.
     int size() {
         return size;
     }
 
+    /// Returns the first element in the array.
+    Element* front() {
+        if (empty()) indexOutOfBounds("front", 0);
+        return data[0];
+    }
+
     /// Returns a reference to the element at the given index.
     Element* operator[](int index) {
+        if (index < 0 || index >= size()) indexOutOfBounds("operator[]", index);
         return data[index];
     }
 
@@ -37,6 +48,11 @@ struct ArrayRef<Element>: Copyable {
 
     ArrayIterator<Element> iterator() {
         return ArrayIterator(this);
+    }
+
+    private void indexOutOfBounds(string function, int index) {
+        print("ArrayRef.", function, ": index ", index, " is out of bounds, size is ", size());
+        fatalError();
     }
 }
 

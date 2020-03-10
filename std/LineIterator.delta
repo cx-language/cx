@@ -1,0 +1,26 @@
+struct LineIterator: Copyable, Iterator<string> {
+    string stream;
+    int end;
+
+    init(string stream) {
+        this.stream = stream;
+        end = stream.find('\n');
+    }
+
+    bool hasValue() {
+        return !stream.empty();
+    }
+
+    string value() {
+        return stream.substr(0..end);
+    }
+
+    void increment() {
+        stream = stream.substr(end + 1);
+        end = stream.find('\n');
+    }
+
+    LineIterator iterator() {
+        return this;
+    }
+}

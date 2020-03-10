@@ -1,4 +1,4 @@
-struct StringBuffer: Comparable, Hashable, OutputStream, Printable {
+struct StringBuffer: Comparable, Hashable, Printable {
     List<char> characters;
 
     /// Initializes an empty string.
@@ -30,6 +30,12 @@ struct StringBuffer: Comparable, Hashable, OutputStream, Printable {
     ///
     init(char* cString) {
         init(string(cString, int(strlen(cString))));
+    }
+
+    /// Initializes the buffer to contain the given number of uninitialized bytes.
+    init(int uninitializedSize) {
+        characters = List<char>(uninitializedSize: uninitializedSize + 1);
+        *characters[uninitializedSize] = '\0';
     }
 
     int size() {
@@ -91,56 +97,60 @@ struct StringBuffer: Comparable, Hashable, OutputStream, Printable {
     }
 
     bool contains(char c) {
-        return find(c, 0) != -1;
+        return find(c, 0) != size();
     }
 
-    /// Returns the index of the given character, or -1 if it's not found
+    /// Returns the index of the given character, or the size if it's not found.
     int find(char c) {
         return find(c, 0);
     }
 
-    /// Returns the index of the given character, or -1 if it's not found.
-    /// Starts from start
+    /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
     int find(char c, int start) {
         for (var i in start..size()) {
             if (characters[i] == c) {
                 return i;
             }
         }
-        return -1;
+        return size();
     }
 
-    // Returns the substring of the string in the given range, [inclusive, exclusive]
-    string substr(Range<int> range) {
-        if (range.end > size()) {
-            indexOutOfBounds(range.end);
+    /// Returns the substring of the string starting from the given index, until the end of the string.
+    string substr(int start) {
+        if (start < 0 || start > size()) {
+            indexOutOfBounds("substr", start);
         }
-        return string(characters[range.start], range.size());
+        return string(&characters.data()[start], size() - start);
+    }
+
+    /// Returns the substring of the string in the given range, [inclusive, exclusive]
+    string substr(Range<int> range) {
+        if (range.start < 0 || range.start > size()) {
+            indexOutOfBounds("substr", range.start);
+        }
+        if (range.end < 0 || range.end > size()) {
+            indexOutOfBounds("substr", range.end);
+        }
+        return string(&characters.data()[range.start], range.size());
     }
 
     // Splits the string by the given delimiter
     List<string> split(char delim) {
         var tokens = List<string>();
-
         var prev = 0;
         var pos = 0;
 
         while (true) {
             pos = find(delim, prev);
-
-            if (pos == -1) {
-                pos = size();
-            }
-
             var token = substr(prev..pos);
             tokens.push(token);
-
             prev = pos + 1;
 
             if (pos > size() || prev > size()) {
                 break;
             }
         }
+
         return tokens;
     }
 
@@ -157,8 +167,8 @@ struct StringBuffer: Comparable, Hashable, OutputStream, Printable {
         return string(this).compare(string(other));
     }
 
-    private void indexOutOfBounds(int index) {
-        printf("Range index %d is out of bounds, size is %d\n", index, size());
+    private void indexOutOfBounds(string function, int index) {
+        print("StringBuffer.", function, ": index ", index, " is out of bounds, size is ", size());
         fatalError();
     }
 }

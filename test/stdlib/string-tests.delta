@@ -10,6 +10,8 @@ void main() {
     testSubstr();
     testSplit();
     testOtherSplit();
+    testBytes();
+    testLines();
 }
 
 void testStringIterator() {
@@ -36,7 +38,7 @@ void testFind() {
     assert(s.find('d') == 3);
 
     // Start from index
-    assert(s.find('w', 1) == -1);
+    assert(s.find('w', 1) == s.size());
     assert(s.find('d', 2) == 3);
 }
 
@@ -103,4 +105,30 @@ void testOtherSplit() {
     assert(words[5] == "");
     assert(words[6] == "");
     assert(words[7] == "");
+}
+
+void testBytes() {
+    // TODO: Unicode / UTF-8
+    var text = "The quick brown fox jumps over the lazy dog";
+    var i = 0;
+
+    for (var byte in text.bytes()) {
+        assert(byte == uint8(text[i]));
+        i++;
+    }
+
+    assert(i == text.size());
+}
+
+void testLines() {
+    var text = "The quick brown fox \n\n\n jumps over\n the lazy dog\n";
+    var expected = ["The quick brown fox ", "", "", " jumps over", " the lazy dog"];
+    var i = 0;
+
+    for (var line in text.lines()) {
+        assert(line == expected[i]);
+        i++;
+    }
+
+    assert(i == expected.size());
 }

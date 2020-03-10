@@ -118,11 +118,6 @@ struct Program
 
 void main()
 {
-    var file = FileStream("./inputs/mandel.b");
-    var text = StringBuffer();
-
-    for (var byte in file.bytes())
-        text.push(char(byte));
-
+    var text = readFile("./inputs/mandel.b");
     Program(string(text)).run();
 }

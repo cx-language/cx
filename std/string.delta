@@ -19,8 +19,17 @@ struct string: Copyable, Comparable, Hashable, Printable {
         characters = ArrayRef<char>(string.data(), string.size());
     }
 
+    bool empty() {
+        return characters.size() == 0;
+    }
+
     int size() {
         return characters.size();
+    }
+
+    /// Returns the first character.
+    char front() {
+        return characters.front();
     }
 
     /// Returns the character at the given index.
@@ -33,23 +42,42 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     bool contains(char c) {
-        return find(c, 0) != -1;
+        return find(c, 0) != size();
     }
 
-    /// Returns the index of the given character, or -1 if it's not found
+    /// Returns the index of the given character, or the size if it's not found.
     int find(char c) {
         return find(c, 0);
     }
 
-    /// Returns the index of the given character, or -1 if it's not found.
-    /// Starts from start
+    // TODO: Do we need 'find(char, int)', because basically the same can be accomplish with `substr(start).find(c)`?
+    /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
     int find(char c, int start) {
         for (var i in start..size()) {
             if (characters[i] == c) {
                 return i;
             }
         }
-        return -1;
+        return size();
+    }
+
+    /// Returns the substring of the string starting from the given index, until the end of the string.
+    string substr(int start) {
+        if (start < 0 || start > size()) {
+            indexOutOfBounds("substr", start);
+        }
+        return string(&characters.data()[start], size() - start);
+    }
+
+    /// Returns the substring of the string in the given range, [inclusive, exclusive]
+    string substr(Range<int> range) {
+        if (range.start < 0 || range.start > size()) {
+            indexOutOfBounds("substr", range.start);
+        }
+        if (range.end < 0 || range.end > size()) {
+            indexOutOfBounds("substr", range.end);
+        }
+        return string(&characters.data()[range.start], range.size());
     }
 
     /// Supports using strings with sets and dicts
@@ -67,6 +95,16 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return StringIterator(this);
     }
 
+    /// Returns an iterator over each line in the string.
+    LineIterator lines() {
+        return LineIterator(this);
+    }
+
+    /// Returns an iterator over each byte in the string.
+    ByteIterator bytes() {
+        return ByteIterator(this);
+    }
+
     void print(StringBuffer* stream) {
         stream.write(this);
     }
@@ -79,6 +117,11 @@ struct string: Copyable, Comparable, Hashable, Printable {
         if (size() < other.size()) { return Ordering.Less; }
         if (size() > other.size()) { return Ordering.Greater; }
         return Ordering.Equal;
+    }
+
+    private void indexOutOfBounds(string function, int index) {
+        print("string.", function, ": index ", index, " is out of bounds, size is ", size());
+        fatalError();
     }
 }
 

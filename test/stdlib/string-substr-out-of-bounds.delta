@@ -7,4 +7,4 @@ int main() {
     return 0;
 }
 
-// CHECK: Range index 5 is out of bounds, size is 2
+// CHECK: StringBuffer.substr: index 5 is out of bounds, size is 2

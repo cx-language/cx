@@ -26,6 +26,13 @@ struct List<Element> {
         }
     }
 
+    /// Initializes the list to contain the given number of uninitialized elements.
+    init(int uninitializedSize) {
+        buffer = allocateArray<Element>(uninitializedSize);
+        size = uninitializedSize;
+        capacity = uninitializedSize;
+    }
+
     deinit() {
         if (capacity != 0) {
             // FIXME: Call deinitializers of remaining elements.
@@ -106,12 +113,6 @@ struct List<Element> {
             buffer = newBuffer;
             capacity = minimumCapacity;
         }
-    }
-
-    void resizeUninitialized(int size) {
-        assert(this.size == 0);
-        assert(this.capacity == 0);
-        buffer = allocateArray<Element>(size);
     }
 
     /// Removes the first element from the list.
