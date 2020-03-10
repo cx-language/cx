@@ -8,5 +8,9 @@ struct Foo {
     void foo(int qux) { }
 }
 
-void foo(int i) { }
+void foo(int i) {
+    Foo(i: i).foo(i: i)
+    Foo(qux: i).foo(qux: i)
+}
+
 void foo(int qux) { }

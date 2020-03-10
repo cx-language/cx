@@ -44,10 +44,19 @@ if.end:                                           ; preds = %if.else
 
 declare %StringIterator @_EN3std6string8iteratorE(%string*)
 
-declare void @_EN3std6string4initE7pointerP4char6length3int(%string*, i8*, i32)
+define void @_EN3std6string4initE7pointerP4char6length3int(%string* %this, i8* %pointer, i32 %length) {
+  %1 = alloca %"ArrayRef<char>"
+  %characters = getelementptr inbounds %string, %string* %this, i32 0, i32 0
+  call void @_EN3std8ArrayRefI4charE4initE4dataP4char4size3int(%"ArrayRef<char>"* %1, i8* %pointer, i32 %length)
+  %.load = load %"ArrayRef<char>", %"ArrayRef<char>"* %1
+  store %"ArrayRef<char>" %.load, %"ArrayRef<char>"* %characters
+  ret void
+}
 
 declare i1 @_EN3std14StringIterator8hasValueE(%StringIterator*)
 
 declare i8 @_EN3std14StringIterator5valueE(%StringIterator*)
 
 declare void @_EN3std14StringIterator9incrementE(%StringIterator*)
+
+declare void @_EN3std8ArrayRefI4charE4initE4dataP4char4size3int(%"ArrayRef<char>"*, i8*, i32)

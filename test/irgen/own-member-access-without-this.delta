@@ -33,3 +33,12 @@ struct B: Copyable {
         j = 1
     }
 }
+
+void main() {
+    var a = A()
+    a.foo()
+    a.bar()
+    var b = B()
+    b.foo()
+    b.bar()
+}

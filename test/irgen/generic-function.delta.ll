@@ -32,7 +32,14 @@ define %string @_EN4main3barI6stringEE1t6string(%string %t) {
   ret %string %t
 }
 
-declare void @_EN3std6string4initE7pointerP4char6length3int(%string*, i8*, i32)
+define void @_EN3std6string4initE7pointerP4char6length3int(%string* %this, i8* %pointer, i32 %length) {
+  %1 = alloca %"ArrayRef<char>"
+  %characters = getelementptr inbounds %string, %string* %this, i32 0, i32 0
+  call void @_EN3std8ArrayRefI4charE4initE4dataP4char4size3int(%"ArrayRef<char>"* %1, i8* %pointer, i32 %length)
+  %.load = load %"ArrayRef<char>", %"ArrayRef<char>"* %1
+  store %"ArrayRef<char>" %.load, %"ArrayRef<char>"* %characters
+  ret void
+}
 
 define i32 @_EN4main3quxI3intEE1t3int(i32 %t) {
   %1 = icmp slt i32 %t, 0
@@ -48,3 +55,5 @@ if.else:                                          ; preds = %0
 if.end:                                           ; preds = %if.else
   ret i32 %t
 }
+
+declare void @_EN3std8ArrayRefI4charE4initE4dataP4char4size3int(%"ArrayRef<char>"*, i8*, i32)

@@ -16,12 +16,8 @@ define void @_EN4main1SI3intE4initE(%"S<int>"* %this) {
   ret void
 }
 
-declare void @_EN4main1SI3intE4initE.1(%"S<int>"*)
-
 define void @_EN4main1SI4boolE4initE(%"S<bool>"* %this) {
   %p = getelementptr inbounds %"S<bool>", %"S<bool>"* %this, i32 0, i32 0
   store i1* null, i1** %p
   ret void
 }
-
-declare void @_EN4main1SI4boolE4initE.2(%"S<bool>"*)

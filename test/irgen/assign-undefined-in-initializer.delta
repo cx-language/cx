@@ -7,3 +7,7 @@ struct A {
         i = undefined;
     }
 }
+
+void main() {
+    var a = A();
+}

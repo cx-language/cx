@@ -29,4 +29,13 @@ define void @_EN4main3FooI6stringE4initE1t6string(%"Foo<string>"* %this, %string
   ret void
 }
 
-declare void @_EN3std6string4initE7pointerP4char6length3int(%string*, i8*, i32)
+define void @_EN3std6string4initE7pointerP4char6length3int(%string* %this, i8* %pointer, i32 %length) {
+  %1 = alloca %"ArrayRef<char>"
+  %characters = getelementptr inbounds %string, %string* %this, i32 0, i32 0
+  call void @_EN3std8ArrayRefI4charE4initE4dataP4char4size3int(%"ArrayRef<char>"* %1, i8* %pointer, i32 %length)
+  %.load = load %"ArrayRef<char>", %"ArrayRef<char>"* %1
+  store %"ArrayRef<char>" %.load, %"ArrayRef<char>"* %characters
+  ret void
+}
+
+declare void @_EN3std8ArrayRefI4charE4initE4dataP4char4size3int(%"ArrayRef<char>"*, i8*, i32)

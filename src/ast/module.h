@@ -51,12 +51,11 @@ public:
     void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) {
         identifierReplacements.try_emplace(name, replacement);
     }
-    bool contains(const std::string& name) const { return !find(name).empty(); }
-    bool containsInCurrentScope(const std::string& name) const { return !findInCurrentScope(name).empty(); }
+    bool contains(llvm::StringRef name) const { return !find(name).empty(); }
+    bool containsInCurrentScope(llvm::StringRef name) const { return !findInCurrentScope(name).empty(); }
 
-    llvm::ArrayRef<Decl*> find(const std::string& name) const {
+    llvm::ArrayRef<Decl*> find(llvm::StringRef name) const {
         auto realName = applyIdentifierReplacements(name);
-
         for (const auto& scope : llvm::reverse(scopes)) {
             auto it = scope.decls.find(realName);
             if (it != scope.decls.end()) return it->second;
@@ -64,19 +63,14 @@ public:
         return {};
     }
 
-    Decl* findOne(const std::string& name) const {
+    Decl* findOne(llvm::StringRef name) const {
         auto results = find(name);
-        switch (results.size()) {
-            case 1:
-                return results[0];
-            case 0:
-                return nullptr;
-            default:
-                throw std::runtime_error("Found multiple occurrences of '" + name + "'");
-        }
+        if (results.empty()) return nullptr;
+        ASSERT(results.size() == 1);
+        return results.front();
     }
 
-    llvm::ArrayRef<Decl*> findInCurrentScope(const std::string& name) const {
+    llvm::ArrayRef<Decl*> findInCurrentScope(llvm::StringRef name) const {
         if (!scopes.empty()) {
             auto it = scopes.back().decls.find(applyIdentifierReplacements(name));
             if (it != scopes.back().decls.end()) return it->second;
@@ -142,7 +136,7 @@ public:
 
     static std::vector<Module*> getAllImportedModules();
     static llvm::StringMap<Module*>& getAllImportedModulesMap() { return allImportedModules; }
-    static llvm::ArrayRef<Module*> getStdlibModules();
+    static Module* getStdlibModule();
 
 private:
     void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global);

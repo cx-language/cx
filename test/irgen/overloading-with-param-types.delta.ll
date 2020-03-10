@@ -2,18 +2,6 @@
 %S = type { i32 }
 %T = type { i32 }
 
-define void @_EN4main1S4initE(%S* %this) {
-  %i = getelementptr inbounds %S, %S* %this, i32 0, i32 0
-  store i32 0, i32* %i
-  ret void
-}
-
-define void @_EN4main1T4initE(%T* %this) {
-  %i = getelementptr inbounds %T, %T* %this, i32 0, i32 0
-  store i32 0, i32* %i
-  ret void
-}
-
 define void @_EN4main1fE1a1S(%S %a) {
   ret void
 }
@@ -46,4 +34,16 @@ define i32 @main() {
   %t.load4 = load %T, %T* %t
   call void @_EN4mainplE1a1T1b1T(%T %t.load3, %T %t.load4)
   ret i32 0
+}
+
+define void @_EN4main1S4initE(%S* %this) {
+  %i = getelementptr inbounds %S, %S* %this, i32 0, i32 0
+  store i32 0, i32* %i
+  ret void
+}
+
+define void @_EN4main1T4initE(%T* %this) {
+  %i = getelementptr inbounds %T, %T* %this, i32 0, i32 0
+  store i32 0, i32* %i
+  ret void
 }

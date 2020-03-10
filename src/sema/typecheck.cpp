@@ -463,7 +463,7 @@ Decl* Typechecker::findDecl(llvm::StringRef name, SourceLocation location) const
         }
     }
 
-    if (Decl* match = findDeclInModules(name, location, currentModule->getStdlibModules())) {
+    if (Decl* match = findDeclInModules(name, location, Module::getStdlibModule())) {
         return match;
     }
 
@@ -472,7 +472,7 @@ Decl* Typechecker::findDecl(llvm::StringRef name, SourceLocation location) const
             return match;
         }
     } else {
-        if (Decl* match = findDeclInModules(name, location, currentModule->getAllImportedModules())) {
+        if (Decl* match = findDeclInModules(name, location, Module::getAllImportedModules())) {
             return match;
         }
     }
@@ -512,12 +512,12 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
         append(decls, findDeclsInModules(name, currentModule));
     }
 
-    append(decls, findDeclsInModules(name, currentModule->getStdlibModules()));
+    append(decls, findDeclsInModules(name, Module::getStdlibModule()));
 
     if (currentSourceFile && !inAllImportedModules) {
         append(decls, findDeclsInModules(name, currentSourceFile->getImportedModules()));
     } else {
-        append(decls, findDeclsInModules(name, currentModule->getAllImportedModules()));
+        append(decls, findDeclsInModules(name, Module::getAllImportedModules()));
     }
 
     return decls;

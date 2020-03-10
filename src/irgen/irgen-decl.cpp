@@ -148,10 +148,6 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
         }
     }
 
-    for (auto& memberDecl : decl.getMemberDecls()) {
-        codegenDecl(*memberDecl);
-    }
-
     if (decl.getDeinitializer() == nullptr) {
         if (auto deinitializer = getDefaultDeinitializer(decl)) {
             codegenDecl(*deinitializer);

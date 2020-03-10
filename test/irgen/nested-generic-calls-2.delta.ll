@@ -1,14 +1,6 @@
 
-%S = type { i32 }
 %"M<S>" = type { %S }
-
-define void @_EN4main1S4initE(%S* %this) {
-  ret void
-}
-
-define void @_EN4main1S1iE(%S* %this) {
-  ret void
-}
+%S = type { i32 }
 
 define i32 @main() {
   %m = alloca %"M<S>"
@@ -35,9 +27,17 @@ define void @_EN4main1AI1SE4initE({}* %this) {
   ret void
 }
 
+define void @_EN4main1S1iE(%S* %this) {
+  ret void
+}
+
 define %S @_EN4main1AI1SE1aE({}* %this) {
   %1 = alloca %S
   call void @_EN4main1S4initE(%S* %1)
   %.load = load %S, %S* %1
   ret %S %.load
+}
+
+define void @_EN4main1S4initE(%S* %this) {
+  ret void
 }

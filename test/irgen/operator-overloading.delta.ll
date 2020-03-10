@@ -1,18 +1,6 @@
 
 %vec2 = type { i32, i32 }
 
-define i32 @_EN4main4vec2ixE5index3int(%vec2* %this, i32 %index) {
-  ret i32 %index
-}
-
-define void @_EN4main4vec24initE1x3int1y3int(%vec2* %this, i32 %x, i32 %y) {
-  %x1 = getelementptr inbounds %vec2, %vec2* %this, i32 0, i32 0
-  store i32 %x, i32* %x1
-  %y2 = getelementptr inbounds %vec2, %vec2* %this, i32 0, i32 1
-  store i32 %y, i32* %y2
-  ret void
-}
-
 define %vec2 @_EN4mainmlE1a4vec21b4vec2(%vec2 %a, %vec2 %b) {
   %1 = alloca %vec2
   %x = extractvalue %vec2 %a, 0
@@ -24,6 +12,14 @@ define %vec2 @_EN4mainmlE1a4vec21b4vec2(%vec2 %a, %vec2 %b) {
   call void @_EN4main4vec24initE1x3int1y3int(%vec2* %1, i32 %2, i32 %3)
   %.load = load %vec2, %vec2* %1
   ret %vec2 %.load
+}
+
+define void @_EN4main4vec24initE1x3int1y3int(%vec2* %this, i32 %x, i32 %y) {
+  %x1 = getelementptr inbounds %vec2, %vec2* %this, i32 0, i32 0
+  store i32 %x, i32* %x1
+  %y2 = getelementptr inbounds %vec2, %vec2* %this, i32 0, i32 1
+  store i32 %y, i32* %y2
+  ret void
 }
 
 define i32 @main() {
@@ -51,4 +47,8 @@ define i1 @_EN4maineqE1a4vec21b4vec2(%vec2 %a, %vec2 %b) {
   %x1 = extractvalue %vec2 %b, 0
   %1 = icmp eq i32 %x, %x1
   ret i1 %1
+}
+
+define i32 @_EN4main4vec2ixE5index3int(%vec2* %this, i32 %index) {
+  ret i32 %index
 }

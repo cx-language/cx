@@ -27,5 +27,5 @@ void main() {
 }
 
 void f<T: Interface>(T* a) {
-    a.foo(a.foo(a));
+    a.foo(a.bar());
 }

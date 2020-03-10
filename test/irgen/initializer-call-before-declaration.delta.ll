@@ -8,12 +8,12 @@ define i32 @main() {
   ret i32 0
 }
 
-define void @_EN4main3Foo4initE1i3int(%Foo* %this, i32 %i) {
-  %f = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-  store float 0.000000e+00, float* %f
+define void @_EN4main3Foo6deinitE(%Foo* %this) {
   ret void
 }
 
-define void @_EN4main3Foo6deinitE(%Foo* %this) {
+define void @_EN4main3Foo4initE1i3int(%Foo* %this, i32 %i) {
+  %f = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
+  store float 0.000000e+00, float* %f
   ret void
 }

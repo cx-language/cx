@@ -7,3 +7,7 @@ struct S: Copyable {
         this.i = 2
     }
 }
+
+void main() {
+    S(1).s()
+}

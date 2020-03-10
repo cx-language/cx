@@ -2,14 +2,6 @@
 %A = type { i32 }
 %B = type { i32 }
 
-define void @_EN4main1A4initE(%A* %this) {
-  ret void
-}
-
-define void @_EN4main1B4initE(%B* %this) {
-  ret void
-}
-
 define void @_EN4main1fE1aP1A(%A* %a) {
   ret void
 }
@@ -35,4 +27,12 @@ define i32 @main() {
   store i32 0, i32* %3
   call void @_EN4main1fE1iP3int(i32* %3)
   ret i32 0
+}
+
+define void @_EN4main1A4initE(%A* %this) {
+  ret void
+}
+
+define void @_EN4main1B4initE(%B* %this) {
+  ret void
 }

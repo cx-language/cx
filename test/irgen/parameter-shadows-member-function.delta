@@ -12,4 +12,5 @@ struct S {
 
 void main() {
     var s = S();
+    s.foo(30);
 }

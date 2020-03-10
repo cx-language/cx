@@ -11,22 +11,6 @@ define i32 @main() {
   ret i32 0
 }
 
-define void @_EN4main1YI3intE1fE(%"Y<int>"* %this) {
-  ret void
-}
-
-define void @_EN4main1YI3intE4initE1a3int(%"Y<int>"* %this, i32 %a) {
-  %a1 = getelementptr inbounds %"Y<int>", %"Y<int>"* %this, i32 0, i32 0
-  store i32 %a, i32* %a1
-  ret void
-}
-
-define void @_EN4main1XI3intE4initE(%"X<int>"* %this) {
-  %y = getelementptr inbounds %"X<int>", %"X<int>"* %this, i32 0, i32 0
-  store %"Y<int>"* null, %"Y<int>"** %y
-  ret void
-}
-
 define void @_EN4main1XI3intE6deinitE(%"X<int>"* %this) {
   %a = alloca i32
   %y = getelementptr inbounds %"X<int>", %"X<int>"* %this, i32 0, i32 0
@@ -43,6 +27,12 @@ assert.success:                                   ; preds = %0
   %a1 = getelementptr inbounds %"Y<int>", %"Y<int>"* %y.load, i32 0, i32 0
   %a1.load = load i32, i32* %a1
   store i32 %a1.load, i32* %a
+  ret void
+}
+
+define void @_EN4main1XI3intE4initE(%"X<int>"* %this) {
+  %y = getelementptr inbounds %"X<int>", %"X<int>"* %this, i32 0, i32 0
+  store %"Y<int>"* null, %"Y<int>"** %y
   ret void
 }
 

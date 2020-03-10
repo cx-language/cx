@@ -2,6 +2,16 @@
 %Foo = type { i32 }
 %Bar = type { i32 }
 
+define i32 @main() {
+  %1 = alloca %Foo
+  %2 = alloca %Bar
+  call void @_EN4main3Foo4initE1i3int(%Foo* %1, i32 1)
+  call void @_EN4main3Foo7doStuffE(%Foo* %1)
+  call void @_EN4main3Bar4initE1i3int(%Bar* %2, i32 2)
+  call void @_EN4main3Bar7doStuffE(%Bar* %2)
+  ret i32 0
+}
+
 define void @_EN4main3Foo7doStuffE(%Foo* %this) {
   ret void
 }

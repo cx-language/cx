@@ -5,6 +5,16 @@
 @i = private global i32 42
 
 define i32* @_EN4main3fooE() {
+  %a = alloca i1*
+  %1 = alloca %A
+  %b = alloca i8*
+  %2 = alloca %B
+  call void @_EN4main1A4initE1bA2_4bool(%A* %1, [2 x i1] [i1 false, i1 true])
+  %3 = call i1* @_EN4main1A2ffE(%A* %1)
+  store i1* %3, i1** %a
+  call void @_EN4main1B4initE1a4char(%B* %2, i8 97)
+  %4 = call i8* @_EN4main1B2ggE(%B* %2)
+  store i8* %4, i8** %b
   ret i32* @i
 }
 

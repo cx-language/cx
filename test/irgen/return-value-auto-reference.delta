@@ -3,6 +3,8 @@
 var i = 42;
 
 int* foo() {
+    var a = A([false,true]).ff();
+    var b = B('a').gg();
     return i;
 }
 

@@ -1,12 +1,6 @@
 
 %Foo = type { i32 }
 
-define void @_EN4main3Foo4initE1i3int(%Foo* %this, i32 %i) {
-  %i1 = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-  store i32 %i, i32* %i1
-  ret void
-}
-
 define void @_EN4main3getE1fP3Foo(%Foo* %f) {
   %m = alloca i32
   %i = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0

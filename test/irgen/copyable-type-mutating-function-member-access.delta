@@ -7,3 +7,7 @@ struct S: Copyable {
         var b = a
     }
 }
+
+void main() {
+    S(1).foo()
+}

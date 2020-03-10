@@ -1,5 +1,6 @@
 #include "irgen.h"
 #include <llvm/Support/Path.h>
+#include "../ast/module.h"
 #include "../support/utility.h"
 
 using namespace delta;
@@ -16,10 +17,18 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         static int stringLiteralCounter = 0;
         auto* type = toIR(BasicType::get("string", {}));
         auto* alloca = createEntryBlockAlloca(type, nullptr, "__str" + std::to_string(stringLiteralCounter++));
-        auto* stringInitType = llvm::FunctionType::get(llvm::Type::getVoidTy(ctx), { alloca->getType(), stringPtr->getType(), size->getType() }, false);
-        // TODO: Retrieve this constructor in a nicer way.
-        auto* stringInit = module->getOrInsertFunction("_EN3std6string4initE7pointerP4char6length3int", stringInitType).getCallee();
-        builder.CreateCall(stringInit, { alloca, stringPtr, size });
+        llvm::Function* stringConstructor = nullptr;
+
+        for (auto* decl : Module::getStdlibModule()->getSymbolTable().find("string.init")) {
+            auto params = llvm::cast<InitDecl>(decl)->getParams();
+            if (params.size() == 2 && params[0].getType().isPointerType() && params[1].getType().isInt()) {
+                stringConstructor = getFunctionProto(*llvm::cast<InitDecl>(decl));
+                break;
+            }
+        }
+
+        ASSERT(stringConstructor);
+        builder.CreateCall(stringConstructor, { alloca, stringPtr, size });
         return alloca;
     } else {
         // Passing as C-string, i.e. char pointer.

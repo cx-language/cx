@@ -2,6 +2,18 @@
 %A = type { i32, i32 }
 %B = type { i32, i32 }
 
+define i32 @main() {
+  %a = alloca %A
+  %b = alloca %B
+  call void @_EN4main1A4initE(%A* %a)
+  %1 = call i32 @_EN4main1A3fooE(%A* %a)
+  call void @_EN4main1A3barE(%A* %a)
+  call void @_EN4main1B4initE(%B* %b)
+  %2 = call i32 @_EN4main1B3fooE(%B* %b)
+  call void @_EN4main1B3barE(%B* %b)
+  ret i32 0
+}
+
 define void @_EN4main1A4initE(%A* %this) {
   %j = getelementptr inbounds %A, %A* %this, i32 0, i32 1
   store i32 42, i32* %j

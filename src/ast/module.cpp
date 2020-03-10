@@ -8,9 +8,9 @@ std::vector<Module*> Module::getAllImportedModules() {
     return map(allImportedModules, [](auto& p) { return p.second; });
 }
 
-llvm::ArrayRef<Module*> Module::getStdlibModules() {
+Module* Module::getStdlibModule() {
     auto it = allImportedModules.find("std");
-    if (it == allImportedModules.end()) return {};
+    if (it == allImportedModules.end()) return nullptr;
     return it->second;
 }
 

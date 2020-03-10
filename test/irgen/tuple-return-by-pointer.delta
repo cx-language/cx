@@ -11,3 +11,9 @@ struct S {
         return t;
     }
 }
+
+void main() {
+    var s = S((a: 1));
+    var f = s.f();
+    var g = s.g();
+}
