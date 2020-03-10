@@ -278,12 +278,20 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
 
 static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, const CompileOptions& options) {
     std::error_code error;
-    llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end;
+    std::vector<std::string> paths;
 
-    for (; it != end; it.increment(error)) {
+    for (llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end; it != end; it.increment(error)) {
         if (error) break;
         if (llvm::sys::path::extension(it->path()) == ".delta") {
-            Parser parser(it->path(), module, options);
+            paths.push_back(it->path());
+        }
+    }
+
+    if (!error) {
+        llvm::sort(paths);
+
+        for (auto& path : paths) {
+            Parser parser(path, module, options);
             parser.parse();
         }
     }
