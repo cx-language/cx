@@ -6,14 +6,14 @@
 
 define i32 @main() {
   %b = alloca %string
-  %__str4 = alloca %string
+  %__str6 = alloca %string
   %five = alloca i32
   call void @_EN4main3fooI3intEE1t3int(i32 1)
   call void @_EN4main3fooI4boolEE1t4bool(i1 false)
   call void @_EN4main3fooI4boolEE1t4bool(i1 true)
-  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str4, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  %__str4.load = load %string, %string* %__str4
-  %1 = call %string @_EN4main3barI6stringEE1t6string(%string %__str4.load)
+  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  %__str6.load = load %string, %string* %__str6
+  %1 = call %string @_EN4main3barI6stringEE1t6string(%string %__str6.load)
   store %string %1, %string* %b
   %2 = call i32 @_EN4main3quxI3intEE1t3int(i32 -5)
   store i32 %2, i32* %five

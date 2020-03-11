@@ -5,8 +5,8 @@
 @0 = private unnamed_addr constant [3 x i8] c"\5Cn\00", align 1
 
 define i32 @main() {
-  %__str4 = alloca %string
-  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str4, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @0, i32 0, i32 0), i32 2)
+  %__str6 = alloca %string
+  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str6, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @0, i32 0, i32 0), i32 2)
   ret i32 0
 }
 

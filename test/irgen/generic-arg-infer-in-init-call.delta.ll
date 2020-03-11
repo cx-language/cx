@@ -9,11 +9,11 @@
 define i32 @main() {
   %i = alloca %"Foo<int>"
   %b = alloca %"Foo<string>"
-  %__str4 = alloca %string
+  %__str6 = alloca %string
   call void @_EN4main3FooI3intE4initE1t3int(%"Foo<int>"* %i, i32 42)
-  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str4, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
-  %__str4.load = load %string, %string* %__str4
-  call void @_EN4main3FooI6stringE4initE1t6string(%"Foo<string>"* %b, %string %__str4.load)
+  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str6, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
+  %__str6.load = load %string, %string* %__str6
+  call void @_EN4main3FooI6stringE4initE1t6string(%"Foo<string>"* %b, %string %__str6.load)
   ret i32 0
 }
 

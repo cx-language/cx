@@ -7,10 +7,10 @@
 
 define i32 @main() {
   %__iterator = alloca %StringIterator
-  %__str4 = alloca %string
+  %__str6 = alloca %string
   %ch = alloca i8
-  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str4, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  %1 = call %StringIterator @_EN3std6string8iteratorE(%string* %__str4)
+  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  %1 = call %StringIterator @_EN3std6string8iteratorE(%string* %__str6)
   store %StringIterator %1, %StringIterator* %__iterator
   br label %loop.condition
 

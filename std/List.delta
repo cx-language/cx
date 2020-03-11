@@ -65,18 +65,12 @@ struct List<Element> {
     }
 
     Element* first() {
-        if (size == 0) {
-            emptyListFirst();
-        }
-
+        if (size == 0) assertFail("Called first() on empty List\n");
         return buffer[0];
     }
 
     Element* last() {
-        if (size == 0) {
-            emptyListLast();
-        }
-
+        if (size == 0) assertFail("Called last() on empty List\n");
         return buffer[size - 1];
     }
 
@@ -118,10 +112,7 @@ struct List<Element> {
     /// Removes the first element from the list.
     /// Other elements are moved towards the beginning of the list by one index.
     void removeFirst() {
-        if (size == 0) {
-            emptyListRemoveFirst();
-        }
-
+        if (size == 0) assertFail("Called removeFirst() on empty List\n");
         unsafeRemoveAt(0);
     }
 
@@ -137,20 +128,14 @@ struct List<Element> {
 
     /// Removes the last element from the list.
     void removeLast() {
-        if (size == 0) {
-            emptyListRemoveLast();
-        }
-
+        if (size == 0) assertFail("Called removeLast() on empty List\n");
         size--;
         buffer[size].deinit();
     }
 
     /// Removes and returns the last element.
     Element pop() {
-        if (size == 0) {
-            emptyListRemoveLast();
-        }
-
+        if (size == 0) assertFail("Called pop() on empty List\n");
         size--;
         return buffer[size];
     }
@@ -217,27 +202,7 @@ struct List<Element> {
     }
 
     private void indexOutOfBounds(int index) {
-        printf("List index %d is out of bounds, size is %d\n", index, size());
-        fatalError();
-    }
-
-    private void emptyListFirst() {
-        printf("Called first() on empty List\n");
-        fatalError();
-    }
-
-    private void emptyListLast() {
-        printf("Called last() on empty List\n");
-        fatalError();
-    }
-
-    private void emptyListRemoveFirst() {
-        printf("Called removeFirst() on empty List\n");
-        fatalError();
-    }
-
-    private void emptyListRemoveLast() {
-        printf("Called removeLast() on empty List\n");
+        print("List index ", index, " is out of bounds, size is ", size());
         fatalError();
     }
 }

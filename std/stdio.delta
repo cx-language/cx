@@ -81,11 +81,11 @@ bool writeFile(string path, string content) {
     return true;
 }
 
-private void assertFail(char* message) {
+void assertFail(const char* message) {
     var stream = fdopen(2, "w");
     if (stream) {
         fprintf(stream, message);
         fclose(stream!);
     }
-    abort();
+    fatalError();
 }
