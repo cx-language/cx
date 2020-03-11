@@ -1,5 +1,5 @@
 
-define void @_EN4main3fooE1pPP4char1xP4char(i8** %p, i8* %x) {
+define void @_EN4main3fooEPP4charP4char(i8** %p, i8* %x) {
   %pp = alloca i8**
   store i8** %p, i8*** %pp
   %pp.load = load i8**, i8*** %pp

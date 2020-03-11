@@ -149,10 +149,11 @@ private:
 
 class ParamDecl : public VariableDecl, public Movable {
 public:
-    ParamDecl(Type type, std::string&& name, SourceLocation location)
+    ParamDecl(Type type, std::string&& name, bool isNamedArgument, SourceLocation location)
     : VariableDecl(DeclKind::ParamDecl, AccessLevel::None, nullptr /* initialized by FunctionDecl constructor */, type),
-      name(std::move(name)), location(location) {}
+      name(std::move(name)), location(location), namedArgument(isNamedArgument) {}
     llvm::StringRef getName() const override { return name; }
+    bool isNamedArgument() const { return namedArgument; }
     Module* getModule() const override { return nullptr; }
     SourceLocation getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::ParamDecl; }
@@ -161,6 +162,7 @@ public:
 private:
     std::string name;
     SourceLocation location;
+    bool namedArgument;
 };
 
 std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs);

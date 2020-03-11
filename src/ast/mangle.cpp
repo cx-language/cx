@@ -131,7 +131,9 @@ std::string delta::mangleFunctionDecl(const FunctionDecl& functionDecl) {
         stream << 'E';
 
         for (auto& param : functionDecl.getParams()) {
-            mangleIdentifier(stream, param.getName());
+            if (param.isNamedArgument()) {
+                mangleIdentifier(stream, param.getName());
+            }
             mangleType(stream, param.getType());
         }
     }

@@ -1,5 +1,5 @@
 
-define void @_EN4main3fooE1pOP3int(i32* %p) {
+define void @_EN4main3fooEOP3int(i32* %p) {
   ret void
 }
 
@@ -9,7 +9,7 @@ define i32 @main() {
   store i32 42, i32* %i
   store i32* %i, i32** %x
   %x.load = load i32*, i32** %x
-  call void @_EN4main3fooE1pOP3int(i32* %x.load)
-  call void @_EN4main3fooE1pOP3int(i32* %i)
+  call void @_EN4main3fooEOP3int(i32* %x.load)
+  call void @_EN4main3fooEOP3int(i32* %i)
   ret i32 0
 }

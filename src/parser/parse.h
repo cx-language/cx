@@ -138,8 +138,8 @@ private:
     std::vector<Stmt*> parseBlockOrStmt(Decl* parent);
     std::vector<Stmt*> parseStmtsUntil(Token::Kind end, Decl* parent);
     std::vector<Stmt*> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent);
-    ParamDecl parseParam(bool withType);
-    std::vector<ParamDecl> parseParamList(bool* isVariadic, bool withTypes);
+    ParamDecl parseParam();
+    std::vector<ParamDecl> parseParamList(bool* isVariadic);
     void parseGenericParamList(std::vector<GenericParamDecl>& genericParams);
     llvm::StringRef parseFunctionName(TypeDecl* receiverTypeDecl);
     FunctionDecl* parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,

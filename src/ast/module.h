@@ -80,17 +80,23 @@ public:
 
     FunctionDecl* findWithMatchingPrototype(const FunctionDecl& toFind) const {
         for (Decl* decl : find(toFind.getQualifiedName())) {
-            auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl);
-            if (!functionDecl || functionDecl->getParams().size() != toFind.getParams().size()) continue;
-            if (std::equal(toFind.getParams().begin(), toFind.getParams().end(), functionDecl->getParams().begin(),
-                           [](auto& a, auto& b) { return a.getName() == b.getName() && a.getType() == b.getType(); })) {
-                return functionDecl;
+            if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
+                if (functionDecl->getParams().size() == toFind.getParams().size() &&
+                    std::equal(toFind.getParams().begin(), toFind.getParams().end(), functionDecl->getParams().begin(), paramsMatch)) {
+                    return functionDecl;
+                }
             }
         }
         return nullptr;
     }
 
 private:
+    static bool paramsMatch(const ParamDecl& a, const ParamDecl& b) {
+        if (a.getType() != b.getType()) return false;
+        if (a.isNamedArgument() && b.isNamedArgument() && a.getName() != b.getName()) return false;
+        return true;
+    }
+
     llvm::StringRef applyIdentifierReplacements(llvm::StringRef name) const {
         llvm::StringRef initialName = name;
         while (true) {

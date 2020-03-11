@@ -12,7 +12,7 @@ define i32 @main() {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailE7messageP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @0, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @0, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -25,7 +25,7 @@ assert.success:                                   ; preds = %0
   br i1 %assert.condition1, label %assert.fail2, label %assert.success3
 
 assert.fail2:                                     ; preds = %assert.success
-  call void @_EN3std10assertFailE7messageP4char(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @1, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([35 x i8], [35 x i8]* @1, i32 0, i32 0))
   unreachable
 
 assert.success3:                                  ; preds = %assert.success
@@ -34,4 +34,4 @@ assert.success3:                                  ; preds = %assert.success
   ret i32 0
 }
 
-declare void @_EN3std10assertFailE7messageP4char(i8*)
+declare void @_EN3std10assertFailEP4char(i8*)

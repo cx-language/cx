@@ -1057,7 +1057,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
     }
 
     if (expr.getFunctionName() == "assert") {
-        ParamDecl assertParam(Type::getBool(), "", SourceLocation());
+        ParamDecl assertParam(Type::getBool(), "", false, SourceLocation());
         validateArgs(expr, assertParam, false, expr.getFunctionName(), expr.getLocation());
         validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
         return Type::getVoid();
@@ -1147,7 +1147,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
         }
         case DeclKind::EnumCase: {
             auto type = llvm::cast<EnumCase>(decl)->getAssociatedType();
-            params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), decl->getLocation()); });
+            params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
             validateArgs(expr, params, false, decl->getName(), expr.getLocation());
             break;
         }

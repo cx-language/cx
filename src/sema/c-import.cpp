@@ -171,7 +171,7 @@ static Type toDelta(clang::QualType qualtype) {
 
 static FunctionDecl* toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
     auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
-        return ParamDecl(toDelta(param->getType()), param->getNameAsString(), SourceLocation());
+        return ParamDecl(toDelta(param->getType()), param->getNameAsString(), false, SourceLocation());
     });
     FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()), decl.isVariadic(), true);
     return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, SourceLocation());

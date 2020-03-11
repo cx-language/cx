@@ -1,5 +1,5 @@
 
-define void @_EN4main3fooE1i3int(i32 %i) {
+define void @_EN4main3fooE3int(i32 %i) {
   switch i32 %i, label %switch.default [
     i32 42, label %switch.case.0
   ]

@@ -1,5 +1,5 @@
 
-define i8 @_EN4main3fooE1b4bool(i1 %b) {
+define i8 @_EN4main3fooE4bool(i1 %b) {
   br i1 %b, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0

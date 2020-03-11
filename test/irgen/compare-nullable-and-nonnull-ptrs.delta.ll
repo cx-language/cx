@@ -1,5 +1,5 @@
 
-define void @_EN4main1fE3fooP3int3barOP3int(i32* %foo, i32* %bar) {
+define void @_EN4main1fEP3intOP3int(i32* %foo, i32* %bar) {
   %1 = icmp eq i32* %foo, %bar
   br i1 %1, label %if.then, label %if.else
 

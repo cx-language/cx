@@ -9,12 +9,12 @@
 
 define i32 @main() {
   %__str6 = alloca %string
-  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  call void @_EN3std5printI6stringEE5valueP6string(%string* %__str6)
+  call void @_EN3std6string4initEP4char3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN3std5printI6stringEEP6string(%string* %__str6)
   ret i32 0
 }
 
-define void @_EN3std5printI6stringEE5valueP6string(%string* %value) {
+define void @_EN3std5printI6stringEEP6string(%string* %value) {
   %s = alloca %StringBuffer
   %1 = call %StringBuffer @_EN3std6string8toStringE(%string* %value)
   store %StringBuffer %1, %StringBuffer* %s
@@ -25,7 +25,7 @@ define void @_EN3std5printI6stringEE5valueP6string(%string* %value) {
   ret void
 }
 
-declare void @_EN3std6string4initE7pointerP4char6length3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
 
 declare void @_EN3std12StringBuffer6deinitE(%StringBuffer*)
 

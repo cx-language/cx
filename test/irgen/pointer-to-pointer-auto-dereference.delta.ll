@@ -1,7 +1,7 @@
 
 declare void @f(i32*)
 
-define void @_EN4main1aE1pP3int(i32* %p) {
+define void @_EN4main1aEP3int(i32* %p) {
   %q = alloca i32*
   store i32* %p, i32** %q
   %q.load = load i32*, i32** %q

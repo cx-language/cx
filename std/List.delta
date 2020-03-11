@@ -11,7 +11,7 @@ struct List<Element> {
     }
 
     /// Initializes an empty list with pre-allocated capacity.
-    init(int capacity) {
+    init(capacity: int) {
         init();
         reserve(capacity);
     }
@@ -27,7 +27,7 @@ struct List<Element> {
     }
 
     /// Initializes the list to contain the given number of uninitialized elements.
-    init(int uninitializedSize) {
+    init(uninitializedSize: int) {
         buffer = allocateArray<Element>(uninitializedSize);
         size = uninitializedSize;
         capacity = uninitializedSize;

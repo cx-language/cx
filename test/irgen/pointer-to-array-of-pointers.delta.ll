@@ -15,7 +15,7 @@ define i32 @main() {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailE7messageP4char(i8* getelementptr inbounds ([58 x i8], [58 x i8]* @1, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([58 x i8], [58 x i8]* @1, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -28,4 +28,4 @@ assert.success:                                   ; preds = %0
 
 declare i32 @printf(i8*, ...)
 
-declare void @_EN3std10assertFailE7messageP4char(i8*)
+declare void @_EN3std10assertFailEP4char(i8*)

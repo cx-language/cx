@@ -2,19 +2,19 @@
 %S = type { i32 }
 %T = type { i32 }
 
-define void @_EN4main1fE1a1S(%S %a) {
+define void @_EN4main1fE1S(%S %a) {
   ret void
 }
 
-define void @_EN4main1fE1a1T(%T %a) {
+define void @_EN4main1fE1T(%T %a) {
   ret void
 }
 
-define void @_EN4mainplE1a1S1b1S(%S %a, %S %b) {
+define void @_EN4mainplE1S1S(%S %a, %S %b) {
   ret void
 }
 
-define void @_EN4mainplE1a1T1b1T(%T %a, %T %b) {
+define void @_EN4mainplE1T1T(%T %a, %T %b) {
   ret void
 }
 
@@ -24,15 +24,15 @@ define i32 @main() {
   call void @_EN4main1S4initE(%S* %s)
   call void @_EN4main1T4initE(%T* %t)
   %s.load = load %S, %S* %s
-  call void @_EN4main1fE1a1S(%S %s.load)
+  call void @_EN4main1fE1S(%S %s.load)
   %t.load = load %T, %T* %t
-  call void @_EN4main1fE1a1T(%T %t.load)
+  call void @_EN4main1fE1T(%T %t.load)
   %s.load1 = load %S, %S* %s
   %s.load2 = load %S, %S* %s
-  call void @_EN4mainplE1a1S1b1S(%S %s.load1, %S %s.load2)
+  call void @_EN4mainplE1S1S(%S %s.load1, %S %s.load2)
   %t.load3 = load %T, %T* %t
   %t.load4 = load %T, %T* %t
-  call void @_EN4mainplE1a1T1b1T(%T %t.load3, %T %t.load4)
+  call void @_EN4mainplE1T1T(%T %t.load3, %T %t.load4)
   ret i32 0
 }
 

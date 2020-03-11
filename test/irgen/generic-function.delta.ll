@@ -8,33 +8,33 @@ define i32 @main() {
   %b = alloca %string
   %__str6 = alloca %string
   %five = alloca i32
-  call void @_EN4main3fooI3intEE1t3int(i32 1)
-  call void @_EN4main3fooI4boolEE1t4bool(i1 false)
-  call void @_EN4main3fooI4boolEE1t4bool(i1 true)
-  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN4main3fooI3intEE3int(i32 1)
+  call void @_EN4main3fooI4boolEE4bool(i1 false)
+  call void @_EN4main3fooI4boolEE4bool(i1 true)
+  call void @_EN3std6string4initEP4char3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   %__str6.load = load %string, %string* %__str6
-  %1 = call %string @_EN4main3barI6stringEE1t6string(%string %__str6.load)
+  %1 = call %string @_EN4main3barI6stringEE6string(%string %__str6.load)
   store %string %1, %string* %b
-  %2 = call i32 @_EN4main3quxI3intEE1t3int(i32 -5)
+  %2 = call i32 @_EN4main3quxI3intEE3int(i32 -5)
   store i32 %2, i32* %five
   ret i32 0
 }
 
-define void @_EN4main3fooI3intEE1t3int(i32 %t) {
+define void @_EN4main3fooI3intEE3int(i32 %t) {
   ret void
 }
 
-define void @_EN4main3fooI4boolEE1t4bool(i1 %t) {
+define void @_EN4main3fooI4boolEE4bool(i1 %t) {
   ret void
 }
 
-define %string @_EN4main3barI6stringEE1t6string(%string %t) {
+define %string @_EN4main3barI6stringEE6string(%string %t) {
   ret %string %t
 }
 
-declare void @_EN3std6string4initE7pointerP4char6length3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
 
-define i32 @_EN4main3quxI3intEE1t3int(i32 %t) {
+define i32 @_EN4main3quxI3intEE3int(i32 %t) {
   %1 = icmp slt i32 %t, 0
   br i1 %1, label %if.then, label %if.else
 

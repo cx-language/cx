@@ -1,6 +1,7 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void foo() { }
+void foo() { } // CHECK: [[@LINE]]:6: error: redefinition of 'foo'
 
-// CHECK: [[@LINE+1]]:6: error: redefinition of 'foo'
-void foo() { }
+void bar(int a) { }
+void bar(int b) { } // CHECK: [[@LINE]]:6: error: redefinition of 'bar'

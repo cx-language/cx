@@ -1,5 +1,5 @@
 
-define void @_EN4main3bazE3foo4bool(i1 %foo) {
+define void @_EN4main3bazE4bool(i1 %foo) {
   br label %loop.condition
 
 loop.condition:                                   ; preds = %if.end, %if.then, %0
@@ -12,7 +12,7 @@ loop.end:                                         ; preds = %loop.condition
   ret void
 
 if.then:                                          ; preds = %loop.body
-  call void @_EN4main3bazE3foo4bool(i1 %foo)
+  call void @_EN4main3bazE4bool(i1 %foo)
   br label %loop.condition
 
 if.else:                                          ; preds = %loop.body

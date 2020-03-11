@@ -119,7 +119,9 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, Ty
 }
 
 std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
-    return map(params, [&](auto& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.getLocation()); });
+    return map(params, [&](auto& param) {
+        return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.isNamedArgument(), param.getLocation());
+    });
 }
 
 std::string TypeDecl::getQualifiedName() const {

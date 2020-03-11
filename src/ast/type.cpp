@@ -183,14 +183,7 @@ std::string delta::getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef
 }
 
 std::vector<ParamDecl> FunctionType::getParamDecls(SourceLocation location) const {
-    std::vector<ParamDecl> paramDecls;
-    paramDecls.reserve(paramTypes.size());
-
-    for (Type paramType : paramTypes) {
-        paramDecls.push_back(ParamDecl(paramType, "", location));
-    }
-
-    return paramDecls;
+    return map(paramTypes, [&](Type paramType) { return ParamDecl(paramType, "", false, location); });
 }
 
 constexpr auto signedInts = { "int", "int8", "int16", "int32", "int64" };

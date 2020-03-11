@@ -9,7 +9,7 @@ define i32 @main() {
   %__iterator = alloca %StringIterator
   %__str6 = alloca %string
   %ch = alloca i8
-  call void @_EN3std6string4initE7pointerP4char6length3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   %1 = call %StringIterator @_EN3std6string8iteratorE(%string* %__str6)
   store %StringIterator %1, %StringIterator* %__iterator
   br label %loop.condition
@@ -44,7 +44,7 @@ if.end:                                           ; preds = %if.else
 
 declare %StringIterator @_EN3std6string8iteratorE(%string*)
 
-declare void @_EN3std6string4initE7pointerP4char6length3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
 
 declare i1 @_EN3std14StringIterator8hasValueE(%StringIterator*)
 

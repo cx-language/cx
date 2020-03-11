@@ -19,7 +19,7 @@ define void @_EN4main1XI3intE6deinitE(%"X<int>"* %this) {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailE7messageP4char(i8* getelementptr inbounds ([67 x i8], [67 x i8]* @0, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([67 x i8], [67 x i8]* @0, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -35,4 +35,4 @@ define void @_EN4main1XI3intE4initE(%"X<int>"* %this) {
   ret void
 }
 
-declare void @_EN3std10assertFailE7messageP4char(i8*)
+declare void @_EN3std10assertFailEP4char(i8*)

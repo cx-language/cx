@@ -2,7 +2,7 @@
 %Foo = type { i32 }
 %Bar = type { i32 }
 
-define void @_EN4main3quxE1fP3Foo1bP3Bar(%Foo* %f, %Bar* %b) {
+define void @_EN4main3quxEP3FooP3Bar(%Foo* %f, %Bar* %b) {
   call void @_EN4main3Foo3fooE(%Foo* %f)
   call void @_EN4main3Bar3barE(%Bar* %b)
   ret void
@@ -21,7 +21,7 @@ define i32 @main() {
   %b = alloca %Bar
   call void @_EN4main3Foo4initE(%Foo* %f)
   call void @_EN4main3Bar4initE(%Bar* %b)
-  call void @_EN4main3quxE1fP3Foo1bP3Bar(%Foo* %f, %Bar* %b)
+  call void @_EN4main3quxEP3FooP3Bar(%Foo* %f, %Bar* %b)
   ret i32 0
 }
 

@@ -2,7 +2,7 @@
 %"Range<int>" = type { i32, i32 }
 %"RangeIterator<int>" = type { i32, i32 }
 
-define i32 @_EN4main3fooE1r5RangeI3intE(%"Range<int>" %r) {
+define i32 @_EN4main3fooE5RangeI3intE(%"Range<int>" %r) {
   %sum = alloca i32
   %__iterator = alloca %"RangeIterator<int>"
   %1 = alloca %"Range<int>"
@@ -45,10 +45,10 @@ declare void @_EN3std13RangeIteratorI3intE9incrementE(%"RangeIterator<int>"*)
 
 define i32 @main() {
   %1 = alloca %"Range<int>"
-  call void @_EN3std5RangeI3intE4initE5start3int3end3int(%"Range<int>"* %1, i32 0, i32 5)
+  call void @_EN3std5RangeI3intE4initE3int3int(%"Range<int>"* %1, i32 0, i32 5)
   %.load = load %"Range<int>", %"Range<int>"* %1
-  %2 = call i32 @_EN4main3fooE1r5RangeI3intE(%"Range<int>" %.load)
+  %2 = call i32 @_EN4main3fooE5RangeI3intE(%"Range<int>" %.load)
   ret i32 %2
 }
 
-declare void @_EN3std5RangeI3intE4initE5start3int3end3int(%"Range<int>"*, i32, i32)
+declare void @_EN3std5RangeI3intE4initE3int3int(%"Range<int>"*, i32, i32)

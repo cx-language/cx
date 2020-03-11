@@ -3,7 +3,7 @@ define i32 @_EN4main1gE() {
   ret i32 1
 }
 
-define void @_EN4main1fE1aP3int1b3int(i32* %a, i32 %b) {
+define void @_EN4main1fEP3int3int(i32* %a, i32 %b) {
   %m = alloca i32
   %n = alloca i32
   %1 = call i32 @_EN4main1gE()

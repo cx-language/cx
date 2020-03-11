@@ -1,7 +1,7 @@
 
 %X = type { i32 }
 
-define void @_EN4main3fooE1pP1X1x1X(%X* %p, %X %x) {
+define void @_EN4main3fooEP1X1X(%X* %p, %X %x) {
   store %X %x, %X* %p
   ret void
 }

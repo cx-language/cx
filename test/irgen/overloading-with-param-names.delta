@@ -2,15 +2,15 @@
 
 struct Foo {
     int i
-    init(int i) { }
-    init(int qux) { }
-    void foo(int i) { }
-    void foo(int qux) { }
+    init(i: int) { }
+    init(qux: int) { }
+    void foo(i: int) { }
+    void foo(qux: int) { }
 }
 
-void foo(int i) {
+void foo(i: int) {
     Foo(i: i).foo(i: i)
     Foo(qux: i).foo(qux: i)
 }
 
-void foo(int qux) { }
+void foo(qux: int) { }

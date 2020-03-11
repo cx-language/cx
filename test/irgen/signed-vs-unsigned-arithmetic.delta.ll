@@ -1,5 +1,5 @@
 
-define void @_EN4main3fooE1i3int1u4uint(i32 %i, i32 %u) {
+define void @_EN4main3fooE3int4uint(i32 %i, i32 %u) {
   %a = alloca i1
   %b = alloca i32
   %c = alloca i32
