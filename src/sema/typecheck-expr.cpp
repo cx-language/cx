@@ -323,7 +323,7 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
 
     typecheckExpr(lhs, true);
     Type lhsType = lhs.getAssignableType();
-    Type rhsType = typecheckExpr(rhs);
+    Type rhsType = typecheckExpr(rhs, false, lhsType);
 
     if (rhs.isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(lhs, currentFunction)) {
         ERROR(rhs.getLocation(), "'undefined' is only allowed as an initial value");
@@ -664,8 +664,8 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
     return Type();
 }
 
-std::vector<Type> Typechecker::inferGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
-                                                llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
+std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
+                                                            llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
     if (call.getArgs().size() != params.size()) return {};
 
     std::vector<Type> inferredGenericArgs;
@@ -755,20 +755,23 @@ static void validateArgCount(size_t paramCount, size_t argCount, bool isVariadic
 }
 
 llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
-                                                         llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
+                                                         llvm::ArrayRef<ParamDecl> params, bool returnOnError, Type expectedType) {
     ASSERT(!genericParams.empty());
     std::vector<Type> inferredGenericArgs;
     llvm::ArrayRef<Type> genericArgTypes;
 
     if (call.getGenericArgs().empty()) {
-        if (call.getArgs().empty()) {
-            ERROR(call.getLocation(), "can't infer generic parameters without function arguments");
+        if (expectedType && expectedType.isBasicType()) {
+            // TODO: Should probably check that expectedType is the same type as the type whose generics args we're inferring.
+            genericArgTypes = expectedType.getGenericArgs();
+        } else if (call.getArgs().empty()) {
+            ERROR(call.getLocation(), "can't infer generic parameters, please specify them explicitly");
+        } else {
+            inferredGenericArgs = inferGenericArgsFromCallArgs(genericParams, call, params, returnOnError);
+            if (inferredGenericArgs.empty()) return {};
+            ASSERT(inferredGenericArgs.size() == genericParams.size());
+            genericArgTypes = inferredGenericArgs;
         }
-
-        inferredGenericArgs = inferGenericArgs(genericParams, call, params, returnOnError);
-        if (inferredGenericArgs.empty()) return {};
-        ASSERT(inferredGenericArgs.size() == genericParams.size());
-        genericArgTypes = inferredGenericArgs;
     } else {
         genericArgTypes = call.getGenericArgs();
     }
@@ -820,7 +823,7 @@ static std::vector<Type> getGenericArgTypes(const llvm::StringMap<Type>& generic
     return types;
 }
 
-Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, bool returnNullOnError) {
+Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
     std::vector<Decl*> matches;
     std::vector<Decl*> initDecls;
     bool isInitCall = false;
@@ -839,12 +842,12 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
 
                 auto params = functionTemplate->getFunctionDecl()->getParams();
-                auto genericArgs = getGenericArgsForCall(genericParams, expr, params, decls.size() != 1);
+                auto genericArgs = getGenericArgsForCall(genericParams, expr, params, decls.size() != 1, expectedType);
                 if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
                 auto* functionDecl = functionTemplate->instantiate(genericArgs);
 
-                if (decls.size() == 1 && !returnNullOnError) {
+                if (decls.size() == 1) {
                     validateArgs(expr, *functionDecl, callee, expr.getCallee().getLocation());
                     declsToTypecheck.emplace_back(functionDecl);
                     return functionDecl;
@@ -860,7 +863,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             case DeclKind::InitDecl: {
                 auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
 
-                if (decls.size() == 1 && !returnNullOnError) {
+                if (decls.size() == 1) {
                     validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                     validateArgs(expr, functionDecl, callee, expr.getCallee().getLocation());
                     return &functionDecl;
@@ -883,7 +886,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 for (Decl* decl : initDecls) {
                     auto& initDecl = llvm::cast<InitDecl>(*decl);
 
-                    if (initDecls.size() == 1 && !returnNullOnError) {
+                    if (initDecls.size() == 1) {
                         validateArgs(expr, initDecl, callee, expr.getCallee().getLocation());
                         return &initDecl;
                     }
@@ -909,8 +912,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 decls = initDecls;
 
                 for (auto* decl : initDecls) {
-                    auto* initDecl = llvm::cast<InitDecl>(decl);
-                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, initDecl->getParams(), initDecls.size() != 1);
+                    auto params = llvm::cast<InitDecl>(decl)->getParams();
+                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, params, initDecls.size() != 1, expectedType);
                     if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
                     TypeDecl* typeDecl = nullptr;
@@ -932,7 +935,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
 
                 for (auto* instantiatedInitDecl : instantiatedInitDecls) {
-                    if (initDecls.size() == 1 && !returnNullOnError) {
+                    if (initDecls.size() == 1) {
                         validateArgs(expr, *instantiatedInitDecl, callee, expr.getCallee().getLocation());
                         return instantiatedInitDecl;
                     }
@@ -950,7 +953,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->getType().getBase())) {
                     auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
 
-                    if (decls.size() == 1 && !returnNullOnError) {
+                    if (decls.size() == 1) {
                         validateArgs(expr, paramDecls, false, callee, expr.getCallee().getLocation());
                         return variableDecl;
                     }
@@ -975,11 +978,6 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             return matches.front();
 
         case 0: {
-            // FIXME: Should returnNullOnError be renamed to reportErrors or removed completely?
-            if (returnNullOnError) {
-                return nullptr;
-            }
-
             if (decls.size() == 0) {
                 ERROR(expr.getCallee().getLocation(), "unknown identifier '" << callee << "'");
             }
@@ -1002,10 +1000,6 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             }
         }
         default:
-            if (returnNullOnError) {
-                return nullptr;
-            }
-
             bool allMatchesAreFromC = llvm::all_of(matches, [](Decl* match) {
                 return match->getModule() && match->getModule()->getName().endswith_lower(".h");
             });
@@ -1039,7 +1033,7 @@ std::vector<Decl*> Typechecker::findCalleeCandidates(const CallExpr& expr, llvm:
     return findDecls(callee, receiverTypeDecl, isPostProcessing);
 }
 
-Type Typechecker::typecheckCallExpr(CallExpr& expr) {
+Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     if (!expr.callsNamedFunction()) {
         ERROR(expr.getLocation(), "anonymous function calls not implemented yet");
     }
@@ -1109,11 +1103,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr) {
             return Type::getVoid();
         }
 
-        decl = resolveOverload(decls, expr, callee);
+        decl = resolveOverload(decls, expr, callee, expectedType);
     } else {
         auto callee = expr.getFunctionName();
         auto decls = findCalleeCandidates(expr, callee);
-        decl = resolveOverload(decls, expr, callee);
+        decl = resolveOverload(decls, expr, callee, expectedType);
 
         if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
             expr.setReceiverType(initDecl->getTypeDecl()->getType());
@@ -1448,7 +1442,7 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     }
 }
 
-Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
+Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedType) {
     Type type;
 
     switch (expr.getKind()) {
@@ -1490,7 +1484,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly) {
             type = typecheckBinaryExpr(llvm::cast<BinaryExpr>(expr));
             break;
         case ExprKind::CallExpr:
-            type = typecheckCallExpr(llvm::cast<CallExpr>(expr));
+            type = typecheckCallExpr(llvm::cast<CallExpr>(expr), expectedType);
             break;
         case ExprKind::SizeofExpr:
             type = typecheckSizeofExpr(llvm::cast<SizeofExpr>(expr));

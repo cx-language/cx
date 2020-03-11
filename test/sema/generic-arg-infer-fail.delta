@@ -2,5 +2,5 @@
 
 void foo<T>() { }
 
-// CHECK: [[@LINE+1]]:18: error: can't infer generic parameters without function arguments
+// CHECK: [[@LINE+1]]:18: error: can't infer generic parameters, please specify them explicitly
 void main() { foo() }

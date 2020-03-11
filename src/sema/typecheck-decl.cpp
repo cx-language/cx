@@ -285,8 +285,10 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
         ERROR(decl.getLocation(), "global variables cannot be uninitialized");
     }
 
+    Type declaredType = decl.getType();
+
     try {
-        typecheckExpr(*decl.getInitializer());
+        typecheckExpr(*decl.getInitializer(), false, declaredType);
     } catch (const CompileError&) {
         if (!isGlobal) getCurrentModule()->addToSymbolTable(decl, false);
         throw;
@@ -294,9 +296,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
 
     if (!isGlobal) getCurrentModule()->addToSymbolTable(decl, false);
 
-    Type declaredType = decl.getType();
     Type initializerType = decl.getInitializer()->getType();
-
     if (!initializerType) return;
 
     if (declaredType) {

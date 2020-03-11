@@ -3,7 +3,7 @@ struct Set<Key: Hashable> {
 
     /// Initializes an empty set
     init() {
-        map = Map<Key, bool>();
+        map = Map();
     }
 
     /// Inserts an element into the set. If the element exists already, nothing is done.

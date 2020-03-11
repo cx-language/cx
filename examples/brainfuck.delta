@@ -5,7 +5,7 @@ struct Tape
 
     init()
     {
-        tape = List<int>([0]);
+        tape = List([0]);
         pos = 0;
     }
 
@@ -47,7 +47,7 @@ struct Program
     init(string text)
     {
         this.code = StringBuffer();
-        this.bracketMap = Map<int, int>();
+        this.bracketMap = Map();
 
         var leftStack = List<int>();
         var pc = 0;

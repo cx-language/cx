@@ -124,7 +124,7 @@ void testIteratorOrder() {
 
     assert(called == 100);
 
-    map = OrderedMap<int, int>();
+    map = OrderedMap();
 
     for (var i in 0..100) {
         map.insert(99 - i, i-12);

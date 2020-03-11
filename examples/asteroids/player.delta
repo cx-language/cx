@@ -16,7 +16,7 @@ struct Player {
         position = Vector2(width / 2, height / 2);
         velocity = Vector2(0, 0);
         direction = 0;
-        missiles = List<Missile>();
+        missiles = List();
         timeSinceLastMissileShot = 0;
     }
 

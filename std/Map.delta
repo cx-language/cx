@@ -10,7 +10,7 @@ struct Map<Key: Hashable, Value> {
     /// Initializes an empty map
     init() {
         size = 0;
-        hashTable = List<List<MapEntry<Key, Value>>>();
+        hashTable = List();
         increaseTableSize(hashTable, 128);
     }
 

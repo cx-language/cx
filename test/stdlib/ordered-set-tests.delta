@@ -157,7 +157,7 @@ void testIteratorOrder() {
 
     assert(called == 100);
 
-    set = OrderedSet<uint>();
+    set = OrderedSet();
 
     for (var i in 0..100) {
         set.insert(uint(99 - i));

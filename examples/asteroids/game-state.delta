@@ -9,7 +9,7 @@ struct GameState {
 
     init() {
         player = Player();
-        asteroids = List<Asteroid>();
+        asteroids = List();
         asteroids.push(Asteroid());
 
         ticks = SDL_GetTicks();

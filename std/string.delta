@@ -2,7 +2,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     ArrayRef<char> characters;
 
     init(char* pointer, int length) {
-        characters = ArrayRef<char>(pointer, length);
+        characters = ArrayRef(pointer, length);
     }
 
     /// Initializes a string referring to a null-terminated C-style string.
@@ -12,11 +12,11 @@ struct string: Copyable, Comparable, Hashable, Printable {
     /// `string.init(char* pointer, uint length)` instead.
     ///
     init(char* cString) {
-        characters = ArrayRef<char>(cString, int(strlen(cString)));
+        characters = ArrayRef(cString, int(strlen(cString)));
     }
 
     init(StringBuffer* string) {
-        characters = ArrayRef<char>(string.data(), string.size());
+        characters = ArrayRef(string.data(), string.size());
     }
 
     bool empty() {
