@@ -385,6 +385,30 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         ABORT("couldn't import the standard library: " << stdModule.getError().message());
     }
 
+    // Typecheck implemented interfaces so that interface method implementations are added to the implementing type before they're referenced.
+    for (auto& sourceFile : module.getSourceFiles()) {
+        for (auto& decl : sourceFile.getTopLevelDecls()) {
+            currentModule = &module;
+            currentSourceFile = &sourceFile;
+
+            if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                for (Type interface : typeDecl->getInterfaces()) {
+                    typecheckType(interface, typeDecl->getAccessLevel());
+
+                    for (auto& method : interface.getDecl()->getMethods()) {
+                        auto& methodDecl = llvm::cast<MethodDecl>(*method);
+
+                        if (methodDecl.hasBody()) {
+                            auto copy = methodDecl.instantiate({ { "This", typeDecl->getType() } }, *typeDecl);
+                            getCurrentModule()->addToSymbolTable(*copy);
+                            typeDecl->addMethod(copy);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Infer the types of global variables for use before their declaration.
     for (auto& sourceFile : module.getSourceFiles()) {
         currentModule = &module;

@@ -237,16 +237,6 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
             REPORT_ERROR(decl.getLocation(),
                          "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
         }
-
-        for (auto& method : interfaceDecl->getMethods()) {
-            auto& methodDecl = llvm::cast<MethodDecl>(*method);
-
-            if (methodDecl.hasBody()) {
-                auto copy = methodDecl.instantiate({ { "This", decl.getType() } }, decl);
-                getCurrentModule()->addToSymbolTable(*copy);
-                decl.addMethod(copy);
-            }
-        }
     }
 
     TypeDecl* realDecl;

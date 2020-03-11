@@ -821,7 +821,7 @@ static std::vector<Type> getGenericArgTypes(const llvm::StringMap<Type>& generic
 }
 
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, bool returnNullOnError) {
-    llvm::SmallVector<Decl*, 1> matches;
+    std::vector<Decl*> matches;
     std::vector<Decl*> initDecls;
     bool isInitCall = false;
 
