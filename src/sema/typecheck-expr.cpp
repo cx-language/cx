@@ -286,7 +286,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     Type leftType = typecheckExpr(expr.getLHS());
-    Type rightType = typecheckExpr(expr.getRHS());
+    Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
 
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
@@ -772,10 +772,11 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
     llvm::ArrayRef<Type> genericArgTypes;
 
     if (call.getGenericArgs().empty()) {
-        if (expectedType && expectedType.isBasicType()) {
+        if (expectedType && expectedType.isBasicType() && !expectedType.getGenericArgs().empty()) {
             // TODO: Should probably check that expectedType is the same type as the type whose generics args we're inferring.
             genericArgTypes = expectedType.getGenericArgs();
         } else if (call.getArgs().empty()) {
+            if (returnOnError) return {};
             ERROR(call.getLocation(), "can't infer generic parameters, please specify them explicitly");
         } else {
             inferredGenericArgs = inferGenericArgsFromCallArgs(genericParams, call, params, returnOnError);

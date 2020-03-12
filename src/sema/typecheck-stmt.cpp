@@ -46,7 +46,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
         return;
     }
 
-    Type returnValueType = typecheckExpr(stmt.getReturnValue());
+    Type returnValueType = typecheckExpr(stmt.getReturnValue(), false, functionReturnType);
 
     if (!convert(stmt.getReturnValue(), functionReturnType)) {
         ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
