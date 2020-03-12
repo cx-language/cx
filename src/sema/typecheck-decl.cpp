@@ -159,7 +159,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     if (decl.isLambda()) {
         ASSERT(decl.getBody().size() == 1);
-        decl.getProto().setReturnType(typecheckExpr(*llvm::cast<ReturnStmt>(decl.getBody().front())->getReturnValue()));
+        decl.getProto().setReturnType(typecheckExpr(llvm::cast<ReturnStmt>(decl.getBody().front())->getReturnValue()));
     }
 
     if (!decl.isInitDecl() && !decl.isDeinitDecl()) {
@@ -188,7 +188,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
                 if (decl.isInitDecl()) {
                     if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
-                        if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
+                        if (auto* callExpr = llvm::dyn_cast<CallExpr>(exprStmt->getExpr())) {
                             if (auto* initDecl = llvm::dyn_cast_or_null<InitDecl>(callExpr->getCalleeDecl())) {
                                 if (initDecl->getTypeDecl() == receiverTypeDecl) {
                                     delegatedInit = true;
@@ -272,7 +272,7 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     }
 
     for (auto& enumCase : decl.getCases()) {
-        typecheckExpr(*enumCase.getValue());
+        typecheckExpr(enumCase.getValue());
     }
 }
 
@@ -288,7 +288,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     Type declaredType = decl.getType();
 
     try {
-        typecheckExpr(*decl.getInitializer(), false, declaredType);
+        typecheckExpr(decl.getInitializer(), false, declaredType);
     } catch (const CompileError&) {
         if (!isGlobal) getCurrentModule()->addToSymbolTable(decl, false);
         throw;

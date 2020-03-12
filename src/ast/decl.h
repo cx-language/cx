@@ -376,6 +376,7 @@ public:
     EnumCase(std::string&& name, Expr* value, Type associatedType, AccessLevel accessLevel, SourceLocation location);
     llvm::StringRef getName() const override { return name; }
     Expr* getValue() const { return value; }
+    Expr*& getValue() { return value; }
     Type getAssociatedType() const { return associatedType; }
     EnumDecl* getEnumDecl() const { return llvm::cast<EnumDecl>(getParent()); }
     SourceLocation getLocation() const override { return location; }
@@ -400,6 +401,7 @@ public:
     }
     bool hasAssociatedValues() const;
     llvm::ArrayRef<EnumCase> getCases() const { return cases; }
+    llvm::MutableArrayRef<EnumCase> getCases() { return cases; }
     EnumCase* getCaseByName(llvm::StringRef name);
     // TODO: Select tag type to be able to hold all enum values.
     Type getTagType() const { return Type::getInt(); }
@@ -416,6 +418,7 @@ public:
       module(module) {}
     llvm::StringRef getName() const override { return name; }
     Expr* getInitializer() const { return initializer; }
+    Expr*& getInitializer() { return initializer; }
     SourceLocation getLocation() const override { return location; }
     Module* getModule() const override { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }

@@ -420,9 +420,9 @@ const Expr* CallExpr::getReceiver() const {
     return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
 }
 
-Expr* CallExpr::getReceiver() {
+Expr** CallExpr::getReceiver() {
     if (!isMethodCall()) return nullptr;
-    return llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
+    return &llvm::cast<MemberExpr>(getCallee()).getBaseExpr();
 }
 
 llvm::APSInt UnaryExpr::getConstantIntegerValue() const {

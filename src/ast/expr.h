@@ -178,6 +178,7 @@ public:
     ArrayLiteralExpr(std::vector<Expr*>&& elements, SourceLocation location)
     : Expr(ExprKind::ArrayLiteralExpr, location), elements(std::move(elements)) {}
     llvm::ArrayRef<Expr*> getElements() const { return elements; }
+    llvm::MutableArrayRef<Expr*> getElements() { return elements; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::ArrayLiteralExpr; }
 
 private:
@@ -191,7 +192,7 @@ public:
     : name(std::move(name)), value(value), location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
     void setName(std::string&& newName) { name = newName; }
-    Expr* getValue() { return value; }
+    Expr*& getValue() { return value; }
     const Expr* getValue() const { return value; }
     SourceLocation getLocation() const { return location; }
 
@@ -226,7 +227,7 @@ public:
     bool isBuiltinCast() const { return getFunctionName() == "cast"; }
     bool isMoveInit() const;
     const Expr* getReceiver() const;
-    Expr* getReceiver();
+    Expr** getReceiver();
     Type getReceiverType() const { return receiverType; }
     void setReceiverType(Type type) { receiverType = type; }
     Decl* getCalleeDecl() const { return calleeDecl; }
@@ -266,7 +267,7 @@ public:
     UnaryExpr(UnaryOperator op, Expr* operand, SourceLocation location)
     : CallExpr(ExprKind::UnaryExpr, new VarExpr(toString(op.getKind()), location), { NamedValue(operand) }, location), op(op) {}
     UnaryOperator getOperator() const { return op; }
-    Expr& getOperand() { return *getArgs()[0].getValue(); }
+    Expr*& getOperand() { return getArgs()[0].getValue(); }
     const Expr& getOperand() const { return *getArgs()[0].getValue(); }
     llvm::APSInt getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::UnaryExpr; }
@@ -283,8 +284,8 @@ public:
     BinaryOperator getOperator() const { return op; }
     const Expr& getLHS() const { return *getArgs()[0].getValue(); }
     const Expr& getRHS() const { return *getArgs()[1].getValue(); }
-    Expr& getLHS() { return *getArgs()[0].getValue(); }
-    Expr& getRHS() { return *getArgs()[1].getValue(); }
+    Expr*& getLHS() { return getArgs()[0].getValue(); }
+    Expr*& getRHS() { return getArgs()[1].getValue(); }
     llvm::APSInt getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 
@@ -311,7 +312,7 @@ class AddressofExpr : public Expr {
 public:
     AddressofExpr(Expr* operand, SourceLocation location) : Expr(ExprKind::AddressofExpr, location), operand(operand) {}
     const Expr& getOperand() const { return *operand; }
-    Expr& getOperand() { return *operand; }
+    Expr*& getOperand() { return operand; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::AddressofExpr; }
 
 private:
@@ -324,7 +325,7 @@ public:
     MemberExpr(Expr* base, std::string&& member, SourceLocation location)
     : Expr(ExprKind::MemberExpr, location), base(base), member(std::move(member)) {}
     const Expr* getBaseExpr() const { return base; }
-    Expr* getBaseExpr() { return base; }
+    Expr*& getBaseExpr() { return base; }
     llvm::StringRef getMemberName() const { return member; }
     Decl* getDecl() const { return decl; }
     void setDecl(Decl& d) { decl = &d; }
@@ -343,8 +344,8 @@ public:
     : CallExpr(ExprKind::SubscriptExpr, new MemberExpr(base, "[]", location), { NamedValue("", index) }, location) {}
     const Expr* getBaseExpr() const { return getReceiver(); }
     const Expr* getIndexExpr() const { return getArgs()[0].getValue(); }
-    Expr* getBaseExpr() { return getReceiver(); }
-    Expr* getIndexExpr() { return getArgs()[0].getValue(); }
+    Expr*& getBaseExpr() { return *getReceiver(); }
+    Expr*& getIndexExpr() { return getArgs()[0].getValue(); }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::SubscriptExpr; }
 };
 
@@ -355,6 +356,7 @@ class UnwrapExpr : public Expr {
 public:
     UnwrapExpr(Expr* operand, SourceLocation location) : Expr(ExprKind::UnwrapExpr, location), operand(operand) {}
     Expr& getOperand() const { return *operand; }
+    Expr*& getOperand() { return operand; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::UnwrapExpr; }
 
 private:
@@ -375,9 +377,9 @@ class IfExpr : public Expr {
 public:
     IfExpr(Expr* condition, Expr* thenExpr, Expr* elseExpr, SourceLocation location)
     : Expr(ExprKind::IfExpr, location), condition(condition), thenExpr(thenExpr), elseExpr(elseExpr) {}
-    Expr* getCondition() { return condition; }
-    Expr* getThenExpr() { return thenExpr; }
-    Expr* getElseExpr() { return elseExpr; }
+    Expr*& getCondition() { return condition; }
+    Expr*& getThenExpr() { return thenExpr; }
+    Expr*& getElseExpr() { return elseExpr; }
     const Expr* getCondition() const { return condition; }
     const Expr* getThenExpr() const { return thenExpr; }
     const Expr* getElseExpr() const { return elseExpr; }
