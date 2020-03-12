@@ -7,7 +7,6 @@
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringExtras.h>
-#include <llvm/ADT/iterator_range.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
@@ -137,9 +136,9 @@ Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&) {
 }
 
 Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
-    Type firstType = typecheckExpr(*array.getElements()[0]);
-    for (auto& element : llvm::drop_begin(array.getElements(), 1)) {
-        Type type = typecheckExpr(*element);
+    Type firstType = typecheckExpr(array.getElements()[0]);
+    for (auto& element : array.getElements().drop_front()) {
+        Type type = typecheckExpr(element);
         if (type != firstType) {
             ERROR(element->getLocation(), "mixed element types in array literal (expected '" << firstType << "', found '" << type << "')");
         }
@@ -149,7 +148,7 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
 
 Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
     auto elements = map(expr.getElements(), [&](NamedValue& namedValue) {
-        return TupleElement{ namedValue.getName(), typecheckExpr(*namedValue.getValue()) };
+        return TupleElement{ namedValue.getName(), typecheckExpr(namedValue.getValue()) };
     });
     return TupleType::get(std::move(elements));
 }
@@ -171,7 +170,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
 
     if (expr.getOperator() == Token::Not) {
         if (!operandType.isBool() && !operandType.isOptionalType()) {
-            ERROR(expr.getOperand().getLocation(), "invalid operand type '" << operandType << "' to logical not");
+            ERROR(expr.getOperand()->getLocation(), "invalid operand type '" << operandType << "' to logical not");
         }
         return Type::getBool();
     }
@@ -271,8 +270,8 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     if (isCompoundAssignmentOperator(op)) {
-        auto rhs = new BinaryExpr(withoutCompoundEqSuffix(op), &expr.getLHS(), &expr.getRHS(), expr.getLocation());
-        expr = BinaryExpr(Token::Assignment, &expr.getLHS(), rhs, expr.getLocation());
+        auto rhs = new BinaryExpr(withoutCompoundEqSuffix(op), expr.getLHS(), expr.getRHS(), expr.getLocation());
+        expr = BinaryExpr(Token::Assignment, expr.getLHS(), rhs, expr.getLocation());
         return typecheckBinaryExpr(expr);
     }
 
@@ -307,40 +306,40 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
-    bool converted = convert(&expr.getRHS(), leftType, true) || convert(&expr.getLHS(), rightType, true);
+    bool converted = convert(expr.getRHS(), leftType, true) || convert(expr.getLHS(), rightType, true);
 
     if (!converted && (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType())) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
-    return isComparisonOperator(op) ? Type::getBool() : expr.getLHS().getType();
+    return isComparisonOperator(op) ? Type::getBool() : expr.getLHS()->getType();
 }
 
-void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location) {
-    if (!lhs.isLvalue()) {
-        ERROR(lhs.getLocation(), "expression is not assignable");
+void Typechecker::typecheckAssignment(Expr*& lhs, Expr*& rhs, SourceLocation location) {
+    if (!lhs->isLvalue()) {
+        ERROR(lhs->getLocation(), "expression is not assignable");
     }
 
     typecheckExpr(lhs, true);
-    Type lhsType = lhs.getAssignableType();
+    Type lhsType = lhs->getAssignableType();
     Type rhsType = typecheckExpr(rhs, false, lhsType);
 
-    if (rhs.isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(lhs, currentFunction)) {
-        ERROR(rhs.getLocation(), "'undefined' is only allowed as an initial value");
+    if (rhs->isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(*lhs, currentFunction)) {
+        ERROR(rhs->getLocation(), "'undefined' is only allowed as an initial value");
     }
 
-    if (!convert(&rhs, lhsType)) {
+    if (!convert(rhs, lhsType)) {
         ERROR(location, "cannot assign '" << rhsType << "' to variable of type '" << lhsType << "'");
     }
 
     if (!lhsType.isMutable()) {
-        switch (lhs.getKind()) {
+        switch (lhs->getKind()) {
             case ExprKind::VarExpr: {
-                auto identifier = llvm::cast<VarExpr>(lhs).getIdentifier();
+                auto identifier = llvm::cast<VarExpr>(lhs)->getIdentifier();
                 ERROR(location, "cannot assign to immutable variable '" << identifier << "' of type '" << lhsType << "'");
             }
             case ExprKind::MemberExpr: {
-                auto memberName = llvm::cast<MemberExpr>(lhs).getMemberName();
+                auto memberName = llvm::cast<MemberExpr>(lhs)->getMemberName();
                 ERROR(location, "cannot assign to immutable variable '" << memberName << "' of type '" << lhsType << "'");
             }
             default:
@@ -349,12 +348,12 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
     }
 
     if (!rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
-        rhs.setMoved(true);
-        lhs.setMoved(false);
+        rhs->setMoved(true);
+        lhs->setMoved(false);
     }
 
     if (currentInitializedFields) {
-        currentInitializedFields->insert(lhs.getFieldDecl());
+        currentInitializedFields->insert(lhs->getFieldDecl());
     }
 }
 
@@ -682,7 +681,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
             if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateArgs() after this function. Get rid of this duplicated typechecking.
                 auto* argValue = arg.getValue();
-                Type argType = typecheckExpr(*argValue);
+                Type argType = typecheckExpr(argValue);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
                 if (!maybeGenericArg) continue;
 
@@ -800,7 +799,7 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
         ERROR(expr.getLocation(), "expected unnamed argument to converting initializer");
     }
 
-    auto sourceType = typecheckExpr(*expr.getArgs().front().getValue());
+    auto sourceType = typecheckExpr(expr.getArgs().front().getValue());
     auto targetType = BasicType::get(expr.getFunctionName(), {});
 
     if (sourceType == targetType) {
@@ -1050,7 +1049,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     for (auto& arg : expr.getArgs()) {
-        typecheckExpr(*arg.getValue());
+        typecheckExpr(arg.getValue());
     }
 
     if (expr.getFunctionName() == "assert") {
@@ -1070,9 +1069,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         expr.setReceiverType(receiverType);
 
         if (receiverType.isOptionalType()) {
-            WARN(expr.getReceiver()->getLocation(), "calling member function through value of optional type '"
-                                                        << receiverType << "' which may be null; "
-                                                        << "unwrap the value with a postfix '!' to silence this warning");
+            WARN((*expr.getReceiver())->getLocation(), "calling member function through value of optional type '"
+                                                           << receiverType << "' which may be null; "
+                                                           << "unwrap the value with a postfix '!' to silence this warning");
         } else if (receiverType.removePointer().isArrayType()) {
             // TODO: Move these member functions to a 'struct Array' declaration in stdlib.
             if (expr.getFunctionName() == "size") {
@@ -1086,7 +1085,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
                 return BasicType::get("ArrayIterator", receiverType.removePointer().getElementType());
             }
 
-            ERROR(expr.getReceiver()->getLocation(),
+            ERROR((*expr.getReceiver())->getLocation(),
                   "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");
         } else if (receiverType.removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
@@ -1309,7 +1308,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     validateGenericArgCount(1, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
     validateArgCount(1, expr.getArgs().size(), false, expr.getFunctionName(), expr.getLocation());
 
-    Type sourceType = typecheckExpr(*expr.getArgs().front().getValue());
+    Type sourceType = typecheckExpr(expr.getArgs().front().getValue());
     Type targetType = expr.getGenericArgs().front();
 
     if (!isValidCast(sourceType, targetType)) {
@@ -1337,7 +1336,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
         return enumCase->getType();
     }
 
-    Type baseType = typecheckExpr(*expr.getBaseExpr());
+    Type baseType = typecheckExpr(expr.getBaseExpr());
 
     if (baseType.isOptionalType()) {
         WARN(expr.getBaseExpr()->getLocation(), "accessing member through value of optional type '"
@@ -1380,7 +1379,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
 }
 
 Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
-    Type lhsType = typecheckExpr(*expr.getBaseExpr());
+    Type lhsType = typecheckExpr(expr.getBaseExpr());
     Type arrayType;
 
     if (lhsType.isArrayType()) {
@@ -1394,7 +1393,7 @@ Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
     }
 
     Expr* indexExpr = expr.getIndexExpr();
-    Type indexType = typecheckExpr(*indexExpr);
+    Type indexType = typecheckExpr(indexExpr);
 
     if (!convert(indexExpr, ArrayType::getIndexType())) {
         ERROR(indexExpr->getLocation(), "illegal subscript index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
@@ -1427,14 +1426,14 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr) {
 }
 
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {
-    auto conditionType = typecheckExpr(*expr.getCondition());
+    auto conditionType = typecheckExpr(expr.getCondition());
 
     if (!conditionType.isBool() && !conditionType.isOptionalType()) {
         ERROR(expr.getCondition()->getLocation(), "if-expression condition must have type 'bool' or optional type");
     }
 
-    auto thenType = typecheckExpr(*expr.getThenExpr());
-    auto elseType = typecheckExpr(*expr.getElseExpr());
+    auto thenType = typecheckExpr(expr.getThenExpr());
+    auto elseType = typecheckExpr(expr.getElseExpr());
 
     if (convert(expr.getElseExpr(), thenType)) {
         return thenType;
@@ -1445,81 +1444,81 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     }
 }
 
-Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedType) {
+Type Typechecker::typecheckExpr(Expr*& expr, bool useIsWriteOnly, Type expectedType) {
     Type type;
 
-    switch (expr.getKind()) {
+    switch (expr->getKind()) {
         case ExprKind::VarExpr:
-            type = typecheckVarExpr(llvm::cast<VarExpr>(expr), useIsWriteOnly);
+            type = typecheckVarExpr(*llvm::cast<VarExpr>(expr), useIsWriteOnly);
             if (!type) throw CompileError();
             break;
         case ExprKind::StringLiteralExpr:
-            type = typecheckStringLiteralExpr(llvm::cast<StringLiteralExpr>(expr));
+            type = typecheckStringLiteralExpr(*llvm::cast<StringLiteralExpr>(expr));
             break;
         case ExprKind::CharacterLiteralExpr:
-            type = typecheckCharacterLiteralExpr(llvm::cast<CharacterLiteralExpr>(expr));
+            type = typecheckCharacterLiteralExpr(*llvm::cast<CharacterLiteralExpr>(expr));
             break;
         case ExprKind::IntLiteralExpr:
-            type = typecheckIntLiteralExpr(llvm::cast<IntLiteralExpr>(expr));
+            type = typecheckIntLiteralExpr(*llvm::cast<IntLiteralExpr>(expr));
             break;
         case ExprKind::FloatLiteralExpr:
-            type = typecheckFloatLiteralExpr(llvm::cast<FloatLiteralExpr>(expr));
+            type = typecheckFloatLiteralExpr(*llvm::cast<FloatLiteralExpr>(expr));
             break;
         case ExprKind::BoolLiteralExpr:
-            type = typecheckBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
+            type = typecheckBoolLiteralExpr(*llvm::cast<BoolLiteralExpr>(expr));
             break;
         case ExprKind::NullLiteralExpr:
             type = typecheckNullLiteralExpr(expr);
             break;
         case ExprKind::UndefinedLiteralExpr:
-            type = typecheckUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));
+            type = typecheckUndefinedLiteralExpr(*llvm::cast<UndefinedLiteralExpr>(expr));
             break;
         case ExprKind::ArrayLiteralExpr:
-            type = typecheckArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
+            type = typecheckArrayLiteralExpr(*llvm::cast<ArrayLiteralExpr>(expr));
             break;
         case ExprKind::TupleExpr:
-            type = typecheckTupleExpr(llvm::cast<TupleExpr>(expr));
+            type = typecheckTupleExpr(*llvm::cast<TupleExpr>(expr));
             break;
         case ExprKind::UnaryExpr:
-            type = typecheckUnaryExpr(llvm::cast<UnaryExpr>(expr));
+            type = typecheckUnaryExpr(*llvm::cast<UnaryExpr>(expr));
             break;
         case ExprKind::BinaryExpr:
-            type = typecheckBinaryExpr(llvm::cast<BinaryExpr>(expr));
+            type = typecheckBinaryExpr(*llvm::cast<BinaryExpr>(expr));
             break;
         case ExprKind::CallExpr:
-            type = typecheckCallExpr(llvm::cast<CallExpr>(expr), expectedType);
+            type = typecheckCallExpr(*llvm::cast<CallExpr>(expr), expectedType);
             break;
         case ExprKind::SizeofExpr:
-            type = typecheckSizeofExpr(llvm::cast<SizeofExpr>(expr));
+            type = typecheckSizeofExpr(*llvm::cast<SizeofExpr>(expr));
             break;
         case ExprKind::AddressofExpr:
-            type = typecheckAddressofExpr(llvm::cast<AddressofExpr>(expr));
+            type = typecheckAddressofExpr(*llvm::cast<AddressofExpr>(expr));
             break;
         case ExprKind::MemberExpr:
-            type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr));
+            type = typecheckMemberExpr(*llvm::cast<MemberExpr>(expr));
             break;
         case ExprKind::SubscriptExpr:
-            type = typecheckSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
+            type = typecheckSubscriptExpr(*llvm::cast<SubscriptExpr>(expr));
             break;
         case ExprKind::UnwrapExpr:
-            type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
+            type = typecheckUnwrapExpr(*llvm::cast<UnwrapExpr>(expr));
             break;
         case ExprKind::LambdaExpr:
-            type = typecheckLambdaExpr(llvm::cast<LambdaExpr>(expr));
+            type = typecheckLambdaExpr(*llvm::cast<LambdaExpr>(expr));
             break;
         case ExprKind::IfExpr:
-            type = typecheckIfExpr(llvm::cast<IfExpr>(expr));
+            type = typecheckIfExpr(*llvm::cast<IfExpr>(expr));
             break;
     }
 
-    if (!useIsWriteOnly && type.isOptionalType() && isGuaranteedNonNull(expr)) {
-        expr.setType(type.removeOptional());
+    if (!useIsWriteOnly && type.isOptionalType() && isGuaranteedNonNull(*expr)) {
+        expr->setType(type.removeOptional());
     } else {
-        expr.setType(type);
+        expr->setType(type);
     }
 
-    expr.setAssignableType(type);
-    return expr.getType();
+    expr->setAssignableType(type);
+    return expr->getType();
 }
 
 EnumCase* Typechecker::getEnumCase(const Expr& expr) {

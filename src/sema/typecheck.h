@@ -38,7 +38,7 @@ public:
 
 private:
     Module* getCurrentModule() const { return NOTNULL(currentModule); }
-    Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
+    Type typecheckExpr(Expr*& expr, bool useIsWriteOnly = false, Type expectedType = Type());
     void typecheckVarDecl(VarDecl& decl, bool isGlobal);
     void typecheckFieldDecl(FieldDecl& decl);
     void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest);
@@ -70,7 +70,7 @@ private:
     Type typecheckTupleExpr(TupleExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
-    void typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location);
+    void typecheckAssignment(Expr*& lhs, Expr*& rhs, SourceLocation location);
     Type typecheckCallExpr(CallExpr& expr, Type expectedType = Type());
     Type typecheckBuiltinConversion(CallExpr& expr);
     Type typecheckBuiltinCast(CallExpr& expr);

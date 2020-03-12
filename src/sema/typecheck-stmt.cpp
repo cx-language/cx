@@ -8,7 +8,7 @@ void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
 
     if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(returnValue)) {
         if (unaryExpr->getOperator() == Token::And) {
-            returnValue = &unaryExpr->getOperand();
+            returnValue = unaryExpr->getOperand();
         }
     }
 
@@ -46,7 +46,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
         return;
     }
 
-    Type returnValueType = typecheckExpr(*stmt.getReturnValue(), false, functionReturnType);
+    Type returnValueType = typecheckExpr(stmt.getReturnValue(), false, functionReturnType);
 
     if (!convert(stmt.getReturnValue(), functionReturnType)) {
         ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
@@ -64,7 +64,7 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     Type conditionType = typecheckExpr(ifStmt.getCondition());
 
     if (!conditionType.isBool() && !conditionType.isOptionalType()) {
-        ERROR(ifStmt.getCondition().getLocation(), "'if' condition must have type 'bool' or optional type");
+        ERROR(ifStmt.getCondition()->getLocation(), "'if' condition must have type 'bool' or optional type");
     }
 
     currentControlStmts.push_back(&ifStmt);
@@ -84,13 +84,13 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(stmt.getCondition());
 
     if (!conditionType.isInteger() && !conditionType.isChar() && !conditionType.isEnumType()) {
-        ERROR(stmt.getCondition().getLocation(), "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
+        ERROR(stmt.getCondition()->getLocation(), "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
     }
 
     currentControlStmts.push_back(&stmt);
 
     for (auto& switchCase : stmt.getCases()) {
-        Type caseType = typecheckExpr(*switchCase.getValue());
+        Type caseType = typecheckExpr(switchCase.getValue());
 
         if (!convert(switchCase.getValue(), conditionType)) {
             ERROR(switchCase.getValue()->getLocation(),
@@ -123,7 +123,7 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
     Type conditionType = typecheckExpr(whileStmt.getCondition());
 
     if (!conditionType.isBool() && !conditionType.isOptionalType()) {
-        ERROR(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool' or optional type");
+        ERROR(whileStmt.getCondition()->getLocation(), "'while' condition must have type 'bool' or optional type");
     }
 
     currentControlStmts.push_back(&whileStmt);
@@ -135,7 +135,7 @@ void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
     currentControlStmts.pop_back();
 
     if (auto* increment = whileStmt.getIncrement()) {
-        typecheckExpr(*increment);
+        typecheckExpr(increment);
     }
 }
 

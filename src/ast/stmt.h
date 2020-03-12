@@ -58,6 +58,7 @@ class ReturnStmt : public Stmt {
 public:
     ReturnStmt(Expr* value, SourceLocation location) : Stmt(StmtKind::ReturnStmt), value(value), location(location) {}
     Expr* getReturnValue() const { return value; }
+    Expr*& getReturnValue() { return value; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ReturnStmt; }
 
@@ -81,6 +82,7 @@ class ExprStmt : public Stmt {
 public:
     ExprStmt(Expr* expr) : Stmt(StmtKind::ExprStmt), expr(expr) {}
     Expr& getExpr() const { return *expr; }
+    Expr*& getExpr() { return expr; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ExprStmt; }
 
 private:
@@ -91,6 +93,7 @@ class DeferStmt : public Stmt {
 public:
     DeferStmt(Expr* expr) : Stmt(StmtKind::DeferStmt), expr(expr) {}
     Expr& getExpr() const { return *expr; }
+    Expr*& getExpr() { return expr; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DeferStmt; }
 
 private:
@@ -102,6 +105,7 @@ public:
     IfStmt(Expr* condition, std::vector<Stmt*>&& thenBody, std::vector<Stmt*>&& elseBody)
     : Stmt(StmtKind::IfStmt), condition(condition), thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) {}
     Expr& getCondition() const { return *condition; }
+    Expr*& getCondition() { return condition; }
     llvm::ArrayRef<Stmt*> getThenBody() const { return thenBody; }
     llvm::ArrayRef<Stmt*> getElseBody() const { return elseBody; }
     llvm::MutableArrayRef<Stmt*> getThenBody() { return thenBody; }
@@ -119,6 +123,7 @@ public:
     SwitchCase(Expr* value, VarDecl* associatedValue, std::vector<Stmt*>&& stmts)
     : value(value), associatedValue(associatedValue), stmts(std::move(stmts)) {}
     Expr* getValue() const { return value; }
+    Expr*& getValue() { return value; }
     VarDecl* getAssociatedValue() const { return associatedValue; }
     llvm::ArrayRef<Stmt*> getStmts() const { return stmts; }
     llvm::MutableArrayRef<Stmt*> getStmts() { return stmts; }
@@ -134,6 +139,7 @@ public:
     SwitchStmt(Expr* condition, std::vector<SwitchCase>&& cases, std::vector<Stmt*>&& defaultStmts)
     : Stmt(StmtKind::SwitchStmt), condition(condition), cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) {}
     Expr& getCondition() const { return *condition; }
+    Expr*& getCondition() { return condition; }
     llvm::ArrayRef<SwitchCase> getCases() const { return cases; }
     llvm::MutableArrayRef<SwitchCase> getCases() { return cases; }
     llvm::ArrayRef<Stmt*> getDefaultStmts() const { return defaultStmts; }
@@ -151,6 +157,7 @@ public:
     WhileStmt(Expr* condition, std::vector<Stmt*>&& body, Expr* increment)
     : Stmt(StmtKind::WhileStmt), condition(condition), body(std::move(body)), increment(increment) {}
     Expr& getCondition() const { return *condition; }
+    Expr*& getCondition() { return condition; }
     llvm::ArrayRef<Stmt*> getBody() const { return body; }
     llvm::MutableArrayRef<Stmt*> getBody() { return body; }
     Expr* getIncrement() const { return increment; }
@@ -168,6 +175,7 @@ public:
     : Stmt(StmtKind::ForStmt), variable(variable), range(range), body(std::move(body)), location(location) {}
     VarDecl* getVariable() const { return variable; }
     Expr& getRangeExpr() const { return *range; }
+    Expr*& getRangeExpr() { return range; }
     llvm::ArrayRef<Stmt*> getBody() const { return body; }
     SourceLocation getLocation() const { return location; }
     Stmt* lower(int nestLevel);
