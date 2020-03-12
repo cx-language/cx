@@ -1,0 +1,18 @@
+// TODO: Convert into enum once generic enums are supported.
+struct Optional<T> {
+    T value;
+    bool hasValue;
+
+    init() {
+        value = undefined;
+        hasValue = false;
+    }
+
+    init(T value) {
+        this.value = value;
+        hasValue = true;
+    }
+}
+
+// HACK
+private void __forceOptionalInstantiation(Optional<int> i) { }

@@ -128,7 +128,17 @@ Type typecheckBoolLiteralExpr(BoolLiteralExpr&) {
     return Type::getBool();
 }
 
-Type typecheckNullLiteralExpr(NullLiteralExpr&) {
+static Expr* lowerNullToOptional(Expr* expr, Type expectedType) {
+    auto callee = new VarExpr("Optional", expr->getLocation());
+    return new CallExpr(callee, {}, { expectedType.getWrappedType() }, expr->getLocation());
+}
+
+Type Typechecker::typecheckNullLiteralExpr(Expr*& expr, Type expectedType) {
+    if (expectedType && expectedType.isOptionalType() && !expectedType.getWrappedType().isPointerType()) {
+        expr = lowerNullToOptional(expr, expectedType);
+        typecheckExpr(expr, false, expectedType);
+        return expectedType;
+    }
     return Type::getNull();
 }
 
@@ -435,6 +445,8 @@ bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) c
 }
 
 bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType, bool allowPointerToTemporary) const {
+    source = source.canonicalize();
+
     switch (source.getKind()) {
         case TypeKind::BasicType:
             if (target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
@@ -1466,7 +1478,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             type = typecheckBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
             break;
         case ExprKind::NullLiteralExpr:
-            type = typecheckNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
+            type = typecheckNullLiteralExpr(expr, expectedType);
             break;
         case ExprKind::UndefinedLiteralExpr:
             type = typecheckUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));

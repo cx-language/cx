@@ -122,6 +122,23 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
     llvm_unreachable("all cases handled");
 }
 
+Type Type::canonicalize() const {
+    switch (getKind()) {
+        case TypeKind::BasicType:
+            if (getName() == "Optional") {
+                return OptionalType::get(getGenericArgs().front(), getMutability(), getLocation());
+            }
+            return *this;
+        case TypeKind::ArrayType:
+        case TypeKind::TupleType:
+        case TypeKind::FunctionType:
+        case TypeKind::PointerType:
+        case TypeKind::OptionalType:
+            return *this;
+    }
+    llvm_unreachable("all cases handled");
+}
+
 template<typename T>
 static Type getType(T&& typeBase, Mutability mutability, SourceLocation location) {
     Type newType(&typeBase, mutability, location);

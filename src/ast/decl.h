@@ -227,8 +227,8 @@ public:
     FunctionProto& getProto() { return proto; }
     virtual TypeDecl* getTypeDecl() const { return nullptr; }
     bool hasBody() const { return body.hasValue(); }
-    llvm::ArrayRef<Stmt*> getBody() const { return *NOTNULL(body); }
-    llvm::MutableArrayRef<Stmt*> getBody() { return *NOTNULL(body); }
+    llvm::ArrayRef<Stmt*> getBody() const { return *body; }
+    llvm::MutableArrayRef<Stmt*> getBody() { return *body; }
     void setBody(std::vector<Stmt*>&& body) { this->body = std::move(body); }
     SourceLocation getLocation() const override { return location; }
     FunctionType* getFunctionType() const;

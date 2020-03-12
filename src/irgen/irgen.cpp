@@ -146,7 +146,7 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             if (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType()) {
                 return toIR(type.getWrappedType());
             }
-            llvm_unreachable("IRGen doesn't support non-pointer optional types yet");
+            return toIR(BasicType::get("Optional", type.getWrappedType()));
     }
     llvm_unreachable("all cases handled");
 }
