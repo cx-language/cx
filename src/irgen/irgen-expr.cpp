@@ -61,14 +61,42 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
-    auto pointeeType = expr.getType().getWrappedType().getPointee();
+    if (expr.getType().getWrappedType().isPointerType()) {
+        auto pointeeType = expr.getType().getWrappedType().getPointee();
 
-    if (pointeeType.isArrayWithUnknownSize()) {
-        auto* pointerType = toIR(pointeeType.getElementType())->getPointerTo();
-        return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(pointerType));
+        if (pointeeType.isArrayWithUnknownSize()) {
+            auto* pointerType = toIR(pointeeType.getElementType())->getPointerTo();
+            return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(pointerType));
+        }
+
+        return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
+    } else {
+        return codegenOptionalConstruction(expr.getType().getWrappedType(), nullptr);
+    }
+}
+
+llvm::Value* IRGenerator::codegenOptionalConstruction(Type type, llvm::Value* arg) {
+    auto* decl = Module::getStdlibModule()->getSymbolTable().findOne("Optional");
+    auto typeTemplate = llvm::cast<TypeTemplate>(decl);
+    auto typeDecl = typeTemplate->instantiate(type);
+    llvm::Function* optionalConstructor = nullptr;
+
+    for (auto* method : typeDecl->getMethods()) {
+        if (auto initDecl = llvm::dyn_cast<InitDecl>(method)) {
+            if (initDecl->getParams().size() == (arg ? 1 : 0)) {
+                optionalConstructor = getFunctionProto(*initDecl);
+                break;
+            }
+        }
     }
 
-    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
+    ASSERT(optionalConstructor);
+    auto* alloca = createEntryBlockAlloca(toIR(typeDecl->getType()));
+    llvm::SmallVector<llvm::Value*, 2> allArgs;
+    allArgs.push_back(alloca);
+    if (arg) allArgs.push_back(arg);
+    builder.CreateCall(optionalConstructor, allArgs);
+    return alloca;
 }
 
 llvm::Value* IRGenerator::codegenUndefinedLiteralExpr(const UndefinedLiteralExpr& expr) {
@@ -765,9 +793,11 @@ llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
 
 llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     auto* value = codegenLvalueExpr(expr);
+
     if (value && value->getType()->isPointerTy() && value->getType()->getPointerElementType() == toIR(expr.getType())) {
         value = createLoad(value);
     }
+
     return value;
 }
 

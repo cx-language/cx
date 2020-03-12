@@ -128,7 +128,7 @@ Type typecheckBoolLiteralExpr(BoolLiteralExpr&) {
     return Type::getBool();
 }
 
-Type typecheckNullLiteralExpr(NullLiteralExpr&) {
+Type Typechecker::typecheckNullLiteralExpr(Expr&) {
     return Type::getNull();
 }
 
@@ -277,7 +277,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     Type leftType = typecheckExpr(expr.getLHS());
-    Type rightType = typecheckExpr(expr.getRHS());
+    Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
 
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
@@ -435,6 +435,8 @@ bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) c
 }
 
 bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType, bool allowPointerToTemporary) const {
+    source = source.canonicalize();
+
     switch (source.getKind()) {
         case TypeKind::BasicType:
             if (target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
@@ -761,10 +763,11 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
     llvm::ArrayRef<Type> genericArgTypes;
 
     if (call.getGenericArgs().empty()) {
-        if (expectedType && expectedType.isBasicType()) {
+        if (expectedType && expectedType.isBasicType() && !expectedType.getGenericArgs().empty()) {
             // TODO: Should probably check that expectedType is the same type as the type whose generics args we're inferring.
             genericArgTypes = expectedType.getGenericArgs();
         } else if (call.getArgs().empty()) {
+            if (returnOnError) return {};
             ERROR(call.getLocation(), "can't infer generic parameters, please specify them explicitly");
         } else {
             inferredGenericArgs = inferGenericArgsFromCallArgs(genericParams, call, params, returnOnError);
@@ -1466,7 +1469,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             type = typecheckBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
             break;
         case ExprKind::NullLiteralExpr:
-            type = typecheckNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
+            type = typecheckNullLiteralExpr(expr);
             break;
         case ExprKind::UndefinedLiteralExpr:
             type = typecheckUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));

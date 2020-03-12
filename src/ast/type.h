@@ -96,6 +96,7 @@ public:
     bool isUndefined() const;
 
     Type resolve(const llvm::StringMap<Type>& replacements) const;
+    Type canonicalize() const;
     bool isInteger() const;
     bool isSigned() const;
     bool isUnsigned() const;
