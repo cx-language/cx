@@ -274,19 +274,15 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     // Link the output.
 
     llvm::SmallString<128> temporaryExecutablePath;
-    const char* executableNamePattern = msvc ? "delta-%%%%%%%%.exe" : "delta-%%%%%%%%.out";
-
-    if (auto error = llvm::sys::fs::createUniqueFile(executableNamePattern, temporaryExecutablePath)) {
-        ABORT(error.message());
-    }
+    llvm::sys::fs::createUniquePath(msvc ? "delta-%%%%%%%%.exe" : "delta-%%%%%%%%.out", temporaryExecutablePath, true);
 
     std::vector<const char*> ccArgs = {
         msvc ? ccPath.c_str() : argv0,
         temporaryOutputFilePath.c_str(),
     };
 
-    std::string outputPathFlag = ((msvc ? "-Fe" : "-o") + temporaryExecutablePath).str();
-    ccArgs.push_back(outputPathFlag.c_str());
+    ccArgs.push_back(msvc ? "-Fe:" : "-o");
+    ccArgs.push_back(temporaryExecutablePath.c_str());
 
     for (auto& cflag : options.cflags) {
         ccArgs.push_back(cflag.c_str());
@@ -306,10 +302,6 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     if (ccExitStatus != 0) return ccExitStatus;
 
     if (run) {
-        if (auto error = llvm::sys::fs::make_absolute(temporaryExecutablePath)) {
-            ABORT("couldn't make an absolute path: " << error.message());
-        }
-
         std::string command = (temporaryExecutablePath + " 2>&1").str();
         std::string output;
         int executableExitStatus = exec(command.c_str(), output);
