@@ -39,7 +39,8 @@ enum class ExprKind {
     SubscriptExpr,
     UnwrapExpr,
     LambdaExpr,
-    IfExpr
+    IfExpr,
+    ImplicitCastExpr
 };
 
 class Expr {
@@ -66,6 +67,7 @@ public:
     bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
     bool isLambdaExpr() const { return getKind() == ExprKind::LambdaExpr; }
     bool isIfExpr() const { return getKind() == ExprKind::IfExpr; }
+    bool isImplicitCastExpr() const { return getKind() == ExprKind::ImplicitCastExpr; }
 
     ExprKind getKind() const { return kind; }
     bool hasType() const { return type.getBase() != nullptr; }
@@ -92,6 +94,9 @@ private:
     Type type;
     Type assignableType;
     SourceLocation location;
+
+public:
+    bool typechecked = false;
 };
 
 inline Expr::~Expr() {}
@@ -389,6 +394,20 @@ private:
     Expr* condition;
     Expr* thenExpr;
     Expr* elseExpr;
+};
+
+class ImplicitCastExpr : public Expr {
+public:
+    ImplicitCastExpr(Expr* operand, Type targetType) : Expr(ExprKind::ImplicitCastExpr, operand->getLocation()), operand(operand) {
+        setType(targetType);
+        setAssignableType(targetType);
+    }
+    Expr* getOperand() const { return operand; }
+    Type getTargetType() const { return getType(); }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::ImplicitCastExpr; }
+
+private:
+    Expr* operand;
 };
 
 } // namespace delta

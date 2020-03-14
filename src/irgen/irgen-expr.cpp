@@ -367,6 +367,10 @@ bool isBuiltinArrayToArrayRefConversion(Type sourceType, llvm::Type* targetType)
            targetType->getStructName().startswith("ArrayRef");
 }
 
+bool isBuiltinArrayToArrayRefConversion(Type sourceType, Type targetType) {
+    return sourceType.removePointer().isArrayWithConstantSize() && targetType.isBasicType() && targetType.getName() == "ArrayRef";
+}
+
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
     if (!targetType) {
         return codegenExpr(expr);
@@ -387,11 +391,15 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     if (expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() && !targetType->getPointerElementType()->isArrayTy()) {
         return builder.CreateBitOrPointerCast(codegenLvalueExpr(expr), targetType);
     }
+    //
+    //    // Handle implicit conversions to void pointer.
+    //    if (expr.getType().isPointerType() && !expr.getType().getPointee().isVoid() && targetType->isPointerTy() &&
+    //        targetType->getPointerElementType()->isIntegerTy(8)) {
+    //        return builder.CreateBitCast(codegenExpr(expr), targetType);
+    //    }
 
-    // Handle implicit conversions to void pointer.
-    if (expr.getType().isPointerType() && !expr.getType().getPointee().isVoid() && targetType->isPointerTy() &&
-        targetType->getPointerElementType()->isIntegerTy(8)) {
-        return builder.CreateBitCast(codegenExpr(expr), targetType);
+    if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(&expr)) {
+        return codegenImplicitCastExpr(*implicitCastExpr);
     }
 
     // TODO: Refactor the following.
@@ -554,7 +562,6 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
     for (const auto& arg : expr.getArgs()) {
         auto* paramType = param != paramEnd ? *param++ : nullptr;
         auto* argValue = codegenExprForPassing(*arg.getValue(), paramType);
-        ASSERT(!paramType || argValue->getType() == paramType);
         args.push_back(argValue);
     }
 
@@ -745,6 +752,36 @@ llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
     return phi;
 }
 
+llvm::Value* IRGenerator::codegenImplicitCastExpr(const ImplicitCastExpr& expr) {
+    auto operand = expr.getOperand();
+    auto sourceType = operand->getType();
+    auto targetType = expr.getTargetType();
+
+    if (isBuiltinArrayToArrayRefConversion(sourceType, targetType)) {
+        ASSERT(sourceType.removePointer().isArrayWithConstantSize());
+        auto* value = codegenExprAsPointer(*operand);
+        auto* elementPtr = builder.CreateConstGEP2_32(nullptr, value, 0, 0);
+        auto* arrayRef = builder.CreateInsertValue(llvm::UndefValue::get(toIR(targetType)), elementPtr, 0);
+        auto size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), sourceType.removePointer().getArraySize());
+        return builder.CreateInsertValue(arrayRef, size, 1);
+    }
+
+    // Handle implicit conversions to type 'T[?]*'.
+    if (sourceType.removePointer().isArrayWithConstantSize() && targetType.isPointerType() && targetType.getPointee().isArrayWithUnknownSize()) {
+        return builder.CreateBitOrPointerCast(codegenLvalueExpr(*operand), toIR(targetType));
+    }
+
+    // Handle implicit conversions to void pointer.
+    if (sourceType.isPointerType() && !sourceType.getPointee().isVoid() && targetType.isPointerType() && targetType.getPointee().isVoid()) {
+        return builder.CreateBitCast(codegenLvalueExpr(*operand), toIR(targetType));
+    }
+
+    ASSERT(false);
+    auto value = codegenExpr(*operand);
+    // TODO
+    return value;
+}
+
 llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr:
@@ -787,6 +824,8 @@ llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
             return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
         case ExprKind::IfExpr:
             return codegenIfExpr(llvm::cast<IfExpr>(expr));
+        case ExprKind::ImplicitCastExpr:
+            return codegenImplicitCastExpr(llvm::cast<ImplicitCastExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }

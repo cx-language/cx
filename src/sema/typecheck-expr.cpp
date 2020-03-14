@@ -417,23 +417,29 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
-bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
+bool Typechecker::convert(Expr*& expr, Type type, bool allowPointerToTemporary) const {
     Type convertedType;
-    bool converted = isImplicitlyConvertible(expr, expr->getType(), type, &convertedType, allowPointerToTemporary);
+    bool createImplicitCastExpr = false;
+    bool converted = isImplicitlyConvertible(expr, expr->getType(), type, &convertedType, allowPointerToTemporary, &createImplicitCastExpr);
 
-    if (convertedType) {
-        expr->setType(convertedType);
+    if (createImplicitCastExpr) {
+        expr = new ImplicitCastExpr(expr, type); // convertedType???
+    } else {
+        if (convertedType) {
+            expr->setType(convertedType);
 
-        if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            ifExpr->getThenExpr()->setType(convertedType);
-            ifExpr->getElseExpr()->setType(convertedType);
+            if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
+                ifExpr->getThenExpr()->setType(convertedType);
+                ifExpr->getElseExpr()->setType(convertedType);
+            }
         }
     }
 
     return converted;
 }
 
-bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType, bool allowPointerToTemporary) const {
+bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType, bool allowPointerToTemporary,
+                                          bool* createImplicitCastExpr) const {
     source = source.canonicalize();
 
     switch (source.getKind()) {
@@ -459,9 +465,13 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             }
             break;
         case TypeKind::PointerType:
-            if (target.isPointerType() && (source.getPointee().isMutable() || !target.getPointee().isMutable()) &&
-                (isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee(), nullptr) || target.getPointee().isVoid())) {
-                return true;
+            if (target.isPointerType() && (source.getPointee().isMutable() || !target.getPointee().isMutable())) {
+                if (isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee(), nullptr)) {
+                    return true;
+                } else if (target.getPointee().isVoid()) {
+                    if (createImplicitCastExpr) *createImplicitCastExpr = true;
+                    return true;
+                }
             }
             break;
         case TypeKind::OptionalType:
@@ -1445,6 +1455,9 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
 }
 
 Type Typechecker::typecheckExpr(Expr*& expr, bool useIsWriteOnly, Type expectedType) {
+    if (expr->typechecked) {
+        return expr->getType();
+    }
     Type type;
 
     switch (expr->getKind()) {
@@ -1468,7 +1481,7 @@ Type Typechecker::typecheckExpr(Expr*& expr, bool useIsWriteOnly, Type expectedT
             type = typecheckBoolLiteralExpr(*llvm::cast<BoolLiteralExpr>(expr));
             break;
         case ExprKind::NullLiteralExpr:
-            type = typecheckNullLiteralExpr(expr);
+            type = typecheckNullLiteralExpr(*expr);
             break;
         case ExprKind::UndefinedLiteralExpr:
             type = typecheckUndefinedLiteralExpr(*llvm::cast<UndefinedLiteralExpr>(expr));
@@ -1509,7 +1522,11 @@ Type Typechecker::typecheckExpr(Expr*& expr, bool useIsWriteOnly, Type expectedT
         case ExprKind::IfExpr:
             type = typecheckIfExpr(*llvm::cast<IfExpr>(expr));
             break;
+        case ExprKind::ImplicitCastExpr:
+            llvm_unreachable("unexpected ImplicitCastExpr passed to typecheckExpr");
     }
+
+    expr->typechecked = true;
 
     if (!useIsWriteOnly && type.isOptionalType() && isGuaranteedNonNull(*expr)) {
         expr->setType(type.removeOptional());
