@@ -79,8 +79,6 @@ The C++ code style is enforced by ClangFormat and ClangTidy:
 - Run the `format` CMake target to format the code.
 - Run the `lint` CMake target to check if the code is formatted.
 
-The build system also installs a git pre-commit hook that runs `lint`.
-
 ## License
 
 This implementation of Delta is licensed under the MIT license, a permissive

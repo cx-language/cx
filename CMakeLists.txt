@@ -138,13 +138,6 @@ file(DOWNLOAD https://github.com/llvm/llvm-project/raw/master/clang-tools-extra/
 add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" "${CMAKE_BINARY_DIR}" --check)
 add_custom_target(format COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" "${CMAKE_BINARY_DIR}" --skip-clang-tidy)
 
-if(EXISTS "${PROJECT_SOURCE_DIR}/.git")
-    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit")
-        message(STATUS "Installing git pre-commit hook")
-        configure_file("${PROJECT_SOURCE_DIR}/scripts/pre-commit" "${PROJECT_SOURCE_DIR}/.git/hooks/pre-commit" @ONLY NEWLINE_STYLE LF)
-    endif()
-endif()
-
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")
     message(STATUS "Downloading 'cotire'")
     file(DOWNLOAD "https://github.com/sakra/cotire/raw/master/CMake/cotire.cmake" "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")

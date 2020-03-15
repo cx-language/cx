@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-SKIP_CLANG_TIDY=1 cmake --build @CMAKE_BINARY_DIR@ --target lint
