@@ -68,7 +68,7 @@ viewed by opening `docs/html/index.html` in a browser.
 
 Delta is an open-source language, so contributions are welcome and encouraged!
 See the [issues](https://github.com/delta-lang/delta/issues) and
-[projects](https://github.com/delta-lang/delta/projects) for things to do.
+the [Trello board](https://trello.com/b/NIbkM4v2/delta) for things to do.
 All contributors are expected to follow the [code of conduct](docs/CODE_OF_CONDUCT.md).
 If you have any questions or anything else you want to discuss, feel free to
 post an issue or join the [Delta Telegram group](https://t.me/deltalang).
