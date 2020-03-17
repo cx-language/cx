@@ -546,6 +546,8 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
                isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee(), nullptr)) {
         if (convertedType) *convertedType = source;
         return true;
+    } else if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() && target.removeOptional().isArrayWithRuntimeSize()) {
+        return true;
     } else if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType() &&
                isImplicitlyConvertible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee(), nullptr)) {
         if (convertedType) *convertedType = source;
@@ -1072,6 +1074,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
                                                         << "unwrap the value with a postfix '!' to silence this warning");
         } else if (receiverType.removePointer().isArrayType()) {
             // TODO: Move these member functions to a 'struct Array' declaration in stdlib.
+            if (expr.getFunctionName() == "data") {
+                validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
+                validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
+                return PointerType::get(ArrayType::get(receiverType.removePointer().getElementType(), ArrayType::unknownSize));
+            }
             if (expr.getFunctionName() == "size") {
                 validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());

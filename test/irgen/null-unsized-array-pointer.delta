@@ -3,5 +3,5 @@
 // XFAIL: *
 
 void main() {
-    int8[]*? a = null
+    int8[]? a = null
 }

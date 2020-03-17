@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 struct C {
-    int[]* a
+    int[] a
 
     void foo() {
         _ = a[4]

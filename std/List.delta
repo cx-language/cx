@@ -17,7 +17,7 @@ struct List<Element> {
     }
 
     /// Initializes an list containing the elements of the given array.
-    init(Element[]* elements) {
+    init(Element[] elements) {
         init(capacity: elements.size());
 
         // TODO: Change this to a for-each loop when arrays can be iterated.

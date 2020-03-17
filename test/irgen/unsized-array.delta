@@ -5,17 +5,17 @@ void main() {
     foo(three);
     bar(three);
     var b = three.size();
-    int[]* ref = three;
+    int[] ref = three;
     var bb = ref.size();
 }
 
-void foo(int[]* ints) {
+void foo(int[] ints) {
     var a = ints[1];
     var b = ints.size();
-    int[]* c = ints;
+    int[] c = ints;
 }
 
 void bar(int[3]* ints) {
     var b = ints.size();
-    int[]* ref = ints;
+    int[] ref = ints;
 }

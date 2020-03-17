@@ -3,6 +3,6 @@
 // XFAIL: *
 
 void main() {
-    uint64[]*? a = null
+    uint64[]? a = null
     _ = cast<void*?>(a)
 }

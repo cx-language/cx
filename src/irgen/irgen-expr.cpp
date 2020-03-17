@@ -642,7 +642,7 @@ llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
     auto* value = codegenLvalueExpr(*expr.getBaseExpr());
     Type lhsType = expr.getBaseExpr()->getType();
 
-    if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithRuntimeSize()) {
+    if (lhsType.isArrayWithRuntimeSize()) {
         if (value->getType()->isPointerTy()) {
             value = createLoad(value);
         }

@@ -58,6 +58,15 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
             break;
         }
         case TypeKind::ArrayType:
+            if (type.isArrayWithRuntimeSize()) {
+                auto qualifiedTypeName = getQualifiedTypeName("ArrayRef", type.getElementType());
+                if (findDecls(qualifiedTypeName).empty()) {
+                    auto* arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation()));
+                    auto* instantiation = arrayRef->instantiate({ type.getElementType() });
+                    getCurrentModule()->addToSymbolTable(*instantiation);
+                    declsToTypecheck.push_back(instantiation);
+                }
+            }
             typecheckType(type.getElementType(), userAccessLevel);
             break;
         case TypeKind::TupleType:
@@ -73,13 +82,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
             break;
         case TypeKind::PointerType: {
             if (type.getPointee().isArrayWithRuntimeSize()) {
-                auto qualifiedTypeName = getQualifiedTypeName("ArrayRef", type.getPointee().getElementType());
-                if (findDecls(qualifiedTypeName).empty()) {
-                    auto* arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation()));
-                    auto* instantiation = arrayRef->instantiate({ type.getPointee().getElementType() });
-                    getCurrentModule()->addToSymbolTable(*instantiation);
-                    declsToTypecheck.push_back(instantiation);
-                }
+                ERROR(type.getLocation(), "pointer to array reference is not yet implemented");
             } else {
                 typecheckType(type.getPointee(), userAccessLevel);
             }

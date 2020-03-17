@@ -45,7 +45,7 @@ bool Type::isImplicitlyCopyable() const {
         case TypeKind::BasicType:
             return !getDecl() || getDecl()->passByValue();
         case TypeKind::ArrayType:
-            return false;
+            return !isArrayWithConstantSize() || getElementType().isImplicitlyCopyable();
         case TypeKind::TupleType:
             return llvm::all_of(llvm::cast<TupleType>(typeBase)->getElements(),
                                 [&](auto& element) { return element.type.isImplicitlyCopyable(); });

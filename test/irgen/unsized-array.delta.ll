@@ -10,7 +10,7 @@ define i32 @main() {
   %1 = getelementptr [3 x i32], [3 x i32]* %three, i32 0, i32 0
   %2 = insertvalue %"ArrayRef<int>" undef, i32* %1, 0
   %3 = insertvalue %"ArrayRef<int>" %2, i32 3, 1
-  call void @_EN4main3fooEPAR_3int(%"ArrayRef<int>" %3)
+  call void @_EN4main3fooEAR_3int(%"ArrayRef<int>" %3)
   call void @_EN4main3barEPA3_3int([3 x i32]* %three)
   store i32 3, i32* %b
   %4 = getelementptr [3 x i32], [3 x i32]* %three, i32 0, i32 0
@@ -23,7 +23,7 @@ define i32 @main() {
   ret i32 0
 }
 
-define void @_EN4main3fooEPAR_3int(%"ArrayRef<int>" %ints) {
+define void @_EN4main3fooEAR_3int(%"ArrayRef<int>" %ints) {
   %a = alloca i32
   %b = alloca i32
   %c = alloca %"ArrayRef<int>"
