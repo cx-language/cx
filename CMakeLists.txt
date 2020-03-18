@@ -10,17 +10,16 @@ if(MSVC)
 
     # Use release version of Runtime Library to match prebuilt LLVM.
     # https://gitlab.kitware.com/cmake/community/wikis/FAQ#how-can-i-build-my-msvc-application-with-a-static-runtime
-    foreach(flag_var
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        if(${flag_var} MATCHES "/MDd")
-            string(REGEX REPLACE "/MDd" "/MD" ${flag_var} "${${flag_var}}")
-        endif(${flag_var} MATCHES "/MDd")
+    foreach(flag_var CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+        string(REGEX REPLACE "/MDd" "/MD" ${flag_var} "${${flag_var}}")
     endforeach(flag_var)
 
     if(NOT DEFINED ENV{CI})
         # Disable run-time error checks locally to speed up debug build.
         string(REGEX REPLACE "/RTC[^ ]*" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+        string(REGEX REPLACE "/GR" "/GR-" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GS- /MP /D_ITERATOR_DEBUG_LEVEL=0 /D_SCL_SECURE=0")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /incremental /DEBUG:FASTLINK")
     endif()
 else()
     set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility-inlines-hidden -Wall -Wextra -Wno-unknown-pragmas ${CMAKE_CXX_FLAGS}")
@@ -77,16 +76,6 @@ add_custom_target(check)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check check_lit check_examples)
 
-if(MSVC)
-    # If we try to set '-Ox' here, we get the error "'/Ox' and '/RTC1' command-line options are incompatible",
-    # and there seems to be no easy way to override compile flags for a specific target for MSVC from CMake.
-    set(FILECHECK_COMPILE_FLAGS "-w")
-    set(NOT_COMPILE_FLAGS "-w")
-else()
-    set(FILECHECK_COMPILE_FLAGS "-w -O3")
-    set(NOT_COMPILE_FLAGS "-w -O0") # Don't optimize 'not', otherwise it segfaults on CI (since LLVM 7).
-endif()
-
 if(NOT TARGET FileCheck)
     # Download the LLVM FileCheck utility for tests.
     set(FILECHECK_SRC_PATH "llvmorg-${LLVM_PACKAGE_VERSION}/llvm/utils/FileCheck/FileCheck.cpp")
@@ -97,7 +86,6 @@ if(NOT TARGET FileCheck)
         file(DOWNLOAD "${FILECHECK_SRC_URL}" "${FILECHECK_SRC_FILE}")
     endif()
     add_executable(FileCheck ${FILECHECK_SRC_FILE})
-    set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} ${FILECHECK_COMPILE_FLAGS}")
     llvm_map_components_to_libnames(FILECHECK_NEEDED_LIBS support)
     target_link_libraries(FileCheck PRIVATE ${FILECHECK_NEEDED_LIBS})
 endif()
@@ -112,9 +100,18 @@ if(NOT TARGET not)
         file(DOWNLOAD "${NOT_SRC_URL}" "${NOT_SRC_FILE}")
     endif()
     add_executable(not ${NOT_SRC_FILE})
-    set_target_properties(not PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} ${NOT_COMPILE_FLAGS}")
     llvm_map_components_to_libnames(NOT_NEEDED_LIBS support)
     target_link_libraries(not PRIVATE ${NOT_NEEDED_LIBS})
+endif()
+
+if(NOT DEFINED ENV{CI})
+    if(MSVC)
+        set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w /O2 /GL")
+        set_target_properties(not PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w /O2 /GL")
+    else()
+        set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
+        set_target_properties(not PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
+    endif()
 endif()
 
 add_dependencies(check FileCheck not)
