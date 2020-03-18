@@ -843,13 +843,11 @@ DeferStmt* Parser::parseDeferStmt() {
     return stmt;
 }
 
-/// if-stmt ::= 'if' '(' expr ')' block-or-stmt ('else' block-or-stmt)?
+/// if-stmt ::= 'if' expr block-or-stmt ('else' block-or-stmt)?
 IfStmt* Parser::parseIfStmt(Decl* parent) {
     ASSERT(currentToken() == Token::If);
     consumeToken();
-    parse(Token::LeftParen);
     auto condition = parseExpr();
-    parse(Token::RightParen);
     auto thenStmts = parseBlockOrStmt(parent);
     std::vector<Stmt*> elseStmts;
     if (currentToken() == Token::Else) {
@@ -859,41 +857,40 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
     return new IfStmt(condition, std::move(thenStmts), std::move(elseStmts));
 }
 
-/// while-stmt ::= 'while' '(' expr ')' block-or-stmt
+/// while-stmt ::= 'while' expr block-or-stmt
 WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     ASSERT(currentToken() == Token::While);
     consumeToken();
-    parse(Token::LeftParen);
     auto condition = parseExpr();
-    parse(Token::RightParen);
     auto body = parseBlockOrStmt(parent);
     return new WhileStmt(condition, std::move(body), nullptr);
 }
 
-/// for-stmt ::= 'for' '(' 'var' id 'in' expr ')' block-or-stmt
+/// for-stmt ::= 'for' for-header block-or-stmt
+/// for-header ::= (type | 'var') id 'in' expr |
+///            '(' (type | 'var') id 'in' expr ')'
 ForStmt* Parser::parseForStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
     auto location = getCurrentLocation();
     consumeToken();
-    parse(Token::LeftParen);
+    bool parens = currentToken() == Token::LeftParen;
+    if (parens) consumeToken();
     auto variable = parseVarDecl(false, parent, AccessLevel::None);
     parse(Token::In);
     auto range = parseExpr();
-    parse(Token::RightParen);
+    if (parens) parse(Token::RightParen);
     auto body = parseBlockOrStmt(parent);
     return new ForStmt(variable, range, std::move(body), location);
 }
 
-/// switch-stmt ::= 'switch' '(' expr ')' '{' cases default-case? '}'
+/// switch-stmt ::= 'switch' expr '{' cases default-case? '}'
 /// cases ::= case | case cases
 /// case ::= 'case' expr ':' stmt+
 /// default-case ::= 'default' ':' stmt+
 SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
     ASSERT(currentToken() == Token::Switch);
     consumeToken();
-    parse(Token::LeftParen);
     auto condition = parseExpr();
-    parse(Token::RightParen);
     parse(Token::LeftBrace);
     std::vector<SwitchCase> cases;
     std::vector<Stmt*> defaultStmts;

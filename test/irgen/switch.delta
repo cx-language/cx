@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %delta -print-ir %s -Wno-unused
 
 void foo(int i) {
-    switch (i) {
+    switch i {
         case 0:
             break;
         case -1:
@@ -23,7 +23,7 @@ struct S {
 }
 
 int f(S* s) {
-    switch (s.i) {
+    switch s.i {
         case 0: return 0;
         default: return 1;
     }

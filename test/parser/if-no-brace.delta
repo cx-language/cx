@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 int main() {
-    if (false) return 1;
+    if false return 1;
 
-    if (true)
+    if true
         return 2;
 
     return 3;

@@ -3,7 +3,7 @@
 extern bool foo();
 
 void main() {
-    while (foo()) {
+    while foo() {
         foo();
     }
 }

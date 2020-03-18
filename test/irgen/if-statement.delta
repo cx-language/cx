@@ -4,7 +4,7 @@ extern void foo();
 extern void bar();
 
 void main() {
-    if (false) {
+    if false {
         foo();
     } else {
         bar();
