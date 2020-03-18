@@ -12,6 +12,7 @@ if(MSVC)
     # https://gitlab.kitware.com/cmake/community/wikis/FAQ#how-can-i-build-my-msvc-application-with-a-static-runtime
     foreach(flag_var CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
         string(REGEX REPLACE "/MDd" "/MD" ${flag_var} "${${flag_var}}")
+        string(REGEX REPLACE "/DNDEBUG" "" ${flag_var} "${${flag_var}}")
     endforeach(flag_var)
 
     if(NOT DEFINED ENV{CI})
@@ -23,6 +24,10 @@ if(MSVC)
     endif()
 else()
     set(CMAKE_CXX_FLAGS "-fno-rtti -fvisibility-inlines-hidden -Wall -Wextra -Wno-unknown-pragmas ${CMAKE_CXX_FLAGS}")
+
+    foreach(flag_var CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+        string(REGEX REPLACE "-DNDEBUG" "" ${flag_var} "${${flag_var}}")
+    endforeach(flag_var)
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         set(CMAKE_CXX_FLAGS "-Wsuggest-override ${CMAKE_CXX_FLAGS}")
