@@ -358,14 +358,11 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
     }
 }
 
-static bool checkRange(const Expr& expr, const llvm::APSInt& value, Type type, Type* convertedType) {
+static void checkRange(const Expr& expr, const llvm::APSInt& value, Type type) {
     if (llvm::APSInt::compareValues(value, llvm::APSInt::getMinValue(type.getIntegerBitWidth(), type.isUnsigned())) < 0 ||
         llvm::APSInt::compareValues(value, llvm::APSInt::getMaxValue(type.getIntegerBitWidth(), type.isUnsigned())) > 0) {
         ERROR(expr.getLocation(), value << " is out of range for type '" << type << "'");
     }
-
-    if (convertedType) *convertedType = type;
-    return true;
 }
 
 static bool hasField(TypeDecl& type, const FieldDecl& field) {
@@ -419,8 +416,8 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
 }
 
 bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
-    Type convertedType;
-    bool converted = isImplicitlyConvertible(expr, expr->getType(), type, &convertedType, allowPointerToTemporary);
+    // NOTE: convertedType may be the same as the source type, i.e. expr->getType().
+    Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary);
 
     if (convertedType) {
         expr->setType(convertedType);
@@ -429,57 +426,51 @@ bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) c
             ifExpr->getThenExpr()->setType(convertedType);
             ifExpr->getElseExpr()->setType(convertedType);
         }
-    }
 
-    return converted;
+        return true;
+    } else {
+        return false;
+    }
 }
 
-bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType, bool allowPointerToTemporary) const {
-    switch (source.getKind()) {
-        case TypeKind::BasicType:
-            if (target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
-                return true;
-            }
-            break;
-        case TypeKind::ArrayType:
-            if (target.isArrayType() && (source.getArraySize() == target.getArraySize() || target.isArrayWithRuntimeSize()) &&
-                isImplicitlyConvertible(nullptr, source.getElementType(), target.getElementType(), nullptr)) {
-                return true;
-            }
-            break;
-        case TypeKind::TupleType:
-            if (target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
-                return true;
-            }
-            break;
-        case TypeKind::FunctionType:
-            if (target.isFunctionType() && source.getReturnType() == target.getReturnType() && source.getParamTypes() == target.getParamTypes()) {
-                return true;
-            }
-            break;
-        case TypeKind::PointerType:
-            if (target.isPointerType() && (source.getPointee().isMutable() || !target.getPointee().isMutable()) &&
-                (isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee(), nullptr) || target.getPointee().isVoid())) {
-                return true;
-            }
-            break;
-        case TypeKind::OptionalType:
-            if (target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable()) &&
-                isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), nullptr)) {
-                return true;
-            }
-            break;
+Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary) const {
+    if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
+        return source;
+    }
+
+    if (source.isArrayType() && target.isArrayType() && (source.getArraySize() == target.getArraySize() || target.isArrayWithRuntimeSize()) &&
+        isImplicitlyConvertible(nullptr, source.getElementType(), target.getElementType())) {
+        return source;
+    }
+
+    if (source.isTupleType() && target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
+        return source;
+    }
+
+    if (source.isFunctionType() && target.isFunctionType() && source.getReturnType() == target.getReturnType() &&
+        source.getParamTypes() == target.getParamTypes()) {
+        return source;
+    }
+
+    if (source.isPointerType() && target.isPointerType() && (source.getPointee().isMutable() || !target.getPointee().isMutable()) &&
+        (isImplicitlyConvertible(nullptr, source.getPointee(), target.getPointee()) || target.getPointee().isVoid())) {
+        return source;
+    }
+
+    if (source.isOptionalType() && target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable()) &&
+        isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType())) {
+        return source;
     }
 
     if (expr) {
         if (expr->getType().isEnumType() && llvm::cast<EnumDecl>(expr->getType().getDecl())->getTagType() == target) {
-            return true;
+            return source;
         }
 
         if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            if (isImplicitlyConvertible(ifExpr->getThenExpr(), ifExpr->getThenExpr()->getType(), target, convertedType) &&
-                isImplicitlyConvertible(ifExpr->getElseExpr(), ifExpr->getElseExpr()->getType(), target, convertedType)) {
-                return true;
+            if (isImplicitlyConvertible(ifExpr->getThenExpr(), ifExpr->getThenExpr()->getType(), target) &&
+                isImplicitlyConvertible(ifExpr->getElseExpr(), ifExpr->getElseExpr()->getType(), target)) {
+                return target;
             }
         }
 
@@ -488,91 +479,108 @@ bool Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             const auto& value = expr->getConstantIntegerValue();
 
             if (target.isInteger()) {
-                return checkRange(*expr, value, target, convertedType);
+                checkRange(*expr, value, target);
+                return target;
             }
 
             if (target.isFloatingPoint()) {
                 // TODO: Check that the integer value is losslessly convertible to the target type?
-                if (convertedType) *convertedType = target;
-                return true;
+                return target;
             }
-        } else if (expr->getType().isFloatingPoint() && expr->isConstant() && target.isFloatingPoint()) {
+        }
+
+        if (expr->getType().isFloatingPoint() && expr->isConstant() && target.isFloatingPoint()) {
             // TODO: Check that the floating-point value is losslessly convertible to the target type?
-            if (convertedType) *convertedType = target;
-            return true;
-        } else if (expr->isNullLiteralExpr() && target.isOptionalType()) {
-            if (convertedType) *convertedType = target;
-            return true;
-        } else if (expr->isUndefinedLiteralExpr()) {
-            if (convertedType) *convertedType = target;
-            return true;
-        } else if (expr->isStringLiteralExpr() && target.removeOptional().isPointerType() &&
-                   target.removeOptional().getPointee().isChar() && !target.removeOptional().getPointee().isMutable()) {
+            return target;
+        }
+
+        if (expr->isNullLiteralExpr() && target.isOptionalType()) {
+            return target;
+        }
+
+        if (expr->isUndefinedLiteralExpr()) {
+            return target;
+        }
+
+        if (expr->isStringLiteralExpr() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() &&
+            !target.removeOptional().getPointee().isMutable()) {
             // Special case: allow passing string literals as C-strings (const char*).
-            if (convertedType) *convertedType = target;
-            return true;
-        } else if (expr->isArrayLiteralExpr() && target.isArrayType()) {
+            return target;
+        }
+
+        if (expr->isArrayLiteralExpr() && target.isArrayWithConstantSize()) {
             bool isConvertible = llvm::all_of(llvm::cast<ArrayLiteralExpr>(expr)->getElements(), [&](auto& element) {
-                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType(), nullptr);
+                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType());
             });
 
             if (isConvertible) {
                 for (auto& element : llvm::cast<ArrayLiteralExpr>(expr)->getElements()) {
                     element->setType(target.getElementType());
                 }
-                if (convertedType) *convertedType = target;
-                return true;
+                return target;
             }
         }
     }
 
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.removeOptional().isPointerType() &&
         (source.isMutable() || !target.removeOptional().getPointee().isMutable()) &&
-        isImplicitlyConvertible(expr, source, target.removeOptional().getPointee(), nullptr)) {
-        if (convertedType) *convertedType = source;
-        return true;
-    } else if (source.isPointerType() && source.getPointee() == target) {
+        isImplicitlyConvertible(expr, source, target.removeOptional().getPointee())) {
+        return source;
+    }
+
+    if (source.isPointerType() && source.getPointee() == target) {
         // Auto-dereference.
-        if (convertedType) *convertedType = target;
-        return true;
-    } else if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) &&
-               isImplicitlyConvertible(expr, source, target.getWrappedType(), nullptr)) {
-        return true;
-    } else if (source.isArrayType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayType() &&
-               isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee().getElementType(), nullptr)) {
-        if (convertedType) *convertedType = source;
-        return true;
-    } else if (source.isArrayType() && target.removeOptional().isPointerType() &&
-               isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee(), nullptr)) {
-        if (convertedType) *convertedType = source;
-        return true;
-    } else if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() && target.removeOptional().isArrayWithRuntimeSize()) {
-        return true;
-    } else if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType() &&
-               isImplicitlyConvertible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee(), nullptr)) {
-        if (convertedType) *convertedType = source;
-        return true;
-    } else if (source.isPointerType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayWithUnknownSize()) {
-        return true;
-    } else if (source.isTupleType() && target.isTupleType()) {
+        return target;
+    }
+
+    if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) && isImplicitlyConvertible(expr, source, target.getWrappedType())) {
+        return source;
+    }
+
+    if (source.isArrayType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayType() &&
+        isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee().getElementType())) {
+        return source;
+    }
+
+    if (source.isArrayType() && target.removeOptional().isPointerType() &&
+        isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee())) {
+        return source;
+    }
+
+    if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() && target.removeOptional().isArrayWithRuntimeSize()) {
+        return source;
+    }
+
+    if (source.isPointerType() && source.getPointee().isArrayType() && target.removeOptional().isPointerType() &&
+        isImplicitlyConvertible(nullptr, source.getPointee().getElementType(), target.removeOptional().getPointee())) {
+        return source;
+    }
+
+    if (source.isPointerType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayWithUnknownSize()) {
+        return source;
+    }
+
+    if (source.isTupleType() && target.isTupleType()) {
         auto* tupleExpr = llvm::dyn_cast_or_null<TupleExpr>(expr);
         auto sourceElements = source.getTupleElements();
         auto targetElements = target.getTupleElements();
 
         for (size_t i = 0; i < sourceElements.size(); ++i) {
-            if (sourceElements[i].name != targetElements[i].name) return false;
+            if (sourceElements[i].name != targetElements[i].name) {
+                return Type();
+            }
+
             auto* elementValue = tupleExpr ? tupleExpr->getElements()[i].getValue() : nullptr;
 
-            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type, nullptr)) {
-                return false;
+            if (!isImplicitlyConvertible(elementValue, sourceElements[i].type, targetElements[i].type)) {
+                return Type();
             }
         }
 
-        if (convertedType) *convertedType = target;
-        return true;
+        return target;
     }
 
-    return false;
+    return Type();
 }
 
 static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
@@ -1208,7 +1216,7 @@ bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* funct
             return false;
         }
 
-        if (param && !isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), nullptr, true)) {
+        if (param && !isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), true)) {
             return false;
         }
     }

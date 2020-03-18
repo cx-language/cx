@@ -84,7 +84,8 @@ private:
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
     bool convert(Expr* expr, Type type, bool allowPointerToTemporary = false) const;
-    bool isImplicitlyConvertible(const Expr* expr, Type source, Type target, Type* convertedType, bool allowPointerToTemporary = false) const;
+    /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
+    Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                 llvm::ArrayRef<ParamDecl> params, bool returnOnError, Type expectedType);
     Decl* findDecl(llvm::StringRef name, SourceLocation location) const;
