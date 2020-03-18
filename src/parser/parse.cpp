@@ -1379,7 +1379,7 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
         parse(Token::RightParen);
 
         for (llvm::StringRef path : llvm::concat<const std::string>(options.importSearchPaths, options.frameworkSearchPaths)) {
-            auto headerPath = path + "/" + header.getString().drop_back().drop_front();
+            auto headerPath = (path + "/" + header.getString().drop_back().drop_front()).str();
             if (llvm::sys::fs::exists(headerPath) && !llvm::sys::fs::is_directory(headerPath)) {
                 condition = true;
                 break;

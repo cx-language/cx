@@ -324,7 +324,7 @@ llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer
     }
 
     for (llvm::StringRef importPath : options.importSearchPaths) {
-        auto modulePath = importPath + "/" + moduleName;
+        auto modulePath = (importPath + "/" + moduleName).str();
         if (llvm::sys::fs::is_directory(modulePath)) {
             error = importModuleSourcesInDirectoryRecursively(modulePath, *module, options);
             goto done;
