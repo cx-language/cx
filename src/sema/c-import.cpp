@@ -179,7 +179,7 @@ static FunctionDecl* toDelta(const clang::FunctionDecl& decl, Module* currentMod
 
 static llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
     if (decl.getName().empty()) return llvm::None;
-    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), typeDecl, AccessLevel::Default, SourceLocation());
+    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), nullptr, typeDecl, AccessLevel::Default, SourceLocation());
 }
 
 static TypeDecl* toDelta(const clang::RecordDecl& decl, Module* currentModule) {

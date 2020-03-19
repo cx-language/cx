@@ -1,0 +1,15 @@
+// RUN: check_matches_snapshot %delta -print-ir %s
+
+struct Foo {
+    int i = 42;
+}
+
+struct Bar {
+    int i = 42;
+    int j;
+}
+
+void main() {
+    var foo = Foo();
+    var bar = Bar(j: -1);
+}

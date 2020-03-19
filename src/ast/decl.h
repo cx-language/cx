@@ -429,16 +429,18 @@ private:
 
 class FieldDecl : public VariableDecl {
 public:
-    FieldDecl(Type type, std::string&& name, TypeDecl& parent, AccessLevel accessLevel, SourceLocation location)
-    : VariableDecl(DeclKind::FieldDecl, accessLevel, &parent, type), name(std::move(name)), location(location) {}
+    FieldDecl(Type type, std::string&& name, Expr* defaultValue, TypeDecl& parent, AccessLevel accessLevel, SourceLocation location)
+    : VariableDecl(DeclKind::FieldDecl, accessLevel, &parent, type), name(std::move(name)), defaultValue(defaultValue), location(location) {}
     llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
+    Expr* getDefaultValue() const { return defaultValue; }
     Module* getModule() const override { return getParent()->getModule(); }
     SourceLocation getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }
 
 private:
     std::string name;
+    Expr* defaultValue;
     SourceLocation location;
 };
 

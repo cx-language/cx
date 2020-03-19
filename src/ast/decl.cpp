@@ -260,7 +260,8 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
             auto instantiation = new TypeDecl(typeDecl->getTag(), typeDecl->getName(), genericArgsArray, std::move(interfaces),
                                               getAccessLevel(), *typeDecl->getModule(), typeDecl->getLocation());
             for (auto& field : typeDecl->getFields()) {
-                instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName(), *instantiation,
+                auto defaultValue = field.getDefaultValue() ? field.getDefaultValue()->instantiate(genericArgs) : nullptr;
+                instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName(), defaultValue, *instantiation,
                                                   field.getAccessLevel(), field.getLocation()));
             }
 

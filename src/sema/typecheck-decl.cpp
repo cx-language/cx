@@ -205,7 +205,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
         if (decl.isInitDecl() && !delegatedInit) {
             for (auto& field : decl.getTypeDecl()->getFields()) {
-                if (initializedFields.count(&field) == 0) {
+                if (!field.getDefaultValue() && initializedFields.count(&field) == 0) {
                     WARN(decl.getLocation(), "initializer doesn't initialize member variable '" << field.getName() << "'");
                 }
             }
