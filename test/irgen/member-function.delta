@@ -3,7 +3,7 @@
 struct Foo {
     int baz;
 
-    init() { this.baz = 42; }
+    Foo() { this.baz = 42; }
 
     void bar() { this.baz++; }
 

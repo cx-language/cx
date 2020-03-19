@@ -3,7 +3,7 @@ struct OrderedSet<Element> {
     OrderedMap<Element, bool> map;
 
     /// Initiates an empty Set.
-    init() {
+    OrderedSet() {
         map = OrderedMap();
     }
 

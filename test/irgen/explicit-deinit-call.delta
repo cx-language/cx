@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %delta -print-ir %s -Wno-unused
 
 struct A {
-    deinit() {}
+    ~A() {}
 }
 
 void f(A* a) {

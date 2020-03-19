@@ -2,7 +2,7 @@
 
 struct S {
     int bar;
-    init() {}
+    S() {}
     void foo(int bar) {
         _ = bar + 42;
     }

@@ -3,7 +3,7 @@
 struct Foo {
     int i;
 
-    init() {
+    Foo() {
         this.i = 0;
     }
 

@@ -5,13 +5,13 @@ void main() {
 }
 
 struct X {
-    init(int a, int b) {
+    X(int a, int b) {
         init(a);
     }
 
-    init(int a) {
+    X(int a) {
         init();
     }
 
-    init() {}
+    X() {}
 }

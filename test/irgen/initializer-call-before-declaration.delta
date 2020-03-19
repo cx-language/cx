@@ -6,6 +6,6 @@ void main() {
 
 struct Foo: Copyable {
     float f;
-    init(int i) { f = 0.0; }
-    deinit() { }
+    Foo(int i) { f = 0.0; }
+    ~Foo() { }
 }

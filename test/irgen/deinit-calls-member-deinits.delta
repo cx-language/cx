@@ -7,13 +7,13 @@ struct A {
     B bb;
     int i;
 
-    init() {
+    A() {
         b = undefined;
         bb = undefined;
         i = undefined;
     }
 
-    deinit() {
+    ~A() {
         if (f()) {
             return;
         }
@@ -22,14 +22,14 @@ struct A {
 
 struct B {
     int i;
-    init() { i = 0; }
-    deinit() {}
+    B() { i = 0; }
+    ~B() {}
 }
 
 struct C {
     B b;
     B bb;
-    init() {
+    C() {
         b = undefined;
         bb = undefined;
     }

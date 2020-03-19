@@ -6,5 +6,5 @@ struct A {
 
     // CHECK: [[@LINE+2]]:5: warning: initializer doesn't initialize member variable 'i'
     // CHECK: [[@LINE+1]]:5: warning: initializer doesn't initialize member variable 'j'
-    init() {}
+    A() {}
 }

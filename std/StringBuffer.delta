@@ -2,12 +2,12 @@ struct StringBuffer: Comparable, Hashable, Printable {
     List<char> characters;
 
     /// Initializes an empty string.
-    init() {
+    StringBuffer() {
         characters = List();
         characters.push('\0');
     }
 
-    init(string s) {
+    StringBuffer(string s) {
         characters = List(capacity: s.size() + 1);
 
         for (var ch in s) {
@@ -18,7 +18,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Initializes a string with the characters from a character array of known length.
-    init(char* pointer, int length) {
+    StringBuffer(char* pointer, int length) {
         init(string(pointer, length));
     }
 
@@ -26,14 +26,14 @@ struct StringBuffer: Comparable, Hashable, Printable {
     ///
     /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
     /// length of the argument string. If you know the length beforehand, consider using
-    /// `StringBuffer.init(char* pointer, uint length)` instead.
+    /// `StringBuffer(char* pointer, uint length)` instead.
     ///
-    init(char* cString) {
+    StringBuffer(char* cString) {
         init(string(cString, int(strlen(cString))));
     }
 
     /// Initializes the buffer to contain the given number of uninitialized bytes.
-    init(int uninitializedSize) {
+    StringBuffer(int uninitializedSize) {
         characters = List(uninitializedSize: uninitializedSize + 1);
         *characters[uninitializedSize] = '\0';
     }

@@ -2,7 +2,7 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
     ArrayIterator<Element> base;
     int index;
 
-    init(ArrayIterator<Element> iterator) {
+    EnumeratedIterator(ArrayIterator<Element> iterator) {
         base = iterator;
         index = 0;
     }

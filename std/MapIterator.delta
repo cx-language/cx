@@ -2,7 +2,7 @@ struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
     ArrayIterator<List<MapEntry<Key, Value>>> hashTableIterator;
     MapEntry<Key, Value>[?]* current;
 
-    init(Map<Key, Value>* map) {
+    MapIterator(Map<Key, Value>* map) {
         hashTableIterator = map.hashTable.iterator();
         current = undefined;
         skipEmptySlots();

@@ -2,12 +2,12 @@
 
 struct S: Copyable {
     int i;
-    init() { i = 0; }
+    S() { i = 0; }
 }
 
 struct T: Copyable {
     int i;
-    init() { i = 0; }
+    T() { i = 0; }
 }
 
 void f(S a) {}

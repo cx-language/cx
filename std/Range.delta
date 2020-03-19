@@ -2,12 +2,12 @@ struct Range<T>: Copyable {
     T start;
     T end;
 
-    init(T start, T end) {
+    Range(T start, T end) {
         this.start = start;
         this.end = end;
     }
 
-    init(T end) {
+    Range(T end) {
         init(0, end);
     }
 

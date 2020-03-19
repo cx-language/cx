@@ -5,13 +5,13 @@ struct Queue<T> {
     int size;
 
     /// Initialize an empty Queue
-    init() {
+    Queue() {
         head = null;
         tail = null;
         size = 0;
     }
 
-    deinit() {
+    ~Queue() {
         while (!empty()) {
             var next = head!.next;
             deallocate(head!);
@@ -69,7 +69,7 @@ struct Node<T> {
     Node<T>*? next;
     T value;
 
-    init(T val) {
+    Node(T val) {
         this.value = val;
         this.next = null;
     }

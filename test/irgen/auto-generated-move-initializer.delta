@@ -2,7 +2,7 @@
 
 struct X {
     int i;
-    deinit() {}
+    ~X() {}
 }
 
 void foo(X* p, X x) {

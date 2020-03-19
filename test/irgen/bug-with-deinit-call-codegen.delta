@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 struct X {
-    deinit() {}
+    ~X() {}
 }
 
 struct Y<T> {

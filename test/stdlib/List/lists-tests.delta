@@ -2,7 +2,7 @@
 
 struct C {
     int i;
-    deinit() {}
+    ~C() {}
 }
 
 void main() {
@@ -164,7 +164,7 @@ void testRemoveFirstByPredicate() {
 var deinits = 0;
 
 struct DestructionTester {
-    deinit() {
+    ~DestructionTester() {
         deinits++;
     }
 }

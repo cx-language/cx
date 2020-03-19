@@ -2,7 +2,7 @@ struct LineIterator: Copyable, Iterator<string> {
     string stream;
     int end;
 
-    init(string stream) {
+    LineIterator(string stream) {
         this.stream = stream;
         end = stream.find('\n');
     }

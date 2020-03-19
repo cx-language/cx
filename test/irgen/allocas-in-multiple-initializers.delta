@@ -1,11 +1,11 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 struct S: Copyable {
-    init() {
+    S() {
         var i = 4;
     }
 
-    init(int foo) {
+    S(int foo) {
         var j = 5;
     }
 }

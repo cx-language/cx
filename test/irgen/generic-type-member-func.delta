@@ -3,7 +3,7 @@
 struct F<T, U>: Copyable {
     T a
     U b
-    init() {
+    F() {
         a = undefined
         b = undefined
     }

@@ -3,7 +3,7 @@
 struct S<T>: Copyable {
     T*? p
 
-    init() {
+    S() {
         p = null
     }
 }

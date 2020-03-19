@@ -1,7 +1,7 @@
 struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
     OrderedMapIterator<Element, bool> mapIter;
 
-    init(OrderedSet<Element>* set) {
+    OrderedSetIterator(OrderedSet<Element>* set) {
         this.mapIter = set.map.iterator();
     }
 

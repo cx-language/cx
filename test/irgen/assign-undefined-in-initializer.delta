@@ -3,7 +3,7 @@
 struct A {
     int i;
 
-    init() {
+    A() {
         i = undefined;
     }
 }

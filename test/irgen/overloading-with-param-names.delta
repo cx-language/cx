@@ -2,8 +2,8 @@
 
 struct Foo {
     int i
-    init(i: int) { }
-    init(qux: int) { }
+    Foo(i: int) { }
+    Foo(qux: int) { }
     void foo(i: int) { }
     void foo(qux: int) { }
 }

@@ -2,7 +2,7 @@ struct RangeIterator<T>: Copyable, Iterator<T> {
     T current;
     T end;
 
-    init(Range<T> range) {
+    RangeIterator(Range<T> range) {
         current = range.start();
         end = range.end();
     }

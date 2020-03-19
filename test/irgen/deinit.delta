@@ -3,7 +3,7 @@
 struct Foo {
     int i;
 
-    deinit() {
+    ~Foo() {
         i = 0;
         f();
         this.f();
@@ -15,7 +15,7 @@ struct Foo {
 struct Bar: Copyable {
     int i;
 
-    deinit() {
+    ~Bar() {
         i = 0;
         f();
         this.f();

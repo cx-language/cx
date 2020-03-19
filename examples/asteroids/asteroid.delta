@@ -19,7 +19,7 @@ struct Asteroid {
     float size;
     Vector2[8] vertices;
 
-    init() {
+    Asteroid() {
         position = Vector2(randomFloat(0, width), randomFloat(0, height));
         var direction = randomFloat(-M_PI, M_PI);
         var speed = randomFloat(minSpeed, maxSpeed);

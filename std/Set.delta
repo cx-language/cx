@@ -2,7 +2,7 @@ struct Set<Key: Hashable> {
     Map<Key, bool> map;
 
     /// Initializes an empty set
-    init() {
+    Set() {
         map = Map();
     }
 

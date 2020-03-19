@@ -3,7 +3,7 @@ struct Tape
     List<int> tape;
     int pos;
 
-    init()
+    Tape()
     {
         tape = List([0]);
         pos = 0;
@@ -44,7 +44,7 @@ struct Program
     StringBuffer code;
     Map<int, int> bracketMap;
 
-    init(string text)
+    Program(string text)
     {
         this.code = StringBuffer();
         this.bracketMap = Map();

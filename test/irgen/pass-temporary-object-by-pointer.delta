@@ -2,12 +2,12 @@
 
 struct A: Copyable {
     int i;
-    init() {}
+    A() {}
 }
 
 struct B {
     int i;
-    init() {}
+    B() {}
 }
 
 void f(A* a) {}

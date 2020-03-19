@@ -1027,7 +1027,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             }
 
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
-                             "ambiguous reference to '" << callee << (isInitCall ? ".init'" : "'"));
+                             "ambiguous reference to '" << callee << "'" << (isInitCall ? " constructor" : ""));
     }
 }
 

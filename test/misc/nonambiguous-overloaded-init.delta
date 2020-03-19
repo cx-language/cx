@@ -1,8 +1,8 @@
 // RUN: %delta -print-ir %s
 
 struct Foo: Copyable {
-    init(int a) { }
-    init(int a, int b) { }
+    Foo(int a) { }
+    Foo(int a, int b) { }
 }
 
 void main() {

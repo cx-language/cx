@@ -2,7 +2,7 @@ struct ClosedRangeIterator<T>: Copyable, Iterator<T> {
     T current;
     T end;
 
-    init(ClosedRange<T> range) {
+    ClosedRangeIterator(ClosedRange<T> range) {
         current = range.start();
         end = range.end();
     }

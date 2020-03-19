@@ -1,7 +1,7 @@
 struct SetIterator<Element>: Copyable, Iterator<Element*> {
     MapIterator<Element, bool> iterator;
 
-    init(Set<Element>*  set) {
+    SetIterator(Set<Element>*  set) {
         iterator = MapIterator(set.map);
     }
 

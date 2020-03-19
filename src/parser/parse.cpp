@@ -1153,23 +1153,28 @@ FunctionDecl* Parser::parseExternFunctionDecl(Type type, llvm::StringRef name, S
     return decl;
 }
 
-/// init-decl ::= 'init' param-list '{' stmt* '}'
+/// init-decl ::= id param-list '{' stmt* '}'
 InitDecl* Parser::parseInitDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel) {
-    auto initLocation = parse(Token::Init).getLocation();
+    ASSERT(currentToken() == Token::Identifier);
+    auto location = consumeToken().getLocation();
     auto params = parseParamList(nullptr);
-    auto decl = new InitDecl(receiverTypeDecl, std::move(params), accessLevel, initLocation);
+    auto decl = new InitDecl(receiverTypeDecl, std::move(params), accessLevel, location);
     parse(Token::LeftBrace);
     decl->setBody(parseStmtsUntil(Token::RightBrace, decl));
     parse(Token::RightBrace);
     return decl;
 }
 
-/// deinit-decl ::= 'deinit' '(' ')' '{' stmt* '}'
+/// deinit-decl ::= '~' id param-list '{' stmt* '}'
 DeinitDecl* Parser::parseDeinitDecl(TypeDecl& receiverTypeDecl) {
-    auto deinitLocation = parse(Token::Deinit).getLocation();
+    ASSERT(currentToken() == Token::Tilde);
+    auto location = consumeToken().getLocation();
+    if (parse(Token::Identifier).getString() != receiverTypeDecl.getName()) {
+        REPORT_ERROR(location, "expected '" << receiverTypeDecl.getName() << "' after '~'");
+    }
     auto params = parseParamList(nullptr);
-    if (!params.empty()) ERROR(deinitLocation, "deinitializers cannot have parameters");
-    auto decl = new DeinitDecl(receiverTypeDecl, deinitLocation);
+    if (!params.empty()) REPORT_ERROR(location, "deinitializers cannot have parameters");
+    auto decl = new DeinitDecl(receiverTypeDecl, location);
     parse(Token::LeftBrace);
     decl->setBody(parseStmtsUntil(Token::RightBrace, decl));
     parse(Token::RightBrace);
@@ -1249,16 +1254,19 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 accessLevel = AccessLevel::Private;
                 consumeToken();
                 goto start;
-            case Token::Init:
-                typeDecl->addMethod(parseInitDecl(*typeDecl, accessLevel));
-                hasInitializer = true;
-                break;
-            case Token::Deinit:
+            case Token::Tilde:
                 if (accessLevel != AccessLevel::Default) {
                     WARN(lookAhead(-1).getLocation(), "deinitializers cannot be " << accessLevel);
                 }
                 typeDecl->addMethod(parseDeinitDecl(*typeDecl));
                 break;
+            case Token::Identifier:
+                if (lookAhead(1) == Token::LeftParen && currentToken().getString() == typeName.getString()) {
+                    typeDecl->addMethod(parseInitDecl(*typeDecl, accessLevel));
+                    hasInitializer = true;
+                    break;
+                }
+                LLVM_FALLTHROUGH;
             default: {
                 auto type = parseType();
                 auto location = getCurrentLocation();

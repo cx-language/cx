@@ -4,5 +4,5 @@ void foo(A<int> a) {}
 
 struct A<T> {
     T i;
-    deinit() {}
+    ~A() {}
 }

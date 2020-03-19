@@ -2,7 +2,7 @@
 
 struct S {
     int i;
-    init() {}
+    S() {}
     void bar() {}
     void foo(int bar) {
         var a = bar;

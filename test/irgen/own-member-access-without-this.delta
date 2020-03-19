@@ -4,7 +4,7 @@ struct A {
     int i
     int j
 
-    init() {
+    A() {
         j = 42
     }
 
@@ -21,7 +21,7 @@ struct B: Copyable {
     int i
     int j
 
-    init() {
+    B() {
         j = 42
     }
 

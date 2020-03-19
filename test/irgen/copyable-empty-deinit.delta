@@ -1,7 +1,7 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 struct Foo: Copyable {
-    deinit() { }
+    ~Foo() { }
 }
 
 void main() {

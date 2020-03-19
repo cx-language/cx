@@ -3,7 +3,7 @@
 struct Foo<T> {
     T t;
 
-    init(T t) { this.t = t; }
+    Foo(T t) { this.t = t; }
 }
 
 void main() {

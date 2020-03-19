@@ -2,13 +2,13 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
     Element[?]* current;
     Element[?]* end;
 
-    init(Element[] array) {
+    ArrayIterator(Element[] array) {
         current = array.data();
         end = &array.data()[array.size()];
     }
 
     // TODO: Remove this overload once ArrayRef<T> is made synonymous with T[].
-    init(ArrayRef<Element> array) {
+    ArrayIterator(ArrayRef<Element> array) {
         current = array.data();
         end = &array.data()[array.size()];
     }

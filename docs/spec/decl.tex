@@ -90,7 +90,7 @@ Initializers are a special kind of member functions that are used for
 initializing newly created objects.
 
 \begin{grammar}
-\rule{initializer-definition} \code{init} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{body} \code{\}}
+\rule{initializer-definition} \nonterminal{struct-name} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{body} \code{\}}
 \end{grammar}
 
 Initializers can be invoked with the following syntax:
@@ -111,7 +111,7 @@ explicitly. They can be used e.g. to deallocate resources allocated in an
 initializer. They are declared as follows:
 
 \begin{grammar}
-\rule{deinitializer-definition} \code{deinit} \code{(} \code{)} \code{\{} \nonterminal{body} \code{\}}
+\rule{deinitializer-definition} \code{\~} \nonterminal{struct-name} \code{(} \code{)} \code{\{} \nonterminal{body} \code{\}}
 \end{grammar}
 
 \subsection{Private and public functions}

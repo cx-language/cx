@@ -1,15 +1,15 @@
 struct UniquePtr<Pointee> {
 	Pointee* pointer;
 
-	init(Pointee value) {
+	UniquePtr(Pointee value) {
 		this.pointer = allocate(value);
 	}
 
-	init(Pointee* pointer) {
+	UniquePtr(Pointee* pointer) {
 		this.pointer = pointer;
 	}
 
-	deinit() {
+	~UniquePtr() {
 		deallocate(pointer);
 	}
 

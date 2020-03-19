@@ -3,12 +3,12 @@ struct OrderedMap<Key, Value> {
     AVLnode<Key, Value>*? root;
     int size;
 
-    init() {
+    OrderedMap() {
         root = null;
         size = 0;
     }
 
-    deinit() {
+    ~OrderedMap() {
         if (root != null) {
             root.deallocate();
         }
@@ -369,7 +369,7 @@ struct AVLnode<Key, Value> {
     AVLnode<Key, Value>*? left;
     AVLnode<Key, Value>*? right;
 
-    init(Key key, AVLnode<Key, Value>*? parent, Value value) {
+    AVLnode(Key key, AVLnode<Key, Value>*? parent, Value value) {
         this.entry = MapEntry(key, value);
         this.parent = parent;
         this.balance = 0;

@@ -9,11 +9,11 @@ struct S: Copyable {
 }
 
 struct Foo<U> {
-    init() {
+    Foo() {
         baz()
     }
 
-    deinit() {
+    ~Foo() {
         baz()
     }
 

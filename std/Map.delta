@@ -8,7 +8,7 @@ struct Map<Key: Hashable, Value> {
     int size;
 
     /// Initializes an empty map
-    init() {
+    Map() {
         size = 0;
         hashTable = List();
         increaseTableSize(hashTable, 128);

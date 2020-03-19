@@ -1,11 +1,11 @@
 import "header.h"
 
 struct A<E>: Copyable {
-    init() {
+    A() {
         foo()
     }
 
-    deinit() {
+    ~A() {
         foo()
     }
 

@@ -2,12 +2,12 @@ struct ClosedRange<T>: Copyable {
     T start;
     T end;
 
-    init(T start, T end) {
+    ClosedRange(T start, T end) {
         this.start = start;
         this.end = end;
     }
 
-    init(T end) {
+    ClosedRange(T end) {
         init(0, end);
     }
 

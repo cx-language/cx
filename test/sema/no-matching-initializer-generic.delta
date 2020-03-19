@@ -1,16 +1,16 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
 
 struct Foo<T>: Copyable {
-    init() { }
-    init(T a, T b) { }
+    Foo() { }
+    Foo(T a, T b) { }
 }
 
 void main() {
     // CHECK: [[@LINE+6]]:9: error: no matching initializer for 'Foo' with argument list of type '(int)'
     // CHECK: 4:5: note: candidate function:
-    // CHECK-NEXT: init() { }
+    // CHECK-NEXT: Foo() { }
     // CHECK: 5:5: note: candidate function:
-    // CHECK-NEXT: init(T a, T b) { }
+    // CHECK-NEXT: Foo(T a, T b) { }
     // CHECK-NOT: note
     _ = Foo(42)
 }

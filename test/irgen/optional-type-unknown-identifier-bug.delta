@@ -3,11 +3,11 @@
 struct X<T> {
     Y<T>*? y;
 
-    init() {
+    X() {
         y = null;
     }
 
-    deinit() {
+    ~X() {
         var a = y!.a;
     }
 }

@@ -2,7 +2,7 @@
 
 struct Foo: Copyable {
     int baz;
-    init() { this.baz = 42; }
+    Foo() { this.baz = 42; }
     void bar() { }
     int qux() { return this.baz; }
 }

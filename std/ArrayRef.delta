@@ -3,20 +3,20 @@ struct ArrayRef<Element>: Copyable {
     int size;
 
     /// Initializes an ArrayRef referring to an empty array.
-    init() {
+    ArrayRef() {
         data = undefined;
         size = 0;
     }
 
     /// Initializes an ArrayRef referring to the elements of the given List.
-    init(List<Element>* list) {
+    ArrayRef(List<Element>* list) {
         data = list.data();
         size = list.size();
     }
 
     /// Initializes an ArrayRef referring to an array of the given size located at the given memory
     /// address.
-    init(Element* data, int size) {
+    ArrayRef(Element* data, int size) {
         this.data = data;
         this.size = size;
     }

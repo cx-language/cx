@@ -1,7 +1,7 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
 
 struct X: Copyable {
-    init(int a) { }
+    X(int a) { }
 }
 
 void main() {

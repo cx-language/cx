@@ -13,7 +13,7 @@ interface Interface {
 struct S: Interface {
     S* that;
 
-    init() { that = this; }
+    S() { that = this; }
 
     S* foo(S* a) {
         return this;

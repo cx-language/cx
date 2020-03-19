@@ -15,7 +15,7 @@ struct R: Copyable {
 struct A<T> {
     T t;
 
-    init() {
+    A() {
         t = undefined;
     }
 
@@ -27,7 +27,7 @@ struct A<T> {
 struct S<E: H> {
     A<A<E>> a;
 
-    init() {
+    S() {
         a = undefined;
     }
 

@@ -4,7 +4,7 @@ struct Foo: Copyable {
     int a;
     bool b;
 
-    init(int a, bool b) {
+    Foo(int a, bool b) {
         this.a = a;
         this.b = b;
         this.a++;

@@ -2,13 +2,13 @@
 
 struct Foo {
     int i;
-    init() { i = 0; }
+    Foo() { i = 0; }
     void foo() { }
 }
 
 struct Bar: Copyable {
     int i;
-    init() { i = 0; }
+    Bar() { i = 0; }
     void bar() { }
 }
 

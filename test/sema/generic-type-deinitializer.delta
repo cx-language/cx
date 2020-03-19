@@ -1,7 +1,7 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
 
 struct C<T> {
-    deinit() {
+    ~C() {
         // CHECK: [[@LINE+1]]:17: error: unknown identifier 'b'
         var a = b
     }

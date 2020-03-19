@@ -6,7 +6,7 @@ interface I {
 
 struct S: Copyable {
     int i;
-    init() {}
+    S() {}
     void i() {}
 }
 
@@ -19,7 +19,7 @@ struct A<E> {
 struct M<T: I> {
     T t;
 
-    init() {}
+    M() {}
 
     void f() {
         var a = A<T>();

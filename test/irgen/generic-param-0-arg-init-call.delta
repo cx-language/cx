@@ -2,11 +2,11 @@
 
 struct C {
     int i;
-    init() { i = 0; }
+    C() { i = 0; }
 }
 
 struct A<T> {
-    init() {
+    A() {
         var t = T();
     }
 }

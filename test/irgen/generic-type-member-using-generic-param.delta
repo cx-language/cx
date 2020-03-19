@@ -2,7 +2,7 @@
 
 struct A<T> {
     T*? a
-    init() { this.a = null }
+    A() { this.a = null }
 }
 
 void main() { var a = A<int>() }

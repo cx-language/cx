@@ -7,7 +7,7 @@ struct GameState {
     uint timeOfLastAsteroidSpawn;
     float asteroidSpawnInterval;
 
-    init() {
+    GameState() {
         player = Player();
         asteroids = List();
         asteroids.push(Asteroid());
