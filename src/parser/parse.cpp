@@ -820,17 +820,24 @@ ExprStmt* Parser::parseExprStmt(Expr* expr) {
     return stmt;
 }
 
-/// block-or-stmt ::= '{' stmt* '}' | stmt
-std::vector<Stmt*> Parser::parseBlockOrStmt(Decl* parent) {
+/// block ::= '{' stmt* '}'
+std::vector<Stmt*> Parser::parseBlock(Decl* parent) {
+    parse(Token::LeftBrace);
     std::vector<Stmt*> stmts;
-    if (currentToken() == Token::LeftBrace) {
-        consumeToken();
-        stmts = parseStmtsUntil(Token::RightBrace, parent);
-        consumeToken();
-    } else {
-        stmts.emplace_back(parseStmt(parent));
+    while (currentToken() != Token::RightBrace) {
+        stmts.push_back(parseStmt(parent));
     }
+    consumeToken();
     return stmts;
+}
+
+/// block-or-stmt ::= block | stmt
+std::vector<Stmt*> Parser::parseBlockOrStmt(Decl* parent) {
+    if (currentToken() == Token::LeftBrace) {
+        return parseBlock(parent);
+    } else {
+        return { parseStmt(parent) };
+    }
 }
 
 /// defer-stmt ::= 'defer' expr ('\n' | ';')
@@ -994,14 +1001,6 @@ Stmt* Parser::parseStmt(Decl* parent) {
     return parseExprStmt(expr);
 }
 
-std::vector<Stmt*> Parser::parseStmtsUntil(Token::Kind end, Decl* parent) {
-    std::vector<Stmt*> stmts;
-    while (currentToken() != end) {
-        stmts.emplace_back(parseStmt(parent));
-    }
-    return stmts;
-}
-
 std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent) {
     std::vector<Stmt*> stmts;
     while (currentToken() != end1 && currentToken() != end2 && currentToken() != end3) {
@@ -1123,9 +1122,7 @@ FunctionDecl* Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel 
     auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, nullptr, type, name, location);
 
     if (requireBody || currentToken() == Token::LeftBrace) {
-        parse(Token::LeftBrace);
-        decl->setBody(parseStmtsUntil(Token::RightBrace, decl));
-        parse(Token::RightBrace);
+        decl->setBody(parseBlock(decl));
     }
 
     if (lookAhead(-1) != Token::RightBrace) {
@@ -1139,9 +1136,7 @@ FunctionDecl* Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel 
 FunctionTemplate* Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name,
                                                 SourceLocation location) {
     auto decl = parseFunctionTemplateProto(receiverTypeDecl, accessLevel, type, name, location);
-    parse(Token::LeftBrace);
-    decl->getFunctionDecl()->setBody(parseStmtsUntil(Token::RightBrace, decl));
-    parse(Token::RightBrace);
+    decl->getFunctionDecl()->setBody(parseBlock(decl));
     return decl;
 }
 
@@ -1158,9 +1153,7 @@ ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, Access
     auto location = consumeToken().getLocation();
     auto params = parseParamList(nullptr);
     auto decl = new ConstructorDecl(receiverTypeDecl, std::move(params), accessLevel, location);
-    parse(Token::LeftBrace);
-    decl->setBody(parseStmtsUntil(Token::RightBrace, decl));
-    parse(Token::RightBrace);
+    decl->setBody(parseBlock(decl));
     return decl;
 }
 
@@ -1174,9 +1167,7 @@ DestructorDecl* Parser::parseDestructorDecl(TypeDecl& receiverTypeDecl) {
     auto params = parseParamList(nullptr);
     if (!params.empty()) REPORT_ERROR(location, "destructors cannot have parameters");
     auto decl = new DestructorDecl(receiverTypeDecl, location);
-    parse(Token::LeftBrace);
-    decl->setBody(parseStmtsUntil(Token::RightBrace, decl));
-    parse(Token::RightBrace);
+    decl->setBody(parseBlock(decl));
     return decl;
 }
 

@@ -135,8 +135,8 @@ private:
     BreakStmt* parseBreakStmt();
     ContinueStmt* parseContinueStmt();
     Stmt* parseStmt(Decl* parent);
+    std::vector<Stmt*> parseBlock(Decl* parent);
     std::vector<Stmt*> parseBlockOrStmt(Decl* parent);
-    std::vector<Stmt*> parseStmtsUntil(Token::Kind end, Decl* parent);
     std::vector<Stmt*> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent);
     ParamDecl parseParam();
     std::vector<ParamDecl> parseParamList(bool* isVariadic);
