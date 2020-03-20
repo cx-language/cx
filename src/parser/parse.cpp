@@ -147,7 +147,7 @@ std::vector<NamedValue> Parser::parseArgumentList() {
 
 /// var-expr ::= id
 VarExpr* Parser::parseVarExpr() {
-    ASSERT(currentToken().is({ Token::Identifier, Token::Init }));
+    ASSERT(currentToken() == Token::Identifier);
     auto id = consumeToken();
     return new VarExpr(id.getString(), id.getLocation());
 }
@@ -476,7 +476,7 @@ AddressofExpr* Parser::parseAddressofExpr() {
 /// member-expr ::= expr '.' id
 MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
     auto location = getCurrentLocation();
-    auto member = parse({ Token::Identifier, Token::Init, Token::Deinit });
+    auto member = parse(Token::Identifier);
     return new MemberExpr(lhs, member.getString(), location);
 }
 
@@ -611,7 +611,6 @@ Expr* Parser::parsePostfixExpr() {
 
     switch (currentToken()) {
         case Token::Identifier:
-        case Token::Init:
             switch (lookAhead(1)) {
                 case Token::LeftParen:
                     expr = parseCallExpr(parseVarExpr());
