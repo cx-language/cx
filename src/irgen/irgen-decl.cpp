@@ -57,11 +57,11 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
     for (auto& param : decl.getParams()) {
         setLocalValue(&*arg++, &param);
     }
-    if (decl.isDeinitDecl()) {
+    if (decl.isDestructorDecl()) {
         for (auto& field : decl.getTypeDecl()->getFields()) {
-            if (field.getType().getDeinitializer() == nullptr) continue;
+            if (field.getType().getDestructor() == nullptr) continue;
             auto* fieldValue = codegenMemberAccess(function.arg_begin(), field.getType(), field.getName());
-            deferDeinitCall(fieldValue, &field);
+            deferDestructorCall(fieldValue, &field);
         }
     }
     for (auto& stmt : decl.getBody()) {
@@ -148,9 +148,9 @@ llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
         }
     }
 
-    if (decl.getDeinitializer() == nullptr) {
-        if (auto deinitializer = getDefaultDeinitializer(decl)) {
-            codegenDecl(*deinitializer);
+    if (decl.getDestructor() == nullptr) {
+        if (auto destructor = getDefaultDestructor(decl)) {
+            codegenDecl(*destructor);
         }
     }
 
@@ -195,11 +195,11 @@ void IRGenerator::codegenDecl(const Decl& decl) {
             break;
         case DeclKind::GenericParamDecl:
             llvm_unreachable("cannot codegen generic parameter declaration");
-        case DeclKind::InitDecl:
-            codegenFunctionDecl(llvm::cast<InitDecl>(decl));
+        case DeclKind::ConstructorDecl:
+            codegenFunctionDecl(llvm::cast<ConstructorDecl>(decl));
             break;
-        case DeclKind::DeinitDecl:
-            codegenFunctionDecl(llvm::cast<DeinitDecl>(decl));
+        case DeclKind::DestructorDecl:
+            codegenFunctionDecl(llvm::cast<DestructorDecl>(decl));
             break;
         case DeclKind::FunctionTemplate:
             break;

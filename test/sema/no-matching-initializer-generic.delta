@@ -6,7 +6,7 @@ struct Foo<T>: Copyable {
 }
 
 void main() {
-    // CHECK: [[@LINE+6]]:9: error: no matching initializer for 'Foo' with argument list of type '(int)'
+    // CHECK: [[@LINE+6]]:9: error: no matching constructor for 'Foo' with argument list of type '(int)'
     // CHECK: 4:5: note: candidate function:
     // CHECK-NEXT: Foo() { }
     // CHECK: 5:5: note: candidate function:

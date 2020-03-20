@@ -165,7 +165,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         decl.getProto().setReturnType(typecheckExpr(*llvm::cast<ReturnStmt>(decl.getBody().front())->getReturnValue()));
     }
 
-    if (!decl.isInitDecl() && !decl.isDeinitDecl()) {
+    if (!decl.isConstructorDecl() && !decl.isDestructorDecl()) {
         typecheckType(decl.getReturnType(), decl.getAccessLevel());
     }
 
@@ -189,11 +189,11 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                     typecheckStmt(stmt);
                 }
 
-                if (decl.isInitDecl()) {
+                if (decl.isConstructorDecl()) {
                     if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
                         if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
-                            if (auto* initDecl = llvm::dyn_cast_or_null<InitDecl>(callExpr->getCalleeDecl())) {
-                                if (initDecl->getTypeDecl() == receiverTypeDecl) {
+                            if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->getCalleeDecl())) {
+                                if (constructorDecl->getTypeDecl() == receiverTypeDecl) {
                                     delegatedInit = true;
                                 }
                             }
@@ -203,10 +203,10 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             }
         }
 
-        if (decl.isInitDecl() && !delegatedInit) {
+        if (decl.isConstructorDecl() && !delegatedInit) {
             for (auto& field : decl.getTypeDecl()->getFields()) {
                 if (!field.getDefaultValue() && initializedFields.count(&field) == 0) {
-                    WARN(decl.getLocation(), "initializer doesn't initialize member variable '" << field.getName() << "'");
+                    WARN(decl.getLocation(), "constructor doesn't initialize member variable '" << field.getName() << "'");
                 }
             }
         }
@@ -360,10 +360,10 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
             llvm_unreachable("no top-level method declarations");
         case DeclKind::GenericParamDecl:
             llvm_unreachable("no top-level parameter declarations");
-        case DeclKind::InitDecl:
-            llvm_unreachable("no top-level initializer declarations");
-        case DeclKind::DeinitDecl:
-            llvm_unreachable("no top-level deinitializer declarations");
+        case DeclKind::ConstructorDecl:
+            llvm_unreachable("no top-level constructor declarations");
+        case DeclKind::DestructorDecl:
+            llvm_unreachable("no top-level destructor declarations");
         case DeclKind::FunctionTemplate:
             typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl));
             break;
@@ -392,8 +392,8 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
 void Typechecker::typecheckMemberDecl(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::MethodDecl:
-        case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl:
+        case DeclKind::ConstructorDecl:
+        case DeclKind::DestructorDecl:
             typecheckFunctionDecl(llvm::cast<MethodDecl>(decl));
             break;
         case DeclKind::FieldDecl:

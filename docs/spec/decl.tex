@@ -84,34 +84,34 @@ are written inside a type declaration. That type declaration defines the member
 function's receiver type. Inside member functions, the receiver can be accessed
 with the keyword \code{this}.
 
-\subsubsection{Initializers}
+\subsubsection{Constructors}
 
-Initializers are a special kind of member functions that are used for
+Constructors are a special kind of member functions that are used for
 initializing newly created objects.
 
 \begin{grammar}
-\rule{initializer-definition} \nonterminal{struct-name} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{body} \code{\}}
+\rule{constructor-definition} \nonterminal{struct-name} \code{(} \nonterminal{parameter-list} \code{)} \code{\{} \nonterminal{body} \code{\}}
 \end{grammar}
 
-Initializers can be invoked with the following syntax:
+Constructors can be invoked with the following syntax:
 
 \begin{grammar}
-\rule{initializer-call} \nonterminal{receiver-type} \code{(} \nonterminal{argument-list} \code{)}
+\rule{constructor-call} \nonterminal{receiver-type} \code{(} \nonterminal{argument-list} \code{)}
 \end{grammar}
 
-The \nonterminal{initializer-call} expression returns a new instance of the
-specified type that has been initialized by calling the initializer function
+The \nonterminal{constructor-call} expression returns a new instance of the
+specified type that has been initialized by calling the constructor function
 with a matching parameter list.
 
-\subsubsection{Deinitializers}
+\subsubsection{Destructors}
 
-Deinitializers are another special kind of member functions. They are
+Destructors are another special kind of member functions. They are
 automatically called on objects when they're destroyed, but can also be called
 explicitly. They can be used e.g. to deallocate resources allocated in an
-initializer. They are declared as follows:
+constructor. They are declared as follows:
 
 \begin{grammar}
-\rule{deinitializer-definition} \code{\~} \nonterminal{struct-name} \code{(} \code{)} \code{\{} \nonterminal{body} \code{\}}
+\rule{destructor-definition} \code{\~} \nonterminal{struct-name} \code{(} \code{)} \code{\{} \nonterminal{body} \code{\}}
 \end{grammar}
 
 \subsection{Private and public functions}

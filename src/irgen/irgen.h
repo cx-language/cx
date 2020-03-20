@@ -25,14 +25,14 @@ struct IRGenScope {
     void onScopeEnd();
     void clear();
 
-    struct DeferredDeinit {
+    struct DeferredDestructor {
         llvm::Function* function;
         llvm::Value* value;
         const Decl* decl;
     };
 
     llvm::SmallVector<const Expr*, 8> deferredExprs;
-    llvm::SmallVector<DeferredDeinit, 8> deinitsToCall;
+    llvm::SmallVector<DeferredDestructor, 8> destructorsToCall;
     llvm::DenseMap<const Decl*, llvm::Value*> valuesByDecl;
     IRGenerator* irGenerator;
 };
@@ -48,7 +48,7 @@ private:
     friend struct IRGenScope;
 
     void codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function);
-    void createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit);
+    void createDestructorCall(llvm::Function* destructor, llvm::Value* receiver);
 
     /// 'decl' is null if this is the 'this' value.
     void setLocalValue(llvm::Value* value, const VariableDecl* decl);
@@ -102,7 +102,7 @@ private:
     llvm::Value* codegenLambdaExpr(const LambdaExpr& expr);
     llvm::Value* codegenIfExpr(const IfExpr& expr);
 
-    void codegenDeferredExprsAndDeinitCallsForReturn();
+    void codegenDeferredExprsAndDestructorCallsForReturn();
     void codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* continuation);
     void codegenReturnStmt(const ReturnStmt& stmt);
     void codegenVarStmt(const VarStmt& stmt);
@@ -136,8 +136,8 @@ private:
     void beginScope();
     void endScope();
     void deferEvaluationOf(const Expr& expr);
-    DeinitDecl* getDefaultDeinitializer(const TypeDecl& typeDecl);
-    void deferDeinitCall(llvm::Value* valueToDeinit, const VariableDecl* decl);
+    DestructorDecl* getDefaultDestructor(const TypeDecl& typeDecl);
+    void deferDestructorCall(llvm::Value* receiver, const VariableDecl* decl);
     IRGenScope& globalScope() { return scopes.front(); }
 
 private:

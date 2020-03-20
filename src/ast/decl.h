@@ -46,8 +46,8 @@ enum class DeclKind {
     GenericParamDecl,
     FunctionDecl,
     MethodDecl,
-    InitDecl,
-    DeinitDecl,
+    ConstructorDecl,
+    DestructorDecl,
     FunctionTemplate,
     TypeDecl,
     TypeTemplate,
@@ -84,11 +84,11 @@ public:
 
     bool isVariableDecl() const { return getKind() >= DeclKind::VarDecl && getKind() <= DeclKind::ParamDecl; }
     bool isParamDecl() const { return getKind() == DeclKind::ParamDecl; }
-    bool isFunctionDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::DeinitDecl; }
-    bool isMethodDecl() const { return getKind() >= DeclKind::MethodDecl && getKind() <= DeclKind::DeinitDecl; }
+    bool isFunctionDecl() const { return getKind() >= DeclKind::FunctionDecl && getKind() <= DeclKind::DestructorDecl; }
+    bool isMethodDecl() const { return getKind() >= DeclKind::MethodDecl && getKind() <= DeclKind::DestructorDecl; }
     bool isGenericParamDecl() const { return getKind() == DeclKind::GenericParamDecl; }
-    bool isInitDecl() const { return getKind() == DeclKind::InitDecl; }
-    bool isDeinitDecl() const { return getKind() == DeclKind::DeinitDecl; }
+    bool isConstructorDecl() const { return getKind() == DeclKind::ConstructorDecl; }
+    bool isDestructorDecl() const { return getKind() == DeclKind::DestructorDecl; }
     bool isFunctionTemplate() const { return getKind() == DeclKind::FunctionTemplate; }
     bool isTypeDecl() const { return getKind() == DeclKind::TypeDecl || getKind() == DeclKind::EnumDecl; }
     bool isTypeTemplate() const { return getKind() == DeclKind::TypeTemplate; }
@@ -268,19 +268,16 @@ private:
     TypeDecl* typeDecl;
 };
 
-class InitDecl : public MethodDecl {
+class ConstructorDecl : public MethodDecl {
 public:
-    InitDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, AccessLevel accessLevel, SourceLocation location)
-    : MethodDecl(DeclKind::InitDecl, FunctionProto("init", std::move(params), Type::getVoid(), false, false), receiverTypeDecl, {},
-                 accessLevel, location) {}
-    static bool classof(const Decl* d) { return d->getKind() == DeclKind::InitDecl; }
+    ConstructorDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, AccessLevel accessLevel, SourceLocation location);
+    static bool classof(const Decl* d) { return d->getKind() == DeclKind::ConstructorDecl; }
 };
 
-class DeinitDecl : public MethodDecl {
+class DestructorDecl : public MethodDecl {
 public:
-    DeinitDecl(TypeDecl& receiverTypeDecl, SourceLocation location)
-    : MethodDecl(DeclKind::DeinitDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None, location) {}
-    static bool classof(const Decl* d) { return d->getKind() == DeclKind::DeinitDecl; }
+    DestructorDecl(TypeDecl& receiverTypeDecl, SourceLocation location);
+    static bool classof(const Decl* d) { return d->getKind() == DeclKind::DestructorDecl; }
 };
 
 class FunctionTemplate : public Decl {
@@ -326,7 +323,8 @@ public:
     void addField(FieldDecl&& field);
     void addMethod(Decl* decl);
     llvm::ArrayRef<Decl*> getMemberDecls() const { return methods; }
-    DeinitDecl* getDeinitializer() const;
+    std::vector<Decl*> getConstructors() const;
+    DestructorDecl* getDestructor() const;
     Type getType(Mutability mutability = Mutability::Mutable) const;
     Type getTypeForPassing() const;
     bool passByValue() const { return (isStruct() && isCopyable()) || isUnion(); }

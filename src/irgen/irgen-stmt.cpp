@@ -3,10 +3,10 @@
 using namespace delta;
 
 void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
-    // TODO: Emit deferred expressions and deinitializer calls after the evaluation of the return
+    // TODO: Emit deferred expressions and destructor calls after the evaluation of the return
     // value, but before emitting the return instruction. The return value expression may depend on
-    // the values that the deferred expressions and/or deinitializer calls could deallocate.
-    codegenDeferredExprsAndDeinitCallsForReturn();
+    // the values that the deferred expressions and/or destructor calls could deallocate.
+    codegenDeferredExprsAndDestructorCallsForReturn();
 
     if (auto* returnValue = stmt.getReturnValue()) {
         builder.CreateRet(codegenExprForPassing(*returnValue, builder.getCurrentFunctionReturnType()));
@@ -26,8 +26,8 @@ void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
 
     if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
         if (callExpr->getCalleeDecl()) {
-            if (auto* initDecl = llvm::dyn_cast<InitDecl>(callExpr->getCalleeDecl())) {
-                if (initDecl->getTypeDecl()->getType() == stmt.getDecl().getType()) {
+            if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(callExpr->getCalleeDecl())) {
+                if (constructorDecl->getTypeDecl()->getType() == stmt.getDecl().getType()) {
                     codegenCallExpr(*callExpr, alloca);
                     return;
                 }

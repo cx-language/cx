@@ -80,10 +80,10 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
             return Type(llvm::cast<FunctionDecl>(decl)->getFunctionType(), Mutability::Mutable, SourceLocation());
         case DeclKind::GenericParamDecl:
             llvm_unreachable("cannot refer to generic parameters yet");
-        case DeclKind::InitDecl:
-            llvm_unreachable("cannot refer to initializers yet");
-        case DeclKind::DeinitDecl:
-            llvm_unreachable("cannot refer to deinitializers yet");
+        case DeclKind::ConstructorDecl:
+            llvm_unreachable("cannot refer to constructors yet");
+        case DeclKind::DestructorDecl:
+            llvm_unreachable("cannot refer to destructors yet");
         case DeclKind::FunctionTemplate:
             llvm_unreachable("cannot refer to generic functions yet");
         case DeclKind::TypeDecl:
@@ -245,11 +245,11 @@ static void invalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) 
 }
 
 static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* currentFunction) {
-    if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentFunction)) {
+    if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(currentFunction)) {
         switch (lhs.getKind()) {
             case ExprKind::VarExpr: {
                 auto* fieldDecl = llvm::dyn_cast<FieldDecl>(llvm::cast<VarExpr>(lhs).getDecl());
-                return fieldDecl && fieldDecl->getParent() == initDecl->getTypeDecl();
+                return fieldDecl && fieldDecl->getParent() == constructorDecl->getTypeDecl();
             }
             case ExprKind::MemberExpr: {
                 auto* varExpr = llvm::dyn_cast<VarExpr>(llvm::cast<MemberExpr>(lhs).getBaseExpr());
@@ -798,13 +798,13 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
 
 Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
     if (expr.getArgs().size() != 1) {
-        ERROR(expr.getLocation(), "expected single argument to converting initializer");
+        ERROR(expr.getLocation(), "expected single argument to converting constructor");
     }
     if (!expr.getGenericArgs().empty()) {
-        ERROR(expr.getLocation(), "expected no generic arguments to converting initializer");
+        ERROR(expr.getLocation(), "expected no generic arguments to converting constructor");
     }
     if (!expr.getArgs().front().getName().empty()) {
-        ERROR(expr.getLocation(), "expected unnamed argument to converting initializer");
+        ERROR(expr.getLocation(), "expected unnamed argument to converting constructor");
     }
 
     auto sourceType = typecheckExpr(*expr.getArgs().front().getValue());
@@ -835,7 +835,7 @@ static std::vector<Type> getGenericArgTypes(const llvm::StringMap<Type>& generic
 
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
     std::vector<Decl*> matches;
-    std::vector<Decl*> initDecls;
+    std::vector<Decl*> constructorDecls;
     bool isInitCall = false;
 
     for (Decl* decl : decls) {
@@ -870,7 +870,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             }
             case DeclKind::FunctionDecl:
             case DeclKind::MethodDecl:
-            case DeclKind::InitDecl: {
+            case DeclKind::ConstructorDecl: {
                 auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
 
                 if (decls.size() == 1) {
@@ -887,21 +887,20 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 auto* typeDecl = llvm::cast<TypeDecl>(decl);
                 isInitCall = true;
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                auto qualifiedName = getQualifiedFunctionName(typeDecl->getType(), "init", {});
-                initDecls = findDecls(qualifiedName);
-                ASSERT(!initDecls.empty());
+                constructorDecls = typeDecl->getConstructors();
+                ASSERT(!constructorDecls.empty());
                 ASSERT(decls.size() == 1);
-                decls = initDecls;
+                decls = constructorDecls;
 
-                for (Decl* decl : initDecls) {
-                    auto& initDecl = llvm::cast<InitDecl>(*decl);
+                for (Decl* decl : constructorDecls) {
+                    auto& constructorDecl = llvm::cast<ConstructorDecl>(*decl);
 
-                    if (initDecls.size() == 1) {
-                        validateArgs(expr, initDecl, callee, expr.getCallee().getLocation());
-                        return &initDecl;
+                    if (constructorDecls.size() == 1) {
+                        validateArgs(expr, constructorDecl, callee, expr.getCallee().getLocation());
+                        return &constructorDecl;
                     }
-                    if (argumentsMatch(expr, &initDecl)) {
-                        matches.push_back(&initDecl);
+                    if (argumentsMatch(expr, &constructorDecl)) {
+                        matches.push_back(&constructorDecl);
                     }
                 }
                 break;
@@ -909,21 +908,14 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             case DeclKind::TypeTemplate: {
                 auto* typeTemplate = llvm::cast<TypeTemplate>(decl);
                 isInitCall = true;
-
-                std::vector<InitDecl*> instantiatedInitDecls;
-
-                for (auto& method : typeTemplate->getTypeDecl()->getMethods()) {
-                    auto* initDecl = llvm::dyn_cast<InitDecl>(method);
-                    if (!initDecl) continue;
-                    initDecls.push_back(initDecl);
-                }
-
+                std::vector<ConstructorDecl*> instantiatedConstructorDecls;
+                constructorDecls = typeTemplate->getTypeDecl()->getConstructors();
                 ASSERT(decls.size() == 1);
-                decls = initDecls;
+                decls = constructorDecls;
 
-                for (auto* decl : initDecls) {
-                    auto params = llvm::cast<InitDecl>(decl)->getParams();
-                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, params, initDecls.size() != 1, expectedType);
+                for (auto* decl : constructorDecls) {
+                    auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
+                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, params, constructorDecls.size() != 1, expectedType);
                     if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
                     TypeDecl* typeDecl = nullptr;
@@ -938,19 +930,19 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     }
 
                     for (auto& method : typeDecl->getMethods()) {
-                        auto* initDecl = llvm::dyn_cast<InitDecl>(method);
-                        if (!initDecl) continue;
-                        instantiatedInitDecls.push_back(initDecl);
+                        auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(method);
+                        if (!constructorDecl) continue;
+                        instantiatedConstructorDecls.push_back(constructorDecl);
                     }
                 }
 
-                for (auto* instantiatedInitDecl : instantiatedInitDecls) {
-                    if (initDecls.size() == 1) {
-                        validateArgs(expr, *instantiatedInitDecl, callee, expr.getCallee().getLocation());
-                        return instantiatedInitDecl;
+                for (auto* instantiatedConstructorDecl : instantiatedConstructorDecls) {
+                    if (constructorDecls.size() == 1) {
+                        validateArgs(expr, *instantiatedConstructorDecl, callee, expr.getCallee().getLocation());
+                        return instantiatedConstructorDecl;
                     }
-                    if (argumentsMatch(expr, instantiatedInitDecl)) {
-                        matches.push_back(instantiatedInitDecl);
+                    if (argumentsMatch(expr, instantiatedConstructorDecl)) {
+                        matches.push_back(instantiatedConstructorDecl);
                     }
                 }
                 break;
@@ -973,7 +965,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
                 break;
             }
-            case DeclKind::DeinitDecl:
+            case DeclKind::DestructorDecl:
                 matches.push_back(decl);
                 break;
 
@@ -1003,7 +995,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 });
 
                 ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
-                                 "no matching " << (isInitCall ? "initializer for '" : "function for call to '") << callee
+                                 "no matching " << (isInitCall ? "constructor for '" : "function for call to '") << callee
                                                 << "' with argument list of type '(" << llvm::join(argTypeStrings, ", ") << ")'");
             } else {
                 ERROR(expr.getCallee().getLocation(), "'" << callee << "' is not a function");
@@ -1124,8 +1116,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         auto decls = findCalleeCandidates(expr, callee);
         decl = resolveOverload(decls, expr, callee, expectedType);
 
-        if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
-            expr.setReceiverType(initDecl->getTypeDecl()->getType());
+        if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
+            expr.setReceiverType(constructorDecl->getTypeDecl()->getType());
         } else if (decl->isMethodDecl()) {
             auto* varDecl = llvm::cast<VarDecl>(findDecl("this", expr.getCallee().getLocation()));
             expr.setReceiverType(varDecl->getType());
@@ -1133,8 +1125,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     checkHasAccess(*decl, expr.getCallee().getLocation(), AccessLevel::None);
-    if (auto* initDecl = llvm::dyn_cast<InitDecl>(decl)) {
-        checkHasAccess(*initDecl->getTypeDecl(), expr.getCallee().getLocation(), AccessLevel::None);
+    if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
+        checkHasAccess(*constructorDecl->getTypeDecl(), expr.getCallee().getLocation(), AccessLevel::None);
     }
 
     std::vector<ParamDecl> params;
@@ -1142,8 +1134,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-        case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl:
+        case DeclKind::ConstructorDecl:
+        case DeclKind::DestructorDecl:
             params = llvm::cast<FunctionDecl>(decl)->getParams();
             break;
 
@@ -1176,11 +1168,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-        case DeclKind::DeinitDecl:
+        case DeclKind::DestructorDecl:
             return llvm::cast<FunctionDecl>(decl)->getFunctionType()->getReturnType();
 
-        case DeclKind::InitDecl:
-            return llvm::cast<InitDecl>(decl)->getTypeDecl()->getType();
+        case DeclKind::ConstructorDecl:
+            return llvm::cast<ConstructorDecl>(decl)->getTypeDecl()->getType();
 
         case DeclKind::VarDecl:
         case DeclKind::ParamDecl:
@@ -1228,8 +1220,8 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
     switch (calleeDecl.getKind()) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-        case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl: {
+        case DeclKind::ConstructorDecl:
+        case DeclKind::DestructorDecl: {
             auto& functionDecl = llvm::cast<FunctionDecl>(calleeDecl);
             validateArgs(expr, functionDecl.getParams(), functionDecl.isVariadic(), functionName, location);
             break;

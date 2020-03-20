@@ -24,9 +24,9 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Initializes a string with the contents of a null-terminated C-style string.
     ///
-    /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
+    /// __Note:__ This constructor has a time complexity of O(n) because it has to calculate the
     /// length of the argument string. If you know the length beforehand, consider using
-    /// `StringBuffer(char* pointer, uint length)` instead.
+    /// `StringBuffer(char* pointer, int length)` instead.
     ///
     StringBuffer(char* cString) {
         init(string(cString, int(strlen(cString))));
@@ -92,7 +92,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     StringIterator iterator() {
-        // TODO: When implicit initializers have been implemented, remove the string() call below.
+        // TODO: When implicit constructors have been implemented, remove the string() call below.
         return StringIterator(string(this));
     }
 

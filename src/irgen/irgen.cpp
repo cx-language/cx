@@ -12,15 +12,15 @@ void IRGenScope::onScopeEnd() {
         irGenerator->codegenExpr(*expr);
     }
 
-    for (auto& p : llvm::reverse(deinitsToCall)) {
+    for (auto& p : llvm::reverse(destructorsToCall)) {
         if (p.decl && p.decl->hasBeenMoved()) continue;
-        irGenerator->createDeinitCall(p.function, p.value);
+        irGenerator->createDestructorCall(p.function, p.value);
     }
 }
 
 void IRGenScope::clear() {
     deferredExprs.clear();
-    deinitsToCall.clear();
+    destructorsToCall.clear();
 }
 
 IRGenerator::IRGenerator() : builder(ctx) {
@@ -32,7 +32,7 @@ void IRGenerator::setLocalValue(llvm::Value* value, const VariableDecl* decl) {
     ASSERT(it.second);
 
     if (decl) {
-        deferDeinitCall(value, decl);
+        deferDestructorCall(value, decl);
     }
 }
 
@@ -165,40 +165,40 @@ void IRGenerator::deferEvaluationOf(const Expr& expr) {
     scopes.back().deferredExprs.push_back(&expr);
 }
 
-/// Returns a deinitializer that only calls the deinitializers of the member variables, or null if
-/// no such deinitializer is needed because none of the member variables have deinitializers.
-DeinitDecl* IRGenerator::getDefaultDeinitializer(const TypeDecl& typeDecl) {
-    ASSERT(typeDecl.getDeinitializer() == nullptr);
+/// Returns a destructor that only calls the destructors of the member variables, or null if
+/// no such destructor is needed because none of the member variables have destructors.
+DestructorDecl* IRGenerator::getDefaultDestructor(const TypeDecl& typeDecl) {
+    ASSERT(typeDecl.getDestructor() == nullptr);
 
     for (auto& field : typeDecl.getFields()) {
-        if (field.getType().getDeinitializer() != nullptr) {
-            auto deinitializer = new DeinitDecl(const_cast<TypeDecl&>(typeDecl), typeDecl.getLocation());
-            deinitializer->setBody({});
-            return deinitializer;
+        if (field.getType().getDestructor() != nullptr) {
+            auto destructor = new DestructorDecl(const_cast<TypeDecl&>(typeDecl), typeDecl.getLocation());
+            destructor->setBody({});
+            return destructor;
         }
     }
 
     return nullptr;
 }
 
-void IRGenerator::deferDeinitCall(llvm::Value* valueToDeinit, const VariableDecl* decl) {
+void IRGenerator::deferDestructorCall(llvm::Value* receiver, const VariableDecl* decl) {
     auto type = decl->getType();
     llvm::Function* proto = nullptr;
 
-    if (auto* deinitializer = type.getDeinitializer()) {
-        proto = getFunctionProto(*deinitializer);
+    if (auto* destructor = type.getDestructor()) {
+        proto = getFunctionProto(*destructor);
     } else if (auto* typeDecl = type.getDecl()) {
-        if (auto deinitializer = getDefaultDeinitializer(*typeDecl)) {
-            proto = getFunctionProto(*deinitializer);
+        if (auto defaultDestructor = getDefaultDestructor(*typeDecl)) {
+            proto = getFunctionProto(*defaultDestructor);
         }
     }
 
     if (proto) {
-        scopes.back().deinitsToCall.push_back({ proto, valueToDeinit, decl });
+        scopes.back().destructorsToCall.push_back({ proto, receiver, decl });
     }
 }
 
-void IRGenerator::codegenDeferredExprsAndDeinitCallsForReturn() {
+void IRGenerator::codegenDeferredExprsAndDestructorCallsForReturn() {
     for (auto& scope : llvm::reverse(scopes)) {
         scope.onScopeEnd();
     }
@@ -236,23 +236,23 @@ llvm::Value* IRGenerator::createLoad(llvm::Value* value) {
 }
 
 llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr& lhs) {
-    // Don't call deinitializer for LHS when assigning to fields in initializer.
-    if (auto* initDecl = llvm::dyn_cast<InitDecl>(currentDecl)) {
+    // Don't call destructor for LHS when assigning to fields in constructor.
+    if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(currentDecl)) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(&lhs)) {
             if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
-                if (fieldDecl->getParent() == initDecl->getTypeDecl()) {
+                if (fieldDecl->getParent() == constructorDecl->getTypeDecl()) {
                     return codegenLvalueExpr(lhs);
                 }
             }
         }
     }
 
-    // Call deinitializer for LHS.
+    // Call destructor for LHS.
     if (auto* basicType = llvm::dyn_cast<BasicType>(lhs.getType().getBase())) {
         if (auto* typeDecl = basicType->getDecl()) {
-            if (auto* deinit = typeDecl->getDeinitializer()) {
+            if (auto* destructor = typeDecl->getDestructor()) {
                 llvm::Value* value = codegenLvalueExpr(lhs);
-                createDeinitCall(getFunctionProto(*deinit), value);
+                createDestructorCall(getFunctionProto(*destructor), value);
                 return value;
             }
         }
@@ -261,11 +261,11 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr& lhs) {
     return codegenLvalueExpr(lhs);
 }
 
-void IRGenerator::createDeinitCall(llvm::Function* deinit, llvm::Value* valueToDeinit) {
-    if (!valueToDeinit->getType()->isPointerTy()) {
-        valueToDeinit = createTempAlloca(valueToDeinit);
+void IRGenerator::createDestructorCall(llvm::Function* destructor, llvm::Value* receiver) {
+    if (!receiver->getType()->isPointerTy()) {
+        receiver = createTempAlloca(receiver);
     }
-    builder.CreateCall(deinit, valueToDeinit);
+    builder.CreateCall(destructor, receiver);
 }
 
 llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl) {
@@ -283,8 +283,8 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
     switch (decl->getKind()) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
-        case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl:
+        case DeclKind::ConstructorDecl:
+        case DeclKind::DestructorDecl:
             return getFunctionProto(*llvm::cast<FunctionDecl>(decl));
         case DeclKind::VarDecl:
         case DeclKind::ParamDecl:

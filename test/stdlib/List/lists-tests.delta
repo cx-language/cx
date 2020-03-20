@@ -161,11 +161,11 @@ void testRemoveFirstByPredicate() {
     assert(a.empty());
 }
 
-var deinits = 0;
+var destroyed = 0;
 
 struct DestructionTester {
     ~DestructionTester() {
-        deinits++;
+        destroyed++;
     }
 }
 
@@ -182,5 +182,5 @@ void testElementDestruction() {
     a.removeLast();
     a.removeFirst();
 
-    assert(deinits == 5);
+    assert(destroyed == 5);
 }

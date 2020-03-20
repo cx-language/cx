@@ -286,9 +286,9 @@ TypeDecl* Type::getDecl() const {
     return basicType ? basicType->getDecl() : nullptr;
 }
 
-DeinitDecl* Type::getDeinitializer() const {
+DestructorDecl* Type::getDestructor() const {
     auto* typeDecl = getDecl();
-    return typeDecl ? typeDecl->getDeinitializer() : nullptr;
+    return typeDecl ? typeDecl->getDestructor() : nullptr;
 }
 
 void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {

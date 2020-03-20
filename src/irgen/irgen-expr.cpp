@@ -20,9 +20,9 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         llvm::Function* stringConstructor = nullptr;
 
         for (auto* decl : Module::getStdlibModule()->getSymbolTable().find("string.init")) {
-            auto params = llvm::cast<InitDecl>(decl)->getParams();
+            auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
             if (params.size() == 2 && params[0].getType().isPointerType() && params[1].getType().isInt()) {
-                stringConstructor = getFunctionProto(*llvm::cast<InitDecl>(decl));
+                stringConstructor = getFunctionProto(*llvm::cast<ConstructorDecl>(decl));
                 break;
             }
         }
@@ -507,13 +507,13 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
     auto* calleeDecl = expr.getCalleeDecl();
 
     if (calleeDecl && calleeDecl->isMethodDecl()) {
-        if (auto* initDecl = llvm::dyn_cast<InitDecl>(calleeDecl)) {
+        if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(calleeDecl)) {
             if (thisAllocaForInit) {
                 args.emplace_back(thisAllocaForInit);
-            } else if (currentDecl->isInitDecl() && expr.getFunctionName() == "init") {
+            } else if (currentDecl->isConstructorDecl() && expr.getFunctionName() == "init") {
                 args.emplace_back(getThis());
             } else {
-                args.emplace_back(createEntryBlockAlloca(toIR(initDecl->getTypeDecl()->getType())));
+                args.emplace_back(createEntryBlockAlloca(toIR(constructorDecl->getTypeDecl()->getType())));
             }
         } else if (expr.getReceiver()) {
             args.emplace_back(codegenExprForPassing(*expr.getReceiver(), *param));
@@ -530,7 +530,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
         args.push_back(argValue);
     }
 
-    if (calleeDecl->isInitDecl()) {
+    if (calleeDecl->isConstructorDecl()) {
         builder.CreateCall(calleeValue, args);
         return args[0];
     } else {

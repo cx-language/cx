@@ -16,7 +16,7 @@ namespace delta {
 
 class ParamDecl;
 class TypeDecl;
-class DeinitDecl;
+class DestructorDecl;
 class TupleElement;
 
 enum class Mutability { Mutable, Const };
@@ -110,7 +110,7 @@ public:
     Type removeArrayWithUnknownSize() const { return isArrayWithUnknownSize() ? getElementType() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     TypeDecl* getDecl() const;
-    DeinitDecl* getDeinitializer() const;
+    DestructorDecl* getDestructor() const;
     bool equalsIgnoreTopLevelMutable(Type) const;
     void printTo(std::ostream& stream, bool omitTopLevelConst) const;
     std::string toString(bool omitTopLevelMutable) const;

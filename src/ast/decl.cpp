@@ -100,17 +100,17 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, Ty
             }
             return instantiation;
         }
-        case DeclKind::InitDecl: {
-            auto* initDecl = llvm::cast<InitDecl>(this);
-            auto params = instantiateParams(initDecl->getParams(), genericArgs);
-            auto instantiation = new InitDecl(typeDecl, std::move(params), getAccessLevel(), initDecl->getLocation());
-            instantiation->setBody(::instantiate(initDecl->getBody(), genericArgs));
+        case DeclKind::ConstructorDecl: {
+            auto* constructorDecl = llvm::cast<ConstructorDecl>(this);
+            auto params = instantiateParams(constructorDecl->getParams(), genericArgs);
+            auto instantiation = new ConstructorDecl(typeDecl, std::move(params), getAccessLevel(), constructorDecl->getLocation());
+            instantiation->setBody(::instantiate(constructorDecl->getBody(), genericArgs));
             return instantiation;
         }
-        case DeclKind::DeinitDecl: {
-            auto* deinitDecl = llvm::cast<DeinitDecl>(this);
-            auto instantiation = new DeinitDecl(typeDecl, deinitDecl->getLocation());
-            instantiation->setBody(::instantiate(deinitDecl->getBody(), genericArgs));
+        case DeclKind::DestructorDecl: {
+            auto* destructorDecl = llvm::cast<DestructorDecl>(this);
+            auto instantiation = new DestructorDecl(typeDecl, destructorDecl->getLocation());
+            instantiation->setBody(::instantiate(destructorDecl->getBody(), genericArgs));
             return instantiation;
         }
         default:
@@ -144,10 +144,22 @@ void TypeDecl::addMethod(Decl* decl) {
     methods.push_back(decl);
 }
 
-DeinitDecl* TypeDecl::getDeinitializer() const {
+std::vector<Decl*> TypeDecl::getConstructors() const {
+    std::vector<Decl*> constructors;
+
     for (auto& decl : getMemberDecls()) {
-        if (auto* deinitDecl = llvm::dyn_cast<DeinitDecl>(decl)) {
-            return deinitDecl;
+        if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
+            constructors.push_back(constructorDecl);
+        }
+    }
+
+    return constructors;
+}
+
+DestructorDecl* TypeDecl::getDestructor() const {
+    for (auto& decl : getMemberDecls()) {
+        if (auto* destructorDecl = llvm::dyn_cast<DestructorDecl>(decl)) {
+            return destructorDecl;
         }
     }
     return nullptr;
@@ -247,8 +259,8 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
             llvm_unreachable("handled by FunctionDecl::instantiate()");
 
         case DeclKind::MethodDecl:
-        case DeclKind::InitDecl:
-        case DeclKind::DeinitDecl:
+        case DeclKind::ConstructorDecl:
+        case DeclKind::DestructorDecl:
             llvm_unreachable("handled via TypeDecl");
 
         case DeclKind::FunctionTemplate:
@@ -310,3 +322,10 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
     }
     llvm_unreachable("all cases handled");
 }
+
+ConstructorDecl::ConstructorDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, AccessLevel accessLevel, SourceLocation location)
+: MethodDecl(DeclKind::ConstructorDecl, FunctionProto("init", std::move(params), Type::getVoid(), false, false), receiverTypeDecl, {},
+             accessLevel, location) {}
+
+DestructorDecl::DestructorDecl(TypeDecl& receiverTypeDecl, SourceLocation location)
+: MethodDecl(DeclKind::DestructorDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None, location) {}

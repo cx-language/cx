@@ -349,8 +349,8 @@ void Typechecker::postProcess() {
             switch (decl->getKind()) {
                 case DeclKind::FunctionDecl:
                 case DeclKind::MethodDecl:
-                case DeclKind::InitDecl:
-                case DeclKind::DeinitDecl:
+                case DeclKind::ConstructorDecl:
+                case DeclKind::DestructorDecl:
                     typecheckFunctionDecl(*llvm::cast<FunctionDecl>(decl));
                     break;
                 case DeclKind::FunctionTemplate:

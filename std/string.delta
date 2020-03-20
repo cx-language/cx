@@ -7,9 +7,9 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Initializes a string referring to a null-terminated C-style string.
     ///
-    /// __Note:__ This initializer has a time complexity of O(n) because it has to calculate the
+    /// __Note:__ This constructor has a time complexity of O(n) because it has to calculate the
     /// length of the argument string. If you know the length beforehand, consider using
-    /// `string(char* pointer, uint length)` instead.
+    /// `string(char* pointer, int length)` instead.
     ///
     string(char* cString) {
         characters = ArrayRef(cString, int(strlen(cString)));

@@ -35,7 +35,7 @@ struct List<Element> {
 
     ~List() {
         if (capacity != 0) {
-            // FIXME: Call deinitializers of remaining elements.
+            // FIXME: Call destructors of remaining elements.
             deallocate(buffer);
         }
     }
@@ -163,7 +163,7 @@ struct List<Element> {
     }
 
     ArrayIterator<Element> iterator() {
-        // TODO: When implicit initializers have been implemented, remove the ArrayRef() call below.
+        // TODO: When implicit constructors have been implemented, remove the ArrayRef() call below.
         return ArrayIterator(ArrayRef(this));
     }
 
