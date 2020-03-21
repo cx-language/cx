@@ -124,15 +124,16 @@ llvm::Value* IRGenerator::codegenUnaryExpr(const UnaryExpr& expr) {
         case Token::Tilde:
             return codegenNot(expr);
         case Token::Increment:
-            return codegenIncrementExpr(expr);
+            return codegenConstantIncrement(expr, 1);
         case Token::Decrement:
-            return codegenDecrementExpr(expr);
+            return codegenConstantIncrement(expr, -1);
         default:
             llvm_unreachable("invalid prefix operator");
     }
 }
 
-llvm::Value* IRGenerator::codegenIncrementExpr(const UnaryExpr& expr) {
+// TODO: Lower increment and decrement statements to compound assignments so this isn't needed.
+llvm::Value* IRGenerator::codegenConstantIncrement(const UnaryExpr& expr, int increment) {
     auto operandType = expr.getOperand().getType();
     auto* ptr = codegenLvalueExpr(expr.getOperand());
     if (operandType.isPointerType() && llvm::isa<llvm::AllocaInst>(ptr)) {
@@ -141,29 +142,14 @@ llvm::Value* IRGenerator::codegenIncrementExpr(const UnaryExpr& expr) {
     auto* value = createLoad(ptr);
     llvm::Value* result;
 
-    if (operandType.isPointerType() && operandType.getPointee().isArrayWithUnknownSize()) {
-        result = builder.CreateConstGEP1_32(value, 1);
+    if (value->getType()->isIntegerTy()) {
+        result = builder.CreateAdd(value, llvm::ConstantInt::getSigned(value->getType(), increment));
+    } else if (value->getType()->isPointerTy()) {
+        result = builder.CreateInBoundsGEP(value, llvm::ConstantInt::getSigned(llvm::IntegerType::getInt32Ty(ctx), increment));
+    } else if (value->getType()->isFloatingPointTy()) {
+        result = builder.CreateFAdd(value, llvm::ConstantFP::get(value->getType(), increment));
     } else {
-        result = builder.CreateAdd(value, llvm::ConstantInt::get(value->getType(), 1));
-    }
-
-    builder.CreateStore(result, ptr);
-    return nullptr;
-}
-
-llvm::Value* IRGenerator::codegenDecrementExpr(const UnaryExpr& expr) {
-    auto operandType = expr.getOperand().getType();
-    auto* ptr = codegenLvalueExpr(expr.getOperand());
-    if (operandType.isPointerType() && llvm::isa<llvm::AllocaInst>(ptr)) {
-        ptr = createLoad(ptr);
-    }
-    auto* value = createLoad(ptr);
-    llvm::Value* result;
-
-    if (operandType.isPointerType() && operandType.getPointee().isArrayWithUnknownSize()) {
-        result = builder.CreateGEP(value, llvm::ConstantInt::getSigned(llvm::IntegerType::getInt32Ty(ctx), -1));
-    } else {
-        result = builder.CreateSub(value, llvm::ConstantInt::get(value->getType(), 1));
+        llvm_unreachable("unknown increment/decrement operand type");
     }
 
     builder.CreateStore(result, ptr);

@@ -92,7 +92,7 @@ define void @_EN3std5printI3intEEP3int(i32* %value) {
 define void @_EN3std13ArrayIteratorI3intE9incrementE(%"ArrayIterator<int>"* %this) {
   %current = getelementptr inbounds %"ArrayIterator<int>", %"ArrayIterator<int>"* %this, i32 0, i32 0
   %current.load = load i32*, i32** %current
-  %1 = getelementptr i32, i32* %current.load, i32 1
+  %1 = getelementptr inbounds i32, i32* %current.load, i32 1
   store i32* %1, i32** %current
   ret void
 }

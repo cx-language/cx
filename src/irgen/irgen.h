@@ -78,8 +78,7 @@ private:
     llvm::Value* codegenImplicitNullComparison(llvm::Value* operand);
     llvm::Value* codegenNot(const UnaryExpr& expr);
     llvm::Value* codegenUnaryExpr(const UnaryExpr& expr);
-    llvm::Value* codegenIncrementExpr(const UnaryExpr& expr);
-    llvm::Value* codegenDecrementExpr(const UnaryExpr& expr);
+    llvm::Value* codegenConstantIncrement(const UnaryExpr& expr, int value);
     llvm::Value* codegenLogicalAnd(const Expr& left, const Expr& right);
     llvm::Value* codegenLogicalOr(const Expr& left, const Expr& right);
     llvm::Value* codegenBinaryOp(Token::Kind op, llvm::Value* lhs, llvm::Value* rhs, Type lhsType);
