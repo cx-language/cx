@@ -378,13 +378,12 @@ struct AVLnode<Key, Value> {
     }
 
     void deallocate() {
-        deallocate(this);
-
         if (left != null) {
             left.deallocate();
         }
         if (right != null) {
             right.deallocate();
         }
+        deallocate(this);
     }
 }

@@ -1,5 +1,5 @@
 struct List<Element> {
-    Element[?]* buffer;
+    Element[*] buffer;
     int size;
     int capacity;
 
@@ -74,7 +74,7 @@ struct List<Element> {
         return buffer[size - 1];
     }
 
-    Element[?]* data() {
+    Element[*] data() {
         return buffer;
     }
 

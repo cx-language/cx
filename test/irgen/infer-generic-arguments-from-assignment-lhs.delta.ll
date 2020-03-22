@@ -3,7 +3,7 @@
 %"RangeIterator<int>" = type { i32, i32 }
 %"Range<int>" = type { i32, i32 }
 
-@0 = private unnamed_addr constant [39 x i8] c"Unwrap failed at allocate.delta:36:62\0A\00", align 1
+@0 = private unnamed_addr constant [39 x i8] c"Unwrap failed at allocate.delta:36:61\0A\00", align 1
 
 define i32 @main() {
   %i = alloca %"List<int>"
@@ -29,7 +29,7 @@ define void @_EN3std4ListI3intE6deinitE(%"List<int>"* %this) {
 if.then:                                          ; preds = %0
   %buffer = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 0
   %buffer.load = load i32*, i32** %buffer
-  call void @_EN3std10deallocateIAU_3intEEPAU_3int(i32* %buffer.load)
+  call void @_EN3std10deallocateIAU_3intEEAU_3int(i32* %buffer.load)
   br label %if.end
 
 if.else:                                          ; preds = %0
@@ -116,7 +116,7 @@ loop.end:                                         ; preds = %loop.condition
 if.then3:                                         ; preds = %loop.end
   %buffer6 = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 0
   %buffer6.load = load i32*, i32** %buffer6
-  call void @_EN3std10deallocateIAU_3intEEPAU_3int(i32* %buffer6.load)
+  call void @_EN3std10deallocateIAU_3intEEAU_3int(i32* %buffer6.load)
   br label %if.end5
 
 if.else4:                                         ; preds = %loop.end
@@ -131,7 +131,7 @@ if.end5:                                          ; preds = %if.else4, %if.then3
   br label %if.end
 }
 
-define void @_EN3std10deallocateIAU_3intEEPAU_3int(i32* %allocation) {
+define void @_EN3std10deallocateIAU_3intEEAU_3int(i32* %allocation) {
   %1 = bitcast i32* %allocation to i8*
   call void @free(i8* %1)
   ret void

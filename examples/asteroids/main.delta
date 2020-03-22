@@ -7,7 +7,7 @@ const SDL_WINDOWPOS_UNDEFINED = 0x1FFF0000;
 const width = 640;
 const height = 480;
 
-uint8[?]*? keyState = null;
+uint8[*]? keyState = null;
 
 bool isKeyDown(SDL_Scancode key) {
     return keyState![key] != 0;
@@ -46,7 +46,7 @@ void main() {
 void mainLoop(SDL_Renderer* renderer) {
     SDL_Event event = undefined;
     var state = GameState();
-    keyState = cast<const uint8[?]*>(SDL_GetKeyboardState(null)!);
+    keyState = cast<const uint8[*]>(SDL_GetKeyboardState(null)!);
 
     while (true) {
         if (SDL_PollEvent(event) != 0) {

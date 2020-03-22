@@ -29,7 +29,7 @@ define i32 @main() {
 define void @_EN3std9UniquePtrI9UniquePtrI3intEE6deinitE(%"UniquePtr<UniquePtr<int>>"* %this) {
   %pointer = getelementptr inbounds %"UniquePtr<UniquePtr<int>>", %"UniquePtr<UniquePtr<int>>"* %this, i32 0, i32 0
   %pointer.load = load %"UniquePtr<int>"*, %"UniquePtr<int>"** %pointer
-  call void @_EN3std10deallocateI9UniquePtrI3intEEEP9UniquePtrI3intE(%"UniquePtr<int>"* %pointer.load)
+  call void @_EN3std10deallocateIP9UniquePtrI3intEEEP9UniquePtrI3intE(%"UniquePtr<int>"* %pointer.load)
   ret void
 }
 
@@ -50,7 +50,7 @@ define void @_EN3std9UniquePtrI3intE4initE3int(%"UniquePtr<int>"* %this, i32 %va
 define void @_EN3std9UniquePtrI3intE6deinitE(%"UniquePtr<int>"* %this) {
   %pointer = getelementptr inbounds %"UniquePtr<int>", %"UniquePtr<int>"* %this, i32 0, i32 0
   %pointer.load = load i32*, i32** %pointer
-  call void @_EN3std10deallocateI3intEEP3int(i32* %pointer.load)
+  call void @_EN3std10deallocateIP3intEEP3int(i32* %pointer.load)
   ret void
 }
 
@@ -79,7 +79,7 @@ assert.success:                                   ; preds = %0
   ret i32* %allocation.load1
 }
 
-define void @_EN3std10deallocateI3intEEP3int(i32* %allocation) {
+define void @_EN3std10deallocateIP3intEEP3int(i32* %allocation) {
   %1 = bitcast i32* %allocation to i8*
   call void @free(i8* %1)
   ret void
@@ -104,7 +104,7 @@ assert.success:                                   ; preds = %0
   ret %"UniquePtr<int>"* %allocation.load1
 }
 
-define void @_EN3std10deallocateI9UniquePtrI3intEEEP9UniquePtrI3intE(%"UniquePtr<int>"* %allocation) {
+define void @_EN3std10deallocateIP9UniquePtrI3intEEEP9UniquePtrI3intE(%"UniquePtr<int>"* %allocation) {
   %1 = bitcast %"UniquePtr<int>"* %allocation to i8*
   call void @free(i8* %1)
   ret void

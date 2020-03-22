@@ -154,75 +154,63 @@ Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
     return TupleType::get(std::move(elements));
 }
 
-static bool isPointerOp(const UnaryExpr& expr) {
-    if (expr.getOperator() == Token::Star || expr.getOperator() == Token::And) return true;
-    auto operandType = expr.getOperand().getType();
-    if (!operandType.isPointerType()) return false;
-    if (!operandType.getPointee().isArrayWithUnknownSize()) return false;
-    return expr.getOperator() == Token::Increment || expr.getOperator() == Token::Decrement;
-}
-
 Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
-    if (!isPointerOp(expr)) {
-        operandType = operandType.removePointer();
-    }
+    switch (expr.getOperator()) {
+        case Token::Not:
+            operandType = operandType.removePointer();
 
-    if (expr.getOperator() == Token::Not) {
-        if (!operandType.isBool() && !operandType.isOptionalType()) {
-            ERROR(expr.getOperand().getLocation(), "invalid operand type '" << operandType << "' to logical not");
-        }
-        return Type::getBool();
-    }
+            if (!operandType.isBool() && !operandType.isOptionalType()) {
+                ERROR(expr.getOperand().getLocation(), "invalid operand type '" << operandType << "' to logical not");
+            }
 
-    if (expr.getOperator() == Token::Star) { // Dereference operation
-        if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
-            WARN(expr.getLocation(), "dereferencing value of optional type '"
-                                         << operandType << "' which may be null; "
-                                         << "unwrap the value with a postfix '!' to silence this warning");
-            operandType = operandType.getWrappedType();
-        } else if (!operandType.isPointerType()) {
+            return Type::getBool();
+
+        case Token::Star: // Dereference operation
+            if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
+                WARN(expr.getLocation(), "dereferencing value of optional type '"
+                                             << operandType << "' which may be null; "
+                                             << "unwrap the value with a postfix '!' to silence this warning");
+                operandType = operandType.getWrappedType();
+            }
+
+            if (operandType.isPointerType()) {
+                return operandType.getPointee();
+            } else if (operandType.isArrayWithUnknownSize()) {
+                return operandType.getElementType();
+            }
+
             ERROR(expr.getLocation(), "cannot dereference non-pointer type '" << operandType << "'");
-        }
-        return operandType.getPointee().removeArrayWithUnknownSize();
-    }
 
-    if (expr.getOperator() == Token::And) { // Address-of operation
-        return PointerType::get(operandType);
-    }
+        case Token::And: // Address-of operation
+            return PointerType::get(operandType);
 
-    if (expr.getOperator() == Token::Increment) {
-        if (!operandType.isMutable()) {
-            ERROR(expr.getLocation(), "cannot increment immutable value of type '" << operandType << "'");
-        }
-        if (operandType.isPointerType() && !operandType.getPointee().isArrayWithUnknownSize()) {
-            auto expectedType = PointerType::get(
-                ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().getMutability()));
-            ERROR(expr.getLocation(), "cannot increment '" << operandType << "', should be '" << expectedType << "'");
-        }
-        if (!operandType.isIncrementable()) {
-            ERROR(expr.getLocation(), "cannot increment '" << operandType << "'");
-        }
-        return Type::getVoid();
-    }
+        case Token::Increment:
+            operandType = operandType.removePointer();
 
-    if (expr.getOperator() == Token::Decrement) {
-        if (!operandType.isMutable()) {
-            ERROR(expr.getLocation(), "cannot decrement immutable value of type '" << operandType << "'");
-        }
-        if (operandType.isPointerType() && !operandType.getPointee().isArrayWithUnknownSize()) {
-            auto expectedType = PointerType::get(
-                ArrayType::get(operandType.getPointee(), ArrayType::unknownSize, operandType.getPointee().getMutability()));
-            ERROR(expr.getLocation(), "cannot decrement '" << operandType << "', should be '" << expectedType << "'");
-        }
-        if (!operandType.isDecrementable()) {
-            ERROR(expr.getLocation(), "cannot decrement '" << operandType << "'");
-        }
-        return Type::getVoid();
-    }
+            if (!operandType.isMutable()) {
+                ERROR(expr.getLocation(), "cannot increment immutable value of type '" << operandType << "'");
+            } else if (!operandType.isIncrementable()) {
+                ERROR(expr.getLocation(), "cannot increment '" << operandType << "'");
+            }
 
-    return operandType;
+            return Type::getVoid();
+
+        case Token::Decrement:
+            operandType = operandType.removePointer();
+
+            if (!operandType.isMutable()) {
+                ERROR(expr.getLocation(), "cannot decrement immutable value of type '" << operandType << "'");
+            } else if (!operandType.isDecrementable()) {
+                ERROR(expr.getLocation(), "cannot decrement '" << operandType << "'");
+            }
+
+            return Type::getVoid();
+
+        default:
+            return operandType;
+    }
 }
 
 static void invalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) {
@@ -291,7 +279,8 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     if (op == Token::PointerEqual || op == Token::PointerNotEqual) {
-        if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
+        if (!(leftType.removeOptional().isPointerType() || leftType.removeOptional().isArrayWithUnknownSize()) ||
+            !(rightType.removeOptional().isPointerType() || rightType.removeOptional().isArrayWithUnknownSize())) {
             ERROR(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
         }
 
@@ -440,9 +429,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isArrayType() && target.isArrayType() && (source.getArraySize() == target.getArraySize() || target.isArrayWithRuntimeSize()) &&
-        isImplicitlyConvertible(nullptr, source.getElementType(), target.getElementType())) {
-        return source;
+    if (source.isArrayType() && target.isArrayType() && source.getElementType() == target.getElementType()) {
+        if (source.getArraySize() == target.getArraySize()) return source;
+        if (source.isArrayWithConstantSize() && (target.isArrayWithUnknownSize() || target.isArrayWithRuntimeSize())) return source;
     }
 
     if (source.isTupleType() && target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
@@ -517,6 +506,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
             if (isConvertible) {
                 for (auto& element : llvm::cast<ArrayLiteralExpr>(expr)->getElements()) {
+                    // FIXME: Don't set type here.
                     element->setType(target.getElementType());
                 }
                 return target;
@@ -539,17 +529,13 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isArrayType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayType() &&
-        isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee().getElementType())) {
-        return source;
-    }
-
     if (source.isArrayType() && target.removeOptional().isPointerType() &&
         isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee())) {
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() && target.removeOptional().isArrayWithRuntimeSize()) {
+    if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() &&
+        (target.isArrayWithRuntimeSize() || target.isArrayWithUnknownSize()) && source.getPointee().getElementType() == target.getElementType()) {
         return source;
     }
 
@@ -558,7 +544,11 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isArrayWithUnknownSize()) {
+    if (source.isArrayWithUnknownSize() && target.isPointerType() && (source.getElementType() == target.getPointee() || target.getPointee().isVoid())) {
+        return source;
+    }
+
+    if (target.isArrayWithUnknownSize() && source.isPointerType() && target.getElementType() == source.getPointee()) {
         return source;
     }
 
@@ -1008,11 +998,13 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 return match->getModule() && match->getModule()->getName().endswith_lower(".h");
             });
 
+            // FIXME: Remove this if-statement.
             if (allMatchesAreFromC) {
                 validateArgs(expr, *matches.front());
                 return matches.front();
             }
 
+            // FIXME: Remove this loop.
             for (auto* match : matches) {
                 if (match->getModule() && match->getModule()->getName() == "std") {
                     validateArgs(expr, *match);
@@ -1020,6 +1012,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
             }
 
+            // FIXME: Change 'getCandidateNotes(decls)' below to 'getCandidateNotes(matches)'
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
                              "ambiguous reference to '" << callee << "'" << (isInitCall ? " constructor" : ""));
     }
@@ -1079,7 +1072,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             if (expr.getFunctionName() == "data") {
                 validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                return PointerType::get(ArrayType::get(receiverType.removePointer().getElementType(), ArrayType::unknownSize));
+                return ArrayType::get(receiverType.removePointer().getElementType(), ArrayType::unknownSize);
             }
             if (expr.getFunctionName() == "size") {
                 validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
@@ -1270,7 +1263,6 @@ void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params,
 static bool isValidCast(Type sourceType, Type targetType) {
     switch (sourceType.getKind()) {
         case TypeKind::BasicType:
-        case TypeKind::ArrayType:
         case TypeKind::TupleType:
         case TypeKind::FunctionType:
             return false;
@@ -1283,14 +1275,26 @@ static bool isValidCast(Type sourceType, Type targetType) {
 
                 if (sourcePointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
                     return true;
-                }
-
-                if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
+                } else if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
+                    return true;
+                } else if (targetPointee.isArrayWithConstantSize() && sourcePointee == targetPointee.getElementType()) {
                     return true;
                 }
+            } else if (targetType.isArrayWithUnknownSize()) {
+                if (sourcePointee.isVoid() && (!targetType.getElementType().isMutable() || sourcePointee.isMutable())) {
+                    return true;
+                } else if (sourcePointee == targetType.getElementType()) {
+                    return true;
+                }
+            }
 
-                if ((targetPointee.isArrayWithConstantSize() || targetPointee.isArrayWithUnknownSize()) &&
-                    sourcePointee == targetPointee.getElementType()) {
+            return false;
+        }
+        case TypeKind::ArrayType: {
+            if (targetType.isPointerType()) {
+                Type targetPointee = targetType.getPointee();
+
+                if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourceType.getElementType().isMutable())) {
                     return true;
                 }
             }

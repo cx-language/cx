@@ -340,7 +340,7 @@ int64_t Parser::parseArraySizeInBrackets() {
         case Token::RightBracket:
             arraySize = ArrayType::runtimeSize;
             break;
-        case Token::QuestionMark:
+        case Token::Star:
             consumeToken();
             arraySize = ArrayType::unknownSize;
             break;
@@ -352,7 +352,7 @@ int64_t Parser::parseArraySizeInBrackets() {
     return arraySize;
 }
 
-/// simple-type ::= id | id generic-argument-list | id '[' int-literal? ']'
+/// simple-type ::= id | id generic-argument-list | id '[' (int-literal | '*')? ']'
 Type Parser::parseSimpleType(Mutability mutability) {
     auto identifier = parse(Token::Identifier);
     std::vector<Type> genericArgs;

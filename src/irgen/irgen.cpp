@@ -127,11 +127,14 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             }
         }
         case TypeKind::ArrayType:
-            if (type.isArrayWithRuntimeSize()) {
-                return toIR(BasicType::get("ArrayRef", type.getElementType()), location);
+            switch (type.getArraySize()) {
+                case ArrayType::runtimeSize:
+                    return toIR(BasicType::get("ArrayRef", type.getElementType()), location);
+                case ArrayType::unknownSize:
+                    return llvm::PointerType::get(toIR(type.getElementType(), location), 0);
+                default:
+                    return llvm::ArrayType::get(toIR(type.getElementType(), location), type.getArraySize());
             }
-            ASSERT(!type.isArrayWithUnknownSize(), "unexpected array type");
-            return llvm::ArrayType::get(toIR(type.getElementType(), location), type.getArraySize());
         case TypeKind::TupleType: {
             auto elementTypes = map(type.getTupleElements(), [&](const TupleElement& element) { return toIR(element.type); });
             return llvm::StructType::get(ctx, elementTypes);
@@ -142,15 +145,11 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
             return llvm::FunctionType::get(returnType, paramTypes, false)->getPointerTo();
         }
         case TypeKind::PointerType: {
-            if (type.getPointee().isArrayWithUnknownSize()) {
-                return llvm::PointerType::get(toIR(type.getPointee().getElementType(), location), 0);
-            }
-
             auto* pointeeType = toIR(type.getPointee(), location);
             return llvm::PointerType::get(pointeeType->isVoidTy() ? llvm::Type::getInt8Ty(ctx) : pointeeType, 0);
         }
         case TypeKind::OptionalType:
-            if (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType()) {
+            if (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType() || type.getWrappedType().isArrayWithUnknownSize()) {
                 return toIR(type.getWrappedType());
             }
             llvm_unreachable("IRGen doesn't support non-pointer optional types yet");

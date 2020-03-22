@@ -316,7 +316,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
                 case ArrayType::runtimeSize:
                     break;
                 case ArrayType::unknownSize:
-                    stream << "?";
+                    stream << "*";
                     break;
                 default:
                     stream << getArraySize();

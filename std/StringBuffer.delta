@@ -54,7 +54,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Returns a pointer to the first character in the string.
-    char[?]* data() {
+    char[*] data() {
         return characters.data();
     }
 

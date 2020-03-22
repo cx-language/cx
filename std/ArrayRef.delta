@@ -1,5 +1,5 @@
 struct ArrayRef<Element>: Copyable {
-    Element[?]* data;
+    Element[*] data;
     int size;
 
     /// Initializes an ArrayRef referring to an empty array.
@@ -42,7 +42,7 @@ struct ArrayRef<Element>: Copyable {
         return data[index];
     }
 
-    Element[?]* data() {
+    Element[*] data() {
         return data;
     }
 

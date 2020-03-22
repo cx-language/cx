@@ -3,7 +3,7 @@
 #if hasInclude("execinfo.h")
 
 extern int backtrace(void** array, int size);
-extern char*[?]*? backtrace_symbols(void** array, int size);
+extern char*[*]? backtrace_symbols(void** array, int size);
 
 void printStackTrace() {
     void*[128] callstack = undefined;

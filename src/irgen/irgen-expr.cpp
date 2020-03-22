@@ -61,13 +61,6 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
-    auto pointeeType = expr.getType().getWrappedType().getPointee();
-
-    if (pointeeType.isArrayWithUnknownSize()) {
-        auto* pointerType = toIR(pointeeType.getElementType())->getPointerTo();
-        return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(pointerType));
-    }
-
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
 }
 
@@ -341,14 +334,14 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
         return builder.CreateInsertValue(arrayRef, size, 1);
     }
 
-    // Handle implicit conversions to type 'T[?]*'.
+    // Handle implicit conversions to type 'T[*]'.
     if (expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() && !targetType->getPointerElementType()->isArrayTy()) {
         return builder.CreateBitOrPointerCast(codegenLvalueExpr(expr), targetType);
     }
 
     // Handle implicit conversions to void pointer.
-    if (expr.getType().isPointerType() && !expr.getType().getPointee().isVoid() && targetType->isPointerTy() &&
-        targetType->getPointerElementType()->isIntegerTy(8)) {
+    if (((expr.getType().isPointerType() && !expr.getType().getPointee().isVoid()) || expr.getType().isArrayWithUnknownSize()) &&
+        targetType->isPointerTy() && targetType->getPointerElementType()->isIntegerTy(8)) {
         return builder.CreateBitCast(codegenExpr(expr), targetType);
     }
 
@@ -511,9 +504,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
 
     for (const auto& arg : expr.getArgs()) {
         auto* paramType = param != paramEnd ? *param++ : nullptr;
-        auto* argValue = codegenExprForPassing(*arg.getValue(), paramType);
-        ASSERT(!paramType || argValue->getType() == paramType);
-        args.push_back(argValue);
+        args.push_back(codegenExprForPassing(*arg.getValue(), paramType));
     }
 
     if (calleeDecl->isConstructorDecl()) {
@@ -642,7 +633,7 @@ llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
         value = createLoad(value);
     }
 
-    if (lhsType.isPointerType() && lhsType.getPointee().isArrayWithUnknownSize()) {
+    if (lhsType.isArrayWithUnknownSize()) {
         return builder.CreateGEP(value, codegenExpr(*expr.getIndexExpr()));
     }
 

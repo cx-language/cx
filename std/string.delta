@@ -37,7 +37,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return characters[index];
     }
 
-    char[?]* data() {
+    char[*] data() {
         return characters.data();
     }
 

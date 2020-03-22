@@ -1,6 +1,6 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
-extern char*[?]*? b();
+extern char*[*]? b();
 
 void main() {
     var s = b();
