@@ -65,8 +65,14 @@ llvm::Value* IRGenerator::getValue(const Decl* decl) {
     }
 }
 
-llvm::Value* IRGenerator::getThis() {
-    return getValue(nullptr);
+llvm::Value* IRGenerator::getThis(llvm::Type* targetType) {
+    auto value = getValue(nullptr);
+
+    if (targetType) {
+        value = builder.CreatePointerCast(value, targetType);
+    }
+
+    return value;
 }
 
 llvm::Type* IRGenerator::getBuiltinType(llvm::StringRef name) {
@@ -266,10 +272,6 @@ void IRGenerator::createDestructorCall(llvm::Function* destructor, llvm::Value* 
         receiver = createTempAlloca(receiver);
     }
     builder.CreateCall(destructor, receiver);
-}
-
-llvm::Type* IRGenerator::getLLVMTypeForPassing(const TypeDecl& typeDecl) {
-    return llvm::PointerType::get(toIR(typeDecl.getType()), 0);
 }
 
 llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {

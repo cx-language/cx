@@ -492,12 +492,12 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
 
     auto* calleeDecl = expr.getCalleeDecl();
 
-    if (calleeDecl && calleeDecl->isMethodDecl()) {
+    if (calleeDecl->isMethodDecl()) {
         if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(calleeDecl)) {
             if (thisAllocaForInit) {
                 args.emplace_back(thisAllocaForInit);
             } else if (currentDecl->isConstructorDecl() && expr.getFunctionName() == "init") {
-                args.emplace_back(getThis());
+                args.emplace_back(getThis(*param));
             } else {
                 args.emplace_back(createEntryBlockAlloca(toIR(constructorDecl->getTypeDecl()->getType())));
             }

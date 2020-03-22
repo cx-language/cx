@@ -45,7 +45,7 @@ private:
     void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
     void typecheckFunctionDecl(FunctionDecl& decl);
     void typecheckFunctionTemplate(FunctionTemplate& decl);
-    void typecheckMemberDecl(Decl& decl);
+    void typecheckMethodDecl(Decl& decl);
 
     void typecheckStmt(Stmt*& stmt);
     void typecheckCompoundStmt(CompoundStmt& stmt);

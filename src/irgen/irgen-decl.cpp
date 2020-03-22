@@ -16,7 +16,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
     if (decl.isMethodDecl()) {
-        paramTypes.emplace_back(getLLVMTypeForPassing(*decl.getTypeDecl()));
+        paramTypes.emplace_back(llvm::PointerType::get(toIR(decl.getTypeDecl()->getType()), 0));
     }
 
     for (auto& paramType : functionType->getParamTypes()) {
@@ -102,11 +102,12 @@ void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
 }
 
 std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
-    return map(decl.getFields(), [&](const FieldDecl& field) { return toIR(field.getType(), field.getLocation()); });
+    return map(decl.getFields(), [&](auto& field) { return toIR(field.getType(), field.getLocation()); });
 }
 
-llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& decl) {
-    if (decl.isInterface()) return nullptr;
+llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& d) {
+    // TODO: Figure out a better way to handle the use of 'This' in interface field types.
+    const TypeDecl& decl = d.isInterface() ? *llvm::cast<TypeDecl>(d.instantiate({ { "This", d.getType() } }, {})) : d;
 
     llvm::StructType* structType;
     auto qualifiedName = decl.getQualifiedName();

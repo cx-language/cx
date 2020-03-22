@@ -385,21 +385,29 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         ABORT("couldn't import the standard library: " << stdModule.getError().message());
     }
 
-    // Typecheck implemented interfaces so that interface method implementations are added to the implementing type before they're referenced.
+    // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
     for (auto& sourceFile : module.getSourceFiles()) {
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             currentModule = &module;
             currentSourceFile = &sourceFile;
 
             if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                llvm::StringMap<Type> genericArgs = { { "This", typeDecl->getType() } };
+
                 for (Type interface : typeDecl->getInterfaces()) {
                     typecheckType(interface, typeDecl->getAccessLevel());
+                    std::vector<FieldDecl> inheritedFields;
 
-                    for (auto& method : interface.getDecl()->getMethods()) {
-                        auto& methodDecl = llvm::cast<MethodDecl>(*method);
+                    for (auto& field : interface.getDecl()->getFields()) {
+                        inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
+                    }
 
-                        if (methodDecl.hasBody()) {
-                            auto copy = methodDecl.instantiate({ { "This", typeDecl->getType() } }, *typeDecl);
+                    typeDecl->getFields().insert(typeDecl->getFields().begin(), inheritedFields.begin(), inheritedFields.end());
+
+                    for (auto member : interface.getDecl()->getMethods()) {
+                        auto methodDecl = llvm::cast<MethodDecl>(member);
+                        if (methodDecl->hasBody()) {
+                            auto copy = methodDecl->instantiate(genericArgs, *typeDecl);
                             getCurrentModule()->addToSymbolTable(*copy);
                             typeDecl->addMethod(copy);
                         }
@@ -529,7 +537,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     }
 
     if (receiverTypeDecl) {
-        for (auto& decl : receiverTypeDecl->getMemberDecls()) {
+        for (auto& decl : receiverTypeDecl->getMethods()) {
             if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
                 if (functionDecl->getName() == name) {
                     decls.emplace_back(decl);

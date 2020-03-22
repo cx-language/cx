@@ -11,8 +11,6 @@ interface Interface {
 }
 
 struct S: Interface {
-    S* that;
-
     S() { that = this; }
 
     S* foo(S* a) {

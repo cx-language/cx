@@ -193,7 +193,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                     if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
                         if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
                             if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->getCalleeDecl())) {
-                                if (constructorDecl->getTypeDecl() == receiverTypeDecl) {
+                                if (constructorDecl->getTypeDecl() == receiverTypeDecl ||
+                                    receiverTypeDecl->hasInterface(*constructorDecl->getTypeDecl())) {
                                     delegatedInit = true;
                                 }
                             }
@@ -243,11 +244,10 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
     }
 
     TypeDecl* realDecl;
-    TypeDecl* thisTypeResolved;
 
     if (decl.isInterface()) {
-        thisTypeResolved = llvm::cast<TypeDecl>(decl.instantiate({ { "This", decl.getType() } }, {}));
-        realDecl = thisTypeResolved;
+        // TODO: Move this to typecheckModule to the pre-typechecking phase?
+        realDecl = llvm::cast<TypeDecl>(decl.instantiate({ { "This", decl.getType() } }, {}));
     } else {
         realDecl = &decl;
     }
@@ -256,8 +256,8 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
         typecheckFieldDecl(fieldDecl);
     }
 
-    for (auto& memberDecl : realDecl->getMemberDecls()) {
-        typecheckMemberDecl(*memberDecl);
+    for (auto& methodDecl : realDecl->getMethods()) {
+        typecheckMethodDecl(*methodDecl);
     }
 }
 
@@ -389,20 +389,17 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
     }
 }
 
-void Typechecker::typecheckMemberDecl(Decl& decl) {
+void Typechecker::typecheckMethodDecl(Decl& decl) {
     switch (decl.getKind()) {
         case DeclKind::MethodDecl:
         case DeclKind::ConstructorDecl:
         case DeclKind::DestructorDecl:
             typecheckFunctionDecl(llvm::cast<MethodDecl>(decl));
             break;
-        case DeclKind::FieldDecl:
-            typecheckFieldDecl(llvm::cast<FieldDecl>(decl));
-            break;
         case DeclKind::FunctionTemplate:
             typecheckFunctionTemplate(llvm::cast<FunctionTemplate>(decl));
             break;
         default:
-            llvm_unreachable("invalid member declaration kind");
+            llvm_unreachable("invalid method declaration kind");
     }
 }

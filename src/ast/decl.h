@@ -114,7 +114,7 @@ protected:
     Decl(DeclKind kind, AccessLevel accessLevel) : kind(kind), accessLevel(accessLevel), referenced(false) {}
 
 private:
-    const DeclKind kind;
+    DeclKind kind;
     AccessLevel accessLevel;
     bool referenced;
 };
@@ -227,8 +227,8 @@ public:
     FunctionProto& getProto() { return proto; }
     virtual TypeDecl* getTypeDecl() const { return nullptr; }
     bool hasBody() const { return body.hasValue(); }
-    llvm::ArrayRef<Stmt*> getBody() const { return *NOTNULL(body); }
-    llvm::MutableArrayRef<Stmt*> getBody() { return *NOTNULL(body); }
+    llvm::ArrayRef<Stmt*> getBody() const { return *body; }
+    llvm::MutableArrayRef<Stmt*> getBody() { return *body; }
     void setBody(std::vector<Stmt*>&& body) { this->body = std::move(body); }
     SourceLocation getLocation() const override { return location; }
     FunctionType* getFunctionType() const;
@@ -322,7 +322,6 @@ public:
     SourceLocation getLocation() const override { return location; }
     void addField(FieldDecl&& field);
     void addMethod(Decl* decl);
-    llvm::ArrayRef<Decl*> getMemberDecls() const { return methods; }
     std::vector<Decl*> getConstructors() const;
     DestructorDecl* getDestructor() const;
     Type getType(Mutability mutability = Mutability::Mutable) const;
@@ -434,6 +433,7 @@ public:
     Expr* getDefaultValue() const { return defaultValue; }
     Module* getModule() const override { return getParent()->getModule(); }
     SourceLocation getLocation() const override { return location; }
+    FieldDecl instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }
 
 private:

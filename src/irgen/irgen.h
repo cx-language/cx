@@ -54,7 +54,7 @@ private:
     void setLocalValue(llvm::Value* value, const VariableDecl* decl);
     llvm::Value* getValueOrNull(const Decl* decl);
     llvm::Value* getValue(const Decl* decl);
-    llvm::Value* getThis();
+    llvm::Value* getThis(llvm::Type* targetType = nullptr);
 
     /// Emits and loads value.
     llvm::Value* codegenExpr(const Expr& expr);
@@ -128,7 +128,6 @@ private:
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getEnumType(const EnumDecl& enumDecl);
     llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
-    llvm::Type* getLLVMTypeForPassing(const TypeDecl& typeDecl);
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
     llvm::Value* getArrayIterator(const Expr& object, Type objectType);
 

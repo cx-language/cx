@@ -87,7 +87,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
         case DeclKind::FunctionTemplate:
             llvm_unreachable("cannot refer to generic functions yet");
         case DeclKind::TypeDecl:
-            ERROR(expr.getLocation(), "'" << expr.getIdentifier() << "' is not a variable");
+            return llvm::cast<TypeDecl>(decl)->getType();
         case DeclKind::TypeTemplate:
             llvm_unreachable("cannot refer to generic types yet");
         case DeclKind::EnumDecl:
@@ -354,7 +354,9 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
     }
 
     if (currentInitializedFields) {
-        currentInitializedFields->insert(lhs.getFieldDecl());
+        if (auto fieldDecl = lhs.getFieldDecl()) {
+            currentInitializedFields->insert(fieldDecl);
+        }
     }
 }
 
@@ -1171,9 +1173,13 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         case DeclKind::DestructorDecl:
             return llvm::cast<FunctionDecl>(decl)->getFunctionType()->getReturnType();
 
-        case DeclKind::ConstructorDecl:
+        case DeclKind::ConstructorDecl: {
+            auto constructorDecl = llvm::cast<ConstructorDecl>(decl);
+            if (constructorDecl->getTypeDecl()->isInterface()) {
+                typecheckFunctionDecl(*constructorDecl);
+            }
             return llvm::cast<ConstructorDecl>(decl)->getTypeDecl()->getType();
-
+        }
         case DeclKind::VarDecl:
         case DeclKind::ParamDecl:
         case DeclKind::FieldDecl:

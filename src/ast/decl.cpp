@@ -118,6 +118,12 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, Ty
     }
 }
 
+FieldDecl FieldDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) const {
+    auto type = getType().resolve(genericArgs);
+    auto defaultValue = getDefaultValue() ? getDefaultValue()->instantiate(genericArgs) : nullptr;
+    return FieldDecl(type, getName(), defaultValue, typeDecl, getAccessLevel(), location);
+}
+
 std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
     return map(params, [&](auto& param) {
         return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.isNamedArgument(), param.getLocation());
@@ -147,7 +153,7 @@ void TypeDecl::addMethod(Decl* decl) {
 std::vector<Decl*> TypeDecl::getConstructors() const {
     std::vector<Decl*> constructors;
 
-    for (auto& decl : getMemberDecls()) {
+    for (auto& decl : getMethods()) {
         if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
             constructors.push_back(constructorDecl);
         }
@@ -157,7 +163,7 @@ std::vector<Decl*> TypeDecl::getConstructors() const {
 }
 
 DestructorDecl* TypeDecl::getDestructor() const {
-    for (auto& decl : getMemberDecls()) {
+    for (auto& decl : getMethods()) {
         if (auto* destructorDecl = llvm::dyn_cast<DestructorDecl>(decl)) {
             return destructorDecl;
         }
