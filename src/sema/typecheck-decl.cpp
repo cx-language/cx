@@ -314,8 +314,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
                 hint = " (add '?' to the type to make it nullable)";
             }
 
-            ERROR(decl.getInitializer()->getLocation(),
-                  "cannot initialize variable of type '" << declaredType << "' with '" << initializerType << "'" << hint);
+            ERROR(decl.getInitializer()->getLocation(), "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint);
         }
     } else {
         if (initializerType.isNull()) {

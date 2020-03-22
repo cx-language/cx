@@ -3,6 +3,6 @@
 extern int*? foo();
 
 void main() {
-    // CHECK: [[@LINE+1]]:17: error: cannot initialize variable of type 'int*' with 'int*?'
+    // CHECK: [[@LINE+1]]:17: error: cannot assign 'int*?' to 'int*'
     int* f = foo();
 }

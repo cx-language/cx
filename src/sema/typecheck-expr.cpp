@@ -319,7 +319,7 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
     }
 
     if (!convert(&rhs, lhsType)) {
-        ERROR(location, "cannot assign '" << rhsType << "' to variable of type '" << lhsType << "'");
+        ERROR(location, "cannot assign '" << rhsType << "' to '" << lhsType << "'");
     }
 
     if (!lhsType.isMutable()) {
