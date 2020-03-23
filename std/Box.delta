@@ -1,0 +1,19 @@
+struct Box<T> {
+    T* pointer;
+
+    Box(T value) {
+        this.pointer = allocate(value);
+    }
+
+//    Box(T* pointer) {
+//        this.pointer = pointer;
+//    }
+
+    ~Box() {
+        deallocate(pointer);
+    }
+
+    T* get() {
+        return pointer;
+    }
+}

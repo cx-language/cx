@@ -1,9 +1,9 @@
 // RUN: check_matches_snapshot %delta -print-ir %s
 
 void main() {
-    var p = UniquePtr(UniquePtr(42));
-    var q = UniquePtr(42);
-    var r = UniquePtr(42);
+    var p = Box(Box(42));
+    var q = Box(42);
+    var r = Box(42);
     *q.get() = 0;
     r.get();
     q = r;
