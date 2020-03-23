@@ -125,16 +125,16 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 }
 
-bool operator==(string a, string b) {
-    if (a.size() != b.size()) {
-        return false;
-    }
-
-    for (var index in 0..a.size()) {
-        if (a[index] != b[index]) {
-            return false;
-        }
-    }
-
-    return true;
-}
+//bool operator==(string a, string b) {
+//    if (a.size() != b.size()) {
+//        return false;
+//    }
+//
+//    for (var index in 0..a.size()) {
+//        if (a[index] != b[index]) {
+//            return false;
+//        }
+//    }
+//
+//    return true;
+//}

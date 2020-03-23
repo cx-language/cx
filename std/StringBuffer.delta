@@ -197,9 +197,9 @@ StringBuffer operator+(StringBuffer a, string b) {
     return result;
 }
 
-bool operator==(StringBuffer* a, StringBuffer* b) {
-    return string(a) == string(b);
-}
+//bool operator==(StringBuffer* a, StringBuffer* b) {
+//    return string(a) == string(b);
+//}
 
 bool operator==(StringBuffer* a, string b) {
     return string(a) == b;

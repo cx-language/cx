@@ -814,20 +814,28 @@ static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
     return map(candidates, [](Decl* candidate) { return Note{ candidate->getLocation(), "candidate function:" }; });
 }
 
-static std::vector<Type> getGenericArgTypes(const llvm::StringMap<Type>& genericArgs) {
-    std::vector<Type> types;
-    types.reserve(genericArgs.size());
+static bool isStdlibDecl(Decl* decl) {
+    return decl->getModule() && decl->getModule()->getName() == "std";
+}
 
-    for (auto& genericArg : genericArgs) {
-        types.emplace_back(genericArg.getValue());
+static bool isCHeaderDecl(Decl* decl) {
+    return decl->getModule() && decl->getModule()->getName().endswith_lower(".h");
+}
+
+static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& b) {
+    if (a.size() != b.size()) return false;
+
+    for (auto& aEntry : a) {
+        auto bEntry = b.find(aEntry.getKey());
+        if (bEntry == b.end() || aEntry.getValue() != bEntry->getValue()) return false;
     }
 
-    return types;
+    return true;
 }
 
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
     std::vector<Decl*> matches;
-    std::vector<Decl*> constructorDecls;
+    std::vector<ConstructorDecl*> constructorDecls;
     bool isInitCall = false;
 
     for (Decl* decl : decls) {
@@ -882,17 +890,15 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 constructorDecls = typeDecl->getConstructors();
                 ASSERT(!constructorDecls.empty());
                 ASSERT(decls.size() == 1);
-                decls = constructorDecls;
+                decls = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
 
-                for (Decl* decl : constructorDecls) {
-                    auto& constructorDecl = llvm::cast<ConstructorDecl>(*decl);
-
+                for (auto* constructorDecl : constructorDecls) {
                     if (constructorDecls.size() == 1) {
-                        validateArgs(expr, constructorDecl, callee, expr.getCallee().getLocation());
-                        return &constructorDecl;
+                        validateArgs(expr, *constructorDecl, callee, expr.getCallee().getLocation());
+                        return constructorDecl;
                     }
-                    if (argumentsMatch(expr, &constructorDecl)) {
-                        matches.push_back(&constructorDecl);
+                    if (argumentsMatch(expr, constructorDecl)) {
+                        matches.push_back(constructorDecl);
                     }
                 }
                 break;
@@ -900,41 +906,43 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             case DeclKind::TypeTemplate: {
                 auto* typeTemplate = llvm::cast<TypeTemplate>(decl);
                 isInitCall = true;
-                std::vector<ConstructorDecl*> instantiatedConstructorDecls;
                 constructorDecls = typeTemplate->getTypeDecl()->getConstructors();
                 ASSERT(decls.size() == 1);
-                decls = constructorDecls;
+                decls = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
 
-                for (auto* decl : constructorDecls) {
-                    auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
+                std::vector<llvm::StringMap<Type>> genericArgSets;
+
+                for (auto* constructorDecl : constructorDecls) {
+                    auto params = constructorDecl->getParams();
                     auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, params, constructorDecls.size() != 1, expectedType);
                     if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
-
-                    TypeDecl* typeDecl = nullptr;
-
-                    auto decls = findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(), getGenericArgTypes(genericArgs)));
-                    if (decls.empty()) {
-                        typeDecl = typeTemplate->instantiate(genericArgs);
-                        getCurrentModule()->addToSymbolTable(*typeDecl);
-                        declsToTypecheck.push_back(typeDecl); // TODO: Can these be typechecked right away?
-                    } else {
-                        typeDecl = llvm::cast<TypeDecl>(decls[0]);
-                    }
-
-                    for (auto& method : typeDecl->getMethods()) {
-                        auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(method);
-                        if (!constructorDecl) continue;
-                        instantiatedConstructorDecls.push_back(constructorDecl);
+                    if (llvm::find_if(genericArgSets, [&](auto& set) { return equals(set, genericArgs); }) == genericArgSets.end()) {
+                        genericArgSets.push_back(genericArgs);
                     }
                 }
 
-                for (auto* instantiatedConstructorDecl : instantiatedConstructorDecls) {
-                    if (constructorDecls.size() == 1) {
-                        validateArgs(expr, *instantiatedConstructorDecl, callee, expr.getCallee().getLocation());
-                        return instantiatedConstructorDecl;
+                for (auto& genericArgs : genericArgSets) {
+                    TypeDecl* typeDecl = nullptr;
+
+                    auto genericArgTypes = map(genericArgs, [](auto& entry) { return entry.getValue(); });
+                    auto typeDecls = findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(), genericArgTypes));
+
+                    if (typeDecls.empty()) {
+                        typeDecl = typeTemplate->instantiate(genericArgs);
+                        getCurrentModule()->addToSymbolTable(*typeDecl);
+                        declsToTypecheck.push_back(typeDecl);
+                    } else {
+                        typeDecl = llvm::cast<TypeDecl>(typeDecls[0]);
                     }
-                    if (argumentsMatch(expr, instantiatedConstructorDecl)) {
-                        matches.push_back(instantiatedConstructorDecl);
+
+                    for (auto* constructorDecl : typeDecl->getConstructors()) {
+                        if (constructorDecls.size() == 1) {
+                            validateArgs(expr, *constructorDecl, callee, expr.getCallee().getLocation());
+                            return constructorDecl;
+                        }
+                        if (argumentsMatch(expr, constructorDecl)) {
+                            matches.push_back(constructorDecl);
+                        }
                     }
                 }
                 break;
@@ -966,55 +974,41 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         }
     }
 
-    switch (matches.size()) {
-        case 1:
-            validateArgs(expr, *matches.front());
-            return matches.front();
-
-        case 0: {
-            if (decls.size() == 0) {
-                ERROR(expr.getCallee().getLocation(), "unknown identifier '" << callee << "'");
-            }
-
-            bool atLeastOneFunction = llvm::any_of(decls, [](Decl* decl) {
-                return decl->isFunctionDecl() || decl->isFunctionTemplate() || decl->isTypeDecl() || decl->isTypeTemplate();
-            });
-
-            if (atLeastOneFunction) {
-                auto argTypeStrings = map(expr.getArgs(), [](const NamedValue& arg) {
-                    auto type = arg.getValue()->getType();
-                    return type ? type.toString(true) : "???";
-                });
-
-                ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
-                                 "no matching " << (isInitCall ? "constructor for '" : "function for call to '") << callee
-                                                << "' with argument list of type '(" << llvm::join(argTypeStrings, ", ") << ")'");
-            } else {
-                ERROR(expr.getCallee().getLocation(), "'" << callee << "' is not a function");
-            }
-        }
-        default:
-            bool allMatchesAreFromC = llvm::all_of(matches, [](Decl* match) {
-                return match->getModule() && match->getModule()->getName().endswith_lower(".h");
-            });
-
-            // FIXME: Remove this if-statement.
-            if (allMatchesAreFromC) {
-                validateArgs(expr, *matches.front());
-                return matches.front();
-            }
-
-            // FIXME: Remove this loop.
-            for (auto* match : matches) {
-                if (match->getModule() && match->getModule()->getName() == "std") {
-                    validateArgs(expr, *match);
-                    return match;
-                }
-            }
-
-            // FIXME: Change 'getCandidateNotes(decls)' below to 'getCandidateNotes(matches)'
+    if (matches.size() > 1) {
+        // Prefer stdlib candidate if there's exactly one of them and all the others are from C headers.
+        if (llvm::count_if(matches, isStdlibDecl) == 1 &&
+            llvm::all_of(matches, [](Decl* decl) { return isStdlibDecl(decl) || isCHeaderDecl(decl); })) {
+            matches = { *llvm::find_if(matches, isStdlibDecl) };
+        } else {
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
                              "ambiguous reference to '" << callee << "'" << (isInitCall ? " constructor" : ""));
+        }
+    }
+
+    if (matches.size() == 1) {
+        validateArgs(expr, *matches.front());
+        return matches.front();
+    }
+
+    if (decls.empty()) {
+        ERROR(expr.getCallee().getLocation(), "unknown identifier '" << callee << "'");
+    }
+
+    bool atLeastOneFunction = llvm::any_of(decls, [](Decl* decl) {
+        return decl->isFunctionDecl() || decl->isFunctionTemplate() || decl->isTypeDecl() || decl->isTypeTemplate();
+    });
+
+    if (atLeastOneFunction) {
+        auto argTypeStrings = map(expr.getArgs(), [](const NamedValue& arg) {
+            auto type = arg.getValue()->getType();
+            return type ? type.toString(true) : "???";
+        });
+
+        ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
+                         "no matching " << (isInitCall ? "constructor for '" : "function for call to '") << callee
+                                        << "' with argument list of type '(" << llvm::join(argTypeStrings, ", ") << ")'");
+    } else {
+        ERROR(expr.getCallee().getLocation(), "'" << callee << "' is not a function");
     }
 }
 

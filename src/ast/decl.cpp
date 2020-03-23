@@ -150,8 +150,8 @@ void TypeDecl::addMethod(Decl* decl) {
     methods.push_back(decl);
 }
 
-std::vector<Decl*> TypeDecl::getConstructors() const {
-    std::vector<Decl*> constructors;
+std::vector<ConstructorDecl*> TypeDecl::getConstructors() const {
+    std::vector<ConstructorDecl*> constructors;
 
     for (auto& decl : getMethods()) {
         if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {

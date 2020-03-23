@@ -322,7 +322,7 @@ public:
     SourceLocation getLocation() const override { return location; }
     void addField(FieldDecl&& field);
     void addMethod(Decl* decl);
-    std::vector<Decl*> getConstructors() const;
+    std::vector<ConstructorDecl*> getConstructors() const;
     DestructorDecl* getDestructor() const;
     Type getType(Mutability mutability = Mutability::Mutable) const;
     Type getTypeForPassing() const;

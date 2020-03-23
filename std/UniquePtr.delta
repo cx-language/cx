@@ -5,9 +5,9 @@ struct UniquePtr<Pointee> {
 		this.pointer = allocate(value);
 	}
 
-	UniquePtr(Pointee* pointer) {
-		this.pointer = pointer;
-	}
+//	UniquePtr(Pointee* pointer) {
+//		this.pointer = pointer;
+//	}
 
 	~UniquePtr() {
 		deallocate(pointer);
