@@ -611,20 +611,20 @@ llvm::Value* IRGenerator::codegenTupleElementAccess(const MemberExpr& expr) {
     }
 }
 
-llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
-    if (!expr.getBaseExpr()->getType().removePointer().isArrayType()) {
+llvm::Value* IRGenerator::codegenIndexExpr(const IndexExpr& expr) {
+    if (!expr.getBase()->getType().removePointer().isArrayType()) {
         return codegenCallExpr(expr);
     }
 
-    auto* value = codegenLvalueExpr(*expr.getBaseExpr());
-    Type lhsType = expr.getBaseExpr()->getType();
+    auto* value = codegenLvalueExpr(*expr.getBase());
+    Type lhsType = expr.getBase()->getType();
 
     if (lhsType.isArrayWithRuntimeSize()) {
         if (value->getType()->isPointerTy()) {
             value = createLoad(value);
         }
         auto* ptr = builder.CreateExtractValue(value, 0);
-        auto* index = codegenExpr(*expr.getIndexExpr());
+        auto* index = codegenExpr(*expr.getIndex());
         return builder.CreateGEP(ptr, index);
     }
 
@@ -634,10 +634,10 @@ llvm::Value* IRGenerator::codegenSubscriptExpr(const SubscriptExpr& expr) {
     }
 
     if (lhsType.isArrayWithUnknownSize()) {
-        return builder.CreateGEP(value, codegenExpr(*expr.getIndexExpr()));
+        return builder.CreateGEP(value, codegenExpr(*expr.getIndex()));
     }
 
-    return builder.CreateGEP(value, { llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegenExpr(*expr.getIndexExpr()) });
+    return builder.CreateGEP(value, { llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegenExpr(*expr.getIndex()) });
 }
 
 llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {
@@ -728,8 +728,8 @@ llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
             return codegenAddressofExpr(llvm::cast<AddressofExpr>(expr));
         case ExprKind::MemberExpr:
             return codegenMemberExpr(llvm::cast<MemberExpr>(expr));
-        case ExprKind::SubscriptExpr:
-            return codegenSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
+        case ExprKind::IndexExpr:
+            return codegenIndexExpr(llvm::cast<IndexExpr>(expr));
         case ExprKind::UnwrapExpr:
             return codegenUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
         case ExprKind::LambdaExpr:

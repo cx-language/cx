@@ -36,7 +36,7 @@ enum class ExprKind {
     SizeofExpr,
     AddressofExpr,
     MemberExpr,
-    SubscriptExpr,
+    IndexExpr,
     UnwrapExpr,
     LambdaExpr,
     IfExpr
@@ -62,7 +62,7 @@ public:
     bool isSizeofExpr() const { return getKind() == ExprKind::SizeofExpr; }
     bool isAddressofExpr() const { return getKind() == ExprKind::AddressofExpr; }
     bool isMemberExpr() const { return getKind() == ExprKind::MemberExpr; }
-    bool isSubscriptExpr() const { return getKind() == ExprKind::SubscriptExpr; }
+    bool isIndexExpr() const { return getKind() == ExprKind::IndexExpr; }
     bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
     bool isLambdaExpr() const { return getKind() == ExprKind::LambdaExpr; }
     bool isIfExpr() const { return getKind() == ExprKind::IfExpr; }
@@ -242,7 +242,7 @@ public:
             case ExprKind::CallExpr:
             case ExprKind::UnaryExpr:
             case ExprKind::BinaryExpr:
-            case ExprKind::SubscriptExpr:
+            case ExprKind::IndexExpr:
                 return true;
             default:
                 return false;
@@ -337,15 +337,15 @@ private:
 };
 
 /// An element access expression using the element's index in brackets, e.g. 'base[index]'.
-class SubscriptExpr : public CallExpr {
+class IndexExpr : public CallExpr {
 public:
-    SubscriptExpr(Expr* base, Expr* index, SourceLocation location)
-    : CallExpr(ExprKind::SubscriptExpr, new MemberExpr(base, "[]", location), { NamedValue("", index) }, location) {}
-    const Expr* getBaseExpr() const { return getReceiver(); }
-    const Expr* getIndexExpr() const { return getArgs()[0].getValue(); }
-    Expr* getBaseExpr() { return getReceiver(); }
-    Expr* getIndexExpr() { return getArgs()[0].getValue(); }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::SubscriptExpr; }
+    IndexExpr(Expr* base, Expr* index, SourceLocation location)
+    : CallExpr(ExprKind::IndexExpr, new MemberExpr(base, "[]", location), { NamedValue("", index) }, location) {}
+    const Expr* getBase() const { return getReceiver(); }
+    const Expr* getIndex() const { return getArgs()[0].getValue(); }
+    Expr* getBase() { return getReceiver(); }
+    Expr* getIndex() { return getArgs()[0].getValue(); }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::IndexExpr; }
 };
 
 /// A postfix expression that unwraps an optional (nullable) value, yielding the value wrapped by

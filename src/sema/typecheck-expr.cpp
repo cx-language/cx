@@ -1387,8 +1387,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     ERROR(expr.getLocation(), "no member named '" << expr.getMemberName() << "' in '" << baseType << "'");
 }
 
-Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
-    Type lhsType = typecheckExpr(*expr.getBaseExpr());
+Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
+    Type lhsType = typecheckExpr(*expr.getBase());
     Type arrayType;
 
     if (lhsType.isArrayType()) {
@@ -1396,16 +1396,16 @@ Type Typechecker::typecheckSubscriptExpr(SubscriptExpr& expr) {
     } else if (lhsType.isPointerType() && lhsType.getPointee().isArrayType()) {
         arrayType = lhsType.getPointee();
     } else if (lhsType.removePointer().isBuiltinType()) {
-        ERROR(expr.getLocation(), "'" << lhsType << "' doesn't provide a subscript operator");
+        ERROR(expr.getLocation(), "'" << lhsType << "' doesn't provide an index operator");
     } else {
         return typecheckCallExpr(expr);
     }
 
-    Expr* indexExpr = expr.getIndexExpr();
+    Expr* indexExpr = expr.getIndex();
     Type indexType = typecheckExpr(*indexExpr);
 
     if (!convert(indexExpr, ArrayType::getIndexType())) {
-        ERROR(indexExpr->getLocation(), "illegal subscript index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
+        ERROR(indexExpr->getLocation(), "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
     }
 
     if (arrayType.isArrayWithConstantSize()) {
@@ -1506,8 +1506,8 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         case ExprKind::MemberExpr:
             type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr));
             break;
-        case ExprKind::SubscriptExpr:
-            type = typecheckSubscriptExpr(llvm::cast<SubscriptExpr>(expr));
+        case ExprKind::IndexExpr:
+            type = typecheckIndexExpr(llvm::cast<IndexExpr>(expr));
             break;
         case ExprKind::UnwrapExpr:
             type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr));

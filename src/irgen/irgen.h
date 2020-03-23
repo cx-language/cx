@@ -96,7 +96,7 @@ private:
     llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
     llvm::Value* codegenMemberExpr(const MemberExpr& expr);
     llvm::Value* codegenTupleElementAccess(const MemberExpr& expr);
-    llvm::Value* codegenSubscriptExpr(const SubscriptExpr& expr);
+    llvm::Value* codegenIndexExpr(const IndexExpr& expr);
     llvm::Value* codegenUnwrapExpr(const UnwrapExpr& expr);
     llvm::Value* codegenLambdaExpr(const LambdaExpr& expr);
     llvm::Value* codegenIfExpr(const IfExpr& expr);

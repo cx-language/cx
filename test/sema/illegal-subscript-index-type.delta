@@ -4,6 +4,6 @@ extern int[5]* foo();
 
 void main() {
     var p = foo();
-    // CHECK: [[@LINE+1]]:15: error: illegal subscript index type 'bool', expected 'int'
+    // CHECK: [[@LINE+1]]:15: error: illegal index type 'bool', expected 'int'
     var e = p[false];
 }

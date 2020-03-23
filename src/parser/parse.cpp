@@ -480,14 +480,14 @@ MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
     return new MemberExpr(lhs, member.getString(), location);
 }
 
-/// subscript-expr ::= expr '[' expr ']'
-SubscriptExpr* Parser::parseSubscript(Expr* operand) {
+/// index-expr ::= expr '[' expr ']'
+IndexExpr* Parser::parseIndexExpr(Expr* operand) {
     ASSERT(currentToken() == Token::LeftBracket);
     auto location = getCurrentLocation();
     consumeToken();
     auto index = parseExpr();
     parse(Token::RightBracket);
-    return new SubscriptExpr(operand, index, location);
+    return new IndexExpr(operand, index, location);
 }
 
 /// unwrap-expr ::= expr '!'
@@ -604,7 +604,7 @@ bool Parser::arrowAfterParentheses() {
 
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
-///                  paren-expr | array-literal | tuple-literal | subscript-expr |
+///                  paren-expr | array-literal | tuple-literal | index-expr |
 ///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr | addressof-expr
 Expr* Parser::parsePostfixExpr() {
     Expr* expr;
@@ -677,7 +677,7 @@ Expr* Parser::parsePostfixExpr() {
     while (true) {
         switch (currentToken()) {
             case Token::LeftBracket:
-                expr = parseSubscript(expr);
+                expr = parseIndexExpr(expr);
                 break;
             case Token::LeftParen:
                 expr = parseCallExpr(expr);
@@ -1079,7 +1079,7 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
                 unexpectedToken(op, {}, "as function name");
             }
             if (receiverTypeDecl) {
-                ERROR(name.getLocation(), "operator functions other than subscript must be non-member functions");
+                ERROR(name.getLocation(), "operator functions other than 'operator[]' must be non-member functions");
             }
             return toString(op);
         }

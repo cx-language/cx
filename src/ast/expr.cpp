@@ -70,7 +70,7 @@ bool Expr::isConstant() const {
 
         case ExprKind::AddressofExpr:
         case ExprKind::MemberExpr:
-        case ExprKind::SubscriptExpr:
+        case ExprKind::IndexExpr:
         case ExprKind::UnwrapExpr:
         case ExprKind::LambdaExpr:
             return false;
@@ -124,7 +124,7 @@ bool Expr::isLvalue() const {
     switch (getKind()) {
         case ExprKind::VarExpr:
         case ExprKind::MemberExpr:
-        case ExprKind::SubscriptExpr:
+        case ExprKind::IndexExpr:
             return true;
         case ExprKind::UnaryExpr:
             return llvm::cast<UnaryExpr>(this)->getOperator() == Token::Star;
@@ -261,11 +261,11 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
             instantiation = new MemberExpr(base, memberExpr->getMemberName(), memberExpr->getLocation());
             break;
         }
-        case ExprKind::SubscriptExpr: {
-            auto* subscriptExpr = llvm::cast<SubscriptExpr>(this);
-            auto base = subscriptExpr->getBaseExpr()->instantiate(genericArgs);
-            auto index = subscriptExpr->getIndexExpr()->instantiate(genericArgs);
-            instantiation = new SubscriptExpr(base, index, subscriptExpr->getLocation());
+        case ExprKind::IndexExpr: {
+            auto* indexExpr = llvm::cast<IndexExpr>(this);
+            auto base = indexExpr->getBase()->instantiate(genericArgs);
+            auto index = indexExpr->getIndex()->instantiate(genericArgs);
+            instantiation = new IndexExpr(base, index, indexExpr->getLocation());
             break;
         }
         case ExprKind::UnwrapExpr: {
@@ -329,7 +329,7 @@ std::vector<const Expr*> Expr::getSubExprs() const {
         }
         case ExprKind::UnaryExpr:
         case ExprKind::BinaryExpr:
-        case ExprKind::SubscriptExpr:
+        case ExprKind::IndexExpr:
         case ExprKind::CallExpr: {
             auto* callExpr = llvm::cast<CallExpr>(this);
             subExprs.push_back(&callExpr->getCallee());

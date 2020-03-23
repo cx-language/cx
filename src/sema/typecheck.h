@@ -76,7 +76,7 @@ private:
     Type typecheckSizeofExpr(SizeofExpr& expr);
     Type typecheckAddressofExpr(AddressofExpr& expr);
     Type typecheckMemberExpr(MemberExpr& expr);
-    Type typecheckSubscriptExpr(SubscriptExpr& expr);
+    Type typecheckIndexExpr(IndexExpr& expr);
     Type typecheckUnwrapExpr(UnwrapExpr& expr);
     Type typecheckLambdaExpr(LambdaExpr& expr);
     Type typecheckIfExpr(IfExpr& expr);

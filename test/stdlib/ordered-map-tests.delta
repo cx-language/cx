@@ -3,7 +3,7 @@
 void main() {
     testInsertAndContains();
     testInsertAndDelete();
-    testInsertAndSubscript();
+    testInsertAndIndex();
     testLowerAndHigher();
     testFirstLast();
     testEmptyMapFunctions();
@@ -48,7 +48,7 @@ void testInsertAndDelete() {
     }
 }
 
-void testInsertAndSubscript() {
+void testInsertAndIndex() {
     var m = OrderedMap<int, int>();
 
     m.insert(42, 39);

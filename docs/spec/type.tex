@@ -65,18 +65,15 @@ interfaces may be generic.
 Pointers are values that point to other values. They can be reassigned to point
 to another value, but they must always refer to some value, i.e. they cannot be
 null by default (nullable pointers can be created using the optional type, see
-below). Member access, member function calls, and subscript operations via
+below). Member access, member function calls, and index operations via
 pointers are allowed: they will be forwarded to the pointee value.
 
 \begin{grammar}
 \rule{pointer-type} \nonterminal{type} \code{*}\\
 \end{grammar}
 
-\begin{samepage}
-Pointer arithmetic is supported as subscript operations on operands of a
+Pointer arithmetic is supported as index operations on operands of a
 pointer-to-array type.
-
-\end{samepage}
 
 \section{Array types}
 

@@ -32,7 +32,7 @@ class TupleExpr;
 class SizeofExpr;
 class AddressofExpr;
 class MemberExpr;
-class SubscriptExpr;
+class IndexExpr;
 class UnwrapExpr;
 class CallExpr;
 class UnaryExpr;
@@ -105,7 +105,7 @@ private:
     SizeofExpr* parseSizeofExpr();
     AddressofExpr* parseAddressofExpr();
     MemberExpr* parseMemberExpr(Expr* lhs);
-    SubscriptExpr* parseSubscript(Expr* operand);
+    IndexExpr* parseIndexExpr(Expr* operand);
     UnwrapExpr* parseUnwrapExpr(Expr* operand);
     CallExpr* parseCallExpr(Expr* callee);
     LambdaExpr* parseLambdaExpr();
