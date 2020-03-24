@@ -65,7 +65,7 @@ private:
     void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
-    Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr);
+    Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr, Type expectedType = Type());
     Type typecheckTupleExpr(TupleExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);

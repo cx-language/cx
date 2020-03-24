@@ -752,8 +752,13 @@ Expr* Parser::parseExpr() {
 std::vector<Expr*> Parser::parseExprList() {
     std::vector<Expr*> exprs;
 
-    if (currentToken() == Token::Semicolon || currentToken() == Token::RightBrace) {
-        return exprs;
+    switch (currentToken()) {
+        case Token::Semicolon:
+        case Token::RightBrace:
+        case Token::RightBracket:
+            return exprs;
+        default:
+            break;
     }
 
     while (true) {

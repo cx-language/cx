@@ -136,14 +136,24 @@ Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&) {
     return Type::getUndefined();
 }
 
-Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array) {
+Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expectedType) {
+    if (array.getElements().empty()) {
+        if (expectedType) {
+            return expectedType;
+        } else {
+            ERROR(array.getLocation(), "couldn't infer type of empty array literal");
+        }
+    }
+
     Type firstType = typecheckExpr(*array.getElements()[0]);
-    for (auto& element : llvm::drop_begin(array.getElements(), 1)) {
+
+    for (auto& element : array.getElements().drop_front()) {
         Type type = typecheckExpr(*element);
         if (type != firstType) {
             ERROR(element->getLocation(), "mixed element types in array literal (expected '" << firstType << "', found '" << type << "')");
         }
     }
+
     return ArrayType::get(firstType, int64_t(array.getElements().size()));
 }
 
@@ -1483,7 +1493,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             type = typecheckUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));
             break;
         case ExprKind::ArrayLiteralExpr:
-            type = typecheckArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr));
+            type = typecheckArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr), expectedType);
             break;
         case ExprKind::TupleExpr:
             type = typecheckTupleExpr(llvm::cast<TupleExpr>(expr));
