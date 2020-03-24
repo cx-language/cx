@@ -16,4 +16,7 @@ void main() {
     print(A("foo")); // CHECK-NEXT: foofoo!
     print(0.1 + 0.2); // CHECK-NEXT: 0.3
     print("f", 0, '0'); // CHECK-NEXT: f00
+    print(List([1, 2, 3])); // CHECK-NEXT: [1, 2, 3]
+    print(List([1])); // CHECK-NEXT: [1]
+    print(List<int>()); // CHECK-NEXT: []
 }

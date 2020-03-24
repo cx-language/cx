@@ -8,6 +8,38 @@ void _print<T: Printable>(T* value) {
     printf("%.*s", s.size(), s.data());
 }
 
+void print<T: Printable>(List<T>* list) {
+    _print('[');
+
+    for (var element in list.enumerate()) {
+        _print(element.value);
+
+        if (element.index != list.size() - 1) {
+            _print(',');
+            _print(' ');
+        }
+    }
+
+    _print(']');
+    _print('\n');
+}
+
+//void print<T: Printable>(T[] array) {
+//    _print('[');
+//
+//    for (var index in 0..array.size()) {
+//        _print(array[index]);
+//
+//        if (index != array.size() - 1) {
+//            _print(',');
+//            _print(' ');
+//        }
+//    }
+//
+//    _print(']');
+//    _print('\n');
+//}
+
 // TODO: Make 'print' a variadic function when those are implemented.
 void print<T0: Printable, T1: Printable>(T0* _0, T1* _1) { _print(_0); _print(_1); printf("\n"); }
 void print<T0: Printable, T1: Printable, T2: Printable>(T0* _0, T1* _1, T2* _2) { _print(_0); _print(_1); _print(_2); printf("\n"); }
