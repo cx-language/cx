@@ -515,9 +515,10 @@ LambdaExpr* Parser::parseLambdaExpr() {
     std::vector<ParamDecl> params;
 
     if (currentToken() == Token::Identifier) {
-        params.push_back(parseParam());
+        auto paramName = consumeToken();
+        params.push_back(ParamDecl(Type(), paramName.getString(), false, paramName.getLocation()));
     } else {
-        params = parseParamList(nullptr);
+        params = parseParamList(nullptr, false);
     }
 
     parse(Token::RightArrow);
@@ -1014,31 +1015,30 @@ std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind en
     return stmts;
 }
 
-/// param-decl ::= type id | id ':' type
-ParamDecl Parser::parseParam() {
-    llvm::StringRef name;
+/// param-decl ::= type? id | id ':' type
+ParamDecl Parser::parseParam(bool requireType) {
+    Token name;
     Type type;
     bool isNamedArgument = lookAhead(1) == Token::Colon;
-    SourceLocation location;
 
     if (isNamedArgument) {
-        location = getCurrentLocation();
-        name = parse(Token::Identifier).getString();
+        name = parse(Token::Identifier);
         consumeToken();
         type = parseType();
     } else {
-        type = parseType();
-        location = getCurrentLocation();
-        name = parse(Token::Identifier).getString();
+        if (requireType || !lookAhead(1).is({ Token::Comma, Token::RightParen })) {
+            type = parseType();
+        }
+        name = parse(Token::Identifier);
     }
 
-    return ParamDecl(type, name, isNamedArgument, location);
+    return ParamDecl(type, name.getString(), isNamedArgument, name.getLocation());
 }
 
 /// param-list ::= '(' params ')'
 /// params ::= '' | non-empty-params
 /// non-empty-params ::= param-decl | param-decl ',' non-empty-params
-std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic) {
+std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireTypes) {
     parse(Token::LeftParen);
     std::vector<ParamDecl> params;
     while (currentToken() != Token::RightParen) {
@@ -1047,7 +1047,7 @@ std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic) {
             *isVariadic = true;
             break;
         }
-        params.emplace_back(parseParam());
+        params.emplace_back(parseParam(requireTypes));
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
     parse(Token::RightParen);

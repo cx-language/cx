@@ -1439,7 +1439,18 @@ Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
     return type.getWrappedType();
 }
 
-Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr) {
+Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
+    for (size_t i = 0, e = expr.getFunctionDecl()->getParams().size(); i < e; ++i) {
+        auto& param = expr.getFunctionDecl()->getParams()[i];
+        if (!param.getType()) {
+            auto inferredType = expectedType ? expectedType.getParamTypes()[i] : Type();
+            if (!inferredType) {
+                ERROR(param.getLocation(), "couldn't infer type for parameter '" << param.getName() << "'");
+            }
+            param.setType(inferredType);
+        }
+    }
+
     typecheckFunctionDecl(*expr.getFunctionDecl());
     return Type(expr.getFunctionDecl()->getFunctionType(), Mutability::Mutable, expr.getLocation());
 }
@@ -1523,7 +1534,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
             break;
         case ExprKind::LambdaExpr:
-            type = typecheckLambdaExpr(llvm::cast<LambdaExpr>(expr));
+            type = typecheckLambdaExpr(llvm::cast<LambdaExpr>(expr), expectedType);
             break;
         case ExprKind::IfExpr:
             type = typecheckIfExpr(llvm::cast<IfExpr>(expr));

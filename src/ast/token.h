@@ -110,6 +110,7 @@ struct Token {
         TokenCount
     };
 
+    Token() = default;
     Token(Token::Kind kind, SourceLocation location, llvm::StringRef string = {});
     Token::Kind getKind() const { return kind; }
     operator Token::Kind() const { return kind; }
