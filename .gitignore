@@ -19,6 +19,11 @@ build/
 delta
 !delta/
 *.a
+*.dll
+*.lib
+*.exe
+*.pdb
+*.ilk
 
 # Generated documentation
 docs/html/
