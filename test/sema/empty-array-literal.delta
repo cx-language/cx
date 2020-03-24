@@ -3,8 +3,8 @@
 void foo(int[] i) {}
 
 void main() {
-    // CHECK: [[@LINE+1]]:9: error: couldn't infer type of empty array literal
-    foo([]); // FIXME: Should be able to infer empty array literal type here.
+    // CHECK-NOT: error
+    foo([]);
 
     // CHECK: [[@LINE+1]]:13: error: couldn't infer type of empty array literal
     var a = [];

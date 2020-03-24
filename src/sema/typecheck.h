@@ -78,7 +78,7 @@ private:
     Type typecheckMemberExpr(MemberExpr& expr);
     Type typecheckIndexExpr(IndexExpr& expr);
     Type typecheckUnwrapExpr(UnwrapExpr& expr);
-    Type typecheckLambdaExpr(LambdaExpr& expr);
+    Type typecheckLambdaExpr(LambdaExpr& expr, Type expectedType);
     Type typecheckIfExpr(IfExpr& expr);
 
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
