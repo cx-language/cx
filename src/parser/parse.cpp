@@ -616,6 +616,9 @@ Expr* Parser::parsePostfixExpr() {
                 case Token::LeftParen:
                     expr = parseCallExpr(parseVarExpr());
                     break;
+                case Token::RightArrow:
+                    expr = parseLambdaExpr();
+                    break;
                 case Token::Less:
                     if (shouldParseGenericArgumentList()) {
                         expr = parseCallExpr(parseVarExpr());
