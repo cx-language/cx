@@ -1009,8 +1009,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     });
 
     if (atLeastOneFunction) {
-        auto argTypeStrings = map(expr.getArgs(), [](const NamedValue& arg) {
-            auto type = arg.getValue()->getType();
+        auto argTypeStrings = map(expr.getArgs(), [&](auto& arg) {
+            auto type = typecheckExpr(*arg.getValue());
             return type ? type.toString(true) : "???";
         });
 
@@ -1045,10 +1045,6 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
     if (expr.isBuiltinCast()) {
         return typecheckBuiltinCast(expr);
-    }
-
-    for (auto& arg : expr.getArgs()) {
-        typecheckExpr(*arg.getValue());
     }
 
     if (expr.getFunctionName() == "assert") {
@@ -1095,11 +1091,15 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             return Type::getVoid();
         }
 
-        if (expr.isMoveInit()) {
-            if (!expr.getArgs()[0].getValue()->getType().isImplicitlyCopyable()) {
-                expr.getArgs()[0].getValue()->setMoved(true);
+        if (expr.getArgs().size() == 1 && expr.getFunctionName() == "init") {
+            typecheckExpr(*expr.getArgs()[0].getValue());
+
+            if (expr.isMoveInit()) {
+                if (!expr.getArgs()[0].getValue()->getType().isImplicitlyCopyable()) {
+                    expr.getArgs()[0].getValue()->setMoved(true);
+                }
+                return Type::getVoid();
             }
-            return Type::getVoid();
         }
 
         auto callee = expr.getQualifiedFunctionName();
@@ -1190,7 +1190,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 }
 
-bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params) const {
+bool Typechecker::argumentsMatch(CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params) {
     if (functionDecl) params = functionDecl->getParams();
     bool isVariadic = functionDecl && functionDecl->isVariadic();
     auto args = expr.getArgs();
@@ -1211,7 +1211,7 @@ bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* funct
             return false;
         }
 
-        if (param && !isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), true)) {
+        if (param && !isImplicitlyConvertible(arg.getValue(), typecheckExpr(*arg.getValue()), param->getType(), true)) {
             return false;
         }
     }
@@ -1219,7 +1219,7 @@ bool Typechecker::argumentsMatch(const CallExpr& expr, const FunctionDecl* funct
     return true;
 }
 
-void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, SourceLocation location) const {
+void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, SourceLocation location) {
     switch (calleeDecl.getKind()) {
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
@@ -1244,8 +1244,7 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
     }
 }
 
-void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName,
-                               SourceLocation location) const {
+void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName, SourceLocation location) {
     auto args = expr.getArgs();
     validateArgCount(params.size(), args.size(), isVariadic, functionName, location);
 
@@ -1257,6 +1256,7 @@ void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params,
             ERROR(arg.getLocation(), "invalid argument name '" << arg.getName() << "' for parameter '" << param->getName() << "'");
         }
 
+        typecheckExpr(*arg.getValue());
         if (param && !convert(arg.getValue(), param->getType(), true)) {
             ERROR(arg.getLocation(), "invalid argument #" << (i + 1) << " type '" << arg.getValue()->getType() << "' to '" << functionName
                                                           << "', expected '" << param->getType() << "'");
@@ -1464,6 +1464,10 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
 }
 
 Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedType) {
+    if (expr.hasType()) {
+        return expr.getType();
+    }
+
     Type type;
 
     switch (expr.getKind()) {
