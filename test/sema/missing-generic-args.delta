@@ -4,3 +4,8 @@
 List f() {
     return List<int>();
 }
+
+enum E {
+    // CHECK: [[@LINE+1]]:7: error: too few generic arguments to 'List', expected 1
+    A(List l);
+}

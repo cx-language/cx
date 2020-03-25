@@ -276,6 +276,10 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 
     for (auto& enumCase : decl.getCases()) {
         typecheckExpr(*enumCase.getValue());
+
+        if (enumCase.getAssociatedType()) {
+            typecheckType(enumCase.getAssociatedType(), enumCase.getAccessLevel());
+        }
     }
 }
 
