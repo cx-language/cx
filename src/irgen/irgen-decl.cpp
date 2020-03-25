@@ -16,14 +16,14 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
     llvm::SmallVector<llvm::Type*, 16> paramTypes;
 
     if (decl.isMethodDecl()) {
-        paramTypes.emplace_back(llvm::PointerType::get(toIR(decl.getTypeDecl()->getType()), 0));
+        paramTypes.emplace_back(llvm::PointerType::get(getLLVMType(decl.getTypeDecl()->getType()), 0));
     }
 
     for (auto& paramType : functionType->getParamTypes()) {
-        paramTypes.emplace_back(toIR(paramType));
+        paramTypes.emplace_back(getLLVMType(paramType));
     }
 
-    auto* returnType = toIR(functionType->getReturnType());
+    auto* returnType = getLLVMType(functionType->getReturnType());
     if (decl.isMain() && returnType->isVoidTy()) returnType = llvm::Type::getInt32Ty(ctx);
 
     auto* llvmFunctionType = llvm::FunctionType::get(returnType, paramTypes, decl.isVariadic());
@@ -102,7 +102,7 @@ void IRGenerator::codegenFunctionDecl(const FunctionDecl& decl) {
 }
 
 std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
-    return map(decl.getFields(), [&](auto& field) { return toIR(field.getType(), field.getLocation()); });
+    return map(decl.getFields(), [&](auto& field) { return getLLVMType(field.getType(), field.getLocation()); });
 }
 
 llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& d) {
@@ -176,7 +176,7 @@ llvm::Value* IRGenerator::codegenVarDecl(const VarDecl& decl) {
     if (decl.getType().isMutable() /* || decl.isPublic() */) {
         auto linkage = value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
         auto initializer = value ? llvm::cast<llvm::Constant>(value) : nullptr;
-        value = new llvm::GlobalVariable(*module, toIR(decl.getType()), false, linkage, initializer, decl.getName());
+        value = new llvm::GlobalVariable(*module, getLLVMType(decl.getType()), false, linkage, initializer, decl.getName());
     }
 
     auto it = globalScope().valuesByDecl.try_emplace(&decl, value);

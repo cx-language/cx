@@ -127,7 +127,7 @@ private:
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getEnumType(const EnumDecl& enumDecl);
-    llvm::Type* toIR(Type type, SourceLocation location = SourceLocation());
+    llvm::Type* getLLVMType(Type type, SourceLocation location = SourceLocation());
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
     llvm::Value* getArrayIterator(const Expr& object, Type objectType);
 

@@ -15,7 +15,7 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
         auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
         auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
         static int stringLiteralCounter = 0;
-        auto* type = toIR(BasicType::get("string", {}));
+        auto* type = getLLVMType(BasicType::get("string", {}));
         auto* alloca = createEntryBlockAlloca(type, nullptr, "__str" + std::to_string(stringLiteralCounter++));
         llvm::Function* stringConstructor = nullptr;
 
@@ -38,11 +38,11 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
 }
 
 llvm::Value* IRGenerator::codegenCharacterLiteralExpr(const CharacterLiteralExpr& expr) {
-    return llvm::ConstantInt::get(toIR(expr.getType()), expr.getValue());
+    return llvm::ConstantInt::get(getLLVMType(expr.getType()), expr.getValue());
 }
 
 llvm::Value* IRGenerator::codegenIntLiteralExpr(const IntLiteralExpr& expr) {
-    auto type = toIR(expr.getType());
+    auto type = getLLVMType(expr.getType());
     // Integer literals may be typed as floating-point when used in a context
     // that requires a floating-point value. It might make sense to combine
     // IntLiteralExpr and FloatLiteralExpr into a single class.
@@ -53,7 +53,7 @@ llvm::Value* IRGenerator::codegenIntLiteralExpr(const IntLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenFloatLiteralExpr(const FloatLiteralExpr& expr) {
-    return llvm::ConstantFP::get(toIR(expr.getType()), expr.getValue());
+    return llvm::ConstantFP::get(getLLVMType(expr.getType()), expr.getValue());
 }
 
 llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
@@ -61,15 +61,15 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
-    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(toIR(expr.getType())));
+    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(getLLVMType(expr.getType())));
 }
 
 llvm::Value* IRGenerator::codegenUndefinedLiteralExpr(const UndefinedLiteralExpr& expr) {
-    return llvm::UndefValue::get(toIR(expr.getType()));
+    return llvm::UndefValue::get(getLLVMType(expr.getType()));
 }
 
 llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) {
-    auto* arrayType = llvm::ArrayType::get(toIR(expr.getElements()[0]->getType()), expr.getElements().size());
+    auto* arrayType = llvm::ArrayType::get(getLLVMType(expr.getElements()[0]->getType()), expr.getElements().size());
     llvm::Value* array = llvm::UndefValue::get(arrayType);
     unsigned index = 0;
     for (auto& element : expr.getElements()) {
@@ -80,7 +80,7 @@ llvm::Value* IRGenerator::codegenArrayLiteralExpr(const ArrayLiteralExpr& expr) 
 }
 
 llvm::Value* IRGenerator::codegenTupleExpr(const TupleExpr& expr) {
-    llvm::Value* tuple = llvm::UndefValue::get(toIR(expr.getType()));
+    llvm::Value* tuple = llvm::UndefValue::get(getLLVMType(expr.getType()));
     unsigned index = 0;
     for (auto& element : expr.getElements()) {
         tuple = builder.CreateInsertValue(tuple, codegenExpr(*element.getValue()), index++);
@@ -365,22 +365,22 @@ llvm::Value* IRGenerator::codegenBuiltinConversion(const Expr& expr, Type type) 
     auto value = codegenExpr(expr);
 
     if (expr.getType().isUnsignedInteger() && type.isInteger()) {
-        return builder.CreateZExtOrTrunc(value, toIR(type));
+        return builder.CreateZExtOrTrunc(value, getLLVMType(type));
     }
     if (expr.getType().isSignedInteger() && type.isInteger()) {
-        return builder.CreateSExtOrTrunc(value, toIR(type));
+        return builder.CreateSExtOrTrunc(value, getLLVMType(type));
     }
     if ((expr.getType().isInteger() || expr.getType().isChar() || expr.getType().isBool()) && (type.isInteger() || type.isChar())) {
-        return builder.CreateIntCast(value, toIR(type), expr.getType().isSignedInteger());
+        return builder.CreateIntCast(value, getLLVMType(type), expr.getType().isSignedInteger());
     }
     if (expr.getType().isFloatingPoint()) {
-        if (type.isSignedInteger()) return builder.CreateFPToSI(value, toIR(type));
-        if (type.isUnsignedInteger()) return builder.CreateFPToUI(value, toIR(type));
-        if (type.isFloatingPoint()) return builder.CreateFPCast(value, toIR(type));
+        if (type.isSignedInteger()) return builder.CreateFPToSI(value, getLLVMType(type));
+        if (type.isUnsignedInteger()) return builder.CreateFPToUI(value, getLLVMType(type));
+        if (type.isFloatingPoint()) return builder.CreateFPCast(value, getLLVMType(type));
     }
     if (type.isFloatingPoint()) {
-        if (expr.getType().isSignedInteger()) return builder.CreateSIToFP(value, toIR(type));
-        if (expr.getType().isUnsignedInteger()) return builder.CreateUIToFP(value, toIR(type));
+        if (expr.getType().isSignedInteger()) return builder.CreateSIToFP(value, getLLVMType(type));
+        if (expr.getType().isUnsignedInteger()) return builder.CreateUIToFP(value, getLLVMType(type));
     }
 
     REPORT_ERROR(expr.getLocation(), "conversion from '" << expr.getType() << "' to '" << type << "' not supported");
@@ -408,12 +408,12 @@ llvm::Value* IRGenerator::codegenEnumCase(const EnumCase& enumCase, llvm::ArrayR
     if (!enumDecl->hasAssociatedValues()) return tag;
 
     // TODO: Could reuse variable alloca instead of always creating a new one here.
-    auto* enumValue = createEntryBlockAlloca(toIR(enumDecl->getType()), nullptr, "enum");
+    auto* enumValue = createEntryBlockAlloca(getLLVMType(enumDecl->getType()), nullptr, "enum");
     builder.CreateStore(tag, builder.CreateStructGEP(enumValue, 0, "tag"));
 
     if (!associatedValueElements.empty()) {
         // TODO: This is duplicated in codegenTupleExpr.
-        llvm::Value* associatedValue = llvm::UndefValue::get(toIR(enumCase.getAssociatedType()));
+        llvm::Value* associatedValue = llvm::UndefValue::get(getLLVMType(enumCase.getAssociatedType()));
         int index = 0;
         for (auto& element : associatedValueElements) {
             associatedValue = builder.CreateInsertValue(associatedValue, codegenExpr(*element.getValue()), index++);
@@ -492,7 +492,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
             } else if (currentDecl->isConstructorDecl() && expr.getFunctionName() == "init") {
                 args.emplace_back(getThis(*param));
             } else {
-                args.emplace_back(createEntryBlockAlloca(toIR(constructorDecl->getTypeDecl()->getType())));
+                args.emplace_back(createEntryBlockAlloca(getLLVMType(constructorDecl->getTypeDecl()->getType())));
             }
         } else if (expr.getReceiver()) {
             args.emplace_back(codegenExprForPassing(*expr.getReceiver(), *param));
@@ -517,7 +517,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
 
 llvm::Value* IRGenerator::codegenBuiltinCast(const CallExpr& expr) {
     auto* value = codegenExpr(*expr.getArgs().front().getValue());
-    auto* type = toIR(expr.getGenericArgs().front());
+    auto* type = getLLVMType(expr.getGenericArgs().front());
 
     if (value->getType()->isIntegerTy() && type->isIntegerTy()) {
         return builder.CreateIntCast(value, type, expr.getArgs().front().getValue()->getType().isSigned());
@@ -527,12 +527,12 @@ llvm::Value* IRGenerator::codegenBuiltinCast(const CallExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenSizeofExpr(const SizeofExpr& expr) {
-    return llvm::ConstantExpr::getSizeOf(toIR(expr.getType()));
+    return llvm::ConstantExpr::getSizeOf(getLLVMType(expr.getType()));
 }
 
 llvm::Value* IRGenerator::codegenAddressofExpr(const AddressofExpr& expr) {
     llvm::Value* value = codegenExpr(expr.getOperand());
-    llvm::Type* uintptr = toIR(Type::getUIntPtr());
+    llvm::Type* uintptr = getLLVMType(Type::getUIntPtr());
     return builder.CreatePtrToInt(value, uintptr, "address");
 }
 
@@ -547,7 +547,7 @@ llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type membe
         auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
 
         if (baseTypeDecl.isUnion()) {
-            return builder.CreateBitCast(baseValue, toIR(memberType)->getPointerTo(), memberName);
+            return builder.CreateBitCast(baseValue, getLLVMType(memberType)->getPointerTo(), memberName);
         } else {
             auto index = baseTypeDecl.getFieldIndex(memberName);
             if (!baseType->isSized()) {
@@ -571,7 +571,7 @@ llvm::Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
 }
 
 llvm::Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
-    auto* type = toIR(BasicType::get("ArrayIterator", objectType.getElementType()));
+    auto* type = getLLVMType(BasicType::get("ArrayIterator", objectType.getElementType()));
     auto* value = codegenExprAsPointer(object);
     auto* elementPtr = builder.CreateConstInBoundsGEP2_32(nullptr, value, 0, 0);
     auto* size = getArrayLength(object, objectType);
@@ -629,7 +629,7 @@ llvm::Value* IRGenerator::codegenIndexExpr(const IndexExpr& expr) {
     }
 
     if (value->getType()->isPointerTy() && value->getType()->getPointerElementType()->isPointerTy() &&
-        value->getType()->getPointerElementType() == toIR(lhsType)) {
+        value->getType()->getPointerElementType() == getLLVMType(lhsType)) {
         value = createLoad(value);
     }
 
@@ -742,7 +742,7 @@ llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
 
 llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     auto* value = codegenLvalueExpr(expr);
-    if (value && value->getType()->isPointerTy() && value->getType()->getPointerElementType() == toIR(expr.getType())) {
+    if (value && value->getType()->isPointerTy() && value->getType()->getPointerElementType() == getLLVMType(expr.getType())) {
         value = createLoad(value);
     }
     return value;
@@ -780,7 +780,7 @@ llvm::Value* IRGenerator::codegenExprOrEnumTag(const Expr& expr, llvm::Value** e
 
 llvm::Value* IRGenerator::codegenAutoCast(llvm::Value* value, const Expr& expr) {
     if (value && expr.hasType()) {
-        auto type = toIR(expr.getType());
+        auto type = getLLVMType(expr.getType());
 
         if (type != value->getType()) {
             if (value->getType()->isFloatingPointTy()) {

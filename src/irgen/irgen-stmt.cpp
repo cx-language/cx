@@ -20,7 +20,7 @@ void IRGenerator::codegenReturnStmt(const ReturnStmt& stmt) {
 }
 
 void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(toIR(stmt.getDecl().getType()), nullptr, stmt.getDecl().getName());
+    auto* alloca = createEntryBlockAlloca(getLLVMType(stmt.getDecl().getType()), nullptr, stmt.getDecl().getName());
     setLocalValue(alloca, &stmt.getDecl());
     auto* initializer = stmt.getDecl().getInitializer();
 
@@ -101,7 +101,7 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
         builder.SetInsertPoint(block);
 
         if (auto* associatedValue = switchCase.getAssociatedValue()) {
-            auto* type = toIR(associatedValue->getType())->getPointerTo();
+            auto* type = getLLVMType(associatedValue->getType())->getPointerTo();
             auto* associatedValuePtr = builder.CreatePointerCast(builder.CreateStructGEP(enumValue, 1), type, associatedValue->getName());
             setLocalValue(associatedValuePtr, associatedValue);
         }

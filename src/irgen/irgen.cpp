@@ -98,13 +98,13 @@ llvm::Type* IRGenerator::getBuiltinType(llvm::StringRef name) {
 }
 
 llvm::Type* IRGenerator::getEnumType(const EnumDecl& enumDecl) {
-    auto* tagType = toIR(enumDecl.getTagType());
+    auto* tagType = getLLVMType(enumDecl.getTagType());
     if (!enumDecl.hasAssociatedValues()) return tagType;
 
     unsigned maxSize = 0;
     for (auto& enumCase : enumDecl.getCases()) {
         if (auto associatedType = enumCase.getAssociatedType()) {
-            auto size = module->getDataLayout().getTypeAllocSize(toIR(associatedType));
+            auto size = module->getDataLayout().getTypeAllocSize(getLLVMType(associatedType));
             if (size > maxSize) maxSize = size;
         }
     }
@@ -112,7 +112,7 @@ llvm::Type* IRGenerator::getEnumType(const EnumDecl& enumDecl) {
     return llvm::StructType::get(tagType, llvm::ArrayType::get(llvm::Type::getInt8Ty(ctx), maxSize));
 }
 
-llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
+llvm::Type* IRGenerator::getLLVMType(Type type, SourceLocation location) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
             if (auto* builtinType = getBuiltinType(type.getName())) return builtinType;
@@ -129,28 +129,28 @@ llvm::Type* IRGenerator::toIR(Type type, SourceLocation location) {
         case TypeKind::ArrayType:
             switch (type.getArraySize()) {
                 case ArrayType::runtimeSize:
-                    return toIR(BasicType::get("ArrayRef", type.getElementType()), location);
+                    return getLLVMType(BasicType::get("ArrayRef", type.getElementType()), location);
                 case ArrayType::unknownSize:
-                    return llvm::PointerType::get(toIR(type.getElementType(), location), 0);
+                    return llvm::PointerType::get(getLLVMType(type.getElementType(), location), 0);
                 default:
-                    return llvm::ArrayType::get(toIR(type.getElementType(), location), type.getArraySize());
+                    return llvm::ArrayType::get(getLLVMType(type.getElementType(), location), type.getArraySize());
             }
         case TypeKind::TupleType: {
-            auto elementTypes = map(type.getTupleElements(), [&](const TupleElement& element) { return toIR(element.type); });
+            auto elementTypes = map(type.getTupleElements(), [&](const TupleElement& element) { return getLLVMType(element.type); });
             return llvm::StructType::get(ctx, elementTypes);
         }
         case TypeKind::FunctionType: {
-            auto paramTypes = map(type.getParamTypes(), [&](Type type) { return toIR(type); });
-            auto* returnType = toIR(type.getReturnType());
+            auto paramTypes = map(type.getParamTypes(), [&](Type type) { return getLLVMType(type); });
+            auto* returnType = getLLVMType(type.getReturnType());
             return llvm::FunctionType::get(returnType, paramTypes, false)->getPointerTo();
         }
         case TypeKind::PointerType: {
-            auto* pointeeType = toIR(type.getPointee(), location);
+            auto* pointeeType = getLLVMType(type.getPointee(), location);
             return llvm::PointerType::get(pointeeType->isVoidTy() ? llvm::Type::getInt8Ty(ctx) : pointeeType, 0);
         }
         case TypeKind::OptionalType:
             if (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType() || type.getWrappedType().isArrayWithUnknownSize()) {
-                return toIR(type.getWrappedType());
+                return getLLVMType(type.getWrappedType());
             }
             llvm_unreachable("IRGen doesn't support non-pointer optional types yet");
     }
