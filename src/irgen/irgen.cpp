@@ -101,6 +101,9 @@ llvm::Type* IRGenerator::getEnumType(const EnumDecl& enumDecl) {
     auto* tagType = getLLVMType(enumDecl.getTagType());
     if (!enumDecl.hasAssociatedValues()) return tagType;
 
+    auto structType = llvm::StructType::create(ctx, enumDecl.getQualifiedName());
+    structs.try_emplace(structType->getName(), std::make_pair(structType, &enumDecl));
+
     unsigned maxSize = 0;
     for (auto& enumCase : enumDecl.getCases()) {
         if (auto associatedType = enumCase.getAssociatedType()) {
@@ -109,7 +112,8 @@ llvm::Type* IRGenerator::getEnumType(const EnumDecl& enumDecl) {
         }
     }
 
-    return llvm::StructType::get(tagType, llvm::ArrayType::get(llvm::Type::getInt8Ty(ctx), maxSize));
+    structType->setBody(tagType, llvm::ArrayType::get(llvm::Type::getInt8Ty(ctx), maxSize));
+    return structType;
 }
 
 llvm::Type* IRGenerator::getLLVMType(Type type, SourceLocation location) {
