@@ -170,7 +170,7 @@ std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const
 class GenericParamDecl : public Decl {
 public:
     GenericParamDecl(std::string&& name, SourceLocation location)
-    : Decl(DeclKind::GenericParamDecl, AccessLevel::None), name(std::move(name)), location(location) {}
+    : Decl(DeclKind::GenericParamDecl, AccessLevel::Default), name(std::move(name)), location(location) {}
     llvm::StringRef getName() const override { return name; }
     llvm::ArrayRef<Type> getConstraints() const { return constraints; }
     void setConstraints(llvm::ArrayRef<Type> c) { constraints.assign(c.begin(), c.end()); }
@@ -354,6 +354,7 @@ public:
     TypeTemplate(std::vector<GenericParamDecl>&& genericParams, TypeDecl* typeDecl, AccessLevel accessLevel)
     : Decl(DeclKind::TypeTemplate, accessLevel), genericParams(std::move(genericParams)), typeDecl(typeDecl) {}
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
+    llvm::MutableArrayRef<GenericParamDecl> getGenericParams() { return genericParams; }
     llvm::StringRef getName() const override { return getTypeDecl()->getName(); }
     TypeDecl* getTypeDecl() const { return typeDecl; }
     TypeDecl* instantiate(const llvm::StringMap<Type>& genericArgs);

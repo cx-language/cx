@@ -44,6 +44,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 switch (decl->getKind()) {
                     case DeclKind::TypeDecl:
                     case DeclKind::EnumDecl:
+                    case DeclKind::GenericParamDecl:
                         break;
                     case DeclKind::TypeTemplate:
                         validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->getGenericParams().size(), basicType->getGenericArgs(),
@@ -149,9 +150,71 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
     }
 }
 
+static bool containsUnknownGenericParam(Type type) {
+    switch (type.getKind()) {
+        case TypeKind::BasicType:
+            if (!type.isBuiltinType() && !type.getDecl()) {
+                return true;
+            }
+
+            for (Type genericArg : type.getGenericArgs()) {
+                if (containsUnknownGenericParam(genericArg)) {
+                    return true;
+                }
+            }
+
+            return false;
+
+        case TypeKind::ArrayType:
+            return containsUnknownGenericParam(type.getElementType());
+
+        case TypeKind::TupleType:
+            for (auto& element : type.getTupleElements()) {
+                if (containsUnknownGenericParam(element.type)) {
+                    return true;
+                }
+            }
+            return false;
+
+        case TypeKind::FunctionType:
+            for (Type paramType : type.getParamTypes()) {
+                if (containsUnknownGenericParam(paramType)) {
+                    return true;
+                }
+            }
+            return containsUnknownGenericParam(type.getReturnType());
+
+        case TypeKind::PointerType:
+            return containsUnknownGenericParam(type.getPointee());
+
+        case TypeKind::OptionalType:
+            return containsUnknownGenericParam(type.getWrappedType());
+    }
+
+    llvm_unreachable("all cases handled");
+}
+
+static bool containsUnknownGenericParam(llvm::ArrayRef<Type> genericArgs) {
+    for (auto& genericArg : genericArgs) {
+        // typecheckType(genericArg, decl.getAccessLevel());
+        //    if (genericArg.getDecl()) {
+        if (containsUnknownGenericParam(genericArg)) {
+            // if (genericArg.isBasicType() && !genericArg.isBuiltinType() && !genericArg.getDecl()) {
+            return true;
+            ;
+        }
+        //  }
+    }
+    return false;
+}
+
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.isTypechecked()) return;
     if (decl.isExtern()) return; // TODO: Typecheck parameters and return type of extern functions.
+
+    if (containsUnknownGenericParam(decl.getGenericArgs())) {
+        return;
+    }
 
     TypeDecl* receiverTypeDecl = decl.getTypeDecl();
 
@@ -225,6 +288,10 @@ void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
 }
 
 void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
+    if (containsUnknownGenericParam(decl.getGenericArgs())) {
+        return;
+    }
+
     for (Type interface : decl.getInterfaces()) {
         typecheckType(interface, decl.getAccessLevel());
         auto* interfaceDecl = interface.getDecl();
@@ -261,6 +328,15 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
 
 void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
     typecheckGenericParamDecls(decl.getGenericParams(), decl.getAccessLevel());
+    //    llvm::SaveAndRestore setGenericParams(currentGenericParams, decl.getGenericParams());
+
+    Scope scope(&decl, &currentModule->getSymbolTable());
+
+    for (auto& genericParam : decl.getGenericParams()) {
+        currentModule->getSymbolTable().add(genericParam.getName(), &genericParam);
+    }
+
+    typecheckTypeDecl(*decl.getTypeDecl());
 }
 
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {

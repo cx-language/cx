@@ -129,6 +129,7 @@ private:
 private:
     Module* currentModule;
     SourceFile* currentSourceFile;
+    llvm::ArrayRef<GenericParamDecl> currentGenericParams;
     FunctionDecl* currentFunction;
     Stmt* currentStmt;
     std::vector<Stmt*> currentControlStmts;

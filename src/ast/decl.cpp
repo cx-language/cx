@@ -10,7 +10,6 @@ using namespace delta;
 FunctionProto FunctionProto::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     auto params = instantiateParams(getParams(), genericArgs);
     auto returnType = getReturnType().resolve(genericArgs);
-    std::vector<GenericParamDecl> genericParams;
     return FunctionProto(getName().str(), std::move(params), returnType, isVarArg(), isExtern());
 }
 
