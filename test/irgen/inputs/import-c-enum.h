@@ -8,7 +8,7 @@ enum Bar {
     BarB = 0x7FFFFFFF
 };
 
-typedef enum {
+typedef enum : unsigned long long {
     QuxA,
     QuxB = 0xFFFFFFFFFFFFFFFF
 } Qux;

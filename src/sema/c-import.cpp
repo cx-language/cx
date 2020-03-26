@@ -314,7 +314,7 @@ private:
 };
 } // namespace
 
-bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, const CompileOptions& options) {
+bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, const CompileOptions& options, SourceLocation importLocation) {
     auto it = Module::getAllImportedModulesMap().find(headerName);
     if (it != Module::getAllImportedModulesMap().end()) {
         importer.addImportedModule(it->second);
@@ -355,13 +355,21 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     const clang::DirectoryLookup* curDir = nullptr;
     const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr,
                                                                                               nullptr, nullptr, nullptr, nullptr, nullptr);
-    if (!fileEntry) return false;
+    if (!fileEntry) {
+        REPORT_ERROR(importLocation, "couldn't find C header file '" << headerName << "'");
+        return false;
+    }
 
     auto fileID = ci.getSourceManager().createFileID(fileEntry, clang::SourceLocation(), clang::SrcMgr::C_System);
     ci.getSourceManager().setMainFileID(fileID);
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(), &ci.getPreprocessor());
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext());
     ci.getDiagnosticClient().EndSourceFile();
+    ci.getDiagnosticClient().finish();
+
+    if (ci.getDiagnosticClient().getNumErrors() > 0) {
+        return false;
+    }
 
     importer.addImportedModule(module);
     Module::getAllImportedModulesMap()[module->getName()] = module;

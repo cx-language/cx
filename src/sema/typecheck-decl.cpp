@@ -354,8 +354,8 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* m
     // TODO: Print import search paths as part of the below error messages.
 
     if (decl.getTarget().endswith(".h")) {
-        if (!importCHeader(*currentSourceFile, decl.getTarget(), options)) {
-            REPORT_ERROR(decl.getLocation(), "couldn't find C header file '" << decl.getTarget() << "'");
+        if (!importCHeader(*currentSourceFile, decl.getTarget(), options, decl.getLocation())) {
+            REPORT_ERROR(decl.getLocation(), "couldn't import C header file '" << decl.getTarget() << "'");
         }
     } else {
         auto module = importDeltaModule(currentSourceFile, manifest, decl.getTarget());

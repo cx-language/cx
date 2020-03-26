@@ -1,0 +1,6 @@
+// RUN: %not %delta -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:8: error: couldn't find C header file 'foo.h'
+import "foo.h";
+
+void main() {}

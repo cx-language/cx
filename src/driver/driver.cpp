@@ -134,12 +134,15 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
 
     importSearchPaths.push_back(DELTA_ROOT_DIR);
     importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
-    addHeaderSearchPathsFromCCompilerOutput();
+    // FIXME: Find a better way to find the correct libc header search path.
+    importSearchPaths.push_back(
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include");
     importSearchPaths.push_back("/usr/include");
     importSearchPaths.push_back("/usr/local/include");
     addHeaderSearchPathsFromEnvVar("CPATH");
     addHeaderSearchPathsFromEnvVar("C_INCLUDE_PATH");
     addHeaderSearchPathsFromEnvVar("INCLUDE");
+    addHeaderSearchPathsFromCCompilerOutput();
 }
 
 static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
@@ -375,6 +378,7 @@ static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
 static void addPlatformDefines() {
 #ifdef _WIN32
     defines.push_back("Windows");
+    cflags.push_back("-fms-extensions");
 #endif
 }
 
