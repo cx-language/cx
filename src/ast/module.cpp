@@ -76,3 +76,11 @@ void Module::addIdentifierReplacement(llvm::StringRef source, llvm::StringRef ta
     ASSERT(!target.empty());
     getSymbolTable().addIdentifierReplacement(source, target);
 }
+
+Scope::Scope(Decl* parent, SymbolTable* symbolTable) : parent(parent), symbolTable(symbolTable) {
+    symbolTable->pushScope(*this);
+}
+
+Scope::~Scope() {
+    symbolTable->popScope();
+}

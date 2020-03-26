@@ -155,7 +155,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     TypeDecl* receiverTypeDecl = decl.getTypeDecl();
 
-    getCurrentModule()->getSymbolTable().pushScope(&decl);
+    Scope scope(&decl, &currentModule->getSymbolTable());
     llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
 
     typecheckParams(decl.getParams(), decl.getAccessLevel());
@@ -212,8 +212,6 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             }
         }
     }
-
-    getCurrentModule()->getSymbolTable().popScope();
 
     if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(decl.getBody())) {
         REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");

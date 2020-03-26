@@ -13,6 +13,7 @@
 namespace delta {
 
 class Module;
+class SymbolTable;
 
 /// Container for the AST of a single file.
 class SourceFile {
@@ -37,17 +38,19 @@ private:
 
 struct Scope {
     Decl* parent;
+    SymbolTable* symbolTable;
     llvm::StringMap<std::vector<Decl*>> decls;
+
+    Scope(Decl* parent, SymbolTable* symbolTable);
+    ~Scope();
 };
 
 class SymbolTable {
 public:
-    SymbolTable() : scopes(1) {}
-    void pushScope(Decl* parent) { scopes.emplace_back().parent = parent; }
-    void popScope() { scopes.pop_back(); }
-    Scope& getCurrentScope() { return scopes.back(); }
-    void add(llvm::StringRef name, Decl* decl) { scopes.back().decls[name].push_back(decl); }
-    void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front().decls[name].push_back(decl); }
+    SymbolTable() : globalScope(nullptr, this) {}
+    Scope& getCurrentScope() { return *scopes.back(); }
+    void add(llvm::StringRef name, Decl* decl) { scopes.back()->decls[name].push_back(decl); }
+    void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front()->decls[name].push_back(decl); }
     void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) {
         identifierReplacements.try_emplace(name, replacement);
     }
@@ -56,9 +59,9 @@ public:
 
     llvm::ArrayRef<Decl*> find(llvm::StringRef name) const {
         auto realName = applyIdentifierReplacements(name);
-        for (const auto& scope : llvm::reverse(scopes)) {
-            auto it = scope.decls.find(realName);
-            if (it != scope.decls.end()) return it->second;
+        for (auto& scope : llvm::reverse(scopes)) {
+            auto it = scope->decls.find(realName);
+            if (it != scope->decls.end()) return it->second;
         }
         return {};
     }
@@ -72,8 +75,8 @@ public:
 
     llvm::ArrayRef<Decl*> findInCurrentScope(llvm::StringRef name) const {
         if (!scopes.empty()) {
-            auto it = scopes.back().decls.find(applyIdentifierReplacements(name));
-            if (it != scopes.back().decls.end()) return it->second;
+            auto it = scopes.back()->decls.find(applyIdentifierReplacements(name));
+            if (it != scopes.back()->decls.end()) return it->second;
         }
         return {};
     }
@@ -91,6 +94,10 @@ public:
     }
 
 private:
+    friend struct Scope;
+    void pushScope(Scope& scope) { scopes.push_back(&scope); }
+    void popScope() { scopes.pop_back(); }
+
     static bool paramsMatch(const ParamDecl& a, const ParamDecl& b) {
         if (a.getType() != b.getType()) return false;
         if (a.isNamedArgument() && b.isNamedArgument() && a.getName() != b.getName()) return false;
@@ -107,7 +114,8 @@ private:
         }
     }
 
-    std::vector<Scope> scopes;
+    std::vector<Scope*> scopes;
+    Scope globalScope;
     llvm::StringMap<std::string> identifierReplacements;
 };
 

@@ -97,7 +97,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
                   "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }
 
-        getCurrentModule()->getSymbolTable().pushScope(nullptr);
+        Scope scope(nullptr, &currentModule->getSymbolTable());
 
         if (auto* associatedValue = switchCase.getAssociatedValue()) {
             auto* enumCase = llvm::cast<EnumCase>(llvm::cast<MemberExpr>(switchCase.getValue())->getDecl());
@@ -108,8 +108,6 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         for (auto& caseStmt : switchCase.getStmts()) {
             typecheckStmt(caseStmt);
         }
-
-        getCurrentModule()->getSymbolTable().popScope();
     }
 
     for (auto& defaultStmt : stmt.getDefaultStmts()) {
@@ -152,13 +150,11 @@ void Typechecker::typecheckContinueStmt(ContinueStmt& continueStmt) {
 }
 
 void Typechecker::typecheckCompoundStmt(CompoundStmt& compoundStmt) {
-    getCurrentModule()->getSymbolTable().pushScope(currentFunction);
+    Scope scope(currentFunction, &currentModule->getSymbolTable());
 
     for (auto& stmt : compoundStmt.getBody()) {
         typecheckStmt(stmt);
     }
-
-    getCurrentModule()->getSymbolTable().popScope();
 }
 
 void Typechecker::typecheckStmt(Stmt*& stmt) {
