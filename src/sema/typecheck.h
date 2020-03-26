@@ -124,6 +124,9 @@ private:
     llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const;
     llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<Stmt*> block) const;
 
+    void setMoved(Expr* expr, bool isMoved);
+    void checkNotMoved(const Decl& decl, const VarExpr& expr);
+
     bool isWarningEnabled(llvm::StringRef warning) const;
 
 private:
@@ -133,6 +136,7 @@ private:
     Stmt* currentStmt;
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
+    llvm::SmallPtrSet<Decl*, 32> movedDecls;
     Type functionReturnType;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;

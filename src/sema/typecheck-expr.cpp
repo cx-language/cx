@@ -7,7 +7,6 @@
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringExtras.h>
-#include <llvm/ADT/iterator_range.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
@@ -16,31 +15,6 @@
 #include "../ast/type.h"
 
 using namespace delta;
-
-static void checkNotMoved(const Decl& decl, const VarExpr& expr) {
-    const Movable* movable;
-
-    switch (decl.getKind()) {
-        case DeclKind::ParamDecl:
-            movable = &llvm::cast<ParamDecl>(decl);
-            break;
-        case DeclKind::VarDecl:
-            movable = &llvm::cast<VarDecl>(decl);
-            break;
-        default:
-            return;
-    }
-
-    if (movable->isMoved()) {
-        std::string typeInfo;
-
-        if (expr.hasType()) {
-            typeInfo = " of type '" + expr.getType().toString(true) + "'";
-        }
-
-        ERROR(expr.getLocation(), "use of moved value '" << expr.getIdentifier() << "'" << typeInfo);
-    }
-}
 
 void Typechecker::checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel) {
     // FIXME: Compare SourceFile objects instead of file path strings.
@@ -348,8 +322,8 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
     }
 
     if (!rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
-        rhs.setMoved(true);
-        lhs.setMoved(false);
+        setMoved(&rhs, true);
+        setMoved(&lhs, false);
     }
 
     if (currentInitializedFields) {
@@ -1096,7 +1070,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
             if (expr.isMoveInit()) {
                 if (!expr.getArgs()[0].getValue()->getType().isImplicitlyCopyable()) {
-                    expr.getArgs()[0].getValue()->setMoved(true);
+                    setMoved(expr.getArgs()[0].getValue(), true);
                 }
                 return Type::getVoid();
             }
@@ -1157,7 +1131,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
     for (auto&& [param, arg] : llvm::zip_first(params, expr.getArgs())) {
         if (!param.getType().isImplicitlyCopyable()) {
-            arg.getValue()->setMoved(true);
+            setMoved(arg.getValue(), true);
         }
     }
 
@@ -1572,4 +1546,22 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr) {
     }
 
     return nullptr;
+}
+
+void Typechecker::setMoved(Expr* expr, bool isMoved) {
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr)) {
+        ASSERT(varExpr->getDecl());
+
+        if (isMoved) {
+            movedDecls.insert(varExpr->getDecl());
+        } else {
+            movedDecls.erase(varExpr->getDecl());
+        }
+    }
+}
+
+void Typechecker::checkNotMoved(const Decl& decl, const VarExpr& expr) {
+    if (movedDecls.count(&decl)) {
+        ERROR(expr.getLocation(), "use of moved value '" << expr.getIdentifier() << "'");
+    }
 }

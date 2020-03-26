@@ -1,4 +1,7 @@
 #include "typecheck.h"
+#pragma warning(push, 0)
+#include <llvm/Support/SaveAndRestore.h>
+#pragma warning(pop)
 #include "../ast/module.h"
 
 using namespace delta;
@@ -53,7 +56,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
     }
 
     checkReturnPointerToLocal(stmt);
-    stmt.getReturnValue()->setMoved(true);
+    setMoved(stmt.getReturnValue(), true);
 }
 
 void Typechecker::typecheckVarStmt(VarStmt& stmt) {
@@ -69,12 +72,18 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
 
     currentControlStmts.push_back(&ifStmt);
 
-    for (auto& stmt : ifStmt.getThenBody()) {
-        typecheckStmt(stmt);
+    {
+        llvm::SaveAndRestore thenMovedDecls(movedDecls);
+        for (auto& stmt : ifStmt.getThenBody()) {
+            typecheckStmt(stmt);
+        }
     }
 
-    for (auto& stmt : ifStmt.getElseBody()) {
-        typecheckStmt(stmt);
+    {
+        llvm::SaveAndRestore elseMovedDecls(movedDecls);
+        for (auto& stmt : ifStmt.getElseBody()) {
+            typecheckStmt(stmt);
+        }
     }
 
     currentControlStmts.pop_back();

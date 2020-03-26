@@ -79,7 +79,6 @@ public:
     llvm::APSInt getConstantIntegerValue() const;
     bool isLvalue() const;
     SourceLocation getLocation() const { return location; }
-    void setMoved(bool moved);
     Expr* instantiate(const llvm::StringMap<Type>& genericArgs) const;
     std::vector<const Expr*> getSubExprs() const;
     FieldDecl* getFieldDecl() const;

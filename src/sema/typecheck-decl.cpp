@@ -202,6 +202,21 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                     }
                 }
             }
+
+            // This prevents creating destructors calls during codegen.
+            for (auto* movedDecl : movedDecls) {
+                switch (movedDecl->getKind()) {
+                    case DeclKind::ParamDecl:
+                        llvm::cast<ParamDecl>(movedDecl)->setMoved(true);
+                        break;
+                    case DeclKind::VarDecl:
+                        llvm::cast<VarDecl>(movedDecl)->setMoved(true);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            movedDecls.clear();
         }
 
         if (decl.isConstructorDecl() && !delegatedInit) {
@@ -327,7 +342,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     }
 
     if (!decl.getType().isImplicitlyCopyable()) {
-        decl.getInitializer()->setMoved(true);
+        setMoved(decl.getInitializer(), true);
     }
 }
 
