@@ -4,31 +4,31 @@ extern void free(void*? ptr);
 extern void abort();
 
 // stdio.h
-// FIXME: using FILE* doesn't currently work, so we use void*.
+struct FILE {}
 extern int printf(const char* format, ...);
-extern int fprintf(void* stream, const char* format, ...);
+extern int fprintf(FILE* stream, const char* format, ...);
 extern int sprintf(char* str, const char* format, ...);
 extern int getchar();
-extern void*? fopen(const char* filename, const char* mode);
+extern FILE*? fopen(const char* filename, const char* mode);
 #if Windows
-extern void*? _fdopen(int fd, const char* mode);
-void*? fdopen(int fd, const char* mode) { return _fdopen(fd, mode); }
+extern FILE*? _fdopen(int fd, const char* mode);
+FILE*? fdopen(int fd, const char* mode) { return _fdopen(fd, mode); }
 #else
-extern void*? fdopen(int fd, const char* mode);
+extern FILE*? fdopen(int fd, const char* mode);
 #endif
-extern int fgetc(void* file);
-extern uint64 fread(void* data, uint64 size, uint64 count, void* file);
-extern void fwrite(const void* data, uint64 size, uint64 count, void* file);
-extern void fseek(void* file, int64 offset, int origin);
-extern int64 ftell(void* file);
-extern int fclose(void* file);
-extern int fflush(void* file);
+extern int fgetc(FILE* file);
+extern uint64 fread(void* data, uint64 size, uint64 count, FILE* file);
+extern void fwrite(const void* data, uint64 size, uint64 count, FILE* file);
+extern void fseek(FILE* file, int64 offset, int origin);
+extern int64 ftell(FILE* file);
+extern int fclose(FILE* file);
+extern int fflush(FILE* file);
 extern void exit(int status);
-extern int feof(void* file);
-extern int fputc(int c, void* file);
+extern int feof(FILE* file);
+extern int fputc(int c, FILE* file);
 extern int remove(const char* filename);
-extern int ungetc(int c, void* file);
-extern void rewind(void* file);
+extern int ungetc(int c, FILE* file);
+extern void rewind(FILE* file);
 const SEEK_SET = 0;
 const SEEK_CUR = 1;
 const SEEK_END = 2;
