@@ -1,0 +1,13 @@
+// RUN: check_exit_status 0 %delta run %s
+
+int foo<T>(T t) {
+    return 1;
+}
+
+int foo(int i) {
+    return 0;
+}
+
+int main() {
+    return foo(1);
+}

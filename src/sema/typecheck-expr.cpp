@@ -806,6 +806,16 @@ static bool isCHeaderDecl(Decl* decl) {
     return decl->getModule() && decl->getModule()->getName().endswith_lower(".h");
 }
 
+static Decl* resolveAmbiguousOverload(llvm::ArrayRef<Decl*> matches) {
+    // Prefer stdlib candidate if there's exactly one of them and all the others are from C headers.
+    if (llvm::count_if(matches, isStdlibDecl) == 1 &&
+        llvm::all_of(matches, [](Decl* decl) { return isStdlibDecl(decl) || isCHeaderDecl(decl); })) {
+        return *llvm::find_if(matches, isStdlibDecl);
+    }
+
+    return nullptr;
+}
+
 static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& b) {
     if (a.size() != b.size()) return false;
 
@@ -819,6 +829,7 @@ static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& 
 
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
     std::vector<Decl*> matches;
+    std::vector<Decl*> templateMatches;
     std::vector<ConstructorDecl*> constructorDecls;
     bool isInitCall = false;
 
@@ -848,7 +859,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
                 if (argumentsMatch(expr, functionDecl)) {
                     declsToTypecheck.emplace_back(functionDecl); // TODO: Do this only after the final match has been selected.
-                    matches.push_back(functionDecl);
+                    templateMatches.push_back(functionDecl);
                 }
                 break;
             }
@@ -925,7 +936,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                             return constructorDecl;
                         }
                         if (argumentsMatch(expr, constructorDecl)) {
-                            matches.push_back(constructorDecl);
+                            templateMatches.push_back(constructorDecl);
                         }
                     }
                 }
@@ -959,14 +970,14 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     }
 
     if (matches.size() > 1) {
-        // Prefer stdlib candidate if there's exactly one of them and all the others are from C headers.
-        if (llvm::count_if(matches, isStdlibDecl) == 1 &&
-            llvm::all_of(matches, [](Decl* decl) { return isStdlibDecl(decl) || isCHeaderDecl(decl); })) {
-            matches = { *llvm::find_if(matches, isStdlibDecl) };
+        if (auto match = resolveAmbiguousOverload(matches)) {
+            matches = { match };
         } else {
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
                              "ambiguous reference to '" << callee << "'" << (isInitCall ? " constructor" : ""));
         }
+    } else if (matches.empty()) {
+        matches = templateMatches;
     }
 
     if (matches.size() == 1) {
