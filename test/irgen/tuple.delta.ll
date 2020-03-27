@@ -31,3 +31,7 @@ define { i1, { float } } @_EN4main1fE() {
   %b.load = load { i1, { float } }, { i1, { float } }* %b
   ret { i1, { float } } %b.load
 }
+
+define { i1, float } @_EN4main1gE() {
+  ret { i1, float } { i1 true, i32 1 }
+}

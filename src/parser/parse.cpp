@@ -283,20 +283,25 @@ ArrayLiteralExpr* Parser::parseArrayLiteral() {
 
 /// tuple-literal ::= '(' tuple-literal-elements ')'
 /// tuple-literal-elements ::= tuple-literal-element | tuple-literal-elements ',' tuple-literal-element
-/// tuple-literal-element ::= id ':' expr
-TupleExpr* Parser::parseTupleLiteral() {
+/// tuple-literal-element ::= (id ':')? expr
+/// paren-expr ::= '(' expr ')'
+Expr* Parser::parseTupleLiteralOrParenExpr() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
     auto elements = parseArgumentList();
+
+    if (elements.size() == 1 && elements[0].getName().empty()) {
+        return elements[0].getValue();
+    }
+
     for (auto& element : elements) {
         if (element.getName().empty()) {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(element.getValue())) {
                 element.setName(varExpr->getIdentifier());
-            } else {
-                ERROR(element.getLocation(), "tuple elements must have names");
             }
         }
     }
+
     return new TupleExpr(std::move(elements), location);
 }
 
@@ -372,7 +377,7 @@ Type Parser::parseSimpleType(Mutability mutability) {
 
 /// tuple-type ::= '(' tuple-type-elements ')'
 /// tuple-type-elements ::= tuple-type-element | tuple-type-elements ',' tuple-type-element
-/// tuple-type-element ::= type id
+/// tuple-type-element ::= type id?
 Type Parser::parseTupleType() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
@@ -381,7 +386,7 @@ Type Parser::parseTupleType() {
 
     while (currentToken() != Token::RightParen) {
         auto type = parseType();
-        std::string name = parse(Token::Identifier).getString();
+        std::string name = currentToken() == Token::Identifier ? consumeToken().getString() : "";
         elements.push_back({ std::move(name), type });
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
@@ -526,15 +531,6 @@ LambdaExpr* Parser::parseLambdaExpr() {
     return new LambdaExpr(std::move(params), body, currentModule, location);
 }
 
-/// paren-expr ::= '(' expr ')'
-Expr* Parser::parseParenExpr() {
-    ASSERT(currentToken() == Token::LeftParen);
-    consumeToken();
-    auto expr = parseExpr();
-    parse(Token::RightParen);
-    return expr;
-}
-
 /// if-expr ::= expr '?' expr ':' expr
 IfExpr* Parser::parseIfExpr(Expr* condition) {
     ASSERT(currentToken() == Token::QuestionMark);
@@ -655,10 +651,8 @@ Expr* Parser::parsePostfixExpr() {
         case Token::LeftParen:
             if (arrowAfterParentheses()) {
                 expr = parseLambdaExpr();
-            } else if (lookAhead(1) == Token::Identifier && lookAhead(2).is({ Token::Colon, Token::Comma })) {
-                expr = parseTupleLiteral();
             } else {
-                expr = parseParenExpr();
+                expr = parseTupleLiteralOrParenExpr();
             }
             break;
         case Token::LeftBracket:

@@ -95,7 +95,7 @@ private:
     NullLiteralExpr* parseNullLiteral();
     UndefinedLiteralExpr* parseUndefinedLiteral();
     ArrayLiteralExpr* parseArrayLiteral();
-    TupleExpr* parseTupleLiteral();
+    Expr* parseTupleLiteralOrParenExpr();
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<Type> parseGenericArgumentList();
     int64_t parseArraySizeInBrackets();
@@ -110,7 +110,6 @@ private:
     UnwrapExpr* parseUnwrapExpr(Expr* operand);
     CallExpr* parseCallExpr(Expr* callee);
     LambdaExpr* parseLambdaExpr();
-    Expr* parseParenExpr();
     IfExpr* parseIfExpr(Expr* condition);
     bool shouldParseVarStmt();
     bool shouldParseGenericArgumentList();

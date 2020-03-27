@@ -11,3 +11,7 @@
     e = (x: 1.0, y: 2.0).x;
     return b;
 }
+
+(bool, float) g() {
+    return (true, 1);
+}
