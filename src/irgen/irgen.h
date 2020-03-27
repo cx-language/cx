@@ -107,7 +107,7 @@ private:
     void codegenVarStmt(const VarStmt& stmt);
     void codegenIfStmt(const IfStmt& ifStmt);
     void codegenSwitchStmt(const SwitchStmt& switchStmt);
-    void codegenWhileStmt(const WhileStmt& whileStmt);
+    void codegenForStmt(const ForStmt& forStmt);
     void codegenBreakStmt(const BreakStmt&);
     void codegenContinueStmt(const ContinueStmt&);
     llvm::Value* codegenAssignmentLHS(const Expr& lhs);

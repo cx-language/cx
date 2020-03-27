@@ -19,6 +19,7 @@ enum class StmtKind {
     SwitchStmt,
     WhileStmt,
     ForStmt,
+    ForEachStmt,
     BreakStmt,
     ContinueStmt,
     CompoundStmt
@@ -36,6 +37,7 @@ public:
     bool isSwitchStmt() const { return getKind() == StmtKind::SwitchStmt; }
     bool isWhileStmt() const { return getKind() == StmtKind::WhileStmt; }
     bool isForStmt() const { return getKind() == StmtKind::ForStmt; }
+    bool isForEachStmt() const { return getKind() == StmtKind::ForEachStmt; }
     bool isBreakStmt() const { return getKind() == StmtKind::BreakStmt; }
     bool isContinueStmt() const { return getKind() == StmtKind::ContinueStmt; }
     bool isCompoundStmt() const { return getKind() == StmtKind::CompoundStmt; }
@@ -148,30 +150,51 @@ private:
 
 class WhileStmt : public Stmt {
 public:
-    WhileStmt(Expr* condition, std::vector<Stmt*>&& body, Expr* increment)
-    : Stmt(StmtKind::WhileStmt), condition(condition), body(std::move(body)), increment(increment) {}
+    WhileStmt(Expr* condition, std::vector<Stmt*>&& body, SourceLocation location)
+    : Stmt(StmtKind::WhileStmt), condition(condition), body(std::move(body)), location(location) {}
     Expr& getCondition() const { return *condition; }
     llvm::ArrayRef<Stmt*> getBody() const { return body; }
     llvm::MutableArrayRef<Stmt*> getBody() { return body; }
-    Expr* getIncrement() const { return increment; }
+    SourceLocation getLocation() const { return location; }
+    Stmt* lower();
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::WhileStmt; }
 
 private:
     Expr* condition;
     std::vector<Stmt*> body;
-    Expr* increment; // Used in 'for' loop lowering.
+    SourceLocation location;
 };
 
 class ForStmt : public Stmt {
 public:
-    ForStmt(VarDecl* variable, Expr* range, std::vector<Stmt*>&& body, SourceLocation location)
-    : Stmt(StmtKind::ForStmt), variable(variable), range(range), body(std::move(body)), location(location) {}
+    ForStmt(VarStmt* variable, Expr* condition, Expr* increment, std::vector<Stmt*>&& body, SourceLocation location)
+    : Stmt(StmtKind::ForStmt), variable(variable), condition(condition), increment(increment), body(std::move(body)), location(location) {}
+    VarStmt* getVariable() const { return variable; }
+    Expr* getCondition() const { return condition; }
+    Expr* getIncrement() const { return increment; }
+    llvm::ArrayRef<Stmt*> getBody() const { return body; }
+    llvm::MutableArrayRef<Stmt*> getBody() { return body; }
+    SourceLocation getLocation() const { return location; }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
+
+private:
+    VarStmt* variable;
+    Expr* condition;
+    Expr* increment;
+    std::vector<Stmt*> body;
+    SourceLocation location;
+};
+
+class ForEachStmt : public Stmt {
+public:
+    ForEachStmt(VarDecl* variable, Expr* range, std::vector<Stmt*>&& body, SourceLocation location)
+    : Stmt(StmtKind::ForEachStmt), variable(variable), range(range), body(std::move(body)), location(location) {}
     VarDecl* getVariable() const { return variable; }
     Expr& getRangeExpr() const { return *range; }
     llvm::ArrayRef<Stmt*> getBody() const { return body; }
     SourceLocation getLocation() const { return location; }
     Stmt* lower(int nestLevel);
-    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForStmt; }
+    static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ForEachStmt; }
 
 private:
     VarDecl* variable;

@@ -118,8 +118,12 @@ void IRGenerator::codegenSwitchStmt(const SwitchStmt& switchStmt) {
     builder.SetInsertPoint(end);
 }
 
-void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
-    auto* increment = whileStmt.getIncrement();
+void IRGenerator::codegenForStmt(const ForStmt& forStmt) {
+    if (forStmt.getVariable()) {
+        codegenVarStmt(*forStmt.getVariable());
+    }
+
+    auto* increment = forStmt.getIncrement();
     auto* function = builder.GetInsertBlock()->getParent();
     auto* condition = llvm::BasicBlock::Create(ctx, "loop.condition", function);
     auto* body = llvm::BasicBlock::Create(ctx, "loop.body", function);
@@ -131,14 +135,14 @@ void IRGenerator::codegenWhileStmt(const WhileStmt& whileStmt) {
     builder.CreateBr(condition);
 
     builder.SetInsertPoint(condition);
-    auto* conditionValue = codegenExpr(whileStmt.getCondition());
+    auto* conditionValue = codegenExpr(*forStmt.getCondition());
     if (conditionValue->getType()->isPointerTy()) {
         conditionValue = codegenImplicitNullComparison(conditionValue);
     }
     builder.CreateCondBr(conditionValue, body, end);
 
     builder.SetInsertPoint(body);
-    codegenBlock(whileStmt.getBody(), afterBody);
+    codegenBlock(forStmt.getBody(), afterBody);
 
     if (increment) {
         builder.SetInsertPoint(afterBody);
@@ -192,10 +196,13 @@ void IRGenerator::codegenStmt(const Stmt& stmt) {
             codegenSwitchStmt(llvm::cast<SwitchStmt>(stmt));
             break;
         case StmtKind::WhileStmt:
-            codegenWhileStmt(llvm::cast<WhileStmt>(stmt));
+            llvm_unreachable("WhileStmt should be lowered into a ForStmt");
             break;
         case StmtKind::ForStmt:
-            llvm_unreachable("ForStmt should be lowered into a WhileStmt");
+            codegenForStmt(llvm::cast<ForStmt>(stmt));
+            break;
+        case StmtKind::ForEachStmt:
+            llvm_unreachable("ForEachStmt should be lowered into a ForStmt");
             break;
         case StmtKind::BreakStmt:
             codegenBreakStmt(llvm::cast<BreakStmt>(stmt));

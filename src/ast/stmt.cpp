@@ -7,6 +7,7 @@ bool Stmt::isBreakable() const {
     switch (getKind()) {
         case StmtKind::WhileStmt:
         case StmtKind::ForStmt:
+        case StmtKind::ForEachStmt:
         case StmtKind::SwitchStmt:
             return true;
         default:
@@ -18,6 +19,7 @@ bool Stmt::isContinuable() const {
     switch (getKind()) {
         case StmtKind::WhileStmt:
         case StmtKind::ForStmt:
+        case StmtKind::ForEachStmt:
             return true;
         default:
             return false;
@@ -67,15 +69,24 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
             auto* whileStmt = llvm::cast<WhileStmt>(this);
             auto condition = whileStmt->getCondition().instantiate(genericArgs);
             auto body = ::instantiate(whileStmt->getBody(), genericArgs);
-            return new WhileStmt(condition, std::move(body), nullptr);
+            return new WhileStmt(condition, std::move(body), whileStmt->getLocation());
         }
         case StmtKind::ForStmt: {
             auto* forStmt = llvm::cast<ForStmt>(this);
             // The second argument can be empty because VarDecl instantiation doesn't use it.
-            auto variable = llvm::cast<VarDecl>(forStmt->getVariable()->instantiate(genericArgs, {}));
-            auto range = forStmt->getRangeExpr().instantiate(genericArgs);
+            auto variable = llvm::cast<VarStmt>(forStmt->getVariable()->instantiate(genericArgs));
+            auto condition = forStmt->getCondition() ? forStmt->getCondition()->instantiate(genericArgs) : nullptr;
+            auto increment = forStmt->getIncrement() ? forStmt->getIncrement()->instantiate(genericArgs) : nullptr;
             auto body = ::instantiate(forStmt->getBody(), genericArgs);
-            return new ForStmt(variable, range, std::move(body), forStmt->getLocation());
+            return new ForStmt(variable, condition, increment, std::move(body), forStmt->getLocation());
+        }
+        case StmtKind::ForEachStmt: {
+            auto* forEachStmt = llvm::cast<ForEachStmt>(this);
+            // The second argument can be empty because VarDecl instantiation doesn't use it.
+            auto variable = llvm::cast<VarDecl>(forEachStmt->getVariable()->instantiate(genericArgs, {}));
+            auto range = forEachStmt->getRangeExpr().instantiate(genericArgs);
+            auto body = ::instantiate(forEachStmt->getBody(), genericArgs);
+            return new ForEachStmt(variable, range, std::move(body), forEachStmt->getLocation());
         }
         case StmtKind::BreakStmt: {
             auto* breakStmt = llvm::cast<BreakStmt>(this);
@@ -94,23 +105,18 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     llvm_unreachable("all cases handled");
 }
 
+Stmt* WhileStmt::lower() {
+    return new ForStmt(nullptr, condition, nullptr, std::move(body), location);
+}
+
 // Lowers 'for (var id in range) { ... }' into:
-// {
-//     var __iterator = range.iterator();
-//     // or if 'range' is already an iterator:
-//     var __iterator = range;
-//
-//     while (__iterator.hasValue()) {
-//         var id = __iterator.value();
-//         ...
-//         __iterator.increment();
-//     }
+// for (var __iterator = range.iterator(); __iterator.hasValue(); __iterator.increment()) {
+//     var id = __iterator.value();
+//     ...
 // }
-Stmt* ForStmt::lower(int nestLevel) {
+Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVariableName = "__iterator" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
     auto location = getLocation();
-
-    std::vector<Stmt*> stmts;
 
     Expr* iteratorValue;
     auto* rangeTypeDecl = range->getType().removePointer().getDecl();
@@ -127,7 +133,6 @@ Stmt* ForStmt::lower(int nestLevel) {
     auto iteratorVarDecl = new VarDecl(Type(nullptr, Mutability::Mutable, location), std::string(iteratorVariableName), iteratorValue,
                                        variable->getParent(), AccessLevel::None, *variable->getModule(), location);
     auto iteratorVarStmt = new VarStmt(iteratorVarDecl);
-    stmts.push_back(iteratorVarStmt);
 
     auto iteratorVarExpr = new VarExpr(std::string(iteratorVariableName), location);
     auto hasValueMemberExpr = new MemberExpr(iteratorVarExpr, "hasValue", location);
@@ -140,19 +145,15 @@ Stmt* ForStmt::lower(int nestLevel) {
                                            AccessLevel::None, *variable->getModule(), variable->getLocation());
     auto loopVariableVarStmt = new VarStmt(loopVariableVarDecl);
 
-    std::vector<Stmt*> forStmtBody;
-    forStmtBody.push_back(loopVariableVarStmt);
+    std::vector<Stmt*> forBody;
+    forBody.push_back(loopVariableVarStmt);
 
-    for (auto& stmt : this->body) {
-        forStmtBody.push_back(stmt);
+    for (auto& stmt : body) {
+        forBody.push_back(stmt);
     }
 
     auto iteratorVarExpr3 = new VarExpr(std::string(iteratorVariableName), location);
     auto incrementMemberExpr = new MemberExpr(iteratorVarExpr3, "increment", location);
     auto incrementCallExpr = new CallExpr(incrementMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
-
-    auto whileStmt = new WhileStmt(hasValueCallExpr, std::move(forStmtBody), incrementCallExpr);
-    stmts.push_back(whileStmt);
-
-    return new CompoundStmt(std::move(stmts));
+    return new ForStmt(iteratorVarStmt, hasValueCallExpr, incrementCallExpr, std::move(forBody), location);
 }

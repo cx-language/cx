@@ -15,6 +15,8 @@ static const Expr& getIfOrWhileCondition(const Stmt& ifOrWhileStmt) {
     switch (ifOrWhileStmt.getKind()) {
         case StmtKind::IfStmt:
             return llvm::cast<IfStmt>(ifOrWhileStmt).getCondition();
+        case StmtKind::ForStmt:
+            return *llvm::cast<ForStmt>(ifOrWhileStmt).getCondition();
         case StmtKind::WhileStmt:
             return llvm::cast<WhileStmt>(ifOrWhileStmt).getCondition();
         default:
@@ -26,6 +28,8 @@ static llvm::ArrayRef<Stmt*> getIfOrWhileThenBody(const Stmt& ifOrWhileStmt) {
     switch (ifOrWhileStmt.getKind()) {
         case StmtKind::IfStmt:
             return llvm::cast<IfStmt>(ifOrWhileStmt).getThenBody();
+        case StmtKind::ForStmt:
+            return llvm::cast<ForStmt>(ifOrWhileStmt).getBody();
         case StmtKind::WhileStmt:
             return llvm::cast<WhileStmt>(ifOrWhileStmt).getBody();
         default:
@@ -122,7 +126,7 @@ static NullCheck analyzeNullCheck(const Expr& condition) {
 }
 
 bool Typechecker::isGuaranteedNonNull(const Expr& expr, const Stmt& currentControlStmt) const {
-    if (!currentControlStmt.isIfStmt() && !currentControlStmt.isWhileStmt()) return false;
+    if (!currentControlStmt.isIfStmt() && !currentControlStmt.isWhileStmt() && !currentControlStmt.isForStmt()) return false;
     auto& condition = getIfOrWhileCondition(currentControlStmt);
     NullCheck nullCheck = analyzeNullCheck(condition);
     if (!nullCheck.isNullCheckFor(expr)) return false;
@@ -193,8 +197,19 @@ llvm::Optional<bool> Typechecker::maySetToNullBeforeEvaluating(const Expr& var, 
             if (auto result = maySetToNullBeforeEvaluating(var, whileStmt.getBody())) return *result;
             return llvm::None;
         }
-        case StmtKind::ForStmt:
-            llvm_unreachable("ForStmt should be lowered into a WhileStmt");
+        case StmtKind::ForStmt: {
+            auto& forStmt = llvm::cast<ForStmt>(stmt);
+            if (forStmt.getCondition()) {
+                if (auto result = maySetToNullBeforeEvaluating(var, *forStmt.getCondition())) return *result;
+            }
+            if (auto result = maySetToNullBeforeEvaluating(var, forStmt.getBody())) return *result;
+            if (forStmt.getIncrement()) {
+                if (auto result = maySetToNullBeforeEvaluating(var, *forStmt.getIncrement())) return *result;
+            }
+            return llvm::None;
+        }
+        case StmtKind::ForEachStmt:
+            llvm_unreachable("ForEachStmt should be lowered into a ForStmt");
 
         case StmtKind::BreakStmt:
         case StmtKind::ContinueStmt:

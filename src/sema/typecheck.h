@@ -53,7 +53,7 @@ private:
     void typecheckVarStmt(VarStmt& stmt);
     void typecheckIfStmt(IfStmt& ifStmt);
     void typecheckSwitchStmt(SwitchStmt& stmt);
-    void typecheckWhileStmt(WhileStmt& whileStmt);
+    void typecheckForStmt(ForStmt& forStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
     void typecheckType(Type type, AccessLevel userAccessLevel);

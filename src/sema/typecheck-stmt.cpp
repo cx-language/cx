@@ -126,22 +126,30 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     currentControlStmts.pop_back();
 }
 
-void Typechecker::typecheckWhileStmt(WhileStmt& whileStmt) {
-    Type conditionType = typecheckExpr(whileStmt.getCondition());
+void Typechecker::typecheckForStmt(ForStmt& forStmt) {
+    Scope scope(currentFunction, &currentModule->getSymbolTable());
 
-    if (!conditionType.isBool() && !conditionType.isOptionalType()) {
-        ERROR(whileStmt.getCondition().getLocation(), "'while' condition must have type 'bool' or optional type");
+    if (forStmt.getVariable()) {
+        typecheckVarStmt(*forStmt.getVariable());
     }
 
-    currentControlStmts.push_back(&whileStmt);
+    if (forStmt.getCondition()) {
+        Type conditionType = typecheckExpr(*forStmt.getCondition());
 
-    for (auto& stmt : whileStmt.getBody()) {
+        if (!conditionType.isBool() && !conditionType.isOptionalType()) {
+            ERROR(forStmt.getCondition()->getLocation(), "loop condition must have type 'bool' or optional type");
+        }
+    }
+
+    currentControlStmts.push_back(&forStmt);
+
+    for (auto& stmt : forStmt.getBody()) {
         typecheckStmt(stmt);
     }
 
     currentControlStmts.pop_back();
 
-    if (auto* increment = whileStmt.getIncrement()) {
+    if (auto* increment = forStmt.getIncrement()) {
         typecheckExpr(*increment);
     }
 }
@@ -187,14 +195,21 @@ void Typechecker::typecheckStmt(Stmt*& stmt) {
             case StmtKind::SwitchStmt:
                 typecheckSwitchStmt(llvm::cast<SwitchStmt>(*stmt));
                 break;
-            case StmtKind::WhileStmt:
-                typecheckWhileStmt(llvm::cast<WhileStmt>(*stmt));
+            case StmtKind::WhileStmt: {
+                auto* whileStmt = llvm::cast<WhileStmt>(stmt);
+                typecheckExpr(whileStmt->getCondition());
+                stmt = whileStmt->lower();
+                typecheckStmt(stmt);
                 break;
-            case StmtKind::ForStmt: {
-                auto* forStmt = llvm::cast<ForStmt>(stmt);
-                typecheckExpr(forStmt->getRangeExpr());
-                auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isWhileStmt(); });
-                stmt = forStmt->lower(nestLevel);
+            }
+            case StmtKind::ForStmt:
+                typecheckForStmt(llvm::cast<ForStmt>(*stmt));
+                break;
+            case StmtKind::ForEachStmt: {
+                auto* forEachStmt = llvm::cast<ForEachStmt>(stmt);
+                typecheckExpr(forEachStmt->getRangeExpr());
+                auto nestLevel = llvm::count_if(currentControlStmts, [](auto* stmt) { return stmt->isForStmt(); });
+                stmt = forEachStmt->lower(nestLevel);
                 typecheckStmt(stmt);
                 break;
             }

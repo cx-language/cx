@@ -46,6 +46,7 @@ class DeferStmt;
 class IfStmt;
 class WhileStmt;
 class ForStmt;
+class ForEachStmt;
 class SwitchStmt;
 class BreakStmt;
 class ContinueStmt;
@@ -122,15 +123,14 @@ private:
     Expr* parseExpr();
     std::vector<Expr*> parseExprList();
     ReturnStmt* parseReturnStmt();
-    VarDecl* parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel);
-    VarDecl* parseVarDeclAfterName(bool requireInitialValue, Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name,
-                                   SourceLocation location);
+    VarDecl* parseVarDecl(Decl* parent, AccessLevel accessLevel);
+    VarDecl* parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation location);
     VarStmt* parseVarStmt(Decl* parent);
     ExprStmt* parseExprStmt(Expr* expr);
     DeferStmt* parseDeferStmt();
     IfStmt* parseIfStmt(Decl* parent);
     WhileStmt* parseWhileStmt(Decl* parent);
-    ForStmt* parseForStmt(Decl* parent);
+    Stmt* parseForOrForEachStmt(Decl* parent);
     SwitchStmt* parseSwitchStmt(Decl* parent);
     BreakStmt* parseBreakStmt();
     ContinueStmt* parseContinueStmt();

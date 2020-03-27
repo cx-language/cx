@@ -785,7 +785,7 @@ ReturnStmt* Parser::parseReturnStmt() {
 /// var-decl ::= type-specifier id '=' initializer ('\n' | ';')
 /// type-specifier ::= 'const' | 'const' type | type | 'var'
 /// initializer ::= expr | 'undefined'
-VarDecl* Parser::parseVarDecl(bool requireInitialValue, Decl* parent, AccessLevel accessLevel) {
+VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel) {
     Type type;
     auto mutability = Mutability::Mutable;
 
@@ -801,15 +801,14 @@ VarDecl* Parser::parseVarDecl(bool requireInitialValue, Decl* parent, AccessLeve
     }
 
     auto name = parse(Token::Identifier);
-    return parseVarDeclAfterName(requireInitialValue, parent, accessLevel, type.withMutability(mutability), name.getString(), name.getLocation());
+    return parseVarDeclAfterName(parent, accessLevel, type.withMutability(mutability), name.getString(), name.getLocation());
 }
 
-VarDecl* Parser::parseVarDeclAfterName(bool requireInitialValue, Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name,
-                                       SourceLocation location) {
+VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation location) {
     Expr* initializer = nullptr;
 
-    if (requireInitialValue) {
-        parse(Token::Assignment);
+    if (currentToken() == Token::Assignment) {
+        consumeToken();
         initializer = parseExpr();
         parseStmtTerminator();
     }
@@ -819,7 +818,7 @@ VarDecl* Parser::parseVarDeclAfterName(bool requireInitialValue, Decl* parent, A
 
 /// var-stmt ::= var-decl
 VarStmt* Parser::parseVarStmt(Decl* parent) {
-    return new VarStmt(parseVarDecl(true, parent, AccessLevel::None));
+    return new VarStmt(parseVarDecl(parent, AccessLevel::None));
 }
 
 /// expr-stmt ::= binary-expr | call-expr ('\n' | ';')
@@ -875,27 +874,40 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
 /// while-stmt ::= 'while' expr block-or-stmt
 WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     ASSERT(currentToken() == Token::While);
-    consumeToken();
+    auto location = consumeToken().getLocation();
     auto condition = parseExpr();
     auto body = parseBlockOrStmt(parent);
-    return new WhileStmt(condition, std::move(body), nullptr);
+    return new WhileStmt(condition, std::move(body), location);
 }
 
 /// for-stmt ::= 'for' for-header block-or-stmt
-/// for-header ::= (type | 'var') id 'in' expr |
-///            '(' (type | 'var') id 'in' expr ')'
-ForStmt* Parser::parseForStmt(Decl* parent) {
+/// for-header ::= var-decl ';' expr ';' stmt |
+///            '(' var-decl ';' expr ';' stmt ')'
+/// foreach-stmt ::= 'for' foreach-header block-or-stmt
+/// foreach-header ::= (type | 'var') id 'in' expr |
+///                '(' (type | 'var') id 'in' expr ')'
+Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
-    auto location = getCurrentLocation();
-    consumeToken();
+    auto location = consumeToken().getLocation();
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
-    auto variable = parseVarDecl(false, parent, AccessLevel::None);
-    parse(Token::In);
-    auto range = parseExpr();
-    if (parens) parse(Token::RightParen);
-    auto body = parseBlockOrStmt(parent);
-    return new ForStmt(variable, range, std::move(body), location);
+    auto varStmt = parseVarStmt(parent);
+
+    if (varStmt->getDecl().getInitializer()) {
+        // Semicolon is parsed inside parseVarDecl
+        auto condition = parseExpr();
+        parse(Token::Semicolon);
+        auto increment = parseExpr();
+        if (parens) parse(Token::RightParen);
+        auto body = parseBlockOrStmt(parent);
+        return new ForStmt(varStmt, condition, increment, std::move(body), location);
+    } else {
+        parse(Token::In);
+        auto range = parseExpr();
+        if (parens) parse(Token::RightParen);
+        auto body = parseBlockOrStmt(parent);
+        return new ForEachStmt(&varStmt->getDecl(), range, std::move(body), location);
+    }
 }
 
 /// switch-stmt ::= 'switch' expr '{' cases default-case? '}'
@@ -962,8 +974,8 @@ ContinueStmt* Parser::parseContinueStmt() {
     return new ContinueStmt(location);
 }
 
-/// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt |
-///          switch-stmt | while-stmt | for-stmt | break-stmt | continue-stmt
+/// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
+///          while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt
 Stmt* Parser::parseStmt(Decl* parent) {
     switch (currentToken()) {
         case Token::Return:
@@ -975,7 +987,7 @@ Stmt* Parser::parseStmt(Decl* parent) {
         case Token::While:
             return parseWhileStmt(parent);
         case Token::For:
-            return parseForStmt(parent);
+            return parseForOrForEachStmt(parent);
         case Token::Switch:
             return parseSwitchStmt(parent);
         case Token::Break:
@@ -1468,7 +1480,7 @@ start:
             if (currentToken() == Token::Const && lookAhead(2) != Token::Assignment) {
                 return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
             }
-            decl = parseVarDecl(true, nullptr, accessLevel);
+            decl = parseVarDecl(nullptr, accessLevel);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);
             break;
         case Token::Import:
@@ -1503,7 +1515,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionTemplate>(*decl));
             break;
         default:
-            decl = parseVarDeclAfterName(true, nullptr, accessLevel, type, name, location);
+            decl = parseVarDeclAfterName(nullptr, accessLevel, type, name, location);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);
             break;
     }
