@@ -171,7 +171,7 @@ struct List<Element> {
         return EnumeratedIterator(iterator());
     }
 
-    List<Output> map<Input, Output>(Output(Input) transform) {
+    List<Output> map<Output>(Output(Element*) transform) {
         var output = List<Output>(capacity: this.size);
 
         for (var element in this) {
@@ -181,7 +181,7 @@ struct List<Element> {
         return output;
     }
 
-    List<Element> filter<Input>(bool(Input) include) {
+    List<Element> filter(bool(Element*) include) {
         var output = List<Element>();
 
         for (var element in this) {

@@ -666,7 +666,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
             if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateArgs() after this function. Get rid of this duplicated typechecking.
                 auto* argValue = arg.getValue();
-                Type argType = typecheckExpr(*argValue);
+                Type argType = typecheckExpr(*argValue, false, paramType);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
                 if (!maybeGenericArg) continue;
 
@@ -747,7 +747,7 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
     llvm::ArrayRef<Type> genericArgTypes;
 
     if (call.getGenericArgs().empty()) {
-        if (expectedType && expectedType.isBasicType()) {
+        if (expectedType && expectedType.isBasicType() && !expectedType.getGenericArgs().empty()) {
             // TODO: Should probably check that expectedType is the same type as the type whose generics args we're inferring.
             genericArgTypes = expectedType.getGenericArgs();
         } else if (call.getArgs().empty()) {
@@ -1196,7 +1196,9 @@ bool Typechecker::argumentsMatch(CallExpr& expr, const FunctionDecl* functionDec
             return false;
         }
 
-        if (param && !isImplicitlyConvertible(arg.getValue(), typecheckExpr(*arg.getValue()), param->getType(), true)) {
+        auto argType = typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
+
+        if (param && !isImplicitlyConvertible(arg.getValue(), argType, param->getType(), true)) {
             return false;
         }
     }
