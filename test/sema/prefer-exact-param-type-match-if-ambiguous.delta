@@ -8,6 +8,15 @@ int foo(int i) {
     return 0;
 }
 
+int bar<T>(T t) {
+    t.x();
+    return 1;
+}
+
+int bar(int i) {
+    return 0;
+}
+
 int main() {
-    return foo(1);
+    return foo(1) + bar(1);
 }

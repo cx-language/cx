@@ -874,7 +874,6 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     return functionDecl;
                 }
                 if (argumentsMatch(expr, functionDecl)) {
-                    declsToTypecheck.emplace_back(functionDecl); // TODO: Do this only after the final match has been selected.
                     templateMatches.push_back(functionDecl);
                 }
                 break;
@@ -993,11 +992,12 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                              "ambiguous reference to '" << callee << "'" << (isInitCall ? " constructor" : ""));
         }
     } else if (matches.empty()) {
-        matches = templateMatches;
+        matches = std::move(templateMatches);
     }
 
     if (matches.size() == 1) {
         validateArgs(expr, *matches.front());
+        declsToTypecheck.push_back(matches.front());
         return matches.front();
     }
 
