@@ -153,7 +153,8 @@ llvm::Type* IRGenerator::getLLVMType(Type type, SourceLocation location) {
             return llvm::PointerType::get(pointeeType->isVoidTy() ? llvm::Type::getInt8Ty(ctx) : pointeeType, 0);
         }
         case TypeKind::OptionalType:
-            if (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType() || type.getWrappedType().isArrayWithUnknownSize()) {
+            if (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType() ||
+                type.getWrappedType().isArrayWithUnknownSize()) {
                 return getLLVMType(type.getWrappedType());
             }
             llvm_unreachable("IRGen doesn't support non-pointer optional types yet");

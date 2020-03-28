@@ -57,7 +57,8 @@ cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file 
 cl::opt<WarningMode> warningMode(cl::desc("Warning mode:"), cl::sub(*cl::AllSubCommands),
                                  cl::values(clEnumValN(WarningMode::Suppress, "w", "Suppress all warnings"),
                                             clEnumValN(WarningMode::TreatAsErrors, "Werror", "Treat warnings as errors")));
-cl::list<std::string> disabledWarnings("Wno-", cl::desc("Disable warnings"), cl::value_desc("warning"), cl::Prefix, cl::sub(*cl::AllSubCommands));
+cl::list<std::string> disabledWarnings("Wno-", cl::desc("Disable warnings"), cl::value_desc("warning"), cl::Prefix,
+                                       cl::sub(*cl::AllSubCommands));
 cl::list<std::string> defines("D", cl::desc("Specify defines"), cl::Prefix, cl::sub(*cl::AllSubCommands));
 cl::list<std::string> importSearchPaths("I", cl::desc("Add directory to import search paths"), cl::value_desc("path"), cl::Prefix,
                                         cl::sub(*cl::AllSubCommands));
@@ -145,7 +146,8 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
     addHeaderSearchPathsFromCCompilerOutput();
 }
 
-static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
+static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType,
+                            llvm::Reloc::Model relocModel) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
@@ -367,8 +369,9 @@ static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
         } else {
             outputFileName = manifest.getPackageName();
         }
+        auto sourceFiles = getSourceFiles(targetRootDir, manifestPath);
         // TODO: Add support for library packages.
-        int exitStatus = buildExecutable(getSourceFiles(targetRootDir, manifestPath), &manifest, argv0, manifest.getOutputDirectory(), outputFileName);
+        int exitStatus = buildExecutable(sourceFiles, &manifest, argv0, manifest.getOutputDirectory(), outputFileName);
         if (exitStatus != 0) return exitStatus;
     }
 

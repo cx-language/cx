@@ -86,7 +86,8 @@ bool FunctionTemplate::isReferenced() const {
     return false;
 }
 
-MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel, SourceLocation location)
+MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel,
+                       SourceLocation location)
 : FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl) {}
 
 MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) {
@@ -334,4 +335,5 @@ ConstructorDecl::ConstructorDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDe
              accessLevel, location) {}
 
 DestructorDecl::DestructorDecl(TypeDecl& receiverTypeDecl, SourceLocation location)
-: MethodDecl(DeclKind::DestructorDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None, location) {}
+: MethodDecl(DeclKind::DestructorDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None,
+             location) {}

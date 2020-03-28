@@ -69,7 +69,7 @@ PenaltyBreakComment: 300
 PenaltyBreakFirstLessLess: 0
 PenaltyBreakString: 100
 PenaltyBreakTemplateDeclaration: 10
-PenaltyExcessCharacter: 1
+PenaltyExcessCharacter: 10
 PenaltyReturnTypeOnItsOwnLine: 60
 PointerAlignment: Left
 ReflowComments: true

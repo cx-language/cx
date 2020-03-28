@@ -272,7 +272,8 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         auto rightPointeeType = rightType.removeOptional().removePointer().removeArrayWithUnknownSize();
 
         if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
-            WARN(expr.getLocation(), "pointers to different types are not allowed to be equal (got '" << leftType << "' and '" << rightType << "')");
+            WARN(expr.getLocation(),
+                 "pointers to different types are not allowed to be equal (got '" << leftType << "' and '" << rightType << "')");
         }
     }
 
@@ -409,7 +410,8 @@ bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) c
 }
 
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary) const {
-    if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
+    if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() &&
+        source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
 
@@ -519,7 +521,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() &&
-        (target.isArrayWithRuntimeSize() || target.isArrayWithUnknownSize()) && source.getPointee().getElementType() == target.getElementType()) {
+        (target.isArrayWithRuntimeSize() || target.isArrayWithUnknownSize()) &&
+        source.getPointee().getElementType() == target.getElementType()) {
         return source;
     }
 
@@ -528,7 +531,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isArrayWithUnknownSize() && target.isPointerType() && (source.getElementType() == target.getPointee() || target.getPointee().isVoid())) {
+    if (source.isArrayWithUnknownSize() && target.isPointerType() &&
+        (source.getElementType() == target.getPointee() || target.getPointee().isVoid())) {
         return source;
     }
 
@@ -683,9 +687,10 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
                         genericArg = maybeGenericArg;
                         genericArgValue = argValue;
                     } else {
-                        ERROR(call.getLocation(), "couldn't infer generic parameter '" << genericParam.getName() << "' of '"
-                                                                                       << call.getFunctionName() << "' because of conflicting argument types '"
-                                                                                       << genericArg << "' and '" << maybeGenericArg << "'");
+                        ERROR(call.getLocation(), "couldn't infer generic parameter '"
+                                                      << genericParam.getName() << "' of '" << call.getFunctionName()
+                                                      << "' because of conflicting argument types '" << genericArg << "' and '"
+                                                      << maybeGenericArg << "'");
                     }
                 }
             }
@@ -724,7 +729,8 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
     return inferredGenericArgs;
 }
 
-void delta::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, SourceLocation location) {
+void delta::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name,
+                                    SourceLocation location) {
     if (genericArgs.size() < genericParamCount) {
         REPORT_ERROR(location, "too few generic arguments to '" << name << "', expected " << genericParamCount);
     } else if (genericArgs.size() > genericParamCount) {
@@ -924,7 +930,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                 for (auto* constructorDecl : constructorDecls) {
                     auto params = constructorDecl->getParams();
-                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, params, constructorDecls.size() != 1, expectedType);
+                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, params, constructorDecls.size() != 1,
+                                                             expectedType);
                     if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
                     if (llvm::find_if(genericArgSets, [&](auto& set) { return equals(set, genericArgs); }) == genericArgSets.end()) {
                         genericArgSets.push_back(genericArgs);
@@ -1148,7 +1155,8 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         }
         case DeclKind::EnumCase: {
             auto type = llvm::cast<EnumCase>(decl)->getAssociatedType();
-            params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
+            params = map(type.getTupleElements(),
+                         [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
             validateArgs(expr, params, false, decl->getName(), expr.getLocation());
             break;
         }
@@ -1237,13 +1245,14 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
     }
 }
 
-void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName, SourceLocation location) {
+void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee,
+                               SourceLocation location) {
     switch (validateArgCount(params.size(), expr.getArgs().size(), isVariadic)) {
         case ValidateArgCountResult::TooFew:
-            REPORT_ERROR(location, "too few arguments to '" << functionName << "', expected " << (isVariadic ? "at least " : "") << params.size());
+            REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << (isVariadic ? "at least " : "") << params.size());
             break;
         case ValidateArgCountResult::TooMany:
-            REPORT_ERROR(location, "too many arguments to '" << functionName << "', expected " << params.size());
+            REPORT_ERROR(location, "too many arguments to '" << callee << "', expected " << params.size());
             break;
         case ValidateArgCountResult::Valid:
             break;
@@ -1257,8 +1266,8 @@ void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params,
             case ValidateArgumentResult::InvalidName:
                 ERROR(arg.getLocation(), "invalid argument name '" << arg.getName() << "' for parameter '" << param->getName() << "'");
             case ValidateArgumentResult::InvalidType:
-                ERROR(arg.getLocation(), "invalid argument #" << (i + 1) << " type '" << arg.getValue()->getType() << "' to '"
-                                                              << functionName << "', expected '" << param->getType() << "'");
+                ERROR(arg.getLocation(), "invalid argument #" << (i + 1) << " type '" << arg.getValue()->getType() << "' to '" << callee
+                                                              << "', expected '" << param->getType() << "'");
             case ValidateArgumentResult::Valid:
                 break;
         }
@@ -1425,7 +1434,8 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
             auto index = indexExpr->getConstantIntegerValue();
 
             if (index < 0 || index >= arrayType.getArraySize()) {
-                ERROR(indexExpr->getLocation(), "accessing array out-of-bounds with index " << index << ", array size is " << arrayType.getArraySize());
+                ERROR(indexExpr->getLocation(),
+                      "accessing array out-of-bounds with index " << index << ", array size is " << arrayType.getArraySize());
             }
         }
     }
@@ -1565,7 +1575,8 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr) {
                 if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
                     auto* enumCase = enumDecl->getCaseByName(memberExpr->getMemberName());
                     if (!enumCase) {
-                        ERROR(expr.getLocation(), "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->getMemberName() << "'");
+                        ERROR(expr.getLocation(),
+                              "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->getMemberName() << "'");
                     }
                     return enumCase;
                 }

@@ -317,7 +317,8 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
         } else {
             if (currentToken() == Token::RightShift) {
                 tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().getLocation());
-                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().getLocation().nextColumn()));
+                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1,
+                                   Token(Token::Greater, currentToken().getLocation().nextColumn()));
             }
             return types;
         }
@@ -1103,8 +1104,9 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
 }
 
 /// function-proto ::= type id param-list
-FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, std::vector<GenericParamDecl>* genericParams,
-                                         Type returnType, llvm::StringRef name, SourceLocation location) {
+FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
+                                         std::vector<GenericParamDecl>* genericParams, Type returnType, llvm::StringRef name,
+                                         SourceLocation location) {
     if (currentToken() == Token::Less) {
         parseGenericParamList(*genericParams);
     }

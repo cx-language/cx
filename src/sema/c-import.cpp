@@ -164,7 +164,8 @@ static Type toDelta(clang::QualType qualtype) {
             return ArrayType::get(toDelta(vectorType.getElementType()), vectorType.getNumElements());
         }
         default:
-            WARN(SourceLocation(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualtype.getAsString() << "')");
+            WARN(SourceLocation(),
+                 "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualtype.getAsString() << "')");
             return Type::getInt();
     }
 }
@@ -353,8 +354,8 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
 
     const clang::DirectoryLookup* curDir = nullptr;
-    const clang::FileEntry* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr,
-                                                                                              nullptr, nullptr, nullptr, nullptr, nullptr);
+    auto* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr,
+                                                                            nullptr, nullptr, nullptr, nullptr);
     if (!fileEntry) {
         REPORT_ERROR(importLocation, "couldn't find C header file '" << headerName << "'");
         return false;

@@ -222,7 +222,8 @@ bool operator==(const TupleElement&, const TupleElement&);
 class TupleType : public TypeBase {
 public:
     llvm::ArrayRef<TupleElement> getElements() const { return elements; }
-    static Type get(std::vector<TupleElement>&& elements, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
+    static Type get(std::vector<TupleElement>&& elements, Mutability mutability = Mutability::Mutable,
+                    SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
 
 private:

@@ -291,7 +291,8 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     return instantiation;
 }
 
-static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, const CompileOptions& options) {
+static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module,
+                                                                 const CompileOptions& options) {
     std::error_code error;
     std::vector<std::string> paths;
 
@@ -319,7 +320,8 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
     return error;
 }
 
-llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName) {
+llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
+                                                            llvm::StringRef moduleName) {
     auto it = Module::getAllImportedModulesMap().find(moduleName);
     if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);

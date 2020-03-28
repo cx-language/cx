@@ -335,7 +335,8 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     }
 
     // Handle implicit conversions to type 'T[*]'.
-    if (expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() && !targetType->getPointerElementType()->isArrayTy()) {
+    if (expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() &&
+        !targetType->getPointerElementType()->isArrayTy()) {
         return builder.CreateBitOrPointerCast(codegenLvalueExpr(expr), targetType);
     }
 
