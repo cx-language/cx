@@ -732,12 +732,28 @@ void delta::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Typ
     }
 }
 
-static void validateArgCount(size_t paramCount, size_t argCount, bool isVariadic, llvm::StringRef name, SourceLocation location) {
+Typechecker::ValidateArgCountResult Typechecker::validateArgCount(size_t paramCount, size_t argCount, bool isVariadic) {
     if (argCount < paramCount) {
-        REPORT_ERROR(location, "too few arguments to '" << name << "', expected " << (isVariadic ? "at least " : "") << paramCount);
+        return ValidateArgCountResult::TooFew;
     } else if (!isVariadic && argCount > paramCount) {
-        REPORT_ERROR(location, "too many arguments to '" << name << "', expected " << paramCount);
+        return ValidateArgCountResult::TooMany;
+    } else {
+        return ValidateArgCountResult::Valid;
     }
+}
+
+Typechecker::ValidateArgumentResult Typechecker::validateArgument(NamedValue& arg, const ParamDecl* param) {
+    if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
+        return ValidateArgumentResult::InvalidName;
+    }
+
+    typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
+
+    if (param && !convert(arg.getValue(), param->getType(), true)) {
+        return ValidateArgumentResult::InvalidType;
+    }
+
+    return ValidateArgumentResult::Valid;
 }
 
 llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
@@ -1180,11 +1196,7 @@ bool Typechecker::argumentsMatch(CallExpr& expr, const FunctionDecl* functionDec
     bool isVariadic = functionDecl && functionDecl->isVariadic();
     auto args = expr.getArgs();
 
-    if (args.size() < params.size()) {
-        return false;
-    }
-
-    if (!isVariadic && args.size() > params.size()) {
+    if (validateArgCount(params.size(), expr.getArgs().size(), isVariadic) != ValidateArgCountResult::Valid) {
         return false;
     }
 
@@ -1192,13 +1204,7 @@ bool Typechecker::argumentsMatch(CallExpr& expr, const FunctionDecl* functionDec
         auto& arg = args[i];
         auto* param = i < params.size() ? &params[i] : nullptr;
 
-        if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
-            return false;
-        }
-
-        auto argType = typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
-
-        if (param && !isImplicitlyConvertible(arg.getValue(), argType, param->getType(), true)) {
+        if (validateArgument(arg, param) != ValidateArgumentResult::Valid) {
             return false;
         }
     }
@@ -1232,21 +1238,29 @@ void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::Str
 }
 
 void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName, SourceLocation location) {
-    auto args = expr.getArgs();
-    validateArgCount(params.size(), args.size(), isVariadic, functionName, location);
+    switch (validateArgCount(params.size(), expr.getArgs().size(), isVariadic)) {
+        case ValidateArgCountResult::TooFew:
+            REPORT_ERROR(location, "too few arguments to '" << functionName << "', expected " << (isVariadic ? "at least " : "") << params.size());
+            break;
+        case ValidateArgCountResult::TooMany:
+            REPORT_ERROR(location, "too many arguments to '" << functionName << "', expected " << params.size());
+            break;
+        case ValidateArgCountResult::Valid:
+            break;
+    }
 
-    for (size_t i = 0; i < args.size(); ++i) {
-        auto& arg = args[i];
+    for (size_t i = 0; i < expr.getArgs().size(); ++i) {
+        auto& arg = expr.getArgs()[i];
         auto* param = i < params.size() ? &params[i] : nullptr;
 
-        if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
-            ERROR(arg.getLocation(), "invalid argument name '" << arg.getName() << "' for parameter '" << param->getName() << "'");
-        }
-
-        typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
-        if (param && !convert(arg.getValue(), param->getType(), true)) {
-            ERROR(arg.getLocation(), "invalid argument #" << (i + 1) << " type '" << arg.getValue()->getType() << "' to '" << functionName
-                                                          << "', expected '" << param->getType() << "'");
+        switch (validateArgument(arg, param)) {
+            case ValidateArgumentResult::InvalidName:
+                ERROR(arg.getLocation(), "invalid argument name '" << arg.getName() << "' for parameter '" << param->getName() << "'");
+            case ValidateArgumentResult::InvalidType:
+                ERROR(arg.getLocation(), "invalid argument #" << (i + 1) << " type '" << arg.getValue()->getType() << "' to '"
+                                                              << functionName << "', expected '" << param->getType() << "'");
+            case ValidateArgumentResult::Valid:
+                break;
         }
     }
 }
@@ -1311,11 +1325,12 @@ static bool isValidCast(Type sourceType, Type targetType) {
 }
 
 Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
-    validateGenericArgCount(1, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-    validateArgCount(1, expr.getArgs().size(), false, expr.getFunctionName(), expr.getLocation());
-
     Type sourceType = typecheckExpr(*expr.getArgs().front().getValue());
     Type targetType = expr.getGenericArgs().front();
+    ParamDecl param(sourceType, "", false, expr.getLocation());
+
+    validateGenericArgCount(1, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
+    validateArgs(expr, param, false, expr.getFunctionName(), expr.getLocation());
 
     if (!isValidCast(sourceType, targetType)) {
         ERROR(expr.getCallee().getLocation(), "illegal cast from '" << sourceType << "' to '" << targetType << "'");

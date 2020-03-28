@@ -95,6 +95,10 @@ private:
     std::vector<Type> inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                    llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     bool argumentsMatch(CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {});
+    enum class ValidateArgCountResult { TooFew, TooMany, Valid };
+    enum class ValidateArgumentResult { InvalidName, InvalidType, Valid };
+    ValidateArgCountResult validateArgCount(size_t paramCount, size_t argCount, bool isVariadic);
+    ValidateArgumentResult validateArgument(NamedValue& arg, const ParamDecl* param);
     void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", SourceLocation location = SourceLocation());
     void validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation());
