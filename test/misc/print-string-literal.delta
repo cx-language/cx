@@ -11,7 +11,7 @@ string bar() { return "bar"; }
 
 void main() {
     puts(foo());
-    print(bar());
+    println(bar());
     puts("baz");
-    print("qux");
+    println("qux");
 }

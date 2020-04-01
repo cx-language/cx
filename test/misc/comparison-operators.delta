@@ -7,16 +7,16 @@
 // CHECK-NEXT:k
 
 void main() {
-    if (1 == 1) { print("a"); }
-    if (1 == 2) { print("b"); }
-    if (0 != 1) { print("c"); }
-    if (0 != 0) { print("d"); }
-    if (1 <  2) { print("e"); }
-    if (1 <  1) { print("f"); }
-    if (1 >  0) { print("g"); }
-    if (0 >  0) { print("h"); }
-    if (0 <= 0) { print("i"); }
-    if (0 <=-1) { print("j"); }
-    if (0 >= 0) { print("k"); }
-    if (0 >= 1) { print("l"); }
+    if (1 == 1) { println("a"); }
+    if (1 == 2) { println("b"); }
+    if (0 != 1) { println("c"); }
+    if (0 != 0) { println("d"); }
+    if (1 <  2) { println("e"); }
+    if (1 <  1) { println("f"); }
+    if (1 >  0) { println("g"); }
+    if (0 >  0) { println("h"); }
+    if (0 <= 0) { println("i"); }
+    if (0 <=-1) { println("j"); }
+    if (0 >= 0) { println("k"); }
+    if (0 >= 1) { println("l"); }
 }

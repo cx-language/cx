@@ -11,12 +11,12 @@ struct A: Printable {
 }
 
 void main() {
-    print(true); // CHECK: true
-    print(false); // CHECK-NEXT: false
-    print(A("foo")); // CHECK-NEXT: foofoo!
-    print(0.1 + 0.2); // CHECK-NEXT: 0.3
-    print("f", 0, '0'); // CHECK-NEXT: f00
-    print(List([1, 2, 3])); // CHECK-NEXT: [1, 2, 3]
-    print(List([1])); // CHECK-NEXT: [1]
-    print(List<int>()); // CHECK-NEXT: []
+    println(true); // CHECK: true
+    println(false); // CHECK-NEXT: false
+    println(A("foo")); // CHECK-NEXT: foofoo!
+    println(0.1 + 0.2); // CHECK-NEXT: 0.3
+    println("f", 0, '0'); // CHECK-NEXT: f00
+    println(List([1, 2, 3])); // CHECK-NEXT: [1, 2, 3]
+    println(List([1])); // CHECK-NEXT: [1]
+    println(List<int>()); // CHECK-NEXT: []
 }

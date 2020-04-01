@@ -202,7 +202,7 @@ struct List<Element> {
     }
 
     private void indexOutOfBounds(int index) {
-        print("List index ", index, " is out of bounds, size is ", size());
+        println("List index ", index, " is out of bounds, size is ", size());
         fatalError();
     }
 }

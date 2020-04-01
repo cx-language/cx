@@ -6,13 +6,13 @@ void main() {
         // CHECK: 1
         // CHECK-NEXT: 2
         // CHECK-NEXT: 3
-        print(e)
+        println(e)
     }
 
     var a = [4,5]
     for (var e in a) {
         // CHECK-NEXT: 4
         // CHECK-NEXT: 5
-        print(e)
+        println(e)
     }
 }

@@ -168,7 +168,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     private void indexOutOfBounds(string function, int index) {
-        print("StringBuffer.", function, ": index ", index, " is out of bounds, size is ", size());
+        println("StringBuffer.", function, ": index ", index, " is out of bounds, size is ", size());
         fatalError();
     }
 }

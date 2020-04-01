@@ -3,5 +3,5 @@
 import "header.h"
 
 void main() {
-    print("foo")
+    println("foo")
 }

@@ -22,13 +22,13 @@ struct A : O {
     }
 
     void foo() {
-        print("A");
+        println("A");
     }
 }
 
 struct B : O {
     void foo() {
-        print("B");
+        println("B");
     }
 }
 

@@ -28,7 +28,7 @@ loop.body:                                        ; preds = %loop.condition
   %7 = call i32* @_EN3std13ArrayIteratorI3intE5valueE(%"ArrayIterator<int>"* %__iterator)
   store i32* %7, i32** %e
   %e.load = load i32*, i32** %e
-  call void @_EN3std5printI3intEEP3int(i32* %e.load)
+  call void @_EN3std7printlnI3intEEP3int(i32* %e.load)
   br label %loop.increment
 
 loop.increment:                                   ; preds = %loop.body
@@ -52,7 +52,7 @@ loop.body3:                                       ; preds = %loop.condition2
   %13 = call i32* @_EN3std13ArrayIteratorI3intE5valueE(%"ArrayIterator<int>"* %__iterator1)
   store i32* %13, i32** %e6
   %e6.load = load i32*, i32** %e6
-  call void @_EN3std5printI3intEEP3int(i32* %e6.load)
+  call void @_EN3std7printlnI3intEEP3int(i32* %e6.load)
   br label %loop.increment4
 
 loop.increment4:                                  ; preds = %loop.body3
@@ -78,7 +78,7 @@ define i32* @_EN3std13ArrayIteratorI3intE5valueE(%"ArrayIterator<int>"* %this) {
   ret i32* %current.load
 }
 
-define void @_EN3std5printI3intEEP3int(i32* %value) {
+define void @_EN3std7printlnI3intEEP3int(i32* %value) {
   %s = alloca %StringBuffer
   %1 = call %StringBuffer @_EN3std3int8toStringE(i32* %value)
   store %StringBuffer %1, %StringBuffer* %s
