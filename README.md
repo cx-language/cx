@@ -1,25 +1,16 @@
 # Delta Programming Language
 
-[![Build Status](https://travis-ci.org/delta-lang/delta.svg?branch=master)](https://travis-ci.org/delta-lang/delta)
+Delta is a high-performance programming language designed to improve programmer productivity.
+The project is still in early stages of development: some planned features have not yet been implemented,
+existing ones are subject to change, and the documentation is scarce.
 
-Delta is a general-purpose systems programming language intended as an
-alternative to languages such as C, C++, and Rust. Its primary goals are
-programmer productivity and performance, which are accomplished by the
-following:
+Learn more about the language at https://delta-lang.github.io.
 
-- Simple language with a carefully selected set of high-level and low-level features
-- Clean, familiar C-like syntax
-- Fast compile times
-- Ability to import C headers and use existing C libraries seamlessly
-- Strong type system with type inference, tagged unions, and compile-time null-safety
-- Efficient compiled code leveraging existing [LLVM](https://llvm.org) optimizations
+## Contributing
 
-For an introduction to the language, check out the [Delta book](https://delta-lang.gitbook.io/delta-book/),
-the [design document](docs/design.md), and the [language specification](docs/spec/spec.pdf).
-
-Note that the project is still in very early stages of development, so the above
-documents may be incomplete and partly out of date. Also some planned language
-features are still unimplemented, and existing ones are subject to change at any time.
+Contributions are welcome and encouraged.
+See the GitHub issues and the [Trello board](https://trello.com/b/NIbkM4v2/delta) for the project backlog.
+To ask a question or open a discussion, create an issue or join the [Delta Discord server](https://discord.gg/hsDbW9p).
 
 ## Building from source
 
@@ -55,24 +46,6 @@ After this, the following commands can be invoked from the `build` directory:
 - `cmake --build .` builds the project.
 - `cmake --build . --target check` runs the test suite.
 - `cmake --build . --target coverage` generates a test coverage report under `coverage/`.
-
-## Documentation
-
-Run `delta -help` for a list of supported command-line options.
-
-To generate compiler API documentation in HTML format, run `doxygen docs/doxyfile`
-in the project root directory. The output is generated under `docs/html` and can be
-viewed by opening `docs/html/index.html` in a browser.
-
-## Contributing
-
-Delta is an open-source language, so contributions are welcome and encouraged!
-See the [issues](https://github.com/delta-lang/delta/issues) and
-the [Trello board](https://trello.com/b/NIbkM4v2/delta) for things to do.
-All contributors are expected to follow the [code of conduct](docs/CODE_OF_CONDUCT.md).
-If you have any questions or anything else you want to discuss, feel free to
-post an issue or join the [Delta Telegram group](https://t.me/deltalang).
-You can also email me at [laine.emil@gmail.com](mailto:laine.emil@gmail.com).
 
 The C++ code style is enforced by ClangFormat and ClangTidy:
 
