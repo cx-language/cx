@@ -52,7 +52,6 @@ struct Token {
         Undefined,
         Var,
         While,
-        Underscore,
         HashIf,
         HashElse,
         HashEndif,

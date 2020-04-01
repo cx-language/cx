@@ -989,13 +989,15 @@ Stmt* Parser::parseStmt(Decl* parent) {
             return parseBreakStmt();
         case Token::Continue:
             return parseContinueStmt();
-        case Token::Underscore: {
-            consumeToken();
-            parse(Token::Assignment);
-            auto stmt = new ExprStmt(parseExpr());
-            parseStmtTerminator();
-            return stmt;
-        }
+        case Token::Identifier:
+            if (currentToken().getString() == "_") {
+                consumeToken();
+                parse(Token::Assignment);
+                auto stmt = new ExprStmt(parseExpr());
+                parseStmtTerminator();
+                return stmt;
+            }
+            LLVM_FALLTHROUGH;
         default:
             if (shouldParseVarStmt()) {
                 return parseVarStmt(parent);

@@ -272,7 +272,6 @@ const char* delta::toString(Token::Kind tokenKind) {
         "undefined",
         "var",
         "while",
-        "_",
         "#if",
         "#else",
         "#endif",

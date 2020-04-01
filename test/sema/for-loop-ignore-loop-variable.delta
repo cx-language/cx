@@ -1,0 +1,5 @@
+// RUN: %delta -typecheck -Werror %s
+
+void main() {
+    for (var _ in "foo") {}
+}

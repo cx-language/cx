@@ -217,7 +217,6 @@ static const llvm::StringMap<Token::Kind> keywords = {
     { "undefined", Token::Undefined },
     { "var", Token::Var },
     { "while", Token::While },
-    { "_", Token::Underscore },
     { "#if", Token::HashIf },
     { "#else", Token::HashElse },
     { "#endif", Token::HashEndif },
