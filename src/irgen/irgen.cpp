@@ -158,6 +158,9 @@ llvm::Type* IRGenerator::getLLVMType(Type type, SourceLocation location) {
                 return getLLVMType(type.getWrappedType());
             }
             llvm_unreachable("IRGen doesn't support non-pointer optional types yet");
+
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
     llvm_unreachable("all cases handled");
 }

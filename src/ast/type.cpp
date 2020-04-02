@@ -54,6 +54,8 @@ bool Type::isImplicitlyCopyable() const {
             return true;
         case TypeKind::OptionalType:
             return getWrappedType().isImplicitlyCopyable();
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
     llvm_unreachable("all cases handled");
 }
@@ -118,6 +120,8 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
             return PointerType::get(getPointee().resolve(replacements), mutability, location);
         case TypeKind::OptionalType:
             return OptionalType::get(getWrappedType().resolve(replacements), mutability, location);
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
     llvm_unreachable("all cases handled");
 }
@@ -159,6 +163,10 @@ Type PointerType::get(Type pointeeType, Mutability mutability, SourceLocation lo
 
 Type OptionalType::get(Type wrappedType, Mutability mutability, SourceLocation location) {
     return getType(OptionalType(wrappedType), mutability, location);
+}
+
+Type UnresolvedType::get(Mutability mutability, SourceLocation location) {
+    return getType(UnresolvedType(), mutability, location);
 }
 
 bool delta::operator==(const TupleElement& a, const TupleElement& b) {
@@ -273,6 +281,8 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
             return other.isPointerType() && getPointee() == other.getPointee();
         case TypeKind::OptionalType:
             return other.isOptionalType() && getWrappedType() == other.getWrappedType();
+        case TypeKind::UnresolvedType:
+            return false;
     }
     llvm_unreachable("all cases handled");
 }
@@ -368,6 +378,8 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
             }
             stream << '?';
             break;
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
 }
 

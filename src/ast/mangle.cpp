@@ -99,6 +99,8 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type) {
             stream << 'O';
             mangleType(stream, type.getWrappedType());
             break;
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
 }
 

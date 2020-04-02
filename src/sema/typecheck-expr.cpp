@@ -592,6 +592,9 @@ static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
 
         case TypeKind::OptionalType:
             return containsGenericParam(type.getWrappedType(), genericParam);
+
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
 
     llvm_unreachable("all cases handled");
@@ -645,6 +648,9 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
                 return findGenericArg(argType.getWrappedType(), paramType.getWrappedType(), genericParam);
             }
             break;
+
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
 
     if (paramType.removeOptional().isPointerType()) {
@@ -670,7 +676,8 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
             if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateArgs() after this function. Get rid of this duplicated typechecking.
                 auto* argValue = arg.getValue();
-                Type argType = typecheckExpr(*argValue, false, paramType);
+                auto expectedType = paramType.resolve({ { genericParam.getName(), UnresolvedType::get() } });
+                Type argType = typecheckExpr(*argValue, false, expectedType);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
                 if (!maybeGenericArg) continue;
 
@@ -1328,6 +1335,8 @@ static bool isValidCast(Type sourceType, Type targetType) {
 
             return false;
         }
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
 
     llvm_unreachable("all cases handled");

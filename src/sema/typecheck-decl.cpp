@@ -91,6 +91,9 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
         case TypeKind::OptionalType:
             typecheckType(type.getWrappedType(), userAccessLevel);
             break;
+
+        case TypeKind::UnresolvedType:
+            llvm_unreachable("invalid unresolved type");
     }
 }
 

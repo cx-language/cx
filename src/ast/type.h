@@ -28,6 +28,7 @@ enum class TypeKind {
     FunctionType,
     PointerType,
     OptionalType,
+    UnresolvedType, // Placeholder for unresolved generic parameters
 };
 
 class TypeBase {
@@ -146,7 +147,6 @@ public:
     static Type getFloat32(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getFloat64(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getFloat80(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
-    static Type getString(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getChar(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getNull(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getUndefined(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
@@ -275,6 +275,15 @@ private:
 
 private:
     Type wrappedType;
+};
+
+class UnresolvedType : public TypeBase {
+public:
+    static Type get(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::OptionalType; }
+
+private:
+    UnresolvedType() : TypeBase(TypeKind::UnresolvedType) {}
 };
 
 bool operator==(Type, Type);
