@@ -695,6 +695,10 @@ llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
     return phi;
 }
 
+llvm::Value* IRGenerator::codegenImplicitCastExpr(const ImplicitCastExpr& expr) {
+    return codegenExprWithoutAutoCast(*expr.getOperand());
+}
+
 llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr:
@@ -737,6 +741,8 @@ llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
             return codegenLambdaExpr(llvm::cast<LambdaExpr>(expr));
         case ExprKind::IfExpr:
             return codegenIfExpr(llvm::cast<IfExpr>(expr));
+        case ExprKind::ImplicitCastExpr:
+            return codegenImplicitCastExpr(llvm::cast<ImplicitCastExpr>(expr));
     }
     llvm_unreachable("all cases handled");
 }

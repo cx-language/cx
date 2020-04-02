@@ -291,6 +291,48 @@ bool delta::operator!=(Type lhs, Type rhs) {
     return !(lhs == rhs);
 }
 
+bool Type::containsUnresolvedPlaceholder() const {
+    switch (getKind()) {
+        case TypeKind::BasicType:
+            for (Type genericArg : getGenericArgs()) {
+                if (genericArg.containsUnresolvedPlaceholder()) {
+                    return true;
+                }
+            }
+            return false;
+
+        case TypeKind::ArrayType:
+            return getElementType().containsUnresolvedPlaceholder();
+
+        case TypeKind::TupleType:
+            for (auto& element : getTupleElements()) {
+                if (element.type.containsUnresolvedPlaceholder()) {
+                    return true;
+                }
+            }
+            return false;
+
+        case TypeKind::FunctionType:
+            for (Type paramType : getParamTypes()) {
+                if (paramType.containsUnresolvedPlaceholder()) {
+                    return true;
+                }
+            }
+            return getReturnType().containsUnresolvedPlaceholder();
+
+        case TypeKind::PointerType:
+            return getPointee().containsUnresolvedPlaceholder();
+
+        case TypeKind::OptionalType:
+            return getWrappedType().containsUnresolvedPlaceholder();
+
+        case TypeKind::UnresolvedType:
+            return true;
+    }
+
+    llvm_unreachable("all cases handled");
+}
+
 TypeDecl* Type::getDecl() const {
     auto* basicType = llvm::dyn_cast<BasicType>(typeBase);
     return basicType ? basicType->getDecl() : nullptr;

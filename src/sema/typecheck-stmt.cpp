@@ -49,9 +49,11 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
         return;
     }
 
-    Type returnValueType = typecheckExpr(*stmt.getReturnValue());
+    Type returnValueType = typecheckExpr(*stmt.getReturnValue(), false, functionReturnType);
 
-    if (!convert(stmt.getReturnValue(), functionReturnType)) {
+    if (auto converted = convert(stmt.getReturnValue(), functionReturnType)) {
+        stmt.setReturnValue(converted);
+    } else {
         ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
     }
 
@@ -101,7 +103,9 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     for (auto& switchCase : stmt.getCases()) {
         Type caseType = typecheckExpr(*switchCase.getValue());
 
-        if (!convert(switchCase.getValue(), conditionType)) {
+        if (auto converted = convert(switchCase.getValue(), conditionType)) {
+            switchCase.setValue(converted);
+        } else {
             ERROR(switchCase.getValue()->getLocation(),
                   "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }

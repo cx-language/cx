@@ -60,6 +60,7 @@ class ReturnStmt : public Stmt {
 public:
     ReturnStmt(Expr* value, SourceLocation location) : Stmt(StmtKind::ReturnStmt), value(value), location(location) {}
     Expr* getReturnValue() const { return value; }
+    void setReturnValue(Expr* expr) { value = expr; }
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ReturnStmt; }
 
@@ -124,6 +125,7 @@ public:
     VarDecl* getAssociatedValue() const { return associatedValue; }
     llvm::ArrayRef<Stmt*> getStmts() const { return stmts; }
     llvm::MutableArrayRef<Stmt*> getStmts() { return stmts; }
+    void setValue(Expr* expr) { value = expr; }
 
 private:
     Expr* value;

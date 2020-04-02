@@ -326,7 +326,9 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
         bool isLocalVariable = decl.getParent() && decl.getParent()->isFunctionDecl();
         typecheckType(declaredType, isLocalVariable ? AccessLevel::None : decl.getAccessLevel());
 
-        if (!convert(decl.getInitializer(), declaredType)) {
+        if (auto converted = convert(decl.getInitializer(), declaredType)) {
+            decl.setInitializer(converted);
+        } else {
             const char* hint = "";
 
             if (initializerType.isNull()) {

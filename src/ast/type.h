@@ -113,6 +113,7 @@ public:
     TypeDecl* getDecl() const;
     DestructorDecl* getDestructor() const;
     bool equalsIgnoreTopLevelMutable(Type) const;
+    bool containsUnresolvedPlaceholder() const;
     void printTo(std::ostream& stream, bool omitTopLevelConst) const;
     std::string toString(bool omitTopLevelMutable) const;
 

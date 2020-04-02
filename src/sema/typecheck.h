@@ -69,7 +69,7 @@ private:
     Type typecheckTupleExpr(TupleExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
     Type typecheckBinaryExpr(BinaryExpr& expr);
-    void typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location);
+    void typecheckAssignment(BinaryExpr& expr, SourceLocation location);
     Type typecheckCallExpr(CallExpr& expr, Type expectedType = Type());
     Type typecheckBuiltinConversion(CallExpr& expr);
     Type typecheckBuiltinCast(CallExpr& expr);
@@ -83,7 +83,8 @@ private:
 
     bool hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const;
     bool providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const;
-    bool convert(Expr* expr, Type type, bool allowPointerToTemporary = false) const;
+    /// Returns the converted expression if the conversion succeeds, or null otherwise.
+    Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false) const;
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,

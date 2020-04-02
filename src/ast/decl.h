@@ -416,6 +416,7 @@ public:
       module(module) {}
     llvm::StringRef getName() const override { return name; }
     Expr* getInitializer() const { return initializer; }
+    void setInitializer(Expr* expr) { initializer = expr; }
     SourceLocation getLocation() const override { return location; }
     Module* getModule() const override { return &module; }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::VarDecl; }

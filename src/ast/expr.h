@@ -39,7 +39,8 @@ enum class ExprKind {
     IndexExpr,
     UnwrapExpr,
     LambdaExpr,
-    IfExpr
+    IfExpr,
+    ImplicitCastExpr
 };
 
 class Expr {
@@ -66,6 +67,7 @@ public:
     bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
     bool isLambdaExpr() const { return getKind() == ExprKind::LambdaExpr; }
     bool isIfExpr() const { return getKind() == ExprKind::IfExpr; }
+    bool isImplicitCastExpr() const { return getKind() == ExprKind::ImplicitCastExpr; }
 
     ExprKind getKind() const { return kind; }
     bool hasType() const { return type.getBase() != nullptr; }
@@ -82,6 +84,7 @@ public:
     Expr* instantiate(const llvm::StringMap<Type>& genericArgs) const;
     std::vector<const Expr*> getSubExprs() const;
     FieldDecl* getFieldDecl() const;
+    const Expr* withoutImplicitCast() const;
 
 protected:
     Expr(ExprKind kind, SourceLocation location) : kind(kind), location(location) {}
@@ -192,6 +195,7 @@ public:
     void setName(std::string&& newName) { name = newName; }
     Expr* getValue() { return value; }
     const Expr* getValue() const { return value; }
+    void setValue(Expr* expr) { value = expr; }
     SourceLocation getLocation() const { return location; }
 
 private:
@@ -284,6 +288,8 @@ public:
     const Expr& getRHS() const { return *getArgs()[1].getValue(); }
     Expr& getLHS() { return *getArgs()[0].getValue(); }
     Expr& getRHS() { return *getArgs()[1].getValue(); }
+    void setLHS(Expr* expr) { getArgs()[0].setValue(expr); }
+    void setRHS(Expr* expr) { getArgs()[1].setValue(expr); }
     llvm::APSInt getConstantIntegerValue() const;
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::BinaryExpr; }
 
@@ -344,6 +350,7 @@ public:
     const Expr* getIndex() const { return getArgs()[0].getValue(); }
     Expr* getBase() { return getReceiver(); }
     Expr* getIndex() { return getArgs()[0].getValue(); }
+    void setIndex(Expr* expr) { getArgs()[0].setValue(expr); }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::IndexExpr; }
 };
 
@@ -380,12 +387,28 @@ public:
     const Expr* getCondition() const { return condition; }
     const Expr* getThenExpr() const { return thenExpr; }
     const Expr* getElseExpr() const { return elseExpr; }
+    void setThenExpr(Expr* expr) { thenExpr = expr; }
+    void setElseExpr(Expr* expr) { elseExpr = expr; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::IfExpr; }
 
 private:
     Expr* condition;
     Expr* thenExpr;
     Expr* elseExpr;
+};
+
+class ImplicitCastExpr : public Expr {
+public:
+    ImplicitCastExpr(Expr* operand, Type targetType) : Expr(ExprKind::ImplicitCastExpr, operand->getLocation()), operand(operand) {
+        setType(targetType);
+        setAssignableType(targetType);
+    }
+    Expr* getOperand() const { return operand; }
+    Type getTargetType() const { return getType(); }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::ImplicitCastExpr; }
+
+private:
+    Expr* operand;
 };
 
 } // namespace delta

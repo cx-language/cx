@@ -100,6 +100,7 @@ private:
     llvm::Value* codegenUnwrapExpr(const UnwrapExpr& expr);
     llvm::Value* codegenLambdaExpr(const LambdaExpr& expr);
     llvm::Value* codegenIfExpr(const IfExpr& expr);
+    llvm::Value* codegenImplicitCastExpr(const ImplicitCastExpr& expr);
 
     void codegenDeferredExprsAndDestructorCallsForReturn();
     void codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* continuation);

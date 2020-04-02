@@ -56,6 +56,8 @@ static llvm::Optional<bool> memberExprChainsMatch(const MemberExpr& a, const Mem
 }
 
 bool Typechecker::isGuaranteedNonNull(const Expr& expr) const {
+    if (expr.isNullLiteralExpr()) return false;
+
     if (currentControlStmts.empty()) {
         auto stmts = currentFunction->getBody().take_while([&](Stmt* s) { return s != currentStmt; });
 
@@ -107,7 +109,7 @@ static NullCheck analyzeNullCheck(const Expr& condition) {
         nullCheck.nullableValue = &condition;
         nullCheck.op = Token::NotEqual;
     } else if (auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(&condition)) {
-        if (binaryExpr->getRHS().isNullLiteralExpr()) {
+        if (binaryExpr->getRHS().withoutImplicitCast()->isNullLiteralExpr()) {
             nullCheck.nullableValue = &binaryExpr->getLHS();
             nullCheck.op = binaryExpr->getOperator();
         }

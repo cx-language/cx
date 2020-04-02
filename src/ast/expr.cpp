@@ -63,17 +63,16 @@ bool Expr::isConstant() const {
             return llvm::cast<BinaryExpr>(this)->getLHS().isConstant() && llvm::cast<BinaryExpr>(this)->getRHS().isConstant();
 
         case ExprKind::CallExpr:
-            return false;
-
-        case ExprKind::SizeofExpr:
-            return false; // TODO: sizeof should be a constant expression.
-
+        case ExprKind::SizeofExpr: // TODO: sizeof should be a constant expression.
         case ExprKind::AddressofExpr:
         case ExprKind::MemberExpr:
         case ExprKind::IndexExpr:
         case ExprKind::UnwrapExpr:
         case ExprKind::LambdaExpr:
             return false;
+
+        case ExprKind::ImplicitCastExpr:
+            return llvm::cast<ImplicitCastExpr>(this)->getOperand()->isConstant();
 
         case ExprKind::IfExpr:
             return llvm::cast<IfExpr>(this)->getCondition()->isConstant() && llvm::cast<IfExpr>(this)->getThenExpr()->isConstant() &&
@@ -275,6 +274,12 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
             instantiation = new IfExpr(condition, thenExpr, elseExpr, ifExpr->getLocation());
             break;
         }
+        case ExprKind::ImplicitCastExpr: {
+            auto implicitCastExpr = llvm::cast<ImplicitCastExpr>(this);
+            instantiation = new ImplicitCastExpr(implicitCastExpr->getOperand()->instantiate(genericArgs),
+                                                 implicitCastExpr->getType().resolve(genericArgs));
+            break;
+        }
     }
 
     if (hasType()) {
@@ -351,6 +356,11 @@ std::vector<const Expr*> Expr::getSubExprs() const {
             subExprs.push_back(ifExpr->getElseExpr());
             break;
         }
+        case ExprKind::ImplicitCastExpr: {
+            auto* implicitCastExpr = llvm::cast<ImplicitCastExpr>(this);
+            subExprs.push_back(implicitCastExpr->getOperand());
+            break;
+        }
     }
 
     return subExprs;
@@ -365,6 +375,13 @@ FieldDecl* Expr::getFieldDecl() const {
         default:
             return nullptr;
     }
+}
+
+const Expr* Expr::withoutImplicitCast() const {
+    if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(this)) {
+        return implicitCastExpr->getOperand();
+    }
+    return this;
 }
 
 llvm::StringRef CallExpr::getFunctionName() const {

@@ -102,8 +102,12 @@ Type typecheckBoolLiteralExpr(BoolLiteralExpr&) {
     return Type::getBool();
 }
 
-Type typecheckNullLiteralExpr(NullLiteralExpr&) {
-    return Type::getNull();
+Type typecheckNullLiteralExpr(NullLiteralExpr&, Type expectedType) {
+    if (expectedType && expectedType.isOptionalType() && !expectedType.containsUnresolvedPlaceholder()) {
+        return expectedType;
+    } else {
+        return Type::getNull();
+    }
 }
 
 Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&) {
@@ -238,7 +242,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     auto op = expr.getOperator();
 
     if (op == Token::Assignment) {
-        typecheckAssignment(expr.getLHS(), expr.getRHS(), expr.getLocation());
+        typecheckAssignment(expr, expr.getLocation());
         return Type::getVoid();
     }
 
@@ -281,40 +285,48 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
-    bool converted = convert(&expr.getRHS(), leftType, true) || convert(&expr.getLHS(), rightType, true);
-
-    if (!converted && (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType())) {
+    if (auto convertedRHS = convert(&expr.getRHS(), leftType, true)) {
+        expr.setRHS(convertedRHS);
+    } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true)) {
+        expr.setLHS(convertedLHS);
+    } else if ((!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType())) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
     return isComparisonOperator(op) ? Type::getBool() : expr.getLHS().getType();
 }
 
-void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation location) {
-    if (!lhs.isLvalue()) {
-        ERROR(lhs.getLocation(), "expression is not assignable");
+void Typechecker::typecheckAssignment(BinaryExpr& expr, SourceLocation location) {
+    auto* lhs = &expr.getLHS();
+    auto* rhs = &expr.getRHS();
+
+    if (!lhs->isLvalue()) {
+        ERROR(lhs->getLocation(), "expression is not assignable");
     }
 
-    typecheckExpr(lhs, true);
-    Type lhsType = lhs.getAssignableType();
-    Type rhsType = typecheckExpr(rhs, false, lhsType);
+    typecheckExpr(*lhs, true);
+    Type lhsType = lhs->getAssignableType();
+    Type rhsType = typecheckExpr(*rhs, false, lhsType);
 
-    if (rhs.isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(lhs, currentFunction)) {
-        ERROR(rhs.getLocation(), "'undefined' is only allowed as an initial value");
+    if (rhs->isUndefinedLiteralExpr() && !allowAssignmentOfUndefined(*lhs, currentFunction)) {
+        ERROR(rhs->getLocation(), "'undefined' is only allowed as an initial value");
     }
 
-    if (!convert(&rhs, lhsType)) {
+    if (auto converted = convert(rhs, lhsType)) {
+        expr.setRHS(converted);
+        rhs = converted;
+    } else {
         ERROR(location, "cannot assign '" << rhsType << "' to '" << lhsType << "'");
     }
 
     if (!lhsType.isMutable()) {
-        switch (lhs.getKind()) {
+        switch (lhs->getKind()) {
             case ExprKind::VarExpr: {
-                auto identifier = llvm::cast<VarExpr>(lhs).getIdentifier();
+                auto identifier = llvm::cast<VarExpr>(lhs)->getIdentifier();
                 ERROR(location, "cannot assign to immutable variable '" << identifier << "' of type '" << lhsType << "'");
             }
             case ExprKind::MemberExpr: {
-                auto memberName = llvm::cast<MemberExpr>(lhs).getMemberName();
+                auto memberName = llvm::cast<MemberExpr>(lhs)->getMemberName();
                 ERROR(location, "cannot assign to immutable variable '" << memberName << "' of type '" << lhsType << "'");
             }
             default:
@@ -323,12 +335,12 @@ void Typechecker::typecheckAssignment(Expr& lhs, Expr& rhs, SourceLocation locat
     }
 
     if (!rhsType.isImplicitlyCopyable() && !lhsType.removeOptional().isPointerType()) {
-        setMoved(&rhs, true);
-        setMoved(&lhs, false);
+        setMoved(rhs, true);
+        setMoved(lhs, false);
     }
 
     if (currentInitializedFields) {
-        if (auto fieldDecl = lhs.getFieldDecl()) {
+        if (auto fieldDecl = lhs->getFieldDecl()) {
             currentInitializedFields->insert(fieldDecl);
         }
     }
@@ -391,22 +403,21 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
     return true;
 }
 
-bool Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
-    // NOTE: convertedType may be the same as the source type, i.e. expr->getType().
-    Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary);
+Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
+    if (Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary)) {
+        if (convertedType != expr->getType()) {
+            expr->setType(convertedType);
 
-    if (convertedType) {
-        expr->setType(convertedType);
+            if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
+                ifExpr->getThenExpr()->setType(convertedType);
+                ifExpr->getElseExpr()->setType(convertedType);
+            }
 
-        if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-            ifExpr->getThenExpr()->setType(convertedType);
-            ifExpr->getElseExpr()->setType(convertedType);
+            return new ImplicitCastExpr(expr, convertedType);
         }
-
-        return true;
-    } else {
-        return false;
+        return expr;
     }
+    return nullptr;
 }
 
 Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary) const {
@@ -476,7 +487,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         if (expr->isUndefinedLiteralExpr()) {
-            return target;
+            return source;
         }
 
         if (expr->isStringLiteralExpr() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() &&
@@ -660,6 +671,16 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
     return Type();
 }
 
+static Type replaceUnresolvedGenericParamsWithPlaceholders(Type type, llvm::ArrayRef<GenericParamDecl> genericParams) {
+    llvm::StringMap<Type> placeholders;
+
+    for (auto& genericParam : genericParams) {
+        placeholders.try_emplace(genericParam.getName(), UnresolvedType::get());
+    }
+
+    return type.resolve(placeholders);
+}
+
 std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                             llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
     if (call.getArgs().size() != params.size()) return {};
@@ -668,7 +689,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
 
     for (auto& genericParam : genericParams) {
         Type genericArg;
-        Expr* genericArgValue;
+        Expr* genericArgValue = nullptr;
 
         for (auto&& [param, arg] : llvm::zip_first(params, call.getArgs())) {
             Type paramType = param.getType();
@@ -676,7 +697,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
             if (containsGenericParam(paramType, genericParam.getName())) {
                 // FIXME: The args will also be typechecked by validateArgs() after this function. Get rid of this duplicated typechecking.
                 auto* argValue = arg.getValue();
-                auto expectedType = paramType.resolve({ { genericParam.getName(), UnresolvedType::get() } });
+                auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType, genericParams);
                 Type argType = typecheckExpr(*argValue, false, expectedType);
                 Type maybeGenericArg = findGenericArg(argType, paramType, genericParam.getName());
                 if (!maybeGenericArg) continue;
@@ -688,9 +709,9 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
                     Type paramTypeWithGenericArg = paramType.resolve({ { genericParam.getName(), genericArg } });
                     Type paramTypeWithMaybeGenericArg = paramType.resolve({ { genericParam.getName(), maybeGenericArg } });
 
-                    if (convert(argValue, paramTypeWithGenericArg, true)) {
+                    if (isImplicitlyConvertible(argValue, argValue->getType(), paramTypeWithGenericArg, true)) {
                         continue;
-                    } else if (convert(genericArgValue, paramTypeWithMaybeGenericArg, true)) {
+                    } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->getType(), paramTypeWithMaybeGenericArg, true)) {
                         genericArg = maybeGenericArg;
                         genericArgValue = argValue;
                     } else {
@@ -762,8 +783,12 @@ Typechecker::ValidateArgumentResult Typechecker::validateArgument(NamedValue& ar
 
     typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
 
-    if (param && !convert(arg.getValue(), param->getType(), true)) {
-        return ValidateArgumentResult::InvalidType;
+    if (param) {
+        if (auto converted = convert(arg.getValue(), param->getType(), true)) {
+            arg.setValue(converted);
+        } else {
+            return ValidateArgumentResult::InvalidType;
+        }
     }
 
     return ValidateArgumentResult::Valid;
@@ -1434,7 +1459,10 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
     Expr* indexExpr = expr.getIndex();
     Type indexType = typecheckExpr(*indexExpr);
 
-    if (!convert(indexExpr, ArrayType::getIndexType())) {
+    if (auto converted = convert(indexExpr, ArrayType::getIndexType())) {
+        expr.setIndex(converted);
+        indexExpr = converted;
+    } else {
         ERROR(indexExpr->getLocation(), "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
     }
 
@@ -1486,9 +1514,11 @@ Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto thenType = typecheckExpr(*expr.getThenExpr());
     auto elseType = typecheckExpr(*expr.getElseExpr());
 
-    if (convert(expr.getElseExpr(), thenType)) {
+    if (auto convertedElse = convert(expr.getElseExpr(), thenType)) {
+        expr.setElseExpr(convertedElse);
         return thenType;
-    } else if (convert(expr.getThenExpr(), elseType)) {
+    } else if (auto convertedThen = convert(expr.getThenExpr(), elseType)) {
+        expr.setThenExpr(convertedThen);
         return elseType;
     } else {
         ERROR(expr.getLocation(), "incompatible operand types ('" << thenType << "' and '" << elseType << "')");
@@ -1523,7 +1553,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             type = typecheckBoolLiteralExpr(llvm::cast<BoolLiteralExpr>(expr));
             break;
         case ExprKind::NullLiteralExpr:
-            type = typecheckNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr));
+            type = typecheckNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr), expectedType);
             break;
         case ExprKind::UndefinedLiteralExpr:
             type = typecheckUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));
@@ -1564,6 +1594,8 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         case ExprKind::IfExpr:
             type = typecheckIfExpr(llvm::cast<IfExpr>(expr));
             break;
+        case ExprKind::ImplicitCastExpr:
+            llvm_unreachable("unexpected ImplicitCastExpr passed to typecheckExpr");
     }
 
     if (!useIsWriteOnly && type.isOptionalType() && isGuaranteedNonNull(expr)) {
