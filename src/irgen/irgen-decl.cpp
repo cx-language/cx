@@ -37,16 +37,14 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
         arg->setName(param->getName());
     }
 
-    auto result = functionInstantiations.try_emplace(std::move(mangled), FunctionInstantiation(decl, function));
-    // TODO: 'result.second' should always be true.
-    // ASSERT(result.second);
-
-    // If the function is from a different module, return the declaration generated in the current module.
-    if (result.first->second.getFunction()->getParent() != &*module) {
-        return function;
+    for (auto& instantiation : functionInstantiations) {
+        if (instantiation.function->getName() == mangled) {
+            return function;
+        }
     }
 
-    return result.first->second.getFunction();
+    functionInstantiations.push_back({ &decl, function });
+    return function;
 }
 
 void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& function) {

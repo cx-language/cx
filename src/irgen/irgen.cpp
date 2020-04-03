@@ -323,12 +323,12 @@ llvm::Module& IRGenerator::codegenModule(const Module& sourceModule) {
     while (true) {
         auto currentFunctionInstantiations = functionInstantiations;
 
-        for (auto& p : currentFunctionInstantiations) {
-            if (p.second.getDecl().isExtern() || !p.second.getFunction()->empty()) continue;
+        for (auto& instantiation : currentFunctionInstantiations) {
+            if (instantiation.decl->isExtern() || !instantiation.function->empty()) continue;
 
-            currentDecl = &p.second.getDecl();
-            codegenFunctionBody(p.second.getDecl(), *p.second.getFunction());
-            ASSERT(!llvm::verifyFunction(*p.second.getFunction(), &llvm::errs()));
+            currentDecl = instantiation.decl;
+            codegenFunctionBody(*instantiation.decl, *instantiation.function);
+            ASSERT(!llvm::verifyFunction(*instantiation.function, &llvm::errs()));
         }
 
         if (functionInstantiations.size() == currentFunctionInstantiations.size()) break;

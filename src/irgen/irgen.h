@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/DenseMap.h>
@@ -140,18 +139,11 @@ private:
     IRGenScope& globalScope() { return scopes.front(); }
 
 private:
-    class FunctionInstantiation {
-    public:
-        FunctionInstantiation(const FunctionDecl& decl, llvm::Function* function) : decl(decl), function(function) {}
-        const FunctionDecl& getDecl() const { return decl; }
-        llvm::Function* getFunction() const { return function; }
-
-    private:
-        const FunctionDecl& decl;
+    struct FunctionInstantiation {
+        const FunctionDecl* decl;
         llvm::Function* function;
     };
 
-private:
     std::vector<IRGenScope> scopes;
 
     llvm::LLVMContext ctx;
@@ -160,7 +152,7 @@ private:
     std::vector<llvm::Module*> generatedModules;
     llvm::BasicBlock::iterator lastAlloca;
 
-    std::map<std::string, FunctionInstantiation> functionInstantiations;
+    std::vector<FunctionInstantiation> functionInstantiations;
     llvm::StringMap<std::pair<llvm::StructType*, const TypeDecl*>> structs;
     const Decl* currentDecl;
 

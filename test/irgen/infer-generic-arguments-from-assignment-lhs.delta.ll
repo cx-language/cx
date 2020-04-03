@@ -53,6 +53,12 @@ define void @_EN3std4ListI3intE4initE(%"List<int>"* %this) {
   ret void
 }
 
+define void @_EN3std10deallocateIAU_3intEEAU_3int(i32* %allocation) {
+  %1 = bitcast i32* %allocation to i8*
+  call void @free(i8* %1)
+  ret void
+}
+
 define void @_EN3std4ListI3intE7reserveE3int(%"List<int>"* %this, i32 %minimumCapacity) {
   %newBuffer = alloca i32*
   %__iterator = alloca %"RangeIterator<int>"
@@ -129,12 +135,6 @@ if.end5:                                          ; preds = %if.else4, %if.then3
   %capacity9 = getelementptr inbounds %"List<int>", %"List<int>"* %this, i32 0, i32 2
   store i32 %minimumCapacity, i32* %capacity9
   br label %if.end
-}
-
-define void @_EN3std10deallocateIAU_3intEEAU_3int(i32* %allocation) {
-  %1 = bitcast i32* %allocation to i8*
-  call void @free(i8* %1)
-  ret void
 }
 
 declare void @free(i8*)

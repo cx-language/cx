@@ -60,6 +60,12 @@ define i32* @_EN3std3BoxI3intE3getE(%"Box<int>"* %this) {
   ret i32* %pointer.load
 }
 
+define void @_EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(%"Box<int>"* %allocation) {
+  %1 = bitcast %"Box<int>"* %allocation to i8*
+  call void @free(i8* %1)
+  ret void
+}
+
 define %"Box<int>"* @_EN3std8allocateI3BoxI3intEEE3BoxI3intE(%"Box<int>" %value) {
   %allocation = alloca %"Box<int>"*
   %1 = call i8* @malloc(i64 ptrtoint (i1** getelementptr (i1*, i1** null, i32 1) to i64))
@@ -77,12 +83,6 @@ assert.success:                                   ; preds = %0
   store %"Box<int>" %value, %"Box<int>"* %allocation.load
   %allocation.load1 = load %"Box<int>"*, %"Box<int>"** %allocation
   ret %"Box<int>"* %allocation.load1
-}
-
-define void @_EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(%"Box<int>"* %allocation) {
-  %1 = bitcast %"Box<int>"* %allocation to i8*
-  call void @free(i8* %1)
-  ret void
 }
 
 define i32* @_EN3std8allocateI3intEE3int(i32 %value) {

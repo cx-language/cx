@@ -52,10 +52,10 @@ define void @_EN4main3Bar6deinitE(%Bar* %this) {
   ret void
 }
 
-define void @_EN4main3Bar1fE(%Bar* %this) {
+define void @_EN4main3Foo1fE(%Foo* %this) {
   ret void
 }
 
-define void @_EN4main3Foo1fE(%Foo* %this) {
+define void @_EN4main3Bar1fE(%Bar* %this) {
   ret void
 }
