@@ -86,6 +86,7 @@ private:
     void codegenAssignment(const BinaryExpr& expr);
     llvm::Value* codegenExprForPassing(const Expr& expr, llvm::Type* targetType);
     llvm::Value* codegenBuiltinConversion(const Expr& expr, Type type);
+    llvm::Value* codegenOptionalConstruction(Type wrappedType, llvm::Value* arg);
     void codegenAssert(llvm::Value* condition, SourceLocation location, llvm::StringRef message = "Assertion failed");
     llvm::Value* codegenEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
     llvm::Value* codegenCallExpr(const CallExpr& expr, llvm::AllocaInst* thisAllocaForInit = nullptr);
@@ -128,6 +129,7 @@ private:
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getEnumType(const EnumDecl& enumDecl);
+    llvm::Type* getStructType(Type type);
     llvm::Type* getLLVMType(Type type, SourceLocation location = SourceLocation());
     llvm::Value* getArrayLength(const Expr& object, Type objectType);
     llvm::Value* getArrayIterator(const Expr& object, Type objectType);
@@ -160,6 +162,9 @@ private:
     /// The basic blocks to branch to on a 'break'/'continue' statement.
     llvm::SmallVector<llvm::BasicBlock*, 4> breakTargets;
     llvm::SmallVector<llvm::BasicBlock*, 4> continueTargets;
+
+    static const int optionalHasValueFieldIndex = 0;
+    static const int optionalValueFieldIndex = 1;
 };
 
 } // namespace delta

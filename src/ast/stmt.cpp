@@ -73,7 +73,6 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         }
         case StmtKind::ForStmt: {
             auto* forStmt = llvm::cast<ForStmt>(this);
-            // The second argument can be empty because VarDecl instantiation doesn't use it.
             auto variable = llvm::cast<VarStmt>(forStmt->getVariable()->instantiate(genericArgs));
             auto condition = forStmt->getCondition() ? forStmt->getCondition()->instantiate(genericArgs) : nullptr;
             auto increment = forStmt->getIncrement() ? forStmt->getIncrement()->instantiate(genericArgs) : nullptr;
@@ -116,7 +115,6 @@ Stmt* WhileStmt::lower() {
 // }
 Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVariableName = "__iterator" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
-    auto location = getLocation();
 
     Expr* iteratorValue;
     auto* rangeTypeDecl = range->getType().removePointer().getDecl();

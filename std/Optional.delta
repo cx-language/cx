@@ -1,0 +1,25 @@
+// TODO: Convert into enum once generic enums are supported.
+struct Optional<T> {
+    bool hasValue;
+    T value;
+
+    Optional() {
+        hasValue = false;
+        value = undefined;
+    }
+
+    Optional(T value) {
+        hasValue = true;
+        this.value = value;
+    }
+}
+
+bool operator==<T: Comparable>(Optional<T>* a, Optional<T>* b) {
+    if (a.hasValue != b.hasValue) return false;
+    if (!b.hasValue) return true;
+    return a.value == b.value;
+}
+
+bool operator!=<T: Comparable>(Optional<T>* a, Optional<T>* b) {
+    return !(a == b);
+}

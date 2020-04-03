@@ -19,4 +19,6 @@ void main() {
     println(List([1, 2, 3])); // CHECK-NEXT: [1, 2, 3]
     println(List([1])); // CHECK-NEXT: [1]
     println(List<int>()); // CHECK-NEXT: []
+    println(Optional<int>()); // CHECK-NEXT: null
+    println(Optional<int>(42)); // CHECK-NEXT: 42
 }

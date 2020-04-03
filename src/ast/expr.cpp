@@ -133,7 +133,7 @@ bool Expr::isLvalue() const {
 }
 
 Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
-    Expr* instantiation;
+    Expr* instantiation = nullptr;
 
     switch (getKind()) {
         case ExprKind::VarExpr: {
@@ -148,7 +148,6 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
             }
 
             instantiation = new VarExpr(std::move(identifier), varExpr->getLocation());
-            llvm::cast<VarExpr>(*instantiation).setDecl(varExpr->getDecl());
             break;
         }
         case ExprKind::StringLiteralExpr: {
@@ -220,11 +219,6 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
                             [&](auto& arg) { return NamedValue(arg.getName(), arg.getValue()->instantiate(genericArgs)); });
             auto callGenericArgs = map(callExpr->getGenericArgs(), [&](Type type) { return type.resolve(genericArgs); });
             instantiation = new CallExpr(callee, std::move(args), std::move(callGenericArgs), callExpr->getLocation());
-            if (auto* callee = callExpr->getCalleeDecl()) {
-                llvm::cast<CallExpr>(*instantiation).setCalleeDecl(callee);
-            }
-            Type receiverType = callExpr->getReceiverType().resolve(genericArgs);
-            llvm::cast<CallExpr>(*instantiation).setReceiverType(receiverType);
             break;
         }
         case ExprKind::SizeofExpr: {
@@ -280,10 +274,6 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
                                                  implicitCastExpr->getType().resolve(genericArgs));
             break;
         }
-    }
-
-    if (hasType()) {
-        instantiation->setType(getType());
     }
 
     return instantiation;
@@ -384,6 +374,10 @@ const Expr* Expr::withoutImplicitCast() const {
     return this;
 }
 
+bool Expr::isThis() const {
+    return isVarExpr() && llvm::cast<VarExpr>(this)->getIdentifier() == "this";
+}
+
 llvm::StringRef CallExpr::getFunctionName() const {
     switch (getCallee().getKind()) {
         case ExprKind::VarExpr:
@@ -450,6 +444,7 @@ bool delta::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (left.isEnumType() && left.equalsIgnoreTopLevelMutable(right)) return true;
     if (left.isEnumType() && right.isInteger()) return true;
     if (left.isInteger() && right.isEnumType()) return true;
+    if (left.isPointerTypeInLLVM() && right.isPointerTypeInLLVM()) return true;
     return left.isBuiltinType() && right.isBuiltinType();
 }
 

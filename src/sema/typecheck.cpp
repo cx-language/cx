@@ -59,7 +59,7 @@ bool Typechecker::isGuaranteedNonNull(const Expr& expr) const {
     if (expr.isNullLiteralExpr()) return false;
 
     if (currentControlStmts.empty()) {
-        auto stmts = currentFunction->getBody().take_while([&](Stmt* s) { return s != currentStmt; });
+        auto stmts = currentFunction->getBody().take_while([&](Stmt* s) { return s != *currentStmt; });
 
         for (auto* stmt : llvm::reverse(stmts)) {
             if (auto* ifStmt = llvm::dyn_cast<IfStmt>(stmt)) {

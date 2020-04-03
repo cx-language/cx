@@ -56,9 +56,14 @@ void IRGenerator::codegenBlock(llvm::ArrayRef<Stmt*> stmts, llvm::BasicBlock* co
 
 void IRGenerator::codegenIfStmt(const IfStmt& ifStmt) {
     auto* condition = codegenExpr(ifStmt.getCondition());
+
+    // FIXME: Lower implicit null checks such as `if (ptr)` and `if (!ptr)` to null comparisons.
     if (condition->getType()->isPointerTy()) {
         condition = codegenImplicitNullComparison(condition);
+    } else if (ifStmt.getCondition().getType().isOptionalType() && !ifStmt.getCondition().getType().getWrappedType().isPointerType()) {
+        condition = builder.CreateExtractValue(condition, optionalHasValueFieldIndex);
     }
+
     auto* function = builder.GetInsertBlock()->getParent();
     auto* thenBlock = llvm::BasicBlock::Create(ctx, "if.then", function);
     auto* elseBlock = llvm::BasicBlock::Create(ctx, "if.else", function);

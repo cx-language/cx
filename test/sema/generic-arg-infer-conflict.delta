@@ -2,5 +2,6 @@
 
 void foo<T>(T a, T b) { }
 
-// CHECK: [[@LINE+1]]:18: error: couldn't infer generic parameter 'T' of 'foo' because of conflicting argument types 'int' and 'bool'
+// CHECK: [[@LINE+2]]:15: error: no matching function for call to 'foo' with argument list of type '(int, bool)'
+// CHECK: :3:6: note: candidate function:
 void main() { foo(1, false) }

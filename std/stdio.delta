@@ -40,6 +40,14 @@ void println<T: Printable>(List<T>* list) {
 //    print('\n');
 //}
 
+void println<T: Printable>(Optional<T>* optional) {
+    if (optional.hasValue) {
+        println(optional.value);
+    } else {
+        println("null");
+    }
+}
+
 // TODO: Make 'print'/'println' variadic functions when those are implemented.
 void println<T0: Printable, T1: Printable>(T0* _0, T1* _1) { print(_0); print(_1); print('\n'); }
 void println<T0: Printable, T1: Printable, T2: Printable>(T0* _0, T1* _1, T2* _2) { print(_0); print(_1); print(_2); print('\n'); }

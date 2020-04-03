@@ -65,6 +65,7 @@ private:
     void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
+    Type typecheckNullLiteralExpr(NullLiteralExpr& expr, Type expectedType);
     Type typecheckArrayLiteralExpr(ArrayLiteralExpr& expr, Type expectedType = Type());
     Type typecheckTupleExpr(TupleExpr& expr);
     Type typecheckUnaryExpr(UnaryExpr& expr);
@@ -86,9 +87,10 @@ private:
     /// Returns the converted expression if the conversion succeeds, or null otherwise.
     Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false) const;
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
-    Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false) const;
-    llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
-                                                llvm::ArrayRef<ParamDecl> params, bool returnOnError, Type expectedType);
+    Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
+                                 bool* setType = nullptr) const;
+    llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl,
+                                                bool returnOnError, Type expectedType);
     Decl* findDecl(llvm::StringRef name, SourceLocation location) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false) const;
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);
@@ -138,7 +140,7 @@ private:
     Module* currentModule;
     SourceFile* currentSourceFile;
     FunctionDecl* currentFunction;
-    Stmt* currentStmt;
+    Stmt** currentStmt; // Double-pointer so it refers to the correct statement after lowering.
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     llvm::SmallPtrSet<Decl*, 32> movedDecls;

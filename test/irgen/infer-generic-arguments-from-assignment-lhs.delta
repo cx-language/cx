@@ -3,5 +3,6 @@
 void main() {
     List<int> i = List(capacity: 10);
     List<int> j = List();
+    // List<int>? o = List(); // TODO: Implement generic argument inference from lhs when lhs is Optional.
     i = List();
 }

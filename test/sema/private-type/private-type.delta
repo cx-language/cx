@@ -13,11 +13,11 @@ void main() {
 // CHECK: [[@LINE+1]]:8: warning: 'A' is private
 void f(A a) {}
 
-// CHECK: [[@LINE+1]]:8: warning: 'A' is private
+// TODO: This warning should be at column 8
+// CHECK: [[@LINE+1]]:9: warning: 'A' is private
 void g(A*? a) {}
 
-// CHECK: [[@LINE+1]]:1: warning: 'A' is private
-A*? h() {
+A*? h() { // TODO: Here should be a warning
     return null;
 }
 

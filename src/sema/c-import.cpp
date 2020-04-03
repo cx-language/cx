@@ -185,7 +185,7 @@ static llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl&
 
 static TypeDecl* toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     auto tag = decl.isUnion() ? TypeTag::Union : TypeTag::Struct;
-    auto* typeDecl = new TypeDecl(tag, getName(decl), {}, {}, AccessLevel::Default, *currentModule, SourceLocation());
+    auto* typeDecl = new TypeDecl(tag, getName(decl), {}, {}, AccessLevel::Default, *currentModule, nullptr, SourceLocation());
 
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, *typeDecl)) {
@@ -249,7 +249,8 @@ public:
                         addIntegerConstantToSymbolTable(enumeratorName, value, type, module);
                     }
 
-                    module.addToSymbolTable(new EnumDecl(getName(enumDecl), std::move(cases), AccessLevel::Default, module, SourceLocation()));
+                    module.addToSymbolTable(
+                        new EnumDecl(getName(enumDecl), std::move(cases), AccessLevel::Default, module, nullptr, SourceLocation()));
                     break;
                 }
                 case clang::Decl::Var:

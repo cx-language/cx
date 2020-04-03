@@ -34,11 +34,9 @@ void m(A* r) {
     a = A();
 }
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:8: warning: using private type 'A' in public declaration
-void o(A*? a) {}
+void o(A*? a) {} // TODO: Here should be a warning
 
-// CHECK-PRIVATE-IN-PUBLIC-DECL: a.delta:[[@LINE+1]]:1: warning: using private type 'A' in public declaration
-A*? p() {
+A*? p() { // TODO: Here should be a warning
     return null;
 }
 

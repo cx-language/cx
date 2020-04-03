@@ -11,7 +11,7 @@ using namespace delta;
 void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
-            if (type.isBuiltinType()) {
+            if (!type.isOptionalType() && type.isBuiltinType()) {
                 validateGenericArgCount(0, type.getGenericArgs(), type.getName(), type.getLocation());
                 break;
             }
@@ -34,9 +34,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
 
                 ASSERT(decls.size() == 1);
                 decl = decls[0];
-                auto typeTemplate = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs());
-                getCurrentModule()->addToSymbolTable(*typeTemplate);
-                typecheckTypeDecl(*typeTemplate);
+                auto instantiation = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs());
+                getCurrentModule()->addToSymbolTable(*instantiation);
+                declsToTypecheck.push_back(instantiation);
+
             } else {
                 ASSERT(decls.size() == 1);
                 decl = decls[0];
@@ -88,10 +89,6 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
             }
             break;
         }
-        case TypeKind::OptionalType:
-            typecheckType(type.getWrappedType(), userAccessLevel);
-            break;
-
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");
     }
@@ -189,7 +186,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
         if (decl.hasBody()) {
             for (auto& stmt : decl.getBody()) {
                 {
-                    llvm::SaveAndRestore setCurrentStmt(currentStmt, stmt);
+                    llvm::SaveAndRestore setCurrentStmt(currentStmt, &stmt);
                     typecheckStmt(stmt);
                 }
 

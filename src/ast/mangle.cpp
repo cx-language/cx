@@ -56,8 +56,13 @@ static void mangleGenericArgs(llvm::raw_string_ostream& stream, llvm::ArrayRef<T
 static void mangleType(llvm::raw_string_ostream& stream, Type type) {
     switch (type.getKind()) {
         case TypeKind::BasicType:
-            mangleIdentifier(stream, type.getName());
-            mangleGenericArgs(stream, type.getGenericArgs());
+            if (type.isOptionalType()) {
+                stream << 'O';
+                mangleType(stream, type.getWrappedType());
+            } else {
+                mangleIdentifier(stream, type.getName());
+                mangleGenericArgs(stream, type.getGenericArgs());
+            }
             break;
         case TypeKind::ArrayType:
             stream << 'A';
@@ -94,10 +99,6 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type) {
         case TypeKind::PointerType:
             stream << 'P';
             mangleType(stream, type.getPointee());
-            break;
-        case TypeKind::OptionalType:
-            stream << 'O';
-            mangleType(stream, type.getWrappedType());
             break;
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");

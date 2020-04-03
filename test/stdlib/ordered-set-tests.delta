@@ -22,7 +22,6 @@ void testInsert() {
     assert(!s.contains(39));
 }
 
-
 void testRemoval() {
     var s = OrderedSet<int>();
 

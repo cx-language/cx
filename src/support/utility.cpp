@@ -54,11 +54,7 @@ void delta::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm:
         llvm::outs().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
     }
 
-    if (location.file && *location.file) {
-        llvm::outs() << location.file;
-        if (location.isValid()) {
-            llvm::outs() << ':' << location.line << ':' << location.column;
-        }
+    if (location.print()) {
         llvm::outs() << ": ";
     }
 

@@ -1191,7 +1191,7 @@ DestructorDecl* Parser::parseDestructorDecl(TypeDecl& receiverTypeDecl) {
 }
 
 /// field-decl ::= type id ('=' expr)? ('\n' | ';')
-FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation nameLocation) {
+FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation location) {
     Expr* defaultValue = nullptr;
 
     if (currentToken() == Token::Assignment) {
@@ -1200,7 +1200,7 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Ty
     }
 
     parseStmtTerminator();
-    return FieldDecl(type, name, defaultValue, typeDecl, accessLevel, nameLocation);
+    return FieldDecl(type, name, defaultValue, typeDecl, accessLevel, location);
 }
 
 /// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}'
@@ -1244,7 +1244,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
     auto typeDecl = new TypeDecl(tag, typeName.getString(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule,
-                                 typeName.getLocation());
+                                 nullptr, typeName.getLocation());
     bool hasConstructor = false;
     parse(Token::LeftBrace);
 
@@ -1363,7 +1363,7 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
     }
 
     consumeToken();
-    return new EnumDecl(name.getString(), std::move(cases), typeAccessLevel, *currentModule, name.getLocation());
+    return new EnumDecl(name.getString(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.getLocation());
 }
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')

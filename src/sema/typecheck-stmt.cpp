@@ -66,7 +66,7 @@ void Typechecker::typecheckVarStmt(VarStmt& stmt) {
 }
 
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
-    Type conditionType = typecheckExpr(ifStmt.getCondition());
+    Type conditionType = typecheckExpr(ifStmt.getCondition()).removePointer();
 
     if (!conditionType.isBool() && !conditionType.isOptionalType()) {
         ERROR(ifStmt.getCondition().getLocation(), "'if' condition must have type 'bool' or optional type");
@@ -138,7 +138,7 @@ void Typechecker::typecheckForStmt(ForStmt& forStmt) {
     }
 
     if (forStmt.getCondition()) {
-        Type conditionType = typecheckExpr(*forStmt.getCondition());
+        Type conditionType = typecheckExpr(*forStmt.getCondition()).removePointer();
 
         if (!conditionType.isBool() && !conditionType.isOptionalType()) {
             ERROR(forStmt.getCondition()->getLocation(), "loop condition must have type 'bool' or optional type");
@@ -201,7 +201,6 @@ void Typechecker::typecheckStmt(Stmt*& stmt) {
                 break;
             case StmtKind::WhileStmt: {
                 auto* whileStmt = llvm::cast<WhileStmt>(stmt);
-                typecheckExpr(whileStmt->getCondition());
                 stmt = whileStmt->lower();
                 typecheckStmt(stmt);
                 break;
