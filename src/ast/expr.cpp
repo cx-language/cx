@@ -384,6 +384,10 @@ const Expr* Expr::withoutImplicitCast() const {
     return this;
 }
 
+bool Expr::isThis() const {
+    return isVarExpr() && llvm::cast<VarExpr>(this)->getIdentifier() == "this";
+}
+
 llvm::StringRef CallExpr::getFunctionName() const {
     switch (getCallee().getKind()) {
         case ExprKind::VarExpr:

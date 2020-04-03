@@ -1,0 +1,15 @@
+// TODO: Convert into enum once generic enums are supported.
+struct Optional<T> {
+    T value;
+    bool hasValue;
+
+    Optional() {
+        this.value = undefined;
+        this.hasValue = false;
+    }
+
+    Optional(T value) {
+        this.value = value;
+        this.hasValue = true;
+    }
+}

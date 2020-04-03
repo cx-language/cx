@@ -58,7 +58,7 @@ static llvm::Optional<bool> memberExprChainsMatch(const MemberExpr& a, const Mem
 bool Typechecker::isGuaranteedNonNull(const Expr& expr) const {
     if (expr.isNullLiteralExpr()) return false;
 
-    if (currentControlStmts.empty()) {
+    if (currentControlStmts.empty() && currentFunction) {
         auto stmts = currentFunction->getBody().take_while([&](Stmt* s) { return s != currentStmt; });
 
         for (auto* stmt : llvm::reverse(stmts)) {

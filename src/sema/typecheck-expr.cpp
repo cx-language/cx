@@ -102,7 +102,7 @@ Type typecheckBoolLiteralExpr(BoolLiteralExpr&) {
     return Type::getBool();
 }
 
-Type typecheckNullLiteralExpr(NullLiteralExpr&, Type expectedType) {
+Type Typechecker::typecheckNullLiteralExpr(NullLiteralExpr&, Type expectedType) {
     if (expectedType && expectedType.isOptionalType() && !expectedType.containsUnresolvedPlaceholder()) {
         return expectedType;
     } else {
@@ -253,7 +253,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     Type leftType = typecheckExpr(expr.getLHS());
-    Type rightType = typecheckExpr(expr.getRHS());
+    Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
 
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
@@ -404,13 +404,16 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
-    if (Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary)) {
+    bool setType = true;
+    if (Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary, &setType)) {
         if (convertedType != expr->getType()) {
-            expr->setType(convertedType);
+            if (setType) {
+                expr->setType(convertedType);
 
-            if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-                ifExpr->getThenExpr()->setType(convertedType);
-                ifExpr->getElseExpr()->setType(convertedType);
+                if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
+                    ifExpr->getThenExpr()->setType(convertedType);
+                    ifExpr->getElseExpr()->setType(convertedType);
+                }
             }
 
             return new ImplicitCastExpr(expr, convertedType);
@@ -420,7 +423,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
     return nullptr;
 }
 
-Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary) const {
+Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary, bool* setType) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() &&
         source.getGenericArgs() == target.getGenericArgs()) {
         return source;
@@ -523,7 +526,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) && isImplicitlyConvertible(expr, source, target.getWrappedType())) {
-        return source;
+        if (setType) *setType = false;
+        return target;
     }
 
     if (source.isArrayType() && target.removeOptional().isPointerType() &&
@@ -601,9 +605,6 @@ static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
         case TypeKind::PointerType:
             return containsGenericParam(type.getPointee(), genericParam);
 
-        case TypeKind::OptionalType:
-            return containsGenericParam(type.getWrappedType(), genericParam);
-
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");
     }
@@ -651,12 +652,6 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
         case TypeKind::PointerType:
             if (paramType.isPointerType()) {
                 return findGenericArg(argType.getPointee(), paramType.getPointee(), genericParam);
-            }
-            break;
-
-        case TypeKind::OptionalType:
-            if (paramType.isOptionalType()) {
-                return findGenericArg(argType.getWrappedType(), paramType.getWrappedType(), genericParam);
             }
             break;
 
@@ -794,20 +789,22 @@ Typechecker::ValidateArgumentResult Typechecker::validateArgument(NamedValue& ar
     return ValidateArgumentResult::Valid;
 }
 
-llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
-                                                         llvm::ArrayRef<ParamDecl> params, bool returnOnError, Type expectedType) {
+llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl,
+                                                         bool returnOnError, Type expectedType) {
     ASSERT(!genericParams.empty());
     std::vector<Type> inferredGenericArgs;
     llvm::ArrayRef<Type> genericArgTypes;
 
     if (call.getGenericArgs().empty()) {
-        if (expectedType && expectedType.isBasicType() && !expectedType.getGenericArgs().empty()) {
-            // TODO: Should probably check that expectedType is the same type as the type whose generics args we're inferring.
+        if (expectedType && expectedType.isBasicType() && !expectedType.getGenericArgs().empty() &&
+            BasicType::get(expectedType.getName(), {}).getDecl() ==
+                (decl->isConstructorDecl() ? decl->getTypeDecl() : decl->getReturnType().getDecl())) {
             genericArgTypes = expectedType.getGenericArgs();
         } else if (call.getArgs().empty()) {
+            if (returnOnError) return {};
             ERROR(call.getLocation(), "can't infer generic parameters, please specify them explicitly");
         } else {
-            inferredGenericArgs = inferGenericArgsFromCallArgs(genericParams, call, params, returnOnError);
+            inferredGenericArgs = inferGenericArgsFromCallArgs(genericParams, call, decl->getParams(), returnOnError);
             if (inferredGenericArgs.empty()) return {};
             ASSERT(inferredGenericArgs.size() == genericParams.size());
             genericArgTypes = inferredGenericArgs;
@@ -901,8 +898,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     continue;
                 }
 
-                auto params = functionTemplate->getFunctionDecl()->getParams();
-                auto genericArgs = getGenericArgsForCall(genericParams, expr, params, decls.size() != 1, expectedType);
+                auto genericArgs = getGenericArgsForCall(genericParams, expr, functionTemplate->getFunctionDecl(), decls.size() != 1,
+                                                         expectedType);
                 if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
                 auto* functionDecl = functionTemplate->instantiate(genericArgs);
@@ -962,9 +959,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 std::vector<llvm::StringMap<Type>> genericArgSets;
 
                 for (auto* constructorDecl : constructorDecls) {
-                    auto params = constructorDecl->getParams();
-                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, params, constructorDecls.size() != 1,
-                                                             expectedType);
+                    auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, constructorDecl,
+                                                             constructorDecls.size() != 1, expectedType);
                     if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
                     if (llvm::find_if(genericArgSets, [&](auto& set) { return equals(set, genericArgs); }) == genericArgSets.end()) {
                         genericArgSets.push_back(genericArgs);
@@ -1310,6 +1306,19 @@ void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params,
 static bool isValidCast(Type sourceType, Type targetType) {
     switch (sourceType.getKind()) {
         case TypeKind::BasicType:
+            if (sourceType.isOptionalType()) {
+                Type sourceWrappedType = sourceType.getWrappedType();
+
+                if (sourceWrappedType.isPointerType() && targetType.isOptionalType()) {
+                    Type targetWrappedType = targetType.getWrappedType();
+
+                    if (targetWrappedType.isPointerType() && isValidCast(sourceWrappedType, targetWrappedType)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+
         case TypeKind::TupleType:
         case TypeKind::FunctionType:
             return false;
@@ -1342,19 +1351,6 @@ static bool isValidCast(Type sourceType, Type targetType) {
                 Type targetPointee = targetType.getPointee();
 
                 if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourceType.getElementType().isMutable())) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        case TypeKind::OptionalType: {
-            Type sourceWrappedType = sourceType.getWrappedType();
-
-            if (sourceWrappedType.isPointerType() && targetType.isOptionalType()) {
-                Type targetWrappedType = targetType.getWrappedType();
-
-                if (targetWrappedType.isPointerType() && isValidCast(sourceWrappedType, targetWrappedType)) {
                     return true;
                 }
             }
@@ -1403,7 +1399,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
 
     Type baseType = typecheckExpr(*expr.getBaseExpr());
 
-    if (baseType.isOptionalType()) {
+    if (baseType.isOptionalType() && !expr.getBaseExpr()->isThis()) {
         WARN(expr.getBaseExpr()->getLocation(), "accessing member through value of optional type '"
                                                     << baseType << "' which may be null; "
                                                     << "unwrap the value with a postfix '!' to silence this warning");

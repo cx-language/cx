@@ -52,8 +52,6 @@ bool Type::isImplicitlyCopyable() const {
         case TypeKind::FunctionType:
         case TypeKind::PointerType:
             return true;
-        case TypeKind::OptionalType:
-            return getWrappedType().isImplicitlyCopyable();
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");
     }
@@ -118,8 +116,6 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
         }
         case TypeKind::PointerType:
             return PointerType::get(getPointee().resolve(replacements), mutability, location);
-        case TypeKind::OptionalType:
-            return OptionalType::get(getWrappedType().resolve(replacements), mutability, location);
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");
     }
@@ -162,7 +158,7 @@ Type PointerType::get(Type pointeeType, Mutability mutability, SourceLocation lo
 }
 
 Type OptionalType::get(Type wrappedType, Mutability mutability, SourceLocation location) {
-    return getType(OptionalType(wrappedType), mutability, location);
+    return BasicType::get("Optional", wrappedType, mutability, location);
 }
 
 Type UnresolvedType::get(Mutability mutability, SourceLocation location) {
@@ -259,7 +255,8 @@ Type Type::getPointee() const {
 }
 
 Type Type::getWrappedType() const {
-    return llvm::cast<OptionalType>(typeBase)->getWrappedType().withLocation(location);
+    ASSERT(isOptionalType());
+    return getGenericArgs().front().withLocation(location);
 }
 
 bool delta::operator==(Type lhs, Type rhs) {
@@ -279,8 +276,6 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
             return other.isFunctionType() && getReturnType() == other.getReturnType() && getParamTypes() == other.getParamTypes();
         case TypeKind::PointerType:
             return other.isPointerType() && getPointee() == other.getPointee();
-        case TypeKind::OptionalType:
-            return other.isOptionalType() && getWrappedType() == other.getWrappedType();
         case TypeKind::UnresolvedType:
             return false;
     }
@@ -323,9 +318,6 @@ bool Type::containsUnresolvedPlaceholder() const {
         case TypeKind::PointerType:
             return getPointee().containsUnresolvedPlaceholder();
 
-        case TypeKind::OptionalType:
-            return getWrappedType().containsUnresolvedPlaceholder();
-
         case TypeKind::UnresolvedType:
             return true;
     }
@@ -346,6 +338,15 @@ DestructorDecl* Type::getDestructor() const {
 void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
     switch (typeBase->getKind()) {
         case TypeKind::BasicType: {
+            if (isOptionalType()) {
+                getWrappedType().printTo(stream, false);
+                if (!isMutable() && !omitTopLevelConst) {
+                    stream << " const";
+                }
+                stream << '?';
+                break;
+            }
+
             if (!isMutable() && !omitTopLevelConst) stream << "const ";
             stream << getName();
 
@@ -395,30 +396,11 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
             stream << ")";
             break;
         case TypeKind::PointerType:
-            if (getPointee().isFunctionType()) {
-                stream << '(';
-            }
             getPointee().printTo(stream, false);
             if (!isMutable() && !omitTopLevelConst) {
                 stream << " const";
             }
-            if (getPointee().isFunctionType()) {
-                stream << ')';
-            }
             stream << '*';
-            break;
-        case TypeKind::OptionalType:
-            if (getWrappedType().isFunctionType()) {
-                stream << '(';
-            }
-            getWrappedType().printTo(stream, false);
-            if (!isMutable() && !omitTopLevelConst) {
-                stream << " const";
-            }
-            if (getWrappedType().isFunctionType()) {
-                stream << ')';
-            }
-            stream << '?';
             break;
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");

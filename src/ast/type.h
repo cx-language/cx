@@ -27,7 +27,6 @@ enum class TypeKind {
     TupleType,
     FunctionType,
     PointerType,
-    OptionalType,
     UnresolvedType, // Placeholder for unresolved generic parameters
 };
 
@@ -63,8 +62,9 @@ public:
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
-    bool isOptionalType() const { return getKind() == TypeKind::OptionalType; }
+    bool isOptionalType() const { return isBasicType() && getName() == "Optional"; }
     bool isBuiltinType() const {
+        // Should Optional be a builtin type? What's the definition of "builtin type"?
         return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isOptionalType() || isNull() || isVoid();
     }
     bool isImplicitlyCopyable() const;
@@ -265,23 +265,14 @@ private:
     Type pointeeType;
 };
 
-class OptionalType : public TypeBase {
-public:
-    Type getWrappedType() const { return wrappedType; }
-    static Type get(Type wrappedType, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
-    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::OptionalType; }
-
-private:
-    OptionalType(Type wrappedType) : TypeBase(TypeKind::OptionalType), wrappedType(wrappedType) {}
-
-private:
-    Type wrappedType;
+namespace OptionalType {
+Type get(Type wrappedType, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
 };
 
 class UnresolvedType : public TypeBase {
 public:
     static Type get(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
-    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::OptionalType; }
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::UnresolvedType; }
 
 private:
     UnresolvedType() : TypeBase(TypeKind::UnresolvedType) {}

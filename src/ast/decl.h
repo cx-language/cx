@@ -309,9 +309,9 @@ enum class TypeTag { Struct, Interface, Union, Enum };
 class TypeDecl : public Decl {
 public:
     TypeDecl(TypeTag tag, std::string&& name, std::vector<Type>&& genericArgs, std::vector<Type>&& interfaces, AccessLevel accessLevel,
-             Module& module, SourceLocation location)
+             Module& module, const TypeDecl* instantiatedFrom, SourceLocation location)
     : Decl(DeclKind::TypeDecl, accessLevel), tag(tag), name(std::move(name)), genericArgs(std::move(genericArgs)),
-      interfaces(std::move(interfaces)), location(location), module(module) {}
+      interfaces(std::move(interfaces)), location(location), module(module), instantiatedFrom(instantiatedFrom) {}
     TypeTag getTag() const { return tag; }
     llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
@@ -335,11 +335,13 @@ public:
     bool isUnion() const { return tag == TypeTag::Union; }
     unsigned getFieldIndex(const FieldDecl* field) const;
     Module* getModule() const override { return &module; }
+    const TypeDecl* getInstantiatedFrom() const { return instantiatedFrom; }
     static bool classof(const Decl* d) { return d->isTypeDecl(); }
 
 protected:
-    TypeDecl(DeclKind kind, TypeTag tag, std::string&& name, AccessLevel accessLevel, Module& module, SourceLocation location)
-    : Decl(kind, accessLevel), tag(tag), name(std::move(name)), location(location), module(module) {}
+    TypeDecl(DeclKind kind, TypeTag tag, std::string&& name, AccessLevel accessLevel, Module& module, const TypeDecl* instantiatedFrom,
+             SourceLocation location)
+    : Decl(kind, accessLevel), tag(tag), name(std::move(name)), location(location), module(module), instantiatedFrom(instantiatedFrom) {}
 
 private:
     TypeTag tag;
@@ -350,6 +352,7 @@ private:
     std::vector<Decl*> methods;
     SourceLocation location;
     Module& module;
+    const TypeDecl* instantiatedFrom;
 };
 
 class TypeTemplate : public Decl {
@@ -391,8 +394,9 @@ private:
 
 class EnumDecl : public TypeDecl {
 public:
-    EnumDecl(std::string&& name, std::vector<EnumCase>&& cases, AccessLevel accessLevel, Module& module, SourceLocation location)
-    : TypeDecl(DeclKind::EnumDecl, TypeTag::Enum, std::move(name), accessLevel, module, location), cases(std::move(cases)) {
+    EnumDecl(std::string&& name, std::vector<EnumCase>&& cases, AccessLevel accessLevel, Module& module, const TypeDecl* instantiatedFrom,
+             SourceLocation location)
+    : TypeDecl(DeclKind::EnumDecl, TypeTag::Enum, std::move(name), accessLevel, module, instantiatedFrom, location), cases(std::move(cases)) {
         for (auto& enumCase : this->cases) {
             enumCase.setParent(this);
             enumCase.setType(getType());

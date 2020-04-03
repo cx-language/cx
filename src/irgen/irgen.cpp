@@ -114,19 +114,26 @@ llvm::Type* IRGenerator::getEnumType(const EnumDecl& enumDecl) {
     return structType;
 }
 
+llvm::Type* IRGenerator::getStructType(Type type) {
+    auto it = structs.find(type.getQualifiedTypeName());
+    if (it != structs.end()) return it->second.first;
+
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(type.getDecl())) {
+        return getEnumType(*enumDecl);
+    } else {
+        return codegenTypeDecl(*type.getDecl());
+    }
+}
+
 llvm::Type* IRGenerator::getLLVMType(Type type, SourceLocation location) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
             if (auto* builtinType = getBuiltinType(type.getName())) return builtinType;
-
-            auto it = structs.find(type.getQualifiedTypeName());
-            if (it != structs.end()) return it->second.first;
-
-            if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(type.getDecl())) {
-                return getEnumType(*enumDecl);
-            } else {
-                return codegenTypeDecl(*type.getDecl());
+            if (type.isOptionalType() && (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType() ||
+                                          type.getWrappedType().isArrayWithUnknownSize())) {
+                return getLLVMType(type.getWrappedType());
             }
+            return getStructType(type);
         }
         case TypeKind::ArrayType:
             switch (type.getArraySize()) {
@@ -150,13 +157,6 @@ llvm::Type* IRGenerator::getLLVMType(Type type, SourceLocation location) {
             auto* pointeeType = getLLVMType(type.getPointee(), location);
             return llvm::PointerType::get(pointeeType->isVoidTy() ? llvm::Type::getInt8Ty(ctx) : pointeeType, 0);
         }
-        case TypeKind::OptionalType:
-            if (type.getWrappedType().isPointerType() || type.getWrappedType().isFunctionType() ||
-                type.getWrappedType().isArrayWithUnknownSize()) {
-                return getLLVMType(type.getWrappedType());
-            }
-            llvm_unreachable("IRGen doesn't support non-pointer optional types yet");
-
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");
     }

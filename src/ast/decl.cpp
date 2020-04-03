@@ -140,6 +140,7 @@ bool TypeDecl::hasInterface(const TypeDecl& interface) const {
 }
 
 bool TypeDecl::isCopyable() const {
+    if (name == "Optional") return genericArgs.front().isImplicitlyCopyable();
     return llvm::any_of(getInterfaces(), [&](Type type) { return type.getName() == "Copyable"; });
 }
 
@@ -195,9 +196,7 @@ unsigned TypeDecl::getFieldIndex(const FieldDecl* field) const {
 
 TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {
     ASSERT(!genericParams.empty() && !genericArgs.empty());
-
-    auto orderedGenericArgs = map(getGenericParams(),
-                                  [&](const GenericParamDecl& genericParam) { return genericArgs.find(genericParam.getName())->second; });
+    auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
 
     auto it = instantiations.find(orderedGenericArgs);
     if (it != instantiations.end()) return it->second;
@@ -277,7 +276,7 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
             auto* typeDecl = llvm::cast<TypeDecl>(this);
             auto interfaces = map(typeDecl->getInterfaces(), [&](Type type) { return type.resolve(genericArgs); });
             auto instantiation = new TypeDecl(typeDecl->getTag(), typeDecl->getName(), genericArgsArray, std::move(interfaces),
-                                              getAccessLevel(), *typeDecl->getModule(), typeDecl->getLocation());
+                                              getAccessLevel(), *typeDecl->getModule(), typeDecl, typeDecl->getLocation());
             for (auto& field : typeDecl->getFields()) {
                 auto defaultValue = field.getDefaultValue() ? field.getDefaultValue()->instantiate(genericArgs) : nullptr;
                 instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName(), defaultValue, *instantiation,

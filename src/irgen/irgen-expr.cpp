@@ -61,7 +61,40 @@ llvm::Value* IRGenerator::codegenBoolLiteralExpr(const BoolLiteralExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenNullLiteralExpr(const NullLiteralExpr& expr) {
-    return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(getLLVMType(expr.getType())));
+    if (expr.getType().getWrappedType().isPointerType()) {
+        auto pointeeType = expr.getType().getWrappedType().getPointee();
+
+        if (pointeeType.isArrayWithUnknownSize()) {
+            auto* pointerType = getLLVMType(pointeeType.getElementType())->getPointerTo();
+            return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(pointerType));
+        }
+
+        return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(getLLVMType(expr.getType())));
+    } else {
+        return codegenOptionalConstruction(expr.getType().getWrappedType(), nullptr);
+    }
+}
+
+llvm::Value* IRGenerator::codegenOptionalConstruction(Type wrappedType, llvm::Value* arg) {
+    auto* decl = Module::getStdlibModule()->getSymbolTable().findOne("Optional");
+    auto typeTemplate = llvm::cast<TypeTemplate>(decl);
+    auto typeDecl = typeTemplate->instantiate(wrappedType);
+    llvm::Function* optionalConstructor = nullptr;
+
+    for (auto* constructor : typeDecl->getConstructors()) {
+        if (constructor->getParams().size() == (arg ? 1 : 0)) {
+            optionalConstructor = getFunctionProto(*constructor);
+            break;
+        }
+    }
+
+    ASSERT(optionalConstructor);
+    auto* alloca = createEntryBlockAlloca(getLLVMType(typeDecl->getType()));
+    llvm::SmallVector<llvm::Value*, 2> args;
+    args.push_back(alloca);
+    if (arg) args.push_back(arg);
+    builder.CreateCall(optionalConstructor, args);
+    return alloca;
 }
 
 llvm::Value* IRGenerator::codegenUndefinedLiteralExpr(const UndefinedLiteralExpr& expr) {
@@ -341,7 +374,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     }
 
     // Handle implicit conversions to void pointer.
-    if (((expr.getType().isPointerType() && !expr.getType().getPointee().isVoid()) || expr.getType().isArrayWithUnknownSize()) &&
+    if ((expr.getType().removeOptional().isPointerType() || expr.getType().removeOptional().isArrayWithUnknownSize()) &&
         targetType->isPointerTy() && targetType->getPointerElementType()->isIntegerTy(8)) {
         return builder.CreateBitCast(codegenExpr(expr), targetType);
     }
@@ -505,7 +538,9 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
 
     for (const auto& arg : expr.getArgs()) {
         auto* paramType = param != paramEnd ? *param++ : nullptr;
-        args.push_back(codegenExprForPassing(*arg.getValue(), paramType));
+        auto* argValue = codegenExprForPassing(*arg.getValue(), paramType);
+        if (paramType) ASSERT(argValue->getType() == paramType);
+        args.push_back(argValue);
     }
 
     if (calleeDecl->isConstructorDecl()) {
@@ -696,6 +731,12 @@ llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenImplicitCastExpr(const ImplicitCastExpr& expr) {
+    if (expr.getType().isOptionalType() &&
+        !(expr.getType().getWrappedType().isPointerType() || expr.getType().getWrappedType().isFunctionType()) &&
+        expr.getOperand()->getType() == expr.getType().getWrappedType()) {
+        return codegenOptionalConstruction(expr.getOperand()->getType(), codegenExprWithoutAutoCast(*expr.getOperand()));
+    }
+
     return codegenExprWithoutAutoCast(*expr.getOperand());
 }
 
@@ -749,9 +790,21 @@ llvm::Value* IRGenerator::codegenExprWithoutAutoCast(const Expr& expr) {
 
 llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     auto* value = codegenLvalueExpr(expr);
-    if (value && value->getType()->isPointerTy() && value->getType()->getPointerElementType() == getLLVMType(expr.getType())) {
-        value = createLoad(value);
+
+    if (value) {
+        // FIXME: Temporary
+        if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(&expr)) {
+            if (value->getType()->isPointerTy() &&
+                value->getType()->getPointerElementType() == getLLVMType(implicitCastExpr->getOperand()->getType())) {
+                return createLoad(value);
+            }
+        }
+
+        if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == getLLVMType(expr.getType())) {
+            return createLoad(value);
+        }
     }
+
     return value;
 }
 

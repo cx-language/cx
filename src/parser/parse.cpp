@@ -1243,7 +1243,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
     auto typeDecl = new TypeDecl(tag, typeName.getString(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule,
-                                 typeName.getLocation());
+                                 nullptr, typeName.getLocation());
     bool hasConstructor = false;
     parse(Token::LeftBrace);
 
@@ -1362,7 +1362,7 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
     }
 
     consumeToken();
-    return new EnumDecl(name.getString(), std::move(cases), typeAccessLevel, *currentModule, name.getLocation());
+    return new EnumDecl(name.getString(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.getLocation());
 }
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')

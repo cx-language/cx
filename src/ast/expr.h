@@ -85,6 +85,7 @@ public:
     std::vector<const Expr*> getSubExprs() const;
     FieldDecl* getFieldDecl() const;
     const Expr* withoutImplicitCast() const;
+    bool isThis() const;
 
 protected:
     Expr(ExprKind kind, SourceLocation location) : kind(kind), location(location) {}
@@ -404,7 +405,6 @@ public:
         setAssignableType(targetType);
     }
     Expr* getOperand() const { return operand; }
-    Type getTargetType() const { return getType(); }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::ImplicitCastExpr; }
 
 private:
