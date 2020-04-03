@@ -25,7 +25,6 @@ addons:
             - g++-7
             - libstdc++-7-dev
             - lcov
-            - pandoc
 
 env:
     global:
@@ -80,5 +79,7 @@ script:
 after_success:
     - if [[ $CXXFLAGS == *"--coverage"* ]]; then
           coveralls --exclude test --exclude llvm --exclude $LLVM_TARBALL_NAME --exclude CMakeFiles;
+          wget --no-verbose https://github.com/jgm/pandoc/releases/download/2.9.2.1/pandoc-2.9.2.1-1-amd64.deb;
+          sudo dpkg -i pandoc-2.9.2.1-1-amd64.deb;
           scripts/ci-update-website.sh;
       fi
