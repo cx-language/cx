@@ -884,6 +884,7 @@ static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& 
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
     std::vector<Decl*> matches;
     std::vector<Decl*> templateMatches;
+    llvm::ArrayRef<Decl*> candidates = decls;
     std::vector<ConstructorDecl*> constructorDecls;
     bool isInitCall = false;
 
@@ -938,7 +939,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 constructorDecls = typeDecl->getConstructors();
                 ASSERT(!constructorDecls.empty());
                 ASSERT(decls.size() == 1);
-                decls = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
+                candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
 
                 for (auto* constructorDecl : constructorDecls) {
                     if (constructorDecls.size() == 1) {
@@ -956,7 +957,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 isInitCall = true;
                 constructorDecls = typeTemplate->getTypeDecl()->getConstructors();
                 ASSERT(decls.size() == 1);
-                decls = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
+                candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
 
                 std::vector<llvm::StringMap<Type>> genericArgSets;
 
@@ -1027,7 +1028,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         if (auto match = resolveAmbiguousOverload(matches)) {
             matches = { match };
         } else {
-            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
+            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
                              "ambiguous reference to '" << callee << "'" << (isInitCall ? " constructor" : ""));
         }
     } else if (matches.empty()) {
@@ -1054,7 +1055,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             return type ? type.toString(true) : "???";
         });
 
-        ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(decls),
+        ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
                          "no matching " << (isInitCall ? "constructor for '" : "function for call to '") << callee
                                         << "' with argument list of type '(" << llvm::join(argTypeStrings, ", ") << ")'");
     } else {
