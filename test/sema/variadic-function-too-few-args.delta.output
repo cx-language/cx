@@ -1,0 +1,3 @@
+variadic-function-too-few-args.delta:7:5: error: too few arguments to 'f', expected at least 1
+    f();
+    ^

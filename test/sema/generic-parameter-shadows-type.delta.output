@@ -1,0 +1,6 @@
+generic-parameter-shadows-type.delta:6:10: error: redefinition of 'Foo'
+void bar<Foo>() { }
+         ^
+generic-parameter-shadows-type.delta:6:6: warning: unused declaration 'bar'
+void bar<Foo>() { }
+     ^

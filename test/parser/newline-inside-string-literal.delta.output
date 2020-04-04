@@ -1,0 +1,6 @@
+newline-inside-string-literal.delta:5:15: error: newline inside string literal
+    var i = "a
+              ^
+newline-inside-string-literal.delta:5:11: error: unexpected '='
+    var i = "a
+          ^

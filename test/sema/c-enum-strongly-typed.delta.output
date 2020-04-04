@@ -1,0 +1,3 @@
+c-enum-strongly-typed.delta:10:9: error: invalid argument #1 type 'int' to 'baz', expected 'Foo'
+    baz(42);
+        ^

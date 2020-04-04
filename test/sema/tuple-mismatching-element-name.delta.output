@@ -1,0 +1,6 @@
+tuple-mismatching-element-name.delta:5:5: error: mismatching return type '(int a, int c)', expected '(int a, int b)'
+    return (a: 0, c: 0);
+    ^
+tuple-mismatching-element-name.delta:3:16: warning: unused declaration 'f'
+(int a, int b) f() {
+               ^

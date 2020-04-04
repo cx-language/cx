@@ -1,4 +1,4 @@
-// RUN: %delta -typecheck ./a.delta ./b.delta | %FileCheck -allow-empty %s
+// RUN: %check_errors %delta -typecheck ./a.delta ./b.delta
 
 import "header.h"
 

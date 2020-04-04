@@ -1,0 +1,3 @@
+unknown-variable.delta:5:15: error: unknown identifier 'unknown'
+    var foo = unknown;
+              ^

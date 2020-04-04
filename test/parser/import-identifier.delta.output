@@ -1,0 +1,6 @@
+import-identifier.delta:4:8: error: expected identifier or string literal after 'import', got '<'
+import <iostream>
+       ^
+import-identifier.delta:4:8: error: unexpected '<'
+import <iostream>
+       ^

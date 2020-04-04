@@ -1,0 +1,6 @@
+null-check-fail-reassigned.delta:10:9: warning: dereferencing value of optional type 'int*?' which may be null; unwrap the value with a postfix '!' to silence this warning
+        *p = 42;
+        ^
+null-check-fail-reassigned.delta:3:6: warning: unused declaration 'foo'
+void foo(int*? a, int*? b) {
+     ^

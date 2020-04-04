@@ -1,0 +1,3 @@
+private-interface-member.delta:5:5: warning: interface members cannot be private
+    private void b();
+    ^

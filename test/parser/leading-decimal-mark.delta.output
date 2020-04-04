@@ -1,0 +1,6 @@
+leading-decimal-mark.delta:4:12: error: unexpected '.'
+var half = .5;
+           ^
+leading-decimal-mark.delta:4:12: error: unexpected '.'
+var half = .5;
+           ^

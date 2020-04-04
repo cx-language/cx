@@ -1,0 +1,3 @@
+member-function-call-through-nullable-pointer.delta:11:5: warning: calling member function through value of optional type 'Foo*?' which may be null; unwrap the value with a postfix '!' to silence this warning
+    f.bar();
+    ^

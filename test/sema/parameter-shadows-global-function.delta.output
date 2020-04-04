@@ -1,0 +1,9 @@
+parameter-shadows-global-function.delta:7:5: error: 'bar' is not a function
+    bar();
+    ^
+parameter-shadows-global-function.delta:3:6: warning: unused declaration 'bar'
+void bar() {}
+     ^
+parameter-shadows-global-function.delta:4:6: warning: unused declaration 'foo'
+void foo(int bar) {
+     ^

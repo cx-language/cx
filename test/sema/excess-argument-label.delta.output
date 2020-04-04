@@ -1,0 +1,6 @@
+excess-argument-label.delta:7:7: error: invalid argument name 'foo' for parameter 'a'
+    f(foo: 0);
+      ^
+excess-argument-label.delta:3:6: warning: unused declaration 'f'
+void f(int a) { }
+     ^

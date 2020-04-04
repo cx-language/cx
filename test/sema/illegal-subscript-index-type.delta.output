@@ -1,0 +1,3 @@
+illegal-subscript-index-type.delta:8:15: error: illegal index type 'bool', expected 'int'
+    var e = p[false];
+              ^

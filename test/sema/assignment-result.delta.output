@@ -1,0 +1,3 @@
+assignment-result.delta:6:7: error: cannot assign 'void' to 'int'
+    a = (a = 2);
+      ^

@@ -1,4 +1,4 @@
-// RUN: %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %delta -typecheck %s
 
 struct A {
     int i;

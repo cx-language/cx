@@ -1,0 +1,6 @@
+generic-constraint-unknown-type.delta:4:11: error: unknown type 'Foo'
+void f<T: Foo>() {}
+          ^
+generic-constraint-unknown-type.delta:4:6: warning: unused declaration 'f'
+void f<T: Foo>() {}
+     ^

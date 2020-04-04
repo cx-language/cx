@@ -1,0 +1,9 @@
+ambiguous-init-call-with-overloaded-params.delta:15:9: error: ambiguous reference to 'Foo' constructor
+    _ = Foo(1)
+        ^
+ambiguous-init-call-with-overloaded-params.delta:4:5: note: candidate function:
+    Foo(a: int) { }
+    ^
+ambiguous-init-call-with-overloaded-params.delta:5:5: note: candidate function:
+    Foo(b: int) { }
+    ^

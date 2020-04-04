@@ -1,0 +1,6 @@
+mismatching-argument-label.delta:7:22: error: invalid argument name 'qux' for parameter 'bar'
+    return f(foo: 5, qux: false);
+                     ^
+mismatching-argument-label.delta:3:5: warning: unused declaration 'f'
+int f(int foo, bool bar) { return foo; }
+    ^

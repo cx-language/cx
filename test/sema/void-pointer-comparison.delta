@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 void f(void* a, void* b) {
 	// CHECK: [[@LINE+1]]:11: error: no matching function for call to '==' with argument list of type '(void*, void*)'

@@ -1,0 +1,3 @@
+interface-impl-decl-error-builtin-type.delta:4:14: error: 'int' is not an interface
+struct Z<T>: int {}
+             ^

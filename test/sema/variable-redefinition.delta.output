@@ -1,0 +1,3 @@
+variable-redefinition.delta:6:9: error: redefinition of 'foo'
+    var foo = 2;
+        ^

@@ -1,0 +1,3 @@
+generic-type-init-non-existing-member.delta:5:16: error: no member named 'd' in 'A<int>'
+    A() { this.d = 3 }
+               ^

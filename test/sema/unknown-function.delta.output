@@ -1,0 +1,6 @@
+unknown-function.delta:6:23: error: unknown identifier 'foo'
+void main() { var i = foo(); }
+                      ^
+unknown-function.delta:3:5: warning: unused declaration 'fooz'
+int fooz() { return 42; }
+    ^

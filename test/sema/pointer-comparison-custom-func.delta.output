@@ -1,0 +1,6 @@
+pointer-comparison-custom-func.delta:7:11: error: type 'X' doesn't implement interface 'Comparable'
+    _ = a < b;
+          ^
+pointer-comparison-custom-func.delta:5:6: warning: unused declaration 'fx'
+void fx(X* a, X* b) {
+     ^

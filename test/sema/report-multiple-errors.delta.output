@@ -1,0 +1,6 @@
+report-multiple-errors.delta:4:13: error: unknown identifier 'ff'
+    var a = ff; // CHECK: [[@LINE]]:13: error: unknown identifier 'ff'
+            ^
+report-multiple-errors.delta:5:13: error: unknown identifier 'xx'
+    var b = xx; // CHECK: [[@LINE]]:13: error: unknown identifier 'xx'
+            ^

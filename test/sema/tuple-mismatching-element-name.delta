@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 (int a, int b) f() {
     // CHECK: [[@LINE+1]]:5: error: mismatching return type '(int a, int c)', expected '(int a, int b)'

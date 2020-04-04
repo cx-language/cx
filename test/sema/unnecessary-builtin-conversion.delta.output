@@ -1,0 +1,6 @@
+unnecessary-builtin-conversion.delta:5:13: warning: unnecessary conversion to same type
+    var j = int(i);
+            ^
+unnecessary-builtin-conversion.delta:3:6: warning: unused declaration 'a'
+void a(int i) {
+     ^

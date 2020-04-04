@@ -1,0 +1,12 @@
+too-many-generic-arguments.delta:6:36: error: too many generic arguments to 'foo', expected 1
+void main() { var f = foo<int, int>(1, 2); }
+                                   ^
+too-many-generic-arguments.delta:6:23: error: no matching function for call to 'foo' with argument list of type '(int, int)'
+void main() { var f = foo<int, int>(1, 2); }
+                      ^
+too-many-generic-arguments.delta:3:3: note: candidate function:
+T foo<T>(T a, T b) { return b; }
+  ^
+too-many-generic-arguments.delta:3:3: warning: unused declaration 'foo'
+T foo<T>(T a, T b) { return b; }
+  ^

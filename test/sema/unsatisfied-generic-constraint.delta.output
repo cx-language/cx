@@ -1,0 +1,6 @@
+unsatisfied-generic-constraint.delta:15:8: error: type 'F' doesn't implement interface 'Fooable'
+    bar(f);
+       ^
+unsatisfied-generic-constraint.delta:18:6: warning: unused declaration 'bar'
+void bar<T: Fooable>(T t) {
+     ^

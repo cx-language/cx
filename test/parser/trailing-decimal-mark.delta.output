@@ -1,0 +1,6 @@
+trailing-decimal-mark.delta:4:12: error: expected identifier, got ';'
+var pi = 3.;
+           ^
+trailing-decimal-mark.delta:4:12: error: unexpected ';'
+var pi = 3.;
+           ^

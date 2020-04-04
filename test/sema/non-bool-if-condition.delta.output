@@ -1,0 +1,3 @@
+non-bool-if-condition.delta:5:9: error: 'if' condition must have type 'bool' or optional type
+    if (0) {}
+        ^

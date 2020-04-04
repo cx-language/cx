@@ -1,0 +1,3 @@
+interface-impl-decl-error-not-interface.delta:4:14: error: 'StringBuffer' is not an interface
+struct Z<T>: StringBuffer {}
+             ^

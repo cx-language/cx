@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 // TODO: Error location column should be at asterisk.
 // CHECK: [[@LINE+1]]:10: error: pointer to array reference is not yet implemented

@@ -1,0 +1,3 @@
+invalid-break.delta:10:9: error: 'break' is only allowed inside 'while', 'for', and 'switch' statements
+        break;
+        ^

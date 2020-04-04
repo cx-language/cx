@@ -1,0 +1,6 @@
+disallow-use-of-moved-param.delta:9:13: error: use of moved value 't'
+    var a = t; // CHECK: [[@LINE]]:13: error: use of moved value
+            ^
+disallow-use-of-moved-param.delta:7:6: warning: unused declaration 'g'
+void g(T t) {
+     ^

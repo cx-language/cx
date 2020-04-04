@@ -1,0 +1,3 @@
+call-nonfunction-variable.delta:6:15: error: 'foo' is not a function
+    var bar = foo();
+              ^

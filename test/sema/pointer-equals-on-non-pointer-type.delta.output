@@ -1,0 +1,6 @@
+pointer-equals-on-non-pointer-type.delta:5:8: error: both operands to pointer comparison operator must have pointer type
+	_ = a !== b;
+	      ^
+pointer-equals-on-non-pointer-type.delta:3:6: warning: unused declaration 'f'
+void f(int a, int b) {
+     ^

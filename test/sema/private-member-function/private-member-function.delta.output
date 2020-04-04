@@ -1,0 +1,6 @@
+private-member-function.delta:7:7: warning: 'f' is private
+    a.f();
+      ^
+a.delta:13:6: warning: unused declaration 'g'
+void g() {
+     ^

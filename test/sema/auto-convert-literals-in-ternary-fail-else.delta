@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 uint8 foo(bool b) {
     // CHECK: [[@LINE+1]]:22: error: 1000 is out of range for type 'uint8'

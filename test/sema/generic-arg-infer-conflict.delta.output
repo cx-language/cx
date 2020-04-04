@@ -1,0 +1,6 @@
+generic-arg-infer-conflict.delta:6:18: error: couldn't infer generic parameter 'T' of 'foo' because of conflicting argument types 'int' and 'bool'
+void main() { foo(1, false) }
+                 ^
+generic-arg-infer-conflict.delta:3:6: warning: unused declaration 'foo'
+void foo<T>(T a, T b) { }
+     ^

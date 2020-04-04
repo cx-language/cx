@@ -1,0 +1,39 @@
+return-pointer-to-local-variable.delta:6:13: warning: returning pointer to local variable (local variables will not exist after the function returns)
+    return &a;
+            ^
+return-pointer-to-local-variable.delta:12:12: warning: returning pointer to local variable (local variables will not exist after the function returns)
+    return a;
+           ^
+return-pointer-to-local-variable.delta:31:13: warning: returning pointer to local variable (local variables will not exist after the function returns)
+    return &a;
+            ^
+return-pointer-to-local-variable.delta:36:12: warning: returning pointer to local variable (local variables will not exist after the function returns)
+    return a;
+           ^
+return-pointer-to-local-variable.delta:46:13: warning: returning pointer to local variable (local variables will not exist after the function returns)
+    return &a;
+            ^
+return-pointer-to-local-variable.delta:51:12: warning: returning pointer to local variable (local variables will not exist after the function returns)
+    return a;
+           ^
+return-pointer-to-local-variable.delta:3:6: warning: unused declaration 'f0'
+int* f0() {
+     ^
+return-pointer-to-local-variable.delta:9:6: warning: unused declaration 'f1'
+int* f1() {
+     ^
+return-pointer-to-local-variable.delta:29:6: warning: unused declaration 'f4'
+int* f4(int a) {
+     ^
+return-pointer-to-local-variable.delta:34:6: warning: unused declaration 'f5'
+int* f5(int a) {
+     ^
+return-pointer-to-local-variable.delta:39:6: warning: unused declaration 'f6'
+int* f6(int* a) {
+     ^
+return-pointer-to-local-variable.delta:44:7: warning: unused declaration 'f7'
+int** f7(int* a) {
+      ^
+return-pointer-to-local-variable.delta:49:7: warning: unused declaration 'f8'
+int** f8(int* a) {
+      ^

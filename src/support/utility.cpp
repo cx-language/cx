@@ -6,6 +6,7 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
 #include <llvm/Support/Process.h>
 #include <llvm/Support/Program.h>
 #include <llvm/Support/Signals.h>
@@ -55,10 +56,17 @@ void delta::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm:
     }
 
     if (location.file && *location.file) {
-        llvm::outs() << location.file;
+        // Convert stdlib paths to relative.
+        llvm::SmallString<128> path(llvm::sys::path::convert_to_slash(location.file));
+        llvm::SmallString<128> root(llvm::sys::path::convert_to_slash(DELTA_ROOT_DIR));
+        root.append("/");
+        llvm::sys::path::replace_path_prefix(path, root, "");
+        llvm::outs() << path;
+
         if (location.isValid()) {
             llvm::outs() << ':' << location.line << ':' << location.column;
         }
+
         llvm::outs() << ": ";
     }
 
@@ -109,7 +117,7 @@ std::string delta::getCCompilerPath() {
 void delta::printStackTrace() {
     if (auto env = llvm::sys::Process::GetEnv("DELTA_PRINT_STACK_TRACE")) {
         if (llvm::StringRef(*env).equals_lower("true") || *env == "1") {
-            llvm::sys::PrintStackTrace(llvm::outs());
+            llvm::sys::PrintStackTrace(llvm::errs());
         }
     }
 }

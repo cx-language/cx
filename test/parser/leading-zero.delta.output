@@ -1,0 +1,6 @@
+leading-zero.delta:5:13: error: numbers cannot start with 0[0-9], use 0o prefix for octal literal
+    var i = 0666;
+            ^
+leading-zero.delta:5:11: error: unexpected '='
+    var i = 0666;
+          ^

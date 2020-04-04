@@ -1,0 +1,3 @@
+for-loop-over-non-iterable.delta:7:5: error: unknown identifier 'A.iterator'
+    for (var i in A()) {}
+    ^

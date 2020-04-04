@@ -1,0 +1,3 @@
+enum-associated-value-mismatch.delta:9:16: error: too few arguments to 'A', expected 2
+    var a = E.A(a: 1);
+               ^

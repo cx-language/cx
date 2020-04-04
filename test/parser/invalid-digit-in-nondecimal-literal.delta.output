@@ -1,0 +1,6 @@
+invalid-digit-in-nondecimal-literal.delta:4:16: error: invalid digit '8' in octal literal
+var a = 0o000378;
+               ^
+invalid-digit-in-nondecimal-literal.delta:4:7: error: unexpected '='
+var a = 0o000378;
+      ^

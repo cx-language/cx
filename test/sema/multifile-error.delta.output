@@ -1,0 +1,3 @@
+inputs/multifile-error/b.delta:1:9: error: unknown identifier 'foo'
+var b = foo;
+        ^

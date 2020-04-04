@@ -1,0 +1,6 @@
+increment-through-pointer-error.delta:6:6: error: cannot increment 'bool'
+    p++;
+     ^
+increment-through-pointer-error.delta:3:6: warning: unused declaration 'f'
+void f(bool* a) {
+     ^

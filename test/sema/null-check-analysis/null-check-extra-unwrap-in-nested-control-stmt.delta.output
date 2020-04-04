@@ -1,0 +1,6 @@
+null-check-extra-unwrap-in-nested-control-stmt.delta:13:23: error: cannot unwrap non-optional type 'S*'
+            return n.a!.a;
+                      ^
+null-check-extra-unwrap-in-nested-control-stmt.delta:7:5: warning: unused declaration 'foo'
+S*? foo(S* p) {
+    ^

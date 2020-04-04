@@ -1,0 +1,3 @@
+interface-impl-decl-error-missing-method.delta:8:8: error: 'Z' doesn't have member function 'foo' required by interface 'X'
+struct Z<T>: X {}
+       ^

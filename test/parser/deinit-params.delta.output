@@ -1,0 +1,3 @@
+deinit-params.delta:5:5: error: destructors cannot have parameters
+    ~Foo(int i) { }
+    ^

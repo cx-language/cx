@@ -1,0 +1,9 @@
+private-member-variable.delta:7:7: warning: 'a' is private
+    a.a++;
+      ^
+a.delta:7:5: warning: constructor doesn't initialize member variable 'a'
+    A() {}
+    ^
+a.delta:14:6: warning: unused declaration 'f'
+void f() {
+     ^

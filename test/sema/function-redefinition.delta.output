@@ -1,0 +1,12 @@
+function-redefinition.delta:4:6: error: redefinition of 'foo'
+void foo() { } // CHECK: [[@LINE]]:6: error: redefinition of 'foo'
+     ^
+function-redefinition.delta:7:6: error: redefinition of 'bar'
+void bar(int b) { } // CHECK: [[@LINE]]:6: error: redefinition of 'bar'
+     ^
+function-redefinition.delta:3:6: warning: unused declaration 'foo'
+void foo() { }
+     ^
+function-redefinition.delta:6:6: warning: unused declaration 'bar'
+void bar(int a) { }
+     ^

@@ -1,0 +1,9 @@
+private-enum.delta:6:13: warning: 'A' is private
+    var b = A.B;
+            ^
+private-enum.delta:9:5: warning: 'A' is private
+    A c = undefined;
+    ^
+a.delta:7:6: warning: unused declaration 'f'
+void f() {
+     ^

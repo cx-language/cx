@@ -1,0 +1,6 @@
+missing-member-assignment-in-init.delta:9:5: warning: constructor doesn't initialize member variable 'i'
+    A() {}
+    ^
+missing-member-assignment-in-init.delta:9:5: warning: constructor doesn't initialize member variable 'j'
+    A() {}
+    ^

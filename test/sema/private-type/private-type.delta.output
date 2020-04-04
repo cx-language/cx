@@ -1,0 +1,72 @@
+private-type.delta:7:5: warning: 'A' is private
+    A a = undefined;
+    ^
+private-type.delta:10:9: warning: 'init' is private
+    a = A();
+        ^
+private-type.delta:10:9: warning: 'A' is private
+    a = A();
+        ^
+private-type.delta:14:8: warning: 'A' is private
+void f(A a) {}
+       ^
+private-type.delta:17:8: warning: 'A' is private
+void g(A*? a) {}
+       ^
+private-type.delta:20:1: warning: 'A' is private
+A*? h() {
+^
+private-type.delta:26:5: warning: 'A' is private
+    A a;
+    ^
+private-type.delta:26:5: warning: 'A' is private
+    A a;
+    ^
+a.delta:21:13: warning: using private type 'A' in public declaration
+    private A a;
+            ^
+a.delta:30:8: warning: using private type 'A' in public declaration
+void m(A* r) {
+       ^
+a.delta:38:8: warning: using private type 'A' in public declaration
+void o(A*? a) {}
+       ^
+a.delta:41:1: warning: using private type 'A' in public declaration
+A*? p() {
+^
+a.delta:47:5: warning: using private type 'A' in public declaration
+    A* a;
+    ^
+a.delta:47:5: warning: using private type 'A' in public declaration
+    A* a;
+    ^
+private-type.delta:14:6: warning: unused declaration 'f'
+void f(A a) {}
+     ^
+private-type.delta:17:6: warning: unused declaration 'g'
+void g(A*? a) {}
+     ^
+private-type.delta:20:5: warning: unused declaration 'h'
+A*? h() {
+    ^
+a.delta:7:14: warning: unused declaration 'i'
+private void i(A* q) {
+             ^
+a.delta:12:14: warning: unused declaration 'j'
+private void j(A a) {}
+             ^
+a.delta:14:14: warning: unused declaration 'k'
+private void k(A*? a) {}
+             ^
+a.delta:16:13: warning: unused declaration 'l'
+private A*? l() {
+            ^
+a.delta:30:6: warning: unused declaration 'm'
+void m(A* r) {
+     ^
+a.delta:38:6: warning: unused declaration 'o'
+void o(A*? a) {}
+     ^
+a.delta:41:5: warning: unused declaration 'p'
+A*? p() {
+    ^

@@ -1,4 +1,4 @@
-// RUN: %not %delta -parse %s | %FileCheck %s
+// RUN: %check_errors %not %delta -parse %s
 
 // TODO: Improve error message to say "expected type, got '...'"
 // CHECK: [[@LINE+1]]:15: error: unexpected '...'

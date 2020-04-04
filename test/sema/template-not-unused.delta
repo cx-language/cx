@@ -1,4 +1,4 @@
-// RUN: %delta -typecheck -Werror %s | %FileCheck %s -allow-empty
+// RUN: %check_errors %delta -typecheck -Werror %s
 
 void f<T>() {}
 

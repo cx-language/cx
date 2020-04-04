@@ -1,0 +1,6 @@
+private-global-variable.delta:6:5: warning: 'i' is private
+    i++;
+    ^
+a.delta:5:6: warning: unused declaration 'f'
+void f() {
+     ^

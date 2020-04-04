@@ -1,0 +1,3 @@
+assign-undefined-in-method.delta:8:13: error: 'undefined' is only allowed as an initial value
+        i = undefined;
+            ^

@@ -1,0 +1,6 @@
+dereference-increment-expr.delta:7:13: error: cannot dereference non-pointer type 'void'
+    var b = *(a++);
+            ^
+dereference-increment-expr.delta:3:6: warning: unused declaration 'f'
+void f(int[*] p) {
+     ^

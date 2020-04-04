@@ -1,0 +1,6 @@
+return-array-with-wrong-size.delta:6:5: error: mismatching return type 'int[2]', expected 'int[1]'
+    return buffer;
+    ^
+return-array-with-wrong-size.delta:3:8: warning: unused declaration 'foo'
+int[1] foo() {
+       ^

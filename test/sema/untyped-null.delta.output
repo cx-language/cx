@@ -1,0 +1,3 @@
+untyped-null.delta:5:9: error: couldn't infer type of 'foo', add a type annotation
+    var foo = null;
+        ^

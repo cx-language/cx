@@ -1,0 +1,3 @@
+private-global-function.delta:8:5: warning: 'f' is private
+    f();
+    ^

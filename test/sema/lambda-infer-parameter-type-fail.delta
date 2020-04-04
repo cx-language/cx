@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 void main() {
     // CHECK: [[@LINE+1]]:13: error: couldn't infer type for parameter 'b'

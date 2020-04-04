@@ -1,4 +1,4 @@
-// RUN: %not %delta -parse %s | %FileCheck %s
+// RUN: %check_errors %not %delta -parse %s
 
 // CHECK: [[@LINE+1]]:8: error: expected identifier or string literal after 'import', got '<'
 import <iostream>

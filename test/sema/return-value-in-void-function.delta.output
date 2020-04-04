@@ -1,0 +1,6 @@
+return-value-in-void-function.delta:5:5: error: mismatching return type 'int', expected 'void'
+    return a * b;
+    ^
+return-value-in-void-function.delta:3:6: warning: unused declaration 'foo'
+void foo(int a, int b) {
+     ^

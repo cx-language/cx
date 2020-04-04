@@ -1,0 +1,3 @@
+nonexisting-member-access.delta:10:19: error: no member named 'bar' in 'Foo'
+    var bar = foo.bar;
+                  ^

@@ -1,0 +1,3 @@
+invalid-operand-to-logical-not.delta:6:10: error: invalid operand type 'int' to logical not
+    if (!foo) { }
+         ^

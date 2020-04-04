@@ -1,0 +1,6 @@
+mixed-case-hex-literal.delta:5:16: error: mixed letter case in hex literal
+    var i = 0xfF;
+               ^
+mixed-case-hex-literal.delta:5:11: error: unexpected '='
+    var i = 0xfF;
+          ^

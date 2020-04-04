@@ -1,0 +1,3 @@
+mismatching-switch-case-value-type.delta:6:14: error: case value type 'bool' doesn't match switch condition type 'int'
+        case false: break;
+             ^

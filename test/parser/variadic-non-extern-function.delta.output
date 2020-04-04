@@ -1,0 +1,6 @@
+variadic-non-extern-function.delta:5:15: error: unexpected '...'
+void f(int i, ...) {}
+              ^
+variadic-non-extern-function.delta:5:15: error: unexpected '...'
+void f(int i, ...) {}
+              ^

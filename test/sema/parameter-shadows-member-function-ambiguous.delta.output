@@ -1,0 +1,9 @@
+parameter-shadows-member-function-ambiguous.delta:7:9: error: ambiguous reference to 'bar'
+        bar();
+        ^
+parameter-shadows-member-function-ambiguous.delta:4:10: note: candidate function:
+    void bar() {}
+         ^
+parameter-shadows-member-function-ambiguous.delta:5:21: note: candidate function:
+    void foo(void() bar) {
+                    ^

@@ -1,0 +1,3 @@
+lambda-capture-field.delta:8:43: error: unknown identifier 'd'
+        var b = (int c, int a) -> c + a + d;
+                                          ^

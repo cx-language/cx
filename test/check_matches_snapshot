@@ -13,9 +13,10 @@ allow_empty = '-allow-empty' in sys.argv
 if allow_empty: sys.argv.remove('-allow-empty')
 
 snapshot_path = sys.argv[1]
+args = map(os.path.relpath, sys.argv[2:])
 
 try:
-    output = subprocess.check_output(sys.argv[2:])
+    output = subprocess.check_output(args)
 except subprocess.CalledProcessError as error:
     print(error.output)
     sys.exit(error.returncode)

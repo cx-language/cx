@@ -1,0 +1,3 @@
+lambda-capture-local-variable.delta:6:28: error: lambda capturing not implemented yet
+    var b = (int c) -> c + a;
+                           ^

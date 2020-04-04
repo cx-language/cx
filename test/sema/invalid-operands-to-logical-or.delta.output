@@ -1,0 +1,3 @@
+invalid-operands-to-logical-or.delta:7:13: error: invalid operands 'bool' and 'int' to '||'
+    if (foo || bar) { }
+            ^

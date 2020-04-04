@@ -1,0 +1,6 @@
+invalid-escape-character.delta:4:14: error: unknown escape character '\z'
+var a = "   \z"
+             ^
+invalid-escape-character.delta:4:9: error: unexpected string literal
+var a = "   \z"
+        ^

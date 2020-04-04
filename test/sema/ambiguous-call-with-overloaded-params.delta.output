@@ -1,0 +1,15 @@
+ambiguous-call-with-overloaded-params.delta:13:5: error: ambiguous reference to 'foo'
+    foo(1)
+    ^
+ambiguous-call-with-overloaded-params.delta:3:6: note: candidate function:
+void foo(a: int) { }
+     ^
+ambiguous-call-with-overloaded-params.delta:4:6: note: candidate function:
+void foo(b: int) { }
+     ^
+ambiguous-call-with-overloaded-params.delta:3:6: warning: unused declaration 'foo'
+void foo(a: int) { }
+     ^
+ambiguous-call-with-overloaded-params.delta:4:6: warning: unused declaration 'foo'
+void foo(b: int) { }
+     ^

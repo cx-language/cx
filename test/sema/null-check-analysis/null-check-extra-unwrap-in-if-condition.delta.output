@@ -1,0 +1,6 @@
+null-check-extra-unwrap-in-if-condition.delta:12:22: error: cannot unwrap non-optional type 'S*'
+        if (n === n.a!.a) {
+                     ^
+null-check-extra-unwrap-in-if-condition.delta:7:5: warning: unused declaration 'foo'
+S*? foo(S* p) {
+    ^

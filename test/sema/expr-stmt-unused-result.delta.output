@@ -1,0 +1,3 @@
+expr-stmt-unused-result.delta:5:10: error: unexpected ';'
+    2 + 2;
+         ^

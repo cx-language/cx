@@ -1,0 +1,3 @@
+conversion-to-bool-disallowed.delta:6:18: error: conversion from 'int' to 'bool' not supported
+    var b = bool(1);
+                 ^

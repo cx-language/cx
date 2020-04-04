@@ -1,4 +1,4 @@
-// RUN: %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %delta -typecheck %s
 
 void foo(int*? a, int*? b) {
     var p = a;

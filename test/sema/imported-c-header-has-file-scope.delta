@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck -I%p/inputs/imported-c-header-has-file-scope %s %p/inputs/imported-c-header-has-file-scope/second-file.delta | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck -I%p/inputs/imported-c-header-has-file-scope %s %p/inputs/imported-c-header-has-file-scope/second-file.delta
 
 import "a.h"
 

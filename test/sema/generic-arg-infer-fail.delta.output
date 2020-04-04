@@ -1,0 +1,6 @@
+generic-arg-infer-fail.delta:6:18: error: can't infer generic parameters, please specify them explicitly
+void main() { foo() }
+                 ^
+generic-arg-infer-fail.delta:3:6: warning: unused declaration 'foo'
+void foo<T>() { }
+     ^

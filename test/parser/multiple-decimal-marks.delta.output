@@ -1,0 +1,6 @@
+multiple-decimal-marks.delta:4:14: error: expected identifier, got number
+var pi = 3.1.4;
+             ^
+multiple-decimal-marks.delta:4:14: error: unexpected number
+var pi = 3.1.4;
+             ^

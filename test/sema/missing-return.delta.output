@@ -1,0 +1,6 @@
+missing-return.delta:4:5: error: 'foo' is missing a return statement
+int foo(bool b) {
+    ^
+missing-return.delta:4:5: warning: unused declaration 'foo'
+int foo(bool b) {
+    ^

@@ -1,0 +1,6 @@
+var-decl-no-id.delta:4:5: error: expected identifier, got number
+var 1
+    ^
+var-decl-no-id.delta:4:5: error: unexpected number
+var 1
+    ^

@@ -1,0 +1,3 @@
+int-literal-initializer-overflow.delta:5:14: error: 128 is out of range for type 'int8'
+    int8 b = 128;
+             ^

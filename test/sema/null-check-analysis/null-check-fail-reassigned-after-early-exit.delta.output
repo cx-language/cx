@@ -1,0 +1,6 @@
+null-check-fail-reassigned-after-early-exit.delta:11:13: warning: dereferencing value of optional type 'int*?' which may be null; unwrap the value with a postfix '!' to silence this warning
+    var a = *p;
+            ^
+null-check-fail-reassigned-after-early-exit.delta:5:6: warning: unused declaration 'foo'
+void foo(int*? p) {
+     ^

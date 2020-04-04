@@ -1,0 +1,3 @@
+too-few-arguments.delta:6:25: error: too few arguments to 'sum', expected 2
+void main() { var foo = sum(1); }
+                        ^

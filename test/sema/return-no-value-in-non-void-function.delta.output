@@ -1,0 +1,6 @@
+return-no-value-in-non-void-function.delta:5:5: error: expected return statement to return a value of type 'int'
+    return;
+    ^
+return-no-value-in-non-void-function.delta:3:5: warning: unused declaration 'foo'
+int foo() {
+    ^

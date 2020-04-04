@@ -1,0 +1,3 @@
+invalid-operands-to-logical-and.delta:7:13: error: invalid operands 'int' and 'bool' to '&&'
+    if (foo && bar) { }
+            ^

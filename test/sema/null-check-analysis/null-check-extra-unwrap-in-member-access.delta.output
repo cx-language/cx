@@ -1,0 +1,6 @@
+null-check-extra-unwrap-in-member-access.delta:10:12: error: cannot unwrap non-optional type 'S*'
+        p.a!.a = p;
+           ^
+null-check-extra-unwrap-in-member-access.delta:7:6: warning: unused declaration 'foo'
+void foo(S* p) {
+     ^

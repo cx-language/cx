@@ -1,0 +1,6 @@
+type-not-specified-to-implement-interface.delta:19:6: error: type 'Y' doesn't implement interface 'X'
+    f(Y());
+     ^
+type-not-specified-to-implement-interface.delta:15:6: warning: unused declaration 'f'
+void f<T: X>(T t) {}
+     ^

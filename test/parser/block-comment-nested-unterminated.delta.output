@@ -1,0 +1,3 @@
+block-comment-nested-unterminated.delta:4:1: error: unterminated block comment
+/*
+^

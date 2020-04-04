@@ -1,0 +1,3 @@
+call-method-on-array.delta:6:5: error: type 'int[3]' has no member function 'foo'
+    a.foo();
+    ^

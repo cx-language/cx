@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 void main() {
     // CHECK: [[@LINE+1]]:14: error: 128 is out of range for type 'int8'

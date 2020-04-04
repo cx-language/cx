@@ -1,0 +1,9 @@
+dereference-increment-expr-stmt.delta:7:11: error: unexpected ';'
+    *(a++);
+          ^
+dereference-increment-expr-stmt.delta:7:5: error: cannot dereference non-pointer type 'void'
+    *(a++);
+    ^
+dereference-increment-expr-stmt.delta:3:6: warning: unused declaration 'f'
+void f(int* p) {
+     ^

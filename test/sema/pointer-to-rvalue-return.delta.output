@@ -1,0 +1,3 @@
+pointer-to-rvalue-return.delta:4:14: error: mismatching return type 'int', expected 'int*'
+int* foo() { return 42; }
+             ^

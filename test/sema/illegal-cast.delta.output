@@ -1,0 +1,3 @@
+illegal-cast.delta:5:13: error: illegal cast from 'bool' to 'int**'
+    var i = cast<int**>(false);
+            ^

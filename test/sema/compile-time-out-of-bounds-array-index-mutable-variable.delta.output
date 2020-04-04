@@ -1,0 +1,3 @@
+compile-time-out-of-bounds-array-index-mutable-variable.delta:10:15: error: illegal index type 'uint', expected 'int'
+    var e = p[i];
+              ^

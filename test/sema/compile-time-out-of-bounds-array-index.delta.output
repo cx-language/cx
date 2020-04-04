@@ -1,0 +1,3 @@
+compile-time-out-of-bounds-array-index.delta:8:15: error: accessing array out-of-bounds with index 5, array size is 5
+    var e = p[5];
+              ^

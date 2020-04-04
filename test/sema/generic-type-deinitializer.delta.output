@@ -1,0 +1,3 @@
+generic-type-deinitializer.delta:6:17: error: unknown identifier 'b'
+        var a = b
+                ^

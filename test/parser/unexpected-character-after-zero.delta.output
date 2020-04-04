@@ -1,0 +1,9 @@
+unexpected-character-after-zero.delta:5:14: error: expected newline or ';', got identifier
+    var i = 0_;
+             ^
+unexpected-character-after-zero.delta:5:15: error: expected identifier, got ';'
+    var i = 0_;
+              ^
+unexpected-character-after-zero.delta:5:15: error: unexpected ';'
+    var i = 0_;
+              ^

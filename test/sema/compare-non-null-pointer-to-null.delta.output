@@ -1,0 +1,3 @@
+compare-non-null-pointer-to-null.delta:7:11: error: invalid operands 'int*' and 'null' to '==' (non-optional type 'int*' cannot be null)
+    if (p == null) { }
+          ^

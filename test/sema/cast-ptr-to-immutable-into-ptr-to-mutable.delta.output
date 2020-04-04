@@ -1,0 +1,6 @@
+cast-ptr-to-immutable-into-ptr-to-mutable.delta:5:13: error: illegal cast from 'const void*' to 'int*'
+    var p = cast<int*>(v);
+            ^
+cast-ptr-to-immutable-into-ptr-to-mutable.delta:3:6: warning: unused declaration 'f'
+void f(const void* v) {
+     ^

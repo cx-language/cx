@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 // CHECK: [[@LINE+1]]:8: error: couldn't find C header file 'foo.h'
 import "foo.h";

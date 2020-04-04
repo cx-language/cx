@@ -1,0 +1,6 @@
+string-literal-ends-in-backslash.delta:5:15: error: newline inside string literal
+var a = "   \"
+              ^
+string-literal-ends-in-backslash.delta:5:7: error: unexpected '='
+var a = "   \"
+      ^

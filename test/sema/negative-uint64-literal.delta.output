@@ -1,0 +1,3 @@
+negative-uint64-literal.delta:5:16: error: -42 is out of range for type 'uint64'
+    uint64 a = -42
+               ^

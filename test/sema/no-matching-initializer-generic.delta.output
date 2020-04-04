@@ -1,0 +1,9 @@
+no-matching-initializer-generic.delta:15:9: error: no matching constructor for 'Foo' with argument list of type '(int)'
+    _ = Foo(42)
+        ^
+no-matching-initializer-generic.delta:4:5: note: candidate function:
+    Foo() { }
+    ^
+no-matching-initializer-generic.delta:5:5: note: candidate function:
+    Foo(T a, T b) { }
+    ^

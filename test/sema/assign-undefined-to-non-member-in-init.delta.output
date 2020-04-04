@@ -1,0 +1,6 @@
+assign-undefined-to-non-member-in-init.delta:9:13: error: 'undefined' is only allowed as an initial value
+        j = undefined;
+            ^
+assign-undefined-to-non-member-in-init.delta:6:5: warning: constructor doesn't initialize member variable 'i'
+    A() {
+    ^

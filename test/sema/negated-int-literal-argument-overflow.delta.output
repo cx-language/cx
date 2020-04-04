@@ -1,0 +1,6 @@
+negated-int-literal-argument-overflow.delta:7:9: error: -1 is out of range for type 'uint'
+    foo(-1);
+        ^
+negated-int-literal-argument-overflow.delta:3:6: warning: unused declaration 'foo'
+void foo(uint a) { }
+     ^

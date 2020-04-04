@@ -1,0 +1,6 @@
+interface-wrong-type-as-this-type.delta:8:9: error: mismatching return type 'S*', expected 'Interface*'
+        return f();
+        ^
+interface-wrong-type-as-this-type.delta:16:6: warning: unused declaration 'f'
+void f(S* s) {
+     ^

@@ -1,0 +1,3 @@
+lambda-infer-parameter-type-fail.delta:5:13: error: couldn't infer type for parameter 'b'
+    var a = b -> b;
+            ^

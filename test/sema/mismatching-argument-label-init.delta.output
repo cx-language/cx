@@ -1,0 +1,3 @@
+mismatching-argument-label-init.delta:9:15: error: invalid argument name 'bar' for parameter 'a'
+    var x = X(bar: 5);
+              ^

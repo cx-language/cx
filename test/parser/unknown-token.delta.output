@@ -1,0 +1,6 @@
+unknown-token.delta:4:1: error: unknown token '`'
+`
+^
+unknown-token.delta:5:1: error: expected identifier, got end-of-file
+
+^

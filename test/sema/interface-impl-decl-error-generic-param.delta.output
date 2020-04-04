@@ -1,0 +1,3 @@
+interface-impl-decl-error-generic-param.delta:4:14: error: 'bool' is not an interface
+struct Z<T>: T {}
+             ^

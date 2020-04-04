@@ -1,0 +1,3 @@
+mismatching-binary-operands.delta:5:17: error: invalid operands 'int' and 'bool' to '+'
+    var foo = 4 + false;
+                ^

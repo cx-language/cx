@@ -1,0 +1,9 @@
+no-matching-initializer.delta:15:9: error: no matching constructor for 'Foo' with argument list of type '(float)'
+    _ = Foo(3.14)
+        ^
+no-matching-initializer.delta:4:5: note: candidate function:
+    Foo() { }
+    ^
+no-matching-initializer.delta:5:5: note: candidate function:
+    Foo(int i) { }
+    ^

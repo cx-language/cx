@@ -1,0 +1,3 @@
+initialize-non-null-pointer-with-null.delta:5:14: error: cannot assign 'null' to 'int*' (add '?' to the type to make it nullable)
+    int* p = null;
+             ^

@@ -1,0 +1,3 @@
+unknown-member-access-base.delta:5:15: error: unknown identifier 'foo'
+    var bar = foo.bar;
+              ^

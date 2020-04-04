@@ -1,0 +1,6 @@
+pointer-equals-incompatible-pointee-types.delta:5:8: warning: pointers to different types are not allowed to be equal (got 'int*' and 'uint*')
+	_ = a === b;
+	      ^
+pointer-equals-incompatible-pointee-types.delta:3:6: warning: unused declaration 'f'
+void f(int* a, uint* b) {
+     ^

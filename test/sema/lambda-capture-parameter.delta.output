@@ -1,0 +1,6 @@
+lambda-capture-parameter.delta:6:28: error: lambda capturing not implemented yet
+    var b = (int c) -> c + a + d;
+                           ^
+lambda-capture-parameter.delta:3:6: warning: unused declaration 'foo'
+void foo(int a) {
+     ^

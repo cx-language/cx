@@ -1,0 +1,6 @@
+int-literal-argument-overflow.delta:7:9: error: 256 is out of range for type 'uint8'
+    foo(256);
+        ^
+int-literal-argument-overflow.delta:3:6: warning: unused declaration 'foo'
+void foo(uint8 a) { }
+     ^

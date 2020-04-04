@@ -1,0 +1,6 @@
+auto-convert-literals-in-ternary-fail-else.delta:5:22: error: 1000 is out of range for type 'uint8'
+    return b ? 100 : 1000;
+                     ^
+auto-convert-literals-in-ternary-fail-else.delta:3:7: warning: unused declaration 'foo'
+uint8 foo(bool b) {
+      ^

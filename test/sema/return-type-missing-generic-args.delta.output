@@ -1,0 +1,33 @@
+ #0 0x00007ff7eab6e2b7 llvm::sys::PrintStackTrace(class llvm::raw_ostream &) (C:\Users\emlai\src\delta\cmake-build-debug-visual-studio-64-bit\delta.exe+0x3ee2b7)
+ #1 0x00007ff7ea9632a8 delta::printStackTrace(void) C:\Users\emlai\src\delta\src\support\utility.cpp:112:0
+ #2 0x00007ff7ea93f33f delta::validateGenericArgCount(unsigned __int64,class llvm::ArrayRef<struct delta::Type>,class llvm::StringRef,struct delta::SourceLocation) C:\Users\emlai\src\delta\src\sema\typecheck-expr.cpp:745:0
+ #3 0x00007ff7ea923ac2 delta::Typechecker::typecheckType(struct delta::Type,enum delta::AccessLevel) C:\Users\emlai\src\delta\src\sema\typecheck-decl.cpp:51:0
+ #4 0x00007ff7ea922835 delta::Typechecker::typecheckFunctionDecl(class delta::FunctionDecl &) C:\Users\emlai\src\delta\src\sema\typecheck-decl.cpp:172:0
+ #5 0x00007ff7ea9222d4 delta::Typechecker::typecheckTopLevelDecl(class delta::Decl &,class delta::PackageManifest const *) C:\Users\emlai\src\delta\src\sema\typecheck-decl.cpp:358:0
+ #6 0x00007ff7ea958bfb delta::Typechecker::typecheckModule(class delta::Module &,class delta::PackageManifest const *) C:\Users\emlai\src\delta\src\sema\typecheck.cpp:437:0
+ #7 0x00007ff7ea88d1f6 buildExecutable C:\Users\emlai\src\delta\src\driver\driver.cpp:212:0
+ #8 0x00007ff7ea88f85a main C:\Users\emlai\src\delta\src\driver\driver.cpp:387:0
+ #9 0x00007ff7eca044b8 __scrt_common_main_seh d:\agent\_work\5\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288:0
+#10 0x00007fff8f8137e4 (C:\WINDOWS\System32\KERNEL32.DLL+0x137e4)
+#11 0x00007fff8fa3cb81 (C:\WINDOWS\SYSTEM32\ntdll.dll+0x6cb81)
+C:\Users\emlai\src\delta\test\sema\return-type-missing-generic-args.delta:4:1: error: too few generic arguments to 'List', expected 1
+List f() {
+^
+ #0 0x00007ff7eab6e2b7 llvm::sys::PrintStackTrace(class llvm::raw_ostream &) (C:\Users\emlai\src\delta\cmake-build-debug-visual-studio-64-bit\delta.exe+0x3ee2b7)
+ #1 0x00007ff7ea9632a8 delta::printStackTrace(void) C:\Users\emlai\src\delta\src\support\utility.cpp:112:0
+ #2 0x00007ff7ea955624 delta::Typechecker::typecheckReturnStmt(class delta::ReturnStmt &) C:\Users\emlai\src\delta\src\sema\typecheck-stmt.cpp:52:0
+ #3 0x00007ff7ea954e69 delta::Typechecker::typecheckStmt(class delta::Stmt * &) C:\Users\emlai\src\delta\src\sema\typecheck-stmt.cpp:169:0
+ #4 0x00007ff7ea922bdd delta::Typechecker::typecheckFunctionDecl(class delta::FunctionDecl &) C:\Users\emlai\src\delta\src\sema\typecheck-decl.cpp:189:0
+ #5 0x00007ff7ea9222d4 delta::Typechecker::typecheckTopLevelDecl(class delta::Decl &,class delta::PackageManifest const *) C:\Users\emlai\src\delta\src\sema\typecheck-decl.cpp:358:0
+ #6 0x00007ff7ea958bfb delta::Typechecker::typecheckModule(class delta::Module &,class delta::PackageManifest const *) C:\Users\emlai\src\delta\src\sema\typecheck.cpp:437:0
+ #7 0x00007ff7ea88d1f6 buildExecutable C:\Users\emlai\src\delta\src\driver\driver.cpp:212:0
+ #8 0x00007ff7ea88f85a main C:\Users\emlai\src\delta\src\driver\driver.cpp:387:0
+ #9 0x00007ff7eca044b8 __scrt_common_main_seh d:\agent\_work\5\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl:288:0
+#10 0x00007fff8f8137e4 (C:\WINDOWS\System32\KERNEL32.DLL+0x137e4)
+#11 0x00007fff8fa3cb81 (C:\WINDOWS\SYSTEM32\ntdll.dll+0x6cb81)
+C:\Users\emlai\src\delta\test\sema\return-type-missing-generic-args.delta:5:5: error: mismatching return type 'List<int>', expected 'List'
+    return List<int>();
+    ^
+C:\Users\emlai\src\delta\test\sema\return-type-missing-generic-args.delta:4:6: warning: unused declaration 'f'
+List f() {
+     ^

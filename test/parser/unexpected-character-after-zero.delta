@@ -1,4 +1,4 @@
-// RUN: %not %delta -parse %s | %FileCheck %s
+// RUN: %check_errors %not %delta -parse %s
 
 void main() {
     // CHECK: [[@LINE+1]]:14: error: expected newline or ';', got identifier

@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 // CHECK: [[@LINE+1]]:1: error: too few generic arguments to 'List', expected 1
 List f() {

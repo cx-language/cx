@@ -1,0 +1,6 @@
+diagnostic-disjunctive-list.delta:6:15: error: unexpected '>'
+    var a = A<>();
+              ^
+diagnostic-disjunctive-list.delta:6:15: error: unexpected '>'
+    var a = A<>();
+              ^

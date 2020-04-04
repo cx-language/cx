@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck -Iinputs %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck -Iinputs %s
 
 import "c-enum.h";
 

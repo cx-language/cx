@@ -1,0 +1,21 @@
+void-pointer-comparison.delta:5:11: error: no matching function for call to '==' with argument list of type '(void*, void*)'
+    _ = a == b;
+          ^
+std/ArrayRef.delta:59:6: note: candidate function:
+bool operator==<T>(ArrayRef<T> a, ArrayRef<T> b) {
+     ^
+std/Comparable.delta:15:6: note: candidate function:
+bool operator== <T: Comparable>(T* a, T* b) {
+     ^
+std/List.delta:210:6: note: candidate function:
+bool operator==<T>(List<T>* a, List<T>* b) {
+     ^
+std/StringBuffer.delta:204:6: note: candidate function:
+bool operator==(StringBuffer* a, string b) {
+     ^
+std/StringBuffer.delta:208:6: note: candidate function:
+bool operator==(string a, StringBuffer* b) {
+     ^
+void-pointer-comparison.delta:3:6: warning: unused declaration 'f'
+void f(void* a, void* b) {
+     ^

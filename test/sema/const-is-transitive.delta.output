@@ -1,0 +1,6 @@
+const-is-transitive.delta:9:11: error: cannot assign to immutable variable 'a' of type 'int'
+    foo.a = 42
+          ^
+const-is-transitive.delta:7:6: warning: unused declaration 'bar'
+void bar(const Foo* foo) {
+     ^

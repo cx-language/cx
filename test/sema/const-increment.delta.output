@@ -1,0 +1,3 @@
+const-increment.delta:8:9: error: cannot increment immutable value of type 'int'
+    (*i)++;
+        ^

@@ -1,0 +1,6 @@
+generic-arg-infer-conflict-2.delta:5:22: error: couldn't infer generic parameter 'T' of 'Range' because of conflicting argument types 'float' and 'uint'
+    for (var i in 0.0..a) {}
+                     ^
+generic-arg-infer-conflict-2.delta:3:6: warning: unused declaration 'f'
+void f(uint a) {
+     ^

@@ -1,0 +1,6 @@
+invalid-arguments-to-function-pointer.delta:5:11: error: invalid argument #2 type 'bool' to 'a', expected 'int'
+    a(42, false);
+          ^
+invalid-arguments-to-function-pointer.delta:3:6: warning: unused declaration 'f'
+void f(void(int, int) a) {
+     ^

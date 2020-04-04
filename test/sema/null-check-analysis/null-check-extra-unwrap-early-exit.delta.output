@@ -1,0 +1,6 @@
+null-check-extra-unwrap-early-exit.delta:9:16: error: cannot unwrap non-optional type 'int*'
+    var a = *(p!);
+               ^
+null-check-extra-unwrap-early-exit.delta:3:6: warning: unused declaration 'foo'
+void foo(int*? p) {
+     ^

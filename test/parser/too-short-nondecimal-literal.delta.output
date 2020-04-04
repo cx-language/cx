@@ -1,0 +1,6 @@
+too-short-nondecimal-literal.delta:4:9: error: hex literal must have at least one digit after '0x'
+var a = 0x;
+        ^
+too-short-nondecimal-literal.delta:4:7: error: unexpected '='
+var a = 0x;
+      ^

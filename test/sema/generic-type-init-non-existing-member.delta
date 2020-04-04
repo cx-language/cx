@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 struct A<T> {
     // CHECK: 5:16: error: no member named 'd' in 'A<int>'

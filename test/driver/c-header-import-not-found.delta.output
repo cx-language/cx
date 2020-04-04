@@ -1,0 +1,6 @@
+c-header-import-not-found.delta:4:8: error: couldn't find C header file 'foo.h'
+import "foo.h";
+       ^
+c-header-import-not-found.delta:4:8: error: couldn't import C header file 'foo.h'
+import "foo.h";
+       ^

@@ -1,4 +1,4 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %check_errors %not %delta -typecheck %s
 
 // CHECK: [[@LINE+1]]:14: error: 'bool' is not an interface
 struct Z<T>: T {}

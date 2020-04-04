@@ -1,0 +1,3 @@
+explicitly-typed-variable.delta:5:13: error: cannot assign 'bool' to 'int'
+    int i = false;
+            ^

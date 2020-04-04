@@ -1,0 +1,3 @@
+too-many-generic-arguments-on-type.delta:7:15: error: too many generic arguments to 'C', expected 0
+    _ = C<int>();
+              ^

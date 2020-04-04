@@ -1,4 +1,4 @@
-// RUN: %delta -print-ir %s | %FileCheck %s -allow-empty
+// RUN: %check_errors %delta -print-ir %s
 
 #if !hasInclude("stdio.h")
 // CHECK-NOT: stdio

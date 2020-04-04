@@ -1,0 +1,3 @@
+inputs/imported-c-header-has-file-scope/second-file.delta:2:5: error: unknown identifier 'foo'
+    foo()
+    ^

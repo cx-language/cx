@@ -1,0 +1,6 @@
+tuple-mismatching-element-name-inferred.delta:7:5: error: mismatching return type '(int a, int c)', expected '(int a, int b)'
+    return (a, c);
+    ^
+tuple-mismatching-element-name-inferred.delta:3:16: warning: unused declaration 'f'
+(int a, int b) f() {
+               ^

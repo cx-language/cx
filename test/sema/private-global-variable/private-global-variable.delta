@@ -1,5 +1,5 @@
-// RUN: %delta -typecheck %s %p/a.delta | %FileCheck %s
-// RUN: %delta -typecheck %s %p/a.delta | %FileCheck %p/a.delta
+// RUN: %check_errors %delta -typecheck %s %p/a.delta
+// RUN: %check_errors %delta -typecheck %s %p/a.delta
 
 void main() {
     // CHECK: [[@LINE+1]]:5: warning: 'i' is private

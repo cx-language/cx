@@ -1,0 +1,3 @@
+uninitialized-global.delta:4:5: error: global variables cannot be uninitialized
+int i = undefined;
+    ^
