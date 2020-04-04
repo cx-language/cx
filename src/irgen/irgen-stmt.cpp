@@ -36,7 +36,7 @@ void IRGenerator::codegenVarStmt(const VarStmt& stmt) {
     }
 
     if (!initializer->isUndefinedLiteralExpr()) {
-        builder.CreateStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
+        createStore(codegenExprForPassing(*initializer, alloca->getAllocatedType()), alloca);
     }
 }
 

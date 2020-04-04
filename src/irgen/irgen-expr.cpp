@@ -145,7 +145,7 @@ llvm::Value* IRGenerator::codegenConstantIncrement(const UnaryExpr& expr, int in
         llvm_unreachable("unknown increment/decrement operand type");
     }
 
-    builder.CreateStore(result, ptr);
+    createStore(result, ptr);
     return nullptr;
 }
 
@@ -310,7 +310,7 @@ void IRGenerator::codegenAssignment(const BinaryExpr& expr) {
 
     llvm::Value* lhsLvalue = codegenAssignmentLHS(expr.getLHS());
     auto rhsValue = codegenExprForPassing(expr.getRHS(), lhsLvalue->getType()->getPointerElementType());
-    builder.CreateStore(rhsValue, lhsLvalue);
+    createStore(rhsValue, lhsLvalue);
 }
 
 bool isBuiltinArrayToArrayRefConversion(Type sourceType, llvm::Type* targetType) {
@@ -410,7 +410,7 @@ llvm::Value* IRGenerator::codegenEnumCase(const EnumCase& enumCase, llvm::ArrayR
 
     // TODO: Could reuse variable alloca instead of always creating a new one here.
     auto* enumValue = createEntryBlockAlloca(getLLVMType(enumDecl->getType()), nullptr, "enum");
-    builder.CreateStore(tag, builder.CreateStructGEP(enumValue, 0, "tag"));
+    createStore(tag, builder.CreateStructGEP(enumValue, 0, "tag"));
 
     if (!associatedValueElements.empty()) {
         // TODO: This is duplicated in codegenTupleExpr.
@@ -421,7 +421,7 @@ llvm::Value* IRGenerator::codegenEnumCase(const EnumCase& enumCase, llvm::ArrayR
         }
         auto* associatedValuePtr = builder.CreatePointerCast(builder.CreateStructGEP(enumValue, 1, "associatedValue"),
                                                              associatedValue->getType()->getPointerTo());
-        builder.CreateStore(associatedValue, associatedValuePtr);
+        createStore(associatedValue, associatedValuePtr);
     }
 
     return enumValue;
@@ -458,7 +458,7 @@ llvm::Value* IRGenerator::codegenCallExpr(const CallExpr& expr, llvm::AllocaInst
     if (expr.isMoveInit()) {
         auto* receiverValue = codegenExpr(*expr.getReceiver());
         auto* argumentValue = codegenExpr(*expr.getArgs()[0].getValue());
-        builder.CreateStore(argumentValue, receiverValue);
+        createStore(argumentValue, receiverValue);
         return nullptr;
     }
 

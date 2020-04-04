@@ -240,12 +240,18 @@ llvm::AllocaInst* IRGenerator::createEntryBlockAlloca(llvm::Type* type, llvm::Va
 
 llvm::AllocaInst* IRGenerator::createTempAlloca(llvm::Value* value, const llvm::Twine& name) {
     auto* alloca = createEntryBlockAlloca(value->getType(), nullptr, name);
-    builder.CreateStore(value, alloca);
+    createStore(value, alloca);
     return alloca;
 }
 
 llvm::Value* IRGenerator::createLoad(llvm::Value* value) {
     return builder.CreateLoad(value, value->getName() + ".load");
+}
+
+void IRGenerator::createStore(llvm::Value* value, llvm::Value* pointer) {
+    ASSERT(pointer->getType()->isPointerTy());
+    ASSERT(pointer->getType()->getPointerElementType() == value->getType());
+    builder.CreateStore(value, pointer);
 }
 
 llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr& lhs) {

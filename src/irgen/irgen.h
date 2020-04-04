@@ -124,6 +124,7 @@ private:
     llvm::AllocaInst* createEntryBlockAlloca(llvm::Type* type, llvm::Value* arraySize = nullptr, const llvm::Twine& name = "");
     llvm::AllocaInst* createTempAlloca(llvm::Value* value, const llvm::Twine& name = "");
     llvm::Value* createLoad(llvm::Value* value);
+    void createStore(llvm::Value* value, llvm::Value* pointer);
     std::vector<llvm::Type*> getFieldTypes(const TypeDecl& decl);
     llvm::Type* getBuiltinType(llvm::StringRef name);
     llvm::Type* getEnumType(const EnumDecl& enumDecl);
