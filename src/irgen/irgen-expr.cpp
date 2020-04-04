@@ -537,29 +537,29 @@ llvm::Value* IRGenerator::codegenAddressofExpr(const AddressofExpr& expr) {
     return builder.CreatePtrToInt(value, uintptr, "address");
 }
 
-llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName) {
+llvm::Value* IRGenerator::codegenMemberAccess(llvm::Value* baseValue, const FieldDecl* field) {
+    auto baseTypeDecl = field->getParentDecl();
     auto baseType = baseValue->getType();
+
     if (baseType->isPointerTy()) {
         baseType = baseType->getPointerElementType();
         if (baseType->isPointerTy()) {
             baseType = baseType->getPointerElementType();
             baseValue = createLoad(baseValue);
         }
-        auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
 
-        if (baseTypeDecl.isUnion()) {
-            return builder.CreateBitCast(baseValue, getLLVMType(memberType)->getPointerTo(), memberName);
+        if (baseTypeDecl->isUnion()) {
+            return builder.CreateBitCast(baseValue, getLLVMType(field->getType())->getPointerTo(), field->getName());
         } else {
-            auto index = baseTypeDecl.getFieldIndex(memberName);
+            auto index = baseTypeDecl->getFieldIndex(field);
             if (!baseType->isSized()) {
-                codegenTypeDecl(baseTypeDecl);
+                codegenTypeDecl(*baseTypeDecl);
             }
-            return builder.CreateStructGEP(nullptr, baseValue, index, memberName);
+            return builder.CreateStructGEP(nullptr, baseValue, index, field->getName());
         }
     } else {
-        auto& baseTypeDecl = *structs.find(baseType->getStructName())->second.second;
-        auto index = baseTypeDecl.isUnion() ? 0 : baseTypeDecl.getFieldIndex(memberName);
-        return builder.CreateExtractValue(baseValue, index, memberName);
+        auto index = baseTypeDecl->isUnion() ? 0 : baseTypeDecl->getFieldIndex(field);
+        return builder.CreateExtractValue(baseValue, index, field->getName());
     }
 }
 
@@ -590,7 +590,7 @@ llvm::Value* IRGenerator::codegenMemberExpr(const MemberExpr& expr) {
         return codegenTupleElementAccess(expr);
     }
 
-    return codegenMemberAccess(codegenLvalueExpr(*expr.getBaseExpr()), expr.getType(), expr.getMemberName());
+    return codegenMemberAccess(codegenLvalueExpr(*expr.getBaseExpr()), llvm::cast<FieldDecl>(expr.getDecl()));
 }
 
 llvm::Value* IRGenerator::codegenTupleElementAccess(const MemberExpr& expr) {

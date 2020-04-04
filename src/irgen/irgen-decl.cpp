@@ -58,8 +58,7 @@ void IRGenerator::codegenFunctionBody(const FunctionDecl& decl, llvm::Function& 
     if (decl.isDestructorDecl()) {
         for (auto& field : decl.getTypeDecl()->getFields()) {
             if (field.getType().getDestructor() == nullptr) continue;
-            auto* fieldValue = codegenMemberAccess(function.arg_begin(), field.getType(), field.getName());
-            deferDestructorCall(fieldValue, &field);
+            deferDestructorCall(codegenMemberAccess(function.arg_begin(), &field), &field);
         }
     }
     for (auto& stmt : decl.getBody()) {

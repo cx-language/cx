@@ -184,9 +184,9 @@ Type TypeDecl::getTypeForPassing() const {
     }
 }
 
-unsigned TypeDecl::getFieldIndex(llvm::StringRef fieldName) const {
-    for (auto p : llvm::enumerate(fields)) {
-        if (p.value().getName() == fieldName) {
+unsigned TypeDecl::getFieldIndex(const FieldDecl* field) const {
+    for (auto& p : llvm::enumerate(fields)) {
+        if (&p.value() == field) {
             return static_cast<unsigned>(p.index());
         }
     }

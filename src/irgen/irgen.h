@@ -92,7 +92,7 @@ private:
     llvm::Value* codegenBuiltinCast(const CallExpr& expr);
     llvm::Value* codegenSizeofExpr(const SizeofExpr& expr);
     llvm::Value* codegenAddressofExpr(const AddressofExpr& expr);
-    llvm::Value* codegenMemberAccess(llvm::Value* baseValue, Type memberType, llvm::StringRef memberName);
+    llvm::Value* codegenMemberAccess(llvm::Value* baseValue, const FieldDecl* field);
     llvm::Value* codegenMemberExpr(const MemberExpr& expr);
     llvm::Value* codegenTupleElementAccess(const MemberExpr& expr);
     llvm::Value* codegenIndexExpr(const IndexExpr& expr);

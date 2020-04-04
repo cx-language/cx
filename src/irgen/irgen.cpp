@@ -54,10 +54,8 @@ llvm::Value* IRGenerator::getValue(const Decl* decl) {
     switch (decl->getKind()) {
         case DeclKind::VarDecl:
             return codegenVarDecl(*llvm::cast<VarDecl>(decl));
-        case DeclKind::FieldDecl: {
-            auto* fieldDecl = llvm::cast<FieldDecl>(decl);
-            return codegenMemberAccess(getThis(), fieldDecl->getType(), fieldDecl->getName());
-        }
+        case DeclKind::FieldDecl:
+            return codegenMemberAccess(getThis(), llvm::cast<FieldDecl>(decl));
         case DeclKind::FunctionDecl:
             return getFunctionProto(*llvm::cast<FunctionDecl>(decl));
         default:
@@ -306,8 +304,7 @@ llvm::Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
             return getValue(decl);
         case DeclKind::FieldDecl:
             if (call.getReceiver()) {
-                return codegenMemberAccess(codegenLvalueExpr(*call.getReceiver()), llvm::cast<FieldDecl>(decl)->getType(),
-                                           llvm::cast<FieldDecl>(decl)->getName());
+                return codegenMemberAccess(codegenLvalueExpr(*call.getReceiver()), llvm::cast<FieldDecl>(decl));
             } else {
                 return getValue(decl);
             }

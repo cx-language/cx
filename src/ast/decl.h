@@ -333,7 +333,7 @@ public:
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isInterface() const { return tag == TypeTag::Interface; }
     bool isUnion() const { return tag == TypeTag::Union; }
-    unsigned getFieldIndex(llvm::StringRef fieldName) const;
+    unsigned getFieldIndex(const FieldDecl* field) const;
     Module* getModule() const override { return &module; }
     static bool classof(const Decl* d) { return d->isTypeDecl(); }
 
@@ -435,6 +435,7 @@ public:
     llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
     Expr* getDefaultValue() const { return defaultValue; }
+    TypeDecl* getParentDecl() const { return llvm::cast<TypeDecl>(VariableDecl::getParentDecl()); }
     Module* getModule() const override { return getParentDecl()->getModule(); }
     SourceLocation getLocation() const override { return location; }
     FieldDecl instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) const;
