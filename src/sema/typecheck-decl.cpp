@@ -323,7 +323,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     if (!initializerType) return;
 
     if (declaredType) {
-        bool isLocalVariable = decl.getParent() && decl.getParent()->isFunctionDecl();
+        bool isLocalVariable = decl.getParentDecl() && decl.getParentDecl()->isFunctionDecl();
         typecheckType(declaredType, isLocalVariable ? AccessLevel::None : decl.getAccessLevel());
 
         if (auto converted = convert(decl.getInitializer(), declaredType)) {
@@ -352,7 +352,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
 }
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
-    typecheckType(decl.getType(), std::min(decl.getAccessLevel(), decl.getParent()->getAccessLevel()));
+    typecheckType(decl.getType(), std::min(decl.getAccessLevel(), decl.getParentDecl()->getAccessLevel()));
 }
 
 void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest) {

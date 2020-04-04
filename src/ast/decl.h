@@ -135,7 +135,7 @@ class VariableDecl : public Decl {
 public:
     Type getType() const { return type; }
     void setType(Type type) { this->type = NOTNULL(type); }
-    Decl* getParent() const { return parent; }
+    Decl* getParentDecl() const { return parent; }
     void setParent(Decl* p) { parent = p; }
     static bool classof(const Decl* d) { return d->isVariableDecl(); }
 
@@ -377,9 +377,9 @@ public:
     llvm::StringRef getName() const override { return name; }
     Expr* getValue() const { return value; }
     Type getAssociatedType() const { return associatedType; }
-    EnumDecl* getEnumDecl() const { return llvm::cast<EnumDecl>(getParent()); }
+    EnumDecl* getEnumDecl() const { return llvm::cast<EnumDecl>(getParentDecl()); }
     SourceLocation getLocation() const override { return location; }
-    Module* getModule() const override { return getParent()->getModule(); }
+    Module* getModule() const override { return getParentDecl()->getModule(); }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::EnumCase; }
 
 private:
@@ -435,7 +435,7 @@ public:
     llvm::StringRef getName() const override { return name; }
     std::string getQualifiedName() const;
     Expr* getDefaultValue() const { return defaultValue; }
-    Module* getModule() const override { return getParent()->getModule(); }
+    Module* getModule() const override { return getParentDecl()->getModule(); }
     SourceLocation getLocation() const override { return location; }
     FieldDecl instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) const;
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::FieldDecl; }

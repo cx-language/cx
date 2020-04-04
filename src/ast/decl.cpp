@@ -240,7 +240,7 @@ bool EnumDecl::hasAssociatedValues() const {
 }
 
 std::string FieldDecl::getQualifiedName() const {
-    return (llvm::cast<TypeDecl>(getParent())->getQualifiedName() + "." + getName()).str();
+    return (llvm::cast<TypeDecl>(getParentDecl())->getQualifiedName() + "." + getName()).str();
 }
 
 bool Decl::hasBeenMoved() const {
@@ -318,7 +318,7 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
             auto* varDecl = llvm::cast<VarDecl>(this);
             auto type = varDecl->getType().resolve(genericArgs);
             auto initializer = varDecl->getInitializer() ? varDecl->getInitializer()->instantiate(genericArgs) : nullptr;
-            return new VarDecl(type, varDecl->getName(), initializer, varDecl->getParent(), getAccessLevel(), *varDecl->getModule(),
+            return new VarDecl(type, varDecl->getName(), initializer, varDecl->getParentDecl(), getAccessLevel(), *varDecl->getModule(),
                                varDecl->getLocation());
         }
         case DeclKind::FieldDecl:

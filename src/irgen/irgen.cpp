@@ -253,7 +253,7 @@ llvm::Value* IRGenerator::codegenAssignmentLHS(const Expr& lhs) {
     if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(currentDecl)) {
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(&lhs)) {
             if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
-                if (fieldDecl->getParent() == constructorDecl->getTypeDecl()) {
+                if (fieldDecl->getParentDecl() == constructorDecl->getTypeDecl()) {
                     return codegenLvalueExpr(lhs);
                 }
             }

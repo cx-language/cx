@@ -131,7 +131,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     }
 
     auto iteratorVarDecl = new VarDecl(Type(nullptr, Mutability::Mutable, location), std::string(iteratorVariableName), iteratorValue,
-                                       variable->getParent(), AccessLevel::None, *variable->getModule(), location);
+                                       variable->getParentDecl(), AccessLevel::None, *variable->getModule(), location);
     auto iteratorVarStmt = new VarStmt(iteratorVarDecl);
 
     auto iteratorVarExpr = new VarExpr(std::string(iteratorVariableName), location);
@@ -141,7 +141,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVarExpr2 = new VarExpr(std::string(iteratorVariableName), location);
     auto valueMemberExpr = new MemberExpr(iteratorVarExpr2, "value", location);
     auto valueCallExpr = new CallExpr(valueMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
-    auto loopVariableVarDecl = new VarDecl(variable->getType(), variable->getName(), valueCallExpr, variable->getParent(),
+    auto loopVariableVarDecl = new VarDecl(variable->getType(), variable->getName(), valueCallExpr, variable->getParentDecl(),
                                            AccessLevel::None, *variable->getModule(), variable->getLocation());
     auto loopVariableVarStmt = new VarStmt(loopVariableVarDecl);
 

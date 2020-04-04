@@ -27,7 +27,7 @@ void Typechecker::checkHasAccess(const Decl& decl, SourceLocation location, Acce
 
 void Typechecker::checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const {
     auto* parent = getCurrentModule()->getSymbolTable().getCurrentScope().parent;
-    if (parent && parent->isLambda() && variableDecl.getParent() != parent) {
+    if (parent && parent->isLambda() && variableDecl.getParentDecl() != parent) {
         ERROR(varExpr.getLocation(), "lambda capturing not implemented yet");
     }
 }
@@ -225,7 +225,7 @@ static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* curr
         switch (lhs.getKind()) {
             case ExprKind::VarExpr: {
                 auto* fieldDecl = llvm::dyn_cast<FieldDecl>(llvm::cast<VarExpr>(lhs).getDecl());
-                return fieldDecl && fieldDecl->getParent() == constructorDecl->getTypeDecl();
+                return fieldDecl && fieldDecl->getParentDecl() == constructorDecl->getTypeDecl();
             }
             case ExprKind::MemberExpr: {
                 auto* varExpr = llvm::dyn_cast<VarExpr>(llvm::cast<MemberExpr>(lhs).getBaseExpr());

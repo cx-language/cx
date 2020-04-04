@@ -21,7 +21,7 @@ void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
         switch (varExpr->getDecl()->getKind()) {
             case DeclKind::VarDecl: {
                 auto* varDecl = llvm::cast<VarDecl>(varExpr->getDecl());
-                if (varDecl->getParent() && varDecl->getParent()->isFunctionDecl()) {
+                if (varDecl->getParentDecl() && varDecl->getParentDecl()->isFunctionDecl()) {
                     localVariableType = varDecl->getType();
                 }
                 break;
