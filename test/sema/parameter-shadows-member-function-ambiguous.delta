@@ -3,7 +3,9 @@
 struct S {
     void bar() {}
     void foo(void() bar) {
-        // CHECK: [[@LINE+1]]:9: error: ambiguous reference to 'bar'
+        // CHECK: [[@LINE+3]]:9: error: ambiguous reference to 'bar'
+        // CHECK: :4:10: note: candidate function:
+        // CHECK: :5:21: note: candidate function:
         bar();
     }
 }
