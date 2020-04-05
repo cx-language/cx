@@ -14,12 +14,12 @@ Module* Module::getStdlibModule() {
     return it->second;
 }
 
-void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) {
+void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {
     if (getSymbolTable().containsInCurrentScope(name)) {
         REPORT_ERROR(decl.getLocation(), "redefinition of '" << name << "'");
     }
 
-    if (global) {
+    if (decl.isGlobal()) {
         getSymbolTable().addGlobal(name, &decl);
     } else {
         getSymbolTable().add(name, &decl);
@@ -41,12 +41,12 @@ void Module::addToSymbolTable(FunctionDecl& decl) {
 }
 
 void Module::addToSymbolTable(TypeTemplate& decl) {
-    addToSymbolTableWithName(decl, decl.getTypeDecl()->getName(), true);
+    addToSymbolTableWithName(decl, decl.getTypeDecl()->getName());
 }
 
 void Module::addToSymbolTable(TypeDecl& decl) {
     llvm::cast<BasicType>(decl.getType().getBase())->setDecl(&decl);
-    addToSymbolTableWithName(decl, decl.getQualifiedName(), true);
+    addToSymbolTableWithName(decl, decl.getQualifiedName());
 
     for (auto& memberDecl : decl.getMethods()) {
         if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(memberDecl)) {
@@ -57,11 +57,11 @@ void Module::addToSymbolTable(TypeDecl& decl) {
 
 void Module::addToSymbolTable(EnumDecl& decl) {
     llvm::cast<BasicType>(decl.getType().getBase())->setDecl(&decl);
-    addToSymbolTableWithName(decl, decl.getName(), true);
+    addToSymbolTableWithName(decl, decl.getName());
 }
 
-void Module::addToSymbolTable(VarDecl& decl, bool global) {
-    addToSymbolTableWithName(decl, decl.getName(), global);
+void Module::addToSymbolTable(VarDecl& decl) {
+    addToSymbolTableWithName(decl, decl.getName());
 }
 
 void Module::addToSymbolTable(Decl* decl) {

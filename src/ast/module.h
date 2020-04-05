@@ -144,7 +144,7 @@ public:
     void addToSymbolTable(TypeTemplate& decl);
     void addToSymbolTable(TypeDecl& decl);
     void addToSymbolTable(EnumDecl& decl);
-    void addToSymbolTable(VarDecl& decl, bool global);
+    void addToSymbolTable(VarDecl& decl);
     void addToSymbolTable(Decl* decl);
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
 
@@ -153,7 +153,7 @@ public:
     static Module* getStdlibModule();
 
 private:
-    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global);
+    void addToSymbolTableWithName(Decl& decl, llvm::StringRef name);
 
 private:
     std::string name;

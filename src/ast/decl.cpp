@@ -330,6 +330,13 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
     llvm_unreachable("all cases handled");
 }
 
+bool Decl::isGlobal() const {
+    if (auto variableDecl = llvm::dyn_cast<VariableDecl>(this)) {
+        return variableDecl->getParentDecl() == nullptr;
+    }
+    return true;
+}
+
 ConstructorDecl::ConstructorDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, AccessLevel accessLevel, SourceLocation location)
 : MethodDecl(DeclKind::ConstructorDecl, FunctionProto("init", std::move(params), Type::getVoid(), false, false), receiverTypeDecl, {},
              accessLevel, location) {}

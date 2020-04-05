@@ -62,7 +62,7 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
 }
 
 void Typechecker::typecheckVarStmt(VarStmt& stmt) {
-    typecheckVarDecl(stmt.getDecl(), false);
+    typecheckVarDecl(stmt.getDecl());
 }
 
 void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
@@ -115,7 +115,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         if (auto* associatedValue = switchCase.getAssociatedValue()) {
             auto* enumCase = llvm::cast<EnumCase>(llvm::cast<MemberExpr>(switchCase.getValue())->getDecl());
             associatedValue->setType(enumCase->getAssociatedType());
-            typecheckVarDecl(*associatedValue, false);
+            typecheckVarDecl(*associatedValue);
         }
 
         for (auto& caseStmt : switchCase.getStmts()) {

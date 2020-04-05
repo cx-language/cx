@@ -105,6 +105,7 @@ public:
     bool isMain() const { return getName() == "main"; }
     bool isLambda() const { return isFunctionDecl() && getName().startswith("__lambda"); }
     AccessLevel getAccessLevel() const { return accessLevel; }
+    virtual bool isGlobal() const;
     virtual bool isReferenced() const { return referenced; }
     void setReferenced(bool referenced) { this->referenced = referenced; }
     bool hasBeenMoved() const;
@@ -136,7 +137,7 @@ public:
     Type getType() const { return type; }
     void setType(Type type) { this->type = NOTNULL(type); }
     Decl* getParentDecl() const { return parent; }
-    void setParent(Decl* p) { parent = p; }
+    void setParentDecl(Decl* p) { parent = p; }
     static bool classof(const Decl* d) { return d->isVariableDecl(); }
 
 protected:
@@ -212,7 +213,7 @@ public:
     FunctionDecl(FunctionProto&& proto, std::vector<Type>&& genericArgs, AccessLevel accessLevel, Module& module, SourceLocation location)
     : FunctionDecl(DeclKind::FunctionDecl, std::move(proto), std::move(genericArgs), accessLevel, module, location) {
         for (auto& param : getParams()) {
-            param.setParent(this);
+            param.setParentDecl(this);
         }
     }
     bool isExtern() const { return getProto().isExtern(); }
@@ -394,7 +395,7 @@ public:
     EnumDecl(std::string&& name, std::vector<EnumCase>&& cases, AccessLevel accessLevel, Module& module, SourceLocation location)
     : TypeDecl(DeclKind::EnumDecl, TypeTag::Enum, std::move(name), accessLevel, module, location), cases(std::move(cases)) {
         for (auto& enumCase : this->cases) {
-            enumCase.setParent(this);
+            enumCase.setParentDecl(this);
             enumCase.setType(getType());
         }
     }

@@ -444,7 +444,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         for (auto& decl : sourceFile.getTopLevelDecls()) {
             if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
                 try {
-                    typecheckVarDecl(*varDecl, true);
+                    typecheckVarDecl(*varDecl);
                 } catch (const CompileError& error) {
                     error.print();
                 }

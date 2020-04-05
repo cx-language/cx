@@ -299,8 +299,8 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
     }
 }
 
-void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
-    if (isGlobal && decl.getInitializer()->isUndefinedLiteralExpr()) {
+void Typechecker::typecheckVarDecl(VarDecl& decl) {
+    if (decl.isGlobal() && decl.getInitializer()->isUndefinedLiteralExpr()) {
         ERROR(decl.getLocation(), "global variables cannot be uninitialized");
     }
 
@@ -309,11 +309,11 @@ void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
     try {
         typecheckExpr(*decl.getInitializer(), false, declaredType);
     } catch (const CompileError&) {
-        if (!isGlobal) getCurrentModule()->addToSymbolTable(decl, false);
+        if (!decl.isGlobal()) getCurrentModule()->addToSymbolTable(decl);
         throw;
     }
 
-    if (!isGlobal) getCurrentModule()->addToSymbolTable(decl, false);
+    if (!decl.isGlobal()) getCurrentModule()->addToSymbolTable(decl);
 
     Type initializerType = decl.getInitializer()->getType();
     if (!initializerType) return;
@@ -396,7 +396,7 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
         case DeclKind::EnumCase:
             llvm_unreachable("no top-level enum case declarations");
         case DeclKind::VarDecl:
-            typecheckVarDecl(llvm::cast<VarDecl>(decl), true);
+            typecheckVarDecl(llvm::cast<VarDecl>(decl));
             break;
         case DeclKind::FieldDecl:
             llvm_unreachable("no top-level field declarations");

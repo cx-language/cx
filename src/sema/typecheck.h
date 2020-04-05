@@ -39,7 +39,7 @@ public:
 private:
     Module* getCurrentModule() const { return NOTNULL(currentModule); }
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
-    void typecheckVarDecl(VarDecl& decl, bool isGlobal);
+    void typecheckVarDecl(VarDecl& decl);
     void typecheckFieldDecl(FieldDecl& decl);
     void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest);
     void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);

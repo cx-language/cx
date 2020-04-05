@@ -927,7 +927,8 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
             if (currentToken() == Token::As) {
                 consumeToken();
                 auto name = parse(Token::Identifier);
-                associatedValue = new VarDecl(Type(), name.getString(), new UndefinedLiteralExpr(name.getLocation()), nullptr,
+                // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
+                associatedValue = new VarDecl(Type(), name.getString(), new UndefinedLiteralExpr(name.getLocation()), parent,
                                               AccessLevel::None, *currentModule, name.getLocation());
             }
 
@@ -1475,7 +1476,7 @@ start:
                 return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
             }
             decl = parseVarDecl(nullptr, accessLevel);
-            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
             break;
         case Token::Import:
             if (accessLevel != AccessLevel::Default) {
@@ -1510,7 +1511,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
             break;
         default:
             decl = parseVarDeclAfterName(nullptr, accessLevel, type, name, location);
-            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl), true);
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
             break;
     }
 
