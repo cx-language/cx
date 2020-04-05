@@ -54,8 +54,6 @@ public:
     void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) {
         identifierReplacements.try_emplace(name, replacement);
     }
-    bool contains(llvm::StringRef name) const { return !find(name).empty(); }
-    bool containsInCurrentScope(llvm::StringRef name) const { return !findInCurrentScope(name).empty(); }
 
     llvm::ArrayRef<Decl*> find(llvm::StringRef name) const {
         auto realName = applyIdentifierReplacements(name);

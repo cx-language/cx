@@ -2,5 +2,6 @@
 
 struct Foo: Copyable { }
 
-// CHECK: [[@LINE+1]]:10: error: redefinition of 'Foo'
+// CHECK: [[@LINE+2]]:10: error: redefinition of 'Foo'
+// CHECK: :3:8: note: previous definition here
 void bar<Foo>() { }

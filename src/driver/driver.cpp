@@ -264,7 +264,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         if (error) ABORT(error.message());
     }
 
-    bool treatAsLibrary = !module.getSymbolTable().contains("main") && !run;
+    bool treatAsLibrary = module.getSymbolTable().find("main").empty() && !run;
     if (treatAsLibrary) {
         compileOnly = true;
     }

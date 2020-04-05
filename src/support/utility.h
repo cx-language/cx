@@ -117,6 +117,14 @@ enum class WarningMode { Default, Suppress, TreatAsErrors };
         reportError(location, s, {}); \
     }
 
+#define REPORT_ERROR_WITH_NOTES(location, notes, args) \
+    { \
+        printStackTrace(); \
+        StringFormatter s; \
+        s << args; \
+        reportError(location, s, notes); \
+    }
+
 #define WARN(location, args) \
     { \
         StringFormatter s; \

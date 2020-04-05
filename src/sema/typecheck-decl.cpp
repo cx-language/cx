@@ -98,8 +98,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
 }
 
 void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel) {
-    if (getCurrentModule()->getSymbolTable().containsInCurrentScope(decl.getName())) {
-        ERROR(decl.getLocation(), "redefinition of '" << decl.getName() << "'");
+    if (auto existing = getCurrentModule()->getSymbolTable().findInCurrentScope(decl.getName()); !existing.empty()) {
+        ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getName() << "'");
     }
 
     typecheckType(decl.getType(), userAccessLevel);
@@ -128,8 +128,9 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
 
 void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel) {
     for (auto& genericParam : genericParams) {
-        if (getCurrentModule()->getSymbolTable().contains(genericParam.getName())) {
-            ERROR(genericParam.getLocation(), "redefinition of '" << genericParam.getName() << "'");
+        if (auto existing = getCurrentModule()->getSymbolTable().find(genericParam.getName()); !existing.empty()) {
+            ERROR_WITH_NOTES(genericParam.getLocation(), getPreviousDefinitionNotes(existing),
+                             "redefinition of '" << genericParam.getName() << "'");
         }
 
         for (Type constraint : genericParam.getConstraints()) {

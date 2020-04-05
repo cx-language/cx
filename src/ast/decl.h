@@ -464,4 +464,6 @@ private:
     Module& module;
 };
 
+std::vector<Note> getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls);
+
 } // namespace delta

@@ -2,6 +2,7 @@
 
 void main() {
     var foo = 1;
-    // CHECK: [[@LINE+1]]:9: error: redefinition of 'foo'
+    // CHECK: [[@LINE+2]]:9: error: redefinition of 'foo'
+    // CHECK: :4:9: note: previous definition here
     var foo = 2;
 }
