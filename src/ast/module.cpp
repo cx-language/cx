@@ -15,7 +15,7 @@ Module* Module::getStdlibModule() {
 }
 
 void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) {
-    if (getSymbolTable().contains(name)) {
+    if (getSymbolTable().containsInCurrentScope(name)) {
         REPORT_ERROR(decl.getLocation(), "redefinition of '" << name << "'");
     }
 

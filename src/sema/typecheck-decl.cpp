@@ -300,10 +300,6 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 }
 
 void Typechecker::typecheckVarDecl(VarDecl& decl, bool isGlobal) {
-    if (!isGlobal && getCurrentModule()->getSymbolTable().contains(decl.getName())) {
-        ERROR(decl.getLocation(), "redefinition of '" << decl.getName() << "'");
-    }
-
     if (isGlobal && decl.getInitializer()->isUndefinedLiteralExpr()) {
         ERROR(decl.getLocation(), "global variables cannot be uninitialized");
     }

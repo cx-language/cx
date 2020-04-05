@@ -1,0 +1,22 @@
+// RUN: check_matches_snapshot %delta -print-ir %s
+
+int i = 0;
+
+struct S {
+    int i = 0;
+
+    void f() {
+        int i = 0;
+
+// TODO: Also allow shadowing variables within the same decl?
+//        if (true) {
+//            int i = 0;
+//        }
+    }
+}
+
+void main() {
+    int i = 0;
+    S s = S();
+    s.f();
+}
