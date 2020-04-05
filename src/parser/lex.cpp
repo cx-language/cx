@@ -75,6 +75,7 @@ void Lexer::readBlockComment(SourceLocation startLocation) {
                 unreadChar(next);
             }
         } else if (ch == '\0') {
+            unreadChar(ch);
             REPORT_ERROR(startLocation, "unterminated block comment");
             break;
         }
