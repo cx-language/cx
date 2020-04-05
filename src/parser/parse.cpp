@@ -1387,14 +1387,10 @@ void Parser::parseIfdefBody(std::vector<Decl*>* activeDecls) {
     if (currentToken() == Token::HashIf) {
         parseIfdef(activeDecls);
     } else {
-        try {
-            if (activeDecls) {
-                activeDecls->emplace_back(parseTopLevelDecl(true));
-            } else {
-                parseTopLevelDecl(false);
-            }
-        } catch (const CompileError& error) {
-            error.print();
+        if (activeDecls) {
+            activeDecls->emplace_back(parseTopLevelDecl(true));
+        } else {
+            parseTopLevelDecl(false);
         }
     }
 }
@@ -1525,18 +1521,18 @@ void Parser::parse() {
     std::vector<Decl*> topLevelDecls;
     SourceFile sourceFile(lexer.getFilePath());
 
-    while (currentToken() != Token::None) {
-        if (currentToken() == Token::HashIf) {
-            parseIfdef(&topLevelDecls);
-        } else {
-            auto previousTokenIndex = currentTokenIndex;
-            try {
+    try {
+        while (currentToken() != Token::None) {
+            if (currentToken() == Token::HashIf) {
+                parseIfdef(&topLevelDecls);
+            } else {
+                auto previousTokenIndex = currentTokenIndex;
                 topLevelDecls.push_back(parseTopLevelDecl(true));
-            } catch (const CompileError& error) {
-                error.print();
+                if (currentTokenIndex == previousTokenIndex) break;
             }
-            if (currentTokenIndex == previousTokenIndex) break;
         }
+    } catch (const CompileError& error) {
+        error.print();
     }
 
     sourceFile.setDecls(std::move(topLevelDecls));

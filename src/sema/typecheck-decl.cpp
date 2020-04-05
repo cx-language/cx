@@ -129,7 +129,7 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
 void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel) {
     for (auto& genericParam : genericParams) {
         if (getCurrentModule()->getSymbolTable().contains(genericParam.getName())) {
-            REPORT_ERROR(genericParam.getLocation(), "redefinition of '" << genericParam.getName() << "'");
+            ERROR(genericParam.getLocation(), "redefinition of '" << genericParam.getName() << "'");
         }
 
         for (Type constraint : genericParam.getConstraints()) {

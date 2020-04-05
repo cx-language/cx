@@ -16,7 +16,7 @@ Module* Module::getStdlibModule() {
 
 void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool global) {
     if (getSymbolTable().contains(name)) {
-        ERROR(decl.getLocation(), "redefinition of '" << name << "'");
+        REPORT_ERROR(decl.getLocation(), "redefinition of '" << name << "'");
     }
 
     if (global) {
@@ -28,14 +28,14 @@ void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name, bool glo
 
 void Module::addToSymbolTable(FunctionTemplate& decl) {
     if (getSymbolTable().findWithMatchingPrototype(*decl.getFunctionDecl())) {
-        ERROR(decl.getLocation(), "redefinition of '" << decl.getQualifiedName() << "'");
+        REPORT_ERROR(decl.getLocation(), "redefinition of '" << decl.getQualifiedName() << "'");
     }
     getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
 }
 
 void Module::addToSymbolTable(FunctionDecl& decl) {
     if (getSymbolTable().findWithMatchingPrototype(decl)) {
-        ERROR(decl.getLocation(), "redefinition of '" << decl.getQualifiedName() << "'");
+        REPORT_ERROR(decl.getLocation(), "redefinition of '" << decl.getQualifiedName() << "'");
     }
     getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
 }
