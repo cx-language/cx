@@ -1,3 +1,4 @@
 // RUN: %not %delta -parse %s | %FileCheck %s
 
- this // CHECK: [[@LINE]]:2: error: unexpected 'this'
+// CHECK: [[@LINE+1]]:2: error: unexpected 'this'
+ this

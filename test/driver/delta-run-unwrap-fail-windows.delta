@@ -3,6 +3,8 @@
 
 void main() {
     int*? p = null;
-    // CHECK: Unwrap failed at delta-run-unwrap-fail-windows.delta:[[@LINE+1]]:15
+    // CHECK: Unwrap failed at delta-run-unwrap-fail-windows.delta:[[@LINE+3]]:15
+    // CHECK: error:
+    // TODO: Why is this printing 'error:' after the assertion failure message? Fix.
     var pp = p!;
 }

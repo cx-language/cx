@@ -2,5 +2,6 @@
 
 T foo<T, U>(T a, U b) { return a; }
 
-// CHECK: [[@LINE+1]]:31: error: too few generic arguments to 'foo', expected 2
+// CHECK: [[@LINE+2]]:31: error: too few generic arguments to 'foo', expected 2
+// CHECK: [[@LINE+1]]:23: error: no matching function for call to 'foo' with argument list of type '(int, int)'
 void main() { var f = foo<int>(1, 2); }

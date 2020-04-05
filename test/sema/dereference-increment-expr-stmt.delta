@@ -3,6 +3,7 @@
 void f(int* p) {
     var a = p;
 
-    // CHECK: [[@LINE+1]]:11: error: unexpected ';'
+    // CHECK: [[@LINE+2]]:11: error: unexpected ';'
+    // CHECK: [[@LINE+1]]:5: error: cannot dereference non-pointer type 'void'
     *(a++);
 }

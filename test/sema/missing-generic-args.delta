@@ -2,6 +2,7 @@
 
 // CHECK: [[@LINE+1]]:1: error: too few generic arguments to 'List', expected 1
 List f() {
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'List<int>', expected 'List'
     return List<int>();
 }
 

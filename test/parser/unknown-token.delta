@@ -2,3 +2,4 @@
 
 // CHECK: [[@LINE+1]]:1: error: unknown token '`'
 `
+// CHECK: [[@LINE+1]]:1: error: expected identifier, got end-of-file

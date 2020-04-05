@@ -6,5 +6,6 @@ void f(T t) {}
 
 void g(T t) {
     f(t);
-    var a = t; // CHECK: [[@LINE]]:13: error: use of moved value
+    // CHECK: [[@LINE+1]]:13: error: use of moved value
+    var a = t;
 }
