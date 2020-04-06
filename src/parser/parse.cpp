@@ -1166,7 +1166,7 @@ FunctionDecl* Parser::parseExternFunctionDecl(Type type, llvm::StringRef name, S
     return decl;
 }
 
-/// init-decl ::= id param-list '{' stmt* '}'
+/// constructor-decl ::= id param-list '{' stmt* '}'
 ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel) {
     ASSERT(currentToken() == Token::Identifier);
     auto location = consumeToken().getLocation();
@@ -1176,7 +1176,7 @@ ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, Access
     return decl;
 }
 
-/// deinit-decl ::= '~' id param-list '{' stmt* '}'
+/// destructor-decl ::= '~' id param-list '{' stmt* '}'
 DestructorDecl* Parser::parseDestructorDecl(TypeDecl& receiverTypeDecl) {
     ASSERT(currentToken() == Token::Tilde);
     auto location = consumeToken().getLocation();
@@ -1227,7 +1227,7 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
 
 /// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}'
 /// interface-list ::= ':' non-empty-type-list
-/// member-decl ::= field-decl | function-decl
+/// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl
 TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     TypeTag tag;
     switch (consumeToken()) {
