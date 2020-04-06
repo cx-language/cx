@@ -35,7 +35,9 @@ struct List<Element> {
 
     ~List() {
         if (capacity != 0) {
-            // FIXME: Call destructors of remaining elements.
+            for (var element in this) {
+                element.deinit();
+            }
             deallocate(buffer);
         }
     }
