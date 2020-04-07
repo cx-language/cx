@@ -12,13 +12,13 @@ void main() {
         println(element);
     }
 
-    println("or an inclusive numeric range");
-    for (var element in 4...6) {
+    println("or an exclusive numeric range");
+    for (var element in 1..3) {
         println(element);
     }
 
-    println("or an exclusive numeric range");
-    for (var element in 7..9) {
+    println("or an inclusive numeric range");
+    for (var element in 1...3) {
         println(element);
     }
 }
