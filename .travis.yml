@@ -8,7 +8,7 @@ matrix:
 
         - os: linux
           compiler: gcc
-          before_install: CC=gcc-7 CXX=g++-7 CXXFLAGS="--coverage"
+          before_install: CC=gcc-7 CXX=g++-7 UPDATE_WEBSITE=true
 
         - os: osx
           compiler: clang
@@ -24,7 +24,6 @@ addons:
             - gcc-7
             - g++-7
             - libstdc++-7-dev
-            - lcov
 
 env:
     global:
@@ -37,7 +36,7 @@ install:
           wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz;
           tar -xf $LLVM_TARBALL_NAME.tar.xz;
           export LLVMDIR="$PWD/$LLVM_TARBALL_NAME";
-          pip install --user lit cpp-coveralls;
+          pip install --user lit;
       fi
     - if [ $TRAVIS_OS_NAME == "osx" ]; then
           export LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-darwin-apple;
@@ -64,7 +63,6 @@ script:
     - export CMAKE_BUILD_PARALLEL_LEVEL=""
     - cmake .
       -DCMAKE_PREFIX_PATH="$LLVMDIR;$CLANGDIR"
-      -DCMAKE_CXX_FLAGS="$CXXFLAGS"
       -DCMAKE_BUILD_TYPE=Debug
       "${EXTRA_CMAKE_FLAGS[@]}"
     - cmake --build .
@@ -72,13 +70,9 @@ script:
     - if [ $TRAVIS_OS_NAME == "linux" ] && [ $TRAVIS_COMPILER == "clang" ]; then
           cmake --build . --target lint;
       fi
-    - if [[ $CXXFLAGS == *"--coverage"* ]]; then
-          cmake --build . --target coverage;
-      fi
 
 after_success:
-    - if [[ $CXXFLAGS == *"--coverage"* ]]; then
-          coveralls --exclude test --exclude llvm --exclude $LLVM_TARBALL_NAME --exclude CMakeFiles;
+    - if [ $UPDATE_WEBSITE == "true" ]; then
           wget --no-verbose https://github.com/jgm/pandoc/releases/download/2.9.2.1/pandoc-2.9.2.1-1-amd64.deb;
           sudo dpkg -i pandoc-2.9.2.1-1-amd64.deb;
           scripts/ci-update-website.sh;

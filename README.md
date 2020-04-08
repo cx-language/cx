@@ -45,7 +45,6 @@ After this, the following commands can be invoked from the `build` directory:
 
 - `cmake --build .` builds the project.
 - `cmake --build . --target check` runs the test suite.
-- `cmake --build . --target coverage` generates a test coverage report under `coverage/`.
 
 The C++ code style is enforced by ClangFormat and ClangTidy:
 
