@@ -1,12 +1,18 @@
 # Pointers
 
-Pointers in Delta, written `T*`, are almost like in C and C++, except that they can't be null by default.
+Pointers, written `T*`, are used to refer to other objects in memory.
+
+Delta pointers are more like C++ references than C/C++ pointers:
+every operation on a pointer operates on the pointed-to value,
+except reassignment. Reassigning a pointer changes what the pointer points to.
+
+Additionally, Delta pointers cannot be null by default.
 To create nullable pointers, the pointer type has to be marked as [nullable](nullable-types.html).
 
 To form a pointer, the `&` operator can be used.
 To dereference a pointer, the `*` operator can be used.
 
-Comparing pointers always compares to pointed-to objects. To compare the memory addresses,
+Comparing pointers also compares to pointed-to objects. To compare the memory addresses,
 the reference equality operators `===` and `!==` can be used.
 
 ```cs
@@ -30,7 +36,7 @@ void main() {
 ## Array pointers
 
 Array pointers, written `T[*]`, are pointers that point to an array of unknown length, or one step past the end of an array.
-They support pointer arithmetic.
+They are the only pointer type that supports pointer arithmetic, since pointer arithmetic only makes sense for arrays.
 
 ```cs
 void main() {
