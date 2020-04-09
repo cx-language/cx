@@ -13,9 +13,8 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
     ASSERT(builder.GetInsertBlock(), "CreateGlobalStringPtr requires block to insert into");
     auto* stringPtr = builder.CreateGlobalStringPtr(expr.getValue());
     auto* size = llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), expr.getValue().size());
-    static int stringLiteralCounter = 0;
     auto* type = getLLVMType(BasicType::get("string", {}));
-    auto* alloca = createEntryBlockAlloca(type, nullptr, "__str" + std::to_string(stringLiteralCounter++));
+    auto* alloca = createEntryBlockAlloca(type, nullptr, "__str");
     llvm::Function* stringConstructor = nullptr;
 
     for (auto* decl : Module::getStdlibModule()->getSymbolTable().find("string.init")) {

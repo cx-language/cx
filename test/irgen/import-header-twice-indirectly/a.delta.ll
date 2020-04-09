@@ -8,9 +8,9 @@
 @1 = private unnamed_addr constant [6 x i8] c"%.*s\0A\00", align 1
 
 define i32 @main() {
-  %__str6 = alloca %string
-  call void @_EN3std6string4initEP4char3int(%string* %__str6, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  call void @_EN3std7printlnI6stringEEP6string(%string* %__str6)
+  %__str = alloca %string
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN3std7printlnI6stringEEP6string(%string* %__str)
   ret i32 0
 }
 
