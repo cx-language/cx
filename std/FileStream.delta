@@ -1,0 +1,32 @@
+struct OutputFileStream {
+    FILE*? file;
+
+    OutputFileStream(fileDescriptor: int) {
+        file = fdopen(fileDescriptor, "w");
+
+        if (!file) { // TODO: Error handling
+            println("Couldn't open file descriptor ", fileDescriptor, " for writing");
+            abort();
+        }
+    }
+
+    ~OutputFileStream() {
+        if (file) {
+            fclose(file);
+        }
+    }
+
+    void write<T: Printable>(T* value) {
+        var s = value.toString();
+        fprintf(file!, "%.*s", s.size(), s.data());
+        fflush(file!); // TODO: Temporary. Remove this when we can.
+    }
+}
+
+OutputFileStream stdout() {
+    return OutputFileStream(fileDescriptor: 1);
+}
+
+OutputFileStream stderr() {
+    return OutputFileStream(fileDescriptor: 2);
+}

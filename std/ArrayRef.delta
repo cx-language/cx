@@ -51,8 +51,7 @@ struct ArrayRef<Element>: Copyable {
     }
 
     private void indexOutOfBounds(string function, int index) {
-        println("ArrayRef.", function, ": index ", index, " is out of bounds, size is ", size());
-        fatalError();
+        abort("ArrayRef.", function, ": index ", index, " is out of bounds, size is ", size());
     }
 }
 

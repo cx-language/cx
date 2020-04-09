@@ -1,5 +1,4 @@
 // RUN: %not %delta run %s 2>&1 | %FileCheck %s
-// UNSUPPORTED: wsl
 
 int main() {
     return List<int>()[0];

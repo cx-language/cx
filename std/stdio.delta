@@ -111,5 +111,5 @@ void assertFail(const char* message) {
         fprintf(stream, message);
         fclose(stream!);
     }
-    fatalError();
+    abortWrapper();
 }

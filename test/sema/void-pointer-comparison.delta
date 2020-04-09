@@ -2,6 +2,6 @@
 
 void f(void* a, void* b) {
 	// CHECK: [[@LINE+2]]:11: error: no matching function for call to '==' with argument list of type '(void*, void*)'
-	// CHECK-COUNT-6: note: candidate function:
+	// CHECK-COUNT-8: note: candidate function:
     _ = a == b;
 }

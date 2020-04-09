@@ -67,12 +67,12 @@ struct List<Element> {
     }
 
     Element* first() {
-        if (size == 0) assertFail("Called first() on empty List\n");
+        if (size == 0) abort("Called first() on empty List\n");
         return buffer[0];
     }
 
     Element* last() {
-        if (size == 0) assertFail("Called last() on empty List\n");
+        if (size == 0) abort("Called last() on empty List\n");
         return buffer[size - 1];
     }
 
@@ -114,7 +114,7 @@ struct List<Element> {
     /// Removes the first element from the list.
     /// Other elements are moved towards the beginning of the list by one index.
     void removeFirst() {
-        if (size == 0) assertFail("Called removeFirst() on empty List\n");
+        if (size == 0) abort("Called removeFirst() on empty List\n");
         unsafeRemoveAt(0);
     }
 
@@ -130,14 +130,14 @@ struct List<Element> {
 
     /// Removes the last element from the list.
     void removeLast() {
-        if (size == 0) assertFail("Called removeLast() on empty List\n");
+        if (size == 0) abort("Called removeLast() on empty List\n");
         size--;
         buffer[size].deinit();
     }
 
     /// Removes and returns the last element.
     Element pop() {
-        if (size == 0) assertFail("Called pop() on empty List\n");
+        if (size == 0) abort("Called pop() on empty List\n");
         size--;
         return buffer[size];
     }
@@ -204,8 +204,7 @@ struct List<Element> {
     }
 
     private void indexOutOfBounds(int index) {
-        println("List index ", index, " is out of bounds, size is ", size());
-        fatalError();
+        abort("List index ", index, " is out of bounds, size is ", size());
     }
 }
 

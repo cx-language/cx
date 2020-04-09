@@ -1,5 +1,4 @@
 // RUN: %not %delta run %s 2>&1 | %FileCheck %s
-// UNSUPPORTED: wsl
 
 void main() {
     var array = List<int>();

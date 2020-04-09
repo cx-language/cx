@@ -1,5 +1,4 @@
 // RUN: %not %delta run %s 2>&1 | %FileCheck -match-full-lines %s
-// UNSUPPORTED: windows, wsl
 
 void main() {
     int*? p = null;

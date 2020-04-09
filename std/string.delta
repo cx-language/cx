@@ -120,21 +120,20 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     private void indexOutOfBounds(string function, int index) {
-        println("string.", function, ": index ", index, " is out of bounds, size is ", size());
-        fatalError();
+        abort("string.", function, ": index ", index, " is out of bounds, size is ", size());
     }
 }
 
-//bool operator==(string a, string b) {
-//    if (a.size() != b.size()) {
-//        return false;
-//    }
-//
-//    for (var index in 0..a.size()) {
-//        if (a[index] != b[index]) {
-//            return false;
-//        }
-//    }
-//
-//    return true;
-//}
+bool operator==(string a, string b) {
+    if (a.size() != b.size()) {
+        return false;
+    }
+
+    for (var index in 0..a.size()) {
+        if (a[index] != b[index]) {
+            return false;
+        }
+    }
+
+    return true;
+}
