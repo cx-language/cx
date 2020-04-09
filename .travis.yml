@@ -3,12 +3,23 @@ language: cpp
 matrix:
     include:
         - os: linux
+          dist: xenial
           compiler: clang
           before_install: CC=clang CXX=clang++
 
         - os: linux
+          dist: xenial
           compiler: gcc
           before_install: CC=gcc-7 CXX=g++-7 UPDATE_WEBSITE=true
+
+        - os: linux
+          dist: bionic
+          compiler: clang
+          before_install: CC=clang CXX=clang++
+
+        - os: linux
+          dist: bionic
+          compiler: gcc
 
         - os: osx
           compiler: clang
