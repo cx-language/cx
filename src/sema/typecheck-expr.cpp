@@ -756,37 +756,6 @@ void delta::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Typ
     }
 }
 
-Typechecker::ValidateArgCountResult Typechecker::validateArgCount(size_t paramCount, size_t argCount, bool isVariadic) {
-    if (argCount < paramCount) {
-        return ValidateArgCountResult::TooFew;
-    } else if (!isVariadic && argCount > paramCount) {
-        return ValidateArgCountResult::TooMany;
-    } else {
-        return ValidateArgCountResult::Valid;
-    }
-}
-
-Typechecker::ValidateArgumentResult Typechecker::validateArgument(NamedValue& arg, const ParamDecl* param) {
-    if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
-        return ValidateArgumentResult::InvalidName;
-    }
-
-    // TODO: Should probably not typecheck here because it might change the expression's type?
-    if (!arg.getValue()->hasType()) {
-        typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
-    }
-
-    if (param) {
-        if (auto converted = convert(arg.getValue(), param->getType(), true)) {
-            arg.setValue(converted);
-        } else {
-            return ValidateArgumentResult::InvalidType;
-        }
-    }
-
-    return ValidateArgumentResult::Valid;
-}
-
 llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl,
                                                          bool returnOnError, Type expectedType) {
     ASSERT(!genericParams.empty());
@@ -1166,30 +1135,14 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
     std::vector<ParamDecl> params;
 
-    switch (decl->getKind()) {
-        case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl:
-        case DeclKind::ConstructorDecl:
-        case DeclKind::DestructorDecl:
-            params = llvm::cast<FunctionDecl>(decl)->getParams();
-            break;
-
-        case DeclKind::VarDecl:
-        case DeclKind::ParamDecl:
-        case DeclKind::FieldDecl: {
-            auto type = llvm::cast<VariableDecl>(decl)->getType();
-            params = llvm::cast<FunctionType>(type.getBase())->getParamDecls();
-            break;
-        }
-        case DeclKind::EnumCase: {
-            auto type = llvm::cast<EnumCase>(decl)->getAssociatedType();
-            params = map(type.getTupleElements(),
-                         [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
-            validateArgs(expr, params, false, decl->getName(), expr.getLocation());
-            break;
-        }
-        default:
-            llvm_unreachable("invalid callee decl");
+    if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
+        params = functionDecl->getParams();
+    } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
+        params = llvm::cast<FunctionType>(variableDecl->getType().getBase())->getParamDecls();
+    } else {
+        auto type = llvm::cast<EnumCase>(decl)->getAssociatedType();
+        params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
+        validateArgs(expr, params, false, decl->getName(), expr.getLocation());
     }
 
     for (auto&& [param, arg] : llvm::zip_first(params, expr.getArgs())) {
@@ -1201,103 +1154,96 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     expr.setCalleeDecl(decl);
     decl->setReferenced(true);
 
-    switch (decl->getKind()) {
-        case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl:
-        case DeclKind::DestructorDecl:
-            return llvm::cast<FunctionDecl>(decl)->getFunctionType()->getReturnType();
-
-        case DeclKind::ConstructorDecl: {
-            auto constructorDecl = llvm::cast<ConstructorDecl>(decl);
-            if (constructorDecl->getTypeDecl()->isInterface()) {
-                typecheckFunctionDecl(*constructorDecl);
-            }
-            return llvm::cast<ConstructorDecl>(decl)->getTypeDecl()->getType();
+    if (auto constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
+        if (constructorDecl->getTypeDecl()->isInterface()) {
+            typecheckFunctionDecl(*constructorDecl);
         }
-        case DeclKind::VarDecl:
-        case DeclKind::ParamDecl:
-        case DeclKind::FieldDecl:
-            return llvm::cast<FunctionType>(llvm::cast<VariableDecl>(decl)->getType().getBase())->getReturnType();
-
-        case DeclKind::EnumCase:
-            return llvm::cast<EnumCase>(decl)->getType();
-
-        default:
-            llvm_unreachable("invalid callee decl");
+        return llvm::cast<ConstructorDecl>(decl)->getTypeDecl()->getType();
+    } else if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
+        return functionDecl->getFunctionType()->getReturnType();
+    } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
+        return llvm::cast<FunctionType>(variableDecl->getType().getBase())->getReturnType();
+    } else {
+        return llvm::cast<EnumCase>(decl)->getType();
     }
 }
 
-bool Typechecker::argumentsMatch(CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params) {
-    if (functionDecl) params = functionDecl->getParams();
-    bool isVariadic = functionDecl && functionDecl->isVariadic();
-    auto args = expr.getArgs();
-
-    if (validateArgCount(params.size(), expr.getArgs().size(), isVariadic) != ValidateArgCountResult::Valid) {
-        return false;
-    }
-
-    for (size_t i = 0; i < args.size(); ++i) {
-        auto& arg = args[i];
-        auto* param = i < params.size() ? &params[i] : nullptr;
-
-        if (validateArgument(arg, param) != ValidateArgumentResult::Valid) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, SourceLocation location) {
-    switch (calleeDecl.getKind()) {
-        case DeclKind::FunctionDecl:
-        case DeclKind::MethodDecl:
-        case DeclKind::ConstructorDecl:
-        case DeclKind::DestructorDecl: {
-            auto& functionDecl = llvm::cast<FunctionDecl>(calleeDecl);
-            validateArgs(expr, functionDecl.getParams(), functionDecl.isVariadic(), functionName, location);
-            break;
-        }
-        case DeclKind::VarDecl:
-        case DeclKind::ParamDecl:
-        case DeclKind::FieldDecl: {
-            auto* variableDecl = llvm::cast<VariableDecl>(&calleeDecl);
-            if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->getType().getBase())) {
-                auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
-                validateArgs(expr, paramDecls, false, functionName, location);
-            }
-            break;
-        }
-        default:
-            llvm_unreachable("invalid callee decl");
-    }
-}
-
-void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee,
-                               SourceLocation location) {
-    switch (validateArgCount(params.size(), expr.getArgs().size(), isVariadic)) {
-        case ValidateArgCountResult::TooFew:
-            REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << (isVariadic ? "at least " : "") << params.size());
-            break;
-        case ValidateArgCountResult::TooMany:
-            REPORT_ERROR(location, "too many arguments to '" << callee << "', expected " << params.size());
-            break;
-        case ValidateArgCountResult::Valid:
-            break;
+ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic) {
+    if (expr.getArgs().size() < params.size()) {
+        return ArgumentValidation(ArgumentValidation::TooFew);
+    } else if (!isVariadic && expr.getArgs().size() > params.size()) {
+        return ArgumentValidation(ArgumentValidation::TooMany);
     }
 
     for (size_t i = 0; i < expr.getArgs().size(); ++i) {
         auto& arg = expr.getArgs()[i];
         auto* param = i < params.size() ? &params[i] : nullptr;
 
-        switch (validateArgument(arg, param)) {
-            case ValidateArgumentResult::InvalidName:
-                ERROR(arg.getLocation(), "invalid argument name '" << arg.getName() << "' for parameter '" << param->getName() << "'");
-            case ValidateArgumentResult::InvalidType:
-                ERROR(arg.getLocation(), "invalid argument #" << (i + 1) << " type '" << arg.getValue()->getType() << "' to '" << callee
-                                                              << "', expected '" << param->getType() << "'");
-            case ValidateArgumentResult::Valid:
-                break;
+        if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
+            return ArgumentValidation(ArgumentValidation::InvalidName, int(i));
+        }
+
+        // TODO: Should probably not typecheck here because it might change the expression's type?
+        if (!arg.getValue()->hasType()) {
+            typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
+        }
+
+        if (param) {
+            if (auto converted = convert(arg.getValue(), param->getType(), true)) {
+                arg.setValue(converted);
+            } else {
+                return ArgumentValidation(ArgumentValidation::InvalidType, int(i));
+            }
+        }
+    }
+
+    return ArgumentValidation(ArgumentValidation::None);
+}
+
+bool Typechecker::argumentsMatch(CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params) {
+    if (functionDecl) params = functionDecl->getParams();
+    bool isVariadic = functionDecl && functionDecl->isVariadic();
+    return !getArgumentValidationResult(expr, params, isVariadic).error;
+}
+
+void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, SourceLocation location) {
+    if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(&calleeDecl)) {
+        validateArgs(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, location);
+    } else {
+        auto variableDecl = llvm::cast<VariableDecl>(&calleeDecl);
+
+        if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->getType().getBase())) {
+            auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
+            validateArgs(expr, paramDecls, false, functionName, location);
+        }
+    }
+}
+
+void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee,
+                               SourceLocation location) {
+    auto result = getArgumentValidationResult(expr, params, isVariadic);
+
+    switch (result.error) {
+        case ArgumentValidation::None:
+            break;
+        case ArgumentValidation::TooFew:
+            REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << (isVariadic ? "at least " : "") << params.size());
+            break;
+        case ArgumentValidation::TooMany:
+            REPORT_ERROR(location, "too many arguments to '" << callee << "', expected " << params.size());
+            break;
+        case ArgumentValidation::InvalidName: {
+            auto& arg = expr.getArgs()[result.index];
+            auto* param = &params[result.index];
+            ERROR(arg.getLocation(), "invalid argument name '" << arg.getName() << "' for parameter '" << param->getName() << "'");
+            break;
+        }
+        case ArgumentValidation::InvalidType: {
+            auto& arg = expr.getArgs()[result.index];
+            auto* param = &params[result.index];
+            ERROR(arg.getLocation(), "invalid argument #" << (result.index + 1) << " type '" << arg.getValue()->getType() << "' to '"
+                                                          << callee << "', expected '" << param->getType() << "'");
+            break;
         }
     }
 }

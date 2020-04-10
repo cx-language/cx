@@ -29,6 +29,16 @@ struct SourceLocation;
 struct Type;
 struct CompileOptions;
 
+struct ArgumentValidation {
+    enum Error { None, TooFew, TooMany, InvalidName, InvalidType };
+
+    Error error;
+    int index;
+
+    ArgumentValidation(Error error) : error(error) {}
+    ArgumentValidation(Error error, int index) : error(error), index(index) {}
+};
+
 class Typechecker {
 public:
     Typechecker(const CompileOptions& options)
@@ -97,11 +107,8 @@ private:
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType);
     std::vector<Type> inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
                                                    llvm::ArrayRef<ParamDecl> params, bool returnOnError);
+    ArgumentValidation getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic);
     bool argumentsMatch(CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {});
-    enum class ValidateArgCountResult { TooFew, TooMany, Valid };
-    enum class ValidateArgumentResult { InvalidName, InvalidType, Valid };
-    ValidateArgCountResult validateArgCount(size_t paramCount, size_t argCount, bool isVariadic);
-    ValidateArgumentResult validateArgument(NamedValue& arg, const ParamDecl* param);
     void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", SourceLocation location = SourceLocation());
     void validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName = "",
                       SourceLocation location = SourceLocation());
