@@ -37,7 +37,6 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 auto instantiation = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs());
                 getCurrentModule()->addToSymbolTable(*instantiation);
                 declsToTypecheck.push_back(instantiation);
-
             } else {
                 ASSERT(decls.size() == 1);
                 decl = decls[0];
@@ -313,8 +312,7 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
     if (!initializerType) return;
 
     if (declaredType) {
-        bool isLocalVariable = decl.getParentDecl() && decl.getParentDecl()->isFunctionDecl();
-        typecheckType(declaredType, isLocalVariable ? AccessLevel::None : decl.getAccessLevel());
+        typecheckType(declaredType, !decl.isGlobal() ? AccessLevel::None : decl.getAccessLevel());
 
         if (auto converted = convert(decl.getInitializer(), declaredType)) {
             decl.setInitializer(converted);

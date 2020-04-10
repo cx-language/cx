@@ -173,6 +173,10 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             ERROR(expr.getLocation(), "cannot dereference non-pointer type '" << operandType << "'");
 
         case Token::And: // Address-of operation
+            // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
+            if (expr.isConstant()) {
+                operandType = operandType.withMutability(Mutability::Mutable);
+            }
             return PointerType::get(operandType);
 
         case Token::Increment:
@@ -512,7 +516,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if ((allowPointerToTemporary || (expr && expr->isLvalue())) && target.removeOptional().isPointerType() &&
-        (source.isMutable() || !target.removeOptional().getPointee().isMutable()) &&
+        // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
+        (source.isMutable() || (expr && expr->isConstant()) || !target.removeOptional().getPointee().isMutable()) &&
         isImplicitlyConvertible(expr, source, target.removeOptional().getPointee())) {
         return source;
     }
