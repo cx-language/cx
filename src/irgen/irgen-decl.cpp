@@ -43,7 +43,7 @@ llvm::Function* IRGenerator::getFunctionProto(const FunctionDecl& decl) {
         }
     }
 
-    functionInstantiations.push_back({ &decl, function });
+    functionInstantiations.push_back({&decl, function});
     return function;
 }
 
@@ -104,7 +104,7 @@ std::vector<llvm::Type*> IRGenerator::getFieldTypes(const TypeDecl& decl) {
 
 llvm::StructType* IRGenerator::codegenTypeDecl(const TypeDecl& d) {
     // TODO: Figure out a better way to handle the use of 'This' in interface field types.
-    const TypeDecl& decl = d.isInterface() ? *llvm::cast<TypeDecl>(d.instantiate({ { "This", d.getType() } }, {})) : d;
+    const TypeDecl& decl = d.isInterface() ? *llvm::cast<TypeDecl>(d.instantiate({{"This", d.getType()}}, {})) : d;
 
     llvm::StructType* structType;
     auto qualifiedName = decl.getQualifiedName();

@@ -26,7 +26,7 @@ llvm::Value* IRGenerator::codegenStringLiteralExpr(const StringLiteralExpr& expr
     }
 
     ASSERT(stringConstructor);
-    builder.CreateCall(stringConstructor, { alloca, stringPtr, size });
+    builder.CreateCall(stringConstructor, {alloca, stringPtr, size});
     return alloca;
 }
 
@@ -665,7 +665,7 @@ llvm::Value* IRGenerator::codegenIndexExpr(const IndexExpr& expr) {
         return builder.CreateGEP(value, codegenExpr(*expr.getIndex()));
     }
 
-    return builder.CreateGEP(value, { llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegenExpr(*expr.getIndex()) });
+    return builder.CreateGEP(value, {llvm::ConstantInt::get(llvm::Type::getInt32Ty(ctx), 0), codegenExpr(*expr.getIndex())});
 }
 
 llvm::Value* IRGenerator::codegenUnwrapExpr(const UnwrapExpr& expr) {

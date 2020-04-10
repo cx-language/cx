@@ -346,5 +346,5 @@ DestructorDecl::DestructorDecl(TypeDecl& receiverTypeDecl, SourceLocation locati
              location) {}
 
 std::vector<Note> delta::getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls) {
-    return map(decls, [](Decl* decl) { return Note{ decl->getLocation(), "previous definition here" }; });
+    return map(decls, [](Decl* decl) { return Note{decl->getLocation(), "previous definition here"}; });
 }

@@ -193,7 +193,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     addPredefinedImportSearchPaths(files);
 
-    CompileOptions options = { disabledWarnings, importSearchPaths, frameworkSearchPaths, defines, cflags };
+    CompileOptions options = {disabledWarnings, importSearchPaths, frameworkSearchPaths, defines, cflags};
 
     if (!specifiedOutputFileName.empty()) {
         outputFileName = specifiedOutputFileName;

@@ -63,7 +63,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 auto qualifiedTypeName = getQualifiedTypeName("ArrayRef", type.getElementType());
                 if (findDecls(qualifiedTypeName).empty()) {
                     auto* arrayRef = llvm::cast<TypeTemplate>(findDecl("ArrayRef", SourceLocation()));
-                    auto* instantiation = arrayRef->instantiate({ type.getElementType() });
+                    auto* instantiation = arrayRef->instantiate({type.getElementType()});
                     getCurrentModule()->addToSymbolTable(*instantiation);
                     declsToTypecheck.push_back(instantiation);
                 }
@@ -261,7 +261,7 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
 
     if (decl.isInterface()) {
         // TODO: Move this to typecheckModule to the pre-typechecking phase?
-        realDecl = llvm::cast<TypeDecl>(decl.instantiate({ { "This", decl.getType() } }, {}));
+        realDecl = llvm::cast<TypeDecl>(decl.instantiate({{"This", decl.getType()}}, {}));
     } else {
         realDecl = &decl;
     }

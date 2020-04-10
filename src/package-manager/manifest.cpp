@@ -54,7 +54,7 @@ PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::m
 }
 
 std::vector<std::string> PackageManifest::getTargetRootDirectories() const {
-    if (!isMultiTarget()) return { packageRoot };
+    if (!isMultiTarget()) return {packageRoot};
 
     std::string sourceDir = packageRoot;
     std::error_code error;

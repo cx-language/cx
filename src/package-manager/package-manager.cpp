@@ -27,7 +27,7 @@ static std::string getGitPath() {
 
 static void cloneGitRepository(const std::string& repositoryUrl, const std::string& path) {
     auto gitPath = getGitPath();
-    llvm::StringRef args[] = { gitPath, "clone", repositoryUrl, path };
+    llvm::StringRef args[] = {gitPath, "clone", repositoryUrl, path};
 
     std::string error;
     int status = llvm::sys::ExecuteAndWait(gitPath, args, llvm::None, {}, 0, 0, &error);
@@ -42,7 +42,7 @@ static void checkoutGitRevision(const std::string& path, const std::string& revi
     auto gitPath = getGitPath();
     auto gitDir = "--git-dir=" + path + "/.git";
     auto workTree = "--work-tree=" + path;
-    llvm::StringRef args[] = { gitPath, gitDir, workTree, "checkout", revision, "--quiet" };
+    llvm::StringRef args[] = {gitPath, gitDir, workTree, "checkout", revision, "--quiet"};
 
     std::string error;
     int status = llvm::sys::ExecuteAndWait(gitPath, args, llvm::None, {}, 0, 0, &error);

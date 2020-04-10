@@ -205,7 +205,7 @@ void IRGenerator::deferDestructorCall(llvm::Value* receiver, const VariableDecl*
     }
 
     if (proto) {
-        scopes.back().destructorsToCall.push_back({ proto, receiver, decl });
+        scopes.back().destructorsToCall.push_back({proto, receiver, decl});
     }
 }
 

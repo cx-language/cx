@@ -269,7 +269,7 @@ private:
 class UnaryExpr : public CallExpr {
 public:
     UnaryExpr(UnaryOperator op, Expr* operand, SourceLocation location)
-    : CallExpr(ExprKind::UnaryExpr, new VarExpr(toString(op.getKind()), location), { NamedValue(operand) }, location), op(op) {}
+    : CallExpr(ExprKind::UnaryExpr, new VarExpr(toString(op.getKind()), location), {NamedValue(operand)}, location), op(op) {}
     UnaryOperator getOperator() const { return op; }
     Expr& getOperand() { return *getArgs()[0].getValue(); }
     const Expr& getOperand() const { return *getArgs()[0].getValue(); }
@@ -283,7 +283,7 @@ private:
 class BinaryExpr : public CallExpr {
 public:
     BinaryExpr(BinaryOperator op, Expr* left, Expr* right, SourceLocation location)
-    : CallExpr(ExprKind::BinaryExpr, new VarExpr(delta::getFunctionName(op), location), { NamedValue(left), NamedValue(right) }, location),
+    : CallExpr(ExprKind::BinaryExpr, new VarExpr(delta::getFunctionName(op), location), {NamedValue(left), NamedValue(right)}, location),
       op(op) {}
     BinaryOperator getOperator() const { return op; }
     const Expr& getLHS() const { return *getArgs()[0].getValue(); }
@@ -347,7 +347,7 @@ private:
 class IndexExpr : public CallExpr {
 public:
     IndexExpr(Expr* base, Expr* index, SourceLocation location)
-    : CallExpr(ExprKind::IndexExpr, new MemberExpr(base, "[]", location), { NamedValue("", index) }, location) {}
+    : CallExpr(ExprKind::IndexExpr, new MemberExpr(base, "[]", location), {NamedValue("", index)}, location) {}
     const Expr* getBase() const { return getReceiver(); }
     const Expr* getIndex() const { return getArgs()[0].getValue(); }
     Expr* getBase() { return getReceiver(); }
