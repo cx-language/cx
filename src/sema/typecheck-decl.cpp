@@ -298,10 +298,6 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 }
 
 void Typechecker::typecheckVarDecl(VarDecl& decl) {
-    if (decl.isGlobal() && decl.getInitializer()->isUndefinedLiteralExpr()) {
-        ERROR(decl.getLocation(), "global variables cannot be uninitialized");
-    }
-
     Type declaredType = decl.getType();
 
     try {

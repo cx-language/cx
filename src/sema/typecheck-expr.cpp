@@ -110,8 +110,9 @@ Type Typechecker::typecheckNullLiteralExpr(NullLiteralExpr&, Type expectedType) 
     }
 }
 
-Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&) {
-    return Type::getUndefined();
+Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&, Type expectedType) {
+    ASSERT(expectedType && !expectedType.containsUnresolvedPlaceholder());
+    return expectedType;
 }
 
 Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expectedType) {
@@ -486,10 +487,6 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
         if (expr->isNullLiteralExpr() && target.isOptionalType()) {
             return target;
-        }
-
-        if (expr->isUndefinedLiteralExpr()) {
-            return source;
         }
 
         if (expr->isStringLiteralExpr() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() &&
@@ -1551,7 +1548,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             type = typecheckNullLiteralExpr(llvm::cast<NullLiteralExpr>(expr), expectedType);
             break;
         case ExprKind::UndefinedLiteralExpr:
-            type = typecheckUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr));
+            type = typecheckUndefinedLiteralExpr(llvm::cast<UndefinedLiteralExpr>(expr), expectedType);
             break;
         case ExprKind::ArrayLiteralExpr:
             type = typecheckArrayLiteralExpr(llvm::cast<ArrayLiteralExpr>(expr), expectedType);
