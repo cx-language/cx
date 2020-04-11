@@ -1,0 +1,8 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+void foo(A<int> a) {}
+
+struct A<T> {
+    T i;
+    ~A() {}
+}

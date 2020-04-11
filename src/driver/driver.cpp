@@ -25,7 +25,8 @@
 #pragma warning(pop)
 #include "clang.h"
 #include "../ast/module.h"
-#include "../irgen/irgen.h"
+#include "../backend/irgen.h"
+#include "../backend/llvm.h"
 #include "../package-manager/manifest.h"
 #include "../package-manager/package-manager.h"
 #include "../parser/parse.h"
@@ -49,7 +50,10 @@ cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(
 cl::opt<bool> parse("parse", cl::desc("Parse only"));
 cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"));
 cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"));
-cl::opt<bool> printIR("print-ir", cl::desc("Print the generated LLVM IR to stdout"));
+cl::opt<bool> printIR("print-ir", cl::desc("Print Delta intermediate representation of main module"));
+cl::opt<bool> printIRAll("print-ir-all", cl::desc("Print Delta intermediate representation of all compiled modules"));
+cl::opt<bool> printLLVM("print-llvm", cl::desc("Print LLVM intermediate representation of main module"));
+// TODO: Add -print-llvm-all option.
 cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"));
 cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"));
 cl::opt<bool> emitPositionIndependentCode("fPIC", cl::desc("Emit position-independent code"), cl::sub(*cl::AllSubCommands));
@@ -195,43 +199,57 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         outputFileName = specifiedOutputFileName;
     }
 
-    Module module("main");
+    Module mainModule("main");
 
     for (llvm::StringRef filePath : files) {
-        Parser parser(filePath, module, options);
+        Parser parser(filePath, mainModule, options);
         parser.parse();
     }
 
     if (parse) return errors ? 1 : 0;
 
     Typechecker typechecker(options);
-    for (auto& importedModule : module.getImportedModules()) {
+    for (auto& importedModule : mainModule.getImportedModules()) {
         typechecker.typecheckModule(*importedModule, nullptr);
     }
-    typechecker.typecheckModule(module, manifest);
+    typechecker.typecheckModule(mainModule, manifest);
 
     if (errors) return 1;
     if (typecheck) return 0;
 
     IRGenerator irGenerator;
-
-    for (auto* module : Module::getAllImportedModules()) {
-        irGenerator.codegenModule(*module);
+    for (auto* importedModule : Module::getAllImportedModules()) {
+        irGenerator.emitModule(*importedModule);
     }
+    irGenerator.emitModule(mainModule);
 
-    auto& mainModule = irGenerator.codegenModule(module);
-
-    if (printIR) {
-        mainModule.setModuleIdentifier("");
-        mainModule.setSourceFileName("");
-        mainModule.print(llvm::outs(), nullptr);
+    if (printIRAll) {
+        for (auto* module : irGenerator.generatedModules) {
+            module->print(llvm::outs());
+        }
+        return 0;
+    } else if (printIR) {
+        irGenerator.generatedModules.back()->print(llvm::outs());
         return 0;
     }
 
-    llvm::Module linkedModule("", irGenerator.getLLVMContext());
+    LLVMGenerator llvmGenerator;
+    for (auto* irModule : irGenerator.generatedModules) {
+        llvmGenerator.codegenModule(*irModule);
+    }
+    llvm::Module* llvmModule = llvmGenerator.generatedModules.back();
+
+    if (printLLVM) {
+        llvmModule->setModuleIdentifier("");
+        llvmModule->setSourceFileName("");
+        llvmModule->print(llvm::outs(), nullptr);
+        return 0;
+    }
+
+    llvm::Module linkedModule("", llvmGenerator.ctx);
     llvm::Linker linker(linkedModule);
 
-    for (auto& module : irGenerator.getGeneratedModules()) {
+    for (auto& module : llvmGenerator.generatedModules) {
         bool error = linker.linkInModule(std::unique_ptr<llvm::Module>(module));
         if (error) ABORT("LLVM module linking failed");
     }
@@ -260,7 +278,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         if (error) ABORT(error.message());
     }
 
-    bool treatAsLibrary = module.getSymbolTable().find("main").empty() && !run;
+    bool treatAsLibrary = mainModule.getSymbolTable().find("main").empty() && !run;
     if (treatAsLibrary) {
         compileOnly = true;
     }

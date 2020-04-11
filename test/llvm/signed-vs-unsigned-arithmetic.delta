@@ -1,0 +1,14 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+void foo(int i, uint u) {
+    var a = i < i;
+    a = u < u;
+    a = i > i;
+    a = u > u;
+    a = i <= i;
+    a = u <= u;
+    a = i >= i;
+    a = u >= u;
+    var b = i / i;
+    var c = u / u;
+}

@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+int*? foo() { return null; }
+
+void main() {
+    var isNull = foo() == null;
+    var isNonNull = foo() != null;
+    var ptr = foo();
+    bool*? ptr2 = null;
+}

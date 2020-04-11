@@ -1,0 +1,44 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+interface H {
+    int h();
+}
+
+struct R: Copyable {
+    int i;
+
+    int h() {
+        return i;
+    }
+}
+
+struct A<T> {
+    T t;
+
+    A() {
+        t = undefined;
+    }
+
+    T operator[](int i) {
+        return t;
+    }
+}
+
+struct S<E: H> {
+    A<A<E>> a;
+
+    S() {
+        a = undefined;
+    }
+
+    void s() {
+        var t = a[0];
+        var tt = t[0];
+        _ = a[tt.h()];
+    }
+}
+
+void main() {
+    var s = S<R>();
+    s.s();
+}

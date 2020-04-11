@@ -1,0 +1,8 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void f<T>(T* p) {}
+
+void main() {
+    var i = 42;
+    f(i);
+}

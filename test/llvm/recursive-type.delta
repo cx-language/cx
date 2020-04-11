@@ -1,0 +1,7 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+struct S: Copyable {
+    S* next
+}
+
+void f(S s) {}

@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void main() {
+    bar();
+    foo();
+}
+
+void foo() { }
+
+extern void bar();

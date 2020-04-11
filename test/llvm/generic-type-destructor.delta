@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct C<T> {
+    ~C() { }
+}
+
+void main() {
+    var i = C<int>()
+    var b = C<bool>()
+}

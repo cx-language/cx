@@ -1,0 +1,13 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Iinputs
+
+import "import-c-enum.h";
+
+void main() {
+    int foo = FooA;
+    uint bar = BarA;
+    uint64 qux = QuxA;
+    int8 qux2 = QuxA;
+    // FIXME: qux3 and qux4 should be i64 to fit the enum value.
+    var qux3 = QuxB;
+    Qux qux4 = qux3;
+}

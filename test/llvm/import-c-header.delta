@@ -1,0 +1,12 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+import "stdio.h";
+import "foo.h";
+
+void main() {
+    puts("foo bar");
+    Foo f = undefined;
+    f.bar = MAGIC_NUMBER + ANSWER;
+    f.baz = "foo";
+    var bar = getBar(f);
+}

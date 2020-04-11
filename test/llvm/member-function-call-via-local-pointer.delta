@@ -1,0 +1,12 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct Foo {
+    int i;
+    void bar() { }
+}
+
+void main() {
+    Foo f = undefined;
+    Foo* rf = f;
+    rf.bar();
+}

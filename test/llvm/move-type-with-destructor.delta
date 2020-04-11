@@ -1,0 +1,13 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+struct Y {
+    ~Y() {}
+}
+
+void f(Y a, Y* b) {
+    *b = a;
+}
+
+void g(Y a) {
+    var b = a;
+}

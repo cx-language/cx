@@ -1,0 +1,16 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct Foo {
+    int i;
+    void doStuff() { }
+}
+
+struct Bar {
+    int i;
+    void doStuff() { }
+}
+
+void main() {
+    Foo(1).doStuff();
+    Bar(2).doStuff();
+}

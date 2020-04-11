@@ -61,7 +61,7 @@ public:
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
-    bool isPointerTypeInLLVM() const;
+    bool isImplementedAsPointer() const;
     bool isUnresolvedType() const { return getKind() == TypeKind::UnresolvedType; }
     bool isOptionalType() const { return isBasicType() && getName() == "Optional"; }
     bool isBuiltinType() const { return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull() || isVoid(); }
@@ -104,6 +104,7 @@ public:
     bool isMutable() const { return mutability == Mutability::Mutable; }
     Mutability getMutability() const { return mutability; }
     Type withMutability(Mutability m) const { return Type(typeBase, m, location); }
+    Type getPointerTo() const;
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
     Type removeArrayWithUnknownSize() const { return isArrayWithUnknownSize() ? getElementType() : *this; }
@@ -124,7 +125,6 @@ public:
     Type getReturnType() const;
     llvm::ArrayRef<Type> getParamTypes() const;
     Type getPointee() const;
-    Type getPointeeInLLVM() const;
     Type getWrappedType() const;
 
     static Type getVoid(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());

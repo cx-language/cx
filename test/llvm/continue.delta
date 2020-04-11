@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void baz(bool foo) {
+    while (foo) {
+        if (foo) {
+            baz(foo);
+            continue;
+        }
+    }
+}

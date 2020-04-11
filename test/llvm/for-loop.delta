@@ -1,0 +1,8 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void main() {
+    var sum = 0;
+    for var i in 68...75 {
+        sum += i;
+    }
+}

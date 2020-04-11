@@ -1,0 +1,5 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+void f(int* foo, int*? bar) {
+    if (foo == bar) {}
+}

@@ -1,0 +1,33 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct S: Copyable {
+    void foo() {
+        bar()
+    }
+
+    void bar() { }
+}
+
+struct Foo<U> {
+    Foo() {
+        baz()
+    }
+
+    ~Foo() {
+        baz()
+    }
+
+    void baz() {
+        qux()
+    }
+
+    void qux() { }
+}
+
+void main() {
+    var s = S()
+    s.foo()
+
+    var t = Foo<int>()
+    t.baz()
+}

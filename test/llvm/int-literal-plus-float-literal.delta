@@ -1,0 +1,6 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void main() {
+    var a = 4.0 + 4;
+    var b = 4 + 4.0;
+}

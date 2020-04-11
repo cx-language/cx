@@ -1,7 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s
-
-void main() {
-    void*[3] a = undefined;
-    int*[2] b = undefined;
-    float32**[1] c = undefined;
-}

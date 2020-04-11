@@ -1,0 +1,8 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void main() {
+    uint u = undefined;
+    f(0, u);
+}
+
+void f<T>(T a, T b) {}

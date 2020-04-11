@@ -1,0 +1,33 @@
+// RUN: check_matches_snapshot %delta -print-llvm -Wno-unused %s
+
+void main() {
+    int? a = null;
+    int? b = Optional(2);
+    int? c = 3;
+    int? d = Optional();
+
+    if (d == null) {}
+    if (d != null) {}
+    if (d) {}
+    if (!d) {}
+}
+
+void f() {
+    Optional<int> a = null;
+    Optional<int> b = Optional(2);
+    Optional<int> c = 3;
+    Optional<int> d = Optional();
+
+    c = null;
+    if (c) {
+        var x = c + 1;
+        c = 1 + c;
+        c = -(c!);
+    }
+    // if (c) c++; // TODO: Allow postfix incrementing/decrementing an implicitly unwrapped optional.
+}
+
+void g() {
+    char*[*]? p = null;
+    if (p == null) {}
+}

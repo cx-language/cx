@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+int main() {
+    return foo();
+}
+
+int foo() {
+    foo();
+    return 42;
+}

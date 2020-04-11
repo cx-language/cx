@@ -1,6 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir -Wno-unused %s
-
-void foo<T>(T a, T b) { }
-int foo<T, U>(T a, U b) { return 0; }
-
-void main() { foo(1, false) }

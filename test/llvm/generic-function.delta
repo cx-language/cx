@@ -1,0 +1,18 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void foo<T>(T t) { }
+
+T bar<T>(T t) { return t; }
+
+T qux<T>(T t) {
+    if (t < 0) { return -t; }
+    return t;
+}
+
+void main() {
+    foo<int>(1);
+    foo<bool>(false);
+    foo<bool>(true);
+    var b = bar("bar");
+    var five = qux(-5);
+}

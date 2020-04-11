@@ -1,0 +1,17 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+(bool c, (float e) d) f() {
+    var d = (e: -1.0);
+    var a = (a: 42, b: (c: false, d));
+    var b = a.b;
+    var e = b.d.e;
+    var p = &a.b;
+    b = *p;
+    e = p.d.e;
+    e = (x: 1.0, y: 2.0).x;
+    return b;
+}
+
+(bool, float) g() {
+    return (true, 1);
+}

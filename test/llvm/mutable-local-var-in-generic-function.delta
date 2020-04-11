@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void f<T>() {
+    var i = 0;
+    i++;
+}
+
+void main() {
+    f<int>();
+}

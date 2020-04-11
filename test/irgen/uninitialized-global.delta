@@ -1,3 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s
-
-int i = undefined;

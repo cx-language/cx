@@ -1,0 +1,6 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+void foo(const int*? a, int* b) {
+    _ = a === b;
+    _ = a !== b;
+}

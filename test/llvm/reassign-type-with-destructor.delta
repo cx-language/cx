@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct X {
+    ~X() {}
+}
+
+void main() {
+    var x = X();
+    x = X();
+}

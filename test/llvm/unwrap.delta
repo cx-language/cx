@@ -1,0 +1,9 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+extern void*? f();
+
+void main() {
+    uint8* byte = cast<uint8*?>(f())!;
+    uint8[1]*? ptr = cast<uint8[1]*?>(f());
+    ptr![0] = 1;
+}

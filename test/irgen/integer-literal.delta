@@ -1,7 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s
-
-void main() {
-    var i = 42;
-    var j = 0 + 0b01;
-    int k = 0xf * 0o7;
-}
