@@ -1,7 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s
-
-extern bool b();
-
-void main() {
-    assert(b());
-}

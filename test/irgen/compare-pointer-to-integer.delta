@@ -1,5 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s -Wno-unused
-
-void f(int* foo, int bar) {
-    _ = foo < bar;
-}

@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct A<E>: Copyable {
+    void a(E n) { }
+}
+
+void main() {
+    var a = A<int>()
+    a.a(5)
+}

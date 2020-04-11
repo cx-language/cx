@@ -1,0 +1,13 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct C {
+    int[] a
+
+    void foo() {
+        _ = a[4]
+    }
+}
+
+void main() {
+    C([0,1,2,3,4]).foo();
+}

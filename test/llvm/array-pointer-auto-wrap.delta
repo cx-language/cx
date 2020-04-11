@@ -1,0 +1,6 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void main() {
+    int[*] p = undefined;
+    int[*]? o = p;
+}

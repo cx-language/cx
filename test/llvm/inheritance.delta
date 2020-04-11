@@ -1,0 +1,54 @@
+// RUN: check_matches_snapshot %delta -print-llvm -w %s
+// TODO: Remove -w
+
+interface O {
+    int p;
+    int r;
+
+    O(int p) {
+        this.p = p;
+        this.r = p;
+    }
+
+    void foo();
+}
+
+struct A : O {
+    bool b;
+
+    A(bool b, int p) {
+        O.init(p);
+        this.b = b;
+    }
+
+    void foo() {
+        println("A");
+    }
+}
+
+struct B : O {
+    void foo() {
+        println("B");
+    }
+}
+
+//T t = T();
+//O o = t;
+//foo(o);
+//
+//void foo(O* o) {
+//    *o = P();
+//}
+//
+//void foo<T: O>(T* o) {
+//    *o = P();
+//}
+//
+//List<O> list;
+
+void main() {
+    var a = A(false, 0);
+    var b = B(4);
+//    O o = A(false, 0);
+//    o = B(4);
+}

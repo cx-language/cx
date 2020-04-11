@@ -1,0 +1,10 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct Foo: Copyable { int i; }
+
+void foo(Foo* ref_f) { }
+
+void main() {
+    Foo f = undefined;
+    foo(f);
+}

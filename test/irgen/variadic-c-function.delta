@@ -1,6 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s
-
-void main() {
-    var f = 4.2;
-    printf("%d %f", -3, f);
-}

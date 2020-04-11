@@ -1,0 +1,13 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+import "c-callback-function.h";
+
+int f(int a) {
+    return a;
+}
+
+void main() {
+    foo(f);
+    bar(f);
+    baz(f);
+}

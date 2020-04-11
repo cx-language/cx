@@ -1,0 +1,5 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+uint8 foo(bool b) {
+    return b ? 0xFF : 0xEE;
+}

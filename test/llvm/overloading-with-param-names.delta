@@ -1,0 +1,16 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -w
+
+struct Foo {
+    int i
+    Foo(i: int) { }
+    Foo(qux: int) { }
+    void foo(i: int) { }
+    void foo(qux: int) { }
+}
+
+void foo(i: int) {
+    Foo(i: i).foo(i: i)
+    Foo(qux: i).foo(qux: i)
+}
+
+void foo(qux: int) { }

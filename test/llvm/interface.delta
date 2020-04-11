@@ -1,0 +1,5 @@
+// RUN: check_matches_snapshot -allow-empty %delta -print-llvm %s
+
+interface I {
+    void f();
+}

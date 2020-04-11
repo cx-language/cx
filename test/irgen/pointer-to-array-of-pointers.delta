@@ -1,9 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s
-
-extern char*[*]? b();
-
-void main() {
-    var s = b();
-    var i = 0;
-    printf("%s\n", s![i]);
-}

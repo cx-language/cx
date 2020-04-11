@@ -1,0 +1,11 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void main() {
+    var f = Foo(5);
+}
+
+struct Foo: Copyable {
+    float f;
+    Foo(int i) { f = 0.0; }
+    ~Foo() { }
+}

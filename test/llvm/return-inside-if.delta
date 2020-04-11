@@ -1,0 +1,28 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+
+extern bool foo();
+
+void bar() {
+    if (foo()) {
+        return;
+    } else {
+        return;
+    }
+
+    if (foo()) {
+        return;
+        var i = 4;
+    } else {
+        return;
+        var j = 4;
+    }
+
+    while (foo()) {
+        return;
+    }
+
+    while (foo()) {
+        return;
+        var k = 4;
+    }
+}

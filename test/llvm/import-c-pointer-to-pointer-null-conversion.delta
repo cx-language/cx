@@ -1,0 +1,7 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s -Iinputs
+
+import "import-c-pointer-to-pointer-null-conversion.h";
+
+void main() {
+    foo(p: null);
+}

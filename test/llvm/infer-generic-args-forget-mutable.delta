@@ -1,0 +1,9 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+void f(Range<int> r) {}
+
+void main() {
+    var foo = 0;
+    var bar = 0;
+    f(foo..bar);
+}

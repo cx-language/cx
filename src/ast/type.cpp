@@ -217,6 +217,10 @@ int Type::getIntegerBitWidth() const {
         .Cases("int64", "uint64", 64);
 }
 
+Type Type::getPointerTo() const {
+    return PointerType::get(*this);
+}
+
 llvm::StringRef Type::getName() const {
     return llvm::cast<BasicType>(typeBase)->getName();
 }
@@ -253,22 +257,9 @@ Type Type::getPointee() const {
     return llvm::cast<PointerType>(typeBase)->getPointeeType().withLocation(location);
 }
 
-bool Type::isPointerTypeInLLVM() const {
+bool Type::isImplementedAsPointer() const {
     auto unwrapped = removeOptional();
     return unwrapped.isPointerType() || unwrapped.isArrayWithUnknownSize() || unwrapped.isFunctionType();
-}
-
-Type Type::getPointeeInLLVM() const {
-    ASSERT(isPointerTypeInLLVM());
-    auto unwrapped = removeOptional();
-
-    if (unwrapped.isPointerType()) {
-        return unwrapped.getPointee();
-    } else if (unwrapped.isArrayType()) {
-        return unwrapped.getElementType();
-    } else {
-        return unwrapped;
-    }
 }
 
 Type Type::getWrappedType() const {

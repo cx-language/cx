@@ -1,0 +1,12 @@
+// RUN: check_matches_snapshot %delta -print-llvm %s
+
+struct Foo<T> {
+    T t;
+
+    Foo(T t) { this.t = t; }
+}
+
+void main() {
+    var i = Foo(42);
+    var b = Foo("");
+}

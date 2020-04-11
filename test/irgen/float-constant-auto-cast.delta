@@ -1,7 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s -Wno-unused
-
-const a = 4.0;
-
-float f(float b) {
-    return b * (a * 2.0);
-}
