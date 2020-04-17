@@ -212,9 +212,9 @@ static void invalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) 
     if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) && (op == Token::Equal || op == Token::NotEqual)) {
         hint += " (non-optional type '";
         if (expr.getRHS().isNullLiteralExpr()) {
-            hint += expr.getLHS().getType().toString(true);
+            hint += expr.getLHS().getType().toString();
         } else {
-            hint += expr.getRHS().getType().toString(true);
+            hint += expr.getRHS().getType().toString();
         }
         hint += "' cannot be null)";
     } else {
@@ -1021,7 +1021,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     if (atLeastOneFunction) {
         auto argTypeStrings = map(expr.getArgs(), [&](auto& arg) {
             auto type = typecheckExpr(*arg.getValue());
-            return type ? type.toString(true) : "???";
+            return type ? type.toString() : "???";
         });
 
         ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),

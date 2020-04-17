@@ -174,7 +174,7 @@ void delta::appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> generi
 
     typeName += '<';
     for (const Type& genericArg : genericArgs) {
-        typeName += genericArg.toString(false);
+        typeName += genericArg.toString();
         if (&genericArg != &genericArgs.back()) typeName += ", ";
     }
     typeName += '>';
@@ -353,26 +353,24 @@ DestructorDecl* Type::getDestructor() const {
     return typeDecl ? typeDecl->getDestructor() : nullptr;
 }
 
-void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
+void Type::printTo(std::ostream& stream) const {
     switch (typeBase->getKind()) {
         case TypeKind::BasicType: {
             if (isOptionalType()) {
-                getWrappedType().printTo(stream, false);
-                if (!isMutable() && !omitTopLevelConst) {
-                    stream << " const";
-                }
+                getWrappedType().printTo(stream);
+                if (!isMutable()) stream << " const";
                 stream << '?';
                 break;
             }
 
-            if (!isMutable() && !omitTopLevelConst) stream << "const ";
+            if (!isMutable()) stream << "const ";
             stream << getName();
 
             auto genericArgs = llvm::cast<BasicType>(typeBase)->getGenericArgs();
             if (!genericArgs.empty()) {
                 stream << "<";
                 for (auto& type : genericArgs) {
-                    type.printTo(stream, false);
+                    type.printTo(stream);
                     if (&type != &genericArgs.back()) stream << ", ";
                 }
                 stream << ">";
@@ -381,7 +379,7 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
             break;
         }
         case TypeKind::ArrayType:
-            getElementType().printTo(stream, omitTopLevelConst);
+            getElementType().printTo(stream);
             stream << "[";
             switch (getArraySize()) {
                 case ArrayType::runtimeSize:
@@ -398,14 +396,14 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
         case TypeKind::TupleType:
             stream << "(";
             for (auto& element : getTupleElements()) {
-                element.type.printTo(stream, omitTopLevelConst);
+                element.type.printTo(stream);
                 stream << " " << element.name;
                 if (&element != &getTupleElements().back()) stream << ", ";
             }
             stream << ")";
             break;
         case TypeKind::FunctionType:
-            getReturnType().printTo(stream, true);
+            getReturnType().printTo(stream);
             stream << "(";
             for (const Type& paramType : getParamTypes()) {
                 stream << paramType;
@@ -414,10 +412,8 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
             stream << ")";
             break;
         case TypeKind::PointerType:
-            getPointee().printTo(stream, false);
-            if (!isMutable() && !omitTopLevelConst) {
-                stream << " const";
-            }
+            getPointee().printTo(stream);
+            if (!isMutable()) stream << " const";
             stream << '*';
             break;
         case TypeKind::UnresolvedType:
@@ -425,19 +421,19 @@ void Type::printTo(std::ostream& stream, bool omitTopLevelConst) const {
     }
 }
 
-std::string Type::toString(bool omitTopLevelMutable) const {
+std::string Type::toString() const {
     std::ostringstream stream;
-    printTo(stream, omitTopLevelMutable);
+    printTo(stream);
     return stream.str();
 }
 
 std::ostream& delta::operator<<(std::ostream& stream, Type type) {
-    type.printTo(stream, true);
+    type.printTo(stream);
     return stream;
 }
 
 llvm::raw_ostream& delta::operator<<(llvm::raw_ostream& stream, Type type) {
     std::ostringstream stringstream;
-    type.printTo(stringstream, true);
+    type.printTo(stringstream);
     return stream << stringstream.str();
 }

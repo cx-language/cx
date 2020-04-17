@@ -7,7 +7,7 @@ const SDL_WINDOWPOS_UNDEFINED = 0x1FFF0000;
 const width = 640;
 const height = 480;
 
-uint8[*]? keyState = null;
+const uint8[*]? keyState = null;
 
 bool isKeyDown(SDL_Scancode key) {
     return keyState![key] != 0;

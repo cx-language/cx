@@ -29,7 +29,7 @@ std::string delta::getQualifiedFunctionName(Type receiver, llvm::StringRef name,
     std::string result;
 
     if (receiver) {
-        result = receiver.toString(true);
+        result = receiver.toString();
         result += '.';
     }
 
