@@ -170,14 +170,6 @@ static Type toDelta(clang::QualType qualtype) {
     }
 }
 
-static FunctionDecl* toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
-    auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
-        return ParamDecl(toDelta(param->getType()), param->getNameAsString(), false, SourceLocation());
-    });
-    FunctionProto proto(decl.getNameAsString(), std::move(params), toDelta(decl.getReturnType()), decl.isVariadic(), true);
-    return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, SourceLocation());
-}
-
 static llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
     if (decl.getName().empty()) return llvm::None;
     return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), nullptr, typeDecl, AccessLevel::Default, SourceLocation());
@@ -219,7 +211,7 @@ static void addFloatConstantToSymbolTable(llvm::StringRef name, llvm::APFloat va
 namespace {
 class CToDeltaConverter : public clang::ASTConsumer {
 public:
-    CToDeltaConverter(Module& module) : module(module) {}
+    CToDeltaConverter(Module& module, clang::SourceManager& sourceManager) : module(module), sourceManager(sourceManager) {}
 
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
         for (clang::Decl* decl : declGroup) {
@@ -229,7 +221,7 @@ public:
                     break;
                 case clang::Decl::Record: {
                     if (!decl->isFirstDecl()) break;
-                    auto typeDecl = toDelta(llvm::cast<clang::RecordDecl>(*decl), &module);
+                    auto typeDecl = ::toDelta(llvm::cast<clang::RecordDecl>(*decl), &module);
                     if (typeDecl) {
                         ASSERT(module.getSymbolTable().find(typeDecl->getName()).empty());
                         module.addToSymbolTable(typeDecl);
@@ -254,7 +246,7 @@ public:
                     break;
                 }
                 case clang::Decl::Var:
-                    module.addToSymbolTable(toDelta(llvm::cast<clang::VarDecl>(*decl), &module));
+                    module.addToSymbolTable(::toDelta(llvm::cast<clang::VarDecl>(*decl), &module));
                     break;
                 case clang::Decl::Typedef: {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
@@ -270,8 +262,22 @@ public:
         return true; // continue parsing
     }
 
+    FunctionDecl* toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
+        auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
+            return ParamDecl(::toDelta(param->getType()), param->getNameAsString(), false, SourceLocation());
+        });
+        FunctionProto proto(decl.getNameAsString(), std::move(params), ::toDelta(decl.getReturnType()), decl.isVariadic(), true);
+        return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, toDelta(decl.getLocation()));
+    }
+
+    SourceLocation toDelta(clang::SourceLocation location) {
+        auto presumedLocation = sourceManager.getPresumedLoc(location);
+        return SourceLocation(strdup(presumedLocation.getFilename()), presumedLocation.getLine(), presumedLocation.getColumn());
+    }
+
 private:
     Module& module;
+    clang::SourceManager& sourceManager;
 };
 
 class MacroImporter : public clang::PPCallbacks {
@@ -349,7 +355,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     auto& pp = ci.getPreprocessor();
     pp.getBuiltinInfo().initializeBuiltins(pp.getIdentifierTable(), pp.getLangOpts());
 
-    ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>(*module));
+    ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>(*module, ci.getSourceManager()));
     ci.createASTContext();
     ci.createSema(clang::TU_Complete, nullptr);
     pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
