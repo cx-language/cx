@@ -216,14 +216,17 @@ public:
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
         for (clang::Decl* decl : declGroup) {
             switch (decl->getKind()) {
-                case clang::Decl::Function:
-                    module.addToSymbolTable(toDelta(llvm::cast<clang::FunctionDecl>(*decl), &module));
+                case clang::Decl::Function: {
+                    auto functionDecl = toDelta(*llvm::cast<clang::FunctionDecl>(decl), &module);
+                    if (module.getSymbolTable().find(functionDecl->getName()).empty()) {
+                        module.addToSymbolTable(functionDecl);
+                    }
                     break;
+                }
                 case clang::Decl::Record: {
                     if (!decl->isFirstDecl()) break;
                     auto typeDecl = ::toDelta(llvm::cast<clang::RecordDecl>(*decl), &module);
-                    if (typeDecl) {
-                        ASSERT(module.getSymbolTable().find(typeDecl->getName()).empty());
+                    if (typeDecl && module.getSymbolTable().find(typeDecl->getName()).empty()) {
                         module.addToSymbolTable(typeDecl);
                     }
                     break;

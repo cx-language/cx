@@ -18,9 +18,10 @@ class SymbolTable;
 /// Container for the AST of a single file.
 class SourceFile {
 public:
-    explicit SourceFile(llvm::StringRef filePath) : filePath(filePath) {}
+    explicit SourceFile(llvm::StringRef filePath, Module* parentModule) : filePath(filePath), parentModule(parentModule) {}
     llvm::ArrayRef<Decl*> getTopLevelDecls() const { return topLevelDecls; }
     llvm::StringRef getFilePath() const { return filePath; }
+    Module* getModule() const { return parentModule; }
     llvm::ArrayRef<Module*> getImportedModules() const { return importedModules; }
     void setDecls(std::vector<Decl*>&& decls) { topLevelDecls = std::move(decls); }
 
@@ -32,6 +33,7 @@ public:
 
 private:
     std::string filePath;
+    Module* parentModule;
     std::vector<Decl*> topLevelDecls;
     std::vector<Module*> importedModules;
 };

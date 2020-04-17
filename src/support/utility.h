@@ -42,6 +42,7 @@ std::vector<T> instantiate(llvm::ArrayRef<T> elements, const llvm::StringMap<Typ
 }
 
 #define NOTNULL(x) (ASSERT(x), x)
+#define DEBUG_PRINT(x) llvm::outs() << #x << " = " << (x) << '\n'
 
 class StringFormatter : public llvm::raw_string_ostream {
 public:

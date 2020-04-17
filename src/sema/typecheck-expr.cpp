@@ -819,7 +819,14 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
 }
 
 static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
-    return map(candidates, [](Decl* candidate) { return Note{candidate->getLocation(), "candidate function:"}; });
+    bool multipleModules = candidates.size() > 1 &&
+                           llvm::any_of(candidates, [&](Decl* c) { return c->getModule() != candidates[0]->getModule(); });
+
+    return map(candidates, [&](Decl* c) {
+        auto message =
+            ("candidate function" + (multipleModules && c->getModule() ? " in module '" + c->getModule()->getName() + "'" : "") + ":").str();
+        return Note{c->getLocation(), std::move(message)};
+    });
 }
 
 static bool isStdlibDecl(Decl* decl) {
@@ -835,6 +842,11 @@ static Decl* resolveAmbiguousOverload(llvm::ArrayRef<Decl*> matches) {
     if (llvm::count_if(matches, isStdlibDecl) == 1 &&
         llvm::all_of(matches, [](Decl* decl) { return isStdlibDecl(decl) || isCHeaderDecl(decl); })) {
         return *llvm::find_if(matches, isStdlibDecl);
+    }
+
+    // Redeclarations in multiple C headers are considered the same declaration, so just return one of them.
+    if (llvm::all_of(matches, isCHeaderDecl)) {
+        return matches[0];
     }
 
     return nullptr;

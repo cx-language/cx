@@ -351,7 +351,7 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* m
             REPORT_ERROR(decl.getLocation(), "couldn't import C header file '" << decl.getTarget() << "'");
         }
     } else {
-        auto module = importDeltaModule(currentSourceFile, manifest, decl.getTarget());
+        auto module = importModule(currentSourceFile, manifest, decl.getTarget());
         if (!module) {
             REPORT_ERROR(decl.getLocation(), "couldn't import module '" << decl.getTarget() << "': " << module.getError().message());
         }

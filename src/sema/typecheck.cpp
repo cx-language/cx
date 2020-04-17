@@ -322,8 +322,7 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
     return error;
 }
 
-llvm::ErrorOr<const Module&> Typechecker::importDeltaModule(SourceFile* importer, const PackageManifest* manifest,
-                                                            llvm::StringRef moduleName) {
+llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName) {
     auto it = Module::getAllImportedModulesMap().find(moduleName);
     if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);
@@ -399,7 +398,7 @@ static void checkUnusedDecls(const Module& module) {
 }
 
 void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest) {
-    auto stdModule = importDeltaModule(nullptr, nullptr, "std");
+    auto stdModule = importModule(nullptr, nullptr, "std");
     if (!stdModule) {
         ABORT("couldn't import the standard library: " << stdModule.getError().message());
     }

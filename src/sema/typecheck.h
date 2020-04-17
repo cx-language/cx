@@ -117,7 +117,7 @@ private:
     void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
     void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;
-    llvm::ErrorOr<const Module&> importDeltaModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName);
+    llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName);
     void postProcess();
 
     /// Returns true if the given expression (of optional type) is guaranteed to be non-null, e.g.

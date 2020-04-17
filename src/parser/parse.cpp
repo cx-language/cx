@@ -1520,7 +1520,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
 
 void Parser::parse() {
     std::vector<Decl*> topLevelDecls;
-    SourceFile sourceFile(lexer.getFilePath());
+    SourceFile sourceFile(lexer.getFilePath(), currentModule);
 
     try {
         while (currentToken() != Token::None) {

@@ -4,12 +4,15 @@ struct S {
     void bar() {}
     void foo(void() bar) {
         // CHECK: [[@LINE+3]]:9: error: ambiguous reference to 'bar'
-        // CHECK: :4:10: note: candidate function:
+        // CHECK: :4:10: note: candidate function in module 'main':
         // CHECK: :5:21: note: candidate function:
         bar();
     }
 }
 
+void f() {}
+
 void main() {
     var s = S();
+    s.foo(f);
 }

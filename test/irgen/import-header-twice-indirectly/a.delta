@@ -1,7 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-ir %s -Iinputs
-
-import "header.h"
-
-void main() {
-    println("foo")
-}

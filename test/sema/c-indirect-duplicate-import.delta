@@ -1,0 +1,9 @@
+// RUN: %delta -typecheck -Iinputs %s | %FileCheck %s -allow-empty
+
+import "function-decl.h";
+import "indirect-include.h";
+
+void main() {
+    // CHECK-NOT: ambiguous reference
+    test();
+}
