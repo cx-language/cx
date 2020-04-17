@@ -37,6 +37,8 @@ written `T[]` where `T` is the element type.
 Under the hood, an array reference is a pointer to the array and a size.
 It is known in other languages by the name slice, span, or array view.
 
+<!-- TODO: Show that calculateSum also works with a List when implicit conversions are implemented -->
+
 ```cs
 // Function to calculate the sum of an array's elements.
 int calculateSum(int[] array) {
@@ -51,10 +53,6 @@ int calculateSum(int[] array) {
 
 void main() {
     println(calculateSum([1, 2, 3]));
-
-    // Also works with a List:
-    var list = List([1, 2, 3]);
-    println(calculateSum(list));
 }
 ```
 
@@ -74,7 +72,7 @@ void main() {
     var even = numbers.filter(isEven);
     println(even); // prints [0, 2, 4]
 
-    var doubled = even.map((int n) -> n * 2);
+    var doubled = even.map(n -> n * 2);
     println(doubled); // prints [0, 4, 8]
 }
 ```

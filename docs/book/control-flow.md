@@ -63,13 +63,17 @@ Unlike in most C-based languages, the case bodies don't fall through to the next
 so you don't have to manually `break` after each case.
 
 ```cs
-switch (value) {
-    case 0:
-        // code to execute if value equals 0
-    case 1:
-        // code to execute if value equals 1
-    default:
-        // code to execute if value equals something else
+void main() {
+    var value = 0;
+
+    switch (value) {
+        case 0:
+            println("value is zero");
+        case 1:
+            println("value is one");
+        default:
+            println("value is something else");
+    }
 }
 ```
 

@@ -32,7 +32,7 @@ void main() {
     foo.moveLeft(); // foo.x is now -0.1
     bar.moveRight();  // bar.x is now 0.1
 
-    println(foo);
-    println(bar);
+    println(foo.x);
+    println(bar.x);
 }
 ```

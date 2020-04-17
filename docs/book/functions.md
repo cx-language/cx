@@ -12,7 +12,8 @@ int sum(int a, int b) {
 }
 ```
 
-Function parameters can have a default value, allowing the parameter to be omitted when calling the function:
+Function parameters can have a default value, allowing the parameter to be
+omitted when calling the function (not implemented yet):
 
 ```cs
 void foo(int i = 0) {
@@ -59,7 +60,7 @@ void main() {
 }
 ```
 
-Functions can return multiple values:
+Functions can return multiple values (destructuring not implemented yet):
 
 ```cs
 (int, bool) foo() {
