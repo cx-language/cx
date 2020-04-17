@@ -730,8 +730,7 @@ llvm::Value* IRGenerator::codegenIfExpr(const IfExpr& expr) {
 }
 
 llvm::Value* IRGenerator::codegenImplicitCastExpr(const ImplicitCastExpr& expr) {
-    if (expr.getType().isOptionalType() &&
-        !(expr.getType().getWrappedType().isPointerType() || expr.getType().getWrappedType().isFunctionType()) &&
+    if (expr.getType().isOptionalType() && !expr.getType().getWrappedType().isPointerTypeInLLVM() &&
         expr.getOperand()->getType() == expr.getType().getWrappedType()) {
         return codegenOptionalConstruction(expr.getOperand()->getType(), codegenExprWithoutAutoCast(*expr.getOperand()));
     }

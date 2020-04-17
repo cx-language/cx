@@ -1,0 +1,6 @@
+// RUN: check_matches_snapshot %delta -print-ir %s
+
+void main() {
+    int[*] p = undefined;
+    int[*]? o = p;
+}
