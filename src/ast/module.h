@@ -53,9 +53,7 @@ public:
     Scope& getCurrentScope() { return *scopes.back(); }
     void add(llvm::StringRef name, Decl* decl) { scopes.back()->decls[name].push_back(decl); }
     void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front()->decls[name].push_back(decl); }
-    void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) {
-        identifierReplacements.try_emplace(name, replacement);
-    }
+    void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) { identifierReplacements.try_emplace(name, replacement); }
 
     llvm::ArrayRef<Decl*> find(llvm::StringRef name) const {
         auto realName = applyIdentifierReplacements(name);

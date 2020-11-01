@@ -47,8 +47,7 @@ inline TypeBase::~TypeBase() {}
 struct Type {
 public:
     Type() : typeBase(nullptr), mutability(Mutability::Mutable) {}
-    Type(TypeBase* typeBase, Mutability mutability, SourceLocation location)
-    : typeBase(typeBase), mutability(mutability), location(location) {}
+    Type(TypeBase* typeBase, Mutability mutability, SourceLocation location) : typeBase(typeBase), mutability(mutability), location(location) {}
     TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
     TypeBase* getBase() const { return typeBase; }
@@ -141,9 +140,7 @@ public:
     static Type getUInt32(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getUInt64(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     // TODO: Return correct uintptr type by checking target platform pointer size.
-    static Type getUIntPtr(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation()) {
-        return getUInt64(mutability, location);
-    }
+    static Type getUIntPtr(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation()) { return getUInt64(mutability, location); }
     static Type getFloat(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getFloat32(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getFloat64(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
@@ -223,8 +220,7 @@ bool operator==(const TupleElement&, const TupleElement&);
 class TupleType : public TypeBase {
 public:
     llvm::ArrayRef<TupleElement> getElements() const { return elements; }
-    static Type get(std::vector<TupleElement>&& elements, Mutability mutability = Mutability::Mutable,
-                    SourceLocation location = SourceLocation());
+    static Type get(std::vector<TupleElement>&& elements, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
 
 private:
@@ -239,8 +235,7 @@ public:
     Type getReturnType() const { return returnType; }
     llvm::ArrayRef<Type> getParamTypes() const { return paramTypes; }
     std::vector<ParamDecl> getParamDecls(SourceLocation location = SourceLocation()) const;
-    static Type get(Type returnType, std::vector<Type>&& paramTypes, Mutability mutability = Mutability::Mutable,
-                    SourceLocation location = SourceLocation());
+    static Type get(Type returnType, std::vector<Type>&& paramTypes, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::FunctionType; }
 
 private:

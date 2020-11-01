@@ -106,8 +106,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         if (auto converted = convert(switchCase.getValue(), conditionType)) {
             switchCase.setValue(converted);
         } else {
-            ERROR(switchCase.getValue()->getLocation(),
-                  "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
+            ERROR(switchCase.getValue()->getLocation(), "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }
 
         Scope scope(nullptr, &currentModule->getSymbolTable());

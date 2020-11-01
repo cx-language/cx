@@ -340,8 +340,7 @@ void IRGenerator::codegenAssignment(const BinaryExpr& expr) {
 }
 
 bool isBuiltinArrayToArrayRefConversion(Type sourceType, llvm::Type* targetType) {
-    return sourceType.removePointer().isArrayWithConstantSize() && targetType->isStructTy() &&
-           targetType->getStructName().startswith("ArrayRef");
+    return sourceType.removePointer().isArrayWithConstantSize() && targetType->isStructTy() && targetType->getStructName().startswith("ArrayRef");
 }
 
 llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* targetType) {
@@ -361,8 +360,7 @@ llvm::Value* IRGenerator::codegenExprForPassing(const Expr& expr, llvm::Type* ta
     }
 
     // Handle implicit conversions to type 'T[*]'.
-    if (expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() &&
-        !targetType->getPointerElementType()->isArrayTy()) {
+    if (expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerTy() && !targetType->getPointerElementType()->isArrayTy()) {
         return builder.CreateBitOrPointerCast(codegenLvalueExpr(expr), targetType);
     }
 
@@ -421,8 +419,8 @@ void IRGenerator::codegenAssert(llvm::Value* condition, SourceLocation location,
     auto* assertFail = getFunctionProto(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->getSymbolTable().findOne("assertFail")));
     builder.CreateCondBr(condition, failBlock, successBlock);
     builder.SetInsertPoint(failBlock);
-    auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":",
-                                               std::to_string(location.line), ":", std::to_string(location.column), "\n");
+    auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":", std::to_string(location.line), ":",
+                                               std::to_string(location.column), "\n");
     builder.CreateCall(assertFail, builder.CreateGlobalStringPtr(messageAndLocation));
     builder.CreateUnreachable();
     builder.SetInsertPoint(successBlock);
@@ -735,8 +733,7 @@ llvm::Value* IRGenerator::codegenImplicitCastExpr(const ImplicitCastExpr& expr) 
         return codegenOptionalConstruction(expr.getOperand()->getType(), codegenExprWithoutAutoCast(*expr.getOperand()));
     }
 
-    if (expr.getOperand()->isStringLiteralExpr() && expr.getType().removeOptional().isPointerType() &&
-        expr.getType().removeOptional().getPointee().isChar()) {
+    if (expr.getOperand()->isStringLiteralExpr() && expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar()) {
         return builder.CreateGlobalStringPtr(llvm::cast<StringLiteralExpr>(expr.getOperand())->getValue());
     }
 
@@ -797,8 +794,7 @@ llvm::Value* IRGenerator::codegenExpr(const Expr& expr) {
     if (value) {
         // FIXME: Temporary
         if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(&expr)) {
-            if (value->getType()->isPointerTy() &&
-                value->getType()->getPointerElementType() == getLLVMType(implicitCastExpr->getOperand()->getType())) {
+            if (value->getType()->isPointerTy() && value->getType()->getPointerElementType() == getLLVMType(implicitCastExpr->getOperand()->getType())) {
                 return createLoad(value);
             }
         }
@@ -843,8 +839,8 @@ llvm::Value* IRGenerator::codegenExprOrEnumTag(const Expr& expr, llvm::Value** e
 
 llvm::Value* IRGenerator::codegenAutoCast(llvm::Value* value, const Expr& expr) {
     // Handle optionals that have been implicitly unwrapped due to data-flow analysis.
-    if (expr.hasAssignableType() && expr.getAssignableType().isOptionalType() &&
-        !expr.getAssignableType().getWrappedType().isPointerType() && expr.getType() == expr.getAssignableType().getWrappedType()) {
+    if (expr.hasAssignableType() && expr.getAssignableType().isOptionalType() && !expr.getAssignableType().getWrappedType().isPointerType() &&
+        expr.getType() == expr.getAssignableType().getWrappedType()) {
         return builder.CreateConstInBoundsGEP2_32(value->getType()->getPointerElementType(), value, 0, optionalValueFieldIndex);
     }
 

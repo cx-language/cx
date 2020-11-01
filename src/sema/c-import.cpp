@@ -164,8 +164,7 @@ static Type toDelta(clang::QualType qualtype) {
             return ArrayType::get(toDelta(vectorType.getElementType()), vectorType.getNumElements());
         }
         default:
-            WARN(SourceLocation(),
-                 "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualtype.getAsString() << "')");
+            WARN(SourceLocation(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualtype.getAsString() << "')");
             return Type::getInt();
     }
 }
@@ -244,8 +243,7 @@ public:
                         addIntegerConstantToSymbolTable(enumeratorName, value, type, module);
                     }
 
-                    module.addToSymbolTable(
-                        new EnumDecl(getName(enumDecl), std::move(cases), AccessLevel::Default, module, nullptr, SourceLocation()));
+                    module.addToSymbolTable(new EnumDecl(getName(enumDecl), std::move(cases), AccessLevel::Default, module, nullptr, SourceLocation()));
                     break;
                 }
                 case clang::Decl::Var:
@@ -266,9 +264,8 @@ public:
     }
 
     FunctionDecl* toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
-        auto params = map(decl.parameters(), [](clang::ParmVarDecl* param) {
-            return ParamDecl(::toDelta(param->getType()), param->getNameAsString(), false, SourceLocation());
-        });
+        auto params = map(decl.parameters(),
+                          [](clang::ParmVarDecl* param) { return ParamDecl(::toDelta(param->getType()), param->getNameAsString(), false, SourceLocation()); });
         FunctionProto proto(decl.getNameAsString(), std::move(params), ::toDelta(decl.getReturnType()), decl.isVariadic(), true);
         return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, toDelta(decl.getLocation()));
     }
@@ -364,8 +361,8 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
 
     const clang::DirectoryLookup* curDir = nullptr;
-    auto* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr,
-                                                                            nullptr, nullptr, nullptr, nullptr);
+    auto* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr,
+                                                                            nullptr, nullptr);
     if (!fileEntry) {
         REPORT_ERROR(importLocation, "couldn't find C header file '" << headerName << "'");
         return false;

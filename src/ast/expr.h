@@ -102,8 +102,7 @@ inline Expr::~Expr() {}
 
 class VarExpr : public Expr {
 public:
-    VarExpr(std::string&& identifier, SourceLocation location)
-    : Expr(ExprKind::VarExpr, location), decl(nullptr), identifier(std::move(identifier)) {}
+    VarExpr(std::string&& identifier, SourceLocation location) : Expr(ExprKind::VarExpr, location), decl(nullptr), identifier(std::move(identifier)) {}
     Decl* getDecl() const { return decl; }
     void setDecl(Decl* newDecl) { decl = newDecl; }
     llvm::StringRef getIdentifier() const { return identifier; }
@@ -116,8 +115,7 @@ private:
 
 class StringLiteralExpr : public Expr {
 public:
-    StringLiteralExpr(std::string&& value, SourceLocation location)
-    : Expr(ExprKind::StringLiteralExpr, location), value(std::move(value)) {}
+    StringLiteralExpr(std::string&& value, SourceLocation location) : Expr(ExprKind::StringLiteralExpr, location), value(std::move(value)) {}
     llvm::StringRef getValue() const { return value; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::StringLiteralExpr; }
 
@@ -179,8 +177,7 @@ public:
 
 class ArrayLiteralExpr : public Expr {
 public:
-    ArrayLiteralExpr(std::vector<Expr*>&& elements, SourceLocation location)
-    : Expr(ExprKind::ArrayLiteralExpr, location), elements(std::move(elements)) {}
+    ArrayLiteralExpr(std::vector<Expr*>&& elements, SourceLocation location) : Expr(ExprKind::ArrayLiteralExpr, location), elements(std::move(elements)) {}
     llvm::ArrayRef<Expr*> getElements() const { return elements; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::ArrayLiteralExpr; }
 
@@ -208,8 +205,7 @@ private:
 
 class TupleExpr : public Expr {
 public:
-    TupleExpr(std::vector<NamedValue>&& elements, SourceLocation location)
-    : Expr(ExprKind::TupleExpr, location), elements(std::move(elements)) {}
+    TupleExpr(std::vector<NamedValue>&& elements, SourceLocation location) : Expr(ExprKind::TupleExpr, location), elements(std::move(elements)) {}
     llvm::ArrayRef<NamedValue> getElements() const { return elements; }
     llvm::MutableArrayRef<NamedValue> getElements() { return elements; }
     const Expr* getElementByName(llvm::StringRef name) const;
@@ -283,8 +279,7 @@ private:
 class BinaryExpr : public CallExpr {
 public:
     BinaryExpr(BinaryOperator op, Expr* left, Expr* right, SourceLocation location)
-    : CallExpr(ExprKind::BinaryExpr, new VarExpr(delta::getFunctionName(op), location), {NamedValue(left), NamedValue(right)}, location),
-      op(op) {}
+    : CallExpr(ExprKind::BinaryExpr, new VarExpr(delta::getFunctionName(op), location), {NamedValue(left), NamedValue(right)}, location), op(op) {}
     BinaryOperator getOperator() const { return op; }
     const Expr& getLHS() const { return *getArgs()[0].getValue(); }
     const Expr& getRHS() const { return *getArgs()[1].getValue(); }
@@ -328,8 +323,7 @@ private:
 /// A member access expression using the dot syntax, such as 'a.b'.
 class MemberExpr : public Expr {
 public:
-    MemberExpr(Expr* base, std::string&& member, SourceLocation location)
-    : Expr(ExprKind::MemberExpr, location), base(base), member(std::move(member)) {}
+    MemberExpr(Expr* base, std::string&& member, SourceLocation location) : Expr(ExprKind::MemberExpr, location), base(base), member(std::move(member)) {}
     const Expr* getBaseExpr() const { return base; }
     Expr* getBaseExpr() { return base; }
     llvm::StringRef getMemberName() const { return member; }

@@ -293,8 +293,7 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     return instantiation;
 }
 
-static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module,
-                                                                 const CompileOptions& options) {
+static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twine& directoryPath, Module& module, const CompileOptions& options) {
     std::error_code error;
     std::vector<std::string> paths;
 
@@ -315,8 +314,8 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
     }
 
     if (module.getSourceFiles().empty()) {
-        REPORT_ERROR(SourceLocation(), "Module '" << module.getName() << "' import failed: no source files found in '" << directoryPath
-                                                  << "' or its subdirectories");
+        REPORT_ERROR(SourceLocation(),
+                     "Module '" << module.getName() << "' import failed: no source files found in '" << directoryPath << "' or its subdirectories");
     }
 
     return error;

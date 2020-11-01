@@ -16,8 +16,7 @@ using namespace delta;
 
 std::vector<llvm::MemoryBuffer*> Lexer::fileBuffers;
 
-Lexer::Lexer(llvm::MemoryBuffer* input)
-: firstLocation(input->getBufferIdentifier().data(), 1, 0), lastLocation(input->getBufferIdentifier().data(), 1, 0) {
+Lexer::Lexer(llvm::MemoryBuffer* input) : firstLocation(input->getBufferIdentifier().data(), 1, 0), lastLocation(input->getBufferIdentifier().data(), 1, 0) {
     fileBuffers.push_back(input);
     currentFilePosition = fileBuffers.back()->getBufferStart() - 1;
 }

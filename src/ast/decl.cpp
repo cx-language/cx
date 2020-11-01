@@ -86,8 +86,7 @@ bool FunctionTemplate::isReferenced() const {
     return false;
 }
 
-MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel,
-                       SourceLocation location)
+MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel, SourceLocation location)
 : FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl) {}
 
 MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) {
@@ -126,9 +125,8 @@ FieldDecl FieldDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeD
 }
 
 std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
-    return map(params, [&](auto& param) {
-        return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.isNamedArgument(), param.getLocation());
-    });
+    return map(params,
+               [&](auto& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.isNamedArgument(), param.getLocation()); });
 }
 
 std::string TypeDecl::getQualifiedName() const {
@@ -217,8 +215,8 @@ TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
 }
 
 EnumCase::EnumCase(std::string&& name, Expr* value, Type associatedType, AccessLevel accessLevel, SourceLocation location)
-: VariableDecl(DeclKind::EnumCase, accessLevel, nullptr, Type() /* initialized by EnumDecl constructor */), name(std::move(name)),
-  value(value), associatedType(associatedType), location(location) {}
+: VariableDecl(DeclKind::EnumCase, accessLevel, nullptr, Type() /* initialized by EnumDecl constructor */), name(std::move(name)), value(value),
+  associatedType(associatedType), location(location) {}
 
 EnumCase* EnumDecl::getCaseByName(llvm::StringRef name) {
     for (auto& enumCase : cases) {
@@ -276,12 +274,12 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
         case DeclKind::TypeDecl: {
             auto* typeDecl = llvm::cast<TypeDecl>(this);
             auto interfaces = map(typeDecl->getInterfaces(), [&](Type type) { return type.resolve(genericArgs); });
-            auto instantiation = new TypeDecl(typeDecl->getTag(), typeDecl->getName(), genericArgsArray, std::move(interfaces),
-                                              getAccessLevel(), *typeDecl->getModule(), typeDecl, typeDecl->getLocation());
+            auto instantiation = new TypeDecl(typeDecl->getTag(), typeDecl->getName(), genericArgsArray, std::move(interfaces), getAccessLevel(),
+                                              *typeDecl->getModule(), typeDecl, typeDecl->getLocation());
             for (auto& field : typeDecl->getFields()) {
                 auto defaultValue = field.getDefaultValue() ? field.getDefaultValue()->instantiate(genericArgs) : nullptr;
-                instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName(), defaultValue, *instantiation,
-                                                  field.getAccessLevel(), field.getLocation()));
+                instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName(), defaultValue, *instantiation, field.getAccessLevel(),
+                                                  field.getLocation()));
             }
 
             for (auto& method : typeDecl->getMethods()) {
@@ -318,8 +316,7 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
             auto* varDecl = llvm::cast<VarDecl>(this);
             auto type = varDecl->getType().resolve(genericArgs);
             auto initializer = varDecl->getInitializer() ? varDecl->getInitializer()->instantiate(genericArgs) : nullptr;
-            return new VarDecl(type, varDecl->getName(), initializer, varDecl->getParentDecl(), getAccessLevel(), *varDecl->getModule(),
-                               varDecl->getLocation());
+            return new VarDecl(type, varDecl->getName(), initializer, varDecl->getParentDecl(), getAccessLevel(), *varDecl->getModule(), varDecl->getLocation());
         }
         case DeclKind::FieldDecl:
             llvm_unreachable("handled via TypeDecl");
@@ -338,12 +335,10 @@ bool Decl::isGlobal() const {
 }
 
 ConstructorDecl::ConstructorDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDecl>&& params, AccessLevel accessLevel, SourceLocation location)
-: MethodDecl(DeclKind::ConstructorDecl, FunctionProto("init", std::move(params), Type::getVoid(), false, false), receiverTypeDecl, {},
-             accessLevel, location) {}
+: MethodDecl(DeclKind::ConstructorDecl, FunctionProto("init", std::move(params), Type::getVoid(), false, false), receiverTypeDecl, {}, accessLevel, location) {}
 
 DestructorDecl::DestructorDecl(TypeDecl& receiverTypeDecl, SourceLocation location)
-: MethodDecl(DeclKind::DestructorDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None,
-             location) {}
+: MethodDecl(DeclKind::DestructorDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None, location) {}
 
 std::vector<Note> delta::getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls) {
     return map(decls, [](Decl* decl) { return Note{decl->getLocation(), "previous definition here"}; });

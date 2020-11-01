@@ -141,15 +141,12 @@ private:
     std::vector<ParamDecl> parseParamList(bool* isVariadic, bool requireTypes = true);
     void parseGenericParamList(std::vector<GenericParamDecl>& genericParams);
     llvm::StringRef parseFunctionName(TypeDecl* receiverTypeDecl);
-    FunctionDecl* parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
-                                     std::vector<GenericParamDecl>* genericParams, Type returnType, llvm::StringRef name,
-                                     SourceLocation location);
-    FunctionTemplate* parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name,
-                                                 SourceLocation location);
+    FunctionDecl* parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, std::vector<GenericParamDecl>* genericParams,
+                                     Type returnType, llvm::StringRef name, SourceLocation location);
+    FunctionTemplate* parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation location);
     FunctionDecl* parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type, llvm::StringRef name,
                                     SourceLocation location);
-    FunctionTemplate* parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name,
-                                            SourceLocation location);
+    FunctionTemplate* parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation location);
     FunctionDecl* parseExternFunctionDecl(Type type, llvm::StringRef name, SourceLocation location);
     ConstructorDecl* parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel);
     DestructorDecl* parseDestructorDecl(TypeDecl& receiverTypeDecl);

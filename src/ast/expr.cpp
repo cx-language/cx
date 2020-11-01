@@ -193,9 +193,8 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         }
         case ExprKind::TupleExpr: {
             auto* tupleExpr = llvm::cast<TupleExpr>(this);
-            auto elements = map(tupleExpr->getElements(), [&](const NamedValue& element) {
-                return NamedValue(element.getName(), element.getValue()->instantiate(genericArgs));
-            });
+            auto elements = map(tupleExpr->getElements(),
+                                [&](const NamedValue& element) { return NamedValue(element.getName(), element.getValue()->instantiate(genericArgs)); });
             instantiation = new TupleExpr(std::move(elements), tupleExpr->getLocation());
             break;
         }
@@ -215,8 +214,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         case ExprKind::CallExpr: {
             auto* callExpr = llvm::cast<CallExpr>(this);
             auto callee = callExpr->getCallee().instantiate(genericArgs);
-            auto args = map(callExpr->getArgs(),
-                            [&](auto& arg) { return NamedValue(arg.getName(), arg.getValue()->instantiate(genericArgs)); });
+            auto args = map(callExpr->getArgs(), [&](auto& arg) { return NamedValue(arg.getName(), arg.getValue()->instantiate(genericArgs)); });
             auto callGenericArgs = map(callExpr->getGenericArgs(), [&](Type type) { return type.resolve(genericArgs); });
             instantiation = new CallExpr(callee, std::move(args), std::move(callGenericArgs), callExpr->getLocation());
             break;
@@ -270,8 +268,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         }
         case ExprKind::ImplicitCastExpr: {
             auto implicitCastExpr = llvm::cast<ImplicitCastExpr>(this);
-            instantiation = new ImplicitCastExpr(implicitCastExpr->getOperand()->instantiate(genericArgs),
-                                                 implicitCastExpr->getType().resolve(genericArgs));
+            instantiation = new ImplicitCastExpr(implicitCastExpr->getOperand()->instantiate(genericArgs), implicitCastExpr->getType().resolve(genericArgs));
             break;
         }
     }
@@ -481,8 +478,7 @@ llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
     }
 }
 
-LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, Expr* body, Module* module, SourceLocation location)
-: Expr(ExprKind::LambdaExpr, location) {
+LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, Expr* body, Module* module, SourceLocation location) : Expr(ExprKind::LambdaExpr, location) {
     static uint64_t nameCounter = 0;
     FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::move(params), Type(), false, false);
     this->functionDecl = new FunctionDecl(std::move(proto), std::vector<Type>(), AccessLevel::Private, *module, getLocation());

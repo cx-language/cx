@@ -46,8 +46,8 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                     case DeclKind::EnumDecl:
                         break;
                     case DeclKind::TypeTemplate:
-                        validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->getGenericParams().size(), basicType->getGenericArgs(),
-                                                basicType->getName(), type.getLocation());
+                        validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->getGenericParams().size(), basicType->getGenericArgs(), basicType->getName(),
+                                                type.getLocation());
                         break;
                     default:
                         ERROR(type.getLocation(), "'" << type << "' is not a type");
@@ -114,8 +114,7 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
         }
         case StmtKind::SwitchStmt: {
             auto& switchStmt = llvm::cast<SwitchStmt>(*block.back());
-            return llvm::all_of(switchStmt.getCases(), [](auto& c) { return allPathsReturn(c.getStmts()); }) &&
-                   allPathsReturn(switchStmt.getDefaultStmts());
+            return llvm::all_of(switchStmt.getCases(), [](auto& c) { return allPathsReturn(c.getStmts()); }) && allPathsReturn(switchStmt.getDefaultStmts());
         }
         default:
             return false;
@@ -125,8 +124,7 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
 void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel) {
     for (auto& genericParam : genericParams) {
         if (auto existing = getCurrentModule()->getSymbolTable().find(genericParam.getName()); !existing.empty()) {
-            ERROR_WITH_NOTES(genericParam.getLocation(), getPreviousDefinitionNotes(existing),
-                             "redefinition of '" << genericParam.getName() << "'");
+            ERROR_WITH_NOTES(genericParam.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << genericParam.getName() << "'");
         }
 
         for (Type constraint : genericParam.getConstraints()) {
@@ -193,8 +191,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                     if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
                         if (auto* callExpr = llvm::dyn_cast<CallExpr>(&exprStmt->getExpr())) {
                             if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->getCalleeDecl())) {
-                                if (constructorDecl->getTypeDecl() == receiverTypeDecl ||
-                                    receiverTypeDecl->hasInterface(*constructorDecl->getTypeDecl())) {
+                                if (constructorDecl->getTypeDecl() == receiverTypeDecl || receiverTypeDecl->hasInterface(*constructorDecl->getTypeDecl())) {
                                     delegatedInit = true;
                                 }
                             }
@@ -251,8 +248,7 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
 
         std::string errorReason;
         if (!providesInterfaceRequirements(decl, *interfaceDecl, &errorReason)) {
-            REPORT_ERROR(decl.getLocation(),
-                         "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
+            REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' " << errorReason << " required by interface '" << interfaceDecl->getName() << "'");
         }
     }
 

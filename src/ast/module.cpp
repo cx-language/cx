@@ -28,16 +28,14 @@ void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {
 
 void Module::addToSymbolTable(FunctionTemplate& decl) {
     if (auto existing = getSymbolTable().findWithMatchingPrototype(*decl.getFunctionDecl())) {
-        REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing),
-                                "redefinition of '" << decl.getQualifiedName() << "'");
+        REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getQualifiedName() << "'");
     }
     getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
 }
 
 void Module::addToSymbolTable(FunctionDecl& decl) {
     if (auto existing = getSymbolTable().findWithMatchingPrototype(decl)) {
-        REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing),
-                                "redefinition of '" << decl.getQualifiedName() << "'");
+        REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getQualifiedName() << "'");
     }
     getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
 }

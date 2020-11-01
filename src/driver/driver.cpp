@@ -57,11 +57,9 @@ cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file 
 cl::opt<WarningMode> warningMode(cl::desc("Warning mode:"), cl::sub(*cl::AllSubCommands),
                                  cl::values(clEnumValN(WarningMode::Suppress, "w", "Suppress all warnings"),
                                             clEnumValN(WarningMode::TreatAsErrors, "Werror", "Treat warnings as errors")));
-cl::list<std::string> disabledWarnings("Wno-", cl::desc("Disable warnings"), cl::value_desc("warning"), cl::Prefix,
-                                       cl::sub(*cl::AllSubCommands));
+cl::list<std::string> disabledWarnings("Wno-", cl::desc("Disable warnings"), cl::value_desc("warning"), cl::Prefix, cl::sub(*cl::AllSubCommands));
 cl::list<std::string> defines("D", cl::desc("Specify defines"), cl::Prefix, cl::sub(*cl::AllSubCommands));
-cl::list<std::string> importSearchPaths("I", cl::desc("Add directory to import search paths"), cl::value_desc("path"), cl::Prefix,
-                                        cl::sub(*cl::AllSubCommands));
+cl::list<std::string> importSearchPaths("I", cl::desc("Add directory to import search paths"), cl::value_desc("path"), cl::Prefix, cl::sub(*cl::AllSubCommands));
 cl::list<std::string> frameworkSearchPaths("F", cl::desc("Add directory framework search paths"), cl::value_desc("path"), cl::Prefix,
                                            cl::sub(*cl::AllSubCommands));
 cl::list<std::string> cflags(cl::Sink, cl::desc("Add C compiler flags"), cl::sub(*cl::AllSubCommands));
@@ -136,8 +134,7 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
     importSearchPaths.push_back(DELTA_ROOT_DIR);
     importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
     // FIXME: Find a better way to find the correct libc header search path.
-    importSearchPaths.push_back(
-        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include");
+    importSearchPaths.push_back("/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include");
     importSearchPaths.push_back("/usr/include");
     importSearchPaths.push_back("/usr/local/include");
     addHeaderSearchPathsFromEnvVar("CPATH");
@@ -146,8 +143,7 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
     addHeaderSearchPathsFromCCompilerOutput();
 }
 
-static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType,
-                            llvm::Reloc::Model relocModel) {
+static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
@@ -185,8 +181,8 @@ static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName
     file.flush();
 }
 
-static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0,
-                           llvm::StringRef outputDirectory, std::string outputFileName) {
+static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManifest* manifest, const char* argv0, llvm::StringRef outputDirectory,
+                           std::string outputFileName) {
     if (files.empty()) {
         ABORT("no input files");
     }

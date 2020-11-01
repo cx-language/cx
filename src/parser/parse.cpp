@@ -95,8 +95,8 @@ static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
     if (expected.size() == 0) {
         ERROR(token.getLocation(), "unexpected " << quote(token) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : ""));
     } else {
-        ERROR(token.getLocation(), "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "")
-                                               << ", got " << quote(token));
+        ERROR(token.getLocation(),
+              "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "") << ", got " << quote(token));
     }
 }
 
@@ -317,8 +317,7 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
         } else {
             if (currentToken() == Token::RightShift) {
                 tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().getLocation());
-                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1,
-                                   Token(Token::Greater, currentToken().getLocation().nextColumn()));
+                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().getLocation().nextColumn()));
             }
             return types;
         }
@@ -449,8 +448,7 @@ Type Parser::parseType() {
                 type = ArrayType::get(type, parseArraySizeInBrackets(), type.getMutability(), getCurrentLocation());
                 break;
             case Token::And:
-                ERROR(getCurrentLocation(),
-                      "Delta doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
+                ERROR(getCurrentLocation(), "Delta doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
             default:
                 return type.withLocation(location);
         }
@@ -554,8 +552,7 @@ bool Parser::shouldParseVarStmt() {
                     return true;
                 }
                 if (lookAhead(offset - 2).is(Token::Star)) {
-                    if (lookAhead(offset - 3).is(Token::Semicolon) ||
-                        lookAhead(offset - 2).getLocation().line != lookAhead(offset - 3).getLocation().line) {
+                    if (lookAhead(offset - 3).is(Token::Semicolon) || lookAhead(offset - 2).getLocation().line != lookAhead(offset - 3).getLocation().line) {
                         return false;
                     }
                     return true;
@@ -928,8 +925,8 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
                 consumeToken();
                 auto name = parse(Token::Identifier);
                 // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
-                associatedValue = new VarDecl(Type(), name.getString(), new UndefinedLiteralExpr(name.getLocation()), parent,
-                                              AccessLevel::None, *currentModule, name.getLocation());
+                associatedValue = new VarDecl(Type(), name.getString(), new UndefinedLiteralExpr(name.getLocation()), parent, AccessLevel::None, *currentModule,
+                                              name.getLocation());
             }
 
             parse(Token::Colon);
@@ -1107,9 +1104,8 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
 }
 
 /// function-proto ::= type id param-list
-FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel,
-                                         std::vector<GenericParamDecl>* genericParams, Type returnType, llvm::StringRef name,
-                                         SourceLocation location) {
+FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDecl, AccessLevel accessLevel, std::vector<GenericParamDecl>* genericParams,
+                                         Type returnType, llvm::StringRef name, SourceLocation location) {
     if (currentToken() == Token::Less) {
         parseGenericParamList(*genericParams);
     }
@@ -1136,8 +1132,8 @@ FunctionTemplate* Parser::parseFunctionTemplateProto(TypeDecl* receiverTypeDecl,
 }
 
 /// function-decl ::= function-proto '{' stmt* '}'
-FunctionDecl* Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type,
-                                        llvm::StringRef name, SourceLocation location) {
+FunctionDecl* Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, bool requireBody, Type type, llvm::StringRef name,
+                                        SourceLocation location) {
     auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, nullptr, type, name, location);
 
     if (requireBody || currentToken() == Token::LeftBrace) {
@@ -1152,8 +1148,7 @@ FunctionDecl* Parser::parseFunctionDecl(TypeDecl* receiverTypeDecl, AccessLevel 
 }
 
 /// function-template-decl ::= function-template-proto '{' stmt* '}'
-FunctionTemplate* Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name,
-                                                SourceLocation location) {
+FunctionTemplate* Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation location) {
     auto decl = parseFunctionTemplateProto(receiverTypeDecl, accessLevel, type, name, location);
     decl->getFunctionDecl()->setBody(parseBlock(decl));
     return decl;
@@ -1243,8 +1238,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
-    auto typeDecl = new TypeDecl(tag, typeName.getString(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule,
-                                 nullptr, typeName.getLocation());
+    auto typeDecl = new TypeDecl(tag, typeName.getString(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
+                                 typeName.getLocation());
     bool hasConstructor = false;
     parse(Token::LeftBrace);
 

@@ -118,8 +118,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
 
     Expr* iteratorValue;
     auto* rangeTypeDecl = range->getType().removePointer().getDecl();
-    bool isIterator = rangeTypeDecl &&
-                      llvm::any_of(rangeTypeDecl->getInterfaces(), [](Type interface) { return interface.getName() == "Iterator"; });
+    bool isIterator = rangeTypeDecl && llvm::any_of(rangeTypeDecl->getInterfaces(), [](Type interface) { return interface.getName() == "Iterator"; });
 
     if (isIterator) {
         iteratorValue = range;
@@ -139,8 +138,8 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVarExpr2 = new VarExpr(std::string(iteratorVariableName), location);
     auto valueMemberExpr = new MemberExpr(iteratorVarExpr2, "value", location);
     auto valueCallExpr = new CallExpr(valueMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
-    auto loopVariableVarDecl = new VarDecl(variable->getType(), variable->getName(), valueCallExpr, variable->getParentDecl(),
-                                           AccessLevel::None, *variable->getModule(), variable->getLocation());
+    auto loopVariableVarDecl = new VarDecl(variable->getType(), variable->getName(), valueCallExpr, variable->getParentDecl(), AccessLevel::None,
+                                           *variable->getModule(), variable->getLocation());
     auto loopVariableVarStmt = new VarStmt(loopVariableVarDecl);
 
     std::vector<Stmt*> forBody;
