@@ -1,0 +1,69 @@
+name: CMake
+
+on: [push]
+
+env:
+  BUILD_TYPE: Release
+  LLVM_VERSION: 9.0.0
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-10.15]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 2.7
+
+      - name: Install Dependencies
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            export LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-$(lsb_release -sr)
+            wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz
+            tar -xf $LLVM_TARBALL_NAME.tar.xz
+            export LLVMDIR="$PWD/$LLVM_TARBALL_NAME"
+          fi
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            export LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-darwin-apple
+            wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz
+            tar -xf $LLVM_TARBALL_NAME.tar.xz
+            export LLVMDIR="$PWD/$LLVM_TARBALL_NAME"
+          fi
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/llvm-master/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt.7z" --output llvm.7z && 7z x llvm.7z
+            curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/clang-master/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt.7z" --output clang.7z && 7z x clang.7z
+            export LLVMDIR="$PWD/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt"
+            export CLANGDIR="$PWD/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt"
+          fi
+          echo "LLVMDIR=$LLVMDIR" >> $GITHUB_ENV
+          echo "CLANGDIR=$CLANGDIR" >> $GITHUB_ENV
+          echo "$LLVMDIR/bin" >> $GITHUB_PATH
+          echo "$CLANGDIR/bin" >> $GITHUB_PATH
+
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{runner.workspace}}/build
+
+      - name: Configure CMake
+        shell: bash
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          export CMAKE_BUILD_PARALLEL_LEVEL=""
+          cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_PREFIX_PATH="$LLVMDIR;$CLANGDIR"
+
+      - name: Build
+        working-directory: ${{runner.workspace}}/build
+        shell: bash
+        run: cmake --build . --config $BUILD_TYPE
+
+      - name: Test
+        working-directory: ${{runner.workspace}}/build
+        shell: bash
+        run: |
+          pip install lit
+          cmake --build . --config $BUILD_TYPE --target check
