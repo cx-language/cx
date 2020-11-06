@@ -515,7 +515,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee() == target) {
+    if (source.isPointerType() && source.getPointee() == target && expr && !expr->isReferenceExpr()) {
         // Auto-dereference.
         return target;
     }

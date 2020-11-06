@@ -35,8 +35,7 @@ struct ArgumentValidation {
     Error error;
     int index;
 
-    ArgumentValidation(Error error) : error(error) {}
-    ArgumentValidation(Error error, int index) : error(error), index(index) {}
+    ArgumentValidation(Error error, int index = -1) : error(error), index(index) {}
 };
 
 class Typechecker {

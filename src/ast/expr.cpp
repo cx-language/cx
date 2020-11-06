@@ -17,6 +17,11 @@ bool Expr::isIncrementOrDecrementExpr() const {
     return unaryExpr && (unaryExpr->getOperator() == Token::Increment || unaryExpr->getOperator() == Token::Decrement);
 }
 
+bool Expr::isReferenceExpr() const {
+    auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(this);
+    return unaryExpr && unaryExpr->getOperator() == Token::And;
+};
+
 bool Expr::isConstant() const {
     switch (getKind()) {
         case ExprKind::VarExpr: {
