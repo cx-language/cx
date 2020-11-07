@@ -146,9 +146,7 @@ AllocaInst* IRGenerator::createTempAlloca(Value* value) {
 }
 
 Value* IRGenerator::createLoad(Value* value) {
-    auto load = new LoadInst { ValueKind::LoadInst, value, value->getName() + ".load" };
-    insertBlock->body.push_back(load);
-    return load;
+    return insertBlock->body.emplace_back(new LoadInst { ValueKind::LoadInst, value, value->getName() + ".load" });
 }
 
 void IRGenerator::createStore(Value* value, Value* pointer) {
@@ -160,9 +158,7 @@ void IRGenerator::createStore(Value* value, Value* pointer) {
 
 Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args) {
     ASSERT(function->kind == ValueKind::Function || (function->getType()->isPointerType() && function->getType()->getPointee()->isFunctionType()));
-    auto call = new CallInst { ValueKind::CallInst, function, args, "" };
-    insertBlock->body.push_back(call);
-    return call;
+    return insertBlock->body.emplace_back(new CallInst { ValueKind::CallInst, function, args, "" });
 }
 
 Value* IRGenerator::emitAssignmentLHS(const Expr& lhs) {

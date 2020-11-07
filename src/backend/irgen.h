@@ -117,19 +117,13 @@ public:
     }
     void createBr(BasicBlock* destination) { insertBlock->body.push_back(new BranchInst { ValueKind::BranchInst, destination }); }
     Value* createPhi(std::vector<std::pair<Value*, BasicBlock*>> valuesAndPredecessors, const llvm::Twine& name = "") {
-        auto phi = new PhiInst { ValueKind::PhiInst, std::move(valuesAndPredecessors), name.str() };
-        insertBlock->body.push_back(phi);
-        return phi;
+        return insertBlock->body.emplace_back(new PhiInst { ValueKind::PhiInst, std::move(valuesAndPredecessors), name.str() });
     }
     Value* createInsertValue(Value* aggregate, Value* value, int index) {
-        auto inst = new InsertInst { ValueKind::InsertInst, aggregate, value, index, "" };
-        insertBlock->body.push_back(inst);
-        return inst;
+        return insertBlock->body.emplace_back(new InsertInst { ValueKind::InsertInst, aggregate, value, index, "" });
     }
     Value* createExtractValue(Value* aggregate, int index, const llvm::Twine& name = "") {
-        auto inst = new ExtractInst { ValueKind::ExtractInst, aggregate, index, name.str() };
-        insertBlock->body.push_back(inst);
-        return inst;
+        return insertBlock->body.emplace_back(new ExtractInst { ValueKind::ExtractInst, aggregate, index, name.str() });
     }
     Value* createConstantInt(IRType* type, llvm::APSInt value) { return new ConstantInt { ValueKind::ConstantInt, type, std::move(value) }; }
     Value* createConstantInt(IRType* type, int64_t value) { return createConstantInt(type, llvm::APSInt::get(value)); }
@@ -149,9 +143,7 @@ public:
     Value* createUndefined(Type type) { return createUndefined(getIRType(type)); }
     Value* createBinaryOp(BinaryOperator op, Value* left, Value* right) {
         ASSERT(left->getType()->equals(right->getType()));
-        auto binary = new BinaryInst { ValueKind::BinaryInst, op, left, right, "" };
-        insertBlock->body.push_back(binary);
-        return binary;
+        return insertBlock->body.emplace_back(new BinaryInst { ValueKind::BinaryInst, op, left, right, "" });
     }
     Value* createIsNull(Value* value, const llvm::Twine& name = "") {
         Value* nullValue;
@@ -170,24 +162,12 @@ public:
         }
 
         ASSERT(value->getType()->equals(nullValue->getType()));
-        auto op = new BinaryInst { ValueKind::BinaryInst, Token::Equal, value, nullValue, name.str() };
-        insertBlock->body.push_back(op);
-        return op;
+        return insertBlock->body.emplace_back(new BinaryInst { ValueKind::BinaryInst, Token::Equal, value, nullValue, name.str() });
     }
-    Value* createNeg(Value* value) {
-        auto op = new UnaryInst { ValueKind::UnaryInst, Token::Minus, value, "" };
-        insertBlock->body.push_back(op);
-        return op;
-    }
-    Value* createNot(Value* value) {
-        auto op = new UnaryInst { ValueKind::UnaryInst, Token::Not, value, "" };
-        insertBlock->body.push_back(op);
-        return op;
-    }
+    Value* createNeg(Value* value) { return insertBlock->body.emplace_back(new UnaryInst { ValueKind::UnaryInst, Token::Minus, value, "" }); }
+    Value* createNot(Value* value) { return insertBlock->body.emplace_back(new UnaryInst { ValueKind::UnaryInst, Token::Not, value, "" }); }
     Value* createGEP(Value* pointer, std::vector<Value*> indexes, const llvm::Twine& name = "") {
-        auto gep = new GEPInst { ValueKind::GEPInst, pointer, std::move(indexes), name.str() };
-        insertBlock->body.push_back(gep);
-        return gep;
+        return insertBlock->body.emplace_back(new GEPInst { ValueKind::GEPInst, pointer, std::move(indexes), name.str() });
     }
     Value* createGEP(Value* pointer, int index0, int index1, const llvm::Twine& name = "") {
         if (pointer->getType()->getPointee()->isArrayType()) {
@@ -195,27 +175,19 @@ public:
         } else {
             ASSERT(index1 < (int) pointer->getType()->getPointee()->getElements().size());
         }
-        auto gep = new ConstGEPInst { ValueKind::ConstGEPInst, pointer, index0, index1, name.str() };
-        insertBlock->body.push_back(gep);
-        return gep;
+        return insertBlock->body.emplace_back(new ConstGEPInst { ValueKind::ConstGEPInst, pointer, index0, index1, name.str() });
     }
     Value* createCast(Value* value, IRType* type, const llvm::Twine& name = "") {
-        auto cast = new CastInst { ValueKind::CastInst, value, type, name.str() };
-        insertBlock->body.push_back(cast);
-        return cast;
+        return insertBlock->body.emplace_back(new CastInst { ValueKind::CastInst, value, type, name.str() });
     }
     Value* createCast(Value* value, Type type, const llvm::Twine& name = "") { return createCast(value, getIRType(type), name); }
     Value* createGlobalVariable(Value* value, const llvm::Twine& name = "") {
-        auto globalVariable = new GlobalVariable { ValueKind::GlobalVariable, value, name.str() };
-        module->globalVariables.push_back(globalVariable);
-        return globalVariable;
+        return module->globalVariables.emplace_back(new GlobalVariable { ValueKind::GlobalVariable, value, name.str() });
     }
     Value* createGlobalStringPtr(llvm::StringRef value) { return new ConstantString { ValueKind::ConstantString, value }; }
     Value* createSizeof(Type type) { return new SizeofInst { ValueKind::SizeofInst, getIRType(type), "" }; }
     SwitchInst* createSwitch(Value* condition, BasicBlock* defaultBlock) {
-        auto switchInst = new SwitchInst { ValueKind::SwitchInst, condition, defaultBlock, {} };
-        insertBlock->body.push_back(switchInst);
-        return switchInst;
+        return llvm::cast<SwitchInst>(insertBlock->body.emplace_back(new SwitchInst { ValueKind::SwitchInst, condition, defaultBlock, {} }));
     }
     void createUnreachable() { insertBlock->body.push_back(new UnreachableInst { ValueKind::UnreachableInst }); }
     void createReturn(Value* value) { insertBlock->body.push_back(new ReturnInst { ValueKind::ReturnInst, value }); }
