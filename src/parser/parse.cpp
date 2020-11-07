@@ -1025,24 +1025,18 @@ std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind en
     return stmts;
 }
 
-/// param-decl ::= type? id | id ':' type
+/// param-decl ::= 'public'? type? id
 ParamDecl Parser::parseParam(bool requireType) {
-    Token name;
-    Type type;
-    bool isNamedArgument = lookAhead(1) == Token::Colon;
+    bool isPublic = currentToken() == Token::Public;
+    if (isPublic) consumeToken();
 
-    if (isNamedArgument) {
-        name = parse(Token::Identifier);
-        consumeToken();
+    Type type;
+    if (requireType || !lookAhead(1).is({Token::Comma, Token::RightParen})) {
         type = parseType();
-    } else {
-        if (requireType || !lookAhead(1).is({Token::Comma, Token::RightParen})) {
-            type = parseType();
-        }
-        name = parse(Token::Identifier);
     }
 
-    return ParamDecl(type, name.getString(), isNamedArgument, name.getLocation());
+    auto name = parse(Token::Identifier);
+    return ParamDecl(type, name.getString(), isPublic, name.getLocation());
 }
 
 /// param-list ::= '(' params ')'

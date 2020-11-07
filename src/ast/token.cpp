@@ -263,6 +263,7 @@ const char* delta::toString(Token::Kind tokenKind) {
         "interface",
         "null",
         "private",
+        "public",
         "return",
         "sizeof",
         "struct",

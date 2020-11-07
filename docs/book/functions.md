@@ -46,11 +46,11 @@ void main() {
 Functions may be overloaded on parameter names:
 
 ```cs
-void foo(a: int) {
+void foo(public int a) {
     println("a");
 }
 
-void foo(b: int) {
+void foo(public int b) {
     println("b");
 }
 

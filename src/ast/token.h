@@ -43,6 +43,7 @@ struct Token {
         Interface,
         Null,
         Private,
+        Public,
         Return,
         Sizeof,
         Struct,

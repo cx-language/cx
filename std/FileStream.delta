@@ -1,7 +1,7 @@
 struct OutputFileStream {
     FILE*? file;
 
-    OutputFileStream(fileDescriptor: int) {
+    OutputFileStream(public int fileDescriptor) {
         file = fdopen(fileDescriptor, "w");
 
         if (!file) { // TODO: Error handling

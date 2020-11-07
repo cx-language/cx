@@ -1,14 +1,14 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
 
-void foo(a: int) { }
-void foo(b: int) { }
+void foo(public int a) { }
+void foo(public int b) { }
 
 void main() {
     // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'foo'
     // CHECK: 3:6: note: candidate function:
-    // CHECK-NEXT: void foo(a: int) { }
+    // CHECK-NEXT: void foo(public int a) { }
     // CHECK: 4:6: note: candidate function:
-    // CHECK-NEXT: void foo(b: int) { }
+    // CHECK-NEXT: void foo(public int b) { }
     // CHECK-NOT: note
     foo(1)
 }
