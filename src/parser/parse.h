@@ -98,11 +98,12 @@ private:
     Expr* parseTupleLiteralOrParenExpr();
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<Type> parseGenericArgumentList();
-    int64_t parseArraySizeInBrackets();
-    Type parseSimpleType(Mutability mutability);
+    int64_t parseArraySizeInBrackets(bool returnOnError);
+    Type parseSimpleType(Mutability mutability, bool returnOnError);
     Type parseTupleType();
-    Type parseFunctionType(Type returnType);
-    Type parseType();
+    Type parseFunctionType(Type returnType, bool returnOnError);
+    bool canParseType();
+    Type parseType(bool returnOnError);
     SizeofExpr* parseSizeofExpr();
     AddressofExpr* parseAddressofExpr();
     MemberExpr* parseMemberExpr(Expr* lhs);
@@ -134,6 +135,7 @@ private:
     BreakStmt* parseBreakStmt();
     ContinueStmt* parseContinueStmt();
     Stmt* parseStmt(Decl* parent);
+    void parseStmtOrDecl(Decl* parent, Stmt*& resultStmt, Decl*& resultDecl, bool addToSymbolTable);
     std::vector<Stmt*> parseBlock(Decl* parent);
     std::vector<Stmt*> parseBlockOrStmt(Decl* parent);
     std::vector<Stmt*> parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent);

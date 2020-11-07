@@ -196,6 +196,7 @@ public:
     static Type getIndexType() { return Type::getInt(); }
     static const int64_t runtimeSize = -1;
     static const int64_t unknownSize = -2;
+    static const int64_t errorSize = -3;
     static Type get(Type type, int64_t size, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
 

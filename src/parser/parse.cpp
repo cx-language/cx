@@ -310,7 +310,7 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
     std::vector<Type> types;
 
     while (true) {
-        types.push_back(parseType());
+        types.push_back(parseType(false));
 
         if (currentToken() == Token::Comma) {
             consumeToken();
@@ -333,7 +333,7 @@ std::vector<Type> Parser::parseGenericArgumentList() {
     return genericArgs;
 }
 
-int64_t Parser::parseArraySizeInBrackets() {
+int64_t Parser::parseArraySizeInBrackets(bool returnOnError) {
     ASSERT(currentToken() == Token::LeftBracket);
     consumeToken();
     int64_t arraySize;
@@ -350,6 +350,7 @@ int64_t Parser::parseArraySizeInBrackets() {
             arraySize = ArrayType::unknownSize;
             break;
         default:
+            if (returnOnError) return ArrayType::errorSize;
             ERROR(getCurrentLocation(), "non-literal array bounds not implemented yet");
     }
 
@@ -358,7 +359,7 @@ int64_t Parser::parseArraySizeInBrackets() {
 }
 
 /// simple-type ::= id | id generic-argument-list | id '[' (int-literal | '*')? ']'
-Type Parser::parseSimpleType(Mutability mutability) {
+Type Parser::parseSimpleType(Mutability mutability, bool returnOnError) {
     auto identifier = parse(Token::Identifier);
     std::vector<Type> genericArgs;
 
@@ -371,7 +372,9 @@ Type Parser::parseSimpleType(Mutability mutability) {
         case Token::LeftBracket:
             auto bracketLocation = getCurrentLocation();
             Type elementType = BasicType::get(identifier.getString(), {}, mutability, identifier.getLocation());
-            return ArrayType::get(elementType, parseArraySizeInBrackets(), mutability, bracketLocation);
+            auto size = parseArraySizeInBrackets(returnOnError);
+            if (size == ArrayType::errorSize) return Type();
+            return ArrayType::get(elementType, size, mutability, bracketLocation);
     }
 }
 
@@ -385,7 +388,7 @@ Type Parser::parseTupleType() {
     std::vector<TupleElement> elements;
 
     while (currentToken() != Token::RightParen) {
-        auto type = parseType();
+        auto type = parseType(false);
         std::string name = currentToken() == Token::Identifier ? consumeToken().getString() : "";
         elements.push_back({ std::move(name), type });
         if (currentToken() != Token::RightParen) parse(Token::Comma);
@@ -398,36 +401,81 @@ Type Parser::parseTupleType() {
 /// function-type ::= type '(' param-types ')'
 /// param-types ::= '' | non-empty-param-types
 /// non-empty-param-types ::= type | type ',' non-empty-param-types
-Type Parser::parseFunctionType(Type returnType) {
+Type Parser::parseFunctionType(Type returnType, bool returnOnError) {
     parse(Token::LeftParen);
     std::vector<Type> paramTypes;
 
     while (currentToken() != Token::RightParen) {
-        paramTypes.emplace_back(parseType());
-        if (currentToken() != Token::RightParen) parse(Token::Comma);
+        paramTypes.emplace_back(parseType(returnOnError));
+        if (!paramTypes.back()) return Type();
+        if (currentToken() != Token::RightParen) {
+            if (currentToken() != Token::Comma && returnOnError) return Type();
+            parse(Token::Comma);
+        }
     }
 
     consumeToken();
     return FunctionType::get(returnType, std::move(paramTypes), Mutability::Mutable, returnType.getLocation());
 }
 
+bool Parser::canParseType() {
+    //    switch (currentToken()) {
+    //        case Token::Const:
+    //            consumeToken();
+    //        case Token::Identifier:
+    //            type = parseSimpleType(Mutability::Const);
+    //            break;
+    //        case Token::LeftParen:
+    //            type = parseTupleType();
+    //            break;
+    //        default:
+    //            unexpectedToken(currentToken());
+    //    }
+    //
+    //    while (true) {
+    //        switch (currentToken()) {
+    //            case Token::Star:
+    //                type = PointerType::get(type, Mutability::Mutable, getCurrentLocation());
+    //                consumeToken();
+    //                break;
+    //            case Token::QuestionMark:
+    //                type = OptionalType::get(type, Mutability::Mutable, getCurrentLocation());
+    //                consumeToken();
+    //                break;
+    //            case Token::LeftParen:
+    //                type = parseFunctionType(type);
+    //                break;
+    //            case Token::LeftBracket:
+    //                type = ArrayType::get(type, parseArraySizeInBrackets(), type.getMutability(), getCurrentLocation());
+    //                break;
+    //            case Token::And:
+    //                ERROR(getCurrentLocation(), "Delta doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
+    //            default:
+    //                return type.withLocation(location);
+    //        }
+    //    }
+}
+
 /// type ::= simple-type | 'const' simple-type | type '*' | type '?' | function-type | tuple-type
-Type Parser::parseType() {
+Type Parser::parseType(bool returnOnError) {
     Type type;
     auto location = getCurrentLocation();
 
     switch (currentToken()) {
         case Token::Identifier:
-            type = parseSimpleType(Mutability::Mutable);
+            type = parseSimpleType(Mutability::Mutable, returnOnError);
+            if (!type) return type;
             break;
         case Token::Const:
             consumeToken();
-            type = parseSimpleType(Mutability::Const);
+            type = parseSimpleType(Mutability::Const, returnOnError);
+            if (!type) return type;
             break;
         case Token::LeftParen:
             type = parseTupleType();
             break;
         default:
+            if (returnOnError) return type;
             unexpectedToken(currentToken());
     }
 
@@ -442,12 +490,17 @@ Type Parser::parseType() {
                 consumeToken();
                 break;
             case Token::LeftParen:
-                type = parseFunctionType(type);
+                type = parseFunctionType(type, returnOnError);
+                if (!type) return type;
                 break;
-            case Token::LeftBracket:
-                type = ArrayType::get(type, parseArraySizeInBrackets(), type.getMutability(), getCurrentLocation());
+            case Token::LeftBracket: {
+                auto size = parseArraySizeInBrackets(returnOnError);
+                if (size == ArrayType::errorSize) return Type();
+                type = ArrayType::get(type, size, type.getMutability(), getCurrentLocation());
                 break;
+            }
             case Token::And:
+                if (returnOnError) return type;
                 ERROR(getCurrentLocation(), "Delta doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
             default:
                 return type.withLocation(location);
@@ -461,7 +514,7 @@ SizeofExpr* Parser::parseSizeofExpr() {
     auto location = getCurrentLocation();
     consumeToken();
     parse(Token::LeftParen);
-    auto type = parseType();
+    auto type = parseType(false);
     parse(Token::RightParen);
     return new SizeofExpr(type, location);
 }
@@ -541,32 +594,7 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
     return new IfExpr(condition, thenExpr, elseExpr, location);
 }
 
-bool Parser::shouldParseVarStmt() {
-    if (currentToken() == Token::Var) return true;
-    int offset = 2;
-
-    while (true) {
-        if (lookAhead(offset).is(Token::Assignment)) {
-            if (lookAhead(offset - 1).is(Token::Identifier)) {
-                if (lookAhead(offset - 2).is({ Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater })) {
-                    return true;
-                }
-                if (lookAhead(offset - 2).is(Token::Star)) {
-                    if (lookAhead(offset - 3).is(Token::Semicolon) || lookAhead(offset - 2).getLocation().line != lookAhead(offset - 3).getLocation().line) {
-                        return false;
-                    }
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).getLocation().line != lookAhead(offset - 1).getLocation().line) {
-                return false;
-            }
-            offset++;
-        }
-    }
-}
+bool Parser::shouldParseVarStmt() {}
 
 bool Parser::shouldParseGenericArgumentList() {
     // Temporary hack: use spacing to determine whether to parse a generic argument list
@@ -789,7 +817,7 @@ VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel) {
     if (currentToken() == Token::Var) {
         consumeToken();
     } else if (lookAhead(1) != Token::Assignment) {
-        type = parseType();
+        type = parseType(false);
     }
 
     auto name = parse(Token::Identifier);
@@ -970,51 +998,198 @@ ContinueStmt* Parser::parseContinueStmt() {
 /// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
 ///          while-stmt | for-stmt | foreach-stmt | break-stmt | continue-stmt
 Stmt* Parser::parseStmt(Decl* parent) {
+    Stmt* resultStmt = nullptr;
+    Decl* resultDecl = nullptr;
+    parseStmtOrDecl(nullptr, resultStmt, resultDecl, false);
+    if (resultDecl) resultStmt = new VarStmt(llvm::cast<VarDecl>(resultDecl)); // TODO
+    ASSERT(resultStmt);
+    return resultStmt;
+}
+
+void Parser::parseStmtOrDecl(Decl* parent, Stmt*& resultStmt, Decl*& resultDecl, bool addToSymbolTable) {
+    AccessLevel accessLevel = AccessLevel::Default;
+    auto start = getCurrentLocation();
+
+start:
     switch (currentToken()) {
+        case Token::Private:
+            if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
+            accessLevel = AccessLevel::Private;
+            consumeToken();
+            goto start;
+        case Token::Extern: {
+            if (accessLevel != AccessLevel::Default) {
+                WARN(lookAhead(-1).getLocation(), "extern functions cannot have access specifiers");
+            }
+            consumeToken();
+            auto type = parseType(false);
+            auto location = getCurrentLocation();
+            auto name = parseFunctionName(nullptr);
+            resultDecl = parseExternFunctionDecl(type, name, location);
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionDecl>(*resultDecl));
+            return;
+        }
+        case Token::Struct:
+        case Token::Interface:
+            if (lookAhead(2) == Token::Less) {
+                resultDecl = parseTypeTemplate(accessLevel);
+                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*resultDecl));
+            } else {
+                resultDecl = parseTypeDecl(nullptr, accessLevel);
+                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeDecl>(*resultDecl));
+            }
+            return;
+        case Token::Enum:
+            resultDecl = parseEnumDecl(accessLevel);
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*resultDecl));
+            return;
+        case Token::Var:
+        case Token::Const:
+            // Determine if this is a constant declaration or if the const is part of a type.
+            if (currentToken() == Token::Const && lookAhead(2) != Token::Assignment) {
+                resultDecl = parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
+                return;
+            }
+            resultDecl = parseVarDecl(nullptr, accessLevel);
+            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*resultDecl));
+            return;
+        case Token::Import:
+            if (accessLevel != AccessLevel::Default) {
+                WARN(lookAhead(-1).getLocation(), "imports cannot have access specifiers");
+            }
+            resultDecl = parseImportDecl();
+            return;
         case Token::Return:
-            return parseReturnStmt();
+            resultStmt = parseReturnStmt();
+            return;
         case Token::Defer:
-            return parseDeferStmt();
+            resultStmt = parseDeferStmt();
+            return;
         case Token::If:
-            return parseIfStmt(parent);
+            resultStmt = parseIfStmt(parent);
+            return;
         case Token::While:
-            return parseWhileStmt(parent);
+            resultStmt = parseWhileStmt(parent);
+            return;
         case Token::For:
-            return parseForOrForEachStmt(parent);
+            resultStmt = parseForOrForEachStmt(parent);
+            return;
         case Token::Switch:
-            return parseSwitchStmt(parent);
+            resultStmt = parseSwitchStmt(parent);
+            return;
         case Token::Break:
-            return parseBreakStmt();
+            resultStmt = parseBreakStmt();
+            return;
         case Token::Continue:
-            return parseContinueStmt();
+            resultStmt = parseContinueStmt();
+            return;
+        case Token::Star:
+            goto parseExpr;
         case Token::Identifier:
             if (currentToken().getString() == "_") {
                 consumeToken();
                 parse(Token::Assignment);
-                auto stmt = new ExprStmt(parseExpr());
+                resultStmt = new ExprStmt(parseExpr());
                 parseStmtTerminator();
-                return stmt;
+                return;
             }
+
+            // id[size] a<Type>(int size) {
+            // id[size] a = 4;
+            // id[size] = 4;
+            switch (lookAhead(1)) {
+                case Token::Assignment:
+                    goto parseExpr;
+                case Token::Identifier:
+                case Token::Star:
+                    goto parseFunctionOrVarDecl;
+            }
+
+            {
+                auto backup = currentTokenIndex;
+                Type type = parseType(true);
+                //                if (!type) {
+                //                }
+                // TODO: Use already parsed type
+
+                if (type && currentToken().is({ Token::Identifier, Token::Less, Token::LeftParen })) {
+                    currentTokenIndex = backup;
+                    goto parseFunctionOrVarDecl;
+                } else {
+                    currentTokenIndex = backup;
+                    goto parseExpr;
+                }
+            }
+
             LLVM_FALLTHROUGH;
         default:
-            if (shouldParseVarStmt()) {
-                return parseVarStmt(parent);
+            int offset = 2;
+            // 0    1    2    3
+            // id        =
+            // id   (    (    id,   id,   id ),  (d
+
+            while (true) {
+                if (lookAhead(offset).is(Token::Assignment)) {
+                    bool isAssignment = true;
+                    if (lookAhead(offset - 1).is(Token::Identifier)) {
+                        if (lookAhead(offset - 2).is({ Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater })) {
+                            if (isAssignment) {
+                                goto parseVarStmt;
+                            } else {
+                                goto parseFunctionOrVarDecl;
+                            }
+                        } else if (lookAhead(offset - 2).is(Token::Dot)) {
+                            goto parseExpr;
+                        } else if (lookAhead(offset - 2).is(Token::Star) &&
+                                   (lookAhead(offset - 3).is(Token::Semicolon) ||
+                                    lookAhead(offset - 2).getLocation().line != lookAhead(offset - 3).getLocation().line)) {
+                            goto parseExpr;
+                        } else {
+                            goto parseFunctionOrVarDecl;
+                        }
+                    } else if (lookAhead(offset - 1).is(Token::RightBracket)) {
+                        goto parseExpr;
+                    }
+                    //                    goto parseFunctionOrVarDecl;
+                    //                } else if (lookAhead(offset).is(Token::Identifier)) {
+                } else if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).getLocation().line != lookAhead(offset - 1).getLocation().line) {
+                    goto parseExpr;
+                }
+
+                offset++;
             }
-            break;
+            llvm_unreachable("");
     }
+
+parseVarStmt:
+    resultDecl = parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
+    return;
+
+parseFunctionOrVarDecl:
+    resultDecl = parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
+    return;
+
+parseExpr:
+    //    if (lookAhead(1) == Token::Identifier) {
+    //        goto parseFunctionOrVarDecl;
+    //    }
 
     // If we're here, the statement starts with an expression.
     auto* expr = parseExpr();
 
     if (!expr->isCallExpr() && !expr->isIncrementOrDecrementExpr() && !expr->isAssignment()) {
         try {
-            unexpectedToken(currentToken());
+            unexpectedToken(currentToken()); // T* max<T>(T* a, T* b) {
         } catch (const CompileError& error) {
             error.print();
         }
     }
 
-    return parseExprStmt(expr);
+    resultStmt = parseExprStmt(expr);
+    return;
+    //        default:
+    //            resultDecl = parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
+    //            return;
 }
 
 std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent) {
@@ -1032,7 +1207,7 @@ ParamDecl Parser::parseParam(bool requireType) {
 
     Type type;
     if (requireType || !lookAhead(1).is({ Token::Comma, Token::RightParen })) {
-        type = parseType();
+        type = parseType(false);
     }
 
     auto name = parse(Token::Identifier);
@@ -1066,7 +1241,7 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
 
         if (currentToken() == Token::Colon) {
             consumeToken();
-            genericParams.back().setConstraints(parseType());
+            genericParams.back().setConstraints(parseType(false));
         }
 
         if (currentToken() == Token::Greater) break;
@@ -1266,7 +1441,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
                 }
                 LLVM_FALLTHROUGH;
             default: {
-                auto type = parseType();
+                auto type = parseType(false);
                 auto location = getCurrentLocation();
                 auto name = parseFunctionName(&*typeDecl);
                 auto requireBody = tag != TypeTag::Interface;
@@ -1428,70 +1603,23 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
 /// top-level-decl ::= function-decl | extern-function-decl | type-decl | enum-decl | import-decl | var-decl
 /// @throws CompileError
 Decl* Parser::parseTopLevelDecl(bool addToSymbolTable) {
-    AccessLevel accessLevel = AccessLevel::Default;
-    Decl* decl = nullptr;
-
-start:
-    switch (currentToken()) {
-        case Token::Private:
-            if (accessLevel != AccessLevel::Default) WARN(getCurrentLocation(), "duplicate access specifier");
-            accessLevel = AccessLevel::Private;
-            consumeToken();
-            goto start;
-        case Token::Extern:
-            if (accessLevel != AccessLevel::Default) {
-                WARN(lookAhead(-1).getLocation(), "extern functions cannot have access specifiers");
-            }
-            consumeToken();
-            return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
-        case Token::Struct:
-        case Token::Interface:
-            if (lookAhead(2) == Token::Less) {
-                decl = parseTypeTemplate(accessLevel);
-                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeTemplate>(*decl));
-            } else {
-                decl = parseTypeDecl(nullptr, accessLevel);
-                if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<TypeDecl>(*decl));
-            }
-            break;
-        case Token::Enum:
-            decl = parseEnumDecl(accessLevel);
-            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<EnumDecl>(*decl));
-            break;
-        case Token::Var:
-        case Token::Const:
-            // Determine if this is a constant declaration or if the const is part of a type.
-            if (currentToken() == Token::Const && lookAhead(2) != Token::Assignment) {
-                return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
-            }
-            decl = parseVarDecl(nullptr, accessLevel);
-            if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<VarDecl>(*decl));
-            break;
-        case Token::Import:
-            if (accessLevel != AccessLevel::Default) {
-                WARN(lookAhead(-1).getLocation(), "imports cannot have access specifiers");
-            }
-            return parseImportDecl();
-        default:
-            return parseTopLevelFunctionOrVariable(false, addToSymbolTable, accessLevel);
-    }
-
-    return decl;
+    Stmt* resultStmt = nullptr;
+    Decl* resultDecl = nullptr;
+    parseStmtOrDecl(nullptr, resultStmt, resultDecl, addToSymbolTable);
+    ASSERT(resultDecl);
+    return resultDecl;
 }
 
+// TODO: remove isExtern parameter
 Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTable, AccessLevel accessLevel) {
     Decl* decl;
-    auto type = parseType();
+    auto type = parseType(false);
     auto location = getCurrentLocation();
     auto name = parseFunctionName(nullptr);
 
     switch (currentToken()) {
         case Token::LeftParen:
-            if (isExtern) {
-                decl = parseExternFunctionDecl(type, name, location);
-            } else {
-                decl = parseFunctionDecl(nullptr, accessLevel, false, type, name, location);
-            }
+            decl = parseFunctionDecl(nullptr, accessLevel, false, type, name, location);
             if (addToSymbolTable) currentModule->addToSymbolTable(llvm::cast<FunctionDecl>(*decl));
             break;
         case Token::Less:
