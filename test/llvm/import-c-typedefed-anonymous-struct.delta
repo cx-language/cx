@@ -1,6 +1,6 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s -Iinputs
+// RUN: check_matches_snapshot %delta -print-llvm %s
 
-import "import-c-typedefed-anonymous-struct.h";
+import "inputs/import-c-typedefed-anonymous-struct.h";
 
 void main() {
     Foo x = undefined;

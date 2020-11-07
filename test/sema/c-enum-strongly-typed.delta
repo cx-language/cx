@@ -1,6 +1,6 @@
-// RUN: %not %delta -typecheck -Iinputs %s | %FileCheck %s
+// RUN: %not %delta -typecheck %s | %FileCheck %s
 
-import "c-enum.h";
+import "./inputs/c-enum.h";
 
 void baz(Foo f) {}
 

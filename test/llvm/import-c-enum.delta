@@ -1,6 +1,6 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s -Iinputs
+// RUN: check_matches_snapshot %delta -print-llvm %s
 
-import "import-c-enum.h";
+import "inputs/import-c-enum.h";
 
 void main() {
     int foo = FooA;

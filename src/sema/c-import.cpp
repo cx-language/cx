@@ -329,8 +329,6 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
         return true;
     }
 
-    auto module = new Module(headerName);
-
     clang::CompilerInstance ci;
     ci.createDiagnostics();
     auto args = map(options.cflags, [](auto& cflag) { return cflag.c_str(); });
@@ -343,6 +341,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
 
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
+    ci.getHeaderSearchOpts().AddPath(llvm::sys::path::parent_path(importer.getFilePath()), clang::frontend::Quoted, false, false);
 
     for (llvm::StringRef includePath : options.importSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
@@ -355,11 +354,6 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     auto& pp = ci.getPreprocessor();
     pp.getBuiltinInfo().initializeBuiltins(pp.getIdentifierTable(), pp.getLangOpts());
 
-    ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>(*module, ci.getSourceManager()));
-    ci.createASTContext();
-    ci.createSema(clang::TU_Complete, nullptr);
-    pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
-
     const clang::DirectoryLookup* curDir = nullptr;
     auto* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr,
                                                                             nullptr, nullptr);
@@ -367,6 +361,12 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
         REPORT_ERROR(importLocation, "couldn't find C header file '" << headerName << "'");
         return false;
     }
+
+    auto module = new Module(headerName);
+    ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>(*module, ci.getSourceManager()));
+    ci.createASTContext();
+    ci.createSema(clang::TU_Complete, nullptr);
+    pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
 
     auto fileID = ci.getSourceManager().createFileID(fileEntry, clang::SourceLocation(), clang::SrcMgr::C_System);
     ci.getSourceManager().setMainFileID(fileID);

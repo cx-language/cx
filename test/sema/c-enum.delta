@@ -1,6 +1,6 @@
-// RUN: %delta -typecheck -Iinputs %s
+// RUN: %delta -typecheck %s
 
-import "c-enum.h";
+import "inputs/c-enum.h";
 
 void main() {
     uint u = FOO;

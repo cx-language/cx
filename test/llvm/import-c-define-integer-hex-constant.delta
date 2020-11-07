@@ -1,6 +1,6 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s -Iinputs
+// RUN: check_matches_snapshot %delta -print-llvm %s
 
-import "import-c-defined-integer-hex-constant.h";
+import "inputs/import-c-defined-integer-hex-constant.h";
 
 void main() {
     int foo = FOO;

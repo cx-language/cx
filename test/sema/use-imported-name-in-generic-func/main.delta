@@ -1,4 +1,4 @@
-// RUN: %delta -typecheck -Iinputs %s
+// RUN: %delta -typecheck %s
 
 import inputs
 
