@@ -15,14 +15,14 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
         }
     }
 
-    auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.getType()), p.getName()}; });
+    auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter { ValueKind::Parameter, getIRType(p.getType()), p.getName() }; });
 
     if (decl.isMethodDecl()) {
-        params.insert(params.begin(), Parameter{ValueKind::Parameter, getIRType(decl.getTypeDecl()->getType().getPointerTo()), "this"});
+        params.insert(params.begin(), Parameter { ValueKind::Parameter, getIRType(decl.getTypeDecl()->getType().getPointerTo()), "this" });
     }
 
     auto returnType = getIRType(decl.isMain() ? Type::getInt() : decl.getReturnType());
-    auto function = new Function{
+    auto function = new Function {
         ValueKind::Function, mangledName, returnType, std::move(params), {}, decl.isExtern(), decl.isVariadic(), decl.getLocation(),
     };
     module->functions.push_back(function);
@@ -33,7 +33,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
         }
     }
 
-    functionInstantiations.push_back({&decl, function});
+    functionInstantiations.push_back({ &decl, function });
     return function;
 }
 

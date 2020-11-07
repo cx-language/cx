@@ -105,7 +105,7 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
 
         case TypeKind::TupleType: {
             auto elements = map(getTupleElements(), [&](const TupleElement& element) {
-                return TupleElement{element.name, element.type.resolve(replacements)};
+                return TupleElement { element.name, element.type.resolve(replacements) };
             });
             return TupleType::get(std::move(elements), mutability, location);
         }
@@ -189,8 +189,8 @@ std::vector<ParamDecl> FunctionType::getParamDecls(SourceLocation location) cons
     return map(paramTypes, [&](Type paramType) { return ParamDecl(paramType, "", false, location); });
 }
 
-constexpr auto signedInts = {"int", "int8", "int16", "int32", "int64"};
-constexpr auto unsignedInts = {"uint", "uint8", "uint16", "uint32", "uint64"};
+constexpr auto signedInts = { "int", "int8", "int16", "int32", "int64" };
+constexpr auto unsignedInts = { "uint", "uint8", "uint16", "uint32", "uint64" };
 
 bool Type::isInteger() const {
     if (!isBasicType()) return false;

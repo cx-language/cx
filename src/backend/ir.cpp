@@ -6,13 +6,13 @@
 
 using namespace delta;
 
-BasicBlock::BasicBlock(std::string name, delta::Function* parent) : Value{ValueKind::BasicBlock}, name(std::move(name)), parent(parent) {
+BasicBlock::BasicBlock(std::string name, delta::Function* parent) : Value { ValueKind::BasicBlock }, name(std::move(name)), parent(parent) {
     if (parent) {
         parent->body.push_back(this);
     }
 }
 
-static std::unordered_map<TypeBase*, IRType*> irTypes = {{nullptr, nullptr}};
+static std::unordered_map<TypeBase*, IRType*> irTypes = { { nullptr, nullptr } };
 
 IRType* delta::getIRType(Type astType) {
     auto it = irTypes.find(astType.getBase());
@@ -23,7 +23,7 @@ IRType* delta::getIRType(Type astType) {
     switch (astType.getKind()) {
         case TypeKind::BasicType: {
             if (astType.isVoid() || Type::isBuiltinScalar(astType.getName())) {
-                irType = new IRBasicType{IRTypeKind::IRBasicType, astType.getName()};
+                irType = new IRBasicType { IRTypeKind::IRBasicType, astType.getName() };
             } else if (astType.isOptionalType() && astType.isImplementedAsPointer()) {
                 irType = getIRType(astType.getWrappedType());
             } else if (astType.isEnumType()) {
@@ -31,8 +31,8 @@ IRType* delta::getIRType(Type astType) {
                 auto tagType = getIRType(enumDecl->getTagType());
 
                 if (enumDecl->hasAssociatedValues()) {
-                    auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, ""};
-                    irType = new IRStructType{IRTypeKind::IRStructType, {tagType, unionType}, astType.getQualifiedTypeName()};
+                    auto unionType = new IRUnionType { IRTypeKind::IRUnionType, {}, "" };
+                    irType = new IRStructType { IRTypeKind::IRStructType, { tagType, unionType }, astType.getQualifiedTypeName() };
                     irTypes.emplace(astType.getBase(), irType);
                     auto associatedTypes = map(enumDecl->getCases(), [](const EnumCase& c) { return getIRType(c.getAssociatedType()); });
                     unionType->elementTypes = std::move(associatedTypes);
@@ -41,7 +41,7 @@ IRType* delta::getIRType(Type astType) {
                     irType = tagType;
                 }
             } else if (astType.getDecl()) {
-                auto structType = new IRStructType{IRTypeKind::IRStructType, {}, astType.getQualifiedTypeName()};
+                auto structType = new IRStructType { IRTypeKind::IRStructType, {}, astType.getQualifiedTypeName() };
                 irTypes.emplace(astType.getBase(), structType);
                 auto elementTypes = map(astType.getDecl()->getFields(), [](const FieldDecl& f) { return getIRType(f.getType()); });
                 structType->elementTypes = std::move(elementTypes);
@@ -54,7 +54,7 @@ IRType* delta::getIRType(Type astType) {
         case TypeKind::ArrayType: {
             if (astType.isArrayWithConstantSize()) {
                 auto elementType = getIRType(astType.getElementType());
-                irType = new IRArrayType{IRTypeKind::IRArrayType, elementType, static_cast<int>(astType.getArraySize())};
+                irType = new IRArrayType { IRTypeKind::IRArrayType, elementType, static_cast<int>(astType.getArraySize()) };
             } else if (astType.isArrayWithRuntimeSize()) {
                 irType = getIRType(BasicType::get("ArrayRef", astType.getElementType()));
             } else {
@@ -65,19 +65,19 @@ IRType* delta::getIRType(Type astType) {
         }
         case TypeKind::TupleType: {
             auto elementTypes = map(astType.getTupleElements(), [](const TupleElement& e) { return getIRType(e.type); });
-            irType = new IRStructType{IRTypeKind::IRStructType, std::move(elementTypes), ""};
+            irType = new IRStructType { IRTypeKind::IRStructType, std::move(elementTypes), "" };
             break;
         }
         case TypeKind::FunctionType: {
             auto returnType = getIRType(astType.getReturnType());
             auto paramTypes = map(astType.getParamTypes(), [](Type t) { return getIRType(t); });
-            auto functionType = new IRFunctionType{IRTypeKind::IRFunctionType, returnType, std::move(paramTypes)};
-            irType = new IRPointerType{IRTypeKind::IRPointerType, functionType};
+            auto functionType = new IRFunctionType { IRTypeKind::IRFunctionType, returnType, std::move(paramTypes) };
+            irType = new IRPointerType { IRTypeKind::IRPointerType, functionType };
             break;
         }
         case TypeKind::PointerType: {
             auto pointeeType = getIRType(astType.getPointee());
-            irType = new IRPointerType{IRTypeKind::IRPointerType, pointeeType};
+            irType = new IRPointerType { IRTypeKind::IRPointerType, pointeeType };
             break;
         }
         case TypeKind::UnresolvedType:
@@ -203,7 +203,7 @@ IRType* Value::getType() const {
         case ValueKind::Function: {
             auto function = llvm::cast<Function>(this);
             auto paramTypes = map(function->params, [](auto& p) { return p.type; });
-            return (new IRFunctionType{IRTypeKind::IRFunctionType, function->returnType, std::move(paramTypes)})->getPointerTo();
+            return (new IRFunctionType { IRTypeKind::IRFunctionType, function->returnType, std::move(paramTypes) })->getPointerTo();
         }
         case ValueKind::Parameter:
             return llvm::cast<Parameter>(this)->type;
@@ -573,7 +573,7 @@ int IRType::getArraySize() {
 }
 
 IRType* IRType::getPointerTo() {
-    return new IRPointerType{IRTypeKind::IRPointerType, this};
+    return new IRPointerType { IRTypeKind::IRPointerType, this };
 }
 
 llvm::raw_ostream& delta::operator<<(llvm::raw_ostream& stream, IRType* type) {

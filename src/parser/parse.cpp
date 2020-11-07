@@ -117,7 +117,7 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
             consumeToken();
             return;
         default:
-            unexpectedToken(currentToken(), {Token::Newline, Token::Semicolon}, contextInfo);
+            unexpectedToken(currentToken(), { Token::Newline, Token::Semicolon }, contextInfo);
     }
 }
 
@@ -138,7 +138,7 @@ std::vector<NamedValue> Parser::parseArgumentList() {
         }
         auto value = parseExpr();
         if (!location.isValid()) location = value->getLocation();
-        args.push_back({std::move(name), value, location});
+        args.push_back({ std::move(name), value, location });
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
     consumeToken();
@@ -387,7 +387,7 @@ Type Parser::parseTupleType() {
     while (currentToken() != Token::RightParen) {
         auto type = parseType();
         std::string name = currentToken() == Token::Identifier ? consumeToken().getString() : "";
-        elements.push_back({std::move(name), type});
+        elements.push_back({ std::move(name), type });
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
 
@@ -514,7 +514,7 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
 }
 
 LambdaExpr* Parser::parseLambdaExpr() {
-    ASSERT(currentToken().is({Token::LeftParen, Token::Identifier}));
+    ASSERT(currentToken().is({ Token::LeftParen, Token::Identifier }));
     auto location = getCurrentLocation();
     std::vector<ParamDecl> params;
 
@@ -548,7 +548,7 @@ bool Parser::shouldParseVarStmt() {
     while (true) {
         if (lookAhead(offset).is(Token::Assignment)) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
-                if (lookAhead(offset - 2).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater})) {
+                if (lookAhead(offset - 2).is({ Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater })) {
                     return true;
                 }
                 if (lookAhead(offset - 2).is(Token::Star)) {
@@ -709,7 +709,7 @@ Expr* Parser::parsePreOrPostfixExpr() {
 /// inc-expr ::= expr '++'
 /// dec-expr ::= expr '--'
 UnaryExpr* Parser::parseIncrementOrDecrementExpr(Expr* operand) {
-    auto op = parse({Token::Increment, Token::Decrement});
+    auto op = parse({ Token::Increment, Token::Decrement });
     return new UnaryExpr(op.getKind(), operand, op.getLocation());
 }
 
@@ -769,7 +769,7 @@ ReturnStmt* Parser::parseReturnStmt() {
     ASSERT(currentToken() == Token::Return);
     auto location = getCurrentLocation();
     consumeToken();
-    auto returnValue = currentToken().is({Token::Semicolon, Token::RightBrace}) ? nullptr : parseExpr();
+    auto returnValue = currentToken().is({ Token::Semicolon, Token::RightBrace }) ? nullptr : parseExpr();
     parseStmtTerminator();
     return new ReturnStmt(returnValue, location);
 }
@@ -836,7 +836,7 @@ std::vector<Stmt*> Parser::parseBlockOrStmt(Decl* parent) {
     if (currentToken() == Token::LeftBrace) {
         return parseBlock(parent);
     } else {
-        return {parseStmt(parent)};
+        return { parseStmt(parent) };
     }
 }
 
@@ -1031,7 +1031,7 @@ ParamDecl Parser::parseParam(bool requireType) {
     if (isPublic) consumeToken();
 
     Type type;
-    if (requireType || !lookAhead(1).is({Token::Comma, Token::RightParen})) {
+    if (requireType || !lookAhead(1).is({ Token::Comma, Token::RightParen })) {
         type = parseType();
     }
 
@@ -1366,7 +1366,7 @@ ImportDecl* Parser::parseImportDecl() {
     if (currentToken() == Token::StringLiteral) {
         importTarget = parseStringLiteral()->getValue();
     } else {
-        importTarget = parse({Token::Identifier, Token::StringLiteral}, "after 'import'").getString();
+        importTarget = parse({ Token::Identifier, Token::StringLiteral }, "after 'import'").getString();
     }
 
     parseStmtTerminator("after 'import' declaration");
@@ -1411,7 +1411,7 @@ void Parser::parseIfdef(std::vector<Decl*>* activeDecls) {
 
     if (negate) condition = !condition;
 
-    while (!currentToken().is({Token::HashElse, Token::HashEndif})) {
+    while (!currentToken().is({ Token::HashElse, Token::HashEndif })) {
         parseIfdefBody(condition ? activeDecls : nullptr);
     }
 

@@ -340,5 +340,5 @@ DestructorDecl::DestructorDecl(TypeDecl& receiverTypeDecl, SourceLocation locati
 : MethodDecl(DeclKind::DestructorDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None, location) {}
 
 std::vector<Note> delta::getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls) {
-    return map(decls, [](Decl* decl) { return Note{decl->getLocation(), "previous definition here"}; });
+    return map(decls, [](Decl* decl) { return Note { decl->getLocation(), "previous definition here" }; });
 }

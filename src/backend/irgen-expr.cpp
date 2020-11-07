@@ -26,7 +26,7 @@ Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
     }
 
     ASSERT(stringConstructor);
-    createCall(stringConstructor, {alloca, stringPtr, size});
+    createCall(stringConstructor, { alloca, stringPtr, size });
     return alloca;
 }
 
@@ -162,7 +162,7 @@ Value* IRGenerator::emitConstantIncrement(const UnaryExpr& expr, int increment) 
     if (value->getType()->isInteger()) {
         result = createBinaryOp(Token::Plus, value, createConstantInt(value->getType(), increment));
     } else if (value->getType()->isPointerType()) {
-        result = createGEP(value, {createConstantInt(Type::getInt(), increment)});
+        result = createGEP(value, { createConstantInt(Type::getInt(), increment) });
     } else if (value->getType()->isFloatingPoint()) {
         result = createBinaryOp(Token::Plus, value, createConstantFP(value->getType(), increment));
     } else {
@@ -187,7 +187,7 @@ Value* IRGenerator::emitLogicalAnd(const Expr& left, const Expr& right) {
     rhsBlock = insertBlock;
 
     setInsertPoint(endBlock);
-    return createPhi({{lhs, lhsBlock}, {rhs, rhsBlock}}, "and");
+    return createPhi({ { lhs, lhsBlock }, { rhs, rhsBlock } }, "and");
 }
 
 Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
@@ -204,7 +204,7 @@ Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
     rhsBlock = insertBlock;
 
     setInsertPoint(endBlock);
-    return createPhi({{lhs, lhsBlock}, {rhs, rhsBlock}}, "or");
+    return createPhi({ { lhs, lhsBlock }, { rhs, rhsBlock } }, "or");
 }
 
 Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
@@ -468,7 +468,7 @@ Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
     auto* value = emitExprAsPointer(object);
     auto* elementPtr = createGEP(value, 0, 0);
     auto* size = getArrayLength(object, objectType);
-    auto* end = createGEP(elementPtr, {size});
+    auto* end = createGEP(elementPtr, { size });
     auto* iterator = createInsertValue(createUndefined(type), elementPtr, 0);
     return createInsertValue(iterator, end, 1);
 }
@@ -518,7 +518,7 @@ Value* IRGenerator::emitIndexExpr(const IndexExpr& expr) {
         }
         auto* ptr = createExtractValue(value, 0);
         auto* index = emitExpr(*expr.getIndex());
-        return createGEP(ptr, {index});
+        return createGEP(ptr, { index });
     }
 
     if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(lhsType))) {
@@ -526,10 +526,10 @@ Value* IRGenerator::emitIndexExpr(const IndexExpr& expr) {
     }
 
     if (lhsType.isArrayWithUnknownSize()) {
-        return createGEP(value, {emitExpr(*expr.getIndex())});
+        return createGEP(value, { emitExpr(*expr.getIndex()) });
     }
 
-    return createGEP(value, {createConstantInt(Type::getInt(), 0), emitExpr(*expr.getIndex())});
+    return createGEP(value, { createConstantInt(Type::getInt(), 0), emitExpr(*expr.getIndex()) });
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
@@ -584,7 +584,7 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
     elseBlock = insertBlock;
 
     setInsertPoint(endIfBlock);
-    return createPhi({{thenValue, thenBlock}, {elseValue, elseBlock}}, "phi");
+    return createPhi({ { thenValue, thenBlock }, { elseValue, elseBlock } }, "phi");
 }
 
 Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {

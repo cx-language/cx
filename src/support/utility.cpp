@@ -90,9 +90,9 @@ void CompileError::print() const {
 
 std::string delta::getCCompilerPath() {
 #ifdef _WIN32
-    auto compilers = {"cl.exe", "clang-cl.exe"};
+    auto compilers = { "cl.exe", "clang-cl.exe" };
 #else
-    auto compilers = {"cc", "clang", "gcc"};
+    auto compilers = { "cc", "clang", "gcc" };
 #endif
     for (const char* compiler : compilers) {
         if (auto path = llvm::sys::findProgramByName(compiler)) {

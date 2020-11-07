@@ -112,7 +112,7 @@ void IRGenerator::deferDestructorCall(Value* receiver, const VariableDecl* decl)
     }
 
     if (function) {
-        scopes.back().destructorsToCall.push_back({function, receiver, decl});
+        scopes.back().destructorsToCall.push_back({ function, receiver, decl });
     }
 }
 
@@ -124,7 +124,7 @@ void IRGenerator::emitDeferredExprsAndDestructorCallsForReturn() {
 }
 
 AllocaInst* IRGenerator::createEntryBlockAlloca(IRType* type, const llvm::Twine& name) {
-    auto alloca = new AllocaInst{ValueKind::AllocaInst, type, name.str()};
+    auto alloca = new AllocaInst { ValueKind::AllocaInst, type, name.str() };
     auto& entryBlock = currentFunction->body.front()->body;
     auto insertPosition = entryBlock.end();
 
@@ -146,7 +146,7 @@ AllocaInst* IRGenerator::createTempAlloca(Value* value) {
 }
 
 Value* IRGenerator::createLoad(Value* value) {
-    auto load = new LoadInst{ValueKind::LoadInst, value, value->getName() + ".load"};
+    auto load = new LoadInst { ValueKind::LoadInst, value, value->getName() + ".load" };
     insertBlock->body.push_back(load);
     return load;
 }
@@ -154,13 +154,13 @@ Value* IRGenerator::createLoad(Value* value) {
 void IRGenerator::createStore(Value* value, Value* pointer) {
     ASSERT(pointer->getType()->isPointerType());
     ASSERT(pointer->getType()->getPointee()->equals(value->getType()));
-    auto store = new StoreInst{ValueKind::StoreInst, value, pointer};
+    auto store = new StoreInst { ValueKind::StoreInst, value, pointer };
     insertBlock->body.push_back(store);
 }
 
 Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args) {
     ASSERT(function->kind == ValueKind::Function || (function->getType()->isPointerType() && function->getType()->getPointee()->isFunctionType()));
-    auto call = new CallInst{ValueKind::CallInst, function, args, ""};
+    auto call = new CallInst { ValueKind::CallInst, function, args, "" };
     insertBlock->body.push_back(call);
     return call;
 }

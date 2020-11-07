@@ -409,7 +409,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             currentSourceFile = &sourceFile;
 
             if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-                llvm::StringMap<Type> genericArgs = {{"This", typeDecl->getType()}};
+                llvm::StringMap<Type> genericArgs = { { "This", typeDecl->getType() } };
 
                 for (Type interface : typeDecl->getInterfaces()) {
                     typecheckType(interface, typeDecl->getAccessLevel());

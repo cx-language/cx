@@ -137,7 +137,9 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
 }
 
 Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
-    auto elements = map(expr.getElements(), [&](NamedValue& namedValue) { return TupleElement{namedValue.getName(), typecheckExpr(*namedValue.getValue())}; });
+    auto elements = map(expr.getElements(), [&](NamedValue& namedValue) {
+        return TupleElement { namedValue.getName(), typecheckExpr(*namedValue.getValue()) };
+    });
     return TupleType::get(std::move(elements));
 }
 
@@ -371,7 +373,7 @@ bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
 }
 
 bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
-    auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({{"This", type.getType()}}, {}));
+    auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({ { "This", type.getType() } }, {}));
 
     for (auto& fieldRequirement : thisTypeResolvedInterface->getFields()) {
         if (!hasField(type, fieldRequirement)) {
@@ -695,8 +697,8 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
                     genericArg = maybeGenericArg;
                     genericArgValue = argValue;
                 } else {
-                    Type paramTypeWithGenericArg = paramType.resolve({{genericParam.getName(), genericArg}});
-                    Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam.getName(), maybeGenericArg}});
+                    Type paramTypeWithGenericArg = paramType.resolve({ { genericParam.getName(), genericArg } });
+                    Type paramTypeWithMaybeGenericArg = paramType.resolve({ { genericParam.getName(), maybeGenericArg } });
 
                     if (isImplicitlyConvertible(argValue, argValue->getType(), paramTypeWithGenericArg, true)) {
                         continue;
@@ -812,7 +814,7 @@ static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
 
     return map(candidates, [&](Decl* c) {
         auto message = ("candidate function" + (multipleModules && c->getModule() ? " in module '" + c->getModule()->getName() + "'" : "") + ":").str();
-        return Note{c->getLocation(), std::move(message)};
+        return Note { c->getLocation(), std::move(message) };
     });
 }
 
@@ -991,7 +993,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
     if (matches.size() > 1) {
         if (auto match = resolveAmbiguousOverload(matches)) {
-            matches = {match};
+            matches = { match };
         } else {
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
                              "ambiguous reference to '" << callee << "'" << (isConstructorCall ? " constructor" : ""));
@@ -1355,7 +1357,7 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     }
 
     if (baseType.isArrayType()) {
-        auto sizeSynonyms = {"count", "length", "size"};
+        auto sizeSynonyms = { "count", "length", "size" };
 
         if (llvm::is_contained(sizeSynonyms, expr.getMemberName())) {
             ERROR(expr.getLocation(), "use the '.size()' member function to get the number of elements in an array");
