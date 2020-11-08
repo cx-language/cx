@@ -39,7 +39,7 @@ if.else5:                                         ; preds = %loop.end
   br label %if.end6
 
 if.end6:                                          ; preds = %if.else5, %if.then4
-  %phi = phi i32 [ 1, %if.then4 ], [ 2, %if.else5 ]
-  store i32 %phi, i32* %a
+  %if.result = phi i32 [ 1, %if.then4 ], [ 2, %if.else5 ]
+  store i32 %if.result, i32* %a
   ret i32 0
 }

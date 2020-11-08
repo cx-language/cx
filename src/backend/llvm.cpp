@@ -129,6 +129,16 @@ void LLVMGenerator::codegenFunctionBody(const Function* function, llvm::Function
         llvmBlock->insertInto(llvmFunction);
         builder.SetInsertPoint(llvmBlock);
 
+        if (block->parameter) {
+            auto phi = builder.CreatePHI(getLLVMType(block->parameter->type), 2, block->parameter->name);
+            for (auto pred : block->predecessors) {
+                auto value = getValue(pred->body.back()->getBranchArgument());
+                auto target = getBasicBlock(pred);
+                phi->addIncoming(value, target);
+            }
+            generatedValues.emplace(block->parameter, phi);
+        }
+
         for (auto* inst : block->body) {
             getValue(inst);
         }
@@ -178,17 +188,6 @@ llvm::Value* LLVMGenerator::codegenCondBranch(const CondBranchInst* inst) {
     auto trueBlock = getBasicBlock(inst->trueBlock);
     auto falseBlock = getBasicBlock(inst->falseBlock);
     return builder.CreateCondBr(condition, trueBlock, falseBlock);
-}
-
-llvm::Value* LLVMGenerator::codegenPhi(const PhiInst* inst) {
-    auto type = getLLVMType(inst->valuesAndPredecessors[0].first->getType());
-    auto phi = builder.CreatePHI(type, (unsigned) inst->valuesAndPredecessors.size(), inst->name);
-    for (auto& p : inst->valuesAndPredecessors) {
-        auto value = getValue(p.first);
-        auto block = getBasicBlock(p.second);
-        phi->addIncoming(value, block);
-    }
-    return phi;
 }
 
 llvm::Value* LLVMGenerator::codegenSwitch(const SwitchInst* inst) {
@@ -421,8 +420,6 @@ llvm::Value* LLVMGenerator::codegenInst(const Value* value) {
             return codegenBranch(llvm::cast<BranchInst>(value));
         case ValueKind::CondBranchInst:
             return codegenCondBranch(llvm::cast<CondBranchInst>(value));
-        case ValueKind::PhiInst:
-            return codegenPhi(llvm::cast<PhiInst>(value));
         case ValueKind::SwitchInst:
             return codegenSwitch(llvm::cast<SwitchInst>(value));
         case ValueKind::LoadInst:

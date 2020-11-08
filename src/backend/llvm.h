@@ -24,7 +24,6 @@ public:
     llvm::Value* codegenReturn(const ReturnInst* inst);
     llvm::Value* codegenBranch(const BranchInst* inst);
     llvm::Value* codegenCondBranch(const CondBranchInst* inst);
-    llvm::Value* codegenPhi(const PhiInst* inst);
     llvm::Value* codegenSwitch(const SwitchInst* inst);
     llvm::Value* codegenLoad(const LoadInst* inst);
     llvm::Value* codegenStore(const StoreInst* inst);

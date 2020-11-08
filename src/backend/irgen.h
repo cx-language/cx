@@ -112,12 +112,14 @@ public:
     Value* createLoad(Value* value);
     void createStore(Value* value, Value* pointer);
     Value* createCall(Value* function, llvm::ArrayRef<Value*> args);
-    void createCondBr(Value* condition, BasicBlock* trueBlock, BasicBlock* falseBlock) {
-        insertBlock->body.push_back(new CondBranchInst { ValueKind::CondBranchInst, condition, trueBlock, falseBlock });
+    void createBr(BasicBlock* destination, Value* argument = nullptr) {
+        insertBlock->body.push_back(new BranchInst { ValueKind::BranchInst, destination, argument });
+        destination->predecessors.push_back(insertBlock);
     }
-    void createBr(BasicBlock* destination) { insertBlock->body.push_back(new BranchInst { ValueKind::BranchInst, destination }); }
-    Value* createPhi(std::vector<std::pair<Value*, BasicBlock*>> valuesAndPredecessors, const llvm::Twine& name = "") {
-        return insertBlock->body.emplace_back(new PhiInst { ValueKind::PhiInst, std::move(valuesAndPredecessors), name.str() });
+    void createCondBr(Value* condition, BasicBlock* trueBlock, BasicBlock* falseBlock, Value* argument = nullptr) {
+        insertBlock->body.push_back(new CondBranchInst { ValueKind::CondBranchInst, condition, trueBlock, falseBlock, argument });
+        trueBlock->predecessors.push_back(insertBlock);
+        falseBlock->predecessors.push_back(insertBlock);
     }
     Value* createInsertValue(Value* aggregate, Value* value, int index) {
         return insertBlock->body.emplace_back(new InsertInst { ValueKind::InsertInst, aggregate, value, index, "" });

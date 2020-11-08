@@ -178,16 +178,15 @@ Value* IRGenerator::emitLogicalAnd(const Expr& left, const Expr& right) {
     auto* endBlock = new BasicBlock("and.end");
 
     Value* lhs = emitExpr(left);
-    createCondBr(lhs, rhsBlock, endBlock);
-    auto* lhsBlock = insertBlock;
+    createCondBr(lhs, rhsBlock, endBlock, lhs);
 
     setInsertPoint(rhsBlock);
     Value* rhs = emitExpr(right);
-    createBr(endBlock);
-    rhsBlock = insertBlock;
+    createBr(endBlock, rhs);
 
     setInsertPoint(endBlock);
-    return createPhi({ { lhs, lhsBlock }, { rhs, rhsBlock } }, "and");
+    endBlock->parameter = new Parameter { ValueKind::Parameter, lhs->getType(), "and" };
+    return endBlock->parameter;
 }
 
 Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
@@ -195,16 +194,15 @@ Value* IRGenerator::emitLogicalOr(const Expr& left, const Expr& right) {
     auto* endBlock = new BasicBlock("or.end");
 
     Value* lhs = emitExpr(left);
-    createCondBr(lhs, endBlock, rhsBlock);
-    auto* lhsBlock = insertBlock;
+    createCondBr(lhs, endBlock, rhsBlock, lhs);
 
     setInsertPoint(rhsBlock);
     Value* rhs = emitExpr(right);
-    createBr(endBlock);
-    rhsBlock = insertBlock;
+    createBr(endBlock, rhs);
 
     setInsertPoint(endBlock);
-    return createPhi({ { lhs, lhsBlock }, { rhs, rhsBlock } }, "or");
+    endBlock->parameter = new Parameter { ValueKind::Parameter, lhs->getType(), "or" };
+    return endBlock->parameter;
 }
 
 Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
@@ -575,16 +573,15 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
 
     setInsertPoint(thenBlock);
     auto* thenValue = emitExpr(*expr.getThenExpr());
-    createBr(endIfBlock);
-    thenBlock = insertBlock;
+    createBr(endIfBlock, thenValue);
 
     setInsertPoint(elseBlock);
     auto* elseValue = emitExpr(*expr.getElseExpr());
-    createBr(endIfBlock);
-    elseBlock = insertBlock;
+    createBr(endIfBlock, elseValue);
 
     setInsertPoint(endIfBlock);
-    return createPhi({ { thenValue, thenBlock }, { elseValue, elseBlock } }, "phi");
+    endIfBlock->parameter = new Parameter { ValueKind::Parameter, thenValue->getType(), "if.result" };
+    return endIfBlock->parameter;
 }
 
 Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {

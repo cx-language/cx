@@ -98,14 +98,6 @@ IRType* Value::getType() const {
             llvm_unreachable("unhandled BranchInst");
         case ValueKind::CondBranchInst:
             llvm_unreachable("unhandled CondBranchInst");
-        case ValueKind::PhiInst: {
-            auto phi = llvm::cast<PhiInst>(this);
-            auto firstType = phi->valuesAndPredecessors[0].first->getType();
-            for (size_t i = 1; i < phi->valuesAndPredecessors.size(); ++i) {
-                ASSERT(phi->valuesAndPredecessors[i].first->getType()->equals(firstType));
-            }
-            return firstType;
-        }
         case ValueKind::SwitchInst:
             llvm_unreachable("unhandled SwitchInst");
         case ValueKind::LoadInst:
@@ -236,8 +228,6 @@ std::string Value::getName() const {
             llvm_unreachable("unhandled BranchInst");
         case ValueKind::CondBranchInst:
             llvm_unreachable("unhandled CondBranchInst");
-        case ValueKind::PhiInst:
-            return llvm::cast<PhiInst>(this)->name;
         case ValueKind::SwitchInst:
             llvm_unreachable("unhandled SwitchInst");
         case ValueKind::LoadInst:
@@ -290,6 +280,16 @@ std::string Value::getName() const {
     }
 
     llvm_unreachable("unhandled instruction kind");
+}
+
+Value* Value::getBranchArgument() const {
+    if (auto branch = llvm::dyn_cast<BranchInst>(this)) {
+        return branch->argument;
+    } else if (auto condBranch = llvm::dyn_cast<CondBranchInst>(this)) {
+        return condBranch->argument;
+    } else {
+        llvm_unreachable("value has no branch argument");
+    }
 }
 
 static bool isConstant(const Value* inst) {
@@ -351,21 +351,16 @@ void Value::print(llvm::raw_ostream& stream) const {
         }
         case ValueKind::BranchInst: {
             auto branch = llvm::cast<BranchInst>(this);
-            stream << indent << "goto " << formatName(branch->destination);
+            stream << indent << "br " << formatName(branch->destination);
+            if (branch->argument) stream << "(" << formatName(branch->argument) << ")";
             break;
         }
         case ValueKind::CondBranchInst: {
             auto condBranch = llvm::cast<CondBranchInst>(this);
-            stream << indent << "goto " << formatName(condBranch->condition) << " ? " << condBranch->trueBlock->name << " : " << condBranch->falseBlock->name;
-            break;
-        }
-        case ValueKind::PhiInst: {
-            auto phi = llvm::cast<PhiInst>(this);
-            stream << indent << formatTypeAndName(phi) << " = phi ";
-            for (auto& p : phi->valuesAndPredecessors) {
-                stream << "[" << formatName(p.first) << ", " << p.second->name << "]";
-                if (&p != &phi->valuesAndPredecessors.back()) stream << ", ";
-            }
+            stream << indent << "br " << formatName(condBranch->condition) << ", " << condBranch->trueBlock->name;
+            if (condBranch->argument) stream << "(" << formatName(condBranch->argument) << ")";
+            stream << ", " << condBranch->falseBlock->name;
+            if (condBranch->argument) stream << "(" << formatName(condBranch->argument) << ")";
             break;
         }
         case ValueKind::SwitchInst: {
@@ -459,7 +454,9 @@ void Value::print(llvm::raw_ostream& stream) const {
                 stream << " {\n";
                 for (auto& block : function->body) {
                     if (&block != &function->body.front()) {
-                        stream << "\n" << block->name << ":\n";
+                        stream << "\n" << block->name;
+                        if (block->parameter) stream << "(" << formatTypeAndName(block->parameter) << ")";
+                        stream << ":\n";
                     }
                     for (auto* i : block->body) {
                         i->print(stream);

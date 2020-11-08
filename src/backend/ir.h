@@ -17,6 +17,7 @@ namespace delta {
 
 struct Function;
 struct BasicBlock;
+struct Parameter;
 
 enum class IRTypeKind {
     IRBasicType,
@@ -102,7 +103,6 @@ enum class ValueKind {
     ReturnInst,
     BranchInst,
     CondBranchInst,
-    PhiInst,
     SwitchInst,
     LoadInst,
     StoreInst,
@@ -133,6 +133,7 @@ struct Value {
     std::string getName() const;
     bool isTerminator() const { return kind == ValueKind::ReturnInst || kind == ValueKind::BranchInst || kind == ValueKind::CondBranchInst; }
     void print(llvm::raw_ostream& stream) const;
+    Value* getBranchArgument() const;
 
     ValueKind kind;
 };
@@ -156,6 +157,7 @@ struct ReturnInst : Instruction {
 
 struct BranchInst : Instruction {
     BasicBlock* destination;
+    Value* argument;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::BranchInst; }
 };
@@ -164,15 +166,9 @@ struct CondBranchInst : Instruction {
     Value* condition;
     BasicBlock* trueBlock;
     BasicBlock* falseBlock;
+    Value* argument;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::CondBranchInst; }
-};
-
-struct PhiInst : Instruction {
-    std::vector<std::pair<Value*, BasicBlock*>> valuesAndPredecessors;
-    std::string name;
-
-    static bool classof(const Value* v) { return v->kind == ValueKind::PhiInst; }
 };
 
 struct SwitchInst : Instruction {
@@ -277,7 +273,9 @@ struct SizeofInst : Instruction {
 struct BasicBlock : Value {
     std::string name;
     Function* parent;
+    Parameter* parameter = nullptr;
     std::vector<Instruction*> body;
+    std::vector<BasicBlock*> predecessors;
 
     BasicBlock(std::string name, Function* parent = nullptr);
     static bool classof(const Value* v) { return v->kind == ValueKind::BasicBlock; }

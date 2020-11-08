@@ -31,11 +31,11 @@ if.else2:                                         ; preds = %if.else
   br label %if.end
 
 if.end:                                           ; preds = %if.else2, %if.then1
-  %phi = phi i1 [ %4, %if.then1 ], [ %5, %if.else2 ]
+  %if.result = phi i1 [ %4, %if.then1 ], [ %5, %if.else2 ]
   br label %if.end3
 
 if.end3:                                          ; preds = %if.end, %if.then
-  %phi4 = phi i1 [ %2, %if.then ], [ %phi, %if.end ]
-  store i1 %phi4, i1* %x
+  %if.result4 = phi i1 [ %2, %if.then ], [ %if.result, %if.end ]
+  store i1 %if.result4, i1* %x
   ret i32 0
 }
