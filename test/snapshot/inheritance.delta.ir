@@ -1,0 +1,32 @@
+
+int main() {
+    A* %a = alloca A
+    B* %b = alloca B
+    void %0 = call %_EN4main1A4initE4bool3int(A* %a, bool false, int 0)
+    void %1 = call %_EN4main1B4initE3int(B* %b, int 4)
+    return int 0
+}
+
+void _EN4main1A4initE4bool3int(A* %this, bool %b, int %p) {
+    O* %0 = cast %this to O*
+    void %1 = call %_EN4main1O4initE3int(O* %0, int %p)
+    bool* %b = getelementptr %this, 0, 2
+    store %b to %b
+    return void
+}
+
+void _EN4main1B4initE3int(B* %this, int %p) {
+    int* %p = getelementptr %this, 0, 0
+    store %p to %p
+    int* %r = getelementptr %this, 0, 1
+    store %p to %r
+    return void
+}
+
+void _EN4main1O4initE3int(O* %this, int %p) {
+    int* %p = getelementptr %this, 0, 0
+    store %p to %p
+    int* %r = getelementptr %this, 0, 1
+    store %p to %r
+    return void
+}

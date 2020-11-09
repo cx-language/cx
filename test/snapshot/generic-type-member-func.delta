@@ -1,0 +1,17 @@
+// RUN: check-snapshots
+
+struct F<T, U>: Copyable {
+    T a
+    U b
+    F() {
+        a = undefined
+        b = undefined
+    }
+    void foo() { }
+    void unused() { }
+}
+
+void main() {
+    var f = F<int, bool>()
+    f.foo()
+}

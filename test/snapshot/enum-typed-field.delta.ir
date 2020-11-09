@@ -1,0 +1,11 @@
+
+int _EN4main1fE1S(S %s) {
+    int %f = extractvalue %s, 1
+    return %f
+}
+
+int _EN4main1gEP1S(S* %s) {
+    int* %f = getelementptr %s, 0, 1
+    int %f.load = load %f
+    return %f.load
+}

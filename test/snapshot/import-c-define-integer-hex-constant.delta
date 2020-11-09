@@ -1,0 +1,7 @@
+// RUN: check-snapshots
+
+import "inputs/import-c-defined-integer-hex-constant.h";
+
+void main() {
+    int foo = FOO;
+}

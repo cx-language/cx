@@ -1,0 +1,33 @@
+
+extern char** b()
+
+int main() {
+    char*** %s = alloca char**
+    int* %i = alloca int
+    char** %0 = call %b()
+    char** %1 = cast %0 to char**
+    store %1 to %s
+    store int 0 to %i
+    char* %2 = cast char* "%s
+" to char*
+    char** %s.load = load %s
+    bool %assert.condition = %s.load == char** null
+    br %assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void %3 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at pointer-to-array-of-pointers.delta:8:21
+")
+    unreachable
+
+assert.success:
+    int %i.load = load %i
+    char** %4 = getelementptr %s.load, %i.load
+    char* %.load = load %4
+    int %5 = call %printf(char* %2, char* %.load)
+    return int 0
+}
+
+extern int printf(char* %format)
+
+void _EN3std10assertFailEP4char(char* %message) {
+}

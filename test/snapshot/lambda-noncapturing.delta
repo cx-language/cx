@@ -1,0 +1,12 @@
+// RUN: check-snapshots
+
+void foo(int(int, int) a) {
+    _ = a(1, 2);
+}
+
+void main() {
+    foo((int a, int b) -> a + b);
+    foo((a, int b) -> a + b);
+    foo((int a, b) -> a + b);
+    foo((a, b) -> a + b);
+}

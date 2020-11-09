@@ -1,0 +1,23 @@
+// RUN: check-snapshots -w
+
+struct A: Copyable {
+    int i;
+    A() {}
+}
+
+struct B {
+    int i;
+    B() {}
+}
+
+void f(A* a) {}
+void f(B* b) {}
+void f(int* i) {}
+
+void main() {
+    A a = undefined;
+    B b = undefined;
+    f(A());
+    f(B());
+    f(0);
+}

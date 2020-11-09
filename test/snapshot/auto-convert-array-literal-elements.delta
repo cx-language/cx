@@ -1,0 +1,6 @@
+// RUN: check-snapshots
+
+void main() {
+    float[1] foo = [1.0];
+    uint16[2] bar = [50, 100];
+}

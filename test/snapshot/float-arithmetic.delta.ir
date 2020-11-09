@@ -1,0 +1,17 @@
+
+int main() {
+    float* %a = alloca float
+    float* %b = alloca float
+    store float 1 to %a
+    float %a.load = load %a
+    float %0 = -%a.load
+    float %1 = float 2 * %0
+    store %1 to %b
+    float %b.load = load %b
+    float %2 = %b.load + float 1
+    store %2 to %b
+    float %b.load = load %b
+    float %3 = %b.load + float -1
+    store %3 to %b
+    return int 0
+}

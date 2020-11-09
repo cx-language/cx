@@ -1,0 +1,9 @@
+// RUN: check-snapshots
+
+void f(Range<int> r) {}
+
+void main() {
+    var foo = 0;
+    var bar = 0;
+    f(foo..bar);
+}

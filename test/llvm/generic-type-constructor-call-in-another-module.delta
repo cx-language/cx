@@ -1,7 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s -Iinputs
-
-import imported_generic_type_constructor
-
-void main() {
-    var a = A<int>()
-}

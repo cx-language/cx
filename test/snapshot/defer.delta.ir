@@ -1,0 +1,58 @@
+
+extern void foo()
+
+extern void bar()
+
+int main() {
+    br bool false, if.then, if.else
+
+if.then:
+    void %0 = call %bar()
+    void %1 = call %foo()
+    return int 0
+
+if.else:
+    br %if.end
+
+if.end:
+    br bool false, if.then, if.else
+
+if.then:
+    void %2 = call %bar()
+    br %if.end
+
+if.else:
+    br %if.end
+
+if.end:
+    br %loop.condition
+
+loop.condition:
+    br bool false, loop.body, loop.end
+
+loop.body:
+    void %3 = call %bar()
+    void %4 = call %foo()
+    br %loop.condition
+
+loop.end:
+    br bool true, if.then, if.else
+
+if.then:
+    void %5 = call %bar()
+    void %6 = call %foo()
+    return int 0
+
+if.else:
+    br %if.end
+
+if.end:
+    void %7 = call %foo()
+    void %8 = call %bar()
+    void %9 = call %foo()
+    return int 0
+}
+
+void _EN4main13shouldBeEmptyE() {
+    return void
+}

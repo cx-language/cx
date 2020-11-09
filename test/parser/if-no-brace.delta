@@ -1,4 +1,4 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s
+// RUN: check-snapshots
 
 int main() {
     if false return 1;

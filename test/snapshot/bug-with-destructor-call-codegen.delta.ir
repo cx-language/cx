@@ -1,0 +1,26 @@
+
+int main() {
+    X* %a = alloca X
+    Y<bool>* %0 = alloca Y<bool>
+    void %1 = call %_EN4main1X4initE(X* %a)
+    void %2 = call %_EN4main1YI4boolE4initE(Y<bool>* %0)
+    int %3 = call %_EN4main1YI4boolE1fE(Y<bool>* %0)
+    void %4 = call %_EN4main1X6deinitE(X* %a)
+    return int 0
+}
+
+void _EN4main1X6deinitE(X* %this) {
+    return void
+}
+
+void _EN4main1X4initE(X* %this) {
+    return void
+}
+
+int _EN4main1YI4boolE1fE(Y<bool>* %this) {
+    return int 1
+}
+
+void _EN4main1YI4boolE4initE(Y<bool>* %this) {
+    return void
+}

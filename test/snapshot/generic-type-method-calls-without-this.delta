@@ -1,0 +1,11 @@
+// RUN: check-snapshots
+
+struct S<T>: Copyable {
+    void f() { g() }
+    void g() {}
+}
+
+void main() {
+    S<int>().f()
+    S<float>().f()
+}

@@ -1,0 +1,6 @@
+// RUN: check-snapshots
+
+void main() {
+    for (var i in 0...5) { }
+    for (var i in 0...5) { }
+}

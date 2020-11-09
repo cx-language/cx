@@ -1,9 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s
-
-const int qux = 42;
-
-void main() {
-    var d = bar;
-}
-
-const bar = 42;

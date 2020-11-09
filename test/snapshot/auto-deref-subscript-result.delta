@@ -1,0 +1,13 @@
+// RUN: check-snapshots -Wno-unused
+
+struct S<T> {
+    T t;
+
+    T* operator[](int i) {
+        return t;
+    }
+}
+
+void f(S<int>* s) {
+    s[0]++;
+}

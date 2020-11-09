@@ -1,0 +1,10 @@
+// RUN: check-snapshots
+
+extern void foo(uint8 a);
+
+void main() {
+    foo(1);
+    uint64 b = 42;
+    int8 c = -42;
+    b = b + 1;
+}

@@ -1,0 +1,12 @@
+// RUN: check-snapshots
+
+extern bool a();
+extern bool b();
+extern bool c();
+
+void main() {
+    var and = a() && b();
+    var and2 = a() && b() && c();
+    var or = a() || b();
+    var or2 = a() || b() || c();
+}

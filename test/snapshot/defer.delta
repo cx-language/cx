@@ -1,0 +1,26 @@
+// RUN: check-snapshots -Wno-unused
+
+extern void foo();
+extern void bar();
+
+void main() {
+    defer foo();
+    if (false) {
+        defer bar();
+        return;
+    }
+    if (false) {
+        defer bar();
+    }
+    while (false) {
+        defer foo();
+        bar();
+    }
+    defer bar();
+    if (true) {
+        return;
+    }
+    foo();
+}
+
+void shouldBeEmpty() { }

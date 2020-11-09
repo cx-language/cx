@@ -1,0 +1,9 @@
+// RUN: check-snapshots
+
+struct S: Copyable { }
+struct C { }
+
+void main() {
+    S s = undefined;
+    C c = undefined;
+}

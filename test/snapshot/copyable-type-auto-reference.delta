@@ -1,0 +1,10 @@
+// RUN: check-snapshots
+
+struct Foo: Copyable { int i; }
+
+void foo(Foo* ref_f) { }
+
+void main() {
+    Foo f = undefined;
+    foo(f);
+}

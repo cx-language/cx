@@ -1,0 +1,12 @@
+// RUN: check-snapshots
+
+struct C {
+    void f() {
+        return
+    }
+}
+
+void main() {
+    var c = C()
+    c.f()
+}

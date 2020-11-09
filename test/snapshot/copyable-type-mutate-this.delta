@@ -1,0 +1,13 @@
+// RUN: check-snapshots
+
+struct S: Copyable {
+    int i
+
+    void s() {
+        this.i = 2
+    }
+}
+
+void main() {
+    S(1).s()
+}

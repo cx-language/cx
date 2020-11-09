@@ -1,0 +1,48 @@
+
+int main() {
+    A* %a = alloca A
+    B* %b = alloca B
+    void %0 = call %_EN4main1A4initE(A* %a)
+    int %1 = call %_EN4main1A3fooE(A* %a)
+    void %2 = call %_EN4main1A3barE(A* %a)
+    void %3 = call %_EN4main1B4initE(B* %b)
+    int %4 = call %_EN4main1B3fooE(B* %b)
+    void %5 = call %_EN4main1B3barE(B* %b)
+    return int 0
+}
+
+void _EN4main1A4initE(A* %this) {
+    int* %j = getelementptr %this, 0, 1
+    store int 42 to %j
+    return void
+}
+
+int _EN4main1A3fooE(A* %this) {
+    int* %j = getelementptr %this, 0, 1
+    int %j.load = load %j
+    return %j.load
+}
+
+void _EN4main1A3barE(A* %this) {
+    int* %j = getelementptr %this, 0, 1
+    store int 1 to %j
+    return void
+}
+
+void _EN4main1B4initE(B* %this) {
+    int* %j = getelementptr %this, 0, 1
+    store int 42 to %j
+    return void
+}
+
+int _EN4main1B3fooE(B* %this) {
+    int* %j = getelementptr %this, 0, 1
+    int %j.load = load %j
+    return %j.load
+}
+
+void _EN4main1B3barE(B* %this) {
+    int* %j = getelementptr %this, 0, 1
+    store int 1 to %j
+    return void
+}

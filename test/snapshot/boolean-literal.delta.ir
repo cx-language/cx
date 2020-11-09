@@ -1,0 +1,10 @@
+
+int main() {
+    bool* %b = alloca bool
+    bool* %c = alloca bool
+    store bool false to %b
+    bool %b.load = load %b
+    bool %0 = %b.load == bool true
+    store %0 to %c
+    return int 0
+}

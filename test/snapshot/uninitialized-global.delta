@@ -1,0 +1,3 @@
+// RUN: check-snapshots
+
+int i = undefined;

@@ -1,0 +1,11 @@
+
+int main() {
+    int* %i = alloca int
+    store int 42 to %i
+    void %0 = call %_EN4main1fI3intEEP3int(int* %i)
+    return int 0
+}
+
+void _EN4main1fI3intEEP3int(int* %p) {
+    return void
+}

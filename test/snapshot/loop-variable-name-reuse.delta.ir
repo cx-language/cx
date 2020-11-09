@@ -1,0 +1,113 @@
+
+int main() {
+    ClosedRangeIterator<int>* %__iterator = alloca ClosedRangeIterator<int>
+    ClosedRange<int>* %0 = alloca ClosedRange<int>
+    int* %i = alloca int
+    ClosedRangeIterator<int>* %__iterator = alloca ClosedRangeIterator<int>
+    ClosedRange<int>* %1 = alloca ClosedRange<int>
+    int* %i = alloca int
+    void %2 = call %_EN3std11ClosedRangeI3intE4initE3int3int(ClosedRange<int>* %0, int 0, int 5)
+    ClosedRangeIterator<int> %3 = call %_EN3std11ClosedRangeI3intE8iteratorE(ClosedRange<int>* %0)
+    store %3 to %__iterator
+    br %loop.condition
+
+loop.condition:
+    bool %4 = call %_EN3std19ClosedRangeIteratorI3intE8hasValueE(ClosedRangeIterator<int>* %__iterator)
+    br %4, loop.body, loop.end
+
+loop.body:
+    int %5 = call %_EN3std19ClosedRangeIteratorI3intE5valueE(ClosedRangeIterator<int>* %__iterator)
+    store %5 to %i
+    br %loop.increment
+
+loop.increment:
+    void %6 = call %_EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* %__iterator)
+    br %loop.condition
+
+loop.end:
+    void %7 = call %_EN3std11ClosedRangeI3intE4initE3int3int(ClosedRange<int>* %1, int 0, int 5)
+    ClosedRangeIterator<int> %8 = call %_EN3std11ClosedRangeI3intE8iteratorE(ClosedRange<int>* %1)
+    store %8 to %__iterator
+    br %loop.condition
+
+loop.condition:
+    bool %9 = call %_EN3std19ClosedRangeIteratorI3intE8hasValueE(ClosedRangeIterator<int>* %__iterator)
+    br %9, loop.body, loop.end
+
+loop.body:
+    int %10 = call %_EN3std19ClosedRangeIteratorI3intE5valueE(ClosedRangeIterator<int>* %__iterator)
+    store %10 to %i
+    br %loop.increment
+
+loop.increment:
+    void %11 = call %_EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* %__iterator)
+    br %loop.condition
+
+loop.end:
+    return int 0
+}
+
+ClosedRangeIterator<int> _EN3std11ClosedRangeI3intE8iteratorE(ClosedRange<int>* %this) {
+    ClosedRangeIterator<int>* %0 = alloca ClosedRangeIterator<int>
+    ClosedRange<int> %this.load = load %this
+    void %1 = call %_EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ClosedRangeIterator<int>* %0, ClosedRange<int> %this.load)
+    ClosedRangeIterator<int> %.load = load %0
+    return %.load
+}
+
+void _EN3std11ClosedRangeI3intE4initE3int3int(ClosedRange<int>* %this, int %start, int %end) {
+    int* %start = getelementptr %this, 0, 0
+    store %start to %start
+    int* %end = getelementptr %this, 0, 1
+    store %end to %end
+    return void
+}
+
+bool _EN3std19ClosedRangeIteratorI3intE8hasValueE(ClosedRangeIterator<int>* %this) {
+    int* %current = getelementptr %this, 0, 0
+    int %current.load = load %current
+    int* %end = getelementptr %this, 0, 1
+    int %end.load = load %end
+    bool %0 = %current.load <= %end.load
+    return %0
+}
+
+int _EN3std19ClosedRangeIteratorI3intE5valueE(ClosedRangeIterator<int>* %this) {
+    int* %current = getelementptr %this, 0, 0
+    int %current.load = load %current
+    return %current.load
+}
+
+void _EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* %this) {
+    int* %current = getelementptr %this, 0, 0
+    int %current.load = load %current
+    int %0 = %current.load + int 1
+    store %0 to %current
+    return void
+}
+
+void _EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ClosedRangeIterator<int>* %this, ClosedRange<int> %range) {
+    ClosedRange<int>* %0 = alloca ClosedRange<int>
+    ClosedRange<int>* %1 = alloca ClosedRange<int>
+    int* %current = getelementptr %this, 0, 0
+    store %range to %0
+    int %2 = call %_EN3std11ClosedRangeI3intE5startE(ClosedRange<int>* %0)
+    store %2 to %current
+    int* %end = getelementptr %this, 0, 1
+    store %range to %1
+    int %3 = call %_EN3std11ClosedRangeI3intE3endE(ClosedRange<int>* %1)
+    store %3 to %end
+    return void
+}
+
+int _EN3std11ClosedRangeI3intE5startE(ClosedRange<int>* %this) {
+    int* %start = getelementptr %this, 0, 0
+    int %start.load = load %start
+    return %start.load
+}
+
+int _EN3std11ClosedRangeI3intE3endE(ClosedRange<int>* %this) {
+    int* %end = getelementptr %this, 0, 1
+    int %end.load = load %end
+    return %end.load
+}

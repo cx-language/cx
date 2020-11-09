@@ -1,0 +1,13 @@
+
+int main() {
+    int* %foo = alloca int
+    store int 0 to %foo
+    int %foo.load = load %foo
+    int %0 = %foo.load + int -1
+    store %0 to %foo
+    store int 666 to %foo
+    int %foo.load = load %foo
+    int %1 = %foo.load + int 1
+    store %1 to %foo
+    return int 0
+}

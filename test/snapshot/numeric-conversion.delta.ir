@@ -1,0 +1,17 @@
+
+int main() {
+    uint16* %i = alloca uint16
+    float32* %f = alloca float32
+    int64* %u = alloca int64
+    uint* %s = alloca uint
+    store uint16 42 to %i
+    uint16 %i.load = load %i
+    float32 %0 = cast %i.load to float32
+    store %0 to %f
+    float32 %f.load = load %f
+    int64 %1 = cast %f.load to int64
+    store %1 to %u
+    uint %2 = cast bool true to uint
+    store %2 to %s
+    return int 0
+}

@@ -1,0 +1,21 @@
+
+void _EN4main1fE5RangeI3intE(Range<int> %r) {
+    return void
+}
+
+int main() {
+    int* %foo = alloca int
+    int* %bar = alloca int
+    Range<int>* %0 = alloca Range<int>
+    store int 0 to %foo
+    store int 0 to %bar
+    int %foo.load = load %foo
+    int %bar.load = load %bar
+    void %1 = call %_EN3std5RangeI3intE4initE3int3int(Range<int>* %0, int %foo.load, int %bar.load)
+    Range<int> %.load = load %0
+    void %2 = call %_EN4main1fE5RangeI3intE(Range<int> %.load)
+    return int 0
+}
+
+void _EN3std5RangeI3intE4initE3int3int(Range<int>* %this, int %start, int %end) {
+}

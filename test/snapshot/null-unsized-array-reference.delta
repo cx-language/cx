@@ -1,0 +1,5 @@
+// RUN: check-snapshots
+
+void main() {
+    int8[]? a = null
+}

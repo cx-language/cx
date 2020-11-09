@@ -1,0 +1,12 @@
+// RUN: check-snapshots
+
+struct Foo {
+    int i;
+    void bar() { }
+}
+
+void main() {
+    Foo f = undefined;
+    Foo* rf = f;
+    rf.bar();
+}

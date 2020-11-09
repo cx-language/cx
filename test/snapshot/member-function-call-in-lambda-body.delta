@@ -1,0 +1,11 @@
+// RUN: check-snapshots
+
+struct X {
+    int foo() {
+        return 42;
+    }
+}
+
+void main() {
+    var lambda = (X* x) -> x.foo();
+}

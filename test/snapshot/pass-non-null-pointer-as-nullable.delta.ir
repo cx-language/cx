@@ -1,0 +1,17 @@
+
+void _EN4main3fooEOP3int(int* %p) {
+    return void
+}
+
+int main() {
+    int* %i = alloca int
+    int** %x = alloca int*
+    store int 42 to %i
+    int* %0 = cast %i to int*
+    store %0 to %x
+    int* %x.load = load %x
+    int* %1 = cast %x.load to int*
+    void %2 = call %_EN4main3fooEOP3int(int* %1)
+    void %3 = call %_EN4main3fooEOP3int(int* %i)
+    return int 0
+}

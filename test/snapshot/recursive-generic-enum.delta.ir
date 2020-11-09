@@ -1,0 +1,35 @@
+
+int main() {
+    E* %e = alloca E
+    E* %enum = alloca E
+    S<E>* %0 = alloca S<E>
+    E* %enum = alloca E
+    S<E>* %1 = alloca S<E>
+    int* %tag = getelementptr %enum, 0, 0
+    store int 0 to %tag
+    int* %tag = getelementptr %enum, 0, 0
+    store int 0 to %tag
+    E* %2 = cast E* null to E*
+    void %3 = call %_EN4main1SI1EE4initEOP1E(S<E>* %1, E* %2)
+    S<E> %.load = load %1
+    { S<E> } %4 = insertvalue { S<E> } undefined, 0, %.load
+    union { { S<E> }, { int[12] } }* %associatedValue = getelementptr %enum, 0, 1
+    { S<E> }* %5 = cast %associatedValue to { S<E> }*
+    store %4 to %5
+    void %6 = call %_EN4main1SI1EE4initEOP1E(S<E>* %0, E* %enum)
+    S<E> %.load = load %0
+    { S<E> } %7 = insertvalue { S<E> } undefined, 0, %.load
+    union { { S<E> }, { int[12] } }* %associatedValue = getelementptr %enum, 0, 1
+    { S<E> }* %8 = cast %associatedValue to { S<E> }*
+    store %7 to %8
+    E %enum.load = load %enum
+    store %enum.load to %e
+    return int 0
+}
+
+void _EN4main1SI1EE4initEOP1E(S<E>* %this, E* %e) {
+    E** %e = getelementptr %this, 0, 0
+    E* %0 = cast %e to E*
+    store %0 to %e
+    return void
+}

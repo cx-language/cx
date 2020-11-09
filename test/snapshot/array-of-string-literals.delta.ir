@@ -1,0 +1,17 @@
+
+int main() {
+    string[2]* %a = alloca string[2]
+    string* %__str = alloca string
+    string* %__str = alloca string
+    void %0 = call %_EN3std6string4initEP4char3int(string* %__str, char* "foo", int 3)
+    string %__str.load = load %__str
+    string[2] %1 = insertvalue string[2] undefined, 0, %__str.load
+    void %2 = call %_EN3std6string4initEP4char3int(string* %__str, char* "bar", int 3)
+    string %__str.load = load %__str
+    string[2] %3 = insertvalue %1, 1, %__str.load
+    store %3 to %a
+    return int 0
+}
+
+void _EN3std6string4initEP4char3int(string* %this, char* %pointer, int %length) {
+}

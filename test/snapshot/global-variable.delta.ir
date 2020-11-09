@@ -1,0 +1,11 @@
+global %foo = int 42
+global %qux = int 42
+global %bar = int 42
+
+int main() {
+    int* %d = alloca int
+    store int 43 to %foo
+    int %bar.load = load %bar
+    store %bar.load to %d
+    return int 0
+}

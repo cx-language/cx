@@ -1,0 +1,30 @@
+
+void _EN4main3fooE1i3int(int %i) {
+    Foo* %0 = alloca Foo
+    Foo* %1 = alloca Foo
+    void %2 = call %_EN4main3Foo4initE1i3int(Foo* %0, int %i)
+    void %3 = call %_EN4main3Foo3fooE1i3int(Foo* %0, int %i)
+    void %4 = call %_EN4main3Foo4initE3qux3int(Foo* %1, int %i)
+    void %5 = call %_EN4main3Foo3fooE3qux3int(Foo* %1, int %i)
+    return void
+}
+
+void _EN4main3Foo3fooE1i3int(Foo* %this, int %i) {
+    return void
+}
+
+void _EN4main3Foo4initE1i3int(Foo* %this, int %i) {
+    return void
+}
+
+void _EN4main3Foo3fooE3qux3int(Foo* %this, int %qux) {
+    return void
+}
+
+void _EN4main3Foo4initE3qux3int(Foo* %this, int %qux) {
+    return void
+}
+
+void _EN4main3fooE3qux3int(int %qux) {
+    return void
+}

@@ -1,0 +1,13 @@
+// RUN: check-snapshots
+
+int foo(Range<int> r) {
+    var sum = 0;
+    for (var i in r) {
+        sum += i;
+    }
+    return sum;
+}
+
+int main() {
+    return foo(0..5);
+}

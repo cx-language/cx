@@ -1,0 +1,9 @@
+// RUN: check-snapshots -Wno-unused
+
+struct S: Copyable {}
+
+void f(S s) {
+    g(s);
+}
+
+void g(S* s) {}

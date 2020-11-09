@@ -1,0 +1,46 @@
+
+extern bool foo()
+
+void _EN4main3barE() {
+    bool %0 = call %foo()
+    br %0, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    return void
+
+if.end:
+    bool %1 = call %foo()
+    br %1, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    return void
+
+if.end:
+    br %loop.condition
+
+loop.condition:
+    bool %2 = call %foo()
+    br %2, loop.body, loop.end
+
+loop.body:
+    return void
+
+loop.end:
+    br %loop.condition
+
+loop.condition:
+    bool %3 = call %foo()
+    br %3, loop.body, loop.end
+
+loop.body:
+    return void
+
+loop.end:
+    return void
+}

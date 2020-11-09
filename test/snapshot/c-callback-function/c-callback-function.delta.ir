@@ -1,0 +1,20 @@
+
+int _EN4main1fE3int(int %a) {
+    return %a
+}
+
+int main() {
+    int(int)* %0 = cast %_EN4main1fE3int to int(int)*
+    void %1 = call %foo(int(int)* %0)
+    int(int)* %2 = cast %_EN4main1fE3int to int(int)*
+    void %3 = call %bar(int(int)* %2)
+    int(int)* %4 = cast %_EN4main1fE3int to int(int)*
+    void %5 = call %baz(int(int)* %4)
+    return int 0
+}
+
+extern void foo(int(int)* %cb)
+
+extern void bar(int(int)* %cb)
+
+extern void baz(int(int)* %cb)

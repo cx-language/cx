@@ -1,0 +1,43 @@
+
+int main() {
+    S* %s = alloca S
+    Foo<int>* %t = alloca Foo<int>
+    void %0 = call %_EN4main1S4initE(S* %s)
+    void %1 = call %_EN4main1S3fooE(S* %s)
+    void %2 = call %_EN4main3FooI3intE4initE(Foo<int>* %t)
+    void %3 = call %_EN4main3FooI3intE3bazE(Foo<int>* %t)
+    void %4 = call %_EN4main3FooI3intE6deinitE(Foo<int>* %t)
+    return int 0
+}
+
+void _EN4main1S4initE(S* %this) {
+    return void
+}
+
+void _EN4main1S3fooE(S* %this) {
+    void %0 = call %_EN4main1S3barE(S* %this)
+    return void
+}
+
+void _EN4main3FooI3intE6deinitE(Foo<int>* %this) {
+    void %0 = call %_EN4main3FooI3intE3bazE(Foo<int>* %this)
+    return void
+}
+
+void _EN4main3FooI3intE4initE(Foo<int>* %this) {
+    void %0 = call %_EN4main3FooI3intE3bazE(Foo<int>* %this)
+    return void
+}
+
+void _EN4main3FooI3intE3bazE(Foo<int>* %this) {
+    void %0 = call %_EN4main3FooI3intE3quxE(Foo<int>* %this)
+    return void
+}
+
+void _EN4main1S3barE(S* %this) {
+    return void
+}
+
+void _EN4main3FooI3intE3quxE(Foo<int>* %this) {
+    return void
+}

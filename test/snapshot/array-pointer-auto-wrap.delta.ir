@@ -1,0 +1,9 @@
+
+int main() {
+    int** %p = alloca int*
+    int** %o = alloca int*
+    int* %p.load = load %p
+    int* %0 = cast %p.load to int*
+    store %0 to %o
+    return int 0
+}

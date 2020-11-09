@@ -1,0 +1,21 @@
+
+int _EN4main1gE4bool(bool %i) {
+    int %0 = cast %i to int
+    return %0
+}
+
+int main() {
+    X<int>* %x = alloca X<int>
+    void %0 = call %_EN4main1XI3intE4initE(X<int>* %x)
+    int(bool)* %1 = cast %_EN4main1gE4bool to int(bool)*
+    void %2 = call %_EN4main1XI3intE1fI4boolEEF4bool_3int(X<int>* %x, int(bool)* %1)
+    return int 0
+}
+
+void _EN4main1XI3intE4initE(X<int>* %this) {
+    return void
+}
+
+void _EN4main1XI3intE1fI4boolEEF4bool_3int(X<int>* %this, int(bool)* %u) {
+    return void
+}

@@ -1,0 +1,5 @@
+// RUN: check-snapshots -Wno-unused
+
+uint8 foo(bool b) {
+    return b ? 0xFF : 0xEE;
+}

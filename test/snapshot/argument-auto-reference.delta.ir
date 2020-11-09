@@ -1,0 +1,10 @@
+
+void _EN4main3ptrEP3Foo(Foo* %p) {
+    return void
+}
+
+int main() {
+    Foo* %f = alloca Foo
+    void %0 = call %_EN4main3ptrEP3Foo(Foo* %f)
+    return int 0
+}

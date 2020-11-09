@@ -1,0 +1,10 @@
+// RUN: check-snapshots -Wno-unused
+
+struct X {
+    int i;
+    ~X() {}
+}
+
+void foo(X* p, X x) {
+    p.init(x);
+}

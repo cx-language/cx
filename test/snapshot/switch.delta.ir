@@ -1,0 +1,55 @@
+
+void _EN4main3fooE3int(int %i) {
+    int %0 = -int 1
+    switch %i {
+        int 0 -> switch.case.0
+        %0 -> switch.case.1
+        int 42 -> switch.case.2
+    }
+
+switch.case.0:
+    br %switch.end
+
+switch.case.1:
+    void %1 = call %_EN4main3fooE3int(int %i)
+    void %2 = call %_EN4main3fooE3int(int %i)
+    br %switch.end
+
+switch.case.2:
+    br %switch.end
+
+switch.default:
+    br %switch.end
+
+switch.end:
+    switch %i {
+        int 0 -> switch.case.0
+    }
+
+switch.case.0:
+    br %switch.end
+
+switch.default:
+    void %3 = call %_EN4main3fooE3int(int %i)
+    br %switch.end
+
+switch.end:
+    return void
+}
+
+int _EN4main1fEP1S(S* %s) {
+    int* %i = getelementptr %s, 0, 0
+    int %i.load = load %i
+    switch %i.load {
+        int 0 -> switch.case.0
+    }
+
+switch.case.0:
+    return int 0
+
+switch.default:
+    return int 1
+
+switch.end:
+    return void
+}

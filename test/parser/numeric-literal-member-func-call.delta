@@ -1,4 +1,4 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s
+// RUN: check-snapshots
 
 void main() {
     var foo = 0.hash();

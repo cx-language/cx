@@ -1,0 +1,23 @@
+
+int main() {
+    B* %b = alloca B
+    int* %x = alloca int
+    void %0 = call %_EN4main1B4initE(B* %b)
+    int %1 = call %_EN4main1B1gE(B* %b)
+    store %1 to %x
+    return int 0
+}
+
+void _EN4main1B4initE(B* %this) {
+    return void
+}
+
+int _EN4main1B1gE(B* %this) {
+    int %0 = call %_EN4main1B1fE(B* %this)
+    int %1 = %0 * int 2
+    return %1
+}
+
+int _EN4main1B1fE(B* %this) {
+    return int 21
+}

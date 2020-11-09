@@ -1,0 +1,47 @@
+
+void _EN4main1fE1S(S %a) {
+    return void
+}
+
+void _EN4main1fE1T(T %a) {
+    return void
+}
+
+void _EN4mainplE1S1S(S %a, S %b) {
+    return void
+}
+
+void _EN4mainplE1T1T(T %a, T %b) {
+    return void
+}
+
+int main() {
+    S* %s = alloca S
+    T* %t = alloca T
+    void %0 = call %_EN4main1S4initE(S* %s)
+    void %1 = call %_EN4main1T4initE(T* %t)
+    S %s.load = load %s
+    void %2 = call %_EN4main1fE1S(S %s.load)
+    T %t.load = load %t
+    void %3 = call %_EN4main1fE1T(T %t.load)
+    S %s.load = load %s
+    S %s.load = load %s
+    void %4 = call %_EN4mainplE1S1S(S %s.load, S %s.load)
+    T %t.load = load %t
+    T %t.load = load %t
+    void %5 = call %_EN4mainplE1T1T(T %t.load, T %t.load)
+    int %6 = int 1 + int 1
+    return int 0
+}
+
+void _EN4main1S4initE(S* %this) {
+    int* %i = getelementptr %this, 0, 0
+    store int 0 to %i
+    return void
+}
+
+void _EN4main1T4initE(T* %this) {
+    int* %i = getelementptr %this, 0, 0
+    store int 0 to %i
+    return void
+}

@@ -1,0 +1,11 @@
+
+int main() {
+    uint* %u = alloca uint
+    uint %u.load = load %u
+    void %0 = call %_EN4main1fI4uintEE4uint4uint(uint 0, uint %u.load)
+    return int 0
+}
+
+void _EN4main1fI4uintEE4uint4uint(uint %a, uint %b) {
+    return void
+}

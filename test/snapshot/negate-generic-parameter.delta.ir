@@ -1,0 +1,10 @@
+
+int main() {
+    float %0 = call %_EN4main1fI5floatEE5float(float 0)
+    return int 0
+}
+
+float _EN4main1fI5floatEE5float(float %a) {
+    float %0 = -%a
+    return %0
+}

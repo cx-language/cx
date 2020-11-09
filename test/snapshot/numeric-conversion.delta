@@ -1,0 +1,8 @@
+// RUN: check-snapshots
+
+void main() {
+    uint16 i = 42;
+    var f = float32(i);
+    var u = int64(f);
+    var s = uint(true);
+}

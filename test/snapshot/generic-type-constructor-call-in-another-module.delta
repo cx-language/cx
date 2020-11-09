@@ -1,0 +1,7 @@
+// RUN: check-snapshots -Iinputs
+
+import imported_generic_type_constructor
+
+void main() {
+    var a = A<int>()
+}

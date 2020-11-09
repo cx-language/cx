@@ -1,0 +1,14 @@
+
+void _EN4main1fEP1SI3intE(S<int>* %s) {
+    S<int>* %0 = cast %s to S<int>*
+    int* %1 = call %_EN4main1SI3intEixE3int(S<int>* %0, int 0)
+    int %.load = load %1
+    int %2 = %.load + int 1
+    store %2 to %1
+    return void
+}
+
+int* _EN4main1SI3intEixE3int(S<int>* %this, int %i) {
+    int* %t = getelementptr %this, 0, 0
+    return %t
+}

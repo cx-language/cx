@@ -1,0 +1,11 @@
+// RUN: check-snapshots
+
+var foo = 42;
+int qux = 42;
+
+void main() {
+    foo = 43;
+    var d = bar;
+}
+
+var bar = 42;

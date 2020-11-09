@@ -1,0 +1,11 @@
+
+int main() {
+    float[1]* %foo = alloca float[1]
+    uint16[2]* %bar = alloca uint16[2]
+    float[1] %0 = insertvalue float[1] undefined, 0, float 1
+    store %0 to %foo
+    uint16[2] %1 = insertvalue uint16[2] undefined, 0, uint16 50
+    uint16[2] %2 = insertvalue %1, 1, uint16 100
+    store %2 to %bar
+    return int 0
+}

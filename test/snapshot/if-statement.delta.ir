@@ -1,0 +1,19 @@
+
+extern void foo()
+
+extern void bar()
+
+int main() {
+    br bool false, if.then, if.else
+
+if.then:
+    void %0 = call %foo()
+    br %if.end
+
+if.else:
+    void %1 = call %bar()
+    br %if.end
+
+if.end:
+    return int 0
+}

@@ -1,0 +1,29 @@
+// RUN: check-snapshots
+
+interface Interface {
+    This* that;
+
+    This* foo(This* a);
+
+    This* bar() {
+        return foo(foo(this));
+    }
+}
+
+struct S: Interface {
+    S() { that = this; }
+
+    S* foo(S* a) {
+        return this;
+    }
+}
+
+void main() {
+    var a = S();
+    var b = S();
+    f(a.foo(b));
+}
+
+void f<T: Interface>(T* a) {
+    a.foo(a.bar());
+}

@@ -1,0 +1,9 @@
+
+int main() {
+    float* %f = alloca float
+    float* %g = alloca float
+    store float 42 to %f
+    float %0 = -float 42
+    store %0 to %g
+    return int 0
+}

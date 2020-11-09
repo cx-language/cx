@@ -1,0 +1,22 @@
+
+int main() {
+    br bool true, if.then, if.else
+
+if.then:
+    br bool false, if.then, if.else
+
+if.else:
+    br %if.end
+
+if.end:
+    return int 2
+
+if.then:
+    return int 1
+
+if.else:
+    return int 0
+
+if.end:
+    br %if.end
+}

@@ -1,0 +1,8 @@
+// RUN: check-snapshots
+
+void main() {
+    uint u = undefined;
+    f(0, u);
+}
+
+void f<T>(T a, T b) {}

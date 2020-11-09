@@ -1,0 +1,17 @@
+// RUN: check-snapshots
+
+void main() {
+    var x = X(4, 2);
+}
+
+struct X {
+    X(int a, int b) {
+        init(a);
+    }
+
+    X(int a) {
+        init();
+    }
+
+    X() {}
+}

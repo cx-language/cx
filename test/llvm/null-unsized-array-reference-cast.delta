@@ -1,8 +1,0 @@
-// TODO: Add this test back when optional (nullable) ArrayRefs are implemented.
-// RUN: check_matches_snapshot %delta -print-llvm %s
-// XFAIL: *
-
-void main() {
-    uint64[]? a = null
-    _ = cast<void*?>(a)
-}

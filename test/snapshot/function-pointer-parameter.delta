@@ -1,0 +1,18 @@
+// RUN: check-snapshots
+
+void f() {}
+
+int f2(int a, bool b) { return a; }
+
+void g(void() p) {
+    p();
+}
+
+void g2(int(int, bool) p) {
+    var a = p(42, !true) + 1;
+}
+
+void main() {
+    g(f);
+    g2(f2);
+}

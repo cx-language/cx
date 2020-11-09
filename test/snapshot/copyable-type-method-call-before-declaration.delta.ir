@@ -1,0 +1,15 @@
+
+int main() {
+    B* %0 = alloca B
+    void %1 = call %_EN4main1B4initE(B* %0)
+    void %2 = call %_EN4main1B1fE(B* %0)
+    return int 0
+}
+
+void _EN4main1B1fE(B* %this) {
+    return void
+}
+
+void _EN4main1B4initE(B* %this) {
+    return void
+}

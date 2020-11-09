@@ -1,0 +1,23 @@
+// RUN: check-snapshots
+
+struct X<T> {
+    Y<T>*? y;
+
+    X() {
+        y = null;
+    }
+
+    ~X() {
+        var a = y!.a;
+    }
+}
+
+struct Y<T> {
+    T a;
+
+    void f() {}
+}
+
+void main() {
+    var x = X<int>();
+}

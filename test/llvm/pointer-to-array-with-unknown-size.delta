@@ -1,9 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s
-
-void main() {
-    var a = [1, 2, 3];
-    int[*] p = &a[0];
-    p = a;
-    p = &a;
-    var t = p[1];
-}

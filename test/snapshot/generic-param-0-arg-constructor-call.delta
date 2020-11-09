@@ -1,0 +1,16 @@
+// RUN: check-snapshots
+
+struct C {
+    int i;
+    C() { i = 0; }
+}
+
+struct A<T> {
+    A() {
+        var t = T();
+    }
+}
+
+void main() {
+    var a = A<C>();
+}

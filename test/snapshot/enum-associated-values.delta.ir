@@ -1,0 +1,75 @@
+
+int main() {
+    E* %e = alloca E
+    E* %enum = alloca E
+    E* %enum = alloca E
+    E* %enum = alloca E
+    E* %enum = alloca E
+    int* %tag = getelementptr %enum, 0, 0
+    store int 0 to %tag
+    E %enum.load = load %enum
+    store %enum.load to %e
+    int* %tag = getelementptr %enum, 0, 0
+    store int 1 to %tag
+    { bool, int } %0 = insertvalue { bool, int } undefined, 0, bool false
+    { bool, int } %1 = insertvalue %0, 1, int 42
+    union { void, { bool, int }, { int } }* %associatedValue = getelementptr %enum, 0, 1
+    { bool, int }* %2 = cast %associatedValue to { bool, int }*
+    store %1 to %2
+    E %enum.load = load %enum
+    store %enum.load to %e
+    int* %tag = getelementptr %enum, 0, 0
+    store int 2 to %tag
+    { int } %3 = insertvalue { int } undefined, 0, int 43
+    union { void, { bool, int }, { int } }* %associatedValue = getelementptr %enum, 0, 1
+    { int }* %4 = cast %associatedValue to { int }*
+    store %3 to %4
+    E %enum.load = load %enum
+    store %enum.load to %e
+    int* %e.tag = getelementptr %e, 0, 0
+    int %e.tag.load = load %e.tag
+    switch %e.tag.load {
+        int 0 -> switch.case.0
+        int 1 -> switch.case.1
+        int 2 -> switch.case.2
+    }
+
+switch.case.0:
+    br %switch.end
+
+switch.case.1:
+    union { void, { bool, int }, { int } }* %5 = getelementptr %e, 0, 1
+    { bool, int }* %eb = cast %5 to { bool, int }*
+    int* %tag = getelementptr %enum, 0, 0
+    store int 2 to %tag
+    int* %i = getelementptr %eb, 0, 1
+    int %i.load = load %i
+    { int } %6 = insertvalue { int } undefined, 0, %i.load
+    union { void, { bool, int }, { int } }* %associatedValue = getelementptr %enum, 0, 1
+    { int }* %7 = cast %associatedValue to { int }*
+    store %6 to %7
+    E %enum.load = load %enum
+    store %enum.load to %e
+    int* %i = getelementptr %eb, 0, 1
+    int %i.load = load %i
+    return %i.load
+
+switch.case.2:
+    union { void, { bool, int }, { int } }* %8 = getelementptr %e, 0, 1
+    { int }* %eb = cast %8 to { int }*
+    int* %j = getelementptr %eb, 0, 0
+    int %j.load = load %j
+    return %j.load
+
+switch.default:
+    br %switch.end
+
+switch.end:
+    int* %e.tag = getelementptr %e, 0, 0
+    int %e.tag.load = load %e.tag
+    bool %9 = %e.tag.load == int 0
+    int* %e.tag = getelementptr %e, 0, 0
+    int %e.tag.load = load %e.tag
+    bool %10 = %e.tag.load == int 1
+    return int 0
+}

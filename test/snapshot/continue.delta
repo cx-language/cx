@@ -1,0 +1,10 @@
+// RUN: check-snapshots
+
+void baz(bool foo) {
+    while (foo) {
+        if (foo) {
+            baz(foo);
+            continue;
+        }
+    }
+}

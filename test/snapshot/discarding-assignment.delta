@@ -1,0 +1,7 @@
+// RUN: check-snapshots
+
+extern int foo();
+
+void main() {
+    _ = foo();
+}

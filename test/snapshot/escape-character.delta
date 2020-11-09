@@ -1,0 +1,5 @@
+// RUN: check-snapshots
+
+void main() {
+    _ = "\\n"
+}

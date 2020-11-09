@@ -1,0 +1,47 @@
+
+{ bool, { float } } _EN4main1fE() {
+    { float }* %d = alloca { float }
+    { int, { bool, { float } } }* %a = alloca { int, { bool, { float } } }
+    { bool, { float } }* %b = alloca { bool, { float } }
+    float* %e = alloca float
+    { bool, { float } }** %p = alloca { bool, { float } }*
+    float %0 = -float 1
+    { float } %1 = insertvalue { float } undefined, 0, %0
+    store %1 to %d
+    { int, { bool, { float } } } %2 = insertvalue { int, { bool, { float } } } undefined, 0, int 42
+    { bool, { float } } %3 = insertvalue { bool, { float } } undefined, 0, bool false
+    { float } %d.load = load %d
+    { bool, { float } } %4 = insertvalue %3, 1, %d.load
+    { int, { bool, { float } } } %5 = insertvalue %2, 1, %4
+    store %5 to %a
+    { bool, { float } }* %b = getelementptr %a, 0, 1
+    { bool, { float } } %b.load = load %b
+    store %b.load to %b
+    { float }* %d = getelementptr %b, 0, 1
+    float* %e = getelementptr %d, 0, 0
+    float %e.load = load %e
+    store %e.load to %e
+    { bool, { float } }* %b = getelementptr %a, 0, 1
+    { bool, { float } }* %6 = cast %b to { bool, { float } }*
+    store %6 to %p
+    { bool, { float } }* %p.load = load %p
+    { bool, { float } } %p.load.load = load %p.load
+    store %p.load.load to %b
+    { bool, { float } }* %p.load = load %p
+    { float }* %d = getelementptr %p.load, 0, 1
+    float* %e = getelementptr %d, 0, 0
+    float %e.load = load %e
+    store %e.load to %e
+    { float, float } %7 = insertvalue { float, float } undefined, 0, float 1
+    { float, float } %8 = insertvalue %7, 1, float 2
+    float %x = extractvalue %8, 0
+    store %x to %e
+    { bool, { float } } %b.load = load %b
+    return %b.load
+}
+
+{ bool, float } _EN4main1gE() {
+    { bool, float } %0 = insertvalue { bool, float } undefined, 0, bool true
+    { bool, float } %1 = insertvalue %0, 1, int 1
+    return %1
+}

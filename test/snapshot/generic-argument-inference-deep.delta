@@ -1,0 +1,17 @@
+// RUN: check-snapshots -Wno-unused
+
+struct S<T>: Copyable {
+    T f;
+}
+
+bool operator==<T>(S<T> a, S<T> b) {
+    return true;
+}
+
+void f(S<int> c, S<int> d) {
+    _ = c == d;
+}
+
+void f(S<bool>*  c, S<bool>*  d) {
+    _ = *c == *d;
+}

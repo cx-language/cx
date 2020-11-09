@@ -1,0 +1,37 @@
+
+void _EN4main3fooEF3int3int_3int(int(int, int)* %a) {
+    int %0 = call %a(int 1, int 2)
+    return void
+}
+
+int main() {
+    int(int, int)* %0 = cast %_EN4main9__lambda0E3int3int to int(int, int)*
+    void %1 = call %_EN4main3fooEF3int3int_3int(int(int, int)* %0)
+    int(int, int)* %2 = cast %_EN4main9__lambda1E3int3int to int(int, int)*
+    void %3 = call %_EN4main3fooEF3int3int_3int(int(int, int)* %2)
+    int(int, int)* %4 = cast %_EN4main9__lambda2E3int3int to int(int, int)*
+    void %5 = call %_EN4main3fooEF3int3int_3int(int(int, int)* %4)
+    int(int, int)* %6 = cast %_EN4main9__lambda3E3int3int to int(int, int)*
+    void %7 = call %_EN4main3fooEF3int3int_3int(int(int, int)* %6)
+    return int 0
+}
+
+int _EN4main9__lambda0E3int3int(int %a, int %b) {
+    int %0 = %a + %b
+    return %0
+}
+
+int _EN4main9__lambda1E3int3int(int %a, int %b) {
+    int %0 = %a + %b
+    return %0
+}
+
+int _EN4main9__lambda2E3int3int(int %a, int %b) {
+    int %0 = %a + %b
+    return %0
+}
+
+int _EN4main9__lambda3E3int3int(int %a, int %b) {
+    int %0 = %a + %b
+    return %0
+}

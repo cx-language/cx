@@ -1,0 +1,17 @@
+// RUN: check-snapshots
+
+struct S<E> {
+    S() {
+        E().h();
+    }
+    void s() {}
+}
+
+struct A: Copyable {
+    void h() {}
+}
+
+void main() {
+    var x = S<A>();
+    x.s();
+}

@@ -1,0 +1,13 @@
+// RUN: check-snapshots
+
+struct A {
+    int i;
+
+    A() {
+        i = undefined;
+    }
+}
+
+void main() {
+    var a = A();
+}

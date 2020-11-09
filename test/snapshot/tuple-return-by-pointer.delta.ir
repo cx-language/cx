@@ -1,0 +1,32 @@
+
+int main() {
+    S* %s = alloca S
+    { int }** %f = alloca { int }*
+    { int }** %g = alloca { int }*
+    { int } %0 = insertvalue { int } undefined, 0, int 1
+    void %1 = call %_EN4main1S4initET3int_(S* %s, { int } %0)
+    { int }* %2 = call %_EN4main1S1fE(S* %s)
+    { int }* %3 = cast %2 to { int }*
+    store %3 to %f
+    { int }* %4 = call %_EN4main1S1gE(S* %s)
+    { int }* %5 = cast %4 to { int }*
+    store %5 to %g
+    return int 0
+}
+
+void _EN4main1S4initET3int_(S* %this, { int } %t) {
+    { int }* %t = getelementptr %this, 0, 0
+    store %t to %t
+    return void
+}
+
+{ int }* _EN4main1S1fE(S* %this) {
+    { int }* %t = getelementptr %this, 0, 0
+    { int }* %0 = cast %t to { int }*
+    return %0
+}
+
+{ int }* _EN4main1S1gE(S* %this) {
+    { int }* %t = getelementptr %this, 0, 0
+    return %t
+}

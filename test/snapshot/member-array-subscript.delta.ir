@@ -1,0 +1,31 @@
+
+int main() {
+    C* %0 = alloca C
+    int[5]* %1 = alloca int[5]
+    int[5] %2 = insertvalue int[5] undefined, 0, int 0
+    int[5] %3 = insertvalue %2, 1, int 1
+    int[5] %4 = insertvalue %3, 2, int 2
+    int[5] %5 = insertvalue %4, 3, int 3
+    int[5] %6 = insertvalue %5, 4, int 4
+    store %6 to %1
+    int* %7 = getelementptr %1, 0, 0
+    ArrayRef<int> %8 = insertvalue ArrayRef<int> undefined, 0, %7
+    ArrayRef<int> %9 = insertvalue %8, 1, int 5
+    void %10 = call %_EN4main1C4initEAR_3int(C* %0, ArrayRef<int> %9)
+    void %11 = call %_EN4main1C3fooE(C* %0)
+    return int 0
+}
+
+void _EN4main1C3fooE(C* %this) {
+    ArrayRef<int>* %a = getelementptr %this, 0, 0
+    ArrayRef<int> %a.load = load %a
+    int* %0 = extractvalue %a.load, 0
+    int* %1 = getelementptr %0, int 4
+    return void
+}
+
+void _EN4main1C4initEAR_3int(C* %this, ArrayRef<int> %a) {
+    ArrayRef<int>* %a = getelementptr %this, 0, 0
+    store %a to %a
+    return void
+}

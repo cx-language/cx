@@ -1,0 +1,8 @@
+// TODO: Add this test back when optional (nullable) ArrayRefs are implemented.
+// RUN: check-snapshots
+// XFAIL: *
+
+void main() {
+    uint64[]? a = null
+    _ = cast<void*?>(a)
+}

@@ -1,0 +1,9 @@
+// RUN: check-snapshots
+
+void main() {
+    for (var ch in "abc") {
+        if (ch == 'b') {
+            continue;
+        }
+    }
+}

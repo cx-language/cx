@@ -1,8 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s
-
-void main() {
-    var foo = 0;
-    foo--;
-    foo = 666;
-    foo++;
-}

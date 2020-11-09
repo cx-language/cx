@@ -1,0 +1,9 @@
+// RUN: check-snapshots
+
+extern bool foo();
+
+void main() {
+    while foo() {
+        foo();
+    }
+}

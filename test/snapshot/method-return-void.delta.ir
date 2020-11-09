@@ -1,0 +1,15 @@
+
+int main() {
+    C* %c = alloca C
+    void %0 = call %_EN4main1C4initE(C* %c)
+    void %1 = call %_EN4main1C1fE(C* %c)
+    return int 0
+}
+
+void _EN4main1C4initE(C* %this) {
+    return void
+}
+
+void _EN4main1C1fE(C* %this) {
+    return void
+}

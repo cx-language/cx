@@ -1,0 +1,20 @@
+
+int main() {
+    Foo* %f = alloca Foo
+    uint* %bar = alloca uint
+    char* %0 = cast char* "foo bar" to char*
+    int %1 = call %puts(char* %0)
+    int* %bar = getelementptr %f, 0, 0
+    int %2 = int 5 + int 42
+    store %2 to %bar
+    char** %baz = getelementptr %f, 0, 1
+    char* %3 = cast char* "foo" to char*
+    store %3 to %baz
+    uint %4 = call %getBar(Foo* %f)
+    store %4 to %bar
+    return int 0
+}
+
+extern int puts(char* %__s)
+
+extern uint getBar(Foo* %foo)

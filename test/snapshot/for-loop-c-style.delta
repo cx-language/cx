@@ -1,0 +1,8 @@
+// RUN: check-snapshots
+
+void main() {
+    var sum = 0;
+    for (int i = 3; i < 9; i++) {
+        sum += i;
+    }
+}

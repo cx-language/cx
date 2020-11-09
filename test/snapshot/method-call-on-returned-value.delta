@@ -1,0 +1,23 @@
+// RUN: check-snapshots
+
+struct S: Copyable {
+    int i;
+    S() { i = 0; }
+    void f() {}
+}
+
+struct C {
+    int i;
+    C() { i = 0; }
+    void f() {}
+}
+
+S s() { return S(); }
+C c() { return C(); }
+
+void main() {
+    s().f();
+    c().f();
+    S().f();
+    C().f();
+}

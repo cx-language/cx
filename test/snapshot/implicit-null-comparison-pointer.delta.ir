@@ -1,0 +1,44 @@
+
+int main() {
+    bool** %foo = alloca bool*
+    bool* %b = alloca bool
+    int* %a = alloca int
+    bool* %foo.load = load %foo
+    bool %0 = %foo.load == bool* null
+    store %0 to %b
+    bool* %foo.load = load %foo
+    bool %1 = %foo.load != bool* null
+    br %1, if.then, if.else
+
+if.then:
+    br %if.end
+
+if.else:
+    br %if.end
+
+if.end:
+    br %loop.condition
+
+loop.condition:
+    bool* %foo.load = load %foo
+    bool %2 = %foo.load != bool* null
+    br %2, loop.body, loop.end
+
+loop.body:
+    br %loop.condition
+
+loop.end:
+    bool* %foo.load = load %foo
+    bool %3 = %foo.load != bool* null
+    br %3, if.then, if.else
+
+if.then:
+    br %if.end(int 1)
+
+if.else:
+    br %if.end(int 2)
+
+if.end(int %if.result):
+    store %if.result to %a
+    return int 0
+}

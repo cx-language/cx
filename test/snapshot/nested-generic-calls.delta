@@ -1,0 +1,12 @@
+// RUN: check-snapshots
+
+void main() {
+    g(42);
+    g(false);
+}
+
+void g<T>(T t) {
+    f(t);
+}
+
+void f<T>(T t) {}

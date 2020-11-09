@@ -1,0 +1,20 @@
+
+int main(X<int> %x) {
+    X<bool>* %a = alloca X<bool>
+    X<int>* %0 = alloca X<int>
+    store %x to %0
+    X<bool> %1 = call %_EN4main1XI3intE1fI4boolEE4bool(X<int>* %0, bool false)
+    store %1 to %a
+    void %2 = call %_EN4main1XI4boolE1gE(X<bool>* %a)
+    return int 0
+}
+
+X<bool> _EN4main1XI3intE1fI4boolEE4bool(X<int>* %this, bool %u) {
+    X<bool>* %x = alloca X<bool>
+    X<bool> %x.load = load %x
+    return %x.load
+}
+
+void _EN4main1XI4boolE1gE(X<bool>* %this) {
+    return void
+}

@@ -1,0 +1,18 @@
+// RUN: check-snapshots -Wno-unused
+
+void f() {
+    var index = 0;
+    var x = g();
+    X<int>().g();
+}
+
+X<int> g() {
+    var x = X<int>();
+    return x;
+}
+
+struct X<T> {
+    void g() {
+        var index = 0;
+    }
+}

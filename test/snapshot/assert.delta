@@ -1,0 +1,7 @@
+// RUN: check-snapshots
+
+extern bool b();
+
+void main() {
+    assert(b());
+}

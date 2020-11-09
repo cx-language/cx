@@ -1,0 +1,16 @@
+// RUN: check-snapshots -w
+
+struct S {
+    int i;
+    S() {}
+    void bar() {}
+    void foo(int bar) {
+        var a = bar;
+        bar();
+    }
+}
+
+void main() {
+    var s = S();
+    s.foo(30);
+}

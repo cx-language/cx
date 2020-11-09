@@ -1,0 +1,16 @@
+// RUN: check-snapshots -Wno-unused
+
+enum E { A }
+
+struct S {
+    E e;
+    E f;
+}
+
+E f(S s) {
+    return s.f;
+}
+
+E g(S* s) {
+    return s.f;
+}

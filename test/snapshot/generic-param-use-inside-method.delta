@@ -1,0 +1,17 @@
+// RUN: check-snapshots
+
+struct S<T>: Copyable {
+    void f() {
+        g();
+        T t = undefined;
+    }
+
+    void g() {
+        T t2 = undefined;
+    }
+}
+
+void main() {
+    var s = S<int>();
+    s.f();
+}

@@ -1,9 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s
-
-T f<T>(T a) {
-    return -a
-}
-
-void main() {
-    f(0.0)
-}

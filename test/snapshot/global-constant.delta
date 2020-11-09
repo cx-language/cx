@@ -1,0 +1,9 @@
+// RUN: check-snapshots
+
+const int qux = 42;
+
+void main() {
+    var d = bar;
+}
+
+const bar = 42;

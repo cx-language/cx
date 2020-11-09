@@ -1,0 +1,8 @@
+
+int main() {
+    char** %0 = cast char** null to char**
+    void %1 = call %foo(char** %0)
+    return int 0
+}
+
+extern void foo(char** %p)

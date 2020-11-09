@@ -1,0 +1,10 @@
+// RUN: check-snapshots
+
+struct A<T> {
+    T a
+}
+
+void main() {
+    A<int> a = undefined
+    A<A<A<bool>>> aaa = undefined
+}

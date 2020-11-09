@@ -1,9 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
-
-struct S: Copyable {}
-
-void f(S s) {
-    g(s);
-}
-
-void g(S* s) {}

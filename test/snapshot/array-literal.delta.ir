@@ -1,0 +1,11 @@
+
+int main() {
+    int[3]* %a = alloca int[3]
+    int[3] %0 = insertvalue int[3] undefined, 0, int 1
+    int[3] %1 = insertvalue %0, 1, int 2
+    int[3] %2 = insertvalue %1, 2, int 3
+    store %2 to %a
+    int* %3 = getelementptr %a, int 0, int 1
+    int %.load = load %3
+    return %.load
+}

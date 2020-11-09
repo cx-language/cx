@@ -1,0 +1,20 @@
+
+int main() {
+    S* %s = alloca S
+    S* %t = alloca S
+    void %0 = call %_EN4main1S4initE(S* %s)
+    void %1 = call %_EN4main1S4initE3int(S* %t, int 1)
+    return int 0
+}
+
+void _EN4main1S4initE(S* %this) {
+    int* %i = alloca int
+    store int 4 to %i
+    return void
+}
+
+void _EN4main1S4initE3int(S* %this, int %foo) {
+    int* %j = alloca int
+    store int 5 to %j
+    return void
+}

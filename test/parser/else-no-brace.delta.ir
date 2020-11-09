@@ -1,0 +1,13 @@
+
+int main() {
+    br bool true, if.then, if.else
+
+if.then:
+    return int 1
+
+if.else:
+    return int 0
+
+if.end:
+    return int 0
+}

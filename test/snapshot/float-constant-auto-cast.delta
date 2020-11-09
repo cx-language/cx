@@ -1,0 +1,7 @@
+// RUN: check-snapshots -Wno-unused
+
+const a = 4.0;
+
+float f(float b) {
+    return b * (a * 2.0);
+}

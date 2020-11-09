@@ -1,0 +1,16 @@
+// RUN: check-snapshots -w
+
+struct Foo {
+    int i
+    Foo(public int i) { }
+    Foo(public int qux) { }
+    void foo(public int i) { }
+    void foo(public int qux) { }
+}
+
+void foo(public int i) {
+    Foo(i: i).foo(i: i)
+    Foo(qux: i).foo(qux: i)
+}
+
+void foo(public int qux) { }

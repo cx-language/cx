@@ -1,0 +1,125 @@
+
+int main() {
+    Box<Box<int>>* %p = alloca Box<Box<int>>
+    Box<int>* %0 = alloca Box<int>
+    Box<int>* %q = alloca Box<int>
+    Box<int>* %r = alloca Box<int>
+    void %1 = call %_EN3std3BoxI3intE4initE3int(Box<int>* %0, int 42)
+    Box<int> %.load = load %0
+    void %2 = call %_EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(Box<Box<int>>* %p, Box<int> %.load)
+    void %3 = call %_EN3std3BoxI3intE4initE3int(Box<int>* %q, int 42)
+    void %4 = call %_EN3std3BoxI3intE4initE3int(Box<int>* %r, int 42)
+    int* %5 = call %_EN3std3BoxI3intE3getE(Box<int>* %q)
+    store int 0 to %5
+    int* %6 = call %_EN3std3BoxI3intE3getE(Box<int>* %r)
+    void %7 = call %_EN3std3BoxI3intE6deinitE(Box<int>* %q)
+    Box<int> %r.load = load %r
+    store %r.load to %q
+    void %8 = call %_EN3std3BoxI3intE6deinitE(Box<int>* %q)
+    void %9 = call %_EN3std3BoxI3BoxI3intEE6deinitE(Box<Box<int>>* %p)
+    return int 0
+}
+
+void _EN3std3BoxI3BoxI3intEE6deinitE(Box<Box<int>>* %this) {
+    Box<int>** %pointer = getelementptr %this, 0, 0
+    Box<int>* %pointer.load = load %pointer
+    Box<int>* %0 = cast %pointer.load to Box<int>*
+    void %1 = call %_EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* %0)
+    return void
+}
+
+void _EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(Box<Box<int>>* %this, Box<int> %value) {
+    Box<int>** %pointer = getelementptr %this, 0, 0
+    Box<int>* %0 = call %_EN3std8allocateI3BoxI3intEEE3BoxI3intE(Box<int> %value)
+    Box<int>* %1 = cast %0 to Box<int>*
+    store %1 to %pointer
+    return void
+}
+
+void _EN3std3BoxI3intE4initE3int(Box<int>* %this, int %value) {
+    int** %pointer = getelementptr %this, 0, 0
+    int* %0 = call %_EN3std8allocateI3intEE3int(int %value)
+    int* %1 = cast %0 to int*
+    store %1 to %pointer
+    return void
+}
+
+void _EN3std3BoxI3intE6deinitE(Box<int>* %this) {
+    int** %pointer = getelementptr %this, 0, 0
+    int* %pointer.load = load %pointer
+    int* %0 = cast %pointer.load to int*
+    void %1 = call %_EN3std10deallocateIP3intEEP3int(int* %0)
+    return void
+}
+
+int* _EN3std3BoxI3intE3getE(Box<int>* %this) {
+    int** %pointer = getelementptr %this, 0, 0
+    int* %pointer.load = load %pointer
+    int* %0 = cast %pointer.load to int*
+    return %0
+}
+
+void _EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* %allocation) {
+    void* %0 = cast %allocation to void*
+    void %1 = call %free(void* %0)
+    return void
+}
+
+Box<int>* _EN3std8allocateI3BoxI3intEEE3BoxI3intE(Box<int> %value) {
+    Box<int>** %allocation = alloca Box<int>*
+    uint64 %0 = cast %1 to uint64
+    void* %2 = call %malloc(uint64 %0)
+    bool %assert.condition = %2 == void* null
+    br %assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void %3 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at allocate.delta:9:54
+")
+    unreachable
+
+assert.success:
+    Box<int>* %4 = cast %2 to Box<int>*
+    Box<int>* %5 = cast %4 to Box<int>*
+    store %5 to %allocation
+    Box<int>* %allocation.load = load %allocation
+    store %value to %allocation.load
+    Box<int>* %allocation.load = load %allocation
+    Box<int>* %6 = cast %allocation.load to Box<int>*
+    return %6
+}
+
+int* _EN3std8allocateI3intEE3int(int %value) {
+    int** %allocation = alloca int*
+    uint64 %0 = cast %1 to uint64
+    void* %2 = call %malloc(uint64 %0)
+    bool %assert.condition = %2 == void* null
+    br %assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void %3 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at allocate.delta:9:54
+")
+    unreachable
+
+assert.success:
+    int* %4 = cast %2 to int*
+    int* %5 = cast %4 to int*
+    store %5 to %allocation
+    int* %allocation.load = load %allocation
+    store %value to %allocation.load
+    int* %allocation.load = load %allocation
+    int* %6 = cast %allocation.load to int*
+    return %6
+}
+
+void _EN3std10deallocateIP3intEEP3int(int* %allocation) {
+    void* %0 = cast %allocation to void*
+    void %1 = call %free(void* %0)
+    return void
+}
+
+extern void free(void* %ptr)
+
+extern void* malloc(uint64 %size)
+
+void _EN3std10assertFailEP4char(char* %message) {
+}

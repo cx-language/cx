@@ -1,0 +1,6 @@
+// RUN: check-snapshots
+
+void main() {
+    var b = !!false;
+    b = !b;
+}

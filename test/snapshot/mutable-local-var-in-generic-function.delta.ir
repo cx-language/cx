@@ -1,0 +1,14 @@
+
+int main() {
+    void %0 = call %_EN4main1fI3intEE()
+    return int 0
+}
+
+void _EN4main1fI3intEE() {
+    int* %i = alloca int
+    store int 0 to %i
+    int %i.load = load %i
+    int %0 = %i.load + int 1
+    store %0 to %i
+    return void
+}

@@ -1,0 +1,16 @@
+// RUN: check-snapshots
+
+struct X {
+    ~X() {}
+}
+
+struct Y<T> {
+    int f() {
+        return 1;
+    }
+}
+
+void main() {
+    var a = X();
+    Y<bool>().f();
+}

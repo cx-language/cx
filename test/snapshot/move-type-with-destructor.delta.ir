@@ -1,0 +1,17 @@
+
+void _EN4main1fE1YP1Y(Y %a, Y* %b) {
+    void %0 = call %_EN4main1Y6deinitE(Y* %b)
+    store %a to %b
+    return void
+}
+
+void _EN4main1Y6deinitE(Y* %this) {
+    return void
+}
+
+void _EN4main1gE1Y(Y %a) {
+    Y* %b = alloca Y
+    store %a to %b
+    void %0 = call %_EN4main1Y6deinitE(Y* %b)
+    return void
+}

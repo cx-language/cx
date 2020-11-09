@@ -1,0 +1,8 @@
+// RUN: check-snapshots
+
+import "inputs/import-c-typedefed-anonymous-struct.h";
+
+void main() {
+    Foo x = undefined;
+    foo(x);
+}

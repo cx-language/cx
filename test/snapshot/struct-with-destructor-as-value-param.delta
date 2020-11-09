@@ -1,0 +1,8 @@
+// RUN: check-snapshots -Wno-unused
+
+void foo(A<int> a) {}
+
+struct A<T> {
+    T i;
+    ~A() {}
+}

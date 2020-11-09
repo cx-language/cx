@@ -1,0 +1,9 @@
+// RUN: check-snapshots
+
+T f<T>(T a) {
+    return -a
+}
+
+void main() {
+    f(0.0)
+}

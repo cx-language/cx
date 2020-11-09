@@ -1,0 +1,40 @@
+
+extern void* f()
+
+int main() {
+    uint8** %byte = alloca uint8*
+    uint8[1]** %ptr = alloca uint8[1]*
+    void* %0 = call %f()
+    uint8* %1 = cast %0 to uint8*
+    bool %assert.condition = %1 == uint8* null
+    br %assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void %2 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at unwrap.delta:6:37
+")
+    unreachable
+
+assert.success:
+    uint8* %3 = cast %1 to uint8*
+    store %3 to %byte
+    void* %4 = call %f()
+    uint8[1]* %5 = cast %4 to uint8[1]*
+    uint8[1]* %6 = cast %5 to uint8[1]*
+    store %6 to %ptr
+    uint8[1]* %ptr.load = load %ptr
+    bool %assert.condition = %ptr.load == uint8[1]* null
+    br %assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void %7 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at unwrap.delta:8:8
+")
+    unreachable
+
+assert.success:
+    uint8* %8 = getelementptr %ptr.load, int 0, int 0
+    store uint8 1 to %8
+    return int 0
+}
+
+void _EN3std10assertFailEP4char(char* %message) {
+}

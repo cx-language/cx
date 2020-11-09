@@ -1,0 +1,13 @@
+
+uint8 _EN4main3fooE4bool(bool %b) {
+    br %b, if.then, if.else
+
+if.then:
+    br %if.end(uint8 255)
+
+if.else:
+    br %if.end(uint8 238)
+
+if.end(uint8 %if.result):
+    return %if.result
+}

@@ -1,0 +1,46 @@
+
+void _EN4main3fooE() {
+    return void
+}
+
+int _EN4main2f2E3int4bool(int %a, bool %b) {
+    return %a
+}
+
+void _EN4main1gEF_4void(void()* %p) {
+    void()** %p2 = alloca void()*
+    void()* %0 = cast %p to void()*
+    store %0 to %p2
+    void()* %p2.load = load %p2
+    void %1 = call %p2.load()
+    return void
+}
+
+void _EN4main2g2EF3int4bool_3int(int(int, bool)* %p) {
+    int(int, bool)** %p2 = alloca int(int, bool)*
+    int* %a = alloca int
+    int(int, bool)* %0 = cast %p to int(int, bool)*
+    store %0 to %p2
+    int(int, bool)* %p2.load = load %p2
+    bool %1 = !bool true
+    int %2 = call %p2.load(int 42, bool %1)
+    int %3 = %2 + int 1
+    store %3 to %a
+    return void
+}
+
+int main() {
+    void()** %lf = alloca void()*
+    int(int, bool)** %lf2 = alloca int(int, bool)*
+    void()* %0 = cast %_EN4main3fooE to void()*
+    store %0 to %lf
+    void()* %lf.load = load %lf
+    void()* %1 = cast %lf.load to void()*
+    void %2 = call %_EN4main1gEF_4void(void()* %1)
+    int(int, bool)* %3 = cast %_EN4main2f2E3int4bool to int(int, bool)*
+    store %3 to %lf2
+    int(int, bool)* %lf2.load = load %lf2
+    int(int, bool)* %4 = cast %lf2.load to int(int, bool)*
+    void %5 = call %_EN4main2g2EF3int4bool_3int(int(int, bool)* %4)
+    return int 0
+}

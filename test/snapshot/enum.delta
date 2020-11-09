@@ -1,0 +1,16 @@
+// RUN: check-snapshots
+
+var x = 0;
+
+enum A { x, y, z }
+
+void main() {
+    var foo = A.z;
+    if (foo == A.y) {}
+    if (foo != A.x) {}
+    switch (foo) {
+        case A.x: return;
+        case A.y: return;
+        case A.z: return;
+    }
+}

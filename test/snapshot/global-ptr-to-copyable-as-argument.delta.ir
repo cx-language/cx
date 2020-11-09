@@ -1,0 +1,12 @@
+global %sp = S* null
+
+int main() {
+    S* %sp.load = load %sp
+    S* %0 = cast %sp.load to S*
+    void %1 = call %_EN4main3fooEOP1S(S* %0)
+    return int 0
+}
+
+void _EN4main3fooEOP1S(S* %p) {
+    return void
+}

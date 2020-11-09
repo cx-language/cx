@@ -1,0 +1,30 @@
+
+int main() {
+    Foo* %foo = alloca Foo
+    int* %i = alloca int
+    void %0 = call %_EN4main3Foo4initE(Foo* %foo)
+    void %1 = call %_EN4main3Foo3barE(Foo* %foo)
+    int %2 = call %_EN4main3Foo3quxE(Foo* %foo)
+    store %2 to %i
+    return int 0
+}
+
+void _EN4main3Foo4initE(Foo* %this) {
+    int* %baz = getelementptr %this, 0, 0
+    store int 42 to %baz
+    return void
+}
+
+void _EN4main3Foo3barE(Foo* %this) {
+    int* %baz = getelementptr %this, 0, 0
+    int %baz.load = load %baz
+    int %0 = %baz.load + int 1
+    store %0 to %baz
+    return void
+}
+
+int _EN4main3Foo3quxE(Foo* %this) {
+    int* %baz = getelementptr %this, 0, 0
+    int %baz.load = load %baz
+    return %baz.load
+}

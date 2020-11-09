@@ -1,0 +1,26 @@
+
+int main() {
+    S<A>* %x = alloca S<A>
+    void %0 = call %_EN4main1SI1AE4initE(S<A>* %x)
+    void %1 = call %_EN4main1SI1AE1sE(S<A>* %x)
+    return int 0
+}
+
+void _EN4main1SI1AE4initE(S<A>* %this) {
+    A* %0 = alloca A
+    void %1 = call %_EN4main1A4initE(A* %0)
+    void %2 = call %_EN4main1A1hE(A* %0)
+    return void
+}
+
+void _EN4main1SI1AE1sE(S<A>* %this) {
+    return void
+}
+
+void _EN4main1A1hE(A* %this) {
+    return void
+}
+
+void _EN4main1A4initE(A* %this) {
+    return void
+}

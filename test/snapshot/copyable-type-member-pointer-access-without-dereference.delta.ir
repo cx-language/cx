@@ -1,0 +1,25 @@
+
+int main() {
+    S* %0 = alloca S
+    int* %1 = alloca int
+    store int 1 to %1
+    void %2 = call %_EN4main1S4initEP3int(S* %0, int* %1)
+    void %3 = call %_EN4main1S3fooE(S* %0)
+    return int 0
+}
+
+void _EN4main1S3fooE(S* %this) {
+    int** %b = alloca int*
+    int** %a = getelementptr %this, 0, 0
+    int* %a.load = load %a
+    int* %0 = cast %a.load to int*
+    store %0 to %b
+    return void
+}
+
+void _EN4main1S4initEP3int(S* %this, int* %a) {
+    int** %a = getelementptr %this, 0, 0
+    int* %0 = cast %a to int*
+    store %0 to %a
+    return void
+}

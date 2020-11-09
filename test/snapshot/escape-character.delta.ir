@@ -1,0 +1,9 @@
+
+int main() {
+    string* %__str = alloca string
+    void %0 = call %_EN3std6string4initEP4char3int(string* %__str, char* "\n", int 2)
+    return int 0
+}
+
+void _EN3std6string4initEP4char3int(string* %this, char* %pointer, int %length) {
+}

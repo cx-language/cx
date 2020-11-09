@@ -1,0 +1,39 @@
+
+int _EN4main3fooE3int(int %a) {
+    return %a
+}
+
+int main() {
+    X* %x = alloca X
+    int(int)* %0 = cast %_EN4main3fooE3int to int(int)*
+    void %1 = call %_EN4main1X4initEF3int_3int(X* %x, int(int)* %0)
+    int(int)** %p = getelementptr %x, 0, 0
+    int(int)* %p.load = load %p
+    int %2 = call %p.load(int 42)
+    void %3 = call %_EN4main1X1fE(X* %x)
+    return int 0
+}
+
+void _EN4main1X4initEF3int_3int(X* %this, int(int)* %p) {
+    int(int)** %p = getelementptr %this, 0, 0
+    int(int)* %0 = cast %p to int(int)*
+    store %0 to %p
+    return void
+}
+
+void _EN4main1X1fE(X* %this) {
+    int(int)** %p2 = alloca int(int)*
+    int(int)** %p = getelementptr %this, 0, 0
+    int(int)* %p.load = load %p
+    int %0 = call %p.load(int 42)
+    int(int)** %p = getelementptr %this, 0, 0
+    int(int)* %p.load = load %p
+    int %1 = call %p.load(int 42)
+    int(int)** %p = getelementptr %this, 0, 0
+    int(int)* %p.load = load %p
+    int(int)* %2 = cast %p.load to int(int)*
+    store %2 to %p2
+    int(int)* %p2.load = load %p2
+    int %3 = call %p2.load(int 42)
+    return void
+}

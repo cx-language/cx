@@ -1,0 +1,15 @@
+// RUN: check-snapshots
+
+interface A {
+    int f();
+    int g() { return f() * 2; }
+}
+
+struct B: A {
+    int f() { return 21; }
+}
+
+void main() {
+    var b = B();
+    var x = b.g();
+}

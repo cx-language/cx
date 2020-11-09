@@ -1,0 +1,11 @@
+// RUN: check-snapshots
+
+extern bool a();
+extern bool b();
+extern bool c();
+extern bool d();
+extern bool e();
+
+void main() {
+    var x = a() ? b() : c() ? d() : e();
+}

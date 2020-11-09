@@ -1,0 +1,14 @@
+// RUN: check-snapshots
+
+struct S<T>: Copyable {
+    T*? p
+
+    S() {
+        p = null
+    }
+}
+
+void main() {
+    _ = S<int>()
+    _ = S<bool>()
+}

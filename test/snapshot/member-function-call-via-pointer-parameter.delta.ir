@@ -1,0 +1,37 @@
+
+void _EN4main3quxEP3FooP3Bar(Foo* %f, Bar* %b) {
+    Foo* %0 = cast %f to Foo*
+    void %1 = call %_EN4main3Foo3fooE(Foo* %0)
+    Bar* %2 = cast %b to Bar*
+    void %3 = call %_EN4main3Bar3barE(Bar* %2)
+    return void
+}
+
+void _EN4main3Foo3fooE(Foo* %this) {
+    return void
+}
+
+void _EN4main3Bar3barE(Bar* %this) {
+    return void
+}
+
+int main() {
+    Foo* %f = alloca Foo
+    Bar* %b = alloca Bar
+    void %0 = call %_EN4main3Foo4initE(Foo* %f)
+    void %1 = call %_EN4main3Bar4initE(Bar* %b)
+    void %2 = call %_EN4main3quxEP3FooP3Bar(Foo* %f, Bar* %b)
+    return int 0
+}
+
+void _EN4main3Foo4initE(Foo* %this) {
+    int* %i = getelementptr %this, 0, 0
+    store int 0 to %i
+    return void
+}
+
+void _EN4main3Bar4initE(Bar* %this) {
+    int* %i = getelementptr %this, 0, 0
+    store int 0 to %i
+    return void
+}

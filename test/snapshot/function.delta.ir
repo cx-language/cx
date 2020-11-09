@@ -1,0 +1,12 @@
+
+int main() {
+    void %0 = call %bar()
+    void %1 = call %_EN4main3fooE()
+    return int 0
+}
+
+extern void bar()
+
+void _EN4main3fooE() {
+    return void
+}

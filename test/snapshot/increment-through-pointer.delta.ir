@@ -1,0 +1,14 @@
+
+void _EN4main1fEP3int(int* %a) {
+    int** %p = alloca int*
+    int* %0 = cast %a to int*
+    store %0 to %p
+    int* %p.load = load %p
+    int %p.load.load = load %p.load
+    int %1 = %p.load.load + int 1
+    store %1 to %p.load
+    int %a.load = load %a
+    int %2 = %a.load + int -1
+    store %2 to %a
+    return void
+}

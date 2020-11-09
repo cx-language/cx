@@ -1,0 +1,6 @@
+
+float _EN4main1fE5float(float %b) {
+    float %0 = float 4 * float 2
+    float %1 = %b * %0
+    return %1
+}

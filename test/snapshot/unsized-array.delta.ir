@@ -1,0 +1,50 @@
+
+int main() {
+    int[3]* %three = alloca int[3]
+    int* %b = alloca int
+    ArrayRef<int>* %ref = alloca ArrayRef<int>
+    int* %bb = alloca int
+    int[3] %0 = insertvalue int[3] undefined, 0, int 0
+    int[3] %1 = insertvalue %0, 1, int 42
+    int[3] %2 = insertvalue %1, 2, int 0
+    store %2 to %three
+    int* %3 = getelementptr %three, 0, 0
+    ArrayRef<int> %4 = insertvalue ArrayRef<int> undefined, 0, %3
+    ArrayRef<int> %5 = insertvalue %4, 1, int 3
+    void %6 = call %_EN4main3fooEAR_3int(ArrayRef<int> %5)
+    void %7 = call %_EN4main3barEPA3_3int(int[3]* %three)
+    store int 3 to %b
+    int* %8 = getelementptr %three, 0, 0
+    ArrayRef<int> %9 = insertvalue ArrayRef<int> undefined, 0, %8
+    ArrayRef<int> %10 = insertvalue %9, 1, int 3
+    store %10 to %ref
+    ArrayRef<int> %ref.load = load %ref
+    int %size = extractvalue %ref.load, 1
+    store %size to %bb
+    return int 0
+}
+
+void _EN4main3fooEAR_3int(ArrayRef<int> %ints) {
+    int* %a = alloca int
+    int* %b = alloca int
+    ArrayRef<int>* %c = alloca ArrayRef<int>
+    int* %0 = extractvalue %ints, 0
+    int* %1 = getelementptr %0, int 1
+    int %.load = load %1
+    store %.load to %a
+    int %size = extractvalue %ints, 1
+    store %size to %b
+    store %ints to %c
+    return void
+}
+
+void _EN4main3barEPA3_3int(int[3]* %ints) {
+    int* %b = alloca int
+    ArrayRef<int>* %ref = alloca ArrayRef<int>
+    store int 3 to %b
+    int* %0 = getelementptr %ints, 0, 0
+    ArrayRef<int> %1 = insertvalue ArrayRef<int> undefined, 0, %0
+    ArrayRef<int> %2 = insertvalue %1, 1, int 3
+    store %2 to %ref
+    return void
+}

@@ -1,0 +1,12 @@
+
+int main() {
+    int* %i = alloca int
+    int* %j = alloca int
+    int* %k = alloca int
+    store int 42 to %i
+    int %0 = int 0 + int 1
+    store %0 to %j
+    int %1 = int 15 * int 7
+    store %1 to %k
+    return int 0
+}

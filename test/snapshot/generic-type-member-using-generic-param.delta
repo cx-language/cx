@@ -1,0 +1,8 @@
+// RUN: check-snapshots
+
+struct A<T> {
+    T*? a
+    A() { this.a = null }
+}
+
+void main() { var a = A<int>() }

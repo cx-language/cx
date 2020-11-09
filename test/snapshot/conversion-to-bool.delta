@@ -1,0 +1,7 @@
+// RUN: check-snapshots -w
+
+void f(char* pb) {
+    var b = bool(2);
+    b = bool(*pb);
+    bool(b);
+}

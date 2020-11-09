@@ -1,0 +1,16 @@
+// RUN: check-snapshots
+
+void main() {
+    while (true) {
+        if (true) {
+            break;
+            var a = 1;
+        }
+        break;
+    }
+    switch (1) {
+        default:
+            break;
+            var b = 1;
+    }
+}

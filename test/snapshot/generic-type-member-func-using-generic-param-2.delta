@@ -1,0 +1,16 @@
+// RUN: check-snapshots
+
+struct C<T>: Copyable {
+    void f() {
+        g()
+    }
+
+    void g() {
+        var a = sizeof(T)
+    }
+}
+
+void main() {
+    var c = C<bool>()
+    c.f()
+}

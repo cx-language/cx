@@ -1,0 +1,12 @@
+// RUN: check-snapshots
+
+extern void foo();
+extern void bar();
+
+void main() {
+    if false {
+        foo();
+    } else {
+        bar();
+    }
+}

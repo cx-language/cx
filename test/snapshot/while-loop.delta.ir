@@ -1,0 +1,17 @@
+
+extern bool foo()
+
+int main() {
+    br %loop.condition
+
+loop.condition:
+    bool %0 = call %foo()
+    br %0, loop.body, loop.end
+
+loop.body:
+    bool %1 = call %foo()
+    br %loop.condition
+
+loop.end:
+    return int 0
+}

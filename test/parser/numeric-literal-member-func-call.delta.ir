@@ -1,0 +1,15 @@
+
+int main() {
+    uint64* %foo = alloca uint64
+    int* %0 = alloca int
+    store int 0 to %0
+    uint64 %1 = call %_EN3std3int4hashE(int* %0)
+    store %1 to %foo
+    return int 0
+}
+
+uint64 _EN3std3int4hashE(int* %this) {
+    int %this.load = load %this
+    uint64 %0 = cast %this.load to uint64
+    return %0
+}

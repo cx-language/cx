@@ -1,0 +1,23 @@
+
+int main() {
+    Foo* %foo = alloca Foo
+    Bar* %bar = alloca Bar
+    void %0 = call %_EN4main3Foo4initE(Foo* %foo)
+    int %1 = -int 1
+    void %2 = call %_EN4main3Bar4initE3int(Bar* %bar, int %1)
+    return int 0
+}
+
+void _EN4main3Foo4initE(Foo* %this) {
+    int* %i = getelementptr %this, 0, 0
+    store int 42 to %i
+    return void
+}
+
+void _EN4main3Bar4initE3int(Bar* %this, int %j) {
+    int* %i = getelementptr %this, 0, 0
+    store int 42 to %i
+    int* %j = getelementptr %this, 0, 1
+    store %j to %j
+    return void
+}

@@ -1,0 +1,16 @@
+
+extern void foo(uint8 %a)
+
+int main() {
+    uint64* %b = alloca uint64
+    int8* %c = alloca int8
+    void %0 = call %foo(uint8 1)
+    store uint64 42 to %b
+    int %1 = -int 42
+    int8 %2 = cast %1 to int8
+    store %2 to %c
+    uint64 %b.load = load %b
+    uint64 %3 = %b.load + uint64 1
+    store %3 to %b
+    return int 0
+}

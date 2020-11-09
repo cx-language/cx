@@ -1,0 +1,9 @@
+
+int main() {
+    Foo* %x = alloca Foo
+    Foo %x.load = load %x
+    void %0 = call %foo(Foo %x.load)
+    return int 0
+}
+
+extern void foo(Foo %0)

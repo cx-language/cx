@@ -1,0 +1,13 @@
+// RUN: check-snapshots
+
+void main() {
+    foo(sp)
+}
+
+S*? sp = null
+
+void foo(S*? p) { }
+
+struct S: Copyable {
+    int i
+}

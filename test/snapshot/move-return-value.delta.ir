@@ -1,0 +1,23 @@
+
+X _EN4main1fE() {
+    X* %x = alloca X
+    void %0 = call %_EN4main1X4initE(X* %x)
+    X %x.load = load %x
+    return %x.load
+}
+
+void _EN4main1X6deinitE(X* %this) {
+    return void
+}
+
+void _EN4main1X4initE(X* %this) {
+    return void
+}
+
+int main() {
+    X* %a = alloca X
+    X %0 = call %_EN4main1fE()
+    store %0 to %a
+    void %1 = call %_EN4main1X6deinitE(X* %a)
+    return int 0
+}

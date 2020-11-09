@@ -1,0 +1,22 @@
+// RUN: check-snapshots
+
+struct X {
+    int(int) p;
+
+    void f() {
+        this.p(42);
+        p(42);
+        var p2 = p;
+        p2(42);
+    }
+}
+
+int foo(int a) {
+    return a;
+}
+
+void main() {
+    var x = X(foo);
+    x.p(42);
+    x.f();
+}

@@ -1,0 +1,26 @@
+
+int main() {
+    Foo<int>* %i = alloca Foo<int>
+    Foo<string>* %b = alloca Foo<string>
+    string* %__str = alloca string
+    void %0 = call %_EN4main3FooI3intE4initE3int(Foo<int>* %i, int 42)
+    void %1 = call %_EN3std6string4initEP4char3int(string* %__str, char* "", int 0)
+    string %__str.load = load %__str
+    void %2 = call %_EN4main3FooI6stringE4initE6string(Foo<string>* %b, string %__str.load)
+    return int 0
+}
+
+void _EN4main3FooI3intE4initE3int(Foo<int>* %this, int %t) {
+    int* %t = getelementptr %this, 0, 0
+    store %t to %t
+    return void
+}
+
+void _EN4main3FooI6stringE4initE6string(Foo<string>* %this, string %t) {
+    string* %t = getelementptr %this, 0, 0
+    store %t to %t
+    return void
+}
+
+void _EN3std6string4initEP4char3int(string* %this, char* %pointer, int %length) {
+}

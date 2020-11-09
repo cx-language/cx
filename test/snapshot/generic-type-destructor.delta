@@ -1,0 +1,10 @@
+// RUN: check-snapshots
+
+struct C<T> {
+    ~C() { }
+}
+
+void main() {
+    var i = C<int>()
+    var b = C<bool>()
+}

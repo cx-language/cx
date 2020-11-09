@@ -156,11 +156,10 @@ IRType* Value::getType() const {
                     case IRTypeKind::IRArrayType:
                         baseType = baseType->getPointee()->getElementType()->getPointerTo();
                         break;
-                    case IRTypeKind::IRBasicType:
-                    case IRTypeKind::IRStructType:
-                    case IRTypeKind::IRUnionType:
-                    case IRTypeKind::IRFunctionType:
                     case IRTypeKind::IRPointerType:
+                        baseType = baseType->getPointee();
+                        break;
+                    default:
                         llvm_unreachable("invalid non-const GEP target type");
                 }
             }
@@ -168,21 +167,17 @@ IRType* Value::getType() const {
         }
         case ValueKind::ConstGEPInst: {
             auto gep = llvm::cast<ConstGEPInst>(this);
-            auto baseType = gep->pointer->getType();
-            switch (baseType->getPointee()->kind) {
-                case IRTypeKind::IRStructType: {
-                    ASSERT(gep->index1 < (int) baseType->getPointee()->getElements().size());
-                    baseType = baseType->getPointee()->getElements()[gep->index1]->getPointerTo();
-                    break;
-                }
+            auto baseType = gep->pointer->getType()->getPointee();
+            switch (baseType->kind) {
+                case IRTypeKind::IRStructType:
+                    ASSERT(gep->index1 < baseType->getElements().size());
+                    return baseType->getElements()[gep->index1]->getPointerTo();
                 case IRTypeKind::IRArrayType:
-                case IRTypeKind::IRBasicType:
-                case IRTypeKind::IRFunctionType:
-                case IRTypeKind::IRPointerType:
-                case IRTypeKind::IRUnionType:
+                    ASSERT(gep->index1 < baseType->getArraySize());
+                    return baseType->getElementType()->getPointerTo();
+                default:
                     llvm_unreachable("invalid const GEP target type");
             }
-            return baseType;
         }
         case ValueKind::CastInst:
             return llvm::cast<CastInst>(this)->type;
@@ -597,9 +592,9 @@ llvm::raw_ostream& delta::operator<<(llvm::raw_ostream& stream, IRType* type) {
                 return stream << type->getName();
             } else {
                 stream << "{ ";
-                for (auto& field : type->getElements()) {
-                    stream << field;
-                    if (&field != &type->getElements().back()) stream << ", ";
+                for (auto& element : type->getElements()) {
+                    stream << element;
+                    if (&element != &type->getElements().back()) stream << ", ";
                 }
                 return stream << " }";
             }
@@ -609,9 +604,13 @@ llvm::raw_ostream& delta::operator<<(llvm::raw_ostream& stream, IRType* type) {
                 return stream << type->getName();
             } else {
                 stream << "union { ";
-                for (auto& field : type->getElements()) {
-                    stream << field;
-                    if (&field != &type->getElements().back()) stream << ", ";
+                for (auto& element : type->getElements()) {
+                    if (element) { // TODO: Element type should exist for all associated values
+                        stream << element;
+                    } else {
+                        stream << "void";
+                    }
+                    if (&element != &type->getElements().back()) stream << ", ";
                 }
                 return stream << " }";
             }

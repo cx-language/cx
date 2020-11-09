@@ -1,0 +1,8 @@
+// RUN: check-snapshots
+
+void main() {
+    var a = 1.0;
+    var b = 2.0 * -a;
+    b++;
+    b--;
+}

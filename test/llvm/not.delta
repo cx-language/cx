@@ -1,6 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s
-
-void main() {
-    var b = !!false;
-    b = !b;
-}

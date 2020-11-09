@@ -1,0 +1,7 @@
+
+int main() {
+    void*[3]* %a = alloca void*[3]
+    int*[2]* %b = alloca int*[2]
+    float32**[1]* %c = alloca float32**[1]
+    return int 0
+}

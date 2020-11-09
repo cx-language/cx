@@ -1,0 +1,15 @@
+
+int main() {
+    Optional<int8[]>* %a = alloca Optional<int8[]>
+    Optional<int8[]>* %0 = alloca Optional<int8[]>
+    void %1 = call %_EN3std8OptionalIAR_4int8E4initE(Optional<int8[]>* %0)
+    Optional<int8[]> %.load = load %0
+    store %.load to %a
+    return int 0
+}
+
+void _EN3std8OptionalIAR_4int8E4initE(Optional<int8[]>* %this) {
+    bool* %hasValue = getelementptr %this, 0, 0
+    store bool false to %hasValue
+    return void
+}

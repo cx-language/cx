@@ -1,0 +1,15 @@
+// RUN: check-snapshots
+
+struct X<T> {
+    X<U> f<U>(U u) {
+        X<U> x = undefined;
+        return x;
+    }
+
+    void g() {}
+}
+
+void main(X<int> x) {
+    var a = x.f(false);
+    a.g();
+}

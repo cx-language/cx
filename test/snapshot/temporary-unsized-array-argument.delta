@@ -1,0 +1,10 @@
+// RUN: check-snapshots
+
+void f<T>(T[] a) {
+    var s = a.size();
+}
+
+void main() {
+    f([1,2,3]);
+    f<int>([1,2,3]);
+}

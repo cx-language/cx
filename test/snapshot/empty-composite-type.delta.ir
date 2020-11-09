@@ -1,0 +1,6 @@
+
+int main() {
+    S* %s = alloca S
+    C* %c = alloca C
+    return int 0
+}

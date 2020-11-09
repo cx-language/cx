@@ -1,0 +1,22 @@
+global %i = int 0
+
+int main() {
+    int* %i = alloca int
+    S* %s = alloca S
+    store int 0 to %i
+    void %0 = call %_EN4main1S4initE(S* %s)
+    void %1 = call %_EN4main1S1fE(S* %s)
+    return int 0
+}
+
+void _EN4main1S4initE(S* %this) {
+    int* %i = getelementptr %this, 0, 0
+    store int 0 to %i
+    return void
+}
+
+void _EN4main1S1fE(S* %this) {
+    int* %i = alloca int
+    store int 0 to %i
+    return void
+}

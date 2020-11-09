@@ -1,0 +1,10 @@
+// RUN: check-snapshots
+
+void f<T>() {
+    var i = 0;
+    i++;
+}
+
+void main() {
+    f<int>();
+}

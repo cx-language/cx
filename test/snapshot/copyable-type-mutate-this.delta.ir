@@ -1,0 +1,19 @@
+
+int main() {
+    S* %0 = alloca S
+    void %1 = call %_EN4main1S4initE3int(S* %0, int 1)
+    void %2 = call %_EN4main1S1sE(S* %0)
+    return int 0
+}
+
+void _EN4main1S1sE(S* %this) {
+    int* %i = getelementptr %this, 0, 0
+    store int 2 to %i
+    return void
+}
+
+void _EN4main1S4initE3int(S* %this, int %i) {
+    int* %i = getelementptr %this, 0, 0
+    store %i to %i
+    return void
+}

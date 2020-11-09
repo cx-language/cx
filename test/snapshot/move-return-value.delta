@@ -1,0 +1,14 @@
+// RUN: check-snapshots
+
+struct X {
+    ~X() {}
+}
+
+X f() {
+    var x = X();
+    return x;
+}
+
+void main() {
+    var a = f();
+}

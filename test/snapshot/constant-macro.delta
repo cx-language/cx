@@ -1,0 +1,9 @@
+// RUN: check-snapshots -Wno-unused
+
+import "constant-macro.h"
+
+void foo(int i) {
+    switch (i) {
+        case FOO: return
+    }
+}

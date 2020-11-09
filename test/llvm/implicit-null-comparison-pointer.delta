@@ -1,9 +1,0 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s
-
-void main() {
-    bool*? foo = undefined;
-    bool b = !foo;
-    if (foo) {}
-    while (foo) {}
-    var a = foo ? 1 : 2;
-}

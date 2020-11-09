@@ -1,0 +1,9 @@
+
+int main() {
+    int %0 = call %_EN4main3fooI3int4boolEE3int4bool(int 1, bool false)
+    return int 0
+}
+
+int _EN4main3fooI3int4boolEE3int4bool(int %a, bool %b) {
+    return int 0
+}

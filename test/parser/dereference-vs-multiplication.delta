@@ -1,4 +1,4 @@
-// RUN: check_matches_snapshot %delta -print-llvm %s -Wno-unused
+// RUN: check-snapshots -Wno-unused
 
 int g() {
     return 1

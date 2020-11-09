@@ -1,0 +1,10 @@
+// RUN: check-snapshots
+
+int main() {
+    return foo();
+}
+
+int foo() {
+    foo();
+    return 42;
+}

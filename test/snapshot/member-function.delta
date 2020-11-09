@@ -1,0 +1,17 @@
+// RUN: check-snapshots
+
+struct Foo {
+    int baz;
+
+    Foo() { this.baz = 42; }
+
+    void bar() { this.baz++; }
+
+    int qux() { return this.baz; }
+}
+
+void main() {
+    var foo = Foo();
+    foo.bar();
+    var i = foo.qux();
+}

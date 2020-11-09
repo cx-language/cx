@@ -1,0 +1,29 @@
+
+int main() {
+    int* %sum = alloca int
+    int* %i = alloca int
+    store int 0 to %sum
+    store int 3 to %i
+    br %loop.condition
+
+loop.condition:
+    int %i.load = load %i
+    bool %0 = %i.load < int 9
+    br %0, loop.body, loop.end
+
+loop.body:
+    int %sum.load = load %sum
+    int %i.load = load %i
+    int %1 = %sum.load + %i.load
+    store %1 to %sum
+    br %loop.increment
+
+loop.increment:
+    int %i.load = load %i
+    int %2 = %i.load + int 1
+    store %2 to %i
+    br %loop.condition
+
+loop.end:
+    return int 0
+}
