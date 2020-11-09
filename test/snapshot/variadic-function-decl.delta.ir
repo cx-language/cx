@@ -1,2 +1,2 @@
 
-extern void f(int %i)
+extern void f(int)

@@ -5,4 +5,4 @@ int main() {
     return int 0
 }
 
-extern void foo(char** %p)
+extern void foo(char**)

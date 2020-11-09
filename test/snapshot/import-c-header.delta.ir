@@ -15,6 +15,6 @@ int main() {
     return int 0
 }
 
-extern int puts(char* %__s)
+extern int puts(char*)
 
-extern uint getBar(Foo* %foo)
+extern uint getBar(Foo*)

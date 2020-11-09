@@ -441,7 +441,11 @@ void Value::print(llvm::raw_ostream& stream) const {
             if (function->isExtern) stream << "extern ";
             stream << function->returnType << " " << function->mangledName << "(";
             for (auto& param : function->params) {
-                stream << formatTypeAndName(&param);
+                if (function->isExtern) {
+                    stream << param.type;
+                } else {
+                    stream << formatTypeAndName(&param);
+                }
                 if (&param != &function->params.back()) stream << ", ";
             }
             stream << ")";

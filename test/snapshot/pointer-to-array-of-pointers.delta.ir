@@ -27,7 +27,7 @@ assert.success:
     return int 0
 }
 
-extern int printf(char* %format)
+extern int printf(char*)
 
 void _EN3std10assertFailEP4char(char* %message) {
 }

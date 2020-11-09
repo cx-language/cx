@@ -117,9 +117,9 @@ void _EN3std10deallocateIP3intEEP3int(int* %allocation) {
     return void
 }
 
-extern void free(void* %ptr)
+extern void free(void*)
 
-extern void* malloc(uint64 %size)
+extern void* malloc(uint64)
 
 void _EN3std10assertFailEP4char(char* %message) {
 }

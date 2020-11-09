@@ -227,7 +227,7 @@ void _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* %this, List<int>* %
     return void
 }
 
-extern void free(void* %ptr)
+extern void free(void*)
 
 int* _EN3std13allocateArrayI3intEE3int(int %size) {
     uint64 %0 = cast %1 to uint64
@@ -289,7 +289,7 @@ int _EN3std4ListI3intE4sizeE(List<int>* %this) {
     return %size.load
 }
 
-extern void* malloc(uint64 %size)
+extern void* malloc(uint64)
 
 void _EN3std10assertFailEP4char(char* %message) {
 }

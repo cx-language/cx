@@ -1,5 +1,5 @@
 
-extern void foo(uint8 %a)
+extern void foo(uint8)
 
 int main() {
     uint64* %b = alloca uint64

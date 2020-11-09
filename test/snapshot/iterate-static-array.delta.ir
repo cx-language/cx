@@ -110,7 +110,7 @@ void _EN3std12StringBuffer6deinitE(StringBuffer* %this) {
 StringBuffer _EN3std3int8toStringE(int* %this) {
 }
 
-extern int printf(char* %format)
+extern int printf(char*)
 
 int _EN3std12StringBuffer4sizeE(StringBuffer* %this) {
 }

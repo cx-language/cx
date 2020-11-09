@@ -13,8 +13,8 @@ int main() {
     return int 0
 }
 
-extern void foo(int(int)* %cb)
+extern void foo(int(int)*)
 
-extern void bar(int(int)* %cb)
+extern void bar(int(int)*)
 
-extern void baz(int(int)* %cb)
+extern void baz(int(int)*)

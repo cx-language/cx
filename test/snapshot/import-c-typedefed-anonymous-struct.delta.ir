@@ -6,4 +6,4 @@ int main() {
     return int 0
 }
 
-extern void foo(Foo %0)
+extern void foo(Foo)
