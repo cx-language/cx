@@ -87,11 +87,11 @@ StringBuffer readFile(string path) {
     defer fclose(file);
 
     fseek(file, 0, SEEK_END);
-    var size = ftell(file!);
-    fseek(file!, 0, SEEK_SET);
+    var size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
     var content = StringBuffer(uninitializedSize: int(size));
-    fread(content.data(), sizeof(char), uint64(size), file!);
+    fread(content.data(), sizeof(char), uint64(size), file);
 
     return content;
 }
@@ -109,7 +109,7 @@ void assertFail(const char* message) {
     var stream = fdopen(2, "w");
     if (stream) {
         fprintf(stream, message);
-        fclose(stream!);
+        fclose(stream);
     }
     abortWrapper();
 }

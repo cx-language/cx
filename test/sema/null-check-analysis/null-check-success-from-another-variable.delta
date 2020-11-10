@@ -2,7 +2,8 @@
 
 void foo(int*? p) {
     if (p != null) {
-        var i = *p;
-        *p = 42;
+        var j = p;
+        var i = j;
+        *i = 3;
     }
 }

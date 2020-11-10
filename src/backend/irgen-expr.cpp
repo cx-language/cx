@@ -26,7 +26,7 @@ Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
     }
 
     ASSERT(stringConstructor);
-    createCall(stringConstructor, { alloca, stringPtr, size });
+    createCall(stringConstructor, { alloca, stringPtr, size }, nullptr);
     return alloca;
 }
 
@@ -79,7 +79,7 @@ Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Value* arg) {
     llvm::SmallVector<Value*, 2> args;
     args.push_back(alloca);
     if (arg) args.push_back(arg);
-    createCall(optionalConstructor, args);
+    createCall(optionalConstructor, args, nullptr);
     return alloca;
 }
 
@@ -109,7 +109,7 @@ Value* IRGenerator::emitTupleExpr(const TupleExpr& expr) {
 }
 
 Value* IRGenerator::emitImplicitNullComparison(Value* operand, BinaryOperator op) {
-    return createBinaryOp(op, operand, createConstantNull(operand->getType()));
+    return createBinaryOp(op, operand, createConstantNull(operand->getType()), nullptr);
 }
 
 Value* IRGenerator::emitNot(const UnaryExpr& expr) {
@@ -126,8 +126,13 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
             return emitExpr(expr.getOperand());
         case Token::Minus:
             return createNeg(emitExpr(expr.getOperand()));
-        case Token::Star:
-            return emitExpr(expr.getOperand());
+        case Token::Star: {
+            auto operand = emitExpr(expr.getOperand());
+            if (auto load = llvm::dyn_cast<LoadInst>(operand)) {
+                load->expr = &expr;
+            }
+            return operand;
+        }
         case Token::And:
             return emitExprAsPointer(expr.getOperand());
         case Token::Not:
@@ -160,11 +165,11 @@ Value* IRGenerator::emitConstantIncrement(const UnaryExpr& expr, int increment) 
     Value* result;
 
     if (value->getType()->isInteger()) {
-        result = createBinaryOp(Token::Plus, value, createConstantInt(value->getType(), increment));
+        result = createBinaryOp(Token::Plus, value, createConstantInt(value->getType(), increment), &expr);
     } else if (value->getType()->isPointerType()) {
         result = createGEP(value, { createConstantInt(Type::getInt(), increment) });
     } else if (value->getType()->isFloatingPoint()) {
-        result = createBinaryOp(Token::Plus, value, createConstantFP(value->getType(), increment));
+        result = createBinaryOp(Token::Plus, value, createConstantFP(value->getType(), increment), &expr);
     } else {
         llvm_unreachable("unknown increment/decrement operand type");
     }
@@ -232,7 +237,7 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
                 right = createLoad(right);
             }
 
-            return createBinaryOp(expr.getOperator(), left, right);
+            return createBinaryOp(expr.getOperator(), left, right, &expr);
     }
 }
 
@@ -290,8 +295,8 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     }
 }
 
-void IRGenerator::emitAssert(Value* condition, SourceLocation location, llvm::StringRef message) {
-    condition = createIsNull(condition, "assert.condition");
+void IRGenerator::emitAssert(Value* condition, const Expr* expr, SourceLocation location, llvm::StringRef message) {
+    condition = createIsNull(condition, expr, "assert.condition");
     auto* function = insertBlock->parent;
     auto* failBlock = new BasicBlock("assert.fail", function);
     auto* successBlock = new BasicBlock("assert.success", function);
@@ -300,7 +305,7 @@ void IRGenerator::emitAssert(Value* condition, SourceLocation location, llvm::St
     setInsertPoint(failBlock);
     auto messageAndLocation = llvm::join_items("", message, " at ", llvm::sys::path::filename(location.file), ":", std::to_string(location.line), ":",
                                                std::to_string(location.column), "\n");
-    createCall(assertFail, createGlobalStringPtr(messageAndLocation));
+    createCall(assertFail, createGlobalStringPtr(messageAndLocation), nullptr);
     createUnreachable();
     setInsertPoint(successBlock);
 }
@@ -312,7 +317,7 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
 
     // TODO: Could reuse variable alloca instead of always creating a new one here.
     auto* enumValue = createEntryBlockAlloca(enumDecl->getType(), "enum");
-    createStore(tag, createGEP(enumValue, 0, 0, "tag"));
+    createStore(tag, createGEP(enumValue, 0, 0, nullptr, "tag"));
 
     if (!associatedValueElements.empty()) {
         // TODO: This is duplicated in emitTupleExpr.
@@ -321,7 +326,7 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
         for (auto& element : associatedValueElements) {
             associatedValue = createInsertValue(associatedValue, emitExpr(*element.getValue()), index++);
         }
-        auto* associatedValuePtr = createCast(createGEP(enumValue, 0, 1, "associatedValue"), associatedValue->getType()->getPointerTo());
+        auto* associatedValuePtr = createCast(createGEP(enumValue, 0, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
         createStore(associatedValue, associatedValuePtr);
     }
 
@@ -338,7 +343,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (expr.getFunctionName() == "assert") {
-        emitAssert(emitExpr(*expr.getArgs().front().getValue()), expr.getCallee().getLocation());
+        emitAssert(emitExpr(*expr.getArgs().front().getValue()), &expr, expr.getCallee().getLocation());
         return nullptr;
     }
 
@@ -409,10 +414,10 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
     }
 
     if (calleeDecl->isConstructorDecl()) {
-        createCall(calleeValue, args);
+        createCall(calleeValue, args, &expr);
         return args[0];
     } else {
-        return createCall(calleeValue, args);
+        return createCall(calleeValue, args, &expr);
     }
 }
 
@@ -431,21 +436,18 @@ Value* IRGenerator::emitAddressofExpr(const AddressofExpr& expr) {
     return createCast(value, Type::getUIntPtr(), "address");
 }
 
-Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field) {
+Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr) {
     auto baseTypeDecl = field->getParentDecl();
-    auto baseType = baseValue->getType();
 
-    if (baseType->isPointerType()) {
-        baseType = baseType->getPointee();
-
-        if (baseType->isPointerType()) {
+    if (baseValue->getType()->isPointerType()) {
+        if (baseValue->getType()->getPointee()->isPointerType()) {
             baseValue = createLoad(baseValue);
         }
 
         if (baseTypeDecl->isUnion()) {
             return createCast(baseValue, field->getType().getPointerTo(), field->getName());
         } else {
-            return createGEP(baseValue, 0, baseTypeDecl->getFieldIndex(field), field->getName());
+            return createGEP(baseValue, 0, baseTypeDecl->getFieldIndex(field), expr, field->getName());
         }
     } else {
         auto index = baseTypeDecl->isUnion() ? 0 : baseTypeDecl->getFieldIndex(field);
@@ -480,7 +482,7 @@ Value* IRGenerator::emitMemberExpr(const MemberExpr& expr) {
         return emitTupleElementAccess(expr);
     }
 
-    return emitMemberAccess(emitLvalueExpr(*expr.getBaseExpr()), llvm::cast<FieldDecl>(expr.getDecl()));
+    return emitMemberAccess(emitLvalueExpr(*expr.getBaseExpr()), llvm::cast<FieldDecl>(expr.getDecl()), &expr);
 }
 
 Value* IRGenerator::emitTupleElementAccess(const MemberExpr& expr) {
@@ -496,14 +498,14 @@ Value* IRGenerator::emitTupleElementAccess(const MemberExpr& expr) {
     }
 
     if (baseValue->getType()->isPointerType()) {
-        return createGEP(baseValue, 0, index, expr.getMemberName());
+        return createGEP(baseValue, 0, index, nullptr, expr.getMemberName());
     } else {
         return createExtractValue(baseValue, index, expr.getMemberName());
     }
 }
 
 Value* IRGenerator::emitIndexExpr(const IndexExpr& expr) {
-    if (!expr.getBase()->getType().removePointer().isArrayType()) {
+    if (!expr.getBase()->getType().removeOptional().removePointer().isArrayType()) {
         return emitCallExpr(expr);
     }
 
@@ -523,7 +525,7 @@ Value* IRGenerator::emitIndexExpr(const IndexExpr& expr) {
         value = createLoad(value);
     }
 
-    if (lhsType.isArrayWithUnknownSize()) {
+    if (lhsType.removeOptional().isArrayWithUnknownSize()) {
         return createGEP(value, { emitExpr(*expr.getIndex()) });
     }
 
@@ -535,10 +537,10 @@ Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
     llvm::StringRef message = "Unwrap failed";
 
     if (expr.getOperand().getType().isImplementedAsPointer()) {
-        emitAssert(value, expr.getLocation(), message);
+        emitAssert(value, &expr, expr.getLocation(), message);
         return value;
     } else {
-        emitAssert(createExtractValue(value, optionalHasValueFieldIndex), expr.getLocation(), message);
+        emitAssert(createExtractValue(value, optionalHasValueFieldIndex), &expr, expr.getLocation(), message);
         return createExtractValue(value, optionalValueFieldIndex);
     }
 }
@@ -687,7 +689,7 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
         if (enumDecl->hasAssociatedValues()) {
             auto* value = emitLvalueExpr(expr);
             if (enumValue) *enumValue = value;
-            return createLoad(createGEP(value, 0, 0, value->getName() + ".tag"));
+            return createLoad(createGEP(value, 0, 0, nullptr, value->getName() + ".tag"));
         }
     }
 

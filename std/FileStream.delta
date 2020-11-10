@@ -19,7 +19,7 @@ struct OutputFileStream {
     void write<T: Printable>(T* value) {
         var s = value.toString();
         fprintf(file!, "%.*s", s.size(), s.data());
-        fflush(file!); // TODO: Temporary. Remove this when we can.
+        fflush(file);
     }
 }
 

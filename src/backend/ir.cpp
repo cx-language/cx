@@ -156,9 +156,6 @@ IRType* Value::getType() const {
                     case IRTypeKind::IRArrayType:
                         baseType = baseType->getPointee()->getElementType()->getPointerTo();
                         break;
-                    case IRTypeKind::IRPointerType:
-                        baseType = baseType->getPointee();
-                        break;
                     default:
                         llvm_unreachable("invalid non-const GEP target type");
                 }
@@ -211,6 +208,21 @@ IRType* Value::getType() const {
     }
 
     llvm_unreachable("unhandled instruction kind");
+}
+
+const Expr* Value::getExpr() const {
+    switch (kind) {
+        case ValueKind::CallInst:
+            return llvm::cast<CallInst>(this)->expr;
+        case ValueKind::BinaryInst:
+            return llvm::cast<BinaryInst>(this)->expr;
+        case ValueKind::UnaryInst:
+            return llvm::cast<UnaryInst>(this)->expr;
+        case ValueKind::ConstGEPInst:
+            return llvm::cast<ConstGEPInst>(this)->expr;
+        default:
+            return nullptr;
+    }
 }
 
 std::string Value::getName() const {
@@ -488,6 +500,27 @@ void Value::print(llvm::raw_ostream& stream) const {
     }
 
     stream << "\n";
+}
+
+bool Value::loads(Value* value, int gepIndex1) {
+    if (auto load = llvm::dyn_cast<LoadInst>(this)) {
+        if (gepIndex1 == -1) {
+            return load->value == value;
+        } else {
+            if (auto gep = llvm::dyn_cast<ConstGEPInst>(load->value)) {
+                if (gep->pointer == value && gep->index1 == gepIndex1) return true;
+                if (auto valueLoad = llvm::dyn_cast<LoadInst>(value)) {
+                    if (auto gepPointerLoad = llvm::dyn_cast<LoadInst>(gep->pointer)) {
+                        if (valueLoad->value == gepPointerLoad->value) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        }
+    }
+    return false;
 }
 
 void IRModule::print(llvm::raw_ostream& stream) const {

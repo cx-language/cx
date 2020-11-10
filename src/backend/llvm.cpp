@@ -309,6 +309,8 @@ llvm::Value* LLVMGenerator::codegenUnary(const UnaryInst* inst) {
             return builder.CreateNeg(operand);
         case Token::Not:
             return builder.CreateNot(operand);
+        case Token::Star:
+            return operand;
         default:
             llvm_unreachable("invalid unary operation");
     }

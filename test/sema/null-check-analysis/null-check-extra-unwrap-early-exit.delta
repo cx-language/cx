@@ -1,10 +1,10 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %delta -typecheck %s | %FileCheck %s
 
 void foo(int*? p) {
     if (p == null) {
         return;
     }
     defer println("foo");
-    // CHECK: [[@LINE+1]]:16: error: cannot unwrap non-optional type 'int*'
+    // CHECK: [[@LINE+1]]:16: warning: value cannot be null here; null check can be removed
     var a = *(p!);
 }

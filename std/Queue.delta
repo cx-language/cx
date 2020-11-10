@@ -14,7 +14,7 @@ struct Queue<T> {
     ~Queue() {
         while (!empty()) {
             var next = head!.next;
-            deallocate(head!);
+            deallocate(head);
             head = next;
         }
     }
@@ -37,8 +37,8 @@ struct Queue<T> {
     /// Retrieve and remove head of the queue
     T pop() {
         var value = head!.value;
-        var next = head!.next;
-        deallocate(head!);
+        var next = head.next;
+        deallocate(head);
         head = next;
 
         if (head == null) {

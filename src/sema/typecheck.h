@@ -118,24 +118,6 @@ private:
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName);
     void postProcess();
 
-    /// Returns true if the given expression (of optional type) is guaranteed to be non-null, e.g.
-    /// if it was previously checked against null, and the type-checker can prove that it wasn't set
-    /// back to null after that check.
-    bool isGuaranteedNonNull(const Expr& expr) const;
-    bool isGuaranteedNonNull(const Expr& expr, const Stmt& currentControlStmt) const;
-
-    /// Returns true if the given if-statement returns when the given variable is null.
-    static bool isEarlyExitNullCheck(const Expr& expr, const IfStmt& stmt);
-
-    /// Returns true if executing the given statement/expression/block might result in 'null' being
-    /// assigned to the given variable before evaluating it. Returns false if the variable is
-    /// guaranteed to be null when evaluating it. Returns an empty optional if the expression didn't
-    /// contain the given variable, but also can't result in 'null' being assigned to it.
-    llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, const Stmt& stmt) const;
-    llvm::Optional<bool> subExprMaySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const;
-    llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, const Expr& expr) const;
-    llvm::Optional<bool> maySetToNullBeforeEvaluating(const Expr& var, llvm::ArrayRef<Stmt*> block) const;
-
     void setMoved(Expr* expr, bool isMoved);
     void checkNotMoved(const Decl& decl, const VarExpr& expr);
 

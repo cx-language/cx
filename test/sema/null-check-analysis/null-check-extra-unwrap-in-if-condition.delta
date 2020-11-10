@@ -1,6 +1,6 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
+// RUN: %delta -typecheck %s | %FileCheck %s
 
-struct S: Copyable {
+struct S {
     S*? a;
 }
 
@@ -8,7 +8,7 @@ S*? foo(S* p) {
     var n = p;
 
     while (n.a != null) {
-        // CHECK: [[@LINE+1]]:22: error: cannot unwrap non-optional type 'S*'
+        // CHECK: [[@LINE+1]]:22: warning: value cannot be null here; null check can be removed
         if (n === n.a!.a) {
             return n.a!.a;
         }

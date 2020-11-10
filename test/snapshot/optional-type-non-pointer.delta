@@ -20,8 +20,9 @@ void f() {
 
     c = null;
     if (c) {
-        var x = c + 1;
-        c = 1 + c;
+        // TODO: Fix these to not require explicit unwrapping. How should overload resolution work with implicitly unwrapped optional arguments?
+        var x = c! + 1;
+        _ = 1 + c!;
         c = -(c!);
     }
     // if (c) c++; // TODO: Allow postfix incrementing/decrementing an implicitly unwrapped optional.

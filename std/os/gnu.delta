@@ -15,10 +15,10 @@ void printStackTrace() {
     }
 
     for (var i in 0..frames) {
-        printf("%s\n", strings![i]);
+        printf("%s\n", strings[i]);
     }
 
-    free(cast<void*>(strings!));
+    free(cast<void*>(strings));
 }
 
 #else
