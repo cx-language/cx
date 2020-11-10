@@ -1016,14 +1016,15 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     });
 
     if (atLeastOneFunction) {
-        auto argTypeStrings = map(expr.getArgs(), [&](auto& arg) {
-            auto type = typecheckExpr(*arg.getValue());
-            return type ? type.toString() : "???";
-        });
-
-        ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
-                         (isConstructorCall ? "no matching constructor for '" : "no matching function for call to '")
-                             << callee << "' with argument list of type '(" << llvm::join(argTypeStrings, ", ") << ")'");
+        if (auto binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
+            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
+                             "no matching operator '" << binaryExpr->getOperator() << "' with arguments '" << binaryExpr->getLHS().getType() << "' and '"
+                                                      << binaryExpr->getRHS().getType() << "'");
+        } else {
+            auto argTypes = map(expr.getArgs(), [&](NamedValue& arg) { return typecheckExpr(*arg.getValue()).toString(); });
+            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
+                             (isConstructorCall ? "no matching constructor '" : "no matching function '") << callee << "(" << llvm::join(argTypes, ", ") << ")'");
+        }
     } else {
         ERROR(expr.getCallee().getLocation(), "'" << callee << "' is not a function");
     }
