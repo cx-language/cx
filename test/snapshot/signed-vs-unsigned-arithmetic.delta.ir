@@ -1,27 +1,27 @@
 
-void _EN4main3fooE3int4uint(int %i, uint %u) {
-    bool* %a = alloca bool
-    int* %b = alloca int
-    uint* %c = alloca uint
-    bool %0 = %i < %i
-    store %0 to %a
-    bool %1 = %u < %u
-    store %1 to %a
-    bool %2 = %i > %i
-    store %2 to %a
-    bool %3 = %u > %u
-    store %3 to %a
-    bool %4 = %i <= %i
-    store %4 to %a
-    bool %5 = %u <= %u
-    store %5 to %a
-    bool %6 = %i >= %i
-    store %6 to %a
-    bool %7 = %u >= %u
-    store %7 to %a
-    int %8 = %i / %i
-    store %8 to %b
-    uint %9 = %u / %u
-    store %9 to %c
+void _EN4main3fooE3int4uint(int i, uint u) {
+    bool* a = alloca bool
+    int* b = alloca int
+    uint* c = alloca uint
+    bool _0 = i < i
+    store _0 to a
+    bool _1 = u < u
+    store _1 to a
+    bool _2 = i > i
+    store _2 to a
+    bool _3 = u > u
+    store _3 to a
+    bool _4 = i <= i
+    store _4 to a
+    bool _5 = u <= u
+    store _5 to a
+    bool _6 = i >= i
+    store _6 to a
+    bool _7 = u >= u
+    store _7 to a
+    int _8 = i / i
+    store _8 to b
+    uint _9 = u / u
+    store _9 to c
     return void
 }

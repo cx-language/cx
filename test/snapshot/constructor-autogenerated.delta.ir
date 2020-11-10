@@ -1,41 +1,41 @@
 
 int main() {
-    int* %b = alloca int
-    X* %x = alloca X
-    X* %y = alloca X
-    Empty* %e = alloca Empty
-    Generic<float>* %g = alloca Generic<float>
-    Generic<int>* %h = alloca Generic<int>
-    store int 2 to %b
-    void %0 = call %_EN4main1X4initE3intP3int(X* %x, int 4, int* %b)
-    void %1 = call %_EN4main1X4initE3intP3int(X* %y, int 4, int* %b)
-    void %2 = call %_EN4main5Empty4initE(Empty* %e)
-    void %3 = call %_EN4main7GenericI5floatE4initE5float(Generic<float>* %g, float 4.5)
-    void %4 = call %_EN4main7GenericI3intE4initE3int(Generic<int>* %h, int 4)
+    int* b = alloca int
+    X* x = alloca X
+    X* y = alloca X
+    Empty* e = alloca Empty
+    Generic<float>* g = alloca Generic<float>
+    Generic<int>* h = alloca Generic<int>
+    store int 2 to b
+    void _0 = call _EN4main1X4initE3intP3int(X* x, int 4, int* b)
+    void _1 = call _EN4main1X4initE3intP3int(X* y, int 4, int* b)
+    void _2 = call _EN4main5Empty4initE(Empty* e)
+    void _3 = call _EN4main7GenericI5floatE4initE5float(Generic<float>* g, float 4.5)
+    void _4 = call _EN4main7GenericI3intE4initE3int(Generic<int>* h, int 4)
     return int 0
 }
 
-void _EN4main1X4initE3intP3int(X* %this, int %a, int* %b) {
-    int* %a = getelementptr %this, 0, 0
-    store %a to %a
-    int** %b = getelementptr %this, 0, 1
-    int* %0 = cast %b to int*
-    store %0 to %b
+void _EN4main1X4initE3intP3int(X* this, int a, int* b) {
+    int* a_0 = getelementptr this, 0, 0
+    store a to a_0
+    int** b_0 = getelementptr this, 0, 1
+    int* _0 = cast b to int*
+    store _0 to b_0
     return void
 }
 
-void _EN4main5Empty4initE(Empty* %this) {
+void _EN4main5Empty4initE(Empty* this) {
     return void
 }
 
-void _EN4main7GenericI5floatE4initE5float(Generic<float>* %this, float %i) {
-    float* %i = getelementptr %this, 0, 0
-    store %i to %i
+void _EN4main7GenericI5floatE4initE5float(Generic<float>* this, float i) {
+    float* i_0 = getelementptr this, 0, 0
+    store i to i_0
     return void
 }
 
-void _EN4main7GenericI3intE4initE3int(Generic<int>* %this, int %i) {
-    int* %i = getelementptr %this, 0, 0
-    store %i to %i
+void _EN4main7GenericI3intE4initE3int(Generic<int>* this, int i) {
+    int* i_0 = getelementptr this, 0, 0
+    store i to i_0
     return void
 }

@@ -1,48 +1,48 @@
 
 int main() {
-    int* %p = alloca int
-    RangeIterator<int>* %__iterator = alloca RangeIterator<int>
-    Range<int>* %0 = alloca Range<int>
-    int* %i = alloca int
-    store int 9 to %p
-    void %1 = call %_EN3std5RangeI3intE4initE3int3int(Range<int>* %0, int 0, int 3)
-    RangeIterator<int> %2 = call %_EN3std5RangeI3intE8iteratorE(Range<int>* %0)
-    store %2 to %__iterator
-    br %loop.condition
+    int* p = alloca int
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    store int 9 to p
+    void _1 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int 3)
+    RangeIterator<int> _2 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _2 to __iterator
+    br loop.condition
 
 loop.condition:
-    bool %3 = call %_EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* %__iterator)
-    br %3, loop.body, loop.end
+    bool _3 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _3, loop.body, loop.end
 
 loop.body:
-    int %4 = call %_EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* %__iterator)
-    store %4 to %i
-    int %p.load = load %p
-    int %i.load = load %i
-    int %5 = %p.load - %i.load
-    store %5 to %p
-    br %loop.increment
+    int _4 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _4 to i
+    int p.load = load p
+    int i.load = load i
+    int _5 = p.load - i.load
+    store _5 to p
+    br loop.increment
 
 loop.increment:
-    void %6 = call %_EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* %__iterator)
-    br %loop.condition
+    void _6 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
 
 loop.end:
-    int %p.load = load %p
-    return %p.load
+    int p.load_0 = load p
+    return p.load_0
 }
 
-RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* %this) {
+RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
 }
 
-void _EN3std5RangeI3intE4initE3int3int(Range<int>* %this, int %start, int %end) {
+void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
 }
 
-bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* %this) {
+bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
 }
 
-int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* %this) {
+int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
 }
 
-void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* %this) {
+void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {
 }

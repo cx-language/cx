@@ -1,22 +1,22 @@
 
 int main() {
-    S<int>* %0 = alloca S<int>
-    S<bool>* %1 = alloca S<bool>
-    void %2 = call %_EN4main1SI3intE4initE(S<int>* %0)
-    void %3 = call %_EN4main1SI4boolE4initE(S<bool>* %1)
+    S<int>* _0 = alloca S<int>
+    S<bool>* _1 = alloca S<bool>
+    void _2 = call _EN4main1SI3intE4initE(S<int>* _0)
+    void _3 = call _EN4main1SI4boolE4initE(S<bool>* _1)
     return int 0
 }
 
-void _EN4main1SI3intE4initE(S<int>* %this) {
-    int** %p = getelementptr %this, 0, 0
-    int* %0 = cast int* null to int*
-    store %0 to %p
+void _EN4main1SI3intE4initE(S<int>* this) {
+    int** p = getelementptr this, 0, 0
+    int* _0 = cast int* null to int*
+    store _0 to p
     return void
 }
 
-void _EN4main1SI4boolE4initE(S<bool>* %this) {
-    bool** %p = getelementptr %this, 0, 0
-    bool* %0 = cast bool* null to bool*
-    store %0 to %p
+void _EN4main1SI4boolE4initE(S<bool>* this) {
+    bool** p = getelementptr this, 0, 0
+    bool* _0 = cast bool* null to bool*
+    store _0 to p
     return void
 }

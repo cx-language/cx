@@ -1,18 +1,18 @@
 
-void _EN4main1fEP1A(A* %a) {
-    A* %0 = cast %a to A*
-    void %1 = call %_EN4main1A6deinitE(A* %0)
+void _EN4main1fEP1A(A* a) {
+    A* _0 = cast a to A*
+    void _1 = call _EN4main1A6deinitE(A* _0)
     return void
 }
 
-void _EN4main1A6deinitE(A* %this) {
+void _EN4main1A6deinitE(A* this) {
     return void
 }
 
-void _EN4main1gEP1B(B* %b) {
+void _EN4main1gEP1B(B* b) {
     return void
 }
 
-void _EN4main1hEP4char(char* %c) {
+void _EN4main1hEP4char(char* c) {
     return void
 }

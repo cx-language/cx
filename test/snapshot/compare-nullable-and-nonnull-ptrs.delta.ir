@@ -1,13 +1,13 @@
 
-void _EN4main1fEP3intOP3int(int* %foo, int* %bar) {
-    bool %0 = %foo == %bar
-    br %0, if.then, if.else
+void _EN4main1fEP3intOP3int(int* foo, int* bar) {
+    bool _0 = foo == bar
+    br _0, if.then, if.else
 
 if.then:
-    br %if.end
+    br if.end
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
     return void

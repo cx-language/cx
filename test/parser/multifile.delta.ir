@@ -1,2 +1,2 @@
-global %a = int 42
-global %b = int 42
+global a = int 42
+global b = int 42

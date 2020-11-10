@@ -1,4 +1,4 @@
 
-void _EN4main1fE1S(S %s) {
+void _EN4main1fE1S(S s) {
     return void
 }

@@ -1,36 +1,36 @@
 
 int main() {
-    S<int>* %0 = alloca S<int>
-    S<float>* %1 = alloca S<float>
-    void %2 = call %_EN4main1SI3intE4initE(S<int>* %0)
-    void %3 = call %_EN4main1SI3intE1fE(S<int>* %0)
-    void %4 = call %_EN4main1SI5floatE4initE(S<float>* %1)
-    void %5 = call %_EN4main1SI5floatE1fE(S<float>* %1)
+    S<int>* _0 = alloca S<int>
+    S<float>* _1 = alloca S<float>
+    void _2 = call _EN4main1SI3intE4initE(S<int>* _0)
+    void _3 = call _EN4main1SI3intE1fE(S<int>* _0)
+    void _4 = call _EN4main1SI5floatE4initE(S<float>* _1)
+    void _5 = call _EN4main1SI5floatE1fE(S<float>* _1)
     return int 0
 }
 
-void _EN4main1SI3intE1fE(S<int>* %this) {
-    void %0 = call %_EN4main1SI3intE1gE(S<int>* %this)
+void _EN4main1SI3intE1fE(S<int>* this) {
+    void _0 = call _EN4main1SI3intE1gE(S<int>* this)
     return void
 }
 
-void _EN4main1SI3intE4initE(S<int>* %this) {
+void _EN4main1SI3intE4initE(S<int>* this) {
     return void
 }
 
-void _EN4main1SI5floatE1fE(S<float>* %this) {
-    void %0 = call %_EN4main1SI5floatE1gE(S<float>* %this)
+void _EN4main1SI5floatE1fE(S<float>* this) {
+    void _0 = call _EN4main1SI5floatE1gE(S<float>* this)
     return void
 }
 
-void _EN4main1SI5floatE4initE(S<float>* %this) {
+void _EN4main1SI5floatE4initE(S<float>* this) {
     return void
 }
 
-void _EN4main1SI3intE1gE(S<int>* %this) {
+void _EN4main1SI3intE1gE(S<int>* this) {
     return void
 }
 
-void _EN4main1SI5floatE1gE(S<float>* %this) {
+void _EN4main1SI5floatE1gE(S<float>* this) {
     return void
 }

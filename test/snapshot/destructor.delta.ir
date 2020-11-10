@@ -1,59 +1,59 @@
 
 int main() {
-    Foo* %f = alloca Foo
-    Foo* %f2 = alloca Foo
-    Bar* %b = alloca Bar
-    Bar* %b2 = alloca Bar
-    int* %i = alloca int
+    Foo* f = alloca Foo
+    Foo* f2 = alloca Foo
+    Bar* b = alloca Bar
+    Bar* b2 = alloca Bar
+    int* i = alloca int
     br bool false, if.then, if.else
 
 if.then:
-    void %0 = call %_EN4main3Foo6deinitE(Foo* %f2)
-    br %if.end
+    void _0 = call _EN4main3Foo6deinitE(Foo* f2)
+    br if.end
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
-    br %loop.condition
+    br loop.condition
 
 loop.condition:
     br bool false, loop.body, loop.end
 
 loop.body:
-    void %1 = call %_EN4main3Bar6deinitE(Bar* %b2)
-    void %2 = call %_EN4main3Bar6deinitE(Bar* %b)
-    void %3 = call %_EN4main3Foo6deinitE(Foo* %f)
+    void _1 = call _EN4main3Bar6deinitE(Bar* b2)
+    void _2 = call _EN4main3Bar6deinitE(Bar* b)
+    void _3 = call _EN4main3Foo6deinitE(Foo* f)
     return int 0
 
 loop.end:
-    store int 1 to %i
-    void %4 = call %_EN4main3Bar6deinitE(Bar* %b)
-    void %5 = call %_EN4main3Foo6deinitE(Foo* %f)
+    store int 1 to i
+    void _4 = call _EN4main3Bar6deinitE(Bar* b)
+    void _5 = call _EN4main3Foo6deinitE(Foo* f)
     return int 0
 }
 
-void _EN4main3Foo6deinitE(Foo* %this) {
-    int* %i = getelementptr %this, 0, 0
-    store int 0 to %i
-    void %0 = call %_EN4main3Foo1fE(Foo* %this)
-    Foo* %1 = cast %this to Foo*
-    void %2 = call %_EN4main3Foo1fE(Foo* %1)
+void _EN4main3Foo6deinitE(Foo* this) {
+    int* i = getelementptr this, 0, 0
+    store int 0 to i
+    void _0 = call _EN4main3Foo1fE(Foo* this)
+    Foo* _1 = cast this to Foo*
+    void _2 = call _EN4main3Foo1fE(Foo* _1)
     return void
 }
 
-void _EN4main3Bar6deinitE(Bar* %this) {
-    int* %i = getelementptr %this, 0, 0
-    store int 0 to %i
-    void %0 = call %_EN4main3Bar1fE(Bar* %this)
-    void %1 = call %_EN4main3Bar1fE(Bar* %this)
+void _EN4main3Bar6deinitE(Bar* this) {
+    int* i = getelementptr this, 0, 0
+    store int 0 to i
+    void _0 = call _EN4main3Bar1fE(Bar* this)
+    void _1 = call _EN4main3Bar1fE(Bar* this)
     return void
 }
 
-void _EN4main3Foo1fE(Foo* %this) {
+void _EN4main3Foo1fE(Foo* this) {
     return void
 }
 
-void _EN4main3Bar1fE(Bar* %this) {
+void _EN4main3Bar1fE(Bar* this) {
     return void
 }

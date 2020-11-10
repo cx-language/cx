@@ -10,30 +10,30 @@ extern bool d()
 extern bool e()
 
 int main() {
-    bool* %x = alloca bool
-    bool %0 = call %a()
-    br %0, if.then, if.else
+    bool* x = alloca bool
+    bool _0 = call a()
+    br _0, if.then, if.else
 
 if.then:
-    bool %1 = call %b()
-    br %if.end(%1)
+    bool _1 = call b()
+    br if.end(_1)
 
 if.else:
-    bool %2 = call %c()
-    br %2, if.then, if.else
+    bool _2 = call c()
+    br _2, if.then, if.else
 
-if.then:
-    bool %3 = call %d()
-    br %if.end(%3)
+if.then_0:
+    bool _3 = call d()
+    br if.end_0(_3)
 
-if.else:
-    bool %4 = call %e()
-    br %if.end(%4)
+if.else_0:
+    bool _4 = call e()
+    br if.end_0(_4)
 
-if.end(bool %if.result):
-    br %if.end(%if.result)
+if.end_0(bool if.result):
+    br if.end(if.result)
 
-if.end(bool %if.result):
-    store %if.result to %x
+if.end(bool if.result_0):
+    store if.result_0 to x
     return int 0
 }

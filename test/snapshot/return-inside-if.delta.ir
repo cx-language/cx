@@ -2,8 +2,8 @@
 extern bool foo()
 
 void _EN4main3barE() {
-    bool %0 = call %foo()
-    br %0, if.then, if.else
+    bool _0 = call foo()
+    br _0, if.then, if.else
 
 if.then:
     return void
@@ -12,35 +12,35 @@ if.else:
     return void
 
 if.end:
-    bool %1 = call %foo()
-    br %1, if.then, if.else
+    bool _1 = call foo()
+    br _1, if.then, if.else
 
-if.then:
+if.then_0:
     return void
 
-if.else:
+if.else_0:
     return void
 
-if.end:
-    br %loop.condition
+if.end_0:
+    br loop.condition
 
 loop.condition:
-    bool %2 = call %foo()
-    br %2, loop.body, loop.end
+    bool _2 = call foo()
+    br _2, loop.body, loop.end
 
 loop.body:
     return void
 
 loop.end:
-    br %loop.condition
+    br loop.condition_0
 
-loop.condition:
-    bool %3 = call %foo()
-    br %3, loop.body, loop.end
+loop.condition_0:
+    bool _3 = call foo()
+    br _3, loop.body, loop.end
 
-loop.body:
+loop.body_0:
     return void
 
-loop.end:
+loop.end_0:
     return void
 }

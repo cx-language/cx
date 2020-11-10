@@ -1,6 +1,6 @@
 
-void _EN4main1fEP3int3int(int* %foo, int %bar) {
-    int %foo.load = load %foo
-    bool %0 = %foo.load < %bar
+void _EN4main1fEP3int3int(int* foo, int bar) {
+    int foo.load = load foo
+    bool _0 = foo.load < bar
     return void
 }

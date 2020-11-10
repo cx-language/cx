@@ -1,44 +1,44 @@
 
 int main() {
-    bool** %foo = alloca bool*
-    bool* %b = alloca bool
-    int* %a = alloca int
-    bool* %foo.load = load %foo
-    bool %0 = %foo.load == bool* null
-    store %0 to %b
-    bool* %foo.load = load %foo
-    bool %1 = %foo.load != bool* null
-    br %1, if.then, if.else
+    bool** foo = alloca bool*
+    bool* b = alloca bool
+    int* a = alloca int
+    bool* foo.load = load foo
+    bool _0 = foo.load == bool* null
+    store _0 to b
+    bool* foo.load_0 = load foo
+    bool _1 = foo.load_0 != bool* null
+    br _1, if.then, if.else
 
 if.then:
-    br %if.end
+    br if.end
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
-    br %loop.condition
+    br loop.condition
 
 loop.condition:
-    bool* %foo.load = load %foo
-    bool %2 = %foo.load != bool* null
-    br %2, loop.body, loop.end
+    bool* foo.load_1 = load foo
+    bool _2 = foo.load_1 != bool* null
+    br _2, loop.body, loop.end
 
 loop.body:
-    br %loop.condition
+    br loop.condition
 
 loop.end:
-    bool* %foo.load = load %foo
-    bool %3 = %foo.load != bool* null
-    br %3, if.then, if.else
+    bool* foo.load_2 = load foo
+    bool _3 = foo.load_2 != bool* null
+    br _3, if.then, if.else
 
-if.then:
-    br %if.end(int 1)
+if.then_0:
+    br if.end_0(int 1)
 
-if.else:
-    br %if.end(int 2)
+if.else_0:
+    br if.end_0(int 2)
 
-if.end(int %if.result):
-    store %if.result to %a
+if.end_0(int if.result):
+    store if.result to a
     return int 0
 }

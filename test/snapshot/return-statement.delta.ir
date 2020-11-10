@@ -1,10 +1,10 @@
 
 int main() {
-    int %0 = call %_EN4main3fooE()
-    return %0
+    int _0 = call _EN4main3fooE()
+    return _0
 }
 
 int _EN4main3fooE() {
-    int %0 = call %_EN4main3fooE()
+    int _0 = call _EN4main3fooE()
     return int 42
 }

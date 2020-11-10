@@ -3,14 +3,14 @@ int _EN4main1gE() {
     return int 1
 }
 
-void _EN4main1fEP3int3int(int* %a, int %b) {
-    int* %m = alloca int
-    int* %n = alloca int
-    int %0 = call %_EN4main1gE()
-    store %0 to %m
-    store %b to %a
-    int %1 = call %_EN4main1gE()
-    int %2 = %1 * %b
-    store %2 to %n
+void _EN4main1fEP3int3int(int* a, int b) {
+    int* m = alloca int
+    int* n = alloca int
+    int _0 = call _EN4main1gE()
+    store _0 to m
+    store b to a
+    int _1 = call _EN4main1gE()
+    int _2 = _1 * b
+    store _2 to n
     return void
 }

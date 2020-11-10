@@ -1,23 +1,23 @@
 
-void _EN4main3getEP3Foo(Foo* %f) {
-    int* %m = alloca int
-    int* %i = getelementptr %f, 0, 0
-    int %i.load = load %i
-    store %i.load to %m
+void _EN4main3getEP3Foo(Foo* f) {
+    int* m = alloca int
+    int* i = getelementptr f, 0, 0
+    int i.load = load i
+    store i.load to m
     return void
 }
 
 int main() {
-    Foo* %f = alloca Foo
-    Foo** %rf = alloca Foo*
-    int* %n = alloca int
-    store %f to %rf
-    Foo* %rf.load = load %rf
-    int* %i = getelementptr %rf.load, 0, 0
-    int %i.load = load %i
-    store %i.load to %n
-    Foo* %rf.load = load %rf
-    Foo* %0 = cast %rf.load to Foo*
-    void %1 = call %_EN4main3getEP3Foo(Foo* %0)
+    Foo* f = alloca Foo
+    Foo** rf = alloca Foo*
+    int* n = alloca int
+    store f to rf
+    Foo* rf.load = load rf
+    int* i = getelementptr rf.load, 0, 0
+    int i.load = load i
+    store i.load to n
+    Foo* rf.load_0 = load rf
+    Foo* _0 = cast rf.load_0 to Foo*
+    void _1 = call _EN4main3getEP3Foo(Foo* _0)
     return int 0
 }

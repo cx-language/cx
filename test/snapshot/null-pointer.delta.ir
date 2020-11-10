@@ -1,24 +1,24 @@
 
 int* _EN4main3fooE() {
-    int* %0 = cast int* null to int*
-    return %0
+    int* _0 = cast int* null to int*
+    return _0
 }
 
 int main() {
-    bool* %isNull = alloca bool
-    bool* %isNonNull = alloca bool
-    int** %ptr = alloca int*
-    bool** %ptr2 = alloca bool*
-    int* %0 = call %_EN4main3fooE()
-    bool %1 = %0 == int* null
-    store %1 to %isNull
-    int* %2 = call %_EN4main3fooE()
-    bool %3 = %2 != int* null
-    store %3 to %isNonNull
-    int* %4 = call %_EN4main3fooE()
-    int* %5 = cast %4 to int*
-    store %5 to %ptr
-    bool* %6 = cast bool* null to bool*
-    store %6 to %ptr2
+    bool* isNull = alloca bool
+    bool* isNonNull = alloca bool
+    int** ptr = alloca int*
+    bool** ptr2 = alloca bool*
+    int* _0 = call _EN4main3fooE()
+    bool _1 = _0 == int* null
+    store _1 to isNull
+    int* _2 = call _EN4main3fooE()
+    bool _3 = _2 != int* null
+    store _3 to isNonNull
+    int* _4 = call _EN4main3fooE()
+    int* _5 = cast _4 to int*
+    store _5 to ptr
+    bool* _6 = cast bool* null to bool*
+    store _6 to ptr2
     return int 0
 }

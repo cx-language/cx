@@ -1,35 +1,35 @@
 
-void _EN4main1fEP1A(A* %a) {
+void _EN4main1fEP1A(A* a) {
     return void
 }
 
-void _EN4main1fEP1B(B* %b) {
+void _EN4main1fEP1B(B* b) {
     return void
 }
 
-void _EN4main1fEP3int(int* %i) {
+void _EN4main1fEP3int(int* i) {
     return void
 }
 
 int main() {
-    A* %a = alloca A
-    B* %b = alloca B
-    A* %0 = alloca A
-    B* %1 = alloca B
-    int* %2 = alloca int
-    void %3 = call %_EN4main1A4initE(A* %0)
-    void %4 = call %_EN4main1fEP1A(A* %0)
-    void %5 = call %_EN4main1B4initE(B* %1)
-    void %6 = call %_EN4main1fEP1B(B* %1)
-    store int 0 to %2
-    void %7 = call %_EN4main1fEP3int(int* %2)
+    A* a = alloca A
+    B* b = alloca B
+    A* _0 = alloca A
+    B* _1 = alloca B
+    int* _2 = alloca int
+    void _3 = call _EN4main1A4initE(A* _0)
+    void _4 = call _EN4main1fEP1A(A* _0)
+    void _5 = call _EN4main1B4initE(B* _1)
+    void _6 = call _EN4main1fEP1B(B* _1)
+    store int 0 to _2
+    void _7 = call _EN4main1fEP3int(int* _2)
     return int 0
 }
 
-void _EN4main1A4initE(A* %this) {
+void _EN4main1A4initE(A* this) {
     return void
 }
 
-void _EN4main1B4initE(B* %this) {
+void _EN4main1B4initE(B* this) {
     return void
 }

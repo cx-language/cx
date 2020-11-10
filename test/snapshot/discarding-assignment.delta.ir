@@ -2,6 +2,6 @@
 extern int foo()
 
 int main() {
-    int %0 = call %foo()
+    int _0 = call foo()
     return int 0
 }

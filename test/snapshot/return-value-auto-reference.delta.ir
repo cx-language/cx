@@ -1,42 +1,42 @@
-global %i = int 42
+global i = int 42
 
 int* _EN4main3fooE() {
-    bool** %a = alloca bool*
-    A* %0 = alloca A
-    char** %b = alloca char*
-    B* %1 = alloca B
-    bool[2] %2 = insertvalue bool[2] undefined, 0, bool false
-    bool[2] %3 = insertvalue %2, 1, bool true
-    void %4 = call %_EN4main1A4initEA2_4bool(A* %0, bool[2] %3)
-    bool* %5 = call %_EN4main1A2ffE(A* %0)
-    bool* %6 = cast %5 to bool*
-    store %6 to %a
-    void %7 = call %_EN4main1B4initE4char(B* %1, char 97)
-    char* %8 = call %_EN4main1B2ggE(B* %1)
-    char* %9 = cast %8 to char*
-    store %9 to %b
-    return %i
+    bool** a = alloca bool*
+    A* _0 = alloca A
+    char** b = alloca char*
+    B* _1 = alloca B
+    bool[2] _2 = insertvalue bool[2] undefined, 0, bool false
+    bool[2] _3 = insertvalue _2, 1, bool true
+    void _4 = call _EN4main1A4initEA2_4bool(A* _0, bool[2] _3)
+    bool* _5 = call _EN4main1A2ffE(A* _0)
+    bool* _6 = cast _5 to bool*
+    store _6 to a
+    void _7 = call _EN4main1B4initE4char(B* _1, char 97)
+    char* _8 = call _EN4main1B2ggE(B* _1)
+    char* _9 = cast _8 to char*
+    store _9 to b
+    return i
 }
 
-bool* _EN4main1A2ffE(A* %this) {
-    bool[2]* %b = getelementptr %this, 0, 0
-    bool* %0 = getelementptr %b, int 0, int 1
-    return %0
+bool* _EN4main1A2ffE(A* this) {
+    bool[2]* b = getelementptr this, 0, 0
+    bool* _0 = getelementptr b, int 0, int 1
+    return _0
 }
 
-void _EN4main1A4initEA2_4bool(A* %this, bool[2] %b) {
-    bool[2]* %b = getelementptr %this, 0, 0
-    store %b to %b
+void _EN4main1A4initEA2_4bool(A* this, bool[2] b) {
+    bool[2]* b_0 = getelementptr this, 0, 0
+    store b to b_0
     return void
 }
 
-char* _EN4main1B2ggE(B* %this) {
-    char* %a = getelementptr %this, 0, 0
-    return %a
+char* _EN4main1B2ggE(B* this) {
+    char* a = getelementptr this, 0, 0
+    return a
 }
 
-void _EN4main1B4initE4char(B* %this, char %a) {
-    char* %a = getelementptr %this, 0, 0
-    store %a to %a
+void _EN4main1B4initE4char(B* this, char a) {
+    char* a_0 = getelementptr this, 0, 0
+    store a to a_0
     return void
 }

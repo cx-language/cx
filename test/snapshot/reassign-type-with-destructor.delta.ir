@@ -1,20 +1,20 @@
 
 int main() {
-    X* %x = alloca X
-    X* %0 = alloca X
-    void %1 = call %_EN4main1X4initE(X* %x)
-    void %2 = call %_EN4main1X6deinitE(X* %x)
-    void %3 = call %_EN4main1X4initE(X* %0)
-    X %.load = load %0
-    store %.load to %x
-    void %4 = call %_EN4main1X6deinitE(X* %x)
+    X* x = alloca X
+    X* _0 = alloca X
+    void _1 = call _EN4main1X4initE(X* x)
+    void _2 = call _EN4main1X6deinitE(X* x)
+    void _3 = call _EN4main1X4initE(X* _0)
+    X .load = load _0
+    store .load to x
+    void _4 = call _EN4main1X6deinitE(X* x)
     return int 0
 }
 
-void _EN4main1X6deinitE(X* %this) {
+void _EN4main1X6deinitE(X* this) {
     return void
 }
 
-void _EN4main1X4initE(X* %this) {
+void _EN4main1X4initE(X* this) {
     return void
 }

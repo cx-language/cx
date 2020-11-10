@@ -1,6 +1,6 @@
 
 int main() {
-    A<int>* %a = alloca A<int>
-    A<A<A<bool>>>* %aaa = alloca A<A<A<bool>>>
+    A<int>* a = alloca A<int>
+    A<A<A<bool>>>* aaa = alloca A<A<A<bool>>>
     return int 0
 }

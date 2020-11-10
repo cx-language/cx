@@ -1,18 +1,18 @@
 
 int main() {
-    A<C>* %a = alloca A<C>
-    void %0 = call %_EN4main1AI1CE4initE(A<C>* %a)
+    A<C>* a = alloca A<C>
+    void _0 = call _EN4main1AI1CE4initE(A<C>* a)
     return int 0
 }
 
-void _EN4main1AI1CE4initE(A<C>* %this) {
-    C* %t = alloca C
-    void %0 = call %_EN4main1C4initE(C* %t)
+void _EN4main1AI1CE4initE(A<C>* this) {
+    C* t = alloca C
+    void _0 = call _EN4main1C4initE(C* t)
     return void
 }
 
-void _EN4main1C4initE(C* %this) {
-    int* %i = getelementptr %this, 0, 0
-    store int 0 to %i
+void _EN4main1C4initE(C* this) {
+    int* i = getelementptr this, 0, 0
+    store int 0 to i
     return void
 }

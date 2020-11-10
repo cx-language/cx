@@ -1,17 +1,17 @@
 
 int main() {
-    Foo* %f = alloca Foo
-    void %0 = call %_EN4main3Foo4initE3int(Foo* %f, int 5)
-    void %1 = call %_EN4main3Foo6deinitE(Foo* %f)
+    Foo* f = alloca Foo
+    void _0 = call _EN4main3Foo4initE3int(Foo* f, int 5)
+    void _1 = call _EN4main3Foo6deinitE(Foo* f)
     return int 0
 }
 
-void _EN4main3Foo6deinitE(Foo* %this) {
+void _EN4main3Foo6deinitE(Foo* this) {
     return void
 }
 
-void _EN4main3Foo4initE3int(Foo* %this, int %i) {
-    float* %f = getelementptr %this, 0, 0
-    store float 0 to %f
+void _EN4main3Foo4initE3int(Foo* this, int i) {
+    float* f = getelementptr this, 0, 0
+    store float 0 to f
     return void
 }

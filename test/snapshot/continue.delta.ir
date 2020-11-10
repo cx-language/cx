@@ -1,23 +1,23 @@
 
-void _EN4main3bazE4bool(bool %foo) {
-    br %loop.condition
+void _EN4main3bazE4bool(bool foo) {
+    br loop.condition
 
 loop.condition:
-    br %foo, loop.body, loop.end
+    br foo, loop.body, loop.end
 
 loop.body:
-    br %foo, if.then, if.else
+    br foo, if.then, if.else
 
 loop.end:
     return void
 
 if.then:
-    void %0 = call %_EN4main3bazE4bool(bool %foo)
-    br %loop.condition
+    void _0 = call _EN4main3bazE4bool(bool foo)
+    br loop.condition
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
-    br %loop.condition
+    br loop.condition
 }

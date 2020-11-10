@@ -1,11 +1,11 @@
 
-void _EN4main3fooE1AI3intE(A<int> %a) {
-    A<int>* %0 = alloca A<int>
-    store %a to %0
-    void %1 = call %_EN4main1AI3intE6deinitE(A<int>* %0)
+void _EN4main3fooE1AI3intE(A<int> a) {
+    A<int>* _0 = alloca A<int>
+    store a to _0
+    void _1 = call _EN4main1AI3intE6deinitE(A<int>* _0)
     return void
 }
 
-void _EN4main1AI3intE6deinitE(A<int>* %this) {
+void _EN4main1AI3intE6deinitE(A<int>* this) {
     return void
 }

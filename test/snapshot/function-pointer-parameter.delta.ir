@@ -3,28 +3,28 @@ void _EN4main1fE() {
     return void
 }
 
-int _EN4main2f2E3int4bool(int %a, bool %b) {
-    return %a
+int _EN4main2f2E3int4bool(int a, bool b) {
+    return a
 }
 
-void _EN4main1gEF_4void(void()* %p) {
-    void %0 = call %p()
+void _EN4main1gEF_4void(void()* p) {
+    void _0 = call p()
     return void
 }
 
-void _EN4main2g2EF3int4bool_3int(int(int, bool)* %p) {
-    int* %a = alloca int
-    bool %0 = !bool true
-    int %1 = call %p(int 42, bool %0)
-    int %2 = %1 + int 1
-    store %2 to %a
+void _EN4main2g2EF3int4bool_3int(int(int, bool)* p) {
+    int* a = alloca int
+    bool _0 = !bool true
+    int _1 = call p(int 42, bool _0)
+    int _2 = _1 + int 1
+    store _2 to a
     return void
 }
 
 int main() {
-    void()* %0 = cast %_EN4main1fE to void()*
-    void %1 = call %_EN4main1gEF_4void(void()* %0)
-    int(int, bool)* %2 = cast %_EN4main2f2E3int4bool to int(int, bool)*
-    void %3 = call %_EN4main2g2EF3int4bool_3int(int(int, bool)* %2)
+    void()* _0 = cast _EN4main1fE to void()*
+    void _1 = call _EN4main1gEF_4void(void()* _0)
+    int(int, bool)* _2 = cast _EN4main2f2E3int4bool to int(int, bool)*
+    void _3 = call _EN4main2g2EF3int4bool_3int(int(int, bool)* _2)
     return int 0
 }

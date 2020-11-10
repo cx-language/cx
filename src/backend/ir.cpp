@@ -1,5 +1,6 @@
 #include "ir.h"
 #pragma warning(push, 0)
+#include <llvm/ADT/StringSet.h>
 #include <llvm/ADT/StringSwitch.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
@@ -304,28 +305,33 @@ static bool isConstant(const Value* inst) {
            inst->kind == ValueKind::Undefined || inst->kind == ValueKind::ConstantNull || inst->kind == ValueKind::ConstantBool;
 }
 
-static std::unordered_map<const Value*, std::string> generatedNames;
-static int localNameCounter = 0;
+static std::unordered_map<const Value*, std::string> valuesNames;
+static llvm::StringSet usedNames;
 
 static std::string formatName(const Value* inst) {
     std::string str;
     llvm::raw_string_ostream s(str);
 
     if (isConstant(inst)) {
-        s << inst->getType() << " "; // Always print type for inline constants.
-    } else {
-        s << "%";
+        s << inst->getType() << " " << inst->getName(); // Always print type for inline constants.
+        return s.str();
     }
 
-    auto name = inst->getName();
-    if (name.empty()) {
-        auto it = generatedNames.find(inst);
-        if (it != generatedNames.end()) {
-            name = it->second;
-        } else {
-            name = std::to_string(localNameCounter++);
-            generatedNames.emplace(inst, name);
+    std::string name;
+    auto it = valuesNames.find(inst);
+    if (it != valuesNames.end()) {
+        name = it->second;
+    } else {
+        auto instName = inst->getName();
+        name = instName;
+        int i = 0;
+
+        while (name.empty() || usedNames.count(name)) {
+            name = instName + '_' + std::to_string(i++);
         }
+
+        usedNames.insert(name);
+        valuesNames.emplace(inst, name);
     }
 
     s << name;
@@ -447,7 +453,15 @@ void Value::print(llvm::raw_ostream& stream) const {
         case ValueKind::BasicBlock:
             llvm_unreachable("handled via Function");
         case ValueKind::Function: {
-            localNameCounter = 0;
+            for (auto it = valuesNames.begin(); it != valuesNames.end();) {
+                if (!it->first->isGlobal()) {
+                    usedNames.erase(it->second);
+                    it = valuesNames.erase(it);
+                } else {
+                    it++;
+                }
+            }
+
             auto function = llvm::cast<Function>(this);
             stream << "\n";
             if (function->isExtern) stream << "extern ";
@@ -465,7 +479,7 @@ void Value::print(llvm::raw_ostream& stream) const {
                 stream << " {\n";
                 for (auto& block : function->body) {
                     if (&block != &function->body.front()) {
-                        stream << "\n" << block->name;
+                        stream << "\n" << formatName(block);
                         if (block->parameter) stream << "(" << formatTypeAndName(block->parameter) << ")";
                         stream << ":\n";
                     }

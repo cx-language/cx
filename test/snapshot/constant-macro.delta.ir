@@ -1,6 +1,6 @@
 
-void _EN4main3fooE3int(int %i) {
-    switch %i {
+void _EN4main3fooE3int(int i) {
+    switch i {
         int 42 -> switch.case.0
     }
 
@@ -8,7 +8,7 @@ switch.case.0:
     return void
 
 switch.default:
-    br %switch.end
+    br switch.end
 
 switch.end:
     return void

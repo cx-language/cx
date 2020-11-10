@@ -1,6 +1,6 @@
 
 int main() {
-    int* %d = alloca int
-    store int 42 to %d
+    int* d = alloca int
+    store int 42 to d
     return int 0
 }

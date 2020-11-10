@@ -1,6 +1,6 @@
 
 int main() {
-    br %loop.condition
+    br loop.condition
 
 loop.condition:
     br bool true, loop.body, loop.end
@@ -13,16 +13,16 @@ loop.end:
     }
 
 if.then:
-    br %loop.end
+    br loop.end
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
-    br %loop.end
+    br loop.end
 
 switch.default:
-    br %switch.end
+    br switch.end
 
 switch.end:
     return int 0

@@ -1,32 +1,32 @@
-global %x = int 0
+global x = int 0
 
 int main() {
-    int* %foo = alloca int
-    store int 2 to %foo
-    int %foo.load = load %foo
-    bool %0 = %foo.load == int 1
-    br %0, if.then, if.else
+    int* foo = alloca int
+    store int 2 to foo
+    int foo.load = load foo
+    bool _0 = foo.load == int 1
+    br _0, if.then, if.else
 
 if.then:
-    br %if.end
+    br if.end
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
-    int %foo.load = load %foo
-    bool %1 = %foo.load != int 0
-    br %1, if.then, if.else
+    int foo.load_0 = load foo
+    bool _1 = foo.load_0 != int 0
+    br _1, if.then, if.else
 
-if.then:
-    br %if.end
+if.then_0:
+    br if.end_0
 
-if.else:
-    br %if.end
+if.else_0:
+    br if.end_0
 
-if.end:
-    int %foo.load = load %foo
-    switch %foo.load {
+if.end_0:
+    int foo.load_1 = load foo
+    switch foo.load_1 {
         int 0 -> switch.case.0
         int 1 -> switch.case.1
         int 2 -> switch.case.2
@@ -42,7 +42,7 @@ switch.case.2:
     return int 0
 
 switch.default:
-    br %switch.end
+    br switch.end
 
 switch.end:
     return int 0

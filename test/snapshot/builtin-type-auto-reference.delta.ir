@@ -1,11 +1,11 @@
 
-void _EN4main3fooEP3int(int* %ref_i) {
+void _EN4main3fooEP3int(int* ref_i) {
     return void
 }
 
 int main() {
-    int* %bar = alloca int
-    store int 42 to %bar
-    void %0 = call %_EN4main3fooEP3int(int* %bar)
+    int* bar = alloca int
+    store int 42 to bar
+    void _0 = call _EN4main3fooEP3int(int* bar)
     return int 0
 }

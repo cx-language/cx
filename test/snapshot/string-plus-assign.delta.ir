@@ -1,25 +1,25 @@
 
 int main() {
-    StringBuffer* %a = alloca StringBuffer
-    string* %__str = alloca string
-    void %0 = call %_EN3std12StringBuffer4initE(StringBuffer* %a)
-    StringBuffer %a.load = load %a
-    void %1 = call %_EN3std6string4initEP4char3int(string* %__str, char* "", int 0)
-    string %__str.load = load %__str
-    StringBuffer %2 = call %_EN3stdplE12StringBuffer6string(StringBuffer %a.load, string %__str.load)
-    store %2 to %a
-    void %3 = call %_EN3std12StringBuffer6deinitE(StringBuffer* %a)
+    StringBuffer* a = alloca StringBuffer
+    string* __str = alloca string
+    void _0 = call _EN3std12StringBuffer4initE(StringBuffer* a)
+    StringBuffer a.load = load a
+    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "", int 0)
+    string __str.load = load __str
+    StringBuffer _2 = call _EN3stdplE12StringBuffer6string(StringBuffer a.load, string __str.load)
+    store _2 to a
+    void _3 = call _EN3std12StringBuffer6deinitE(StringBuffer* a)
     return int 0
 }
 
-void _EN3std12StringBuffer6deinitE(StringBuffer* %this) {
+void _EN3std12StringBuffer6deinitE(StringBuffer* this) {
 }
 
-void _EN3std12StringBuffer4initE(StringBuffer* %this) {
+void _EN3std12StringBuffer4initE(StringBuffer* this) {
 }
 
-StringBuffer _EN3stdplE12StringBuffer6string(StringBuffer %a, string %b) {
+StringBuffer _EN3stdplE12StringBuffer6string(StringBuffer a, string b) {
 }
 
-void _EN3std6string4initEP4char3int(string* %this, char* %pointer, int %length) {
+void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
 }

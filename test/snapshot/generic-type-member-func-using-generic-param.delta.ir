@@ -1,15 +1,15 @@
 
 int main() {
-    A<int>* %a = alloca A<int>
-    void %0 = call %_EN4main1AI3intE4initE(A<int>* %a)
-    void %1 = call %_EN4main1AI3intE1aE3int(A<int>* %a, int 5)
+    A<int>* a = alloca A<int>
+    void _0 = call _EN4main1AI3intE4initE(A<int>* a)
+    void _1 = call _EN4main1AI3intE1aE3int(A<int>* a, int 5)
     return int 0
 }
 
-void _EN4main1AI3intE4initE(A<int>* %this) {
+void _EN4main1AI3intE4initE(A<int>* this) {
     return void
 }
 
-void _EN4main1AI3intE1aE3int(A<int>* %this, int %n) {
+void _EN4main1AI3intE1aE3int(A<int>* this, int n) {
     return void
 }

@@ -1,33 +1,33 @@
 
 int main() {
-    int* %i = alloca int
-    store int 0 to %i
-    int %i.load = load %i
-    int %0 = %i.load + int 1
-    store %0 to %i
-    int %i.load = load %i
-    int %1 = %i.load - int 1
-    store %1 to %i
-    int %i.load = load %i
-    int %2 = %i.load * int 1
-    store %2 to %i
-    int %i.load = load %i
-    int %3 = %i.load / int 1
-    store %3 to %i
-    int %i.load = load %i
-    int %4 = %i.load & int 1
-    store %4 to %i
-    int %i.load = load %i
-    int %5 = %i.load | int 1
-    store %5 to %i
-    int %i.load = load %i
-    int %6 = %i.load ^ int 1
-    store %6 to %i
-    int %i.load = load %i
-    int %7 = %i.load << int 1
-    store %7 to %i
-    int %i.load = load %i
-    int %8 = %i.load >> int 1
-    store %8 to %i
+    int* i = alloca int
+    store int 0 to i
+    int i.load = load i
+    int _0 = i.load + int 1
+    store _0 to i
+    int i.load_0 = load i
+    int _1 = i.load_0 - int 1
+    store _1 to i
+    int i.load_1 = load i
+    int _2 = i.load_1 * int 1
+    store _2 to i
+    int i.load_2 = load i
+    int _3 = i.load_2 / int 1
+    store _3 to i
+    int i.load_3 = load i
+    int _4 = i.load_3 & int 1
+    store _4 to i
+    int i.load_4 = load i
+    int _5 = i.load_4 | int 1
+    store _5 to i
+    int i.load_5 = load i
+    int _6 = i.load_5 ^ int 1
+    store _6 to i
+    int i.load_6 = load i
+    int _7 = i.load_6 << int 1
+    store _7 to i
+    int i.load_7 = load i
+    int _8 = i.load_7 >> int 1
+    store _8 to i
     return int 0
 }

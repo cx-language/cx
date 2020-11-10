@@ -1,52 +1,52 @@
 
 S _EN4main1sE() {
-    S* %0 = alloca S
-    void %1 = call %_EN4main1S4initE(S* %0)
-    S %.load = load %0
-    return %.load
+    S* _0 = alloca S
+    void _1 = call _EN4main1S4initE(S* _0)
+    S .load = load _0
+    return .load
 }
 
-void _EN4main1S4initE(S* %this) {
-    int* %i = getelementptr %this, 0, 0
-    store int 0 to %i
+void _EN4main1S4initE(S* this) {
+    int* i = getelementptr this, 0, 0
+    store int 0 to i
     return void
 }
 
 C _EN4main1cE() {
-    C* %0 = alloca C
-    void %1 = call %_EN4main1C4initE(C* %0)
-    C %.load = load %0
-    return %.load
+    C* _0 = alloca C
+    void _1 = call _EN4main1C4initE(C* _0)
+    C .load = load _0
+    return .load
 }
 
-void _EN4main1C4initE(C* %this) {
-    int* %i = getelementptr %this, 0, 0
-    store int 0 to %i
+void _EN4main1C4initE(C* this) {
+    int* i = getelementptr this, 0, 0
+    store int 0 to i
     return void
 }
 
 int main() {
-    S* %0 = alloca S
-    C* %1 = alloca C
-    S* %2 = alloca S
-    C* %3 = alloca C
-    S %4 = call %_EN4main1sE()
-    store %4 to %0
-    void %5 = call %_EN4main1S1fE(S* %0)
-    C %6 = call %_EN4main1cE()
-    store %6 to %1
-    void %7 = call %_EN4main1C1fE(C* %1)
-    void %8 = call %_EN4main1S4initE(S* %2)
-    void %9 = call %_EN4main1S1fE(S* %2)
-    void %10 = call %_EN4main1C4initE(C* %3)
-    void %11 = call %_EN4main1C1fE(C* %3)
+    S* _0 = alloca S
+    C* _1 = alloca C
+    S* _2 = alloca S
+    C* _3 = alloca C
+    S _4 = call _EN4main1sE()
+    store _4 to _0
+    void _5 = call _EN4main1S1fE(S* _0)
+    C _6 = call _EN4main1cE()
+    store _6 to _1
+    void _7 = call _EN4main1C1fE(C* _1)
+    void _8 = call _EN4main1S4initE(S* _2)
+    void _9 = call _EN4main1S1fE(S* _2)
+    void _10 = call _EN4main1C4initE(C* _3)
+    void _11 = call _EN4main1C1fE(C* _3)
     return int 0
 }
 
-void _EN4main1S1fE(S* %this) {
+void _EN4main1S1fE(S* this) {
     return void
 }
 
-void _EN4main1C1fE(C* %this) {
+void _EN4main1C1fE(C* this) {
     return void
 }

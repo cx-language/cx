@@ -1,9 +1,9 @@
 
-void _EN4main1fEP7float647float647float64(float64* %foo, float64 %bar, float64 %baz) {
-    float64 %foo.load = load %foo
-    float64 %0 = %bar * %baz
-    float64 %1 = float64 1 - %0
-    float64 %2 = %foo.load * %1
-    store %2 to %foo
+void _EN4main1fEP7float647float647float64(float64* foo, float64 bar, float64 baz) {
+    float64 foo.load = load foo
+    float64 _0 = bar * baz
+    float64 _1 = float64 1 - _0
+    float64 _2 = foo.load * _1
+    store _2 to foo
     return void
 }

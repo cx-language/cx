@@ -7,49 +7,49 @@ int main() {
     br bool false, if.then, if.else
 
 if.then:
-    void %0 = call %bar()
-    void %1 = call %foo()
+    void _0 = call bar()
+    void _1 = call foo()
     return int 0
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
     br bool false, if.then, if.else
 
-if.then:
-    void %2 = call %bar()
-    br %if.end
+if.then_0:
+    void _2 = call bar()
+    br if.end_0
 
-if.else:
-    br %if.end
+if.else_0:
+    br if.end_0
 
-if.end:
-    br %loop.condition
+if.end_0:
+    br loop.condition
 
 loop.condition:
     br bool false, loop.body, loop.end
 
 loop.body:
-    void %3 = call %bar()
-    void %4 = call %foo()
-    br %loop.condition
+    void _3 = call bar()
+    void _4 = call foo()
+    br loop.condition
 
 loop.end:
     br bool true, if.then, if.else
 
-if.then:
-    void %5 = call %bar()
-    void %6 = call %foo()
+if.then_1:
+    void _5 = call bar()
+    void _6 = call foo()
     return int 0
 
-if.else:
-    br %if.end
+if.else_1:
+    br if.end_1
 
-if.end:
-    void %7 = call %foo()
-    void %8 = call %bar()
-    void %9 = call %foo()
+if.end_1:
+    void _7 = call foo()
+    void _8 = call bar()
+    void _9 = call foo()
     return int 0
 }
 

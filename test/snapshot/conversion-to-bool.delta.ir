@@ -1,12 +1,12 @@
 
-void _EN4main1fEP4char(char* %pb) {
-    bool* %b = alloca bool
-    bool %0 = cast int 2 to bool
-    store %0 to %b
-    char %pb.load = load %pb
-    bool %1 = cast %pb.load to bool
-    store %1 to %b
-    bool %b.load = load %b
-    bool %2 = cast %b.load to bool
+void _EN4main1fEP4char(char* pb) {
+    bool* b = alloca bool
+    bool _0 = cast int 2 to bool
+    store _0 to b
+    char pb.load = load pb
+    bool _1 = cast pb.load to bool
+    store _1 to b
+    bool b.load = load b
+    bool _2 = cast b.load to bool
     return void
 }

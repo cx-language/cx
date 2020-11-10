@@ -1,39 +1,39 @@
 
 int main() {
-    int** %p = alloca int*
-    int** %cp = alloca int*
-    void** %v = alloca void*
-    int8** %b = alloca int8*
-    int* %i = alloca int
-    int* %p.load = load %p
-    void* %0 = cast %p.load to void*
-    store %0 to %v
-    int* %p.load = load %p
-    void* %1 = cast %p.load to void*
-    void %2 = call %_EN4main3barEP4void(void* %1)
-    void* %v.load = load %v
-    void* %3 = cast %v.load to void*
-    void %4 = call %_EN4main3barEP4void(void* %3)
-    void* %v.load = load %v
-    int8* %5 = cast %v.load to int8*
-    int8* %6 = cast %5 to int8*
-    store %6 to %b
-    int8* %b.load = load %b
-    void* %7 = cast %b.load to void*
-    store %7 to %v
-    int* %cp.load = load %cp
-    void* %8 = cast %cp.load to void*
-    void %9 = call %_EN4main3bazEOP4void(void* %8)
-    store int 0 to %i
-    void* %10 = cast %i to void*
-    void %11 = call %_EN4main3bazEOP4void(void* %10)
+    int** p = alloca int*
+    int** cp = alloca int*
+    void** v = alloca void*
+    int8** b = alloca int8*
+    int* i = alloca int
+    int* p.load = load p
+    void* _0 = cast p.load to void*
+    store _0 to v
+    int* p.load_0 = load p
+    void* _1 = cast p.load_0 to void*
+    void _2 = call _EN4main3barEP4void(void* _1)
+    void* v.load = load v
+    void* _3 = cast v.load to void*
+    void _4 = call _EN4main3barEP4void(void* _3)
+    void* v.load_0 = load v
+    int8* _5 = cast v.load_0 to int8*
+    int8* _6 = cast _5 to int8*
+    store _6 to b
+    int8* b.load = load b
+    void* _7 = cast b.load to void*
+    store _7 to v
+    int* cp.load = load cp
+    void* _8 = cast cp.load to void*
+    void _9 = call _EN4main3bazEOP4void(void* _8)
+    store int 0 to i
+    void* _10 = cast i to void*
+    void _11 = call _EN4main3bazEOP4void(void* _10)
     return int 0
 }
 
-void _EN4main3barEP4void(void* %p) {
+void _EN4main3barEP4void(void* p) {
     return void
 }
 
-void _EN4main3bazEOP4void(void* %p) {
+void _EN4main3bazEOP4void(void* p) {
     return void
 }

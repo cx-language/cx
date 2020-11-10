@@ -1,10 +1,10 @@
 
 int main() {
-    float* %a = alloca float
-    float* %b = alloca float
-    float %0 = float 4 + float 4
-    store %0 to %a
-    float %1 = float 4 + float 4
-    store %1 to %b
+    float* a = alloca float
+    float* b = alloca float
+    float _0 = float 4 + float 4
+    store _0 to a
+    float _1 = float 4 + float 4
+    store _1 to b
     return int 0
 }

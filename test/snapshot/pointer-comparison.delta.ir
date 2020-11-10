@@ -1,19 +1,19 @@
 
-bool _EN4mainltEP1XP1X(X* %a, X* %b) {
+bool _EN4mainltEP1XP1X(X* a, X* b) {
     return bool true
 }
 
-void _EN4main2fxEP1XP1X(X* %a, X* %b) {
-    X* %0 = cast %a to X*
-    X* %1 = cast %b to X*
-    bool %2 = call %_EN4mainltEP1XP1X(X* %0, X* %1)
-    bool %3 = call %_EN4mainltEP1XP1X(X* %a, X* %b)
+void _EN4main2fxEP1XP1X(X* a, X* b) {
+    X* _0 = cast a to X*
+    X* _1 = cast b to X*
+    bool _2 = call _EN4mainltEP1XP1X(X* _0, X* _1)
+    bool _3 = call _EN4mainltEP1XP1X(X* a, X* b)
     return void
 }
 
-void _EN4main2fyEP1YP1Y(Y* %a, Y* %b) {
-    uint64 %address = cast %a to uint64
-    uint64 %address = cast %b to uint64
-    bool %0 = %address < %address
+void _EN4main2fyEP1YP1Y(Y* a, Y* b) {
+    uint64 address = cast a to uint64
+    uint64 address_0 = cast b to uint64
+    bool _0 = address < address_0
     return void
 }

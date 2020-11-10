@@ -1,15 +1,15 @@
 
 int main() {
-    B* %0 = alloca B
-    void %1 = call %_EN4main1B4initE(B* %0)
-    void %2 = call %_EN4main1B1fE(B* %0)
+    B* _0 = alloca B
+    void _1 = call _EN4main1B4initE(B* _0)
+    void _2 = call _EN4main1B1fE(B* _0)
     return int 0
 }
 
-void _EN4main1B1fE(B* %this) {
+void _EN4main1B1fE(B* this) {
     return void
 }
 
-void _EN4main1B4initE(B* %this) {
+void _EN4main1B4initE(B* this) {
     return void
 }

@@ -1,23 +1,23 @@
 
 int main() {
-    C<bool>* %c = alloca C<bool>
-    void %0 = call %_EN4main1CI4boolE4initE(C<bool>* %c)
-    void %1 = call %_EN4main1CI4boolE1fE(C<bool>* %c)
+    C<bool>* c = alloca C<bool>
+    void _0 = call _EN4main1CI4boolE4initE(C<bool>* c)
+    void _1 = call _EN4main1CI4boolE1fE(C<bool>* c)
     return int 0
 }
 
-void _EN4main1CI4boolE4initE(C<bool>* %this) {
+void _EN4main1CI4boolE4initE(C<bool>* this) {
     return void
 }
 
-void _EN4main1CI4boolE1fE(C<bool>* %this) {
-    void %0 = call %_EN4main1CI4boolE1gE(C<bool>* %this)
+void _EN4main1CI4boolE1fE(C<bool>* this) {
+    void _0 = call _EN4main1CI4boolE1gE(C<bool>* this)
     return void
 }
 
-void _EN4main1CI4boolE1gE(C<bool>* %this) {
-    uint64* %a = alloca uint64
-    uint64 %0 = cast %1 to uint64
-    store %0 to %a
+void _EN4main1CI4boolE1gE(C<bool>* this) {
+    uint64* a = alloca uint64
+    uint64 _0 = cast _1 to uint64
+    store _0 to a
     return void
 }

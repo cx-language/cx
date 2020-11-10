@@ -6,17 +6,17 @@ if.then:
     br bool false, if.then, if.else
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
     return int 2
 
-if.then:
+if.then_0:
     return int 1
 
-if.else:
+if.else_0:
     return int 0
 
-if.end:
-    br %if.end
+if.end_0:
+    br if.end
 }

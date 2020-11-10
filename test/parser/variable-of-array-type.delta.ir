@@ -1,18 +1,18 @@
-global %foo = int[3] %0
+global foo = int[3] _0
 
 int main() {
-    int[1]* %qux = alloca int[1]
-    int[1] %0 = insertvalue int[1] undefined, 0, int 42
-    store %0 to %qux
-    int* %1 = getelementptr %foo, int 0, int 0
-    store int 3 to %1
-    int* %2 = getelementptr %foo, int 0, int 1
-    uint64 %3 = call %_EN3std3int4hashE(int* %2)
+    int[1]* qux = alloca int[1]
+    int[1] _0 = insertvalue int[1] undefined, 0, int 42
+    store _0 to qux
+    int* _1 = getelementptr foo, int 0, int 0
+    store int 3 to _1
+    int* _2 = getelementptr foo, int 0, int 1
+    uint64 _3 = call _EN3std3int4hashE(int* _2)
     return int 0
 }
 
-uint64 _EN3std3int4hashE(int* %this) {
-    int %this.load = load %this
-    uint64 %0 = cast %this.load to uint64
-    return %0
+uint64 _EN3std3int4hashE(int* this) {
+    int this.load = load this
+    uint64 _0 = cast this.load to uint64
+    return _0
 }

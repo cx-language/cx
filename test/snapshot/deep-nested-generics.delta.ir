@@ -1,43 +1,43 @@
 
 int main() {
-    S<R>* %s = alloca S<R>
-    void %0 = call %_EN4main1SI1RE4initE(S<R>* %s)
-    void %1 = call %_EN4main1SI1RE1sE(S<R>* %s)
+    S<R>* s = alloca S<R>
+    void _0 = call _EN4main1SI1RE4initE(S<R>* s)
+    void _1 = call _EN4main1SI1RE1sE(S<R>* s)
     return int 0
 }
 
-void _EN4main1SI1RE4initE(S<R>* %this) {
+void _EN4main1SI1RE4initE(S<R>* this) {
     return void
 }
 
-void _EN4main1SI1RE1sE(S<R>* %this) {
-    A<R>* %t = alloca A<R>
-    R* %tt = alloca R
-    A<A<R>>* %a = getelementptr %this, 0, 0
-    A<R> %0 = call %_EN4main1AI1AI1REEixE3int(A<A<R>>* %a, int 0)
-    store %0 to %t
-    R %1 = call %_EN4main1AI1REixE3int(A<R>* %t, int 0)
-    store %1 to %tt
-    A<A<R>>* %a = getelementptr %this, 0, 0
-    int %2 = call %_EN4main1R1hE(R* %tt)
-    A<R> %3 = call %_EN4main1AI1AI1REEixE3int(A<A<R>>* %a, int %2)
+void _EN4main1SI1RE1sE(S<R>* this) {
+    A<R>* t = alloca A<R>
+    R* tt = alloca R
+    A<A<R>>* a = getelementptr this, 0, 0
+    A<R> _0 = call _EN4main1AI1AI1REEixE3int(A<A<R>>* a, int 0)
+    store _0 to t
+    R _1 = call _EN4main1AI1REixE3int(A<R>* t, int 0)
+    store _1 to tt
+    A<A<R>>* a_0 = getelementptr this, 0, 0
+    int _2 = call _EN4main1R1hE(R* tt)
+    A<R> _3 = call _EN4main1AI1AI1REEixE3int(A<A<R>>* a_0, int _2)
     return void
 }
 
-A<R> _EN4main1AI1AI1REEixE3int(A<A<R>>* %this, int %i) {
-    A<R>* %t = getelementptr %this, 0, 0
-    A<R> %t.load = load %t
-    return %t.load
+A<R> _EN4main1AI1AI1REEixE3int(A<A<R>>* this, int i) {
+    A<R>* t = getelementptr this, 0, 0
+    A<R> t.load = load t
+    return t.load
 }
 
-R _EN4main1AI1REixE3int(A<R>* %this, int %i) {
-    R* %t = getelementptr %this, 0, 0
-    R %t.load = load %t
-    return %t.load
+R _EN4main1AI1REixE3int(A<R>* this, int i) {
+    R* t = getelementptr this, 0, 0
+    R t.load = load t
+    return t.load
 }
 
-int _EN4main1R1hE(R* %this) {
-    int* %i = getelementptr %this, 0, 0
-    int %i.load = load %i
-    return %i.load
+int _EN4main1R1hE(R* this) {
+    int* i = getelementptr this, 0, 0
+    int i.load = load i
+    return i.load
 }

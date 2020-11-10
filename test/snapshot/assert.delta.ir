@@ -2,12 +2,12 @@
 extern bool b()
 
 int main() {
-    bool %0 = call %b()
-    bool %assert.condition = %0 == bool false
-    br %assert.condition, assert.fail, assert.success
+    bool _0 = call b()
+    bool assert.condition = _0 == bool false
+    br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void %1 = call %_EN3std10assertFailEP4char(char* "Assertion failed at assert.delta:6:5
+    void _1 = call _EN3std10assertFailEP4char(char* "Assertion failed at assert.delta:6:5
 ")
     unreachable
 
@@ -15,5 +15,5 @@ assert.success:
     return int 0
 }
 
-void _EN3std10assertFailEP4char(char* %message) {
+void _EN3std10assertFailEP4char(char* message) {
 }

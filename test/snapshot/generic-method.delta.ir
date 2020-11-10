@@ -8,25 +8,25 @@ bool _EN4main1hE() {
 }
 
 int main() {
-    X* %x = alloca X
-    void %0 = call %_EN4main1X4initE(X* %x)
-    int()* %1 = cast %_EN4main1gE to int()*
-    int %2 = call %_EN4main1X1fI3intEEF_3int(X* %x, int()* %1)
-    bool()* %3 = cast %_EN4main1hE to bool()*
-    bool %4 = call %_EN4main1X1fI4boolEEF_4bool(X* %x, bool()* %3)
+    X* x = alloca X
+    void _0 = call _EN4main1X4initE(X* x)
+    int()* _1 = cast _EN4main1gE to int()*
+    int _2 = call _EN4main1X1fI3intEEF_3int(X* x, int()* _1)
+    bool()* _3 = cast _EN4main1hE to bool()*
+    bool _4 = call _EN4main1X1fI4boolEEF_4bool(X* x, bool()* _3)
     return int 0
 }
 
-void _EN4main1X4initE(X* %this) {
+void _EN4main1X4initE(X* this) {
     return void
 }
 
-int _EN4main1X1fI3intEEF_3int(X* %this, int()* %t) {
-    int %0 = call %t()
-    return %0
+int _EN4main1X1fI3intEEF_3int(X* this, int()* t) {
+    int _0 = call t()
+    return _0
 }
 
-bool _EN4main1X1fI4boolEEF_4bool(X* %this, bool()* %t) {
-    bool %0 = call %t()
-    return %0
+bool _EN4main1X1fI4boolEEF_4bool(X* this, bool()* t) {
+    bool _0 = call t()
+    return _0
 }

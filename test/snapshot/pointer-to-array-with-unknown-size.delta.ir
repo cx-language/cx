@@ -1,22 +1,22 @@
 
 int main() {
-    int[3]* %a = alloca int[3]
-    int** %p = alloca int*
-    int* %t = alloca int
-    int[3] %0 = insertvalue int[3] undefined, 0, int 1
-    int[3] %1 = insertvalue %0, 1, int 2
-    int[3] %2 = insertvalue %1, 2, int 3
-    store %2 to %a
-    int* %3 = getelementptr %a, int 0, int 0
-    int* %4 = cast %3 to int*
-    store %4 to %p
-    int* %5 = cast %a to int*
-    store %5 to %p
-    int* %6 = cast %a to int*
-    store %6 to %p
-    int* %p.load = load %p
-    int* %7 = getelementptr %p.load, int 1
-    int %.load = load %7
-    store %.load to %t
+    int[3]* a = alloca int[3]
+    int** p = alloca int*
+    int* t = alloca int
+    int[3] _0 = insertvalue int[3] undefined, 0, int 1
+    int[3] _1 = insertvalue _0, 1, int 2
+    int[3] _2 = insertvalue _1, 2, int 3
+    store _2 to a
+    int* _3 = getelementptr a, int 0, int 0
+    int* _4 = cast _3 to int*
+    store _4 to p
+    int* _5 = cast a to int*
+    store _5 to p
+    int* _6 = cast a to int*
+    store _6 to p
+    int* p.load = load p
+    int* _7 = getelementptr p.load, int 1
+    int .load = load _7
+    store .load to t
     return int 0
 }

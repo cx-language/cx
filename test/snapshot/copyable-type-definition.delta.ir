@@ -1,30 +1,30 @@
 
 int main() {
-    Foo* %f = alloca Foo
-    int* %bar = alloca int
-    bool* %qux = alloca bool
-    void %0 = call %_EN4main3Foo4initE3int4bool(Foo* %f, int 666, bool true)
-    int* %a = getelementptr %f, 0, 0
-    int %a.load = load %a
-    int %1 = %a.load + int 1
-    store %1 to %a
-    int* %a = getelementptr %f, 0, 0
-    int %a.load = load %a
-    store %a.load to %bar
-    bool* %b = getelementptr %f, 0, 1
-    bool %b.load = load %b
-    store %b.load to %qux
+    Foo* f = alloca Foo
+    int* bar = alloca int
+    bool* qux = alloca bool
+    void _0 = call _EN4main3Foo4initE3int4bool(Foo* f, int 666, bool true)
+    int* a = getelementptr f, 0, 0
+    int a.load = load a
+    int _1 = a.load + int 1
+    store _1 to a
+    int* a_0 = getelementptr f, 0, 0
+    int a.load_0 = load a_0
+    store a.load_0 to bar
+    bool* b = getelementptr f, 0, 1
+    bool b.load = load b
+    store b.load to qux
     return int 0
 }
 
-void _EN4main3Foo4initE3int4bool(Foo* %this, int %a, bool %b) {
-    int* %a = getelementptr %this, 0, 0
-    store %a to %a
-    bool* %b = getelementptr %this, 0, 1
-    store %b to %b
-    int* %a = getelementptr %this, 0, 0
-    int %a.load = load %a
-    int %0 = %a.load + int 1
-    store %0 to %a
+void _EN4main3Foo4initE3int4bool(Foo* this, int a, bool b) {
+    int* a_0 = getelementptr this, 0, 0
+    store a to a_0
+    bool* b_0 = getelementptr this, 0, 1
+    store b to b_0
+    int* a_1 = getelementptr this, 0, 0
+    int a.load = load a_1
+    int _0 = a.load + int 1
+    store _0 to a_1
     return void
 }

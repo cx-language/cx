@@ -1,47 +1,47 @@
 
 int main() {
-    string* %b = alloca string
-    string* %__str = alloca string
-    int* %five = alloca int
-    void %0 = call %_EN4main3fooI3intEE3int(int 1)
-    void %1 = call %_EN4main3fooI4boolEE4bool(bool false)
-    void %2 = call %_EN4main3fooI4boolEE4bool(bool true)
-    void %3 = call %_EN3std6string4initEP4char3int(string* %__str, char* "bar", int 3)
-    string %__str.load = load %__str
-    string %4 = call %_EN4main3barI6stringEE6string(string %__str.load)
-    store %4 to %b
-    int %5 = -int 5
-    int %6 = call %_EN4main3quxI3intEE3int(int %5)
-    store %6 to %five
+    string* b = alloca string
+    string* __str = alloca string
+    int* five = alloca int
+    void _0 = call _EN4main3fooI3intEE3int(int 1)
+    void _1 = call _EN4main3fooI4boolEE4bool(bool false)
+    void _2 = call _EN4main3fooI4boolEE4bool(bool true)
+    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "bar", int 3)
+    string __str.load = load __str
+    string _4 = call _EN4main3barI6stringEE6string(string __str.load)
+    store _4 to b
+    int _5 = -int 5
+    int _6 = call _EN4main3quxI3intEE3int(int _5)
+    store _6 to five
     return int 0
 }
 
-void _EN4main3fooI3intEE3int(int %t) {
+void _EN4main3fooI3intEE3int(int t) {
     return void
 }
 
-void _EN4main3fooI4boolEE4bool(bool %t) {
+void _EN4main3fooI4boolEE4bool(bool t) {
     return void
 }
 
-string _EN4main3barI6stringEE6string(string %t) {
-    return %t
+string _EN4main3barI6stringEE6string(string t) {
+    return t
 }
 
-void _EN3std6string4initEP4char3int(string* %this, char* %pointer, int %length) {
+void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
 }
 
-int _EN4main3quxI3intEE3int(int %t) {
-    bool %0 = %t < int 0
-    br %0, if.then, if.else
+int _EN4main3quxI3intEE3int(int t) {
+    bool _0 = t < int 0
+    br _0, if.then, if.else
 
 if.then:
-    int %1 = -%t
-    return %1
+    int _1 = -t
+    return _1
 
 if.else:
-    br %if.end
+    br if.end
 
 if.end:
-    return %t
+    return t
 }

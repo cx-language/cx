@@ -1,7 +1,7 @@
 
 int main() {
-    void %0 = call %bar()
-    void %1 = call %_EN4main3fooE()
+    void _0 = call bar()
+    void _1 = call _EN4main3fooE()
     return int 0
 }
 

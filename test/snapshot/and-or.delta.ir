@@ -6,59 +6,59 @@ extern bool b()
 extern bool c()
 
 int main() {
-    bool* %and = alloca bool
-    bool* %and2 = alloca bool
-    bool* %or = alloca bool
-    bool* %or2 = alloca bool
-    bool %0 = call %a()
-    br %0, and.rhs(%0), and.end(%0)
+    bool* and = alloca bool
+    bool* and2 = alloca bool
+    bool* or = alloca bool
+    bool* or2 = alloca bool
+    bool _0 = call a()
+    br _0, and.rhs(_0), and.end(_0)
 
 and.rhs:
-    bool %1 = call %b()
-    br %and.end(%1)
+    bool _1 = call b()
+    br and.end(_1)
 
-and.end(bool %and):
-    store %and to %and
-    bool %2 = call %a()
-    br %2, and.rhs(%2), and.end(%2)
+and.end(bool and_0):
+    store and_0 to and
+    bool _2 = call a()
+    br _2, and.rhs(_2), and.end(_2)
 
-and.rhs:
-    bool %3 = call %c()
-    br %and.end(%3)
+and.rhs_0:
+    bool _3 = call c()
+    br and.end_0(_3)
 
-and.rhs:
-    bool %4 = call %b()
-    br %and.end(%4)
+and.rhs_1:
+    bool _4 = call b()
+    br and.end_1(_4)
 
-and.end(bool %and):
-    br %and, and.rhs(%and), and.end(%and)
+and.end_1(bool and_1):
+    br and_1, and.rhs(and_1), and.end(and_1)
 
-and.end(bool %and):
-    store %and to %and2
-    bool %5 = call %a()
-    br %5, or.end(%5), or.rhs(%5)
-
-or.rhs:
-    bool %6 = call %b()
-    br %or.end(%6)
-
-or.end(bool %or):
-    store %or to %or
-    bool %7 = call %a()
-    br %7, or.end(%7), or.rhs(%7)
+and.end_0(bool and_2):
+    store and_2 to and2
+    bool _5 = call a()
+    br _5, or.end(_5), or.rhs(_5)
 
 or.rhs:
-    bool %8 = call %c()
-    br %or.end(%8)
+    bool _6 = call b()
+    br or.end(_6)
 
-or.rhs:
-    bool %9 = call %b()
-    br %or.end(%9)
+or.end(bool or_0):
+    store or_0 to or
+    bool _7 = call a()
+    br _7, or.end(_7), or.rhs(_7)
 
-or.end(bool %or):
-    br %or, or.end(%or), or.rhs(%or)
+or.rhs_0:
+    bool _8 = call c()
+    br or.end_0(_8)
 
-or.end(bool %or):
-    store %or to %or2
+or.rhs_1:
+    bool _9 = call b()
+    br or.end_1(_9)
+
+or.end_1(bool or_1):
+    br or_1, or.end(or_1), or.rhs(or_1)
+
+or.end_0(bool or_2):
+    store or_2 to or2
     return int 0
 }

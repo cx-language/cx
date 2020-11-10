@@ -1,24 +1,24 @@
 
 int main() {
-    void %0 = call %_EN4main1gI3intEE3int(int 42)
-    void %1 = call %_EN4main1gI4boolEE4bool(bool false)
+    void _0 = call _EN4main1gI3intEE3int(int 42)
+    void _1 = call _EN4main1gI4boolEE4bool(bool false)
     return int 0
 }
 
-void _EN4main1gI3intEE3int(int %t) {
-    void %0 = call %_EN4main1fI3intEE3int(int %t)
+void _EN4main1gI3intEE3int(int t) {
+    void _0 = call _EN4main1fI3intEE3int(int t)
     return void
 }
 
-void _EN4main1gI4boolEE4bool(bool %t) {
-    void %0 = call %_EN4main1fI4boolEE4bool(bool %t)
+void _EN4main1gI4boolEE4bool(bool t) {
+    void _0 = call _EN4main1fI4boolEE4bool(bool t)
     return void
 }
 
-void _EN4main1fI3intEE3int(int %t) {
+void _EN4main1fI3intEE3int(int t) {
     return void
 }
 
-void _EN4main1fI4boolEE4bool(bool %t) {
+void _EN4main1fI4boolEE4bool(bool t) {
     return void
 }

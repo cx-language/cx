@@ -1,119 +1,119 @@
 
 int main() {
-    ArrayIterator<int>* %__iterator = alloca ArrayIterator<int>
-    int[3]* %0 = alloca int[3]
-    int** %e = alloca int*
-    int[2]* %a = alloca int[2]
-    ArrayIterator<int>* %__iterator = alloca ArrayIterator<int>
-    int** %e = alloca int*
-    int[3] %1 = insertvalue int[3] undefined, 0, int 1
-    int[3] %2 = insertvalue %1, 1, int 2
-    int[3] %3 = insertvalue %2, 2, int 3
-    store %3 to %0
-    int* %4 = getelementptr %0, 0, 0
-    int* %5 = getelementptr %4, int 3
-    ArrayIterator<int> %6 = insertvalue ArrayIterator<int> undefined, 0, %4
-    ArrayIterator<int> %7 = insertvalue %6, 1, %5
-    store %7 to %__iterator
-    br %loop.condition
+    ArrayIterator<int>* __iterator = alloca ArrayIterator<int>
+    int[3]* _0 = alloca int[3]
+    int** e = alloca int*
+    int[2]* a = alloca int[2]
+    ArrayIterator<int>* __iterator_0 = alloca ArrayIterator<int>
+    int** e_0 = alloca int*
+    int[3] _1 = insertvalue int[3] undefined, 0, int 1
+    int[3] _2 = insertvalue _1, 1, int 2
+    int[3] _3 = insertvalue _2, 2, int 3
+    store _3 to _0
+    int* _4 = getelementptr _0, 0, 0
+    int* _5 = getelementptr _4, int 3
+    ArrayIterator<int> _6 = insertvalue ArrayIterator<int> undefined, 0, _4
+    ArrayIterator<int> _7 = insertvalue _6, 1, _5
+    store _7 to __iterator
+    br loop.condition
 
 loop.condition:
-    bool %8 = call %_EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* %__iterator)
-    br %8, loop.body, loop.end
+    bool _8 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator)
+    br _8, loop.body, loop.end
 
 loop.body:
-    int* %9 = call %_EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* %__iterator)
-    int* %10 = cast %9 to int*
-    store %10 to %e
-    int* %e.load = load %e
-    int* %11 = cast %e.load to int*
-    void %12 = call %_EN3std7printlnI3intEEP3int(int* %11)
-    br %loop.increment
+    int* _9 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator)
+    int* _10 = cast _9 to int*
+    store _10 to e
+    int* e.load = load e
+    int* _11 = cast e.load to int*
+    void _12 = call _EN3std7printlnI3intEEP3int(int* _11)
+    br loop.increment
 
 loop.increment:
-    void %13 = call %_EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* %__iterator)
-    br %loop.condition
+    void _13 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator)
+    br loop.condition
 
 loop.end:
-    int[2] %14 = insertvalue int[2] undefined, 0, int 4
-    int[2] %15 = insertvalue %14, 1, int 5
-    store %15 to %a
-    int* %16 = getelementptr %a, 0, 0
-    int* %17 = getelementptr %16, int 2
-    ArrayIterator<int> %18 = insertvalue ArrayIterator<int> undefined, 0, %16
-    ArrayIterator<int> %19 = insertvalue %18, 1, %17
-    store %19 to %__iterator
-    br %loop.condition
+    int[2] _14 = insertvalue int[2] undefined, 0, int 4
+    int[2] _15 = insertvalue _14, 1, int 5
+    store _15 to a
+    int* _16 = getelementptr a, 0, 0
+    int* _17 = getelementptr _16, int 2
+    ArrayIterator<int> _18 = insertvalue ArrayIterator<int> undefined, 0, _16
+    ArrayIterator<int> _19 = insertvalue _18, 1, _17
+    store _19 to __iterator_0
+    br loop.condition_0
 
-loop.condition:
-    bool %20 = call %_EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* %__iterator)
-    br %20, loop.body, loop.end
+loop.condition_0:
+    bool _20 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator_0)
+    br _20, loop.body, loop.end
 
-loop.body:
-    int* %21 = call %_EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* %__iterator)
-    int* %22 = cast %21 to int*
-    store %22 to %e
-    int* %e.load = load %e
-    int* %23 = cast %e.load to int*
-    void %24 = call %_EN3std7printlnI3intEEP3int(int* %23)
-    br %loop.increment
+loop.body_0:
+    int* _21 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator_0)
+    int* _22 = cast _21 to int*
+    store _22 to e_0
+    int* e.load_0 = load e_0
+    int* _23 = cast e.load_0 to int*
+    void _24 = call _EN3std7printlnI3intEEP3int(int* _23)
+    br loop.increment_0
 
-loop.increment:
-    void %25 = call %_EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* %__iterator)
-    br %loop.condition
+loop.increment_0:
+    void _25 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator_0)
+    br loop.condition_0
 
-loop.end:
+loop.end_0:
     return int 0
 }
 
-bool _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* %this) {
-    int** %current = getelementptr %this, 0, 0
-    int* %current.load = load %current
-    int** %end = getelementptr %this, 0, 1
-    int* %end.load = load %end
-    bool %0 = %current.load !== %end.load
-    return %0
+bool _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* this) {
+    int** current = getelementptr this, 0, 0
+    int* current.load = load current
+    int** end = getelementptr this, 0, 1
+    int* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
 }
 
-int* _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* %this) {
-    int** %current = getelementptr %this, 0, 0
-    int* %current.load = load %current
-    int* %0 = cast %current.load to int*
-    return %0
+int* _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* this) {
+    int** current = getelementptr this, 0, 0
+    int* current.load = load current
+    int* _0 = cast current.load to int*
+    return _0
 }
 
-void _EN3std7printlnI3intEEP3int(int* %value) {
-    StringBuffer* %s = alloca StringBuffer
-    int* %0 = cast %value to int*
-    StringBuffer %1 = call %_EN3std3int8toStringE(int* %0)
-    store %1 to %s
-    char* %2 = cast char* "%.*s
+void _EN3std7printlnI3intEEP3int(int* value) {
+    StringBuffer* s = alloca StringBuffer
+    int* _0 = cast value to int*
+    StringBuffer _1 = call _EN3std3int8toStringE(int* _0)
+    store _1 to s
+    char* _2 = cast char* "%.*s
 " to char*
-    int %3 = call %_EN3std12StringBuffer4sizeE(StringBuffer* %s)
-    char* %4 = call %_EN3std12StringBuffer4dataE(StringBuffer* %s)
-    int %5 = call %printf(char* %2, int %3, char* %4)
-    void %6 = call %_EN3std12StringBuffer6deinitE(StringBuffer* %s)
+    int _3 = call _EN3std12StringBuffer4sizeE(StringBuffer* s)
+    char* _4 = call _EN3std12StringBuffer4dataE(StringBuffer* s)
+    int _5 = call printf(char* _2, int _3, char* _4)
+    void _6 = call _EN3std12StringBuffer6deinitE(StringBuffer* s)
     return void
 }
 
-void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* %this) {
-    int** %current = getelementptr %this, 0, 0
-    int* %current.load = load %current
-    int* %0 = getelementptr %current.load, int 1
-    store %0 to %current
+void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* this) {
+    int** current = getelementptr this, 0, 0
+    int* current.load = load current
+    int* _0 = getelementptr current.load, int 1
+    store _0 to current
     return void
 }
 
-void _EN3std12StringBuffer6deinitE(StringBuffer* %this) {
+void _EN3std12StringBuffer6deinitE(StringBuffer* this) {
 }
 
-StringBuffer _EN3std3int8toStringE(int* %this) {
+StringBuffer _EN3std3int8toStringE(int* this) {
 }
 
 extern int printf(char*)
 
-int _EN3std12StringBuffer4sizeE(StringBuffer* %this) {
+int _EN3std12StringBuffer4sizeE(StringBuffer* this) {
 }
 
-char* _EN3std12StringBuffer4dataE(StringBuffer* %this) {
+char* _EN3std12StringBuffer4dataE(StringBuffer* this) {
 }

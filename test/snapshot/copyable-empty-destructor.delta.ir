@@ -1,10 +1,10 @@
 
 int main() {
-    Foo* %foo = alloca Foo
-    void %0 = call %_EN4main3Foo6deinitE(Foo* %foo)
+    Foo* foo = alloca Foo
+    void _0 = call _EN4main3Foo6deinitE(Foo* foo)
     return int 0
 }
 
-void _EN4main3Foo6deinitE(Foo* %this) {
+void _EN4main3Foo6deinitE(Foo* this) {
     return void
 }

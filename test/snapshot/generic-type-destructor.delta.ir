@@ -1,26 +1,26 @@
 
 int main() {
-    C<int>* %i = alloca C<int>
-    C<bool>* %b = alloca C<bool>
-    void %0 = call %_EN4main1CI3intE4initE(C<int>* %i)
-    void %1 = call %_EN4main1CI4boolE4initE(C<bool>* %b)
-    void %2 = call %_EN4main1CI4boolE6deinitE(C<bool>* %b)
-    void %3 = call %_EN4main1CI3intE6deinitE(C<int>* %i)
+    C<int>* i = alloca C<int>
+    C<bool>* b = alloca C<bool>
+    void _0 = call _EN4main1CI3intE4initE(C<int>* i)
+    void _1 = call _EN4main1CI4boolE4initE(C<bool>* b)
+    void _2 = call _EN4main1CI4boolE6deinitE(C<bool>* b)
+    void _3 = call _EN4main1CI3intE6deinitE(C<int>* i)
     return int 0
 }
 
-void _EN4main1CI3intE6deinitE(C<int>* %this) {
+void _EN4main1CI3intE6deinitE(C<int>* this) {
     return void
 }
 
-void _EN4main1CI3intE4initE(C<int>* %this) {
+void _EN4main1CI3intE4initE(C<int>* this) {
     return void
 }
 
-void _EN4main1CI4boolE6deinitE(C<bool>* %this) {
+void _EN4main1CI4boolE6deinitE(C<bool>* this) {
     return void
 }
 
-void _EN4main1CI4boolE4initE(C<bool>* %this) {
+void _EN4main1CI4boolE4initE(C<bool>* this) {
     return void
 }

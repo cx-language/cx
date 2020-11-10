@@ -1,46 +1,46 @@
 
-void _EN4main3fooE3int(int %i) {
-    int %0 = -int 1
-    switch %i {
+void _EN4main3fooE3int(int i) {
+    int _0 = -int 1
+    switch i {
         int 0 -> switch.case.0
-        %0 -> switch.case.1
+        _0 -> switch.case.1
         int 42 -> switch.case.2
     }
 
 switch.case.0:
-    br %switch.end
+    br switch.end
 
 switch.case.1:
-    void %1 = call %_EN4main3fooE3int(int %i)
-    void %2 = call %_EN4main3fooE3int(int %i)
-    br %switch.end
+    void _1 = call _EN4main3fooE3int(int i)
+    void _2 = call _EN4main3fooE3int(int i)
+    br switch.end
 
 switch.case.2:
-    br %switch.end
+    br switch.end
 
 switch.default:
-    br %switch.end
+    br switch.end
 
 switch.end:
-    switch %i {
+    switch i {
         int 0 -> switch.case.0
     }
 
-switch.case.0:
-    br %switch.end
+switch.case.0_0:
+    br switch.end_0
 
-switch.default:
-    void %3 = call %_EN4main3fooE3int(int %i)
-    br %switch.end
+switch.default_0:
+    void _3 = call _EN4main3fooE3int(int i)
+    br switch.end_0
 
-switch.end:
+switch.end_0:
     return void
 }
 
-int _EN4main1fEP1S(S* %s) {
-    int* %i = getelementptr %s, 0, 0
-    int %i.load = load %i
-    switch %i.load {
+int _EN4main1fEP1S(S* s) {
+    int* i = getelementptr s, 0, 0
+    int i.load = load i
+    switch i.load {
         int 0 -> switch.case.0
     }
 

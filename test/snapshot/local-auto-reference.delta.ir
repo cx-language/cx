@@ -1,9 +1,9 @@
 
 int main() {
-    Foo* %f = alloca Foo
-    Foo** %rf = alloca Foo*
-    Foo** %pf = alloca Foo*
-    store %f to %rf
-    store %f to %pf
+    Foo* f = alloca Foo
+    Foo** rf = alloca Foo*
+    Foo** pf = alloca Foo*
+    store f to rf
+    store f to pf
     return int 0
 }

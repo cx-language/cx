@@ -1,14 +1,14 @@
 
 int main() {
-    Foo* %f = alloca Foo
-    Foo** %rf = alloca Foo*
-    store %f to %rf
-    Foo* %rf.load = load %rf
-    Foo* %0 = cast %rf.load to Foo*
-    void %1 = call %_EN4main3Foo3barE(Foo* %0)
+    Foo* f = alloca Foo
+    Foo** rf = alloca Foo*
+    store f to rf
+    Foo* rf.load = load rf
+    Foo* _0 = cast rf.load to Foo*
+    void _1 = call _EN4main3Foo3barE(Foo* _0)
     return int 0
 }
 
-void _EN4main3Foo3barE(Foo* %this) {
+void _EN4main3Foo3barE(Foo* this) {
     return void
 }

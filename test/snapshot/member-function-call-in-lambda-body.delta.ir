@@ -1,17 +1,17 @@
 
 int main() {
-    int(X*)** %lambda = alloca int(X*)*
-    int(X*)* %0 = cast %_EN4main9__lambda0EP1X to int(X*)*
-    store %0 to %lambda
+    int(X*)** lambda = alloca int(X*)*
+    int(X*)* _0 = cast _EN4main9__lambda0EP1X to int(X*)*
+    store _0 to lambda
     return int 0
 }
 
-int _EN4main9__lambda0EP1X(X* %x) {
-    X* %0 = cast %x to X*
-    int %1 = call %_EN4main1X3fooE(X* %0)
-    return %1
+int _EN4main9__lambda0EP1X(X* x) {
+    X* _0 = cast x to X*
+    int _1 = call _EN4main1X3fooE(X* _0)
+    return _1
 }
 
-int _EN4main1X3fooE(X* %this) {
+int _EN4main1X3fooE(X* this) {
     return int 42
 }

@@ -1,15 +1,15 @@
 
-int _EN4main1fE3int(int %a) {
-    return %a
+int _EN4main1fE3int(int a) {
+    return a
 }
 
 int main() {
-    int(int)* %0 = cast %_EN4main1fE3int to int(int)*
-    void %1 = call %foo(int(int)* %0)
-    int(int)* %2 = cast %_EN4main1fE3int to int(int)*
-    void %3 = call %bar(int(int)* %2)
-    int(int)* %4 = cast %_EN4main1fE3int to int(int)*
-    void %5 = call %baz(int(int)* %4)
+    int(int)* _0 = cast _EN4main1fE3int to int(int)*
+    void _1 = call foo(int(int)* _0)
+    int(int)* _2 = cast _EN4main1fE3int to int(int)*
+    void _3 = call bar(int(int)* _2)
+    int(int)* _4 = cast _EN4main1fE3int to int(int)*
+    void _5 = call baz(int(int)* _4)
     return int 0
 }
 

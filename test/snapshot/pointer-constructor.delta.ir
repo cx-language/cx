@@ -1,11 +1,11 @@
 
-void _EN4main3fooEPP4charP4char(char** %p, char* %x) {
-    char*** %pp = alloca char**
-    store %p to %pp
-    char** %pp.load = load %pp
-    store %x to %pp.load
-    char** %pp.load = load %pp
-    char* %pp.load.load = load %pp.load
-    store char 120 to %pp.load.load
+void _EN4main3fooEPP4charP4char(char** p, char* x) {
+    char*** pp = alloca char**
+    store p to pp
+    char** pp.load = load pp
+    store x to pp.load
+    char** pp.load_0 = load pp
+    char* pp.load.load = load pp.load_0
+    store char 120 to pp.load.load
     return void
 }

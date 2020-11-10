@@ -1,19 +1,19 @@
 
-int[2] _EN4main1fE3int3int(int %foo, int %bar) {
-    int %0 = %foo + %bar
-    int[2] %1 = insertvalue int[2] undefined, 0, %0
-    int %2 = %foo - %bar
-    int[2] %3 = insertvalue %1, 1, %2
-    return %3
+int[2] _EN4main1fE3int3int(int foo, int bar) {
+    int _0 = foo + bar
+    int[2] _1 = insertvalue int[2] undefined, 0, _0
+    int _2 = foo - bar
+    int[2] _3 = insertvalue _1, 1, _2
+    return _3
 }
 
-int[2] _EN4main1gE3int3int(int %foo, int %bar) {
-    int[2]* %c = alloca int[2]
-    int %0 = %foo + %bar
-    int[2] %1 = insertvalue int[2] undefined, 0, %0
-    int %2 = %foo - %bar
-    int[2] %3 = insertvalue %1, 1, %2
-    store %3 to %c
-    int[2] %c.load = load %c
-    return %c.load
+int[2] _EN4main1gE3int3int(int foo, int bar) {
+    int[2]* c = alloca int[2]
+    int _0 = foo + bar
+    int[2] _1 = insertvalue int[2] undefined, 0, _0
+    int _2 = foo - bar
+    int[2] _3 = insertvalue _1, 1, _2
+    store _3 to c
+    int[2] c.load = load c
+    return c.load
 }

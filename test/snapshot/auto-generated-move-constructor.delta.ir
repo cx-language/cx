@@ -1,9 +1,9 @@
 
-void _EN4main3fooEP1X1X(X* %p, X %x) {
-    store %x to %p
+void _EN4main3fooEP1X1X(X* p, X x) {
+    store x to p
     return void
 }
 
-void _EN4main1X6deinitE(X* %this) {
+void _EN4main1X6deinitE(X* this) {
     return void
 }

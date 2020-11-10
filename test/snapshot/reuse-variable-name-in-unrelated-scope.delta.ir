@@ -1,29 +1,29 @@
 
 void _EN4main1fE() {
-    int* %index = alloca int
-    X<int>* %x = alloca X<int>
-    X<int>* %0 = alloca X<int>
-    store int 0 to %index
-    X<int> %1 = call %_EN4main1gE()
-    store %1 to %x
-    void %2 = call %_EN4main1XI3intE4initE(X<int>* %0)
-    void %3 = call %_EN4main1XI3intE1gE(X<int>* %0)
+    int* index = alloca int
+    X<int>* x = alloca X<int>
+    X<int>* _0 = alloca X<int>
+    store int 0 to index
+    X<int> _1 = call _EN4main1gE()
+    store _1 to x
+    void _2 = call _EN4main1XI3intE4initE(X<int>* _0)
+    void _3 = call _EN4main1XI3intE1gE(X<int>* _0)
     return void
 }
 
 X<int> _EN4main1gE() {
-    X<int>* %x = alloca X<int>
-    void %0 = call %_EN4main1XI3intE4initE(X<int>* %x)
-    X<int> %x.load = load %x
-    return %x.load
+    X<int>* x = alloca X<int>
+    void _0 = call _EN4main1XI3intE4initE(X<int>* x)
+    X<int> x.load = load x
+    return x.load
 }
 
-void _EN4main1XI3intE1gE(X<int>* %this) {
-    int* %index = alloca int
-    store int 0 to %index
+void _EN4main1XI3intE1gE(X<int>* this) {
+    int* index = alloca int
+    store int 0 to index
     return void
 }
 
-void _EN4main1XI3intE4initE(X<int>* %this) {
+void _EN4main1XI3intE4initE(X<int>* this) {
     return void
 }

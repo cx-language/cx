@@ -1,40 +1,40 @@
 
 int main() {
-    M<S>* %m = alloca M<S>
-    void %0 = call %_EN4main1MI1SE4initE(M<S>* %m)
-    void %1 = call %_EN4main1MI1SE1fE(M<S>* %m)
+    M<S>* m = alloca M<S>
+    void _0 = call _EN4main1MI1SE4initE(M<S>* m)
+    void _1 = call _EN4main1MI1SE1fE(M<S>* m)
     return int 0
 }
 
-void _EN4main1MI1SE4initE(M<S>* %this) {
+void _EN4main1MI1SE4initE(M<S>* this) {
     return void
 }
 
-void _EN4main1MI1SE1fE(M<S>* %this) {
-    A<S>* %a = alloca A<S>
-    S* %0 = alloca S
-    void %1 = call %_EN4main1AI1SE4initE(A<S>* %a)
-    S %2 = call %_EN4main1AI1SE1aE(A<S>* %a)
-    store %2 to %0
-    void %3 = call %_EN4main1S1iE(S* %0)
+void _EN4main1MI1SE1fE(M<S>* this) {
+    A<S>* a = alloca A<S>
+    S* _0 = alloca S
+    void _1 = call _EN4main1AI1SE4initE(A<S>* a)
+    S _2 = call _EN4main1AI1SE1aE(A<S>* a)
+    store _2 to _0
+    void _3 = call _EN4main1S1iE(S* _0)
     return void
 }
 
-void _EN4main1AI1SE4initE(A<S>* %this) {
+void _EN4main1AI1SE4initE(A<S>* this) {
     return void
 }
 
-void _EN4main1S1iE(S* %this) {
+void _EN4main1S1iE(S* this) {
     return void
 }
 
-S _EN4main1AI1SE1aE(A<S>* %this) {
-    S* %0 = alloca S
-    void %1 = call %_EN4main1S4initE(S* %0)
-    S %.load = load %0
-    return %.load
+S _EN4main1AI1SE1aE(A<S>* this) {
+    S* _0 = alloca S
+    void _1 = call _EN4main1S4initE(S* _0)
+    S .load = load _0
+    return .load
 }
 
-void _EN4main1S4initE(S* %this) {
+void _EN4main1S4initE(S* this) {
     return void
 }

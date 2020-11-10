@@ -144,6 +144,7 @@ struct Value {
     std::string getName() const;
     const Expr* getExpr() const;
     bool isTerminator() const { return kind == ValueKind::ReturnInst || kind == ValueKind::BranchInst || kind == ValueKind::CondBranchInst; }
+    bool isGlobal() const { return kind == ValueKind::GlobalVariable || kind == ValueKind::Function; }
     void addUse(Instruction* user) { uses.push_back(user); }
     void print(llvm::raw_ostream& stream) const;
     Value* getBranchArgument() const;

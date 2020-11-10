@@ -1,13 +1,13 @@
 
 int main() {
-    A<int>* %a = alloca A<int>
-    void %0 = call %_EN4main1AI3intE4initE(A<int>* %a)
+    A<int>* a = alloca A<int>
+    void _0 = call _EN4main1AI3intE4initE(A<int>* a)
     return int 0
 }
 
-void _EN4main1AI3intE4initE(A<int>* %this) {
-    int** %a = getelementptr %this, 0, 0
-    int* %0 = cast int* null to int*
-    store %0 to %a
+void _EN4main1AI3intE4initE(A<int>* this) {
+    int** a = getelementptr this, 0, 0
+    int* _0 = cast int* null to int*
+    store _0 to a
     return void
 }
