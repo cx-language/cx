@@ -1,12 +1,13 @@
 // RUN: %delta -typecheck %s -Wno-unused | %FileCheck %s
 
-void foo(int*? a, int*? b) {
-    var p = a;
-    if (p != null) {
-        var i = *p;
-        *p = 42;
-        p = b;
+struct S {
+    int*? i;
+}
+
+void foo(S* p) {
+    if (p.i != null) {
+        p.i = null;
         // CHECK: [[@LINE+1]]:9: warning: dereferenced pointer may be null; unwrap it with a postfix '!' to silence this warning
-        *p = 42;
+        *p.i = 1;
     }
 }

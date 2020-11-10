@@ -4,5 +4,5 @@ extern int*? foo();
 
 void main() {
     // CHECK: [[@LINE+1]]:17: error: cannot assign 'int*?' to 'int*'
-    int* f = foo();
+    int* f = foo(); // TODO: Implicitly unwrap with warning
 }

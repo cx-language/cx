@@ -131,36 +131,25 @@ void _EN4main1fE() {
     Optional<int>* %2 = alloca Optional<int>
     int* %x = alloca int
     Optional<int>* %3 = alloca Optional<int>
-    Optional<int>* %4 = alloca Optional<int>
-    void %5 = call %_EN3std8OptionalI3intE4initE(Optional<int>* %0)
+    void %4 = call %_EN3std8OptionalI3intE4initE(Optional<int>* %0)
     Optional<int> %.load = load %0
     store %.load to %a
-    void %6 = call %_EN3std8OptionalI3intE4initE3int(Optional<int>* %b, int 2)
-    void %7 = call %_EN3std8OptionalI3intE4initE3int(Optional<int>* %1, int 3)
+    void %5 = call %_EN3std8OptionalI3intE4initE3int(Optional<int>* %b, int 2)
+    void %6 = call %_EN3std8OptionalI3intE4initE3int(Optional<int>* %1, int 3)
     Optional<int> %.load = load %1
     store %.load to %c
-    void %8 = call %_EN3std8OptionalI3intE4initE(Optional<int>* %d)
-    void %9 = call %_EN3std8OptionalI3intE4initE(Optional<int>* %2)
+    void %7 = call %_EN3std8OptionalI3intE4initE(Optional<int>* %d)
+    void %8 = call %_EN3std8OptionalI3intE4initE(Optional<int>* %2)
     Optional<int> %.load = load %2
     store %.load to %c
     Optional<int> %c.load = load %c
-    bool %10 = extractvalue %c.load, 0
-    br %10, if.then, if.else
+    bool %9 = extractvalue %c.load, 0
+    br %9, if.then, if.else
 
 if.then:
-    int* %11 = getelementptr %c, 0, 1
-    int %.load = load %11
-    int %12 = %.load + int 1
-    store %12 to %x
-    int* %13 = getelementptr %c, 0, 1
-    int %.load = load %13
-    int %14 = int 1 + %.load
-    void %15 = call %_EN3std8OptionalI3intE4initE3int(Optional<int>* %3, int %14)
-    Optional<int> %.load = load %3
-    store %.load to %c
     Optional<int> %c.load = load %c
-    bool %16 = extractvalue %c.load, 0
-    bool %assert.condition = %16 == bool false
+    bool %10 = extractvalue %c.load, 0
+    bool %assert.condition = %10 == bool false
     br %assert.condition, assert.fail, assert.success
 
 if.else:
@@ -170,15 +159,42 @@ if.end:
     return void
 
 assert.fail:
-    void %17 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.delta:25:16
+    void %11 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.delta:24:18
 ")
     unreachable
 
 assert.success:
-    int %18 = extractvalue %c.load, 1
-    int %19 = -%18
-    void %20 = call %_EN3std8OptionalI3intE4initE3int(Optional<int>* %4, int %19)
-    Optional<int> %.load = load %4
+    int %12 = extractvalue %c.load, 1
+    int %13 = %12 + int 1
+    store %13 to %x
+    Optional<int> %c.load = load %c
+    bool %14 = extractvalue %c.load, 0
+    bool %assert.condition = %14 == bool false
+    br %assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void %15 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.delta:25:18
+")
+    unreachable
+
+assert.success:
+    int %16 = extractvalue %c.load, 1
+    int %17 = int 1 + %16
+    Optional<int> %c.load = load %c
+    bool %18 = extractvalue %c.load, 0
+    bool %assert.condition = %18 == bool false
+    br %assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void %19 = call %_EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.delta:26:16
+")
+    unreachable
+
+assert.success:
+    int %20 = extractvalue %c.load, 1
+    int %21 = -%20
+    void %22 = call %_EN3std8OptionalI3intE4initE3int(Optional<int>* %3, int %21)
+    Optional<int> %.load = load %3
     store %.load to %c
     br %if.end
 }

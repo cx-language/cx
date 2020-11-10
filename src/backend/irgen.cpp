@@ -145,20 +145,19 @@ AllocaInst* IRGenerator::createTempAlloca(Value* value) {
     return alloca;
 }
 
-Value* IRGenerator::createLoad(Value* value) {
-    return insertBlock->body.emplace_back(new LoadInst { ValueKind::LoadInst, value, value->getName() + ".load" });
+Value* IRGenerator::createLoad(Value* value, const Expr* expr) {
+    return insertBlock->add(new LoadInst { ValueKind::LoadInst, value, expr, value->getName() + ".load" });
 }
 
 void IRGenerator::createStore(Value* value, Value* pointer) {
     ASSERT(pointer->getType()->isPointerType());
     ASSERT(pointer->getType()->getPointee()->equals(value->getType()));
-    auto store = new StoreInst { ValueKind::StoreInst, value, pointer };
-    insertBlock->body.push_back(store);
+    insertBlock->add(new StoreInst { ValueKind::StoreInst, value, pointer });
 }
 
-Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args) {
+Value* IRGenerator::createCall(Value* function, llvm::ArrayRef<Value*> args, const CallExpr* expr) {
     ASSERT(function->kind == ValueKind::Function || (function->getType()->isPointerType() && function->getType()->getPointee()->isFunctionType()));
-    return insertBlock->body.emplace_back(new CallInst { ValueKind::CallInst, function, args, "" });
+    return insertBlock->add(new CallInst { ValueKind::CallInst, function, args, expr, "" });
 }
 
 Value* IRGenerator::emitAssignmentLHS(const Expr& lhs) {
@@ -192,7 +191,7 @@ void IRGenerator::createDestructorCall(Function* destructor, Value* receiver) {
         receiver = createTempAlloca(receiver);
     }
 
-    createCall(destructor, receiver);
+    createCall(destructor, receiver, nullptr);
 }
 
 Value* IRGenerator::getFunctionForCall(const CallExpr& call) {

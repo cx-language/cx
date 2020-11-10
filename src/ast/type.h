@@ -55,6 +55,7 @@ public:
     void setLocation(SourceLocation location) { this->location = location; }
     Type withLocation(SourceLocation location) const { return Type(typeBase, mutability, location); }
 
+    // TODO: Remove 'Type' suffix from these methods
     bool isBasicType() const { return getKind() == TypeKind::BasicType; }
     bool isArrayType() const { return getKind() == TypeKind::ArrayType; }
     bool isRangeType() const { return isBasicType() && (getName() == "Range" || getName() == "ClosedRange"); }

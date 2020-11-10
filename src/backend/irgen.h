@@ -75,13 +75,13 @@ public:
     void emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
     Value* emitOptionalConstruction(Type wrappedType, Value* arg);
-    void emitAssert(Value* condition, SourceLocation location, llvm::StringRef message = "Assertion failed");
+    void emitAssert(Value* condition, const Expr* expr, SourceLocation location, llvm::StringRef message = "Assertion failed");
     Value* emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
     Value* emitBuiltinCast(const CallExpr& expr);
     Value* emitSizeofExpr(const SizeofExpr& expr);
     Value* emitAddressofExpr(const AddressofExpr& expr);
-    Value* emitMemberAccess(Value* baseValue, const FieldDecl* field);
+    Value* emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr = nullptr);
     Value* emitMemberExpr(const MemberExpr& expr);
     Value* emitTupleElementAccess(const MemberExpr& expr);
     Value* emitIndexExpr(const IndexExpr& expr);
@@ -109,23 +109,23 @@ public:
     AllocaInst* createEntryBlockAlloca(IRType* type, const llvm::Twine& name = "");
     AllocaInst* createEntryBlockAlloca(Type type, const llvm::Twine& name = "") { return createEntryBlockAlloca(getIRType(type), name); }
     AllocaInst* createTempAlloca(Value* value);
-    Value* createLoad(Value* value);
+    Value* createLoad(Value* value, const Expr* expr = nullptr);
     void createStore(Value* value, Value* pointer);
-    Value* createCall(Value* function, llvm::ArrayRef<Value*> args);
+    Value* createCall(Value* function, llvm::ArrayRef<Value*> args, const CallExpr* expr);
     void createBr(BasicBlock* destination, Value* argument = nullptr) {
-        insertBlock->body.push_back(new BranchInst { ValueKind::BranchInst, destination, argument });
+        insertBlock->add(new BranchInst { ValueKind::BranchInst, destination, argument });
         destination->predecessors.push_back(insertBlock);
     }
     void createCondBr(Value* condition, BasicBlock* trueBlock, BasicBlock* falseBlock, Value* argument = nullptr) {
-        insertBlock->body.push_back(new CondBranchInst { ValueKind::CondBranchInst, condition, trueBlock, falseBlock, argument });
+        insertBlock->add(new CondBranchInst { ValueKind::CondBranchInst, condition, trueBlock, falseBlock, argument });
         trueBlock->predecessors.push_back(insertBlock);
         falseBlock->predecessors.push_back(insertBlock);
     }
     Value* createInsertValue(Value* aggregate, Value* value, int index) {
-        return insertBlock->body.emplace_back(new InsertInst { ValueKind::InsertInst, aggregate, value, index, "" });
+        return insertBlock->add(new InsertInst { ValueKind::InsertInst, aggregate, value, index, "" });
     }
     Value* createExtractValue(Value* aggregate, int index, const llvm::Twine& name = "") {
-        return insertBlock->body.emplace_back(new ExtractInst { ValueKind::ExtractInst, aggregate, index, name.str() });
+        return insertBlock->add(new ExtractInst { ValueKind::ExtractInst, aggregate, index, name.str() });
     }
     Value* createConstantInt(IRType* type, llvm::APSInt value) { return new ConstantInt { ValueKind::ConstantInt, type, std::move(value) }; }
     Value* createConstantInt(IRType* type, int64_t value) { return createConstantInt(type, llvm::APSInt::get(value)); }
@@ -143,11 +143,14 @@ public:
     Value* createConstantNull(Type type) { return createConstantNull(getIRType(type)); }
     Value* createUndefined(IRType* type) { return new Undefined { ValueKind::Undefined, type }; }
     Value* createUndefined(Type type) { return createUndefined(getIRType(type)); }
-    Value* createBinaryOp(BinaryOperator op, Value* left, Value* right) {
+    Value* createBinaryOp(BinaryOperator op, Value* left, Value* right, const Expr* expr, const llvm::Twine& name = "") {
         ASSERT(left->getType()->equals(right->getType()));
-        return insertBlock->body.emplace_back(new BinaryInst { ValueKind::BinaryInst, op, left, right, "" });
+        auto inst = insertBlock->add(new BinaryInst { ValueKind::BinaryInst, op, left, right, expr, name.str() });
+        left->addUse(inst);
+        right->addUse(inst);
+        return inst;
     }
-    Value* createIsNull(Value* value, const llvm::Twine& name = "") {
+    Value* createIsNull(Value* value, const Expr* expr, const llvm::Twine& name = "") {
         Value* nullValue;
         auto type = value->getType();
 
@@ -163,24 +166,23 @@ public:
             llvm_unreachable("invalid type passed to createIsNull");
         }
 
-        ASSERT(value->getType()->equals(nullValue->getType()));
-        return insertBlock->body.emplace_back(new BinaryInst { ValueKind::BinaryInst, Token::Equal, value, nullValue, name.str() });
+        return createBinaryOp(Token::Equal, value, nullValue, expr, name);
     }
-    Value* createNeg(Value* value) { return insertBlock->body.emplace_back(new UnaryInst { ValueKind::UnaryInst, Token::Minus, value, "" }); }
-    Value* createNot(Value* value) { return insertBlock->body.emplace_back(new UnaryInst { ValueKind::UnaryInst, Token::Not, value, "" }); }
+    Value* createNeg(Value* value) { return insertBlock->add(new UnaryInst { ValueKind::UnaryInst, Token::Minus, value, nullptr, "" }); }
+    Value* createNot(Value* value) { return insertBlock->add(new UnaryInst { ValueKind::UnaryInst, Token::Not, value, nullptr, "" }); }
     Value* createGEP(Value* pointer, std::vector<Value*> indexes, const llvm::Twine& name = "") {
-        return insertBlock->body.emplace_back(new GEPInst { ValueKind::GEPInst, pointer, std::move(indexes), name.str() });
+        return insertBlock->add(new GEPInst { ValueKind::GEPInst, pointer, std::move(indexes), name.str() });
     }
-    Value* createGEP(Value* pointer, int index0, int index1, const llvm::Twine& name = "") {
+    Value* createGEP(Value* pointer, int index0, int index1, const MemberExpr* expr = nullptr, const llvm::Twine& name = "") {
         if (pointer->getType()->getPointee()->isArrayType()) {
             ASSERT(index1 < pointer->getType()->getPointee()->getArraySize());
         } else {
-            ASSERT(index1 < (int) pointer->getType()->getPointee()->getElements().size());
+            ASSERT(index1 < pointer->getType()->getPointee()->getElements().size());
         }
-        return insertBlock->body.emplace_back(new ConstGEPInst { ValueKind::ConstGEPInst, pointer, index0, index1, name.str() });
+        return insertBlock->add(new ConstGEPInst { ValueKind::ConstGEPInst, pointer, index0, index1, expr, name.str() });
     }
     Value* createCast(Value* value, IRType* type, const llvm::Twine& name = "") {
-        return insertBlock->body.emplace_back(new CastInst { ValueKind::CastInst, value, type, name.str() });
+        return insertBlock->add(new CastInst { ValueKind::CastInst, value, type, name.str() });
     }
     Value* createCast(Value* value, Type type, const llvm::Twine& name = "") { return createCast(value, getIRType(type), name); }
     Value* createGlobalVariable(Value* value, const llvm::Twine& name = "") {
@@ -189,10 +191,10 @@ public:
     Value* createGlobalStringPtr(llvm::StringRef value) { return new ConstantString { ValueKind::ConstantString, value }; }
     Value* createSizeof(Type type) { return new SizeofInst { ValueKind::SizeofInst, getIRType(type), "" }; }
     SwitchInst* createSwitch(Value* condition, BasicBlock* defaultBlock) {
-        return llvm::cast<SwitchInst>(insertBlock->body.emplace_back(new SwitchInst { ValueKind::SwitchInst, condition, defaultBlock, {} }));
+        return insertBlock->add(new SwitchInst { ValueKind::SwitchInst, condition, defaultBlock, {} });
     }
-    void createUnreachable() { insertBlock->body.push_back(new UnreachableInst { ValueKind::UnreachableInst }); }
-    void createReturn(Value* value) { insertBlock->body.push_back(new ReturnInst { ValueKind::ReturnInst, value }); }
+    void createUnreachable() { insertBlock->add(new UnreachableInst { ValueKind::UnreachableInst }); }
+    void createReturn(Value* value) { insertBlock->add(new ReturnInst { ValueKind::ReturnInst, value }); }
     Value* getArrayLength(const Expr& object, Type objectType);
     Value* getArrayIterator(const Expr& object, Type objectType);
     void beginScope();

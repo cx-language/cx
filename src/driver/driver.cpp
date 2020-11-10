@@ -30,6 +30,7 @@
 #include "../package-manager/manifest.h"
 #include "../package-manager/package-manager.h"
 #include "../parser/parse.h"
+#include "../sema/null-analyzer.h"
 #include "../sema/typecheck.h"
 #include "../support/utility.h"
 
@@ -215,13 +216,20 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     typechecker.typecheckModule(mainModule, manifest);
 
     if (errors) return 1;
-    if (typecheck) return 0;
 
     IRGenerator irGenerator;
     for (auto* importedModule : Module::getAllImportedModules()) {
         irGenerator.emitModule(*importedModule);
     }
     irGenerator.emitModule(mainModule);
+
+    NullAnalyzer nullAnalyzer;
+    for (auto module : irGenerator.generatedModules) {
+        nullAnalyzer.analyze(module);
+    }
+
+    if (errors) return 1;
+    if (typecheck) return 0;
 
     if (printIRAll) {
         for (auto* module : irGenerator.generatedModules) {

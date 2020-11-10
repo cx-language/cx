@@ -157,16 +157,10 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
             return Type::getBool();
 
         case Token::Star: // Dereference operation
-            if (operandType.isOptionalType() && operandType.getWrappedType().isPointerType()) {
-                WARN(expr.getLocation(), "dereferencing value of optional type '" << operandType << "' which may be null; "
-                                                                                  << "unwrap the value with a postfix '!' to silence this warning");
-                operandType = operandType.getWrappedType();
-            }
-
-            if (operandType.isPointerType()) {
-                return operandType.getPointee();
-            } else if (operandType.isArrayWithUnknownSize()) {
-                return operandType.getElementType();
+            if (operandType.removeOptional().isPointerType()) {
+                return operandType.removeOptional().getPointee();
+            } else if (operandType.removeOptional().isArrayWithUnknownSize()) {
+                return operandType.removeOptional().getElementType();
             }
 
             ERROR(expr.getLocation(), "cannot dereference non-pointer type '" << operandType << "'");
@@ -278,7 +272,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         auto rightPointeeType = rightType.removeOptional().removePointer().removeArrayWithUnknownSize();
 
         if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
-            WARN(expr.getLocation(), "pointers to different types are not allowed to be equal (got '" << leftType << "' and '" << rightType << "')");
+            ERROR(expr.getLocation(), "comparison of distinct pointer types ('" << leftType << "' and '" << rightType << "')");
         }
     }
 
@@ -525,6 +519,11 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) && isImplicitlyConvertible(expr, source, target.getWrappedType())) {
         if (setType) *setType = false;
         return target;
+    }
+
+    if (source.isOptionalType() && source.getWrappedType() == target && expr && !expr->isCallExpr()) {
+        // Implicit optional unwrap. Warnings for these are generated during null analysis.
+        return source;
     }
 
     if (source.isArrayType() && target.removeOptional().isPointerType() &&
@@ -1071,11 +1070,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
         expr.setReceiverType(receiverType);
 
-        if (receiverType.isOptionalType()) {
-            WARN(expr.getReceiver()->getLocation(), "calling member function through value of optional type '"
-                                                        << receiverType << "' which may be null; "
-                                                        << "unwrap the value with a postfix '!' to silence this warning");
-        } else if (receiverType.removePointer().isArrayType()) {
+        if (receiverType.removeOptional().removePointer().isArrayType()) {
             // TODO: Move these member functions to a 'struct Array' declaration in stdlib.
             if (expr.getFunctionName() == "data") {
                 validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
@@ -1094,7 +1089,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             }
 
             ERROR(expr.getReceiver()->getLocation(), "type '" << receiverType.removePointer() << "' has no member function '" << expr.getFunctionName() << "'");
-        } else if (receiverType.removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
+        } else if (receiverType.removeOptional().removePointer().isBuiltinType() && expr.getFunctionName() == "deinit") {
             return Type::getVoid();
         }
 
@@ -1318,7 +1313,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     validateGenericArgCount(1, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
     validateArgs(expr, param, false, expr.getFunctionName(), expr.getLocation());
 
-    if (!isValidCast(sourceType, targetType)) {
+    if (!isValidCast(sourceType, targetType) && !isValidCast(sourceType.removeOptional(), targetType)) {
         ERROR(expr.getCallee().getLocation(), "illegal cast from '" << sourceType << "' to '" << targetType << "'");
     }
 
@@ -1344,17 +1339,8 @@ Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     }
 
     Type baseType = typecheckExpr(*expr.getBaseExpr());
-
-    if (baseType.isOptionalType() && !expr.getBaseExpr()->isThis()) {
-        WARN(expr.getBaseExpr()->getLocation(), "accessing member through value of optional type '"
-                                                    << baseType << "' which may be null; "
-                                                    << "unwrap the value with a postfix '!' to silence this warning");
-        baseType = baseType.getWrappedType();
-    }
-
-    if (baseType.isPointerType()) {
-        baseType = baseType.getPointee();
-    }
+    if (!expr.getBaseExpr()->isThis()) baseType = baseType.removeOptional();
+    baseType = baseType.removePointer();
 
     if (baseType.isArrayType()) {
         auto sizeSynonyms = { "count", "length", "size" };
@@ -1389,8 +1375,8 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
     Type lhsType = typecheckExpr(*expr.getBase());
     Type arrayType;
 
-    if (lhsType.isArrayType()) {
-        arrayType = lhsType;
+    if (lhsType.removeOptional().isArrayType()) {
+        arrayType = lhsType.removeOptional();
     } else if (lhsType.isPointerType() && lhsType.getPointee().isArrayType()) {
         arrayType = lhsType.getPointee();
     } else if (lhsType.removeOptional().removePointer().isBuiltinType()) {
@@ -1538,12 +1524,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             break;
     }
 
-    if (!useIsWriteOnly && type.isOptionalType() && isGuaranteedNonNull(expr)) {
-        expr.setType(type.removeOptional());
-    } else {
-        expr.setType(type);
-    }
-
+    expr.setType(type);
     expr.setAssignableType(type);
 
     if (!type.isUndefined()) { // TODO: Don't special-case the 'undefined' type.

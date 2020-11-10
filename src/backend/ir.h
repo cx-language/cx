@@ -15,8 +15,14 @@ class StringRef;
 
 namespace delta {
 
+class Expr;
+class CallExpr;
+class BinaryExpr;
+class UnaryExpr;
+class MemberExpr;
 struct Function;
 struct BasicBlock;
+struct Instruction;
 struct Parameter;
 
 enum class IRTypeKind {
@@ -129,13 +135,19 @@ enum class ValueKind {
 };
 
 struct Value {
+    ValueKind kind;
+    std::vector<Instruction*> uses;
+    BasicBlock* parent = nullptr;
+
+    Value(ValueKind kind) : kind(kind) {}
     IRType* getType() const;
     std::string getName() const;
+    const Expr* getExpr() const;
     bool isTerminator() const { return kind == ValueKind::ReturnInst || kind == ValueKind::BranchInst || kind == ValueKind::CondBranchInst; }
+    void addUse(Instruction* user) { uses.push_back(user); }
     void print(llvm::raw_ostream& stream) const;
     Value* getBranchArgument() const;
-
-    ValueKind kind;
+    bool loads(Value* pointer, int gepIndex1 = -1);
 };
 
 struct Instruction : Value {
@@ -181,6 +193,7 @@ struct SwitchInst : Instruction {
 
 struct LoadInst : Instruction {
     Value* value;
+    const Expr* expr;
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::LoadInst; }
@@ -213,6 +226,7 @@ struct ExtractInst : Instruction {
 struct CallInst : Instruction {
     Value* function;
     std::vector<Value*> args;
+    const CallExpr* expr;
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::CallInst; }
@@ -222,6 +236,7 @@ struct BinaryInst : Instruction {
     BinaryOperator op;
     Value* left;
     Value* right;
+    const Expr* expr;
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::BinaryInst; }
@@ -230,6 +245,7 @@ struct BinaryInst : Instruction {
 struct UnaryInst : Instruction {
     UnaryOperator op;
     Value* operand;
+    const UnaryExpr* expr;
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::UnaryInst; }
@@ -245,7 +261,8 @@ struct GEPInst : Instruction {
 
 struct ConstGEPInst : Instruction {
     Value* pointer;
-    int index0, index1;
+    int index0, index1; // TODO: Remove index0 since we're not using it?
+    const MemberExpr* expr;
     std::string name;
 
     static bool classof(const Value* v) { return v->kind == ValueKind::ConstGEPInst; }
@@ -278,6 +295,12 @@ struct BasicBlock : Value {
     std::vector<BasicBlock*> predecessors;
 
     BasicBlock(std::string name, Function* parent = nullptr);
+    template<typename T>
+    T* add(T* inst) {
+        inst->parent = this;
+        body.push_back(inst);
+        return inst;
+    }
     static bool classof(const Value* v) { return v->kind == ValueKind::BasicBlock; }
 };
 

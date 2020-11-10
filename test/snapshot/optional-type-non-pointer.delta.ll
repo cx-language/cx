@@ -1,7 +1,9 @@
 
 %"Optional<int>" = type { i1, i32 }
 
-@0 = private unnamed_addr constant [56 x i8] c"Unwrap failed at optional-type-non-pointer.delta:25:16\0A\00", align 1
+@0 = private unnamed_addr constant [56 x i8] c"Unwrap failed at optional-type-non-pointer.delta:24:18\0A\00", align 1
+@1 = private unnamed_addr constant [56 x i8] c"Unwrap failed at optional-type-non-pointer.delta:25:18\0A\00", align 1
+@2 = private unnamed_addr constant [56 x i8] c"Unwrap failed at optional-type-non-pointer.delta:26:16\0A\00", align 1
 
 define i32 @main() {
   %a = alloca %"Optional<int>"
@@ -133,7 +135,6 @@ define void @_EN4main1fE() {
   %3 = alloca %"Optional<int>"
   %x = alloca i32
   %4 = alloca %"Optional<int>"
-  %5 = alloca %"Optional<int>"
   call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %1)
   %.load = load %"Optional<int>", %"Optional<int>"* %1
   store %"Optional<int>" %.load, %"Optional<int>"* %a
@@ -146,29 +147,19 @@ define void @_EN4main1fE() {
   %.load2 = load %"Optional<int>", %"Optional<int>"* %3
   store %"Optional<int>" %.load2, %"Optional<int>"* %c
   %c.load = load %"Optional<int>", %"Optional<int>"* %c
-  %6 = extractvalue %"Optional<int>" %c.load, 0
-  br i1 %6, label %if.then, label %if.else
+  %5 = extractvalue %"Optional<int>" %c.load, 0
+  br i1 %5, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
-  %7 = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %c, i32 0, i32 1
-  %.load3 = load i32, i32* %7
-  %8 = add i32 %.load3, 1
-  store i32 %8, i32* %x
-  %9 = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %c, i32 0, i32 1
-  %.load4 = load i32, i32* %9
-  %10 = add i32 1, %.load4
-  call void @_EN3std8OptionalI3intE4initE3int(%"Optional<int>"* %4, i32 %10)
-  %.load5 = load %"Optional<int>", %"Optional<int>"* %4
-  store %"Optional<int>" %.load5, %"Optional<int>"* %c
-  %c.load6 = load %"Optional<int>", %"Optional<int>"* %c
-  %11 = extractvalue %"Optional<int>" %c.load6, 0
-  %assert.condition = icmp eq i1 %11, false
+  %c.load3 = load %"Optional<int>", %"Optional<int>"* %c
+  %6 = extractvalue %"Optional<int>" %c.load3, 0
+  %assert.condition = icmp eq i1 %6, false
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 if.else:                                          ; preds = %0
   br label %if.end
 
-if.end:                                           ; preds = %assert.success, %if.else
+if.end:                                           ; preds = %assert.success11, %if.else
   ret void
 
 assert.fail:                                      ; preds = %if.then
@@ -176,11 +167,36 @@ assert.fail:                                      ; preds = %if.then
   unreachable
 
 assert.success:                                   ; preds = %if.then
-  %12 = extractvalue %"Optional<int>" %c.load6, 1
-  %13 = sub i32 0, %12
-  call void @_EN3std8OptionalI3intE4initE3int(%"Optional<int>"* %5, i32 %13)
-  %.load7 = load %"Optional<int>", %"Optional<int>"* %5
-  store %"Optional<int>" %.load7, %"Optional<int>"* %c
+  %7 = extractvalue %"Optional<int>" %c.load3, 1
+  %8 = add i32 %7, 1
+  store i32 %8, i32* %x
+  %c.load4 = load %"Optional<int>", %"Optional<int>"* %c
+  %9 = extractvalue %"Optional<int>" %c.load4, 0
+  %assert.condition5 = icmp eq i1 %9, false
+  br i1 %assert.condition5, label %assert.fail6, label %assert.success7
+
+assert.fail6:                                     ; preds = %assert.success
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([56 x i8], [56 x i8]* @1, i32 0, i32 0))
+  unreachable
+
+assert.success7:                                  ; preds = %assert.success
+  %10 = extractvalue %"Optional<int>" %c.load4, 1
+  %11 = add i32 1, %10
+  %c.load8 = load %"Optional<int>", %"Optional<int>"* %c
+  %12 = extractvalue %"Optional<int>" %c.load8, 0
+  %assert.condition9 = icmp eq i1 %12, false
+  br i1 %assert.condition9, label %assert.fail10, label %assert.success11
+
+assert.fail10:                                    ; preds = %assert.success7
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([56 x i8], [56 x i8]* @2, i32 0, i32 0))
+  unreachable
+
+assert.success11:                                 ; preds = %assert.success7
+  %13 = extractvalue %"Optional<int>" %c.load8, 1
+  %14 = sub i32 0, %13
+  call void @_EN3std8OptionalI3intE4initE3int(%"Optional<int>"* %4, i32 %14)
+  %.load12 = load %"Optional<int>", %"Optional<int>"* %4
+  store %"Optional<int>" %.load12, %"Optional<int>"* %c
   br label %if.end
 }
 

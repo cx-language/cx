@@ -1,12 +1,8 @@
-// RUN: %delta -typecheck -Werror %s
+// RUN: %delta -typecheck -Werror -Wno-unused %s
 
 void foo(int*? p) {
     if (p) {
         var i = *p;
         *p = 42;
     }
-}
-
-void main() {
-    foo(null);
 }
