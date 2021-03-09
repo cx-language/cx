@@ -15,31 +15,31 @@ To ask a question or open a discussion, create an issue or join the [Delta Disco
 ## Building from source
 
 Compiling Delta requires a C++17 compiler, [CMake](https://cmake.org), and
-[LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 9.0. To run the test
-suite you also need [lit](https://llvm.org/docs/CommandGuide/lit.html).
+[LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 9.0.
 
-### Ubuntu / macOS / WSL
+- ### Unix / macOS
 
-Download and extract LLVM/Clang 9.0 pre-built binaries for your platform from
-https://releases.llvm.org/download.html. Then run the following commands:
+    Download and extract LLVM/Clang 9.0 pre-built binaries for your platform from
+    https://releases.llvm.org/download.html. Then run the following commands:
 
-    mkdir build
-    cd build
-    cmake .. -DCMAKE_PREFIX_PATH="/path/to/llvm"
+      mkdir build
+      cd build
+      cmake .. -DCMAKE_PREFIX_PATH="/path/to/llvm"
 
-### Windows with Visual Studio
+- ### Windows with Visual Studio
 
-Download and extract LLVM/Clang pre-built binaries from
-https://github.com/vovkos/llvm-package-windows/releases/download/llvm-master/llvm-9.0.0-windows-amd64-msvc15-msvcrt.7z
-and https://github.com/vovkos/llvm-package-windows/releases/download/clang-master/clang-9.0.0-windows-amd64-msvc15-msvcrt.7z.
-Then run the following commands:
+    Download and extract LLVM/Clang pre-built binaries from
+    https://github.com/vovkos/llvm-package-windows/releases/download/llvm-master/llvm-9.0.0-windows-amd64-msvc15-msvcrt.7z
+    and https://github.com/vovkos/llvm-package-windows/releases/download/clang-master/clang-9.0.0-windows-amd64-msvc15-msvcrt.7z.
+    Then run the following commands:
 
-    mkdir build
-    cd build
-    cmake .. -DCMAKE_PREFIX_PATH="C:\path\to\llvm;C:\path\to\clang" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64
+      mkdir build
+      cd build
+      cmake .. -DCMAKE_PREFIX_PATH="C:\path\to\llvm;C:\path\to\clang" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64
 
-For running the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html)
-with `sudo pip install lit` (you need [pip](https://pip.pypa.io/en/stable/) installed).
+To run the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html) via [pip](https://pip.pypa.io/en/stable/installing/), e.g.:
+
+    sudo python -m pip install lit
 
 After this, the following commands can be invoked from the `build` directory:
 
