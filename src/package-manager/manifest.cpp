@@ -31,6 +31,8 @@ static auto getConfigValue(Decl* decl, DefaultValueT defaultValue) {
 
 PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::move(packageRoot)) {
     auto manifestPath = this->packageRoot + "/" + manifestFileName;
+    if (!llvm::sys::fs::exists(manifestPath)) return;
+
     Module module(manifestFileName);
     CompileOptions options;
     Parser parser(manifestPath, module, options);
