@@ -4,14 +4,14 @@ on: [push]
 
 env:
   BUILD_TYPE: Release
-  LLVM_VERSION: 9.0.0
+  LLVM_VERSION: 11.0.0
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-10.15, windows-2019]
+        os: [ubuntu-20.04, macos-10.15, windows-2019]
 
     steps:
       - uses: actions/checkout@v2
@@ -25,27 +25,23 @@ jobs:
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
             export LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-linux-gnu-ubuntu-$(lsb_release -sr)
-            wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz
+            wget --no-verbose https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz
             tar -xf $LLVM_TARBALL_NAME.tar.xz
             export LLVMDIR="$PWD/$LLVM_TARBALL_NAME"
           fi
           if [ "$RUNNER_OS" == "macOS" ]; then
-            export LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-darwin-apple
-            wget --no-verbose http://releases.llvm.org/$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz
+            export LLVM_TARBALL_NAME=clang+llvm-$LLVM_VERSION-x86_64-apple-darwin
+            wget --no-verbose https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VERSION/$LLVM_TARBALL_NAME.tar.xz
             tar -xf $LLVM_TARBALL_NAME.tar.xz
             export LLVMDIR="$PWD/$LLVM_TARBALL_NAME"
           fi
           if [ "$RUNNER_OS" == "Windows" ]; then
-            curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/llvm-master/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt.7z" --output llvm.7z && 7z x llvm.7z
-            curl -L "https://github.com/vovkos/llvm-package-windows/releases/download/clang-master/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt.7z" --output clang.7z && 7z x clang.7z
-            # The sed below converts the paths to Windows-style paths
-            export LLVMDIR="$(echo "$PWD/llvm-$LLVM_VERSION-windows-amd64-msvc15-msvcrt" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')"
-            export CLANGDIR="$(echo "$PWD/clang-$LLVM_VERSION-windows-amd64-msvc15-msvcrt" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/' )"
+            curl -L "https://ziglang.org/deps/llvm%2bclang%2blld-$LLVM_VERSION-x86_64-windows-msvc-release-mt.tar.xz" --output llvm.tar.xz && 7z x llvm.tar.xz && 7z x llvm.tar
+            # The sed below converts the path to a Windows-style path
+            export LLVMDIR="$(echo "$PWD/llvm+clang+lld-$LLVM_VERSION-x86_64-windows-msvc-release-mt" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')"
           fi
           echo "LLVMDIR=$LLVMDIR" >> $GITHUB_ENV
-          echo "CLANGDIR=$CLANGDIR" >> $GITHUB_ENV
           echo "$LLVMDIR/bin" >> $GITHUB_PATH
-          echo "$CLANGDIR/bin" >> $GITHUB_PATH
 
       - name: Create Build Environment
         run: cmake -E make_directory ${{runner.workspace}}/build
@@ -55,7 +51,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         run: |
           export CMAKE_BUILD_PARALLEL_LEVEL=""
-          cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_PREFIX_PATH="$LLVMDIR;$CLANGDIR"
+          cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_PREFIX_PATH="$LLVMDIR"
 
       - name: Build
         working-directory: ${{runner.workspace}}/build

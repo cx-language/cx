@@ -8,10 +8,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(MSVC)
     set(CMAKE_CXX_FLAGS "-w14062 -wd4244 -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING ${CMAKE_CXX_FLAGS}")
 
-    # Use release version of Runtime Library to match prebuilt LLVM.
+    # Use static release version of Runtime Library to match prebuilt LLVM.
     # https://gitlab.kitware.com/cmake/community/wikis/FAQ#how-can-i-build-my-msvc-application-with-a-static-runtime
     foreach(flag_var CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-        string(REGEX REPLACE "/MDd" "/MD" ${flag_var} "${${flag_var}}")
+        string(REGEX REPLACE "/MDd" "/MT" ${flag_var} "${${flag_var}}")
         string(REGEX REPLACE "/DNDEBUG" "" ${flag_var} "${${flag_var}}")
     endforeach(flag_var)
 
@@ -46,7 +46,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "--system-header-prefix=llvm --system-header-prefix=clang ${CMAKE_CXX_FLAGS}")
 endif()
 
-find_package(LLVM 9.0 REQUIRED)
+find_package(LLVM 11.0 REQUIRED)
 find_package(Clang REQUIRED)
 set(LLVM_PACKAGE_VERSION "${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}")
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")

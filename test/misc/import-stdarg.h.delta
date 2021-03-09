@@ -1,4 +1,5 @@
 // RUN: check_exit_status 0 %delta run %s
 
 import "stdarg.h";
+
 void main() { }

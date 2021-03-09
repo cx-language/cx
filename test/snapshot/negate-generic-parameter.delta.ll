@@ -5,6 +5,6 @@ define i32 @main() {
 }
 
 define float @_EN4main1fI5floatEE5float(float %a) {
-  %1 = fsub float -0.000000e+00, %a
+  %1 = fneg float %a
   ret float %1
 }

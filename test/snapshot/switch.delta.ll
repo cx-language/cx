@@ -40,7 +40,7 @@ switch.end3:                                      ; preds = %switch.default2, %s
 
 define i32 @_EN4main1fEP1S(%S* %s) {
   %i = getelementptr inbounds %S, %S* %s, i32 0, i32 0
-  %i.load = load i32, i32* %i
+  %i.load = load i32, i32* %i, align 4
   switch i32 %i.load, label %switch.default [
     i32 0, label %switch.case.0
   ]

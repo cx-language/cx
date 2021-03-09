@@ -13,10 +13,10 @@ define void @_EN4main1gEF_4void(void ()* %p) {
 }
 
 define void @_EN4main2g2EF3int4bool_3int(i32 (i32, i1)* %p) {
-  %a = alloca i32
+  %a = alloca i32, align 4
   %1 = call i32 %p(i32 42, i1 false)
   %2 = add i32 %1, 1
-  store i32 %2, i32* %a
+  store i32 %2, i32* %a, align 4
   ret void
 }
 

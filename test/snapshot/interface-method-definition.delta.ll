@@ -1,10 +1,10 @@
 
 define i32 @main() {
-  %b = alloca {}
-  %x = alloca i32
+  %b = alloca {}, align 8
+  %x = alloca i32, align 4
   call void @_EN4main1B4initE({}* %b)
   %1 = call i32 @_EN4main1B1gE({}* %b)
-  store i32 %1, i32* %x
+  store i32 %1, i32* %x, align 4
   ret i32 0
 }
 

@@ -3,8 +3,8 @@
 %"S<bool>" = type { i1* }
 
 define i32 @main() {
-  %1 = alloca %"S<int>"
-  %2 = alloca %"S<bool>"
+  %1 = alloca %"S<int>", align 8
+  %2 = alloca %"S<bool>", align 8
   call void @_EN4main1SI3intE4initE(%"S<int>"* %1)
   call void @_EN4main1SI4boolE4initE(%"S<bool>"* %2)
   ret i32 0
@@ -12,12 +12,12 @@ define i32 @main() {
 
 define void @_EN4main1SI3intE4initE(%"S<int>"* %this) {
   %p = getelementptr inbounds %"S<int>", %"S<int>"* %this, i32 0, i32 0
-  store i32* null, i32** %p
+  store i32* null, i32** %p, align 8
   ret void
 }
 
 define void @_EN4main1SI4boolE4initE(%"S<bool>"* %this) {
   %p = getelementptr inbounds %"S<bool>", %"S<bool>"* %this, i32 0, i32 0
-  store i1* null, i1** %p
+  store i1* null, i1** %p, align 8
   ret void
 }

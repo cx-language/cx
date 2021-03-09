@@ -3,9 +3,9 @@
 
 define void @_EN4main1fEP1SI3intE(%"S<int>"* %s) {
   %1 = call i32* @_EN4main1SI3intEixE3int(%"S<int>"* %s, i32 0)
-  %.load = load i32, i32* %1
+  %.load = load i32, i32* %1, align 4
   %2 = add i32 %.load, 1
-  store i32 %2, i32* %1
+  store i32 %2, i32* %1, align 4
   ret void
 }
 

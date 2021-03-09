@@ -188,7 +188,7 @@ public:
     Value* createGlobalVariable(Value* value, const llvm::Twine& name = "") {
         return module->globalVariables.emplace_back(new GlobalVariable { ValueKind::GlobalVariable, value, name.str() });
     }
-    Value* createGlobalStringPtr(llvm::StringRef value) { return new ConstantString { ValueKind::ConstantString, value }; }
+    Value* createGlobalStringPtr(llvm::StringRef value) { return new ConstantString { ValueKind::ConstantString, value.str() }; }
     Value* createSizeof(Type type) { return new SizeofInst { ValueKind::SizeofInst, getIRType(type), "" }; }
     SwitchInst* createSwitch(Value* condition, BasicBlock* defaultBlock) {
         return insertBlock->add(new SwitchInst { ValueKind::SwitchInst, condition, defaultBlock, {} });

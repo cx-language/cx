@@ -3,8 +3,8 @@
 %Bar = type { i32, i32 }
 
 define i32 @main() {
-  %foo = alloca %Foo
-  %bar = alloca %Bar
+  %foo = alloca %Foo, align 8
+  %bar = alloca %Bar, align 8
   call void @_EN4main3Foo4initE(%Foo* %foo)
   call void @_EN4main3Bar4initE3int(%Bar* %bar, i32 -1)
   ret i32 0
@@ -12,14 +12,14 @@ define i32 @main() {
 
 define void @_EN4main3Foo4initE(%Foo* %this) {
   %i = getelementptr inbounds %Foo, %Foo* %this, i32 0, i32 0
-  store i32 42, i32* %i
+  store i32 42, i32* %i, align 4
   ret void
 }
 
 define void @_EN4main3Bar4initE3int(%Bar* %this, i32 %j) {
   %i = getelementptr inbounds %Bar, %Bar* %this, i32 0, i32 0
-  store i32 42, i32* %i
+  store i32 42, i32* %i, align 4
   %j1 = getelementptr inbounds %Bar, %Bar* %this, i32 0, i32 1
-  store i32 %j, i32* %j1
+  store i32 %j, i32* %j1, align 4
   ret void
 }

@@ -2,6 +2,7 @@
 #pragma warning(push, 0)
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
+#include "ast.h"
 #include "decl.h"
 #include "token.h"
 
@@ -157,7 +158,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         }
         case ExprKind::StringLiteralExpr: {
             auto* stringLiteralExpr = llvm::cast<StringLiteralExpr>(this);
-            instantiation = new StringLiteralExpr(stringLiteralExpr->getValue(), stringLiteralExpr->getLocation());
+            instantiation = new StringLiteralExpr(stringLiteralExpr->getValue().str(), stringLiteralExpr->getLocation());
             break;
         }
         case ExprKind::CharacterLiteralExpr: {
@@ -199,7 +200,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         case ExprKind::TupleExpr: {
             auto* tupleExpr = llvm::cast<TupleExpr>(this);
             auto elements = map(tupleExpr->getElements(),
-                                [&](const NamedValue& element) { return NamedValue(element.getName(), element.getValue()->instantiate(genericArgs)); });
+                                [&](const NamedValue& element) { return NamedValue(element.getName().str(), element.getValue()->instantiate(genericArgs)); });
             instantiation = new TupleExpr(std::move(elements), tupleExpr->getLocation());
             break;
         }
@@ -219,7 +220,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         case ExprKind::CallExpr: {
             auto* callExpr = llvm::cast<CallExpr>(this);
             auto callee = callExpr->getCallee().instantiate(genericArgs);
-            auto args = map(callExpr->getArgs(), [&](auto& arg) { return NamedValue(arg.getName(), arg.getValue()->instantiate(genericArgs)); });
+            auto args = map(callExpr->getArgs(), [&](auto& arg) { return NamedValue(arg.getName().str(), arg.getValue()->instantiate(genericArgs)); });
             auto callGenericArgs = map(callExpr->getGenericArgs(), [&](Type type) { return type.resolve(genericArgs); });
             instantiation = new CallExpr(callee, std::move(args), std::move(callGenericArgs), callExpr->getLocation());
             break;
@@ -239,7 +240,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         case ExprKind::MemberExpr: {
             auto* memberExpr = llvm::cast<MemberExpr>(this);
             auto base = memberExpr->getBaseExpr()->instantiate(genericArgs);
-            instantiation = new MemberExpr(base, memberExpr->getMemberName(), memberExpr->getLocation());
+            instantiation = new MemberExpr(base, memberExpr->getMemberName().str(), memberExpr->getLocation());
             break;
         }
         case ExprKind::IndexExpr: {

@@ -10,7 +10,7 @@ declare i1 @d()
 declare i1 @e()
 
 define i32 @main() {
-  %x = alloca i1
+  %x = alloca i1, align 1
   %1 = call i1 @a()
   br i1 %1, label %if.then, label %if.else
 
@@ -36,6 +36,6 @@ if.end:                                           ; preds = %if.else2, %if.then1
 
 if.end3:                                          ; preds = %if.end, %if.then
   %if.result4 = phi i1 [ %2, %if.then ], [ %if.result, %if.end ]
-  store i1 %if.result4, i1* %x
+  store i1 %if.result4, i1* %x, align 1
   ret i32 0
 }

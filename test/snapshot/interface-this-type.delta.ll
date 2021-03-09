@@ -2,8 +2,8 @@
 %S = type { %S* }
 
 define i32 @main() {
-  %a = alloca %S
-  %b = alloca %S
+  %a = alloca %S, align 8
+  %b = alloca %S, align 8
   call void @_EN4main1S4initE(%S* %a)
   call void @_EN4main1S4initE(%S* %b)
   %1 = call %S* @_EN4main1S3fooEP1S(%S* %a, %S* %b)
@@ -13,7 +13,7 @@ define i32 @main() {
 
 define void @_EN4main1S4initE(%S* %this) {
   %that = getelementptr inbounds %S, %S* %this, i32 0, i32 0
-  store %S* %this, %S** %that
+  store %S* %this, %S** %that, align 8
   ret void
 }
 

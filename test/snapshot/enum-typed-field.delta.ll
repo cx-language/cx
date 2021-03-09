@@ -8,6 +8,6 @@ define i32 @_EN4main1fE1S(%S %s) {
 
 define i32 @_EN4main1gEP1S(%S* %s) {
   %f = getelementptr inbounds %S, %S* %s, i32 0, i32 1
-  %f.load = load i32, i32* %f
+  %f.load = load i32, i32* %f, align 4
   ret i32 %f.load
 }

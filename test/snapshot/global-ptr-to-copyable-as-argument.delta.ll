@@ -4,7 +4,7 @@
 @sp = private global %S* null
 
 define i32 @main() {
-  %sp.load = load %S*, %S** @sp
+  %sp.load = load %S*, %S** @sp, align 8
   call void @_EN4main3fooEOP1S(%S* %sp.load)
   ret i32 0
 }

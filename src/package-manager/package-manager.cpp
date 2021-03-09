@@ -38,10 +38,10 @@ static void cloneGitRepository(const std::string& repositoryUrl, const std::stri
     }
 }
 
-static void checkoutGitRevision(const std::string& path, const std::string& revision) {
+static void checkoutGitRevision(llvm::StringRef path, llvm::StringRef revision) {
     auto gitPath = getGitPath();
-    auto gitDir = "--git-dir=" + path + "/.git";
-    auto workTree = "--work-tree=" + path;
+    auto gitDir = ("--git-dir=" + path + "/.git").str();
+    auto workTree = ("--work-tree=" + path).str();
     llvm::StringRef args[] = { gitPath, gitDir, workTree, "checkout", revision, "--quiet" };
 
     std::string error;
@@ -54,7 +54,7 @@ static void checkoutGitRevision(const std::string& path, const std::string& revi
 }
 
 void delta::fetchDependencies(llvm::StringRef packageRoot) {
-    PackageManifest manifest(packageRoot);
+    PackageManifest manifest(packageRoot.str());
 
     for (auto& dependency : manifest.getDeclaredDependencies()) {
         auto path = dependency.getFileSystemPath();

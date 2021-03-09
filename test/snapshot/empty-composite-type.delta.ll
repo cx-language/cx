@@ -1,6 +1,6 @@
 
 define i32 @main() {
-  %s = alloca {}
-  %c = alloca {}
+  %s = alloca {}, align 8
+  %c = alloca {}, align 8
   ret i32 0
 }

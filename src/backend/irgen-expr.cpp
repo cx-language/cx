@@ -556,7 +556,7 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     scopes = std::move(scopesBackup);
     if (insertBlockBackup) setInsertPoint(insertBlockBackup);
 
-    VarExpr varExpr(functionDecl->getName(), functionDecl->getLocation());
+    VarExpr varExpr(functionDecl->getName().str(), functionDecl->getLocation());
     varExpr.setDecl(functionDecl);
     varExpr.setType(expr.getType());
     return emitVarExpr(varExpr);

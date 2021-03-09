@@ -6,7 +6,7 @@ define void @_EN4main3ptrEP3Foo(%Foo* %p) {
 }
 
 define i32 @main() {
-  %f = alloca %Foo
+  %f = alloca %Foo, align 8
   call void @_EN4main3ptrEP3Foo(%Foo* %f)
   ret i32 0
 }

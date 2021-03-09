@@ -50,7 +50,7 @@ PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::m
             auto* tuple = llvm::cast<TupleExpr>(&*element);
             auto* package = llvm::cast<StringLiteralExpr>(tuple->getElementByName("package"));
             auto* version = llvm::cast<StringLiteralExpr>(tuple->getElementByName("version"));
-            declaredDependencies.emplace_back(package->getValue(), version->getValue());
+            declaredDependencies.push_back(Dependency(package->getValue().str(), version->getValue().str()));
         }
     }
 }

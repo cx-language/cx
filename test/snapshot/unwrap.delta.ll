@@ -5,8 +5,8 @@
 declare i8* @f()
 
 define i32 @main() {
-  %byte = alloca i8*
-  %ptr = alloca [1 x i8]*
+  %byte = alloca i8*, align 8
+  %ptr = alloca [1 x i8]*, align 8
   %1 = call i8* @f()
   %assert.condition = icmp eq i8* %1, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
@@ -16,11 +16,11 @@ assert.fail:                                      ; preds = %0
   unreachable
 
 assert.success:                                   ; preds = %0
-  store i8* %1, i8** %byte
+  store i8* %1, i8** %byte, align 8
   %2 = call i8* @f()
   %3 = bitcast i8* %2 to [1 x i8]*
-  store [1 x i8]* %3, [1 x i8]** %ptr
-  %ptr.load = load [1 x i8]*, [1 x i8]** %ptr
+  store [1 x i8]* %3, [1 x i8]** %ptr, align 8
+  %ptr.load = load [1 x i8]*, [1 x i8]** %ptr, align 8
   %assert.condition1 = icmp eq [1 x i8]* %ptr.load, null
   br i1 %assert.condition1, label %assert.fail2, label %assert.success3
 
@@ -30,7 +30,7 @@ assert.fail2:                                     ; preds = %assert.success
 
 assert.success3:                                  ; preds = %assert.success
   %4 = getelementptr inbounds [1 x i8], [1 x i8]* %ptr.load, i32 0, i32 0
-  store i8 1, i8* %4
+  store i8 1, i8* %4, align 1
   ret i32 0
 }
 

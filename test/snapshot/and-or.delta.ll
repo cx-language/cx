@@ -6,10 +6,10 @@ declare i1 @b()
 declare i1 @c()
 
 define i32 @main() {
-  %and = alloca i1
-  %and2 = alloca i1
-  %or = alloca i1
-  %or2 = alloca i1
+  %and = alloca i1, align 1
+  %and2 = alloca i1, align 1
+  %or = alloca i1, align 1
+  %or2 = alloca i1, align 1
   %1 = call i1 @a()
   br i1 %1, label %and.rhs, label %and.end
 
@@ -19,7 +19,7 @@ and.rhs:                                          ; preds = %0
 
 and.end:                                          ; preds = %and.rhs, %0
   %and1 = phi i1 [ %1, %0 ], [ %2, %and.rhs ]
-  store i1 %and1, i1* %and
+  store i1 %and1, i1* %and, align 1
   %3 = call i1 @a()
   br i1 %3, label %and.rhs3, label %and.end4
 
@@ -37,7 +37,7 @@ and.end4:                                         ; preds = %and.rhs3, %and.end
 
 and.end6:                                         ; preds = %and.end4, %and.rhs2
   %and7 = phi i1 [ %and5, %and.end4 ], [ %4, %and.rhs2 ]
-  store i1 %and7, i1* %and2
+  store i1 %and7, i1* %and2, align 1
   %6 = call i1 @a()
   br i1 %6, label %or.end, label %or.rhs
 
@@ -47,7 +47,7 @@ or.rhs:                                           ; preds = %and.end6
 
 or.end:                                           ; preds = %or.rhs, %and.end6
   %or8 = phi i1 [ %6, %and.end6 ], [ %7, %or.rhs ]
-  store i1 %or8, i1* %or
+  store i1 %or8, i1* %or, align 1
   %8 = call i1 @a()
   br i1 %8, label %or.end11, label %or.rhs10
 
@@ -65,6 +65,6 @@ or.end11:                                         ; preds = %or.rhs10, %or.end
 
 or.end13:                                         ; preds = %or.end11, %or.rhs9
   %or14 = phi i1 [ %or12, %or.end11 ], [ %9, %or.rhs9 ]
-  store i1 %or14, i1* %or2
+  store i1 %or14, i1* %or2, align 1
   ret i32 0
 }

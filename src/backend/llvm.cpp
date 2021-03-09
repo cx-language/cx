@@ -229,8 +229,13 @@ llvm::Value* LLVMGenerator::codegenExtract(const ExtractInst* inst) {
 llvm::Value* LLVMGenerator::codegenCall(const CallInst* inst) {
     auto function = getValue(inst->function);
     auto args = map(inst->args, [&](auto* arg) { return getValue(arg); });
-    ASSERT(function->getType()->isFunctionTy() || (function->getType()->isPointerTy() && function->getType()->getPointerElementType()->isFunctionTy()));
-    return builder.CreateCall(function, args);
+
+    auto* functionType = llvm::dyn_cast<llvm::FunctionType>(function->getType());
+    if (!functionType) {
+        functionType = llvm::cast<llvm::FunctionType>(function->getType()->getPointerElementType());
+    }
+
+    return builder.CreateCall(functionType, function, args);
 }
 
 llvm::Value* LLVMGenerator::codegenBinary(const BinaryInst* inst) {

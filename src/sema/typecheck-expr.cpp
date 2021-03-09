@@ -138,7 +138,7 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
 
 Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
     auto elements = map(expr.getElements(), [&](NamedValue& namedValue) {
-        return TupleElement { namedValue.getName(), typecheckExpr(*namedValue.getValue()) };
+        return TupleElement { namedValue.getName().str(), typecheckExpr(*namedValue.getValue()) };
     });
     return TupleType::get(std::move(elements));
 }

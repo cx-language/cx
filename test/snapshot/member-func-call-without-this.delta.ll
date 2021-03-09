@@ -1,7 +1,7 @@
 
 define i32 @main() {
-  %s = alloca {}
-  %t = alloca {}
+  %s = alloca {}, align 8
+  %t = alloca {}, align 8
   call void @_EN4main1S4initE({}* %s)
   call void @_EN4main1S3fooE({}* %s)
   call void @_EN4main3FooI3intE4initE({}* %t)

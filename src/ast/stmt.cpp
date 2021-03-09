@@ -1,4 +1,5 @@
 #include "stmt.h"
+#include "ast.h"
 #include "decl.h"
 
 using namespace delta;
@@ -138,7 +139,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVarExpr2 = new VarExpr(std::string(iteratorVariableName), location);
     auto valueMemberExpr = new MemberExpr(iteratorVarExpr2, "value", location);
     auto valueCallExpr = new CallExpr(valueMemberExpr, std::vector<NamedValue>(), std::vector<Type>(), location);
-    auto loopVariableVarDecl = new VarDecl(variable->getType(), variable->getName(), valueCallExpr, variable->getParentDecl(), AccessLevel::None,
+    auto loopVariableVarDecl = new VarDecl(variable->getType(), variable->getName().str(), valueCallExpr, variable->getParentDecl(), AccessLevel::None,
                                            *variable->getModule(), variable->getLocation());
     auto loopVariableVarStmt = new VarStmt(loopVariableVarDecl);
 

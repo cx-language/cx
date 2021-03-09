@@ -5,12 +5,12 @@
 declare i8** @b()
 
 define i32 @main() {
-  %s = alloca i8**
-  %i = alloca i32
+  %s = alloca i8**, align 8
+  %i = alloca i32, align 4
   %1 = call i8** @b()
-  store i8** %1, i8*** %s
-  store i32 0, i32* %i
-  %s.load = load i8**, i8*** %s
+  store i8** %1, i8*** %s, align 8
+  store i32 0, i32* %i, align 4
+  %s.load = load i8**, i8*** %s, align 8
   %assert.condition = icmp eq i8** %s.load, null
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
@@ -19,9 +19,9 @@ assert.fail:                                      ; preds = %0
   unreachable
 
 assert.success:                                   ; preds = %0
-  %i.load = load i32, i32* %i
+  %i.load = load i32, i32* %i, align 4
   %2 = getelementptr inbounds i8*, i8** %s.load, i32 %i.load
-  %.load = load i8*, i8** %2
+  %.load = load i8*, i8** %2, align 8
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i8* %.load)
   ret i32 0
 }

@@ -6,12 +6,12 @@
 @0 = private unnamed_addr constant [4 x i8] c"abc\00", align 1
 
 define i32 @main() {
-  %__iterator = alloca %StringIterator
-  %__str = alloca %string
-  %ch = alloca i8
+  %__iterator = alloca %StringIterator, align 8
+  %__str = alloca %string, align 8
+  %ch = alloca i8, align 1
   call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   %1 = call %StringIterator @_EN3std6string8iteratorE(%string* %__str)
-  store %StringIterator %1, %StringIterator* %__iterator
+  store %StringIterator %1, %StringIterator* %__iterator, align 8
   br label %loop.condition
 
 loop.condition:                                   ; preds = %loop.increment, %0
@@ -20,8 +20,8 @@ loop.condition:                                   ; preds = %loop.increment, %0
 
 loop.body:                                        ; preds = %loop.condition
   %3 = call i8 @_EN3std14StringIterator5valueE(%StringIterator* %__iterator)
-  store i8 %3, i8* %ch
-  %ch.load = load i8, i8* %ch
+  store i8 %3, i8* %ch, align 1
+  %ch.load = load i8, i8* %ch, align 1
   %4 = icmp eq i8 %ch.load, 98
   br i1 %4, label %if.then, label %if.else
 

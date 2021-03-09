@@ -24,7 +24,7 @@ IRType* delta::getIRType(Type astType) {
     switch (astType.getKind()) {
         case TypeKind::BasicType: {
             if (astType.isVoid() || Type::isBuiltinScalar(astType.getName())) {
-                irType = new IRBasicType { IRTypeKind::IRBasicType, astType.getName() };
+                irType = new IRBasicType { IRTypeKind::IRBasicType, astType.getName().str() };
             } else if (astType.isOptionalType() && astType.isImplementedAsPointer()) {
                 irType = getIRType(astType.getWrappedType());
             } else if (astType.isEnumType()) {
@@ -277,7 +277,7 @@ std::string Value::getName() const {
         case ValueKind::ConstantFP: {
             llvm::SmallString<128> buffer;
             llvm::cast<ConstantFP>(this)->value.toString(buffer);
-            return buffer.str();
+            return std::string(buffer);
         }
         case ValueKind::ConstantBool:
             return llvm::cast<ConstantBool>(this)->value ? "true" : "false";

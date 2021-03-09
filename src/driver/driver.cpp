@@ -14,6 +14,7 @@
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Host.h>
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Process.h>
@@ -97,7 +98,7 @@ static void addHeaderSearchPathsFromEnvVar(const char* name) {
         llvm::StringRef(*pathList).split(paths, llvm::sys::EnvPathSeparator, -1, false);
 
         for (llvm::StringRef path : paths) {
-            importSearchPaths.push_back(path);
+            importSearchPaths.push_back(path.str());
         }
     }
 }
@@ -117,7 +118,7 @@ static void addHeaderSearchPathsFromCCompilerOutput() {
         for (auto line : lines) {
             auto path = line.trim();
             if (llvm::sys::fs::is_directory(path)) {
-                importSearchPaths.push_back(path);
+                importSearchPaths.push_back(path.str());
             }
         }
     }
@@ -133,13 +134,11 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
     }
 
     for (auto& keyValue : relativeImportSearchPaths) {
-        importSearchPaths.push_back(keyValue.getKey());
+        importSearchPaths.push_back(keyValue.getKey().str());
     }
 
     importSearchPaths.push_back(DELTA_ROOT_DIR);
     importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
-    // FIXME: Find a better way to find the correct libc header search path.
-    importSearchPaths.push_back("/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include");
     importSearchPaths.push_back("/usr/include");
     importSearchPaths.push_back("/usr/local/include");
     addHeaderSearchPathsFromEnvVar("CPATH");
@@ -148,7 +147,7 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
     addHeaderSearchPathsFromCCompilerOutput();
 }
 
-static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::TargetMachine::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
+static void emitMachineCode(llvm::Module& module, llvm::StringRef fileName, llvm::CodeGenFileType fileType, llvm::Reloc::Model relocModel) {
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
@@ -276,7 +275,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         ABORT(error.message());
     }
 
-    auto fileType = emitAssembly ? llvm::TargetMachine::CGFT_AssemblyFile : llvm::TargetMachine::CGFT_ObjectFile;
+    auto fileType = emitAssembly ? llvm::CGFT_AssemblyFile : llvm::CGFT_ObjectFile;
     if (msvc) emitPositionIndependentCode = true;
     auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_ : llvm::Reloc::Model::Static;
     emitMachineCode(linkedModule, temporaryOutputFilePath, fileType, relocModel);
@@ -314,16 +313,6 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     for (auto& cflag : options.cflags) {
         ccArgs.push_back(cflag.c_str());
     }
-
-#ifdef __APPLE__
-    std::string sdkPath;
-    exec("xcrun -show-sdk-path", sdkPath);
-    sdkPath = llvm::StringRef(sdkPath).trim();
-    if (!sdkPath.empty()) {
-        ccArgs.push_back("-isysroot");
-        ccArgs.push_back(sdkPath.c_str());
-    }
-#endif
 
     if (msvc) {
         ccArgs.push_back("-link");
@@ -391,7 +380,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
 static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
     auto manifestPath = (packageRoot + "/" + PackageManifest::manifestFileName).str();
-    PackageManifest manifest(packageRoot);
+    PackageManifest manifest(packageRoot.str());
     fetchDependencies(packageRoot);
 
     for (auto& targetRootDir : manifest.getTargetRootDirectories()) {
@@ -403,24 +392,34 @@ static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
         }
         auto sourceFiles = getSourceFiles(targetRootDir, manifestPath);
         // TODO: Add support for library packages.
-        int exitStatus = buildExecutable(sourceFiles, &manifest, argv0, manifest.getOutputDirectory(), outputFileName);
+        int exitStatus = buildExecutable(sourceFiles, &manifest, argv0, manifest.getOutputDirectory(), outputFileName.str());
         if (exitStatus != 0) return exitStatus;
     }
 
     return 0;
 }
 
-static void addPlatformDefines() {
+static void addPlatformCompileOptions() {
 #ifdef _WIN32
     defines.push_back("Windows");
     cflags.push_back("-fms-extensions");
+#endif
+#ifdef __APPLE__
+    cflags.push_back("-fgnuc-version=4.2.1");
+    std::string sdkPath;
+    exec("xcrun --show-sdk-path", sdkPath);
+    sdkPath = llvm::StringRef(sdkPath).trim();
+    if (!sdkPath.empty()) {
+        cflags.push_back("-isysroot");
+        cflags.push_back(std::move(sdkPath));
+    }
 #endif
 }
 
 int main(int argc, const char** argv) {
     llvm::InitLLVM x(argc, argv);
     cl::ParseCommandLineOptions(argc, argv, "Delta compiler\n");
-    addPlatformDefines();
+    addPlatformCompileOptions();
 
     if (!inputs.empty()) {
         return buildExecutable(inputs, nullptr, argv[0], ".", "");

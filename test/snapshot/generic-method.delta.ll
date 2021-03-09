@@ -8,7 +8,7 @@ define i1 @_EN4main1hE() {
 }
 
 define i32 @main() {
-  %x = alloca {}
+  %x = alloca {}, align 8
   call void @_EN4main1X4initE({}* %x)
   %1 = call i32 @_EN4main1X1fI3intEEF_3int({}* %x, i32 ()* @_EN4main1gE)
   %2 = call i1 @_EN4main1X1fI4boolEEF_4bool({}* %x, i1 ()* @_EN4main1hE)

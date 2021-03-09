@@ -31,8 +31,6 @@
 
 namespace delta {
 
-struct Type;
-
 std::ostream& operator<<(std::ostream& stream, llvm::StringRef string);
 
 template<typename SourceContainer, typename Mapper>
@@ -43,11 +41,6 @@ auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(m
         result.emplace_back(mapper(element));
     }
     return result;
-}
-
-template<typename T>
-std::vector<T> instantiate(llvm::ArrayRef<T> elements, const llvm::StringMap<Type>& genericArgs) {
-    return map(elements, [&](const T& element) { return element->instantiate(genericArgs); });
 }
 
 #define NOTNULL(x) (ASSERT(x), x)

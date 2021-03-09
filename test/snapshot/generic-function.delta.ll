@@ -5,18 +5,18 @@
 @0 = private unnamed_addr constant [4 x i8] c"bar\00", align 1
 
 define i32 @main() {
-  %b = alloca %string
-  %__str = alloca %string
-  %five = alloca i32
+  %b = alloca %string, align 8
+  %__str = alloca %string, align 8
+  %five = alloca i32, align 4
   call void @_EN4main3fooI3intEE3int(i32 1)
   call void @_EN4main3fooI4boolEE4bool(i1 false)
   call void @_EN4main3fooI4boolEE4bool(i1 true)
   call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
-  %__str.load = load %string, %string* %__str
+  %__str.load = load %string, %string* %__str, align 8
   %1 = call %string @_EN4main3barI6stringEE6string(%string %__str.load)
-  store %string %1, %string* %b
+  store %string %1, %string* %b, align 8
   %2 = call i32 @_EN4main3quxI3intEE3int(i32 -5)
-  store i32 %2, i32* %five
+  store i32 %2, i32* %five, align 4
   ret i32 0
 }
 

@@ -15,11 +15,11 @@ To ask a question or open a discussion, create an issue or join the [Delta Disco
 ## Building from source
 
 Compiling Delta requires a C++17 compiler, [CMake](https://cmake.org), and
-[LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 9.0.
+[LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 11.
 
 - ### Unix / macOS
 
-    Download and extract LLVM/Clang 9.0 pre-built binaries for your platform from
+    Download and extract LLVM/Clang 11 pre-built binaries for your platform from
     https://releases.llvm.org/download.html. Then run the following commands:
 
       mkdir build
@@ -28,14 +28,14 @@ Compiling Delta requires a C++17 compiler, [CMake](https://cmake.org), and
 
 - ### Windows with Visual Studio
 
-    Download and extract LLVM/Clang pre-built binaries from
-    https://github.com/vovkos/llvm-package-windows/releases/download/llvm-master/llvm-9.0.0-windows-amd64-msvc15-msvcrt.7z
-    and https://github.com/vovkos/llvm-package-windows/releases/download/clang-master/clang-9.0.0-windows-amd64-msvc15-msvcrt.7z.
+    Download and extract LLVM/Clang 11 pre-built binaries from somewhere, such as
+    https://ziglang.org/deps/llvm%2bclang%2blld-11.0.0-x86_64-windows-msvc-release-mt.tar.xz
+    (consider [sponsoring Zig](https://github.com/sponsors/ziglang)).
     Then run the following commands:
 
       mkdir build
       cd build
-      cmake .. -DCMAKE_PREFIX_PATH="C:\path\to\llvm;C:\path\to\clang" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64
+      cmake .. -DCMAKE_PREFIX_PATH="C:\path\to\llvm" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64
 
 To run the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html) via [pip](https://pip.pypa.io/en/stable/installing/), e.g.:
 

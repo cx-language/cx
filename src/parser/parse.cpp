@@ -149,7 +149,7 @@ std::vector<NamedValue> Parser::parseArgumentList() {
 VarExpr* Parser::parseVarExpr() {
     ASSERT(currentToken() == Token::Identifier);
     auto id = consumeToken();
-    return new VarExpr(id.getString(), id.getLocation());
+    return new VarExpr(id.getString().str(), id.getLocation());
 }
 
 VarExpr* Parser::parseThis() {
@@ -297,7 +297,7 @@ Expr* Parser::parseTupleLiteralOrParenExpr() {
     for (auto& element : elements) {
         if (element.getName().empty()) {
             if (auto* varExpr = llvm::dyn_cast<VarExpr>(element.getValue())) {
-                element.setName(varExpr->getIdentifier());
+                element.setName(varExpr->getIdentifier().str());
             }
         }
     }
@@ -386,7 +386,7 @@ Type Parser::parseTupleType() {
 
     while (currentToken() != Token::RightParen) {
         auto type = parseType();
-        std::string name = currentToken() == Token::Identifier ? consumeToken().getString() : "";
+        std::string name = currentToken() == Token::Identifier ? consumeToken().getString().str() : "";
         elements.push_back({ std::move(name), type });
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
@@ -481,7 +481,7 @@ AddressofExpr* Parser::parseAddressofExpr() {
 MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
     auto location = getCurrentLocation();
     auto member = parse(Token::Identifier);
-    return new MemberExpr(lhs, member.getString(), location);
+    return new MemberExpr(lhs, member.getString().str(), location);
 }
 
 /// index-expr ::= expr '[' expr ']'
@@ -520,7 +520,7 @@ LambdaExpr* Parser::parseLambdaExpr() {
 
     if (currentToken() == Token::Identifier) {
         auto paramName = consumeToken();
-        params.push_back(ParamDecl(Type(), paramName.getString(), false, paramName.getLocation()));
+        params.push_back(ParamDecl(Type(), paramName.getString().str(), false, paramName.getLocation()));
     } else {
         params = parseParamList(nullptr, false);
     }
@@ -805,7 +805,7 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
         parseStmtTerminator();
     }
 
-    return new VarDecl(type, name, initializer, parent, accessLevel, *currentModule, location);
+    return new VarDecl(type, name.str(), initializer, parent, accessLevel, *currentModule, location);
 }
 
 /// var-stmt ::= var-decl
@@ -925,8 +925,8 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
                 consumeToken();
                 auto name = parse(Token::Identifier);
                 // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
-                associatedValue = new VarDecl(Type(), name.getString(), new UndefinedLiteralExpr(name.getLocation()), parent, AccessLevel::None, *currentModule,
-                                              name.getLocation());
+                associatedValue = new VarDecl(Type(), name.getString().str(), new UndefinedLiteralExpr(name.getLocation()), parent, AccessLevel::None,
+                                              *currentModule, name.getLocation());
             }
 
             parse(Token::Colon);
@@ -1036,7 +1036,7 @@ ParamDecl Parser::parseParam(bool requireType) {
     }
 
     auto name = parse(Token::Identifier);
-    return ParamDecl(type, name.getString(), isPublic, name.getLocation());
+    return ParamDecl(type, name.getString().str(), isPublic, name.getLocation());
 }
 
 /// param-list ::= '(' params ')'
@@ -1062,7 +1062,7 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
     parse(Token::Less);
     while (true) {
         auto genericParamName = parse(Token::Identifier);
-        genericParams.emplace_back(genericParamName.getString(), genericParamName.getLocation());
+        genericParams.emplace_back(genericParamName.getString().str(), genericParamName.getLocation());
 
         if (currentToken() == Token::Colon) {
             consumeToken();
@@ -1106,7 +1106,7 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
 
     bool isVariadic = false;
     auto params = parseParamList(isExtern ? &isVariadic : nullptr);
-    FunctionProto proto(name, std::move(params), returnType, isVariadic, isExtern);
+    FunctionProto proto(name.str(), std::move(params), returnType, isVariadic, isExtern);
 
     if (receiverTypeDecl) {
         return new MethodDecl(std::move(proto), *receiverTypeDecl, std::vector<Type>(), accessLevel, location);
@@ -1189,7 +1189,7 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Ty
     }
 
     parseStmtTerminator();
-    return FieldDecl(type, name, defaultValue, typeDecl, accessLevel, location);
+    return FieldDecl(type, name.str(), defaultValue, typeDecl, accessLevel, location);
 }
 
 /// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}'
@@ -1232,7 +1232,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
-    auto typeDecl = new TypeDecl(tag, typeName.getString(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
+    auto typeDecl = new TypeDecl(tag, typeName.getString().str(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
                                  typeName.getLocation());
     bool hasConstructor = false;
     parse(Token::LeftBrace);
@@ -1300,12 +1300,12 @@ ConstructorDecl* Parser::createAutogeneratedConstructor(TypeDecl* typeDecl) cons
     std::vector<Stmt*> body;
 
     for (auto& field : typeDecl->getFields()) {
-        auto* left = new MemberExpr(new VarExpr("this", field.getLocation()), field.getName(), field.getLocation());
-        auto* right = field.getDefaultValue() ? field.getDefaultValue() : new VarExpr(field.getName(), field.getLocation());
+        auto* left = new MemberExpr(new VarExpr("this", field.getLocation()), field.getName().str(), field.getLocation());
+        auto* right = field.getDefaultValue() ? field.getDefaultValue() : new VarExpr(field.getName().str(), field.getLocation());
         body.push_back(new ExprStmt(new BinaryExpr(Token::Assignment, left, right, field.getLocation())));
 
         if (!field.getDefaultValue()) {
-            params.push_back(ParamDecl(field.getType(), field.getName(), false, field.getLocation()));
+            params.push_back(ParamDecl(field.getType(), field.getName().str(), false, field.getLocation()));
         }
     }
 
@@ -1341,7 +1341,7 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
         }
 
         auto value = new IntLiteralExpr(valueCounter, caseName.getLocation());
-        cases.push_back(EnumCase(caseName.getString(), value, associatedType, typeAccessLevel, caseName.getLocation()));
+        cases.push_back(EnumCase(caseName.getString().str(), value, associatedType, typeAccessLevel, caseName.getLocation()));
         ++valueCounter;
 
         if (currentToken() == Token::Comma) {
@@ -1352,7 +1352,7 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
     }
 
     consumeToken();
-    return new EnumDecl(name.getString(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.getLocation());
+    return new EnumDecl(name.getString().str(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.getLocation());
 }
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')

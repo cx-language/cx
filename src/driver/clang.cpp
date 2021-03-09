@@ -16,7 +16,7 @@
 
 int delta::invokeClang(llvm::ArrayRef<const char*> args) {
     auto* diagClient = new clang::TextDiagnosticPrinter(llvm::errs(), new clang::DiagnosticOptions());
-    diagClient->setPrefix(llvm::sys::path::filename(args[0]));
+    diagClient->setPrefix(llvm::sys::path::filename(args[0]).str());
     clang::DiagnosticsEngine diags(new clang::DiagnosticIDs(), nullptr, diagClient);
     clang::driver::Driver driver(args[0], llvm::sys::getDefaultTargetTriple(), diags);
     std::unique_ptr<clang::driver::Compilation> compilation(driver.BuildCompilation(args));

@@ -12,8 +12,8 @@ define i1 @_EN4maineqI3intEE1SI3intE1SI3intE(%"S<int>" %a, %"S<int>" %b) {
 }
 
 define void @_EN4main1fEP1SI4boolEP1SI4boolE(%"S<bool>"* %c, %"S<bool>"* %d) {
-  %c.load = load %"S<bool>", %"S<bool>"* %c
-  %d.load = load %"S<bool>", %"S<bool>"* %d
+  %c.load = load %"S<bool>", %"S<bool>"* %c, align 1
+  %d.load = load %"S<bool>", %"S<bool>"* %d, align 1
   %1 = call i1 @_EN4maineqI4boolEE1SI4boolE1SI4boolE(%"S<bool>" %c.load, %"S<bool>" %d.load)
   ret void
 }

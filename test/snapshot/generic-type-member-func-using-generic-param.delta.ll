@@ -1,6 +1,6 @@
 
 define i32 @main() {
-  %a = alloca {}
+  %a = alloca {}, align 8
   call void @_EN4main1AI3intE4initE({}* %a)
   call void @_EN4main1AI3intE1aE3int({}* %a, i32 5)
   ret i32 0

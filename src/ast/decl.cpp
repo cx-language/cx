@@ -3,7 +3,7 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
-#include "../support/utility.h"
+#include "ast.h"
 
 using namespace delta;
 
@@ -121,11 +121,11 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, Ty
 FieldDecl FieldDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) const {
     auto type = getType().resolve(genericArgs);
     auto defaultValue = getDefaultValue() ? getDefaultValue()->instantiate(genericArgs) : nullptr;
-    return FieldDecl(type, getName(), defaultValue, typeDecl, getAccessLevel(), location);
+    return FieldDecl(type, getName().str(), defaultValue, typeDecl, getAccessLevel(), location);
 }
 
 std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
-    return map(params, [&](auto& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName(), param.isPublic, param.getLocation()); });
+    return map(params, [&](auto& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName().str(), param.isPublic, param.getLocation()); });
 }
 
 std::string TypeDecl::getQualifiedName() const {
@@ -273,12 +273,12 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
         case DeclKind::TypeDecl: {
             auto* typeDecl = llvm::cast<TypeDecl>(this);
             auto interfaces = map(typeDecl->getInterfaces(), [&](Type type) { return type.resolve(genericArgs); });
-            auto instantiation = new TypeDecl(typeDecl->getTag(), typeDecl->getName(), genericArgsArray, std::move(interfaces), getAccessLevel(),
+            auto instantiation = new TypeDecl(typeDecl->getTag(), typeDecl->getName().str(), genericArgsArray, std::move(interfaces), getAccessLevel(),
                                               *typeDecl->getModule(), typeDecl, typeDecl->getLocation());
             for (auto& field : typeDecl->getFields()) {
                 auto defaultValue = field.getDefaultValue() ? field.getDefaultValue()->instantiate(genericArgs) : nullptr;
-                instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName(), defaultValue, *instantiation, field.getAccessLevel(),
-                                                  field.getLocation()));
+                instantiation->addField(FieldDecl(field.getType().resolve(genericArgs), field.getName().str(), defaultValue, *instantiation,
+                                                  field.getAccessLevel(), field.getLocation()));
             }
 
             for (auto& method : typeDecl->getMethods()) {
@@ -315,7 +315,8 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
             auto* varDecl = llvm::cast<VarDecl>(this);
             auto type = varDecl->getType().resolve(genericArgs);
             auto initializer = varDecl->getInitializer() ? varDecl->getInitializer()->instantiate(genericArgs) : nullptr;
-            return new VarDecl(type, varDecl->getName(), initializer, varDecl->getParentDecl(), getAccessLevel(), *varDecl->getModule(), varDecl->getLocation());
+            return new VarDecl(type, varDecl->getName().str(), initializer, varDecl->getParentDecl(), getAccessLevel(), *varDecl->getModule(),
+                               varDecl->getLocation());
         }
         case DeclKind::FieldDecl:
             llvm_unreachable("handled via TypeDecl");

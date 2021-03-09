@@ -1,7 +1,7 @@
 
 define i32 @main() {
-  %lambda = alloca i32 ({}*)*
-  store i32 ({}*)* @_EN4main9__lambda0EP1X, i32 ({}*)** %lambda
+  %lambda = alloca i32 ({}*)*, align 8
+  store i32 ({}*)* @_EN4main9__lambda0EP1X, i32 ({}*)** %lambda, align 8
   ret i32 0
 }
 

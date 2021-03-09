@@ -180,7 +180,7 @@ void delta::appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> generi
 }
 
 std::string delta::getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs) {
-    std::string result = typeName;
+    std::string result = typeName.str();
     appendGenericArgs(result, genericArgs);
     return result;
 }

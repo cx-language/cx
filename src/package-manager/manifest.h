@@ -13,7 +13,7 @@ class PackageManifest {
 public:
     class Dependency {
     public:
-        Dependency(std::string packageIdentifier, std::string packageVersion)
+        Dependency(std::string&& packageIdentifier, std::string&& packageVersion)
         : packageIdentifier(std::move(packageIdentifier)), packageVersion(std::move(packageVersion)) {}
         llvm::StringRef getPackageIdentifier() const { return packageIdentifier; }
         llvm::StringRef getPackageVersion() const { return packageVersion; }

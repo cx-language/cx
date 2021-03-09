@@ -5,15 +5,15 @@
 @1 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
 
 define i32 @main() {
-  %f = alloca %Foo
-  %bar = alloca i32
+  %f = alloca %Foo, align 8
+  %bar = alloca i32, align 4
   %1 = call i32 @puts(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @0, i32 0, i32 0))
   %bar1 = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 0
-  store i32 47, i32* %bar1
+  store i32 47, i32* %bar1, align 4
   %baz = getelementptr inbounds %Foo, %Foo* %f, i32 0, i32 1
-  store i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0), i8** %baz
+  store i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0), i8** %baz, align 8
   %2 = call i32 @getBar(%Foo* %f)
-  store i32 %2, i32* %bar
+  store i32 %2, i32* %bar, align 4
   ret i32 0
 }
 

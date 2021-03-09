@@ -2,7 +2,7 @@
 %"F<int, bool>" = type { i32, i1 }
 
 define i32 @main() {
-  %f = alloca %"F<int, bool>"
+  %f = alloca %"F<int, bool>", align 8
   call void @_EN4main1FI3int4boolE4initE(%"F<int, bool>"* %f)
   call void @_EN4main1FI3int4boolE3fooE(%"F<int, bool>"* %f)
   ret i32 0

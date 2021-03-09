@@ -15,7 +15,7 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
         }
     }
 
-    auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter { ValueKind::Parameter, getIRType(p.getType()), p.getName() }; });
+    auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter { ValueKind::Parameter, getIRType(p.getType()), p.getName().str() }; });
 
     if (decl.isMethodDecl()) {
         params.insert(params.begin(), Parameter { ValueKind::Parameter, getIRType(decl.getTypeDecl()->getType().getPointerTo()), "this" });

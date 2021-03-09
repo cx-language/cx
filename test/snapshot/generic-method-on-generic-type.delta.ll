@@ -5,7 +5,7 @@ define i32 @_EN4main1gE4bool(i1 %i) {
 }
 
 define i32 @main() {
-  %x = alloca {}
+  %x = alloca {}, align 8
   call void @_EN4main1XI3intE4initE({}* %x)
   call void @_EN4main1XI3intE1fI4boolEEF4bool_3int({}* %x, i32 (i1)* @_EN4main1gE4bool)
   ret i32 0

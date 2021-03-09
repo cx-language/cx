@@ -6,8 +6,8 @@
 declare i1 @f()
 
 define i32 @main() {
-  %a = alloca %A
-  %c = alloca %C
+  %a = alloca %A, align 8
+  %c = alloca %C, align 8
   call void @_EN4main1A4initE(%A* %a)
   call void @_EN4main1C4initE(%C* %c)
   call void @_EN4main1C6deinitE(%C* %c)

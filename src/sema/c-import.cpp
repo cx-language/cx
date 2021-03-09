@@ -1,6 +1,4 @@
 #include "c-import.h"
-#include <cstdio>
-#include <cstdlib>
 #include <memory>
 #include <string>
 #include <utility>
@@ -10,19 +8,17 @@
 #include <clang/AST/DeclGroup.h>
 #include <clang/AST/PrettyPrinter.h>
 #include <clang/AST/Type.h>
+#include <clang/Basic/Builtins.h>
 #include <clang/Basic/TargetInfo.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Lex/HeaderSearch.h>
 #include <clang/Lex/Preprocessor.h>
 #include <clang/Parse/ParseAST.h>
 #include <clang/Sema/Sema.h>
-#include <llvm/ADT/SmallVector.h>
-#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
-#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Host.h>
 #include <llvm/Support/Path.h>
-#include <llvm/Support/Program.h>
 #pragma warning(pop)
 #include "typecheck.h"
 #include "../ast/decl.h"
@@ -176,7 +172,7 @@ static llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl&
 
 static TypeDecl* toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     auto tag = decl.isUnion() ? TypeTag::Union : TypeTag::Struct;
-    auto* typeDecl = new TypeDecl(tag, getName(decl), {}, {}, AccessLevel::Default, *currentModule, nullptr, SourceLocation());
+    auto* typeDecl = new TypeDecl(tag, getName(decl).str(), {}, {}, AccessLevel::Default, *currentModule, nullptr, SourceLocation());
 
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toDelta(*field, *typeDecl)) {
@@ -190,21 +186,21 @@ static TypeDecl* toDelta(const clang::RecordDecl& decl, Module* currentModule) {
 }
 
 static VarDecl* toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return new VarDecl(toDelta(decl.getType()), decl.getName(), nullptr, nullptr, AccessLevel::Default, *currentModule, SourceLocation());
+    return new VarDecl(toDelta(decl.getType()), decl.getName().str(), nullptr, nullptr, AccessLevel::Default, *currentModule, SourceLocation());
 }
 
 static void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
     auto initializer = new IntLiteralExpr(std::move(value), SourceLocation());
     auto type = toDelta(qualType).withMutability(Mutability::Const);
     initializer->setType(type);
-    module.addToSymbolTable(new VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
+    module.addToSymbolTable(new VarDecl(type, name.str(), initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 static void addFloatConstantToSymbolTable(llvm::StringRef name, llvm::APFloat value, Module& module) {
     auto initializer = new FloatLiteralExpr(std::move(value), SourceLocation());
     auto type = Type::getFloat64(Mutability::Const);
     initializer->setType(type);
-    module.addToSymbolTable(new VarDecl(type, name, initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
+    module.addToSymbolTable(new VarDecl(type, name.str(), initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
 }
 
 namespace {
@@ -239,11 +235,11 @@ public:
                         auto enumeratorName = enumerator->getName();
                         auto& value = enumerator->getInitVal();
                         auto valueExpr = new IntLiteralExpr(value, SourceLocation());
-                        cases.push_back(EnumCase(enumeratorName, valueExpr, Type(), AccessLevel::Default, SourceLocation()));
+                        cases.push_back(EnumCase(enumeratorName.str(), valueExpr, Type(), AccessLevel::Default, SourceLocation()));
                         addIntegerConstantToSymbolTable(enumeratorName, value, type, module);
                     }
 
-                    module.addToSymbolTable(new EnumDecl(getName(enumDecl), std::move(cases), AccessLevel::Default, module, nullptr, SourceLocation()));
+                    module.addToSymbolTable(new EnumDecl(getName(enumDecl).str(), std::move(cases), AccessLevel::Default, module, nullptr, SourceLocation()));
                     break;
                 }
                 case clang::Decl::Var:
@@ -332,7 +328,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     clang::CompilerInstance ci;
     ci.createDiagnostics();
     auto args = map(options.cflags, [](auto& cflag) { return cflag.c_str(); });
-    clang::CompilerInvocation::CreateFromArgs(ci.getInvocation(), &*args.begin(), &*args.end(), ci.getDiagnostics());
+    clang::CompilerInvocation::CreateFromArgs(ci.getInvocation(), args, ci.getDiagnostics());
 
     std::shared_ptr<clang::TargetOptions> pto = std::make_shared<clang::TargetOptions>();
     pto->Triple = llvm::sys::getDefaultTargetTriple();
@@ -341,12 +337,14 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
 
     ci.createFileManager();
     ci.createSourceManager(ci.getFileManager());
-    ci.getHeaderSearchOpts().AddPath(llvm::sys::path::parent_path(importer.getFilePath()), clang::frontend::Quoted, false, false);
+    ci.getHeaderSearchOpts().AddPath(llvm::sys::path::parent_path(importer.getFilePath()), clang::frontend::Quoted, false, true);
 
     for (llvm::StringRef includePath : options.importSearchPaths) {
+        ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, true);
         ci.getHeaderSearchOpts().AddPath(includePath, clang::frontend::System, false, false);
     }
     for (llvm::StringRef frameworkPath : options.frameworkSearchPaths) {
+        ci.getHeaderSearchOpts().AddPath(frameworkPath, clang::frontend::System, true, true);
         ci.getHeaderSearchOpts().AddPath(frameworkPath, clang::frontend::System, true, false);
     }
 
@@ -355,20 +353,25 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     pp.getBuiltinInfo().initializeBuiltins(pp.getIdentifierTable(), pp.getLangOpts());
 
     const clang::DirectoryLookup* curDir = nullptr;
-    auto* fileEntry = ci.getPreprocessor().getHeaderSearchInfo().LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr,
-                                                                            nullptr, nullptr);
+    clang::HeaderSearch& headerSearch = ci.getPreprocessor().getHeaderSearchInfo();
+    auto fileEntry = headerSearch.LookupFile(headerName, {}, false, nullptr, curDir, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (!fileEntry) {
-        REPORT_ERROR(importLocation, "couldn't find C header file '" << headerName << "'");
+        std::string searchDirs;
+        for (auto searchDir = headerSearch.search_dir_begin(), end = headerSearch.search_dir_end(); searchDir != end; ++searchDir) {
+            searchDirs += '\n';
+            searchDirs += searchDir->getName();
+        }
+        REPORT_ERROR(importLocation, "couldn't find C header file '" << headerName << "' in the following locations:" << searchDirs);
         return false;
     }
 
     auto module = new Module(headerName);
-    ci.setASTConsumer(llvm::make_unique<CToDeltaConverter>(*module, ci.getSourceManager()));
+    ci.setASTConsumer(std::make_unique<CToDeltaConverter>(*module, ci.getSourceManager()));
     ci.createASTContext();
     ci.createSema(clang::TU_Complete, nullptr);
-    pp.addPPCallbacks(llvm::make_unique<MacroImporter>(*module, ci.getSema()));
+    pp.addPPCallbacks(std::make_unique<MacroImporter>(*module, ci.getSema()));
 
-    auto fileID = ci.getSourceManager().createFileID(fileEntry, clang::SourceLocation(), clang::SrcMgr::C_System);
+    auto fileID = ci.getSourceManager().createFileID(*fileEntry, clang::SourceLocation(), clang::SrcMgr::C_System);
     ci.getSourceManager().setMainFileID(fileID);
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(), &ci.getPreprocessor());
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext());

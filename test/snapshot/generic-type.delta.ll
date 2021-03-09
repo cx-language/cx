@@ -5,7 +5,7 @@
 %"A<bool>" = type { i1 }
 
 define i32 @main() {
-  %a = alloca %"A<int>"
-  %aaa = alloca %"A<A<A<bool>>>"
+  %a = alloca %"A<int>", align 8
+  %aaa = alloca %"A<A<A<bool>>>", align 8
   ret i32 0
 }
