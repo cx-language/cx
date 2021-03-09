@@ -294,22 +294,25 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
 
 void Typechecker::typecheckVarDecl(VarDecl& decl) {
     Type declaredType = decl.getType();
+    if (declaredType) {
+        typecheckType(declaredType, !decl.isGlobal() ? AccessLevel::None : decl.getAccessLevel());
+    }
 
-    try {
-        typecheckExpr(*decl.getInitializer(), false, declaredType);
-    } catch (const CompileError&) {
-        if (!decl.isGlobal()) getCurrentModule()->addToSymbolTable(decl);
-        throw;
+    if (decl.getInitializer()) {
+        try {
+            typecheckExpr(*decl.getInitializer(), false, declaredType);
+        } catch (const CompileError&) {
+            if (!decl.isGlobal()) getCurrentModule()->addToSymbolTable(decl);
+            throw;
+        }
     }
 
     if (!decl.isGlobal()) getCurrentModule()->addToSymbolTable(decl);
-
+    if (!decl.getInitializer()) return;
     Type initializerType = decl.getInitializer()->getType();
     if (!initializerType) return;
 
     if (declaredType) {
-        typecheckType(declaredType, !decl.isGlobal() ? AccessLevel::None : decl.getAccessLevel());
-
         if (auto converted = convert(decl.getInitializer(), declaredType)) {
             decl.setInitializer(converted);
         } else {

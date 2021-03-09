@@ -543,6 +543,7 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
 
 bool Parser::shouldParseVarStmt() {
     if (currentToken() == Token::Var) return true;
+    if (currentToken() == Token::Star) return false;
     int offset = 2;
 
     while (true) {
@@ -561,6 +562,11 @@ bool Parser::shouldParseVarStmt() {
             return false;
         } else {
             if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).getLocation().line != lookAhead(offset - 1).getLocation().line) {
+                if (lookAhead(offset - 1).is(Token::Identifier)) {
+                    if (lookAhead(offset - 2).is({ Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater, Token::Star })) {
+                        return true;
+                    }
+                }
                 return false;
             }
             offset++;
@@ -796,16 +802,19 @@ VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel) {
     return parseVarDeclAfterName(parent, accessLevel, type.withMutability(mutability), name.getString(), name.getLocation());
 }
 
-VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation location) {
+VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, SourceLocation nameLocation) {
     Expr* initializer = nullptr;
 
     if (currentToken() == Token::Assignment) {
         consumeToken();
         initializer = parseExpr();
         parseStmtTerminator();
+    } else if (currentToken() == Token::Semicolon || currentToken().getLocation().line != lookAhead(-1).getLocation().line) {
+        WARN(nameLocation, "missing initializer");
+        parseStmtTerminator();
     }
 
-    return new VarDecl(type, name.str(), initializer, parent, accessLevel, *currentModule, location);
+    return new VarDecl(type, name.str(), initializer, parent, accessLevel, *currentModule, nameLocation);
 }
 
 /// var-stmt ::= var-decl
@@ -813,9 +822,9 @@ VarStmt* Parser::parseVarStmt(Decl* parent) {
     return new VarStmt(parseVarDecl(parent, AccessLevel::None));
 }
 
-/// expr-stmt ::= binary-expr | call-expr ('\n' | ';')
-ExprStmt* Parser::parseExprStmt(Expr* expr) {
-    auto stmt = new ExprStmt(expr);
+/// expr-stmt ::= expr ('\n' | ';')
+ExprStmt* Parser::parseExprStmt() {
+    auto stmt = new ExprStmt(parseExpr());
     parseStmtTerminator();
     return stmt;
 }
@@ -991,30 +1000,17 @@ Stmt* Parser::parseStmt(Decl* parent) {
             if (currentToken().getString() == "_") {
                 consumeToken();
                 parse(Token::Assignment);
-                auto stmt = new ExprStmt(parseExpr());
-                parseStmtTerminator();
-                return stmt;
+                return parseExprStmt();
+            } else if (lookAhead(1).is(Token::Assignment)) {
+                return parseExprStmt();
             }
             LLVM_FALLTHROUGH;
         default:
             if (shouldParseVarStmt()) {
                 return parseVarStmt(parent);
             }
-            break;
+            return parseExprStmt();
     }
-
-    // If we're here, the statement starts with an expression.
-    auto* expr = parseExpr();
-
-    if (!expr->isCallExpr() && !expr->isIncrementOrDecrementExpr() && !expr->isAssignment()) {
-        try {
-            unexpectedToken(currentToken());
-        } catch (const CompileError& error) {
-            error.print();
-        }
-    }
-
-    return parseExprStmt(expr);
 }
 
 std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind end2, Token::Kind end3, Decl* parent) {

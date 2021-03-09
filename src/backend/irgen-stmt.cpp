@@ -19,6 +19,7 @@ void IRGenerator::emitVarStmt(const VarStmt& stmt) {
     auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), stmt.getDecl().getName());
     setLocalValue(alloca, &stmt.getDecl());
     auto* initializer = stmt.getDecl().getInitializer();
+    if (!initializer) return;
 
     if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
         if (callExpr->getCalleeDecl()) {
