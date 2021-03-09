@@ -65,7 +65,7 @@ cl::opt<WarningMode> warningMode(cl::desc("Warning mode:"), cl::sub(*cl::AllSubC
 cl::list<std::string> disabledWarnings("Wno-", cl::desc("Disable warnings"), cl::value_desc("warning"), cl::Prefix, cl::sub(*cl::AllSubCommands));
 cl::list<std::string> defines("D", cl::desc("Specify defines"), cl::Prefix, cl::sub(*cl::AllSubCommands));
 cl::list<std::string> importSearchPaths("I", cl::desc("Add directory to import search paths"), cl::value_desc("path"), cl::Prefix, cl::sub(*cl::AllSubCommands));
-cl::list<std::string> frameworkSearchPaths("F", cl::desc("Add directory framework search paths"), cl::value_desc("path"), cl::Prefix,
+cl::list<std::string> frameworkSearchPaths("F", cl::desc("Add directory to framework search paths"), cl::value_desc("path"), cl::Prefix,
                                            cl::sub(*cl::AllSubCommands));
 cl::list<std::string> cflags(cl::Sink, cl::desc("Add C compiler flags"), cl::sub(*cl::AllSubCommands));
 cl::alias emitAssemblyAlias("S", cl::aliasopt(emitAssembly));
@@ -314,6 +314,16 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     for (auto& cflag : options.cflags) {
         ccArgs.push_back(cflag.c_str());
     }
+
+#ifdef __APPLE__
+    std::string sdkPath;
+    exec("xcrun -show-sdk-path", sdkPath);
+    sdkPath = llvm::StringRef(sdkPath).trim();
+    if (!sdkPath.empty()) {
+        ccArgs.push_back("-isysroot");
+        ccArgs.push_back(sdkPath.c_str());
+    }
+#endif
 
     if (msvc) {
         ccArgs.push_back("-link");
