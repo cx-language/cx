@@ -351,11 +351,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     if (outputFileName.empty()) {
-        if (files.size() == 1) {
-            outputFileName = llvm::sys::path::stem(files[0]);
-        } else {
-            outputFileName = "main";
-        }
+        outputFileName = files.size() == 1 ? llvm::sys::path::stem(files[0]).str() : "main";
         outputFileName.append(msvc ? ".exe" : ".out");
     }
 

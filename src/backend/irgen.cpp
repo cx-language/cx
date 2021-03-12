@@ -221,7 +221,7 @@ Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
 IRModule& IRGenerator::emitModule(const Module& sourceModule) {
     ASSERT(!module);
     module = new IRModule;
-    module->name = sourceModule.getName();
+    module->name = sourceModule.getName().str();
 
     for (auto& sourceFile : sourceModule.getSourceFiles()) {
         for (auto& decl : sourceFile.getTopLevelDecls()) {

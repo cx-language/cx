@@ -144,16 +144,9 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     switch (getKind()) {
         case ExprKind::VarExpr: {
             auto* varExpr = llvm::cast<VarExpr>(this);
-            std::string identifier;
-
             auto it = genericArgs.find(varExpr->getIdentifier());
-            if (it != genericArgs.end()) {
-                identifier = it->second.getName();
-            } else {
-                identifier = varExpr->getIdentifier();
-            }
-
-            instantiation = new VarExpr(std::move(identifier), varExpr->getLocation());
+            auto identifier = it != genericArgs.end() ? it->second.getName() : varExpr->getIdentifier();
+            instantiation = new VarExpr(identifier.str(), varExpr->getLocation());
             break;
         }
         case ExprKind::StringLiteralExpr: {

@@ -40,9 +40,9 @@ PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::m
     // TODO: Type-check package manifest.
 
     auto& symbols = module.getSymbolTable();
-    packageName = getConfigValue<StringLiteralExpr>(symbols.findOne("name"), "");
+    packageName = getConfigValue<StringLiteralExpr>(symbols.findOne("name"), "").str();
     multitarget = getConfigValue<BoolLiteralExpr>(symbols.findOne("multitarget"), false);
-    outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), "bin");
+    outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), "bin").str();
 
     if (auto* dependencies = symbols.findOne("dependencies")) {
         auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(dependencies)->getInitializer());

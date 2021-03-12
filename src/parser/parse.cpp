@@ -132,7 +132,7 @@ std::vector<NamedValue> Parser::parseArgumentList() {
         SourceLocation location = SourceLocation();
         if (lookAhead(1) == Token::Colon) {
             auto result = parse(Token::Identifier);
-            name = std::move(result.getString());
+            name = result.getString().str();
             location = result.getLocation();
             consumeToken();
         }
@@ -1360,13 +1360,13 @@ ImportDecl* Parser::parseImportDecl() {
     ASSERT(currentToken() == Token::Import);
     consumeToken();
 
-    std::string importTarget;
     auto location = getCurrentLocation();
+    std::string importTarget;
 
     if (currentToken() == Token::StringLiteral) {
-        importTarget = parseStringLiteral()->getValue();
+        importTarget = parseStringLiteral()->getValue().str();
     } else {
-        importTarget = parse({ Token::Identifier, Token::StringLiteral }, "after 'import'").getString();
+        importTarget = parse({ Token::Identifier, Token::StringLiteral }, "after 'import'").getString().str();
     }
 
     parseStmtTerminator("after 'import' declaration");
