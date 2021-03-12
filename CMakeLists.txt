@@ -72,7 +72,6 @@ target_link_libraries(delta ${LLVM_LIBS})
 add_custom_target(check_lit COMMAND lit --verbose --succinct --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
     -Ddelta_path="$<TARGET_FILE:delta>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
-    -Dnot_path="$<TARGET_FILE:not>"
     -Dtest_helper_scripts_path="${PROJECT_SOURCE_DIR}/test"
     USES_TERMINAL)
 add_custom_target(check_examples COMMAND python "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "$<TARGET_FILE:delta>")
@@ -94,31 +93,15 @@ if(NOT TARGET FileCheck)
     target_link_libraries(FileCheck PRIVATE ${FILECHECK_NEEDED_LIBS})
 endif()
 
-if(NOT TARGET not)
-    # Download the LLVM 'not' utility for tests.
-    set(NOT_SRC_PATH "llvmorg-${LLVM_PACKAGE_VERSION}/llvm/utils/not/not.cpp")
-    set(NOT_SRC_URL "https://raw.githubusercontent.com/llvm/llvm-project/${NOT_SRC_PATH}")
-    set(NOT_SRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${NOT_SRC_PATH}")
-    if(NOT EXISTS "${NOT_SRC_FILE}")
-        message(STATUS "Downloading LLVM 'not' source")
-        file(DOWNLOAD "${NOT_SRC_URL}" "${NOT_SRC_FILE}")
-    endif()
-    add_executable(not ${NOT_SRC_FILE})
-    llvm_map_components_to_libnames(NOT_NEEDED_LIBS support)
-    target_link_libraries(not PRIVATE ${NOT_NEEDED_LIBS})
-endif()
-
 if(NOT DEFINED ENV{CI})
     if(MSVC)
         set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w /O2 /GL")
-        set_target_properties(not PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w /O2 /GL")
     else()
         set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
-        set_target_properties(not PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
     endif()
 endif()
 
-add_dependencies(check FileCheck not)
+add_dependencies(check FileCheck)
 
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/cmake-modules)
 
