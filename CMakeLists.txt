@@ -93,6 +93,7 @@ target_link_libraries(FileCheck ${FILECHECK_NEEDED_LIBS})
 
 if(MSVC)
     set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w /O2 /GL /MT")
+    set_target_properties(delta PROPERTIES COMPILE_FLAGS "/MT")
 else()
     set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
 endif()
