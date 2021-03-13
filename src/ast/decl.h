@@ -190,7 +190,7 @@ public:
     llvm::StringRef getName() const { return name; }
     llvm::ArrayRef<ParamDecl> getParams() const { return params; }
     llvm::MutableArrayRef<ParamDecl> getParams() { return params; }
-    Type getReturnType() const { return NOTNULL(returnType); }
+    Type getReturnType() const { return returnType; }
     void setReturnType(Type type) { returnType = type; }
     bool isVarArg() const { return varArg; }
     bool isExtern() const { return external; }

@@ -51,10 +51,14 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
 
     Type returnValueType = typecheckExpr(*stmt.getReturnValue(), false, functionReturnType);
 
-    if (auto converted = convert(stmt.getReturnValue(), functionReturnType)) {
-        stmt.setReturnValue(converted);
+    if (functionReturnType) {
+        if (auto converted = convert(stmt.getReturnValue(), functionReturnType)) {
+            stmt.setReturnValue(converted);
+        } else {
+            ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
+        }
     } else {
-        ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
+        functionReturnType = returnValueType;
     }
 
     checkReturnPointerToLocal(stmt);
@@ -177,7 +181,7 @@ void Typechecker::typecheckCompoundStmt(CompoundStmt& compoundStmt) {
     }
 }
 
-void Typechecker::typecheckStmt(Stmt*& stmt) {
+bool Typechecker::typecheckStmt(Stmt*& stmt) {
     try {
         switch (stmt->getKind()) {
             case StmtKind::ReturnStmt:
@@ -227,5 +231,8 @@ void Typechecker::typecheckStmt(Stmt*& stmt) {
         }
     } catch (const CompileError& error) {
         error.print();
+        return false;
     }
+
+    return true;
 }

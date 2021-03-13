@@ -32,6 +32,9 @@ int _EN4main9__lambda2E3int3int(int a, int b) {
 }
 
 int _EN4main9__lambda3E3int3int(int a, int b) {
+    int* x = alloca int
     int _0 = a + b
-    return _0
+    store _0 to x
+    int x.load = load x
+    return x.load
 }

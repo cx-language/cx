@@ -139,140 +139,118 @@ bool Expr::isLvalue() const {
 }
 
 Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
-    Expr* instantiation = nullptr;
-
     switch (getKind()) {
         case ExprKind::VarExpr: {
             auto* varExpr = llvm::cast<VarExpr>(this);
             auto it = genericArgs.find(varExpr->getIdentifier());
             auto identifier = it != genericArgs.end() ? it->second.getName() : varExpr->getIdentifier();
-            instantiation = new VarExpr(identifier.str(), varExpr->getLocation());
-            break;
+            return new VarExpr(identifier.str(), varExpr->getLocation());
         }
         case ExprKind::StringLiteralExpr: {
             auto* stringLiteralExpr = llvm::cast<StringLiteralExpr>(this);
-            instantiation = new StringLiteralExpr(stringLiteralExpr->getValue().str(), stringLiteralExpr->getLocation());
-            break;
+            return new StringLiteralExpr(stringLiteralExpr->getValue().str(), stringLiteralExpr->getLocation());
         }
         case ExprKind::CharacterLiteralExpr: {
             auto* characterLiteralExpr = llvm::cast<CharacterLiteralExpr>(this);
-            instantiation = new CharacterLiteralExpr(characterLiteralExpr->getValue(), characterLiteralExpr->getLocation());
-            break;
+            return new CharacterLiteralExpr(characterLiteralExpr->getValue(), characterLiteralExpr->getLocation());
         }
         case ExprKind::IntLiteralExpr: {
             auto* intLiteralExpr = llvm::cast<IntLiteralExpr>(this);
-            instantiation = new IntLiteralExpr(intLiteralExpr->getValue(), intLiteralExpr->getLocation());
-            break;
+            return new IntLiteralExpr(intLiteralExpr->getValue(), intLiteralExpr->getLocation());
         }
         case ExprKind::FloatLiteralExpr: {
             auto* floatLiteralExpr = llvm::cast<FloatLiteralExpr>(this);
-            instantiation = new FloatLiteralExpr(floatLiteralExpr->getValue(), floatLiteralExpr->getLocation());
-            break;
+            return new FloatLiteralExpr(floatLiteralExpr->getValue(), floatLiteralExpr->getLocation());
         }
         case ExprKind::BoolLiteralExpr: {
             auto* boolLiteralExpr = llvm::cast<BoolLiteralExpr>(this);
-            instantiation = new BoolLiteralExpr(boolLiteralExpr->getValue(), boolLiteralExpr->getLocation());
-            break;
+            return new BoolLiteralExpr(boolLiteralExpr->getValue(), boolLiteralExpr->getLocation());
         }
         case ExprKind::NullLiteralExpr: {
             auto* nullLiteralExpr = llvm::cast<NullLiteralExpr>(this);
-            instantiation = new NullLiteralExpr(nullLiteralExpr->getLocation());
-            break;
+            return new NullLiteralExpr(nullLiteralExpr->getLocation());
         }
         case ExprKind::UndefinedLiteralExpr: {
             auto* undefinedLiteralExpr = llvm::cast<UndefinedLiteralExpr>(this);
-            instantiation = new UndefinedLiteralExpr(undefinedLiteralExpr->getLocation());
-            break;
+            return new UndefinedLiteralExpr(undefinedLiteralExpr->getLocation());
         }
         case ExprKind::ArrayLiteralExpr: {
             auto* arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(this);
             auto elements = ::instantiate(arrayLiteralExpr->getElements(), genericArgs);
-            instantiation = new ArrayLiteralExpr(std::move(elements), arrayLiteralExpr->getLocation());
-            break;
+            return new ArrayLiteralExpr(std::move(elements), arrayLiteralExpr->getLocation());
         }
         case ExprKind::TupleExpr: {
             auto* tupleExpr = llvm::cast<TupleExpr>(this);
             auto elements = map(tupleExpr->getElements(),
                                 [&](const NamedValue& element) { return NamedValue(element.getName().str(), element.getValue()->instantiate(genericArgs)); });
-            instantiation = new TupleExpr(std::move(elements), tupleExpr->getLocation());
-            break;
+            return new TupleExpr(std::move(elements), tupleExpr->getLocation());
         }
         case ExprKind::UnaryExpr: {
             auto* unaryExpr = llvm::cast<UnaryExpr>(this);
             auto operand = unaryExpr->getOperand().instantiate(genericArgs);
-            instantiation = new UnaryExpr(unaryExpr->getOperator(), operand, unaryExpr->getLocation());
-            break;
+            return new UnaryExpr(unaryExpr->getOperator(), operand, unaryExpr->getLocation());
         }
         case ExprKind::BinaryExpr: {
             auto* binaryExpr = llvm::cast<BinaryExpr>(this);
             auto lhs = binaryExpr->getLHS().instantiate(genericArgs);
             auto rhs = binaryExpr->getRHS().instantiate(genericArgs);
-            instantiation = new BinaryExpr(binaryExpr->getOperator(), lhs, rhs, binaryExpr->getLocation());
-            break;
+            return new BinaryExpr(binaryExpr->getOperator(), lhs, rhs, binaryExpr->getLocation());
         }
         case ExprKind::CallExpr: {
             auto* callExpr = llvm::cast<CallExpr>(this);
             auto callee = callExpr->getCallee().instantiate(genericArgs);
             auto args = map(callExpr->getArgs(), [&](auto& arg) { return NamedValue(arg.getName().str(), arg.getValue()->instantiate(genericArgs)); });
             auto callGenericArgs = map(callExpr->getGenericArgs(), [&](Type type) { return type.resolve(genericArgs); });
-            instantiation = new CallExpr(callee, std::move(args), std::move(callGenericArgs), callExpr->getLocation());
-            break;
+            return new CallExpr(callee, std::move(args), std::move(callGenericArgs), callExpr->getLocation());
         }
         case ExprKind::SizeofExpr: {
             auto* sizeofExpr = llvm::cast<SizeofExpr>(this);
             auto type = sizeofExpr->getType().resolve(genericArgs);
-            instantiation = new SizeofExpr(type, sizeofExpr->getLocation());
-            break;
+            return new SizeofExpr(type, sizeofExpr->getLocation());
         }
         case ExprKind::AddressofExpr: {
             auto* addressofExpr = llvm::cast<AddressofExpr>(this);
             auto operand = addressofExpr->getOperand().instantiate(genericArgs);
-            instantiation = new AddressofExpr(operand, addressofExpr->getLocation());
-            break;
+            return new AddressofExpr(operand, addressofExpr->getLocation());
         }
         case ExprKind::MemberExpr: {
             auto* memberExpr = llvm::cast<MemberExpr>(this);
             auto base = memberExpr->getBaseExpr()->instantiate(genericArgs);
-            instantiation = new MemberExpr(base, memberExpr->getMemberName().str(), memberExpr->getLocation());
-            break;
+            return new MemberExpr(base, memberExpr->getMemberName().str(), memberExpr->getLocation());
         }
         case ExprKind::IndexExpr: {
             auto* indexExpr = llvm::cast<IndexExpr>(this);
             auto base = indexExpr->getBase()->instantiate(genericArgs);
             auto index = indexExpr->getIndex()->instantiate(genericArgs);
-            instantiation = new IndexExpr(base, index, indexExpr->getLocation());
-            break;
+            return new IndexExpr(base, index, indexExpr->getLocation());
         }
         case ExprKind::UnwrapExpr: {
             auto* unwrapExpr = llvm::cast<UnwrapExpr>(this);
             auto operand = unwrapExpr->getOperand().instantiate(genericArgs);
-            instantiation = new UnwrapExpr(operand, unwrapExpr->getLocation());
-            break;
+            return new UnwrapExpr(operand, unwrapExpr->getLocation());
         }
         case ExprKind::LambdaExpr: {
             auto* lambdaExpr = llvm::cast<LambdaExpr>(this);
             auto params = instantiateParams(lambdaExpr->getFunctionDecl()->getParams(), genericArgs);
-            ASSERT(lambdaExpr->getFunctionDecl()->getBody().size() == 1);
-            auto body = llvm::cast<ReturnStmt>(*lambdaExpr->getFunctionDecl()->getBody().front()).getReturnValue()->instantiate(genericArgs);
-            instantiation = new LambdaExpr(std::move(params), body, lambdaExpr->getFunctionDecl()->getModule(), lambdaExpr->getLocation());
-            break;
+            auto body = ::instantiate(lambdaExpr->getFunctionDecl()->getBody(), genericArgs);
+            auto lambda = new LambdaExpr(std::move(params), lambdaExpr->getFunctionDecl()->getModule(), lambdaExpr->getLocation());
+            lambda->functionDecl->setBody(std::move(body));
+            return lambda;
         }
         case ExprKind::IfExpr: {
             auto* ifExpr = llvm::cast<IfExpr>(this);
             auto condition = ifExpr->getCondition()->instantiate(genericArgs);
             auto thenExpr = ifExpr->getThenExpr()->instantiate(genericArgs);
             auto elseExpr = ifExpr->getElseExpr()->instantiate(genericArgs);
-            instantiation = new IfExpr(condition, thenExpr, elseExpr, ifExpr->getLocation());
-            break;
+            return new IfExpr(condition, thenExpr, elseExpr, ifExpr->getLocation());
         }
         case ExprKind::ImplicitCastExpr: {
             auto implicitCastExpr = llvm::cast<ImplicitCastExpr>(this);
-            instantiation = new ImplicitCastExpr(implicitCastExpr->getOperand()->instantiate(genericArgs), implicitCastExpr->getType().resolve(genericArgs));
-            break;
+            return new ImplicitCastExpr(implicitCastExpr->getOperand()->instantiate(genericArgs), implicitCastExpr->getType().resolve(genericArgs));
         }
     }
 
-    return instantiation;
+    llvm_unreachable("all cases handled");
 }
 
 std::vector<const Expr*> Expr::getSubExprs() const {
@@ -477,13 +455,10 @@ llvm::APSInt BinaryExpr::getConstantIntegerValue() const {
     }
 }
 
-LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, Expr* body, Module* module, SourceLocation location) : Expr(ExprKind::LambdaExpr, location) {
+LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, Module* module, SourceLocation location) : Expr(ExprKind::LambdaExpr, location) {
     static uint64_t nameCounter = 0;
     FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::move(params), Type(), false, false);
     this->functionDecl = new FunctionDecl(std::move(proto), std::vector<Type>(), AccessLevel::Private, *module, getLocation());
-    std::vector<Stmt*> stmts;
-    stmts.push_back(new ReturnStmt(body, body->getLocation()));
-    this->functionDecl->setBody(std::move(stmts));
 }
 
 const Expr* TupleExpr::getElementByName(llvm::StringRef name) const {

@@ -56,7 +56,7 @@ private:
     void typecheckFunctionTemplate(FunctionTemplate& decl);
     void typecheckMethodDecl(Decl& decl);
 
-    void typecheckStmt(Stmt*& stmt);
+    bool typecheckStmt(Stmt*& stmt);
     void typecheckCompoundStmt(CompoundStmt& stmt);
     void typecheckReturnStmt(ReturnStmt& stmt);
     void typecheckVarStmt(VarStmt& stmt);

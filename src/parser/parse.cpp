@@ -526,8 +526,16 @@ LambdaExpr* Parser::parseLambdaExpr() {
     }
 
     parse(Token::RightArrow);
-    auto body = parseExpr();
-    return new LambdaExpr(std::move(params), body, currentModule, location);
+    auto lambda = new LambdaExpr(std::move(params), currentModule, location);
+
+    if (currentToken() == Token::LeftBrace) {
+        lambda->functionDecl->setBody(parseBlock(lambda->functionDecl));
+    } else {
+        auto expr = parseExpr();
+        lambda->functionDecl->setBody({ new ReturnStmt(expr, expr->getLocation()) });
+    }
+
+    return lambda;
 }
 
 /// if-expr ::= expr '?' expr ':' expr

@@ -28,6 +28,9 @@ define i32 @_EN4main9__lambda2E3int3int(i32 %a, i32 %b) {
 }
 
 define i32 @_EN4main9__lambda3E3int3int(i32 %a, i32 %b) {
+  %x = alloca i32, align 4
   %1 = add i32 %a, %b
-  ret i32 %1
+  store i32 %1, i32* %x, align 4
+  %x.load = load i32, i32* %x, align 4
+  ret i32 %x.load
 }

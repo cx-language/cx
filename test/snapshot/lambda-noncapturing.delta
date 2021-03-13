@@ -6,7 +6,10 @@ void foo(int(int, int) a) {
 
 void main() {
     foo((int a, int b) -> a + b);
-    foo((a, int b) -> a + b);
+    foo((a, int b) -> { return a + b });
     foo((int a, b) -> a + b);
-    foo((a, b) -> a + b);
+    foo((a, b) -> {
+        var x = a + b;
+        return x;
+    });
 }

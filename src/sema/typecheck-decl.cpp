@@ -158,12 +158,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     typecheckParams(decl.getParams(), decl.getAccessLevel());
 
-    if (decl.isLambda()) {
-        ASSERT(decl.getBody().size() == 1);
-        decl.getProto().setReturnType(typecheckExpr(*llvm::cast<ReturnStmt>(decl.getBody().front())->getReturnValue()));
-    }
-
-    if (!decl.isConstructorDecl() && !decl.isDestructorDecl()) {
+    if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
         typecheckType(decl.getReturnType(), decl.getAccessLevel());
     }
 
@@ -184,7 +179,19 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             for (auto& stmt : decl.getBody()) {
                 {
                     llvm::SaveAndRestore setCurrentStmt(currentStmt, &stmt);
-                    typecheckStmt(stmt);
+                    bool success = typecheckStmt(stmt);
+
+                    if (!decl.getReturnType()) {
+                        ASSERT(decl.isLambda());
+
+                        if (!success) {
+                            throw CompileError();
+                        }
+
+                        if (auto returnStmt = llvm::dyn_cast<ReturnStmt>(stmt)) {
+                            decl.getProto().setReturnType(returnStmt->getReturnValue() ? returnStmt->getReturnValue()->getType() : Type::getVoid());
+                        }
+                    }
                 }
 
                 if (decl.isConstructorDecl()) {
@@ -213,6 +220,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                         break;
                 }
             }
+
             movedDecls.clear();
         }
 

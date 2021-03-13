@@ -366,11 +366,10 @@ private:
 
 class LambdaExpr : public Expr {
 public:
-    LambdaExpr(std::vector<ParamDecl>&& params, Expr* body, Module* module, SourceLocation location);
+    LambdaExpr(std::vector<ParamDecl>&& params, Module* module, SourceLocation location);
     FunctionDecl* getFunctionDecl() const { return functionDecl; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::LambdaExpr; }
 
-private:
     FunctionDecl* functionDecl;
 };
 
