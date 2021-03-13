@@ -12,6 +12,7 @@ void main() {
     testListMutatingIteration();
     testListEnumeratedIterator();
     testEmpty();
+    testFind();
     testMap();
     testFilter();
     testRemoveFirstByPredicate();
@@ -45,11 +46,11 @@ void testListInitFromLiteral() {
 }
 
 void testArrayIterator() {
-    var array = List<C>();
-    array.push(C(1));
-    array.push(C(4));
+    var a = List<C>();
+    a.push(C(1));
+    a.push(C(4));
 
-    var iterator = array.iterator();
+    var iterator = a.iterator();
 
     assert(iterator.hasValue());
     assert(iterator.value().i == 1);
@@ -109,6 +110,16 @@ void testEmpty() {
     assert(a.empty());
     a.push(7);
     assert(!a.empty());
+}
+
+void testFind() {
+    var a = List<int>();
+    assert(a.find(x -> x == 1) == null);
+    a.push(1);
+    assert(a.find(x -> x == 1)! == 1); // TODO: '!' shouldn't be required
+    a.push(2);
+    assert(a.find(x -> x == 2)! == 2); // TODO: '!' shouldn't be required
+    assert(a.find(x -> x == 3) == null);
 }
 
 void testMap() {

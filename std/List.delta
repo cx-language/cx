@@ -174,6 +174,16 @@ struct List<Element> {
         return EnumeratedIterator(iterator());
     }
 
+    Element*? find(bool(Element*) predicate) {
+        for (var element in this) {
+            if (predicate(element)) {
+                return element;
+            }
+        }
+
+        return null;
+    }
+
     List<Output> map<Output>(Output(Element*) transform) {
         var output = List<Output>(capacity: this.size);
 

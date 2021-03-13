@@ -50,6 +50,16 @@ struct ArrayRef<Element>: Copyable {
         return ArrayIterator(this);
     }
 
+    Element*? find(bool(Element*) predicate) {
+        for (var element in this) {
+            if (predicate(element)) {
+                return element;
+            }
+        }
+
+        return null;
+    }
+
     private void indexOutOfBounds(string function, int index) {
         abort("ArrayRef.", function, ": index ", index, " is out of bounds, size is ", size());
     }
