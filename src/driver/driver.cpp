@@ -413,6 +413,7 @@ static void addPlatformCompileOptions() {
 }
 
 int main(int argc, const char** argv) {
+    llvm::setBugReportMsg("Please submit a bug report to https://github.com/delta-lang/delta/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
     cl::ParseCommandLineOptions(argc, argv, "Delta compiler\n");
     addPlatformCompileOptions();
