@@ -35,3 +35,19 @@ const SEEK_END = 2;
 
 // string.h
 extern uint64 strlen(const char* string);
+
+// ctype.h
+extern int isalnum(int ch);
+extern int isalpha(int ch);
+extern int islower(int ch);
+extern int isupper(int ch);
+extern int isdigit(int ch);
+extern int isxdigit(int ch);
+extern int iscntrl(int ch);
+extern int isgraph(int ch);
+extern int isspace(int ch);
+extern int isblank(int ch);
+extern int isprint(int ch);
+extern int ispunct(int ch);
+extern int tolower(int ch);
+extern int toupper(int ch);
