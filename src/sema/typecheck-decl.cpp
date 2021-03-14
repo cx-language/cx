@@ -108,6 +108,11 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
     switch (block.back()->getKind()) {
         case StmtKind::ReturnStmt:
             return true;
+        case StmtKind::ExprStmt: {
+            auto& exprStmt = llvm::cast<ExprStmt>(*block.back());
+            auto call = llvm::dyn_cast<CallExpr>(&exprStmt.getExpr());
+            return call && call->getType().isNeverType();
+        }
         case StmtKind::IfStmt: {
             auto& ifStmt = llvm::cast<IfStmt>(*block.back());
             return allPathsReturn(ifStmt.getThenBody()) && allPathsReturn(ifStmt.getElseBody());
@@ -227,7 +232,11 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     }
 
     if ((!receiverTypeDecl || !receiverTypeDecl->isInterface()) && !decl.getReturnType().isVoid() && !allPathsReturn(decl.getBody())) {
-        REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");
+        if (decl.getReturnType().isNeverType()) {
+            WARN(decl.getLocation(), "'" << decl.getName() << "' is declared to never return but it does return");
+        } else {
+            REPORT_ERROR(decl.getLocation(), "'" << decl.getName() << "' is missing a return statement");
+        }
     }
 
     decl.setTypechecked(true);

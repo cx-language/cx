@@ -1,0 +1,2 @@
+/// Placeholder type used as the return type for functions that do not return.
+struct never {}

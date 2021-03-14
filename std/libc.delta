@@ -1,7 +1,8 @@
 // stdlib.h
 extern void*? malloc(uint64 size);
 extern void free(void*? ptr);
-extern void abort();
+extern never abort();
+extern never exit(int status);
 
 // stdio.h
 struct FILE {}
@@ -23,7 +24,6 @@ extern void fseek(FILE* file, int64 offset, int origin);
 extern int64 ftell(FILE* file);
 extern int fclose(FILE* file);
 extern int fflush(FILE* file);
-extern void exit(int status);
 extern int feof(FILE* file);
 extern int fputc(int c, FILE* file);
 extern int remove(const char* filename);

@@ -94,6 +94,7 @@ public:
     bool isChar() const;
     bool isNull() const;
     bool isUndefined() const;
+    bool isNeverType() const { return isBasicType() && getName() == "never"; }
 
     Type resolve(const llvm::StringMap<Type>& replacements) const;
     bool isInteger() const;

@@ -1,0 +1,13 @@
+// RUN: %delta -typecheck %s -Wno-unused | %FileCheck %s
+
+// CHECK-NOT: warning
+never f() { f() }
+
+// CHECK-NOT: warning
+never g() { abort() }
+
+// CHECK: [[@LINE+1]]:7: warning: 'h' is declared to never return but it does return
+never h() {}
+
+// CHECK-NOT: warning
+void i() { f() }
