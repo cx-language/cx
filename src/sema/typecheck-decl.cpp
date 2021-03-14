@@ -164,7 +164,6 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     if (!decl.isExtern()) {
         llvm::SmallPtrSet<FieldDecl*, 32> initializedFields;
-        llvm::SaveAndRestore setReturnType(functionReturnType, decl.getReturnType());
         llvm::SaveAndRestore setInitializedFields(currentInitializedFields, &initializedFields);
 
         if (receiverTypeDecl) {

@@ -131,7 +131,6 @@ private:
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     llvm::SmallPtrSet<Decl*, 32> movedDecls;
-    Type functionReturnType;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
     const CompileOptions& options;

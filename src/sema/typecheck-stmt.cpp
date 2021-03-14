@@ -33,34 +33,31 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
         }
     }
 
-    if (localVariableType && functionReturnType.removeOptional().isPointerType() &&
-        functionReturnType.removeOptional().getPointee().equalsIgnoreTopLevelMutable(localVariableType)) {
+    if (localVariableType && currentFunction->getReturnType().removeOptional().isPointerType() &&
+        currentFunction->getReturnType().removeOptional().getPointee().equalsIgnoreTopLevelMutable(localVariableType)) {
         WARN(returnValue->getLocation(), "returning pointer to local variable (local variables will not exist after the function returns)");
     }
 }
 
 void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
-    Type returnValueType = stmt.getReturnValue() ? typecheckExpr(*stmt.getReturnValue(), false, functionReturnType) : Type::getVoid();
+    Type returnValueType = stmt.getReturnValue() ? typecheckExpr(*stmt.getReturnValue(), false, currentFunction->getReturnType()) : Type::getVoid();
 
-    if (!functionReturnType) {
+    if (!currentFunction->getReturnType()) {
         ASSERT(currentFunction->isLambda());
-        ASSERT(!currentFunction->getReturnType());
-
-        functionReturnType = returnValueType;
         currentFunction->getProto().setReturnType(returnValueType);
     }
 
     if (!stmt.getReturnValue()) {
-        if (!functionReturnType.isVoid()) {
-            ERROR(stmt.getLocation(), "expected return statement to return a value of type '" << functionReturnType << "'");
+        if (!currentFunction->getReturnType().isVoid()) {
+            ERROR(stmt.getLocation(), "expected return statement to return a value of type '" << currentFunction->getReturnType() << "'");
         }
         return;
     }
 
-    if (auto converted = convert(stmt.getReturnValue(), functionReturnType)) {
+    if (auto converted = convert(stmt.getReturnValue(), currentFunction->getReturnType())) {
         stmt.setReturnValue(converted);
     } else {
-        ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
+        ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << currentFunction->getReturnType() << "'");
     }
 
     checkReturnPointerToLocal(stmt.getReturnValue());
