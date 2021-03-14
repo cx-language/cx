@@ -1,19 +1,21 @@
 
-void _EN4main3fooEF3int3int_3int(int(int, int)* a) {
-    int _0 = call a(int 1, int 2)
-    return void
-}
-
 int main() {
     int(int, int)* _0 = cast _EN4main9__lambda0E3int3int to int(int, int)*
-    void _1 = call _EN4main3fooEF3int3int_3int(int(int, int)* _0)
+    void _1 = call _EN4main3fooI3intEEF3int3int_3int(int(int, int)* _0)
     int(int, int)* _2 = cast _EN4main9__lambda1E3int3int to int(int, int)*
-    void _3 = call _EN4main3fooEF3int3int_3int(int(int, int)* _2)
+    void _3 = call _EN4main3fooI3intEEF3int3int_3int(int(int, int)* _2)
     int(int, int)* _4 = cast _EN4main9__lambda2E3int3int to int(int, int)*
-    void _5 = call _EN4main3fooEF3int3int_3int(int(int, int)* _4)
+    void _5 = call _EN4main3fooI3intEEF3int3int_3int(int(int, int)* _4)
     int(int, int)* _6 = cast _EN4main9__lambda3E3int3int to int(int, int)*
-    void _7 = call _EN4main3fooEF3int3int_3int(int(int, int)* _6)
+    void _7 = call _EN4main3fooI3intEEF3int3int_3int(int(int, int)* _6)
+    void(int, int)* _8 = cast _EN4main9__lambda4E3int3int to void(int, int)*
+    void _9 = call _EN4main3fooI4voidEEF3int3int_4void(void(int, int)* _8)
     return int 0
+}
+
+void _EN4main3fooI3intEEF3int3int_3int(int(int, int)* a) {
+    int _0 = call a(int 1, int 2)
+    return void
 }
 
 int _EN4main9__lambda0E3int3int(int a, int b) {
@@ -27,8 +29,19 @@ int _EN4main9__lambda1E3int3int(int a, int b) {
 }
 
 int _EN4main9__lambda2E3int3int(int a, int b) {
-    int _0 = a + b
-    return _0
+    bool _0 = a > b
+    br _0, if.then, if.else
+
+if.then:
+    int _1 = a + b
+    return _1
+
+if.else:
+    int _2 = a - b
+    return _2
+
+if.end:
+    return void
 }
 
 int _EN4main9__lambda3E3int3int(int a, int b) {
@@ -37,4 +50,23 @@ int _EN4main9__lambda3E3int3int(int a, int b) {
     store _0 to x
     int x.load = load x
     return x.load
+}
+
+void _EN4main3fooI4voidEEF3int3int_4void(void(int, int)* a) {
+    void _0 = call a(int 1, int 2)
+    return void
+}
+
+void _EN4main9__lambda4E3int3int(int a, int b) {
+    bool _0 = a == b
+    br _0, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    br if.end
+
+if.end:
+    return void
 }

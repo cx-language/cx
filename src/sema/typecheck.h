@@ -112,7 +112,7 @@ private:
                       SourceLocation location = SourceLocation());
     TypeDecl* getTypeDecl(const BasicType& type);
     EnumCase* getEnumCase(const Expr& expr);
-    void checkReturnPointerToLocal(const ReturnStmt& stmt) const;
+    void checkReturnPointerToLocal(const Expr* returnValue) const;
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
     void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName);

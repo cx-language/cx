@@ -1,15 +1,26 @@
 // RUN: check-snapshots
 
-void foo(int(int, int) a) {
+void foo<T>(T(int, int) a) {
     _ = a(1, 2);
 }
 
 void main() {
     foo((int a, int b) -> a + b);
     foo((a, int b) -> { return a + b });
-    foo((int a, b) -> a + b);
+    foo((int a, b) -> {
+        if (a > b) {
+            return a + b;
+        } else {
+            return a - b;
+        }
+    });
     foo((a, b) -> {
         var x = a + b;
         return x;
+    });
+    foo((int a, int b) -> {
+        if (a == b) {
+            return;
+        }
     });
 }

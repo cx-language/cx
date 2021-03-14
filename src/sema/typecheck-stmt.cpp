@@ -6,9 +6,7 @@
 
 using namespace delta;
 
-void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
-    auto* returnValue = stmt.getReturnValue();
-
+void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(returnValue)) {
         if (unaryExpr->getOperator() == Token::And) {
             returnValue = &unaryExpr->getOperand();
@@ -42,6 +40,16 @@ void Typechecker::checkReturnPointerToLocal(const ReturnStmt& stmt) const {
 }
 
 void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
+    Type returnValueType = stmt.getReturnValue() ? typecheckExpr(*stmt.getReturnValue(), false, functionReturnType) : Type::getVoid();
+
+    if (!functionReturnType) {
+        ASSERT(currentFunction->isLambda());
+        ASSERT(!currentFunction->getReturnType());
+
+        functionReturnType = returnValueType;
+        currentFunction->getProto().setReturnType(returnValueType);
+    }
+
     if (!stmt.getReturnValue()) {
         if (!functionReturnType.isVoid()) {
             ERROR(stmt.getLocation(), "expected return statement to return a value of type '" << functionReturnType << "'");
@@ -49,19 +57,13 @@ void Typechecker::typecheckReturnStmt(ReturnStmt& stmt) {
         return;
     }
 
-    Type returnValueType = typecheckExpr(*stmt.getReturnValue(), false, functionReturnType);
-
-    if (functionReturnType) {
-        if (auto converted = convert(stmt.getReturnValue(), functionReturnType)) {
-            stmt.setReturnValue(converted);
-        } else {
-            ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
-        }
+    if (auto converted = convert(stmt.getReturnValue(), functionReturnType)) {
+        stmt.setReturnValue(converted);
     } else {
-        functionReturnType = returnValueType;
+        ERROR(stmt.getLocation(), "mismatching return type '" << returnValueType << "', expected '" << functionReturnType << "'");
     }
 
-    checkReturnPointerToLocal(stmt);
+    checkReturnPointerToLocal(stmt.getReturnValue());
     setMoved(stmt.getReturnValue(), true);
 }
 

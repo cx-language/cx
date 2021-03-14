@@ -1,0 +1,12 @@
+// RUN: %not %delta -typecheck %s | %FileCheck %s
+
+void main() {
+    var lambda = (int a, int b) -> {
+        if (a > b) {
+            return a + b
+        } else {
+            // CHECK: [[@LINE+1]]:13: error: mismatching return type 'bool', expected 'int'
+            return false
+        }
+    }
+}

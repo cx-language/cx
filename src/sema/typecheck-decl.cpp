@@ -179,18 +179,10 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
             for (auto& stmt : decl.getBody()) {
                 {
                     llvm::SaveAndRestore setCurrentStmt(currentStmt, &stmt);
-                    bool success = typecheckStmt(stmt);
 
-                    if (!decl.getReturnType()) {
+                    if (!typecheckStmt(stmt) && !decl.getReturnType()) {
                         ASSERT(decl.isLambda());
-
-                        if (!success) {
-                            throw CompileError();
-                        }
-
-                        if (auto returnStmt = llvm::dyn_cast<ReturnStmt>(stmt)) {
-                            decl.getProto().setReturnType(returnStmt->getReturnValue() ? returnStmt->getReturnValue()->getType() : Type::getVoid());
-                        }
+                        throw CompileError();
                     }
                 }
 
@@ -206,6 +198,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                     }
                 }
             }
+
+            ASSERT(decl.getReturnType());
 
             // This prevents creating destructors calls during codegen.
             for (auto* movedDecl : movedDecls) {

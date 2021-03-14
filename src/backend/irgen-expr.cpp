@@ -551,7 +551,7 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     auto insertBlockBackup = insertBlock;
     auto scopesBackup = std::move(scopes);
 
-    emitFunctionDecl(*functionDecl);
+    emitDecl(*functionDecl);
 
     scopes = std::move(scopesBackup);
     if (insertBlockBackup) setInsertPoint(insertBlockBackup);
