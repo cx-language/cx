@@ -630,7 +630,14 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
             break;
 
         case TypeKind::TupleType:
-            llvm_unreachable("unimplemented");
+            if (paramType.isTupleType()) {
+                for (auto&& [argTypeElement, paramTypeElement] : llvm::zip_first(argType.getTupleElements(), paramType.getTupleElements())) {
+                    if (Type type = findGenericArg(argTypeElement.type, paramTypeElement.type, genericParam)) {
+                        return type;
+                    }
+                }
+            }
+            break;
 
         case TypeKind::FunctionType:
             if (paramType.isFunctionType()) {
@@ -723,20 +730,19 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
     for (auto&& [genericParam, genericArg] : llvm::zip(genericParams, inferredGenericArgs)) {
         if (!genericParam.getConstraints().empty()) {
             ASSERT(genericParam.getConstraints().size() == 1, "cannot have multiple generic constraints yet");
-
             auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.getConstraints()[0].getBase()));
-            std::string errorReason;
 
-            if (genericArg.isBasicType()) {
-                auto* typeDecl = getTypeDecl(*llvm::cast<BasicType>(genericArg.getBase()));
-
-                if (!typeDecl || !typeDecl->hasInterface(*interface)) {
-                    if (returnOnError) {
-                        return {};
-                    } else {
-                        ERROR(call.getLocation(), "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
-                    }
+            if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.getBase())) {
+                auto* typeDecl = getTypeDecl(*basicType);
+                if (typeDecl && typeDecl->hasInterface(*interface)) {
+                    continue;
                 }
+            }
+
+            if (returnOnError) {
+                return {};
+            } else {
+                ERROR(call.getLocation(), "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
             }
         }
     }
