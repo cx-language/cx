@@ -127,7 +127,13 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
 std::vector<NamedValue> Parser::parseArgumentList() {
     parse(Token::LeftParen);
     std::vector<NamedValue> args;
-    while (currentToken() != Token::RightParen) {
+
+    if (currentToken() == Token::RightParen) {
+        consumeToken();
+        return {};
+    }
+
+    do {
         std::string name;
         SourceLocation location = SourceLocation();
         if (lookAhead(1) == Token::Colon) {
@@ -139,9 +145,8 @@ std::vector<NamedValue> Parser::parseArgumentList() {
         auto value = parseExpr();
         if (!location.isValid()) location = value->getLocation();
         args.push_back({ std::move(name), value, location });
-        if (currentToken() != Token::RightParen) parse(Token::Comma);
-    }
-    consumeToken();
+    } while (parse({ Token::Comma, Token::RightParen }) == Token::Comma);
+
     return args;
 }
 
