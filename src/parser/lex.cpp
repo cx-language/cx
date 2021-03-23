@@ -84,14 +84,23 @@ void Lexer::readBlockComment(SourceLocation startLocation) {
 Token Lexer::readQuotedLiteral(char delimiter, Token::Kind literalKind) {
     const char* begin = currentFilePosition;
     const char* end = begin + 2;
-    int ch;
+    bool escape = false;
 
-    while ((ch = readChar()) != delimiter || *(end - 2) == '\\') {
-        if (ch == '\n' || ch == '\r') {
+    while (true) {
+        auto ch = readChar();
+
+        if (escape) {
+            escape = false;
+        } else if (ch == delimiter) {
+            break;
+        } else if (ch == '\\') {
+            escape = true;
+        } else if (ch == '\n' || ch == '\r') {
             SourceLocation newlineLocation = firstLocation;
             newlineLocation.column += end - begin - 1;
             ERROR(newlineLocation, "newline inside " << toString(literalKind));
         }
+
         end++;
     }
 
