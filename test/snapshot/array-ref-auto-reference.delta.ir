@@ -9,7 +9,7 @@ int main() {
     int[3] _1 = insertvalue _0, 1, int 2
     int[3] _2 = insertvalue _1, 2, int 3
     store _2 to a
-    int* _3 = getelementptr a, 0, 0
+    int* _3 = getelementptr a, 0
     ArrayRef<int> _4 = insertvalue ArrayRef<int> undefined, 0, _3
     ArrayRef<int> _5 = insertvalue _4, 1, int 3
     void _6 = call _EN4main3fooEAR_3int(ArrayRef<int> _5)

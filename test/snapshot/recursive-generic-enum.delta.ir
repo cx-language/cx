@@ -5,21 +5,21 @@ int main() {
     S<E>* _0 = alloca S<E>
     E* enum_0 = alloca E
     S<E>* _1 = alloca S<E>
-    int* tag = getelementptr enum, 0, 0
+    int* tag = getelementptr enum, 0
     store int 0 to tag
-    int* tag_0 = getelementptr enum_0, 0, 0
+    int* tag_0 = getelementptr enum_0, 0
     store int 0 to tag_0
     E* _2 = cast E* null to E*
     void _3 = call _EN4main1SI1EE4initEOP1E(S<E>* _1, E* _2)
     S<E> .load = load _1
     { S<E> } _4 = insertvalue { S<E> } undefined, 0, .load
-    union { { S<E> }, { int[12] } }* associatedValue = getelementptr enum_0, 0, 1
+    union { { S<E> }, { int[12] } }* associatedValue = getelementptr enum_0, 1
     { S<E> }* _5 = cast associatedValue to { S<E> }*
     store _4 to _5
     void _6 = call _EN4main1SI1EE4initEOP1E(S<E>* _0, E* enum_0)
     S<E> .load_0 = load _0
     { S<E> } _7 = insertvalue { S<E> } undefined, 0, .load_0
-    union { { S<E> }, { int[12] } }* associatedValue_0 = getelementptr enum, 0, 1
+    union { { S<E> }, { int[12] } }* associatedValue_0 = getelementptr enum, 1
     { S<E> }* _8 = cast associatedValue_0 to { S<E> }*
     store _7 to _8
     E enum.load = load enum
@@ -28,7 +28,7 @@ int main() {
 }
 
 void _EN4main1SI1EE4initEOP1E(S<E>* this, E* e) {
-    E** e_0 = getelementptr this, 0, 0
+    E** e_0 = getelementptr this, 0
     E* _0 = cast e to E*
     store _0 to e_0
     return void

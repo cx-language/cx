@@ -21,7 +21,7 @@ int main() {
 }
 
 void _EN3std3BoxI3BoxI3intEE6deinitE(Box<Box<int>>* this) {
-    Box<int>** pointer = getelementptr this, 0, 0
+    Box<int>** pointer = getelementptr this, 0
     Box<int>* pointer.load = load pointer
     Box<int>* _0 = cast pointer.load to Box<int>*
     void _1 = call _EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* _0)
@@ -29,7 +29,7 @@ void _EN3std3BoxI3BoxI3intEE6deinitE(Box<Box<int>>* this) {
 }
 
 void _EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(Box<Box<int>>* this, Box<int> value) {
-    Box<int>** pointer = getelementptr this, 0, 0
+    Box<int>** pointer = getelementptr this, 0
     Box<int>* _0 = call _EN3std8allocateI3BoxI3intEEE3BoxI3intE(Box<int> value)
     Box<int>* _1 = cast _0 to Box<int>*
     store _1 to pointer
@@ -37,7 +37,7 @@ void _EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(Box<Box<int>>* this, Box<int> value
 }
 
 void _EN3std3BoxI3intE4initE3int(Box<int>* this, int value) {
-    int** pointer = getelementptr this, 0, 0
+    int** pointer = getelementptr this, 0
     int* _0 = call _EN3std8allocateI3intEE3int(int value)
     int* _1 = cast _0 to int*
     store _1 to pointer
@@ -45,7 +45,7 @@ void _EN3std3BoxI3intE4initE3int(Box<int>* this, int value) {
 }
 
 void _EN3std3BoxI3intE6deinitE(Box<int>* this) {
-    int** pointer = getelementptr this, 0, 0
+    int** pointer = getelementptr this, 0
     int* pointer.load = load pointer
     int* _0 = cast pointer.load to int*
     void _1 = call _EN3std10deallocateIP3intEEP3int(int* _0)
@@ -53,7 +53,7 @@ void _EN3std3BoxI3intE6deinitE(Box<int>* this) {
 }
 
 int* _EN3std3BoxI3intE3getE(Box<int>* this) {
-    int** pointer = getelementptr this, 0, 0
+    int** pointer = getelementptr this, 0
     int* pointer.load = load pointer
     int* _0 = cast pointer.load to int*
     return _0

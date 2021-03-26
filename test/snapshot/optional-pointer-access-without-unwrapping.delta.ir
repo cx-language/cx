@@ -7,17 +7,17 @@ int main() {
     Foo* _0 = cast Foo* null to Foo*
     store _0 to f
     Foo* f.load = load f
-    int* i = getelementptr f.load, 0, 0
+    int* i = getelementptr f.load, 0
     Foo* f.load_0 = load f
-    int* i_0 = getelementptr f.load_0, 0, 0
+    int* i_0 = getelementptr f.load_0, 0
     int i.load = load i_0
     store i.load to a
     Foo* f.load_1 = load f
-    int* i_1 = getelementptr f.load_1, 0, 0
+    int* i_1 = getelementptr f.load_1, 0
     int* _1 = cast i_1 to int*
     store _1 to b
     Foo* f.load_2 = load f
-    int* i_2 = getelementptr f.load_2, 0, 0
+    int* i_2 = getelementptr f.load_2, 0
     store i_2 to c
     Foo* f.load_3 = load f
     Foo* _2 = cast f.load_3 to Foo*

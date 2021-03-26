@@ -7,7 +7,7 @@ int main() {
     X* x = alloca X
     int(int)* _0 = cast _EN4main3fooE3int to int(int)*
     void _1 = call _EN4main1X4initEF3int_3int(X* x, int(int)* _0)
-    int(int)** p = getelementptr x, 0, 0
+    int(int)** p = getelementptr x, 0
     int(int)* p.load = load p
     int _2 = call p.load(int 42)
     void _3 = call _EN4main1X1fE(X* x)
@@ -15,7 +15,7 @@ int main() {
 }
 
 void _EN4main1X4initEF3int_3int(X* this, int(int)* p) {
-    int(int)** p_0 = getelementptr this, 0, 0
+    int(int)** p_0 = getelementptr this, 0
     int(int)* _0 = cast p to int(int)*
     store _0 to p_0
     return void
@@ -23,13 +23,13 @@ void _EN4main1X4initEF3int_3int(X* this, int(int)* p) {
 
 void _EN4main1X1fE(X* this) {
     int(int)** p2 = alloca int(int)*
-    int(int)** p = getelementptr this, 0, 0
+    int(int)** p = getelementptr this, 0
     int(int)* p.load = load p
     int _0 = call p.load(int 42)
-    int(int)** p_0 = getelementptr this, 0, 0
+    int(int)** p_0 = getelementptr this, 0
     int(int)* p.load_0 = load p_0
     int _1 = call p.load_0(int 42)
-    int(int)** p_1 = getelementptr this, 0, 0
+    int(int)** p_1 = getelementptr this, 0
     int(int)* p.load_1 = load p_1
     int(int)* _2 = cast p.load_1 to int(int)*
     store _2 to p2

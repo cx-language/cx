@@ -168,10 +168,10 @@ IRType* Value::getType() const {
             auto baseType = gep->pointer->getType()->getPointee();
             switch (baseType->kind) {
                 case IRTypeKind::IRStructType:
-                    ASSERT(gep->index1 < baseType->getElements().size());
-                    return baseType->getElements()[gep->index1]->getPointerTo();
+                    ASSERT(gep->index < baseType->getElements().size());
+                    return baseType->getElements()[gep->index]->getPointerTo();
                 case IRTypeKind::IRArrayType:
-                    ASSERT(gep->index1 < baseType->getArraySize());
+                    ASSERT(gep->index < baseType->getArraySize());
                     return baseType->getElementType()->getPointerTo();
                 default:
                     llvm_unreachable("invalid const GEP target type");
@@ -436,7 +436,7 @@ void Value::print(llvm::raw_ostream& stream) const {
         }
         case ValueKind::ConstGEPInst: {
             auto gep = llvm::cast<ConstGEPInst>(this);
-            stream << indent << formatTypeAndName(gep) << " = getelementptr " << formatName(gep->pointer) << ", " << gep->index0 << ", " << gep->index1;
+            stream << indent << formatTypeAndName(gep) << " = getelementptr " << formatName(gep->pointer) << ", " << gep->index;
             break;
         }
         case ValueKind::CastInst: {
@@ -516,13 +516,13 @@ void Value::print(llvm::raw_ostream& stream) const {
     stream << "\n";
 }
 
-bool Value::loads(Value* value, int gepIndex1) {
+bool Value::loads(Value* value, int gepIndex) {
     if (auto load = llvm::dyn_cast<LoadInst>(this)) {
-        if (gepIndex1 == -1) {
+        if (gepIndex == -1) {
             return load->value == value;
         } else {
             if (auto gep = llvm::dyn_cast<ConstGEPInst>(load->value)) {
-                if (gep->pointer == value && gep->index1 == gepIndex1) return true;
+                if (gep->pointer == value && gep->index == gepIndex) return true;
                 if (auto valueLoad = llvm::dyn_cast<LoadInst>(value)) {
                     if (auto gepPointerLoad = llvm::dyn_cast<LoadInst>(gep->pointer)) {
                         if (valueLoad->value == gepPointerLoad->value) {

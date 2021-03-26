@@ -12,7 +12,7 @@ void _EN4main1AI1CE4initE(A<C>* this) {
 }
 
 void _EN4main1C4initE(C* this) {
-    int* i = getelementptr this, 0, 0
+    int* i = getelementptr this, 0
     store int 0 to i
     return void
 }

@@ -25,8 +25,8 @@ struct NullAnalyzer {
     /// if it was previously checked against null, and the type-checker can prove that it wasn't set
     /// back to null after that check.
     bool isDefinitelyNotNull(Value* nullableValue, Instruction* startFrom);
-    bool isDefinitelyNotNullRecursive(Value* nullableValue, Instruction* startFrom, int gepIndex1 = -1);
-    bool isNotNullWhenComingFrom(Value* nullableValue, BasicBlock* predecessor, BasicBlock* destination, int gepIndex1);
+    bool isDefinitelyNotNullRecursive(Value* nullableValue, Instruction* startFrom, int gepIndex = -1);
+    bool isNotNullWhenComingFrom(Value* nullableValue, BasicBlock* predecessor, BasicBlock* destination, int gepIndex);
 };
 
 } // namespace delta

@@ -173,13 +173,13 @@ public:
     Value* createGEP(Value* pointer, std::vector<Value*> indexes, const llvm::Twine& name = "") {
         return insertBlock->add(new GEPInst { ValueKind::GEPInst, pointer, std::move(indexes), name.str() });
     }
-    Value* createGEP(Value* pointer, int index0, int index1, const MemberExpr* expr = nullptr, const llvm::Twine& name = "") {
+    Value* createGEP(Value* pointer, int index, const MemberExpr* expr = nullptr, const llvm::Twine& name = "") {
         if (pointer->getType()->getPointee()->isArrayType()) {
-            ASSERT(index1 < pointer->getType()->getPointee()->getArraySize());
+            ASSERT(index < pointer->getType()->getPointee()->getArraySize());
         } else {
-            ASSERT(index1 < pointer->getType()->getPointee()->getElements().size());
+            ASSERT(index < pointer->getType()->getPointee()->getElements().size());
         }
-        return insertBlock->add(new ConstGEPInst { ValueKind::ConstGEPInst, pointer, index0, index1, expr, name.str() });
+        return insertBlock->add(new ConstGEPInst { ValueKind::ConstGEPInst, pointer, index, expr, name.str() });
     }
     Value* createCast(Value* value, IRType* type, const llvm::Twine& name = "") {
         return insertBlock->add(new CastInst { ValueKind::CastInst, value, type, name.str() });

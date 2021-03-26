@@ -105,7 +105,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
 
         if (auto* associatedValue = switchCase.getAssociatedValue()) {
             auto type = associatedValue->getType().getPointerTo();
-            auto* associatedValuePtr = createCast(createGEP(enumValue, 0, 1), type, associatedValue->getName());
+            auto* associatedValuePtr = createCast(createGEP(enumValue, 1), type, associatedValue->getName());
             setLocalValue(associatedValuePtr, associatedValue);
         }
 

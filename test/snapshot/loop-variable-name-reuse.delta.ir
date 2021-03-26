@@ -56,30 +56,30 @@ ClosedRangeIterator<int> _EN3std11ClosedRangeI3intE8iteratorE(ClosedRange<int>* 
 }
 
 void _EN3std11ClosedRangeI3intE4initE3int3int(ClosedRange<int>* this, int start, int end) {
-    int* start_0 = getelementptr this, 0, 0
+    int* start_0 = getelementptr this, 0
     store start to start_0
-    int* end_0 = getelementptr this, 0, 1
+    int* end_0 = getelementptr this, 1
     store end to end_0
     return void
 }
 
 bool _EN3std19ClosedRangeIteratorI3intE8hasValueE(ClosedRangeIterator<int>* this) {
-    int* current = getelementptr this, 0, 0
+    int* current = getelementptr this, 0
     int current.load = load current
-    int* end = getelementptr this, 0, 1
+    int* end = getelementptr this, 1
     int end.load = load end
     bool _0 = current.load <= end.load
     return _0
 }
 
 int _EN3std19ClosedRangeIteratorI3intE5valueE(ClosedRangeIterator<int>* this) {
-    int* current = getelementptr this, 0, 0
+    int* current = getelementptr this, 0
     int current.load = load current
     return current.load
 }
 
 void _EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* this) {
-    int* current = getelementptr this, 0, 0
+    int* current = getelementptr this, 0
     int current.load = load current
     int _0 = current.load + int 1
     store _0 to current
@@ -89,11 +89,11 @@ void _EN3std19ClosedRangeIteratorI3intE9incrementE(ClosedRangeIterator<int>* thi
 void _EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ClosedRangeIterator<int>* this, ClosedRange<int> range) {
     ClosedRange<int>* _0 = alloca ClosedRange<int>
     ClosedRange<int>* _1 = alloca ClosedRange<int>
-    int* current = getelementptr this, 0, 0
+    int* current = getelementptr this, 0
     store range to _0
     int _2 = call _EN3std11ClosedRangeI3intE5startE(ClosedRange<int>* _0)
     store _2 to current
-    int* end = getelementptr this, 0, 1
+    int* end = getelementptr this, 1
     store range to _1
     int _3 = call _EN3std11ClosedRangeI3intE3endE(ClosedRange<int>* _1)
     store _3 to end
@@ -101,13 +101,13 @@ void _EN3std19ClosedRangeIteratorI3intE4initE11ClosedRangeI3intE(ClosedRangeIter
 }
 
 int _EN3std11ClosedRangeI3intE5startE(ClosedRange<int>* this) {
-    int* start = getelementptr this, 0, 0
+    int* start = getelementptr this, 0
     int start.load = load start
     return start.load
 }
 
 int _EN3std11ClosedRangeI3intE3endE(ClosedRange<int>* this) {
-    int* end = getelementptr this, 0, 1
+    int* end = getelementptr this, 1
     int end.load = load end
     return end.load
 }

@@ -19,24 +19,24 @@ int* _EN4main3fooE() {
 }
 
 bool* _EN4main1A2ffE(A* this) {
-    bool[2]* b = getelementptr this, 0, 0
+    bool[2]* b = getelementptr this, 0
     bool* _0 = getelementptr b, int 0, int 1
     return _0
 }
 
 void _EN4main1A4initEA2_4bool(A* this, bool[2] b) {
-    bool[2]* b_0 = getelementptr this, 0, 0
+    bool[2]* b_0 = getelementptr this, 0
     store b to b_0
     return void
 }
 
 char* _EN4main1B2ggE(B* this) {
-    char* a = getelementptr this, 0, 0
+    char* a = getelementptr this, 0
     return a
 }
 
 void _EN4main1B4initE4char(B* this, char a) {
-    char* a_0 = getelementptr this, 0, 0
+    char* a_0 = getelementptr this, 0
     store a to a_0
     return void
 }

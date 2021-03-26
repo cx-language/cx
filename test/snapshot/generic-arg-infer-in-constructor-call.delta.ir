@@ -11,13 +11,13 @@ int main() {
 }
 
 void _EN4main3FooI3intE4initE3int(Foo<int>* this, int t) {
-    int* t_0 = getelementptr this, 0, 0
+    int* t_0 = getelementptr this, 0
     store t to t_0
     return void
 }
 
 void _EN4main3FooI6stringE4initE6string(Foo<string>* this, string t) {
-    string* t_0 = getelementptr this, 0, 0
+    string* t_0 = getelementptr this, 0
     store t to t_0
     return void
 }

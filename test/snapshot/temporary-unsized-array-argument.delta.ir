@@ -6,7 +6,7 @@ int main() {
     int[3] _3 = insertvalue _2, 1, int 2
     int[3] _4 = insertvalue _3, 2, int 3
     store _4 to _0
-    int* _5 = getelementptr _0, 0, 0
+    int* _5 = getelementptr _0, 0
     ArrayRef<int> _6 = insertvalue ArrayRef<int> undefined, 0, _5
     ArrayRef<int> _7 = insertvalue _6, 1, int 3
     void _8 = call _EN4main1fI3intEEAR_3int(ArrayRef<int> _7)
@@ -14,7 +14,7 @@ int main() {
     int[3] _10 = insertvalue _9, 1, int 2
     int[3] _11 = insertvalue _10, 2, int 3
     store _11 to _1
-    int* _12 = getelementptr _1, 0, 0
+    int* _12 = getelementptr _1, 0
     ArrayRef<int> _13 = insertvalue ArrayRef<int> undefined, 0, _12
     ArrayRef<int> _14 = insertvalue _13, 1, int 3
     void _15 = call _EN4main1fI3intEEAR_3int(ArrayRef<int> _14)

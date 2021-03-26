@@ -38,7 +38,7 @@ switch.end_0:
 }
 
 int _EN4main1fEP1S(S* s) {
-    int* i = getelementptr s, 0, 0
+    int* i = getelementptr s, 0
     int i.load = load i
     switch i.load {
         int 0 -> switch.case.0

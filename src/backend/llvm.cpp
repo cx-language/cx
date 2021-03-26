@@ -329,7 +329,7 @@ llvm::Value* LLVMGenerator::codegenGEP(const GEPInst* inst) {
 
 llvm::Value* LLVMGenerator::codegenConstGEP(const ConstGEPInst* inst) {
     auto pointer = getValue(inst->pointer);
-    return builder.CreateConstInBoundsGEP2_32(nullptr, pointer, inst->index0, inst->index1, inst->name);
+    return builder.CreateConstInBoundsGEP2_32(nullptr, pointer, 0, inst->index, inst->name);
 }
 
 llvm::Value* LLVMGenerator::codegenCast(const CastInst* inst) {

@@ -9,7 +9,7 @@ bool NullAnalyzer::isDefinitelyNotNull(Value* nullableValue, Instruction* startF
     return isDefinitelyNotNullRecursive(nullableValue, startFrom);
 }
 
-bool NullAnalyzer::isDefinitelyNotNullRecursive(Value* nullableValue, Instruction* startFrom, int gepIndex1) {
+bool NullAnalyzer::isDefinitelyNotNullRecursive(Value* nullableValue, Instruction* startFrom, int gepIndex) {
     auto block = NOTNULL(startFrom->parent);
     int startFromIndex = -1;
 
@@ -25,28 +25,28 @@ bool NullAnalyzer::isDefinitelyNotNullRecursive(Value* nullableValue, Instructio
     for (int i = startFromIndex - 1; i >= 0; i--) {
         Instruction* currentInst = block->body[i];
 
-        // If gepIndex1 is specified, i.e. non-negative, we're searching for a GEP accessing nullableValue at that index.
-        if (currentInst == nullableValue && gepIndex1 == -1) {
+        // If gepIndex is specified, i.e. non-negative, we're searching for a GEP accessing nullableValue at that index.
+        if (currentInst == nullableValue && gepIndex == -1) {
             if (auto load = llvm::dyn_cast<LoadInst>(nullableValue)) {
                 if (auto gep = llvm::dyn_cast<ConstGEPInst>(load->value)) {
-                    return isDefinitelyNotNullRecursive(gep->pointer, gep, gep->index1);
+                    return isDefinitelyNotNullRecursive(gep->pointer, gep, gep->index);
                 }
                 return isDefinitelyNotNullRecursive(load->value, load);
             } else if (auto cast = llvm::dyn_cast<CastInst>(nullableValue)) {
                 return isDefinitelyNotNullRecursive(cast->value, cast);
             } else if (auto gep = llvm::dyn_cast<ConstGEPInst>(nullableValue)) {
-                return isDefinitelyNotNullRecursive(gep->pointer, gep, gep->index1);
+                return isDefinitelyNotNullRecursive(gep->pointer, gep, gep->index);
             }
         }
 
         if (auto store = llvm::dyn_cast<StoreInst>(currentInst)) {
-            if (gepIndex1 == -1) {
+            if (gepIndex == -1) {
                 if (store->pointer == nullableValue) {
                     return isDefinitelyNotNullRecursive(store->value, store);
                 }
             } else {
                 if (auto gep = llvm::dyn_cast<ConstGEPInst>(store->pointer)) {
-                    if (gep->pointer == nullableValue && gep->index1 == gepIndex1) {
+                    if (gep->pointer == nullableValue && gep->index == gepIndex) {
                         return false;
                     }
                     if (auto valueLoad = llvm::dyn_cast<LoadInst>(nullableValue)) {
@@ -68,7 +68,7 @@ bool NullAnalyzer::isDefinitelyNotNullRecursive(Value* nullableValue, Instructio
     visited.insert(block);
 
     for (auto predecessor : block->predecessors) {
-        if (visited.count(predecessor) || !isNotNullWhenComingFrom(nullableValue, predecessor, block, gepIndex1)) {
+        if (visited.count(predecessor) || !isNotNullWhenComingFrom(nullableValue, predecessor, block, gepIndex)) {
             return false;
         }
     }
@@ -76,12 +76,12 @@ bool NullAnalyzer::isDefinitelyNotNullRecursive(Value* nullableValue, Instructio
     return true;
 }
 
-bool NullAnalyzer::isNotNullWhenComingFrom(Value* nullableValue, BasicBlock* predecessor, BasicBlock* destination, int gepIndex1) {
+bool NullAnalyzer::isNotNullWhenComingFrom(Value* nullableValue, BasicBlock* predecessor, BasicBlock* destination, int gepIndex) {
     auto lastInst = predecessor->body.back();
 
     if (auto condBr = llvm::dyn_cast<CondBranchInst>(lastInst)) {
         if (auto binary = llvm::dyn_cast<BinaryInst>(condBr->condition)) {
-            if ((binary->left == nullableValue || binary->left->loads(nullableValue, gepIndex1)) && binary->right->kind == ValueKind::ConstantNull) {
+            if ((binary->left == nullableValue || binary->left->loads(nullableValue, gepIndex)) && binary->right->kind == ValueKind::ConstantNull) {
                 if (binary->op == Token::Equal) {
                     return destination == condBr->falseBlock;
                 } else if (binary->op == Token::NotEqual) {
@@ -92,7 +92,7 @@ bool NullAnalyzer::isNotNullWhenComingFrom(Value* nullableValue, BasicBlock* pre
         }
     }
 
-    return isDefinitelyNotNullRecursive(nullableValue, lastInst, gepIndex1);
+    return isDefinitelyNotNullRecursive(nullableValue, lastInst, gepIndex);
 }
 
 void NullAnalyzer::analyze(IRModule* module) {

@@ -9,7 +9,7 @@ int main() {
 }
 
 void _EN3std8OptionalIAR_4int8E4initE(Optional<int8[]>* this) {
-    bool* hasValue = getelementptr this, 0, 0
+    bool* hasValue = getelementptr this, 0
     store bool false to hasValue
     return void
 }

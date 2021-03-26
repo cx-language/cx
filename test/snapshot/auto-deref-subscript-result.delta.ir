@@ -9,6 +9,6 @@ void _EN4main1fEP1SI3intE(S<int>* s) {
 }
 
 int* _EN4main1SI3intEixE3int(S<int>* this, int i) {
-    int* t = getelementptr this, 0, 0
+    int* t = getelementptr this, 0
     return t
 }

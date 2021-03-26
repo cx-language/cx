@@ -263,7 +263,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     if (isBuiltinArrayToArrayRefConversion(expr.getType(), targetType)) {
         ASSERT(expr.getType().removePointer().isArrayWithConstantSize());
         auto* value = emitExprAsPointer(expr);
-        auto* elementPtr = createGEP(value, 0, 0);
+        auto* elementPtr = createGEP(value, 0);
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
         auto size = createConstantInt(Type::getInt(), expr.getType().removePointer().getArraySize());
         return createInsertValue(arrayRef, size, 1);
@@ -317,7 +317,7 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
 
     // TODO: Could reuse variable alloca instead of always creating a new one here.
     auto* enumValue = createEntryBlockAlloca(enumDecl->getType(), "enum");
-    createStore(tag, createGEP(enumValue, 0, 0, nullptr, "tag"));
+    createStore(tag, createGEP(enumValue, 0, nullptr, "tag"));
 
     if (!associatedValueElements.empty()) {
         // TODO: This is duplicated in emitTupleExpr.
@@ -326,7 +326,7 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
         for (auto& element : associatedValueElements) {
             associatedValue = createInsertValue(associatedValue, emitExpr(*element.getValue()), index++);
         }
-        auto* associatedValuePtr = createCast(createGEP(enumValue, 0, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
+        auto* associatedValuePtr = createCast(createGEP(enumValue, 1, nullptr, "associatedValue"), associatedValue->getType()->getPointerTo());
         createStore(associatedValue, associatedValuePtr);
     }
 
@@ -447,7 +447,7 @@ Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, c
         if (baseTypeDecl->isUnion()) {
             return createCast(baseValue, field->getType().getPointerTo(), field->getName());
         } else {
-            return createGEP(baseValue, 0, baseTypeDecl->getFieldIndex(field), expr, field->getName());
+            return createGEP(baseValue, baseTypeDecl->getFieldIndex(field), expr, field->getName());
         }
     } else {
         auto index = baseTypeDecl->isUnion() ? 0 : baseTypeDecl->getFieldIndex(field);
@@ -466,7 +466,7 @@ Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
 Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
     auto type = BasicType::get("ArrayIterator", objectType.getElementType());
     auto* value = emitExprAsPointer(object);
-    auto* elementPtr = createGEP(value, 0, 0);
+    auto* elementPtr = createGEP(value, 0);
     auto* size = getArrayLength(object, objectType);
     auto* end = createGEP(elementPtr, { size });
     auto* iterator = createInsertValue(createUndefined(type), elementPtr, 0);
@@ -498,7 +498,7 @@ Value* IRGenerator::emitTupleElementAccess(const MemberExpr& expr) {
     }
 
     if (baseValue->getType()->isPointerType()) {
-        return createGEP(baseValue, 0, index, nullptr, expr.getMemberName());
+        return createGEP(baseValue, index, nullptr, expr.getMemberName());
     } else {
         return createExtractValue(baseValue, index, expr.getMemberName());
     }
@@ -689,7 +689,7 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
         if (enumDecl->hasAssociatedValues()) {
             auto* value = emitLvalueExpr(expr);
             if (enumValue) *enumValue = value;
-            return createLoad(createGEP(value, 0, 0, nullptr, value->getName() + ".tag"));
+            return createLoad(createGEP(value, 0, nullptr, value->getName() + ".tag"));
         }
     }
 
@@ -700,7 +700,7 @@ Value* IRGenerator::emitAutoCast(Value* value, const Expr& expr) {
     // Handle optionals that have been implicitly unwrapped due to data-flow analysis.
     if (expr.hasAssignableType() && expr.getAssignableType().isOptionalType() && !expr.getAssignableType().getWrappedType().isPointerType() &&
         expr.getType() == expr.getAssignableType().getWrappedType()) {
-        return createGEP(value, 0, optionalValueFieldIndex);
+        return createGEP(value, optionalValueFieldIndex);
     }
 
     if (value && expr.hasType()) {

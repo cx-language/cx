@@ -15,18 +15,18 @@ int main() {
 }
 
 void _EN4main1S4initET3int_(S* this, { int } t) {
-    { int }* t_0 = getelementptr this, 0, 0
+    { int }* t_0 = getelementptr this, 0
     store t to t_0
     return void
 }
 
 { int }* _EN4main1S1fE(S* this) {
-    { int }* t = getelementptr this, 0, 0
+    { int }* t = getelementptr this, 0
     { int }* _0 = cast t to { int }*
     return _0
 }
 
 { int }* _EN4main1S1gE(S* this) {
-    { int }* t = getelementptr this, 0, 0
+    { int }* t = getelementptr this, 0
     return t
 }

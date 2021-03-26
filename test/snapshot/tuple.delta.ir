@@ -14,22 +14,22 @@
     { bool, { float } } _4 = insertvalue _3, 1, d.load
     { int, { bool, { float } } } _5 = insertvalue _2, 1, _4
     store _5 to a
-    { bool, { float } }* b_0 = getelementptr a, 0, 1
+    { bool, { float } }* b_0 = getelementptr a, 1
     { bool, { float } } b.load = load b_0
     store b.load to b
-    { float }* d_0 = getelementptr b, 0, 1
-    float* e_0 = getelementptr d_0, 0, 0
+    { float }* d_0 = getelementptr b, 1
+    float* e_0 = getelementptr d_0, 0
     float e.load = load e_0
     store e.load to e
-    { bool, { float } }* b_1 = getelementptr a, 0, 1
+    { bool, { float } }* b_1 = getelementptr a, 1
     { bool, { float } }* _6 = cast b_1 to { bool, { float } }*
     store _6 to p
     { bool, { float } }* p.load = load p
     { bool, { float } } p.load.load = load p.load
     store p.load.load to b
     { bool, { float } }* p.load_0 = load p
-    { float }* d_1 = getelementptr p.load_0, 0, 1
-    float* e_1 = getelementptr d_1, 0, 0
+    { float }* d_1 = getelementptr p.load_0, 1
+    float* e_1 = getelementptr d_1, 0
     float e.load_0 = load e_1
     store e.load_0 to e
     { float, float } _7 = insertvalue { float, float } undefined, 0, float 1

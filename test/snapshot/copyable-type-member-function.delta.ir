@@ -10,7 +10,7 @@ int main() {
 }
 
 void _EN4main3Foo4initE(Foo* this) {
-    int* baz = getelementptr this, 0, 0
+    int* baz = getelementptr this, 0
     store int 42 to baz
     return void
 }
@@ -20,7 +20,7 @@ void _EN4main3Foo3barE(Foo* this) {
 }
 
 int _EN4main3Foo3quxE(Foo* this) {
-    int* baz = getelementptr this, 0, 0
+    int* baz = getelementptr this, 0
     int baz.load = load baz
     return baz.load
 }

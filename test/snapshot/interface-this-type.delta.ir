@@ -11,7 +11,7 @@ int main() {
 }
 
 void _EN4main1S4initE(S* this) {
-    S** that = getelementptr this, 0, 0
+    S** that = getelementptr this, 0
     S* _0 = cast this to S*
     store _0 to that
     return void

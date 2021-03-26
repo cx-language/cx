@@ -34,7 +34,7 @@ loop.end:
 }
 
 void _EN4main3Foo6deinitE(Foo* this) {
-    int* i = getelementptr this, 0, 0
+    int* i = getelementptr this, 0
     store int 0 to i
     void _0 = call _EN4main3Foo1fE(Foo* this)
     Foo* _1 = cast this to Foo*
@@ -43,7 +43,7 @@ void _EN4main3Foo6deinitE(Foo* this) {
 }
 
 void _EN4main3Bar6deinitE(Bar* this) {
-    int* i = getelementptr this, 0, 0
+    int* i = getelementptr this, 0
     store int 0 to i
     void _0 = call _EN4main3Bar1fE(Bar* this)
     void _1 = call _EN4main3Bar1fE(Bar* this)

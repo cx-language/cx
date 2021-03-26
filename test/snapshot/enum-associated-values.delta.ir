@@ -5,28 +5,28 @@ int main() {
     E* enum_0 = alloca E
     E* enum_1 = alloca E
     E* enum_2 = alloca E
-    int* tag = getelementptr enum, 0, 0
+    int* tag = getelementptr enum, 0
     store int 0 to tag
     E enum.load = load enum
     store enum.load to e
-    int* tag_0 = getelementptr enum_0, 0, 0
+    int* tag_0 = getelementptr enum_0, 0
     store int 1 to tag_0
     { bool, int } _0 = insertvalue { bool, int } undefined, 0, bool false
     { bool, int } _1 = insertvalue _0, 1, int 42
-    union { void, { bool, int }, { int } }* associatedValue = getelementptr enum_0, 0, 1
+    union { void, { bool, int }, { int } }* associatedValue = getelementptr enum_0, 1
     { bool, int }* _2 = cast associatedValue to { bool, int }*
     store _1 to _2
     E enum.load_0 = load enum_0
     store enum.load_0 to e
-    int* tag_1 = getelementptr enum_1, 0, 0
+    int* tag_1 = getelementptr enum_1, 0
     store int 2 to tag_1
     { int } _3 = insertvalue { int } undefined, 0, int 43
-    union { void, { bool, int }, { int } }* associatedValue_0 = getelementptr enum_1, 0, 1
+    union { void, { bool, int }, { int } }* associatedValue_0 = getelementptr enum_1, 1
     { int }* _4 = cast associatedValue_0 to { int }*
     store _3 to _4
     E enum.load_1 = load enum_1
     store enum.load_1 to e
-    int* e.tag = getelementptr e, 0, 0
+    int* e.tag = getelementptr e, 0
     int e.tag.load = load e.tag
     switch e.tag.load {
         int 0 -> switch.case.0
@@ -38,26 +38,26 @@ switch.case.0:
     br switch.end
 
 switch.case.1:
-    union { void, { bool, int }, { int } }* _5 = getelementptr e, 0, 1
+    union { void, { bool, int }, { int } }* _5 = getelementptr e, 1
     { bool, int }* eb = cast _5 to { bool, int }*
-    int* tag_2 = getelementptr enum_2, 0, 0
+    int* tag_2 = getelementptr enum_2, 0
     store int 2 to tag_2
-    int* i = getelementptr eb, 0, 1
+    int* i = getelementptr eb, 1
     int i.load = load i
     { int } _6 = insertvalue { int } undefined, 0, i.load
-    union { void, { bool, int }, { int } }* associatedValue_1 = getelementptr enum_2, 0, 1
+    union { void, { bool, int }, { int } }* associatedValue_1 = getelementptr enum_2, 1
     { int }* _7 = cast associatedValue_1 to { int }*
     store _6 to _7
     E enum.load_2 = load enum_2
     store enum.load_2 to e
-    int* i_0 = getelementptr eb, 0, 1
+    int* i_0 = getelementptr eb, 1
     int i.load_0 = load i_0
     return i.load_0
 
 switch.case.2:
-    union { void, { bool, int }, { int } }* _8 = getelementptr e, 0, 1
+    union { void, { bool, int }, { int } }* _8 = getelementptr e, 1
     { int }* eb_0 = cast _8 to { int }*
-    int* j = getelementptr eb_0, 0, 0
+    int* j = getelementptr eb_0, 0
     int j.load = load j
     return j.load
 
@@ -65,10 +65,10 @@ switch.default:
     br switch.end
 
 switch.end:
-    int* e.tag_0 = getelementptr e, 0, 0
+    int* e.tag_0 = getelementptr e, 0
     int e.tag.load_0 = load e.tag_0
     bool _9 = e.tag.load_0 == int 0
-    int* e.tag_1 = getelementptr e, 0, 0
+    int* e.tag_1 = getelementptr e, 0
     int e.tag.load_1 = load e.tag_1
     bool _10 = e.tag.load_1 == int 1
     return int 0

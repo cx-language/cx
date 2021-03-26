@@ -13,9 +13,9 @@ vec2 _EN4mainmlE4vec24vec2(vec2 a, vec2 b) {
 }
 
 void _EN4main4vec24initE3int3int(vec2* this, int x, int y) {
-    int* x_0 = getelementptr this, 0, 0
+    int* x_0 = getelementptr this, 0
     store x to x_0
-    int* y_0 = getelementptr this, 0, 1
+    int* y_0 = getelementptr this, 1
     store y to y_0
     return void
 }
@@ -35,7 +35,7 @@ int main() {
     void _6 = call _EN4main4vec24initE3int3int(vec2* _1, int _5, int 3)
     vec2 .load_0 = load _1
     bool _7 = call _EN4maineqE4vec24vec2(vec2 v.load_0, vec2 .load_0)
-    int* x = getelementptr v, 0, 0
+    int* x = getelementptr v, 0
     int x.load = load x
     int _8 = call _EN4main4vec2ixE3int(vec2* v, int x.load)
     return int 0

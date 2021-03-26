@@ -14,7 +14,7 @@ void _EN4main3Foo7doStuffE(Foo* this) {
 }
 
 void _EN4main3Foo4initE3int(Foo* this, int i) {
-    int* i_0 = getelementptr this, 0, 0
+    int* i_0 = getelementptr this, 0
     store i to i_0
     return void
 }
@@ -24,7 +24,7 @@ void _EN4main3Bar7doStuffE(Bar* this) {
 }
 
 void _EN4main3Bar4initE3int(Bar* this, int i) {
-    int* i_0 = getelementptr this, 0, 0
+    int* i_0 = getelementptr this, 0
     store i to i_0
     return void
 }

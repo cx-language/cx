@@ -25,13 +25,13 @@ int main() {
 }
 
 void _EN4main3Foo4initE(Foo* this) {
-    int* i = getelementptr this, 0, 0
+    int* i = getelementptr this, 0
     store int 0 to i
     return void
 }
 
 void _EN4main3Bar4initE(Bar* this) {
-    int* i = getelementptr this, 0, 0
+    int* i = getelementptr this, 0
     store int 0 to i
     return void
 }

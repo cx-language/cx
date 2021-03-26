@@ -148,7 +148,7 @@ struct Value {
     void addUse(Instruction* user) { uses.push_back(user); }
     void print(llvm::raw_ostream& stream) const;
     Value* getBranchArgument() const;
-    bool loads(Value* pointer, int gepIndex1 = -1);
+    bool loads(Value* pointer, int gepIndex = -1);
 };
 
 struct Instruction : Value {
@@ -262,7 +262,7 @@ struct GEPInst : Instruction {
 
 struct ConstGEPInst : Instruction {
     Value* pointer;
-    int index0, index1; // TODO: Remove index0 since we're not using it?
+    int index;
     const MemberExpr* expr;
     std::string name;
 

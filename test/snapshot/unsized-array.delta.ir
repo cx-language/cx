@@ -8,13 +8,13 @@ int main() {
     int[3] _1 = insertvalue _0, 1, int 42
     int[3] _2 = insertvalue _1, 2, int 0
     store _2 to three
-    int* _3 = getelementptr three, 0, 0
+    int* _3 = getelementptr three, 0
     ArrayRef<int> _4 = insertvalue ArrayRef<int> undefined, 0, _3
     ArrayRef<int> _5 = insertvalue _4, 1, int 3
     void _6 = call _EN4main3fooEAR_3int(ArrayRef<int> _5)
     void _7 = call _EN4main3barEPA3_3int(int[3]* three)
     store int 3 to b
-    int* _8 = getelementptr three, 0, 0
+    int* _8 = getelementptr three, 0
     ArrayRef<int> _9 = insertvalue ArrayRef<int> undefined, 0, _8
     ArrayRef<int> _10 = insertvalue _9, 1, int 3
     store _10 to ref
@@ -42,7 +42,7 @@ void _EN4main3barEPA3_3int(int[3]* ints) {
     int* b = alloca int
     ArrayRef<int>* ref = alloca ArrayRef<int>
     store int 3 to b
-    int* _0 = getelementptr ints, 0, 0
+    int* _0 = getelementptr ints, 0
     ArrayRef<int> _1 = insertvalue ArrayRef<int> undefined, 0, _0
     ArrayRef<int> _2 = insertvalue _1, 1, int 3
     store _2 to ref

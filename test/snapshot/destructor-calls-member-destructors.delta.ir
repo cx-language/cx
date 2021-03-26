@@ -12,8 +12,8 @@ int main() {
 }
 
 void _EN4main1A6deinitE(A* this) {
-    B* b = getelementptr this, 0, 0
-    B* bb = getelementptr this, 0, 1
+    B* b = getelementptr this, 0
+    B* bb = getelementptr this, 1
     bool _0 = call f()
     br _0, if.then, if.else
 
@@ -36,8 +36,8 @@ void _EN4main1A4initE(A* this) {
 }
 
 void _EN4main1C6deinitE(C* this) {
-    B* b = getelementptr this, 0, 0
-    B* bb = getelementptr this, 0, 1
+    B* b = getelementptr this, 0
+    B* bb = getelementptr this, 1
     void _0 = call _EN4main1B6deinitE(B* bb)
     void _1 = call _EN4main1B6deinitE(B* b)
     return void

@@ -8,7 +8,7 @@ int main() {
     int[5] _5 = insertvalue _4, 3, int 3
     int[5] _6 = insertvalue _5, 4, int 4
     store _6 to _1
-    int* _7 = getelementptr _1, 0, 0
+    int* _7 = getelementptr _1, 0
     ArrayRef<int> _8 = insertvalue ArrayRef<int> undefined, 0, _7
     ArrayRef<int> _9 = insertvalue _8, 1, int 5
     void _10 = call _EN4main1C4initEAR_3int(C* _0, ArrayRef<int> _9)
@@ -17,7 +17,7 @@ int main() {
 }
 
 void _EN4main1C3fooE(C* this) {
-    ArrayRef<int>* a = getelementptr this, 0, 0
+    ArrayRef<int>* a = getelementptr this, 0
     ArrayRef<int> a.load = load a
     int* _0 = extractvalue a.load, 0
     int* _1 = getelementptr _0, int 4
@@ -25,7 +25,7 @@ void _EN4main1C3fooE(C* this) {
 }
 
 void _EN4main1C4initEAR_3int(C* this, ArrayRef<int> a) {
-    ArrayRef<int>* a_0 = getelementptr this, 0, 0
+    ArrayRef<int>* a_0 = getelementptr this, 0
     store a to a_0
     return void
 }

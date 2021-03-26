@@ -10,23 +10,23 @@ int main() {
 void _EN4main1A4initE4bool3int(A* this, bool b, int p) {
     O* _0 = cast this to O*
     void _1 = call _EN4main1O4initE3int(O* _0, int p)
-    bool* b_0 = getelementptr this, 0, 2
+    bool* b_0 = getelementptr this, 2
     store b to b_0
     return void
 }
 
 void _EN4main1B4initE3int(B* this, int p) {
-    int* p_0 = getelementptr this, 0, 0
+    int* p_0 = getelementptr this, 0
     store p to p_0
-    int* r = getelementptr this, 0, 1
+    int* r = getelementptr this, 1
     store p to r
     return void
 }
 
 void _EN4main1O4initE3int(O* this, int p) {
-    int* p_0 = getelementptr this, 0, 0
+    int* p_0 = getelementptr this, 0
     store p to p_0
-    int* r = getelementptr this, 0, 1
+    int* r = getelementptr this, 1
     store p to r
     return void
 }

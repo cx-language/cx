@@ -7,13 +7,13 @@ int main() {
 }
 
 void _EN4main1S1sE(S* this) {
-    int* i = getelementptr this, 0, 0
+    int* i = getelementptr this, 0
     store int 2 to i
     return void
 }
 
 void _EN4main1S4initE3int(S* this, int i) {
-    int* i_0 = getelementptr this, 0, 0
+    int* i_0 = getelementptr this, 0
     store i to i_0
     return void
 }

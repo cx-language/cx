@@ -11,7 +11,7 @@ void _EN4main3Foo6deinitE(Foo* this) {
 }
 
 void _EN4main3Foo4initE3int(Foo* this, int i) {
-    float* f = getelementptr this, 0, 0
+    float* f = getelementptr this, 0
     store float 0 to f
     return void
 }

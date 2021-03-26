@@ -65,23 +65,23 @@ if.end_2:
 }
 
 void _EN3std8OptionalI3intE4initE(Optional<int>* this) {
-    bool* hasValue = getelementptr this, 0, 0
+    bool* hasValue = getelementptr this, 0
     store bool false to hasValue
     return void
 }
 
 void _EN3std8OptionalI3intE4initE3int(Optional<int>* this, int value) {
-    bool* hasValue = getelementptr this, 0, 0
+    bool* hasValue = getelementptr this, 0
     store bool true to hasValue
-    int* value_0 = getelementptr this, 0, 1
+    int* value_0 = getelementptr this, 1
     store value to value_0
     return void
 }
 
 bool _EN3stdeqI3intEEPO3intPO3int(Optional<int>* a, Optional<int>* b) {
-    bool* hasValue = getelementptr a, 0, 0
+    bool* hasValue = getelementptr a, 0
     bool hasValue.load = load hasValue
-    bool* hasValue_0 = getelementptr b, 0, 0
+    bool* hasValue_0 = getelementptr b, 0
     bool hasValue.load_0 = load hasValue_0
     bool _0 = hasValue.load != hasValue.load_0
     br _0, if.then, if.else
@@ -93,7 +93,7 @@ if.else:
     br if.end
 
 if.end:
-    bool* hasValue_1 = getelementptr b, 0, 0
+    bool* hasValue_1 = getelementptr b, 0
     bool hasValue.load_1 = load hasValue_1
     bool _1 = !hasValue.load_1
     br _1, if.then, if.else
@@ -105,9 +105,9 @@ if.else_0:
     br if.end_0
 
 if.end_0:
-    int* value = getelementptr a, 0, 1
+    int* value = getelementptr a, 1
     int value.load = load value
-    int* value_0 = getelementptr b, 0, 1
+    int* value_0 = getelementptr b, 1
     int value.load_0 = load value_0
     bool _2 = value.load == value.load_0
     return _2

@@ -10,7 +10,7 @@ int main() {
     int[3] _2 = insertvalue _1, 1, int 2
     int[3] _3 = insertvalue _2, 2, int 3
     store _3 to _0
-    int* _4 = getelementptr _0, 0, 0
+    int* _4 = getelementptr _0, 0
     int* _5 = getelementptr _4, int 3
     ArrayIterator<int> _6 = insertvalue ArrayIterator<int> undefined, 0, _4
     ArrayIterator<int> _7 = insertvalue _6, 1, _5
@@ -38,7 +38,7 @@ loop.end:
     int[2] _14 = insertvalue int[2] undefined, 0, int 4
     int[2] _15 = insertvalue _14, 1, int 5
     store _15 to a
-    int* _16 = getelementptr a, 0, 0
+    int* _16 = getelementptr a, 0
     int* _17 = getelementptr _16, int 2
     ArrayIterator<int> _18 = insertvalue ArrayIterator<int> undefined, 0, _16
     ArrayIterator<int> _19 = insertvalue _18, 1, _17
@@ -67,16 +67,16 @@ loop.end_0:
 }
 
 bool _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* this) {
-    int** current = getelementptr this, 0, 0
+    int** current = getelementptr this, 0
     int* current.load = load current
-    int** end = getelementptr this, 0, 1
+    int** end = getelementptr this, 1
     int* end.load = load end
     bool _0 = current.load !== end.load
     return _0
 }
 
 int* _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* this) {
-    int** current = getelementptr this, 0, 0
+    int** current = getelementptr this, 0
     int* current.load = load current
     int* _0 = cast current.load to int*
     return _0
@@ -97,7 +97,7 @@ void _EN3std7printlnI3intEEP3int(int* value) {
 }
 
 void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* this) {
-    int** current = getelementptr this, 0, 0
+    int** current = getelementptr this, 0
     int* current.load = load current
     int* _0 = getelementptr current.load, int 1
     store _0 to current
