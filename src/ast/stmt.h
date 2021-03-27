@@ -8,7 +8,7 @@
 
 namespace delta {
 
-class VarDecl;
+struct VarDecl;
 
 enum class StmtKind {
     ReturnStmt,
@@ -25,8 +25,7 @@ enum class StmtKind {
     CompoundStmt,
 };
 
-class Stmt {
-public:
+struct Stmt {
     virtual ~Stmt() = 0;
 
     bool isReturnStmt() const { return getKind() == StmtKind::ReturnStmt; }
@@ -56,8 +55,7 @@ private:
 
 inline Stmt::~Stmt() {}
 
-class ReturnStmt : public Stmt {
-public:
+struct ReturnStmt : Stmt {
     ReturnStmt(Expr* value, SourceLocation location) : Stmt(StmtKind::ReturnStmt), value(value), location(location) {}
     Expr* getReturnValue() const { return value; }
     void setReturnValue(Expr* expr) { value = expr; }
@@ -69,8 +67,7 @@ private:
     SourceLocation location;
 };
 
-class VarStmt : public Stmt {
-public:
+struct VarStmt : Stmt {
     VarStmt(VarDecl* decl) : Stmt(StmtKind::VarStmt), decl(decl) {}
     VarDecl& getDecl() const { return *decl; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::VarStmt; }
@@ -80,8 +77,7 @@ private:
 };
 
 /// A statement that consists of the evaluation of a single expression.
-class ExprStmt : public Stmt {
-public:
+struct ExprStmt : Stmt {
     ExprStmt(Expr* expr) : Stmt(StmtKind::ExprStmt), expr(expr) {}
     Expr& getExpr() const { return *expr; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ExprStmt; }
@@ -90,8 +86,7 @@ private:
     Expr* expr;
 };
 
-class DeferStmt : public Stmt {
-public:
+struct DeferStmt : Stmt {
     DeferStmt(Expr* expr) : Stmt(StmtKind::DeferStmt), expr(expr) {}
     Expr& getExpr() const { return *expr; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::DeferStmt; }
@@ -100,8 +95,7 @@ private:
     Expr* expr;
 };
 
-class IfStmt : public Stmt {
-public:
+struct IfStmt : Stmt {
     IfStmt(Expr* condition, std::vector<Stmt*>&& thenBody, std::vector<Stmt*>&& elseBody)
     : Stmt(StmtKind::IfStmt), condition(condition), thenBody(std::move(thenBody)), elseBody(std::move(elseBody)) {}
     Expr& getCondition() const { return *condition; }
@@ -117,8 +111,7 @@ private:
     std::vector<Stmt*> elseBody;
 };
 
-class SwitchCase {
-public:
+struct SwitchCase {
     SwitchCase(Expr* value, VarDecl* associatedValue, std::vector<Stmt*>&& stmts) : value(value), associatedValue(associatedValue), stmts(std::move(stmts)) {}
     Expr* getValue() const { return value; }
     VarDecl* getAssociatedValue() const { return associatedValue; }
@@ -132,8 +125,7 @@ private:
     std::vector<Stmt*> stmts;
 };
 
-class SwitchStmt : public Stmt {
-public:
+struct SwitchStmt : Stmt {
     SwitchStmt(Expr* condition, std::vector<SwitchCase>&& cases, std::vector<Stmt*>&& defaultStmts)
     : Stmt(StmtKind::SwitchStmt), condition(condition), cases(std::move(cases)), defaultStmts(std::move(defaultStmts)) {}
     Expr& getCondition() const { return *condition; }
@@ -149,8 +141,7 @@ private:
     std::vector<Stmt*> defaultStmts;
 };
 
-class WhileStmt : public Stmt {
-public:
+struct WhileStmt : Stmt {
     WhileStmt(Expr* condition, std::vector<Stmt*>&& body, SourceLocation location)
     : Stmt(StmtKind::WhileStmt), condition(condition), body(std::move(body)), location(location) {}
     Expr& getCondition() const { return *condition; }
@@ -166,8 +157,7 @@ private:
     SourceLocation location;
 };
 
-class ForStmt : public Stmt {
-public:
+struct ForStmt : Stmt {
     ForStmt(VarStmt* variable, Expr* condition, Expr* increment, std::vector<Stmt*>&& body, SourceLocation location)
     : Stmt(StmtKind::ForStmt), variable(variable), condition(condition), increment(increment), body(std::move(body)), location(location) {}
     VarStmt* getVariable() const { return variable; }
@@ -186,8 +176,7 @@ private:
     SourceLocation location;
 };
 
-class ForEachStmt : public Stmt {
-public:
+struct ForEachStmt : Stmt {
     ForEachStmt(VarDecl* variable, Expr* range, std::vector<Stmt*>&& body, SourceLocation location)
     : Stmt(StmtKind::ForEachStmt), variable(variable), range(range), body(std::move(body)), location(location) {}
     VarDecl* getVariable() const { return variable; }
@@ -204,8 +193,7 @@ private:
     SourceLocation location;
 };
 
-class BreakStmt : public Stmt {
-public:
+struct BreakStmt : Stmt {
     BreakStmt(SourceLocation location) : Stmt(StmtKind::BreakStmt), location(location) {}
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::BreakStmt; }
@@ -214,8 +202,7 @@ private:
     SourceLocation location;
 };
 
-class ContinueStmt : public Stmt {
-public:
+struct ContinueStmt : Stmt {
     ContinueStmt(SourceLocation location) : Stmt(StmtKind::ContinueStmt), location(location) {}
     SourceLocation getLocation() const { return location; }
     static bool classof(const Stmt* s) { return s->getKind() == StmtKind::ContinueStmt; }
@@ -224,8 +211,7 @@ private:
     SourceLocation location;
 };
 
-class CompoundStmt : public Stmt {
-public:
+struct CompoundStmt : Stmt {
     CompoundStmt(std::vector<Stmt*>&& body) : Stmt(StmtKind::CompoundStmt), body(std::move(body)) {}
     llvm::ArrayRef<Stmt*> getBody() const { return body; }
     llvm::MutableArrayRef<Stmt*> getBody() { return body; }

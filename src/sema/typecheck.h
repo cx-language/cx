@@ -22,9 +22,9 @@ class SmallVector;
 
 namespace delta {
 
-class Module;
-class PackageManifest;
-class SourceFile;
+struct Module;
+struct PackageManifest;
+struct SourceFile;
 struct SourceLocation;
 struct Type;
 struct CompileOptions;
@@ -38,8 +38,7 @@ struct ArgumentValidation {
     ArgumentValidation(Error error, int index = -1) : error(error), index(index) {}
 };
 
-class Typechecker {
-public:
+struct Typechecker {
     Typechecker(const CompileOptions& options)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
       isPostProcessing(false), options(options) {}

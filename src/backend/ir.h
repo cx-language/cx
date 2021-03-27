@@ -15,11 +15,11 @@ class StringRef;
 
 namespace delta {
 
-class Expr;
-class CallExpr;
-class BinaryExpr;
-class UnaryExpr;
-class MemberExpr;
+struct Expr;
+struct CallExpr;
+struct BinaryExpr;
+struct UnaryExpr;
+struct MemberExpr;
 struct Function;
 struct BasicBlock;
 struct Instruction;

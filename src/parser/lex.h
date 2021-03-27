@@ -11,8 +11,7 @@ namespace delta {
 
 struct SourceLocation;
 
-class Lexer {
-public:
+struct Lexer {
     Lexer(llvm::MemoryBuffer* input);
     Token nextToken();
     const char* getFilePath() const;

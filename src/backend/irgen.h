@@ -13,10 +13,10 @@
 
 namespace delta {
 
-class Module;
+struct Module;
 struct Type;
-class Typechecker;
-class IRGenerator;
+struct Typechecker;
+struct IRGenerator;
 
 struct IRGenScope {
     IRGenScope(IRGenerator& irGenerator) : irGenerator(&irGenerator) {}
@@ -35,8 +35,7 @@ struct IRGenScope {
     IRGenerator* irGenerator;
 };
 
-class IRGenerator {
-public:
+struct IRGenerator {
     IRGenerator();
     IRModule& emitModule(const Module& sourceModule);
     void emitFunctionBody(const FunctionDecl& decl, Function& function);

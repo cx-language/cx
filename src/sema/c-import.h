@@ -6,7 +6,7 @@ class StringRef;
 
 namespace delta {
 
-class SourceFile;
+struct SourceFile;
 struct SourceLocation;
 struct CompileOptions;
 

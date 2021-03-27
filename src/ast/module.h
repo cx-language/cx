@@ -12,12 +12,11 @@
 
 namespace delta {
 
-class Module;
-class SymbolTable;
+struct Module;
+struct SymbolTable;
 
 /// Container for the AST of a single file.
-class SourceFile {
-public:
+struct SourceFile {
     explicit SourceFile(llvm::StringRef filePath, Module* parentModule) : filePath(filePath), parentModule(parentModule) {}
     llvm::ArrayRef<Decl*> getTopLevelDecls() const { return topLevelDecls; }
     llvm::StringRef getFilePath() const { return filePath; }
@@ -47,8 +46,7 @@ struct Scope {
     ~Scope();
 };
 
-class SymbolTable {
-public:
+struct SymbolTable {
     SymbolTable() : globalScope(nullptr, this) {}
     Scope& getCurrentScope() { return *scopes.back(); }
     void add(llvm::StringRef name, Decl* decl) { scopes.back()->decls[name].push_back(decl); }
@@ -118,8 +116,7 @@ private:
 };
 
 /// Container for the AST of a whole module, comprised of one or more SourceFiles.
-class Module {
-public:
+struct Module {
     Module(llvm::StringRef name) : name(name) {}
     void addSourceFile(SourceFile&& file) { sourceFiles.emplace_back(std::move(file)); }
     llvm::ArrayRef<SourceFile> getSourceFiles() const { return sourceFiles; }

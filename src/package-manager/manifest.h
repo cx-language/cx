@@ -9,10 +9,8 @@
 
 namespace delta {
 
-class PackageManifest {
-public:
-    class Dependency {
-    public:
+struct PackageManifest {
+    struct Dependency {
         Dependency(std::string&& packageIdentifier, std::string&& packageVersion)
         : packageIdentifier(std::move(packageIdentifier)), packageVersion(std::move(packageVersion)) {}
         llvm::StringRef getPackageIdentifier() const { return packageIdentifier; }
@@ -25,7 +23,6 @@ public:
         std::string packageVersion;
     };
 
-public:
     PackageManifest(std::string&& packageRoot);
     llvm::StringRef getPackageName() const { return packageName; }
     llvm::ArrayRef<Dependency> getDeclaredDependencies() const { return declaredDependencies; }

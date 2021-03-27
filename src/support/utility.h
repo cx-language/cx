@@ -46,8 +46,7 @@ auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(m
 #define NOTNULL(x) (ASSERT(x), x)
 #define DEBUG_PRINT(x) llvm::errs() << #x << " = " << (x) << '\n'
 
-class StringFormatter : public llvm::raw_string_ostream {
-public:
+struct StringFormatter : llvm::raw_string_ostream {
     StringFormatter() : llvm::raw_string_ostream(message) {}
 
 private:

@@ -14,10 +14,10 @@
 
 namespace delta {
 
-class ParamDecl;
-class TypeDecl;
-class DestructorDecl;
-class TupleElement;
+struct ParamDecl;
+struct TypeDecl;
+struct DestructorDecl;
+struct TupleElement;
 
 enum class Mutability { Mutable, Const };
 
@@ -30,8 +30,7 @@ enum class TypeKind {
     UnresolvedType, // Placeholder for unresolved generic parameters
 };
 
-class TypeBase {
-public:
+struct TypeBase {
     virtual ~TypeBase() = 0;
     TypeKind getKind() const { return kind; }
 
@@ -45,7 +44,6 @@ private:
 inline TypeBase::~TypeBase() {}
 
 struct Type {
-public:
     Type() : typeBase(nullptr), mutability(Mutability::Mutable) {}
     Type(TypeBase* typeBase, Mutability mutability, SourceLocation location) : typeBase(typeBase), mutability(mutability), location(location) {}
     TypeBase& operator*() const { return *typeBase; }
@@ -163,8 +161,7 @@ private:
 void appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> genericArgs);
 std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs);
 
-class BasicType : public TypeBase {
-public:
+struct BasicType : TypeBase {
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     llvm::StringRef getName() const { return name; }
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
@@ -188,8 +185,7 @@ private:
     TypeDecl* decl;
 };
 
-class ArrayType : public TypeBase {
-public:
+struct ArrayType : TypeBase {
     Type getElementType() const { return elementType; }
     int64_t getSize() const { return size; }
     bool hasStaticSize() const { return size >= 0; }
@@ -211,16 +207,14 @@ private:
                   /// this type never know their size.
 };
 
-class TupleElement {
-public:
+struct TupleElement {
     std::string name;
     Type type;
 };
 
 bool operator==(const TupleElement&, const TupleElement&);
 
-class TupleType : public TypeBase {
-public:
+struct TupleType : TypeBase {
     llvm::ArrayRef<TupleElement> getElements() const { return elements; }
     static Type get(std::vector<TupleElement>&& elements, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::TupleType; }
@@ -232,8 +226,7 @@ private:
     std::vector<TupleElement> elements;
 };
 
-class FunctionType : public TypeBase {
-public:
+struct FunctionType : TypeBase {
     Type getReturnType() const { return returnType; }
     llvm::ArrayRef<Type> getParamTypes() const { return paramTypes; }
     std::vector<ParamDecl> getParamDecls(SourceLocation location = SourceLocation()) const;
@@ -249,8 +242,7 @@ private:
     std::vector<Type> paramTypes;
 };
 
-class PointerType : public TypeBase {
-public:
+struct PointerType : TypeBase {
     Type getPointeeType() const { return pointeeType; }
     static Type get(Type pointeeType, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::PointerType; }
@@ -266,8 +258,7 @@ namespace OptionalType {
 Type get(Type wrappedType, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
 };
 
-class UnresolvedType : public TypeBase {
-public:
+struct UnresolvedType : TypeBase {
     static Type get(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::UnresolvedType; }
 

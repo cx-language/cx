@@ -4,7 +4,7 @@
 
 namespace delta {
 
-class FunctionDecl;
+struct FunctionDecl;
 
 std::string mangleFunctionDecl(const FunctionDecl& functionDecl);
 

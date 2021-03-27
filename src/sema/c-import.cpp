@@ -204,8 +204,7 @@ static void addFloatConstantToSymbolTable(llvm::StringRef name, llvm::APFloat va
 }
 
 namespace {
-class CToDeltaConverter : public clang::ASTConsumer {
-public:
+struct CToDeltaConverter : clang::ASTConsumer {
     CToDeltaConverter(Module& module, clang::SourceManager& sourceManager) : module(module), sourceManager(sourceManager) {}
 
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
@@ -276,8 +275,7 @@ private:
     clang::SourceManager& sourceManager;
 };
 
-class MacroImporter : public clang::PPCallbacks {
-public:
+struct MacroImporter : clang::PPCallbacks {
     MacroImporter(Module& module, clang::Sema& clangSema) : module(module), clangSema(clangSema) {}
 
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) final override {

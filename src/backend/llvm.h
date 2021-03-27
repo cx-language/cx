@@ -16,8 +16,7 @@ struct Value;
 struct Function;
 struct BasicBlock;
 
-class LLVMGenerator {
-public:
+struct LLVMGenerator {
     LLVMGenerator() : builder(ctx) {}
     llvm::Module& codegenModule(const IRModule& sourceModule);
     llvm::Value* codegenAlloca(const AllocaInst* inst);
