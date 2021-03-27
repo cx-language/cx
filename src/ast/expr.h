@@ -37,6 +37,7 @@ enum class ExprKind {
     AddressofExpr,
     MemberExpr,
     IndexExpr,
+    IndexAssignmentExpr,
     UnwrapExpr,
     LambdaExpr,
     IfExpr,
@@ -245,6 +246,7 @@ public:
             case ExprKind::UnaryExpr:
             case ExprKind::BinaryExpr:
             case ExprKind::IndexExpr:
+            case ExprKind::IndexAssignmentExpr:
                 return true;
             default:
                 return false;
@@ -338,7 +340,7 @@ private:
     Decl* decl = nullptr;
 };
 
-/// An element access expression using the element's index in brackets, e.g. 'base[index]'.
+/// An element access expression using the element's index in brackets: 'base[index]'.
 class IndexExpr : public CallExpr {
 public:
     IndexExpr(Expr* base, Expr* index, SourceLocation location)
@@ -349,6 +351,20 @@ public:
     Expr* getIndex() { return getArgs()[0].getValue(); }
     void setIndex(Expr* expr) { getArgs()[0].setValue(expr); }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::IndexExpr; }
+
+protected:
+    IndexExpr(Expr* base, Expr* index, Expr* value, SourceLocation location)
+    : CallExpr(ExprKind::IndexAssignmentExpr, new MemberExpr(base, "[]=", location), { NamedValue("", index), NamedValue("", value) }, location) {}
+};
+
+/// An assignment to an indexed access: 'base[index] = value'.
+class IndexAssignmentExpr : public IndexExpr {
+public:
+    IndexAssignmentExpr(Expr* base, Expr* index, Expr* value, SourceLocation location) : IndexExpr(base, index, value, location) {}
+    const Expr* getValue() const { return getArgs()[1].getValue(); }
+    Expr* getValue() { return getArgs()[1].getValue(); }
+    void setValue(Expr* expr) { getArgs()[1].setValue(expr); }
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::IndexAssignmentExpr; }
 };
 
 /// A postfix expression that unwraps an optional (nullable) value, yielding the value wrapped by

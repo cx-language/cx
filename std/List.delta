@@ -21,7 +21,7 @@ struct List<Element> {
         init(capacity: elements.size());
 
         // TODO: When array references can be iterated, iterate 'elements' directly.
-        // TODO: Add pushAll method for pushing all elements from an array reference.
+        // TODO: Add push() overload for pushing all elements from an array reference.
         for (var index in 0..elements.size()) {
             push(elements[index]);
         }
@@ -67,6 +67,10 @@ struct List<Element> {
         return buffer[index];
     }
 
+    void operator[]=(int index, Element element) {
+        buffer[index] = element;
+    }
+
     Element* first() {
         if (size == 0) abort("Called first() on empty List\n");
         return buffer[0];
@@ -82,13 +86,13 @@ struct List<Element> {
     }
 
     /// Adds the given element to the end of the list.
-    void push(Element newElement) {
+    void push(Element element) {
         if (size == capacity) {
             grow();
         }
 
         // TODO: Shouldn't need '&' here.
-        (&buffer[size]).init(newElement);
+        (&buffer[size]).init(element);
         size++;
     }
 

@@ -490,13 +490,20 @@ MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
 }
 
 /// index-expr ::= expr '[' expr ']'
-IndexExpr* Parser::parseIndexExpr(Expr* operand) {
+/// index-assignment-expr ::= index-expr '=' expr
+Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
     ASSERT(currentToken() == Token::LeftBracket);
     auto location = getCurrentLocation();
     consumeToken();
     auto index = parseExpr();
     parse(Token::RightBracket);
-    return new IndexExpr(operand, index, location);
+
+    if (currentToken() == Token::Assignment) {
+        consumeToken();
+        return new IndexAssignmentExpr(base, index, parseExpr(), location);
+    }
+
+    return new IndexExpr(base, index, location);
 }
 
 /// unwrap-expr ::= expr '!'
@@ -618,7 +625,7 @@ bool Parser::arrowAfterParentheses() {
 
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
-///                  paren-expr | array-literal | tuple-literal | index-expr |
+///                  paren-expr | array-literal | tuple-literal | index-expr | index-assignment-expr
 ///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr | addressof-expr
 Expr* Parser::parsePostfixExpr() {
     Expr* expr;
@@ -692,7 +699,7 @@ Expr* Parser::parsePostfixExpr() {
     while (true) {
         switch (currentToken()) {
             case Token::LeftBracket:
-                expr = parseIndexExpr(expr);
+                expr = parseIndexExprOrIndexAssignmentExpr(expr);
                 break;
             case Token::LeftParen:
                 expr = parseCallExpr(expr);
@@ -1091,7 +1098,12 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
         auto op = consumeToken();
         if (op == Token::LeftBracket) {
             parse(Token::RightBracket);
-            return "[]";
+            if (currentToken() == Token::Assignment) {
+                consumeToken();
+                return "[]=";
+            } else {
+                return "[]";
+            }
         } else {
             if (!isOverloadable(op)) {
                 unexpectedToken(op, {}, "as function name");

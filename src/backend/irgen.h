@@ -84,7 +84,9 @@ public:
     Value* emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr = nullptr);
     Value* emitMemberExpr(const MemberExpr& expr);
     Value* emitTupleElementAccess(const MemberExpr& expr);
+    Value* emitIndexedAccess(const Expr& base, const Expr& index);
     Value* emitIndexExpr(const IndexExpr& expr);
+    Value* emitIndexAssignmentExpr(const IndexAssignmentExpr& expr);
     Value* emitUnwrapExpr(const UnwrapExpr& expr);
     Value* emitLambdaExpr(const LambdaExpr& expr);
     Value* emitIfExpr(const IfExpr& expr);

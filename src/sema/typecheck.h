@@ -87,6 +87,7 @@ private:
     Type typecheckAddressofExpr(AddressofExpr& expr);
     Type typecheckMemberExpr(MemberExpr& expr);
     Type typecheckIndexExpr(IndexExpr& expr);
+    Type typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr);
     Type typecheckUnwrapExpr(UnwrapExpr& expr);
     Type typecheckLambdaExpr(LambdaExpr& expr, Type expectedType);
     Type typecheckIfExpr(IfExpr& expr);

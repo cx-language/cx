@@ -73,6 +73,7 @@ bool Expr::isConstant() const {
         case ExprKind::AddressofExpr:
         case ExprKind::MemberExpr:
         case ExprKind::IndexExpr:
+        case ExprKind::IndexAssignmentExpr:
         case ExprKind::UnwrapExpr:
         case ExprKind::LambdaExpr:
             return false;
@@ -224,6 +225,13 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
             auto index = indexExpr->getIndex()->instantiate(genericArgs);
             return new IndexExpr(base, index, indexExpr->getLocation());
         }
+        case ExprKind::IndexAssignmentExpr: {
+            auto* indexAssignmentExpr = llvm::cast<IndexAssignmentExpr>(this);
+            auto base = indexAssignmentExpr->getBase()->instantiate(genericArgs);
+            auto index = indexAssignmentExpr->getIndex()->instantiate(genericArgs);
+            auto value = indexAssignmentExpr->getValue()->instantiate(genericArgs);
+            return new IndexAssignmentExpr(base, index, value, indexAssignmentExpr->getLocation());
+        }
         case ExprKind::UnwrapExpr: {
             auto* unwrapExpr = llvm::cast<UnwrapExpr>(this);
             auto operand = unwrapExpr->getOperand().instantiate(genericArgs);
@@ -284,6 +292,7 @@ std::vector<const Expr*> Expr::getSubExprs() const {
         case ExprKind::UnaryExpr:
         case ExprKind::BinaryExpr:
         case ExprKind::IndexExpr:
+        case ExprKind::IndexAssignmentExpr:
         case ExprKind::CallExpr: {
             auto* callExpr = llvm::cast<CallExpr>(this);
             subExprs.push_back(&callExpr->getCallee());

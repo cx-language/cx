@@ -504,32 +504,45 @@ Value* IRGenerator::emitTupleElementAccess(const MemberExpr& expr) {
     }
 }
 
+Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
+    auto* value = emitLvalueExpr(base);
+
+    if (base.getType().isArrayWithRuntimeSize()) {
+        if (value->getType()->isPointerType()) {
+            value = createLoad(value);
+        }
+        value = createExtractValue(value, 0);
+        return createGEP(value, { emitExpr(index) });
+    } else {
+        if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() &&
+            value->getType()->getPointee()->equals(getIRType(base.getType()))) {
+            value = createLoad(value);
+        }
+
+        if (base.getType().removeOptional().isArrayWithUnknownSize()) {
+            return createGEP(value, { emitExpr(index) });
+        } else {
+            return createGEP(value, { createConstantInt(Type::getInt(), 0), emitExpr(index) });
+        }
+    }
+}
+
 Value* IRGenerator::emitIndexExpr(const IndexExpr& expr) {
     if (!expr.getBase()->getType().removeOptional().removePointer().isArrayType()) {
         return emitCallExpr(expr);
     }
 
-    auto* value = emitLvalueExpr(*expr.getBase());
-    Type lhsType = expr.getBase()->getType();
+    return emitIndexedAccess(*expr.getBase(), *expr.getIndex());
+}
 
-    if (lhsType.isArrayWithRuntimeSize()) {
-        if (value->getType()->isPointerType()) {
-            value = createLoad(value);
-        }
-        auto* ptr = createExtractValue(value, 0);
-        auto* index = emitExpr(*expr.getIndex());
-        return createGEP(ptr, { index });
+Value* IRGenerator::emitIndexAssignmentExpr(const IndexAssignmentExpr& expr) {
+    if (!expr.getBase()->getType().removeOptional().removePointer().isArrayType()) {
+        return emitCallExpr(expr);
     }
 
-    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(lhsType))) {
-        value = createLoad(value);
-    }
-
-    if (lhsType.removeOptional().isArrayWithUnknownSize()) {
-        return createGEP(value, { emitExpr(*expr.getIndex()) });
-    }
-
-    return createGEP(value, { createConstantInt(Type::getInt(), 0), emitExpr(*expr.getIndex()) });
+    auto gep = emitIndexedAccess(*expr.getBase(), *expr.getIndex());
+    createStore(emitExpr(*expr.getValue()), gep);
+    return nullptr;
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
@@ -635,6 +648,8 @@ Value* IRGenerator::emitExprWithoutAutoCast(const Expr& expr) {
             return emitMemberExpr(llvm::cast<MemberExpr>(expr));
         case ExprKind::IndexExpr:
             return emitIndexExpr(llvm::cast<IndexExpr>(expr));
+        case ExprKind::IndexAssignmentExpr:
+            return emitIndexAssignmentExpr(llvm::cast<IndexAssignmentExpr>(expr));
         case ExprKind::UnwrapExpr:
             return emitUnwrapExpr(llvm::cast<UnwrapExpr>(expr));
         case ExprKind::LambdaExpr:

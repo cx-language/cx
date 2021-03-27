@@ -1,0 +1,10 @@
+// RUN: %not %delta -typecheck %s | %FileCheck %s
+
+struct S {}
+
+void main() {
+    var s = S()
+
+    // CHECK: [[@LINE+1]]:6: error: unknown identifier 'S.[]='
+    s[1] = 2 // TODO: Improve error message to say something like "S doesn't provide an operator[]="
+}

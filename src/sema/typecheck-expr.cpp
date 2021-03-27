@@ -295,10 +295,6 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, SourceLocation location)
     auto* lhs = &expr.getLHS();
     auto* rhs = &expr.getRHS();
 
-    if (!lhs->isLvalue()) {
-        ERROR(lhs->getLocation(), "expression is not assignable");
-    }
-
     typecheckExpr(*lhs, true);
     Type lhsType = lhs->getAssignableType();
     Type rhsType = typecheckExpr(*rhs, false, lhsType);
@@ -1415,6 +1411,24 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
     return arrayType.getElementType();
 }
 
+Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
+    auto elementType = typecheckIndexExpr(expr);
+
+    if (!expr.getBase()->getType().removeOptional().removePointer().isArrayType()) {
+        return typecheckCallExpr(expr);
+    }
+
+    typecheckExpr(*expr.getValue());
+
+    if (auto converted = convert(expr.getValue(), elementType)) {
+        expr.setValue(converted);
+    } else {
+        ERROR(expr.getValue()->getLocation(), "cannot assign '" << expr.getValue()->getType() << "' to '" << elementType << "'");
+    }
+
+    return Type::getVoid();
+}
+
 Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
     Type type = typecheckExpr(expr.getOperand());
     if (!type.isOptionalType()) {
@@ -1515,6 +1529,9 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             break;
         case ExprKind::IndexExpr:
             type = typecheckIndexExpr(llvm::cast<IndexExpr>(expr));
+            break;
+        case ExprKind::IndexAssignmentExpr:
+            type = typecheckIndexAssignmentExpr(llvm::cast<IndexAssignmentExpr>(expr));
             break;
         case ExprKind::UnwrapExpr:
             type = typecheckUnwrapExpr(llvm::cast<UnwrapExpr>(expr));

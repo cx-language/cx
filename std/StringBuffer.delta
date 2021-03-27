@@ -35,7 +35,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     /// Initializes the buffer to contain the given number of uninitialized bytes.
     StringBuffer(int uninitializedSize) {
         characters = List(uninitializedSize: uninitializedSize + 1);
-        *characters[uninitializedSize] = '\0';
+        characters[uninitializedSize] = '\0';
     }
 
     int size() {
@@ -45,6 +45,11 @@ struct StringBuffer: Comparable, Hashable, Printable {
     /// Returns the character at the given index.
     char operator[](int index) {
         return characters[index];
+    }
+
+    /// Sets the character at the given index.
+    void operator[]=(int index, char c) {
+        characters[index] = c;
     }
 
     /// Returns the string as a C-style, i.e. null-terminated, string.
@@ -62,8 +67,8 @@ struct StringBuffer: Comparable, Hashable, Printable {
         return size() == 0;
     }
 
-    void push(char character) {
-        characters[size()] = character;
+    void push(char c) {
+        characters[size()] = c;
         characters.push('\0');
     }
 

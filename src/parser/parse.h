@@ -106,7 +106,7 @@ private:
     SizeofExpr* parseSizeofExpr();
     AddressofExpr* parseAddressofExpr();
     MemberExpr* parseMemberExpr(Expr* lhs);
-    IndexExpr* parseIndexExpr(Expr* operand);
+    Expr* parseIndexExprOrIndexAssignmentExpr(Expr* base);
     UnwrapExpr* parseUnwrapExpr(Expr* operand);
     CallExpr* parseCallExpr(Expr* callee);
     LambdaExpr* parseLambdaExpr();

@@ -35,6 +35,7 @@ static const char* operatorName(const FunctionDecl& functionDecl) {
         .Case("++", "pp")
         .Case("--", "mm")
         .Case("[]", "ix")
+        .Case("[]=", "ixa")
         .Default(nullptr);
 }
 
