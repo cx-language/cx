@@ -1,0 +1,37 @@
+
+never _EN4main1fE() {
+    never _0 = call _EN4main1fE()
+    unreachable
+}
+
+never _EN4main1gE() {
+    never _0 = call abort()
+    unreachable
+}
+
+extern never abort()
+
+never _EN4main1hE() {
+    unreachable
+}
+
+void _EN4main1iE() {
+    never _0 = call _EN4main1fE()
+    return void
+}
+
+int _EN4main1iE3int(int x) {
+    switch x {
+        int 0 -> switch.case.0
+    }
+
+switch.case.0:
+    return int 1
+
+switch.default:
+    never _0 = call _EN4main1fE()
+    br switch.end
+
+switch.end:
+    unreachable
+}

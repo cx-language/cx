@@ -9,5 +9,5 @@ if.else:
     return int 0
 
 if.end:
-    return int 0
+    unreachable
 }

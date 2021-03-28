@@ -41,7 +41,7 @@ if.else:
     return _2
 
 if.end:
-    return void
+    unreachable
 }
 
 int _EN4main9__lambda3E3int3int(int a, int b) {

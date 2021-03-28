@@ -65,13 +65,11 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
     endScope();
 
-    // TODO: Remove unreachable final block here instead of emitting a dummy return void.
-    //       Currently the LLVM backend handles the removal.
     if (insertBlock->body.empty() || !llvm::isa<ReturnInst>(insertBlock->body.back())) {
-        if (decl.getReturnType().isNeverType()) {
-            createUnreachable();
-        } else {
+        if (decl.getReturnType().isVoid()) {
             createReturn(decl.isMain() ? createConstantInt(Type::getInt(), 0) : nullptr);
+        } else {
+            createUnreachable();
         }
     }
 }
