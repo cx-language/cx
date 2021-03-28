@@ -124,11 +124,11 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
 /// argument-list ::= '(' ')' | '(' nonempty-argument-list ')'
 /// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
 /// argument ::= (id ':')? expr
-std::vector<NamedValue> Parser::parseArgumentList() {
+std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
     parse(Token::LeftParen);
     std::vector<NamedValue> args;
 
-    if (currentToken() == Token::RightParen) {
+    if (currentToken() == Token::RightParen && allowEmpty) {
         consumeToken();
         return {};
     }
@@ -293,7 +293,7 @@ ArrayLiteralExpr* Parser::parseArrayLiteral() {
 Expr* Parser::parseTupleLiteralOrParenExpr() {
     ASSERT(currentToken() == Token::LeftParen);
     auto location = getCurrentLocation();
-    auto elements = parseArgumentList();
+    auto elements = parseArgumentList(false);
 
     if (elements.size() == 1 && elements[0].getName().empty()) {
         return elements[0].getValue();
@@ -521,7 +521,7 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
         genericArgs = parseGenericArgumentList();
     }
     auto location = getCurrentLocation();
-    auto args = parseArgumentList();
+    auto args = parseArgumentList(true);
     return new CallExpr(callee, std::move(args), std::move(genericArgs), location);
 }
 

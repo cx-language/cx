@@ -83,7 +83,7 @@ private:
     Token consumeToken();
     Token parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInfo = nullptr);
     void parseStmtTerminator(const char* contextInfo = nullptr);
-    std::vector<NamedValue> parseArgumentList();
+    std::vector<NamedValue> parseArgumentList(bool allowEmpty);
     VarExpr* parseVarExpr();
     VarExpr* parseThis();
     StringLiteralExpr* parseStringLiteral();

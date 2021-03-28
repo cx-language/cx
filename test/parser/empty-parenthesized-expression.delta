@@ -1,0 +1,8 @@
+// RUN: %not %delta -parse %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:9: error: unexpected ')'
+    if () {
+
+    }
+}
