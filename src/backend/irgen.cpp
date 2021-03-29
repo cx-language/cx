@@ -165,11 +165,17 @@ Value* IRGenerator::emitAssignmentLHS(const Expr& lhs) {
 
     // Don't call destructor for LHS when assigning to fields in constructor.
     if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(currentDecl)) {
+        Decl* referencedDecl = nullptr;
+
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(&lhs)) {
-            if (auto* fieldDecl = llvm::dyn_cast<FieldDecl>(varExpr->getDecl())) {
-                if (fieldDecl->getParentDecl() == constructorDecl->getTypeDecl()) {
-                    return value;
-                }
+            referencedDecl = varExpr->getDecl();
+        } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&lhs); memberExpr && memberExpr->getBaseExpr()->isThis()) {
+            referencedDecl = memberExpr->getDecl();
+        }
+
+        if (auto* fieldDecl = llvm::dyn_cast_or_null<FieldDecl>(referencedDecl)) {
+            if (fieldDecl->getParentDecl() == constructorDecl->getTypeDecl()) {
+                return value;
             }
         }
     }

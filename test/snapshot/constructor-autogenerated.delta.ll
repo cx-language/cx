@@ -1,7 +1,7 @@
 
 %X = type { i32, i32* }
 %"Generic<float>" = type { float }
-%"Generic<int>" = type { i32 }
+%"Generic<Empty>" = type { {} }
 
 define i32 @main() {
   %b = alloca i32, align 4
@@ -9,13 +9,15 @@ define i32 @main() {
   %y = alloca %X, align 8
   %e = alloca {}, align 8
   %g = alloca %"Generic<float>", align 8
-  %h = alloca %"Generic<int>", align 8
+  %h = alloca %"Generic<Empty>", align 8
   store i32 2, i32* %b, align 4
   call void @_EN4main1X4initE3intP3int(%X* %x, i32 4, i32* %b)
   call void @_EN4main1X4initE3intP3int(%X* %y, i32 4, i32* %b)
   call void @_EN4main5Empty4initE({}* %e)
   call void @_EN4main7GenericI5floatE4initE5float(%"Generic<float>"* %g, float 4.500000e+00)
-  call void @_EN4main7GenericI3intE4initE3int(%"Generic<int>"* %h, i32 4)
+  %e.load = load {}, {}* %e, align 1
+  call void @_EN4main7GenericI5EmptyE4initE5Empty(%"Generic<Empty>"* %h, {} %e.load)
+  call void @_EN4main7GenericI5EmptyE6deinitE(%"Generic<Empty>"* %h)
   ret i32 0
 }
 
@@ -37,8 +39,18 @@ define void @_EN4main7GenericI5floatE4initE5float(%"Generic<float>"* %this, floa
   ret void
 }
 
-define void @_EN4main7GenericI3intE4initE3int(%"Generic<int>"* %this, i32 %i) {
-  %i1 = getelementptr inbounds %"Generic<int>", %"Generic<int>"* %this, i32 0, i32 0
-  store i32 %i, i32* %i1, align 4
+define void @_EN4main7GenericI5EmptyE4initE5Empty(%"Generic<Empty>"* %this, {} %i) {
+  %i1 = getelementptr inbounds %"Generic<Empty>", %"Generic<Empty>"* %this, i32 0, i32 0
+  store {} %i, {}* %i1, align 1
+  ret void
+}
+
+define void @_EN4main7GenericI5EmptyE6deinitE(%"Generic<Empty>"* %this) {
+  %i = getelementptr inbounds %"Generic<Empty>", %"Generic<Empty>"* %this, i32 0, i32 0
+  call void @_EN4main5Empty6deinitE({}* %i)
+  ret void
+}
+
+define void @_EN4main5Empty6deinitE({}* %this) {
   ret void
 }

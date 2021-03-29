@@ -6,7 +6,7 @@ void main() {
     var y = X(a: 4, b: b);
     var e = Empty();
     var g = Generic(4.5);
-    var h = Generic(4);
+    var h = Generic(e);
 }
 
 struct X {
@@ -14,7 +14,9 @@ struct X {
     int* b;
 }
 
-struct Empty {}
+struct Empty {
+    ~Empty() {}
+}
 
 struct Generic<T> {
     T i;
