@@ -1,0 +1,6 @@
+// RUN: check-snapshots -Wno-unused
+
+int? f() {
+    int i = 1;
+    return i;
+}

@@ -1,0 +1,18 @@
+
+Optional<int> _EN4main1fE() {
+    int* i = alloca int
+    Optional<int>* _0 = alloca Optional<int>
+    store int 1 to i
+    int i.load = load i
+    void _1 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _0, int i.load)
+    Optional<int> .load = load _0
+    return .load
+}
+
+void _EN3std8OptionalI3intE4initE3int(Optional<int>* this, int value) {
+    bool* hasValue = getelementptr this, 0
+    store bool true to hasValue
+    int* value_0 = getelementptr this, 1
+    store value to value_0
+    return void
+}

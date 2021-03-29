@@ -61,7 +61,7 @@ Value* IRGenerator::emitNullLiteralExpr(const NullLiteralExpr& expr) {
     }
 }
 
-Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Value* arg) {
+Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Expr* arg) {
     auto* decl = Module::getStdlibModule()->getSymbolTable().findOne("Optional");
     auto typeTemplate = llvm::cast<TypeTemplate>(decl);
     auto typeDecl = typeTemplate->instantiate(wrappedType);
@@ -78,7 +78,7 @@ Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Value* arg) {
     auto* alloca = createEntryBlockAlloca(typeDecl->getType());
     llvm::SmallVector<Value*, 2> args;
     args.push_back(alloca);
-    if (arg) args.push_back(arg);
+    if (arg) args.push_back(emitExprForPassing(*arg, optionalConstructor->params[1].getType()));
     createCall(optionalConstructor, args, nullptr);
     return alloca;
 }
@@ -602,7 +602,7 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
 Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
     if (expr.getType().isOptionalType() && !expr.getType().getWrappedType().isImplementedAsPointer() &&
         expr.getOperand()->getType() == expr.getType().getWrappedType()) {
-        return emitOptionalConstruction(expr.getOperand()->getType(), emitExprWithoutAutoCast(*expr.getOperand()));
+        return emitOptionalConstruction(expr.getOperand()->getType(), expr.getOperand());
     }
 
     if (expr.getOperand()->isStringLiteralExpr() && expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar()) {
