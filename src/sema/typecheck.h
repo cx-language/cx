@@ -107,9 +107,9 @@ private:
                                                    bool returnOnError);
     ArgumentValidation getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic);
     bool argumentsMatch(CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {});
-    void validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", SourceLocation location = SourceLocation());
-    void validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef functionName = "",
-                      SourceLocation location = SourceLocation());
+    void validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", SourceLocation location = SourceLocation());
+    void validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee = "",
+                                     SourceLocation location = SourceLocation());
     TypeDecl* getTypeDecl(const BasicType& type);
     EnumCase* getEnumCase(const Expr& expr);
     void checkReturnPointerToLocal(const Expr* returnValue) const;

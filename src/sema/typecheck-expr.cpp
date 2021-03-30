@@ -687,7 +687,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
             Type paramType = param.getType();
 
             if (containsGenericParam(paramType, genericParam.getName())) {
-                // FIXME: The args will also be typechecked by validateArgs() after this function. Get rid of this duplicated typechecking.
+                // FIXME: The args will also be typechecked by validateAndConvertArguments() after this function. Get rid of this duplicated typechecking.
                 auto* argValue = arg.getValue();
                 auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType, genericParams);
                 // TODO: Should probably not typecheck here because it might change the expression's type?
@@ -878,7 +878,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 auto* functionDecl = functionTemplate->instantiate(genericArgs);
 
                 if (decls.size() == 1) {
-                    validateArgs(expr, *functionDecl, callee, expr.getCallee().getLocation());
+                    validateAndConvertArguments(expr, *functionDecl, callee, expr.getCallee().getLocation());
                     declsToTypecheck.emplace_back(functionDecl);
                     return functionDecl;
                 }
@@ -894,7 +894,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                 if (decls.size() == 1) {
                     validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                    validateArgs(expr, functionDecl, callee, expr.getCallee().getLocation());
+                    validateAndConvertArguments(expr, functionDecl, callee, expr.getCallee().getLocation());
                     return &functionDecl;
                 }
                 if (argumentsMatch(expr, &functionDecl)) {
@@ -913,7 +913,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                 for (auto* constructorDecl : constructorDecls) {
                     if (constructorDecls.size() == 1) {
-                        validateArgs(expr, *constructorDecl, callee, expr.getCallee().getLocation());
+                        validateAndConvertArguments(expr, *constructorDecl, callee, expr.getCallee().getLocation());
                         return constructorDecl;
                     }
                     if (argumentsMatch(expr, constructorDecl)) {
@@ -955,7 +955,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                     for (auto* constructorDecl : typeDecl->getConstructors()) {
                         if (constructorDecls.size() == 1) {
-                            validateArgs(expr, *constructorDecl, callee, expr.getCallee().getLocation());
+                            validateAndConvertArguments(expr, *constructorDecl, callee, expr.getCallee().getLocation());
                             return constructorDecl;
                         }
                         if (argumentsMatch(expr, constructorDecl)) {
@@ -974,7 +974,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
 
                     if (decls.size() == 1) {
-                        validateArgs(expr, paramDecls, false, callee, expr.getCallee().getLocation());
+                        validateAndConvertArguments(expr, paramDecls, false, callee, expr.getCallee().getLocation());
                         return variableDecl;
                     }
                     if (argumentsMatch(expr, nullptr, paramDecls)) {
@@ -1004,7 +1004,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     }
 
     if (matches.size() == 1) {
-        validateArgs(expr, *matches.front());
+        validateAndConvertArguments(expr, *matches.front());
         declsToTypecheck.push_back(matches.front());
         return matches.front();
     }
@@ -1059,7 +1059,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
     if (expr.getFunctionName() == "assert") {
         ParamDecl assertParam(Type::getBool(), "", false, SourceLocation());
-        validateArgs(expr, assertParam, false, expr.getFunctionName(), expr.getLocation());
+        validateAndConvertArguments(expr, assertParam, false, expr.getFunctionName(), expr.getLocation());
         validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
         return Type::getVoid();
     }
@@ -1076,17 +1076,17 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         if (receiverType.removeOptional().removePointer().isArrayType()) {
             // TODO: Move these member functions to a 'struct Array' declaration in stdlib.
             if (expr.getFunctionName() == "data") {
-                validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
+                validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 return ArrayType::get(receiverType.removePointer().getElementType(), ArrayType::unknownSize);
             }
             if (expr.getFunctionName() == "size") {
-                validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
+                validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 return ArrayType::getIndexType();
             }
             if (expr.getFunctionName() == "iterator") {
-                validateArgs(expr, {}, false, expr.getFunctionName(), expr.getLocation());
+                validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
                 return BasicType::get("ArrayIterator", receiverType.removePointer().getElementType());
             }
@@ -1142,7 +1142,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     } else {
         auto type = llvm::cast<EnumCase>(decl)->getAssociatedType();
         params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
-        validateArgs(expr, params, false, decl->getName(), expr.getLocation());
+        validateAndConvertArguments(expr, params, false, decl->getName(), expr.getLocation());
     }
 
     for (auto&& [param, arg] : llvm::zip_longest(params, expr.getArgs())) {
@@ -1188,12 +1188,8 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
             typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
         }
 
-        if (param) {
-            if (auto converted = convert(arg.getValue(), param->getType(), true)) {
-                arg.setValue(converted);
-            } else {
-                return ArgumentValidation(ArgumentValidation::InvalidType, int(i));
-            }
+        if (param && !isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), true)) {
+            return ArgumentValidation(ArgumentValidation::InvalidType, int(i));
         }
     }
 
@@ -1206,24 +1202,24 @@ bool Typechecker::argumentsMatch(CallExpr& expr, const FunctionDecl* functionDec
     return !getArgumentValidationResult(expr, params, isVariadic).error;
 }
 
-void Typechecker::validateArgs(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, SourceLocation location) {
+void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, SourceLocation location) {
     if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(&calleeDecl)) {
-        validateArgs(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, location);
+        validateAndConvertArguments(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, location);
     } else {
-        auto variableDecl = llvm::cast<VariableDecl>(&calleeDecl);
-
-        if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->getType().getBase())) {
-            auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
-            validateArgs(expr, paramDecls, false, functionName, location);
-        }
+        auto functionType = llvm::cast<FunctionType>(llvm::cast<VariableDecl>(calleeDecl).getType().getBase());
+        auto paramDecls = functionType->getParamDecls(calleeDecl.getLocation());
+        validateAndConvertArguments(expr, paramDecls, false, functionName, location);
     }
 }
 
-void Typechecker::validateArgs(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, SourceLocation location) {
+void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, SourceLocation location) {
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
     switch (result.error) {
         case ArgumentValidation::None:
+            for (auto&& [param, arg] : llvm::zip_first(params, expr.getArgs())) {
+                arg.setValue(convert(arg.getValue(), param.getType(), true));
+            }
             break;
         case ArgumentValidation::TooFew:
             REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << (isVariadic ? "at least " : "") << params.size());
@@ -1314,7 +1310,7 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     ParamDecl param(sourceType, "", false, expr.getLocation());
 
     validateGenericArgCount(1, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-    validateArgs(expr, param, false, expr.getFunctionName(), expr.getLocation());
+    validateAndConvertArguments(expr, param, false, expr.getFunctionName(), expr.getLocation());
 
     if (!isValidCast(sourceType, targetType) && !isValidCast(sourceType.removeOptional(), targetType)) {
         ERROR(expr.getCallee().getLocation(), "illegal cast from '" << sourceType << "' to '" << targetType << "'");
