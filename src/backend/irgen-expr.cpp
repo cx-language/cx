@@ -12,6 +12,10 @@ Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
 }
 
 Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
+    if (expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar()) {
+        return createGlobalStringPtr(expr.getValue());
+    }
+
     auto* stringPtr = createGlobalStringPtr(expr.getValue());
     auto* size = createConstantInt(Type::getInt(), expr.getValue().size());
     auto* alloca = createEntryBlockAlloca(BasicType::get("string", {}), "__str");
@@ -600,16 +604,15 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
 }
 
 Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
-    if (expr.getType().isOptionalType() && !expr.getType().getWrappedType().isImplementedAsPointer() &&
-        expr.getOperand()->getType() == expr.getType().getWrappedType()) {
-        return emitOptionalConstruction(expr.getOperand()->getType(), expr.getOperand());
+    if (expr.getType().isOptionalType()) {
+        if (expr.getType().getWrappedType().isImplementedAsPointer()) {
+            return emitExpr(*expr.getOperand());
+        } else {
+            return emitOptionalConstruction(expr.getOperand()->getType(), expr.getOperand());
+        }
     }
 
-    if (expr.getOperand()->isStringLiteralExpr() && expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar()) {
-        return createGlobalStringPtr(llvm::cast<StringLiteralExpr>(expr.getOperand())->getValue());
-    }
-
-    return emitPlainExpr(*expr.getOperand());
+    llvm_unreachable("all implicit cast variations handled");
 }
 
 Value* IRGenerator::emitPlainExpr(const Expr& expr) {

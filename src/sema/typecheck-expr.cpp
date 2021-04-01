@@ -393,10 +393,12 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
-    bool setType = true;
-    if (Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary, &setType)) {
+    bool createImplicitCast = false;
+    if (Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary, &createImplicitCast)) {
         if (convertedType != expr->getType()) {
-            if (setType) {
+            if (createImplicitCast) {
+                return new ImplicitCastExpr(expr, convertedType);
+            } else {
                 expr->setType(convertedType);
 
                 if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
@@ -404,15 +406,13 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
                     ifExpr->getElseExpr()->setType(convertedType);
                 }
             }
-
-            return new ImplicitCastExpr(expr, convertedType);
         }
         return expr;
     }
     return nullptr;
 }
 
-Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary, bool* setType) const {
+Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary, bool* createImplicitCast) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
@@ -481,7 +481,6 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         if (expr->isStringLiteralExpr() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() &&
             !target.removeOptional().getPointee().isMutable()) {
             // Special case: allow passing string literals as C-strings (const char*).
-            if (setType) *setType = false;
             return target;
         }
 
@@ -513,7 +512,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) && isImplicitlyConvertible(expr, source, target.getWrappedType())) {
-        if (setType) *setType = false;
+        if (createImplicitCast) *createImplicitCast = true;
         return target;
     }
 

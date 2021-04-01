@@ -96,7 +96,7 @@ private:
     /// Returns the converted expression if the conversion succeeds, or null otherwise.
     Expr* convert(Expr* expr, Type type, bool allowPointerToTemporary = false) const;
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
-    Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false, bool* setType = nullptr) const;
+    Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false, bool* createImplicitCast = nullptr) const;
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                 Type expectedType);
     Decl* findDecl(llvm::StringRef name, SourceLocation location) const;
