@@ -609,10 +609,10 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
         return createGlobalStringPtr(llvm::cast<StringLiteralExpr>(expr.getOperand())->getValue());
     }
 
-    return emitExprWithoutAutoCast(*expr.getOperand());
+    return emitPlainExpr(*expr.getOperand());
 }
 
-Value* IRGenerator::emitExprWithoutAutoCast(const Expr& expr) {
+Value* IRGenerator::emitPlainExpr(const Expr& expr) {
     switch (expr.getKind()) {
         case ExprKind::VarExpr:
             return emitVarExpr(llvm::cast<VarExpr>(expr));
@@ -681,10 +681,6 @@ Value* IRGenerator::emitExpr(const Expr& expr) {
     return value;
 }
 
-Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
-    return emitAutoCast(emitExprWithoutAutoCast(expr), expr);
-}
-
 Value* IRGenerator::emitExprAsPointer(const Expr& expr) {
     auto* value = emitLvalueExpr(expr);
     if (!value->getType()->isPointerType()) {
@@ -711,7 +707,9 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
     return emitExpr(expr);
 }
 
-Value* IRGenerator::emitAutoCast(Value* value, const Expr& expr) {
+Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
+    auto value = emitPlainExpr(expr);
+
     // Handle optionals that have been implicitly unwrapped due to data-flow analysis.
     if (expr.hasAssignableType() && expr.getAssignableType().isOptionalType() && !expr.getAssignableType().getWrappedType().isPointerType() &&
         expr.getType() == expr.getAssignableType().getWrappedType()) {

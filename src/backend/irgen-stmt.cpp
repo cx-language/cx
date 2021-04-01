@@ -187,7 +187,7 @@ void IRGenerator::emitStmt(const Stmt& stmt) {
             emitVarStmt(llvm::cast<VarStmt>(stmt));
             break;
         case StmtKind::ExprStmt:
-            emitLvalueExpr(llvm::cast<ExprStmt>(stmt).getExpr());
+            emitPlainExpr(llvm::cast<ExprStmt>(stmt).getExpr());
             break;
         case StmtKind::DeferStmt:
             deferEvaluationOf(llvm::cast<DeferStmt>(stmt).getExpr());

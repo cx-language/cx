@@ -52,8 +52,7 @@ struct IRGenerator {
     /// Emits value as a pointer, storing it in a temporary alloca if needed.
     Value* emitExprAsPointer(const Expr& expr);
     Value* emitExprOrEnumTag(const Expr& expr, Value** enumValue);
-    Value* emitExprWithoutAutoCast(const Expr& expr);
-    Value* emitAutoCast(Value* value, const Expr& expr);
+    Value* emitPlainExpr(const Expr& expr);
     Value* emitVarExpr(const VarExpr& expr);
     Value* emitStringLiteralExpr(const StringLiteralExpr& expr);
     Value* emitCharacterLiteralExpr(const CharacterLiteralExpr& expr);
