@@ -136,7 +136,6 @@ enum class ValueKind {
 
 struct Value {
     ValueKind kind;
-    std::vector<Instruction*> uses;
     BasicBlock* parent = nullptr;
 
     Value(ValueKind kind) : kind(kind) {}
@@ -145,7 +144,6 @@ struct Value {
     const Expr* getExpr() const;
     bool isTerminator() const { return kind == ValueKind::ReturnInst || kind == ValueKind::BranchInst || kind == ValueKind::CondBranchInst; }
     bool isGlobal() const { return kind == ValueKind::GlobalVariable || kind == ValueKind::Function; }
-    void addUse(Instruction* user) { uses.push_back(user); }
     void print(llvm::raw_ostream& stream) const;
     Value* getBranchArgument() const;
     bool loads(Value* pointer, int gepIndex = -1);

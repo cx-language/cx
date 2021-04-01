@@ -145,10 +145,7 @@ struct IRGenerator {
     Value* createUndefined(Type type) { return createUndefined(getIRType(type)); }
     Value* createBinaryOp(BinaryOperator op, Value* left, Value* right, const Expr* expr, const llvm::Twine& name = "") {
         ASSERT(left->getType()->equals(right->getType()));
-        auto inst = insertBlock->add(new BinaryInst { ValueKind::BinaryInst, op, left, right, expr, name.str() });
-        left->addUse(inst);
-        right->addUse(inst);
-        return inst;
+        return insertBlock->add(new BinaryInst { ValueKind::BinaryInst, op, left, right, expr, name.str() });
     }
     Value* createIsNull(Value* value, const Expr* expr, const llvm::Twine& name = "") {
         Value* nullValue;
