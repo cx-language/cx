@@ -4,12 +4,9 @@ int _EN4main1fE3int(int a) {
 }
 
 int main() {
-    int(int)* _0 = cast _EN4main1fE3int to int(int)*
-    void _1 = call foo(int(int)* _0)
-    int(int)* _2 = cast _EN4main1fE3int to int(int)*
-    void _3 = call bar(int(int)* _2)
-    int(int)* _4 = cast _EN4main1fE3int to int(int)*
-    void _5 = call baz(int(int)* _4)
+    void _0 = call foo(int(int)* _EN4main1fE3int)
+    void _1 = call bar(int(int)* _EN4main1fE3int)
+    void _2 = call baz(int(int)* _EN4main1fE3int)
     return int 0
 }
 

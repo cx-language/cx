@@ -1,9 +1,7 @@
 
 void _EN4main3quxEP3FooP3Bar(Foo* f, Bar* b) {
-    Foo* _0 = cast f to Foo*
-    void _1 = call _EN4main3Foo3fooE(Foo* _0)
-    Bar* _2 = cast b to Bar*
-    void _3 = call _EN4main3Bar3barE(Bar* _2)
+    void _0 = call _EN4main3Foo3fooE(Foo* f)
+    void _1 = call _EN4main3Bar3barE(Bar* b)
     return void
 }
 

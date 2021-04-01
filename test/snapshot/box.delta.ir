@@ -23,40 +23,35 @@ int main() {
 void _EN3std3BoxI3BoxI3intEE6deinitE(Box<Box<int>>* this) {
     Box<int>** pointer = getelementptr this, 0
     Box<int>* pointer.load = load pointer
-    Box<int>* _0 = cast pointer.load to Box<int>*
-    void _1 = call _EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* _0)
+    void _0 = call _EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* pointer.load)
     return void
 }
 
 void _EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(Box<Box<int>>* this, Box<int> value) {
     Box<int>** pointer = getelementptr this, 0
     Box<int>* _0 = call _EN3std8allocateI3BoxI3intEEE3BoxI3intE(Box<int> value)
-    Box<int>* _1 = cast _0 to Box<int>*
-    store _1 to pointer
+    store _0 to pointer
     return void
 }
 
 void _EN3std3BoxI3intE4initE3int(Box<int>* this, int value) {
     int** pointer = getelementptr this, 0
     int* _0 = call _EN3std8allocateI3intEE3int(int value)
-    int* _1 = cast _0 to int*
-    store _1 to pointer
+    store _0 to pointer
     return void
 }
 
 void _EN3std3BoxI3intE6deinitE(Box<int>* this) {
     int** pointer = getelementptr this, 0
     int* pointer.load = load pointer
-    int* _0 = cast pointer.load to int*
-    void _1 = call _EN3std10deallocateIP3intEEP3int(int* _0)
+    void _0 = call _EN3std10deallocateIP3intEEP3int(int* pointer.load)
     return void
 }
 
 int* _EN3std3BoxI3intE3getE(Box<int>* this) {
     int** pointer = getelementptr this, 0
     int* pointer.load = load pointer
-    int* _0 = cast pointer.load to int*
-    return _0
+    return pointer.load
 }
 
 void _EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* allocation) {
@@ -79,13 +74,11 @@ assert.fail:
 
 assert.success:
     Box<int>* _4 = cast _2 to Box<int>*
-    Box<int>* _5 = cast _4 to Box<int>*
-    store _5 to allocation
+    store _4 to allocation
     Box<int>* allocation.load = load allocation
     store value to allocation.load
     Box<int>* allocation.load_0 = load allocation
-    Box<int>* _6 = cast allocation.load_0 to Box<int>*
-    return _6
+    return allocation.load_0
 }
 
 int* _EN3std8allocateI3intEE3int(int value) {
@@ -102,13 +95,11 @@ assert.fail:
 
 assert.success:
     int* _4 = cast _2 to int*
-    int* _5 = cast _4 to int*
-    store _5 to allocation
+    store _4 to allocation
     int* allocation.load = load allocation
     store value to allocation.load
     int* allocation.load_0 = load allocation
-    int* _6 = cast allocation.load_0 to int*
-    return _6
+    return allocation.load_0
 }
 
 void _EN3std10deallocateIP3intEEP3int(int* allocation) {

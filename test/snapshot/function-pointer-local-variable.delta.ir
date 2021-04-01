@@ -9,38 +9,32 @@ int _EN4main2f2E3int4bool(int a, bool b) {
 
 void _EN4main1gEF_4void(void()* p) {
     void()** p2 = alloca void()*
-    void()* _0 = cast p to void()*
-    store _0 to p2
+    store p to p2
     void()* p2.load = load p2
-    void _1 = call p2.load()
+    void _0 = call p2.load()
     return void
 }
 
 void _EN4main2g2EF3int4bool_3int(int(int, bool)* p) {
     int(int, bool)** p2 = alloca int(int, bool)*
     int* a = alloca int
-    int(int, bool)* _0 = cast p to int(int, bool)*
-    store _0 to p2
+    store p to p2
     int(int, bool)* p2.load = load p2
-    bool _1 = !bool true
-    int _2 = call p2.load(int 42, bool _1)
-    int _3 = _2 + int 1
-    store _3 to a
+    bool _0 = !bool true
+    int _1 = call p2.load(int 42, bool _0)
+    int _2 = _1 + int 1
+    store _2 to a
     return void
 }
 
 int main() {
     void()** lf = alloca void()*
     int(int, bool)** lf2 = alloca int(int, bool)*
-    void()* _0 = cast _EN4main3fooE to void()*
-    store _0 to lf
+    store _EN4main3fooE to lf
     void()* lf.load = load lf
-    void()* _1 = cast lf.load to void()*
-    void _2 = call _EN4main1gEF_4void(void()* _1)
-    int(int, bool)* _3 = cast _EN4main2f2E3int4bool to int(int, bool)*
-    store _3 to lf2
+    void _0 = call _EN4main1gEF_4void(void()* lf.load)
+    store _EN4main2f2E3int4bool to lf2
     int(int, bool)* lf2.load = load lf2
-    int(int, bool)* _4 = cast lf2.load to int(int, bool)*
-    void _5 = call _EN4main2g2EF3int4bool_3int(int(int, bool)* _4)
+    void _1 = call _EN4main2g2EF3int4bool_3int(int(int, bool)* lf2.load)
     return int 0
 }

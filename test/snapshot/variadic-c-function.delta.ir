@@ -2,10 +2,9 @@
 int main() {
     float* f = alloca float
     store float 4.19999981 to f
-    char* _0 = cast char* "%d %f" to char*
-    int _1 = -int 3
+    int _0 = -int 3
     float f.load = load f
-    int _2 = call printf(char* _0, int _1, float f.load)
+    int _1 = call printf(char* "%d %f", int _0, float f.load)
     return int 0
 }
 

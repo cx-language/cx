@@ -12,14 +12,12 @@ void _EN4main1S3fooE(S* this) {
     int** b = alloca int*
     int** a = getelementptr this, 0
     int* a.load = load a
-    int* _0 = cast a.load to int*
-    store _0 to b
+    store a.load to b
     return void
 }
 
 void _EN4main1S4initEP3int(S* this, int* a) {
     int** a_0 = getelementptr this, 0
-    int* _0 = cast a to int*
-    store _0 to a_0
+    store a to a_0
     return void
 }

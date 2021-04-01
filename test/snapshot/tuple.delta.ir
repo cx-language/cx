@@ -22,8 +22,7 @@
     float e.load = load e_0
     store e.load to e
     { bool, { float } }* b_1 = getelementptr a, 1
-    { bool, { float } }* _6 = cast b_1 to { bool, { float } }*
-    store _6 to p
+    store b_1 to p
     { bool, { float } }* p.load = load p
     { bool, { float } } p.load.load = load p.load
     store p.load.load to b
@@ -32,9 +31,9 @@
     float* e_1 = getelementptr d_1, 0
     float e.load_0 = load e_1
     store e.load_0 to e
-    { float, float } _7 = insertvalue { float, float } undefined, 0, float 1
-    { float, float } _8 = insertvalue _7, 1, float 2
-    float x = extractvalue _8, 0
+    { float, float } _6 = insertvalue { float, float } undefined, 0, float 1
+    { float, float } _7 = insertvalue _6, 1, float 2
+    float x = extractvalue _7, 0
     store x to e
     { bool, { float } } b.load_0 = load b
     return b.load_0

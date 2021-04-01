@@ -4,8 +4,7 @@ int main() {
     Foo** rf = alloca Foo*
     store f to rf
     Foo* rf.load = load rf
-    Foo* _0 = cast rf.load to Foo*
-    void _1 = call _EN4main3Foo3barE(Foo* _0)
+    void _0 = call _EN4main3Foo3barE(Foo* rf.load)
     return int 0
 }
 

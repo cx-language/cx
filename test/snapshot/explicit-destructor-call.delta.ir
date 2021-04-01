@@ -1,7 +1,6 @@
 
 void _EN4main1fEP1A(A* a) {
-    A* _0 = cast a to A*
-    void _1 = call _EN4main1A6deinitE(A* _0)
+    void _0 = call _EN4main1A6deinitE(A* a)
     return void
 }
 

@@ -114,11 +114,9 @@ if.end_0:
 }
 
 bool _EN3stdneI3intEEPO3intPO3int(Optional<int>* a, Optional<int>* b) {
-    Optional<int>* _0 = cast a to Optional<int>*
-    Optional<int>* _1 = cast b to Optional<int>*
-    bool _2 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* _0, Optional<int>* _1)
-    bool _3 = !_2
-    return _3
+    bool _0 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* a, Optional<int>* b)
+    bool _1 = !_0
+    return _1
 }
 
 void _EN4main1fE() {
@@ -204,11 +202,10 @@ void _EN3std10assertFailEP4char(char* message) {
 
 void _EN4main1gE() {
     char*** p = alloca char**
-    char** _0 = cast char** null to char**
-    store _0 to p
+    store char** null to p
     char** p.load = load p
-    bool _1 = p.load == char** null
-    br _1, if.then, if.else
+    bool _0 = p.load == char** null
+    br _0, if.then, if.else
 
 if.then:
     br if.end

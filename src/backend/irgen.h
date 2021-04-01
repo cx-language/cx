@@ -179,9 +179,15 @@ struct IRGenerator {
         return insertBlock->add(new ConstGEPInst { ValueKind::ConstGEPInst, pointer, index, expr, name.str() });
     }
     Value* createCast(Value* value, IRType* type, const llvm::Twine& name = "") {
+        ASSERT(!value->getType()->equals(type));
         return insertBlock->add(new CastInst { ValueKind::CastInst, value, type, name.str() });
     }
     Value* createCast(Value* value, Type type, const llvm::Twine& name = "") { return createCast(value, getIRType(type), name); }
+    Value* createCastIfNeeded(Value* value, IRType* type, const llvm::Twine& name = "") {
+        if (value->getType()->equals(type)) return value;
+        return createCast(value, type, name);
+    }
+    Value* createCastIfNeeded(Value* value, Type type, const llvm::Twine& name = "") { return createCastIfNeeded(value, getIRType(type), name); }
     Value* createGlobalVariable(Value* value, const llvm::Twine& name = "") {
         return module->globalVariables.emplace_back(new GlobalVariable { ValueKind::GlobalVariable, value, name.str() });
     }

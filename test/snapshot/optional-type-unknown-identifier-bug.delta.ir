@@ -27,8 +27,7 @@ assert.success:
 
 void _EN4main1XI3intE4initE(X<int>* this) {
     Y<int>** y = getelementptr this, 0
-    Y<int>* _0 = cast Y<int>* null to Y<int>*
-    store _0 to y
+    store Y<int>* null to y
     return void
 }
 

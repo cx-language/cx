@@ -280,7 +280,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
 
     // Handle implicit conversions to void pointer, and to base type pointer.
     if (expr.getType().isImplementedAsPointer() && targetType->isPointerType()) {
-        return createCast(emitExpr(expr), targetType);
+        return createCastIfNeeded(emitExpr(expr), targetType);
     }
 
     // TODO: Refactor the following.
@@ -339,7 +339,7 @@ Value* IRGenerator::emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedV
 
 Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit) {
     if (expr.isBuiltinConversion()) {
-        return createCast(emitExpr(*expr.getArgs().front().getValue()), expr.getType());
+        return createCastIfNeeded(emitExpr(*expr.getArgs().front().getValue()), expr.getType());
     }
 
     if (expr.isBuiltinCast()) {

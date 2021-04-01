@@ -5,37 +5,28 @@ int main() {
     void _0 = call _EN4main1S4initE(S* a)
     void _1 = call _EN4main1S4initE(S* b)
     S* _2 = call _EN4main1S3fooEP1S(S* a, S* b)
-    S* _3 = cast _2 to S*
-    void _4 = call _EN4main1fI1SEEP1S(S* _3)
+    void _3 = call _EN4main1fI1SEEP1S(S* _2)
     return int 0
 }
 
 void _EN4main1S4initE(S* this) {
     S** that = getelementptr this, 0
-    S* _0 = cast this to S*
-    store _0 to that
+    store this to that
     return void
 }
 
 void _EN4main1fI1SEEP1S(S* a) {
-    S* _0 = cast a to S*
-    S* _1 = cast a to S*
-    S* _2 = call _EN4main1S3barE(S* _1)
-    S* _3 = cast _2 to S*
-    S* _4 = call _EN4main1S3fooEP1S(S* _0, S* _3)
+    S* _0 = call _EN4main1S3barE(S* a)
+    S* _1 = call _EN4main1S3fooEP1S(S* a, S* _0)
     return void
 }
 
 S* _EN4main1S3fooEP1S(S* this, S* a) {
-    S* _0 = cast this to S*
-    return _0
+    return this
 }
 
 S* _EN4main1S3barE(S* this) {
-    S* _0 = cast this to S*
+    S* _0 = call _EN4main1S3fooEP1S(S* this, S* this)
     S* _1 = call _EN4main1S3fooEP1S(S* this, S* _0)
-    S* _2 = cast _1 to S*
-    S* _3 = call _EN4main1S3fooEP1S(S* this, S* _2)
-    S* _4 = cast _3 to S*
-    return _4
+    return _1
 }

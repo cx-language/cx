@@ -1,10 +1,9 @@
 
 void _EN4main1fEP1SI3intE(S<int>* s) {
-    S<int>* _0 = cast s to S<int>*
-    int* _1 = call _EN4main1SI3intEixE3int(S<int>* _0, int 0)
-    int .load = load _1
-    int _2 = .load + int 1
-    store _2 to _1
+    int* _0 = call _EN4main1SI3intEixE3int(S<int>* s, int 0)
+    int .load = load _0
+    int _1 = .load + int 1
+    store _1 to _0
     return void
 }
 

@@ -22,9 +22,7 @@ void _EN4main2g2EF3int4bool_3int(int(int, bool)* p) {
 }
 
 int main() {
-    void()* _0 = cast _EN4main1fE to void()*
-    void _1 = call _EN4main1gEF_4void(void()* _0)
-    int(int, bool)* _2 = cast _EN4main2f2E3int4bool to int(int, bool)*
-    void _3 = call _EN4main2g2EF3int4bool_3int(int(int, bool)* _2)
+    void _0 = call _EN4main1gEF_4void(void()* _EN4main1fE)
+    void _1 = call _EN4main2g2EF3int4bool_3int(int(int, bool)* _EN4main2f2E3int4bool)
     return int 0
 }

@@ -7,7 +7,6 @@ int main() {
 
 void _EN4main1AI3intE4initE(A<int>* this) {
     int** a = getelementptr this, 0
-    int* _0 = cast int* null to int*
-    store _0 to a
+    store int* null to a
     return void
 }

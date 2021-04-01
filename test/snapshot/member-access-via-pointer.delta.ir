@@ -17,7 +17,6 @@ int main() {
     int i.load = load i
     store i.load to n
     Foo* rf.load_0 = load rf
-    Foo* _0 = cast rf.load_0 to Foo*
-    void _1 = call _EN4main3getEP3Foo(Foo* _0)
+    void _0 = call _EN4main3getEP3Foo(Foo* rf.load_0)
     return int 0
 }

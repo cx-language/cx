@@ -8,15 +8,14 @@ int main() {
     int[3] _2 = insertvalue _1, 2, int 3
     store _2 to a
     int* _3 = getelementptr a, int 0, int 0
-    int* _4 = cast _3 to int*
+    store _3 to p
+    int* _4 = cast a to int*
     store _4 to p
     int* _5 = cast a to int*
     store _5 to p
-    int* _6 = cast a to int*
-    store _6 to p
     int* p.load = load p
-    int* _7 = getelementptr p.load, int 1
-    int .load = load _7
+    int* _6 = getelementptr p.load, int 1
+    int .load = load _6
     store .load to t
     return int 0
 }

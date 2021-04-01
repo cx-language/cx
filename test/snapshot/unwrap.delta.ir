@@ -15,24 +15,22 @@ assert.fail:
     unreachable
 
 assert.success:
-    uint8* _3 = cast _1 to uint8*
-    store _3 to byte
-    void* _4 = call f()
-    uint8[1]* _5 = cast _4 to uint8[1]*
-    uint8[1]* _6 = cast _5 to uint8[1]*
-    store _6 to ptr
+    store _1 to byte
+    void* _3 = call f()
+    uint8[1]* _4 = cast _3 to uint8[1]*
+    store _4 to ptr
     uint8[1]* ptr.load = load ptr
     bool assert.condition_0 = ptr.load == uint8[1]* null
     br assert.condition_0, assert.fail, assert.success
 
 assert.fail_0:
-    void _7 = call _EN3std10assertFailEP4char(char* "Unwrap failed at unwrap.delta:8:8
+    void _5 = call _EN3std10assertFailEP4char(char* "Unwrap failed at unwrap.delta:8:8
 ")
     unreachable
 
 assert.success_0:
-    uint8* _8 = getelementptr ptr.load, int 0, int 0
-    store uint8 1 to _8
+    uint8* _6 = getelementptr ptr.load, int 0, int 0
+    store uint8 1 to _6
     return int 0
 }
 

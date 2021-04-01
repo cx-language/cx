@@ -10,10 +10,8 @@ bool _EN4main1hE() {
 int main() {
     X* x = alloca X
     void _0 = call _EN4main1X4initE(X* x)
-    int()* _1 = cast _EN4main1gE to int()*
-    int _2 = call _EN4main1X1fI3intEEF_3int(X* x, int()* _1)
-    bool()* _3 = cast _EN4main1hE to bool()*
-    bool _4 = call _EN4main1X1fI4boolEEF_4bool(X* x, bool()* _3)
+    int _1 = call _EN4main1X1fI3intEEF_3int(X* x, int()* _EN4main1gE)
+    bool _2 = call _EN4main1X1fI4boolEEF_4bool(X* x, bool()* _EN4main1hE)
     return int 0
 }
 

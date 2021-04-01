@@ -7,6 +7,5 @@ void _EN4main1fEP4char(char* pb) {
     bool _1 = cast pb.load to bool
     store _1 to b
     bool b.load = load b
-    bool _2 = cast b.load to bool
     return void
 }

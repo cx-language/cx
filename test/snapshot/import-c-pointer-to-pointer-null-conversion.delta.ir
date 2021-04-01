@@ -1,7 +1,6 @@
 
 int main() {
-    char** _0 = cast char** null to char**
-    void _1 = call foo(char** _0)
+    void _0 = call foo(char** null)
     return int 0
 }
 

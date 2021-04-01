@@ -9,12 +9,10 @@ int* _EN4main3fooE() {
     bool[2] _3 = insertvalue _2, 1, bool true
     void _4 = call _EN4main1A4initEA2_4bool(A* _0, bool[2] _3)
     bool* _5 = call _EN4main1A2ffE(A* _0)
-    bool* _6 = cast _5 to bool*
-    store _6 to a
-    void _7 = call _EN4main1B4initE4char(B* _1, char 97)
-    char* _8 = call _EN4main1B2ggE(B* _1)
-    char* _9 = cast _8 to char*
-    store _9 to b
+    store _5 to a
+    void _6 = call _EN4main1B4initE4char(B* _1, char 97)
+    char* _7 = call _EN4main1B2ggE(B* _1)
+    store _7 to b
     return i
 }
 

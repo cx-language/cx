@@ -3,7 +3,6 @@ int main() {
     int** p = alloca int*
     int** o = alloca int*
     int* p.load = load p
-    int* _0 = cast p.load to int*
-    store _0 to o
+    store p.load to o
     return int 0
 }

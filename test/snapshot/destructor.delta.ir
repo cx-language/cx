@@ -37,8 +37,7 @@ void _EN4main3Foo6deinitE(Foo* this) {
     int* i = getelementptr this, 0
     store int 0 to i
     void _0 = call _EN4main3Foo1fE(Foo* this)
-    Foo* _1 = cast this to Foo*
-    void _2 = call _EN4main3Foo1fE(Foo* _1)
+    void _1 = call _EN4main3Foo1fE(Foo* this)
     return void
 }
 

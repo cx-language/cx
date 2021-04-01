@@ -5,10 +5,9 @@ int main() {
     int* _1 = alloca int
     void _2 = call _EN4main1SI3intE4initE(S<int>* s)
     store int 0 to _0
-    int* _3 = cast _0 to int*
-    void _4 = call _EN4main1SI3intE1fEP3int(S<int>* s, int* _3)
+    void _3 = call _EN4main1SI3intE1fEP3int(S<int>* s, int* _0)
     store int 0 to _1
-    void _5 = call _EN4main1SI3intE1fEP3int(S<int>* s, int* _1)
+    void _4 = call _EN4main1SI3intE1fEP3int(S<int>* s, int* _1)
     return int 0
 }
 

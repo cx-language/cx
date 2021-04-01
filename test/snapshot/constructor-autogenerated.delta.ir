@@ -21,8 +21,7 @@ void _EN4main1X4initE3intP3int(X* this, int a, int* b) {
     int* a_0 = getelementptr this, 0
     store a to a_0
     int** b_0 = getelementptr this, 1
-    int* _0 = cast b to int*
-    store _0 to b_0
+    store b to b_0
     return void
 }
 

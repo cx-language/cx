@@ -1,7 +1,6 @@
 
 int* _EN4main3fooE() {
-    int* _0 = cast int* null to int*
-    return _0
+    return int* null
 }
 
 int main() {
@@ -16,9 +15,7 @@ int main() {
     bool _3 = _2 != int* null
     store _3 to isNonNull
     int* _4 = call _EN4main3fooE()
-    int* _5 = cast _4 to int*
-    store _5 to ptr
-    bool* _6 = cast bool* null to bool*
-    store _6 to ptr2
+    store _4 to ptr
+    store bool* null to ptr2
     return int 0
 }

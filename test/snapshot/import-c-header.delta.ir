@@ -2,16 +2,14 @@
 int main() {
     Foo* f = alloca Foo
     uint* bar = alloca uint
-    char* _0 = cast char* "foo bar" to char*
-    int _1 = call puts(char* _0)
+    int _0 = call puts(char* "foo bar")
     int* bar_0 = getelementptr f, 0
-    int _2 = int 5 + int 42
-    store _2 to bar_0
+    int _1 = int 5 + int 42
+    store _1 to bar_0
     char** baz = getelementptr f, 1
-    char* _3 = cast char* "foo" to char*
-    store _3 to baz
-    uint _4 = call getBar(Foo* f)
-    store _4 to bar
+    store char* "foo" to baz
+    uint _2 = call getBar(Foo* f)
+    store _2 to bar
     return int 0
 }
 

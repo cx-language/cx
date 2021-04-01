@@ -4,8 +4,7 @@ int main() {
     int* a = alloca int
     int** b = alloca int*
     int** c = alloca int*
-    Foo* _0 = cast Foo* null to Foo*
-    store _0 to f
+    store Foo* null to f
     Foo* f.load = load f
     int* i = getelementptr f.load, 0
     Foo* f.load_0 = load f
@@ -14,14 +13,12 @@ int main() {
     store i.load to a
     Foo* f.load_1 = load f
     int* i_1 = getelementptr f.load_1, 0
-    int* _1 = cast i_1 to int*
-    store _1 to b
+    store i_1 to b
     Foo* f.load_2 = load f
     int* i_2 = getelementptr f.load_2, 0
     store i_2 to c
     Foo* f.load_3 = load f
-    Foo* _2 = cast f.load_3 to Foo*
-    void _3 = call _EN4main3Foo3barE(Foo* _2)
+    void _0 = call _EN4main3Foo3barE(Foo* f.load_3)
     Foo* f.load_4 = load f
     Foo* f.load_5 = load f
     Foo f.load.load = load f.load_5

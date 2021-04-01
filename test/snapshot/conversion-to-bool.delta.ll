@@ -6,6 +6,5 @@ define void @_EN4main1fEP4char(i8* %pb) {
   %1 = icmp ne i8 %pb.load, 0
   store i1 %1, i1* %b, align 1
   %b.load = load i1, i1* %b, align 1
-  %2 = icmp ne i1 %b.load, false
   ret void
 }
