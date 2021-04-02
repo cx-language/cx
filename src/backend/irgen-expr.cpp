@@ -668,17 +668,8 @@ Value* IRGenerator::emitPlainExpr(const Expr& expr) {
 Value* IRGenerator::emitExpr(const Expr& expr) {
     auto* value = emitLvalueExpr(expr);
 
-    if (value) {
-        // FIXME: Temporary
-        if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(&expr)) {
-            if (value->getType()->isPointerType() && value->getType()->getPointee()->equals(getIRType(implicitCastExpr->getOperand()->getType()))) {
-                return createLoad(value);
-            }
-        }
-
-        if (value->getType()->isPointerType() && value->getType()->getPointee()->equals(getIRType(expr.getType()))) {
-            return createLoad(value);
-        }
+    if (value && value->getType()->isPointerType() && value->getType()->getPointee()->equals(getIRType(expr.getType()))) {
+        return createLoad(value);
     }
 
     return value;
