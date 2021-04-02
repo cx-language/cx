@@ -10,9 +10,8 @@ int main() {
     string __str.load = load __str
     string _4 = call _EN4main3barI6stringEE6string(string __str.load)
     store _4 to b
-    int _5 = -int 5
-    int _6 = call _EN4main3quxI3intEE3int(int _5)
-    store _6 to five
+    int _5 = call _EN4main3quxI3intEE3int(int -5)
+    store _5 to five
     return int 0
 }
 

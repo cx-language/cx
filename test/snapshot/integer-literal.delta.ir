@@ -4,9 +4,7 @@ int main() {
     int* j = alloca int
     int* k = alloca int
     store int 42 to i
-    int _0 = int 0 + int 1
-    store _0 to j
-    int _1 = int 15 * int 7
-    store _1 to k
+    store int 1 to j
+    store int 105 to k
     return int 0
 }

@@ -9,15 +9,13 @@ const int int_min = -2147483648;
 const int8 int8_min = -128;
 const int16 int16_min = -32768;
 const int32 int32_min = -2147483648;
-// TODO: Fix "error: integer literal is too large"
-// const int64 int64_min = -9223372036854775808;
+const int64 int64_min = -9223372036854775808;
 
 const uint uint_max = 4294967295;
 const uint8 uint8_max = 255;
 const uint16 uint16_max = 65535;
 const uint32 uint32_max = 4294967295;
-// TODO: Fix "error: integer literal is too large"
-// const uint64 uint64_max = 18446744073709551615;
+const uint64 uint64_max = 18446744073709551615;
 
 const uint uint_min = 0;
 const uint8 uint8_min = 0;

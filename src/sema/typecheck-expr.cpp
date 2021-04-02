@@ -87,9 +87,10 @@ Type typecheckCharacterLiteralExpr(CharacterLiteralExpr&) {
 Type typecheckIntLiteralExpr(IntLiteralExpr& expr) {
     if (expr.getValue().isSignedIntN(32)) {
         return Type::getInt();
-    }
-    if (expr.getValue().isSignedIntN(64)) {
+    } else if (expr.getValue().isSignedIntN(64)) {
         return Type::getInt64();
+    } else if (expr.getValue().isIntN(64)) {
+        return Type::getUInt64();
     }
     ERROR(expr.getLocation(), "integer literal is too large");
 }
@@ -455,7 +456,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
         // Auto-cast integer constants to target type if within range, error out if not within range.
         if ((expr->getType().isInteger() || expr->getType().isChar() || expr->getType().isEnumType()) && expr->isConstant()) {
-            const auto& value = expr->getConstantIntegerValue();
+            auto value = expr->getConstantIntegerValue();
             auto adjustedTarget = allowPointerToTemporary ? target.removePointer() : target; // Convert e.g. int literal to uint when comparing to uint*.
 
             if (adjustedTarget.isInteger()) {

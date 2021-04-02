@@ -7,13 +7,10 @@ int main() {
     int* qux3 = alloca int
     int* qux4 = alloca int
     store int -1 to foo
-    uint _0 = cast int 0 to uint
-    store _0 to bar
-    uint64 _1 = cast int 0 to uint64
-    store _1 to qux
-    int8 _2 = cast int 0 to int8
-    store _2 to qux2
-    store int -1 to qux3
+    store uint 0 to bar
+    store uint64 0 to qux
+    store int8 0 to qux2
+    store int 18446744073709551615 to qux3
     int qux3.load = load qux3
     store qux3.load to qux4
     return int 0

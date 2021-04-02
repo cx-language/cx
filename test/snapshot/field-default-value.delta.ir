@@ -3,8 +3,7 @@ int main() {
     Foo* foo = alloca Foo
     Bar* bar = alloca Bar
     void _0 = call _EN4main3Foo4initE(Foo* foo)
-    int _1 = -int 1
-    void _2 = call _EN4main3Bar4initE3int(Bar* bar, int _1)
+    void _1 = call _EN4main3Bar4initE3int(Bar* bar, int -1)
     return int 0
 }
 

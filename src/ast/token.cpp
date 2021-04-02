@@ -169,10 +169,10 @@ bool Token::is(llvm::ArrayRef<Token::Kind> kinds) const {
 }
 
 llvm::APSInt Token::getIntegerValue() const {
-    llvm::APInt value;
+    llvm::APInt value(64, 0);
     bool fail = string.getAsInteger(0, value);
     ASSERT(!fail, "invalid integer literal");
-    return llvm::APSInt(value);
+    return llvm::APSInt(value, false);
 }
 
 llvm::APFloat Token::getFloatingPointValue() const {

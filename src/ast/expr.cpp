@@ -43,7 +43,6 @@ bool Expr::isConstant() const {
         case ExprKind::FloatLiteralExpr:
         case ExprKind::BoolLiteralExpr:
         case ExprKind::NullLiteralExpr:
-        case ExprKind::UndefinedLiteralExpr:
             return true;
 
         case ExprKind::ArrayLiteralExpr:
@@ -62,9 +61,17 @@ bool Expr::isConstant() const {
             }
             return true;
 
-        case ExprKind::UnaryExpr:
-            return llvm::cast<UnaryExpr>(this)->getOperand().isConstant();
-
+        case ExprKind::UnaryExpr: {
+            auto unaryExpr = llvm::cast<UnaryExpr>(this);
+            switch (unaryExpr->getOperator()) {
+                case Token::Plus:
+                case Token::Minus:
+                case Token::Tilde:
+                    return unaryExpr->getOperand().isConstant();
+                default:
+                    return false;
+            }
+        }
         case ExprKind::BinaryExpr:
             return llvm::cast<BinaryExpr>(this)->getLHS().isConstant() && llvm::cast<BinaryExpr>(this)->getRHS().isConstant();
 
@@ -76,6 +83,7 @@ bool Expr::isConstant() const {
         case ExprKind::IndexAssignmentExpr:
         case ExprKind::UnwrapExpr:
         case ExprKind::LambdaExpr:
+        case ExprKind::UndefinedLiteralExpr:
             return false;
 
         case ExprKind::ImplicitCastExpr:
@@ -91,36 +99,24 @@ bool Expr::isConstant() const {
 
 llvm::APSInt Expr::getConstantIntegerValue() const {
     switch (getKind()) {
-        case ExprKind::VarExpr: {
-            auto* decl = llvm::cast<VarExpr>(this)->getDecl();
-
-            if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+        case ExprKind::VarExpr:
+            if (auto* varDecl = llvm::dyn_cast<VarDecl>(llvm::cast<VarExpr>(this)->getDecl())) {
                 if (!varDecl->getType().isMutable() && varDecl->getInitializer()) {
                     return varDecl->getInitializer()->getConstantIntegerValue();
                 }
             }
-
             llvm_unreachable("not a constant integer");
-        }
-
         case ExprKind::CharacterLiteralExpr:
             return llvm::APSInt::get(llvm::cast<CharacterLiteralExpr>(this)->getValue());
-
-        case ExprKind::IntLiteralExpr: {
-            auto& value = llvm::cast<IntLiteralExpr>(this)->getValue();
-            return llvm::APSInt(value, value.isSignBitSet());
-        }
-
+        case ExprKind::IntLiteralExpr:
+            return llvm::cast<IntLiteralExpr>(this)->getValue();
         case ExprKind::UnaryExpr:
             return llvm::cast<UnaryExpr>(this)->getConstantIntegerValue();
-
         case ExprKind::BinaryExpr:
             return llvm::cast<BinaryExpr>(this)->getConstantIntegerValue();
-
         case ExprKind::SizeofExpr:
         case ExprKind::IfExpr:
             llvm_unreachable("unimplemented");
-
         default:
             llvm_unreachable("not a constant integer");
     }

@@ -31,13 +31,12 @@ int main() {
     vec2 _4 = call _EN4mainmlE4vec24vec2(vec2 .load, vec2 v.load)
     store _4 to v
     vec2 v.load_0 = load v
-    int _5 = -int 1
-    void _6 = call _EN4main4vec24initE3int3int(vec2* _1, int _5, int 3)
+    void _5 = call _EN4main4vec24initE3int3int(vec2* _1, int -1, int 3)
     vec2 .load_0 = load _1
-    bool _7 = call _EN4maineqE4vec24vec2(vec2 v.load_0, vec2 .load_0)
+    bool _6 = call _EN4maineqE4vec24vec2(vec2 v.load_0, vec2 .load_0)
     int* x = getelementptr v, 0
     int x.load = load x
-    int _8 = call _EN4main4vec2ixE3int(vec2* v, int x.load)
+    int _7 = call _EN4main4vec2ixE3int(vec2* v, int x.load)
     return int 0
 }
 

@@ -4,12 +4,11 @@ int main() {
     uint* bar = alloca uint
     int _0 = call puts(char* "foo bar")
     int* bar_0 = getelementptr f, 0
-    int _1 = int 5 + int 42
-    store _1 to bar_0
+    store int 47 to bar_0
     char** baz = getelementptr f, 1
     store char* "foo" to baz
-    uint _2 = call getBar(Foo* f)
-    store _2 to bar
+    uint _1 = call getBar(Foo* f)
+    store _1 to bar
     return int 0
 }
 

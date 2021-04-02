@@ -30,7 +30,6 @@ int main() {
     T t.load_0 = load t
     T t.load_1 = load t
     void _5 = call _EN4mainplE1T1T(T t.load_0, T t.load_1)
-    int _6 = int 1 + int 1
     return int 0
 }
 

@@ -6,11 +6,9 @@ int main() {
     int8* c = alloca int8
     void _0 = call foo(uint8 1)
     store uint64 42 to b
-    int _1 = -int 42
-    int8 _2 = cast _1 to int8
-    store _2 to c
+    store int8 -42 to c
     uint64 b.load = load b
-    uint64 _3 = b.load + uint64 1
-    store _3 to b
+    uint64 _1 = b.load + uint64 1
+    store _1 to b
     return int 0
 }

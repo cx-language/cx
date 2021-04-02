@@ -46,7 +46,7 @@ Value* IRGenerator::emitIntLiteralExpr(const IntLiteralExpr& expr) {
         return createConstantFP(expr.getType(), expr.getValue().roundToDouble());
     }
 
-    return createConstantInt(expr.getType(), expr.getValue().getExtValue());
+    return createConstantInt(expr.getType(), expr.getValue());
 }
 
 Value* IRGenerator::emitFloatLiteralExpr(const FloatLiteralExpr& expr) {
@@ -616,6 +616,10 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
 }
 
 Value* IRGenerator::emitPlainExpr(const Expr& expr) {
+    if (expr.isConstant() && expr.getType().isInteger()) {
+        return createConstantInt(expr.getType(), expr.getConstantIntegerValue());
+    }
+
     switch (expr.getKind()) {
         case ExprKind::VarExpr:
             return emitVarExpr(llvm::cast<VarExpr>(expr));

@@ -1,9 +1,8 @@
 
 void _EN4main3fooE3int(int i) {
-    int _0 = -int 1
     switch i {
         int 0 -> switch.case.0
-        _0 -> switch.case.1
+        int -1 -> switch.case.1
         int 42 -> switch.case.2
     }
 
@@ -11,8 +10,8 @@ switch.case.0:
     br switch.end
 
 switch.case.1:
+    void _0 = call _EN4main3fooE3int(int i)
     void _1 = call _EN4main3fooE3int(int i)
-    void _2 = call _EN4main3fooE3int(int i)
     br switch.end
 
 switch.case.2:
@@ -30,7 +29,7 @@ switch.case.0_0:
     br switch.end_0
 
 switch.default_0:
-    void _3 = call _EN4main3fooE3int(int i)
+    void _2 = call _EN4main3fooE3int(int i)
     br switch.end_0
 
 switch.end_0:
