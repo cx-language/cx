@@ -62,19 +62,18 @@ void _EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* allocation) {
 
 Box<int>* _EN3std8allocateI3BoxI3intEEE3BoxI3intE(Box<int> value) {
     Box<int>** allocation = alloca Box<int>*
-    uint64 _0 = cast _1 to uint64
-    void* _2 = call malloc(uint64 _0)
-    bool assert.condition = _2 == void* null
+    void* _0 = call malloc(uint64 sizeof(Box<int>))
+    bool assert.condition = _0 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.delta:9:54
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.delta:9:54
 ")
     unreachable
 
 assert.success:
-    Box<int>* _4 = cast _2 to Box<int>*
-    store _4 to allocation
+    Box<int>* _2 = cast _0 to Box<int>*
+    store _2 to allocation
     Box<int>* allocation.load = load allocation
     store value to allocation.load
     Box<int>* allocation.load_0 = load allocation
@@ -83,19 +82,18 @@ assert.success:
 
 int* _EN3std8allocateI3intEE3int(int value) {
     int** allocation = alloca int*
-    uint64 _0 = cast _1 to uint64
-    void* _2 = call malloc(uint64 _0)
-    bool assert.condition = _2 == void* null
+    void* _0 = call malloc(uint64 sizeof(int))
+    bool assert.condition = _0 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.delta:9:54
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.delta:9:54
 ")
     unreachable
 
 assert.success:
-    int* _4 = cast _2 to int*
-    store _4 to allocation
+    int* _2 = cast _0 to int*
+    store _2 to allocation
     int* allocation.load = load allocation
     store value to allocation.load
     int* allocation.load_0 = load allocation

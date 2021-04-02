@@ -182,7 +182,7 @@ IRType* Value::getType() const {
         case ValueKind::UnreachableInst:
             llvm_unreachable("unhandled UnreachableInst");
         case ValueKind::SizeofInst:
-            return getIRType(Type::getInt());
+            return getIRType(Type::getUInt64());
         case ValueKind::BasicBlock:
             llvm_unreachable("unhandled BasicBlock");
         case ValueKind::Function: {
@@ -261,7 +261,7 @@ std::string Value::getName() const {
         case ValueKind::UnreachableInst:
             llvm_unreachable("unhandled UnreachableInst");
         case ValueKind::SizeofInst:
-            return llvm::cast<SizeofInst>(this)->name;
+            return ("sizeof(" + llvm::cast<SizeofInst>(this)->type->getName() + ")").str();
         case ValueKind::BasicBlock:
             return llvm::cast<BasicBlock>(this)->name;
         case ValueKind::Function:

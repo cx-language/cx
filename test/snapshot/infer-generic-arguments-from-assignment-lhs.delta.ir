@@ -215,21 +215,20 @@ void _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* this, List<int>* li
 extern void free(void*)
 
 int* _EN3std13allocateArrayI3intEE3int(int size) {
-    uint64 _0 = cast _1 to uint64
-    uint64 _2 = cast size to uint64
-    uint64 _3 = _0 * _2
-    void* _4 = call malloc(uint64 _3)
-    bool assert.condition = _4 == void* null
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(int) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
     br assert.condition, assert.fail, assert.success
 
 assert.fail:
-    void _5 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.delta:36:61
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.delta:36:61
 ")
     unreachable
 
 assert.success:
-    int* _6 = cast _4 to int*
-    return _6
+    int* _4 = cast _2 to int*
+    return _4
 }
 
 RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
