@@ -1,4 +1,4 @@
-name: CMake
+name: Build
 
 on: [push]
 
@@ -64,3 +64,41 @@ jobs:
         run: |
           pip install lit
           cmake --build . --config $BUILD_TYPE --target check
+
+  deploy-website:
+    if: github.repository == 'delta-lang/delta' && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Deploy website
+        run: |
+          wget --no-verbose https://github.com/jgm/pandoc/releases/download/2.13/pandoc-2.13-1-amd64.deb
+          sudo dpkg -i pandoc-2.13-1-amd64.deb
+
+          (
+            cd docs || exit 1
+            ./build-website.sh
+          )
+
+          git clone https://github.com/delta-lang/delta-lang.github.io.git
+          cd delta-lang.github.io || exit 1
+
+          DELTA_VERSION=$GITHUB_SHA
+          echo "$DELTA_VERSION" > server/.delta-version
+
+          cp -a ../docs/build/. ./
+          git add .
+
+          PREVIOUS_COMMIT_AUTHOR=$(git log -1 --pretty=format:%an)
+          if [ "$PREVIOUS_COMMIT_AUTHOR" = "Delta CI" ]; then
+            AMEND=--amend
+          fi
+
+          git config user.email ""
+          git config user.name "Delta CI"
+          git commit --message "Update documentation and Delta version to $DELTA_VERSION" $AMEND
+
+          git remote set-url origin "https://${{ secrets.CI_TOKEN }}@github.com/delta-lang/delta-lang.github.io.git" > /dev/null 2>&1
+          git push --quiet --force-with-lease
