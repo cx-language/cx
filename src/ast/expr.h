@@ -391,15 +391,23 @@ private:
 };
 
 struct ImplicitCastExpr : Expr {
-    ImplicitCastExpr(Expr* operand, Type targetType) : Expr(ExprKind::ImplicitCastExpr, operand->getLocation()), operand(operand) {
+    enum Kind {
+        OptionalWrap,
+        AutoReference,
+    };
+
+    ImplicitCastExpr(Expr* operand, Type targetType, Kind kind)
+    : Expr(ExprKind::ImplicitCastExpr, operand->getLocation()), operand(operand), kind(kind) {
         setType(targetType);
         setAssignableType(targetType);
     }
     Expr* getOperand() const { return operand; }
+    Kind getImplicitCastKind() const { return kind; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::ImplicitCastExpr; }
 
 private:
     Expr* operand;
+    Kind kind;
 };
 
 } // namespace delta

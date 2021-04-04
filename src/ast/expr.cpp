@@ -250,7 +250,8 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         }
         case ExprKind::ImplicitCastExpr: {
             auto implicitCastExpr = llvm::cast<ImplicitCastExpr>(this);
-            return new ImplicitCastExpr(implicitCastExpr->getOperand()->instantiate(genericArgs), implicitCastExpr->getType().resolve(genericArgs));
+            return new ImplicitCastExpr(implicitCastExpr->getOperand()->instantiate(genericArgs), implicitCastExpr->getType().resolve(genericArgs),
+                                        implicitCastExpr->getImplicitCastKind());
         }
     }
 

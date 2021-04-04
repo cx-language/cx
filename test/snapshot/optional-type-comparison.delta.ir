@@ -1,0 +1,38 @@
+
+int main() {
+    Optional<int>* a = alloca Optional<int>
+    Optional<int>* _0 = alloca Optional<int>
+    int* _1 = alloca int
+    void _2 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
+    Optional<int> .load = load _0
+    store .load to a
+    store int 1 to _1
+    bool _3 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* _1)
+    return int 0
+}
+
+void _EN3std8OptionalI3intE4initE(Optional<int>* this) {
+    bool* hasValue = getelementptr this, 0
+    store bool false to hasValue
+    return void
+}
+
+bool _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* b) {
+    bool* hasValue = getelementptr a, 0
+    bool hasValue.load = load hasValue
+    bool _0 = !hasValue.load
+    br _0, if.then, if.else
+
+if.then:
+    return bool false
+
+if.else:
+    br if.end
+
+if.end:
+    int* value = getelementptr a, 1
+    int value.load = load value
+    int b.load = load b
+    bool _1 = value.load == b.load
+    return _1
+}

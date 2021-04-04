@@ -1,7 +1,6 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void f(uint a) {
-    // CHECK: [[@LINE+2]]:22: error: no matching operator '..' with arguments 'float' and 'uint'
-    // CHECK-COUNT-2: note: candidate function:
+    // CHECK: [[@LINE+1]]:22: error: no matching operator '..' with arguments 'float' and 'uint'
     for (var i in 0.0..a) {}
 }

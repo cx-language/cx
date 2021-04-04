@@ -394,18 +394,16 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
 }
 
 Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) const {
-    bool createImplicitCast = false;
-    if (Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary, &createImplicitCast)) {
-        if (convertedType != expr->getType()) {
-            if (createImplicitCast) {
-                return new ImplicitCastExpr(expr, convertedType);
-            } else {
-                expr->setType(convertedType);
+    llvm::Optional<ImplicitCastExpr::Kind> implicitCastKind;
+    if (Type convertedType = isImplicitlyConvertible(expr, expr->getType(), type, allowPointerToTemporary, &implicitCastKind)) {
+        if (implicitCastKind) {
+            return new ImplicitCastExpr(expr, convertedType, *implicitCastKind);
+        } else if (convertedType != expr->getType()) {
+            expr->setType(convertedType);
 
-                if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
-                    ifExpr->getThenExpr()->setType(convertedType);
-                    ifExpr->getElseExpr()->setType(convertedType);
-                }
+            if (auto* ifExpr = llvm::dyn_cast<IfExpr>(expr)) {
+                ifExpr->getThenExpr()->setType(convertedType);
+                ifExpr->getElseExpr()->setType(convertedType);
             }
         }
         return expr;
@@ -413,7 +411,8 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
     return nullptr;
 }
 
-Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary, bool* createImplicitCast) const {
+Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary,
+                                          llvm::Optional<ImplicitCastExpr::Kind>* implicitCastKind) const {
     if (source.isBasicType() && target.isBasicType() && source.getName() == target.getName() && source.getGenericArgs() == target.getGenericArgs()) {
         return source;
     }
@@ -504,6 +503,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
         (source.isMutable() || (expr && expr->isConstant()) || !target.removeOptional().getPointee().isMutable()) &&
         isImplicitlyConvertible(expr, source, target.removeOptional().getPointee())) {
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::AutoReference;
         return source;
     }
 
@@ -513,7 +513,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (target.isOptionalType() && (!expr || !expr->isNullLiteralExpr()) && isImplicitlyConvertible(expr, source, target.getWrappedType())) {
-        if (createImplicitCast) *createImplicitCast = true;
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalWrap;
         return target;
     }
 
@@ -819,6 +819,33 @@ static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
     });
 }
 
+static const Match* findMatchByPredicate(llvm::ArrayRef<Match> matches, const CallExpr& call, llvm::function_ref<bool(Type param, Type arg)> predicate) {
+    const Match* result = nullptr;
+
+    for (auto& match : matches) {
+        std::vector<ParamDecl> params;
+        if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl)) {
+            params = functionDecl->getParams();
+        } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(match.decl)) {
+            params = llvm::cast<FunctionType>(variableDecl->getType().getBase())->getParamDecls();
+        } else {
+            llvm_unreachable("unhandled callee decl");
+        }
+
+        if (params.size() == call.getArgs().size()) {
+            if (llvm::all_of(llvm::zip_first(params, call.getArgs()), [&](auto&& pair) {
+                    auto&& [param, arg] = pair;
+                    return predicate(param.getType(), arg.getValue()->getType());
+                })) {
+                if (result) return nullptr;
+                result = &match;
+            }
+        }
+    }
+
+    return result;
+}
+
 static bool isStdlibDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->getName() == "std";
 }
@@ -827,22 +854,21 @@ static bool isCHeaderDecl(const Match& match) {
     return match.decl->getModule() && match.decl->getModule()->getName().endswith_lower(".h");
 }
 
-static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches) {
-    // Prefer stdlib candidate if there's exactly one of them and all the others are from C headers.
+static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, const CallExpr& call) {
     if (llvm::count_if(matches, isStdlibDecl) == 1 && llvm::all_of(matches, [](auto& match) { return isStdlibDecl(match) || isCHeaderDecl(match); })) {
         return llvm::find_if(matches, isStdlibDecl);
-    }
-
-    // Redeclarations in multiple C headers are considered the same declaration, so just return one of them.
-    if (llvm::all_of(matches, isCHeaderDecl)) {
+    } else if (llvm::all_of(matches, isCHeaderDecl)) {
+        // Redeclarations in multiple C headers are considered the same declaration, so just return one of them.
         return &matches[0];
-    }
-
-    if (llvm::count_if(matches, [](auto& match) { return match.didConvertArguments == false; }) == 1) {
+    } else if (llvm::count_if(matches, [](auto& match) { return match.didConvertArguments == false; }) == 1) {
         return llvm::find_if(matches, [](auto& match) { return match.didConvertArguments == false; });
+    } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg; })) {
+        return match;
+    } else if (auto match = findMatchByPredicate(matches, call, [](Type param, Type arg) { return param == arg.getPointerTo(); })) {
+        return match;
+    } else {
+        return nullptr;
     }
-
-    return nullptr;
 }
 
 static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& b) {
@@ -1001,15 +1027,23 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         }
     }
 
+    if (matches.empty()) {
+        matches = std::move(templateMatches);
+    }
+
     if (matches.size() > 1) {
-        if (auto match = resolveAmbiguousOverload(matches)) {
+        for (auto& arg : expr.getArgs()) {
+            if (!arg.getValue()->hasType()) {
+                typecheckExpr(*arg.getValue());
+            }
+        }
+
+        if (auto match = resolveAmbiguousOverload(matches, expr)) {
             matches = { *match };
         } else {
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(map(matches, [](auto& match) { return match.decl; })),
                              "ambiguous reference to '" << callee << "'" << (isConstructorCall ? " constructor" : ""));
         }
-    } else if (matches.empty()) {
-        matches = std::move(templateMatches);
     }
 
     if (matches.size() == 1) {

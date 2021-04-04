@@ -14,8 +14,13 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     }
 
     Type localVariableType;
+    const Expr* operand = returnValue;
 
-    if (auto* varExpr = llvm::dyn_cast<VarExpr>(returnValue)) {
+    if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(returnValue)) {
+        operand = implicitCastExpr->getOperand();
+    }
+
+    if (auto varExpr = llvm::dyn_cast<VarExpr>(operand)) {
         switch (varExpr->getDecl()->getKind()) {
             case DeclKind::VarDecl: {
                 auto* varDecl = llvm::cast<VarDecl>(varExpr->getDecl());

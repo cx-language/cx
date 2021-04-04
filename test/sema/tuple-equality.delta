@@ -1,7 +1,6 @@
 // RUN: %not %delta -typecheck %s | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+2]]:12: error: no matching operator '==' with arguments '(int a)' and '(int a)'
-	// CHECK-COUNT-8: note: candidate function:
+    // CHECK: [[@LINE+1]]:12: error: no matching operator '==' with arguments '(int a)' and '(int a)'
     (a: 1) == (a: 1); // TODO: Implement tuple equality comparison
 }

@@ -52,7 +52,7 @@ void testInsertAndIndex() {
     var m = OrderedMap<int, int>();
 
     m.insert(42, 39);
-    assert(m[42]! == 39);
+    assert(m[42] == 39);
 
     m.remove(42);
 
@@ -61,7 +61,7 @@ void testInsertAndIndex() {
     }
 
     for (var i in 42..79) {
-        assert(m[i]! == i+7);
+        assert(m[i] == i+7);
 
         m.remove(i);
         assert(m[i] == null);

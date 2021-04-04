@@ -604,15 +604,18 @@ Value* IRGenerator::emitIfExpr(const IfExpr& expr) {
 }
 
 Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
-    if (expr.getType().isOptionalType()) {
-        if (expr.getType().getWrappedType().isImplementedAsPointer()) {
-            return emitExpr(*expr.getOperand());
-        } else {
-            return emitOptionalConstruction(expr.getOperand()->getType(), expr.getOperand());
-        }
+    switch (expr.getImplicitCastKind()) {
+        case ImplicitCastExpr::OptionalWrap:
+            if (expr.getType().getWrappedType().isImplementedAsPointer()) {
+                return emitExpr(*expr.getOperand());
+            } else {
+                return emitOptionalConstruction(expr.getOperand()->getType(), expr.getOperand());
+            }
+        case ImplicitCastExpr::AutoReference:
+            return emitPlainExpr(*expr.getOperand());
     }
 
-    llvm_unreachable("all implicit cast variations handled");
+    llvm_unreachable("all implicit cast kinds handled");
 }
 
 Value* IRGenerator::emitPlainExpr(const Expr& expr) {
