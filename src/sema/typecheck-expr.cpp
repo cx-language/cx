@@ -819,23 +819,27 @@ static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
     });
 }
 
-static bool isStdlibDecl(Decl* decl) {
-    return decl->getModule() && decl->getModule()->getName() == "std";
+static bool isStdlibDecl(const Match& match) {
+    return match.decl->getModule() && match.decl->getModule()->getName() == "std";
 }
 
-static bool isCHeaderDecl(Decl* decl) {
-    return decl->getModule() && decl->getModule()->getName().endswith_lower(".h");
+static bool isCHeaderDecl(const Match& match) {
+    return match.decl->getModule() && match.decl->getModule()->getName().endswith_lower(".h");
 }
 
-static Decl* resolveAmbiguousOverload(llvm::ArrayRef<Decl*> matches) {
+static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches) {
     // Prefer stdlib candidate if there's exactly one of them and all the others are from C headers.
-    if (llvm::count_if(matches, isStdlibDecl) == 1 && llvm::all_of(matches, [](Decl* decl) { return isStdlibDecl(decl) || isCHeaderDecl(decl); })) {
-        return *llvm::find_if(matches, isStdlibDecl);
+    if (llvm::count_if(matches, isStdlibDecl) == 1 && llvm::all_of(matches, [](auto& match) { return isStdlibDecl(match) || isCHeaderDecl(match); })) {
+        return llvm::find_if(matches, isStdlibDecl);
     }
 
     // Redeclarations in multiple C headers are considered the same declaration, so just return one of them.
     if (llvm::all_of(matches, isCHeaderDecl)) {
-        return matches[0];
+        return &matches[0];
+    }
+
+    if (llvm::count_if(matches, [](auto& match) { return match.didConvertArguments == false; }) == 1) {
+        return llvm::find_if(matches, [](auto& match) { return match.didConvertArguments == false; });
     }
 
     return nullptr;
@@ -853,8 +857,8 @@ static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& 
 }
 
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
-    std::vector<Decl*> matches;
-    std::vector<Decl*> templateMatches;
+    std::vector<Match> matches;
+    std::vector<Match> templateMatches;
     llvm::ArrayRef<Decl*> candidates = decls;
     std::vector<ConstructorDecl*> constructorDecls;
     bool isConstructorCall = false;
@@ -882,23 +886,28 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     declsToTypecheck.emplace_back(functionDecl);
                     return functionDecl;
                 }
-                if (argumentsMatch(expr, functionDecl)) {
-                    templateMatches.push_back(functionDecl);
+                if (auto match = matchArguments(expr, functionDecl)) {
+                    templateMatches.push_back(*match);
                 }
                 break;
             }
             case DeclKind::FunctionDecl:
             case DeclKind::MethodDecl:
             case DeclKind::ConstructorDecl: {
-                auto& functionDecl = llvm::cast<FunctionDecl>(*decl);
+                auto functionDecl = llvm::cast<FunctionDecl>(decl);
+
+                // TODO: Figure out where to perform this.
+                if (functionDecl && functionDecl->getTypeDecl() && functionDecl->getTypeDecl()->isInterface()) {
+                    functionDecl = functionDecl->instantiate({ { "This", functionDecl->getTypeDecl()->getType() } }, {});
+                }
 
                 if (decls.size() == 1) {
                     validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                    validateAndConvertArguments(expr, functionDecl, callee, expr.getCallee().getLocation());
-                    return &functionDecl;
+                    validateAndConvertArguments(expr, *functionDecl, callee, expr.getCallee().getLocation());
+                    return functionDecl;
                 }
-                if (argumentsMatch(expr, &functionDecl)) {
-                    matches.push_back(&functionDecl);
+                if (auto match = matchArguments(expr, functionDecl)) {
+                    matches.push_back(*match);
                 }
                 break;
             }
@@ -916,8 +925,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                         validateAndConvertArguments(expr, *constructorDecl, callee, expr.getCallee().getLocation());
                         return constructorDecl;
                     }
-                    if (argumentsMatch(expr, constructorDecl)) {
-                        matches.push_back(constructorDecl);
+                    if (auto match = matchArguments(expr, constructorDecl)) {
+                        matches.push_back(*match);
                     }
                 }
                 break;
@@ -958,8 +967,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                             validateAndConvertArguments(expr, *constructorDecl, callee, expr.getCallee().getLocation());
                             return constructorDecl;
                         }
-                        if (argumentsMatch(expr, constructorDecl)) {
-                            templateMatches.push_back(constructorDecl);
+                        if (auto match = matchArguments(expr, constructorDecl)) {
+                            templateMatches.push_back(*match);
                         }
                     }
                 }
@@ -977,14 +986,14 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                         validateAndConvertArguments(expr, paramDecls, false, callee, expr.getCallee().getLocation());
                         return variableDecl;
                     }
-                    if (argumentsMatch(expr, nullptr, paramDecls)) {
-                        matches.push_back(variableDecl);
+                    if (auto match = matchArguments(expr, variableDecl, paramDecls)) {
+                        matches.push_back(*match);
                     }
                 }
                 break;
             }
             case DeclKind::DestructorDecl:
-                matches.push_back(decl);
+                matches.push_back({ decl, false });
                 break;
 
             default:
@@ -994,9 +1003,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
     if (matches.size() > 1) {
         if (auto match = resolveAmbiguousOverload(matches)) {
-            matches = { match };
+            matches = { *match };
         } else {
-            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
+            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(map(matches, [](auto& match) { return match.decl; })),
                              "ambiguous reference to '" << callee << "'" << (isConstructorCall ? " constructor" : ""));
         }
     } else if (matches.empty()) {
@@ -1004,9 +1013,9 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     }
 
     if (matches.size() == 1) {
-        validateAndConvertArguments(expr, *matches.front());
-        declsToTypecheck.push_back(matches.front());
-        return matches.front();
+        validateAndConvertArguments(expr, *matches.front().decl);
+        declsToTypecheck.push_back(matches.front().decl);
+        return matches.front().decl;
     }
 
     if (decls.empty()) {
@@ -1170,36 +1179,52 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
 ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic) {
     if (expr.getArgs().size() < params.size()) {
-        return ArgumentValidation(ArgumentValidation::TooFew);
+        return ArgumentValidation::tooFew();
     } else if (!isVariadic && expr.getArgs().size() > params.size()) {
-        return ArgumentValidation(ArgumentValidation::TooMany);
+        return ArgumentValidation::tooMany();
     }
+
+    bool didConvertArguments = false;
 
     for (size_t i = 0; i < expr.getArgs().size(); ++i) {
         auto& arg = expr.getArgs()[i];
         auto* param = i < params.size() ? &params[i] : nullptr;
 
         if (!arg.getName().empty() && (!param || arg.getName() != param->getName())) {
-            return ArgumentValidation(ArgumentValidation::InvalidName, int(i));
+            return ArgumentValidation::invalidName(i);
         }
 
-        // TODO: Should probably not typecheck here because it might change the expression's type?
-        if (!arg.getValue()->hasType()) {
-            typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
-        }
+        if (param) {
+            bool hadType = arg.getValue()->hasType();
 
-        if (param && !isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), true)) {
-            return ArgumentValidation(ArgumentValidation::InvalidType, int(i));
+            if (!arg.getValue()->hasType()) {
+                typecheckExpr(*arg.getValue(), false, param ? param->getType() : Type());
+            }
+
+            bool invalidType = false;
+            if (Type convertedType = isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), true)) {
+                didConvertArguments = didConvertArguments || convertedType != arg.getValue()->getType();
+            } else {
+                invalidType = true;
+            }
+
+            if (!hadType) arg.getValue()->removeTypes();
+            if (invalidType) return ArgumentValidation::invalidType(i);
         }
     }
 
-    return ArgumentValidation(ArgumentValidation::None);
+    return ArgumentValidation::success(didConvertArguments);
 }
 
-bool Typechecker::argumentsMatch(CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params) {
-    if (functionDecl) params = functionDecl->getParams();
-    bool isVariadic = functionDecl && functionDecl->isVariadic();
-    return !getArgumentValidationResult(expr, params, isVariadic).error;
+llvm::Optional<Match> Typechecker::matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params) {
+    bool isVariadic = false;
+    if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(calleeDecl)) {
+        params = functionDecl->getParams();
+        isVariadic = functionDecl->isVariadic();
+    }
+    auto result = getArgumentValidationResult(expr, params, isVariadic);
+    if (result.error) return llvm::None;
+    return Match { calleeDecl, result.didConvertArguments };
 }
 
 void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName, SourceLocation location) {
@@ -1215,11 +1240,17 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& callee
 void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, SourceLocation location) {
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
+    for (auto&& [param, arg] : llvm::zip_longest(params, expr.getArgs())) {
+        if (!arg) continue;
+        if (!arg->getValue()->hasType()) {
+            typecheckExpr(*arg->getValue(), false, param ? param->getType() : Type());
+        }
+
+        if (param) arg->setValue(convert(arg->getValue(), param->getType(), true));
+    }
+
     switch (result.error) {
         case ArgumentValidation::None:
-            for (auto&& [param, arg] : llvm::zip_first(params, expr.getArgs())) {
-                arg.setValue(convert(arg.getValue(), param.getType(), true));
-            }
             break;
         case ArgumentValidation::TooFew:
             REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << (isVariadic ? "at least " : "") << params.size());

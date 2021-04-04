@@ -163,7 +163,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
                     for (auto member : interface.getDecl()->getMethods()) {
                         auto methodDecl = llvm::cast<MethodDecl>(member);
                         if (methodDecl->hasBody()) {
-                            auto copy = methodDecl->instantiate(genericArgs, *typeDecl);
+                            auto copy = methodDecl->instantiate(genericArgs, {}, *typeDecl);
                             getCurrentModule()->addToSymbolTable(*copy);
                             typeDecl->addMethod(copy);
                         }

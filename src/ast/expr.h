@@ -76,6 +76,10 @@ struct Expr {
     Type getAssignableType() const { return NOTNULL(assignableType); }
     void setType(Type type) { this->type = NOTNULL(type); }
     void setAssignableType(Type type) { assignableType = NOTNULL(type); }
+    void removeTypes() {
+        type = Type();
+        assignableType = Type();
+    }
     bool isAssignment() const;
     bool isIncrementOrDecrementExpr() const;
     bool isReferenceExpr() const;

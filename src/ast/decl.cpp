@@ -57,19 +57,14 @@ bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceive
 }
 
 FunctionDecl* FunctionDecl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray) {
-    auto proto = getProto().instantiate(genericArgs);
-    auto body = ::instantiate(getBody(), genericArgs);
-
-    FunctionDecl* instantiation;
-
-    if (isMethodDecl()) {
-        instantiation = new MethodDecl(std::move(proto), *getTypeDecl(), genericArgsArray, getAccessLevel(), location);
+    if (auto methodDecl = llvm::dyn_cast<MethodDecl>(this)) {
+        return methodDecl->instantiate(genericArgs, genericArgsArray, *getTypeDecl());
     } else {
-        instantiation = new FunctionDecl(std::move(proto), genericArgsArray, getAccessLevel(), module, location);
+        auto proto = getProto().instantiate(genericArgs);
+        auto instantiation = new FunctionDecl(std::move(proto), genericArgsArray, getAccessLevel(), module, location);
+        instantiation->setBody(::instantiate(getBody(), genericArgs));
+        return instantiation;
     }
-
-    instantiation->setBody(std::move(body));
-    return instantiation;
 }
 
 bool FunctionTemplate::isReferenced() const {
@@ -89,12 +84,12 @@ bool FunctionTemplate::isReferenced() const {
 MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel, SourceLocation location)
 : FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl) {}
 
-MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) {
+MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray, TypeDecl& typeDecl) {
     switch (getKind()) {
         case DeclKind::MethodDecl: {
             auto* methodDecl = llvm::cast<MethodDecl>(this);
             auto proto = methodDecl->getProto().instantiate(genericArgs);
-            auto instantiation = new MethodDecl(std::move(proto), typeDecl, std::vector<Type>(), getAccessLevel(), methodDecl->getLocation());
+            auto instantiation = new MethodDecl(std::move(proto), typeDecl, genericArgsArray, getAccessLevel(), methodDecl->getLocation());
             if (methodDecl->hasBody()) {
                 instantiation->setBody(::instantiate(methodDecl->getBody(), genericArgs));
             }
@@ -283,11 +278,11 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
 
             for (auto& method : typeDecl->getMethods()) {
                 if (auto* nonTemplateMethod = llvm::dyn_cast<MethodDecl>(method)) {
-                    instantiation->addMethod(nonTemplateMethod->instantiate(genericArgs, *instantiation));
+                    instantiation->addMethod(nonTemplateMethod->instantiate(genericArgs, {}, *instantiation));
                 } else {
                     auto* functionTemplate = llvm::cast<FunctionTemplate>(method);
                     auto* methodDecl = llvm::cast<MethodDecl>(functionTemplate->getFunctionDecl());
-                    auto methodInstantiation = methodDecl->MethodDecl::instantiate(genericArgs, *instantiation);
+                    auto methodInstantiation = methodDecl->instantiate(genericArgs, {}, *instantiation);
 
                     std::vector<GenericParamDecl> genericParams;
                     genericParams.reserve(functionTemplate->getGenericParams().size());

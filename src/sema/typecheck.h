@@ -18,6 +18,8 @@ template<typename T>
 class ArrayRef;
 template<typename T, unsigned N>
 class SmallVector;
+template<typename T>
+class Optional;
 } // namespace llvm
 
 namespace delta {
@@ -34,8 +36,18 @@ struct ArgumentValidation {
 
     Error error;
     int index;
+    bool didConvertArguments;
 
-    ArgumentValidation(Error error, int index = -1) : error(error), index(index) {}
+    static ArgumentValidation success(bool didConvertArguments) { return { None, -1, didConvertArguments }; }
+    static ArgumentValidation tooFew() { return { TooFew, -1, false }; }
+    static ArgumentValidation tooMany() { return { TooMany, -1, false }; }
+    static ArgumentValidation invalidName(size_t index) { return { InvalidName, int(index), false }; }
+    static ArgumentValidation invalidType(size_t index) { return { InvalidType, int(index), false }; }
+};
+
+struct Match {
+    Decl* decl;
+    bool didConvertArguments;
 };
 
 struct Typechecker {
@@ -106,7 +118,7 @@ private:
     std::vector<Type> inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                    bool returnOnError);
     ArgumentValidation getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic);
-    bool argumentsMatch(CallExpr& expr, const FunctionDecl* functionDecl, llvm::ArrayRef<ParamDecl> params = {});
+    llvm::Optional<Match> matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params = {});
     void validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", SourceLocation location = SourceLocation());
     void validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee = "",
                                      SourceLocation location = SourceLocation());
