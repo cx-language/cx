@@ -1,4 +1,16 @@
 struct char: Copyable, Comparable, Printable, Hashable {
+    bool isAlpha() {
+        return (this >= 'A' && this <= 'Z') || (this >= 'a' && this <= 'z');
+    }
+
+    bool isDigit() {
+        return this >= '0' && this <= '9';
+    }
+
+    bool isWhitespace() {
+        return this == ' ' || (this >= char(0x9) && this <= char(0xD));
+    }
+
     Ordering compare(char* other) {
         return int(this).compare(int(other));
     }

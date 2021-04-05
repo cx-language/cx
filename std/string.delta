@@ -105,6 +105,45 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return ByteIterator(this);
     }
 
+    // TODO: Support plus and minus signs, non-base-10 numbers, and handle range errors.
+    int? parseInt() {
+        if (empty()) {
+            return null;
+        }
+
+        int result = 0;
+
+        for (var c in this) {
+            if (c >= '0' && c <= '9') {
+                result *= 10;
+                result += int(c - '0');
+            } else {
+                return null;
+            }
+        }
+
+        return result;
+    }
+
+    // TODO: return iterator instead of eagerly allocating?
+    StringBuffer escape() {
+        var result = StringBuffer();
+
+        for (var c in this) {
+            switch (c) {
+                case '\0': result += "\\0";
+                case '\n': result += "\\n";
+                case '\r': result += "\\r";
+                case '\t': result += "\\t";
+                case '\"': result += "\\\"";
+                case '\\': result += "\\\\";
+                default:   result += c;
+            }
+        }
+
+        return result;
+    }
+
     void print(StringBuffer* stream) {
         stream.write(this);
     }

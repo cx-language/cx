@@ -12,6 +12,8 @@ void main() {
     testOtherSplit();
     testBytes();
     testLines();
+    testParseInt();
+    testEscape();
 }
 
 void testStringIterator() {
@@ -131,4 +133,19 @@ void testLines() {
     }
 
     assert(i == expected.size());
+}
+
+void testParseInt() {
+    assert("".parseInt() == null);
+    assert("a".parseInt() == null);
+    assert("1a".parseInt() == null);
+    assert("1".parseInt() == 1);
+    assert("123789".parseInt() == 123789);
+    assert("2147483647".parseInt() == 2147483647);
+}
+
+void testEscape() {
+    assert("".escape() == "");
+    assert("0 r t \' n".escape() == "0 r t ' n");
+    assert("\0 \r \t \' \" \\ \n".escape() == "\\0 \\r \\t ' \\\" \\\\ \\n");
 }

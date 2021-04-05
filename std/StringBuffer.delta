@@ -164,6 +164,14 @@ struct StringBuffer: Comparable, Hashable, Printable {
         return split(' ');
     }
 
+    int? parseInt() {
+        return string(this).parseInt();
+    }
+
+    StringBuffer escape() {
+        return string(this).escape();
+    }
+
     void print(StringBuffer* stream) {
         stream.write(string(this));
     }
@@ -192,12 +200,18 @@ StringBuffer operator+(string a, string b) {
 }
 
 StringBuffer operator+(StringBuffer a, string b) {
-    var result = a;
+    var result = a // TODO: Workaround until parameters can be mutated.
 
     for (var ch in b) {
         result.push(ch);
     }
 
+    return result;
+}
+
+StringBuffer operator+(StringBuffer a, char b) {
+    var result = a // TODO: Workaround until parameters can be mutated.
+    result.push(b);
     return result;
 }
 
@@ -211,4 +225,12 @@ bool operator==(StringBuffer* a, string b) {
 
 bool operator==(string a, StringBuffer* b) {
     return a == string(b);
+}
+
+bool operator!=(StringBuffer* a, string b) {
+    return string(a) != b;
+}
+
+bool operator!=(string a, StringBuffer* b) {
+    return a != string(b);
 }

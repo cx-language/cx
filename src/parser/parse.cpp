@@ -176,12 +176,6 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLoca
                 case '0':
                     result += '\0';
                     break;
-                case 'a':
-                    result += '\a';
-                    break;
-                case 'b':
-                    result += '\b';
-                    break;
                 case 'n':
                     result += '\n';
                     break;
@@ -190,9 +184,6 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, SourceLoca
                     break;
                 case 't':
                     result += '\t';
-                    break;
-                case 'v':
-                    result += '\v';
                     break;
                 case '"':
                     result += '"';
