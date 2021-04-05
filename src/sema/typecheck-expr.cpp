@@ -1607,6 +1607,10 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             typecheckExpr(*llvm::cast<ImplicitCastExpr>(expr).getOperand());
             type = expr.getType();
             break;
+        case ExprKind::VarDeclExpr:
+            typecheckVarDecl(*llvm::cast<VarDeclExpr>(expr).varDecl);
+            type = llvm::cast<VarDeclExpr>(expr).varDecl->getType();
+            break;
     }
 
     expr.setType(type);

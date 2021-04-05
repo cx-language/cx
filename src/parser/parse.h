@@ -119,6 +119,7 @@ private:
     UnaryExpr* parseIncrementOrDecrementExpr(Expr* operand);
     Expr* parseBinaryExpr(int minPrecedence);
     Expr* parseExpr();
+    Expr* parseExprOrVarDecl(Decl* parent);
     std::vector<Expr*> parseExprList();
     ReturnStmt* parseReturnStmt();
     VarDecl* parseVarDecl(Decl* parent, AccessLevel accessLevel);

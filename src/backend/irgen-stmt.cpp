@@ -15,28 +15,6 @@ void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
     }
 }
 
-void IRGenerator::emitVarStmt(const VarStmt& stmt) {
-    auto* alloca = createEntryBlockAlloca(stmt.getDecl().getType(), stmt.getDecl().getName());
-    setLocalValue(alloca, &stmt.getDecl());
-    auto* initializer = stmt.getDecl().getInitializer();
-    if (!initializer) return;
-
-    if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
-        if (callExpr->getCalleeDecl()) {
-            if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(callExpr->getCalleeDecl())) {
-                if (constructorDecl->getTypeDecl()->getType() == stmt.getDecl().getType()) {
-                    emitCallExpr(*callExpr, alloca);
-                    return;
-                }
-            }
-        }
-    }
-
-    if (!initializer->isUndefinedLiteralExpr()) {
-        createStore(emitExprForPassing(*initializer, alloca->allocatedType), alloca);
-    }
-}
-
 void IRGenerator::emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuation) {
     beginScope();
 
@@ -123,7 +101,7 @@ void IRGenerator::emitSwitchStmt(const SwitchStmt& switchStmt) {
 
 void IRGenerator::emitForStmt(const ForStmt& forStmt) {
     if (forStmt.getVariable()) {
-        emitVarStmt(*forStmt.getVariable());
+        emitVarDecl(forStmt.getVariable()->getDecl());
     }
 
     auto* increment = forStmt.getIncrement();
@@ -184,7 +162,7 @@ void IRGenerator::emitStmt(const Stmt& stmt) {
             emitReturnStmt(llvm::cast<ReturnStmt>(stmt));
             break;
         case StmtKind::VarStmt:
-            emitVarStmt(llvm::cast<VarStmt>(stmt));
+            emitVarDecl(llvm::cast<VarStmt>(stmt).getDecl());
             break;
         case StmtKind::ExprStmt:
             emitPlainExpr(llvm::cast<ExprStmt>(stmt).getExpr());

@@ -112,6 +112,8 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
 
     switch (currentToken()) {
         case Token::RightBrace:
+        case Token::RightParen:
+        case Token::In:
             return;
         case Token::Semicolon:
             consumeToken();
@@ -553,8 +555,8 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
 }
 
 bool Parser::shouldParseVarStmt() {
-    if (currentToken() == Token::Var) return true;
-    if (currentToken() == Token::Star) return false;
+    if (currentToken().is({ Token::Var, Token::Const })) return true;
+    if (!currentToken().is({ Token::Identifier, Token::LeftParen })) return false;
     int offset = 2;
 
     while (true) {
@@ -760,6 +762,14 @@ Expr* Parser::parseExpr() {
     return parseBinaryExpr(0);
 }
 
+Expr* Parser::parseExprOrVarDecl(Decl* parent) {
+    if (!shouldParseVarStmt()) {
+        return parseExpr();
+    } else {
+        return new VarDeclExpr(parseVarDecl(parent, AccessLevel::None));
+    }
+}
+
 /// expr-list ::= '' | nonempty-expr-list
 /// nonempty-expr-list ::= expr | expr ',' nonempty-expr-list
 std::vector<Expr*> Parser::parseExprList() {
@@ -819,12 +829,11 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     if (currentToken() == Token::Assignment) {
         consumeToken();
         initializer = parseExpr();
-        parseStmtTerminator();
     } else if (currentToken() == Token::Semicolon || currentToken().getLocation().line != lookAhead(-1).getLocation().line) {
         WARN(nameLocation, "missing initializer");
-        parseStmtTerminator();
     }
 
+    parseStmtTerminator();
     return new VarDecl(type, name.str(), initializer, parent, accessLevel, *currentModule, nameLocation);
 }
 
@@ -869,11 +878,14 @@ DeferStmt* Parser::parseDeferStmt() {
     return stmt;
 }
 
-/// if-stmt ::= 'if' expr block-or-stmt ('else' block-or-stmt)?
+/// if-stmt ::= 'if' (expr | var-decl) block-or-stmt ('else' block-or-stmt)?
 IfStmt* Parser::parseIfStmt(Decl* parent) {
     ASSERT(currentToken() == Token::If);
     consumeToken();
-    auto condition = parseExpr();
+    bool parens = currentToken() == Token::LeftParen;
+    if (parens) consumeToken();
+    auto condition = parseExprOrVarDecl(parent);
+    if (parens) parse(Token::RightParen);
     auto thenStmts = parseBlockOrStmt(parent);
     std::vector<Stmt*> elseStmts;
     if (currentToken() == Token::Else) {
@@ -883,11 +895,14 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
     return new IfStmt(condition, std::move(thenStmts), std::move(elseStmts));
 }
 
-/// while-stmt ::= 'while' expr block-or-stmt
+/// while-stmt ::= 'while' (expr | var-decl) block-or-stmt
 WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     ASSERT(currentToken() == Token::While);
     auto location = consumeToken().getLocation();
-    auto condition = parseExpr();
+    bool parens = currentToken() == Token::LeftParen;
+    if (parens) consumeToken();
+    auto condition = parseExprOrVarDecl(parent);
+    if (parens) parse(Token::RightParen);
     auto body = parseBlockOrStmt(parent);
     return new WhileStmt(condition, std::move(body), location);
 }

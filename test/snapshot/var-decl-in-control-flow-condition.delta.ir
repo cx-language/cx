@@ -1,0 +1,44 @@
+
+void _EN4main1fE() {
+    int** c = alloca int*
+    int** c_0 = alloca int*
+    br loop.condition
+
+loop.condition:
+    int* _0 = call _EN4main1hE()
+    store _0 to c
+    int* c.load = load c
+    bool _1 = c.load != int* null
+    br _1, loop.body, loop.end
+
+loop.body:
+    int* c.load_0 = load c
+    void _2 = call _EN4main1jEP3int(int* c.load_0)
+    br loop.condition
+
+loop.end:
+    int* _3 = call _EN4main1hE()
+    store _3 to c_0
+    int* c.load_1 = load c_0
+    bool _4 = c.load_1 != int* null
+    br _4, if.then, if.else
+
+if.then:
+    int* c.load_2 = load c_0
+    void _5 = call _EN4main1jEP3int(int* c.load_2)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+}
+
+int* _EN4main1hE() {
+    return int* null
+}
+
+void _EN4main1jEP3int(int* i) {
+    return void
+}

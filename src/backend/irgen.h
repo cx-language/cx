@@ -92,7 +92,6 @@ struct IRGenerator {
     void emitDeferredExprsAndDestructorCallsForReturn();
     void emitBlock(llvm::ArrayRef<Stmt*> stmts, BasicBlock* continuation);
     void emitReturnStmt(const ReturnStmt& stmt);
-    void emitVarStmt(const VarStmt& stmt);
     void emitIfStmt(const IfStmt& ifStmt);
     void emitSwitchStmt(const SwitchStmt& switchStmt);
     void emitForStmt(const ForStmt& forStmt);

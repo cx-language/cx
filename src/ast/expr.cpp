@@ -84,6 +84,7 @@ bool Expr::isConstant() const {
         case ExprKind::UnwrapExpr:
         case ExprKind::LambdaExpr:
         case ExprKind::UndefinedLiteralExpr:
+        case ExprKind::VarDeclExpr:
             return false;
 
         case ExprKind::ImplicitCastExpr:
@@ -253,87 +254,13 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
             return new ImplicitCastExpr(implicitCastExpr->getOperand()->instantiate(genericArgs), implicitCastExpr->getType().resolve(genericArgs),
                                         implicitCastExpr->getImplicitCastKind());
         }
+        case ExprKind::VarDeclExpr: {
+            auto varDeclExpr = llvm::cast<VarDeclExpr>(this);
+            return new VarDeclExpr(llvm::cast<VarDecl>(varDeclExpr->varDecl->instantiate(genericArgs, {})));
+        }
     }
 
     llvm_unreachable("all cases handled");
-}
-
-std::vector<const Expr*> Expr::getSubExprs() const {
-    std::vector<const Expr*> subExprs;
-
-    switch (getKind()) {
-        case ExprKind::VarExpr:
-        case ExprKind::StringLiteralExpr:
-        case ExprKind::CharacterLiteralExpr:
-        case ExprKind::IntLiteralExpr:
-        case ExprKind::FloatLiteralExpr:
-        case ExprKind::BoolLiteralExpr:
-        case ExprKind::NullLiteralExpr:
-        case ExprKind::UndefinedLiteralExpr:
-            break;
-
-        case ExprKind::ArrayLiteralExpr: {
-            auto* arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(this);
-            for (auto& element : arrayLiteralExpr->getElements()) {
-                subExprs.push_back(element);
-            }
-            break;
-        }
-        case ExprKind::TupleExpr: {
-            auto* tupleExpr = llvm::cast<TupleExpr>(this);
-            for (auto& element : tupleExpr->getElements()) {
-                subExprs.push_back(element.getValue());
-            }
-            break;
-        }
-        case ExprKind::UnaryExpr:
-        case ExprKind::BinaryExpr:
-        case ExprKind::IndexExpr:
-        case ExprKind::IndexAssignmentExpr:
-        case ExprKind::CallExpr: {
-            auto* callExpr = llvm::cast<CallExpr>(this);
-            subExprs.push_back(&callExpr->getCallee());
-            for (auto& arg : callExpr->getArgs()) {
-                subExprs.push_back(arg.getValue());
-            }
-            break;
-        }
-        case ExprKind::SizeofExpr:
-            break;
-
-        case ExprKind::AddressofExpr: {
-            auto* addressofExpr = llvm::cast<AddressofExpr>(this);
-            subExprs.push_back(&addressofExpr->getOperand());
-            break;
-        }
-        case ExprKind::MemberExpr: {
-            auto* memberExpr = llvm::cast<MemberExpr>(this);
-            subExprs.push_back(memberExpr->getBaseExpr());
-            break;
-        }
-        case ExprKind::UnwrapExpr: {
-            auto* unwrapExpr = llvm::cast<UnwrapExpr>(this);
-            subExprs.push_back(&unwrapExpr->getOperand());
-            break;
-        }
-        case ExprKind::LambdaExpr:
-            break;
-
-        case ExprKind::IfExpr: {
-            auto* ifExpr = llvm::cast<IfExpr>(this);
-            subExprs.push_back(ifExpr->getCondition());
-            subExprs.push_back(ifExpr->getThenExpr());
-            subExprs.push_back(ifExpr->getElseExpr());
-            break;
-        }
-        case ExprKind::ImplicitCastExpr: {
-            auto* implicitCastExpr = llvm::cast<ImplicitCastExpr>(this);
-            subExprs.push_back(implicitCastExpr->getOperand());
-            break;
-        }
-    }
-
-    return subExprs;
 }
 
 FieldDecl* Expr::getFieldDecl() const {
@@ -466,6 +393,8 @@ LambdaExpr::LambdaExpr(std::vector<ParamDecl>&& params, Module* module, SourceLo
     FunctionProto proto("__lambda" + std::to_string(nameCounter++), std::move(params), Type(), false, false);
     this->functionDecl = new FunctionDecl(std::move(proto), std::vector<Type>(), AccessLevel::Private, *module, getLocation());
 }
+
+VarDeclExpr::VarDeclExpr(VarDecl* varDecl) : Expr(ExprKind::VarDeclExpr, varDecl->getLocation()), varDecl(varDecl) {}
 
 const Expr* TupleExpr::getElementByName(llvm::StringRef name) const {
     for (auto& element : getElements()) {

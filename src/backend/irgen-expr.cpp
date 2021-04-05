@@ -668,6 +668,8 @@ Value* IRGenerator::emitPlainExpr(const Expr& expr) {
             return emitIfExpr(llvm::cast<IfExpr>(expr));
         case ExprKind::ImplicitCastExpr:
             return emitImplicitCastExpr(llvm::cast<ImplicitCastExpr>(expr));
+        case ExprKind::VarDeclExpr:
+            return emitVarDecl(*llvm::cast<VarDeclExpr>(expr).varDecl);
     }
     llvm_unreachable("all cases handled");
 }

@@ -1,0 +1,17 @@
+// RUN: check-snapshots -Wno-unused
+
+void f() {
+    while (var c = h()) {
+        j(c);
+    }
+
+    if (var c = h()) {
+        j(c);
+    }
+}
+
+int*? h() {
+    return null
+}
+
+void j(int* i) {}

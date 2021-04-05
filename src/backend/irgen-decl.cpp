@@ -91,16 +91,40 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
         return value;
     }
 
-    ASSERT(decl.getInitializer());
-    Value* value = emitExpr(*decl.getInitializer());
+    if (decl.isGlobal()) {
+        ASSERT(decl.getInitializer());
+        Value* value = emitExpr(*decl.getInitializer());
 
-    if (decl.getType().isMutable()) {
-        value = createGlobalVariable(value, decl.getName());
+        if (decl.getType().isMutable()) {
+            value = createGlobalVariable(value, decl.getName());
+        }
+
+        auto it = globalScope().valuesByDecl.try_emplace(&decl, value);
+        ASSERT(it.second);
+        return value;
+    } else {
+        auto* alloca = createEntryBlockAlloca(decl.getType(), decl.getName());
+        setLocalValue(alloca, &decl);
+        auto* initializer = decl.getInitializer();
+        if (!initializer) return alloca;
+
+        if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
+            if (callExpr->getCalleeDecl()) {
+                if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(callExpr->getCalleeDecl())) {
+                    if (constructorDecl->getTypeDecl()->getType() == decl.getType()) {
+                        emitCallExpr(*callExpr, alloca);
+                        return alloca;
+                    }
+                }
+            }
+        }
+
+        if (!initializer->isUndefinedLiteralExpr()) {
+            createStore(emitExprForPassing(*initializer, alloca->allocatedType), alloca);
+        }
+
+        return alloca;
     }
-
-    auto it = globalScope().valuesByDecl.try_emplace(&decl, value);
-    ASSERT(it.second);
-    return value;
 }
 
 void IRGenerator::emitDecl(const Decl& decl) {

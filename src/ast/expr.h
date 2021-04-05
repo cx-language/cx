@@ -17,6 +17,7 @@ namespace delta {
 struct Decl;
 struct FieldDecl;
 struct FunctionDecl;
+struct VarDecl;
 struct Module;
 
 enum class ExprKind {
@@ -41,7 +42,8 @@ enum class ExprKind {
     UnwrapExpr,
     LambdaExpr,
     IfExpr,
-    ImplicitCastExpr
+    ImplicitCastExpr,
+    VarDeclExpr,
 };
 
 struct Expr {
@@ -68,6 +70,7 @@ struct Expr {
     bool isLambdaExpr() const { return getKind() == ExprKind::LambdaExpr; }
     bool isIfExpr() const { return getKind() == ExprKind::IfExpr; }
     bool isImplicitCastExpr() const { return getKind() == ExprKind::ImplicitCastExpr; }
+    bool isVarDeclExpr() const { return getKind() == ExprKind::VarDeclExpr; }
 
     ExprKind getKind() const { return kind; }
     bool hasType() const { return !!type; }
@@ -88,7 +91,6 @@ struct Expr {
     bool isLvalue() const;
     SourceLocation getLocation() const { return location; }
     Expr* instantiate(const llvm::StringMap<Type>& genericArgs) const;
-    std::vector<const Expr*> getSubExprs() const;
     FieldDecl* getFieldDecl() const;
     const Expr* withoutImplicitCast() const;
     bool isThis() const;
@@ -396,8 +398,7 @@ struct ImplicitCastExpr : Expr {
         AutoReference,
     };
 
-    ImplicitCastExpr(Expr* operand, Type targetType, Kind kind)
-    : Expr(ExprKind::ImplicitCastExpr, operand->getLocation()), operand(operand), kind(kind) {
+    ImplicitCastExpr(Expr* operand, Type targetType, Kind kind) : Expr(ExprKind::ImplicitCastExpr, operand->getLocation()), operand(operand), kind(kind) {
         setType(targetType);
         setAssignableType(targetType);
     }
@@ -408,6 +409,13 @@ struct ImplicitCastExpr : Expr {
 private:
     Expr* operand;
     Kind kind;
+};
+
+struct VarDeclExpr : Expr {
+    VarDeclExpr(VarDecl* varDecl);
+    static bool classof(const Expr* e) { return e->getKind() == ExprKind::VarDeclExpr; }
+
+    VarDecl* varDecl;
 };
 
 } // namespace delta
