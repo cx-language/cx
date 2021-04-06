@@ -4,7 +4,7 @@ int main() {
     Foo<string>* b = alloca Foo<string>
     string* __str = alloca string
     void _0 = call _EN4main3FooI3intE4initE3int(Foo<int>* i, int 42)
-    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "", int 0)
+    void _1 = call _EN3std6string4initEAU_4char3int(string* __str, char* "", int 0)
     string __str.load = load __str
     void _2 = call _EN4main3FooI6stringE4initE6string(Foo<string>* b, string __str.load)
     return int 0
@@ -22,5 +22,5 @@ void _EN4main3FooI6stringE4initE6string(Foo<string>* this, string t) {
     return void
 }
 
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
+void _EN3std6string4initEAU_4char3int(string* this, char* pointer, int length) {
 }

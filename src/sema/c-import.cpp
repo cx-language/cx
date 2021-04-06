@@ -105,7 +105,7 @@ static Type toDelta(clang::QualType qualtype) {
             if (pointeeType->isFunctionType()) {
                 return OptionalType::get(toDelta(pointeeType), mutability);
             }
-            return OptionalType::get(PointerType::get(toDelta(pointeeType), Mutability::Mutable), mutability);
+            return OptionalType::get(ArrayType::get(toDelta(pointeeType), ArrayType::unknownSize, Mutability::Mutable), mutability);
         }
         case clang::Type::Builtin:
             return toDelta(llvm::cast<clang::BuiltinType>(type)).withMutability(mutability);

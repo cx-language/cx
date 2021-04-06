@@ -3,7 +3,7 @@ int main() {
     StringIterator* __iterator = alloca StringIterator
     string* __str = alloca string
     char* ch = alloca char
-    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "abc", int 3)
+    void _0 = call _EN3std6string4initEAU_4char3int(string* __str, char* "abc", int 3)
     StringIterator _1 = call _EN3std6string8iteratorE(string* __str)
     store _1 to __iterator
     br loop.condition
@@ -39,7 +39,7 @@ if.end:
 StringIterator _EN3std6string8iteratorE(string* this) {
 }
 
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
+void _EN3std6string4initEAU_4char3int(string* this, char* pointer, int length) {
 }
 
 bool _EN3std14StringIterator8hasValueE(StringIterator* this) {

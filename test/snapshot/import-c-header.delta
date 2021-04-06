@@ -8,5 +8,5 @@ void main() {
     Foo f = undefined;
     f.bar = MAGIC_NUMBER + ANSWER;
     f.baz = "foo";
-    var bar = getBar(f);
+    var bar = getBar(&f);
 }

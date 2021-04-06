@@ -11,7 +11,7 @@ define i32 @main() {
   %b = alloca %"Foo<string>", align 8
   %__str = alloca %string, align 8
   call void @_EN4main3FooI3intE4initE3int(%"Foo<int>"* %i, i32 42)
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
+  call void @_EN3std6string4initEAU_4char3int(%string* %__str, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
   %__str.load = load %string, %string* %__str, align 8
   call void @_EN4main3FooI6stringE4initE6string(%"Foo<string>"* %b, %string %__str.load)
   ret i32 0
@@ -23,7 +23,7 @@ define void @_EN4main3FooI3intE4initE3int(%"Foo<int>"* %this, i32 %t) {
   ret void
 }
 
-declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEAU_4char3int(%string*, i8*, i32)
 
 define void @_EN4main3FooI6stringE4initE6string(%"Foo<string>"* %this, %string %t) {
   %t1 = getelementptr inbounds %"Foo<string>", %"Foo<string>"* %this, i32 0, i32 0

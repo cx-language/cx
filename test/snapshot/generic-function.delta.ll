@@ -11,7 +11,7 @@ define i32 @main() {
   call void @_EN4main3fooI3intEE3int(i32 1)
   call void @_EN4main3fooI4boolEE4bool(i1 false)
   call void @_EN4main3fooI4boolEE4bool(i1 true)
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEAU_4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   %__str.load = load %string, %string* %__str, align 8
   %1 = call %string @_EN4main3barI6stringEE6string(%string %__str.load)
   store %string %1, %string* %b, align 8
@@ -28,7 +28,7 @@ define void @_EN4main3fooI4boolEE4bool(i1 %t) {
   ret void
 }
 
-declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEAU_4char3int(%string*, i8*, i32)
 
 define %string @_EN4main3barI6stringEE6string(%string %t) {
   ret %string %t

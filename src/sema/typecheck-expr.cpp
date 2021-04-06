@@ -436,6 +436,11 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
+    if (source.isArrayWithUnknownSize() && target.isArrayWithUnknownSize() && (source.getElementType().isMutable() || !target.getElementType().isMutable()) &&
+        source.getElementType().equalsIgnoreTopLevelMutable(target.getElementType())) {
+        return target;
+    }
+
     if (source.isOptionalType() && target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable()) &&
         isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType())) {
         return source;
@@ -478,8 +483,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             return target;
         }
 
-        if (expr->isStringLiteralExpr() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() &&
-            !target.removeOptional().getPointee().isMutable()) {
+        if (expr->isStringLiteralExpr() && target.removeOptional().isArrayWithUnknownSize() && target.removeOptional().getElementType().isChar() &&
+            !target.removeOptional().getElementType().isMutable()) {
             // Special case: allow passing string literals as C-strings (const char*).
             return target;
         }
@@ -522,11 +527,6 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isArrayType() && target.removeOptional().isPointerType() &&
-        isImplicitlyConvertible(nullptr, source.getElementType(), target.removeOptional().getPointee())) {
-        return source;
-    }
-
     if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() && (target.isArrayWithRuntimeSize() || target.isArrayWithUnknownSize()) &&
         source.getPointee().getElementType() == target.getElementType()) {
         return source;
@@ -541,7 +541,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (target.isArrayWithUnknownSize() && source.isPointerType() && target.getElementType() == source.getPointee()) {
+    if (target.isArrayWithUnknownSize() && source.isPointerType() && (target.getElementType() == source.getPointee() || target.getElementType().isVoid())) {
         return source;
     }
 
@@ -1377,7 +1377,9 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     validateGenericArgCount(1, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
     validateAndConvertArguments(expr, param, false, expr.getFunctionName(), expr.getLocation());
 
-    if (!isValidCast(sourceType, targetType) && !isValidCast(sourceType.removeOptional(), targetType)) {
+    if (sourceType.equalsIgnoreTopLevelMutable(targetType)) {
+        WARN(expr.getCallee().getLocation(), "unnecessary cast from '" << sourceType << "' to '" << targetType << "'");
+    } else if (!isValidCast(sourceType, targetType) && !isValidCast(sourceType.removeOptional(), targetType)) {
         ERROR(expr.getCallee().getLocation(), "illegal cast from '" << sourceType << "' to '" << targetType << "'");
     }
 

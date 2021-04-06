@@ -15,10 +15,10 @@ define i32 @main() {
   %__str1 = alloca %string, align 8
   %a = getelementptr inbounds %S, %S* %s, i32 0, i32 0
   %2 = bitcast [1024 x i8]* %a to i8*
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i32 0, i32 0), i32 1)
+  call void @_EN3std6string4initEAU_4char3int(%string* %__str, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i32 0, i32 0), i32 1)
   %__str.load = load %string, %string* %__str, align 8
-  %3 = call i1 @_EN3stdeqEP4char6string(i8* %2, %string %__str.load)
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0), i32 1)
+  %3 = call i1 @_EN3stdeqEAU_4char6string(i8* %2, %string %__str.load)
+  call void @_EN3std6string4initEAU_4char3int(%string* %__str1, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0), i32 1)
   %__str.load2 = load %string, %string* %__str1, align 8
   call void @_EN3std12StringBuffer4initE6string(%StringBuffer* %1, %string %__str.load2)
   %a3 = getelementptr inbounds %S, %S* %s, i32 0, i32 0
@@ -27,9 +27,9 @@ define i32 @main() {
   ret i32 0
 }
 
-declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEAU_4char3int(%string*, i8*, i32)
 
-declare i1 @_EN3stdeqEP4char6string(i8*, %string)
+declare i1 @_EN3stdeqEAU_4char6string(i8*, %string)
 
 declare void @_EN3std12StringBuffer4initE6string(%StringBuffer*, %string)
 

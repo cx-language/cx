@@ -6,7 +6,7 @@ int main() {
     void _0 = call _EN4main3fooI3intEE3int(int 1)
     void _1 = call _EN4main3fooI4boolEE4bool(bool false)
     void _2 = call _EN4main3fooI4boolEE4bool(bool true)
-    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "bar", int 3)
+    void _3 = call _EN3std6string4initEAU_4char3int(string* __str, char* "bar", int 3)
     string __str.load = load __str
     string _4 = call _EN4main3barI6stringEE6string(string __str.load)
     store _4 to b
@@ -27,7 +27,7 @@ string _EN4main3barI6stringEE6string(string t) {
     return t
 }
 
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
+void _EN3std6string4initEAU_4char3int(string* this, char* pointer, int length) {
 }
 
 int _EN4main3quxI3intEE3int(int t) {

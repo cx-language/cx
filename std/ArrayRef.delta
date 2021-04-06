@@ -16,7 +16,7 @@ struct ArrayRef<Element>: Copyable {
 
     /// Initializes an ArrayRef referring to an array of the given size located at the given memory
     /// address.
-    ArrayRef(Element* data, int size) {
+    ArrayRef(Element[*] data, int size) {
         this.data = data;
         this.size = size;
     }
