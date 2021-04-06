@@ -12,7 +12,7 @@ Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
 }
 
 Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
-    if ((expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar()) ||
+    if ((expr.getType().removeOptional().isArrayWithUnknownSize() && expr.getType().removeOptional().getElementType().isChar()) ||
         (expr.getType().removeOptional().isUnsizedArrayPointer() && expr.getType().removeOptional().getElementType().isChar())) {
         return createGlobalStringPtr(expr.getValue());
     }
@@ -24,7 +24,7 @@ Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
 
     for (auto* decl : Module::getStdlibModule()->getSymbolTable().find("string.init")) {
         auto params = llvm::cast<ConstructorDecl>(decl)->getParams();
-        if (params.size() == 2 && params[0].getType().isPointerType() && params[1].getType().isInt()) {
+        if (params.size() == 2 && params[0].getType().isArrayWithUnknownSize() && params[1].getType().isInt()) {
             stringConstructor = getFunction(*llvm::cast<ConstructorDecl>(decl));
             break;
         }

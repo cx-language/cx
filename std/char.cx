@@ -17,7 +17,7 @@ struct char: Copyable, Comparable, Printable, Hashable {
 
     void print(StringBuffer* stream) {
         // TODO: Use char overload of 'write' when it's implemented.
-        stream.write(string(this, 1));
+        stream.write(string(&this, 1));
     }
 
     uint64 hash() {

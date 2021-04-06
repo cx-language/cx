@@ -1,7 +1,7 @@
 struct string: Copyable, Comparable, Hashable, Printable {
     ArrayRef<char> characters;
 
-    string(char* pointer, int length) {
+    string(char[*] pointer, int length) {
         characters = ArrayRef(pointer, length);
     }
 
@@ -11,7 +11,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     /// length of the argument string. If you know the length beforehand, consider using
     /// `string(char* pointer, int length)` instead.
     ///
-    string(char* cString) {
+    string(char[*] cString) {
         characters = ArrayRef(cString, int(strlen(cString)));
     }
 
@@ -190,18 +190,18 @@ bool operator==(string a, string b) {
     return true;
 }
 
-bool operator==(char* a, string b) {
+bool operator==(char[*] a, string b) {
     return string(a) == b;
 }
 
-bool operator!=(char* a, string b) {
+bool operator!=(char[*] a, string b) {
     return string(a) != b;
 }
 
-bool operator==(string a, char* b) {
+bool operator==(string a, char[*] b) {
     return a == string(b);
 }
 
-bool operator!=(string a, char* b) {
+bool operator!=(string a, char[*] b) {
     return a != string(b);
 }

@@ -1,0 +1,8 @@
+
+int main() {
+    uint8[4]** buffer = alloca uint8[4]*
+    uint8[4]* buffer.load = load buffer
+    uint8* _0 = getelementptr buffer.load, int 0, int 1
+    store uint8 255 to _0
+    return int 0
+}

@@ -9,7 +9,7 @@ define i32 @main() {
   %__iterator = alloca %StringIterator, align 8
   %__str = alloca %string, align 8
   %ch = alloca i8, align 1
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEAU_4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   %1 = call %StringIterator @_EN3std6string8iteratorE(%string* %__str)
   store %StringIterator %1, %StringIterator* %__iterator, align 8
   br label %loop.condition
@@ -42,7 +42,7 @@ if.end:                                           ; preds = %if.else
   br label %loop.increment
 }
 
-declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEAU_4char3int(%string*, i8*, i32)
 
 declare %StringIterator @_EN3std6string8iteratorE(%string*)
 

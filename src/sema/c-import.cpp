@@ -110,7 +110,7 @@ static Type toCx(clang::QualType qualtype) {
             if (pointeeType->isFunctionType()) {
                 return OptionalType::get(toCx(pointeeType), mutability);
             }
-            return OptionalType::get(PointerType::get(toCx(pointeeType), Mutability::Mutable), mutability);
+            return OptionalType::get(ArrayType::get(toCx(pointeeType), ArrayType::unknownSize, Mutability::Mutable), mutability);
         }
         case clang::Type::Builtin:
             return toCx(llvm::cast<clang::BuiltinType>(type)).withMutability(mutability);

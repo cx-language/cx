@@ -6,10 +6,10 @@ int main() {
     string* __str_0 = alloca string
     char[1024]* a = getelementptr s, 0
     char* _1 = cast a to char*
-    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "x", int 1)
+    void _2 = call _EN3std6string4initEAU_4char3int(string* __str, char* "x", int 1)
     string __str.load = load __str
-    bool _3 = call _EN3stdeqEP4char6string(char* _1, string __str.load)
-    void _4 = call _EN3std6string4initEP4char3int(string* __str_0, char* "x", int 1)
+    bool _3 = call _EN3stdeqEAU_4char6string(char* _1, string __str.load)
+    void _4 = call _EN3std6string4initEAU_4char3int(string* __str_0, char* "x", int 1)
     string __str.load_0 = load __str_0
     void _5 = call _EN3std12StringBuffer4initE6string(StringBuffer* _0, string __str.load_0)
     char[1024]* a_0 = getelementptr s, 0
@@ -18,10 +18,10 @@ int main() {
     return int 0
 }
 
-bool _EN3stdeqEP4char6string(char* a, string b) {
+bool _EN3stdeqEAU_4char6string(char* a, string b) {
 }
 
-void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
+void _EN3std6string4initEAU_4char3int(string* this, char* pointer, int length) {
 }
 
 bool _EN3stdneEP12StringBufferAU_4char(StringBuffer* a, char* b) {

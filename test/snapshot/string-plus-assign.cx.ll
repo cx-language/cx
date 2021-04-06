@@ -11,7 +11,7 @@ define i32 @main() {
   %__str = alloca %string, align 8
   call void @_EN3std12StringBuffer4initE(%StringBuffer* %a)
   %a.load = load %StringBuffer, %StringBuffer* %a, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
+  call void @_EN3std6string4initEAU_4char3int(%string* %__str, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @0, i32 0, i32 0), i32 0)
   %__str.load = load %string, %string* %__str, align 8
   %1 = call %StringBuffer @_EN3stdplE12StringBuffer6string(%StringBuffer %a.load, %string %__str.load)
   store %StringBuffer %1, %StringBuffer* %a, align 8
@@ -21,7 +21,7 @@ define i32 @main() {
 
 declare void @_EN3std12StringBuffer4initE(%StringBuffer*)
 
-declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEAU_4char3int(%string*, i8*, i32)
 
 declare %StringBuffer @_EN3stdplE12StringBuffer6string(%StringBuffer, %string)
 

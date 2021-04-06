@@ -9,14 +9,14 @@ define i32 @main() {
   %a = alloca [2 x %string], align 8
   %__str = alloca %string, align 8
   %__str1 = alloca %string, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEAU_4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0), i32 3)
   %__str.load = load %string, %string* %__str, align 8
   %1 = insertvalue [2 x %string] undef, %string %__str.load, 0
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEAU_4char3int(%string* %__str1, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0), i32 3)
   %__str.load2 = load %string, %string* %__str1, align 8
   %2 = insertvalue [2 x %string] %1, %string %__str.load2, 1
   store [2 x %string] %2, [2 x %string]* %a, align 8
   ret i32 0
 }
 
-declare void @_EN3std6string4initEP4char3int(%string*, i8*, i32)
+declare void @_EN3std6string4initEAU_4char3int(%string*, i8*, i32)
