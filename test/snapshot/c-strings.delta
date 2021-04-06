@@ -1,0 +1,11 @@
+// RUN: check-snapshots
+
+struct S {
+    char[1024] a;
+}
+
+void main() {
+    S s = undefined;
+    s.a == "x";
+    StringBuffer("x") != s.a;
+}

@@ -176,3 +176,19 @@ bool operator==(string a, string b) {
 
     return true;
 }
+
+bool operator==(char* a, string b) {
+    return string(a) == b;
+}
+
+bool operator!=(char* a, string b) {
+    return string(a) != b;
+}
+
+bool operator==(string a, char* b) {
+    return a == string(b);
+}
+
+bool operator!=(string a, char* b) {
+    return a != string(b);
+}

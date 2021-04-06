@@ -199,8 +199,16 @@ StringBuffer operator+(string a, string b) {
     return result;
 }
 
+StringBuffer operator+(string a, char b) {
+    return a + string(b, 1);
+}
+
+StringBuffer operator+(string a, char[*] b) {
+    return a + string(b);
+}
+
 StringBuffer operator+(StringBuffer a, string b) {
-    var result = a // TODO: Workaround until parameters can be mutated.
+    var result = a; // TODO: Workaround until parameters can be mutated.
 
     for (var ch in b) {
         result.push(ch);
@@ -210,9 +218,13 @@ StringBuffer operator+(StringBuffer a, string b) {
 }
 
 StringBuffer operator+(StringBuffer a, char b) {
-    var result = a // TODO: Workaround until parameters can be mutated.
+    var result = a; // TODO: Workaround until parameters can be mutated.
     result.push(b);
     return result;
+}
+
+StringBuffer operator+(StringBuffer a, char[*] b) {
+    return a + string(b);
 }
 
 bool operator==(StringBuffer* a, StringBuffer* b) {
@@ -223,14 +235,30 @@ bool operator==(StringBuffer* a, string b) {
     return string(a) == b;
 }
 
-bool operator==(string a, StringBuffer* b) {
-    return a == string(b);
-}
-
 bool operator!=(StringBuffer* a, string b) {
     return string(a) != b;
 }
 
+bool operator==(string a, StringBuffer* b) {
+    return a == string(b);
+}
+
 bool operator!=(string a, StringBuffer* b) {
     return a != string(b);
+}
+
+bool operator==(char[*] a, StringBuffer* b) {
+    return string(a) == string(b);
+}
+
+bool operator!=(char[*] a, StringBuffer* b) {
+    return string(a) != string(b);
+}
+
+bool operator==(StringBuffer* a, char[*] b) {
+    return string(a) == string(b);
+}
+
+bool operator!=(StringBuffer* a, char[*] b) {
+    return string(a) != string(b);
 }
