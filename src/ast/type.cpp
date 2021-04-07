@@ -84,12 +84,12 @@ bool Type::isEnumType() const {
     return false;
 }
 
-Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
+Type Type::resolve(const std::unordered_map<std::string, Type>& replacements) const {
     if (!typeBase) return Type(nullptr, mutability, location);
 
     switch (getKind()) {
         case TypeKind::BasicType: {
-            auto it = replacements.find(getName());
+            auto it = replacements.find(getName().str());
             if (it != replacements.end()) {
                 // TODO: Handle generic arguments for type placeholders.
                 Type resolved = it->second.withMutability(mutability);

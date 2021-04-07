@@ -7,17 +7,17 @@
 
 using namespace delta;
 
-FunctionProto FunctionProto::instantiate(const llvm::StringMap<Type>& genericArgs) const {
+FunctionProto FunctionProto::instantiate(const std::unordered_map<std::string, Type>& genericArgs) const {
     auto params = instantiateParams(getParams(), genericArgs);
     auto returnType = getReturnType().resolve(genericArgs);
     std::vector<GenericParamDecl> genericParams;
     return FunctionProto(getName().str(), std::move(params), returnType, isVarArg(), isExtern());
 }
 
-FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {
+FunctionDecl* FunctionTemplate::instantiate(const std::unordered_map<std::string, Type>& genericArgs) {
     ASSERT(!genericParams.empty() && !genericArgs.empty());
 
-    auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
+    auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName().str())->second; });
 
     auto it = instantiations.find(orderedGenericArgs);
     if (it != instantiations.end()) return it->second;
@@ -56,7 +56,7 @@ bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceive
     return true;
 }
 
-FunctionDecl* FunctionDecl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray) {
+FunctionDecl* FunctionDecl::instantiate(const std::unordered_map<std::string, Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray) {
     if (auto methodDecl = llvm::dyn_cast<MethodDecl>(this)) {
         return methodDecl->instantiate(genericArgs, genericArgsArray, *getTypeDecl());
     } else {
@@ -84,7 +84,7 @@ bool FunctionTemplate::isReferenced() const {
 MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel, SourceLocation location)
 : FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl) {}
 
-MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray, TypeDecl& typeDecl) {
+MethodDecl* MethodDecl::instantiate(const std::unordered_map<std::string, Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray, TypeDecl& typeDecl) {
     switch (getKind()) {
         case DeclKind::MethodDecl: {
             auto* methodDecl = llvm::cast<MethodDecl>(this);
@@ -113,13 +113,13 @@ MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, ll
     }
 }
 
-FieldDecl FieldDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeDecl& typeDecl) const {
+FieldDecl FieldDecl::instantiate(const std::unordered_map<std::string, Type>& genericArgs, TypeDecl& typeDecl) const {
     auto type = getType().resolve(genericArgs);
     auto defaultValue = getDefaultValue() ? getDefaultValue()->instantiate(genericArgs) : nullptr;
     return FieldDecl(type, getName().str(), defaultValue, typeDecl, getAccessLevel(), location);
 }
 
-std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
+std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const std::unordered_map<std::string, Type>& genericArgs) {
     return map(params, [&](auto& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName().str(), param.isPublic, param.getLocation()); });
 }
 
@@ -186,9 +186,9 @@ unsigned TypeDecl::getFieldIndex(const FieldDecl* field) const {
     llvm_unreachable("unknown field");
 }
 
-TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {
+TypeDecl* TypeTemplate::instantiate(const std::unordered_map<std::string, Type>& genericArgs) {
     ASSERT(!genericParams.empty() && !genericArgs.empty());
-    auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
+    auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName().str())->second; });
 
     auto it = instantiations.find(orderedGenericArgs);
     if (it != instantiations.end()) return it->second;
@@ -199,10 +199,10 @@ TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {
 
 TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
     ASSERT(genericArgs.size() == genericParams.size());
-    llvm::StringMap<Type> genericArgsMap;
+    std::unordered_map<std::string, Type> genericArgsMap;
 
     for (auto&& [genericArg, genericParam] : llvm::zip_first(genericArgs, genericParams)) {
-        genericArgsMap[genericParam.getName()] = genericArg;
+        genericArgsMap[genericParam.getName().str()] = genericArg;
     }
 
     return instantiate(genericArgsMap);
@@ -246,7 +246,7 @@ bool Decl::hasBeenMoved() const {
 }
 
 // TODO: Ensure that the same decl isn't instantiated multiple times with same generic args, to avoid duplicate work.
-Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray) const {
+Decl* Decl::instantiate(const std::unordered_map<std::string, Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray) const {
     switch (getKind()) {
         case DeclKind::ParamDecl:
             llvm_unreachable("handled in FunctionProto::instantiate()");

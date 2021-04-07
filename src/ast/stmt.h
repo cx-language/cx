@@ -44,7 +44,7 @@ struct Stmt {
     StmtKind getKind() const { return kind; }
     bool isBreakable() const;
     bool isContinuable() const;
-    Stmt* instantiate(const llvm::StringMap<Type>& genericArgs) const;
+    Stmt* instantiate(const std::unordered_map<std::string, Type>& genericArgs) const;
 
 protected:
     Stmt(StmtKind kind) : kind(kind) {}

@@ -664,10 +664,10 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
 }
 
 static Type replaceUnresolvedGenericParamsWithPlaceholders(Type type, llvm::ArrayRef<GenericParamDecl> genericParams) {
-    llvm::StringMap<Type> placeholders;
+    std::unordered_map<std::string, Type> placeholders;
 
     for (auto& genericParam : genericParams) {
-        placeholders.try_emplace(genericParam.getName(), UnresolvedType::get());
+        placeholders.try_emplace(genericParam.getName().str(), UnresolvedType::get());
     }
 
     return type.resolve(placeholders);
@@ -699,8 +699,8 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
                     genericArg = maybeGenericArg;
                     genericArgValue = argValue;
                 } else {
-                    Type paramTypeWithGenericArg = paramType.resolve({ { genericParam.getName(), genericArg } });
-                    Type paramTypeWithMaybeGenericArg = paramType.resolve({ { genericParam.getName(), maybeGenericArg } });
+                    Type paramTypeWithGenericArg = paramType.resolve({ { genericParam.getName().str(), genericArg } });
+                    Type paramTypeWithMaybeGenericArg = paramType.resolve({ { genericParam.getName().str(), maybeGenericArg } });
 
                     if (isImplicitlyConvertible(argValue, argValue->getType(), paramTypeWithGenericArg, true)) {
                         continue;
@@ -754,8 +754,8 @@ void delta::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Typ
     }
 }
 
-llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
-                                                         Type expectedType) {
+std::unordered_map<std::string, Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl,
+                                                                         bool returnOnError, Type expectedType) {
     ASSERT(!genericParams.empty());
     std::vector<Type> inferredGenericArgs;
     llvm::ArrayRef<Type> genericArgTypes;
@@ -778,11 +778,11 @@ llvm::StringMap<Type> Typechecker::getGenericArgsForCall(llvm::ArrayRef<GenericP
         genericArgTypes = call.getGenericArgs();
     }
 
-    llvm::StringMap<Type> genericArgs;
+    std::unordered_map<std::string, Type> genericArgs;
     auto genericArg = genericArgTypes.begin();
 
     for (const GenericParamDecl& genericParam : genericParams) {
-        genericArgs.try_emplace(genericParam.getName(), *genericArg++);
+        genericArgs.try_emplace(genericParam.getName().str(), *genericArg++);
     }
 
     return genericArgs;
@@ -871,12 +871,12 @@ static const Match* resolveAmbiguousOverload(llvm::ArrayRef<Match> matches, cons
     }
 }
 
-static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& b) {
+static bool equals(const std::unordered_map<std::string, Type>& a, const std::unordered_map<std::string, Type>& b) {
     if (a.size() != b.size()) return false;
 
     for (auto& aEntry : a) {
-        auto bEntry = b.find(aEntry.getKey());
-        if (bEntry == b.end() || aEntry.getValue() != bEntry->getValue()) return false;
+        auto bEntry = b.find(aEntry.first);
+        if (bEntry == b.end() || aEntry.second != bEntry->second) return false;
     }
 
     return true;
@@ -964,7 +964,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 ASSERT(decls.size() == 1);
                 candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
 
-                std::vector<llvm::StringMap<Type>> genericArgSets;
+                std::vector<std::unordered_map<std::string, Type>> genericArgSets;
 
                 for (auto* constructorDecl : constructorDecls) {
                     auto genericArgs = getGenericArgsForCall(typeTemplate->getGenericParams(), expr, constructorDecl, constructorDecls.size() != 1, expectedType);
@@ -977,7 +977,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 for (auto& genericArgs : genericArgSets) {
                     TypeDecl* typeDecl = nullptr;
 
-                    auto genericArgTypes = map(genericArgs, [](auto& entry) { return entry.getValue(); });
+                    auto genericArgTypes = map(genericArgs, [](auto& entry) { return entry.second; });
                     auto typeDecls = findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(), genericArgTypes));
 
                     if (typeDecls.empty()) {

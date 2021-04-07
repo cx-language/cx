@@ -317,7 +317,7 @@ private:
 } // namespace
 
 bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, const CompileOptions& options, SourceLocation importLocation) {
-    auto it = Module::getAllImportedModulesMap().find(headerName);
+    auto it = Module::getAllImportedModulesMap().find(headerName.str());
     if (it != Module::getAllImportedModulesMap().end()) {
         importer.addImportedModule(it->second);
         return true;
@@ -381,6 +381,6 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     }
 
     importer.addImportedModule(module);
-    Module::getAllImportedModulesMap()[module->getName()] = module;
+    Module::getAllImportedModulesMap()[module->getName().str()] = module;
     return true;
 }

@@ -1,11 +1,11 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
-#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #pragma warning(pop)
 #include "decl.h"
@@ -40,7 +40,7 @@ private:
 struct Scope {
     Decl* parent;
     SymbolTable* symbolTable;
-    llvm::StringMap<std::vector<Decl*>> decls;
+    std::unordered_map<std::string, std::vector<Decl*>> decls;
 
     Scope(Decl* parent, SymbolTable* symbolTable);
     ~Scope();
@@ -49,14 +49,14 @@ struct Scope {
 struct SymbolTable {
     SymbolTable() : globalScope(nullptr, this) {}
     Scope& getCurrentScope() { return *scopes.back(); }
-    void add(llvm::StringRef name, Decl* decl) { scopes.back()->decls[name].push_back(decl); }
-    void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front()->decls[name].push_back(decl); }
-    void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) { identifierReplacements.try_emplace(name, replacement); }
+    void add(llvm::StringRef name, Decl* decl) { scopes.back()->decls[name.str()].push_back(decl); }
+    void addGlobal(llvm::StringRef name, Decl* decl) { scopes.front()->decls[name.str()].push_back(decl); }
+    void addIdentifierReplacement(llvm::StringRef name, llvm::StringRef replacement) { identifierReplacements.try_emplace(name.str(), replacement); }
 
     llvm::ArrayRef<Decl*> find(llvm::StringRef name) const {
         auto realName = applyIdentifierReplacements(name);
         for (auto& scope : llvm::reverse(scopes)) {
-            auto it = scope->decls.find(realName);
+            auto it = scope->decls.find(realName.str());
             if (it != scope->decls.end()) return it->second;
         }
         return {};
@@ -71,7 +71,7 @@ struct SymbolTable {
 
     llvm::ArrayRef<Decl*> findInCurrentScope(llvm::StringRef name) const {
         if (!scopes.empty()) {
-            auto it = scopes.back()->decls.find(applyIdentifierReplacements(name));
+            auto it = scopes.back()->decls.find(applyIdentifierReplacements(name).str());
             if (it != scopes.back()->decls.end()) return it->second;
         }
         return {};
@@ -103,7 +103,7 @@ private:
     llvm::StringRef applyIdentifierReplacements(llvm::StringRef name) const {
         llvm::StringRef initialName = name;
         while (true) {
-            auto it = identifierReplacements.find(name);
+            auto it = identifierReplacements.find(name.str());
             if (it == identifierReplacements.end()) return name;
             if (it->second == initialName) return name; // Break replacement cycle.
             name = it->second;
@@ -112,7 +112,7 @@ private:
 
     std::vector<Scope*> scopes;
     Scope globalScope;
-    llvm::StringMap<std::string> identifierReplacements;
+    std::unordered_map<std::string, std::string> identifierReplacements;
 };
 
 /// Container for the AST of a whole module, comprised of one or more SourceFiles.
@@ -144,7 +144,7 @@ struct Module {
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
 
     static std::vector<Module*> getAllImportedModules();
-    static llvm::StringMap<Module*>& getAllImportedModulesMap() { return allImportedModules; }
+    static std::unordered_map<std::string, Module*>& getAllImportedModulesMap() { return allImportedModules; }
     static Module* getStdlibModule();
 
 private:
@@ -154,7 +154,7 @@ private:
     std::string name;
     std::vector<SourceFile> sourceFiles;
     SymbolTable symbolTable;
-    static llvm::StringMap<Module*> allImportedModules;
+    static std::unordered_map<std::string, Module*> allImportedModules;
 };
 
 } // namespace delta

@@ -2,10 +2,10 @@
 
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallPtrSet.h>
-#include <llvm/ADT/StringMap.h>
 #include <llvm/Support/ErrorOr.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
@@ -110,8 +110,8 @@ private:
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
                                  llvm::Optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr) const;
-    llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
-                                                Type expectedType);
+    std::unordered_map<std::string, Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl,
+                                                                bool returnOnError, Type expectedType);
     Decl* findDecl(llvm::StringRef name, SourceLocation location) const;
     std::vector<Decl*> findDecls(llvm::StringRef name, TypeDecl* receiverTypeDecl = nullptr, bool inAllImportedModules = false) const;
     std::vector<Decl*> findCalleeCandidates(const CallExpr& expr, llvm::StringRef callee);

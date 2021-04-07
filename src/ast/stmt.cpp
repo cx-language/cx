@@ -27,7 +27,7 @@ bool Stmt::isContinuable() const {
     }
 }
 
-Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
+Stmt* Stmt::instantiate(const std::unordered_map<std::string, Type>& genericArgs) const {
     switch (getKind()) {
         case StmtKind::ReturnStmt: {
             auto* returnStmt = llvm::cast<ReturnStmt>(this);

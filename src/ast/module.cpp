@@ -2,7 +2,7 @@
 
 using namespace delta;
 
-llvm::StringMap<Module*> Module::allImportedModules;
+std::unordered_map<std::string, Module*> Module::allImportedModules;
 
 std::vector<Module*> Module::getAllImportedModules() {
     return map(allImportedModules, [](auto& p) { return p.second; });

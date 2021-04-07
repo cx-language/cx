@@ -90,7 +90,7 @@ struct Expr {
     llvm::APSInt getConstantIntegerValue() const;
     bool isLvalue() const;
     SourceLocation getLocation() const { return location; }
-    Expr* instantiate(const llvm::StringMap<Type>& genericArgs) const;
+    Expr* instantiate(const std::unordered_map<std::string, Type>& genericArgs) const;
     FieldDecl* getFieldDecl() const;
     const Expr* withoutImplicitCast() const;
     bool isThis() const;

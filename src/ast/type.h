@@ -2,10 +2,10 @@
 
 #include <ostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_ostream.h>
@@ -94,7 +94,7 @@ struct Type {
     bool isUndefined() const;
     bool isNeverType() const { return isBasicType() && getName() == "never"; }
 
-    Type resolve(const llvm::StringMap<Type>& replacements) const;
+    Type resolve(const std::unordered_map<std::string, Type>& replacements) const;
     bool isInteger() const;
     bool isSigned() const;
     bool isUnsigned() const;

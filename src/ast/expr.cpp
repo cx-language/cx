@@ -136,11 +136,11 @@ bool Expr::isLvalue() const {
     }
 }
 
-Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
+Expr* Expr::instantiate(const std::unordered_map<std::string, Type>& genericArgs) const {
     switch (getKind()) {
         case ExprKind::VarExpr: {
             auto* varExpr = llvm::cast<VarExpr>(this);
-            auto it = genericArgs.find(varExpr->getIdentifier());
+            auto it = genericArgs.find(varExpr->getIdentifier().str());
             auto identifier = it != genericArgs.end() ? it->second.getName() : varExpr->getIdentifier();
             return new VarExpr(identifier.str(), varExpr->getLocation());
         }

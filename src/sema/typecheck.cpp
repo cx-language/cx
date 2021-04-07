@@ -61,7 +61,7 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
 }
 
 llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName) {
-    auto it = Module::getAllImportedModulesMap().find(moduleName);
+    auto it = Module::getAllImportedModulesMap().find(moduleName.str());
     if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);
         return *it->second;
@@ -90,7 +90,7 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
 done:
     if (error) return error;
     if (importer) importer->addImportedModule(module);
-    Module::getAllImportedModulesMap()[module->getName()] = module;
+    Module::getAllImportedModulesMap()[module->getName().str()] = module;
     typecheckModule(*module, nullptr);
     return *module;
 }
@@ -148,7 +148,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             currentSourceFile = &sourceFile;
 
             if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-                llvm::StringMap<Type> genericArgs = { { "This", typeDecl->getType() } };
+                std::unordered_map<std::string, Type> genericArgs = { { "This", typeDecl->getType() } };
 
                 for (Type interface : typeDecl->getInterfaces()) {
                     typecheckType(interface, typeDecl->getAccessLevel());

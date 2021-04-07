@@ -1,9 +1,9 @@
 #include "lex.h"
 #include <cctype>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #pragma warning(push, 0)
-#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/MemoryBuffer.h>
@@ -197,7 +197,7 @@ end:
     return Token(isFloat ? Token::FloatLiteral : Token::IntegerLiteral, getCurrentLocation(), llvm::StringRef(begin, end - begin));
 }
 
-static const llvm::StringMap<Token::Kind> keywords = {
+static const std::unordered_map<std::string, Token::Kind> keywords = {
     { "addressof", Token::Addressof },
     { "as", Token::As },
     { "break", Token::Break },
@@ -408,7 +408,7 @@ Token Lexer::nextToken() {
 
                 llvm::StringRef string(begin, end - begin);
 
-                auto it = keywords.find(string);
+                auto it = keywords.find(string.str());
                 if (it != keywords.end()) {
                     return Token(it->second, getCurrentLocation(), string);
                 }
