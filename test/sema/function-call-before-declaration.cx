@@ -1,0 +1,4 @@
+// RUN: %cx -typecheck %s
+
+void main() { foo(); }
+void foo() { }

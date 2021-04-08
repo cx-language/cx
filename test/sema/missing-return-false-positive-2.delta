@@ -1,8 +1,0 @@
-// RUN: %delta -print-llvm %s
-
-int foo(int i) {
-    switch (i) {
-        case 5: return 2;
-        default: return 3;
-    }
-}

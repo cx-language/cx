@@ -5,9 +5,9 @@
 #pragma warning(pop)
 #include "../ast/decl.h"
 
-using namespace delta;
+using namespace cx;
 
-BasicBlock::BasicBlock(std::string name, delta::Function* parent) : Value { ValueKind::BasicBlock }, name(std::move(name)), parent(parent) {
+BasicBlock::BasicBlock(std::string name, cx::Function* parent) : Value { ValueKind::BasicBlock }, name(std::move(name)), parent(parent) {
     if (parent) {
         parent->body.push_back(this);
     }
@@ -15,7 +15,7 @@ BasicBlock::BasicBlock(std::string name, delta::Function* parent) : Value { Valu
 
 static std::unordered_map<TypeBase*, IRType*> irTypes = { { nullptr, nullptr } };
 
-IRType* delta::getIRType(Type astType) {
+IRType* cx::getIRType(Type astType) {
     auto it = irTypes.find(astType.getBase());
     if (it != irTypes.end()) return it->second;
 
@@ -619,7 +619,7 @@ IRType* IRType::getPointerTo() {
     return new IRPointerType { IRTypeKind::IRPointerType, this };
 }
 
-llvm::raw_ostream& delta::operator<<(llvm::raw_ostream& stream, IRType* type) {
+llvm::raw_ostream& cx::operator<<(llvm::raw_ostream& stream, IRType* type) {
     switch (type->kind) {
         case IRTypeKind::IRBasicType:
             return stream << type->getName();

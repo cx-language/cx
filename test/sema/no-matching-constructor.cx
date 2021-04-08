@@ -1,0 +1,16 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct Foo: Copyable {
+    Foo() { }
+    Foo(int i) { }
+}
+
+void main() {
+    // CHECK: 15:9: error: no matching constructor 'Foo(float)'
+    // CHECK: 4:5: note: candidate function:
+    // CHECK-NEXT: Foo() { }
+    // CHECK: 5:5: note: candidate function:
+    // CHECK-NEXT: Foo(int i) { }
+    // CHECK-NOT: note
+    _ = Foo(3.14)
+}

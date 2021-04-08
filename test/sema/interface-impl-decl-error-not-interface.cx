@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:14: error: 'StringBuffer' is not an interface
+struct Z<T>: StringBuffer {}
+
+void main() {
+    var z = Z<int>();
+}

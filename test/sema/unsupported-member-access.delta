@@ -1,8 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-struct Foo {}
-
-void main() {
-    // CHECK: [[@LINE+1]]:19: error: no member named 'bar' in 'Foo'
-    var bar = Foo.bar;
-}

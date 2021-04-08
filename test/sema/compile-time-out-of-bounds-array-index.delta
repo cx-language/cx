@@ -1,9 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-extern int[5]* foo();
-
-void main() {
-    var p = foo();
-    // CHECK: [[@LINE+1]]:15: error: accessing array out-of-bounds with index 5, array size is 5
-    var e = p[5];
-}

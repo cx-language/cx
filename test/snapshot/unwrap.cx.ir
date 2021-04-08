@@ -1,0 +1,38 @@
+
+extern void* f()
+
+int main() {
+    uint8** byte = alloca uint8*
+    uint8[1]** ptr = alloca uint8[1]*
+    void* _0 = call f()
+    uint8* _1 = cast _0 to uint8*
+    bool assert.condition = _1 == uint8* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _2 = call _EN3std10assertFailEP4char(char* "Unwrap failed at unwrap.cx:6:37
+")
+    unreachable
+
+assert.success:
+    store _1 to byte
+    void* _3 = call f()
+    uint8[1]* _4 = cast _3 to uint8[1]*
+    store _4 to ptr
+    uint8[1]* ptr.load = load ptr
+    bool assert.condition_0 = ptr.load == uint8[1]* null
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _5 = call _EN3std10assertFailEP4char(char* "Unwrap failed at unwrap.cx:8:8
+")
+    unreachable
+
+assert.success_0:
+    uint8* _6 = getelementptr ptr.load, int 0, int 0
+    store uint8 1 to _6
+    return int 0
+}
+
+void _EN3std10assertFailEP4char(char* message) {
+}

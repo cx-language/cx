@@ -13,7 +13,7 @@
 #include "manifest.h"
 #include "../support/utility.h"
 
-using namespace delta;
+using namespace cx;
 
 static std::string getGitPath() {
     llvm::ErrorOr<std::string> gitPath = llvm::sys::findProgramByName("git");
@@ -53,7 +53,7 @@ static void checkoutGitRevision(llvm::StringRef path, llvm::StringRef revision) 
     }
 }
 
-void delta::fetchDependencies(llvm::StringRef packageRoot) {
+void cx::fetchDependencies(llvm::StringRef packageRoot) {
     PackageManifest manifest(packageRoot.str());
 
     for (auto& dependency : manifest.getDeclaredDependencies()) {
@@ -66,7 +66,7 @@ void delta::fetchDependencies(llvm::StringRef packageRoot) {
     }
 }
 
-std::vector<std::string> delta::getSourceFiles(llvm::StringRef rootDirectory, llvm::StringRef packageManifestPath) {
+std::vector<std::string> cx::getSourceFiles(llvm::StringRef rootDirectory, llvm::StringRef packageManifestPath) {
     std::vector<std::string> sourceFiles;
     std::error_code error;
 
@@ -76,7 +76,7 @@ std::vector<std::string> delta::getSourceFiles(llvm::StringRef rootDirectory, ll
             break;
         }
 
-        if (llvm::sys::path::extension(it->path()) == ".delta" && it->path() != packageManifestPath) {
+        if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != packageManifestPath) {
             sourceFiles.push_back(it->path());
         }
     }

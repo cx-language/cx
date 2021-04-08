@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    var foo = false;
+    var bar = 0;
+    // CHECK: [[@LINE+1]]:13: error: invalid operands 'bool' and 'int' to '||'
+    if (foo || bar) { }
+}

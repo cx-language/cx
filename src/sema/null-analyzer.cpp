@@ -2,7 +2,7 @@
 #include "../ast/decl.h"
 #include "../backend/ir.h"
 
-using namespace delta;
+using namespace cx;
 
 bool NullAnalyzer::isDefinitelyNotNull(Value* nullableValue, Instruction* startFrom) {
     visited.clear();

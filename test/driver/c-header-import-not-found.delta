@@ -1,7 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-// CHECK: [[@LINE+2]]:8: error: couldn't find C header file 'foo.h'
-// CHECK: [[@LINE+1]]:8: error: couldn't import C header file 'foo.h'
-import "foo.h"; // TODO: Make this emit only one error.
-
-void main() {}

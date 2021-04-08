@@ -1,8 +1,0 @@
-// RUN: %delta -typecheck %s
-
-struct Foo { }
-
-void main() {
-    Foo f = undefined;
-    Foo f2 = f;
-}

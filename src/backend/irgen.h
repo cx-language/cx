@@ -11,7 +11,7 @@
 #include "../backend/ir.h"
 #include "../sema/typecheck.h"
 
-namespace delta {
+namespace cx {
 
 struct Module;
 struct Type;
@@ -226,4 +226,4 @@ struct IRGenerator {
     static const int optionalValueFieldIndex = 1;
 };
 
-} // namespace delta
+} // namespace cx

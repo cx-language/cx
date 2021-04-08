@@ -7,7 +7,7 @@
 #include <llvm/ADT/StringRef.h>
 #pragma warning(pop)
 
-namespace delta {
+namespace cx {
 
 struct PackageManifest {
     struct Dependency {
@@ -39,4 +39,4 @@ private:
     std::string outputDirectory;
 };
 
-} // namespace delta
+} // namespace cx

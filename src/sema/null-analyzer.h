@@ -9,7 +9,7 @@ template<typename T>
 class Optional;
 }
 
-namespace delta {
+namespace cx {
 
 struct IRModule;
 struct BasicBlock;
@@ -29,4 +29,4 @@ struct NullAnalyzer {
     bool isNotNullWhenComingFrom(Value* nullableValue, BasicBlock* predecessor, BasicBlock* destination, int gepIndex);
 };
 
-} // namespace delta
+} // namespace cx

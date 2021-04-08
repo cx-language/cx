@@ -1,0 +1,6 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void foo<T>() { }
+
+// CHECK: [[@LINE+1]]:18: error: can't infer generic parameters, please specify them explicitly
+void main() { foo() }

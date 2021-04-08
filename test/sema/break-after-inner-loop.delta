@@ -1,9 +1,0 @@
-// RUN: %delta -typecheck %s
-
-void main() {
-    while (false) {
-        while (false) {
-        }
-        break;
-    }
-}

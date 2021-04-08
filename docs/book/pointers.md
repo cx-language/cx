@@ -2,11 +2,11 @@
 
 Pointers, written `T*`, are used to refer to other objects in memory.
 
-Delta pointers are more like C++ references than C/C++ pointers:
+C* pointers are more like C++ references than C/C++ pointers:
 every operation on a pointer operates on the pointed-to value,
 except reassignment. Reassigning a pointer changes what the pointer points to.
 
-Additionally, Delta pointers cannot be null by default.
+Additionally, C* pointers cannot be null by default.
 To create nullable pointers, the pointer type has to be marked as [nullable](nullable-types.html).
 
 To form a pointer, the `&` operator can be used.

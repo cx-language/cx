@@ -16,8 +16,8 @@
 
 namespace std {
 template<>
-struct hash<std::vector<delta::Type>> {
-    size_t operator()(llvm::ArrayRef<delta::Type> types) const {
+struct hash<std::vector<cx::Type>> {
+    size_t operator()(llvm::ArrayRef<cx::Type> types) const {
         ASSERT(!types.empty());
         size_t hashValue = reinterpret_cast<size_t>(types[0].getBase());
 
@@ -34,7 +34,7 @@ namespace llvm {
 class StringRef;
 }
 
-namespace delta {
+namespace cx {
 
 struct Module;
 struct TypeDecl;
@@ -443,4 +443,4 @@ private:
 
 std::vector<Note> getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls);
 
-} // namespace delta
+} // namespace cx

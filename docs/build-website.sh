@@ -18,7 +18,7 @@ for file in book/*.md index.html; do
     esac
 
     basename="${basename%.*}"
-    pandoc "$file" -o "build/$basename.html" -s --include-before-body="top-nav.html" $toc --metadata pagetitle="Delta"
+    pandoc "$file" -o "build/$basename.html" -s --include-before-body="top-nav.html" $toc --metadata pagetitle="C*"
 done
 
 cp -r *.css *.js lib build

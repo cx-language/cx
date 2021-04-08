@@ -1,6 +1,6 @@
 # Variables and constants
 
-Delta has variables, declared using `var` or an explicit type, and constants, declared using `const` (possibly followed by an explicit type).
+C* has variables, declared using `var` or an explicit type, and constants, declared using `const` (possibly followed by an explicit type).
 
 When using `var` or `const` without an explicit type, the type of the variable or constant will be inferred from the initializer.
 

@@ -1,8 +1,0 @@
-// RUN: %not %delta run %s 2>&1 | %FileCheck %s
-
-void main() {
-    var array = List<int>();
-    array.removeLast();
-}
-
-// CHECK: Called removeLast() on empty List

@@ -1,6 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void main() {
-    // CHECK: [[@LINE+1]]:13: error: couldn't infer type for parameter 'b'
-    var a = b -> b;
-}

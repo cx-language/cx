@@ -1,0 +1,1 @@
+// RUN: %not %cx -typecheck %p/inputs/multifile-error/a.cx %p/inputs/multifile-error/b.cx | %FileCheck -match-full-lines -strict-whitespace %p/inputs/multifile-error/b.cx

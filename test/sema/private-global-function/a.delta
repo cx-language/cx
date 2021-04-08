@@ -1,8 +1,0 @@
-// RUN: true
-
-private void f() {}
-
-void g() {
-    // CHECK-NOT: a.delta:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: '{{(f|g)}}' is private
-    f();
-}

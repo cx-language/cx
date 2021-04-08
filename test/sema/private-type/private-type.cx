@@ -1,0 +1,27 @@
+// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %s
+// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %p/a.cx
+// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %p/a.cx -check-prefix=CHECK-PRIVATE-IN-PUBLIC-DECL
+
+void main() {
+    // CHECK: [[@LINE+1]]:5: warning: 'A' is private
+    A a = undefined;
+
+    // CHECK: [[@LINE+1]]:9: warning: 'A' is private
+    a = A();
+}
+
+// CHECK: [[@LINE+1]]:8: warning: 'A' is private
+void f(A a) {}
+
+// TODO: This warning should be at column 8
+// CHECK: [[@LINE+1]]:9: warning: 'A' is private
+void g(A*? a) {}
+
+A*? h() { // TODO: Here should be a warning
+    return null;
+}
+
+struct B {
+    // CHECK: [[@LINE+1]]:5: warning: 'A' is private
+    A a;
+}

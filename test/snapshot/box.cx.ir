@@ -1,0 +1,114 @@
+
+int main() {
+    Box<Box<int>>* p = alloca Box<Box<int>>
+    Box<int>* _0 = alloca Box<int>
+    Box<int>* q = alloca Box<int>
+    Box<int>* r = alloca Box<int>
+    void _1 = call _EN3std3BoxI3intE4initE3int(Box<int>* _0, int 42)
+    Box<int> .load = load _0
+    void _2 = call _EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(Box<Box<int>>* p, Box<int> .load)
+    void _3 = call _EN3std3BoxI3intE4initE3int(Box<int>* q, int 42)
+    void _4 = call _EN3std3BoxI3intE4initE3int(Box<int>* r, int 42)
+    int* _5 = call _EN3std3BoxI3intE3getE(Box<int>* q)
+    store int 0 to _5
+    int* _6 = call _EN3std3BoxI3intE3getE(Box<int>* r)
+    void _7 = call _EN3std3BoxI3intE6deinitE(Box<int>* q)
+    Box<int> r.load = load r
+    store r.load to q
+    void _8 = call _EN3std3BoxI3intE6deinitE(Box<int>* q)
+    void _9 = call _EN3std3BoxI3BoxI3intEE6deinitE(Box<Box<int>>* p)
+    return int 0
+}
+
+void _EN3std3BoxI3BoxI3intEE6deinitE(Box<Box<int>>* this) {
+    Box<int>** pointer = getelementptr this, 0
+    Box<int>* pointer.load = load pointer
+    void _0 = call _EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* pointer.load)
+    return void
+}
+
+void _EN3std3BoxI3BoxI3intEE4initE3BoxI3intE(Box<Box<int>>* this, Box<int> value) {
+    Box<int>** pointer = getelementptr this, 0
+    Box<int>* _0 = call _EN3std8allocateI3BoxI3intEEE3BoxI3intE(Box<int> value)
+    store _0 to pointer
+    return void
+}
+
+void _EN3std3BoxI3intE4initE3int(Box<int>* this, int value) {
+    int** pointer = getelementptr this, 0
+    int* _0 = call _EN3std8allocateI3intEE3int(int value)
+    store _0 to pointer
+    return void
+}
+
+void _EN3std3BoxI3intE6deinitE(Box<int>* this) {
+    int** pointer = getelementptr this, 0
+    int* pointer.load = load pointer
+    void _0 = call _EN3std10deallocateIP3intEEP3int(int* pointer.load)
+    return void
+}
+
+int* _EN3std3BoxI3intE3getE(Box<int>* this) {
+    int** pointer = getelementptr this, 0
+    int* pointer.load = load pointer
+    return pointer.load
+}
+
+void _EN3std10deallocateIP3BoxI3intEEEP3BoxI3intE(Box<int>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+Box<int>* _EN3std8allocateI3BoxI3intEEE3BoxI3intE(Box<int> value) {
+    Box<int>** allocation = alloca Box<int>*
+    void* _0 = call malloc(uint64 sizeof(Box<int>))
+    bool assert.condition = _0 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:9:54
+")
+    unreachable
+
+assert.success:
+    Box<int>* _2 = cast _0 to Box<int>*
+    store _2 to allocation
+    Box<int>* allocation.load = load allocation
+    store value to allocation.load
+    Box<int>* allocation.load_0 = load allocation
+    return allocation.load_0
+}
+
+int* _EN3std8allocateI3intEE3int(int value) {
+    int** allocation = alloca int*
+    void* _0 = call malloc(uint64 sizeof(int))
+    bool assert.condition = _0 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:9:54
+")
+    unreachable
+
+assert.success:
+    int* _2 = cast _0 to int*
+    store _2 to allocation
+    int* allocation.load = load allocation
+    store value to allocation.load
+    int* allocation.load_0 = load allocation
+    return allocation.load_0
+}
+
+void _EN3std10deallocateIP3intEEP3int(int* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+extern void free(void*)
+
+extern void* malloc(uint64)
+
+void _EN3std10assertFailEP4char(char* message) {
+}

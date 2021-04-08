@@ -1,6 +1,6 @@
 # Enum types
 
-Delta's enums are scoped and can optionally have associated values for each enum value.
+C*'s enums are scoped and can optionally have associated values for each enum value.
 
 ```cs
 enum JSONValue {

@@ -1,0 +1,6 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void foo(int a, int b) {
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int', expected 'void'
+    return a * b;
+}

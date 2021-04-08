@@ -1,0 +1,6 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: cannot assign 'bool' to 'int'
+    int i = false;
+}

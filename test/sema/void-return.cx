@@ -1,0 +1,5 @@
+// RUN: %cx -typecheck %s
+
+void foo() {
+    return;
+}

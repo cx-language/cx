@@ -1,8 +1,0 @@
-// RUN: %delta -typecheck %s
-
-import "a.h"
-
-void main() {
-    var a = List<int>()
-    a.push(1)
-}

@@ -1,0 +1,197 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+struct C {
+    int i;
+    ~C() {}
+}
+
+void main() {
+    testListInsertionAndRemoval();
+    testListInitFromLiteral();
+    testArrayIterator();
+    testListMutatingIteration();
+    testListEnumeratedIterator();
+    testEmpty();
+    testFind();
+    testMap();
+    testFilter();
+    testRemoveFirstByPredicate();
+    testElementDestruction();
+}
+
+void testListInsertionAndRemoval() {
+    var a = List<C>();
+    assert(a.size() == 0 && a.capacity() >= 0);
+
+    a.push(C(1));
+    assert(a[0].i == 1);
+
+    a.push(C(2));
+    a.push(C(3));
+    a.removeAt(1);
+    assert(a[0].i == 1 && a[1].i == 3);
+
+    a.removeLast();
+    a.push(C(4));
+    assert(a.size() == 2 && a.capacity() >= 2);
+}
+
+void testListInitFromLiteral() {
+    var a = List([1, 2, 3]);
+
+    assert(a.size() == 3);
+    assert(a[0] == 1);
+    assert(a[1] == 2);
+    assert(a[2] == 3);
+}
+
+void testArrayIterator() {
+    var a = List<C>();
+    a.push(C(1));
+    a.push(C(4));
+
+    var iterator = a.iterator();
+
+    assert(iterator.hasValue());
+    assert(iterator.value().i == 1);
+
+    iterator.increment();
+    assert(iterator.hasValue());
+    assert(iterator.value().i == 4);
+
+    iterator.increment();
+    assert(!iterator.hasValue());
+}
+
+void testListMutatingIteration() {
+    var a = List<int>();
+    a.push(1);
+    a.push(2);
+    a.push(3);
+
+    for (var e in a) {
+        e++;
+    }
+
+    assert(a[0] == 2);
+    assert(a[1] == 3);
+    assert(a[2] == 4);
+}
+
+void testListEnumeratedIterator() {
+    var a = List<int>();
+    a.push(9000);
+    a.push(-1234);
+    a.push(0xcafe);
+
+    var iterator = a.enumerate();
+
+    assert(iterator.hasValue());
+    assert(iterator.value().index == 0);
+    assert(iterator.value().value == 9000);
+
+    iterator.increment();
+    assert(iterator.hasValue());
+    assert(iterator.value().index == 1);
+    assert(iterator.value().value == -1234);
+
+    iterator.increment();
+    assert(iterator.hasValue());
+    assert(iterator.value().index == 2);
+    assert(iterator.value().value == 0xcafe);
+
+    iterator.increment();
+    assert(iterator.value().index == 3);
+    assert(!iterator.hasValue());
+}
+
+void testEmpty() {
+    var a = List<int>();
+    assert(a.empty());
+    a.push(7);
+    assert(!a.empty());
+}
+
+void testFind() {
+    var a = List<int>();
+    assert(a.find(x -> x == 1) == null);
+    a.push(1);
+    assert(a.find(x -> x == 1)! == 1); // TODO: '!' shouldn't be required
+    a.push(2);
+    assert(a.find(x -> x == 2)! == 2); // TODO: '!' shouldn't be required
+    assert(a.find(x -> x == 3) == null);
+}
+
+void testMap() {
+    var a = List<int>();
+    a.push(1);
+    a.push(2);
+    a.push(3);
+    a.push(4);
+
+    var b = a.map(value -> value > 2);
+    assert(b.size() == 4);
+    assert(b[0] == false);
+    assert(b[1] == false);
+    assert(b[2] == true);
+    assert(b[3] == true);
+}
+
+void testFilter() {
+    var a = List<int>();
+    a.push(1);
+    a.push(2);
+    a.push(3);
+    a.push(4);
+
+    var b = a.filter(value -> *value % 2 == 0); // FIXME: Make this compile without the dereference.
+    assert(b.size() == 2);
+    assert(b[0] == 2);
+    assert(b[1] == 4);
+}
+
+void testRemoveFirstByPredicate() {
+    var a = List([0, 1, 2, 3]);
+
+    a.removeFirst(value -> value > 1);
+    assert(a == List([0, 1, 3]));
+
+    a.removeFirst(value -> value < 1);
+    assert(a == List([1, 3]));
+
+    a.removeFirst(value -> value < 1);
+    assert(a == List([1, 3]));
+
+    a.removeFirst(value -> value > 1);
+    assert(a == List([1]));
+
+    a.removeFirst(value -> value == 1);
+    assert(a.empty());
+
+    a.removeFirst(value -> true);
+    assert(a.empty());
+}
+
+var destroyed = 0;
+
+struct DestructionTester {
+    ~DestructionTester() {
+        destroyed++;
+    }
+}
+
+void testElementDestruction() {
+    var a = List<DestructionTester>();
+
+    for (var i in 0..50) {
+        a.push(DestructionTester());
+    }
+
+    a.removeAt(25);
+    a.removeAt(25);
+    a.removeAt(25);
+    a.removeLast();
+    a.removeFirst();
+
+    assert(destroyed == 5);
+}

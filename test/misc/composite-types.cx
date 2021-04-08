@@ -1,0 +1,17 @@
+// RUN: check_exit_status 5 %cx run %s
+
+struct Foo: Copyable { }
+struct Bar { }
+
+struct X: Copyable {
+    int a;
+}
+
+struct Y {
+    char* y;
+}
+
+int main() {
+    var x = X(5);
+    return x.a;
+}

@@ -1,0 +1,14 @@
+// RUN: check_exit_status 21 %cx run %s
+
+struct Foo: Copyable {
+    int value;
+
+    int add(int number) {
+        return this.value + number;
+    }
+}
+
+int main() {
+    var foo = Foo(42);
+    return foo.add(-21);
+}

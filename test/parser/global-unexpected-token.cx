@@ -1,0 +1,4 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:2: error: unexpected 'this'
+ this

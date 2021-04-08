@@ -1,8 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-int foo() { return 42; }
-
-void main() {
-    // CHECK: [[@LINE+1]]:17: error: cannot assign 'int' to 'int*'
-    int* p = foo();
-}

@@ -1,0 +1,10 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct X: Copyable {
+    X(int a) { }
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:15: error: invalid argument name 'bar' for parameter 'a'
+    var x = X(bar: 5);
+}

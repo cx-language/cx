@@ -1,0 +1,1 @@
+// RUN: check-snapshots %p/inputs/multifile/a.cx %p/inputs/multifile/b.cx

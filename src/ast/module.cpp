@@ -1,6 +1,6 @@
 #include "module.h"
 
-using namespace delta;
+using namespace cx;
 
 llvm::StringMap<Module*> Module::allImportedModules;
 

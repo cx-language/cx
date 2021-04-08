@@ -41,19 +41,19 @@
 #define WEXITSTATUS(x) x
 #endif
 
-using namespace delta;
+using namespace cx;
 namespace cl = llvm::cl;
 
-namespace delta {
+namespace cx {
 int errors = 0;
-cl::SubCommand build("build", "Build a Delta project");
-cl::SubCommand run("run", "Build and run a Delta executable");
+cl::SubCommand build("build", "Build a C* project");
+cl::SubCommand run("run", "Build and run a C* executable");
 cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(*cl::AllSubCommands));
 cl::opt<bool> parse("parse", cl::desc("Parse only"));
 cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"));
 cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"));
-cl::opt<bool> printIR("print-ir", cl::desc("Print Delta intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
-cl::opt<bool> printIRAll("print-ir-all", cl::desc("Print Delta intermediate representation of all compiled modules"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
+cl::opt<bool> printIR("print-ir", cl::desc("Print C* intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
+cl::opt<bool> printIRAll("print-ir-all", cl::desc("Print C* intermediate representation of all compiled modules"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
 cl::opt<bool> printLLVM("print-llvm", cl::desc("Print LLVM intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
 // TODO: Add -print-llvm-all option.
 cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"));
@@ -70,7 +70,7 @@ cl::list<std::string> frameworkSearchPaths("F", cl::desc("Add directory to frame
                                            cl::sub(*cl::AllSubCommands));
 cl::list<std::string> cflags(cl::Sink, cl::desc("Add C compiler flags"), cl::sub(*cl::AllSubCommands));
 cl::alias emitAssemblyAlias("S", cl::aliasopt(emitAssembly));
-} // namespace delta
+} // namespace cx
 
 static int exec(const char* command, std::string& output) {
     FILE* pipe = popen(command, "r");
@@ -137,7 +137,7 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
         importSearchPaths.push_back(keyValue.getKey().str());
     }
 
-    importSearchPaths.push_back(DELTA_ROOT_DIR);
+    importSearchPaths.push_back(CX_ROOT_DIR);
     importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
     importSearchPaths.push_back("/usr/include");
     importSearchPaths.push_back("/usr/local/include");
@@ -271,7 +271,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
 
     llvm::SmallString<128> temporaryOutputFilePath;
     auto* outputFileExtension = emitAssembly ? "s" : msvc ? "obj" : "o";
-    if (auto error = llvm::sys::fs::createTemporaryFile("delta", outputFileExtension, temporaryOutputFilePath)) {
+    if (auto error = llvm::sys::fs::createTemporaryFile("cx", outputFileExtension, temporaryOutputFilePath)) {
         ABORT(error.message());
     }
 
@@ -300,7 +300,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     // Link the output.
 
     llvm::SmallString<128> temporaryExecutablePath;
-    llvm::sys::fs::createUniquePath(msvc ? "delta-%%%%%%%%.exe" : "delta-%%%%%%%%.out", temporaryExecutablePath, true);
+    llvm::sys::fs::createUniquePath(msvc ? "cx-%%%%%%%%.exe" : "cx-%%%%%%%%.out", temporaryExecutablePath, true);
 
     std::vector<const char*> ccArgs = {
         msvc ? ccPath.c_str() : argv0,
@@ -413,9 +413,9 @@ static void addPlatformCompileOptions() {
 }
 
 int main(int argc, const char** argv) {
-    llvm::setBugReportMsg("Please submit a bug report to https://github.com/delta-lang/delta/issues and include the crash backtrace.\n");
+    llvm::setBugReportMsg("Please submit a bug report to https://github.com/cx-language/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
-    cl::ParseCommandLineOptions(argc, argv, "Delta compiler\n");
+    cl::ParseCommandLineOptions(argc, argv, "C* compiler\n");
     addPlatformCompileOptions();
 
     if (!inputs.empty()) {

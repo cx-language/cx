@@ -1,1 +1,0 @@
-// RUN: check-snapshots %p/inputs/multifile/a.delta %p/inputs/multifile/b.delta

@@ -1,0 +1,11 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK:foo!!!
+// CHECK-NEXT:bar!!!
+
+import mod;
+
+void main() {
+    foo();
+    bar();
+}

@@ -2,7 +2,7 @@
 #include "ast.h"
 #include "decl.h"
 
-using namespace delta;
+using namespace cx;
 
 bool Stmt::isBreakable() const {
     switch (getKind()) {

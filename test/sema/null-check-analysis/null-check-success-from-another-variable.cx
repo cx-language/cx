@@ -1,0 +1,9 @@
+// RUN: %cx -typecheck -Werror -Wno-unused %s
+
+void foo(int*? p) {
+    if (p != null) {
+        var j = p;
+        var i = j;
+        *i = 3;
+    }
+}

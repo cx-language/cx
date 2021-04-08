@@ -1,0 +1,6 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:12: warning: missing initializer
+    int*** i;
+}

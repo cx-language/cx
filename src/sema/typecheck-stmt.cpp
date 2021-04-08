@@ -4,7 +4,7 @@
 #pragma warning(pop)
 #include "../ast/module.h"
 
-using namespace delta;
+using namespace cx;
 
 void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(returnValue)) {

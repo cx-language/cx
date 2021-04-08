@@ -11,17 +11,17 @@
 #include <llvm/Support/Signals.h>
 #pragma warning(pop)
 
-using namespace delta;
+using namespace cx;
 
-namespace delta {
+namespace cx {
 extern int errors;
 }
 
-std::ostream& delta::operator<<(std::ostream& stream, llvm::StringRef string) {
+std::ostream& cx::operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
 }
 
-std::string delta::readLineFromFile(SourceLocation location) {
+std::string cx::readLineFromFile(SourceLocation location) {
     std::ifstream file(location.file);
 
     while (--location.line) {
@@ -33,7 +33,7 @@ std::string delta::readLineFromFile(SourceLocation location) {
     return lineContent;
 }
 
-void delta::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
+void cx::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
     auto permissions = llvm::sys::fs::getPermissions(sourcePath);
     if (auto error = permissions.getError()) {
         ABORT("couldn't get permissions for '" << sourcePath << "': " << error.message());
@@ -49,7 +49,7 @@ void delta::renameFile(llvm::Twine sourcePath, llvm::Twine targetPath) {
     }
 }
 
-void delta::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message) {
+void cx::printDiagnostic(SourceLocation location, llvm::StringRef type, llvm::raw_ostream::Colors color, llvm::StringRef message) {
     if (llvm::outs().has_colors()) {
         llvm::outs().changeColor(llvm::raw_ostream::SAVEDCOLOR, true);
     }
@@ -88,7 +88,7 @@ void CompileError::print() const {
     reportError(location, s, notes);
 }
 
-std::string delta::getCCompilerPath() {
+std::string cx::getCCompilerPath() {
 #ifdef _WIN32
     auto compilers = { "cl.exe", "clang-cl.exe" };
 #else
@@ -102,21 +102,21 @@ std::string delta::getCCompilerPath() {
     return "";
 }
 
-void delta::printStackTrace() {
-    if (auto env = llvm::sys::Process::GetEnv("DELTA_PRINT_STACK_TRACE")) {
+void cx::printStackTrace() {
+    if (auto env = llvm::sys::Process::GetEnv("CX_PRINT_STACK_TRACE")) {
         if (llvm::StringRef(*env).equals_lower("true") || *env == "1") {
             llvm::sys::PrintStackTrace(llvm::outs());
         }
     }
 }
 
-void delta::abort(StringFormatter& message) {
+void cx::abort(StringFormatter& message) {
     printColored("error: ", llvm::raw_ostream::RED);
     llvm::outs() << message.str() << '\n';
     exit(1);
 }
 
-void delta::reportError(SourceLocation location, StringFormatter& message, llvm::ArrayRef<Note> notes) {
+void cx::reportError(SourceLocation location, StringFormatter& message, llvm::ArrayRef<Note> notes) {
     errors++;
     printDiagnostic(location, "error", llvm::raw_ostream::RED, message.str());
 
@@ -125,7 +125,7 @@ void delta::reportError(SourceLocation location, StringFormatter& message, llvm:
     }
 }
 
-void delta::reportWarning(SourceLocation location, StringFormatter& message) {
+void cx::reportWarning(SourceLocation location, StringFormatter& message) {
     extern llvm::cl::opt<WarningMode> warningMode;
 
     switch (warningMode) {

@@ -1,4 +1,0 @@
-// RUN: %not %delta -parse %s | %FileCheck %s
-
-// CHECK: [[@LINE+1]]:12: error: expected identifier, got ';'
-var pi = 3.;

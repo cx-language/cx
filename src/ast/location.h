@@ -5,7 +5,7 @@
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 
-namespace delta {
+namespace cx {
 
 struct SourceLocation {
     using IntegerType = short;
@@ -31,4 +31,4 @@ struct SourceLocation {
     }
 };
 
-} // namespace delta
+} // namespace cx

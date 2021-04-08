@@ -1,0 +1,9 @@
+// RUN: %cx -typecheck %s | %FileCheck %s -allow-empty
+
+import "inputs/function-decl.h";
+import "inputs/indirect-include.h";
+
+void main() {
+    // CHECK-NOT: ambiguous reference
+    test();
+}

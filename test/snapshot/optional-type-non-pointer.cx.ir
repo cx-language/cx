@@ -1,0 +1,218 @@
+
+int main() {
+    Optional<int>* a = alloca Optional<int>
+    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* b = alloca Optional<int>
+    Optional<int>* c = alloca Optional<int>
+    Optional<int>* _1 = alloca Optional<int>
+    Optional<int>* d = alloca Optional<int>
+    Optional<int>* _2 = alloca Optional<int>
+    Optional<int>* _3 = alloca Optional<int>
+    void _4 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
+    Optional<int> .load = load _0
+    store .load to a
+    void _5 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* b, int 2)
+    void _6 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _1, int 3)
+    Optional<int> .load_0 = load _1
+    store .load_0 to c
+    void _7 = call _EN3std8OptionalI3intE4initE(Optional<int>* d)
+    void _8 = call _EN3std8OptionalI3intE4initE(Optional<int>* _2)
+    bool _9 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* d, Optional<int>* _2)
+    br _9, if.then, if.else
+
+if.then:
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    void _10 = call _EN3std8OptionalI3intE4initE(Optional<int>* _3)
+    bool _11 = call _EN3stdneI3intEEPO3intPO3int(Optional<int>* d, Optional<int>* _3)
+    br _11, if.then, if.else
+
+if.then_0:
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    Optional<int> d.load = load d
+    bool _12 = extractvalue d.load, 0
+    br _12, if.then, if.else
+
+if.then_1:
+    br if.end_1
+
+if.else_1:
+    br if.end_1
+
+if.end_1:
+    Optional<int> d.load_0 = load d
+    bool _13 = extractvalue d.load_0, 0
+    bool _14 = !_13
+    br _14, if.then, if.else
+
+if.then_2:
+    br if.end_2
+
+if.else_2:
+    br if.end_2
+
+if.end_2:
+    return int 0
+}
+
+void _EN3std8OptionalI3intE4initE(Optional<int>* this) {
+    bool* hasValue = getelementptr this, 0
+    store bool false to hasValue
+    return void
+}
+
+void _EN3std8OptionalI3intE4initE3int(Optional<int>* this, int value) {
+    bool* hasValue = getelementptr this, 0
+    store bool true to hasValue
+    int* value_0 = getelementptr this, 1
+    store value to value_0
+    return void
+}
+
+bool _EN3stdeqI3intEEPO3intPO3int(Optional<int>* a, Optional<int>* b) {
+    bool* hasValue = getelementptr a, 0
+    bool hasValue.load = load hasValue
+    bool* hasValue_0 = getelementptr b, 0
+    bool hasValue.load_0 = load hasValue_0
+    bool _0 = hasValue.load != hasValue.load_0
+    br _0, if.then, if.else
+
+if.then:
+    return bool false
+
+if.else:
+    br if.end
+
+if.end:
+    bool* hasValue_1 = getelementptr b, 0
+    bool hasValue.load_1 = load hasValue_1
+    bool _1 = !hasValue.load_1
+    br _1, if.then, if.else
+
+if.then_0:
+    return bool true
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    int* value = getelementptr a, 1
+    int value.load = load value
+    int* value_0 = getelementptr b, 1
+    int value.load_0 = load value_0
+    bool _2 = value.load == value.load_0
+    return _2
+}
+
+bool _EN3stdneI3intEEPO3intPO3int(Optional<int>* a, Optional<int>* b) {
+    bool _0 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* a, Optional<int>* b)
+    bool _1 = !_0
+    return _1
+}
+
+void _EN4main1fE() {
+    Optional<int>* a = alloca Optional<int>
+    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* b = alloca Optional<int>
+    Optional<int>* c = alloca Optional<int>
+    Optional<int>* _1 = alloca Optional<int>
+    Optional<int>* d = alloca Optional<int>
+    Optional<int>* _2 = alloca Optional<int>
+    int* x = alloca int
+    Optional<int>* _3 = alloca Optional<int>
+    void _4 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
+    Optional<int> .load = load _0
+    store .load to a
+    void _5 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* b, int 2)
+    void _6 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _1, int 3)
+    Optional<int> .load_0 = load _1
+    store .load_0 to c
+    void _7 = call _EN3std8OptionalI3intE4initE(Optional<int>* d)
+    void _8 = call _EN3std8OptionalI3intE4initE(Optional<int>* _2)
+    Optional<int> .load_1 = load _2
+    store .load_1 to c
+    Optional<int> c.load = load c
+    bool _9 = extractvalue c.load, 0
+    br _9, if.then, if.else
+
+if.then:
+    Optional<int> c.load_0 = load c
+    bool _10 = extractvalue c.load_0, 0
+    bool assert.condition = _10 == bool false
+    br assert.condition, assert.fail, assert.success
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+assert.fail:
+    void _11 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:24:18
+")
+    unreachable
+
+assert.success:
+    int _12 = extractvalue c.load_0, 1
+    int _13 = _12 + int 1
+    store _13 to x
+    Optional<int> c.load_1 = load c
+    bool _14 = extractvalue c.load_1, 0
+    bool assert.condition_0 = _14 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _15 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:25:18
+")
+    unreachable
+
+assert.success_0:
+    int _16 = extractvalue c.load_1, 1
+    int _17 = int 1 + _16
+    Optional<int> c.load_2 = load c
+    bool _18 = extractvalue c.load_2, 0
+    bool assert.condition_1 = _18 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _19 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:26:16
+")
+    unreachable
+
+assert.success_1:
+    int _20 = extractvalue c.load_2, 1
+    int _21 = -_20
+    void _22 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _3, int _21)
+    Optional<int> .load_2 = load _3
+    store .load_2 to c
+    br if.end
+}
+
+void _EN3std10assertFailEP4char(char* message) {
+}
+
+void _EN4main1gE() {
+    char*** p = alloca char**
+    store char** null to p
+    char** p.load = load p
+    bool _0 = p.load == char** null
+    br _0, if.then, if.else
+
+if.then:
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+}

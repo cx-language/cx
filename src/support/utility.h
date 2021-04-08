@@ -29,7 +29,7 @@
     ((void) sizeof(b))
 #endif
 
-namespace delta {
+namespace cx {
 
 std::ostream& operator<<(std::ostream& stream, llvm::StringRef string);
 
@@ -136,4 +136,4 @@ enum class WarningMode { Default, Suppress, TreatAsErrors };
 
 std::string getCCompilerPath();
 
-} // namespace delta
+} // namespace cx

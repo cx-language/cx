@@ -1,0 +1,5 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+2]]:15: error: newline inside string literal
+// CHECK: {{^              \^$}}
+var a = "   \"

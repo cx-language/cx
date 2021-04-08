@@ -1,0 +1,5 @@
+// RUN: %not %cx -typecheck %s %p/inputs/imported-module-has-file-scope/second-file.cx | %FileCheck %s
+
+import foo;
+
+// CHECK: second-file.cx:2:5: error: unknown identifier 'foo'

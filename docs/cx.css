@@ -1,0 +1,37 @@
+.cm-s-cx span.cm-meta { color: #808000; }
+.cm-s-cx span.cm-number { color: var(--number-color); }
+.cm-s-cx span.cm-keyword { color: var(--blue); }
+.cm-s-cx span.cm-atom { color: var(--blue); }
+.cm-s-cx span.cm-def { color: var(--text-color); }
+.cm-s-cx span.cm-variable { color: var(--text-color); }
+.cm-s-cx span.cm-variable-2 { color: var(--text-color); }
+.cm-s-cx span.cm-variable-3, .cm-s-cx span.cm-type { color: var(--text-color); }
+.cm-s-cx span.cm-property { color: var(--text-color); }
+.cm-s-cx span.cm-operator { color: var(--text-color); }
+.cm-s-cx span.cm-comment { color: var(--text-color-subtle); }
+.cm-s-cx span.cm-string { color: var(--string-color); }
+.cm-s-cx span.cm-string-2 { color: var(--string-color); }
+.cm-s-cx span.cm-qualifier { color: #555; }
+.cm-s-cx span.cm-error { color: #FF0000; }
+.cm-s-cx span.cm-attribute { color: var(--blue); }
+.cm-s-cx span.cm-tag { color: #0000a0; }
+.cm-s-cx span.cm-link { color: var(--blue); }
+.cm-s-cx .CodeMirror-activeline-background { background: #FFFAE3; }
+
+.cm-s-cx span.cm-builtin { color: #30a; }
+.cm-s-cx span.cm-bracket { color: #cc7; }
+
+.cm-s-cx .CodeMirror-matchingbracket { outline: 1px solid grey; color: var(--text-color) !important; }
+
+.CodeMirror-hints.cx {
+  color: #616569;
+  background-color: #ebf3fd !important;
+}
+
+.CodeMirror-hints.cx .CodeMirror-hint-active {
+  background-color: #a2b8c9 !important;
+  color: #5c6065 !important;
+}
+
+.CodeMirror-selected { background-color: var(--background-color-3) !important; }
+.CodeMirror-cursor { border-color: var(--text-color); }

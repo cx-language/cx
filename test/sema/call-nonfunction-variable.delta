@@ -1,7 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void main() {
-    var foo = 5;
-    // CHECK: [[@LINE+1]]:15: error: 'foo' is not a function
-    var bar = foo();
-}

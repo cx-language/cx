@@ -1,8 +1,0 @@
-// RUN: %not %delta run %s 2>&1 | %FileCheck %s
-
-void main() {
-    var array = List<int>();
-    array.removeFirst();
-}
-
-// CHECK: Called removeFirst() on empty List

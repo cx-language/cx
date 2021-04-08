@@ -6,7 +6,7 @@
 #include "decl.h"
 #include "token.h"
 
-using namespace delta;
+using namespace cx;
 
 bool Expr::isAssignment() const {
     auto* binaryExpr = llvm::dyn_cast<BinaryExpr>(this);
@@ -343,7 +343,7 @@ llvm::APSInt UnaryExpr::getConstantIntegerValue() const {
     }
 }
 
-bool delta::isBuiltinOp(Token::Kind op, Type left, Type right) {
+bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (op == Token::Assignment) return true;
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
     if (op == Token::PointerEqual || op == Token::PointerNotEqual) return true;

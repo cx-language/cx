@@ -1,0 +1,23 @@
+// RUN: %cx -typecheck %s
+
+void foo(uint a) { }
+void bar(uint8 a) { }
+uint baz() { return 0; }
+(uint a, uint8 b) qux() { return (a: 0, b: 0); }
+
+void main() {
+    foo(0);
+    foo(1);
+    bar(0);
+    bar(255);
+    uint a = 0;
+    uint b = 1;
+    uint8 c = 0;
+    uint8 d = 255;
+    b = 2;
+    d = 0;
+    if (a == 0) { }
+    if (b != 1) { }
+    if (2 <  c) { }
+    if (3 >= d) { }
+}

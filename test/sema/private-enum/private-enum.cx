@@ -1,0 +1,10 @@
+// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %s
+// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %p/a.cx
+
+void main() {
+    // CHECK: private-enum.cx:[[@LINE+1]]:13: warning: 'A' is private
+    var b = A.B;
+
+    // CHECK: private-enum.cx:[[@LINE+1]]:5: warning: 'A' is private
+    A c = undefined;
+}

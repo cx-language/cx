@@ -1,0 +1,14 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:Foo
+
+import "stdlib.h";
+import "stdio.h";
+
+void main() {
+    var buffer = cast<uint8[4]*>(malloc(4)!);
+    buffer[0] = 70;
+    buffer[1] = 0x6f;
+    buffer[2] = 0o157;
+    buffer[3] = 0b0;
+    puts(cast<char*>(cast<void*>(buffer)));
+}

@@ -1,0 +1,11 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void foo() { }
+// CHECK: [[@LINE+2]]:6: error: redefinition of 'foo'
+// CHECK: :3:6: note: previous definition here
+void foo() { }
+
+void bar(int a) { }
+// CHECK: [[@LINE+2]]:6: error: redefinition of 'bar'
+// CHECK: :8:6: note: previous definition here
+void bar(int b) { }

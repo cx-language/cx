@@ -66,7 +66,7 @@ jobs:
           cmake --build . --config $BUILD_TYPE --target check
 
   deploy-website:
-    if: github.repository == 'delta-lang/delta' && github.ref == 'refs/heads/master'
+    if: github.repository == 'cx-language/cx' && github.ref == 'refs/heads/master'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -82,23 +82,23 @@ jobs:
             ./build-website.sh
           )
 
-          git clone https://github.com/delta-lang/delta-lang.github.io.git
-          cd delta-lang.github.io || exit 1
+          git clone https://github.com/cx-language/cx-language.github.io.git
+          cd cx-language.github.io || exit 1
 
-          DELTA_VERSION=$GITHUB_SHA
-          echo "$DELTA_VERSION" > server/.delta-version
+          CX_VERSION=$GITHUB_SHA
+          echo "$CX_VERSION" > server/.cx-version
 
           cp -a ../docs/build/. ./
           git add .
 
           PREVIOUS_COMMIT_AUTHOR=$(git log -1 --pretty=format:%an)
-          if [ "$PREVIOUS_COMMIT_AUTHOR" = "Delta CI" ]; then
+          if [ "$PREVIOUS_COMMIT_AUTHOR" = "C* CI" ]; then
             AMEND=--amend
           fi
 
           git config user.email ""
-          git config user.name "Delta CI"
-          git commit --message "Update documentation and Delta version to $DELTA_VERSION" $AMEND
+          git config user.name "C* CI"
+          git commit --message "Update documentation and C* version to $CX_VERSION" $AMEND
 
-          git remote set-url origin "https://${{ secrets.CI_TOKEN }}@github.com/delta-lang/delta-lang.github.io.git" > /dev/null 2>&1
+          git remote set-url origin "https://${{ secrets.CI_TOKEN }}@github.com/cx-language/cx-language.github.io.git" > /dev/null 2>&1
           git push --quiet --force-with-lease

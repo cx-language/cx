@@ -1,0 +1,10 @@
+// RUN: %cx -typecheck %s
+
+int foo() { return 42; }
+void bar() { }
+
+void main() {
+    var i = foo();
+    bar();
+    foo();
+}

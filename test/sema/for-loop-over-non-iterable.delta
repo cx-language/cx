@@ -1,9 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-struct A {}
-
-void main() {
-    // CHECK: [[@LINE+1]]:5: error: unknown identifier 'A.iterator'
-    for (var i in A()) {}
-    // CHECK-NOT: error
-}

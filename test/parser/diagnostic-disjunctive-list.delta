@@ -1,7 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck -strict-whitespace %s
-
-void main() {
-    // TODO: Should say 'expected type'.
-    // CHECK: [[@LINE+1]]:15: error: unexpected '>'
-    var a = A<>();
-}

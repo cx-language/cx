@@ -13,7 +13,7 @@ template<typename T>
 class ArrayRef;
 } // namespace llvm
 
-namespace delta {
+namespace cx {
 
 struct NamedValue;
 struct Module;
@@ -170,4 +170,4 @@ private:
     const CompileOptions& options;
 };
 
-} // namespace delta
+} // namespace cx

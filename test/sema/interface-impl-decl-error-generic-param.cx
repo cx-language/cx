@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:14: error: 'bool' is not an interface
+struct Z<T>: T {}
+
+void main() {
+    var z = Z<bool>();
+}

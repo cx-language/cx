@@ -1,0 +1,4 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:12: error: unexpected '.'
+var half = .5;

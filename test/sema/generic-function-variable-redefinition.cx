@@ -1,0 +1,10 @@
+// RUN: %cx -typecheck %s
+
+void a() {
+    var i = 1
+    b<int>()
+}
+
+void b<T>() {
+    var i = 1
+}

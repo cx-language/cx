@@ -7,7 +7,7 @@
 #pragma warning(pop)
 #include "ir.h"
 
-namespace delta {
+namespace cx {
 
 struct IRModule;
 struct IRType;
@@ -62,4 +62,4 @@ struct LLVMGenerator {
     std::unordered_map<IRType*, llvm::StructType*> structs;
 };
 
-} // namespace delta
+} // namespace cx

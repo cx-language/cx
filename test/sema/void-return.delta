@@ -1,5 +1,0 @@
-// RUN: %delta -typecheck %s
-
-void foo() {
-    return;
-}

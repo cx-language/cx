@@ -1,6 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void main() {
-    // CHECK: [[@LINE+1]]:17: error: invalid operands 'int' and 'bool' to '+'
-    var foo = 4 + false;
-}

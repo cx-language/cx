@@ -1,0 +1,11 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct T {}
+
+void f(T t) {}
+
+void g(T t) {
+    f(t);
+    // CHECK: [[@LINE+1]]:13: error: use of moved value
+    var a = t;
+}

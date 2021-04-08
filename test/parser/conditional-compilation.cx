@@ -1,0 +1,24 @@
+// RUN: %cx -print-llvm %s       | %FileCheck %s -check-prefix=CHECK-WITHOUT-FOO
+// RUN: %cx -print-llvm %s -DFOO | %FileCheck %s -check-prefix=CHECK-WITH-FOO
+// RUN: %cx -print-llvm %s       | %FileCheck %s -check-prefix=CHECK-WITHOUT-BAR
+// RUN: %cx -print-llvm %s -DBAR | %FileCheck %s -check-prefix=CHECK-WITH-BAR
+
+#if FOO
+// CHECK-WITHOUT-FOO-NOT: 666
+// CHECK-WITH-FOO: 666
+var a = 666;
+#endif
+
+#if BAR
+#if !UNUSED
+// CHECK-WITHOUT-BAR-NOT: 777
+// CHECK-WITH-BAR: 777
+var b = 777;
+#endif
+#else
+#if !UNUSED
+// CHECK-WITHOUT-BAR: 888
+// CHECK-WITH-BAR-NOT: 888
+var b = 888;
+#endif
+#endif

@@ -2,10 +2,10 @@
 
 #include <string>
 
-namespace delta {
+namespace cx {
 
 struct FunctionDecl;
 
 std::string mangleFunctionDecl(const FunctionDecl& functionDecl);
 
-} // namespace delta
+} // namespace cx

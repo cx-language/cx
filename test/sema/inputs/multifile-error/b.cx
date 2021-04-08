@@ -1,0 +1,4 @@
+var b = foo;
+// CHECK:{{.*}}multifile-error/b.cx:[[@LINE-1]]:9: error: unknown identifier 'foo'
+// CHECK-NEXT:var b = foo;
+// CHECK-NEXT:        ^

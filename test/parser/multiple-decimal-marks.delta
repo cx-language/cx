@@ -1,4 +1,0 @@
-// RUN: %not %delta -parse %s | %FileCheck %s
-
-// CHECK: [[@LINE+1]]:14: error: expected identifier, got number
-var pi = 3.1.4;

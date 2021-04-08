@@ -12,7 +12,7 @@
 #include "token.h"
 #include "type.h"
 
-namespace delta {
+namespace cx {
 
 struct Decl;
 struct FieldDecl;
@@ -273,7 +273,7 @@ private:
 
 struct BinaryExpr : CallExpr {
     BinaryExpr(BinaryOperator op, Expr* left, Expr* right, SourceLocation location)
-    : CallExpr(ExprKind::BinaryExpr, new VarExpr(delta::getFunctionName(op), location), { NamedValue(left), NamedValue(right) }, location), op(op) {}
+    : CallExpr(ExprKind::BinaryExpr, new VarExpr(cx::getFunctionName(op), location), { NamedValue(left), NamedValue(right) }, location), op(op) {}
     BinaryOperator getOperator() const { return op; }
     const Expr& getLHS() const { return *getArgs()[0].getValue(); }
     const Expr& getRHS() const { return *getArgs()[1].getValue(); }
@@ -418,4 +418,4 @@ struct VarDeclExpr : Expr {
     VarDecl* varDecl;
 };
 
-} // namespace delta
+} // namespace cx

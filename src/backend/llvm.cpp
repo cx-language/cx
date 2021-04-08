@@ -6,7 +6,7 @@
 #pragma warning(pop)
 #include "ir.h"
 
-using namespace delta;
+using namespace cx;
 
 llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
     return llvm::StringSwitch<llvm::Type*>(name)

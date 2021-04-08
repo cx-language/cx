@@ -1,7 +1,0 @@
-// RUN: %not %delta -typecheck %s 2>&1 | %FileCheck %s
-
-// CHECK: c-header-with-error.h:1:9: error: unknown type name 'foo'
-// CHECK: [[@LINE+1]]:8: error: couldn't import C header file 'c-header-with-error.h'
-import "c-header-with-error.h";
-
-void main() {}

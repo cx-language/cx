@@ -1,0 +1,12 @@
+// RUN: %cx -typecheck -Werror %s | %FileCheck %s -allow-empty
+
+void f<T>() {}
+
+struct A<T> {}
+
+void main() {
+    f<int>();
+    var a = A<int>();
+}
+
+// CHECK-NOT: unused

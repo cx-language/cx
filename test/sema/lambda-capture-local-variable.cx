@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    var a = 1;
+    // CHECK: [[@LINE+1]]:28: error: lambda capturing not implemented yet
+    var b = (int c) -> c + a;
+}

@@ -1,6 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void main() {
-    // CHECK: [[@LINE+1]]:17: error: invalid operands 'float' and 'float' to '&'
-    var a = 5.0 & 2.0;
-}

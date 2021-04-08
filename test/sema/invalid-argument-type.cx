@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+int foo(int a) { return a; }
+
+void main() {
+    var f = false;
+    // CHECK: [[@LINE+1]]:17: error: invalid argument #1 type 'bool' to 'foo', expected 'int'
+    var z = foo(f);
+}

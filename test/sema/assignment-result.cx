@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    var a = 1;
+    // CHECK: [[@LINE+1]]:7: error: cannot assign 'void' to 'int'
+    a = (a = 2);
+}

@@ -13,7 +13,7 @@ namespace llvm {
 class StringRef;
 }
 
-namespace delta {
+namespace cx {
 
 struct Expr;
 struct CallExpr;
@@ -375,4 +375,4 @@ struct IRModule {
     void print(llvm::raw_ostream& stream) const;
 };
 
-} // namespace delta
+} // namespace cx

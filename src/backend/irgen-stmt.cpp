@@ -1,6 +1,6 @@
 #include "irgen.h"
 
-using namespace delta;
+using namespace cx;
 
 void IRGenerator::emitReturnStmt(const ReturnStmt& stmt) {
     // TODO: Emit deferred expressions and destructor calls after the evaluation of the return

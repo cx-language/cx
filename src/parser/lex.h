@@ -7,7 +7,7 @@ namespace llvm {
 class MemoryBuffer;
 }
 
-namespace delta {
+namespace cx {
 
 struct SourceLocation;
 
@@ -31,4 +31,4 @@ private:
     SourceLocation lastLocation;
 };
 
-} // namespace delta
+} // namespace cx

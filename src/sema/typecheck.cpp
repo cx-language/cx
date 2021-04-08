@@ -9,7 +9,7 @@
 #include "../package-manager/manifest.h"
 #include "../parser/parse.h"
 
-using namespace delta;
+using namespace cx;
 
 TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     if (auto* typeDecl = type.getDecl()) {
@@ -38,7 +38,7 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
 
     for (llvm::sys::fs::recursive_directory_iterator it(directoryPath, error), end; it != end; it.increment(error)) {
         if (error) break;
-        if (llvm::sys::path::extension(it->path()) == ".delta") {
+        if (llvm::sys::path::extension(it->path()) == ".cx") {
             paths.push_back(it->path());
         }
     }

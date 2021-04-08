@@ -1,0 +1,1 @@
+// RUN: check-snapshots inputs/copyable-type-method-call-before-declaration/a.cx inputs/copyable-type-method-call-before-declaration/b.cx

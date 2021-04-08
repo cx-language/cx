@@ -5,7 +5,7 @@
 #include "../ast/module.h"
 #include "../support/utility.h"
 
-using namespace delta;
+using namespace cx;
 
 Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
     return getValue(expr.getDecl());

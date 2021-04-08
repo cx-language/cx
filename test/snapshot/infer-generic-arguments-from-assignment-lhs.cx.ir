@@ -1,0 +1,276 @@
+
+int main() {
+    List<int>* i = alloca List<int>
+    List<int>* j = alloca List<int>
+    List<int>* _0 = alloca List<int>
+    void _1 = call _EN3std4ListI3intE4initE8capacity3int(List<int>* i, int 10)
+    void _2 = call _EN3std4ListI3intE4initE(List<int>* j)
+    void _3 = call _EN3std4ListI3intE6deinitE(List<int>* i)
+    void _4 = call _EN3std4ListI3intE4initE(List<int>* _0)
+    List<int> .load = load _0
+    store .load to i
+    void _5 = call _EN3std4ListI3intE6deinitE(List<int>* j)
+    void _6 = call _EN3std4ListI3intE6deinitE(List<int>* i)
+    return int 0
+}
+
+void _EN3std4ListI3intE6deinitE(List<int>* this) {
+    ArrayIterator<int>* __iterator = alloca ArrayIterator<int>
+    int** element = alloca int*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load != int 0
+    br _0, if.then, if.else
+
+if.then:
+    ArrayIterator<int> _1 = call _EN3std4ListI3intE8iteratorE(List<int>* this)
+    store _1 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _2 = call _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    int* _3 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator)
+    store _3 to element
+    br loop.increment
+
+loop.increment:
+    void _4 = call _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int** buffer = getelementptr this, 0
+    int* buffer.load = load buffer
+    void _5 = call _EN3std10deallocateIAU_3intEEAU_3int(int* buffer.load)
+    br if.end
+}
+
+void _EN3std4ListI3intE4initE8capacity3int(List<int>* this, int capacity) {
+    void _0 = call _EN3std4ListI3intE4initE(List<int>* this)
+    void _1 = call _EN3std4ListI3intE7reserveE3int(List<int>* this, int capacity)
+    return void
+}
+
+void _EN3std4ListI3intE4initE(List<int>* this) {
+    int* size = getelementptr this, 1
+    store int 0 to size
+    int* capacity = getelementptr this, 2
+    store int 0 to capacity
+    return void
+}
+
+ArrayIterator<int> _EN3std4ListI3intE8iteratorE(List<int>* this) {
+    ArrayIterator<int>* _0 = alloca ArrayIterator<int>
+    ArrayRef<int>* _1 = alloca ArrayRef<int>
+    void _2 = call _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* _1, List<int>* this)
+    ArrayRef<int> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ArrayIterator<int>* _0, ArrayRef<int> .load)
+    ArrayIterator<int> .load_0 = load _0
+    return .load_0
+}
+
+bool _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* this) {
+    int** current = getelementptr this, 0
+    int* current.load = load current
+    int** end = getelementptr this, 1
+    int* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
+}
+
+int* _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* this) {
+    int** current = getelementptr this, 0
+    int* current.load = load current
+    return current.load
+}
+
+void _EN3std13ArrayIteratorI3intE9incrementE(ArrayIterator<int>* this) {
+    int** current = getelementptr this, 0
+    int* current.load = load current
+    int* _0 = getelementptr current.load, int 1
+    store _0 to current
+    return void
+}
+
+void _EN3std10deallocateIAU_3intEEAU_3int(int* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+void _EN3std4ListI3intE7reserveE3int(List<int>* this, int minimumCapacity) {
+    int** newBuffer = alloca int*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    int** source = alloca int*
+    int** target = alloca int*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _1 = minimumCapacity > capacity.load
+    br _1, if.then, if.else
+
+if.then:
+    int* _2 = call _EN3std13allocateArrayI3intEE3int(int minimumCapacity)
+    store _2 to newBuffer
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int size.load)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to index
+    int** buffer = getelementptr this, 0
+    int* buffer.load = load buffer
+    int index.load = load index
+    int* _7 = getelementptr buffer.load, index.load
+    store _7 to source
+    int* newBuffer.load = load newBuffer
+    int index.load_0 = load index
+    int* _8 = getelementptr newBuffer.load, index.load_0
+    store _8 to target
+    int* target.load = load target
+    int* source.load = load source
+    int source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    bool _10 = capacity.load_0 != int 0
+    br _10, if.then, if.else
+
+if.then_0:
+    int** buffer_0 = getelementptr this, 0
+    int* buffer.load_0 = load buffer_0
+    void _11 = call _EN3std10deallocateIAU_3intEEAU_3int(int* buffer.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    int** buffer_1 = getelementptr this, 0
+    int* newBuffer.load_0 = load newBuffer
+    store newBuffer.load_0 to buffer_1
+    int* capacity_1 = getelementptr this, 2
+    store minimumCapacity to capacity_1
+    br if.end
+}
+
+void _EN3std13ArrayIteratorI3intE4initE8ArrayRefI3intE(ArrayIterator<int>* this, ArrayRef<int> array) {
+    ArrayRef<int>* _0 = alloca ArrayRef<int>
+    ArrayRef<int>* _1 = alloca ArrayRef<int>
+    ArrayRef<int>* _2 = alloca ArrayRef<int>
+    int** current = getelementptr this, 0
+    store array to _0
+    int* _3 = call _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* _0)
+    store _3 to current
+    int** end = getelementptr this, 1
+    store array to _1
+    int* _4 = call _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* _1)
+    store array to _2
+    int _5 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* _2)
+    int* _6 = getelementptr _4, _5
+    store _6 to end
+    return void
+}
+
+void _EN3std8ArrayRefI3intE4initEP4ListI3intE(ArrayRef<int>* this, List<int>* list) {
+    int** data = getelementptr this, 0
+    int* _0 = call _EN3std4ListI3intE4dataE(List<int>* list)
+    store _0 to data
+    int* size = getelementptr this, 1
+    int _1 = call _EN3std4ListI3intE4sizeE(List<int>* list)
+    store _1 to size
+    return void
+}
+
+extern void free(void*)
+
+int* _EN3std13allocateArrayI3intEE3int(int size) {
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(int) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+")
+    unreachable
+
+assert.success:
+    int* _4 = cast _2 to int*
+    return _4
+}
+
+RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
+}
+
+void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
+}
+
+bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
+}
+
+int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
+}
+
+void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {
+}
+
+int* _EN3std8ArrayRefI3intE4dataE(ArrayRef<int>* this) {
+    int** data = getelementptr this, 0
+    int* data.load = load data
+    return data.load
+}
+
+int _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+int* _EN3std4ListI3intE4dataE(List<int>* this) {
+    int** buffer = getelementptr this, 0
+    int* buffer.load = load buffer
+    return buffer.load
+}
+
+int _EN3std4ListI3intE4sizeE(List<int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+extern void* malloc(uint64)
+
+void _EN3std10assertFailEP4char(char* message) {
+}

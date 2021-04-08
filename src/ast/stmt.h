@@ -6,7 +6,7 @@
 #pragma warning(pop)
 #include "expr.h"
 
-namespace delta {
+namespace cx {
 
 struct VarDecl;
 
@@ -221,4 +221,4 @@ private:
     std::vector<Stmt*> body;
 };
 
-} // namespace delta
+} // namespace cx

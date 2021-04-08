@@ -1,3 +1,0 @@
-// RUN: %delta -parse %s
-
-var a = "  \\"

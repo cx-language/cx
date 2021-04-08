@@ -8,9 +8,9 @@
 #include "../parser/parse.h"
 #include "../support/utility.h"
 
-using namespace delta;
+using namespace cx;
 
-const char PackageManifest::manifestFileName[] = "package.delta";
+const char PackageManifest::manifestFileName[] = "package.cx";
 
 std::string PackageManifest::Dependency::getGitRepositoryUrl() const {
     return "https://github.com/" + packageIdentifier + ".git";
@@ -21,7 +21,7 @@ std::string PackageManifest::Dependency::getFileSystemPath() const {
     if (!home) {
         ABORT("environment variable HOME not set");
     }
-    return *home + "/.delta/dependencies/" + packageIdentifier + "@" + packageVersion;
+    return *home + "/.cx/dependencies/" + packageIdentifier + "@" + packageVersion;
 }
 
 template<typename DeclT, typename DefaultValueT>

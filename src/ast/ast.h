@@ -4,7 +4,7 @@
 #include <llvm/ADT/StringMap.h>
 #pragma warning(pop)
 
-namespace delta {
+namespace cx {
 
 struct Type;
 
@@ -13,4 +13,4 @@ std::vector<T> instantiate(llvm::ArrayRef<T> elements, const llvm::StringMap<Typ
     return map(elements, [&](const T& element) { return element->instantiate(genericArgs); });
 }
 
-} // namespace delta
+} // namespace cx

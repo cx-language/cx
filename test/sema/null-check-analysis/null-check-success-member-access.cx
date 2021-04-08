@@ -1,0 +1,11 @@
+// RUN: %cx -typecheck -Werror -Wno-unused %s
+
+struct S {
+    int*? i;
+}
+
+void foo(S* p) {
+    if (p.i != null) {
+        *p.i = 1;
+    }
+}

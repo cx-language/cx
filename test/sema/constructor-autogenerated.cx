@@ -1,0 +1,17 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: too few arguments to 'S', expected 2
+    var a = S();
+
+    // CHECK: [[@LINE+1]]:13: error: too few arguments to 'S', expected 2
+    var b = S(1);
+
+    // CHECK: [[@LINE+1]]:15: error: invalid argument #1 type 'float' to 'S', expected 'int'
+    var c = S(5.4, 1);
+}
+
+struct S {
+    int x;
+    int y;
+}

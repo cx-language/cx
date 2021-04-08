@@ -27,7 +27,7 @@
 #include "../driver/driver.h"
 #include "../support/utility.h"
 
-using namespace delta;
+using namespace cx;
 
 static clang::TargetInfo* targetInfo;
 
@@ -45,7 +45,7 @@ static Type getIntTypeByWidth(int widthInBits, bool asSigned) {
     llvm_unreachable("unsupported integer width");
 }
 
-static Type toDelta(const clang::BuiltinType& type) {
+static Type toCx(const clang::BuiltinType& type) {
     switch (type.getKind()) {
         case clang::BuiltinType::Void:
             return Type::getVoid();
@@ -95,7 +95,7 @@ static llvm::StringRef getName(const clang::TagDecl& decl) {
     return "";
 }
 
-static Type toDelta(clang::QualType qualtype) {
+static Type toCx(clang::QualType qualtype) {
     auto mutability = qualtype.isConstQualified() ? Mutability::Const : Mutability::Mutable;
     auto& type = *qualtype.getTypePtr();
 
@@ -103,61 +103,61 @@ static Type toDelta(clang::QualType qualtype) {
         case clang::Type::Pointer: {
             auto pointeeType = llvm::cast<clang::PointerType>(type).getPointeeType();
             if (pointeeType->isFunctionType()) {
-                return OptionalType::get(toDelta(pointeeType), mutability);
+                return OptionalType::get(toCx(pointeeType), mutability);
             }
-            return OptionalType::get(PointerType::get(toDelta(pointeeType), Mutability::Mutable), mutability);
+            return OptionalType::get(PointerType::get(toCx(pointeeType), Mutability::Mutable), mutability);
         }
         case clang::Type::Builtin:
-            return toDelta(llvm::cast<clang::BuiltinType>(type)).withMutability(mutability);
+            return toCx(llvm::cast<clang::BuiltinType>(type)).withMutability(mutability);
         case clang::Type::Typedef: {
             auto desugared = llvm::cast<clang::TypedefType>(type).desugar();
             if (mutability == Mutability::Const) desugared.addConst();
-            return toDelta(desugared);
+            return toCx(desugared);
         }
         case clang::Type::Elaborated:
-            return toDelta(llvm::cast<clang::ElaboratedType>(type).getNamedType());
+            return toCx(llvm::cast<clang::ElaboratedType>(type).getNamedType());
         case clang::Type::Record: {
             auto* recordDecl = llvm::cast<clang::RecordType>(type).getDecl();
             return BasicType::get(getName(*recordDecl), {}, mutability);
         }
         case clang::Type::Paren:
-            return toDelta(llvm::cast<clang::ParenType>(type).getInnerType());
+            return toCx(llvm::cast<clang::ParenType>(type).getInnerType());
         case clang::Type::FunctionProto: {
             auto& functionProtoType = llvm::cast<clang::FunctionProtoType>(type);
-            auto paramTypes = map(functionProtoType.getParamTypes(), [](clang::QualType qualType) { return toDelta(qualType); });
-            return FunctionType::get(toDelta(functionProtoType.getReturnType()), std::move(paramTypes), mutability);
+            auto paramTypes = map(functionProtoType.getParamTypes(), [](clang::QualType qualType) { return toCx(qualType); });
+            return FunctionType::get(toCx(functionProtoType.getReturnType()), std::move(paramTypes), mutability);
         }
         case clang::Type::FunctionNoProto: {
             auto& functionNoProtoType = llvm::cast<clang::FunctionNoProtoType>(type);
             // This treats it as a zero-argument function, but really it should accept any number of arguments of any types.
-            return FunctionType::get(toDelta(functionNoProtoType.getReturnType()), {}, mutability);
+            return FunctionType::get(toCx(functionNoProtoType.getReturnType()), {}, mutability);
         }
         case clang::Type::ConstantArray: {
             auto& constantArrayType = llvm::cast<clang::ConstantArrayType>(type);
             if (!constantArrayType.getSize().isIntN(64)) {
                 ERROR(SourceLocation(), "array is too large");
             }
-            return ArrayType::get(toDelta(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue(), mutability);
+            return ArrayType::get(toCx(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue(), mutability);
         }
         case clang::Type::IncompleteArray:
-            return ArrayType::get(toDelta(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::unknownSize);
+            return ArrayType::get(toCx(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::unknownSize);
         case clang::Type::Attributed:
-            return toDelta(llvm::cast<clang::AttributedType>(type).getEquivalentType());
+            return toCx(llvm::cast<clang::AttributedType>(type).getEquivalentType());
         case clang::Type::Decayed:
-            return toDelta(llvm::cast<clang::DecayedType>(type).getDecayedType());
+            return toCx(llvm::cast<clang::DecayedType>(type).getDecayedType());
         case clang::Type::Enum: {
             auto& enumType = llvm::cast<clang::EnumType>(type);
             auto name = getName(*enumType.getDecl());
 
             if (name.empty()) {
-                return toDelta(enumType.getDecl()->getIntegerType());
+                return toCx(enumType.getDecl()->getIntegerType());
             } else {
                 return BasicType::get(name, {}, mutability);
             }
         }
         case clang::Type::Vector: {
             auto& vectorType = llvm::cast<clang::VectorType>(type);
-            return ArrayType::get(toDelta(vectorType.getElementType()), vectorType.getNumElements());
+            return ArrayType::get(toCx(vectorType.getElementType()), vectorType.getNumElements());
         }
         default:
             WARN(SourceLocation(), "unhandled type class '" << type.getTypeClassName() << "' (importing type '" << qualtype.getAsString() << "')");
@@ -165,17 +165,17 @@ static Type toDelta(clang::QualType qualtype) {
     }
 }
 
-static llvm::Optional<FieldDecl> toDelta(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
+static llvm::Optional<FieldDecl> toCx(const clang::FieldDecl& decl, TypeDecl& typeDecl) {
     if (decl.getName().empty()) return llvm::None;
-    return FieldDecl(toDelta(decl.getType()), decl.getNameAsString(), nullptr, typeDecl, AccessLevel::Default, SourceLocation());
+    return FieldDecl(toCx(decl.getType()), decl.getNameAsString(), nullptr, typeDecl, AccessLevel::Default, SourceLocation());
 }
 
-static TypeDecl* toDelta(const clang::RecordDecl& decl, Module* currentModule) {
+static TypeDecl* toCx(const clang::RecordDecl& decl, Module* currentModule) {
     auto tag = decl.isUnion() ? TypeTag::Union : TypeTag::Struct;
     auto* typeDecl = new TypeDecl(tag, getName(decl).str(), {}, {}, AccessLevel::Default, *currentModule, nullptr, SourceLocation());
 
     for (auto* field : decl.fields()) {
-        if (auto fieldDecl = toDelta(*field, *typeDecl)) {
+        if (auto fieldDecl = toCx(*field, *typeDecl)) {
             typeDecl->getFields().emplace_back(std::move(*fieldDecl));
         } else {
             return nullptr;
@@ -185,13 +185,13 @@ static TypeDecl* toDelta(const clang::RecordDecl& decl, Module* currentModule) {
     return typeDecl;
 }
 
-static VarDecl* toDelta(const clang::VarDecl& decl, Module* currentModule) {
-    return new VarDecl(toDelta(decl.getType()), decl.getName().str(), nullptr, nullptr, AccessLevel::Default, *currentModule, SourceLocation());
+static VarDecl* toCx(const clang::VarDecl& decl, Module* currentModule) {
+    return new VarDecl(toCx(decl.getType()), decl.getName().str(), nullptr, nullptr, AccessLevel::Default, *currentModule, SourceLocation());
 }
 
 static void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType, Module& module) {
     auto initializer = new IntLiteralExpr(std::move(value), SourceLocation());
-    auto type = toDelta(qualType).withMutability(Mutability::Const);
+    auto type = toCx(qualType).withMutability(Mutability::Const);
     initializer->setType(type);
     module.addToSymbolTable(new VarDecl(type, name.str(), initializer, nullptr, AccessLevel::Default, module, SourceLocation()));
 }
@@ -204,14 +204,14 @@ static void addFloatConstantToSymbolTable(llvm::StringRef name, llvm::APFloat va
 }
 
 namespace {
-struct CToDeltaConverter : clang::ASTConsumer {
-    CToDeltaConverter(Module& module, clang::SourceManager& sourceManager) : module(module), sourceManager(sourceManager) {}
+struct CToCxConverter : clang::ASTConsumer {
+    CToCxConverter(Module& module, clang::SourceManager& sourceManager) : module(module), sourceManager(sourceManager) {}
 
     bool HandleTopLevelDecl(clang::DeclGroupRef declGroup) final override {
         for (clang::Decl* decl : declGroup) {
             switch (decl->getKind()) {
                 case clang::Decl::Function: {
-                    auto functionDecl = toDelta(*llvm::cast<clang::FunctionDecl>(decl), &module);
+                    auto functionDecl = toCx(*llvm::cast<clang::FunctionDecl>(decl), &module);
                     if (module.getSymbolTable().find(functionDecl->getName()).empty()) {
                         module.addToSymbolTable(functionDecl);
                     }
@@ -219,7 +219,7 @@ struct CToDeltaConverter : clang::ASTConsumer {
                 }
                 case clang::Decl::Record: {
                     if (!decl->isFirstDecl()) break;
-                    auto typeDecl = ::toDelta(llvm::cast<clang::RecordDecl>(*decl), &module);
+                    auto typeDecl = ::toCx(llvm::cast<clang::RecordDecl>(*decl), &module);
                     if (typeDecl && module.getSymbolTable().find(typeDecl->getName()).empty()) {
                         module.addToSymbolTable(typeDecl);
                     }
@@ -242,7 +242,7 @@ struct CToDeltaConverter : clang::ASTConsumer {
                     break;
                 }
                 case clang::Decl::Var:
-                    module.addToSymbolTable(::toDelta(llvm::cast<clang::VarDecl>(*decl), &module));
+                    module.addToSymbolTable(::toCx(llvm::cast<clang::VarDecl>(*decl), &module));
                     break;
                 case clang::Decl::Typedef: {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
@@ -258,14 +258,14 @@ struct CToDeltaConverter : clang::ASTConsumer {
         return true; // continue parsing
     }
 
-    FunctionDecl* toDelta(const clang::FunctionDecl& decl, Module* currentModule) {
+    FunctionDecl* toCx(const clang::FunctionDecl& decl, Module* currentModule) {
         auto params = map(decl.parameters(),
-                          [](clang::ParmVarDecl* param) { return ParamDecl(::toDelta(param->getType()), param->getNameAsString(), false, SourceLocation()); });
-        FunctionProto proto(decl.getNameAsString(), std::move(params), ::toDelta(decl.getReturnType()), decl.isVariadic(), true);
-        return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, toDelta(decl.getLocation()));
+                          [](clang::ParmVarDecl* param) { return ParamDecl(::toCx(param->getType()), param->getNameAsString(), false, SourceLocation()); });
+        FunctionProto proto(decl.getNameAsString(), std::move(params), ::toCx(decl.getReturnType()), decl.isVariadic(), true);
+        return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, toCx(decl.getLocation()));
     }
 
-    SourceLocation toDelta(clang::SourceLocation location) {
+    SourceLocation toCx(clang::SourceLocation location) {
         auto presumedLocation = sourceManager.getPresumedLoc(location);
         return SourceLocation(strdup(presumedLocation.getFilename()), presumedLocation.getLine(), presumedLocation.getColumn());
     }
@@ -316,7 +316,7 @@ private:
 };
 } // namespace
 
-bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, const CompileOptions& options, SourceLocation importLocation) {
+bool cx::importCHeader(SourceFile& importer, llvm::StringRef headerName, const CompileOptions& options, SourceLocation importLocation) {
     auto it = Module::getAllImportedModulesMap().find(headerName);
     if (it != Module::getAllImportedModulesMap().end()) {
         importer.addImportedModule(it->second);
@@ -364,7 +364,7 @@ bool delta::importCHeader(SourceFile& importer, llvm::StringRef headerName, cons
     }
 
     auto module = new Module(headerName);
-    ci.setASTConsumer(std::make_unique<CToDeltaConverter>(*module, ci.getSourceManager()));
+    ci.setASTConsumer(std::make_unique<CToCxConverter>(*module, ci.getSourceManager()));
     ci.createASTContext();
     ci.createSema(clang::TU_Complete, nullptr);
     pp.addPPCallbacks(std::make_unique<MacroImporter>(*module, ci.getSema()));
