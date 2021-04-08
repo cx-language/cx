@@ -1189,7 +1189,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     for (auto&& [param, arg] : llvm::zip_longest(params, expr.getArgs())) {
-        if (arg && (!param || !param->getType().isImplicitlyCopyable())) {
+        if (arg && !arg->getValue()->getType().isImplicitlyCopyable() && (!param || !param->getType().isImplicitlyCopyable())) {
             setMoved(arg->getValue(), true);
         }
     }
