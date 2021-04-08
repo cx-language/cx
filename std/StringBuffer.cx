@@ -179,6 +179,11 @@ struct StringBuffer: Comparable, Hashable, Printable {
     Ordering compare(StringBuffer* other) {
         return string(this).compare(string(other));
     }
+//
+//    // TODO: Remove these once implicit into-iterator conversions have been implemented.
+//    bool all(bool(char) predicate) { return iterator().all(predicate); }
+//    bool any(bool(char) predicate) { return iterator().any(predicate); }
+//    bool none(bool(char) predicate) { return iterator().none(predicate); }
 
     private void indexOutOfBounds(string function, int index) {
         abort("StringBuffer.", function, ": index ", index, " is out of bounds, size is ", size());

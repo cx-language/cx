@@ -12,4 +12,31 @@ interface Iterator<Element> {
     /// Advances the iterator to the next element in the sequence. Calling this function is not
     /// allowed if `hasValue()` returns false.
     void increment();
+
+    bool all(bool(T) predicate) {
+//        for (var e in this) {
+//            if (!predicate(e)) {
+//                return false;
+//            }
+//        }
+        return true;
+    }
+
+    bool any(bool(T) predicate) {
+//        for (var e in this) {
+//            if (predicate(e)) {
+//                return true;
+//            }
+//        }
+        return false;
+    }
+
+    bool none(bool(T) predicate) {
+//         for (var e in this) {
+//             if (predicate(e)) {
+//                 return false;
+//             }
+//         }
+         return true;
+     }
 }

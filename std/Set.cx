@@ -32,4 +32,9 @@ struct Set<Key: Hashable> {
     SetIterator<Key> iterator() {
         return SetIterator(this);
     }
+//
+//    // TODO: Remove these once implicit into-iterator conversions have been implemented.
+//    bool all(bool(T*) predicate) { return iterator().all(predicate); }
+//    bool any(bool(T*) predicate) { return iterator().any(predicate); }
+//    bool none(bool(T*) predicate) { return iterator().none(predicate); }
 }
