@@ -1464,7 +1464,7 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
             auto index = indexExpr->getConstantIntegerValue();
 
             if (index < 0 || index >= arrayType.getArraySize()) {
-                ERROR(indexExpr->getLocation(), "accessing array out-of-bounds with index " << index << ", array size is " << arrayType.getArraySize());
+                WARN(indexExpr->getLocation(), "accessing array out-of-bounds with index " << index << ", array size is " << arrayType.getArraySize());
             }
         }
     }
