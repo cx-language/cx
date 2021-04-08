@@ -60,6 +60,11 @@ struct ArrayRef<Element>: Copyable {
         return null;
     }
 
+    // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    bool all(bool(Element*) predicate) { return all(iterator(), predicate); }
+    bool any(bool(Element*) predicate) { return any(iterator(), predicate); }
+    bool none(bool(Element*) predicate) { return none(iterator(), predicate); }
+
     private void indexOutOfBounds(string function, int index) {
         abort("ArrayRef.", function, ": index ", index, " is out of bounds, size is ", size());
     }

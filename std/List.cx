@@ -210,6 +210,11 @@ struct List<Element> {
         return output;
     }
 
+    // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    bool all(bool(Element*) predicate) { return all(iterator(), predicate); }
+    bool any(bool(Element*) predicate) { return any(iterator(), predicate); }
+    bool none(bool(Element*) predicate) { return none(iterator(), predicate); }
+
     private void grow() {
         if (capacity == 0) {
             reserve(1);

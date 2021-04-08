@@ -32,4 +32,9 @@ struct ClosedRange<T>: Copyable {
     ClosedRangeIterator<T> iterator() {
         return ClosedRangeIterator(this);
     }
+
+    // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    bool all(bool(T) predicate) { return all(iterator(), predicate); }
+    bool any(bool(T) predicate) { return any(iterator(), predicate); }
+    bool none(bool(T) predicate) { return none(iterator(), predicate); }
 }

@@ -13,3 +13,32 @@ interface Iterator<Element> {
     /// allowed if `hasValue()` returns false.
     void increment();
 }
+
+// FIXME: Taking 'it' by value causes a miscompilation that stores 'it' into a value for calling the methods,
+// thus preventing 'it' from being mutated, resulting in an infinite loop.
+bool all<T, I>(I* it, bool(T) predicate) {
+    for (; it.hasValue(); it.increment()) {
+        if (!predicate(it.value())) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool any<T, I>(I* it, bool(T) predicate) {
+    for (; it.hasValue(); it.increment()) {
+        if (predicate(it.value())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool none<T, I>(I* it, bool(T) predicate) {
+    for (; it.hasValue(); it.increment()) {
+        if (predicate(it.value())) {
+            return false;
+        }
+    }
+    return true;
+}
