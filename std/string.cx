@@ -1,4 +1,4 @@
-struct string: Copyable, Comparable, Hashable, Printable {
+struct string: Copyable, Comparable, Hashable, Printable, Iterable<char, StringIterator> {
     ArrayRef<char> characters;
 
     string(char* pointer, int length) {

@@ -343,8 +343,8 @@ struct TypeTemplate : Decl {
     llvm::ArrayRef<GenericParamDecl> getGenericParams() const { return genericParams; }
     llvm::StringRef getName() const override { return getTypeDecl()->getName(); }
     TypeDecl* getTypeDecl() const { return typeDecl; }
-    TypeDecl* instantiate(const llvm::StringMap<Type>& genericArgs);
-    TypeDecl* instantiate(llvm::ArrayRef<Type> genericArgs);
+    TypeDecl* instantiate(const llvm::StringMap<Type>& genericArgs, llvm::function_ref<void(Type, AccessLevel)> tc={});
+    TypeDecl* instantiate(llvm::ArrayRef<Type> genericArgs, llvm::function_ref<void(Type, AccessLevel)> tc = {});
     Module* getModule() const override { return typeDecl->getModule(); }
     SourceLocation getLocation() const override { return typeDecl->getLocation(); }
     static bool classof(const Decl* d) { return d->getKind() == DeclKind::TypeTemplate; }

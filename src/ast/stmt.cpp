@@ -74,7 +74,7 @@ Stmt* Stmt::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         }
         case StmtKind::ForStmt: {
             auto* forStmt = llvm::cast<ForStmt>(this);
-            auto variable = llvm::cast<VarStmt>(forStmt->getVariable()->instantiate(genericArgs));
+            auto variable = forStmt->getVariable() ? llvm::cast<VarStmt>(forStmt->getVariable()->instantiate(genericArgs)) : nullptr;
             auto condition = forStmt->getCondition() ? forStmt->getCondition()->instantiate(genericArgs) : nullptr;
             auto increment = forStmt->getIncrement() ? forStmt->getIncrement()->instantiate(genericArgs) : nullptr;
             auto body = ::instantiate(forStmt->getBody(), genericArgs);

@@ -1,4 +1,4 @@
-struct ClosedRange<T>: Copyable {
+struct ClosedRange<T>: Copyable, Iterable<T, ClosedRangeIterator<T>> {
     T start;
     T end;
 

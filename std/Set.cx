@@ -1,5 +1,5 @@
-struct Set<Key: Hashable> {
-    Map<Key, bool> map;
+struct Set<T: Hashable>: Iterable<T, SetIterator<T>> {
+    Map<T, bool> map;
 
     /// Initializes an empty set
     Set() {
@@ -7,17 +7,17 @@ struct Set<Key: Hashable> {
     }
 
     /// Inserts an element into the set. If the element exists already, nothing is done.
-    void insert(Key key) {
+    void insert(T key) {
         map.insert(key, false);
     }
 
     /// Removes an element from the set, if it exists there.
-    void remove(Key* key) {
+    void remove(T* key) {
         map.remove(key);
     }
 
     /// Checks if e is part of the set.
-    bool contains(Key* key) {
+    bool contains(T* key) {
         return map.contains(key);
     }
 
@@ -29,7 +29,7 @@ struct Set<Key: Hashable> {
         return map.empty();
     }
 
-    SetIterator<Key> iterator() {
+    SetIterator<T> iterator() {
         return SetIterator(this);
     }
 //

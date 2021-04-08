@@ -11,6 +11,7 @@ using namespace cx;
 void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
     switch (type.getKind()) {
         case TypeKind::BasicType: {
+            // TODO: is the optional check below needed?
             if (!type.isOptionalType() && type.isBuiltinType()) {
                 validateGenericArgCount(0, type.getGenericArgs(), type.getName(), type.getLocation());
                 break;
@@ -22,6 +23,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 typecheckType(genericArg, userAccessLevel);
             }
 
+            auto  x = basicType->getQualifiedName();
             auto decls = findDecls(basicType->getQualifiedName());
             Decl* decl;
 
@@ -34,7 +36,11 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
 
                 ASSERT(decls.size() == 1);
                 decl = decls[0];
-                auto instantiation = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs());
+                auto instantiation = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs(), [this](auto p, auto x){ typecheckType(p,x);});
+
+
+
+
                 getCurrentModule()->addToSymbolTable(*instantiation);
                 declsToTypecheck.push_back(instantiation);
             } else {
@@ -281,7 +287,8 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
 }
 
 void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
-    typecheckGenericParamDecls(decl.getGenericParams(), decl.getAccessLevel());
+    // TODO: Temporarily commented out
+    // typecheckGenericParamDecls(decl.getGenericParams(), decl.getAccessLevel());
 }
 
 void Typechecker::typecheckEnumDecl(EnumDecl& decl) {

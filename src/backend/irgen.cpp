@@ -213,6 +213,9 @@ Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
         case DeclKind::VarDecl:
         case DeclKind::ParamDecl:
             return getValue(decl);
+            // TODO : this should work right?
+//        case DeclKind::ParamDecl:
+//            return NOTNULL(getValueOrNull(decl));
         case DeclKind::FieldDecl:
             if (call.getReceiver()) {
                 return emitMemberAccess(emitLvalueExpr(*call.getReceiver()), llvm::cast<FieldDecl>(decl));

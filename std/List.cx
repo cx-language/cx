@@ -1,4 +1,4 @@
-struct List<Element> {
+struct List<Element>: Iterable<Element, ArrayIterator<Element>> {
     Element[*] buffer;
     int size;
     int capacity;

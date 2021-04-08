@@ -102,21 +102,25 @@ void Typechecker::postProcess() {
         auto currentDeclsToTypecheck = std::move(declsToTypecheck);
 
         for (auto* decl : currentDeclsToTypecheck) {
-            switch (decl->getKind()) {
-                case DeclKind::FunctionDecl:
-                case DeclKind::MethodDecl:
-                case DeclKind::ConstructorDecl:
-                case DeclKind::DestructorDecl:
-                    typecheckFunctionDecl(*llvm::cast<FunctionDecl>(decl));
-                    break;
-                case DeclKind::FunctionTemplate:
-                    typecheckFunctionTemplate(*llvm::cast<FunctionTemplate>(decl));
-                    break;
-                case DeclKind::TypeDecl:
-                    typecheckTypeDecl(*llvm::cast<TypeDecl>(decl));
-                    break;
-                default:
-                    llvm_unreachable("invalid deferred decl");
+            try {
+                switch (decl->getKind()) {
+                    case DeclKind::FunctionDecl:
+                    case DeclKind::MethodDecl:
+                    case DeclKind::ConstructorDecl:
+                    case DeclKind::DestructorDecl:
+                        typecheckFunctionDecl(*llvm::cast<FunctionDecl>(decl));
+                        break;
+                    case DeclKind::FunctionTemplate:
+                        typecheckFunctionTemplate(*llvm::cast<FunctionTemplate>(decl));
+                        break;
+                    case DeclKind::TypeDecl:
+                        typecheckTypeDecl(*llvm::cast<TypeDecl>(decl));
+                        break;
+                    default:
+                        llvm_unreachable("invalid deferred decl");
+                }
+            } catch (const CompileError& error) {
+                error.print();
             }
         }
     }
@@ -147,28 +151,66 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             currentModule = &module;
             currentSourceFile = &sourceFile;
 
-            if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-                llvm::StringMap<Type> genericArgs = { { "This", typeDecl->getType() } };
+            try {
+                if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
+                    llvm::StringMap<Type> genericArgs = { { "This", typeDecl->getType() } };
 
-                for (Type interface : typeDecl->getInterfaces()) {
-                    typecheckType(interface, typeDecl->getAccessLevel());
-                    std::vector<FieldDecl> inheritedFields;
+                    for (Type interface : typeDecl->getInterfaces()) {
+                        typecheckType(interface, typeDecl->getAccessLevel());
+                        std::vector<FieldDecl> inheritedFields;
 
-                    for (auto& field : interface.getDecl()->getFields()) {
-                        inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
-                    }
+                        for (auto& field : interface.getDecl()->getFields()) {
+                            inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
+                        }
 
-                    typeDecl->getFields().insert(typeDecl->getFields().begin(), inheritedFields.begin(), inheritedFields.end());
+                        typeDecl->getFields().insert(typeDecl->getFields().begin(), inheritedFields.begin(), inheritedFields.end());
 
-                    for (auto member : interface.getDecl()->getMethods()) {
-                        auto methodDecl = llvm::cast<MethodDecl>(member);
-                        if (methodDecl->hasBody()) {
-                            auto copy = methodDecl->instantiate(genericArgs, {}, *typeDecl);
-                            getCurrentModule()->addToSymbolTable(*copy);
-                            typeDecl->addMethod(copy);
+                        for (auto member : interface.getDecl()->getMethods()) {
+                            auto methodDecl = llvm::cast<MethodDecl>(member);
+                            if (typeDecl->getName() == "RangeIterator" && methodDecl->getName() == "all") {
+                                int k = k = 3;
+                            }
+                            if (methodDecl->hasBody()) {
+                                auto copy = methodDecl->instantiate(genericArgs, {}, *typeDecl);
+                                getCurrentModule()->addToSymbolTable(*copy);
+                                typeDecl->addMethod(copy);
+                            }
                         }
                     }
                 }
+
+                /*
+
+                if (auto typeTemplate = llvm::dyn_cast<TypeTemplate>(decl)) {
+                    auto typeDecl = typeTemplate->getTypeDecl();
+                    llvm::StringMap<Type> genericArgs = { { "This", typeDecl->getType() } };
+
+                    for (Type interface : typeDecl->getInterfaces()) {
+                        typecheckType(interface, typeDecl->getAccessLevel());
+                        std::vector<FieldDecl> inheritedFields;
+
+                        for (auto& field : interface.getDecl()->getFields()) {
+                            inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
+                        }
+
+                        typeDecl->getFields().insert(typeDecl->getFields().begin(), inheritedFields.begin(), inheritedFields.end());
+
+                        for (auto member : interface.getDecl()->getMethods()) {
+                            auto methodDecl = llvm::cast<MethodDecl>(member);
+                            if (typeDecl->getName() == "RangeIterator"&& methodDecl->getName() == "all") {
+                                int k=k=3;
+                            }
+                            if (methodDecl->hasBody()) {
+                                auto copy = methodDecl->instantiate(genericArgs, {}, *typeDecl);
+                                getCurrentModule()->addToSymbolTable(*copy);
+                                typeDecl->addMethod(copy);
+                            }
+                        }
+                    }
+                }
+                 */
+            } catch (const CompileError& error) {
+                error.print();
             }
         }
     }

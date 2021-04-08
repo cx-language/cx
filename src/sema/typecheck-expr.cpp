@@ -944,6 +944,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 constructorDecls = typeDecl->getConstructors();
                 ASSERT(!constructorDecls.empty());
                 ASSERT(decls.size() == 1);
+                // TODO: remove these casts
                 candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
 
                 for (auto* constructorDecl : constructorDecls) {
@@ -981,7 +982,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     auto typeDecls = findDecls(getQualifiedTypeName(typeTemplate->getTypeDecl()->getName(), genericArgTypes));
 
                     if (typeDecls.empty()) {
-                        typeDecl = typeTemplate->instantiate(genericArgs);
+                        typeDecl = typeTemplate->instantiate(genericArgs , [this](auto p, auto x){ typecheckType(p,x);});
                         getCurrentModule()->addToSymbolTable(*typeDecl);
                         declsToTypecheck.push_back(typeDecl);
                     } else {
@@ -1114,6 +1115,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         llvm::cast<MemberExpr>(expr.getCallee()).setDecl(*decl);
     } else if (expr.getCallee().isMemberExpr()) {
         Type receiverType = typecheckExpr(*expr.getReceiver());
+        typecheckType(receiverType, AccessLevel::None);
         expr.setReceiverType(receiverType);
 
         if (receiverType.removeOptional().removePointer().isArrayType()) {

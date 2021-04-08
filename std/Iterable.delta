@@ -1,0 +1,43 @@
+// TODO: The I parameter is a workaround until we can define `iterator()` as `Iterator<Element> iterator`.
+// TODO: For some reason using the name "Element" for the generic parameter causes an invalid compilation error.
+interface Iterable<Element, I: Iterator<Element>> {
+    I iterator();
+
+    bool all(bool(Element*) predicate) {
+//        return iterator().all(predicate);
+        for (var it = iterator(); it.hasValue(); it.increment()) {
+            if (!predicate(it.value())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool any(bool(Element) predicate) {
+//        for (var e in this) {
+//            if (predicate(e)) {
+//                return true;
+//            }
+//        }
+        for (var it = iterator(); it.hasValue(); it.increment()) {
+            if (predicate(it.value())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool none(bool(Element) predicate) {
+//         for (var e in this) {
+//             if (predicate(e)) {
+//                 return false;
+//             }
+//         }
+        for (var it = iterator(); it.hasValue(); it.increment()) {
+            if (predicate(it.value())) {
+                return false;
+            }
+        }
+         return true;
+     }
+}

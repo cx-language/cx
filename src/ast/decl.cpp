@@ -1,9 +1,11 @@
 #include "decl.h"
 #pragma warning(push, 0)
+#include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
 #include "ast.h"
+#include "module.h"
 
 using namespace cx;
 
@@ -186,7 +188,10 @@ unsigned TypeDecl::getFieldIndex(const FieldDecl* field) const {
     llvm_unreachable("unknown field");
 }
 
-TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {
+TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::function_ref<void(Type, AccessLevel)> tc) {
+    if (typeDecl->getName() == "ClosedRange") {
+        int k = k = 3;
+    }
     ASSERT(!genericParams.empty() && !genericArgs.empty());
     auto orderedGenericArgs = map(genericParams, [&](auto& genericParam) { return genericArgs.find(genericParam.getName())->second; });
 
@@ -194,10 +199,39 @@ TypeDecl* TypeTemplate::instantiate(const llvm::StringMap<Type>& genericArgs) {
     if (it != instantiations.end()) return it->second;
 
     auto instantiation = llvm::cast<TypeDecl>(getTypeDecl()->instantiate(genericArgs, orderedGenericArgs));
+
+    if (tc) {
+        auto typeDecl = instantiation;
+        llvm::StringMap<Type> genericArgsX = { { "This", typeDecl->getType() } };
+
+        for (Type interface : typeDecl->getInterfaces()) {
+            tc(interface, typeDecl->getAccessLevel());
+            std::vector<FieldDecl> inheritedFields;
+
+            for (auto& field : interface.getDecl()->getFields()) {
+                inheritedFields.push_back(field.instantiate(genericArgsX, *typeDecl));
+            }
+
+            typeDecl->getFields().insert(typeDecl->getFields().begin(), inheritedFields.begin(), inheritedFields.end());
+
+            for (auto member : interface.getDecl()->getMethods()) {
+                auto methodDecl = llvm::cast<MethodDecl>(member);
+                if (typeDecl->getName() == "RangeIterator" && methodDecl->getName() == "all") {
+                    int k = k = 3;
+                }
+                if (methodDecl->hasBody()) {
+                    auto copy = methodDecl->instantiate(genericArgsX, {}, *typeDecl);
+                    //                            instantiation->getModule()->addToSymbolTable(*copy);
+                    typeDecl->addMethod(copy);
+                }
+            }
+        }
+    }
+
     return instantiations.emplace(std::move(orderedGenericArgs), instantiation).first->second;
 }
 
-TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
+TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs, llvm::function_ref<void(Type, AccessLevel)> tc) {
     ASSERT(genericArgs.size() == genericParams.size());
     llvm::StringMap<Type> genericArgsMap;
 
@@ -205,7 +239,7 @@ TypeDecl* TypeTemplate::instantiate(llvm::ArrayRef<Type> genericArgs) {
         genericArgsMap[genericParam.getName()] = genericArg;
     }
 
-    return instantiate(genericArgsMap);
+    return instantiate(genericArgsMap, tc);
 }
 
 EnumCase::EnumCase(std::string&& name, Expr* value, Type associatedType, AccessLevel accessLevel, SourceLocation location)
@@ -267,6 +301,9 @@ Decl* Decl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef
 
         case DeclKind::TypeDecl: {
             auto* typeDecl = llvm::cast<TypeDecl>(this);
+            if (typeDecl->getQualifiedName() == "ClosedRange<int>") {
+                int k = k = 3;
+            }
             auto interfaces = map(typeDecl->getInterfaces(), [&](Type type) { return type.resolve(genericArgs); });
             auto instantiation = new TypeDecl(typeDecl->getTag(), typeDecl->getName().str(), genericArgsArray, std::move(interfaces), getAccessLevel(),
                                               *typeDecl->getModule(), typeDecl, typeDecl->getLocation());

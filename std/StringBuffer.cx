@@ -1,4 +1,4 @@
-struct StringBuffer: Comparable, Hashable, Printable {
+struct StringBuffer: Comparable, Hashable, Printable, Iterable<char, StringIterator> {
     List<char> characters;
 
     /// Initializes an empty string.

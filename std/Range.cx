@@ -1,4 +1,4 @@
-struct Range<T>: Copyable {
+struct Range<T>: Copyable, Iterable<T, RangeIterator<T>> {
     T start;
     T end;
 

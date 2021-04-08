@@ -1,5 +1,5 @@
 /// An iterator is an object used to traverse the elements of a sequence.
-interface Iterator<Element> {
+interface Iterator<T> {
 
     /// Returns true if there's at least one element remaining in the sequence, i.e. if calling
     /// `value()` is allowed.
@@ -7,7 +7,7 @@ interface Iterator<Element> {
 
     /// Returns the next element from the sequence. Calling this function is not allowed if
     /// `hasValue()` returns false.
-    Element value();
+    T value();
 
     /// Advances the iterator to the next element in the sequence. Calling this function is not
     /// allowed if `hasValue()` returns false.

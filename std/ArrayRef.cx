@@ -1,4 +1,4 @@
-struct ArrayRef<Element>: Copyable {
+struct ArrayRef<Element>: Copyable, Iterable<Element, ArrayIterator<Element>> {
     Element[*] data;
     int size;
 
