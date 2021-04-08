@@ -16,11 +16,6 @@ struct ClosedRange<T>: Copyable {
         return end - start + 1;
     }
 
-    // Alias for size
-    T length() {
-        return size();
-    }
-
     T start() {
         return start;
     }
