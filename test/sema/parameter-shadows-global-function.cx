@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void bar() {}
+void foo(int bar) {
+    // TODO: Should call bar().
+    // CHECK: [[@LINE+1]]:5: error: 'bar' is not a function
+    bar();
+}

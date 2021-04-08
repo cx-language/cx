@@ -1,0 +1,11 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct Foo {
+    int qux;
+}
+
+void main() {
+    var foo = Foo(1);
+    // CHECK: [[@LINE+1]]:19: error: no member named 'bar' in 'Foo'
+    var bar = foo.bar;
+}

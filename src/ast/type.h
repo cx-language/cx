@@ -12,7 +12,7 @@
 #pragma warning(pop)
 #include "../support/utility.h"
 
-namespace delta {
+namespace cx {
 
 struct ParamDecl;
 struct TypeDecl;
@@ -271,4 +271,4 @@ bool operator!=(Type, Type);
 std::ostream& operator<<(std::ostream&, Type);
 llvm::raw_ostream& operator<<(llvm::raw_ostream&, Type);
 
-} // namespace delta
+} // namespace cx

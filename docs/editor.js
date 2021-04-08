@@ -10,8 +10,8 @@ function initializeCodeEditor(block) {
     editorWrapper.className = "editor";
 
     const editor = CodeMirror(editorWrapper, {
-        mode: "delta",
-        theme: "delta",
+        mode: "cx",
+        theme: "cx",
         indentUnit: 4,
         value: block.innerText,
         viewportMargin: Infinity
@@ -42,7 +42,7 @@ function initializeCodeEditor(block) {
     var widgets = [];
 
     function highlightError() {
-        var regex = /^main\.delta:(\d+):(\d+): (.*)(?:\n.*\n([ \t]*)\^)?/gm;
+        var regex = /^main\.cx:(\d+):(\d+): (.*)(?:\n.*\n([ \t]*)\^)?/gm;
         var match;
         while ((match = regex.exec(output.innerText))) {
             var [, line, column, message, indent] = match;
@@ -73,7 +73,7 @@ function initializeCodeEditor(block) {
         }, 1000);
 
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://delta-sandbox.herokuapp.com/run", true);
+        xhr.open("POST", "https://cx-online-compiler.herokuapp.com/run", true);
         xhr.onerror = function(error) {
             clearInterval(outputUpdater);
             stdout.innerText = "";

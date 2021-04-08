@@ -1,0 +1,7 @@
+// RUN: %cx -typecheck %s
+
+import "stdlib.h"
+
+int main() {
+    return abs(-42)
+}

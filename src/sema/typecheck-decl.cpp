@@ -6,7 +6,7 @@
 #include "c-import.h"
 #include "../ast/module.h"
 
-using namespace delta;
+using namespace cx;
 
 void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
     switch (type.getKind()) {

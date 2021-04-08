@@ -1,0 +1,6 @@
+// RUN: check_exit_status 5 %cx run %s
+
+int f(int a, bool b) { return a; }
+int main() {
+    return f(a: 5, b: false);
+}

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace delta {
+namespace cx {
 
 struct CompileOptions {
     std::vector<std::string> disabledWarnings;
@@ -13,4 +13,4 @@ struct CompileOptions {
     std::vector<std::string> cflags;
 };
 
-} // namespace delta
+} // namespace cx

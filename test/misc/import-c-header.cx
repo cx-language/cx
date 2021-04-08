@@ -1,0 +1,8 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:foo bar
+
+import "stdio.h";
+
+void main() {
+    printf("foo bar");
+}

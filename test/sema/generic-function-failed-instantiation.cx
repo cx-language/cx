@@ -1,0 +1,10 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+bool foo<T>(T t) {
+    // CHECK: [[@LINE+1]]:14: error: invalid operands 'bool' and 'int' to '<'
+    return t < 3;
+}
+
+void main() {
+    _ = foo(false);
+}

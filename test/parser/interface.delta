@@ -1,6 +1,0 @@
-// RUN: %delta -parse %s
-
-interface I {
-    void i();
-    int* j();
-}

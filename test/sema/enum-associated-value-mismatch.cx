@@ -1,0 +1,10 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+enum E {
+    A(int a, int b)
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:16: error: too few arguments to 'A', expected 2
+    var a = E.A(a: 1);
+}

@@ -1,0 +1,12 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+struct S {
+    S*? a;
+}
+
+void foo(S* p) {
+    if (p.a != null) {
+        // CHECK: [[@LINE+1]]:12: warning: value cannot be null here; null check can be removed
+        p.a!.a = p;
+    }
+}

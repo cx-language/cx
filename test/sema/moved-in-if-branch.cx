@@ -1,0 +1,16 @@
+// RUN: %cx -typecheck %s
+
+struct S {}
+
+void bar(S s) {}
+void baz(S s) {}
+
+void foo(bool b, S s) {
+    if (b) {
+        bar(s);
+    } else {
+        baz(s);
+    }
+
+    bar(s); // TODO: Should warn about 's' being moved
+}

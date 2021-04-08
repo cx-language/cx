@@ -1,6 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void main() {
-    // CHECK: [[@LINE+1]]:15: error: unknown identifier 'unknown'
-    var foo = unknown;
-}

@@ -1,0 +1,7 @@
+// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %s
+// RUN: %cx -typecheck %s %p/a.cx | %FileCheck %p/a.cx
+
+void main() {
+    // CHECK: [[@LINE+1]]:5: warning: 'i' is private
+    i++;
+}

@@ -1,8 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void foo(uint8 a) { }
-
-void main() {
-    // CHECK: [[@LINE+1]]:9: error: 256 is out of range for type 'uint8'
-    foo(256);
-}

@@ -2,7 +2,7 @@
 
 ## `undefined`
 
-By default Delta warns you when you use a variable before initializing it.
+By default C* warns you when you use a variable before initializing it.
 The `undefined` keyword allows you to explicitly mark a variable as uninitialized, suppressing the warning.
 This is useful for example when you need to pass a variable to a C function to be initialized as an out parameter.
 

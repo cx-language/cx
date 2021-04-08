@@ -1,0 +1,18 @@
+// RUN: %cx -print-llvm %s
+
+interface Fooable {
+    void foo();
+}
+
+struct F: Copyable, Fooable {
+    void foo() { }
+}
+
+void main() {
+    F f = undefined;
+    bar(f);
+}
+
+void bar<T: Fooable>(T t) {
+    t.foo();
+}

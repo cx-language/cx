@@ -1,0 +1,16 @@
+// RUN: %cx -typecheck -Werror -Wno-unused %s
+
+struct S {
+    void f() {}
+}
+
+void foo(S*? a) {
+    var p = a;
+    if (p != null) {
+        p.f();
+    }
+    if (a == null) {
+    } else {
+        a.f();
+    }
+}

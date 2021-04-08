@@ -1,0 +1,4 @@
+// RUN: check_exit_status 42 %cx run %s
+
+int main() { return getExitStatus(); }
+int getExitStatus() { return 42; }

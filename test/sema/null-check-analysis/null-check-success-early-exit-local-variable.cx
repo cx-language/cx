@@ -1,0 +1,11 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+void foo(int*? a) {
+    int*? p = a;
+
+    if (p == null) {
+        return;
+    }
+
+    var i = *p;
+}

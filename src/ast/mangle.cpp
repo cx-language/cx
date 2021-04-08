@@ -7,11 +7,11 @@
 #include "../ast/decl.h"
 #include "../ast/module.h"
 
-using namespace delta;
+using namespace cx;
 
 static void mangleType(llvm::raw_string_ostream& stream, Type type);
 
-static const char deltaPrefix[] = "_E";
+static const char cxPrefix[] = "_E";
 
 static bool isOperator(const FunctionDecl& functionDecl) {
     char ch = functionDecl.getName().front();
@@ -106,14 +106,14 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type) {
     }
 }
 
-std::string delta::mangleFunctionDecl(const FunctionDecl& functionDecl) {
+std::string cx::mangleFunctionDecl(const FunctionDecl& functionDecl) {
     std::string mangled;
     llvm::raw_string_ostream stream(mangled);
 
     if (functionDecl.isExtern() || functionDecl.isMain()) {
         stream << functionDecl.getName();
     } else {
-        stream << deltaPrefix;
+        stream << cxPrefix;
         stream << 'N';
 
         mangleIdentifier(stream, functionDecl.getModule()->getName());

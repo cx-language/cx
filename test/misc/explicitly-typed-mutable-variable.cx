@@ -1,0 +1,7 @@
+// RUN: check_exit_status 3 %cx run %s
+
+int main() {
+    int m = 4;
+    m--;
+    return m;
+}

@@ -1,0 +1,15 @@
+// RUN: check_exit_status 11 %cx run %s
+
+int main() {
+    return "abc".size() + foo("quux");
+}
+
+int foo(string x) {
+    var s = x;
+    s = bar(x);
+    return x.size() + bar(s).size();
+}
+
+string bar(string z) {
+    return z;
+}

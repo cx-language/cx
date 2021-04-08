@@ -1,20 +1,20 @@
-# Delta Programming Language
+# The C* Programming Language
 
-Delta is a high-performance programming language designed to improve programmer productivity.
+C* (pronounced "C star") is a performance-oriented programming language designed to improve programmer productivity.
 The project is still in early stages of development: some planned features have not yet been implemented,
 existing ones are subject to change, and the documentation is scarce.
 
-Learn more about the language at https://delta-lang.github.io.
+Learn more about the language at https://cx-language.github.io.
 
 ## Contributing
 
 Contributions are welcome and encouraged.
-See the GitHub issues and the [Trello board](https://trello.com/b/NIbkM4v2/delta) for the project backlog.
-To ask a question or open a discussion, create an issue or join the [Delta Discord server](https://discord.gg/hsDbW9p).
+See the GitHub issues and the [Trello board](https://trello.com/b/NIbkM4v2/c) for the project backlog.
+To ask a question or open a discussion, create an issue or join the [C* Discord server](https://discord.gg/hsDbW9p).
 
 ## Building from source
 
-Compiling Delta requires a C++17 compiler, [CMake](https://cmake.org), and
+Compiling C* requires a C++17 compiler, [CMake](https://cmake.org), and
 [LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 11.
 
 - ### Unix / macOS
@@ -53,6 +53,5 @@ The C++ code style is enforced by ClangFormat and ClangTidy:
 
 ## License
 
-This implementation of Delta is licensed under the MIT license, a permissive
-free software license. See the file [LICENSE.txt](LICENSE.txt) for the full
-license text.
+C* is licensed under the MIT license, a permissive free software license.
+See the file [LICENSE.txt](LICENSE.txt) for the full license text.

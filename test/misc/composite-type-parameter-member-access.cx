@@ -1,0 +1,16 @@
+// RUN: check_exit_status 15 %cx run %s
+
+struct vec2: Copyable {
+    int x;
+    int y;
+
+    vec2 add(vec2 that) {
+        return vec2(this.x + that.x, this.y + that.y);
+    }
+}
+
+int main() {
+    var foo = vec2(5, 8);
+    var foo2 = foo.add(vec2(3, -1));
+    return foo2.x + foo2.y;
+}

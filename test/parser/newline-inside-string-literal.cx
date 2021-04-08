@@ -1,0 +1,7 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:15: error: newline inside string literal
+    var i = "a
+    ";
+}

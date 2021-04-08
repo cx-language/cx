@@ -1,8 +1,0 @@
-// RUN: %not %delta run %s 2>&1 | %FileCheck %s
-
-void main() {
-    var s = StringBuffer("ok");
-    s.substr(0..5);
-}
-
-// CHECK: StringBuffer.substr: index 5 is out of bounds, size is 2

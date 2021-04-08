@@ -1,4 +1,0 @@
-// RUN: %not %delta -parse %s | %FileCheck %s
-
-// CHECK: [[@LINE+1]]:14: error: unknown escape character '\z'
-var a = "   \z"

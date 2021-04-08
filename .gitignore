@@ -16,8 +16,7 @@ rules.ninja
 
 # Build products
 build/
-delta
-!delta/
+cx
 *.a
 *.dll
 *.lib

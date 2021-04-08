@@ -1,0 +1,11 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct A {
+    int i;
+
+    A() {
+        var j = 0;
+        // CHECK: [[@LINE+1]]:13: error: 'undefined' is only allowed as an initial value
+        j = undefined;
+    }
+}

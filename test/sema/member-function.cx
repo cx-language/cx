@@ -1,0 +1,6 @@
+// RUN: %cx -typecheck %s
+
+struct Foo {
+    int i;
+    void bar() { Foo* f = this; }
+}

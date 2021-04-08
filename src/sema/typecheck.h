@@ -22,7 +22,7 @@ template<typename T>
 class Optional;
 } // namespace llvm
 
-namespace delta {
+namespace cx {
 
 struct Module;
 struct PackageManifest;
@@ -151,4 +151,4 @@ private:
 
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, SourceLocation location);
 
-} // namespace delta
+} // namespace cx

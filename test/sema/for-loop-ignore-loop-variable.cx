@@ -1,0 +1,5 @@
+// RUN: %cx -typecheck -Werror %s
+
+void main() {
+    for (var _ in "foo") {}
+}

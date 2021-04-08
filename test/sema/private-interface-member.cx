@@ -1,0 +1,6 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+interface B {
+    // CHECK: [[@LINE+1]]:5: warning: interface members cannot be private
+    private void b();
+}

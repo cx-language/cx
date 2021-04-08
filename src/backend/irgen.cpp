@@ -1,7 +1,7 @@
 #include "irgen.h"
 #include "../ast/module.h"
 
-using namespace delta;
+using namespace cx;
 
 void IRGenScope::onScopeEnd() {
     for (const Expr* expr : reverse(deferredExprs)) {

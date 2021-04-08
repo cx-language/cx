@@ -1,7 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-struct Foo: Copyable { }
-
-// CHECK: [[@LINE+2]]:10: error: redefinition of 'Foo'
-// CHECK: :3:8: note: previous definition here
-void bar<Foo>() { }

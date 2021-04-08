@@ -2,9 +2,9 @@
 
 __Note:__ This page is incomplete and parts of it may be out of date.
 
-Delta is a modern system programming language designed as an alternative to C++,
-C, and Rust. The primary goals of Delta are programmer productivity and
-performance. Memory safety is also a priority, but while Delta improves on what
+C* is a modern system programming language designed as an alternative to C++,
+C, and Rust. The primary goals of C* are programmer productivity and
+performance. Memory safety is also a priority, but while C* improves on what
 C++ and C have to offer, it doesn't go as far as Rust at the detriment of
 ergonomics and productivity.
 
@@ -27,11 +27,11 @@ programmer productivity compared to C and C++.
 
 ## Standard build system
 
-Building a Delta project is done with a single command: `delta build`, which
+Building a C* project is done with a single command: `cx build`, which
 works out of the box without a single line of build configuration code. It finds
-all Delta source files in the project directory (recursively) and compiles them
+all C* source files in the project directory (recursively) and compiles them
 into an executable. Additional build information, such as dependencies, can be
-declared in a package configuration file. `delta build` will then download or
+declared in a package configuration file. `cx build` will then download or
 find these dependencies, and link them into the resulting executable.
 
 No need to learn a new build system for each project, or manage project-specific
@@ -62,13 +62,13 @@ More optimization opportunities:
   compiler flag.
 - The language provides a type-safe reallocation function for arrays, instead
   of just allocation and deallocation functions like C++. For example, the
-  Delta equivalent of C++'s `std::vector` makes use of this function.
+  C* equivalent of C++'s `std::vector` makes use of this function.
 - Unsigned integer overflow is undefined. There are still functions to do
   wrapping arithmetic on both signed and unsigned integers, when needed.
 - Compiler is allowed to reorder struct fields. This can be prevented using an
   attribute or compiler flag.
 
-Delta uses the open-source LLVM library as a code generation back-end,
+C* uses the open-source LLVM library as a code generation back-end,
 benefiting from all current and future optimizations implemented in LLVM.
 
 No hidden expensive operations, like implicit calls to copy constructors and
@@ -76,7 +76,7 @@ copy assignment operators in C++.
 
 ## Improved syntax
 
-Delta's syntax is clean, consistent, and similar to the C family of languages.
+C*'s syntax is clean, consistent, and similar to the C family of languages.
 
 No C-style cast syntax, only C++-style casts and built-in type constructors.
 
@@ -89,7 +89,7 @@ type inference:
 // C++
 a([](auto& b) { return b.c(); });
 
-// Delta
+// C*
 a(b -> b.c());
 ```
 
@@ -99,14 +99,14 @@ Function pointer declaration:
 // C/C++
 void (*f)(int);
 
-// Delta
+// C*
 void(int) f;
 ```
 
 ## Simple and expressive language
 
 - Only structs instead of having both struct and class.
-- Only pointers instead of having both pointers and references. Note that Delta
+- Only pointers instead of having both pointers and references. Note that C*
   pointers are not identical to C/C++ pointers.
 - Member access always uses `.`, never `->`.
 - Switch statement cases break automatically, avoids bugs caused by missing
@@ -116,12 +116,12 @@ void(int) f;
   auto-formatting, linting, etc.
 - Single-parameter constructors are not implicit by default.
 - Only one initialization syntax instead of [three](https://en.cppreference.com/w/cpp/language/initialization).
-- The `static` keyword is not overloaded with 3 different meanings. Delta uses
+- The `static` keyword is not overloaded with 3 different meanings. C* uses
   it only for non-instance members.
-- No built-in preprocessor, at least not in the same form as C and C++. Delta
+- No built-in preprocessor, at least not in the same form as C and C++. C*
   only has the conditional compilation directive `#ifdef` and its friends, which
   can be configured only from the command-line, not from source code as can be
-  done in C and C++ with `#define`. Although there is no preprocessor, Delta may
+  done in C and C++ with `#define`. Although there is no preprocessor, C* may
   get macros in some form if it turns out the language needs them.
 
 Semantics are more in line with usual programmer expectations:
@@ -136,7 +136,7 @@ Semantics are more in line with usual programmer expectations:
 
 ## Safer by default
 
-Delta inserts at least the following safety checks by default:
+C* inserts at least the following safety checks by default:
 
 - Array bounds checks
 - Integer overflow checks
@@ -158,9 +158,9 @@ which is also used in other contexts to mean "ignore this value".
 
 ## Transparent interoperation with existing C APIs
 
-C headers can be imported directly from Delta code. The Clang API is used to
+C headers can be imported directly from C* code. The Clang API is used to
 parse the C headers and allow the contained declarations to be accessed from
-Delta code. Delta functions can be declared `extern "C"` to enable calling them
+C* code. C* functions can be declared `extern "C"` to enable calling them
 from C.
 
 Support for the same level of interoperability with C++ APIs is a longer-term
@@ -182,7 +182,7 @@ Modern type system features for convenience and performance:
       destructors and move/copy constructors/assignment operators.
     - C++17 `std::variant`: not easy or elegant to use (see
       https://bitbashing.io/std-visit.html).
-- Using `interface`s (Delta's equivalent of C++ concepts) allows defining what
+- Using `interface`s (C*'s equivalent of C++ concepts) allows defining what
   kind of types are valid for a given template parameter when writing a generic
   type or function. This leads to much more readable error messages when
   instantiating generic types or functions with an incompatible type as the

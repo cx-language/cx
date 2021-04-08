@@ -1,0 +1,151 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    assert("abc" == "abc");
+    assert(!("abc" == "not"));
+    assert("abc" < "bcd");
+
+    testStringIterator();
+    testFind();
+    testSubstr();
+    testSplit();
+    testOtherSplit();
+    testBytes();
+    testLines();
+    testParseInt();
+    testEscape();
+}
+
+void testStringIterator() {
+    var iterator = "xy".iterator();
+
+    assert(iterator.hasValue());
+    assert(iterator.value() == 'x');
+
+    iterator.increment();
+    assert(iterator.hasValue());
+    assert(iterator.value() == 'y');
+
+    iterator.increment();
+    assert(!iterator.hasValue());
+}
+
+void testFind() {
+    var s = StringBuffer("word");
+
+    // Start from beginning
+    assert(s.find('w') == 0);
+    assert(s.find('o') == 1);
+    assert(s.find('r') == 2);
+    assert(s.find('d') == 3);
+
+    // Start from index
+    assert(s.find('w', 1) == s.size());
+    assert(s.find('d', 2) == 3);
+}
+
+void testSubstr() {
+    var s = StringBuffer("word");
+    assert(s.substr(0..1) == "w");
+    assert(s.substr(0..2) == "wo");
+    assert(s.substr(0..3) == "wor");
+    assert(s.substr(0..4) == "word");
+    assert(s.substr(1..4) == "ord");
+    assert(s.substr(2..4) == "rd");
+    assert(s.substr(1..3) == "or");
+    assert(s.substr(2..3) == "r");
+
+    var s2 = StringBuffer("this is the best sentence");
+    assert(s2.substr(0..4) == "this");
+    assert(s2.substr(5..7) == "is");
+    assert(s2.substr(8..11) == "the");
+    assert(s2.substr(12..16) == "best");
+    assert(s2.substr(17..25) == "sentence");
+
+    var s3 = StringBuffer("best");
+    assert(s3.substr(0..0) == "");
+}
+
+void testSplit() {
+    var s = StringBuffer("this is the best sentence");
+    var words = s.split();
+    assert(words.size() == 5);
+    assert(words[0] == "this");
+    assert(words[1] == "is");
+    assert(words[2] == "the");
+    assert(words[3] == "best");
+    assert(words[4] == "sentence");
+}
+
+void testOtherSplit() {
+    var s = StringBuffer("this,sentence,is,comma,separated");
+    var words = s.split(',');
+    assert(words.size() == 5);
+    assert(words[0] == "this");
+    assert(words[1] == "sentence");
+    assert(words[2] == "is");
+    assert(words[3] == "comma");
+    assert(words[4] == "separated");
+
+    var s2 = StringBuffer(",,1,,2");
+    words = s2.split(',');
+    assert(words.size() == 5);
+    assert(words[0] == "");
+    assert(words[1] == "");
+    assert(words[2] == "1");
+    assert(words[3] == "");
+    assert(words[4] == "2");
+
+    var s3 = StringBuffer(",,,b,a,,,");
+    words = s3.split(',');
+    assert(words.size() == 8);
+    assert(words[0] == "");
+    assert(words[1] == "");
+    assert(words[2] == "");
+    assert(words[3] == "b");
+    assert(words[4] == "a");
+    assert(words[5] == "");
+    assert(words[6] == "");
+    assert(words[7] == "");
+}
+
+void testBytes() {
+    // TODO: Unicode / UTF-8
+    var text = "The quick brown fox jumps over the lazy dog";
+    var i = 0;
+
+    for (var byte in text.bytes()) {
+        assert(byte == uint8(text[i]));
+        i++;
+    }
+
+    assert(i == text.size());
+}
+
+void testLines() {
+    var text = "The quick brown fox \n\n\n jumps over\n the lazy dog\n";
+    var expected = ["The quick brown fox ", "", "", " jumps over", " the lazy dog"];
+    var i = 0;
+
+    for (var line in text.lines()) {
+        assert(line == expected[i]);
+        i++;
+    }
+
+    assert(i == expected.size());
+}
+
+void testParseInt() {
+    assert("".parseInt() == null);
+    assert("a".parseInt() == null);
+    assert("1a".parseInt() == null);
+    assert("1".parseInt() == 1);
+    assert("123789".parseInt() == 123789);
+    assert("2147483647".parseInt() == 2147483647);
+}
+
+void testEscape() {
+    assert("".escape() == "");
+    assert("0 r t \' n".escape() == "0 r t ' n");
+    assert("\0 \r \t \' \" \\ \n".escape() == "\\0 \\r \\t ' \\\" \\\\ \\n");
+}

@@ -1,0 +1,8 @@
+// RUN: %cx -typecheck ./a.cx ./b.cx | %FileCheck -allow-empty %s
+
+import "header.h"
+
+void main() {
+    // CHECK-NOT: error: ambiguous reference to 'foo'
+    foo(a)
+}

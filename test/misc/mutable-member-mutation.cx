@@ -1,0 +1,12 @@
+// RUN: check_exit_status 6 %cx run %s
+
+struct X: Copyable {
+    int a;
+}
+
+int main() {
+    var x = X(0);
+    x.a = 5;
+    x.a++;
+    return x.a;
+}

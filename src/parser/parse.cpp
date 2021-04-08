@@ -18,7 +18,7 @@
 #include "../driver/driver.h"
 #include "../support/utility.h"
 
-using namespace delta;
+using namespace cx;
 
 static llvm::MemoryBuffer* getFileMemoryBuffer(llvm::StringRef filePath) {
     auto buffer = llvm::MemoryBuffer::getFile(filePath);
@@ -446,7 +446,7 @@ Type Parser::parseType() {
                 type = ArrayType::get(type, parseArraySizeInBrackets(), type.getMutability(), getCurrentLocation());
                 break;
             case Token::And:
-                ERROR(getCurrentLocation(), "Delta doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
+                ERROR(getCurrentLocation(), "C* doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");
             default:
                 return type.withLocation(location);
         }

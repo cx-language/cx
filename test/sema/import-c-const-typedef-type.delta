@@ -1,8 +1,0 @@
-// RUN: %delta -typecheck %s
-
-import "inputs/import-c-const-typedef-type.h";
-
-void main() {
-    var i = 0;
-    bar(&i);
-}

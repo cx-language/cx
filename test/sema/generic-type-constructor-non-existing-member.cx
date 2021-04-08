@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct A<T> {
+    // CHECK: 5:16: error: no member named 'd' in 'A<int>'
+    A() { this.d = 3 }
+}
+
+void main() { var a = A<int>() }

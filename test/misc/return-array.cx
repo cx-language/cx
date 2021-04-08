@@ -1,0 +1,18 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:Bar
+
+extern int puts(uint8* s);
+
+uint8[4] foo() {
+    uint8[4] buffer = undefined;
+    buffer[0] = 66;
+    buffer[1] = 0x61;
+    buffer[2] = 0o162;
+    buffer[3] = 0b0;
+    return buffer;
+}
+
+void main() {
+    var array = foo();
+    puts(&array[0]);
+}

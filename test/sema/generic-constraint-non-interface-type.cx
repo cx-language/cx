@@ -1,0 +1,6 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:11: error: only interface types can be used as generic constraints
+void f<T: Foo>() {}
+
+struct Foo {}

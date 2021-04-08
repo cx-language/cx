@@ -1,7 +1,0 @@
-// RUN: %not %delta run %s 2>&1 | %FileCheck %s
-
-int main() {
-    return List<int>()[0];
-}
-
-// CHECK: List index 0 is out of bounds, size is 0

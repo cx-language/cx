@@ -1,7 +1,0 @@
-// RUN: %delta -parse %s
-
-/*
-/*
-foo
-*/
-*/

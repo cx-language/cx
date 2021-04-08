@@ -1,0 +1,4 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:11: error: unknown type 'Foo'
+void f<T: Foo>() {}

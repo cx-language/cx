@@ -10,7 +10,7 @@
 #pragma warning(pop)
 #include "decl.h"
 
-namespace delta {
+namespace cx {
 
 struct Module;
 struct SymbolTable;
@@ -157,4 +157,4 @@ private:
     static llvm::StringMap<Module*> allImportedModules;
 };
 
-} // namespace delta
+} // namespace cx

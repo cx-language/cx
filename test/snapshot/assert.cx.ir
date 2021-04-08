@@ -1,0 +1,19 @@
+
+extern bool b()
+
+int main() {
+    bool _0 = call b()
+    bool assert.condition = _0 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Assertion failed at assert.cx:6:5
+")
+    unreachable
+
+assert.success:
+    return int 0
+}
+
+void _EN3std10assertFailEP4char(char* message) {
+}

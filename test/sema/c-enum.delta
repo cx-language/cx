@@ -1,8 +1,0 @@
-// RUN: %delta -typecheck %s
-
-import "inputs/c-enum.h";
-
-void main() {
-    uint u = FOO;
-    int i = FOO;
-}

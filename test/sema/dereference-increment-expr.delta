@@ -1,8 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void f(int[*] p) {
-    var a = p;
-
-    // CHECK: [[@LINE+1]]:13: error: cannot dereference non-pointer type 'void'
-    var b = *(a++);
-}

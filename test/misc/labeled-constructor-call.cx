@@ -1,0 +1,7 @@
+// RUN: %cx -print-llvm %s
+void main() {
+    var a = Foo(qux: 4);
+}
+struct Foo: Copyable {
+    Foo(int qux) { }
+}

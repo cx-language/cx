@@ -14,7 +14,7 @@
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 
-int delta::invokeClang(llvm::ArrayRef<const char*> args) {
+int cx::invokeClang(llvm::ArrayRef<const char*> args) {
     auto* diagClient = new clang::TextDiagnosticPrinter(llvm::errs(), new clang::DiagnosticOptions());
     diagClient->setPrefix(llvm::sys::path::filename(args[0]).str());
     clang::DiagnosticsEngine diags(new clang::DiagnosticIDs(), nullptr, diagClient);

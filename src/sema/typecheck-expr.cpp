@@ -14,7 +14,7 @@
 #include "../ast/module.h"
 #include "../ast/type.h"
 
-using namespace delta;
+using namespace cx;
 
 void Typechecker::checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel) {
     // FIXME: Compare SourceFile objects instead of file path strings.
@@ -746,7 +746,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
     return inferredGenericArgs;
 }
 
-void delta::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, SourceLocation location) {
+void cx::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, SourceLocation location) {
     if (genericArgs.size() < genericParamCount) {
         REPORT_ERROR(location, "too few generic arguments to '" << name << "', expected " << genericParamCount);
     } else if (genericArgs.size() > genericParamCount) {

@@ -1,0 +1,20 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+interface Fooable {
+    void foo()
+}
+
+struct F: Copyable {
+    int foo() { return 1 }
+}
+
+void main() {
+    F f = undefined;
+
+    // CHECK: 15:8: error: type 'F' doesn't implement interface 'Fooable'
+    bar(f);
+}
+
+void bar<T: Fooable>(T t) {
+    t.foo()
+}

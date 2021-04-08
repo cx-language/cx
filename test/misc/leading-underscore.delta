@@ -1,4 +1,0 @@
-// RUN: check_exit_status 42 %delta run %s
-
-int _foo() { return 42; }
-int main() { return _foo(); }

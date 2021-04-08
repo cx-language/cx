@@ -1,0 +1,17 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:foo
+// CHECK-NEXT:bar
+// CHECK-NEXT:baz
+// CHECK-NEXT:qux
+
+import "stdio.h";
+
+const char* foo() { return "foo"; }
+string bar() { return "bar"; }
+
+void main() {
+    puts(foo());
+    println(bar());
+    puts("baz");
+    println("qux");
+}

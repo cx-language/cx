@@ -1,0 +1,16 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct Foo: Copyable {
+    Foo(public int a) { }
+    Foo(public int b) { }
+}
+
+void main() {
+    // CHECK: [[@LINE+6]]:9: error: ambiguous reference to 'Foo' constructor
+    // CHECK: 4:5: note: candidate function:
+    // CHECK-NEXT: Foo(public int a) { }
+    // CHECK: 5:5: note: candidate function:
+    // CHECK-NEXT: Foo(public int b) { }
+    // CHECK-NOT: note
+    _ = Foo(1)
+}

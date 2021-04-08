@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void foo<T>(T a, T b) { }
+
+// CHECK: [[@LINE+2]]:15: error: no matching function 'foo(int, bool)'
+// CHECK: :3:6: note: candidate function:
+void main() { foo(1, false) }

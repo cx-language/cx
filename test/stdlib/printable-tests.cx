@@ -1,0 +1,20 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testCustomPrintableStruct();
+}
+
+struct A: Printable {
+    string a;
+    string b;
+
+    void print(StringBuffer* stream) {
+        stream.write(a);
+        stream.write("+");
+        stream.write(b);
+    }
+}
+
+void testCustomPrintableStruct() {
+    assert(string(A("foo", "bar").toString()) == "foo+bar");
+}

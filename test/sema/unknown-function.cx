@@ -1,0 +1,6 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+int fooz() { return 42; }
+
+// CHECK: [[@LINE+1]]:23: error: unknown identifier 'foo'
+void main() { var i = foo(); }

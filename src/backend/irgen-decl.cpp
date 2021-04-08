@@ -4,7 +4,7 @@
 #pragma warning(pop)
 #include "../ast/mangle.h"
 
-using namespace delta;
+using namespace cx;
 
 Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     auto mangledName = mangleFunctionDecl(decl);

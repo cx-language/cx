@@ -1,6 +1,6 @@
-# Delta Language Design Document
+# C* Language Design Document
 
-This document describes the design decisions and rationales for the Delta
+This document describes the design decisions and rationales for the C*
 programming language, and provides guidelines and resources for further design.
 
 __Note:__ This document is incomplete.
@@ -11,7 +11,7 @@ __Note:__ This document is incomplete.
 >
 > — Bjarne Stroustrup
 
-Delta is a general-purpose programming language with a bias towards systems
+C* is a general-purpose programming language with a bias towards systems
 programming, intended primarily as a replacement for C++ and C. It is designed
 for applications where runtime performance and programmer productivity matter.
 It should also support large-scale development, and limited interoperability
@@ -42,7 +42,7 @@ with existing C++ and C code to make gradual adoption feasible.
   change too much. Only change things that are an objective improvement from C++
   or otherwise well justified.
 
-## Why Delta instead of C++ or Rust?
+## Why C* instead of C++ or Rust?
 
 C++ is a large and complex language that has accumulated many problems over the
 years, for example:
@@ -85,10 +85,10 @@ It is clear that we can't keep adding more and more features to C++ and writing
 new code in it forever. Sooner or later it will be replaced by another language
 or languages (at least for writing new code).
 
-Delta is designed to solve all of the above problems. Let's take a look at
+C* is designed to solve all of the above problems. Let's take a look at
 another popular systems programming language, Rust, which also solves (almost)
 all of the above problems (excluding e.g. the lack of named parameters). Rust
-differs from Delta in the following aspects:
+differs from C* in the following aspects:
 
 - Guaranteed memory safety is useful for certain types of projects, but for
   non-safety-critical projects it comes at a cost in productivity (e.g. fighting
@@ -106,12 +106,12 @@ differs from Delta in the following aspects:
 - Naming convention for standard library and language keywords favors cryptic
   abbreviated names, instead of clear unabbreviated ones.
 - The Rust compiler complains if you use non-snake-case names for variables or
-  functions, or non-camel-case names for types. Delta, like C++, should not
+  functions, or non-camel-case names for types. C*, like C++, should not
   force programmers to use a specific style.
 - Forces the programmer to write very explicit code (e.g. [console I/O][6]).
 - Numeric literals don't work well in generic code ([example][7]).
 
-So in summary, Delta is intended to be used over Rust for non-safety-critical
+So in summary, C* is intended to be used over Rust for non-safety-critical
 applications where programmer productivity, ergonomics, and performance are more
 important than Rust's safety and explicitness.
 

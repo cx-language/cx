@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+extern void f(char* p, ...);
+
+void main() {
+    // CHECK: [[@LINE+1]]:5: error: too few arguments to 'f', expected at least 1
+    f();
+}

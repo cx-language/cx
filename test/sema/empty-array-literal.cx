@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void foo(int[] i) {}
+
+void main() {
+    // CHECK-NOT: error
+    foo([]);
+
+    // CHECK: [[@LINE+1]]:13: error: couldn't infer type of empty array literal
+    var a = [];
+
+    // CHECK-NOT: error
+    int[0] b = [];
+}

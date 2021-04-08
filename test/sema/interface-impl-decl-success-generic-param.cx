@@ -1,0 +1,13 @@
+// RUN: %cx -typecheck %s
+
+interface X {
+    void foo();
+}
+
+struct Z<T>: T {
+    void foo() {}
+}
+
+void main() {
+    var z = Z<X>();
+}

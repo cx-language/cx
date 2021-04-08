@@ -8,7 +8,7 @@
 #include "decl.h"
 #include "../support/utility.h"
 
-using namespace delta;
+using namespace cx;
 
 static std::vector<TypeBase*> typeBases;
 
@@ -164,11 +164,11 @@ Type UnresolvedType::get(Mutability mutability, SourceLocation location) {
     return getType(UnresolvedType(), mutability, location);
 }
 
-bool delta::operator==(const TupleElement& a, const TupleElement& b) {
+bool cx::operator==(const TupleElement& a, const TupleElement& b) {
     return a.name == b.name && a.type == b.type;
 }
 
-void delta::appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> genericArgs) {
+void cx::appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> genericArgs) {
     if (genericArgs.empty()) return;
 
     typeName += '<';
@@ -179,7 +179,7 @@ void delta::appendGenericArgs(std::string& typeName, llvm::ArrayRef<Type> generi
     typeName += '>';
 }
 
-std::string delta::getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs) {
+std::string cx::getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Type> genericArgs) {
     std::string result = typeName.str();
     appendGenericArgs(result, genericArgs);
     return result;
@@ -267,7 +267,7 @@ Type Type::getWrappedType() const {
     return getGenericArgs().front().withLocation(location);
 }
 
-bool delta::operator==(Type lhs, Type rhs) {
+bool cx::operator==(Type lhs, Type rhs) {
     if (lhs.isMutable() != rhs.isMutable()) return false;
     return lhs.equalsIgnoreTopLevelMutable(rhs);
 }
@@ -290,7 +290,7 @@ bool Type::equalsIgnoreTopLevelMutable(Type other) const {
     llvm_unreachable("all cases handled");
 }
 
-bool delta::operator!=(Type lhs, Type rhs) {
+bool cx::operator!=(Type lhs, Type rhs) {
     return !(lhs == rhs);
 }
 
@@ -417,12 +417,12 @@ std::string Type::toString() const {
     return stream.str();
 }
 
-std::ostream& delta::operator<<(std::ostream& stream, Type type) {
+std::ostream& cx::operator<<(std::ostream& stream, Type type) {
     type.printTo(stream);
     return stream;
 }
 
-llvm::raw_ostream& delta::operator<<(llvm::raw_ostream& stream, Type type) {
+llvm::raw_ostream& cx::operator<<(llvm::raw_ostream& stream, Type type) {
     std::ostringstream stringstream;
     type.printTo(stringstream);
     return stream << stringstream.str();

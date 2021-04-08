@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+int[1] foo() {
+    int[2] buffer = undefined;
+    // CHECK: [[@LINE+1]]:5: error: mismatching return type 'int[2]', expected 'int[1]'
+    return buffer;
+}

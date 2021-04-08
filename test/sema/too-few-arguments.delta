@@ -1,6 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-int sum(int a, int b) { return a + b; }
-
-// CHECK: [[@LINE+1]]:25: error: too few arguments to 'sum', expected 2
-void main() { var foo = sum(1); }

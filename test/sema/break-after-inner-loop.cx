@@ -1,0 +1,9 @@
+// RUN: %cx -typecheck %s
+
+void main() {
+    while (false) {
+        while (false) {
+        }
+        break;
+    }
+}

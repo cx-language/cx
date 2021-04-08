@@ -1,5 +1,0 @@
-// RUN: %delta -print-llvm %s | %FileCheck %s -allow-empty
-
-void main() {
-    2 + 2;
-}

@@ -1,0 +1,28 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+struct C: Comparable {
+    int a;
+
+    Ordering compare(C* other) {
+        return this.a.compare(other.a);
+    }
+}
+
+void main() {
+    var a = C(6);
+    var b = C(99);
+
+    assert(a <= b);
+    assert(!(a >= b));
+    assert(!(a > b));
+    assert(a < b);
+    assert(!(a == b));
+    assert(a != b);
+
+    assert(&a <= &b);
+    assert(!(&a >= &b));
+    assert(!(&a > &b));
+    assert(&a < &b);
+    assert(!(&a == &b));
+    assert(&a != &b);
+}

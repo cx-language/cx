@@ -1,0 +1,16 @@
+// RUN: true
+
+// CHECK-NOT: a.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}: '{{(f|A\.f)}}' is private
+
+struct A {
+    private void f() {}
+    void g() {
+        this.f();
+        f();
+    }
+}
+
+void g() {
+    var a = A();
+    a.g();
+}

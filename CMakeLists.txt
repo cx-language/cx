@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(delta)
+project(cx)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -52,29 +52,29 @@ set(LLVM_PACKAGE_VERSION "${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VER
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(SYSTEM ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
-add_definitions(-DDELTA_ROOT_DIR="${PROJECT_SOURCE_DIR}")
+add_definitions(-DCX_ROOT_DIR="${PROJECT_SOURCE_DIR}")
 
 # Define the include path of the Clang builtin headers, to be used by the compiler to avoid errors
-# about missing C headers when importing C headers from Delta code. For more information, see e.g.
+# about missing C headers when importing C headers from C* code. For more information, see e.g.
 # http://clang.llvm.org/docs/FAQ.html#i-get-errors-about-some-headers-being-missing-stddef-h-stdarg-h
 # CLANG_CMAKE_DIR is defined by ClangConfig.cmake during the above find_package(Clang) call.
 add_definitions(-DCLANG_BUILTIN_INCLUDE_PATH="${CLANG_CMAKE_DIR}/../../clang/${LLVM_VERSION_MAJOR}.${LLVM_VERSION_MINOR}.${LLVM_VERSION_PATCH}/include")
 
 enable_testing()
 
-file(GLOB_RECURSE DELTA_SOURCES src/*.h src/*.cpp)
-add_executable(delta ${DELTA_SOURCES})
+file(GLOB_RECURSE CX_SOURCES src/*.h src/*.cpp)
+add_executable(cx ${CX_SOURCES})
 
 llvm_map_components_to_libnames(LLVM_LIBS core native linker support)
 list(APPEND LLVM_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema)
-target_link_libraries(delta ${LLVM_LIBS})
+target_link_libraries(cx ${LLVM_LIBS})
 
 add_custom_target(check_lit COMMAND lit --verbose --succinct --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
-    -Ddelta_path="$<TARGET_FILE:delta>"
+    -Dcx_path="$<TARGET_FILE:cx>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dtest_helper_scripts_path="${PROJECT_SOURCE_DIR}/test"
     USES_TERMINAL)
-add_custom_target(check_examples COMMAND python "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "$<TARGET_FILE:delta>")
+add_custom_target(check_examples COMMAND python "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "$<TARGET_FILE:cx>")
 add_custom_target(check)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check check_lit check_examples)
@@ -93,7 +93,7 @@ target_link_libraries(FileCheck ${FILECHECK_NEEDED_LIBS})
 
 if(MSVC)
     set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w /O2 /GL /MT")
-    set_target_properties(delta PROPERTIES COMPILE_FLAGS "/MT")
+    set_target_properties(cx PROPERTIES COMPILE_FLAGS "/MT")
 else()
     set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
 endif()
@@ -113,4 +113,4 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")
     file(DOWNLOAD "https://github.com/sakra/cotire/raw/master/CMake/cotire.cmake" "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")
 endif()
 include(cotire)
-cotire(delta)
+cotire(cx)

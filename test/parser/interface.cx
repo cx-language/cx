@@ -1,0 +1,6 @@
+// RUN: %cx -parse %s
+
+interface I {
+    void i();
+    int* j();
+}

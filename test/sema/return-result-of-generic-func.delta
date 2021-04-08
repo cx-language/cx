@@ -1,9 +1,0 @@
-// RUN: %delta -typecheck %s
-
-T qux<T>(T t) {
-    if (t < 0) { return -t; }
-    return t;
-}
-int main() {
-    return qux(-35);
-}

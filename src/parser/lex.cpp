@@ -12,7 +12,7 @@
 #include "../ast/token.h"
 #include "../support/utility.h"
 
-using namespace delta;
+using namespace cx;
 
 std::vector<llvm::MemoryBuffer*> Lexer::fileBuffers;
 

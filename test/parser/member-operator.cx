@@ -1,0 +1,6 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+struct Foo: Copyable {
+    // CHECK: 5:10: error: operator functions other than 'operator[]' must be non-member functions
+    bool operator==(Foo f) { return false }
+}

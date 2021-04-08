@@ -1,0 +1,12 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct C<T> {
+    ~C() {
+        // CHECK: [[@LINE+1]]:17: error: unknown identifier 'b'
+        var a = b
+    }
+}
+
+void main() {
+    var c = C<int>()
+}

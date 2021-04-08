@@ -1,0 +1,10 @@
+// RUN: %cx -typecheck %s
+
+struct A {}
+
+void main() {
+    var a = A();
+    var b = a;
+    a = A();
+    var c = a;
+}

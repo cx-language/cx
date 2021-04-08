@@ -1,0 +1,15 @@
+// RUN: %cx -typecheck -Werror -Wno-unused %s
+
+struct S {
+    S*? a;
+    S*? b;
+}
+
+void foo(S* s) {
+    var a = s;
+    var b = a.a!;
+    a.a = s.b;
+
+    if (a.a != null) {
+    }
+}

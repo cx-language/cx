@@ -1,8 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-T foo<T>(T a, T b) { return b; }
-
-// CHECK: [[@LINE+3]]:36: error: too many generic arguments to 'foo', expected 1
-// CHECK: [[@LINE+2]]:23: error: no matching function 'foo(int, int)'
-// CHECK: :3:3: note: candidate function:
-void main() { var f = foo<int, int>(1, 2); }

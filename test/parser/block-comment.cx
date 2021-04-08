@@ -1,0 +1,5 @@
+// RUN: %cx -parse %s
+
+/*
+foo
+*/

@@ -1,0 +1,13 @@
+// RUN: check_exit_status 42 %cx run %s
+
+import "union-member-access.h"
+
+int foo(U u) {
+    return u.b
+}
+
+int main() {
+    U u = undefined
+    u.a = 21
+    return foo(u) + u.b
+}

@@ -1,0 +1,11 @@
+// RUN: %cx -print-llvm %s | %FileCheck %s -allow-empty
+
+#if !hasInclude("stdio.h")
+// CHECK-NOT: stdio
+var a = "stdio";
+#endif
+
+#if hasInclude("should-not-exist.h")
+// CHECK-NOT: should-not-exist
+var a = "should-not-exist";
+#endif

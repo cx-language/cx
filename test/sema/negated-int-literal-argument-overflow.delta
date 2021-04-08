@@ -1,8 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void foo(uint a) { }
-
-void main() {
-    // CHECK: [[@LINE+1]]:9: error: -1 is out of range for type 'uint'
-    foo(-1);
-}

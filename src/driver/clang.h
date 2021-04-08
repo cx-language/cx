@@ -5,8 +5,8 @@ template<typename T>
 class ArrayRef;
 }
 
-namespace delta {
+namespace cx {
 
 int invokeClang(llvm::ArrayRef<const char*> args);
 
-} // namespace delta
+} // namespace cx

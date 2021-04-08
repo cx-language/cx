@@ -1,0 +1,13 @@
+// RUN: %cx -typecheck %s
+
+struct S<T>: Copyable {
+    void f(T t) {
+        T*? p = null;
+        *p! = t;
+    }
+}
+
+void main() {
+    var s = S<int>();
+    s.f(1);
+}

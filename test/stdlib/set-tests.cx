@@ -1,0 +1,100 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+void main() {
+    testInsert();
+    testRemoval();
+    testDuplicates();
+    testIterator();
+    testEmptySetIterator();
+    testUnitSetIterator();
+}
+
+void testInsert() {
+    var s = Set<string>();
+
+    s.insert("ok");
+
+    assert(s.contains("ok"));
+    assert(!s.contains("lol"));
+}
+
+
+void testRemoval() {
+    var s = Set<string>();
+
+    s.insert("ok");
+    assert(s.contains("ok"));
+
+    s.remove("ok");
+    assert(!s.contains("ok"));
+}
+
+void testDuplicates() {
+    var s = Set<string>();
+
+    s.insert("ok");
+    s.insert("ok");
+    assert(s.contains("ok"));
+
+    s.remove("ok");
+    assert(!s.contains("ok"));
+}
+
+void testIterator() {
+    var s = Set<string>();
+
+    s.insert("a");
+    s.insert("ccc");
+    s.insert("bb");
+    s.insert("a");
+    s.insert("ccc");
+    s.insert("ccc");
+
+    var a = false;
+    var bb = false;
+    var ccc = false;
+
+    for (var e in s) {
+        if (e == "a") {
+            assert(!a);
+            a = true;
+        } else if (e == "bb") {
+            assert(!bb);
+            bb = true;
+        } else if (e == "ccc") {
+            assert(!ccc);
+            ccc = true;
+        } else {
+            assert(false);
+        }
+    }
+
+    assert(a);
+    assert(bb);
+    assert(ccc);
+}
+
+void testEmptySetIterator() {
+    var s = Set<string>();
+    s.insert("foo");
+    s.insert("foo");
+    s.remove("foo");
+
+    for (var e in s) {
+        assert(false);
+    }
+}
+
+void testUnitSetIterator() {
+    var s = Set<string>();
+    s.insert("foo");
+    s.insert("foo");
+    var count = 0;
+
+    for (var e in s) {
+        count++;
+        assert(e == "foo");
+    }
+
+    assert(count == 1);
+}

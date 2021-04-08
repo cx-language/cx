@@ -1,0 +1,7 @@
+// RUN: %cx -typecheck %s
+
+import inputs
+
+void main() {
+    A<int>().f()
+}

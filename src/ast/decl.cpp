@@ -5,7 +5,7 @@
 #pragma warning(pop)
 #include "ast.h"
 
-using namespace delta;
+using namespace cx;
 
 FunctionProto FunctionProto::instantiate(const llvm::StringMap<Type>& genericArgs) const {
     auto params = instantiateParams(getParams(), genericArgs);
@@ -25,7 +25,7 @@ FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<Type>& generic
     return instantiations.emplace(std::move(orderedGenericArgs), instantiation).first->second;
 }
 
-std::string delta::getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::ArrayRef<Type> genericArgs) {
+std::string cx::getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::ArrayRef<Type> genericArgs) {
     std::string result;
 
     if (receiver) {
@@ -119,7 +119,7 @@ FieldDecl FieldDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeD
     return FieldDecl(type, getName().str(), defaultValue, typeDecl, getAccessLevel(), location);
 }
 
-std::vector<ParamDecl> delta::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
+std::vector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
     return map(params, [&](auto& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName().str(), param.isPublic, param.getLocation()); });
 }
 
@@ -335,6 +335,6 @@ ConstructorDecl::ConstructorDecl(TypeDecl& receiverTypeDecl, std::vector<ParamDe
 DestructorDecl::DestructorDecl(TypeDecl& receiverTypeDecl, SourceLocation location)
 : MethodDecl(DeclKind::DestructorDecl, FunctionProto("deinit", {}, Type::getVoid(), false, false), receiverTypeDecl, {}, AccessLevel::None, location) {}
 
-std::vector<Note> delta::getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls) {
+std::vector<Note> cx::getPreviousDefinitionNotes(llvm::ArrayRef<Decl*> decls) {
     return map(decls, [](Decl* decl) { return Note { decl->getLocation(), "previous definition here" }; });
 }

@@ -1,5 +1,0 @@
-// RUN: %delta -typecheck %s
-
-void foo<A, B, C>(C c, B b, A a) { }
-
-void main() { foo(5, false, "bar") }

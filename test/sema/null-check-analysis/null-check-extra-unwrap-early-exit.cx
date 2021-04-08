@@ -1,0 +1,10 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+void foo(int*? p) {
+    if (p == null) {
+        return;
+    }
+    defer println("foo");
+    // CHECK: [[@LINE+1]]:16: warning: value cannot be null here; null check can be removed
+    var a = *(p!);
+}

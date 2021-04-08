@@ -9,7 +9,7 @@
 #pragma warning(pop)
 #include "../support/utility.h"
 
-using namespace delta;
+using namespace cx;
 
 namespace {
 enum class PrecedenceGroup {
@@ -71,7 +71,7 @@ Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string) 
     ASSERT(location.isValid());
 }
 
-bool delta::isBinaryOperator(Token::Kind tokenKind) {
+bool cx::isBinaryOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
@@ -101,7 +101,7 @@ bool delta::isBinaryOperator(Token::Kind tokenKind) {
     }
 }
 
-bool delta::isUnaryOperator(Token::Kind tokenKind) {
+bool cx::isUnaryOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Plus:
         case Token::Minus:
@@ -117,11 +117,11 @@ bool delta::isUnaryOperator(Token::Kind tokenKind) {
     }
 }
 
-bool delta::isAssignmentOperator(Token::Kind tokenKind) {
+bool cx::isAssignmentOperator(Token::Kind tokenKind) {
     return tokenKind == Token::Assignment || isCompoundAssignmentOperator(tokenKind);
 }
 
-bool delta::isCompoundAssignmentOperator(Token::Kind tokenKind) {
+bool cx::isCompoundAssignmentOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::PlusEqual:
         case Token::MinusEqual:
@@ -141,7 +141,7 @@ bool delta::isCompoundAssignmentOperator(Token::Kind tokenKind) {
     }
 }
 
-bool delta::isOverloadable(Token::Kind tokenKind) {
+bool cx::isOverloadable(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
@@ -160,7 +160,7 @@ bool delta::isOverloadable(Token::Kind tokenKind) {
     }
 }
 
-int delta::getPrecedence(Token::Kind tokenKind) {
+int cx::getPrecedence(Token::Kind tokenKind) {
     return int(getPrecedenceGroup(tokenKind));
 }
 
@@ -189,7 +189,7 @@ BinaryOperator::BinaryOperator(Token::Kind kind) : kind(kind) {
     ASSERT(isBinaryOperator(kind));
 }
 
-bool delta::isComparisonOperator(Token::Kind tokenKind) {
+bool cx::isComparisonOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
@@ -205,7 +205,7 @@ bool delta::isComparisonOperator(Token::Kind tokenKind) {
     }
 }
 
-bool delta::isBitwiseOperator(Token::Kind tokenKind) {
+bool cx::isBitwiseOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::And:
         case Token::AndEqual:
@@ -224,7 +224,7 @@ bool delta::isBitwiseOperator(Token::Kind tokenKind) {
     }
 }
 
-std::string delta::getFunctionName(Token::Kind tokenKind) {
+std::string cx::getFunctionName(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::DotDot:
             return "Range";
@@ -235,7 +235,7 @@ std::string delta::getFunctionName(Token::Kind tokenKind) {
     }
 }
 
-const char* delta::toString(Token::Kind tokenKind) {
+const char* cx::toString(Token::Kind tokenKind) {
     static const char* const tokenStrings[] = {
         "end-of-file",
         "newline",
@@ -332,10 +332,10 @@ const char* delta::toString(Token::Kind tokenKind) {
     return tokenStrings[int(tokenKind)];
 }
 
-std::ostream& delta::operator<<(std::ostream& stream, Token::Kind tokenKind) {
+std::ostream& cx::operator<<(std::ostream& stream, Token::Kind tokenKind) {
     return stream << toString(tokenKind);
 }
 
-llvm::raw_ostream& delta::operator<<(llvm::raw_ostream& stream, Token::Kind tokenKind) {
+llvm::raw_ostream& cx::operator<<(llvm::raw_ostream& stream, Token::Kind tokenKind) {
     return stream << toString(tokenKind);
 }
