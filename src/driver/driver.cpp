@@ -396,12 +396,12 @@ static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
 }
 
 static void addPlatformCompileOptions() {
+    cflags.push_back("-fgnuc-version=4.2.1");
 #ifdef _WIN32
     defines.push_back("Windows");
     cflags.push_back("-fms-extensions");
 #endif
 #ifdef __APPLE__
-    cflags.push_back("-fgnuc-version=4.2.1");
     std::string sdkPath;
     exec("xcrun --show-sdk-path", sdkPath);
     sdkPath = llvm::StringRef(sdkPath).trim();
