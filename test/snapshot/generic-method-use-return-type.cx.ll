@@ -1,20 +1,23 @@
 
-define i32 @main({} %x) {
-  %a = alloca {}, align 8
-  %1 = alloca {}, align 8
-  store {} %x, {}* %1, align 1
-  %2 = call {} @_EN4main1XI3intE1fI4boolEE4bool({}* %1, i1 false)
-  store {} %2, {}* %a, align 1
-  call void @_EN4main1XI4boolE1gE({}* %a)
+%"X<int>" = type {}
+%"X<bool>" = type {}
+
+define i32 @main(%"X<int>" %x) {
+  %a = alloca %"X<bool>", align 8
+  %1 = alloca %"X<int>", align 8
+  store %"X<int>" %x, %"X<int>"* %1, align 1
+  %2 = call %"X<bool>" @_EN4main1XI3intE1fI4boolEE4bool(%"X<int>"* %1, i1 false)
+  store %"X<bool>" %2, %"X<bool>"* %a, align 1
+  call void @_EN4main1XI4boolE1gE(%"X<bool>"* %a)
   ret i32 0
 }
 
-define {} @_EN4main1XI3intE1fI4boolEE4bool({}* %this, i1 %u) {
-  %x = alloca {}, align 8
-  %x.load = load {}, {}* %x, align 1
-  ret {} %x.load
+define %"X<bool>" @_EN4main1XI3intE1fI4boolEE4bool(%"X<int>"* %this, i1 %u) {
+  %x = alloca %"X<bool>", align 8
+  %x.load = load %"X<bool>", %"X<bool>"* %x, align 1
+  ret %"X<bool>" %x.load
 }
 
-define void @_EN4main1XI4boolE1gE({}* %this) {
+define void @_EN4main1XI4boolE1gE(%"X<bool>"* %this) {
   ret void
 }

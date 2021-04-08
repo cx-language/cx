@@ -39,8 +39,7 @@ llvm::Type* LLVMGenerator::getStructType(IRStructType* type) {
     auto it = structs.find(type);
     if (it != structs.end()) return NOTNULL(it->second);
 
-    // TODO: Always call StructType::create here?
-    auto llvmStruct = type->elementTypes.empty() ? llvm::StructType::get(ctx, type->packed) : llvm::StructType::create(ctx, type->getName());
+    auto llvmStruct = llvm::StructType::create(ctx, type->getName());
     structs.try_emplace(type, llvmStruct);
     auto elementTypes = map(type->elementTypes, [&](IRType* type) { return getLLVMType(type); });
     llvmStruct->setBody(std::move(elementTypes), type->packed);

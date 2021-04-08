@@ -1,22 +1,24 @@
 
-define {} @_EN4main1fE() {
-  %1 = call {} @_EN4main1fE()
+%never = type {}
+
+define %never @_EN4main1fE() {
+  %1 = call %never @_EN4main1fE()
   unreachable
 }
 
-define {} @_EN4main1gE() {
-  %1 = call {} @abort()
+define %never @_EN4main1gE() {
+  %1 = call %never @abort()
   unreachable
 }
 
-declare {} @abort()
+declare %never @abort()
 
-define {} @_EN4main1hE() {
+define %never @_EN4main1hE() {
   unreachable
 }
 
 define void @_EN4main1iE() {
-  %1 = call {} @_EN4main1fE()
+  %1 = call %never @_EN4main1fE()
   ret void
 }
 
@@ -29,7 +31,7 @@ switch.case.0:                                    ; preds = %0
   ret i32 1
 
 switch.default:                                   ; preds = %0
-  %1 = call {} @_EN4main1fE()
+  %1 = call %never @_EN4main1fE()
   br label %switch.end
 
 switch.end:                                       ; preds = %switch.default

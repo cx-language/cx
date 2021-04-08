@@ -1,43 +1,46 @@
 
+%S = type {}
+%"Foo<int>" = type {}
+
 define i32 @main() {
-  %s = alloca {}, align 8
-  %t = alloca {}, align 8
-  call void @_EN4main1S4initE({}* %s)
-  call void @_EN4main1S3fooE({}* %s)
-  call void @_EN4main3FooI3intE4initE({}* %t)
-  call void @_EN4main3FooI3intE3bazE({}* %t)
-  call void @_EN4main3FooI3intE6deinitE({}* %t)
+  %s = alloca %S, align 8
+  %t = alloca %"Foo<int>", align 8
+  call void @_EN4main1S4initE(%S* %s)
+  call void @_EN4main1S3fooE(%S* %s)
+  call void @_EN4main3FooI3intE4initE(%"Foo<int>"* %t)
+  call void @_EN4main3FooI3intE3bazE(%"Foo<int>"* %t)
+  call void @_EN4main3FooI3intE6deinitE(%"Foo<int>"* %t)
   ret i32 0
 }
 
-define void @_EN4main1S4initE({}* %this) {
+define void @_EN4main1S4initE(%S* %this) {
   ret void
 }
 
-define void @_EN4main1S3fooE({}* %this) {
-  call void @_EN4main1S3barE({}* %this)
+define void @_EN4main1S3fooE(%S* %this) {
+  call void @_EN4main1S3barE(%S* %this)
   ret void
 }
 
-define void @_EN4main3FooI3intE4initE({}* %this) {
-  call void @_EN4main3FooI3intE3bazE({}* %this)
+define void @_EN4main3FooI3intE4initE(%"Foo<int>"* %this) {
+  call void @_EN4main3FooI3intE3bazE(%"Foo<int>"* %this)
   ret void
 }
 
-define void @_EN4main3FooI3intE3bazE({}* %this) {
-  call void @_EN4main3FooI3intE3quxE({}* %this)
+define void @_EN4main3FooI3intE3bazE(%"Foo<int>"* %this) {
+  call void @_EN4main3FooI3intE3quxE(%"Foo<int>"* %this)
   ret void
 }
 
-define void @_EN4main3FooI3intE6deinitE({}* %this) {
-  call void @_EN4main3FooI3intE3bazE({}* %this)
+define void @_EN4main3FooI3intE6deinitE(%"Foo<int>"* %this) {
+  call void @_EN4main3FooI3intE3bazE(%"Foo<int>"* %this)
   ret void
 }
 
-define void @_EN4main1S3barE({}* %this) {
+define void @_EN4main1S3barE(%S* %this) {
   ret void
 }
 
-define void @_EN4main3FooI3intE3quxE({}* %this) {
+define void @_EN4main3FooI3intE3quxE(%"Foo<int>"* %this) {
   ret void
 }
