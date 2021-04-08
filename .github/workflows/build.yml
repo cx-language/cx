@@ -62,7 +62,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         shell: bash
         run: |
-          pip install lit
+          pip install lit psutil
           cmake --build . --config $BUILD_TYPE --target check
 
   deploy-website:

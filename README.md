@@ -37,9 +37,10 @@ Compiling C* requires a C++17 compiler, [CMake](https://cmake.org), and
       cd build
       cmake .. -DCMAKE_PREFIX_PATH="C:\path\to\llvm" -DCMAKE_GENERATOR_PLATFORM=x64 -Thost=x64
 
-To run the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html) via [pip](https://pip.pypa.io/en/stable/installing/), e.g.:
+To run the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html)
+and its optional dependencies via [pip](https://pip.pypa.io/en/stable/installing/):
 
-    sudo python -m pip install lit
+    sudo python -m pip install lit psutil
 
 After this, the following commands can be invoked from the `build` directory:
 
