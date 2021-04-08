@@ -918,9 +918,9 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
     auto location = consumeToken().getLocation();
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
-    auto varStmt = parseVarStmt(parent);
+    auto varStmt = currentToken() == Token::Semicolon ? (consumeToken(), nullptr) : parseVarStmt(parent);
 
-    if (varStmt->getDecl().getInitializer()) {
+    if (!varStmt || varStmt->getDecl().getInitializer()) {
         // Semicolon is parsed inside parseVarDecl
         auto condition = parseExpr();
         parse(Token::Semicolon);
