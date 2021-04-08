@@ -173,6 +173,7 @@ static llvm::Optional<FieldDecl> toCx(const clang::FieldDecl& decl, TypeDecl& ty
 static TypeDecl* toCx(const clang::RecordDecl& decl, Module* currentModule) {
     auto tag = decl.isUnion() ? TypeTag::Union : TypeTag::Struct;
     auto* typeDecl = new TypeDecl(tag, getName(decl).str(), {}, {}, AccessLevel::Default, *currentModule, nullptr, SourceLocation());
+    typeDecl->packed = decl.hasAttr<clang::PackedAttr>();
 
     for (auto* field : decl.fields()) {
         if (auto fieldDecl = toCx(*field, *typeDecl)) {

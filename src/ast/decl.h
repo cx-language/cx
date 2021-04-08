@@ -320,12 +320,9 @@ struct TypeDecl : Decl {
     Module* getModule() const override { return &module; }
     const TypeDecl* getInstantiatedFrom() const { return instantiatedFrom; }
     static bool classof(const Decl* d) { return d->isTypeDecl(); }
-
-protected:
     TypeDecl(DeclKind kind, TypeTag tag, std::string&& name, AccessLevel accessLevel, Module& module, const TypeDecl* instantiatedFrom, SourceLocation location)
     : Decl(kind, accessLevel), tag(tag), name(std::move(name)), location(location), module(module), instantiatedFrom(instantiatedFrom) {}
 
-private:
     TypeTag tag;
     std::string name;
     std::vector<Type> genericArgs;
@@ -335,6 +332,7 @@ private:
     SourceLocation location;
     Module& module;
     const TypeDecl* instantiatedFrom;
+    bool packed = false;
 };
 
 struct TypeTemplate : Decl {

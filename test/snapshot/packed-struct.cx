@@ -1,0 +1,12 @@
+// RUN: check-snapshots
+// RUN: %cx run %s
+
+import "./packed-struct.h";
+
+void main() {
+    S s = undefined;
+    s.a = 0xAB;
+    s.b = 0xCDEF;
+    s.c = 0;
+    assert(sizeof(S) == 4);
+}

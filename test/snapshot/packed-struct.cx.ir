@@ -1,0 +1,24 @@
+
+int main() {
+    S* s = alloca S
+    uint8* a = getelementptr s, 0
+    store uint8 171 to a
+    uint16* b = getelementptr s, 1
+    store uint16 52719 to b
+    uint8* c = getelementptr s, 2
+    store uint8 0 to c
+    bool _0 = sizeof(S) == uint64 4
+    bool assert.condition = _0 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Assertion failed at packed-struct.cx:11:5
+")
+    unreachable
+
+assert.success:
+    return int 0
+}
+
+void _EN3std10assertFailEP4char(char* message) {
+}

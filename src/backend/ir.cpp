@@ -33,7 +33,7 @@ IRType* cx::getIRType(Type astType) {
 
                 if (enumDecl->hasAssociatedValues()) {
                     auto unionType = new IRUnionType { IRTypeKind::IRUnionType, {}, "" };
-                    irType = new IRStructType { IRTypeKind::IRStructType, { tagType, unionType }, astType.getQualifiedTypeName() };
+                    irType = new IRStructType { IRTypeKind::IRStructType, { tagType, unionType }, astType.getQualifiedTypeName(), false };
                     irTypes.emplace(astType.getBase(), irType);
                     auto associatedTypes = map(enumDecl->getCases(), [](const EnumCase& c) { return getIRType(c.getAssociatedType()); });
                     unionType->elementTypes = std::move(associatedTypes);
@@ -42,7 +42,7 @@ IRType* cx::getIRType(Type astType) {
                     irType = tagType;
                 }
             } else if (astType.getDecl()) {
-                auto structType = new IRStructType { IRTypeKind::IRStructType, {}, astType.getQualifiedTypeName() };
+                auto structType = new IRStructType { IRTypeKind::IRStructType, {}, astType.getQualifiedTypeName(), astType.getDecl()->packed };
                 irTypes.emplace(astType.getBase(), structType);
                 auto elementTypes = map(astType.getDecl()->getFields(), [](const FieldDecl& f) { return getIRType(f.getType()); });
                 structType->elementTypes = std::move(elementTypes);
@@ -66,7 +66,7 @@ IRType* cx::getIRType(Type astType) {
         }
         case TypeKind::TupleType: {
             auto elementTypes = map(astType.getTupleElements(), [](const TupleElement& e) { return getIRType(e.type); });
-            irType = new IRStructType { IRTypeKind::IRStructType, std::move(elementTypes), "" };
+            irType = new IRStructType { IRTypeKind::IRStructType, std::move(elementTypes), "", false };
             break;
         }
         case TypeKind::FunctionType: {

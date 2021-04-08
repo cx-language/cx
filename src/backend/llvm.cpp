@@ -33,17 +33,17 @@ llvm::Type* LLVMGenerator::getBuiltinType(llvm::StringRef name) {
 llvm::Type* LLVMGenerator::getStructType(IRStructType* type) {
     if (type->name.empty()) {
         auto elementTypes = map(type->elementTypes, [&](IRType* type) { return getLLVMType(type); });
-        return llvm::StructType::get(ctx, std::move(elementTypes));
+        return llvm::StructType::get(ctx, std::move(elementTypes), type->packed);
     }
 
     auto it = structs.find(type);
     if (it != structs.end()) return NOTNULL(it->second);
 
     // TODO: Always call StructType::create here?
-    auto llvmStruct = type->elementTypes.empty() ? llvm::StructType::get(ctx) : llvm::StructType::create(ctx, type->getName());
+    auto llvmStruct = type->elementTypes.empty() ? llvm::StructType::get(ctx, type->packed) : llvm::StructType::create(ctx, type->getName());
     structs.try_emplace(type, llvmStruct);
     auto elementTypes = map(type->elementTypes, [&](IRType* type) { return getLLVMType(type); });
-    llvmStruct->setBody(std::move(elementTypes));
+    llvmStruct->setBody(std::move(elementTypes), type->packed);
     return llvmStruct;
 }
 
