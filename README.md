@@ -1,6 +1,6 @@
-# Delta Programming Language
+# VS Code extension for cx
 
-VSCode language support for [delta-lang](https://delta-lang.github.io).
+VS Code language support for the [cx programming language](https://github.com/cx-language/cx).
 
 <p align="center">
   <img src="./assets/demo.png">
@@ -12,7 +12,7 @@ Syntax highlighting and some snippets.
 
 ## Installation
 
-Simply use the VSCode "install extensions" command and search for `delta`.
+Use the VS Code "install extensions" command and search for `cx`.
 
 Alternatively, you can download the `.vsix` file from Releases, and run 
 

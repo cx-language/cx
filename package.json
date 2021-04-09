@@ -1,9 +1,9 @@
 {
-	"name": "delta-language",
-	"displayName": "Delta Language",
-	"description": "Support for the Delta language",
+	"name": "cx-language",
+	"displayName": "cx Language",
+	"description": "Support for the cx programming language",
 	"version": "0.1.0",
-	"publisher": "delta-lang",
+	"publisher": "cx-language",
 	"engines": {
 		"vscode": "^1.17.0"
 	},
@@ -11,32 +11,31 @@
 		"Programming Languages"
 	],
 	"repository": {
-		"url": "https://github.com/delta-lang/delta-vscode"
+		"url": "https://github.com/cx-language/vscode-cx"
 	},
 	"contributes": {
 		"languages": [
 			{
-				"id": "delta",
+				"id": "cx",
 				"aliases": [
-					"Delta",
-					"delta"
+					"cx"
 				],
 				"extensions": [
-					".delta"
+					".cx"
 				],
 				"configuration": "./language-configuration.json"
 			}
 		],
 		"grammars": [
 			{
-				"language": "delta",
-				"scopeName": "source.delta",
-				"path": "./syntaxes/delta.json"
+				"language": "cx",
+				"scopeName": "source.cx",
+				"path": "./syntaxes/cx.json"
 			}
 		],
 		"snippets": [
 			{
-				"language": "delta",
+				"language": "cx",
 				"path": "./snippets/snippets.json"
 			}
 		]

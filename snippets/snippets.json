@@ -68,7 +68,7 @@
     "prefix": "ifelse",
     "body": "\nif ($1) {\n\t$2\n} else {\n\t$3\n}\n",
     "description": "if ... else ...",
-    "scope": "source.delta"
+    "scope": "source.cx"
   },
   "#if": {
     "prefix": "#if",
