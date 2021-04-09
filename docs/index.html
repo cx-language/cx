@@ -1,63 +1,34 @@
+<link rel="stylesheet" href="index.css">
+
 <div class="intro">
     <p>
-        C* is a programming language with the goal of making you more productive at writing efficient software.
-        It supports both low-level and high-level programming, as well as multiple paradigms.
+        C* (pronounced "C star") is a C-based hybrid low-level/high-level programming language focused on runtime
+        performance and developer productivity (in this order of priority). It is unopinionated and flexible, supporting
+        multiple paradigms and styles of programming, without friction or a steep learning curve.
     </p>
 </div>
 
 <div class="features">
     <div class="block">
-        <h4>Performance-first approach to common programming patterns</h4>
-        <ul>
-            <li>Non-allocating subtype polymorphism and dynamic dispatch using tagged unions</li>
-            <li>Non-allocating map(), filter(), etc. using lazy iterators</li>
-            <li>Non-allocating string and array operations using slices</li>
-        </ul>
+        <h4>Performance</h4>
+        C* compiles to efficient native code using LLVM. There's no garbage collection, hidden allocations, or runtime.
+        C* takes a performance-first approach to common programming patterns, such as subtyping (tagged unions),
+        map/filter/reduce (lazy iterators), and string/array handling (slices). Even fast compilation is a goal of C*.
     </div>
 
     <div class="block">
-        <h4>Full control over what your code is doing</h4>
-        <ul>
-            <li>No hidden allocations, no implicit deep copies, no runtime</li>
-            <li>Support for ownership-based, reference-counted, and manual memory management</li>
-            <li>Reference-like pointers, and array pointers supporting pointer arithmetic</li>
-        </ul>
+        <h4>Expressiveness</h4>
+        C* is a simple yet expressive language, featuring a strong type system with compile-time null-safety. It has all
+        the features you'd except from a systems-level programming language, like pointers, RAII, templates, type
+        inference, smart pointers, trait-like interfaces, and sum types. There's preprocessor, macros, or
+        metaprogramming.
     </div>
 
     <div class="block">
-        <h4>Speed up the edit-compile-run cycle</h4>
-        <ul>
-            <li>Clean syntax without unnecessary boilerplate</li>
-            <li>No compilation bottlenecks like header files or heavy meta-programming</li>
-            <li>Helpful diagnostics, prefer warnings over errors that get in the way of refactoring</li>
-        </ul>
-    </div>
-
-    <div class="block">
-        <h4>Run fast</h4>
-        <ul>
-            <li>Efficient native machine code optimized using LLVM</li>
-            <li>More optimization opportunities: destructive moves, undefined integer overflow, etc.</li>
-            <li>Follows the "pay only for what you use" principle</li>
-        </ul>
-    </div>
-
-    <div class="block">
-        <h4>Fail fast</h4>
-        <ul>
-            <li>Strongly typed, implicit conversions disallowed by default</li>
-            <li>Compile-time null-safety using nullable types</li>
-            <li>Optional arithmetic overflow checks and array bounds checks</li>
-        </ul>
-    </div>
-
-    <div class="block">
-        <h4>Use existing skills, workflows, and libraries</h4>
-        <ul>
-            <li>Minimal learning curve for C and C++ programmers</li>
-            <li>Doesn't force a specific style or paradigm, lets you choose what suits your project best</li>
-            <li>Ability to import C headers and use C libraries directly</li>
-        </ul>
+        <h4>Productivity</h4>
+        C* allows effortless language interop: import C headers directly without the need for bindings. The clean and
+        familiar C-like syntax avoids unnecessary boilerplate, allowing you to get instantly productive without a steep
+        learning curve. Debug builds check for buffer or arithmetic overflows by default.
     </div>
 </div>
 
@@ -68,16 +39,16 @@
 
 <div class="features">
     <div class="block wide">
-        <h4>Planned features</h4>
+        <h4>Future plans</h4>
         <ul>
-            <li>Built-in dependency management and build system</li>
-            <li>Built-in linter to enforce project-specific conventions</li>
+            <li>Ecosystem and tooling improvements</li>
+            <li>Documentation</li>
+            <li>Built-in dependency manager</li>
+            <li>Optional runtime checks to ensure memory safety, such as integrating AddressSanitizer</li>
+            <li>Good error handling model</li>
+            <li>Concurrency support</li>
             <li>Fast compilation</li>
-            <li>Static reflection</li>
-            <li>Error handling</li>
-            <li>Builtin vector types</li>
-            <li>Optional compiler-enforced memory-safe subset</li>
-            <li>Optional runtime checks to alleviate lack of memory safety</li>
+            <li>Linter to enforce project-specific coding conventions</li>
         </ul>
     </div>
 </div>
