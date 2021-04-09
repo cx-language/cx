@@ -19,6 +19,10 @@ for file in book/*.md index.html; do
 
     basename="${basename%.*}"
     pandoc "$file" -o "build/$basename.html" -s --include-before-body="top-nav.html" $toc --metadata pagetitle="C*"
+
+    template=$(<"build/$basename.html")
+    example=$(<../examples/tree.cx)
+    echo "${template//##EXAMPLECODE##/$example}" > "build/$basename.html"
 done
 
 cp -r *.css *.js lib build
