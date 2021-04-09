@@ -14,6 +14,7 @@ void main() {
     testLines();
     testParseInt();
     testEscape();
+    testRepeat();
 }
 
 void testStringIterator() {
@@ -148,4 +149,12 @@ void testEscape() {
     assert("".escape() == "");
     assert("0 r t \' n".escape() == "0 r t ' n");
     assert("\0 \r \t \' \" \\ \n".escape() == "\\0 \\r \\t ' \\\" \\\\ \\n");
+}
+
+void testRepeat() {
+    assert("abc".repeat(3) == "abcabcabc");
+    assert("1".repeat(5) == "11111");
+    assert("".repeat(3) == "");
+    assert("abc".repeat(0) == "");
+    assert("abc".repeat(1) == "abc");
 }

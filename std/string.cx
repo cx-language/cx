@@ -144,6 +144,15 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return result;
     }
 
+    // TODO: Return non-allocating iterator instead of allocating a string buffer.
+    StringBuffer repeat(int count) {
+        var result = StringBuffer(capacity: this.size() * count);
+        for (var _ in 0..count) {
+            result += this;
+        }
+        return result;
+    }
+
     void print(StringBuffer* stream) {
         stream.write(this);
     }

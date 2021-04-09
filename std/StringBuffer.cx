@@ -7,6 +7,12 @@ struct StringBuffer: Comparable, Hashable, Printable {
         characters.push('\0');
     }
 
+    /// Initializes an empty string with pre-allocated capacity.
+    StringBuffer(public int capacity) {
+        init();
+        characters.reserve(capacity);
+    }
+
     StringBuffer(string s) {
         characters = List(capacity: s.size() + 1);
 
@@ -33,7 +39,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     /// Initializes the buffer to contain the given number of uninitialized bytes.
-    StringBuffer(int uninitializedSize) {
+    StringBuffer(public int uninitializedSize) {
         characters = List(uninitializedSize: uninitializedSize + 1);
         characters[uninitializedSize] = '\0';
     }
