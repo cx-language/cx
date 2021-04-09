@@ -263,6 +263,9 @@ struct CToCxConverter : clang::ASTConsumer {
         auto params = map(decl.parameters(),
                           [](clang::ParmVarDecl* param) { return ParamDecl(::toCx(param->getType()), param->getNameAsString(), false, SourceLocation()); });
         FunctionProto proto(decl.getNameAsString(), std::move(params), ::toCx(decl.getReturnType()), decl.isVariadic(), true);
+        if (auto asmLabelAttr = decl.getAttr<clang::AsmLabelAttr>()) {
+            proto.asmLabel = asmLabelAttr->getLabel().str();
+        }
         return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, *currentModule, toCx(decl.getLocation()));
     }
 

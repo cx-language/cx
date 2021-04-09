@@ -1,0 +1,7 @@
+// RUN: check-snapshots
+
+import "./asm-label-attribute.h";
+
+void main() {
+    FOO();
+}

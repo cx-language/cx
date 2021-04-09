@@ -110,7 +110,9 @@ std::string cx::mangleFunctionDecl(const FunctionDecl& functionDecl) {
     std::string mangled;
     llvm::raw_string_ostream stream(mangled);
 
-    if (functionDecl.isExtern() || functionDecl.isMain()) {
+    if (!functionDecl.getProto().asmLabel.empty()) {
+        stream << '\01' << functionDecl.getProto().asmLabel;
+    } else if (functionDecl.isExtern() || functionDecl.isMain()) {
         stream << functionDecl.getName();
     } else {
         stream << cxPrefix;

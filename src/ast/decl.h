@@ -190,12 +190,12 @@ struct FunctionProto {
     bool isExtern() const { return external; }
     FunctionProto instantiate(const llvm::StringMap<Type>& genericArgs) const;
 
-private:
     std::string name;
     std::vector<ParamDecl> params;
     Type returnType;
     bool varArg;
     bool external;
+    std::string asmLabel;
 };
 
 std::string getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::ArrayRef<Type> genericArgs);
