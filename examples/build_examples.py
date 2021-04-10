@@ -16,7 +16,7 @@ for file in glob.glob("*.cx"):
 
     extension = ".out" if platform.system() != "Windows" else ".exe"
     output = os.path.splitext(file)[0] + extension
-    exit_status = subprocess.call([cx_path, file, "-o", output])
+    exit_status = subprocess.call([cx_path, file, "-o", output, "-Werror"])
     if exit_status != 0:
         sys.exit(1)
 
