@@ -154,10 +154,9 @@ struct OrderedMap<Key, Value> {
 
                 if (newNode == null) {
                     if (goLeft) {
-                        // TODO: Shouldn't need to unwrap parent here.
-                        parent!.left = allocate(AVLnode<Key, Value>(key, parent, value)); // TODO: Should work without specifying generic arguments.
+                        parent.left = allocate(AVLnode<Key, Value>(key, parent, value)); // TODO: Should work without specifying generic arguments.
                     } else {
-                        parent!.right = allocate(AVLnode<Key, Value>(key, parent, value));
+                        parent.right = allocate(AVLnode<Key, Value>(key, parent, value));
                     }
 
                     rebalance(parent);
@@ -186,21 +185,21 @@ struct OrderedMap<Key, Value> {
             parent = n;
             n = child;
             child = *key >= n.entry.key ? n.right : n.left;
-            if (*key == n!.entry.key) {
+            if (*key == n.entry.key) {
                 delNode = n;
             }
         }
 
         if (delNode != null) {
-            delNode.entry.key = n!.entry.key;
+            delNode.entry.key = n.entry.key;
             delNode.entry.value = n.entry.value;
 
             child = n.left != null ? n.left : n.right;
 
-            if (root!.entry.key == *key) {
+            if (root.entry.key == *key) {
                 root = child;
             } else {
-                if (parent!.left === n) {
+                if (parent.left === n) {
                     parent.left = child;
                 } else {
                     parent.right = child;

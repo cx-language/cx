@@ -1,0 +1,14 @@
+// RUN: %cx -typecheck -Werror -Wno-unused %s
+
+struct S {
+    string x;
+}
+
+void foo(string n, S*? p) {
+    while (p) {
+        if (p.x == "x" || p.x == "y")
+            continue;
+
+        var r = n + '/' + p.x;
+    }
+}
