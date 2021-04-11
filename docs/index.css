@@ -2,9 +2,10 @@
     --background-color: #fff;
     --background-color-2: #f8f9fc;
     --background-color-3: hsla(0, 0%, 0%, 0.1);
-    --text-color: #222;
+    --text-color: #333;
     --text-color-subtle: hsla(240, 100%, 5%, 0.4);
-    --blue: #004ecc;
+    --title-color: lightsteelblue;
+    --blue: hsl(220, 74%, 46%);
     --string-color: #008000;
     --number-color: #a31515;
     --error-background-color: #fdd;
@@ -17,6 +18,7 @@
         --background-color-3: hsla(0, 0%, 100%, 0.1);
         --text-color: #e2e4e9;
         --text-color-subtle: hsla(243, 65%, 93%, 0.36);
+        --title-color: #b0c4de66;
         --blue: hsl(213, 60%, 58%);
         --string-color: hsl(0, 58%, 70%);
         --number-color: #b5cea8;
@@ -37,17 +39,15 @@ html {
 body {
     position: relative;
     max-width: 800px;
-    margin: 20px auto 60px auto;
-    padding: 0;
+    margin: 0 auto 60px auto;
+    padding: 20px;
+    box-sizing: content-box;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Droid Sans, Helvetica Neue, Arial, sans-serif;
     font-size: 16px;
 }
 
-h1 a {
-    font-weight: normal;
-    color: unset;
-    text-decoration: unset;
-    margin-right: 20px;
+h1 {
+    margin-top: 30px;
 }
 
 a, a:visited {
@@ -107,11 +107,21 @@ pre, .editor {
 }
 
 .top-nav h1 {
-    margin: 20px 0;
+    margin: 20px 20px 20px 0;
+    font-weight: 900;
+    font-family: Arial Black, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Droid Sans, Helvetica Neue, Arial, sans-serif;
+    font-size: 2.5em;
+    color: var(--title-color);
+}
+
+.top-nav h1 a {
+    color: unset;
+    text-decoration: unset;
 }
 
 .links {
     white-space: nowrap;
+    margin: 40px 0;
 }
 
 .links a + a {
@@ -120,7 +130,7 @@ pre, .editor {
 
 .side-nav {
     margin: 30px 0;
-    padding: 0 20px;
+    padding: 0 30px 0 20px;
     white-space: nowrap;
 }
 
@@ -129,28 +139,28 @@ pre, .editor {
     list-style-type: none;
 }
 
-@media screen and (min-width: 1120px) {
+@media screen and (min-width: 1300px) {
     .side-nav {
-        width: 230px;
+        width: 250px;
         position: absolute;
-        margin-left: -230px;
+        margin-left: -250px;
     }
 }
 
-.intro, .features {
-    margin: 25px 0;
+section {
+    margin: 30px 0;
 }
 
 .features {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr;
     grid-gap: 30px;
     margin: 30px 0;
 }
 
-@media only screen and (max-width: 600px) {
+@media screen and (min-width: 768px) {
     .features {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
     }
 }
 
@@ -160,7 +170,7 @@ h4 {
 }
 
 .block {
-    margin-bottom: 30px;
+    margin: 0;
 }
 
 .block p {
@@ -219,8 +229,14 @@ button:focus {
 button.run {
     position: absolute;
     right: 0;
-    margin: -40px 10px -40px -40px;
+    margin: -40px 30px -40px -40px;
     z-index: 10;
+    color: var(--text-color-subtle);
+}
+
+button.run:hover {
+    background: none;
+    color: var(--text-color);
 }
 
 .output {

@@ -21,7 +21,7 @@ function initializeCodeEditor(block) {
     }, 1);
 
     const runButton = document.createElement("button");
-    runButton.innerText = "▶";
+    runButton.innerText = "▶\uFE0E";
     runButton.className = "run";
     editorWrapper.appendChild(runButton);
 
