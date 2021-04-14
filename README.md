@@ -4,7 +4,7 @@ C* (pronounced "C star") is a performance-oriented programming language designed
 The project is still in early stages of development: some planned features have not yet been implemented,
 existing ones are subject to change, and the documentation is scarce.
 
-Learn more about the language at https://cx-language.github.io.
+Learn more about the language at http://cx-lang.org.
 
 ## Contributing
 
