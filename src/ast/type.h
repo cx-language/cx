@@ -80,11 +80,13 @@ struct Type {
     bool isInt16() const;
     bool isInt32() const;
     bool isInt64() const;
+    bool isInt128() const;
     bool isUInt() const;
     bool isUInt8() const;
     bool isUInt16() const;
     bool isUInt32() const;
     bool isUInt64() const;
+    bool isUInt128() const;
     bool isFloat() const;
     bool isFloat32() const;
     bool isFloat64() const;
@@ -134,11 +136,13 @@ struct Type {
     static Type getInt16(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getInt32(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getInt64(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
+    static Type getInt128(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getUInt(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getUInt8(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getUInt16(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getUInt32(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static Type getUInt64(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
+    static Type getUInt128(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     // TODO: Return correct uintptr type by checking target platform pointer size.
     static Type getUIntPtr(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation()) { return getUInt64(mutability, location); }
     static Type getFloat(Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());

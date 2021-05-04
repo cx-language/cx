@@ -20,7 +20,8 @@ Compiling C* requires a C++17 compiler, [CMake](https://cmake.org), and
 - ### Unix / macOS
 
     Download and extract LLVM/Clang 11 pre-built binaries for your platform from
-    https://releases.llvm.org/download.html. Then run the following commands:
+    https://releases.llvm.org/download.html, or using a package manager, e.g. `brew install llvm@11`.
+    Then run the following commands:
 
       mkdir build
       cd build
@@ -40,7 +41,7 @@ Compiling C* requires a C++17 compiler, [CMake](https://cmake.org), and
 To run the tests, install [lit](https://llvm.org/docs/CommandGuide/lit.html)
 and its optional dependencies via [pip](https://pip.pypa.io/en/stable/installing/):
 
-    sudo python -m pip install lit psutil
+    sudo python3 -m pip install lit psutil
 
 After this, the following commands can be invoked from the `build` directory:
 

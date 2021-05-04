@@ -80,10 +80,14 @@ static Type toCx(const clang::BuiltinType& type) {
             return Type::getFloat64();
         case clang::BuiltinType::LongDouble:
             return Type::getFloat80();
+        case clang::BuiltinType::Int128:
+            return Type::getInt128();
+        case clang::BuiltinType::UInt128:
+            return Type::getUInt128();
         default:
-            break;
+            type.dump();
+            llvm_unreachable("unsupported clang::BuiltinType");
     }
-    llvm_unreachable("unsupported builtin type");
 }
 
 static llvm::StringRef getName(const clang::TagDecl& decl) {
