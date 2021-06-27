@@ -19,7 +19,7 @@ for compiler_flag, extension in checks:
     snapshot_path = test_file + extension
 
     try:
-        output = subprocess.check_output(sys.argv[1:] + [compiler_flag])
+        output = subprocess.check_output(sys.argv[1:] + [compiler_flag], text=True)
     except subprocess.CalledProcessError as error:
         print(error.output)
         sys.exit(error.returncode)
