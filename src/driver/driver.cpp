@@ -24,7 +24,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #pragma warning(pop)
-#include "clang.h"
+#include "clang_driver.h"
 #include "../ast/module.h"
 #include "../backend/irgen.h"
 #include "../backend/llvm.h"
@@ -200,10 +200,17 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     Module mainModule("main");
+    std::vector<std::string> nonCxInputFiles;
 
-    for (llvm::StringRef filePath : files) {
-        Parser parser(filePath, mainModule, options);
-        parser.parse();
+    for (auto& filePath : files) {
+        if (llvm::StringRef(filePath).endswith(".cx")) {
+            Parser parser(filePath, mainModule, options);
+            parser.parse();
+        } else {
+            llvm::SmallString<128> absolutePath(filePath);
+            llvm::sys::fs::make_absolute(absolutePath);
+            nonCxInputFiles.push_back(absolutePath.str().str());
+        }
     }
 
     if (parse) return errors ? 1 : 0;
@@ -307,6 +314,10 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
         temporaryOutputFilePath.c_str(),
     };
 
+    for (auto& filePath : nonCxInputFiles) {
+        ccArgs.push_back(filePath.c_str());
+    }
+
     ccArgs.push_back(msvc ? "-Fe:" : "-o");
     ccArgs.push_back(temporaryExecutablePath.c_str());
 
@@ -323,7 +334,11 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     std::vector<llvm::StringRef> ccArgStringRefs(ccArgs.begin(), ccArgs.end());
-    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs) : invokeClang(ccArgs);
+    std::vector<std::string> aa;
+    std::vector<const char*> bb;
+    for (auto& p : ccArgs) {aa.push_back(p);llvm::outs()<<p<<" ";}
+    for (auto& p : aa) {bb.push_back(p.c_str());}
+    int ccExitStatus = msvc ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs) : clang_main(bb.size(), bb.data());
     llvm::sys::fs::remove(temporaryOutputFilePath);
     if (ccExitStatus != 0) return ccExitStatus;
 
