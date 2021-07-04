@@ -15,7 +15,7 @@ bool Expr::isAssignment() const {
 
 bool Expr::isReferenceExpr() const {
     auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(this);
-    return unaryExpr && unaryExpr->getOperator() == Token::And;
+    return unaryExpr && unaryExpr->getOperator() == Token::Ref;
 }
 
 bool Expr::isConstant() const {
