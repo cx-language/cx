@@ -18,7 +18,9 @@ for file in os.listdir("."):
         exit_status = subprocess.call([cx_path, file, "-o", output, "-Werror"])
         os.remove(output)
     elif file != "inputs" and os.path.isdir(file):
-        exit_status = subprocess.call(["make", "-C", file])
+        env = os.environ.copy()
+        env["PATH"] = os.path.dirname(cx_path) + ":" + env["PATH"]
+        exit_status = subprocess.call(["make", "-C", file], env=env)
     else:
         continue
 
