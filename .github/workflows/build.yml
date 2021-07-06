@@ -63,6 +63,13 @@ jobs:
         shell: bash
         run: |
           pip install lit psutil
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get install libsdl2-dev
+          fi
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            brew install sdl2
+          fi
+          # Tests depending on SDL2 are disabled on Windows CI.
           cmake --build . --config $BUILD_TYPE --target check
 
   deploy-website:
