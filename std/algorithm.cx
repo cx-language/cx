@@ -25,7 +25,7 @@ void swap<E>(E* a, E* b) {
 
 // TODO: Use ArrayRef instead of List.
 /// Sorts a array. Uses insertion sort if the array is small enough, and quickSort otherwise.
-void sort<E: Comparable>(List<E>* array)  {
+void sort<E: Comparable>(List<E>* array) {
     if (array.size() <= 32) {
         insertionSort(array);
     } else {

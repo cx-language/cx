@@ -1,70 +1,58 @@
-struct Tape
-{
+struct Tape {
     List<int> tape;
     int pos;
 
-    Tape()
-    {
+    Tape() {
         tape = List([0]);
         pos = 0;
     }
 
-    int value()
-    {
+    int value() {
         return tape[pos];
     }
 
-    void increment()
-    {
+    void increment() {
         tape[pos]++;
     }
 
-    void decrement()
-    {
+    void decrement() {
         tape[pos]--;
     }
 
-    void forward()
-    {
+    void forward() {
         pos++;
 
         if (pos >= tape.size())
             tape.push(0);
     }
 
-    void backward()
-    {
+    void backward() {
         if (pos > 0)
             pos--;
     }
 }
 
-struct Program
-{
+struct Program {
     StringBuffer code;
     Map<int, int> bracketMap;
 
-    Program(string text)
-    {
+    Program(string text) {
         code = StringBuffer();
         bracketMap = Map();
 
         var leftStack = List<int>();
         var pc = 0;
 
-        for (var ch in text)
-        {
+        for (var ch in text) {
             if (!"+-><[].,".contains(ch))
                 continue;
 
-            switch (ch)
-            {
+            switch (ch) {
                 case '[':
                     leftStack.push(pc);
 
                 case ']':
-                    if (!leftStack.empty())
-                    {
+                    if (!leftStack.empty()) {
                         var left = leftStack.pop();
                         var right = pc;
                         bracketMap.set(left, right);
@@ -77,16 +65,13 @@ struct Program
         }
     }
 
-    void run()
-    {
+    void run() {
         var tape = Tape();
         var pc = 0;
         var size = code.size();
 
-        while (pc < size)
-        {
-            switch (code[pc])
-            {
+        while (pc < size) {
+            switch (code[pc]) {
                 case '+':
                     tape.increment();
 
@@ -116,8 +101,7 @@ struct Program
     }
 }
 
-void main()
-{
+void main() {
     var text = readFile("inputs/mandel.b");
     Program(string(text)).run();
 }

@@ -2,8 +2,7 @@
 
 extern void f(int* i);
 
-void a(int* p)
-{
+void a(int* p) {
     var q = p;
     // CHECK: [[@LINE+1]]:7: error: invalid argument #1 type 'int**' to 'f', expected 'int*'
     f(&q);
