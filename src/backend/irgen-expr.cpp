@@ -428,7 +428,7 @@ Value* IRGenerator::emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaFor
 Value* IRGenerator::emitBuiltinCast(const CallExpr& expr) {
     auto* value = emitExpr(*expr.getArgs().front().getValue());
     auto type = expr.getGenericArgs().front();
-    return createCast(value, type);
+    return createCastIfNeeded(value, type);
 }
 
 Value* IRGenerator::emitSizeofExpr(const SizeofExpr& expr) {
