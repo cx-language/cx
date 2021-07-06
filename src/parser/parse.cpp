@@ -557,6 +557,7 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
 bool Parser::shouldParseVarStmt() {
     if (currentToken().is({ Token::Var, Token::Const })) return true;
     if (!currentToken().is({ Token::Identifier, Token::LeftParen })) return false;
+    if (lookAhead(1).is(Token::Dot) || isCompoundAssignmentOperator(lookAhead(1))) return false;
     int offset = 2;
 
     while (true) {
@@ -573,15 +574,14 @@ bool Parser::shouldParseVarStmt() {
                 }
             }
             return false;
-        } else {
-            if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).getLocation().line != lookAhead(offset - 1).getLocation().line) {
-                if (lookAhead(offset - 1).is(Token::Identifier)) {
-                    if (lookAhead(offset - 2).is({ Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater, Token::Star })) {
-                        return true;
-                    }
+        } else if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).getLocation().line != lookAhead(offset - 1).getLocation().line) {
+            if (lookAhead(offset - 1).is(Token::Identifier)) {
+                if (lookAhead(offset - 2).is({ Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater, Token::Star })) {
+                    return true;
                 }
-                return false;
             }
+            return false;
+        } else {
             offset++;
         }
     }
