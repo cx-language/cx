@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import glob
 import os
 import platform
 import subprocess
@@ -10,13 +9,19 @@ cx_path = sys.argv[1] if len(sys.argv) > 1 else "cx"
 
 os.chdir(os.path.dirname(__file__))
 
-for file in glob.glob("*.cx"):
-    if platform.system() == "Windows" and file == "tree.cx":
+for file in os.listdir("."):
+    if platform.system() == "Windows" and file in ["tree.cx", "asteroids"]:
         continue
 
-    extension = ".out" if platform.system() != "Windows" else ".exe"
-    output = os.path.splitext(file)[0] + extension
-    exit_status = subprocess.call([cx_path, file, "-o", output, "-Werror"])
+    if file.endswith(".cx"):
+        output = os.path.splitext(file)[0] + (".exe" if platform.system() == "Windows" else "")
+        exit_status = subprocess.call([cx_path, file, "-o", output, "-Werror"])
+        os.remove(output)
+    elif file != "inputs" and os.path.isdir(file):
+        exit_status = subprocess.call(["make", "-C", file])
+    else:
+        continue
+
     if exit_status != 0:
         sys.exit(1)
 
