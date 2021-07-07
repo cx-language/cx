@@ -73,7 +73,7 @@ jobs:
           cmake --build . --config $BUILD_TYPE --target check
 
   deploy-website:
-    if: github.repository == 'cx-language/cx' && github.ref == 'refs/heads/master'
+    if: github.repository == 'cx-language/cx' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     steps:
