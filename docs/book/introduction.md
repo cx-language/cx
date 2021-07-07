@@ -17,7 +17,7 @@ The primary goals of C* are:
 
 ## Why C*?
 
-C++ is a large and complex language that has accumulated many problems over the years, for example:
+C++ is a huge and complex language that has accumulated many problems over the years, for example:
 
 - No standard build system.
 - No standard way to manage dependencies.
@@ -28,8 +28,7 @@ C++ is a large and complex language that has accumulated many problems over the 
 - Syntax is overly verbose in some cases (think lambdas, smart pointers).
 - No compile-time reflection (ever wanted to iterate over the values of an enum?).
 - Too many implicit conversion between data types, which cause bugs too easily.
-- Mutability by default.
-- No proper tagged union type (no, `std::variant` [doesn't count][8]).
+- No proper tagged union type (`std::variant` [is too tedious][8]).
 - Poor support for functional programming.
 - Deep copying is implicit, while moving is explicit (in most cases).
 - Switch case-statement fallthrough is implicit, requires explicit `break` to avoid.
@@ -39,7 +38,7 @@ C++ is a large and complex language that has accumulated many problems over the 
   (e.g. no way to express non-nullable reassignable pointers, without resorting
   to a class like `std::reference_wrapper`). No non-nullable smart pointers.
 - String literals have array type (should be string slices).
-- No array/vector range checks in debug builds.
+- No buffer or arithmetic overflow checks in debug builds.
 - Standard library severely lacking:
   - No standard file system API (added in C++17).
   - No Unicode-aware string type.
@@ -367,8 +366,6 @@ The strong type system ensures that type inference will not cause any unexpected
 
 - C* doesn't require importing files from the same project.
   All C* files in the project source directory are by default assumed to belong to the project as a "convention over configuration".
-
-- C* is a simpler language in terms of the number of language features.
 
 - C* has a more familiar C-style syntax, which:
   - allows C/C++ programmers to be immediately productive with it
