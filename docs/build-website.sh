@@ -1,3 +1,5 @@
+pandoc --version >/dev/null || exit
+
 cd spec || exit
 rm -rf ../build
 mkdir ../build

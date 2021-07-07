@@ -1,11 +1,10 @@
 :root {
     --background-color: #fff;
-    --background-color-2: #f8f9fc;
+    --background-color-2: #f9f9fb;
     --background-color-3: hsla(0, 0%, 0%, 0.1);
     --text-color: #333;
     --text-color-subtle: hsla(240, 100%, 5%, 0.4);
-    --title-color: lightsteelblue;
-    --blue: hsl(220, 74%, 46%);
+    --blue: hsl(216, 74%, 46%);
     --string-color: #008000;
     --number-color: #a31515;
     --error-background-color: #fdd;
@@ -18,7 +17,6 @@
         --background-color-3: hsla(0, 0%, 100%, 0.1);
         --text-color: #e2e4e9;
         --text-color-subtle: hsla(243, 65%, 93%, 0.36);
-        --title-color: #b0c4de66;
         --blue: hsl(213, 60%, 58%);
         --string-color: hsl(0, 58%, 70%);
         --number-color: #b5cea8;
@@ -39,7 +37,7 @@ html {
 body {
     position: relative;
     max-width: 800px;
-    margin: 0 auto 60px auto;
+    margin: 0 auto 100px auto;
     padding: 20px;
     box-sizing: content-box;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Droid Sans, Helvetica Neue, Arial, sans-serif;
@@ -80,7 +78,6 @@ pre, code, .sourceCode {
 
 :not(pre) > code {
     font-size: 92%;
-    font-weight: bold;
 }
 
 .sourceCode, pre code {
@@ -98,20 +95,22 @@ pre, .editor {
 }
 
 .top-nav {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    grid-row-gap: 20px;
     align-items: center;
-    text-align: right;
-    flex-wrap: wrap;
     border-bottom: 1px solid var(--background-color-3);
+    padding: 30px 0;
 }
 
 .top-nav h1 {
-    margin: 20px 20px 20px 0;
     font-weight: 900;
     font-family: Arial Black, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Droid Sans, Helvetica Neue, Arial, sans-serif;
     font-size: 2.5em;
-    color: var(--title-color);
+    line-height: 1;
+    margin: 0;
+    margin-right: 15px;
 }
 
 .top-nav h1 a {
@@ -121,7 +120,18 @@ pre, .editor {
 
 .links {
     white-space: nowrap;
-    margin: 40px 0;
+}
+
+@media screen and (min-width: 360px) {
+    .top-nav {
+        grid-template-columns: max-content auto;
+        grid-template-rows: none;
+    }
+
+    .links {
+        text-align: right;
+        margin-top: 0;
+    }
 }
 
 .links a + a {
@@ -250,4 +260,12 @@ button.run:hover {
 
 .stderr {
     color: red;
+}
+
+.bottom-links {
+    text-align: center;
+}
+
+.bottom-links a + a {
+    margin-left: 30px;
 }
