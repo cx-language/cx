@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 project(cx)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_UNITY_BUILD ON)
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "-w14062 -wd4244 -D_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING ${CMAKE_CXX_FLAGS}")
@@ -67,6 +67,7 @@ enable_testing()
 
 file(GLOB_RECURSE CX_SOURCES src/*.h src/*.cpp)
 add_executable(cx ${CX_SOURCES})
+target_precompile_headers(cx PRIVATE src/pch.h)
 
 llvm_map_components_to_libnames(LLVM_LIBS core native linker support)
 list(APPEND LLVM_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema)
@@ -105,17 +106,8 @@ endif()
 
 add_dependencies(check FileCheck)
 
-set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/cmake-modules)
-
 file(DOWNLOAD
     "https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-${LLVM_PACKAGE_VERSION}/clang-tools-extra/clang-tidy/tool/run-clang-tidy.py"
     "${CMAKE_BINARY_DIR}/run-clang-tidy.py")
 add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" "${CMAKE_BINARY_DIR}" --check)
 add_custom_target(format COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" "${CMAKE_BINARY_DIR}" --skip-clang-tidy)
-
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")
-    message(STATUS "Downloading 'cotire'")
-    file(DOWNLOAD "https://github.com/sakra/cotire/raw/master/CMake/cotire.cmake" "${CMAKE_BINARY_DIR}/cmake-modules/cotire.cmake")
-endif()
-include(cotire)
-cotire(cx)

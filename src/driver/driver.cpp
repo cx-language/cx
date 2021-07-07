@@ -53,7 +53,8 @@ cl::opt<bool> parse("parse", cl::desc("Parse only"));
 cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"));
 cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"));
 cl::opt<bool> printIR("print-ir", cl::desc("Print C* intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
-cl::opt<bool> printIRAll("print-ir-all", cl::desc("Print C* intermediate representation of all compiled modules"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
+cl::opt<bool> printIRAll("print-ir-all", cl::desc("Print C* intermediate representation of all compiled modules"), cl::sub(build),
+                         cl::sub(*cl::TopLevelSubCommand));
 cl::opt<bool> printLLVM("print-llvm", cl::desc("Print LLVM intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
 // TODO: Add -print-llvm-all option.
 cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"));
