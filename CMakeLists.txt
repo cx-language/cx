@@ -78,7 +78,7 @@ add_custom_target(check_lit COMMAND lit --verbose --succinct --incremental ${EXT
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dtest_helper_scripts_path="${PROJECT_SOURCE_DIR}/test"
     USES_TERMINAL)
-add_custom_target(check_examples COMMAND python "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "$<TARGET_FILE:cx>")
+add_custom_target(check_examples COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "$<TARGET_FILE:cx>")
 add_custom_target(check)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check check_lit check_examples)
