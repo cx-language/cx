@@ -48,12 +48,20 @@ void println<T: Printable>(Optional<T>* optional) {
     }
 }
 
-void print(char[*] cString) {
-    printf("%s", cString);
+void print(const char[*]? cString) {
+    if (cString) {
+        printf("%s", cString);
+    } else {
+        printf("%s", "null");
+    }
 }
 
-void println(char[*] cString) {
-    printf("%s\n", cString);
+void println(const char[*]? cString) {
+    if (cString) {
+        printf("%s\n", cString);
+    } else {
+        printf("%s\n", "null");
+    }
 }
 
 // TODO: Make 'print'/'println' variadic functions when those are implemented.

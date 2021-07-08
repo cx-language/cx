@@ -3,10 +3,17 @@
 // CHECK-NEXT:bar
 // CHECK-NEXT:baz
 // CHECK-NEXT:qux
+// CHECK-NEXT:foo
+// CHECK-NEXT:foo_opt
+// CHECK-NEXT:foo_array
+// CHECK-NEXT:foo_array_opt
 
 import "stdio.h";
 
 const char* foo() { return "foo"; }
+const char*? foo_opt() { return "foo_opt"; }
+const char[*] foo_array() { return "foo_array"; }
+const char[*]? foo_array_opt() { return "foo_array_opt"; }
 string bar() { return "bar"; }
 
 void main() {
@@ -14,4 +21,8 @@ void main() {
     println(bar());
     puts("baz");
     println("qux");
+    println(foo());
+    println(foo_opt());
+    println(foo_array());
+    println(foo_array_opt());
 }

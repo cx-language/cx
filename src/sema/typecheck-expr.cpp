@@ -478,9 +478,11 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
             return target;
         }
 
-        if (expr->isStringLiteralExpr() && target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() &&
-            !target.removeOptional().getPointee().isMutable()) {
-            // Special case: allow passing string literals as C-strings (const char*).
+        // Special case: allow passing string literals as C-strings (const char* or const char[*]).
+        if (expr->isStringLiteralExpr() &&
+            ((target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() && !target.removeOptional().getPointee().isMutable()) ||
+             (target.removeOptional().isArrayWithUnknownSize() && target.removeOptional().getElementType().isChar() &&
+              !target.removeOptional().getElementType().isMutable()))) {
             return target;
         }
 

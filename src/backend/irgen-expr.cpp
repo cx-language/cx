@@ -12,7 +12,8 @@ Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
 }
 
 Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
-    if (expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar()) {
+    if ((expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar()) ||
+        (expr.getType().removeOptional().isArrayWithUnknownSize() && expr.getType().removeOptional().getElementType().isChar())) {
         return createGlobalStringPtr(expr.getValue());
     }
 
