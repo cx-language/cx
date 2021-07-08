@@ -1,14 +1,14 @@
 
 int main() {
-    Optional<int8[]>* a = alloca Optional<int8[]>
-    Optional<int8[]>* _0 = alloca Optional<int8[]>
-    void _1 = call _EN3std8OptionalIAR_4int8E4initE(Optional<int8[]>* _0)
-    Optional<int8[]> .load = load _0
+    Optional<ArrayRef<int8>>* a = alloca Optional<ArrayRef<int8>>
+    Optional<ArrayRef<int8>>* _0 = alloca Optional<ArrayRef<int8>>
+    void _1 = call _EN3std8OptionalI8ArrayRefI4int8EE4initE(Optional<ArrayRef<int8>>* _0)
+    Optional<ArrayRef<int8>> .load = load _0
     store .load to a
     return int 0
 }
 
-void _EN3std8OptionalIAR_4int8E4initE(Optional<int8[]>* this) {
+void _EN3std8OptionalI8ArrayRefI4int8EE4initE(Optional<ArrayRef<int8>>* this) {
     bool* hasValue = getelementptr this, 0
     store bool false to hasValue
     return void

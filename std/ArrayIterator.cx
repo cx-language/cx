@@ -7,12 +7,6 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
         end = &array.data()[array.size()];
     }
 
-    // TODO: Remove this overload once ArrayRef<T> is made synonymous with T[].
-    ArrayIterator(ArrayRef<Element> array) {
-        current = array.data();
-        end = &array.data()[array.size()];
-    }
-
     bool hasValue() {
         return current !== end;
     }

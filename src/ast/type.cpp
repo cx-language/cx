@@ -63,8 +63,8 @@ bool Type::isArrayWithConstantSize() const {
     return isArrayType() && getArraySize() >= 0;
 }
 
-bool Type::isArrayWithRuntimeSize() const {
-    return isArrayType() && getArraySize() == ArrayType::runtimeSize;
+bool Type::isArrayRef() const {
+    return isBasicType() && getName() == "ArrayRef";
 }
 
 bool Type::isArrayWithUnknownSize() const {
@@ -232,6 +232,7 @@ std::string Type::getQualifiedTypeName() const {
 }
 
 Type Type::getElementType() const {
+    if (isArrayRef()) return getGenericArgs()[0];
     return llvm::cast<ArrayType>(typeBase)->getElementType().withLocation(location);
 }
 
@@ -374,8 +375,6 @@ void Type::printTo(std::ostream& stream) const {
             getElementType().printTo(stream);
             stream << "[";
             switch (getArraySize()) {
-                case ArrayType::runtimeSize:
-                    break;
                 case ArrayType::unknownSize:
                     stream << "*";
                     break;

@@ -9,7 +9,7 @@ int main() {
     int* _5 = getelementptr _0, 0
     ArrayRef<int> _6 = insertvalue ArrayRef<int> undefined, 0, _5
     ArrayRef<int> _7 = insertvalue _6, 1, int 3
-    void _8 = call _EN4main1fI3intEEAR_3int(ArrayRef<int> _7)
+    void _8 = call _EN4main1fI3intEE8ArrayRefI3intE(ArrayRef<int> _7)
     int[3] _9 = insertvalue int[3] undefined, 0, int 1
     int[3] _10 = insertvalue _9, 1, int 2
     int[3] _11 = insertvalue _10, 2, int 3
@@ -17,13 +17,21 @@ int main() {
     int* _12 = getelementptr _1, 0
     ArrayRef<int> _13 = insertvalue ArrayRef<int> undefined, 0, _12
     ArrayRef<int> _14 = insertvalue _13, 1, int 3
-    void _15 = call _EN4main1fI3intEEAR_3int(ArrayRef<int> _14)
+    void _15 = call _EN4main1fI3intEE8ArrayRefI3intE(ArrayRef<int> _14)
     return int 0
 }
 
-void _EN4main1fI3intEEAR_3int(ArrayRef<int> a) {
+void _EN4main1fI3intEE8ArrayRefI3intE(ArrayRef<int> a) {
     int* s = alloca int
-    int size = extractvalue a, 1
-    store size to s
+    ArrayRef<int>* _0 = alloca ArrayRef<int>
+    store a to _0
+    int _1 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* _0)
+    store _1 to s
     return void
+}
+
+int _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
 }

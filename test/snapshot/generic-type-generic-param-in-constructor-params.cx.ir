@@ -9,10 +9,10 @@ int main() {
     int* _4 = getelementptr b, 0
     ArrayRef<int> _5 = insertvalue ArrayRef<int> undefined, 0, _4
     ArrayRef<int> _6 = insertvalue _5, 1, int 3
-    void _7 = call _EN4main1MI3intE4initEAR_3int(M<int>* _0, ArrayRef<int> _6)
+    void _7 = call _EN4main1MI3intE4initE8ArrayRefI3intE(M<int>* _0, ArrayRef<int> _6)
     return int 0
 }
 
-void _EN4main1MI3intE4initEAR_3int(M<int>* this, ArrayRef<int> a) {
+void _EN4main1MI3intE4initE8ArrayRefI3intE(M<int>* this, ArrayRef<int> a) {
     return void
 }

@@ -68,9 +68,6 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type) {
         case TypeKind::ArrayType:
             stream << 'A';
             switch (type.getArraySize()) {
-                case ArrayType::runtimeSize:
-                    stream << 'R';
-                    break;
                 case ArrayType::unknownSize:
                     stream << 'U';
                     break;

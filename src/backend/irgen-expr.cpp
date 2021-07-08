@@ -460,12 +460,8 @@ Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, c
     }
 }
 
-Value* IRGenerator::getArrayLength(const Expr& object, Type objectType) {
-    if (objectType.isArrayWithRuntimeSize()) {
-        return createExtractValue(emitExpr(object), 1, "size");
-    } else {
-        return createConstantInt(Type::getInt(), objectType.getArraySize());
-    }
+Value* IRGenerator::getArrayLength(const Expr&, Type objectType) {
+    return createConstantInt(Type::getInt(), objectType.getArraySize());
 }
 
 Value* IRGenerator::getArrayIterator(const Expr& object, Type objectType) {
@@ -512,23 +508,15 @@ Value* IRGenerator::emitTupleElementAccess(const MemberExpr& expr) {
 Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
     auto* value = emitLvalueExpr(base);
 
-    if (base.getType().isArrayWithRuntimeSize()) {
-        if (value->getType()->isPointerType()) {
-            value = createLoad(value);
-        }
-        value = createExtractValue(value, 0);
+    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() &&
+        value->getType()->getPointee()->equals(getIRType(base.getType()))) {
+        value = createLoad(value);
+    }
+
+    if (base.getType().removeOptional().isArrayWithUnknownSize()) {
         return createGEP(value, { emitExpr(index) });
     } else {
-        if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() &&
-            value->getType()->getPointee()->equals(getIRType(base.getType()))) {
-            value = createLoad(value);
-        }
-
-        if (base.getType().removeOptional().isArrayWithUnknownSize()) {
-            return createGEP(value, { emitExpr(index) });
-        } else {
-            return createGEP(value, { createConstantInt(Type::getInt(), 0), emitExpr(index) });
-        }
+        return createGEP(value, { createConstantInt(Type::getInt(), 0), emitExpr(index) });
     }
 }
 

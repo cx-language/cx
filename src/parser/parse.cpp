@@ -331,28 +331,28 @@ std::vector<Type> Parser::parseGenericArgumentList() {
     return genericArgs;
 }
 
-int64_t Parser::parseArraySizeInBrackets() {
+Type Parser::parseArrayType(Type elementType) {
     ASSERT(currentToken() == Token::LeftBracket);
     consumeToken();
-    int64_t arraySize;
 
     switch (currentToken()) {
-        case Token::IntegerLiteral:
-            arraySize = consumeToken().getIntegerValue().getExtValue();
-            break;
+        case Token::IntegerLiteral: {
+            auto arraySize = consumeToken().getIntegerValue().getExtValue();
+            parse(Token::RightBracket);
+            return ArrayType::get(elementType, arraySize);
+        }
         case Token::RightBracket:
-            arraySize = ArrayType::runtimeSize;
-            break;
+            consumeToken();
+            return BasicType::get("ArrayRef", elementType);
+
         case Token::Star:
             consumeToken();
-            arraySize = ArrayType::unknownSize;
-            break;
+            parse(Token::RightBracket);
+            return ArrayType::get(elementType, ArrayType::unknownSize);
+
         default:
             ERROR(getCurrentLocation(), "non-literal array bounds not implemented yet");
     }
-
-    parse(Token::RightBracket);
-    return arraySize;
 }
 
 /// simple-type ::= id | id generic-argument-list | id '[' (int-literal | '*')? ']'
@@ -367,9 +367,7 @@ Type Parser::parseSimpleType(Mutability mutability) {
         default:
             return BasicType::get(identifier.getString(), std::move(genericArgs), mutability, identifier.getLocation());
         case Token::LeftBracket:
-            auto bracketLocation = getCurrentLocation();
-            Type elementType = BasicType::get(identifier.getString(), {}, mutability, identifier.getLocation());
-            return ArrayType::get(elementType, parseArraySizeInBrackets(), mutability, bracketLocation);
+            return parseArrayType(BasicType::get(identifier.getString(), {}, mutability, identifier.getLocation()));
     }
 }
 
@@ -443,7 +441,7 @@ Type Parser::parseType() {
                 type = parseFunctionType(type);
                 break;
             case Token::LeftBracket:
-                type = ArrayType::get(type, parseArraySizeInBrackets(), type.getMutability(), getCurrentLocation());
+                type = parseArrayType(type);
                 break;
             case Token::And:
                 ERROR(getCurrentLocation(), "C* doesn't have C++-style references; use pointers ('*') instead, they are non-null by default");

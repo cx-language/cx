@@ -1,0 +1,3 @@
+// RUN: check-snapshots -Wno-unused
+
+void foo(int[]* a) {}

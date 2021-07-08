@@ -417,9 +417,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isArrayType() && target.isArrayType() && source.getElementType() == target.getElementType()) {
-        if (source.getArraySize() == target.getArraySize()) return source;
-        if (source.isArrayWithConstantSize() && (target.isArrayWithUnknownSize() || target.isArrayWithRuntimeSize())) return source;
+    if (source.isArrayType() && (target.isArrayType() || target.isArrayRef()) && source.getElementType() == target.getElementType()) {
+        if (target.isArrayType() && source.getArraySize() == target.getArraySize()) return source;
+        if (source.isArrayWithConstantSize() && (target.isArrayWithUnknownSize() || target.isArrayRef())) return source;
     }
 
     if (source.isTupleType() && target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
@@ -529,7 +529,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() && (target.isArrayWithRuntimeSize() || target.isArrayWithUnknownSize()) &&
+    if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() && (target.isArrayRef() || target.isArrayWithUnknownSize()) &&
         source.getPointee().getElementType() == target.getElementType()) {
         return source;
     }
@@ -604,7 +604,7 @@ static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
     llvm_unreachable("all cases handled");
 }
 
-static Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam) {
+Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam) {
     if (paramType.isBasicType() && paramType.getName() == genericParam) {
         return argType;
     }
@@ -658,8 +658,14 @@ static Type findGenericArg(Type argType, Type paramType, llvm::StringRef generic
             llvm_unreachable("invalid unresolved type");
     }
 
+    // TODO: Should probably try matching generic arg also with implicitly-converted values, instead duplicating the special cases here. This is bug prone.
+
     if (paramType.removeOptional().isPointerType()) {
         return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam);
+    }
+
+    if (paramType.isArrayRef() && argType.isArrayType()) {
+        return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam);
     }
 
     return Type();

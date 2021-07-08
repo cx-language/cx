@@ -97,7 +97,7 @@ private:
     Expr* parseTupleLiteralOrParenExpr();
     std::vector<Type> parseNonEmptyTypeList();
     std::vector<Type> parseGenericArgumentList();
-    int64_t parseArraySizeInBrackets();
+    Type parseArrayType(Type elementType);
     Type parseSimpleType(Mutability mutability);
     Type parseTupleType();
     Type parseFunctionType(Type returnType);

@@ -1,5 +1,5 @@
 
-void _EN4main3fooEAR_3int(ArrayRef<int> a) {
+void _EN4main3fooE8ArrayRefI3intE(ArrayRef<int> a) {
     return void
 }
 
@@ -12,7 +12,7 @@ int main() {
     int* _3 = getelementptr a, 0
     ArrayRef<int> _4 = insertvalue ArrayRef<int> undefined, 0, _3
     ArrayRef<int> _5 = insertvalue _4, 1, int 3
-    void _6 = call _EN4main3fooEAR_3int(ArrayRef<int> _5)
+    void _6 = call _EN4main3fooE8ArrayRefI3intE(ArrayRef<int> _5)
     void _7 = call _EN4main3bazEPA3_3int(int[3]* a)
     return int 0
 }

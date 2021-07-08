@@ -66,7 +66,7 @@ struct Type {
     bool isBuiltinType() const { return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull() || isVoid(); }
     bool isImplicitlyCopyable() const;
     bool isArrayWithConstantSize() const;
-    bool isArrayWithRuntimeSize() const;
+    bool isArrayRef() const;
     bool isArrayWithUnknownSize() const;
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
@@ -193,10 +193,8 @@ struct ArrayType : TypeBase {
     Type getElementType() const { return elementType; }
     int64_t getSize() const { return size; }
     bool hasStaticSize() const { return size >= 0; }
-    bool hasRuntimeSize() const { return size == runtimeSize; }
     bool hasUnknownSize() const { return size == unknownSize; }
     static Type getIndexType() { return Type::getInt(); }
-    static const int64_t runtimeSize = -1;
     static const int64_t unknownSize = -2;
     static Type get(Type type, int64_t size, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }

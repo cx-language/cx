@@ -11,21 +11,78 @@ int main() {
     int* _7 = getelementptr _1, 0
     ArrayRef<int> _8 = insertvalue ArrayRef<int> undefined, 0, _7
     ArrayRef<int> _9 = insertvalue _8, 1, int 5
-    void _10 = call _EN4main1C4initEAR_3int(C* _0, ArrayRef<int> _9)
+    void _10 = call _EN4main1C4initE8ArrayRefI3intE(C* _0, ArrayRef<int> _9)
     void _11 = call _EN4main1C3fooE(C* _0)
     return int 0
 }
 
 void _EN4main1C3fooE(C* this) {
     ArrayRef<int>* a = getelementptr this, 0
-    ArrayRef<int> a.load = load a
-    int* _0 = extractvalue a.load, 0
-    int* _1 = getelementptr _0, int 4
+    int* _0 = call _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* a, int 4)
     return void
 }
 
-void _EN4main1C4initEAR_3int(C* this, ArrayRef<int> a) {
+void _EN4main1C4initE8ArrayRefI3intE(C* this, ArrayRef<int> a) {
     ArrayRef<int>* a_0 = getelementptr this, 0
     store a to a_0
     return void
+}
+
+int* _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* this, int index) {
+    string* __str = alloca string
+    bool _0 = index < int 0
+    br _0, or.end(_0), or.rhs(_0)
+
+or.rhs:
+    int _1 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this)
+    bool _2 = index >= _1
+    br or.end(_2)
+
+or.end(bool or):
+    br or, if.then, if.else
+
+if.then:
+    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "operator[]", int 10)
+    string __str.load = load __str
+    void _4 = call _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, string __str.load, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    int** data = getelementptr this, 0
+    int* data.load = load data
+    int* _5 = getelementptr data.load, index
+    return _5
+}
+
+int _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+void _EN3std8ArrayRefI3intE16indexOutOfBoundsE6string3int(ArrayRef<int>* this, string function, int index) {
+    string* __str = alloca string
+    string* _0 = alloca string
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    string* __str_1 = alloca string
+    int* _2 = alloca int
+    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "ArrayRef.", int 9)
+    store function to _0
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
+    store index to _1
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
+    int _6 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* this)
+    store _6 to _2
+    never _7 = call _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6stringP3intP6stringP3int(string* __str, string* _0, string* __str_0, int* _1, string* __str_1, int* _2)
+    return void
+}
+
+void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
+}
+
+never _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6stringP3intP6stringP3int(string* _0, string* _1, string* _2, int* _3, string* _4, int* _5) {
 }

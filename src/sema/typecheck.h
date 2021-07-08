@@ -110,6 +110,7 @@ private:
     /// Returns the converted type when the implicit conversion succeeds, or the null type when it doesn't.
     Type isImplicitlyConvertible(const Expr* expr, Type source, Type target, bool allowPointerToTemporary = false,
                                  llvm::Optional<ImplicitCastExpr::Kind>* implicitCastKind = nullptr) const;
+    Type findGenericArg(Type argType, Type paramType, llvm::StringRef genericParam);
     llvm::StringMap<Type> getGenericArgsForCall(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, FunctionDecl* decl, bool returnOnError,
                                                 Type expectedType);
     Decl* findDecl(llvm::StringRef name, SourceLocation location) const;
