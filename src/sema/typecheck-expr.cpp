@@ -118,7 +118,7 @@ Type typecheckUndefinedLiteralExpr(UndefinedLiteralExpr&, Type expectedType) {
 
 Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expectedType) {
     if (array.getElements().empty()) {
-        if (expectedType) {
+        if (expectedType && !expectedType.containsUnresolvedPlaceholder()) {
             return expectedType;
         } else {
             ERROR(array.getLocation(), "couldn't infer type of empty array literal");

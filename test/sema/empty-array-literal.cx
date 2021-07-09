@@ -11,4 +11,7 @@ void main() {
 
     // CHECK-NOT: error
     int[0] b = [];
+
+    // CHECK: [[@LINE+1]]:11: error: couldn't infer type of empty array literal
+    print([]);
 }
