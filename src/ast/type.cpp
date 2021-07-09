@@ -47,7 +47,7 @@ bool Type::isImplicitlyCopyable() const {
         case TypeKind::BasicType:
             return !getDecl() || getDecl()->passByValue();
         case TypeKind::ArrayType:
-            return !isArrayWithConstantSize() || getElementType().isImplicitlyCopyable();
+            return !isConstantArray() || getElementType().isImplicitlyCopyable();
         case TypeKind::TupleType:
             return llvm::all_of(llvm::cast<TupleType>(typeBase)->getElements(), [&](auto& element) { return element.type.isImplicitlyCopyable(); });
         case TypeKind::FunctionType:
@@ -59,7 +59,7 @@ bool Type::isImplicitlyCopyable() const {
     llvm_unreachable("all cases handled");
 }
 
-bool Type::isArrayWithConstantSize() const {
+bool Type::isConstantArray() const {
     return isArrayType() && getArraySize() >= 0;
 }
 
@@ -67,8 +67,8 @@ bool Type::isArrayRef() const {
     return isBasicType() && getName() == "ArrayRef";
 }
 
-bool Type::isArrayWithUnknownSize() const {
-    return isArrayType() && getArraySize() == ArrayType::unknownSize;
+bool Type::isUnsizedArrayPointer() const {
+    return isArrayType() && getArraySize() == ArrayType::UnknownSize;
 }
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
@@ -262,7 +262,7 @@ Type Type::getPointee() const {
 
 bool Type::isImplementedAsPointer() const {
     auto unwrapped = removeOptional();
-    return unwrapped.isPointerType() || unwrapped.isArrayWithUnknownSize() || unwrapped.isFunctionType();
+    return unwrapped.isPointerType() || unwrapped.isUnsizedArrayPointer() || unwrapped.isFunctionType();
 }
 
 Type Type::getWrappedType() const {
@@ -375,7 +375,7 @@ void Type::printTo(std::ostream& stream) const {
             getElementType().printTo(stream);
             stream << "[";
             switch (getArraySize()) {
-                case ArrayType::unknownSize:
+                case ArrayType::UnknownSize:
                     stream << "*";
                     break;
                 default:

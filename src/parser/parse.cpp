@@ -348,7 +348,7 @@ Type Parser::parseArrayType(Type elementType) {
         case Token::Star:
             consumeToken();
             parse(Token::RightBracket);
-            return ArrayType::get(elementType, ArrayType::unknownSize);
+            return ArrayType::get(elementType, ArrayType::UnknownSize);
 
         default:
             ERROR(getCurrentLocation(), "non-literal array bounds not implemented yet");

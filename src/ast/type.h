@@ -65,14 +65,14 @@ struct Type {
     bool isOptionalType() const { return isBasicType() && getName() == "Optional"; }
     bool isBuiltinType() const { return (isBasicType() && isBuiltinScalar(getName())) || isPointerType() || isNull() || isVoid(); }
     bool isImplicitlyCopyable() const;
-    bool isArrayWithConstantSize() const;
+    bool isConstantArray() const;
     bool isArrayRef() const;
-    bool isArrayWithUnknownSize() const;
+    bool isUnsizedArrayPointer() const;
     bool isFloatingPoint() const { return isFloat() || isFloat32() || isFloat64() || isFloat80(); }
     bool isEnumType() const;
     bool isIterable() const { return isRangeType(); }
-    bool isIncrementable() const { return isInteger() || isFloatingPoint() || isArrayWithUnknownSize(); }
-    bool isDecrementable() const { return isInteger() || isFloatingPoint() || isArrayWithUnknownSize(); }
+    bool isIncrementable() const { return isInteger() || isFloatingPoint() || isUnsizedArrayPointer(); }
+    bool isDecrementable() const { return isInteger() || isFloatingPoint() || isUnsizedArrayPointer(); }
     bool isVoid() const;
     bool isBool() const;
     bool isInt() const;
@@ -109,7 +109,6 @@ struct Type {
     Type getPointerTo() const;
     Type removePointer() const { return isPointerType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
-    Type removeArrayWithUnknownSize() const { return isArrayWithUnknownSize() ? getElementType() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     TypeDecl* getDecl() const;
     DestructorDecl* getDestructor() const;
@@ -193,7 +192,7 @@ struct ArrayType : TypeBase {
     Type getElementType() const { return elementType; }
     int64_t getSize() const { return size; }
     static Type getIndexType() { return Type::getInt(); }
-    static const int64_t unknownSize = -1;
+    static const int64_t UnknownSize = -1;
     static Type get(Type type, int64_t size, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
 

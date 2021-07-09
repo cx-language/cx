@@ -53,11 +53,11 @@ IRType* cx::getIRType(Type astType) {
             break;
         }
         case TypeKind::ArrayType: {
-            if (astType.isArrayWithConstantSize()) {
+            if (astType.isConstantArray()) {
                 auto elementType = getIRType(astType.getElementType());
                 irType = new IRArrayType { IRTypeKind::IRArrayType, elementType, static_cast<int>(astType.getArraySize()) };
             } else {
-                ASSERT(astType.isArrayWithUnknownSize());
+                ASSERT(astType.isUnsizedArrayPointer());
                 irType = getIRType(astType.getElementType().getPointerTo());
             }
             break;

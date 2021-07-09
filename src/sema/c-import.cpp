@@ -144,7 +144,7 @@ static Type toCx(clang::QualType qualtype) {
             return ArrayType::get(toCx(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue());
         }
         case clang::Type::IncompleteArray:
-            return ArrayType::get(toCx(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::unknownSize);
+            return ArrayType::get(toCx(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::UnknownSize);
         case clang::Type::Attributed:
             return toCx(llvm::cast<clang::AttributedType>(type).getEquivalentType());
         case clang::Type::Decayed:

@@ -160,7 +160,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         case Token::Star: // Dereference operation
             if (operandType.removeOptional().isPointerType()) {
                 return operandType.removeOptional().getPointee();
-            } else if (operandType.removeOptional().isArrayWithUnknownSize()) {
+            } else if (operandType.removeOptional().isUnsizedArrayPointer()) {
                 return operandType.removeOptional().getElementType();
             }
 
@@ -269,8 +269,10 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             ERROR(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
         }
 
-        auto leftPointeeType = leftType.removeOptional().removePointer().removeArrayWithUnknownSize();
-        auto rightPointeeType = rightType.removeOptional().removePointer().removeArrayWithUnknownSize();
+        auto leftPointeeType = leftType.removeOptional().removePointer();
+        auto rightPointeeType = rightType.removeOptional().removePointer();
+        if (leftPointeeType.isUnsizedArrayPointer()) leftPointeeType = leftPointeeType.getElementType();
+        if (rightPointeeType.isUnsizedArrayPointer()) rightPointeeType = rightPointeeType.getElementType();
 
         if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
             ERROR(expr.getLocation(), "comparison of distinct pointer types ('" << leftType << "' and '" << rightType << "')");
@@ -419,7 +421,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
     if (source.isArrayType() && (target.isArrayType() || target.isArrayRef()) && source.getElementType() == target.getElementType()) {
         if (target.isArrayType() && source.getArraySize() == target.getArraySize()) return source;
-        if (source.isArrayWithConstantSize() && (target.isArrayWithUnknownSize() || target.isArrayRef())) return source;
+        if (source.isConstantArray() && (target.isUnsizedArrayPointer() || target.isArrayRef())) return source;
     }
 
     if (source.isTupleType() && target.isTupleType() && source.getTupleElements() == target.getTupleElements()) {
@@ -481,12 +483,12 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         // Special case: allow passing string literals as C-strings (const char* or const char[*]).
         if (expr->isStringLiteralExpr() &&
             ((target.removeOptional().isPointerType() && target.removeOptional().getPointee().isChar() && !target.removeOptional().getPointee().isMutable()) ||
-             (target.removeOptional().isArrayWithUnknownSize() && target.removeOptional().getElementType().isChar() &&
+             (target.removeOptional().isUnsizedArrayPointer() && target.removeOptional().getElementType().isChar() &&
               !target.removeOptional().getElementType().isMutable()))) {
             return target;
         }
 
-        if (expr->isArrayLiteralExpr() && target.isArrayWithConstantSize()) {
+        if (expr->isArrayLiteralExpr() && target.isConstantArray()) {
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
             bool isConvertible = llvm::all_of(arrayLiteralExpr->getElements(),
                                               [&](Expr* element) { return isImplicitlyConvertible(element, source.getElementType(), target.getElementType()); });
@@ -529,7 +531,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isPointerType() && source.getPointee().isArrayWithConstantSize() && (target.isArrayRef() || target.isArrayWithUnknownSize()) &&
+    if (source.isPointerType() && source.getPointee().isConstantArray() && (target.isArrayRef() || target.isUnsizedArrayPointer()) &&
         source.getPointee().getElementType() == target.getElementType()) {
         return source;
     }
@@ -540,12 +542,12 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     // Allow conversion from T[*]? to T* and void*
-    if (source.removeOptional().isArrayWithUnknownSize() && target.isPointerType() &&
+    if (source.removeOptional().isUnsizedArrayPointer() && target.isPointerType() &&
         (source.removeOptional().getElementType() == target.getPointee() || target.getPointee().isVoid())) {
         return source;
     }
 
-    if (target.isArrayWithUnknownSize() && source.isPointerType() && target.getElementType() == source.getPointee()) {
+    if (target.isUnsizedArrayPointer() && source.isPointerType() && target.getElementType() == source.getPointee()) {
         return source;
     }
 
@@ -1131,7 +1133,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             if (expr.getFunctionName() == "data") {
                 validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.getLocation());
                 validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
-                return ArrayType::get(receiverType.removePointer().getElementType(), ArrayType::unknownSize);
+                return ArrayType::get(receiverType.removePointer().getElementType(), ArrayType::UnknownSize);
             }
             if (expr.getFunctionName() == "size") {
                 validateAndConvertArguments(expr, {}, false, expr.getFunctionName(), expr.getLocation());
@@ -1348,10 +1350,10 @@ static bool isValidCast(Type sourceType, Type targetType) {
                     return true;
                 } else if (targetPointee.isVoid() && (!targetPointee.isMutable() || sourcePointee.isMutable())) {
                     return true;
-                } else if (targetPointee.isArrayWithConstantSize() && sourcePointee == targetPointee.getElementType()) {
+                } else if (targetPointee.isConstantArray() && sourcePointee == targetPointee.getElementType()) {
                     return true;
                 }
-            } else if (targetType.isArrayWithUnknownSize()) {
+            } else if (targetType.isUnsizedArrayPointer()) {
                 if (sourcePointee.isVoid() && (!targetType.getElementType().isMutable() || sourcePointee.isMutable())) {
                     return true;
                 } else if (sourcePointee == targetType.getElementType()) {
@@ -1469,7 +1471,7 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
         ERROR(indexExpr->getLocation(), "illegal index type '" << indexType << "', expected '" << ArrayType::getIndexType() << "'");
     }
 
-    if (arrayType.isArrayWithConstantSize()) {
+    if (arrayType.isConstantArray()) {
         if (indexExpr->isConstant()) {
             auto index = indexExpr->getConstantIntegerValue();
 

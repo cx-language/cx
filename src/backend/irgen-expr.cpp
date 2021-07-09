@@ -13,7 +13,7 @@ Value* IRGenerator::emitVarExpr(const VarExpr& expr) {
 
 Value* IRGenerator::emitStringLiteralExpr(const StringLiteralExpr& expr) {
     if ((expr.getType().removeOptional().isPointerType() && expr.getType().removeOptional().getPointee().isChar()) ||
-        (expr.getType().removeOptional().isArrayWithUnknownSize() && expr.getType().removeOptional().getElementType().isChar())) {
+        (expr.getType().removeOptional().isUnsizedArrayPointer() && expr.getType().removeOptional().getElementType().isChar())) {
         return createGlobalStringPtr(expr.getValue());
     }
 
@@ -255,7 +255,7 @@ void IRGenerator::emitAssignment(const BinaryExpr& expr) {
 }
 
 static bool isBuiltinArrayToArrayRefConversion(Type sourceType, IRType* targetType) {
-    return sourceType.removePointer().isArrayWithConstantSize() && targetType->isStruct() && targetType->getName().startswith("ArrayRef<");
+    return sourceType.removePointer().isConstantArray() && targetType->isStruct() && targetType->getName().startswith("ArrayRef<");
 }
 
 Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
@@ -266,7 +266,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     // TODO: Handle implicit conversions in a separate function.
 
     if (isBuiltinArrayToArrayRefConversion(expr.getType(), targetType)) {
-        ASSERT(expr.getType().removePointer().isArrayWithConstantSize());
+        ASSERT(expr.getType().removePointer().isConstantArray());
         auto* value = emitExprAsPointer(expr);
         auto* elementPtr = createGEP(value, 0);
         auto* arrayRef = createInsertValue(createUndefined(targetType), elementPtr, 0);
@@ -275,7 +275,7 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     }
 
     // Handle implicit conversions to type 'T[*]'.
-    if (expr.getType().removePointer().isArrayWithConstantSize() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
+    if (expr.getType().removePointer().isConstantArray() && targetType->isPointerType() && !targetType->getPointee()->isArrayType()) {
         return createCast(emitLvalueExpr(expr), targetType);
     }
 
@@ -513,7 +513,7 @@ Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
         value = createLoad(value);
     }
 
-    if (base.getType().removeOptional().isArrayWithUnknownSize()) {
+    if (base.getType().removeOptional().isUnsizedArrayPointer()) {
         return createGEP(value, { emitExpr(index) });
     } else {
         return createGEP(value, { createConstantInt(Type::getInt(), 0), emitExpr(index) });
