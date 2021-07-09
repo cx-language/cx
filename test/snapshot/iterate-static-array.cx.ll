@@ -1,9 +1,5 @@
 
 %"ArrayIterator<int>" = type { i32*, i32* }
-%StringBuffer = type { %"List<char>" }
-%"List<char>" = type { i8*, i32, i32 }
-
-@0 = private unnamed_addr constant [6 x i8] c"%.*s\0A\00", align 1
 
 define i32 @main() {
   %__iterator = alloca %"ArrayIterator<int>", align 8
@@ -28,7 +24,7 @@ loop.body:                                        ; preds = %loop.condition
   %7 = call i32* @_EN3std13ArrayIteratorI3intE5valueE(%"ArrayIterator<int>"* %__iterator)
   store i32* %7, i32** %e, align 8
   %e.load = load i32*, i32** %e, align 8
-  call void @_EN3std7printlnI3intEEP3int(i32* %e.load)
+  call void @_EN3std7printlnIP3intEEP3int(i32* %e.load)
   br label %loop.increment
 
 loop.increment:                                   ; preds = %loop.body
@@ -52,7 +48,7 @@ loop.body4:                                       ; preds = %loop.condition3
   %13 = call i32* @_EN3std13ArrayIteratorI3intE5valueE(%"ArrayIterator<int>"* %__iterator1)
   store i32* %13, i32** %e2, align 8
   %e.load5 = load i32*, i32** %e2, align 8
-  call void @_EN3std7printlnI3intEEP3int(i32* %e.load5)
+  call void @_EN3std7printlnIP3intEEP3int(i32* %e.load5)
   br label %loop.increment6
 
 loop.increment6:                                  ; preds = %loop.body4
@@ -78,14 +74,9 @@ define i32* @_EN3std13ArrayIteratorI3intE5valueE(%"ArrayIterator<int>"* %this) {
   ret i32* %current.load
 }
 
-define void @_EN3std7printlnI3intEEP3int(i32* %value) {
-  %s = alloca %StringBuffer, align 8
-  %1 = call %StringBuffer @_EN3std3int8toStringE(i32* %value)
-  store %StringBuffer %1, %StringBuffer* %s, align 8
-  %2 = call i32 @_EN3std12StringBuffer4sizeE(%StringBuffer* %s)
-  %3 = call i8* @_EN3std12StringBuffer4dataE(%StringBuffer* %s)
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @0, i32 0, i32 0), i32 %2, i8* %3)
-  call void @_EN3std12StringBuffer6deinitE(%StringBuffer* %s)
+define void @_EN3std7printlnIP3intEEP3int(i32* %value) {
+  call void @_EN3std5printI3intEEP3int(i32* %value)
+  call void @_EN3std5printI4charEE4char(i8 10)
   ret void
 }
 
@@ -97,12 +88,6 @@ define void @_EN3std13ArrayIteratorI3intE9incrementE(%"ArrayIterator<int>"* %thi
   ret void
 }
 
-declare %StringBuffer @_EN3std3int8toStringE(i32*)
+declare void @_EN3std5printI3intEEP3int(i32*)
 
-declare i32 @_EN3std12StringBuffer4sizeE(%StringBuffer*)
-
-declare i8* @_EN3std12StringBuffer4dataE(%StringBuffer*)
-
-declare i32 @printf(i8*, ...)
-
-declare void @_EN3std12StringBuffer6deinitE(%StringBuffer*)
+declare void @_EN3std5printI4charEE4char(i8)

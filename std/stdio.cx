@@ -1,6 +1,11 @@
-void println<T: Printable>(T* value) {
+void println<T>(T value) {
+    print(value);
+    print('\n');
+}
+
+void print<T: Printable>(T value) {
     var s = value.toString();
-    printf("%.*s\n", s.size(), s.data());
+    printf("%.*s", s.size(), s.data());
 }
 
 void print<T: Printable>(T* value) {
@@ -8,59 +13,36 @@ void print<T: Printable>(T* value) {
     printf("%.*s", s.size(), s.data());
 }
 
-void println<T: Printable>(List<T>* list) {
+void print<T: Printable>(List<T>* list) {
+    print(ArrayRef(list));
+}
+
+void print<T: Printable>(ArrayRef<T> array) {
     print('[');
 
-    for (var element in list.enumerate()) {
-        print(element.value);
+    for (var index in 0..array.size()) {
+        print(array[index]);
 
-        if (element.index != list.size() - 1) {
-            print(',');
-            print(' ');
-        }
+        if (index != array.size() - 1)
+            print(", ");
     }
 
     print(']');
-    print('\n');
 }
 
-//void print<T: Printable>(T[] array) {
-//    print('[');
-//
-//    for (var index in 0..array.size()) {
-//        print(array[index]);
-//
-//        if (index != array.size() - 1) {
-//            print(',');
-//            print(' ');
-//        }
-//    }
-//
-//    print(']');
-//    print('\n');
-//}
-
-void println<T: Printable>(Optional<T>* optional) {
+void print<T: Printable>(Optional<T>* optional) {
     if (optional.hasValue) {
-        println(optional.value);
+        print(optional.value);
     } else {
-        println("null");
+        print("null");
     }
 }
 
 void print(const char[*]? cString) {
     if (cString) {
-        printf("%s", cString);
+        printf(cString);
     } else {
-        printf("%s", "null");
-    }
-}
-
-void println(const char[*]? cString) {
-    if (cString) {
-        printf("%s\n", cString);
-    } else {
-        printf("%s\n", "null");
+        printf("null");
     }
 }
 

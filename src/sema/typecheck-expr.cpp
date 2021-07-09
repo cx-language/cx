@@ -539,7 +539,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isArrayWithUnknownSize() && target.isPointerType() && (source.getElementType() == target.getPointee() || target.getPointee().isVoid())) {
+    // Allow conversion from T[*]? to T* and void*
+    if (source.removeOptional().isArrayWithUnknownSize() && target.isPointerType() &&
+        (source.removeOptional().getElementType() == target.getPointee() || target.getPointee().isVoid())) {
         return source;
     }
 

@@ -103,7 +103,7 @@ Type Type::resolve(const llvm::StringMap<Type>& replacements) const {
             return BasicType::get(getName(), std::move(genericArgs), mutability, location);
         }
         case TypeKind::ArrayType:
-            return ArrayType::get(getElementType().resolve(replacements), getArraySize(), mutability, location);
+            return ArrayType::get(getElementType().resolve(replacements), getArraySize(), location);
 
         case TypeKind::TupleType: {
             auto elements = map(getTupleElements(), [&](const TupleElement& element) {
@@ -142,8 +142,8 @@ Type BasicType::get(llvm::StringRef name, llvm::ArrayRef<Type> genericArgs, Muta
     return getType(BasicType(name, genericArgs), mutability, location);
 }
 
-Type ArrayType::get(Type elementType, int64_t size, Mutability mutability, SourceLocation location) {
-    return getType(ArrayType(elementType, size), mutability, location);
+Type ArrayType::get(Type elementType, int64_t size, SourceLocation location) {
+    return getType(ArrayType(elementType, size), elementType.getMutability(), location);
 }
 
 Type TupleType::get(std::vector<TupleElement>&& elements, Mutability mutability, SourceLocation location) {

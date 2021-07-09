@@ -8,8 +8,6 @@
 // CHECK-NEXT:foo_array
 // CHECK-NEXT:foo_array_opt
 
-import "stdio.h";
-
 const char* foo() { return "foo"; }
 const char*? foo_opt() { return "foo_opt"; }
 const char[*] foo_array() { return "foo_array"; }

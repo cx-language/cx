@@ -192,11 +192,9 @@ private:
 struct ArrayType : TypeBase {
     Type getElementType() const { return elementType; }
     int64_t getSize() const { return size; }
-    bool hasStaticSize() const { return size >= 0; }
-    bool hasUnknownSize() const { return size == unknownSize; }
     static Type getIndexType() { return Type::getInt(); }
-    static const int64_t unknownSize = -2;
-    static Type get(Type type, int64_t size, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
+    static const int64_t unknownSize = -1;
+    static Type get(Type type, int64_t size, SourceLocation location = SourceLocation());
     static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ArrayType; }
 
 private:
@@ -204,9 +202,7 @@ private:
 
 private:
     Type elementType;
-    int64_t size; ///< Equal to ArrayType::runtimeSize if values of this type know their size at
-                  ///< runtime (i.e. this is an ArrayRef), or ArrayType::unknownSize if values of
-                  /// this type never know their size.
+    int64_t size;
 };
 
 struct TupleElement {

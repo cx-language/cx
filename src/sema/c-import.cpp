@@ -141,7 +141,7 @@ static Type toCx(clang::QualType qualtype) {
             if (!constantArrayType.getSize().isIntN(64)) {
                 ERROR(SourceLocation(), "array is too large");
             }
-            return ArrayType::get(toCx(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue(), mutability);
+            return ArrayType::get(toCx(constantArrayType.getElementType()), constantArrayType.getSize().getLimitedValue());
         }
         case clang::Type::IncompleteArray:
             return ArrayType::get(toCx(llvm::cast<clang::IncompleteArrayType>(type).getElementType()), ArrayType::unknownSize);

@@ -7,8 +7,11 @@ extern never exit(int status);
 // stdio.h
 struct FILE {}
 extern int printf(const char* format, ...);
-extern int fprintf(FILE* stream, const char* format, ...);
+extern int fprintf(FILE* file, const char* format, ...);
 extern int sprintf(char* str, const char* format, ...);
+extern int puts(const char* str);
+extern int fputs(const char* str, FILE* file);
+extern int fputc(int c, FILE* file);
 extern int getchar();
 extern FILE*? fopen(const char* filename, const char* mode);
 #if Windows
@@ -25,7 +28,6 @@ extern int64 ftell(FILE* file);
 extern int fclose(FILE* file);
 extern int fflush(FILE* file);
 extern int feof(FILE* file);
-extern int fputc(int c, FILE* file);
 extern int remove(const char* filename);
 extern int ungetc(int c, FILE* file);
 extern void rewind(FILE* file);
