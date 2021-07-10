@@ -144,17 +144,23 @@ Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
     return TupleType::get(std::move(elements));
 }
 
+void Typechecker::typecheckImplicitlyBoolConvertibleExpr(Type type, SourceLocation location, bool positive) {
+    if (!type.removePointer().isBool() && !type.removePointer().isOptionalType()) {
+        if (type.isImplementedAsPointer()) {
+            WARN(location, "type '" << type << "' " << (positive ? "is always non-null" : "cannot be null") << "; to declare it nullable, use '"
+                                    << OptionalType::get(type) << "'");
+        } else {
+            ERROR(location, "type '" << type << "' is not convertible to boolean");
+        }
+    }
+}
+
 Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     Type operandType = typecheckExpr(expr.getOperand());
 
     switch (expr.getOperator()) {
         case Token::Not:
-            operandType = operandType.removePointer();
-
-            if (!operandType.isBool() && !operandType.isOptionalType()) {
-                ERROR(expr.getOperand().getLocation(), "invalid operand type '" << operandType << "' to logical not");
-            }
-
+            typecheckImplicitlyBoolConvertibleExpr(operandType, expr.getOperand().getLocation(), false);
             return Type::getBool();
 
         case Token::Star: // Dereference operation
@@ -1527,12 +1533,8 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
 }
 
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {
-    auto conditionType = typecheckExpr(*expr.getCondition()).removePointer();
-
-    if (!conditionType.isBool() && !conditionType.isOptionalType()) {
-        ERROR(expr.getCondition()->getLocation(), "if-expression condition must have type 'bool' or optional type");
-    }
-
+    auto conditionType = typecheckExpr(*expr.getCondition());
+    typecheckImplicitlyBoolConvertibleExpr(conditionType, expr.getCondition()->getLocation());
     auto thenType = typecheckExpr(*expr.getThenExpr());
     auto elseType = typecheckExpr(*expr.getElseExpr());
 

@@ -1,6 +1,6 @@
 // RUN: %not %cx -typecheck %s | %FileCheck %s
 
 void main() {
-    // CHECK: [[@LINE+1]]:9: error: 'if' condition must have type 'bool'
+    // CHECK: [[@LINE+1]]:9: error: type 'int' is not convertible to boolean
     if (0) {}
 }

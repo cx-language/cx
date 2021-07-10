@@ -1,0 +1,20 @@
+// RUN: %cx -typecheck %s -Wno-unused | %FileCheck %s
+
+void f(int* p) {
+    // CHECK: [[@LINE+1]]:9: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    if (p) {}
+    // CHECK: [[@LINE+1]]:10: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
+    if (!p) {}
+    // CHECK: [[@LINE+1]]:12: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    while (p) {}
+    // CHECK: [[@LINE+1]]:13: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
+    while (!p) {}
+    // CHECK: [[@LINE+1]]:11: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    for (;p; p++) {}
+    // CHECK: [[@LINE+1]]:12: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
+    for (;!p; p++) {}
+    // CHECK: [[@LINE+1]]:9: warning: type 'int*' is always non-null; to declare it nullable, use 'int*?'
+    _ = p ? 1 : 0
+    // CHECK: [[@LINE+1]]:10: warning: type 'int*' cannot be null; to declare it nullable, use 'int*?'
+    _ = !p ? 1 : 0
+}
