@@ -1,14 +1,17 @@
 # The C* Programming Language
 
-C* (pronounced "C star") is a performance-oriented programming language designed to improve programmer productivity.
-The project is still in early stages of development: some planned features have not yet been implemented,
-existing ones are subject to change, and the documentation is scarce.
+C* (pronounced "C star") is a C-based hybrid low-level/high-level programming language focused on runtime
+performance and developer productivity (in this order of priority). The language is simple and unopinionated,
+supporting imperative, generic, data-oriented, functional, and object-oriented programming.
 
 Learn more about the language at http://cx-lang.org.
 
+The project is still in early stages of development: some planned features have not yet been implemented,
+existing ones are subject to change, and the documentation is scarce.
+
 ## Contributing
 
-Contributions are welcome and encouraged.
+Contributions are welcome.
 See the GitHub issues and the [Trello board](https://trello.com/b/NIbkM4v2/c) for the project backlog.
 To ask a question or open a discussion, create an issue or join the [C* Discord server](https://discord.gg/hsDbW9p).
 
