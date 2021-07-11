@@ -35,7 +35,7 @@ private:
     std::string packageRoot;
     std::string packageName;
     std::vector<Dependency> declaredDependencies;
-    bool multitarget;
+    bool multitarget = false;
     std::string outputDirectory;
 };
 
