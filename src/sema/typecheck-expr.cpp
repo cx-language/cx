@@ -1340,6 +1340,11 @@ static bool isValidCast(Type sourceType, Type targetType) {
                     }
                 }
             }
+
+            if (sourceType.isInteger() && targetType.removeOptional().isPointerType()) {
+                return true;
+            }
+
             return false;
 
         case TypeKind::TupleType:
