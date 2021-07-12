@@ -10,7 +10,7 @@ cx_path = sys.argv[1] if len(sys.argv) > 1 else "cx"
 os.chdir(os.path.dirname(__file__))
 
 for file in os.listdir("."):
-    if platform.system() == "Windows" and file in ["tree.cx", "asteroids"]:
+    if platform.system() == "Windows" and file in ["tree.cx", "asteroids", "opengl"]:
         continue
 
     if file.endswith(".cx"):
