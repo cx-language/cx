@@ -13,6 +13,7 @@
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Lex/HeaderSearch.h>
 #include <clang/Lex/Preprocessor.h>
+#include <clang/Lex/PreprocessorOptions.h>
 #include <clang/Parse/ParseAST.h>
 #include <clang/Sema/Sema.h>
 #include <llvm/ADT/StringRef.h>
@@ -352,6 +353,9 @@ bool cx::importCHeader(SourceFile& importer, llvm::StringRef headerName, const C
     for (llvm::StringRef frameworkPath : options.frameworkSearchPaths) {
         ci.getHeaderSearchOpts().AddPath(frameworkPath, clang::frontend::System, true, true);
         ci.getHeaderSearchOpts().AddPath(frameworkPath, clang::frontend::System, true, false);
+    }
+    for (llvm::StringRef define : options.defines) {
+        ci.getPreprocessorOpts().addMacroDef(define);
     }
 
     ci.createPreprocessor(clang::TU_Complete);
