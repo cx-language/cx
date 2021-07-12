@@ -167,6 +167,7 @@ std::string getQualifiedTypeName(llvm::StringRef typeName, llvm::ArrayRef<Type> 
 struct BasicType : TypeBase {
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     llvm::StringRef getName() const { return name; }
+    void setName(std::string&& name) { this->name = std::move(name); }
     std::string getQualifiedName() const { return getQualifiedTypeName(name, genericArgs); }
     TypeDecl* getDecl() const { return decl; }
     void setDecl(TypeDecl* decl) { this->decl = NOTNULL(decl); }

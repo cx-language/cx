@@ -252,8 +252,11 @@ struct CToCxConverter : clang::ASTConsumer {
                     break;
                 case clang::Decl::Typedef: {
                     auto& typedefDecl = llvm::cast<clang::TypedefDecl>(*decl);
-                    if (auto* baseTypeId = typedefDecl.getUnderlyingType().getBaseTypeIdentifier()) {
-                        module.addIdentifierReplacement(typedefDecl.getName(), baseTypeId->getName());
+                    auto type = ::toCx(typedefDecl.getUnderlyingType());
+                    if (type.isBasicType()) {
+                        llvm::cast<BasicType>(BasicType::get(typedefDecl.getName(), {}).getBase())->setName(type.getName().str());
+                    } else {
+                        // TODO: Import non-BasicType typedefs from C headers.
                     }
                     break;
                 }
@@ -285,7 +288,7 @@ private:
 };
 
 struct MacroImporter : clang::PPCallbacks {
-    MacroImporter(Module& module, clang::Sema& clangSema) : module(module), clangSema(clangSema) {}
+    MacroImporter(Module& module, clang::CompilerInstance& compilerInstance) : module(module), compilerInstance(compilerInstance) {}
 
     void MacroDefined(const clang::Token& name, const clang::MacroDirective* macro) final override {
         if (macro->getMacroInfo()->getNumTokens() != 1) return;
@@ -294,20 +297,18 @@ struct MacroImporter : clang::PPCallbacks {
         switch (token.getKind()) {
             case clang::tok::identifier:
                 module.addIdentifierReplacement(name.getIdentifierInfo()->getName(), token.getIdentifierInfo()->getName());
-                return;
-
+                break;
             case clang::tok::numeric_constant:
-                importNumericConstant(name.getIdentifierInfo()->getName(), token);
-                return;
-
+                importMacroConstant(name.getIdentifierInfo()->getName(), token);
+                break;
             default:
-                return;
+                break;
         }
     }
 
 private:
-    void importNumericConstant(llvm::StringRef name, const clang::Token& token) {
-        auto result = clangSema.ActOnNumericConstant(token);
+    void importMacroConstant(llvm::StringRef name, const clang::Token& token) {
+        auto result = compilerInstance.getSema().ActOnNumericConstant(token);
         if (!result.isUsable()) return;
         clang::Expr* parsed = result.get();
 
@@ -321,7 +322,7 @@ private:
 
 private:
     Module& module;
-    clang::Sema& clangSema;
+    clang::CompilerInstance& compilerInstance;
 };
 } // namespace
 
@@ -379,7 +380,7 @@ bool cx::importCHeader(SourceFile& importer, llvm::StringRef headerName, const C
     ci.setASTConsumer(std::make_unique<CToCxConverter>(*module, ci.getSourceManager()));
     ci.createASTContext();
     ci.createSema(clang::TU_Complete, nullptr);
-    pp.addPPCallbacks(std::make_unique<MacroImporter>(*module, ci.getSema()));
+    pp.addPPCallbacks(std::make_unique<MacroImporter>(*module, ci));
 
     auto fileID = ci.getSourceManager().createFileID(*fileEntry, clang::SourceLocation(), clang::SrcMgr::C_System);
     ci.getSourceManager().setMainFileID(fileID);
