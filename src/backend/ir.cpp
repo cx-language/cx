@@ -191,7 +191,7 @@ IRType* Value::getType() const {
         case ValueKind::Parameter:
             return llvm::cast<Parameter>(this)->type;
         case ValueKind::GlobalVariable:
-            return llvm::cast<GlobalVariable>(this)->value->getType()->getPointerTo();
+            return llvm::cast<GlobalVariable>(this)->type->getPointerTo();
         case ValueKind::ConstantString:
             return getIRType(Type::getChar(Mutability::Const).getPointerTo());
         case ValueKind::ConstantInt:

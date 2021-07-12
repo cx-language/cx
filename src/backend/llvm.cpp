@@ -378,7 +378,7 @@ llvm::Value* LLVMGenerator::codegenBasicBlock(const BasicBlock* block) {
 llvm::Value* LLVMGenerator::codegenGlobalVariable(const GlobalVariable* inst) {
     auto linkage = inst->value ? llvm::GlobalValue::PrivateLinkage : llvm::GlobalValue::ExternalLinkage;
     auto initializer = inst->value ? llvm::cast<llvm::Constant>(getValue(inst->value)) : nullptr;
-    return new llvm::GlobalVariable(*module, getLLVMType(inst->value->getType()), false, linkage, initializer, inst->name);
+    return new llvm::GlobalVariable(*module, getLLVMType(inst->type), false, linkage, initializer, inst->name);
 }
 
 llvm::Value* LLVMGenerator::codegenConstantString(const ConstantString* inst) {

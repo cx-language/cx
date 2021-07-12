@@ -92,11 +92,10 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
     }
 
     if (decl.isGlobal()) {
-        ASSERT(decl.getInitializer());
-        Value* value = emitExpr(*decl.getInitializer());
+        Value* value = decl.getInitializer() ? emitExpr(*decl.getInitializer()) : nullptr;
 
         if (decl.getType().isMutable()) {
-            value = createGlobalVariable(value, decl.getName());
+            value = createGlobalVariable(value, decl.getType(), decl.getName());
         }
 
         auto it = globalScope().valuesByDecl.try_emplace(&decl, value);

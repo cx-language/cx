@@ -187,8 +187,8 @@ struct IRGenerator {
         return createCast(value, type, name);
     }
     Value* createCastIfNeeded(Value* value, Type type, const llvm::Twine& name = "") { return createCastIfNeeded(value, getIRType(type), name); }
-    Value* createGlobalVariable(Value* value, const llvm::Twine& name = "") {
-        return module->globalVariables.emplace_back(new GlobalVariable { ValueKind::GlobalVariable, value, name.str() });
+    Value* createGlobalVariable(Value* value, Type type, const llvm::Twine& name = "") {
+        return module->globalVariables.emplace_back(new GlobalVariable { ValueKind::GlobalVariable, getIRType(type), value, name.str() });
     }
     Value* createGlobalStringPtr(llvm::StringRef value) { return new ConstantString { ValueKind::ConstantString, value.str() }; }
     Value* createSizeof(Type type) { return new SizeofInst { ValueKind::SizeofInst, getIRType(type), "" }; }

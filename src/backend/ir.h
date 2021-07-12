@@ -324,6 +324,7 @@ struct Function : Value {
 };
 
 struct GlobalVariable : Value {
+    IRType* type;
     Value* value;
     std::string name;
 
