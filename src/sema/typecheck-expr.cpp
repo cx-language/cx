@@ -1407,7 +1407,8 @@ Type Typechecker::typecheckBuiltinCast(CallExpr& expr) {
     return targetType;
 }
 
-Type Typechecker::typecheckSizeofExpr(SizeofExpr&) {
+Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
+    typecheckType(expr.getOperandType(), AccessLevel::None);
     return Type::getUInt64();
 }
 

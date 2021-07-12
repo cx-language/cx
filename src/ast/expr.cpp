@@ -203,7 +203,7 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         }
         case ExprKind::SizeofExpr: {
             auto* sizeofExpr = llvm::cast<SizeofExpr>(this);
-            auto type = sizeofExpr->getType().resolve(genericArgs);
+            auto type = sizeofExpr->getOperandType().resolve(genericArgs);
             return new SizeofExpr(type, sizeofExpr->getLocation());
         }
         case ExprKind::AddressofExpr: {

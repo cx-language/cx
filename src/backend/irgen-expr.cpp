@@ -433,7 +433,7 @@ Value* IRGenerator::emitBuiltinCast(const CallExpr& expr) {
 }
 
 Value* IRGenerator::emitSizeofExpr(const SizeofExpr& expr) {
-    return createSizeof(expr.getType());
+    return createSizeof(expr.getOperandType());
 }
 
 Value* IRGenerator::emitAddressofExpr(const AddressofExpr& expr) {

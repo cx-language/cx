@@ -292,12 +292,12 @@ bool isBuiltinOp(Token::Kind op, Type lhs, Type rhs);
 
 /// A compile-time expression returning the size of a given type in bytes, e.g. 'sizeof(int)'.
 struct SizeofExpr : Expr {
-    SizeofExpr(Type type, SourceLocation location) : Expr(ExprKind::SizeofExpr, location), type(type) {}
-    Type getType() const { return type; }
+    SizeofExpr(Type operandType, SourceLocation location) : Expr(ExprKind::SizeofExpr, location), operandType(operandType) {}
+    Type getOperandType() const { return operandType; }
     static bool classof(const Expr* e) { return e->getKind() == ExprKind::SizeofExpr; }
 
 private:
-    Type type;
+    Type operandType;
 };
 
 /// An expression that returns the memory address stored in a pointer (non-null or nullable)
