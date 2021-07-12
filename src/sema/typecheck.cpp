@@ -234,11 +234,15 @@ static llvm::SmallVector<Decl*, 1> findDeclsInModules(llvm::StringRef name, llvm
 static Decl* findDeclInModules(llvm::StringRef name, SourceLocation location, llvm::ArrayRef<Module*> modules) {
     auto decls = findDeclsInModules(name, modules);
 
-    if (decls.empty()) {
-        return nullptr;
-    } else {
-        if (decls.size() > 1) ERROR(location, "ambiguous reference to '" << name << "'");
+    if (decls.size() == 1) {
         return decls[0];
+    } else if (decls.empty()) {
+        return nullptr;
+    } else if (llvm::all_of(decls, [](Decl* decl) { return decl->getModule() && decl->getModule()->getName().endswith_lower(".h"); })) {
+        // For duplicate definitions in C headers, return the last definition. TODO: Check that their value is the same.
+        return decls.back();
+    } else {
+        ERROR(location, "ambiguous reference to '" << name << "'");
     }
 }
 
