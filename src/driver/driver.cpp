@@ -403,6 +403,7 @@ static void addPlatformCompileOptions() {
     cflags.push_back("-fms-extensions");
 #endif
 #ifdef __APPLE__
+    defines.push_back("macOS");
     std::string sdkPath;
     exec("xcrun --show-sdk-path", sdkPath);
     sdkPath = llvm::StringRef(sdkPath).trim();

@@ -1,0 +1,128 @@
+import "GLFW/glfw3.h";
+
+int main()
+{
+    glfwSetErrorCallback(ErrorCallback);
+
+    if (glfwInit() == 0)
+    {
+        println("glfwInit failed");
+        return 1;
+    }
+
+    defer glfwTerminate();
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    additionalWindowHints();
+
+    GLFWwindow*? window = glfwCreateWindow(1024, 768, "OpenGL example", null, null);
+    if (!window)
+    {
+        println("glfwCreateWindow failed");
+        return 1;
+    }
+
+    glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, KeyCallback);
+
+    glClearColor(0, 0, 0, 1);
+
+    GLuint vertexArray = undefined;
+    glGenVertexArrays(1, &vertexArray);
+    glBindVertexArray(vertexArray);
+
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    LoadShader(vertexShader, "vertex_shader.vert");
+    LoadShader(fragmentShader, "fragment_shader.frag");
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+    glLinkProgram(program);
+
+    GLint infoLogLength = 0;
+    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+    if (infoLogLength > 0)
+    {
+        var infoLog = StringBuffer(uninitializedSize: infoLogLength + 1);
+        glGetProgramInfoLog(program, infoLogLength, null, infoLog.data());
+        println(infoLog);
+    }
+
+    glDetachShader(program, vertexShader);
+    glDetachShader(program, fragmentShader);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    const vertexBufferData =
+    [
+        -0.5, -0.5, 0.0,
+         0.5, -0.5, 0.0,
+         0.0,  0.5, 0.0
+    ];
+
+    GLuint vertexBuffer = undefined;
+    glGenBuffers(1, &vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, int64(vertexBufferData.size()) * int64(sizeof(float)), &vertexBufferData, GL_STATIC_DRAW);
+
+    while (glfwWindowShouldClose(window) == 0)
+    {
+        glClear(GL_COLOR_BUFFER_BIT);
+        glUseProgram(program);
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, cast<void*>(0));
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDisableVertexAttribArray(0);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteVertexArrays(1, &vertexArray);
+    glDeleteProgram(program);
+    return 0;
+}
+
+void LoadShader(GLuint shaderID, string path)
+{
+    StringBuffer shaderSource = readFile(path);
+    const char* shaderSourcePointer = shaderSource.cString();
+
+    glShaderSource(shaderID, 1, &shaderSourcePointer, null);
+    glCompileShader(shaderID);
+
+    GLint infoLogLength = 0;
+    glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
+    if (infoLogLength > 0)
+    {
+        var infoLog = StringBuffer(uninitializedSize: infoLogLength + 1);
+        glGetShaderInfoLog(shaderID, infoLogLength, null, infoLog.data());
+        println(infoLog);
+    }
+}
+
+void ErrorCallback(int error, const char*? description)
+{
+    println(description);
+}
+
+void KeyCallback(GLFWwindow*? window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
+#if macOS
+void additionalWindowHints()
+{
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+}
+#else
+void additionalWindowHints() {}
+#endif

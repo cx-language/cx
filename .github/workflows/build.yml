@@ -64,12 +64,12 @@ jobs:
         run: |
           pip install lit psutil
           if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt-get install libsdl2-dev
+            sudo apt-get install libsdl2-dev libglfw3-dev
           fi
           if [ "$RUNNER_OS" == "macOS" ]; then
-            brew install sdl2
+            brew install sdl2 glfw3
           fi
-          # Tests depending on SDL2 are disabled on Windows CI.
+          # Tests depending on SDL2 or GLFW are disabled on Windows CI.
           cmake --build . --config $BUILD_TYPE --target check
 
   deploy-website:
