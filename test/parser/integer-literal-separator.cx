@@ -1,0 +1,6 @@
+// RUN: %cx -parse %s
+
+var a = 1_000__000_;
+var b = 0x_ff_ab30__;
+var c = 0b_10_11__;
+var d = 0o_54_23__;

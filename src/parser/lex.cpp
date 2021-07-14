@@ -1,5 +1,6 @@
 #include "lex.h"
 #include <cctype>
+#include <cstdint>
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
@@ -111,6 +112,9 @@ Token Lexer::readNumber() {
     const char* const begin = currentFilePosition;
     const char* end = begin + 1;
     bool isFloat = false;
+    bool sawSeparator = false;
+    bool sawNonSeparator = false;
+    uint64_t intValue = *begin - '0';
     char ch = readChar();
 
     switch (ch) {
@@ -119,12 +123,18 @@ Token Lexer::readNumber() {
             end++;
             while (true) {
                 ch = readChar();
-                if (ch >= '0' && ch <= '1') {
+                if (ch == '0' || ch == '1') {
+                    intValue <<= 1;
+                    intValue |= ch == '1';
+                    sawNonSeparator = true;
+                    end++;
+                    continue;
+                } else if (ch == '_') {
                     end++;
                     continue;
                 }
                 if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in binary literal");
-                if (end == begin + 2) ERROR(firstLocation, "binary literal must have at least one digit after '0b'");
+                if (end == begin + 2 || !sawNonSeparator) ERROR(firstLocation, "binary literal must have at least one digit after '0b'");
                 goto end;
             }
             break;
@@ -134,11 +144,17 @@ Token Lexer::readNumber() {
             while (true) {
                 ch = readChar();
                 if (ch >= '0' && ch <= '7') {
+                    intValue *= 8;
+                    intValue += ch - '0';
+                    sawNonSeparator = true;
+                    end++;
+                    continue;
+                } else if (ch == '_') {
                     end++;
                     continue;
                 }
                 if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in octal literal");
-                if (end == begin + 2) ERROR(firstLocation, "octal literal must have at least one digit after '0o'");
+                if (end == begin + 2 || !sawNonSeparator) ERROR(firstLocation, "octal literal must have at least one digit after '0o'");
                 goto end;
             }
             break;
@@ -148,10 +164,19 @@ Token Lexer::readNumber() {
             }
 
             while (true) {
-                if (ch == '.') {
-                    if (isFloat) goto end;
+                if (ch == '.' && !isFloat) {
+                    if (sawSeparator) ERROR(firstLocation, "float literals cannot contain separators");
                     isFloat = true;
-                } else if (!std::isdigit(ch)) {
+                } else if (std::isdigit(ch)) {
+                    // Only add to the integer value if we're not a floating-point
+                    // value, otherwise simply continue to the next character
+                    if (!isFloat) {
+                        intValue *= 10;
+                        intValue += ch - '0';
+                    }
+                } else if (ch == '_') {
+                    sawSeparator = true;
+                } else {
                     goto end;
                 }
                 end++;
@@ -166,18 +191,29 @@ Token Lexer::readNumber() {
                 ch = readChar();
 
                 if (std::isdigit(ch)) {
+                    intValue *= 16;
+                    intValue += ch - '0';
+                    sawNonSeparator = true;
+                    end++;
+                } else if (ch == '_') {
                     end++;
                 } else if (ch >= 'a' && ch <= 'f') {
                     if (lettercase > 0) ERROR(lastLocation, "mixed letter case in hex literal");
+                    intValue *= 16;
+                    intValue += ch - 'a' + 10;
+                    sawNonSeparator = true;
                     end++;
                     lettercase = -1;
                 } else if (ch >= 'A' && ch <= 'F') {
                     if (lettercase < 0) ERROR(lastLocation, "mixed letter case in hex literal");
+                    intValue *= 16;
+                    intValue += ch - 'A' + 10;
+                    sawNonSeparator = true;
                     end++;
                     lettercase = 1;
                 } else {
                     if (std::isalnum(ch)) ERROR(lastLocation, "invalid digit '" << ch << "' in hex literal");
-                    if (end == begin + 2) ERROR(firstLocation, "hex literal must have at least one digit after '0x'");
+                    if (end == begin + 2 || !sawNonSeparator) ERROR(firstLocation, "hex literal must have at least one digit after '0x'");
                     goto end;
                 }
             }
@@ -194,7 +230,8 @@ end:
         end--;
     }
 
-    return Token(isFloat ? Token::FloatLiteral : Token::IntegerLiteral, getCurrentLocation(), llvm::StringRef(begin, end - begin));
+    if (isFloat) return Token(Token::FloatLiteral, getCurrentLocation(), llvm::StringRef(begin, end - begin));
+    return Token(getCurrentLocation(), intValue);
 }
 
 static const llvm::StringMap<Token::Kind> keywords = {
