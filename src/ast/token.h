@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <ostream>
 #pragma warning(push, 0)
 #include <llvm/ADT/StringRef.h>
@@ -112,9 +113,10 @@ struct Token {
 
     Token() = default;
     Token(Token::Kind kind, SourceLocation location, llvm::StringRef string = {});
+    Token(SourceLocation location, uint64_t val);
     Token::Kind getKind() const { return kind; }
     operator Token::Kind() const { return kind; }
-    llvm::StringRef getString() const { return string; }
+    llvm::StringRef getString() const { return src.string; }
     SourceLocation getLocation() const { return location; }
     bool is(Token::Kind kind) const { return this->kind == kind; }
     bool is(llvm::ArrayRef<Token::Kind> kinds) const;
@@ -123,7 +125,10 @@ struct Token {
 
 private:
     Token::Kind kind;
-    llvm::StringRef string; ///< The substring in the source code representing this token.
+    union {
+        llvm::StringRef string; ///< The substring in the source code representing this token.
+        uint64_t integer; ///< The parsed integer literal value (only valid if this is a IntegerLiteral token)
+    } src;
     SourceLocation location;
 };
 

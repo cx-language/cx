@@ -2,5 +2,5 @@
 
 void main() {
     // CHECK: [[@LINE+1]]:14: error: expected newline or ';', got identifier
-    var i = 0_;
+    var i = 0a;
 }

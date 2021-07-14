@@ -66,9 +66,14 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     }
 }
 
-Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string) : kind(kind), string(string), location(location) {
+Token::Token(Token::Kind kind, SourceLocation location, llvm::StringRef string) : kind(kind), src { string }, location(location) {
     ASSERT(!string.empty() || kind == Token::None || kind >= Token::Break);
     ASSERT(location.isValid());
+}
+
+Token::Token(SourceLocation location, uint64_t val) : kind(Token::IntegerLiteral), src { "" }, location(location) {
+    ASSERT(location.isValid());
+    src.integer = val;
 }
 
 bool cx::isBinaryOperator(Token::Kind tokenKind) {
@@ -169,15 +174,16 @@ bool Token::is(llvm::ArrayRef<Token::Kind> kinds) const {
 }
 
 llvm::APSInt Token::getIntegerValue() const {
-    llvm::APInt value(64, 0);
-    bool fail = string.getAsInteger(0, value);
-    ASSERT(!fail, "invalid integer literal");
-    return llvm::APSInt(value, false);
+    // Avoid overflow with very large values by adding an extra
+    // storage bit if the high bit in the source value is set
+    llvm::APSInt value(64 + !!(src.integer & (1ULL << 63)), false);
+    value = src.integer;
+    return value;
 }
 
 llvm::APFloat Token::getFloatingPointValue() const {
     // TODO: Which float semantics to use?
-    llvm::APFloat value(llvm::APFloat::IEEEsingle(), string);
+    llvm::APFloat value(llvm::APFloat::IEEEsingle(), src.string);
     return value;
 }
 
