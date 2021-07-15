@@ -111,7 +111,6 @@ struct Token {
         TokenCount
     };
 
-    Token() = default;
     Token(Token::Kind kind, SourceLocation location, llvm::StringRef string = {});
     Token(SourceLocation location, uint64_t val);
     Token::Kind getKind() const { return kind; }
