@@ -58,8 +58,6 @@ struct Token {
         HashEndif,
         Equal,
         NotEqual,
-        PointerEqual,
-        PointerNotEqual,
         Less,
         LessOrEqual,
         Greater,

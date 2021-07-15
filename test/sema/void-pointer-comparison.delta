@@ -1,7 +1,0 @@
-// RUN: %not %delta -typecheck %s | %FileCheck %s
-
-void f(void* a, void* b) {
-	// CHECK: [[@LINE+2]]:11: error: no matching operator '==' with arguments 'void*' and 'void*'
-	// CHECK-COUNT-8: note: candidate function:
-    _ = a == b;
-}

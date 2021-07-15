@@ -63,7 +63,7 @@ struct OrderedMap<Key, Value> {
         a.parent = b;
 
         if (b.parent != null) {
-            if (b.parent.right === a) {
+            if (b.parent.right == a) {
                 b.parent.right = b;
             } else {
                 b.parent.left = b;
@@ -89,7 +89,7 @@ struct OrderedMap<Key, Value> {
         a.parent = b;
 
         if (b.parent != null) {
-            if (b.parent.right === a) {
+            if (b.parent.right == a) {
                 b.parent.right = b;
             } else {
                 b.parent.left = b;
@@ -200,7 +200,7 @@ struct OrderedMap<Key, Value> {
             if (root!.entry.key == *key) {
                 root = child;
             } else {
-                if (parent!.left === n) {
+                if (parent!.left == n) {
                     parent.left = child;
                 } else {
                     parent.right = child;
@@ -283,7 +283,7 @@ struct OrderedMap<Key, Value> {
 
         var n = node;
         while (n.parent != null) {
-            if (n === n.parent.right) {
+            if (n == n.parent.right) {
                 return n.parent;
             }
             n = n.parent;
@@ -316,7 +316,7 @@ struct OrderedMap<Key, Value> {
 
         var n = node;
         while (n.parent != null) {
-            if (n === n.parent.left) {
+            if (n == n.parent.left) {
                 return n.parent;
             }
             n = n.parent;

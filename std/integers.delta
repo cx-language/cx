@@ -42,7 +42,7 @@ private void printUnsigned<T>(T value, StringBuffer* stream) {
 
 struct int: Copyable, Comparable, Printable, Hashable {
     Ordering compare(int* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -56,7 +56,7 @@ struct int: Copyable, Comparable, Printable, Hashable {
 
 struct int8: Copyable, Comparable, Printable, Hashable {
     Ordering compare(int8* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -70,7 +70,7 @@ struct int8: Copyable, Comparable, Printable, Hashable {
 
 struct int16: Copyable, Comparable, Printable, Hashable {
     Ordering compare(int16* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -84,7 +84,7 @@ struct int16: Copyable, Comparable, Printable, Hashable {
 
 struct int32: Copyable, Comparable, Printable, Hashable {
     Ordering compare(int32* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -98,7 +98,7 @@ struct int32: Copyable, Comparable, Printable, Hashable {
 
 struct int64: Copyable, Comparable, Printable, Hashable {
     Ordering compare(int64* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -112,7 +112,7 @@ struct int64: Copyable, Comparable, Printable, Hashable {
 
 struct uint: Copyable, Comparable, Printable, Hashable {
     Ordering compare(uint* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -126,7 +126,7 @@ struct uint: Copyable, Comparable, Printable, Hashable {
 
 struct uint8: Copyable, Comparable, Printable, Hashable {
     Ordering compare(uint8* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -140,7 +140,7 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
 
 struct uint16: Copyable, Comparable, Printable, Hashable {
     Ordering compare(uint16* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -154,7 +154,7 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
 
 struct uint32: Copyable, Comparable, Printable, Hashable {
     Ordering compare(uint32* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -168,7 +168,7 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
 
 struct uint64: Copyable, Comparable, Printable, Hashable {
     Ordering compare(uint64* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {

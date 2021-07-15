@@ -21,8 +21,7 @@ struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
         var slotEnd = &slot.data()[slot.size()];
         current++;
 
-        // TODO: Allow comparing T[*] and T* without casts.
-        if (cast<void*>(current) === cast<void*>(slotEnd)) {
+        if (current == slotEnd) {
             hashTableIterator.increment();
             skipEmptySlots();
         }

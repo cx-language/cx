@@ -1,6 +1,6 @@
 
 void _EN4main3fooEOP3intP3int(int* a, int* b) {
-    bool _0 = a === b
-    bool _1 = a !== b
+    bool _0 = a == b
+    bool _1 = a != b
     return void
 }

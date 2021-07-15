@@ -14,7 +14,7 @@ struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
     }
 
     bool hasValue() {
-        return current !== end;
+        return current != end;
     }
 
     Element* value() {

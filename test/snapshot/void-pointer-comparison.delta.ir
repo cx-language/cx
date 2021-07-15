@@ -1,0 +1,5 @@
+
+void _EN4main1fEP4voidP4void(void* a, void* b) {
+    bool _0 = a == b
+    return void
+}

@@ -3,6 +3,6 @@
 struct X {}
 
 void fx(X* a, X* b) {
-    // CHECK: [[@LINE+1]]:11: error: type 'X' doesn't implement interface 'Comparable'
-    _ = a < b;
+    // CHECK: [[@LINE+1]]:8: error: type 'X' doesn't implement interface 'Comparable'
+    *a < *b;
 }

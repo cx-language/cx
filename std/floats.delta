@@ -10,7 +10,7 @@ private void printFloat(float64 value, StringBuffer* stream) {
 
 struct float: Copyable, Comparable, Printable {
     Ordering compare(float* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -20,7 +20,7 @@ struct float: Copyable, Comparable, Printable {
 
 struct float32: Copyable, Comparable, Printable {
     Ordering compare(float32* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -30,7 +30,7 @@ struct float32: Copyable, Comparable, Printable {
 
 struct float64: Copyable, Comparable, Printable {
     Ordering compare(float64* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 
     void print(StringBuffer* stream) {
@@ -40,6 +40,6 @@ struct float64: Copyable, Comparable, Printable {
 
 struct float80: Copyable, Comparable {
     Ordering compare(float80* other) {
-        return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
+        return this < *other ? Ordering.Less : this > *other ? Ordering.Greater : Ordering.Equal;
     }
 }

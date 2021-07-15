@@ -1,19 +1,21 @@
-/// Public members
-
 /// Gives the maximum of the two elements
 T* max<T>(T* a, T* b) {
-    if (a >= b) {
-        return a;
-    }
-    return b;
+    return *b < *a ? a : b;
+}
+
+/// Gives the maximum of the two elements
+T max<T: Copyable>(T a, T b) {
+    return b < a ? a : b;
 }
 
 /// Gives the minimum of the two elements
 T* min<T>(T* a, T* b) {
-    if (a < b) {
-        return a;
-    }
-    return b;
+    return *a < *b ? a : b;
+}
+
+/// Gives the minimum of the two elements
+T min<T: Copyable>(T a, T b) {
+    return a < b ? a : b;
 }
 
 /// Swaps two items in place
@@ -32,8 +34,6 @@ void sort<E: Comparable>(List<E>* array)  {
         quickSort(array, 0, array.size() - 1);
     }
 }
-
-/// Private members
 
 // TODO: Use ArrayRef instead of List.
 private int partition<E: Comparable>(List<E>* arr, int low, int high) {

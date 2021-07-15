@@ -50,7 +50,6 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return find(c, 0);
     }
 
-    // TODO: Do we need 'find(char, int)', because basically the same can be accomplish with `substr(start).find(c)`?
     /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
     int find(char c, int start) {
         for (var i in start..size()) {

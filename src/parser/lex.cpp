@@ -309,22 +309,12 @@ Token Lexer::nextToken() {
                 return Token(Token::Greater, getCurrentLocation());
             case '=':
                 ch = readChar();
-                if (ch == '=') {
-                    ch = readChar();
-                    if (ch == '=') return Token(Token::PointerEqual, getCurrentLocation());
-                    unreadChar(ch);
-                    return Token(Token::Equal, getCurrentLocation());
-                }
+                if (ch == '=') return Token(Token::Equal, getCurrentLocation());
                 unreadChar(ch);
                 return Token(Token::Assignment, getCurrentLocation());
             case '!':
                 ch = readChar();
-                if (ch == '=') {
-                    ch = readChar();
-                    if (ch == '=') return Token(Token::PointerNotEqual, getCurrentLocation());
-                    unreadChar(ch);
-                    return Token(Token::NotEqual, getCurrentLocation());
-                }
+                if (ch == '=') return Token(Token::NotEqual, getCurrentLocation());
                 unreadChar(ch);
                 return Token(Token::Not, getCurrentLocation());
             case '&':

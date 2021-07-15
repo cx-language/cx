@@ -12,8 +12,7 @@ To create nullable pointers, the pointer type has to be marked as [nullable](nul
 To form a pointer, the `&` operator can be used.
 To dereference a pointer, the `*` operator can be used.
 
-Comparing pointers also compares to pointed-to objects. To compare the memory addresses,
-the reference equality operators `===` and `!==` can be used.
+Comparing pointers compares the memory addresses.
 
 ```cs
 void main() {
@@ -22,11 +21,11 @@ void main() {
     println(p); // Prints 6
 
     int* q = p; // Copy p to q, both point to i now
-    println(p === q); // Prints true because both pointers point to the same memory address
+    println(p == q); // Prints true because both pointers point to the same memory address
 
     int j = 6;
     p = &j; // Change p to point to j
-    println(p === q); // Prints false because pointers point to different memory addresses
+    println(p == q); // Prints false because pointers point to different memory addresses
 
     *p = 7; // Change the value of j
     println(p * q); // Multiplies the values pointed to by p and q, prints 42

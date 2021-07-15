@@ -1,0 +1,6 @@
+// RUN: %not %delta -typecheck %s -Wno-unused | %FileCheck %s
+
+void f(int a, int* b) {
+    // CHECK: [[@LINE+1]]:7: error: invalid operands 'int' and 'int*' to '=='
+    a == b;
+}

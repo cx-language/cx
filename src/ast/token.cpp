@@ -29,8 +29,6 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
-        case Token::PointerEqual:
-        case Token::PointerNotEqual:
             return PrecedenceGroup::Comparison;
         case Token::Less:
         case Token::LessOrEqual:
@@ -75,8 +73,6 @@ bool delta::isBinaryOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
-        case Token::PointerEqual:
-        case Token::PointerNotEqual:
         case Token::Less:
         case Token::LessOrEqual:
         case Token::Greater:
@@ -193,8 +189,6 @@ bool delta::isComparisonOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
-        case Token::PointerEqual:
-        case Token::PointerNotEqual:
         case Token::Less:
         case Token::LessOrEqual:
         case Token::Greater:
@@ -278,8 +272,6 @@ const char* delta::toString(Token::Kind tokenKind) {
         "#endif",
         "==",
         "!=",
-        "===",
-        "!==",
         "<",
         "<=",
         ">",
