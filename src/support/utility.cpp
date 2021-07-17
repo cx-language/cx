@@ -126,16 +126,14 @@ void cx::reportError(SourceLocation location, StringFormatter& message, llvm::Ar
 }
 
 void cx::reportWarning(SourceLocation location, StringFormatter& message) {
-    extern llvm::cl::opt<WarningMode> warningMode;
+    extern llvm::cl::opt<bool> disableWarnings;
+    extern llvm::cl::opt<bool> warningsAsErrors;
 
-    switch (warningMode) {
-        case WarningMode::Default:
-            printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message.str());
-            break;
-        case WarningMode::Suppress:
-            break;
-        case WarningMode::TreatAsErrors:
-            reportError(location, message);
-            break;
+    if (disableWarnings) return;
+
+    if (warningsAsErrors) {
+        reportError(location, message);
+    } else {
+        printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message.str());
     }
 }

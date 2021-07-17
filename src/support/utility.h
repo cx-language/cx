@@ -85,8 +85,6 @@ void printStackTrace();
 void reportError(SourceLocation location, StringFormatter& message, llvm::ArrayRef<Note> notes = {});
 void reportWarning(SourceLocation location, StringFormatter& message);
 
-enum class WarningMode { Default, Suppress, TreatAsErrors };
-
 #define ABORT(args) \
     { \
         printStackTrace(); \

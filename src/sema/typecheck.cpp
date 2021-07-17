@@ -208,16 +208,12 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         }
     }
 
-    if (module.getName() != "std" && isWarningEnabled("unused")) {
+    if (module.getName() != "std" && !options.noUnusedWarnings) {
         checkUnusedDecls(module);
     }
 
     currentModule = nullptr;
     currentSourceFile = nullptr;
-}
-
-bool Typechecker::isWarningEnabled(llvm::StringRef warning) const {
-    return !llvm::is_contained(options.disabledWarnings, warning);
 }
 
 static llvm::SmallVector<Decl*, 1> findDeclsInModules(llvm::StringRef name, llvm::ArrayRef<Module*> modules) {

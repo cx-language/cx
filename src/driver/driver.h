@@ -6,7 +6,7 @@
 namespace cx {
 
 struct CompileOptions {
-    std::vector<std::string> disabledWarnings;
+    bool noUnusedWarnings;
     std::vector<std::string> importSearchPaths;
     std::vector<std::string> frameworkSearchPaths;
     std::vector<std::string> defines;
