@@ -46,31 +46,37 @@ namespace cl = llvm::cl;
 
 namespace cx {
 int errors = 0;
+cl::OptionCategory cxCategory("C* options");
 cl::SubCommand build("build", "Build a C* project");
 cl::SubCommand run("run", "Build and run a C* executable");
-cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(*cl::AllSubCommands));
-cl::opt<bool> parse("parse", cl::desc("Parse only"));
-cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"));
-cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"));
-cl::opt<bool> printIR("print-ir", cl::desc("Print C* intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
+cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(*cl::AllSubCommands), cl::cat(cxCategory));
+cl::opt<bool> parse("parse", cl::desc("Parse only"), cl::cat(cxCategory));
+cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"), cl::cat(cxCategory));
+cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"), cl::cat(cxCategory));
+cl::opt<bool> printIR("print-ir", cl::desc("Print C* intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand),
+                      cl::cat(cxCategory));
 cl::opt<bool> printIRAll("print-ir-all", cl::desc("Print C* intermediate representation of all compiled modules"), cl::sub(build),
-                         cl::sub(*cl::TopLevelSubCommand));
-cl::opt<bool> printLLVM("print-llvm", cl::desc("Print LLVM intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand));
+                         cl::sub(*cl::TopLevelSubCommand), cl::cat(cxCategory));
+cl::opt<bool> printLLVM("print-llvm", cl::desc("Print LLVM intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand),
+                        cl::cat(cxCategory));
 // TODO: Add -print-llvm-all option.
-cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"));
-cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"));
-cl::opt<bool> emitPositionIndependentCode("fPIC", cl::desc("Emit position-independent code"), cl::sub(*cl::AllSubCommands));
-cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file name"));
+cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"), cl::cat(cxCategory));
+cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"), cl::cat(cxCategory));
+cl::opt<bool> emitPositionIndependentCode("fPIC", cl::desc("Emit position-independent code"), cl::sub(*cl::AllSubCommands), cl::cat(cxCategory));
+cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file name"), cl::cat(cxCategory));
 cl::opt<WarningMode> warningMode(cl::desc("Warning mode:"), cl::sub(*cl::AllSubCommands),
                                  cl::values(clEnumValN(WarningMode::Suppress, "w", "Suppress all warnings"),
-                                            clEnumValN(WarningMode::TreatAsErrors, "Werror", "Treat warnings as errors")));
-cl::list<std::string> disabledWarnings("Wno-", cl::desc("Disable warnings"), cl::value_desc("warning"), cl::Prefix, cl::sub(*cl::AllSubCommands));
-cl::list<std::string> defines("D", cl::desc("Specify defines"), cl::Prefix, cl::sub(*cl::AllSubCommands));
-cl::list<std::string> importSearchPaths("I", cl::desc("Add directory to import search paths"), cl::value_desc("path"), cl::Prefix, cl::sub(*cl::AllSubCommands));
+                                            clEnumValN(WarningMode::TreatAsErrors, "Werror", "Treat warnings as errors")),
+                                 cl::cat(cxCategory));
+cl::list<std::string> disabledWarnings("Wno-", cl::desc("Disable warnings"), cl::value_desc("warning"), cl::Prefix, cl::sub(*cl::AllSubCommands),
+                                       cl::cat(cxCategory));
+cl::list<std::string> defines("D", cl::desc("Specify defines"), cl::Prefix, cl::sub(*cl::AllSubCommands), cl::cat(cxCategory));
+cl::list<std::string> importSearchPaths("I", cl::desc("Add directory to import search paths"), cl::value_desc("path"), cl::Prefix, cl::sub(*cl::AllSubCommands),
+                                        cl::cat(cxCategory));
 cl::list<std::string> frameworkSearchPaths("F", cl::desc("Add directory to framework search paths"), cl::value_desc("path"), cl::Prefix,
-                                           cl::sub(*cl::AllSubCommands));
-cl::list<std::string> cflags(cl::Sink, cl::desc("Add C compiler flags"), cl::sub(*cl::AllSubCommands));
-cl::alias emitAssemblyAlias("S", cl::aliasopt(emitAssembly));
+                                           cl::sub(*cl::AllSubCommands), cl::cat(cxCategory));
+cl::list<std::string> cflags(cl::Sink, cl::desc("Add C compiler flags"), cl::sub(*cl::AllSubCommands), cl::cat(cxCategory));
+cl::alias emitAssemblyAlias("S", cl::aliasopt(emitAssembly), cl::cat(cxCategory));
 } // namespace cx
 
 static int exec(const char* command, std::string& output) {
@@ -417,6 +423,7 @@ static void addPlatformCompileOptions() {
 int main(int argc, const char** argv) {
     llvm::setBugReportMsg("Please submit a bug report to https://github.com/cx-language/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
+    cl::HideUnrelatedOptions(cxCategory);
     cl::ParseCommandLineOptions(argc, argv, "C* compiler\n");
     addPlatformCompileOptions();
 
