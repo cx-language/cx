@@ -1,3 +1,5 @@
+SHELL := bash
+
 ifneq ($(OS),Windows_NT)
     UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Darwin)
