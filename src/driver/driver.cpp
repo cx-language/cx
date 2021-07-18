@@ -76,7 +76,7 @@ cl::opt<bool> printLLVM("print-llvm", cl::desc("Print LLVM intermediate represen
 cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"), cl::cat(outputCategory));
 cl::alias emitAssemblyAlias("S", cl::aliasopt(emitAssembly), cl::cat(outputCategory));
 cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"), cl::cat(outputCategory));
-cl::opt<bool> emitPositionIndependentCode("fPIC", cl::desc("Emit position-independent code"), cl::sub(*cl::AllSubCommands), cl::cat(outputCategory));
+cl::opt<bool> noPIE("no-pie", cl::desc("Don't produce a position-independent executable"), cl::sub(*cl::AllSubCommands), cl::cat(outputCategory));
 cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file name"), cl::cat(outputCategory));
 
 cl::OptionCategory warningCategory("Warning Options");
@@ -290,8 +290,7 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     }
 
     auto fileType = emitAssembly ? llvm::CGFT_AssemblyFile : llvm::CGFT_ObjectFile;
-    if (msvc) emitPositionIndependentCode = true;
-    auto relocModel = emitPositionIndependentCode ? llvm::Reloc::Model::PIC_ : llvm::Reloc::Model::Static;
+    auto relocModel = noPIE ? llvm::Reloc::Model::Static : llvm::Reloc::Model::PIC_;
     emitMachineCode(linkedModule, temporaryOutputFilePath, fileType, relocModel);
 
     if (!outputDirectory.empty()) {

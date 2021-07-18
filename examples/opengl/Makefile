@@ -5,7 +5,7 @@ ifneq ($(OS),Windows_NT)
     endif
     ifeq ($(UNAME_S),Linux)
         CX_FLAGS += -DGL_GLEXT_PROTOTYPES
-        CC_FLAGS += $$(pkg-config --libs gl) -no-pie
+        CC_FLAGS += $$(pkg-config --libs gl)
     endif
 endif
 
