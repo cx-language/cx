@@ -15,7 +15,10 @@ using namespace cx;
 
 namespace cx {
 extern int errors;
-}
+extern llvm::cl::opt<int> errorLimit;
+extern llvm::cl::opt<bool> disableWarnings;
+extern llvm::cl::opt<bool> warningsAsErrors;
+} // namespace cx
 
 std::ostream& cx::operator<<(std::ostream& stream, llvm::StringRef string) {
     return stream.write(string.data(), string.size());
@@ -118,6 +121,8 @@ void cx::abort(StringFormatter& message) {
 
 void cx::reportError(SourceLocation location, StringFormatter& message, llvm::ArrayRef<Note> notes) {
     errors++;
+    if (errorLimit > 0 && errors > errorLimit) exit(1);
+
     printDiagnostic(location, "error", llvm::raw_ostream::RED, message.str());
 
     for (auto& note : notes) {
@@ -126,9 +131,6 @@ void cx::reportError(SourceLocation location, StringFormatter& message, llvm::Ar
 }
 
 void cx::reportWarning(SourceLocation location, StringFormatter& message) {
-    extern llvm::cl::opt<bool> disableWarnings;
-    extern llvm::cl::opt<bool> warningsAsErrors;
-
     if (disableWarnings) return;
 
     if (warningsAsErrors) {

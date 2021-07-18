@@ -85,10 +85,12 @@ cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"), cl
 cl::opt<bool> noPIE("no-pie", cl::desc("Don't produce a position-independent executable"), cl::sub(*cl::AllSubCommands), cl::cat(outputCategory));
 cl::opt<std::string> specifiedOutputFileName("o", cl::desc("Specify output file name"), cl::cat(outputCategory));
 
-cl::OptionCategory warningCategory("Warning Options");
-cl::opt<bool> disableWarnings("w", cl::desc("Disable all warnings"), cl::sub(*cl::AllSubCommands), cl::cat(warningCategory));
-cl::opt<bool> warningsAsErrors("Werror", cl::desc("Treat warnings as errors"), cl::sub(*cl::AllSubCommands), cl::cat(warningCategory));
-cl::opt<bool> noUnusedWarnings("Wno-unused", cl::desc("Disable warnings about unused entities"), cl::sub(*cl::AllSubCommands), cl::cat(warningCategory));
+cl::OptionCategory diagnosticCategory("Diagnostic Options");
+cl::opt<bool> disableWarnings("w", cl::desc("Disable all warnings"), cl::sub(*cl::AllSubCommands), cl::cat(diagnosticCategory));
+cl::opt<bool> warningsAsErrors("Werror", cl::desc("Treat warnings as errors"), cl::sub(*cl::AllSubCommands), cl::cat(diagnosticCategory));
+cl::opt<bool> noUnusedWarnings("Wno-unused", cl::desc("Disable warnings about unused entities"), cl::sub(*cl::AllSubCommands), cl::cat(diagnosticCategory));
+cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported errors (10 by default, 0 removes limit)"), cl::init(10),
+                        cl::sub(*cl::AllSubCommands), cl::cat(diagnosticCategory));
 
 } // namespace cx
 
@@ -451,7 +453,7 @@ static void addPlatformCompileOptions() {
 int main(int argc, const char** argv) {
     llvm::setBugReportMsg("Please submit a bug report to https://github.com/cx-language/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
-    cl::HideUnrelatedOptions({ &stageSelectionCategory, &outputCategory, &dependencyCategory, &warningCategory });
+    cl::HideUnrelatedOptions({ &stageSelectionCategory, &outputCategory, &dependencyCategory, &diagnosticCategory });
     cl::ParseCommandLineOptions(argc, argv, "C* compiler\n");
     addPlatformCompileOptions();
 
