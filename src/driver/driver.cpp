@@ -51,14 +51,20 @@ int errors = 0;
 cl::SubCommand build("build", "Build a C* project");
 cl::SubCommand run("run", "Build and run a C* executable");
 
-cl::OptionCategory searchPathAndDefinesCategory("Search Path and Define Options");
-cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(*cl::AllSubCommands), cl::cat(searchPathAndDefinesCategory));
-cl::list<std::string> defines("D", cl::desc("Specify defines"), cl::Prefix, cl::sub(*cl::AllSubCommands), cl::cat(searchPathAndDefinesCategory));
+cl::OptionCategory dependencyCategory("Dependency Options");
+cl::list<std::string> inputs(cl::Positional, cl::desc("<input files>"), cl::sub(*cl::AllSubCommands), cl::cat(dependencyCategory));
+cl::list<std::string> defines("D", cl::desc("Specify defines"), cl::Prefix, cl::sub(*cl::AllSubCommands), cl::cat(dependencyCategory));
 cl::list<std::string> importSearchPaths("I", cl::desc("Add directory to import search paths"), cl::value_desc("path"), cl::Prefix, cl::sub(*cl::AllSubCommands),
-                                        cl::cat(searchPathAndDefinesCategory));
-cl::list<std::string> frameworkSearchPaths("F", cl::desc("Add directory to framework search paths"), cl::value_desc("path"), cl::Prefix,
-                                           cl::sub(*cl::AllSubCommands), cl::cat(searchPathAndDefinesCategory));
-cl::list<std::string> cflags(cl::Sink, cl::desc("Add C compiler flags"), cl::sub(*cl::AllSubCommands), cl::cat(searchPathAndDefinesCategory));
+                                        cl::cat(dependencyCategory));
+cl::list<std::string> libraries("l", cl::desc("Link against system library"), cl::value_desc("path"), cl::Prefix, cl::sub(*cl::AllSubCommands),
+                                cl::cat(dependencyCategory));
+cl::list<std::string> librarySearchPaths("L", cl::desc("Add directory to library search paths"), cl::value_desc("path"), cl::Prefix,
+                                         cl::sub(*cl::AllSubCommands), cl::cat(dependencyCategory));
+cl::list<std::string> frameworks("framework", cl::desc("(macOS) Link against framework"), cl::value_desc("path"), cl::Prefix, cl::sub(*cl::AllSubCommands),
+                                 cl::cat(dependencyCategory));
+cl::list<std::string> frameworkSearchPaths("F", cl::desc("(macOS) Add directory to framework search paths"), cl::value_desc("path"), cl::Prefix,
+                                           cl::sub(*cl::AllSubCommands), cl::cat(dependencyCategory));
+cl::list<std::string> cflags("cflags", cl::desc("Add C compiler flags"), cl::CommaSeparated, cl::sub(*cl::AllSubCommands), cl::cat(dependencyCategory));
 
 cl::OptionCategory stageSelectionCategory("Stage Selection Options");
 cl::opt<bool> parse("parse", cl::desc("Parse only"), cl::cat(stageSelectionCategory));
@@ -323,8 +329,24 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     ccArgs.push_back(msvc ? "-Fe:" : "-o");
     ccArgs.push_back(temporaryExecutablePath.c_str());
 
-    for (auto& cflag : options.cflags) {
-        ccArgs.push_back(cflag.c_str());
+    for (auto& flag : options.cflags) {
+        ccArgs.push_back(flag.c_str());
+    }
+    for (auto& flag : librarySearchPaths) {
+        ccArgs.push_back("-L");
+        ccArgs.push_back(flag.c_str());
+    }
+    for (auto& flag : libraries) {
+        ccArgs.push_back("-l");
+        ccArgs.push_back(flag.c_str());
+    }
+    for (auto& flag : frameworkSearchPaths) {
+        ccArgs.push_back("-F");
+        ccArgs.push_back(flag.c_str());
+    }
+    for (auto& flag : frameworks) {
+        ccArgs.push_back("-framework");
+        ccArgs.push_back(flag.c_str());
     }
 
     if (msvc) {
@@ -429,7 +451,7 @@ static void addPlatformCompileOptions() {
 int main(int argc, const char** argv) {
     llvm::setBugReportMsg("Please submit a bug report to https://github.com/cx-language/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
-    cl::HideUnrelatedOptions({ &stageSelectionCategory, &outputCategory, &searchPathAndDefinesCategory, &warningCategory });
+    cl::HideUnrelatedOptions({ &stageSelectionCategory, &outputCategory, &dependencyCategory, &warningCategory });
     cl::ParseCommandLineOptions(argc, argv, "C* compiler\n");
     addPlatformCompileOptions();
 
