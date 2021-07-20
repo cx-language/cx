@@ -46,10 +46,9 @@ function initializeCodeEditor(block) {
         var match;
         while ((match = regex.exec(output.innerText))) {
             var [, line, column, message, indent] = match;
-            console.log(match, indent);
             var node = document.createElement("div");
             node.appendChild(document.createTextNode(indent + "^ " + message));
-            node.className = "error";
+            node.classList.add("diagnostic", message.startsWith("warning") ? "warning" : "error");
             widgets.push(editor.addLineWidget(line - 1, node, true));
         }
     }

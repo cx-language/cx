@@ -8,6 +8,7 @@
     --string-color: #008000;
     --number-color: #a31515;
     --error-background-color: #fdd;
+    --warning-background-color: #ffd;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,7 +21,8 @@
         --blue: hsl(213, 60%, 58%);
         --string-color: hsl(0, 58%, 70%);
         --number-color: #b5cea8;
-        --error-background-color: #ff00007a;
+        --error-background-color: #ff000038;
+        --warning-background-color: #ffff0021;
     }
 }
 
@@ -214,6 +216,7 @@ button:focus {
 }
 
 .CodeMirror {
+    font-family: inherit;
     background: unset !important;
     color: var(--text-color-subtle);
     height: auto;
@@ -225,15 +228,22 @@ button:focus {
 }
 
 .CodeMirror-line,
-.CodeMirror-linewidget .error {
+.CodeMirror-linewidget .diagnostic {
     padding: 0 15px !important;
 }
 
-.error {
-    background-color: var(--error-background-color);
+.diagnostic {
     color: var(--text-color);
     padding: 0 4px;
     white-space: pre-wrap;
+}
+
+.diagnostic.error {
+    background-color: var(--error-background-color);
+}
+
+.diagnostic.warning {
+    background-color: var(--warning-background-color);
 }
 
 button.run {
