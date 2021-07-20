@@ -12,20 +12,6 @@ int sum(int a, int b) {
 }
 ```
 
-Function parameters can have a default value, allowing the parameter to be
-omitted when calling the function (not implemented yet):
-
-```cs
-void foo(int i = 0) {
-    println(i);
-}
-
-void main() {
-    foo(42); // prints 42
-    foo(); // prints 0
-}
-```
-
 Functions may be overloaded on parameter types:
 
 ```cs
@@ -60,16 +46,22 @@ void main() {
 }
 ```
 
-Functions can return multiple values (destructuring not implemented yet):
+Functions can return multiple values using tuples:
 
 ```cs
-(int, bool) foo() {
-    return (42, true);
+(int a, bool b) foo() {
+    return (a: 42, b: true);
 }
 
 void main() {
-    var (i, b) = foo();
-    println(i); // prints 42
-    println(b); // prints true
+    var result = foo();
+    println(result.a); // prints 42
+    println(result.b); // prints true
 }
 ```
+
+## Planned features
+
+- Default parameter values
+- Destructuring for multiple return values
+- Tuples with anonymous members

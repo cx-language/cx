@@ -96,6 +96,6 @@ int main() {
 }
 ```
 
-## Future additions
+## Planned features
 
 - Add `fallthrough` keyword to explicitly enable switch case fallthrough behavior.

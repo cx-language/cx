@@ -39,7 +39,7 @@ standalone statements, not inside arbitrary expressions.
 
 ---
 
-## Future additions
+## Planned features
 
-- More builtin types, such as `byte`, `double`, `long`, `short`, may be added in the future.
-- The language might provide an exponentiation operator in the future.
+- More builtin type aliases, such as `byte`, `double`, `long`, `short`
+- Exponentiation operator
