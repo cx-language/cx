@@ -1,0 +1,17 @@
+// RUN: %cx run %s | %FileCheck %s
+
+bool isEven(int n) {
+    return n % 2 == 0;
+}
+
+void main() {
+    var numbers = List([0, 1, 2, 3, 4]);
+
+    var even = numbers.filter(isEven);
+    // CHECK: [0, 2, 4]
+    println(even);
+
+    var doubled = even.map(n -> n * 2);
+    // CHECK-NEXT: [0, 4, 8]
+    println(doubled);
+}

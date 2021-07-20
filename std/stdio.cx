@@ -1,4 +1,14 @@
-void println<T>(T value) {
+void println<T>(T* value) {
+    print(value);
+    print('\n');
+}
+
+void println<T: Copyable>(T value) {
+    print(value);
+    print('\n');
+}
+
+void println(const char[*]? value) {
     print(value);
     print('\n');
 }

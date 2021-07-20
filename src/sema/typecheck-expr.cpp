@@ -293,11 +293,11 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         expr.setRHS(convertedRHS);
     } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true)) {
         expr.setLHS(convertedLHS);
-    } else if ((!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType())) {
+    } else if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
         invalidOperandsToBinaryExpr(expr, op);
     }
 
-    return isComparisonOperator(op) ? Type::getBool() : expr.getLHS().getType();
+    return isComparisonOperator(op) ? Type::getBool() : expr.getLHS().getType().removeOptional().removePointer();
 }
 
 void Typechecker::typecheckAssignment(BinaryExpr& expr, SourceLocation location) {
@@ -674,8 +674,8 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
         return findGenericArg(argType, paramType.removeOptional().getPointee(), genericParam);
     }
 
-    if (paramType.isArrayRef() && argType.isArrayType()) {
-        return findGenericArg(argType.getElementType(), paramType.getElementType(), genericParam);
+    if (paramType.isArrayRef() && argType.removeOptional().removePointer().isArrayType()) {
+        return findGenericArg(argType.removeOptional().removePointer().getElementType(), paramType.getElementType(), genericParam);
     }
 
     return Type();

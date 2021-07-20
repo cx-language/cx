@@ -198,7 +198,29 @@ struct List<Element> {
         return output;
     }
 
+    List<Output> map<Output>(Output(Element) transform) {
+        var output = List<Output>(capacity: this.size);
+
+        for (var element in this) {
+            output.push(transform(element));
+        }
+
+        return output;
+    }
+
     List<Element> filter(bool(Element*) include) {
+        var output = List<Element>();
+
+        for (var element in this) {
+            if (include(element)) {
+                output.push(element);
+            }
+        }
+
+        return output;
+    }
+
+    List<Element> filter(bool(Element) include) {
         var output = List<Element>();
 
         for (var element in this) {

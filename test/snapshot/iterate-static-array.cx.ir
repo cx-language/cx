@@ -25,7 +25,7 @@ loop.body:
     int* _9 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator)
     store _9 to e
     int* e.load = load e
-    void _10 = call _EN3std7printlnIP3intEEP3int(int* e.load)
+    void _10 = call _EN3std7printlnI3intEEP3int(int* e.load)
     br loop.increment
 
 loop.increment:
@@ -51,7 +51,7 @@ loop.body_0:
     int* _19 = call _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* __iterator_0)
     store _19 to e_0
     int* e.load_0 = load e_0
-    void _20 = call _EN3std7printlnIP3intEEP3int(int* e.load_0)
+    void _20 = call _EN3std7printlnI3intEEP3int(int* e.load_0)
     br loop.increment_0
 
 loop.increment_0:
@@ -77,7 +77,7 @@ int* _EN3std13ArrayIteratorI3intE5valueE(ArrayIterator<int>* this) {
     return current.load
 }
 
-void _EN3std7printlnIP3intEEP3int(int* value) {
+void _EN3std7printlnI3intEEP3int(int* value) {
     void _0 = call _EN3std5printI3intEEP3int(int* value)
     void _1 = call _EN3std5printI4charEE4char(char 10)
     return void
