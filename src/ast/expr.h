@@ -396,6 +396,7 @@ struct ImplicitCastExpr : Expr {
     enum Kind {
         OptionalWrap,
         AutoReference,
+        AutoDereference,
     };
 
     ImplicitCastExpr(Expr* operand, Type targetType, Kind kind) : Expr(ExprKind::ImplicitCastExpr, operand->getLocation()), operand(operand), kind(kind) {

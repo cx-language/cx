@@ -1,0 +1,18 @@
+
+int main() {
+    int* a = alloca int
+    int** p = alloca int*
+    store int 0 to a
+    store a to p
+    int a.load = load a
+    int* p.load = load p
+    int p.load.load = load p.load
+    int _0 = a.load + p.load.load
+    store _0 to a
+    int a.load_0 = load a
+    int* p.load_0 = load p
+    int p.load.load_0 = load p.load_0
+    int _1 = a.load_0 * p.load.load_0
+    store _1 to a
+    return int 0
+}

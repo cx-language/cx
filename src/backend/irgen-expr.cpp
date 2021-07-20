@@ -602,6 +602,8 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
             }
         case ImplicitCastExpr::AutoReference:
             return emitPlainExpr(*expr.getOperand());
+        case ImplicitCastExpr::AutoDereference:
+            return createLoad(emitPlainExpr(*expr.getOperand()));
     }
 
     llvm_unreachable("all implicit cast kinds handled");
