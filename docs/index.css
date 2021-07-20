@@ -41,7 +41,7 @@ body {
     padding: 20px;
     box-sizing: content-box;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Droid Sans, Helvetica Neue, Arial, sans-serif;
-    font-size: 16px;
+    font-size: 15px;
 }
 
 h1 {
@@ -81,7 +81,7 @@ pre, code, .sourceCode {
 }
 
 .sourceCode, pre code {
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.6;
 }
 
