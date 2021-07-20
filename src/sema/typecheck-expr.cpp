@@ -828,7 +828,21 @@ Type Typechecker::typecheckBuiltinConversion(CallExpr& expr) {
     return expr.getType();
 }
 
-static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> candidates) {
+static std::vector<Note> getCandidateNotes(llvm::ArrayRef<Decl*> unfilteredCandidates, const CallExpr& expr) {
+    std::vector<Decl*> candidates;
+    for (Decl* candidate : unfilteredCandidates) {
+        FunctionDecl* functionDecl = llvm::dyn_cast<FunctionDecl>(candidate);
+        if (!functionDecl) {
+            auto functionTemplate = llvm::dyn_cast<FunctionTemplate>(candidate);
+            functionDecl = functionTemplate ? functionTemplate->getFunctionDecl() : nullptr;
+        }
+
+        if (!functionDecl || functionDecl->getParams().size() == expr.getArgs().size()) {
+            candidates.push_back(candidate);
+        }
+    }
+    if (candidates.empty()) candidates = unfilteredCandidates;
+
     bool multipleModules = candidates.size() > 1 && llvm::any_of(candidates, [&](Decl* c) { return c->getModule() != candidates[0]->getModule(); });
 
     return map(candidates, [&](Decl* c) {
@@ -1059,7 +1073,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         if (auto match = resolveAmbiguousOverload(matches, expr)) {
             matches = { *match };
         } else {
-            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(map(matches, [](auto& match) { return match.decl; })),
+            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(map(matches, [](auto& match) { return match.decl; }), expr),
                              "ambiguous reference to '" << callee << "'" << (isConstructorCall ? " constructor" : ""));
         }
     }
@@ -1080,12 +1094,12 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
     if (atLeastOneFunction) {
         if (auto binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
-            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
+            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates, expr),
                              "no matching operator '" << binaryExpr->getOperator() << "' with arguments '" << binaryExpr->getLHS().getType() << "' and '"
                                                       << binaryExpr->getRHS().getType() << "'");
         } else {
             auto argTypes = map(expr.getArgs(), [&](NamedValue& arg) { return typecheckExpr(*arg.getValue()).toString(); });
-            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates),
+            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates, expr),
                              (isConstructorCall ? "no matching constructor '" : "no matching function '") << callee << "(" << llvm::join(argTypes, ", ") << ")'");
         }
     } else {
