@@ -206,7 +206,7 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
     }
 }
 
-static void invalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) {
+static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind op) {
     std::string hint;
 
     if ((expr.getRHS().isNullLiteralExpr() || expr.getLHS().isNullLiteralExpr()) && (op == Token::Equal || op == Token::NotEqual)) {
@@ -267,7 +267,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (leftType.isBool() && rightType.isBool()) {
             return Type::getBool();
         }
-        invalidOperandsToBinaryExpr(expr, op);
+        throwInvalidOperandsToBinaryExpr(expr, op);
     }
 
     if (op == Token::PointerEqual || op == Token::PointerNotEqual) {
@@ -283,18 +283,23 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
             ERROR(expr.getLocation(), "comparison of distinct pointer types ('" << leftType << "' and '" << rightType << "')");
         }
-    }
-
-    if (isBitwiseOperator(op) && (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
-        invalidOperandsToBinaryExpr(expr, op);
-    }
-
-    if (auto convertedRHS = convert(&expr.getRHS(), leftType, true)) {
+    } else if (!expr.getRHS().isNullLiteralExpr() && leftType.isPointerType() && rightType.isPointerType()) {
+        auto convertedRHS = convert(&expr.getRHS(), leftType.removePointer(), true);
+        auto convertedLHS = convert(&expr.getLHS(), leftType.removePointer(), true);
+        if (convertedRHS && convertedLHS) {
+            expr.setRHS(convertedRHS);
+            expr.setLHS(convertedLHS);
+        } else {
+            throwInvalidOperandsToBinaryExpr(expr, op);
+        }
+    } else if (isBitwiseOperator(op) && (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
+        throwInvalidOperandsToBinaryExpr(expr, op);
+    } else if (auto convertedRHS = convert(&expr.getRHS(), leftType, true)) {
         expr.setRHS(convertedRHS);
     } else if (auto convertedLHS = convert(&expr.getLHS(), rightType, true)) {
         expr.setLHS(convertedLHS);
     } else if (!leftType.removeOptional().isPointerType() || !rightType.removeOptional().isPointerType()) {
-        invalidOperandsToBinaryExpr(expr, op);
+        throwInvalidOperandsToBinaryExpr(expr, op);
     }
 
     return isComparisonOperator(op) ? Type::getBool() : expr.getLHS().getType().removeOptional().removePointer();

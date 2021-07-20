@@ -347,7 +347,10 @@ bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (op == Token::Assignment) return true;
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
     if (op == Token::PointerEqual || op == Token::PointerNotEqual) return true;
-    if (left.isPointerType() && right.isPointerType()) return false;
+    if (left.isPointerType() && right.isPointerType()) {
+        if (left.getPointee().isVoid() || right.getPointee().isVoid()) return false;
+        return isBuiltinOp(op, left.getPointee(), right.getPointee());
+    }
     if (left.isEnumType() && left.equalsIgnoreTopLevelMutable(right)) return true;
     if (left.isEnumType() && right.isInteger()) return true;
     if (left.isInteger() && right.isEnumType()) return true;
