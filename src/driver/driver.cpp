@@ -72,6 +72,8 @@ cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"), cl::
 cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"), cl::cat(stageSelectionCategory));
 
 cl::OptionCategory outputCategory("Output Options");
+cl::opt<bool> printAST("print-ast", cl::desc("Print the abstract syntax tree of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand),
+                       cl::cat(outputCategory));
 cl::opt<bool> printIR("print-ir", cl::desc("Print C* intermediate representation of main module"), cl::sub(build), cl::sub(*cl::TopLevelSubCommand),
                       cl::cat(outputCategory));
 cl::opt<bool> printIRAll("print-ir-all", cl::desc("Print C* intermediate representation of all compiled modules"), cl::sub(build),
@@ -237,6 +239,11 @@ static int buildExecutable(llvm::ArrayRef<std::string> files, const PackageManif
     typechecker.typecheckModule(mainModule, manifest);
 
     if (errors) return 1;
+
+    if (printAST) {
+        mainModule.print(llvm::outs());
+        return 0;
+    }
 
     IRGenerator irGenerator;
     for (auto* importedModule : Module::getAllImportedModules()) {

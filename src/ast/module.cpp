@@ -78,6 +78,14 @@ void Module::addIdentifierReplacement(llvm::StringRef source, llvm::StringRef ta
     getSymbolTable().addIdentifierReplacement(source, target);
 }
 
+void Module::print(llvm::raw_ostream& stream) const {
+    for (auto& sourceFile : sourceFiles) {
+        for (auto* topLevelDecl : sourceFile.getTopLevelDecls()) {
+            stream << *topLevelDecl << "\n";
+        }
+    }
+}
+
 Scope::Scope(Decl* parent, SymbolTable* symbolTable) : parent(parent), symbolTable(symbolTable) {
     symbolTable->pushScope(*this);
 }

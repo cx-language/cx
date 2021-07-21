@@ -142,6 +142,7 @@ struct Module {
     void addToSymbolTable(VarDecl& decl);
     void addToSymbolTable(Decl* decl);
     void addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target);
+    void print(llvm::raw_ostream& stream) const;
 
     static std::vector<Module*> getAllImportedModules();
     static llvm::StringMap<Module*>& getAllImportedModulesMap() { return allImportedModules; }

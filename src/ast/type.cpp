@@ -347,6 +347,11 @@ DestructorDecl* Type::getDestructor() const {
 }
 
 void Type::printTo(std::ostream& stream) const {
+    if (!typeBase) {
+        stream << "NULL";
+        return;
+    }
+
     switch (typeBase->getKind()) {
         case TypeKind::BasicType: {
             if (isOptionalType()) {

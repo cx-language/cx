@@ -76,6 +76,7 @@ struct Expr {
     bool hasType() const { return !!type; }
     bool hasAssignableType() const { return !!assignableType; }
     Type getType() const { return NOTNULL(type); }
+    Type getTypeOrNull() const { return type; }
     Type getAssignableType() const { return NOTNULL(assignableType); }
     void setType(Type type) { this->type = NOTNULL(type); }
     void setAssignableType(Type type) { assignableType = NOTNULL(type); }
