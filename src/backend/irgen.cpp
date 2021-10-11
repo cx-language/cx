@@ -34,8 +34,9 @@ void IRGenerator::setLocalValue(Value* value, const VariableDecl* decl) {
 
 Value* IRGenerator::getValueOrNull(const Decl* decl) {
     for (auto& scope : llvm::reverse(scopes)) {
-        if (auto* value = scope.valuesByDecl.lookup(decl)) {
-            return value;
+        auto it = scope.valuesByDecl.find(decl);
+        if (it != scope.valuesByDecl.end()) {
+            return it->second;
         }
     }
 

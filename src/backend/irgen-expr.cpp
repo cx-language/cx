@@ -88,6 +88,19 @@ Value* IRGenerator::emitOptionalConstruction(Type wrappedType, Expr* arg) {
     return alloca;
 }
 
+Value* IRGenerator::emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name) {
+    auto* value = emitExpr(operand);
+    llvm::StringRef message = "Unwrap failed";
+
+    if (operand.getType().isImplementedAsPointer()) {
+        emitAssert(value, &expr, expr.getLocation(), message, name);
+        return value;
+    } else {
+        emitAssert(createExtractValue(value, optionalHasValueFieldIndex), &expr, expr.getLocation(), message, name);
+        return createExtractValue(value, optionalValueFieldIndex);
+    }
+}
+
 Value* IRGenerator::emitUndefinedLiteralExpr(const UndefinedLiteralExpr& expr) {
     return createUndefined(expr.getType());
 }
@@ -300,11 +313,11 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     }
 }
 
-void IRGenerator::emitAssert(Value* condition, const Expr* expr, SourceLocation location, llvm::StringRef message) {
-    condition = createIsNull(condition, expr, "assert.condition");
+void IRGenerator::emitAssert(Value* condition, const Expr* expr, SourceLocation location, llvm::StringRef message, const llvm::Twine& name) {
+    condition = createIsNull(condition, expr, name + ".condition");
     auto* function = insertBlock->parent;
-    auto* failBlock = new BasicBlock("assert.fail", function);
-    auto* successBlock = new BasicBlock("assert.success", function);
+    auto* failBlock = new BasicBlock((name + ".fail").str(), function);
+    auto* successBlock = new BasicBlock((name + ".success").str(), function);
     auto* assertFail = getFunction(*llvm::cast<FunctionDecl>(Module::getStdlibModule()->getSymbolTable().findOne("assertFail")));
     createCondBr(condition, failBlock, successBlock);
     setInsertPoint(failBlock);
@@ -539,16 +552,7 @@ Value* IRGenerator::emitIndexAssignmentExpr(const IndexAssignmentExpr& expr) {
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
-    auto* value = emitExpr(expr.getOperand());
-    llvm::StringRef message = "Unwrap failed";
-
-    if (expr.getOperand().getType().isImplementedAsPointer()) {
-        emitAssert(value, &expr, expr.getLocation(), message);
-        return value;
-    } else {
-        emitAssert(createExtractValue(value, optionalHasValueFieldIndex), &expr, expr.getLocation(), message);
-        return createExtractValue(value, optionalValueFieldIndex);
-    }
+    return emitOptionalUnwrap(expr.getOperand(), expr, "assert");
 }
 
 Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
@@ -600,6 +604,8 @@ Value* IRGenerator::emitImplicitCastExpr(const ImplicitCastExpr& expr) {
             } else {
                 return emitOptionalConstruction(expr.getOperand()->getType(), expr.getOperand());
             }
+        case ImplicitCastExpr::OptionalUnwrap:
+            return emitOptionalUnwrap(*expr.getOperand(), expr, "__implicit_unwrap");
         case ImplicitCastExpr::AutoReference:
             return emitPlainExpr(*expr.getOperand());
         case ImplicitCastExpr::AutoDereference:

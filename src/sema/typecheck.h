@@ -131,12 +131,11 @@ private:
     static void checkHasAccess(const Decl& decl, SourceLocation location, AccessLevel userAccessLevel);
     void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName);
+    void deferTypechecking(Decl* decl);
     void postProcess();
 
     void setMoved(Expr* expr, bool isMoved);
     void checkNotMoved(const Decl& decl, const VarExpr& expr);
-
-    bool isWarningEnabled(llvm::StringRef warning) const;
 
 private:
     Module* currentModule;

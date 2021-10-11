@@ -85,7 +85,6 @@ struct Expr {
         assignableType = Type();
     }
     bool isAssignment() const;
-    bool isIncrementOrDecrementExpr() const;
     bool isReferenceExpr() const;
     bool isConstant() const;
     llvm::APSInt getConstantIntegerValue() const;
@@ -185,14 +184,14 @@ private:
 };
 
 struct NamedValue {
-    NamedValue(Expr* value) : NamedValue("", value) {}
+    NamedValue(Expr* value) : NamedValue("", NOTNULL(value)) {}
     NamedValue(std::string&& name, Expr* value, SourceLocation location = SourceLocation())
     : name(std::move(name)), value(value), location(location.isValid() ? location : this->value->getLocation()) {}
     llvm::StringRef getName() const { return name; }
     void setName(std::string&& newName) { name = newName; }
     Expr* getValue() { return value; }
     const Expr* getValue() const { return value; }
-    void setValue(Expr* expr) { value = expr; }
+    void setValue(Expr* expr) { value = NOTNULL(expr); }
     SourceLocation getLocation() const { return location; }
 
 private:
@@ -396,6 +395,7 @@ private:
 struct ImplicitCastExpr : Expr {
     enum Kind {
         OptionalWrap,
+        OptionalUnwrap,
         AutoReference,
         AutoDereference,
     };

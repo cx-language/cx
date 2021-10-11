@@ -13,10 +13,7 @@ using namespace cx;
 static std::vector<TypeBase*> typeBases;
 
 #define DEFINE_BUILTIN_TYPE_GET_AND_IS(TYPE, NAME) \
-    Type Type::get##TYPE(Mutability mutability, SourceLocation location) { \
-        static BasicType type(#NAME, /*genericArgs*/ {}); \
-        return Type(&type, mutability, location); \
-    } \
+    Type Type::get##TYPE(Mutability mutability, SourceLocation location) { return BasicType::get(#NAME, {}, mutability, location); } \
     bool Type::is##TYPE() const { return isBasicType() && getName() == #NAME; }
 
 DEFINE_BUILTIN_TYPE_GET_AND_IS(Void, void)
@@ -413,7 +410,8 @@ void Type::printTo(std::ostream& stream) const {
             stream << '*';
             break;
         case TypeKind::UnresolvedType:
-            llvm_unreachable("invalid unresolved type");
+            stream << "<UNRESOLVED>";
+            break;
     }
 }
 

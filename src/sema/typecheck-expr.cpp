@@ -533,8 +533,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     }
 
     if (source.isOptionalType() && source.getWrappedType() == target && expr && !expr->isCallExpr()) {
-        // Implicit optional unwrap. Warnings for these are generated during null analysis.
-        return source;
+        if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalUnwrap;
+        return target;
     }
 
     if (source.isArrayType() && target.removeOptional().isPointerType() &&
@@ -946,7 +946,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
                 if (decls.size() == 1) {
                     validateAndConvertArguments(expr, *functionDecl, callee, expr.getCallee().getLocation());
-                    declsToTypecheck.emplace_back(functionDecl);
+                    deferTypechecking(functionDecl);
                     return functionDecl;
                 }
                 if (auto match = matchArguments(expr, functionDecl)) {
@@ -1020,7 +1020,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                     if (typeDecls.empty()) {
                         typeDecl = typeTemplate->instantiate(genericArgs);
                         getCurrentModule()->addToSymbolTable(*typeDecl);
-                        declsToTypecheck.push_back(typeDecl);
+                        deferTypechecking(typeDecl);
                     } else {
                         typeDecl = llvm::cast<TypeDecl>(typeDecls[0]);
                     }
@@ -1085,7 +1085,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
     if (matches.size() == 1) {
         validateAndConvertArguments(expr, *matches.front().decl);
-        declsToTypecheck.push_back(matches.front().decl);
+        deferTypechecking(matches.front().decl);
         return matches.front().decl;
     }
 
@@ -1273,8 +1273,9 @@ ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm
             }
 
             bool invalidType = false;
-            if (Type convertedType = isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), true)) {
-                didConvertArguments = didConvertArguments || convertedType != arg.getValue()->getType();
+            llvm::Optional<ImplicitCastExpr::Kind> implicitCastKind;
+            if (Type convertedType = isImplicitlyConvertible(arg.getValue(), arg.getValue()->getType(), param->getType(), true, &implicitCastKind)) {
+                didConvertArguments = didConvertArguments || convertedType != arg.getValue()->getType() || implicitCastKind.hasValue();
             } else {
                 invalidType = true;
             }
@@ -1311,17 +1312,23 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& callee
 void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic, llvm::StringRef callee, SourceLocation location) {
     auto result = getArgumentValidationResult(expr, params, isVariadic);
 
-    for (auto&& [param, arg] : llvm::zip_longest(params, expr.getArgs())) {
+    // Arguments are type-checked here for error messages, but type-converted only in the success case below
+    // (they might not convert properly in the case of error).
+    for (int i = 0; i < std::max(params.size(), expr.getArgs().size()); i++) {
+        auto* arg = i < expr.getArgs().size() ? &expr.getArgs()[i] : nullptr;
+        auto* param = i < params.size() ? &params[i] : nullptr;
         if (!arg) continue;
-        if (!arg->getValue()->hasType()) {
-            typecheckExpr(*arg->getValue(), false, param ? param->getType() : Type());
-        }
-
-        if (param) arg->setValue(convert(arg->getValue(), param->getType(), true));
+        if (!arg->getValue()->hasType()) typecheckExpr(*arg->getValue(), false, param ? param->getType() : Type());
     }
 
     switch (result.error) {
         case ArgumentValidation::None:
+            for (int i = 0; i < std::max(params.size(), expr.getArgs().size()); i++) {
+                auto* arg = i < expr.getArgs().size() ? &expr.getArgs()[i] : nullptr;
+                auto* param = i < params.size() ? &params[i] : nullptr;
+                if (!arg) continue;
+                if (param) arg->setValue(convert(arg->getValue(), param->getType(), true));
+            }
             break;
         case ArgumentValidation::TooFew:
             REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << (isVariadic ? "at least " : "") << params.size());
@@ -1643,7 +1650,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             type = typecheckIfExpr(llvm::cast<IfExpr>(expr));
             break;
         case ExprKind::ImplicitCastExpr:
-            typecheckExpr(*llvm::cast<ImplicitCastExpr>(expr).getOperand());
+            typecheckExpr(*llvm::cast<ImplicitCastExpr>(expr).getOperand(), useIsWriteOnly, expectedType);
             type = expr.getType();
             break;
         case ExprKind::VarDeclExpr:

@@ -1,7 +1,16 @@
 
 void _EN4main1fEP3intOP3int(int* foo, int* bar) {
-    bool _0 = foo == bar
-    br _0, if.then, if.else
+    bool __implicit_unwrap.condition = bar == int* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _0 = call _EN3std10assertFailEP4char(char* "Unwrap failed at compare-nullable-and-nonnull-ptrs.cx:4:16
+")
+    unreachable
+
+__implicit_unwrap.success:
+    bool _1 = foo == bar
+    br _1, if.then, if.else
 
 if.then:
     br if.end
@@ -11,4 +20,7 @@ if.else:
 
 if.end:
     return void
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

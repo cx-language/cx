@@ -154,50 +154,91 @@ if.else:
     br if.end
 
 if.end:
-    return void
+    Optional<int> c.load_1 = load c
+    bool _11 = extractvalue c.load_1, 0
+    bool __implicit_unwrap.condition = _11 == bool false
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 assert.fail:
-    void _11 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:24:18
+    void _12 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:24:18
 ")
     unreachable
 
 assert.success:
-    int _12 = extractvalue c.load_0, 1
-    int _13 = _12 + int 1
-    store _13 to x
-    Optional<int> c.load_1 = load c
-    bool _14 = extractvalue c.load_1, 0
-    bool assert.condition_0 = _14 == bool false
+    int _13 = extractvalue c.load_0, 1
+    int _14 = _13 + int 1
+    store _14 to x
+    Optional<int> c.load_2 = load c
+    bool _15 = extractvalue c.load_2, 0
+    bool assert.condition_0 = _15 == bool false
     br assert.condition_0, assert.fail, assert.success
 
 assert.fail_0:
-    void _15 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:25:18
+    void _16 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:25:18
 ")
     unreachable
 
 assert.success_0:
-    int _16 = extractvalue c.load_1, 1
-    int _17 = int 1 + _16
-    Optional<int> c.load_2 = load c
-    bool _18 = extractvalue c.load_2, 0
-    bool assert.condition_1 = _18 == bool false
+    int _17 = extractvalue c.load_2, 1
+    int _18 = int 1 + _17
+    Optional<int> c.load_3 = load c
+    bool _19 = extractvalue c.load_3, 0
+    bool assert.condition_1 = _19 == bool false
     br assert.condition_1, assert.fail, assert.success
 
 assert.fail_1:
-    void _19 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:26:16
+    void _20 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:26:16
 ")
     unreachable
 
 assert.success_1:
-    int _20 = extractvalue c.load_2, 1
-    int _21 = -_20
-    void _22 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _3, int _21)
+    int _21 = extractvalue c.load_3, 1
+    int _22 = -_21
+    void _23 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _3, int _22)
     Optional<int> .load_2 = load _3
     store .load_2 to c
     br if.end
+
+__implicit_unwrap.fail:
+    void _24 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:30:18
+")
+    unreachable
+
+__implicit_unwrap.success:
+    int _25 = extractvalue c.load_1, 1
+    void _26 = call _EN4main12takesNonNullE3int(int _25)
+    Optional<int> c.load_4 = load c
+    bool _27 = extractvalue c.load_4, 0
+    br _27, if.then, if.else
+
+if.then_0:
+    Optional<int> c.load_5 = load c
+    bool _28 = extractvalue c.load_5, 0
+    bool __implicit_unwrap.condition_0 = _28 == bool false
+    br __implicit_unwrap.condition_0, __implicit_unwrap.fail, __implicit_unwrap.success
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    return void
+
+__implicit_unwrap.fail_0:
+    void _29 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:32:22
+")
+    unreachable
+
+__implicit_unwrap.success_0:
+    int _30 = extractvalue c.load_5, 1
+    void _31 = call _EN4main12takesNonNullE3int(int _30)
+    br if.end_0
 }
 
 void _EN3std10assertFailEP4char(char* message) {
+}
+
+void _EN4main12takesNonNullE3int(int i) {
+    return void
 }
 
 void _EN4main1gE() {

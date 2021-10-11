@@ -138,7 +138,7 @@ void NullAnalyzer::analyze(Value* value) {
         }
         case ValueKind::BinaryInst: {
             auto binary = llvm::cast<BinaryInst>(value);
-            if (llvm::isa<ConstantNull>(binary->right)) {
+            if (llvm::isa<ConstantNull>(binary->right) && !llvm::StringRef(binary->name).startswith("__implicit_unwrap")) {
                 ASSERT(binary->op == Token::Equal || binary->op == Token::NotEqual);
                 if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNotNull) {
                     WARN(binary->getExpr()->getLocation(), "value cannot be null here; null check can be removed");

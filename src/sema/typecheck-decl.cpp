@@ -36,7 +36,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 decl = decls[0];
                 auto instantiation = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs());
                 getCurrentModule()->addToSymbolTable(*instantiation);
-                declsToTypecheck.push_back(instantiation);
+                deferTypechecking(instantiation);
             } else {
                 ASSERT(decls.size() == 1);
                 decl = decls[0];

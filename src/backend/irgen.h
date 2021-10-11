@@ -9,13 +9,11 @@
 #include "../ast/expr.h"
 #include "../ast/stmt.h"
 #include "../backend/ir.h"
-#include "../sema/typecheck.h"
 
 namespace cx {
 
 struct Module;
 struct Type;
-struct Typechecker;
 struct IRGenerator;
 
 struct IRGenScope {
@@ -73,7 +71,9 @@ struct IRGenerator {
     void emitAssignment(const BinaryExpr& expr);
     Value* emitExprForPassing(const Expr& expr, IRType* targetType);
     Value* emitOptionalConstruction(Type wrappedType, Expr* arg);
-    void emitAssert(Value* condition, const Expr* expr, SourceLocation location, llvm::StringRef message = "Assertion failed");
+    Value* emitOptionalUnwrap(Expr& operand, const Expr& expr, const llvm::Twine& name);
+    void emitAssert(Value* condition, const Expr* expr, SourceLocation location, llvm::StringRef message = "Assertion failed",
+                    const llvm::Twine& name = "assert");
     Value* emitEnumCase(const EnumCase& enumCase, llvm::ArrayRef<NamedValue> associatedValueElements);
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
     Value* emitBuiltinCast(const CallExpr& expr);
@@ -146,7 +146,7 @@ struct IRGenerator {
         ASSERT(left->getType()->equals(right->getType()));
         return insertBlock->add(new BinaryInst { ValueKind::BinaryInst, op, left, right, expr, name.str() });
     }
-    Value* createIsNull(Value* value, const Expr* expr, const llvm::Twine& name = "") {
+    Value* createIsNull(Value* value, const Expr* expr, const llvm::Twine& name) {
         Value* nullValue;
         auto type = value->getType();
 

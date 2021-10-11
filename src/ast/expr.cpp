@@ -13,15 +13,10 @@ bool Expr::isAssignment() const {
     return binaryExpr && isAssignmentOperator(binaryExpr->getOperator());
 }
 
-bool Expr::isIncrementOrDecrementExpr() const {
-    auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(this);
-    return unaryExpr && (unaryExpr->getOperator() == Token::Increment || unaryExpr->getOperator() == Token::Decrement);
-}
-
 bool Expr::isReferenceExpr() const {
     auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(this);
     return unaryExpr && unaryExpr->getOperator() == Token::And;
-};
+}
 
 bool Expr::isConstant() const {
     switch (getKind()) {
@@ -72,8 +67,10 @@ bool Expr::isConstant() const {
                     return false;
             }
         }
-        case ExprKind::BinaryExpr:
-            return llvm::cast<BinaryExpr>(this)->getLHS().isConstant() && llvm::cast<BinaryExpr>(this)->getRHS().isConstant();
+        case ExprKind::BinaryExpr: {
+            auto binaryExpr = llvm::cast<BinaryExpr>(this);
+            return binaryExpr->getOperator() != Token::Assignment && binaryExpr->getLHS().isConstant() && binaryExpr->getRHS().isConstant();
+        }
 
         case ExprKind::CallExpr:
         case ExprKind::SizeofExpr: // TODO: sizeof should be a constant expression.

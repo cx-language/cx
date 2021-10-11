@@ -28,7 +28,7 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
     ASSERT(decls.size() == 1);
     auto instantiation = llvm::cast<TypeTemplate>(decls[0])->instantiate(type.getGenericArgs());
     getCurrentModule()->addToSymbolTable(*instantiation);
-    declsToTypecheck.push_back(instantiation);
+    deferTypechecking(instantiation);
     return instantiation;
 }
 
@@ -93,6 +93,15 @@ done:
     Module::getAllImportedModulesMap()[module->getName()] = module;
     typecheckModule(*module, nullptr);
     return *module;
+}
+
+void Typechecker::deferTypechecking(Decl* decl) {
+    for (auto existing : declsToTypecheck) {
+        if (existing == decl) {
+            return;
+        }
+    }
+    declsToTypecheck.push_back(decl);
 }
 
 void Typechecker::postProcess() {

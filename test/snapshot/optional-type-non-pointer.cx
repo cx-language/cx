@@ -26,9 +26,16 @@ void f() {
         c = -(c!);
     }
     // if (c) c++; // TODO: Allow postfix incrementing/decrementing an implicitly unwrapped optional.
+
+    takesNonNull(c); // TODO: Should emit warning
+    if (c) {
+        takesNonNull(c);
+    }
 }
 
 void g() {
     char*[*]? p = null;
     if (p == null) {}
 }
+
+void takesNonNull(int i) {}

@@ -2,7 +2,7 @@
 
 void f() {
     while (var c = h()) {
-        j(c);
+        j(c); // FIXME: These shouldn't generate implicit unwrap assertions (they always succeed because of the enclosing if-check)
     }
 
     if (var c = h()) {

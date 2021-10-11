@@ -13,26 +13,44 @@ loop.condition:
 
 loop.body:
     int* c.load_0 = load c
-    void _2 = call _EN4main1jEP3int(int* c.load_0)
-    br loop.condition
+    bool __implicit_unwrap.condition = c.load_0 == int* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 loop.end:
-    int* _3 = call _EN4main1hE()
-    store _3 to c_0
+    int* _2 = call _EN4main1hE()
+    store _2 to c_0
     int* c.load_1 = load c_0
-    bool _4 = c.load_1 != int* null
-    br _4, if.then, if.else
+    bool _3 = c.load_1 != int* null
+    br _3, if.then, if.else
+
+__implicit_unwrap.fail:
+    void _4 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:5:11
+")
+    unreachable
+
+__implicit_unwrap.success:
+    void _5 = call _EN4main1jEP3int(int* c.load_0)
+    br loop.condition
 
 if.then:
     int* c.load_2 = load c_0
-    void _5 = call _EN4main1jEP3int(int* c.load_2)
-    br if.end
+    bool __implicit_unwrap.condition_0 = c.load_2 == int* null
+    br __implicit_unwrap.condition_0, __implicit_unwrap.fail, __implicit_unwrap.success
 
 if.else:
     br if.end
 
 if.end:
     return void
+
+__implicit_unwrap.fail_0:
+    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at var-decl-in-control-flow-condition.cx:9:11
+")
+    unreachable
+
+__implicit_unwrap.success_0:
+    void _7 = call _EN4main1jEP3int(int* c.load_2)
+    br if.end
 }
 
 int* _EN4main1hE() {
@@ -41,4 +59,7 @@ int* _EN4main1hE() {
 
 void _EN4main1jEP3int(int* i) {
     return void
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }
