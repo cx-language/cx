@@ -95,7 +95,6 @@ private:
     Type typecheckBuiltinConversion(CallExpr& expr);
     Type typecheckBuiltinCast(CallExpr& expr);
     Type typecheckSizeofExpr(SizeofExpr& expr);
-    Type typecheckAddressofExpr(AddressofExpr& expr);
     Type typecheckMemberExpr(MemberExpr& expr);
     Type typecheckIndexExpr(IndexExpr& expr);
     Type typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr);

@@ -1,7 +1,6 @@
 // RUN: check-snapshots -Wno-unused
 
 struct X { int i; }
-struct Y { int i; }
 
 bool operator<(X* a, X* b) {
     return true;
@@ -15,11 +14,10 @@ bool operator< <T: Z>(T* a, T* b) {
     return true;
 }
 
-void fx(X* a, X* b) {
-    _ = a < b;
-    _ = *a < *b;
-}
-
-void fy(Y* a, Y* b) {
-    _ = addressof(a) < addressof(b);
+void fx(X* a, X* b, void* v1, void* v2) {
+    a == b;
+    a < b;
+    *a < *b;
+    v1 != v2;
+    v1 >= v2;
 }

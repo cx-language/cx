@@ -29,8 +29,6 @@ static PrecedenceGroup getPrecedenceGroup(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
-        case Token::PointerEqual:
-        case Token::PointerNotEqual:
             return PrecedenceGroup::Comparison;
         case Token::Less:
         case Token::LessOrEqual:
@@ -80,8 +78,6 @@ bool cx::isBinaryOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
-        case Token::PointerEqual:
-        case Token::PointerNotEqual:
         case Token::Less:
         case Token::LessOrEqual:
         case Token::Greater:
@@ -199,8 +195,6 @@ bool cx::isComparisonOperator(Token::Kind tokenKind) {
     switch (tokenKind) {
         case Token::Equal:
         case Token::NotEqual:
-        case Token::PointerEqual:
-        case Token::PointerNotEqual:
         case Token::Less:
         case Token::LessOrEqual:
         case Token::Greater:
@@ -250,7 +244,6 @@ const char* cx::toString(Token::Kind tokenKind) {
         "float literal",
         "string literal",
         "character literal",
-        "addressof",
         "as",
         "break",
         "case",
@@ -284,8 +277,6 @@ const char* cx::toString(Token::Kind tokenKind) {
         "#endif",
         "==",
         "!=",
-        "===",
-        "!==",
         "<",
         "<=",
         ">",

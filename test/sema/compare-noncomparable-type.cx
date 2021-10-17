@@ -1,0 +1,8 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct X {}
+
+void fx(X* a, X* b) {
+    // CHECK: [[@LINE+1]]:12: error: type 'X' doesn't implement interface 'Comparable'
+    _ = *a < *b;
+}

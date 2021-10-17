@@ -124,8 +124,6 @@ IRType* Value::getType() const {
                 case Token::OrOr:
                 case Token::Equal:
                 case Token::NotEqual:
-                case Token::PointerEqual:
-                case Token::PointerNotEqual:
                 case Token::Less:
                 case Token::LessOrEqual:
                 case Token::Greater:

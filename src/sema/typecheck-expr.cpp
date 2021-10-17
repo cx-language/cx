@@ -270,9 +270,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         throwInvalidOperandsToBinaryExpr(expr, op);
     }
 
-    if (op == Token::PointerEqual || op == Token::PointerNotEqual) {
-        if (!leftType.isImplementedAsPointer() || !rightType.isImplementedAsPointer()) {
-            ERROR(expr.getLocation(), "both operands to pointer comparison operator must have pointer type");
+    if (leftType.removeOptional().isPointerType() && rightType.removeOptional().isPointerType()) {
+        if (!isComparisonOperator(op)) {
+            throwInvalidOperandsToBinaryExpr(expr, op);
         }
 
         auto leftPointeeType = leftType.removeOptional().removePointer();
@@ -283,16 +283,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         if (!leftPointeeType.equalsIgnoreTopLevelMutable(rightPointeeType)) {
             ERROR(expr.getLocation(), "comparison of distinct pointer types ('" << leftType << "' and '" << rightType << "')");
         }
-    } else if (!expr.getRHS().isNullLiteralExpr() && leftType.isPointerType() && rightType.isPointerType()) {
-        auto convertedRHS = convert(&expr.getRHS(), leftType.removePointer(), true);
-        auto convertedLHS = convert(&expr.getLHS(), leftType.removePointer(), true);
-        if (convertedRHS && convertedLHS) {
-            expr.setRHS(convertedRHS);
-            expr.setLHS(convertedLHS);
-        } else {
-            throwInvalidOperandsToBinaryExpr(expr, op);
-        }
     } else if (isBitwiseOperator(op) && (leftType.isFloatingPoint() || rightType.isFloatingPoint())) {
+        throwInvalidOperandsToBinaryExpr(expr, op);
+    } else if (leftType.isVoid() || rightType.isVoid()) {
         throwInvalidOperandsToBinaryExpr(expr, op);
     } else if (auto convertedRHS = convert(&expr.getRHS(), leftType, true)) {
         expr.setRHS(convertedRHS);
@@ -1438,13 +1431,6 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
     return Type::getUInt64();
 }
 
-Type Typechecker::typecheckAddressofExpr(AddressofExpr& expr) {
-    if (!typecheckExpr(expr.getOperand()).removeOptional().isPointerType()) {
-        ERROR(expr.getLocation(), "operand to 'addressof' must have pointer type");
-    }
-    return Type::getUIntPtr();
-}
-
 Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
     if (auto* enumCase = getEnumCase(expr)) {
         checkHasAccess(*enumCase->getEnumDecl(), expr.getBaseExpr()->getLocation(), AccessLevel::None);
@@ -1496,7 +1482,7 @@ Type Typechecker::typecheckIndexExpr(IndexExpr& expr) {
     } else if (lhsType.removeOptional().removePointer().isBuiltinType()) {
         ERROR(expr.getLocation(), "'" << lhsType << "' doesn't provide an index operator");
     } else {
-        return typecheckCallExpr(expr);
+        return typecheckCallExpr(expr).removePointer();
     }
 
     Expr* indexExpr = expr.getIndex();
@@ -1627,9 +1613,6 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
             break;
         case ExprKind::SizeofExpr:
             type = typecheckSizeofExpr(llvm::cast<SizeofExpr>(expr));
-            break;
-        case ExprKind::AddressofExpr:
-            type = typecheckAddressofExpr(llvm::cast<AddressofExpr>(expr));
             break;
         case ExprKind::MemberExpr:
             type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr));

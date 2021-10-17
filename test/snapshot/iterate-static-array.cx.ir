@@ -67,7 +67,7 @@ bool _EN3std13ArrayIteratorI3intE8hasValueE(ArrayIterator<int>* this) {
     int* current.load = load current
     int** end = getelementptr this, 1
     int* end.load = load end
-    bool _0 = current.load !== end.load
+    bool _0 = current.load != end.load
     return _0
 }
 

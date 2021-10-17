@@ -8,7 +8,7 @@ struct StringIterator: Copyable, Iterator<char> {
     }
 
     bool hasValue() {
-        return current !== end;
+        return current != end;
     }
 
     char value() {

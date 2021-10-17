@@ -208,11 +208,10 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             if (!decl->isVarDecl()) {
                 try {
                     typecheckTopLevelDecl(*decl, manifest);
+                    postProcess();
                 } catch (const CompileError& error) {
                     error.print();
                 }
-
-                postProcess();
             }
         }
     }

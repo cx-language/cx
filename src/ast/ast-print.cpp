@@ -255,11 +255,6 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
             stream << "SizeofExpr";
             break;
         }
-        case ExprKind::AddressofExpr: {
-            //            auto& addressofExpr = llvm::cast<AddressofExpr>(expr);
-            stream << "AddressofExpr";
-            break;
-        }
         case ExprKind::MemberExpr: {
             //            auto& memberExpr = llvm::cast<MemberExpr>(expr);
             stream << "MemberExpr";

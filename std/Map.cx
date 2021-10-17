@@ -32,7 +32,7 @@ struct Map<Key: Hashable, Value> {
 
     /// Inserts, or updates an existing value.
     void set(Key key, Value value) {
-        var existing = this[key];
+        var existing = &this[key];
 
         if (existing) {
             *existing = value;
@@ -44,7 +44,7 @@ struct Map<Key: Hashable, Value> {
     /// Removes an element from the map, if it exists there.
     void remove(Key* e) {
         var hashValue = convertHash(e.hash()) % capacity();
-        var slot = hashTable[hashValue];
+        var slot = &hashTable[hashValue];
 
         if (slot.size() == 0) {
             return;
@@ -82,7 +82,7 @@ struct Map<Key: Hashable, Value> {
         increaseTableSize(newTable, newCapacity);
 
         for (var i in 0..capacity()) {
-            var slot = hashTable[i];
+            var slot = &hashTable[i];
 
             for (var el in slot) {
                 newTable[convertHash(el.key.hash()) % newCapacity].push(*el);
@@ -94,7 +94,7 @@ struct Map<Key: Hashable, Value> {
 
     Value*? operator[](Key* e) {
         var hashValue = convertHash(e.hash()) % capacity();
-        var slot = hashTable[hashValue];
+        var slot = &hashTable[hashValue];
 
         for (var element in slot) {
             if (element.key == *e) {
@@ -108,7 +108,7 @@ struct Map<Key: Hashable, Value> {
     /// Checks if e is part of the map.
     bool contains(Key* e) {
         var hashValue = convertHash(e.hash()) % capacity();
-        var slot = hashTable[hashValue];
+        var slot = &hashTable[hashValue];
 
         if (slot.size() == 0) {
             return false;

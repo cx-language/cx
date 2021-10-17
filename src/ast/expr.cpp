@@ -74,7 +74,6 @@ bool Expr::isConstant() const {
 
         case ExprKind::CallExpr:
         case ExprKind::SizeofExpr: // TODO: sizeof should be a constant expression.
-        case ExprKind::AddressofExpr:
         case ExprKind::MemberExpr:
         case ExprKind::IndexExpr:
         case ExprKind::IndexAssignmentExpr:
@@ -202,11 +201,6 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
             auto* sizeofExpr = llvm::cast<SizeofExpr>(this);
             auto type = sizeofExpr->getOperandType().resolve(genericArgs);
             return new SizeofExpr(type, sizeofExpr->getLocation());
-        }
-        case ExprKind::AddressofExpr: {
-            auto* addressofExpr = llvm::cast<AddressofExpr>(this);
-            auto operand = addressofExpr->getOperand().instantiate(genericArgs);
-            return new AddressofExpr(operand, addressofExpr->getLocation());
         }
         case ExprKind::MemberExpr: {
             auto* memberExpr = llvm::cast<MemberExpr>(this);
@@ -343,11 +337,6 @@ llvm::APSInt UnaryExpr::getConstantIntegerValue() const {
 bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (op == Token::Assignment) return true;
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
-    if (op == Token::PointerEqual || op == Token::PointerNotEqual) return true;
-    if (left.isPointerType() && right.isPointerType()) {
-        if (left.getPointee().isVoid() || right.getPointee().isVoid()) return false;
-        return isBuiltinOp(op, left.getPointee(), right.getPointee());
-    }
     if (left.isEnumType() && left.equalsIgnoreTopLevelMutable(right)) return true;
     if (left.isEnumType() && right.isInteger()) return true;
     if (left.isInteger() && right.isEnumType()) return true;

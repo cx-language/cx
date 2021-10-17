@@ -235,7 +235,6 @@ end:
 }
 
 static const llvm::StringMap<Token::Kind> keywords = {
-    { "addressof", Token::Addressof },
     { "as", Token::As },
     { "break", Token::Break },
     { "case", Token::Case },
@@ -347,9 +346,6 @@ Token Lexer::nextToken() {
             case '=':
                 ch = readChar();
                 if (ch == '=') {
-                    ch = readChar();
-                    if (ch == '=') return Token(Token::PointerEqual, getCurrentLocation());
-                    unreadChar(ch);
                     return Token(Token::Equal, getCurrentLocation());
                 }
                 unreadChar(ch);
@@ -357,9 +353,6 @@ Token Lexer::nextToken() {
             case '!':
                 ch = readChar();
                 if (ch == '=') {
-                    ch = readChar();
-                    if (ch == '=') return Token(Token::PointerNotEqual, getCurrentLocation());
-                    unreadChar(ch);
                     return Token(Token::NotEqual, getCurrentLocation());
                 }
                 unreadChar(ch);

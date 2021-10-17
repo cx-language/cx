@@ -1,19 +1,18 @@
 # Pointers
 
-Pointers, written `T*`, are used to refer to other objects in memory.
+Pointers, written `T*` (where `T` is the pointed-to type), are used to refer to other objects in memory.
 
-C* pointers are more like C++ references than C/C++ pointers:
-every operation on a pointer operates on the pointed-to value,
-except reassignment. Reassigning a pointer changes what the pointer points to.
-
-Additionally, C* pointers cannot be null by default.
-To create nullable pointers, the pointer type has to be marked as [nullable](nullable-types.html).
+C* pointers are mostly like C/C++ pointers, with the following differences:
+- They cannot be null by default.
+  To create nullable pointers, they need to be marked as [nullable](nullable-types.html).
+- They don't support pointer arithmetic. For pointer arithmetic, array pointers have to be used, see below.
+- When passing a `T*` where a `T` is expected, the pointer is automatically dereferenced. 
+- When passing a `T` value where a `T*` is expected, the address is automatically passed.
 
 To form a pointer, the `&` operator can be used.
 To dereference a pointer, the `*` operator can be used.
-
-Comparing pointers also compares to pointed-to objects. To compare the memory addresses,
-the reference equality operators `===` and `!==` can be used.
+Comparing pointers compares the stored memory addresses.
+To compare the pointed values, the pointers need to be dereferenced first.
 
 ```cs
 void main() {
@@ -22,14 +21,14 @@ void main() {
     println(p); // Prints 6
 
     int* q = p; // Copy p to q, both point to i now
-    println(p === q); // Prints true because both pointers point to the same memory address
+    println(p == q); // Prints true because both pointers point to the same memory address
 
     int j = 6;
     p = &j; // Change p to point to j
-    println(p === q); // Prints false because pointers point to different memory addresses
+    println(p == q); // Prints false because pointers point to different memory addresses
 
     *p = 7; // Change the value of j
-    println(p * q); // Multiplies the values pointed to by p and q, prints 42
+    println(*p + *q); // Sums the values pointed to by p and q, prints 13
 }
 ```
 

@@ -462,17 +462,6 @@ SizeofExpr* Parser::parseSizeofExpr() {
     return new SizeofExpr(type, location);
 }
 
-/// addressof-expr ::= 'addressof' '(' expr ')'
-AddressofExpr* Parser::parseAddressofExpr() {
-    ASSERT(currentToken() == Token::Addressof);
-    auto location = getCurrentLocation();
-    consumeToken();
-    parse(Token::LeftParen);
-    auto operand = parseExpr();
-    parse(Token::RightParen);
-    return new AddressofExpr(operand, location);
-}
-
 /// member-expr ::= expr '.' id
 MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
     auto location = getCurrentLocation();
@@ -617,7 +606,7 @@ bool Parser::arrowAfterParentheses() {
 /// postfix-expr ::= postfix-expr postfix-op | call-expr | variable-expr | string-literal |
 ///                  int-literal | float-literal | bool-literal | null-literal |
 ///                  paren-expr | array-literal | tuple-literal | index-expr | index-assignment-expr
-///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr | addressof-expr
+///                  member-expr | unwrap-expr | lambda-expr | sizeof-expr
 Expr* Parser::parsePostfixExpr() {
     Expr* expr;
 
@@ -675,9 +664,6 @@ Expr* Parser::parsePostfixExpr() {
             break;
         case Token::Sizeof:
             expr = parseSizeofExpr();
-            break;
-        case Token::Addressof:
-            expr = parseAddressofExpr();
             break;
         case Token::Undefined:
             expr = parseUndefinedLiteral();

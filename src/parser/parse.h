@@ -30,7 +30,6 @@ struct UndefinedLiteralExpr;
 struct ArrayLiteralExpr;
 struct TupleExpr;
 struct SizeofExpr;
-struct AddressofExpr;
 struct MemberExpr;
 struct IndexExpr;
 struct UnwrapExpr;
@@ -103,7 +102,6 @@ private:
     Type parseFunctionType(Type returnType);
     Type parseType();
     SizeofExpr* parseSizeofExpr();
-    AddressofExpr* parseAddressofExpr();
     MemberExpr* parseMemberExpr(Expr* lhs);
     Expr* parseIndexExprOrIndexAssignmentExpr(Expr* base);
     UnwrapExpr* parseUnwrapExpr(Expr* operand);

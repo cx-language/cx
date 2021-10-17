@@ -35,7 +35,6 @@ enum class ExprKind {
     BinaryExpr,
     CallExpr,
     SizeofExpr,
-    AddressofExpr,
     MemberExpr,
     IndexExpr,
     IndexAssignmentExpr,
@@ -63,7 +62,6 @@ struct Expr {
     bool isBinaryExpr() const { return getKind() == ExprKind::BinaryExpr; }
     bool isCallExpr() const { return getKind() == ExprKind::CallExpr; }
     bool isSizeofExpr() const { return getKind() == ExprKind::SizeofExpr; }
-    bool isAddressofExpr() const { return getKind() == ExprKind::AddressofExpr; }
     bool isMemberExpr() const { return getKind() == ExprKind::MemberExpr; }
     bool isIndexExpr() const { return getKind() == ExprKind::IndexExpr; }
     bool isUnwrapExpr() const { return getKind() == ExprKind::UnwrapExpr; }
@@ -298,18 +296,6 @@ struct SizeofExpr : Expr {
 
 private:
     Type operandType;
-};
-
-/// An expression that returns the memory address stored in a pointer (non-null or nullable)
-/// as an unsigned integer, e.g. 'addressof(ptr)'.
-struct AddressofExpr : Expr {
-    AddressofExpr(Expr* operand, SourceLocation location) : Expr(ExprKind::AddressofExpr, location), operand(operand) {}
-    const Expr& getOperand() const { return *operand; }
-    Expr& getOperand() { return *operand; }
-    static bool classof(const Expr* e) { return e->getKind() == ExprKind::AddressofExpr; }
-
-private:
-    Expr* operand;
 };
 
 /// A member access expression using the dot syntax, such as 'a.b'.

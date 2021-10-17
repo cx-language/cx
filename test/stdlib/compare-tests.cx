@@ -18,11 +18,4 @@ void main() {
     assert(a < b);
     assert(!(a == b));
     assert(a != b);
-
-    assert(&a <= &b);
-    assert(!(&a >= &b));
-    assert(!(&a > &b));
-    assert(&a < &b);
-    assert(!(&a == &b));
-    assert(&a != &b);
 }

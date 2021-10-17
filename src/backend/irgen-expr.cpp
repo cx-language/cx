@@ -449,11 +449,6 @@ Value* IRGenerator::emitSizeofExpr(const SizeofExpr& expr) {
     return createSizeof(expr.getOperandType());
 }
 
-Value* IRGenerator::emitAddressofExpr(const AddressofExpr& expr) {
-    Value* value = emitExpr(expr.getOperand());
-    return createCast(value, Type::getUIntPtr(), "address");
-}
-
 Value* IRGenerator::emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr) {
     auto baseTypeDecl = field->getParentDecl();
 
@@ -649,8 +644,6 @@ Value* IRGenerator::emitPlainExpr(const Expr& expr) {
             return emitCallExpr(llvm::cast<CallExpr>(expr));
         case ExprKind::SizeofExpr:
             return emitSizeofExpr(llvm::cast<SizeofExpr>(expr));
-        case ExprKind::AddressofExpr:
-            return emitAddressofExpr(llvm::cast<AddressofExpr>(expr));
         case ExprKind::MemberExpr:
             return emitMemberExpr(llvm::cast<MemberExpr>(expr));
         case ExprKind::IndexExpr:

@@ -78,7 +78,6 @@ struct IRGenerator {
     Value* emitCallExpr(const CallExpr& expr, AllocaInst* thisAllocaForInit = nullptr);
     Value* emitBuiltinCast(const CallExpr& expr);
     Value* emitSizeofExpr(const SizeofExpr& expr);
-    Value* emitAddressofExpr(const AddressofExpr& expr);
     Value* emitMemberAccess(Value* baseValue, const FieldDecl* field, const MemberExpr* expr = nullptr);
     Value* emitMemberExpr(const MemberExpr& expr);
     Value* emitTupleElementAccess(const MemberExpr& expr);
