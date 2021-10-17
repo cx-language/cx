@@ -16,17 +16,19 @@ void main() {
     println(foo); // prints null
 
     if (foo) {
-        println("foo is non null"); // this is not executed because foo is null
+        println("foo is non-null"); // this is not executed because foo is null
     }
 
-    // doesn't compile: using foo as an int without checking it for null
-    // int bar = foo + 1;
+    // This should warn about foo being potentially null, but does currently not due to a bug.
+    // This will also abort at runtime if foo is null.
+    // takeInt(foo);
 
     if (foo) {
-        // fine
-        int bar = foo + 1;
+        takeInt(foo); // fine, foo was checked for null
     }
 }
+
+void takeInt(int n) {}
 ```
 
 ## Non-null assertion operator
@@ -38,17 +40,9 @@ If we use it on a value that's actually null, an assertion error will be trigger
 
 ```cs
 void main() {
-    int? result = foo(true);
+    int? x = 1
 
-    // println(result + 1); // doesn't work, compiler says result may be null
-    println(result! + 1); // fine, but only if result is indeed non-null
-}
-
-int? foo(bool b) {
-    if (b) {
-        return 42;
-    } else {
-        return null;
-    }
+    // println(x + 1); // doesn't work, cannot add to potentially null value
+    println(x! + 1); // fine if x is non-null, otherwise will abort at runtime
 }
 ```
