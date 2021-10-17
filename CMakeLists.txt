@@ -74,7 +74,7 @@ endif()
 list(APPEND LLVM_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema)
 target_link_libraries(cx ${LLVM_LIBS})
 
-add_custom_target(check_lit COMMAND lit --verbose --succinct --incremental ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
+add_custom_target(check_lit COMMAND lit --verbose --succinct --incremental --timeout=10 ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
     -Dcx_path="$<TARGET_FILE:cx>"
     -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
     -Dtest_helper_scripts_path="${PROJECT_SOURCE_DIR}/test"

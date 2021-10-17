@@ -1,0 +1,2368 @@
+
+int main() {
+    void _0 = call _EN4main21testInsertAndContainsE()
+    void _1 = call _EN4main19testInsertAndDeleteE()
+    void _2 = call _EN4main18testInsertAndIndexE()
+    void _3 = call _EN4main18testLowerAndHigherE()
+    void _4 = call _EN4main13testFirstLastE()
+    void _5 = call _EN4main21testEmptyMapFunctionsE()
+    void _6 = call _EN4main20testEmptyMapIteratorE()
+    void _7 = call _EN4main17testIteratorOrderE()
+    void _8 = call _EN4main19testUnitMapIteratorE()
+    return int 0
+}
+
+void _EN4main21testInsertAndContainsE() {
+    OrderedMap<int, int>* m = alloca OrderedMap<int, int>
+    int* _0 = alloca int
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _1 = alloca Range<int>
+    int* i = alloca int
+    int* _2 = alloca int
+    void _3 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* m)
+    int _4 = call _EN3std10OrderedMapI3int3intE4sizeE(OrderedMap<int, int>* m)
+    bool _5 = _4 == int 0
+    bool assert.condition = _5 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _6 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:18:5
+")
+    unreachable
+
+assert.success:
+    bool _7 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int 7, int 8)
+    store int 7 to _0
+    bool _8 = call _EN3std10OrderedMapI3int3intE8containsEP3int(OrderedMap<int, int>* m, int* _0)
+    bool assert.condition_0 = _8 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _9 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:21:5
+")
+    unreachable
+
+assert.success_0:
+    void _10 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _1, int 0, int 10)
+    RangeIterator<int> _11 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _1)
+    store _11 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _12 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _12, loop.body, loop.end
+
+loop.body:
+    int _13 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _13 to i
+    int i.load = load i
+    int i.load_0 = load i
+    bool _14 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int i.load, int i.load_0)
+    bool _15 = call _EN3std10OrderedMapI3int3intE8containsEP3int(OrderedMap<int, int>* m, int* i)
+    bool assert.condition_1 = _15 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+loop.increment:
+    void _16 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    store int 42 to _2
+    bool _17 = call _EN3std10OrderedMapI3int3intE8containsEP3int(OrderedMap<int, int>* m, int* _2)
+    bool _18 = !_17
+    bool assert.condition_2 = _18 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_1:
+    void _19 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:25:9
+")
+    unreachable
+
+assert.success_1:
+    br loop.increment
+
+assert.fail_2:
+    void _20 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:28:5
+")
+    unreachable
+
+assert.success_2:
+    int _21 = call _EN3std10OrderedMapI3int3intE4sizeE(OrderedMap<int, int>* m)
+    bool _22 = _21 == int 10
+    bool assert.condition_3 = _22 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _23 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:29:5
+")
+    unreachable
+
+assert.success_3:
+    void _24 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* m)
+    return void
+}
+
+void _EN4main19testInsertAndDeleteE() {
+    OrderedMap<int, int>* m = alloca OrderedMap<int, int>
+    int* _0 = alloca int
+    int* _1 = alloca int
+    int* _2 = alloca int
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _3 = alloca Range<int>
+    int* i = alloca int
+    RangeIterator<int>* __iterator_0 = alloca RangeIterator<int>
+    Range<int>* _4 = alloca Range<int>
+    int* i_0 = alloca int
+    void _5 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* m)
+    bool _6 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int 42, int 39)
+    store int 42 to _0
+    bool _7 = call _EN3std10OrderedMapI3int3intE8containsEP3int(OrderedMap<int, int>* m, int* _0)
+    bool assert.condition = _7 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _8 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:36:5
+")
+    unreachable
+
+assert.success:
+    store int 42 to _1
+    void _9 = call _EN3std10OrderedMapI3int3intE6removeEP3int(OrderedMap<int, int>* m, int* _1)
+    store int 42 to _2
+    bool _10 = call _EN3std10OrderedMapI3int3intE8containsEP3int(OrderedMap<int, int>* m, int* _2)
+    bool _11 = !_10
+    bool assert.condition_0 = _11 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _12 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:39:5
+")
+    unreachable
+
+assert.success_0:
+    void _13 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _3, int 42, int 79)
+    RangeIterator<int> _14 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _3)
+    store _14 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _15 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _15, loop.body, loop.end
+
+loop.body:
+    int _16 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _16 to i
+    int i.load = load i
+    bool _17 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int i.load, int 42)
+    br loop.increment
+
+loop.increment:
+    void _18 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    void _19 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _4, int 42, int 79)
+    RangeIterator<int> _20 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _4)
+    store _20 to __iterator_0
+    br loop.condition_0
+
+loop.condition_0:
+    bool _21 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator_0)
+    br _21, loop.body, loop.end
+
+loop.body_0:
+    int _22 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator_0)
+    store _22 to i_0
+    bool _23 = call _EN3std10OrderedMapI3int3intE8containsEP3int(OrderedMap<int, int>* m, int* i_0)
+    bool assert.condition_1 = _23 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+loop.increment_0:
+    void _24 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator_0)
+    br loop.condition_0
+
+loop.end_0:
+    void _25 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* m)
+    return void
+
+assert.fail_1:
+    void _26 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:46:9
+")
+    unreachable
+
+assert.success_1:
+    void _27 = call _EN3std10OrderedMapI3int3intE6removeEP3int(OrderedMap<int, int>* m, int* i_0)
+    bool _28 = call _EN3std10OrderedMapI3int3intE8containsEP3int(OrderedMap<int, int>* m, int* i_0)
+    bool _29 = !_28
+    bool assert.condition_2 = _29 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _30 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:48:9
+")
+    unreachable
+
+assert.success_2:
+    br loop.increment_0
+}
+
+void _EN4main18testInsertAndIndexE() {
+    OrderedMap<int, int>* m = alloca OrderedMap<int, int>
+    int* _0 = alloca int
+    int* _1 = alloca int
+    int* _2 = alloca int
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _3 = alloca Range<int>
+    int* i = alloca int
+    RangeIterator<int>* __iterator_0 = alloca RangeIterator<int>
+    Range<int>* _4 = alloca Range<int>
+    int* i_0 = alloca int
+    int* _5 = alloca int
+    void _6 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* m)
+    bool _7 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int 42, int 39)
+    store int 42 to _0
+    int* _8 = call _EN3std10OrderedMapI3int3intEixEP3int(OrderedMap<int, int>* m, int* _0)
+    bool __implicit_unwrap.condition = _8 == int* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _9 = call _EN3std10assertFailEP4char(char* "Unwrap failed at ordered-map-tests.cx:56:13
+")
+    unreachable
+
+__implicit_unwrap.success:
+    store int 39 to _1
+    bool _10 = call _EN3stdeqI3intEEP3intP3int(int* _8, int* _1)
+    bool assert.condition = _10 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _11 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:56:5
+")
+    unreachable
+
+assert.success:
+    store int 42 to _2
+    void _12 = call _EN3std10OrderedMapI3int3intE6removeEP3int(OrderedMap<int, int>* m, int* _2)
+    void _13 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _3, int 42, int 79)
+    RangeIterator<int> _14 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _3)
+    store _14 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _15 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _15, loop.body, loop.end
+
+loop.body:
+    int _16 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _16 to i
+    int i.load = load i
+    int i.load_0 = load i
+    int _17 = i.load_0 + int 7
+    bool _18 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int i.load, int _17)
+    br loop.increment
+
+loop.increment:
+    void _19 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    void _20 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _4, int 42, int 79)
+    RangeIterator<int> _21 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _4)
+    store _21 to __iterator_0
+    br loop.condition_0
+
+loop.condition_0:
+    bool _22 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator_0)
+    br _22, loop.body, loop.end
+
+loop.body_0:
+    int _23 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator_0)
+    store _23 to i_0
+    int* _24 = call _EN3std10OrderedMapI3int3intEixEP3int(OrderedMap<int, int>* m, int* i_0)
+    bool __implicit_unwrap.condition_0 = _24 == int* null
+    br __implicit_unwrap.condition_0, __implicit_unwrap.fail, __implicit_unwrap.success
+
+loop.increment_0:
+    void _25 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator_0)
+    br loop.condition_0
+
+loop.end_0:
+    void _26 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* m)
+    return void
+
+__implicit_unwrap.fail_0:
+    void _27 = call _EN3std10assertFailEP4char(char* "Unwrap failed at ordered-map-tests.cx:65:17
+")
+    unreachable
+
+__implicit_unwrap.success_0:
+    int i.load_1 = load i_0
+    int _28 = i.load_1 + int 7
+    store _28 to _5
+    bool _29 = call _EN3stdeqI3intEEP3intP3int(int* _24, int* _5)
+    bool assert.condition_0 = _29 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _30 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:65:9
+")
+    unreachable
+
+assert.success_0:
+    void _31 = call _EN3std10OrderedMapI3int3intE6removeEP3int(OrderedMap<int, int>* m, int* i_0)
+    int* _32 = call _EN3std10OrderedMapI3int3intEixEP3int(OrderedMap<int, int>* m, int* i_0)
+    bool _33 = _32 == int* null
+    bool assert.condition_1 = _33 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _34 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:68:9
+")
+    unreachable
+
+assert.success_1:
+    br loop.increment_0
+}
+
+void _EN4main18testLowerAndHigherE() {
+    OrderedMap<int, int>* m = alloca OrderedMap<int, int>
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    int* _1 = alloca int
+    RangeIterator<int>* __iterator_0 = alloca RangeIterator<int>
+    Range<int>* _2 = alloca Range<int>
+    int* i_0 = alloca int
+    int* _3 = alloca int
+    RangeIterator<int>* __iterator_1 = alloca RangeIterator<int>
+    Range<int>* _4 = alloca Range<int>
+    int* i_1 = alloca int
+    void _5 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* m)
+    void _6 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int 100)
+    RangeIterator<int> _7 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _7 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _8 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _8, loop.body, loop.end
+
+loop.body:
+    int _9 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _9 to i
+    int i.load = load i
+    int i.load_0 = load i
+    int _10 = i.load_0 + int 6
+    bool _11 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int i.load, int _10)
+    br loop.increment
+
+loop.increment:
+    void _12 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    store int 0 to _1
+    int* _13 = call _EN3std10OrderedMapI3int3intE8lowerKeyEP3int(OrderedMap<int, int>* m, int* _1)
+    bool _14 = _13 == int* null
+    bool assert.condition = _14 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _15 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:79:5
+")
+    unreachable
+
+assert.success:
+    void _16 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _2, int 1, int 100)
+    RangeIterator<int> _17 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _2)
+    store _17 to __iterator_0
+    br loop.condition_0
+
+loop.condition_0:
+    bool _18 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator_0)
+    br _18, loop.body, loop.end
+
+loop.body_0:
+    int _19 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator_0)
+    store _19 to i_0
+    int* _20 = call _EN3std10OrderedMapI3int3intE8lowerKeyEP3int(OrderedMap<int, int>* m, int* i_0)
+    bool assert.condition_0 = _20 == int* null
+    br assert.condition_0, assert.fail, assert.success
+
+loop.increment_0:
+    void _21 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator_0)
+    br loop.condition_0
+
+loop.end_0:
+    store int 99 to _3
+    int* _22 = call _EN3std10OrderedMapI3int3intE9higherKeyEP3int(OrderedMap<int, int>* m, int* _3)
+    bool _23 = _22 == int* null
+    bool assert.condition_1 = _23 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_0:
+    void _24 = call _EN3std10assertFailEP4char(char* "Unwrap failed at ordered-map-tests.cx:81:29
+")
+    unreachable
+
+assert.success_0:
+    int i.load_1 = load i_0
+    int _25 = i.load_1 - int 1
+    int .load = load _20
+    bool _26 = .load == _25
+    bool assert.condition_2 = _26 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_1:
+    void _27 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:81:9
+")
+    unreachable
+
+assert.success_1:
+    br loop.increment_0
+
+assert.fail_2:
+    void _28 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:84:5
+")
+    unreachable
+
+assert.success_2:
+    void _29 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _4, int 0, int 99)
+    RangeIterator<int> _30 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _4)
+    store _30 to __iterator_1
+    br loop.condition_1
+
+loop.condition_1:
+    bool _31 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator_1)
+    br _31, loop.body, loop.end
+
+loop.body_1:
+    int _32 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator_1)
+    store _32 to i_1
+    int* _33 = call _EN3std10OrderedMapI3int3intE9higherKeyEP3int(OrderedMap<int, int>* m, int* i_1)
+    bool assert.condition_3 = _33 == int* null
+    br assert.condition_3, assert.fail, assert.success
+
+loop.increment_1:
+    void _34 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator_1)
+    br loop.condition_1
+
+loop.end_1:
+    void _35 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* m)
+    return void
+
+assert.fail_3:
+    void _36 = call _EN3std10assertFailEP4char(char* "Unwrap failed at ordered-map-tests.cx:86:30
+")
+    unreachable
+
+assert.success_3:
+    int i.load_2 = load i_1
+    int _37 = i.load_2 + int 1
+    int .load_0 = load _33
+    bool _38 = .load_0 == _37
+    bool assert.condition_4 = _38 == bool false
+    br assert.condition_4, assert.fail, assert.success
+
+assert.fail_4:
+    void _39 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:86:9
+")
+    unreachable
+
+assert.success_4:
+    br loop.increment_1
+}
+
+void _EN4main13testFirstLastE() {
+    OrderedMap<int, int>* m = alloca OrderedMap<int, int>
+    void _0 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* m)
+    bool _1 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int 63, int 3)
+    bool _2 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int 69, int 3)
+    bool _3 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int 1, int 3)
+    bool _4 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* m, int 53, int 3)
+    int* _5 = call _EN3std10OrderedMapI3int3intE5firstE(OrderedMap<int, int>* m)
+    bool assert.condition = _5 == int* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at ordered-map-tests.cx:98:21
+")
+    unreachable
+
+assert.success:
+    int .load = load _5
+    bool _7 = .load == int 1
+    bool assert.condition_0 = _7 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _8 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:98:5
+")
+    unreachable
+
+assert.success_0:
+    int* _9 = call _EN3std10OrderedMapI3int3intE4lastE(OrderedMap<int, int>* m)
+    bool assert.condition_1 = _9 == int* null
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _10 = call _EN3std10assertFailEP4char(char* "Unwrap failed at ordered-map-tests.cx:99:20
+")
+    unreachable
+
+assert.success_1:
+    int .load_0 = load _9
+    bool _11 = .load_0 == int 69
+    bool assert.condition_2 = _11 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _12 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:99:5
+")
+    unreachable
+
+assert.success_2:
+    void _13 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* m)
+    return void
+}
+
+void _EN4main21testEmptyMapFunctionsE() {
+    OrderedMap<int, int>* m = alloca OrderedMap<int, int>
+    int* _0 = alloca int
+    int* _1 = alloca int
+    void _2 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* m)
+    int* _3 = call _EN3std10OrderedMapI3int3intE5firstE(OrderedMap<int, int>* m)
+    bool _4 = _3 == int* null
+    bool assert.condition = _4 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _5 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:105:5
+")
+    unreachable
+
+assert.success:
+    int* _6 = call _EN3std10OrderedMapI3int3intE4lastE(OrderedMap<int, int>* m)
+    bool _7 = _6 == int* null
+    bool assert.condition_0 = _7 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _8 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:106:5
+")
+    unreachable
+
+assert.success_0:
+    store int 48 to _0
+    int* _9 = call _EN3std10OrderedMapI3int3intE9higherKeyEP3int(OrderedMap<int, int>* m, int* _0)
+    bool _10 = _9 == int* null
+    bool assert.condition_1 = _10 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _11 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:107:5
+")
+    unreachable
+
+assert.success_1:
+    store int 42 to _1
+    int* _12 = call _EN3std10OrderedMapI3int3intE8lowerKeyEP3int(OrderedMap<int, int>* m, int* _1)
+    bool _13 = _12 == int* null
+    bool assert.condition_2 = _13 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _14 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:108:5
+")
+    unreachable
+
+assert.success_2:
+    void _15 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* m)
+    return void
+}
+
+void _EN4main20testEmptyMapIteratorE() {
+    OrderedMap<int, int>* map = alloca OrderedMap<int, int>
+    int* _0 = alloca int
+    OrderedMapIterator<int, int>* __iterator = alloca OrderedMapIterator<int, int>
+    MapEntry<int, int>** e = alloca MapEntry<int, int>*
+    void _1 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* map)
+    bool _2 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* map, int 1, int 2)
+    bool _3 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* map, int 1, int 2)
+    store int 1 to _0
+    void _4 = call _EN3std10OrderedMapI3int3intE6removeEP3int(OrderedMap<int, int>* map, int* _0)
+    OrderedMapIterator<int, int> _5 = call _EN3std10OrderedMapI3int3intE8iteratorE(OrderedMap<int, int>* map)
+    store _5 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _6 = call _EN3std18OrderedMapIteratorI3int3intE8hasValueE(OrderedMapIterator<int, int>* __iterator)
+    br _6, loop.body, loop.end
+
+loop.body:
+    MapEntry<int, int>* _7 = call _EN3std18OrderedMapIteratorI3int3intE5valueE(OrderedMapIterator<int, int>* __iterator)
+    store _7 to e
+    bool assert.condition = bool false == bool false
+    br assert.condition, assert.fail, assert.success
+
+loop.increment:
+    void _8 = call _EN3std18OrderedMapIteratorI3int3intE9incrementE(OrderedMapIterator<int, int>* __iterator)
+    br loop.condition
+
+loop.end:
+    void _9 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* map)
+    return void
+
+assert.fail:
+    void _10 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:154:9
+")
+    unreachable
+
+assert.success:
+    br loop.increment
+}
+
+void _EN4main17testIteratorOrderE() {
+    OrderedMap<int, int>* map = alloca OrderedMap<int, int>
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    int* called = alloca int
+    OrderedMapIterator<int, int>* __iterator_0 = alloca OrderedMapIterator<int, int>
+    MapEntry<int, int>** e = alloca MapEntry<int, int>*
+    OrderedMap<int, int>* _1 = alloca OrderedMap<int, int>
+    RangeIterator<int>* __iterator_1 = alloca RangeIterator<int>
+    Range<int>* _2 = alloca Range<int>
+    int* i_0 = alloca int
+    OrderedMapIterator<int, int>* __iterator_2 = alloca OrderedMapIterator<int, int>
+    MapEntry<int, int>** e_0 = alloca MapEntry<int, int>*
+    void _3 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* map)
+    void _4 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int 100)
+    RangeIterator<int> _5 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _5 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _6 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _6, loop.body, loop.end
+
+loop.body:
+    int _7 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _7 to i
+    int i.load = load i
+    int i.load_0 = load i
+    int _8 = i.load_0 - int 12
+    bool _9 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* map, int i.load, int _8)
+    br loop.increment
+
+loop.increment:
+    void _10 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    store int 0 to called
+    OrderedMapIterator<int, int> _11 = call _EN3std10OrderedMapI3int3intE8iteratorE(OrderedMap<int, int>* map)
+    store _11 to __iterator_0
+    br loop.condition_0
+
+loop.condition_0:
+    bool _12 = call _EN3std18OrderedMapIteratorI3int3intE8hasValueE(OrderedMapIterator<int, int>* __iterator_0)
+    br _12, loop.body, loop.end
+
+loop.body_0:
+    MapEntry<int, int>* _13 = call _EN3std18OrderedMapIteratorI3int3intE5valueE(OrderedMapIterator<int, int>* __iterator_0)
+    store _13 to e
+    MapEntry<int, int>* e.load = load e
+    int* key = getelementptr e.load, 0
+    int key.load = load key
+    int called.load = load called
+    bool _14 = key.load == called.load
+    bool assert.condition = _14 == bool false
+    br assert.condition, assert.fail, assert.success
+
+loop.increment_0:
+    void _15 = call _EN3std18OrderedMapIteratorI3int3intE9incrementE(OrderedMapIterator<int, int>* __iterator_0)
+    br loop.condition_0
+
+loop.end_0:
+    int called.load_0 = load called
+    bool _16 = called.load_0 == int 100
+    bool assert.condition_0 = _16 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail:
+    void _17 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:121:9
+")
+    unreachable
+
+assert.success:
+    MapEntry<int, int>* e.load_0 = load e
+    int* value = getelementptr e.load_0, 1
+    int value.load = load value
+    int called.load_1 = load called
+    int _18 = called.load_1 - int 12
+    bool _19 = value.load == _18
+    bool assert.condition_1 = _19 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_0:
+    void _20 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:122:9
+")
+    unreachable
+
+assert.success_0:
+    int called.load_2 = load called
+    int _21 = called.load_2 + int 1
+    store _21 to called
+    br loop.increment_0
+
+assert.fail_1:
+    void _22 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:126:5
+")
+    unreachable
+
+assert.success_1:
+    void _23 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* map)
+    void _24 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* _1)
+    OrderedMap<int, int> .load = load _1
+    store .load to map
+    void _25 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _2, int 0, int 100)
+    RangeIterator<int> _26 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _2)
+    store _26 to __iterator_1
+    br loop.condition_1
+
+loop.condition_1:
+    bool _27 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator_1)
+    br _27, loop.body, loop.end
+
+loop.body_1:
+    int _28 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator_1)
+    store _28 to i_0
+    int i.load_1 = load i_0
+    int _29 = int 99 - i.load_1
+    int i.load_2 = load i_0
+    int _30 = i.load_2 - int 12
+    bool _31 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* map, int _29, int _30)
+    br loop.increment_1
+
+loop.increment_1:
+    void _32 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator_1)
+    br loop.condition_1
+
+loop.end_1:
+    store int 0 to called
+    OrderedMapIterator<int, int> _33 = call _EN3std10OrderedMapI3int3intE8iteratorE(OrderedMap<int, int>* map)
+    store _33 to __iterator_2
+    br loop.condition_2
+
+loop.condition_2:
+    bool _34 = call _EN3std18OrderedMapIteratorI3int3intE8hasValueE(OrderedMapIterator<int, int>* __iterator_2)
+    br _34, loop.body, loop.end
+
+loop.body_2:
+    MapEntry<int, int>* _35 = call _EN3std18OrderedMapIteratorI3int3intE5valueE(OrderedMapIterator<int, int>* __iterator_2)
+    store _35 to e_0
+    MapEntry<int, int>* e.load_1 = load e_0
+    int* key_0 = getelementptr e.load_1, 0
+    int key.load_0 = load key_0
+    int called.load_3 = load called
+    bool _36 = key.load_0 == called.load_3
+    bool assert.condition_2 = _36 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+loop.increment_2:
+    void _37 = call _EN3std18OrderedMapIteratorI3int3intE9incrementE(OrderedMapIterator<int, int>* __iterator_2)
+    br loop.condition_2
+
+loop.end_2:
+    int called.load_4 = load called
+    bool _38 = called.load_4 == int 100
+    bool assert.condition_3 = _38 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_2:
+    void _39 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:137:9
+")
+    unreachable
+
+assert.success_2:
+    MapEntry<int, int>* e.load_2 = load e_0
+    int* value_0 = getelementptr e.load_2, 1
+    int value.load_0 = load value_0
+    int called.load_5 = load called
+    int _40 = int 99 - called.load_5
+    int _41 = _40 - int 12
+    bool _42 = value.load_0 == _41
+    bool assert.condition_4 = _42 == bool false
+    br assert.condition_4, assert.fail, assert.success
+
+assert.fail_3:
+    void _43 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:138:9
+")
+    unreachable
+
+assert.success_3:
+    int called.load_6 = load called
+    int _44 = called.load_6 + int 1
+    store _44 to called
+    br loop.increment_2
+
+assert.fail_4:
+    void _45 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:142:5
+")
+    unreachable
+
+assert.success_4:
+    void _46 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* map)
+    return void
+}
+
+void _EN4main19testUnitMapIteratorE() {
+    OrderedMap<int, int>* map = alloca OrderedMap<int, int>
+    int* count = alloca int
+    OrderedMapIterator<int, int>* __iterator = alloca OrderedMapIterator<int, int>
+    MapEntry<int, int>** e = alloca MapEntry<int, int>*
+    void _0 = call _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* map)
+    bool _1 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* map, int 1, int 2)
+    bool _2 = call _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* map, int 1, int 4)
+    store int 0 to count
+    OrderedMapIterator<int, int> _3 = call _EN3std10OrderedMapI3int3intE8iteratorE(OrderedMap<int, int>* map)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std18OrderedMapIteratorI3int3intE8hasValueE(OrderedMapIterator<int, int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    MapEntry<int, int>* _5 = call _EN3std18OrderedMapIteratorI3int3intE5valueE(OrderedMapIterator<int, int>* __iterator)
+    store _5 to e
+    int count.load = load count
+    int _6 = count.load + int 1
+    store _6 to count
+    MapEntry<int, int>* e.load = load e
+    int* key = getelementptr e.load, 0
+    int key.load = load key
+    bool _7 = key.load == int 1
+    bool assert.condition = _7 == bool false
+    br assert.condition, assert.fail, assert.success
+
+loop.increment:
+    void _8 = call _EN3std18OrderedMapIteratorI3int3intE9incrementE(OrderedMapIterator<int, int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int count.load_0 = load count
+    bool _9 = count.load_0 == int 1
+    bool assert.condition_0 = _9 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail:
+    void _10 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:167:9
+")
+    unreachable
+
+assert.success:
+    br loop.increment
+
+assert.fail_0:
+    void _11 = call _EN3std10assertFailEP4char(char* "Assertion failed at ordered-map-tests.cx:170:5
+")
+    unreachable
+
+assert.success_0:
+    void _12 = call _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* map)
+    return void
+}
+
+void _EN3std10OrderedMapI3int3intE6deinitE(OrderedMap<int, int>* this) {
+    AVLnode<int, int>** root = getelementptr this, 0
+    AVLnode<int, int>* root.load = load root
+    bool _0 = root.load != AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+if.then:
+    AVLnode<int, int>** root_0 = getelementptr this, 0
+    AVLnode<int, int>* root.load_0 = load root_0
+    void _1 = call _EN3std7AVLnodeI3int3intE10deallocateE(AVLnode<int, int>* root.load_0)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+}
+
+void _EN3std10OrderedMapI3int3intE4initE(OrderedMap<int, int>* this) {
+    AVLnode<int, int>** root = getelementptr this, 0
+    store AVLnode<int, int>* null to root
+    int* size = getelementptr this, 1
+    store int 0 to size
+    return void
+}
+
+int _EN3std10OrderedMapI3int3intE4sizeE(OrderedMap<int, int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+void _EN3std10assertFailEP4char(char* message) {
+}
+
+bool _EN3std10OrderedMapI3int3intE6insertE3int3int(OrderedMap<int, int>* this, int key, int value) {
+    AVLnode<int, int>* _0 = alloca AVLnode<int, int>
+    AVLnode<int, int>** n = alloca AVLnode<int, int>*
+    AVLnode<int, int>** parent = alloca AVLnode<int, int>*
+    bool* goLeft = alloca bool
+    AVLnode<int, int>** newNode = alloca AVLnode<int, int>*
+    AVLnode<int, int>* _1 = alloca AVLnode<int, int>
+    AVLnode<int, int>* _2 = alloca AVLnode<int, int>
+    AVLnode<int, int>** root = getelementptr this, 0
+    AVLnode<int, int>* root.load = load root
+    bool _3 = root.load == AVLnode<int, int>* null
+    br _3, if.then, if.else
+
+if.then:
+    AVLnode<int, int>** root_0 = getelementptr this, 0
+    void _4 = call _EN3std7AVLnodeI3int3intE4initE3intOP7AVLnodeI3int3intE3int(AVLnode<int, int>* _0, int key, AVLnode<int, int>* null, int value)
+    AVLnode<int, int> .load = load _0
+    AVLnode<int, int>* _5 = call _EN3std8allocateI7AVLnodeI3int3intEEE7AVLnodeI3int3intE(AVLnode<int, int> .load)
+    store _5 to root_0
+    br if.end
+
+if.else:
+    AVLnode<int, int>** root_1 = getelementptr this, 0
+    AVLnode<int, int>* root.load_0 = load root_1
+    store root.load_0 to n
+    br loop.condition
+
+if.end:
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int _6 = size.load + int 1
+    store _6 to size
+    return bool true
+
+loop.condition:
+    br bool true, loop.body, loop.end
+
+loop.body:
+    AVLnode<int, int>* n.load = load n
+    MapEntry<int, int>* entry = getelementptr n.load, 0
+    int* key_0 = getelementptr entry, 0
+    int key.load = load key_0
+    bool _7 = key.load == key
+    br _7, if.then, if.else
+
+loop.end:
+    br if.end
+
+if.then_0:
+    return bool false
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    AVLnode<int, int>* n.load_0 = load n
+    store n.load_0 to parent
+    AVLnode<int, int>* n.load_1 = load n
+    MapEntry<int, int>* entry_0 = getelementptr n.load_1, 0
+    int* key_1 = getelementptr entry_0, 0
+    int key.load_0 = load key_1
+    bool _8 = key.load_0 > key
+    store _8 to goLeft
+    bool goLeft.load = load goLeft
+    br goLeft.load, if.then, if.else
+
+if.then_1:
+    AVLnode<int, int>* n.load_2 = load n
+    AVLnode<int, int>** left = getelementptr n.load_2, 3
+    AVLnode<int, int>* left.load = load left
+    br if.end_1(left.load)
+
+if.else_1:
+    AVLnode<int, int>* n.load_3 = load n
+    AVLnode<int, int>** right = getelementptr n.load_3, 4
+    AVLnode<int, int>* right.load = load right
+    br if.end_1(right.load)
+
+if.end_1(AVLnode<int, int>* if.result):
+    store if.result to newNode
+    AVLnode<int, int>* newNode.load = load newNode
+    bool _9 = newNode.load == AVLnode<int, int>* null
+    br _9, if.then, if.else
+
+if.then_2:
+    bool goLeft.load_0 = load goLeft
+    br goLeft.load_0, if.then, if.else
+
+if.else_2:
+    br if.end_2
+
+if.end_2:
+    AVLnode<int, int>* newNode.load_0 = load newNode
+    store newNode.load_0 to n
+    br loop.condition
+
+if.then_3:
+    AVLnode<int, int>* parent.load = load parent
+    AVLnode<int, int>** left_0 = getelementptr parent.load, 3
+    AVLnode<int, int>* parent.load_0 = load parent
+    void _10 = call _EN3std7AVLnodeI3int3intE4initE3intOP7AVLnodeI3int3intE3int(AVLnode<int, int>* _1, int key, AVLnode<int, int>* parent.load_0, int value)
+    AVLnode<int, int> .load_0 = load _1
+    AVLnode<int, int>* _11 = call _EN3std8allocateI7AVLnodeI3int3intEEE7AVLnodeI3int3intE(AVLnode<int, int> .load_0)
+    store _11 to left_0
+    br if.end_3
+
+if.else_3:
+    AVLnode<int, int>* parent.load_1 = load parent
+    AVLnode<int, int>** right_0 = getelementptr parent.load_1, 4
+    AVLnode<int, int>* parent.load_2 = load parent
+    void _12 = call _EN3std7AVLnodeI3int3intE4initE3intOP7AVLnodeI3int3intE3int(AVLnode<int, int>* _2, int key, AVLnode<int, int>* parent.load_2, int value)
+    AVLnode<int, int> .load_1 = load _2
+    AVLnode<int, int>* _13 = call _EN3std8allocateI7AVLnodeI3int3intEEE7AVLnodeI3int3intE(AVLnode<int, int> .load_1)
+    store _13 to right_0
+    br if.end_3
+
+if.end_3:
+    AVLnode<int, int>* parent.load_3 = load parent
+    bool __implicit_unwrap.condition = parent.load_3 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _14 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:162:31
+")
+    unreachable
+
+__implicit_unwrap.success:
+    void _15 = call _EN3std10OrderedMapI3int3intE9rebalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* parent.load_3)
+    br loop.end
+}
+
+bool _EN3std10OrderedMapI3int3intE8containsEP3int(OrderedMap<int, int>* this, int* key) {
+    AVLnode<int, int>* _0 = call _EN3std10OrderedMapI3int3intE8findNodeEP3int(OrderedMap<int, int>* this, int* key)
+    bool _1 = _0 != AVLnode<int, int>* null
+    return _1
+}
+
+RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
+}
+
+void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
+}
+
+bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
+}
+
+int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
+}
+
+void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {
+}
+
+void _EN3std10OrderedMapI3int3intE6removeEP3int(OrderedMap<int, int>* this, int* key) {
+    AVLnode<int, int>** n = alloca AVLnode<int, int>*
+    AVLnode<int, int>** parent = alloca AVLnode<int, int>*
+    AVLnode<int, int>** delNode = alloca AVLnode<int, int>*
+    AVLnode<int, int>** child = alloca AVLnode<int, int>*
+    AVLnode<int, int>** root = getelementptr this, 0
+    AVLnode<int, int>* root.load = load root
+    bool _0 = root.load == AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>** root_0 = getelementptr this, 0
+    AVLnode<int, int>* root.load_0 = load root_0
+    store root.load_0 to n
+    AVLnode<int, int>** root_1 = getelementptr this, 0
+    AVLnode<int, int>* root.load_1 = load root_1
+    store root.load_1 to parent
+    store AVLnode<int, int>* null to delNode
+    AVLnode<int, int>** root_2 = getelementptr this, 0
+    AVLnode<int, int>* root.load_2 = load root_2
+    store root.load_2 to child
+    br loop.condition
+
+loop.condition:
+    AVLnode<int, int>* child.load = load child
+    bool _1 = child.load != AVLnode<int, int>* null
+    br _1, loop.body, loop.end
+
+loop.body:
+    AVLnode<int, int>* n.load = load n
+    store n.load to parent
+    AVLnode<int, int>* child.load_0 = load child
+    store child.load_0 to n
+    int key.load = load key
+    AVLnode<int, int>* n.load_0 = load n
+    MapEntry<int, int>* entry = getelementptr n.load_0, 0
+    int* key_0 = getelementptr entry, 0
+    int key.load_0 = load key_0
+    bool _2 = key.load >= key.load_0
+    br _2, if.then, if.else
+
+loop.end:
+    AVLnode<int, int>* delNode.load = load delNode
+    bool _3 = delNode.load != AVLnode<int, int>* null
+    br _3, if.then, if.else
+
+if.then_0:
+    AVLnode<int, int>* n.load_1 = load n
+    AVLnode<int, int>** right = getelementptr n.load_1, 4
+    AVLnode<int, int>* right.load = load right
+    br if.end_0(right.load)
+
+if.else_0:
+    AVLnode<int, int>* n.load_2 = load n
+    AVLnode<int, int>** left = getelementptr n.load_2, 3
+    AVLnode<int, int>* left.load = load left
+    br if.end_0(left.load)
+
+if.end_0(AVLnode<int, int>* if.result):
+    store if.result to child
+    int key.load_1 = load key
+    AVLnode<int, int>* n.load_3 = load n
+    MapEntry<int, int>* entry_0 = getelementptr n.load_3, 0
+    int* key_1 = getelementptr entry_0, 0
+    int key.load_2 = load key_1
+    bool _4 = key.load_1 == key.load_2
+    br _4, if.then, if.else
+
+if.then_1:
+    AVLnode<int, int>* n.load_4 = load n
+    store n.load_4 to delNode
+    br if.end_1
+
+if.else_1:
+    br if.end_1
+
+if.end_1:
+    br loop.condition
+
+if.then_2:
+    AVLnode<int, int>* delNode.load_0 = load delNode
+    MapEntry<int, int>* entry_1 = getelementptr delNode.load_0, 0
+    int* key_2 = getelementptr entry_1, 0
+    AVLnode<int, int>* n.load_5 = load n
+    MapEntry<int, int>* entry_2 = getelementptr n.load_5, 0
+    int* key_3 = getelementptr entry_2, 0
+    int key.load_3 = load key_3
+    store key.load_3 to key_2
+    AVLnode<int, int>* delNode.load_1 = load delNode
+    MapEntry<int, int>* entry_3 = getelementptr delNode.load_1, 0
+    int* value = getelementptr entry_3, 1
+    AVLnode<int, int>* n.load_6 = load n
+    MapEntry<int, int>* entry_4 = getelementptr n.load_6, 0
+    int* value_0 = getelementptr entry_4, 1
+    int value.load = load value_0
+    store value.load to value
+    AVLnode<int, int>* n.load_7 = load n
+    AVLnode<int, int>** left_0 = getelementptr n.load_7, 3
+    AVLnode<int, int>* left.load_0 = load left_0
+    bool _5 = left.load_0 != AVLnode<int, int>* null
+    br _5, if.then, if.else
+
+if.else_2:
+    br if.end_2
+
+if.end_2:
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int _6 = size.load + int -1
+    store _6 to size
+    return void
+
+if.then_3:
+    AVLnode<int, int>* n.load_8 = load n
+    AVLnode<int, int>** left_1 = getelementptr n.load_8, 3
+    AVLnode<int, int>* left.load_1 = load left_1
+    br if.end_3(left.load_1)
+
+if.else_3:
+    AVLnode<int, int>* n.load_9 = load n
+    AVLnode<int, int>** right_0 = getelementptr n.load_9, 4
+    AVLnode<int, int>* right.load_0 = load right_0
+    br if.end_3(right.load_0)
+
+if.end_3(AVLnode<int, int>* if.result_0):
+    store if.result_0 to child
+    AVLnode<int, int>** root_3 = getelementptr this, 0
+    AVLnode<int, int>* root.load_3 = load root_3
+    MapEntry<int, int>* entry_5 = getelementptr root.load_3, 0
+    int* key_4 = getelementptr entry_5, 0
+    int key.load_4 = load key_4
+    int key.load_5 = load key
+    bool _7 = key.load_4 == key.load_5
+    br _7, if.then, if.else
+
+if.then_4:
+    AVLnode<int, int>** root_4 = getelementptr this, 0
+    AVLnode<int, int>* child.load_1 = load child
+    store child.load_1 to root_4
+    br if.end_4
+
+if.else_4:
+    AVLnode<int, int>* parent.load = load parent
+    AVLnode<int, int>** left_2 = getelementptr parent.load, 3
+    AVLnode<int, int>* left.load_2 = load left_2
+    AVLnode<int, int>* n.load_10 = load n
+    bool _8 = left.load_2 === n.load_10
+    br _8, if.then, if.else
+
+if.end_4:
+    AVLnode<int, int>* n.load_11 = load n
+    void _9 = call _EN3std10deallocateIOP7AVLnodeI3int3intEEEOP7AVLnodeI3int3intE(AVLnode<int, int>* n.load_11)
+    br if.end_2
+
+if.then_5:
+    AVLnode<int, int>* parent.load_0 = load parent
+    AVLnode<int, int>** left_3 = getelementptr parent.load_0, 3
+    AVLnode<int, int>* child.load_2 = load child
+    store child.load_2 to left_3
+    br if.end_5
+
+if.else_5:
+    AVLnode<int, int>* parent.load_1 = load parent
+    AVLnode<int, int>** right_1 = getelementptr parent.load_1, 4
+    AVLnode<int, int>* child.load_3 = load child
+    store child.load_3 to right_1
+    br if.end_5
+
+if.end_5:
+    AVLnode<int, int>* parent.load_2 = load parent
+    bool __implicit_unwrap.condition = parent.load_2 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _10 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:208:27
+")
+    unreachable
+
+__implicit_unwrap.success:
+    void _11 = call _EN3std10OrderedMapI3int3intE9rebalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* parent.load_2)
+    br if.end_4
+}
+
+bool _EN3stdeqI3intEEP3intP3int(int* a, int* b) {
+    int _0 = call _EN3std3int7compareEP3int(int* a, int* b)
+    bool _1 = _0 == int 1
+    return _1
+}
+
+int* _EN3std10OrderedMapI3int3intEixEP3int(OrderedMap<int, int>* this, int* key) {
+    AVLnode<int, int>** found = alloca AVLnode<int, int>*
+    AVLnode<int, int>* _0 = call _EN3std10OrderedMapI3int3intE8findNodeEP3int(OrderedMap<int, int>* this, int* key)
+    store _0 to found
+    AVLnode<int, int>* found.load = load found
+    bool _1 = found.load != AVLnode<int, int>* null
+    br _1, if.then, if.else
+
+if.then:
+    AVLnode<int, int>* found.load_0 = load found
+    MapEntry<int, int>* entry = getelementptr found.load_0, 0
+    int* value = getelementptr entry, 1
+    return value
+
+if.else:
+    br if.end
+
+if.end:
+    return int* null
+}
+
+int* _EN3std10OrderedMapI3int3intE8lowerKeyEP3int(OrderedMap<int, int>* this, int* key) {
+    AVLnode<int, int>** found = alloca AVLnode<int, int>*
+    AVLnode<int, int>** lower = alloca AVLnode<int, int>*
+    AVLnode<int, int>* _0 = call _EN3std10OrderedMapI3int3intE8findNodeEP3int(OrderedMap<int, int>* this, int* key)
+    store _0 to found
+    AVLnode<int, int>* found.load = load found
+    bool _1 = found.load == AVLnode<int, int>* null
+    br _1, if.then, if.else
+
+if.then:
+    return int* null
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>* found.load_0 = load found
+    bool __implicit_unwrap.condition = found.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _2 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:252:31
+")
+    unreachable
+
+__implicit_unwrap.success:
+    AVLnode<int, int>* _3 = call _EN3std10OrderedMapI3int3intE9lowerNodeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* found.load_0)
+    store _3 to lower
+    AVLnode<int, int>* lower.load = load lower
+    bool _4 = lower.load == AVLnode<int, int>* null
+    br _4, if.then, if.else
+
+if.then_0:
+    return int* null
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    AVLnode<int, int>* lower.load_0 = load lower
+    MapEntry<int, int>* entry = getelementptr lower.load_0, 0
+    int* key_0 = getelementptr entry, 0
+    return key_0
+}
+
+int* _EN3std10OrderedMapI3int3intE9higherKeyEP3int(OrderedMap<int, int>* this, int* key) {
+    AVLnode<int, int>** found = alloca AVLnode<int, int>*
+    AVLnode<int, int>** higher = alloca AVLnode<int, int>*
+    AVLnode<int, int>* _0 = call _EN3std10OrderedMapI3int3intE8findNodeEP3int(OrderedMap<int, int>* this, int* key)
+    store _0 to found
+    AVLnode<int, int>* found.load = load found
+    bool _1 = found.load == AVLnode<int, int>* null
+    br _1, if.then, if.else
+
+if.then:
+    return int* null
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>* found.load_0 = load found
+    bool __implicit_unwrap.condition = found.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _2 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:301:33
+")
+    unreachable
+
+__implicit_unwrap.success:
+    AVLnode<int, int>* _3 = call _EN3std10OrderedMapI3int3intE10higherNodeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* found.load_0)
+    store _3 to higher
+    AVLnode<int, int>* higher.load = load higher
+    bool _4 = higher.load == AVLnode<int, int>* null
+    br _4, if.then, if.else
+
+if.then_0:
+    return int* null
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    AVLnode<int, int>* higher.load_0 = load higher
+    MapEntry<int, int>* entry = getelementptr higher.load_0, 0
+    int* key_0 = getelementptr entry, 0
+    return key_0
+}
+
+int* _EN3std10OrderedMapI3int3intE5firstE(OrderedMap<int, int>* this) {
+    AVLnode<int, int>** root = getelementptr this, 0
+    AVLnode<int, int>* root.load = load root
+    bool _0 = root.load == AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+if.then:
+    return int* null
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>** root_0 = getelementptr this, 0
+    AVLnode<int, int>* root.load_0 = load root_0
+    bool __implicit_unwrap.condition = root.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:331:29
+")
+    unreachable
+
+__implicit_unwrap.success:
+    AVLnode<int, int>* _2 = call _EN3std10OrderedMapI3int3intE12minInSubtreeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* root.load_0)
+    MapEntry<int, int>* entry = getelementptr _2, 0
+    int* key = getelementptr entry, 0
+    return key
+}
+
+int* _EN3std10OrderedMapI3int3intE4lastE(OrderedMap<int, int>* this) {
+    AVLnode<int, int>** root = getelementptr this, 0
+    AVLnode<int, int>* root.load = load root
+    bool _0 = root.load == AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+if.then:
+    return int* null
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>** root_0 = getelementptr this, 0
+    AVLnode<int, int>* root.load_0 = load root_0
+    bool __implicit_unwrap.condition = root.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:347:29
+")
+    unreachable
+
+__implicit_unwrap.success:
+    AVLnode<int, int>* _2 = call _EN3std10OrderedMapI3int3intE12maxInSubtreeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* root.load_0)
+    MapEntry<int, int>* entry = getelementptr _2, 0
+    int* key = getelementptr entry, 0
+    return key
+}
+
+OrderedMapIterator<int, int> _EN3std10OrderedMapI3int3intE8iteratorE(OrderedMap<int, int>* this) {
+    OrderedMapIterator<int, int>* _0 = alloca OrderedMapIterator<int, int>
+    void _1 = call _EN3std18OrderedMapIteratorI3int3intE4initEP10OrderedMapI3int3intE(OrderedMapIterator<int, int>* _0, OrderedMap<int, int>* this)
+    OrderedMapIterator<int, int> .load = load _0
+    return .load
+}
+
+bool _EN3std18OrderedMapIteratorI3int3intE8hasValueE(OrderedMapIterator<int, int>* this) {
+    AVLnode<int, int>** current = getelementptr this, 0
+    AVLnode<int, int>* current.load = load current
+    bool _0 = current.load != AVLnode<int, int>* null
+    return _0
+}
+
+MapEntry<int, int>* _EN3std18OrderedMapIteratorI3int3intE5valueE(OrderedMapIterator<int, int>* this) {
+    AVLnode<int, int>** current = getelementptr this, 0
+    AVLnode<int, int>* current.load = load current
+    bool assert.condition = current.load == AVLnode<int, int>* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _0 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMapIterator.cx:15:23
+")
+    unreachable
+
+assert.success:
+    MapEntry<int, int>* entry = getelementptr current.load, 0
+    return entry
+}
+
+void _EN3std18OrderedMapIteratorI3int3intE9incrementE(OrderedMapIterator<int, int>* this) {
+    AVLnode<int, int>** current = getelementptr this, 0
+    OrderedMap<int, int>** map = getelementptr this, 1
+    OrderedMap<int, int>* map.load = load map
+    AVLnode<int, int>** current_0 = getelementptr this, 0
+    AVLnode<int, int>* current.load = load current_0
+    bool assert.condition = current.load == AVLnode<int, int>* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _0 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMapIterator.cx:19:41
+")
+    unreachable
+
+assert.success:
+    AVLnode<int, int>* _1 = call _EN3std10OrderedMapI3int3intE10higherNodeEP7AVLnodeI3int3intE(OrderedMap<int, int>* map.load, AVLnode<int, int>* current.load)
+    store _1 to current
+    return void
+}
+
+void _EN3std7AVLnodeI3int3intE10deallocateE(AVLnode<int, int>* this) {
+    AVLnode<int, int>** left = getelementptr this, 3
+    AVLnode<int, int>* left.load = load left
+    bool _0 = left.load != AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+if.then:
+    AVLnode<int, int>** left_0 = getelementptr this, 3
+    AVLnode<int, int>* left.load_0 = load left_0
+    void _1 = call _EN3std7AVLnodeI3int3intE10deallocateE(AVLnode<int, int>* left.load_0)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>** right = getelementptr this, 4
+    AVLnode<int, int>* right.load = load right
+    bool _2 = right.load != AVLnode<int, int>* null
+    br _2, if.then, if.else
+
+if.then_0:
+    AVLnode<int, int>** right_0 = getelementptr this, 4
+    AVLnode<int, int>* right.load_0 = load right_0
+    void _3 = call _EN3std7AVLnodeI3int3intE10deallocateE(AVLnode<int, int>* right.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    void _4 = call _EN3std10deallocateIP7AVLnodeI3int3intEEEP7AVLnodeI3int3intE(AVLnode<int, int>* this)
+    return void
+}
+
+AVLnode<int, int>* _EN3std8allocateI7AVLnodeI3int3intEEE7AVLnodeI3int3intE(AVLnode<int, int> value) {
+    AVLnode<int, int>** allocation = alloca AVLnode<int, int>*
+    void* _0 = call malloc(uint64 sizeof(AVLnode<int, int>))
+    bool assert.condition = _0 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:9:54
+")
+    unreachable
+
+assert.success:
+    AVLnode<int, int>* _2 = cast _0 to AVLnode<int, int>*
+    store _2 to allocation
+    AVLnode<int, int>* allocation.load = load allocation
+    store value to allocation.load
+    AVLnode<int, int>* allocation.load_0 = load allocation
+    return allocation.load_0
+}
+
+void _EN3std7AVLnodeI3int3intE4initE3intOP7AVLnodeI3int3intE3int(AVLnode<int, int>* this, int key, AVLnode<int, int>* parent, int value) {
+    MapEntry<int, int>* _0 = alloca MapEntry<int, int>
+    MapEntry<int, int>* entry = getelementptr this, 0
+    void _1 = call _EN3std8MapEntryI3int3intE4initE3int3int(MapEntry<int, int>* _0, int key, int value)
+    MapEntry<int, int> .load = load _0
+    store .load to entry
+    AVLnode<int, int>** parent_0 = getelementptr this, 2
+    store parent to parent_0
+    int* balance = getelementptr this, 1
+    store int 0 to balance
+    AVLnode<int, int>** left = getelementptr this, 3
+    store AVLnode<int, int>* null to left
+    AVLnode<int, int>** right = getelementptr this, 4
+    store AVLnode<int, int>* null to right
+    return void
+}
+
+void _EN3std10OrderedMapI3int3intE9rebalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* node) {
+    AVLnode<int, int>** n = alloca AVLnode<int, int>*
+    store node to n
+    AVLnode<int, int>* n.load = load n
+    void _0 = call _EN3std10OrderedMapI3int3intE10setBalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n.load)
+    AVLnode<int, int>* n.load_0 = load n
+    int* balance = getelementptr n.load_0, 1
+    int balance.load = load balance
+    bool _1 = balance.load == int -2
+    br _1, if.then, if.else
+
+if.then:
+    AVLnode<int, int>* n.load_1 = load n
+    AVLnode<int, int>** left = getelementptr n.load_1, 3
+    AVLnode<int, int>* left.load = load left
+    bool assert.condition = left.load == AVLnode<int, int>* null
+    br assert.condition, assert.fail, assert.success
+
+if.else:
+    AVLnode<int, int>* n.load_2 = load n
+    int* balance_0 = getelementptr n.load_2, 1
+    int balance.load_0 = load balance_0
+    bool _2 = balance.load_0 == int 2
+    br _2, if.then, if.else
+
+if.end:
+    AVLnode<int, int>* n.load_3 = load n
+    AVLnode<int, int>** parent = getelementptr n.load_3, 2
+    AVLnode<int, int>* parent.load = load parent
+    bool _3 = parent.load != AVLnode<int, int>* null
+    br _3, if.then, if.else
+
+assert.fail:
+    void _4 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:32:30
+")
+    unreachable
+
+assert.success:
+    AVLnode<int, int>** left_0 = getelementptr left.load, 3
+    AVLnode<int, int>* left.load_0 = load left_0
+    int _5 = call _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* left.load_0)
+    AVLnode<int, int>* n.load_4 = load n
+    AVLnode<int, int>** left_1 = getelementptr n.load_4, 3
+    AVLnode<int, int>* left.load_1 = load left_1
+    AVLnode<int, int>** right = getelementptr left.load_1, 4
+    AVLnode<int, int>* right.load = load right
+    int _6 = call _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* right.load)
+    bool _7 = _5 >= _6
+    br _7, if.then, if.else
+
+if.then_0:
+    AVLnode<int, int>* n.load_5 = load n
+    AVLnode<int, int>* _8 = call _EN3std10OrderedMapI3int3intE11rotateRightEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n.load_5)
+    store _8 to n
+    br if.end_0
+
+if.else_0:
+    AVLnode<int, int>* n.load_6 = load n
+    AVLnode<int, int>* _9 = call _EN3std10OrderedMapI3int3intE19rotateLeftThenRightEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n.load_6)
+    store _9 to n
+    br if.end_0
+
+if.end_0:
+    br if.end
+
+if.then_1:
+    AVLnode<int, int>* n.load_7 = load n
+    AVLnode<int, int>** right_0 = getelementptr n.load_7, 4
+    AVLnode<int, int>* right.load_0 = load right_0
+    bool assert.condition_0 = right.load_0 == AVLnode<int, int>* null
+    br assert.condition_0, assert.fail, assert.success
+
+if.else_1:
+    br if.end_1
+
+if.end_1:
+    br if.end
+
+assert.fail_0:
+    void _10 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:38:31
+")
+    unreachable
+
+assert.success_0:
+    AVLnode<int, int>** right_1 = getelementptr right.load_0, 4
+    AVLnode<int, int>* right.load_1 = load right_1
+    int _11 = call _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* right.load_1)
+    AVLnode<int, int>* n.load_8 = load n
+    AVLnode<int, int>** right_2 = getelementptr n.load_8, 4
+    AVLnode<int, int>* right.load_2 = load right_2
+    AVLnode<int, int>** left_2 = getelementptr right.load_2, 3
+    AVLnode<int, int>* left.load_2 = load left_2
+    int _12 = call _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* left.load_2)
+    bool _13 = _11 >= _12
+    br _13, if.then, if.else
+
+if.then_2:
+    AVLnode<int, int>* n.load_9 = load n
+    AVLnode<int, int>* _14 = call _EN3std10OrderedMapI3int3intE10rotateLeftEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n.load_9)
+    store _14 to n
+    br if.end_2
+
+if.else_2:
+    AVLnode<int, int>* n.load_10 = load n
+    AVLnode<int, int>* _15 = call _EN3std10OrderedMapI3int3intE19rotateRightThenLeftEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n.load_10)
+    store _15 to n
+    br if.end_2
+
+if.end_2:
+    br if.end_1
+
+if.then_3:
+    AVLnode<int, int>* n.load_11 = load n
+    AVLnode<int, int>** parent_0 = getelementptr n.load_11, 2
+    AVLnode<int, int>* parent.load_0 = load parent_0
+    bool __implicit_unwrap.condition = parent.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+if.else_3:
+    AVLnode<int, int>** root = getelementptr this, 0
+    AVLnode<int, int>* n.load_12 = load n
+    store n.load_12 to root
+    br if.end_3
+
+if.end_3:
+    return void
+
+__implicit_unwrap.fail:
+    void _16 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:46:25
+")
+    unreachable
+
+__implicit_unwrap.success:
+    void _17 = call _EN3std10OrderedMapI3int3intE9rebalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* parent.load_0)
+    br if.end_3
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE8findNodeEP3int(OrderedMap<int, int>* this, int* key) {
+    AVLnode<int, int>** n = alloca AVLnode<int, int>*
+    bool* goLeft = alloca bool
+    AVLnode<int, int>** root = getelementptr this, 0
+    AVLnode<int, int>* root.load = load root
+    store root.load to n
+    br loop.condition
+
+loop.condition:
+    br bool true, loop.body, loop.end
+
+loop.body:
+    AVLnode<int, int>* n.load = load n
+    bool _0 = n.load == AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+loop.end:
+    return AVLnode<int, int>* null
+
+if.then:
+    return AVLnode<int, int>* null
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>* n.load_0 = load n
+    MapEntry<int, int>* entry = getelementptr n.load_0, 0
+    int* key_0 = getelementptr entry, 0
+    int key.load = load key_0
+    int key.load_0 = load key
+    bool _1 = key.load == key.load_0
+    br _1, if.then, if.else
+
+if.then_0:
+    AVLnode<int, int>* n.load_1 = load n
+    return n.load_1
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    AVLnode<int, int>* n.load_2 = load n
+    MapEntry<int, int>* entry_0 = getelementptr n.load_2, 0
+    int* key_1 = getelementptr entry_0, 0
+    int key.load_1 = load key_1
+    int key.load_2 = load key
+    bool _2 = key.load_1 > key.load_2
+    store _2 to goLeft
+    bool goLeft.load = load goLeft
+    br goLeft.load, if.then, if.else
+
+if.then_1:
+    AVLnode<int, int>* n.load_3 = load n
+    AVLnode<int, int>** left = getelementptr n.load_3, 3
+    AVLnode<int, int>* left.load = load left
+    br if.end_1(left.load)
+
+if.else_1:
+    AVLnode<int, int>* n.load_4 = load n
+    AVLnode<int, int>** right = getelementptr n.load_4, 4
+    AVLnode<int, int>* right.load = load right
+    br if.end_1(right.load)
+
+if.end_1(AVLnode<int, int>* if.result):
+    store if.result to n
+    br loop.condition
+}
+
+void _EN3std10deallocateIOP7AVLnodeI3int3intEEEOP7AVLnodeI3int3intE(AVLnode<int, int>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+int _EN3std3int7compareEP3int(int* this, int* other) {
+    int this.load = load this
+    int other.load = load other
+    bool _0 = this.load < other.load
+    br _0, if.then, if.else
+
+if.then:
+    br if.end(int 0)
+
+if.else:
+    int this.load_0 = load this
+    int other.load_0 = load other
+    bool _1 = this.load_0 > other.load_0
+    br _1, if.then, if.else
+
+if.then_0:
+    br if.end_0(int 2)
+
+if.else_0:
+    br if.end_0(int 1)
+
+if.end_0(int if.result):
+    br if.end(if.result)
+
+if.end(int if.result_0):
+    return if.result_0
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE9lowerNodeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* node) {
+    AVLnode<int, int>** n = alloca AVLnode<int, int>*
+    AVLnode<int, int>** left = getelementptr node, 3
+    AVLnode<int, int>* left.load = load left
+    bool _0 = left.load != AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+if.then:
+    AVLnode<int, int>** left_0 = getelementptr node, 3
+    AVLnode<int, int>* left.load_0 = load left_0
+    bool __implicit_unwrap.condition = left.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+if.else:
+    br if.end
+
+if.end:
+    store node to n
+    br loop.condition
+
+__implicit_unwrap.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:280:38
+")
+    unreachable
+
+__implicit_unwrap.success:
+    AVLnode<int, int>* _2 = call _EN3std10OrderedMapI3int3intE12maxInSubtreeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* left.load_0)
+    return _2
+
+loop.condition:
+    AVLnode<int, int>* n.load = load n
+    AVLnode<int, int>** parent = getelementptr n.load, 2
+    AVLnode<int, int>* parent.load = load parent
+    bool _3 = parent.load != AVLnode<int, int>* null
+    br _3, loop.body, loop.end
+
+loop.body:
+    AVLnode<int, int>* n.load_0 = load n
+    AVLnode<int, int>* n.load_1 = load n
+    AVLnode<int, int>** parent_0 = getelementptr n.load_1, 2
+    AVLnode<int, int>* parent.load_0 = load parent_0
+    AVLnode<int, int>** right = getelementptr parent.load_0, 4
+    AVLnode<int, int>* right.load = load right
+    bool _4 = n.load_0 === right.load
+    br _4, if.then, if.else
+
+loop.end:
+    return AVLnode<int, int>* null
+
+if.then_0:
+    AVLnode<int, int>* n.load_2 = load n
+    AVLnode<int, int>** parent_1 = getelementptr n.load_2, 2
+    AVLnode<int, int>* parent.load_1 = load parent_1
+    return parent.load_1
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    AVLnode<int, int>* n.load_3 = load n
+    AVLnode<int, int>** parent_2 = getelementptr n.load_3, 2
+    AVLnode<int, int>* parent.load_2 = load parent_2
+    bool __implicit_unwrap.condition_0 = parent.load_2 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition_0, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail_0:
+    void _5 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:288:19
+")
+    unreachable
+
+__implicit_unwrap.success_0:
+    store parent.load_2 to n
+    br loop.condition
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE10higherNodeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* node) {
+    AVLnode<int, int>** n = alloca AVLnode<int, int>*
+    AVLnode<int, int>** right = getelementptr node, 4
+    AVLnode<int, int>* right.load = load right
+    bool _0 = right.load != AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+if.then:
+    AVLnode<int, int>** right_0 = getelementptr node, 4
+    AVLnode<int, int>* right.load_0 = load right_0
+    bool __implicit_unwrap.condition = right.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+if.else:
+    br if.end
+
+if.end:
+    store node to n
+    br loop.condition
+
+__implicit_unwrap.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:313:38
+")
+    unreachable
+
+__implicit_unwrap.success:
+    AVLnode<int, int>* _2 = call _EN3std10OrderedMapI3int3intE12minInSubtreeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* right.load_0)
+    return _2
+
+loop.condition:
+    AVLnode<int, int>* n.load = load n
+    AVLnode<int, int>** parent = getelementptr n.load, 2
+    AVLnode<int, int>* parent.load = load parent
+    bool _3 = parent.load != AVLnode<int, int>* null
+    br _3, loop.body, loop.end
+
+loop.body:
+    AVLnode<int, int>* n.load_0 = load n
+    AVLnode<int, int>* n.load_1 = load n
+    AVLnode<int, int>** parent_0 = getelementptr n.load_1, 2
+    AVLnode<int, int>* parent.load_0 = load parent_0
+    AVLnode<int, int>** left = getelementptr parent.load_0, 3
+    AVLnode<int, int>* left.load = load left
+    bool _4 = n.load_0 === left.load
+    br _4, if.then, if.else
+
+loop.end:
+    return AVLnode<int, int>* null
+
+if.then_0:
+    AVLnode<int, int>* n.load_2 = load n
+    AVLnode<int, int>** parent_1 = getelementptr n.load_2, 2
+    AVLnode<int, int>* parent.load_1 = load parent_1
+    return parent.load_1
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    AVLnode<int, int>* n.load_3 = load n
+    AVLnode<int, int>** parent_2 = getelementptr n.load_3, 2
+    AVLnode<int, int>* parent.load_2 = load parent_2
+    bool __implicit_unwrap.condition_0 = parent.load_2 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition_0, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail_0:
+    void _5 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:321:19
+")
+    unreachable
+
+__implicit_unwrap.success_0:
+    store parent.load_2 to n
+    br loop.condition
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE12minInSubtreeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* node) {
+    AVLnode<int, int>** n = alloca AVLnode<int, int>*
+    store node to n
+    br loop.condition
+
+loop.condition:
+    AVLnode<int, int>* n.load = load n
+    AVLnode<int, int>** left = getelementptr n.load, 3
+    AVLnode<int, int>* left.load = load left
+    bool _0 = left.load != AVLnode<int, int>* null
+    br _0, loop.body, loop.end
+
+loop.body:
+    AVLnode<int, int>* n.load_0 = load n
+    AVLnode<int, int>** left_0 = getelementptr n.load_0, 3
+    AVLnode<int, int>* left.load_0 = load left_0
+    bool __implicit_unwrap.condition = left.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+loop.end:
+    AVLnode<int, int>* n.load_1 = load n
+    return n.load_1
+
+__implicit_unwrap.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:271:19
+")
+    unreachable
+
+__implicit_unwrap.success:
+    store left.load_0 to n
+    br loop.condition
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE12maxInSubtreeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* node) {
+    AVLnode<int, int>** n = alloca AVLnode<int, int>*
+    store node to n
+    br loop.condition
+
+loop.condition:
+    AVLnode<int, int>* n.load = load n
+    AVLnode<int, int>** right = getelementptr n.load, 4
+    AVLnode<int, int>* right.load = load right
+    bool _0 = right.load != AVLnode<int, int>* null
+    br _0, loop.body, loop.end
+
+loop.body:
+    AVLnode<int, int>* n.load_0 = load n
+    AVLnode<int, int>** right_0 = getelementptr n.load_0, 4
+    AVLnode<int, int>* right.load_0 = load right_0
+    bool __implicit_unwrap.condition = right.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+loop.end:
+    AVLnode<int, int>* n.load_1 = load n
+    return n.load_1
+
+__implicit_unwrap.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:263:19
+")
+    unreachable
+
+__implicit_unwrap.success:
+    store right.load_0 to n
+    br loop.condition
+}
+
+void _EN3std18OrderedMapIteratorI3int3intE4initEP10OrderedMapI3int3intE(OrderedMapIterator<int, int>* this, OrderedMap<int, int>* map) {
+    AVLnode<int, int>** current = getelementptr this, 0
+    AVLnode<int, int>* _0 = call _EN3std10OrderedMapI3int3intE9firstNodeE(OrderedMap<int, int>* map)
+    store _0 to current
+    OrderedMap<int, int>** map_0 = getelementptr this, 1
+    store map to map_0
+    return void
+}
+
+void _EN3std10deallocateIP7AVLnodeI3int3intEEEP7AVLnodeI3int3intE(AVLnode<int, int>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+extern void* malloc(uint64)
+
+void _EN3std8MapEntryI3int3intE4initE3int3int(MapEntry<int, int>* this, int key, int value) {
+    int* key_0 = getelementptr this, 0
+    store key to key_0
+    int* value_0 = getelementptr this, 1
+    store value to value_0
+    return void
+}
+
+void _EN3std10OrderedMapI3int3intE10setBalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n) {
+    int* balance = getelementptr n, 1
+    AVLnode<int, int>** right = getelementptr n, 4
+    AVLnode<int, int>* right.load = load right
+    int _0 = call _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* right.load)
+    AVLnode<int, int>** left = getelementptr n, 3
+    AVLnode<int, int>* left.load = load left
+    int _1 = call _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* left.load)
+    int _2 = _0 - _1
+    store _2 to balance
+    return void
+}
+
+int _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n) {
+    int* _0 = alloca int
+    int* _1 = alloca int
+    bool _2 = n == AVLnode<int, int>* null
+    br _2, if.then, if.else
+
+if.then:
+    return int -1
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>** left = getelementptr n, 3
+    AVLnode<int, int>* left.load = load left
+    int _3 = call _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* left.load)
+    store _3 to _0
+    AVLnode<int, int>** right = getelementptr n, 4
+    AVLnode<int, int>* right.load = load right
+    int _4 = call _EN3std10OrderedMapI3int3intE6heightEOP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* right.load)
+    store _4 to _1
+    int* _5 = call _EN3std3maxI3intEEP3intP3int(int* _0, int* _1)
+    int .load = load _5
+    int _6 = int 1 + .load
+    return _6
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE11rotateRightEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* node) {
+    AVLnode<int, int>** a = alloca AVLnode<int, int>*
+    AVLnode<int, int>** b = alloca AVLnode<int, int>*
+    store node to a
+    AVLnode<int, int>* a.load = load a
+    AVLnode<int, int>** left = getelementptr a.load, 3
+    AVLnode<int, int>* left.load = load left
+    bool assert.condition = left.load == AVLnode<int, int>* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _0 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:80:23
+")
+    unreachable
+
+assert.success:
+    store left.load to b
+    AVLnode<int, int>* b.load = load b
+    AVLnode<int, int>** parent = getelementptr b.load, 2
+    AVLnode<int, int>* a.load_0 = load a
+    AVLnode<int, int>** parent_0 = getelementptr a.load_0, 2
+    AVLnode<int, int>* parent.load = load parent_0
+    store parent.load to parent
+    AVLnode<int, int>* a.load_1 = load a
+    AVLnode<int, int>** left_0 = getelementptr a.load_1, 3
+    AVLnode<int, int>* b.load_0 = load b
+    AVLnode<int, int>** right = getelementptr b.load_0, 4
+    AVLnode<int, int>* right.load = load right
+    store right.load to left_0
+    AVLnode<int, int>* a.load_2 = load a
+    AVLnode<int, int>** left_1 = getelementptr a.load_2, 3
+    AVLnode<int, int>* left.load_0 = load left_1
+    bool _1 = left.load_0 != AVLnode<int, int>* null
+    br _1, if.then, if.else
+
+if.then:
+    AVLnode<int, int>* a.load_3 = load a
+    AVLnode<int, int>** left_2 = getelementptr a.load_3, 3
+    AVLnode<int, int>* left.load_1 = load left_2
+    AVLnode<int, int>** parent_1 = getelementptr left.load_1, 2
+    AVLnode<int, int>* a.load_4 = load a
+    store a.load_4 to parent_1
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>* b.load_1 = load b
+    AVLnode<int, int>** right_0 = getelementptr b.load_1, 4
+    AVLnode<int, int>* a.load_5 = load a
+    store a.load_5 to right_0
+    AVLnode<int, int>* a.load_6 = load a
+    AVLnode<int, int>** parent_2 = getelementptr a.load_6, 2
+    AVLnode<int, int>* b.load_2 = load b
+    store b.load_2 to parent_2
+    AVLnode<int, int>* b.load_3 = load b
+    AVLnode<int, int>** parent_3 = getelementptr b.load_3, 2
+    AVLnode<int, int>* parent.load_0 = load parent_3
+    bool _2 = parent.load_0 != AVLnode<int, int>* null
+    br _2, if.then, if.else
+
+if.then_0:
+    AVLnode<int, int>* b.load_4 = load b
+    AVLnode<int, int>** parent_4 = getelementptr b.load_4, 2
+    AVLnode<int, int>* parent.load_1 = load parent_4
+    AVLnode<int, int>** right_1 = getelementptr parent.load_1, 4
+    AVLnode<int, int>* right.load_0 = load right_1
+    AVLnode<int, int>* a.load_7 = load a
+    bool _3 = right.load_0 === a.load_7
+    br _3, if.then, if.else
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    AVLnode<int, int>* a.load_8 = load a
+    void _4 = call _EN3std10OrderedMapI3int3intE10setBalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* a.load_8)
+    AVLnode<int, int>* b.load_5 = load b
+    void _5 = call _EN3std10OrderedMapI3int3intE10setBalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* b.load_5)
+    AVLnode<int, int>* b.load_6 = load b
+    return b.load_6
+
+if.then_1:
+    AVLnode<int, int>* b.load_7 = load b
+    AVLnode<int, int>** parent_5 = getelementptr b.load_7, 2
+    AVLnode<int, int>* parent.load_2 = load parent_5
+    AVLnode<int, int>** right_2 = getelementptr parent.load_2, 4
+    AVLnode<int, int>* b.load_8 = load b
+    store b.load_8 to right_2
+    br if.end_1
+
+if.else_1:
+    AVLnode<int, int>* b.load_9 = load b
+    AVLnode<int, int>** parent_6 = getelementptr b.load_9, 2
+    AVLnode<int, int>* parent.load_3 = load parent_6
+    AVLnode<int, int>** left_3 = getelementptr parent.load_3, 3
+    AVLnode<int, int>* b.load_10 = load b
+    store b.load_10 to left_3
+    br if.end_1
+
+if.end_1:
+    br if.end_0
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE19rotateLeftThenRightEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n) {
+    AVLnode<int, int>** left = getelementptr n, 3
+    AVLnode<int, int>** left_0 = getelementptr n, 3
+    AVLnode<int, int>* left.load = load left_0
+    bool assert.condition = left.load == AVLnode<int, int>* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _0 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:105:35
+")
+    unreachable
+
+assert.success:
+    AVLnode<int, int>* _1 = call _EN3std10OrderedMapI3int3intE10rotateLeftEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* left.load)
+    store _1 to left
+    AVLnode<int, int>* _2 = call _EN3std10OrderedMapI3int3intE11rotateRightEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n)
+    return _2
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE10rotateLeftEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* node) {
+    AVLnode<int, int>** a = alloca AVLnode<int, int>*
+    AVLnode<int, int>** b = alloca AVLnode<int, int>*
+    store node to a
+    AVLnode<int, int>* a.load = load a
+    AVLnode<int, int>** right = getelementptr a.load, 4
+    AVLnode<int, int>* right.load = load right
+    bool assert.condition = right.load == AVLnode<int, int>* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _0 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:54:24
+")
+    unreachable
+
+assert.success:
+    store right.load to b
+    AVLnode<int, int>* b.load = load b
+    AVLnode<int, int>** parent = getelementptr b.load, 2
+    AVLnode<int, int>* a.load_0 = load a
+    AVLnode<int, int>** parent_0 = getelementptr a.load_0, 2
+    AVLnode<int, int>* parent.load = load parent_0
+    store parent.load to parent
+    AVLnode<int, int>* a.load_1 = load a
+    AVLnode<int, int>** right_0 = getelementptr a.load_1, 4
+    AVLnode<int, int>* b.load_0 = load b
+    AVLnode<int, int>** left = getelementptr b.load_0, 3
+    AVLnode<int, int>* left.load = load left
+    store left.load to right_0
+    AVLnode<int, int>* a.load_2 = load a
+    AVLnode<int, int>** right_1 = getelementptr a.load_2, 4
+    AVLnode<int, int>* right.load_0 = load right_1
+    bool _1 = right.load_0 != AVLnode<int, int>* null
+    br _1, if.then, if.else
+
+if.then:
+    AVLnode<int, int>* a.load_3 = load a
+    AVLnode<int, int>** right_2 = getelementptr a.load_3, 4
+    AVLnode<int, int>* right.load_1 = load right_2
+    AVLnode<int, int>** parent_1 = getelementptr right.load_1, 2
+    AVLnode<int, int>* a.load_4 = load a
+    store a.load_4 to parent_1
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>* b.load_1 = load b
+    AVLnode<int, int>** left_0 = getelementptr b.load_1, 3
+    AVLnode<int, int>* a.load_5 = load a
+    store a.load_5 to left_0
+    AVLnode<int, int>* a.load_6 = load a
+    AVLnode<int, int>** parent_2 = getelementptr a.load_6, 2
+    AVLnode<int, int>* b.load_2 = load b
+    store b.load_2 to parent_2
+    AVLnode<int, int>* b.load_3 = load b
+    AVLnode<int, int>** parent_3 = getelementptr b.load_3, 2
+    AVLnode<int, int>* parent.load_0 = load parent_3
+    bool _2 = parent.load_0 != AVLnode<int, int>* null
+    br _2, if.then, if.else
+
+if.then_0:
+    AVLnode<int, int>* b.load_4 = load b
+    AVLnode<int, int>** parent_4 = getelementptr b.load_4, 2
+    AVLnode<int, int>* parent.load_1 = load parent_4
+    AVLnode<int, int>** right_3 = getelementptr parent.load_1, 4
+    AVLnode<int, int>* right.load_2 = load right_3
+    AVLnode<int, int>* a.load_7 = load a
+    bool _3 = right.load_2 === a.load_7
+    br _3, if.then, if.else
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    AVLnode<int, int>* a.load_8 = load a
+    void _4 = call _EN3std10OrderedMapI3int3intE10setBalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* a.load_8)
+    AVLnode<int, int>* b.load_5 = load b
+    void _5 = call _EN3std10OrderedMapI3int3intE10setBalanceEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* b.load_5)
+    AVLnode<int, int>* b.load_6 = load b
+    return b.load_6
+
+if.then_1:
+    AVLnode<int, int>* b.load_7 = load b
+    AVLnode<int, int>** parent_5 = getelementptr b.load_7, 2
+    AVLnode<int, int>* parent.load_2 = load parent_5
+    AVLnode<int, int>** right_4 = getelementptr parent.load_2, 4
+    AVLnode<int, int>* b.load_8 = load b
+    store b.load_8 to right_4
+    br if.end_1
+
+if.else_1:
+    AVLnode<int, int>* b.load_9 = load b
+    AVLnode<int, int>** parent_6 = getelementptr b.load_9, 2
+    AVLnode<int, int>* parent.load_3 = load parent_6
+    AVLnode<int, int>** left_1 = getelementptr parent.load_3, 3
+    AVLnode<int, int>* b.load_10 = load b
+    store b.load_10 to left_1
+    br if.end_1
+
+if.end_1:
+    br if.end_0
+}
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE19rotateRightThenLeftEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n) {
+    AVLnode<int, int>** right = getelementptr n, 4
+    AVLnode<int, int>** right_0 = getelementptr n, 4
+    AVLnode<int, int>* right.load = load right_0
+    bool assert.condition = right.load == AVLnode<int, int>* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _0 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:110:38
+")
+    unreachable
+
+assert.success:
+    AVLnode<int, int>* _1 = call _EN3std10OrderedMapI3int3intE11rotateRightEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* right.load)
+    store _1 to right
+    AVLnode<int, int>* _2 = call _EN3std10OrderedMapI3int3intE10rotateLeftEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* n)
+    return _2
+}
+
+extern void free(void*)
+
+AVLnode<int, int>* _EN3std10OrderedMapI3int3intE9firstNodeE(OrderedMap<int, int>* this) {
+    AVLnode<int, int>** root = getelementptr this, 0
+    AVLnode<int, int>* root.load = load root
+    bool _0 = root.load == AVLnode<int, int>* null
+    br _0, if.then, if.else
+
+if.then:
+    return AVLnode<int, int>* null
+
+if.else:
+    br if.end
+
+if.end:
+    AVLnode<int, int>** root_0 = getelementptr this, 0
+    AVLnode<int, int>* root.load_0 = load root_0
+    bool __implicit_unwrap.condition = root.load_0 == AVLnode<int, int>* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _1 = call _EN3std10assertFailEP4char(char* "Unwrap failed at OrderedMap.cx:339:29
+")
+    unreachable
+
+__implicit_unwrap.success:
+    AVLnode<int, int>* _2 = call _EN3std10OrderedMapI3int3intE12minInSubtreeEP7AVLnodeI3int3intE(OrderedMap<int, int>* this, AVLnode<int, int>* root.load_0)
+    return _2
+}
+
+int* _EN3std3maxI3intEEP3intP3int(int* a, int* b) {
+    int a.load = load a
+    int b.load = load b
+    bool _0 = a.load >= b.load
+    br _0, if.then, if.else
+
+if.then:
+    return a
+
+if.else:
+    br if.end
+
+if.end:
+    return b
+}

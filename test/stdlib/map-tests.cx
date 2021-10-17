@@ -1,3 +1,4 @@
+// RUN: check-snapshots
 // RUN: check_exit_status 0 %cx run -Werror %s
 
 void main() {

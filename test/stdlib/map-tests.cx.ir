@@ -1,0 +1,3938 @@
+
+int main() {
+    void _0 = call _EN4main10testInsertE()
+    void _1 = call _EN4main11testRemovalE()
+    void _2 = call _EN4main14testDuplicatesE()
+    void _3 = call _EN4main10testGetterE()
+    void _4 = call _EN4main10testResizeE()
+    void _5 = call _EN4main8testSizeE()
+    void _6 = call _EN4main12testIteratorE()
+    void _7 = call _EN4main20testEmptyMapIteratorE()
+    void _8 = call _EN4main19testUnitMapIteratorE()
+    return int 0
+}
+
+void _EN4main10testInsertE() {
+    Map<string, int>* map = alloca Map<string, int>
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    void _0 = call _EN3std3MapI6string3intE4initE(Map<string, int>* map)
+    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "ok", int 2)
+    string __str.load = load __str
+    void _2 = call _EN3std3MapI6string3intE6insertE6string3int(Map<string, int>* map, string __str.load, int 1)
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_0, char* "ok", int 2)
+    bool _4 = call _EN3std3MapI6string3intE8containsEP6string(Map<string, int>* map, string* __str_0)
+    bool assert.condition = _4 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _5 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:21:5
+")
+    unreachable
+
+assert.success:
+    void _6 = call _EN3std6string4initEP4char3int(string* __str_1, char* "lol", int 3)
+    bool _7 = call _EN3std3MapI6string3intE8containsEP6string(Map<string, int>* map, string* __str_1)
+    bool _8 = !_7
+    bool assert.condition_0 = _8 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _9 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:22:5
+")
+    unreachable
+
+assert.success_0:
+    void _10 = call _EN3std3MapI6string3intE6deinitE(Map<string, int>* map)
+    return void
+}
+
+void _EN4main11testRemovalE() {
+    Map<string, int>* map = alloca Map<string, int>
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    void _0 = call _EN3std3MapI6string3intE4initE(Map<string, int>* map)
+    int _1 = call _EN3std3MapI6string3intE4sizeE(Map<string, int>* map)
+    bool _2 = _1 == int 0
+    bool assert.condition = _2 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:59:5
+")
+    unreachable
+
+assert.success:
+    void _4 = call _EN3std6string4initEP4char3int(string* __str, char* "ok", int 2)
+    string __str.load = load __str
+    void _5 = call _EN3std3MapI6string3intE6insertE6string3int(Map<string, int>* map, string __str.load, int 2)
+    void _6 = call _EN3std6string4initEP4char3int(string* __str_0, char* "ok", int 2)
+    bool _7 = call _EN3std3MapI6string3intE8containsEP6string(Map<string, int>* map, string* __str_0)
+    bool assert.condition_0 = _7 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _8 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:63:5
+")
+    unreachable
+
+assert.success_0:
+    int _9 = call _EN3std3MapI6string3intE4sizeE(Map<string, int>* map)
+    bool _10 = _9 == int 1
+    bool assert.condition_1 = _10 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _11 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:64:5
+")
+    unreachable
+
+assert.success_1:
+    void _12 = call _EN3std6string4initEP4char3int(string* __str_1, char* "ok", int 2)
+    void _13 = call _EN3std3MapI6string3intE6removeEP6string(Map<string, int>* map, string* __str_1)
+    void _14 = call _EN3std6string4initEP4char3int(string* __str_2, char* "ok", int 2)
+    bool _15 = call _EN3std3MapI6string3intE8containsEP6string(Map<string, int>* map, string* __str_2)
+    bool _16 = !_15
+    bool assert.condition_2 = _16 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _17 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:67:5
+")
+    unreachable
+
+assert.success_2:
+    int _18 = call _EN3std3MapI6string3intE4sizeE(Map<string, int>* map)
+    bool _19 = _18 == int 0
+    bool assert.condition_3 = _19 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _20 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:68:5
+")
+    unreachable
+
+assert.success_3:
+    void _21 = call _EN3std3MapI6string3intE6deinitE(Map<string, int>* map)
+    return void
+}
+
+void _EN4main14testDuplicatesE() {
+    Map<string, int>* map = alloca Map<string, int>
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    int* _0 = alloca int
+    string* __str_3 = alloca string
+    string* __str_4 = alloca string
+    string* __str_5 = alloca string
+    void _1 = call _EN3std3MapI6string3intE4initE(Map<string, int>* map)
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "ok", int 2)
+    string __str.load = load __str
+    void _3 = call _EN3std3MapI6string3intE6insertE6string3int(Map<string, int>* map, string __str.load, int 1)
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_0, char* "ok", int 2)
+    string __str.load_0 = load __str_0
+    void _5 = call _EN3std3MapI6string3intE6insertE6string3int(Map<string, int>* map, string __str.load_0, int 2)
+    void _6 = call _EN3std6string4initEP4char3int(string* __str_1, char* "ok", int 2)
+    bool _7 = call _EN3std3MapI6string3intE8containsEP6string(Map<string, int>* map, string* __str_1)
+    bool assert.condition = _7 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _8 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:76:5
+")
+    unreachable
+
+assert.success:
+    void _9 = call _EN3std6string4initEP4char3int(string* __str_2, char* "ok", int 2)
+    int* _10 = call _EN3std3MapI6string3intEixEP6string(Map<string, int>* map, string* __str_2)
+    bool __implicit_unwrap.condition = _10 == int* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _11 = call _EN3std10assertFailEP4char(char* "Unwrap failed at map-tests.cx:78:15
+")
+    unreachable
+
+__implicit_unwrap.success:
+    store int 1 to _0
+    bool _12 = call _EN3stdeqI3intEEP3intP3int(int* _10, int* _0)
+    bool assert.condition_0 = _12 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _13 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:78:5
+")
+    unreachable
+
+assert.success_0:
+    void _14 = call _EN3std6string4initEP4char3int(string* __str_3, char* "ok", int 2)
+    void _15 = call _EN3std3MapI6string3intE6removeEP6string(Map<string, int>* map, string* __str_3)
+    void _16 = call _EN3std6string4initEP4char3int(string* __str_4, char* "ok", int 2)
+    bool _17 = call _EN3std3MapI6string3intE8containsEP6string(Map<string, int>* map, string* __str_4)
+    bool _18 = !_17
+    bool assert.condition_1 = _18 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _19 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:81:5
+")
+    unreachable
+
+assert.success_1:
+    void _20 = call _EN3std6string4initEP4char3int(string* __str_5, char* "ok", int 2)
+    int* _21 = call _EN3std3MapI6string3intEixEP6string(Map<string, int>* map, string* __str_5)
+    bool _22 = _21 == int* null
+    bool assert.condition_2 = _22 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _23 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:82:5
+")
+    unreachable
+
+assert.success_2:
+    void _24 = call _EN3std3MapI6string3intE6deinitE(Map<string, int>* map)
+    return void
+}
+
+void _EN4main10testGetterE() {
+    Map<string, int>* map = alloca Map<string, int>
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    int* _0 = alloca int
+    void _1 = call _EN3std3MapI6string3intE4initE(Map<string, int>* map)
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "ok", int 2)
+    string __str.load = load __str
+    void _3 = call _EN3std3MapI6string3intE6insertE6string3int(Map<string, int>* map, string __str.load, int 42)
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_0, char* "ok", int 2)
+    int* _5 = call _EN3std3MapI6string3intEixEP6string(Map<string, int>* map, string* __str_0)
+    bool __implicit_unwrap.condition = _5 == int* null
+    br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
+
+__implicit_unwrap.fail:
+    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at map-tests.cx:37:15
+")
+    unreachable
+
+__implicit_unwrap.success:
+    store int 42 to _0
+    bool _7 = call _EN3stdeqI3intEEP3intP3int(int* _5, int* _0)
+    bool assert.condition = _7 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _8 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:37:5
+")
+    unreachable
+
+assert.success:
+    void _9 = call _EN3std3MapI6string3intE6deinitE(Map<string, int>* map)
+    return void
+}
+
+void _EN4main10testResizeE() {
+    Map<StringBuffer, int>* map = alloca Map<StringBuffer, int>
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    StringBuffer* lol = alloca StringBuffer
+    RangeIterator<int>* __iterator1 = alloca RangeIterator<int>
+    Range<int>* _1 = alloca Range<int>
+    int* j = alloca int
+    void _2 = call _EN3std3MapI12StringBuffer3intE4initE(Map<StringBuffer, int>* map)
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int 255)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to i
+    void _7 = call _EN3std12StringBuffer4initE(StringBuffer* lol)
+    int i.load = load i
+    int _8 = i.load + int 1
+    void _9 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _1, int 0, int _8)
+    RangeIterator<int> _10 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _1)
+    store _10 to __iterator1
+    br loop.condition_0
+
+loop.increment:
+    void _11 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int _12 = call _EN3std3MapI12StringBuffer3intE4sizeE(Map<StringBuffer, int>* map)
+    bool _13 = _12 == int 255
+    bool assert.condition = _13 == bool false
+    br assert.condition, assert.fail, assert.success
+
+loop.condition_0:
+    bool _14 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator1)
+    br _14, loop.body, loop.end
+
+loop.body_0:
+    int _15 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator1)
+    store _15 to j
+    void _16 = call _EN3std12StringBuffer4pushE4char(StringBuffer* lol, char 97)
+    br loop.increment_0
+
+loop.increment_0:
+    void _17 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator1)
+    br loop.condition_0
+
+loop.end_0:
+    StringBuffer lol.load = load lol
+    int i.load_0 = load i
+    void _18 = call _EN3std3MapI12StringBuffer3intE6insertE12StringBuffer3int(Map<StringBuffer, int>* map, StringBuffer lol.load, int i.load_0)
+    br loop.increment
+
+assert.fail:
+    void _19 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:53:5
+")
+    unreachable
+
+assert.success:
+    void _20 = call _EN3std3MapI12StringBuffer3intE6deinitE(Map<StringBuffer, int>* map)
+    return void
+}
+
+void _EN4main8testSizeE() {
+    Map<string, string>* map = alloca Map<string, string>
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    void _0 = call _EN3std3MapI6string6stringE4initE(Map<string, string>* map)
+    int _1 = call _EN3std3MapI6string6stringE4sizeE(Map<string, string>* map)
+    bool _2 = _1 == int 0
+    bool assert.condition = _2 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:28:5
+")
+    unreachable
+
+assert.success:
+    void _4 = call _EN3std6string4initEP4char3int(string* __str, char* "best", int 4)
+    string __str.load = load __str
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_0, char* "ok", int 2)
+    string __str.load_0 = load __str_0
+    void _6 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load, string __str.load_0)
+    int _7 = call _EN3std3MapI6string6stringE4sizeE(Map<string, string>* map)
+    bool _8 = _7 == int 1
+    bool assert.condition_0 = _8 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _9 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:30:5
+")
+    unreachable
+
+assert.success_0:
+    void _10 = call _EN3std3MapI6string6stringE6deinitE(Map<string, string>* map)
+    return void
+}
+
+void _EN4main12testIteratorE() {
+    Map<string, string>* map = alloca Map<string, string>
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    string* __str_4 = alloca string
+    string* __str_5 = alloca string
+    string* __str_6 = alloca string
+    string* __str_7 = alloca string
+    string* __str_8 = alloca string
+    string* __str_9 = alloca string
+    string* __str_10 = alloca string
+    bool* a = alloca bool
+    bool* bb = alloca bool
+    bool* ccc = alloca bool
+    MapIterator<string, string>* __iterator = alloca MapIterator<string, string>
+    MapEntry<string, string>** e = alloca MapEntry<string, string>*
+    string* __str_11 = alloca string
+    string* __str_12 = alloca string
+    string* __str_13 = alloca string
+    void _0 = call _EN3std3MapI6string6stringE4initE(Map<string, string>* map)
+    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "a", int 1)
+    string __str.load = load __str
+    void _2 = call _EN3std6string4initEP4char3int(string* __str_0, char* "a", int 1)
+    string __str.load_0 = load __str_0
+    void _3 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load, string __str.load_0)
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_1, char* "ccc", int 3)
+    string __str.load_1 = load __str_1
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_2, char* "ccc", int 3)
+    string __str.load_2 = load __str_2
+    void _6 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load_1, string __str.load_2)
+    void _7 = call _EN3std6string4initEP4char3int(string* __str_3, char* "bb", int 2)
+    string __str.load_3 = load __str_3
+    void _8 = call _EN3std6string4initEP4char3int(string* __str_4, char* "bb", int 2)
+    string __str.load_4 = load __str_4
+    void _9 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load_3, string __str.load_4)
+    void _10 = call _EN3std6string4initEP4char3int(string* __str_5, char* "a", int 1)
+    string __str.load_5 = load __str_5
+    void _11 = call _EN3std6string4initEP4char3int(string* __str_6, char* "a", int 1)
+    string __str.load_6 = load __str_6
+    void _12 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load_5, string __str.load_6)
+    void _13 = call _EN3std6string4initEP4char3int(string* __str_7, char* "ccc", int 3)
+    string __str.load_7 = load __str_7
+    void _14 = call _EN3std6string4initEP4char3int(string* __str_8, char* "ccc", int 3)
+    string __str.load_8 = load __str_8
+    void _15 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load_7, string __str.load_8)
+    void _16 = call _EN3std6string4initEP4char3int(string* __str_9, char* "ccc", int 3)
+    string __str.load_9 = load __str_9
+    void _17 = call _EN3std6string4initEP4char3int(string* __str_10, char* "ccc", int 3)
+    string __str.load_10 = load __str_10
+    void _18 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load_9, string __str.load_10)
+    store bool false to a
+    store bool false to bb
+    store bool false to ccc
+    MapIterator<string, string> _19 = call _EN3std3MapI6string6stringE8iteratorE(Map<string, string>* map)
+    store _19 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _20 = call _EN3std11MapIteratorI6string6stringE8hasValueE(MapIterator<string, string>* __iterator)
+    br _20, loop.body, loop.end
+
+loop.body:
+    MapEntry<string, string>* _21 = call _EN3std11MapIteratorI6string6stringE5valueE(MapIterator<string, string>* __iterator)
+    store _21 to e
+    MapEntry<string, string>* e.load = load e
+    string* key = getelementptr e.load, 0
+    string key.load = load key
+    void _22 = call _EN3std6string4initEP4char3int(string* __str_11, char* "a", int 1)
+    string __str.load_11 = load __str_11
+    bool _23 = call _EN3stdeqE6string6string(string key.load, string __str.load_11)
+    br _23, if.then, if.else
+
+loop.increment:
+    void _24 = call _EN3std11MapIteratorI6string6stringE9incrementE(MapIterator<string, string>* __iterator)
+    br loop.condition
+
+loop.end:
+    bool a.load = load a
+    bool assert.condition = a.load == bool false
+    br assert.condition, assert.fail, assert.success
+
+if.then:
+    bool a.load_0 = load a
+    bool _25 = !a.load_0
+    bool assert.condition_0 = _25 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+if.else:
+    MapEntry<string, string>* e.load_0 = load e
+    string* key_0 = getelementptr e.load_0, 0
+    string key.load_0 = load key_0
+    void _26 = call _EN3std6string4initEP4char3int(string* __str_12, char* "bb", int 2)
+    string __str.load_12 = load __str_12
+    bool _27 = call _EN3stdeqE6string6string(string key.load_0, string __str.load_12)
+    br _27, if.then, if.else
+
+if.end:
+    br loop.increment
+
+assert.fail:
+    void _28 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:101:13
+")
+    unreachable
+
+assert.success:
+    store bool true to a
+    br if.end
+
+if.then_0:
+    bool bb.load = load bb
+    bool _29 = !bb.load
+    bool assert.condition_1 = _29 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+if.else_0:
+    MapEntry<string, string>* e.load_1 = load e
+    string* key_1 = getelementptr e.load_1, 0
+    string key.load_1 = load key_1
+    void _30 = call _EN3std6string4initEP4char3int(string* __str_13, char* "ccc", int 3)
+    string __str.load_13 = load __str_13
+    bool _31 = call _EN3stdeqE6string6string(string key.load_1, string __str.load_13)
+    br _31, if.then, if.else
+
+if.end_0:
+    br if.end
+
+assert.fail_0:
+    void _32 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:104:13
+")
+    unreachable
+
+assert.success_0:
+    store bool true to bb
+    br if.end_0
+
+if.then_1:
+    bool ccc.load = load ccc
+    bool _33 = !ccc.load
+    bool assert.condition_2 = _33 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+if.else_1:
+    bool assert.condition_3 = bool false == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+if.end_1:
+    br if.end_0
+
+assert.fail_1:
+    void _34 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:107:13
+")
+    unreachable
+
+assert.success_1:
+    store bool true to ccc
+    br if.end_1
+
+assert.fail_2:
+    void _35 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:110:13
+")
+    unreachable
+
+assert.success_2:
+    br if.end_1
+
+assert.fail_3:
+    void _36 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:114:5
+")
+    unreachable
+
+assert.success_3:
+    bool bb.load_0 = load bb
+    bool assert.condition_4 = bb.load_0 == bool false
+    br assert.condition_4, assert.fail, assert.success
+
+assert.fail_4:
+    void _37 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:115:5
+")
+    unreachable
+
+assert.success_4:
+    bool ccc.load_0 = load ccc
+    bool assert.condition_5 = ccc.load_0 == bool false
+    br assert.condition_5, assert.fail, assert.success
+
+assert.fail_5:
+    void _38 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:116:5
+")
+    unreachable
+
+assert.success_5:
+    void _39 = call _EN3std3MapI6string6stringE6deinitE(Map<string, string>* map)
+    return void
+}
+
+void _EN4main20testEmptyMapIteratorE() {
+    Map<string, string>* map = alloca Map<string, string>
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    MapIterator<string, string>* __iterator = alloca MapIterator<string, string>
+    MapEntry<string, string>** e = alloca MapEntry<string, string>*
+    void _0 = call _EN3std3MapI6string6stringE4initE(Map<string, string>* map)
+    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "foo", int 3)
+    string __str.load = load __str
+    void _2 = call _EN3std6string4initEP4char3int(string* __str_0, char* "foo", int 3)
+    string __str.load_0 = load __str_0
+    void _3 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load, string __str.load_0)
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_1, char* "foo", int 3)
+    string __str.load_1 = load __str_1
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_2, char* "foo", int 3)
+    string __str.load_2 = load __str_2
+    void _6 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load_1, string __str.load_2)
+    void _7 = call _EN3std6string4initEP4char3int(string* __str_3, char* "foo", int 3)
+    void _8 = call _EN3std3MapI6string6stringE6removeEP6string(Map<string, string>* map, string* __str_3)
+    MapIterator<string, string> _9 = call _EN3std3MapI6string6stringE8iteratorE(Map<string, string>* map)
+    store _9 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _10 = call _EN3std11MapIteratorI6string6stringE8hasValueE(MapIterator<string, string>* __iterator)
+    br _10, loop.body, loop.end
+
+loop.body:
+    MapEntry<string, string>* _11 = call _EN3std11MapIteratorI6string6stringE5valueE(MapIterator<string, string>* __iterator)
+    store _11 to e
+    bool assert.condition = bool false == bool false
+    br assert.condition, assert.fail, assert.success
+
+loop.increment:
+    void _12 = call _EN3std11MapIteratorI6string6stringE9incrementE(MapIterator<string, string>* __iterator)
+    br loop.condition
+
+loop.end:
+    void _13 = call _EN3std3MapI6string6stringE6deinitE(Map<string, string>* map)
+    return void
+
+assert.fail:
+    void _14 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:126:9
+")
+    unreachable
+
+assert.success:
+    br loop.increment
+}
+
+void _EN4main19testUnitMapIteratorE() {
+    Map<string, string>* map = alloca Map<string, string>
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    int* count = alloca int
+    MapIterator<string, string>* __iterator = alloca MapIterator<string, string>
+    MapEntry<string, string>** e = alloca MapEntry<string, string>*
+    string* __str_3 = alloca string
+    void _0 = call _EN3std3MapI6string6stringE4initE(Map<string, string>* map)
+    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "foo", int 3)
+    string __str.load = load __str
+    void _2 = call _EN3std6string4initEP4char3int(string* __str_0, char* "foo", int 3)
+    string __str.load_0 = load __str_0
+    void _3 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load, string __str.load_0)
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_1, char* "foo", int 3)
+    string __str.load_1 = load __str_1
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_2, char* "foo", int 3)
+    string __str.load_2 = load __str_2
+    void _6 = call _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* map, string __str.load_1, string __str.load_2)
+    store int 0 to count
+    MapIterator<string, string> _7 = call _EN3std3MapI6string6stringE8iteratorE(Map<string, string>* map)
+    store _7 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _8 = call _EN3std11MapIteratorI6string6stringE8hasValueE(MapIterator<string, string>* __iterator)
+    br _8, loop.body, loop.end
+
+loop.body:
+    MapEntry<string, string>* _9 = call _EN3std11MapIteratorI6string6stringE5valueE(MapIterator<string, string>* __iterator)
+    store _9 to e
+    int count.load = load count
+    int _10 = count.load + int 1
+    store _10 to count
+    MapEntry<string, string>* e.load = load e
+    string* key = getelementptr e.load, 0
+    string key.load = load key
+    void _11 = call _EN3std6string4initEP4char3int(string* __str_3, char* "foo", int 3)
+    string __str.load_3 = load __str_3
+    bool _12 = call _EN3stdeqE6string6string(string key.load, string __str.load_3)
+    bool assert.condition = _12 == bool false
+    br assert.condition, assert.fail, assert.success
+
+loop.increment:
+    void _13 = call _EN3std11MapIteratorI6string6stringE9incrementE(MapIterator<string, string>* __iterator)
+    br loop.condition
+
+loop.end:
+    int count.load_0 = load count
+    bool _14 = count.load_0 == int 1
+    bool assert.condition_0 = _14 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail:
+    void _15 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:138:9
+")
+    unreachable
+
+assert.success:
+    br loop.increment
+
+assert.fail_0:
+    void _16 = call _EN3std10assertFailEP4char(char* "Assertion failed at map-tests.cx:141:5
+")
+    unreachable
+
+assert.success_0:
+    void _17 = call _EN3std3MapI6string6stringE6deinitE(Map<string, string>* map)
+    return void
+}
+
+void _EN3std3MapI6string3intE6deinitE(Map<string, int>* this) {
+    List<List<MapEntry<string, int>>>* hashTable = getelementptr this, 0
+    void _0 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE6deinitE(List<List<MapEntry<string, int>>>* hashTable)
+    return void
+}
+
+void _EN3std3MapI6string3intE4initE(Map<string, int>* this) {
+    List<List<MapEntry<string, int>>>* _0 = alloca List<List<MapEntry<string, int>>>
+    int* size = getelementptr this, 1
+    store int 0 to size
+    List<List<MapEntry<string, int>>>* hashTable = getelementptr this, 0
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE4initE(List<List<MapEntry<string, int>>>* _0)
+    List<List<MapEntry<string, int>>> .load = load _0
+    store .load to hashTable
+    List<List<MapEntry<string, int>>>* hashTable_0 = getelementptr this, 0
+    void _2 = call _EN3std3MapI6string3intE17increaseTableSizeEP4ListI4ListI8MapEntryI6string3intEEE3int(Map<string, int>* this, List<List<MapEntry<string, int>>>* hashTable_0, int 128)
+    return void
+}
+
+void _EN3std3MapI6string3intE6insertE6string3int(Map<string, int>* this, string key, int value) {
+    string* _0 = alloca string
+    int* hashValue = alloca int
+    string* _1 = alloca string
+    MapEntry<string, int>* _2 = alloca MapEntry<string, int>
+    store key to _0
+    bool _3 = call _EN3std3MapI6string3intE8containsEP6string(Map<string, int>* this, string* _0)
+    br _3, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    br if.end
+
+if.end:
+    store key to _1
+    uint64 _4 = call _EN3std6string4hashE(string* _1)
+    int _5 = call _EN3std11convertHashE6uint64(uint64 _4)
+    int _6 = call _EN3std3MapI6string3intE8capacityE(Map<string, int>* this)
+    int _7 = _5 % _6
+    store _7 to hashValue
+    List<List<MapEntry<string, int>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<string, int>>* _8 = call _EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(List<List<MapEntry<string, int>>>* hashTable, int hashValue.load)
+    void _9 = call _EN3std8MapEntryI6string3intE4initE6string3int(MapEntry<string, int>* _2, string key, int value)
+    MapEntry<string, int> .load = load _2
+    void _10 = call _EN3std4ListI8MapEntryI6string3intEE4pushE8MapEntryI6string3intE(List<MapEntry<string, int>>* _8, MapEntry<string, int> .load)
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int _11 = size.load + int 1
+    store _11 to size
+    float64 _12 = call _EN3std3MapI6string3intE10loadFactorE(Map<string, int>* this)
+    bool _13 = _12 > float64 0.660000026
+    br _13, if.then, if.else
+
+if.then_0:
+    void _14 = call _EN3std3MapI6string3intE6resizeE(Map<string, int>* this)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    return void
+}
+
+void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
+}
+
+bool _EN3std3MapI6string3intE8containsEP6string(Map<string, int>* this, string* e) {
+    int* hashValue = alloca int
+    List<MapEntry<string, int>>** slot = alloca List<MapEntry<string, int>>*
+    ArrayIterator<MapEntry<string, int>>* __iterator = alloca ArrayIterator<MapEntry<string, int>>
+    MapEntry<string, int>** element = alloca MapEntry<string, int>*
+    uint64 _0 = call _EN3std6string4hashE(string* e)
+    int _1 = call _EN3std11convertHashE6uint64(uint64 _0)
+    int _2 = call _EN3std3MapI6string3intE8capacityE(Map<string, int>* this)
+    int _3 = _1 % _2
+    store _3 to hashValue
+    List<List<MapEntry<string, int>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<string, int>>* _4 = call _EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(List<List<MapEntry<string, int>>>* hashTable, int hashValue.load)
+    store _4 to slot
+    List<MapEntry<string, int>>* slot.load = load slot
+    int _5 = call _EN3std4ListI8MapEntryI6string3intEE4sizeE(List<MapEntry<string, int>>* slot.load)
+    bool _6 = _5 == int 0
+    br _6, if.then, if.else
+
+if.then:
+    return bool false
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<string, int>>* slot.load_0 = load slot
+    ArrayIterator<MapEntry<string, int>> _7 = call _EN3std4ListI8MapEntryI6string3intEE8iteratorE(List<MapEntry<string, int>>* slot.load_0)
+    store _7 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _8 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE8hasValueE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    br _8, loop.body, loop.end
+
+loop.body:
+    MapEntry<string, int>* _9 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE5valueE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    store _9 to element
+    MapEntry<string, int>* element.load = load element
+    string* key = getelementptr element.load, 0
+    string key.load = load key
+    string e.load = load e
+    bool _10 = call _EN3stdeqE6string6string(string key.load, string e.load)
+    br _10, if.then, if.else
+
+loop.increment:
+    void _11 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE9incrementE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    br loop.condition
+
+loop.end:
+    return bool false
+
+if.then_0:
+    return bool true
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    br loop.increment
+}
+
+void _EN3std10assertFailEP4char(char* message) {
+}
+
+void _EN3std3MapI6string6stringE6deinitE(Map<string, string>* this) {
+    List<List<MapEntry<string, string>>>* hashTable = getelementptr this, 0
+    void _0 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE6deinitE(List<List<MapEntry<string, string>>>* hashTable)
+    return void
+}
+
+void _EN3std3MapI6string6stringE4initE(Map<string, string>* this) {
+    List<List<MapEntry<string, string>>>* _0 = alloca List<List<MapEntry<string, string>>>
+    int* size = getelementptr this, 1
+    store int 0 to size
+    List<List<MapEntry<string, string>>>* hashTable = getelementptr this, 0
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE4initE(List<List<MapEntry<string, string>>>* _0)
+    List<List<MapEntry<string, string>>> .load = load _0
+    store .load to hashTable
+    List<List<MapEntry<string, string>>>* hashTable_0 = getelementptr this, 0
+    void _2 = call _EN3std3MapI6string6stringE17increaseTableSizeEP4ListI4ListI8MapEntryI6string6stringEEE3int(Map<string, string>* this, List<List<MapEntry<string, string>>>* hashTable_0, int 128)
+    return void
+}
+
+int _EN3std3MapI6string6stringE4sizeE(Map<string, string>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+void _EN3std3MapI6string6stringE6insertE6string6string(Map<string, string>* this, string key, string value) {
+    string* _0 = alloca string
+    int* hashValue = alloca int
+    string* _1 = alloca string
+    MapEntry<string, string>* _2 = alloca MapEntry<string, string>
+    store key to _0
+    bool _3 = call _EN3std3MapI6string6stringE8containsEP6string(Map<string, string>* this, string* _0)
+    br _3, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    br if.end
+
+if.end:
+    store key to _1
+    uint64 _4 = call _EN3std6string4hashE(string* _1)
+    int _5 = call _EN3std11convertHashE6uint64(uint64 _4)
+    int _6 = call _EN3std3MapI6string6stringE8capacityE(Map<string, string>* this)
+    int _7 = _5 % _6
+    store _7 to hashValue
+    List<List<MapEntry<string, string>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<string, string>>* _8 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(List<List<MapEntry<string, string>>>* hashTable, int hashValue.load)
+    void _9 = call _EN3std8MapEntryI6string6stringE4initE6string6string(MapEntry<string, string>* _2, string key, string value)
+    MapEntry<string, string> .load = load _2
+    void _10 = call _EN3std4ListI8MapEntryI6string6stringEE4pushE8MapEntryI6string6stringE(List<MapEntry<string, string>>* _8, MapEntry<string, string> .load)
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int _11 = size.load + int 1
+    store _11 to size
+    float64 _12 = call _EN3std3MapI6string6stringE10loadFactorE(Map<string, string>* this)
+    bool _13 = _12 > float64 0.660000026
+    br _13, if.then, if.else
+
+if.then_0:
+    void _14 = call _EN3std3MapI6string6stringE6resizeE(Map<string, string>* this)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    return void
+}
+
+bool _EN3stdeqI3intEEP3intP3int(int* a, int* b) {
+    int _0 = call _EN3std3int7compareEP3int(int* a, int* b)
+    bool _1 = _0 == int 1
+    return _1
+}
+
+int* _EN3std3MapI6string3intEixEP6string(Map<string, int>* this, string* e) {
+    int* hashValue = alloca int
+    List<MapEntry<string, int>>** slot = alloca List<MapEntry<string, int>>*
+    ArrayIterator<MapEntry<string, int>>* __iterator = alloca ArrayIterator<MapEntry<string, int>>
+    MapEntry<string, int>** element = alloca MapEntry<string, int>*
+    uint64 _0 = call _EN3std6string4hashE(string* e)
+    int _1 = call _EN3std11convertHashE6uint64(uint64 _0)
+    int _2 = call _EN3std3MapI6string3intE8capacityE(Map<string, int>* this)
+    int _3 = _1 % _2
+    store _3 to hashValue
+    List<List<MapEntry<string, int>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<string, int>>* _4 = call _EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(List<List<MapEntry<string, int>>>* hashTable, int hashValue.load)
+    store _4 to slot
+    List<MapEntry<string, int>>* slot.load = load slot
+    ArrayIterator<MapEntry<string, int>> _5 = call _EN3std4ListI8MapEntryI6string3intEE8iteratorE(List<MapEntry<string, int>>* slot.load)
+    store _5 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _6 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE8hasValueE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    br _6, loop.body, loop.end
+
+loop.body:
+    MapEntry<string, int>* _7 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE5valueE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    store _7 to element
+    MapEntry<string, int>* element.load = load element
+    string* key = getelementptr element.load, 0
+    string key.load = load key
+    string e.load = load e
+    bool _8 = call _EN3stdeqE6string6string(string key.load, string e.load)
+    br _8, if.then, if.else
+
+loop.increment:
+    void _9 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE9incrementE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    br loop.condition
+
+loop.end:
+    return int* null
+
+if.then:
+    MapEntry<string, int>* element.load_0 = load element
+    int* value = getelementptr element.load_0, 1
+    return value
+
+if.else:
+    br if.end
+
+if.end:
+    br loop.increment
+}
+
+void _EN3std3MapI12StringBuffer3intE6deinitE(Map<StringBuffer, int>* this) {
+    List<List<MapEntry<StringBuffer, int>>>* hashTable = getelementptr this, 0
+    void _0 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE6deinitE(List<List<MapEntry<StringBuffer, int>>>* hashTable)
+    return void
+}
+
+void _EN3std3MapI12StringBuffer3intE4initE(Map<StringBuffer, int>* this) {
+    List<List<MapEntry<StringBuffer, int>>>* _0 = alloca List<List<MapEntry<StringBuffer, int>>>
+    int* size = getelementptr this, 1
+    store int 0 to size
+    List<List<MapEntry<StringBuffer, int>>>* hashTable = getelementptr this, 0
+    void _1 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4initE(List<List<MapEntry<StringBuffer, int>>>* _0)
+    List<List<MapEntry<StringBuffer, int>>> .load = load _0
+    store .load to hashTable
+    List<List<MapEntry<StringBuffer, int>>>* hashTable_0 = getelementptr this, 0
+    void _2 = call _EN3std3MapI12StringBuffer3intE17increaseTableSizeEP4ListI4ListI8MapEntryI12StringBuffer3intEEE3int(Map<StringBuffer, int>* this, List<List<MapEntry<StringBuffer, int>>>* hashTable_0, int 128)
+    return void
+}
+
+RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
+}
+
+void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
+}
+
+bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
+}
+
+int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
+}
+
+void _EN3std12StringBuffer6deinitE(StringBuffer* this) {
+}
+
+void _EN3std12StringBuffer4initE(StringBuffer* this) {
+}
+
+void _EN3std12StringBuffer4pushE4char(StringBuffer* this, char c) {
+}
+
+void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {
+}
+
+void _EN3std3MapI12StringBuffer3intE6insertE12StringBuffer3int(Map<StringBuffer, int>* this, StringBuffer key, int value) {
+    StringBuffer* _0 = alloca StringBuffer
+    int* hashValue = alloca int
+    StringBuffer* _1 = alloca StringBuffer
+    MapEntry<StringBuffer, int>* _2 = alloca MapEntry<StringBuffer, int>
+    store key to _0
+    bool _3 = call _EN3std3MapI12StringBuffer3intE8containsEP12StringBuffer(Map<StringBuffer, int>* this, StringBuffer* _0)
+    br _3, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    br if.end
+
+if.end:
+    store key to _1
+    uint64 _4 = call _EN3std12StringBuffer4hashE(StringBuffer* _1)
+    int _5 = call _EN3std11convertHashE6uint64(uint64 _4)
+    int _6 = call _EN3std3MapI12StringBuffer3intE8capacityE(Map<StringBuffer, int>* this)
+    int _7 = _5 % _6
+    store _7 to hashValue
+    List<List<MapEntry<StringBuffer, int>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<StringBuffer, int>>* _8 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEEixE3int(List<List<MapEntry<StringBuffer, int>>>* hashTable, int hashValue.load)
+    void _9 = call _EN3std8MapEntryI12StringBuffer3intE4initE12StringBuffer3int(MapEntry<StringBuffer, int>* _2, StringBuffer key, int value)
+    MapEntry<StringBuffer, int> .load = load _2
+    void _10 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE4pushE8MapEntryI12StringBuffer3intE(List<MapEntry<StringBuffer, int>>* _8, MapEntry<StringBuffer, int> .load)
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int _11 = size.load + int 1
+    store _11 to size
+    float64 _12 = call _EN3std3MapI12StringBuffer3intE10loadFactorE(Map<StringBuffer, int>* this)
+    bool _13 = _12 > float64 0.660000026
+    br _13, if.then, if.else
+
+if.then_0:
+    void _14 = call _EN3std3MapI12StringBuffer3intE6resizeE(Map<StringBuffer, int>* this)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    return void
+}
+
+int _EN3std3MapI12StringBuffer3intE4sizeE(Map<StringBuffer, int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+int _EN3std3MapI6string3intE4sizeE(Map<string, int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+void _EN3std3MapI6string3intE6removeEP6string(Map<string, int>* this, string* e) {
+    int* hashValue = alloca int
+    List<MapEntry<string, int>>** slot = alloca List<MapEntry<string, int>>*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    uint64 _1 = call _EN3std6string4hashE(string* e)
+    int _2 = call _EN3std11convertHashE6uint64(uint64 _1)
+    int _3 = call _EN3std3MapI6string3intE8capacityE(Map<string, int>* this)
+    int _4 = _2 % _3
+    store _4 to hashValue
+    List<List<MapEntry<string, int>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<string, int>>* _5 = call _EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(List<List<MapEntry<string, int>>>* hashTable, int hashValue.load)
+    store _5 to slot
+    List<MapEntry<string, int>>* slot.load = load slot
+    int _6 = call _EN3std4ListI8MapEntryI6string3intEE4sizeE(List<MapEntry<string, int>>* slot.load)
+    bool _7 = _6 == int 0
+    br _7, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<string, int>>* slot.load_0 = load slot
+    int _8 = call _EN3std4ListI8MapEntryI6string3intEE4sizeE(List<MapEntry<string, int>>* slot.load_0)
+    void _9 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int _8)
+    RangeIterator<int> _10 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _10 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _11 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _11, loop.body, loop.end
+
+loop.body:
+    int _12 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _12 to i
+    List<MapEntry<string, int>>* slot.load_1 = load slot
+    int i.load = load i
+    MapEntry<string, int>* _13 = call _EN3std4ListI8MapEntryI6string3intEEixE3int(List<MapEntry<string, int>>* slot.load_1, int i.load)
+    string* key = getelementptr _13, 0
+    string key.load = load key
+    string e.load = load e
+    bool _14 = call _EN3stdeqE6string6string(string key.load, string e.load)
+    br _14, if.then, if.else
+
+loop.increment:
+    void _15 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    return void
+
+if.then_0:
+    List<MapEntry<string, int>>* slot.load_2 = load slot
+    int i.load_0 = load i
+    void _16 = call _EN3std4ListI8MapEntryI6string3intEE8removeAtE3int(List<MapEntry<string, int>>* slot.load_2, int i.load_0)
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int _17 = size.load + int -1
+    store _17 to size
+    return void
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    br loop.increment
+}
+
+MapIterator<string, string> _EN3std3MapI6string6stringE8iteratorE(Map<string, string>* this) {
+    MapIterator<string, string>* _0 = alloca MapIterator<string, string>
+    void _1 = call _EN3std11MapIteratorI6string6stringE4initEP3MapI6string6stringE(MapIterator<string, string>* _0, Map<string, string>* this)
+    MapIterator<string, string> .load = load _0
+    return .load
+}
+
+bool _EN3std11MapIteratorI6string6stringE8hasValueE(MapIterator<string, string>* this) {
+    ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator = getelementptr this, 0
+    bool _0 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE8hasValueE(ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator)
+    return _0
+}
+
+MapEntry<string, string>* _EN3std11MapIteratorI6string6stringE5valueE(MapIterator<string, string>* this) {
+    MapEntry<string, string>** current = getelementptr this, 1
+    MapEntry<string, string>* current.load = load current
+    return current.load
+}
+
+bool _EN3stdeqE6string6string(string a, string b) {
+}
+
+void _EN3std11MapIteratorI6string6stringE9incrementE(MapIterator<string, string>* this) {
+    List<MapEntry<string, string>>** slot = alloca List<MapEntry<string, string>>*
+    MapEntry<string, string>** slotEnd = alloca MapEntry<string, string>*
+    ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator = getelementptr this, 0
+    List<MapEntry<string, string>>* _0 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE5valueE(ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator)
+    store _0 to slot
+    List<MapEntry<string, string>>* slot.load = load slot
+    MapEntry<string, string>* _1 = call _EN3std4ListI8MapEntryI6string6stringEE4dataE(List<MapEntry<string, string>>* slot.load)
+    List<MapEntry<string, string>>* slot.load_0 = load slot
+    int _2 = call _EN3std4ListI8MapEntryI6string6stringEE4sizeE(List<MapEntry<string, string>>* slot.load_0)
+    MapEntry<string, string>* _3 = getelementptr _1, _2
+    store _3 to slotEnd
+    MapEntry<string, string>** current = getelementptr this, 1
+    MapEntry<string, string>* current.load = load current
+    MapEntry<string, string>* _4 = getelementptr current.load, int 1
+    store _4 to current
+    MapEntry<string, string>** current_0 = getelementptr this, 1
+    MapEntry<string, string>* current.load_0 = load current_0
+    void* _5 = cast current.load_0 to void*
+    MapEntry<string, string>* slotEnd.load = load slotEnd
+    void* _6 = cast slotEnd.load to void*
+    bool _7 = _5 === _6
+    br _7, if.then, if.else
+
+if.then:
+    ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator_0 = getelementptr this, 0
+    void _8 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE9incrementE(ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator_0)
+    void _9 = call _EN3std11MapIteratorI6string6stringE14skipEmptySlotsE(MapIterator<string, string>* this)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+}
+
+void _EN3std3MapI6string6stringE6removeEP6string(Map<string, string>* this, string* e) {
+    int* hashValue = alloca int
+    List<MapEntry<string, string>>** slot = alloca List<MapEntry<string, string>>*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    uint64 _1 = call _EN3std6string4hashE(string* e)
+    int _2 = call _EN3std11convertHashE6uint64(uint64 _1)
+    int _3 = call _EN3std3MapI6string6stringE8capacityE(Map<string, string>* this)
+    int _4 = _2 % _3
+    store _4 to hashValue
+    List<List<MapEntry<string, string>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<string, string>>* _5 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(List<List<MapEntry<string, string>>>* hashTable, int hashValue.load)
+    store _5 to slot
+    List<MapEntry<string, string>>* slot.load = load slot
+    int _6 = call _EN3std4ListI8MapEntryI6string6stringEE4sizeE(List<MapEntry<string, string>>* slot.load)
+    bool _7 = _6 == int 0
+    br _7, if.then, if.else
+
+if.then:
+    return void
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<string, string>>* slot.load_0 = load slot
+    int _8 = call _EN3std4ListI8MapEntryI6string6stringEE4sizeE(List<MapEntry<string, string>>* slot.load_0)
+    void _9 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int _8)
+    RangeIterator<int> _10 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _10 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _11 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _11, loop.body, loop.end
+
+loop.body:
+    int _12 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _12 to i
+    List<MapEntry<string, string>>* slot.load_1 = load slot
+    int i.load = load i
+    MapEntry<string, string>* _13 = call _EN3std4ListI8MapEntryI6string6stringEEixE3int(List<MapEntry<string, string>>* slot.load_1, int i.load)
+    string* key = getelementptr _13, 0
+    string key.load = load key
+    string e.load = load e
+    bool _14 = call _EN3stdeqE6string6string(string key.load, string e.load)
+    br _14, if.then, if.else
+
+loop.increment:
+    void _15 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    return void
+
+if.then_0:
+    List<MapEntry<string, string>>* slot.load_2 = load slot
+    int i.load_0 = load i
+    void _16 = call _EN3std4ListI8MapEntryI6string6stringEE8removeAtE3int(List<MapEntry<string, string>>* slot.load_2, int i.load_0)
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int _17 = size.load + int -1
+    store _17 to size
+    return void
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    br loop.increment
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string3intEEE6deinitE(List<List<MapEntry<string, int>>>* this) {
+    ArrayIterator<List<MapEntry<string, int>>>* __iterator = alloca ArrayIterator<List<MapEntry<string, int>>>
+    List<MapEntry<string, int>>** element = alloca List<MapEntry<string, int>>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load != int 0
+    br _0, if.then, if.else
+
+if.then:
+    ArrayIterator<List<MapEntry<string, int>>> _1 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE8iteratorE(List<List<MapEntry<string, int>>>* this)
+    store _1 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _2 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE8hasValueE(ArrayIterator<List<MapEntry<string, int>>>* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    List<MapEntry<string, int>>* _3 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE5valueE(ArrayIterator<List<MapEntry<string, int>>>* __iterator)
+    store _3 to element
+    List<MapEntry<string, int>>* element.load = load element
+    void _4 = call _EN3std4ListI8MapEntryI6string3intEE6deinitE(List<MapEntry<string, int>>* element.load)
+    br loop.increment
+
+loop.increment:
+    void _5 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE9incrementE(ArrayIterator<List<MapEntry<string, int>>>* __iterator)
+    br loop.condition
+
+loop.end:
+    List<MapEntry<string, int>>** buffer = getelementptr this, 0
+    List<MapEntry<string, int>>* buffer.load = load buffer
+    void _6 = call _EN3std10deallocateIAU_4ListI8MapEntryI6string3intEEEEAU_4ListI8MapEntryI6string3intEE(List<MapEntry<string, int>>* buffer.load)
+    br if.end
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string3intEEE4initE(List<List<MapEntry<string, int>>>* this) {
+    int* size = getelementptr this, 1
+    store int 0 to size
+    int* capacity = getelementptr this, 2
+    store int 0 to capacity
+    return void
+}
+
+void _EN3std3MapI6string3intE17increaseTableSizeEP4ListI4ListI8MapEntryI6string3intEEE3int(Map<string, int>* this, List<List<MapEntry<string, int>>>* newTable, int newCapacity) {
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    List<MapEntry<string, int>>* _1 = alloca List<MapEntry<string, int>>
+    void _2 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int newCapacity)
+    RangeIterator<int> _3 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    int _5 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _5 to i
+    void _6 = call _EN3std4ListI8MapEntryI6string3intEE4initE(List<MapEntry<string, int>>* _1)
+    List<MapEntry<string, int>> .load = load _1
+    void _7 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE4pushE4ListI8MapEntryI6string3intEE(List<List<MapEntry<string, int>>>* newTable, List<MapEntry<string, int>> .load)
+    br loop.increment
+
+loop.increment:
+    void _8 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    return void
+}
+
+int _EN3std11convertHashE6uint64(uint64 hash) {
+}
+
+uint64 _EN3std6string4hashE(string* this) {
+    uint64* hashValue = alloca uint64
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    store uint64 5381 to hashValue
+    ArrayRef<char>* characters = getelementptr this, 0
+    int _1 = call _EN3std8ArrayRefI4charE4sizeE(ArrayRef<char>* characters)
+    void _2 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int _1)
+    RangeIterator<int> _3 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    int _5 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _5 to index
+    uint64 hashValue.load = load hashValue
+    uint64 _6 = hashValue.load << uint64 5
+    uint64 hashValue.load_0 = load hashValue
+    uint64 _7 = _6 + hashValue.load_0
+    int index.load = load index
+    char _8 = call _EN3std6stringixE3int(string* this, int index.load)
+    uint64 _9 = cast _8 to uint64
+    uint64 _10 = _7 + _9
+    store _10 to hashValue
+    br loop.increment
+
+loop.increment:
+    void _11 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    uint64 hashValue.load_1 = load hashValue
+    return hashValue.load_1
+}
+
+int _EN3std3MapI6string3intE8capacityE(Map<string, int>* this) {
+    List<List<MapEntry<string, int>>>* hashTable = getelementptr this, 0
+    int _0 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE4sizeE(List<List<MapEntry<string, int>>>* hashTable)
+    return _0
+}
+
+void _EN3std4ListI8MapEntryI6string3intEE4pushE8MapEntryI6string3intE(List<MapEntry<string, int>>* this, MapEntry<string, int> element) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = size.load == capacity.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI6string3intEE4growE(List<MapEntry<string, int>>* this)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    MapEntry<string, int>** buffer = getelementptr this, 0
+    MapEntry<string, int>* buffer.load = load buffer
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    MapEntry<string, int>* _2 = getelementptr buffer.load, size.load_0
+    store element to _2
+    int* size_1 = getelementptr this, 1
+    int size.load_1 = load size_1
+    int _3 = size.load_1 + int 1
+    store _3 to size_1
+    return void
+}
+
+List<MapEntry<string, int>>* _EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(List<List<MapEntry<string, int>>>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE16indexOutOfBoundsE3int(List<List<MapEntry<string, int>>>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<string, int>>** buffer = getelementptr this, 0
+    List<MapEntry<string, int>>* buffer.load = load buffer
+    List<MapEntry<string, int>>* _2 = getelementptr buffer.load, index
+    return _2
+}
+
+void _EN3std8MapEntryI6string3intE4initE6string3int(MapEntry<string, int>* this, string key, int value) {
+    string* key_0 = getelementptr this, 0
+    store key to key_0
+    int* value_0 = getelementptr this, 1
+    store value to value_0
+    return void
+}
+
+float64 _EN3std3MapI6string3intE10loadFactorE(Map<string, int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    float64 _0 = cast size.load to float64
+    int _1 = call _EN3std3MapI6string3intE8capacityE(Map<string, int>* this)
+    float64 _2 = cast _1 to float64
+    float64 _3 = _0 / _2
+    return _3
+}
+
+void _EN3std3MapI6string3intE6resizeE(Map<string, int>* this) {
+    List<List<MapEntry<string, int>>>* newTable = alloca List<List<MapEntry<string, int>>>
+    int* newCapacity = alloca int
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    List<MapEntry<string, int>>** slot = alloca List<MapEntry<string, int>>*
+    ArrayIterator<MapEntry<string, int>>* __iterator1 = alloca ArrayIterator<MapEntry<string, int>>
+    MapEntry<string, int>** el = alloca MapEntry<string, int>*
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE4initE(List<List<MapEntry<string, int>>>* newTable)
+    int _2 = call _EN3std3MapI6string3intE8capacityE(Map<string, int>* this)
+    int _3 = _2 * int 2
+    store _3 to newCapacity
+    int newCapacity.load = load newCapacity
+    void _4 = call _EN3std3MapI6string3intE17increaseTableSizeEP4ListI4ListI8MapEntryI6string3intEEE3int(Map<string, int>* this, List<List<MapEntry<string, int>>>* newTable, int newCapacity.load)
+    int _5 = call _EN3std3MapI6string3intE8capacityE(Map<string, int>* this)
+    void _6 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int _5)
+    RangeIterator<int> _7 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _7 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _8 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _8, loop.body, loop.end
+
+loop.body:
+    int _9 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _9 to i
+    List<List<MapEntry<string, int>>>* hashTable = getelementptr this, 0
+    int i.load = load i
+    List<MapEntry<string, int>>* _10 = call _EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(List<List<MapEntry<string, int>>>* hashTable, int i.load)
+    store _10 to slot
+    List<MapEntry<string, int>>* slot.load = load slot
+    ArrayIterator<MapEntry<string, int>> _11 = call _EN3std4ListI8MapEntryI6string3intEE8iteratorE(List<MapEntry<string, int>>* slot.load)
+    store _11 to __iterator1
+    br loop.condition_0
+
+loop.increment:
+    void _12 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    List<List<MapEntry<string, int>>>* hashTable_0 = getelementptr this, 0
+    void _13 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE6deinitE(List<List<MapEntry<string, int>>>* hashTable_0)
+    List<List<MapEntry<string, int>>> newTable.load = load newTable
+    store newTable.load to hashTable_0
+    return void
+
+loop.condition_0:
+    bool _14 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE8hasValueE(ArrayIterator<MapEntry<string, int>>* __iterator1)
+    br _14, loop.body, loop.end
+
+loop.body_0:
+    MapEntry<string, int>* _15 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE5valueE(ArrayIterator<MapEntry<string, int>>* __iterator1)
+    store _15 to el
+    MapEntry<string, int>* el.load = load el
+    string* key = getelementptr el.load, 0
+    uint64 _16 = call _EN3std6string4hashE(string* key)
+    int _17 = call _EN3std11convertHashE6uint64(uint64 _16)
+    int newCapacity.load_0 = load newCapacity
+    int _18 = _17 % newCapacity.load_0
+    List<MapEntry<string, int>>* _19 = call _EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(List<List<MapEntry<string, int>>>* newTable, int _18)
+    MapEntry<string, int>* el.load_0 = load el
+    MapEntry<string, int> el.load.load = load el.load_0
+    void _20 = call _EN3std4ListI8MapEntryI6string3intEE4pushE8MapEntryI6string3intE(List<MapEntry<string, int>>* _19, MapEntry<string, int> el.load.load)
+    br loop.increment_0
+
+loop.increment_0:
+    void _21 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE9incrementE(ArrayIterator<MapEntry<string, int>>* __iterator1)
+    br loop.condition_0
+
+loop.end_0:
+    br loop.increment
+}
+
+int _EN3std4ListI8MapEntryI6string3intEE4sizeE(List<MapEntry<string, int>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+ArrayIterator<MapEntry<string, int>> _EN3std4ListI8MapEntryI6string3intEE8iteratorE(List<MapEntry<string, int>>* this) {
+    ArrayIterator<MapEntry<string, int>>* _0 = alloca ArrayIterator<MapEntry<string, int>>
+    ArrayRef<MapEntry<string, int>>* _1 = alloca ArrayRef<MapEntry<string, int>>
+    void _2 = call _EN3std8ArrayRefI8MapEntryI6string3intEE4initEP4ListI8MapEntryI6string3intEE(ArrayRef<MapEntry<string, int>>* _1, List<MapEntry<string, int>>* this)
+    ArrayRef<MapEntry<string, int>> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE4initE8ArrayRefI8MapEntryI6string3intEE(ArrayIterator<MapEntry<string, int>>* _0, ArrayRef<MapEntry<string, int>> .load)
+    ArrayIterator<MapEntry<string, int>> .load_0 = load _0
+    return .load_0
+}
+
+bool _EN3std13ArrayIteratorI8MapEntryI6string3intEE8hasValueE(ArrayIterator<MapEntry<string, int>>* this) {
+    MapEntry<string, int>** current = getelementptr this, 0
+    MapEntry<string, int>* current.load = load current
+    MapEntry<string, int>** end = getelementptr this, 1
+    MapEntry<string, int>* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
+}
+
+MapEntry<string, int>* _EN3std13ArrayIteratorI8MapEntryI6string3intEE5valueE(ArrayIterator<MapEntry<string, int>>* this) {
+    MapEntry<string, int>** current = getelementptr this, 0
+    MapEntry<string, int>* current.load = load current
+    return current.load
+}
+
+void _EN3std13ArrayIteratorI8MapEntryI6string3intEE9incrementE(ArrayIterator<MapEntry<string, int>>* this) {
+    MapEntry<string, int>** current = getelementptr this, 0
+    MapEntry<string, int>* current.load = load current
+    MapEntry<string, int>* _0 = getelementptr current.load, int 1
+    store _0 to current
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string6stringEEE6deinitE(List<List<MapEntry<string, string>>>* this) {
+    ArrayIterator<List<MapEntry<string, string>>>* __iterator = alloca ArrayIterator<List<MapEntry<string, string>>>
+    List<MapEntry<string, string>>** element = alloca List<MapEntry<string, string>>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load != int 0
+    br _0, if.then, if.else
+
+if.then:
+    ArrayIterator<List<MapEntry<string, string>>> _1 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE8iteratorE(List<List<MapEntry<string, string>>>* this)
+    store _1 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _2 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE8hasValueE(ArrayIterator<List<MapEntry<string, string>>>* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    List<MapEntry<string, string>>* _3 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE5valueE(ArrayIterator<List<MapEntry<string, string>>>* __iterator)
+    store _3 to element
+    List<MapEntry<string, string>>* element.load = load element
+    void _4 = call _EN3std4ListI8MapEntryI6string6stringEE6deinitE(List<MapEntry<string, string>>* element.load)
+    br loop.increment
+
+loop.increment:
+    void _5 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE9incrementE(ArrayIterator<List<MapEntry<string, string>>>* __iterator)
+    br loop.condition
+
+loop.end:
+    List<MapEntry<string, string>>** buffer = getelementptr this, 0
+    List<MapEntry<string, string>>* buffer.load = load buffer
+    void _6 = call _EN3std10deallocateIAU_4ListI8MapEntryI6string6stringEEEEAU_4ListI8MapEntryI6string6stringEE(List<MapEntry<string, string>>* buffer.load)
+    br if.end
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string6stringEEE4initE(List<List<MapEntry<string, string>>>* this) {
+    int* size = getelementptr this, 1
+    store int 0 to size
+    int* capacity = getelementptr this, 2
+    store int 0 to capacity
+    return void
+}
+
+void _EN3std3MapI6string6stringE17increaseTableSizeEP4ListI4ListI8MapEntryI6string6stringEEE3int(Map<string, string>* this, List<List<MapEntry<string, string>>>* newTable, int newCapacity) {
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    List<MapEntry<string, string>>* _1 = alloca List<MapEntry<string, string>>
+    void _2 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int newCapacity)
+    RangeIterator<int> _3 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    int _5 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _5 to i
+    void _6 = call _EN3std4ListI8MapEntryI6string6stringEE4initE(List<MapEntry<string, string>>* _1)
+    List<MapEntry<string, string>> .load = load _1
+    void _7 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE4pushE4ListI8MapEntryI6string6stringEE(List<List<MapEntry<string, string>>>* newTable, List<MapEntry<string, string>> .load)
+    br loop.increment
+
+loop.increment:
+    void _8 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    return void
+}
+
+bool _EN3std3MapI6string6stringE8containsEP6string(Map<string, string>* this, string* e) {
+    int* hashValue = alloca int
+    List<MapEntry<string, string>>** slot = alloca List<MapEntry<string, string>>*
+    ArrayIterator<MapEntry<string, string>>* __iterator = alloca ArrayIterator<MapEntry<string, string>>
+    MapEntry<string, string>** element = alloca MapEntry<string, string>*
+    uint64 _0 = call _EN3std6string4hashE(string* e)
+    int _1 = call _EN3std11convertHashE6uint64(uint64 _0)
+    int _2 = call _EN3std3MapI6string6stringE8capacityE(Map<string, string>* this)
+    int _3 = _1 % _2
+    store _3 to hashValue
+    List<List<MapEntry<string, string>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<string, string>>* _4 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(List<List<MapEntry<string, string>>>* hashTable, int hashValue.load)
+    store _4 to slot
+    List<MapEntry<string, string>>* slot.load = load slot
+    int _5 = call _EN3std4ListI8MapEntryI6string6stringEE4sizeE(List<MapEntry<string, string>>* slot.load)
+    bool _6 = _5 == int 0
+    br _6, if.then, if.else
+
+if.then:
+    return bool false
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<string, string>>* slot.load_0 = load slot
+    ArrayIterator<MapEntry<string, string>> _7 = call _EN3std4ListI8MapEntryI6string6stringEE8iteratorE(List<MapEntry<string, string>>* slot.load_0)
+    store _7 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _8 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE8hasValueE(ArrayIterator<MapEntry<string, string>>* __iterator)
+    br _8, loop.body, loop.end
+
+loop.body:
+    MapEntry<string, string>* _9 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE5valueE(ArrayIterator<MapEntry<string, string>>* __iterator)
+    store _9 to element
+    MapEntry<string, string>* element.load = load element
+    string* key = getelementptr element.load, 0
+    string key.load = load key
+    string e.load = load e
+    bool _10 = call _EN3stdeqE6string6string(string key.load, string e.load)
+    br _10, if.then, if.else
+
+loop.increment:
+    void _11 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE9incrementE(ArrayIterator<MapEntry<string, string>>* __iterator)
+    br loop.condition
+
+loop.end:
+    return bool false
+
+if.then_0:
+    return bool true
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    br loop.increment
+}
+
+int _EN3std3MapI6string6stringE8capacityE(Map<string, string>* this) {
+    List<List<MapEntry<string, string>>>* hashTable = getelementptr this, 0
+    int _0 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE4sizeE(List<List<MapEntry<string, string>>>* hashTable)
+    return _0
+}
+
+void _EN3std4ListI8MapEntryI6string6stringEE4pushE8MapEntryI6string6stringE(List<MapEntry<string, string>>* this, MapEntry<string, string> element) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = size.load == capacity.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI6string6stringEE4growE(List<MapEntry<string, string>>* this)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    MapEntry<string, string>** buffer = getelementptr this, 0
+    MapEntry<string, string>* buffer.load = load buffer
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    MapEntry<string, string>* _2 = getelementptr buffer.load, size.load_0
+    store element to _2
+    int* size_1 = getelementptr this, 1
+    int size.load_1 = load size_1
+    int _3 = size.load_1 + int 1
+    store _3 to size_1
+    return void
+}
+
+List<MapEntry<string, string>>* _EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(List<List<MapEntry<string, string>>>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE16indexOutOfBoundsE3int(List<List<MapEntry<string, string>>>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<string, string>>** buffer = getelementptr this, 0
+    List<MapEntry<string, string>>* buffer.load = load buffer
+    List<MapEntry<string, string>>* _2 = getelementptr buffer.load, index
+    return _2
+}
+
+void _EN3std8MapEntryI6string6stringE4initE6string6string(MapEntry<string, string>* this, string key, string value) {
+    string* key_0 = getelementptr this, 0
+    store key to key_0
+    string* value_0 = getelementptr this, 1
+    store value to value_0
+    return void
+}
+
+float64 _EN3std3MapI6string6stringE10loadFactorE(Map<string, string>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    float64 _0 = cast size.load to float64
+    int _1 = call _EN3std3MapI6string6stringE8capacityE(Map<string, string>* this)
+    float64 _2 = cast _1 to float64
+    float64 _3 = _0 / _2
+    return _3
+}
+
+void _EN3std3MapI6string6stringE6resizeE(Map<string, string>* this) {
+    List<List<MapEntry<string, string>>>* newTable = alloca List<List<MapEntry<string, string>>>
+    int* newCapacity = alloca int
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    List<MapEntry<string, string>>** slot = alloca List<MapEntry<string, string>>*
+    ArrayIterator<MapEntry<string, string>>* __iterator1 = alloca ArrayIterator<MapEntry<string, string>>
+    MapEntry<string, string>** el = alloca MapEntry<string, string>*
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE4initE(List<List<MapEntry<string, string>>>* newTable)
+    int _2 = call _EN3std3MapI6string6stringE8capacityE(Map<string, string>* this)
+    int _3 = _2 * int 2
+    store _3 to newCapacity
+    int newCapacity.load = load newCapacity
+    void _4 = call _EN3std3MapI6string6stringE17increaseTableSizeEP4ListI4ListI8MapEntryI6string6stringEEE3int(Map<string, string>* this, List<List<MapEntry<string, string>>>* newTable, int newCapacity.load)
+    int _5 = call _EN3std3MapI6string6stringE8capacityE(Map<string, string>* this)
+    void _6 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int _5)
+    RangeIterator<int> _7 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _7 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _8 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _8, loop.body, loop.end
+
+loop.body:
+    int _9 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _9 to i
+    List<List<MapEntry<string, string>>>* hashTable = getelementptr this, 0
+    int i.load = load i
+    List<MapEntry<string, string>>* _10 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(List<List<MapEntry<string, string>>>* hashTable, int i.load)
+    store _10 to slot
+    List<MapEntry<string, string>>* slot.load = load slot
+    ArrayIterator<MapEntry<string, string>> _11 = call _EN3std4ListI8MapEntryI6string6stringEE8iteratorE(List<MapEntry<string, string>>* slot.load)
+    store _11 to __iterator1
+    br loop.condition_0
+
+loop.increment:
+    void _12 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    List<List<MapEntry<string, string>>>* hashTable_0 = getelementptr this, 0
+    void _13 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE6deinitE(List<List<MapEntry<string, string>>>* hashTable_0)
+    List<List<MapEntry<string, string>>> newTable.load = load newTable
+    store newTable.load to hashTable_0
+    return void
+
+loop.condition_0:
+    bool _14 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE8hasValueE(ArrayIterator<MapEntry<string, string>>* __iterator1)
+    br _14, loop.body, loop.end
+
+loop.body_0:
+    MapEntry<string, string>* _15 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE5valueE(ArrayIterator<MapEntry<string, string>>* __iterator1)
+    store _15 to el
+    MapEntry<string, string>* el.load = load el
+    string* key = getelementptr el.load, 0
+    uint64 _16 = call _EN3std6string4hashE(string* key)
+    int _17 = call _EN3std11convertHashE6uint64(uint64 _16)
+    int newCapacity.load_0 = load newCapacity
+    int _18 = _17 % newCapacity.load_0
+    List<MapEntry<string, string>>* _19 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(List<List<MapEntry<string, string>>>* newTable, int _18)
+    MapEntry<string, string>* el.load_0 = load el
+    MapEntry<string, string> el.load.load = load el.load_0
+    void _20 = call _EN3std4ListI8MapEntryI6string6stringEE4pushE8MapEntryI6string6stringE(List<MapEntry<string, string>>* _19, MapEntry<string, string> el.load.load)
+    br loop.increment_0
+
+loop.increment_0:
+    void _21 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE9incrementE(ArrayIterator<MapEntry<string, string>>* __iterator1)
+    br loop.condition_0
+
+loop.end_0:
+    br loop.increment
+}
+
+int _EN3std3int7compareEP3int(int* this, int* other) {
+    int this.load = load this
+    int other.load = load other
+    bool _0 = this.load < other.load
+    br _0, if.then, if.else
+
+if.then:
+    br if.end(int 0)
+
+if.else:
+    int this.load_0 = load this
+    int other.load_0 = load other
+    bool _1 = this.load_0 > other.load_0
+    br _1, if.then, if.else
+
+if.then_0:
+    br if.end_0(int 2)
+
+if.else_0:
+    br if.end_0(int 1)
+
+if.end_0(int if.result):
+    br if.end(if.result)
+
+if.end(int if.result_0):
+    return if.result_0
+}
+
+void _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE6deinitE(List<List<MapEntry<StringBuffer, int>>>* this) {
+    ArrayIterator<List<MapEntry<StringBuffer, int>>>* __iterator = alloca ArrayIterator<List<MapEntry<StringBuffer, int>>>
+    List<MapEntry<StringBuffer, int>>** element = alloca List<MapEntry<StringBuffer, int>>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load != int 0
+    br _0, if.then, if.else
+
+if.then:
+    ArrayIterator<List<MapEntry<StringBuffer, int>>> _1 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE8iteratorE(List<List<MapEntry<StringBuffer, int>>>* this)
+    store _1 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _2 = call _EN3std13ArrayIteratorI4ListI8MapEntryI12StringBuffer3intEEE8hasValueE(ArrayIterator<List<MapEntry<StringBuffer, int>>>* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    List<MapEntry<StringBuffer, int>>* _3 = call _EN3std13ArrayIteratorI4ListI8MapEntryI12StringBuffer3intEEE5valueE(ArrayIterator<List<MapEntry<StringBuffer, int>>>* __iterator)
+    store _3 to element
+    List<MapEntry<StringBuffer, int>>* element.load = load element
+    void _4 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE6deinitE(List<MapEntry<StringBuffer, int>>* element.load)
+    br loop.increment
+
+loop.increment:
+    void _5 = call _EN3std13ArrayIteratorI4ListI8MapEntryI12StringBuffer3intEEE9incrementE(ArrayIterator<List<MapEntry<StringBuffer, int>>>* __iterator)
+    br loop.condition
+
+loop.end:
+    List<MapEntry<StringBuffer, int>>** buffer = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* buffer.load = load buffer
+    void _6 = call _EN3std10deallocateIAU_4ListI8MapEntryI12StringBuffer3intEEEEAU_4ListI8MapEntryI12StringBuffer3intEE(List<MapEntry<StringBuffer, int>>* buffer.load)
+    br if.end
+}
+
+void _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4initE(List<List<MapEntry<StringBuffer, int>>>* this) {
+    int* size = getelementptr this, 1
+    store int 0 to size
+    int* capacity = getelementptr this, 2
+    store int 0 to capacity
+    return void
+}
+
+void _EN3std3MapI12StringBuffer3intE17increaseTableSizeEP4ListI4ListI8MapEntryI12StringBuffer3intEEE3int(Map<StringBuffer, int>* this, List<List<MapEntry<StringBuffer, int>>>* newTable, int newCapacity) {
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    List<MapEntry<StringBuffer, int>>* _1 = alloca List<MapEntry<StringBuffer, int>>
+    void _2 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int newCapacity)
+    RangeIterator<int> _3 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    int _5 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _5 to i
+    void _6 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE4initE(List<MapEntry<StringBuffer, int>>* _1)
+    List<MapEntry<StringBuffer, int>> .load = load _1
+    void _7 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4pushE4ListI8MapEntryI12StringBuffer3intEE(List<List<MapEntry<StringBuffer, int>>>* newTable, List<MapEntry<StringBuffer, int>> .load)
+    br loop.increment
+
+loop.increment:
+    void _8 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    return void
+}
+
+bool _EN3std3MapI12StringBuffer3intE8containsEP12StringBuffer(Map<StringBuffer, int>* this, StringBuffer* e) {
+    int* hashValue = alloca int
+    List<MapEntry<StringBuffer, int>>** slot = alloca List<MapEntry<StringBuffer, int>>*
+    ArrayIterator<MapEntry<StringBuffer, int>>* __iterator = alloca ArrayIterator<MapEntry<StringBuffer, int>>
+    MapEntry<StringBuffer, int>** element = alloca MapEntry<StringBuffer, int>*
+    uint64 _0 = call _EN3std12StringBuffer4hashE(StringBuffer* e)
+    int _1 = call _EN3std11convertHashE6uint64(uint64 _0)
+    int _2 = call _EN3std3MapI12StringBuffer3intE8capacityE(Map<StringBuffer, int>* this)
+    int _3 = _1 % _2
+    store _3 to hashValue
+    List<List<MapEntry<StringBuffer, int>>>* hashTable = getelementptr this, 0
+    int hashValue.load = load hashValue
+    List<MapEntry<StringBuffer, int>>* _4 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEEixE3int(List<List<MapEntry<StringBuffer, int>>>* hashTable, int hashValue.load)
+    store _4 to slot
+    List<MapEntry<StringBuffer, int>>* slot.load = load slot
+    int _5 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE4sizeE(List<MapEntry<StringBuffer, int>>* slot.load)
+    bool _6 = _5 == int 0
+    br _6, if.then, if.else
+
+if.then:
+    return bool false
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<StringBuffer, int>>* slot.load_0 = load slot
+    ArrayIterator<MapEntry<StringBuffer, int>> _7 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE8iteratorE(List<MapEntry<StringBuffer, int>>* slot.load_0)
+    store _7 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _8 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE8hasValueE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator)
+    br _8, loop.body, loop.end
+
+loop.body:
+    MapEntry<StringBuffer, int>* _9 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE5valueE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator)
+    store _9 to element
+    MapEntry<StringBuffer, int>* element.load = load element
+    StringBuffer* key = getelementptr element.load, 0
+    bool _10 = call _EN3stdeqEP12StringBufferP12StringBuffer(StringBuffer* key, StringBuffer* e)
+    br _10, if.then, if.else
+
+loop.increment:
+    void _11 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE9incrementE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator)
+    br loop.condition
+
+loop.end:
+    return bool false
+
+if.then_0:
+    return bool true
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    br loop.increment
+}
+
+uint64 _EN3std12StringBuffer4hashE(StringBuffer* this) {
+    string* _0 = alloca string
+    void _1 = call _EN3std6string4initEP12StringBuffer(string* _0, StringBuffer* this)
+    uint64 _2 = call _EN3std6string4hashE(string* _0)
+    return _2
+}
+
+int _EN3std3MapI12StringBuffer3intE8capacityE(Map<StringBuffer, int>* this) {
+    List<List<MapEntry<StringBuffer, int>>>* hashTable = getelementptr this, 0
+    int _0 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4sizeE(List<List<MapEntry<StringBuffer, int>>>* hashTable)
+    return _0
+}
+
+void _EN3std4ListI8MapEntryI12StringBuffer3intEE4pushE8MapEntryI12StringBuffer3intE(List<MapEntry<StringBuffer, int>>* this, MapEntry<StringBuffer, int> element) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = size.load == capacity.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE4growE(List<MapEntry<StringBuffer, int>>* this)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    MapEntry<StringBuffer, int>** buffer = getelementptr this, 0
+    MapEntry<StringBuffer, int>* buffer.load = load buffer
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    MapEntry<StringBuffer, int>* _2 = getelementptr buffer.load, size.load_0
+    store element to _2
+    int* size_1 = getelementptr this, 1
+    int size.load_1 = load size_1
+    int _3 = size.load_1 + int 1
+    store _3 to size_1
+    return void
+}
+
+List<MapEntry<StringBuffer, int>>* _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEEixE3int(List<List<MapEntry<StringBuffer, int>>>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE16indexOutOfBoundsE3int(List<List<MapEntry<StringBuffer, int>>>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<StringBuffer, int>>** buffer = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* buffer.load = load buffer
+    List<MapEntry<StringBuffer, int>>* _2 = getelementptr buffer.load, index
+    return _2
+}
+
+void _EN3std8MapEntryI12StringBuffer3intE4initE12StringBuffer3int(MapEntry<StringBuffer, int>* this, StringBuffer key, int value) {
+    StringBuffer* key_0 = getelementptr this, 0
+    store key to key_0
+    int* value_0 = getelementptr this, 1
+    store value to value_0
+    return void
+}
+
+float64 _EN3std3MapI12StringBuffer3intE10loadFactorE(Map<StringBuffer, int>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    float64 _0 = cast size.load to float64
+    int _1 = call _EN3std3MapI12StringBuffer3intE8capacityE(Map<StringBuffer, int>* this)
+    float64 _2 = cast _1 to float64
+    float64 _3 = _0 / _2
+    return _3
+}
+
+void _EN3std3MapI12StringBuffer3intE6resizeE(Map<StringBuffer, int>* this) {
+    List<List<MapEntry<StringBuffer, int>>>* newTable = alloca List<List<MapEntry<StringBuffer, int>>>
+    int* newCapacity = alloca int
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    List<MapEntry<StringBuffer, int>>** slot = alloca List<MapEntry<StringBuffer, int>>*
+    ArrayIterator<MapEntry<StringBuffer, int>>* __iterator1 = alloca ArrayIterator<MapEntry<StringBuffer, int>>
+    MapEntry<StringBuffer, int>** el = alloca MapEntry<StringBuffer, int>*
+    void _1 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4initE(List<List<MapEntry<StringBuffer, int>>>* newTable)
+    int _2 = call _EN3std3MapI12StringBuffer3intE8capacityE(Map<StringBuffer, int>* this)
+    int _3 = _2 * int 2
+    store _3 to newCapacity
+    int newCapacity.load = load newCapacity
+    void _4 = call _EN3std3MapI12StringBuffer3intE17increaseTableSizeEP4ListI4ListI8MapEntryI12StringBuffer3intEEE3int(Map<StringBuffer, int>* this, List<List<MapEntry<StringBuffer, int>>>* newTable, int newCapacity.load)
+    int _5 = call _EN3std3MapI12StringBuffer3intE8capacityE(Map<StringBuffer, int>* this)
+    void _6 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int _5)
+    RangeIterator<int> _7 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _7 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _8 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _8, loop.body, loop.end
+
+loop.body:
+    int _9 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _9 to i
+    List<List<MapEntry<StringBuffer, int>>>* hashTable = getelementptr this, 0
+    int i.load = load i
+    List<MapEntry<StringBuffer, int>>* _10 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEEixE3int(List<List<MapEntry<StringBuffer, int>>>* hashTable, int i.load)
+    store _10 to slot
+    List<MapEntry<StringBuffer, int>>* slot.load = load slot
+    ArrayIterator<MapEntry<StringBuffer, int>> _11 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE8iteratorE(List<MapEntry<StringBuffer, int>>* slot.load)
+    store _11 to __iterator1
+    br loop.condition_0
+
+loop.increment:
+    void _12 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    List<List<MapEntry<StringBuffer, int>>>* hashTable_0 = getelementptr this, 0
+    void _13 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE6deinitE(List<List<MapEntry<StringBuffer, int>>>* hashTable_0)
+    List<List<MapEntry<StringBuffer, int>>> newTable.load = load newTable
+    store newTable.load to hashTable_0
+    return void
+
+loop.condition_0:
+    bool _14 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE8hasValueE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator1)
+    br _14, loop.body, loop.end
+
+loop.body_0:
+    MapEntry<StringBuffer, int>* _15 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE5valueE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator1)
+    store _15 to el
+    MapEntry<StringBuffer, int>* el.load = load el
+    StringBuffer* key = getelementptr el.load, 0
+    uint64 _16 = call _EN3std12StringBuffer4hashE(StringBuffer* key)
+    int _17 = call _EN3std11convertHashE6uint64(uint64 _16)
+    int newCapacity.load_0 = load newCapacity
+    int _18 = _17 % newCapacity.load_0
+    List<MapEntry<StringBuffer, int>>* _19 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEEixE3int(List<List<MapEntry<StringBuffer, int>>>* newTable, int _18)
+    MapEntry<StringBuffer, int>* el.load_0 = load el
+    MapEntry<StringBuffer, int> el.load.load = load el.load_0
+    void _20 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE4pushE8MapEntryI12StringBuffer3intE(List<MapEntry<StringBuffer, int>>* _19, MapEntry<StringBuffer, int> el.load.load)
+    br loop.increment_0
+
+loop.increment_0:
+    void _21 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE9incrementE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator1)
+    br loop.condition_0
+
+loop.end_0:
+    br loop.increment
+}
+
+MapEntry<string, int>* _EN3std4ListI8MapEntryI6string3intEEixE3int(List<MapEntry<string, int>>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI6string3intEE16indexOutOfBoundsE3int(List<MapEntry<string, int>>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    MapEntry<string, int>** buffer = getelementptr this, 0
+    MapEntry<string, int>* buffer.load = load buffer
+    MapEntry<string, int>* _2 = getelementptr buffer.load, index
+    return _2
+}
+
+void _EN3std4ListI8MapEntryI6string3intEE8removeAtE3int(List<MapEntry<string, int>>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI6string3intEE16indexOutOfBoundsE3int(List<MapEntry<string, int>>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    void _2 = call _EN3std4ListI8MapEntryI6string3intEE14unsafeRemoveAtE3int(List<MapEntry<string, int>>* this, int index)
+    return void
+}
+
+void _EN3std11MapIteratorI6string6stringE4initEP3MapI6string6stringE(MapIterator<string, string>* this, Map<string, string>* map) {
+    ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator = getelementptr this, 0
+    List<List<MapEntry<string, string>>>* hashTable = getelementptr map, 0
+    ArrayIterator<List<MapEntry<string, string>>> _0 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE8iteratorE(List<List<MapEntry<string, string>>>* hashTable)
+    store _0 to hashTableIterator
+    void _1 = call _EN3std11MapIteratorI6string6stringE14skipEmptySlotsE(MapIterator<string, string>* this)
+    return void
+}
+
+bool _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE8hasValueE(ArrayIterator<List<MapEntry<string, string>>>* this) {
+    List<MapEntry<string, string>>** current = getelementptr this, 0
+    List<MapEntry<string, string>>* current.load = load current
+    List<MapEntry<string, string>>** end = getelementptr this, 1
+    List<MapEntry<string, string>>* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
+}
+
+List<MapEntry<string, string>>* _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE5valueE(ArrayIterator<List<MapEntry<string, string>>>* this) {
+    List<MapEntry<string, string>>** current = getelementptr this, 0
+    List<MapEntry<string, string>>* current.load = load current
+    return current.load
+}
+
+MapEntry<string, string>* _EN3std4ListI8MapEntryI6string6stringEE4dataE(List<MapEntry<string, string>>* this) {
+    MapEntry<string, string>** buffer = getelementptr this, 0
+    MapEntry<string, string>* buffer.load = load buffer
+    return buffer.load
+}
+
+int _EN3std4ListI8MapEntryI6string6stringEE4sizeE(List<MapEntry<string, string>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+void _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE9incrementE(ArrayIterator<List<MapEntry<string, string>>>* this) {
+    List<MapEntry<string, string>>** current = getelementptr this, 0
+    List<MapEntry<string, string>>* current.load = load current
+    List<MapEntry<string, string>>* _0 = getelementptr current.load, int 1
+    store _0 to current
+    return void
+}
+
+void _EN3std11MapIteratorI6string6stringE14skipEmptySlotsE(MapIterator<string, string>* this) {
+    br loop.condition
+
+loop.condition:
+    ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator = getelementptr this, 0
+    bool _0 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE8hasValueE(ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator)
+    br _0, loop.body, loop.end
+
+loop.body:
+    ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator_0 = getelementptr this, 0
+    List<MapEntry<string, string>>* _1 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE5valueE(ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator_0)
+    int _2 = call _EN3std4ListI8MapEntryI6string6stringEE4sizeE(List<MapEntry<string, string>>* _1)
+    bool _3 = _2 != int 0
+    br _3, if.then, if.else
+
+loop.end:
+    return void
+
+if.then:
+    MapEntry<string, string>** current = getelementptr this, 1
+    ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator_1 = getelementptr this, 0
+    List<MapEntry<string, string>>* _4 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE5valueE(ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator_1)
+    MapEntry<string, string>* _5 = call _EN3std4ListI8MapEntryI6string6stringEE4dataE(List<MapEntry<string, string>>* _4)
+    store _5 to current
+    br loop.end
+
+if.else:
+    br if.end
+
+if.end:
+    ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator_2 = getelementptr this, 0
+    void _6 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE9incrementE(ArrayIterator<List<MapEntry<string, string>>>* hashTableIterator_2)
+    br loop.condition
+}
+
+MapEntry<string, string>* _EN3std4ListI8MapEntryI6string6stringEEixE3int(List<MapEntry<string, string>>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI6string6stringEE16indexOutOfBoundsE3int(List<MapEntry<string, string>>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    MapEntry<string, string>** buffer = getelementptr this, 0
+    MapEntry<string, string>* buffer.load = load buffer
+    MapEntry<string, string>* _2 = getelementptr buffer.load, index
+    return _2
+}
+
+void _EN3std4ListI8MapEntryI6string6stringEE8removeAtE3int(List<MapEntry<string, string>>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI6string6stringEE16indexOutOfBoundsE3int(List<MapEntry<string, string>>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    void _2 = call _EN3std4ListI8MapEntryI6string6stringEE14unsafeRemoveAtE3int(List<MapEntry<string, string>>* this, int index)
+    return void
+}
+
+ArrayIterator<List<MapEntry<string, int>>> _EN3std4ListI4ListI8MapEntryI6string3intEEE8iteratorE(List<List<MapEntry<string, int>>>* this) {
+    ArrayIterator<List<MapEntry<string, int>>>* _0 = alloca ArrayIterator<List<MapEntry<string, int>>>
+    ArrayRef<List<MapEntry<string, int>>>* _1 = alloca ArrayRef<List<MapEntry<string, int>>>
+    void _2 = call _EN3std8ArrayRefI4ListI8MapEntryI6string3intEEE4initEP4ListI4ListI8MapEntryI6string3intEEE(ArrayRef<List<MapEntry<string, int>>>* _1, List<List<MapEntry<string, int>>>* this)
+    ArrayRef<List<MapEntry<string, int>>> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE4initE8ArrayRefI4ListI8MapEntryI6string3intEEE(ArrayIterator<List<MapEntry<string, int>>>* _0, ArrayRef<List<MapEntry<string, int>>> .load)
+    ArrayIterator<List<MapEntry<string, int>>> .load_0 = load _0
+    return .load_0
+}
+
+bool _EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE8hasValueE(ArrayIterator<List<MapEntry<string, int>>>* this) {
+    List<MapEntry<string, int>>** current = getelementptr this, 0
+    List<MapEntry<string, int>>* current.load = load current
+    List<MapEntry<string, int>>** end = getelementptr this, 1
+    List<MapEntry<string, int>>* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
+}
+
+List<MapEntry<string, int>>* _EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE5valueE(ArrayIterator<List<MapEntry<string, int>>>* this) {
+    List<MapEntry<string, int>>** current = getelementptr this, 0
+    List<MapEntry<string, int>>* current.load = load current
+    return current.load
+}
+
+void _EN3std4ListI8MapEntryI6string3intEE6deinitE(List<MapEntry<string, int>>* this) {
+    ArrayIterator<MapEntry<string, int>>* __iterator = alloca ArrayIterator<MapEntry<string, int>>
+    MapEntry<string, int>** element = alloca MapEntry<string, int>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load != int 0
+    br _0, if.then, if.else
+
+if.then:
+    ArrayIterator<MapEntry<string, int>> _1 = call _EN3std4ListI8MapEntryI6string3intEE8iteratorE(List<MapEntry<string, int>>* this)
+    store _1 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _2 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE8hasValueE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    MapEntry<string, int>* _3 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE5valueE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    store _3 to element
+    br loop.increment
+
+loop.increment:
+    void _4 = call _EN3std13ArrayIteratorI8MapEntryI6string3intEE9incrementE(ArrayIterator<MapEntry<string, int>>* __iterator)
+    br loop.condition
+
+loop.end:
+    MapEntry<string, int>** buffer = getelementptr this, 0
+    MapEntry<string, int>* buffer.load = load buffer
+    void _5 = call _EN3std10deallocateIAU_8MapEntryI6string3intEEEAU_8MapEntryI6string3intE(MapEntry<string, int>* buffer.load)
+    br if.end
+}
+
+void _EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE9incrementE(ArrayIterator<List<MapEntry<string, int>>>* this) {
+    List<MapEntry<string, int>>** current = getelementptr this, 0
+    List<MapEntry<string, int>>* current.load = load current
+    List<MapEntry<string, int>>* _0 = getelementptr current.load, int 1
+    store _0 to current
+    return void
+}
+
+void _EN3std10deallocateIAU_4ListI8MapEntryI6string3intEEEEAU_4ListI8MapEntryI6string3intEE(List<MapEntry<string, int>>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string3intEEE4pushE4ListI8MapEntryI6string3intEE(List<List<MapEntry<string, int>>>* this, List<MapEntry<string, int>> element) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = size.load == capacity.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE4growE(List<List<MapEntry<string, int>>>* this)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<string, int>>** buffer = getelementptr this, 0
+    List<MapEntry<string, int>>* buffer.load = load buffer
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    List<MapEntry<string, int>>* _2 = getelementptr buffer.load, size.load_0
+    store element to _2
+    int* size_1 = getelementptr this, 1
+    int size.load_1 = load size_1
+    int _3 = size.load_1 + int 1
+    store _3 to size_1
+    return void
+}
+
+void _EN3std4ListI8MapEntryI6string3intEE4initE(List<MapEntry<string, int>>* this) {
+    int* size = getelementptr this, 1
+    store int 0 to size
+    int* capacity = getelementptr this, 2
+    store int 0 to capacity
+    return void
+}
+
+int _EN3std8ArrayRefI4charE4sizeE(ArrayRef<char>* this) {
+}
+
+char _EN3std6stringixE3int(string* this, int index) {
+}
+
+int _EN3std4ListI4ListI8MapEntryI6string3intEEE4sizeE(List<List<MapEntry<string, int>>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+void _EN3std4ListI8MapEntryI6string3intEE4growE(List<MapEntry<string, int>>* this) {
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load == int 0
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI6string3intEE7reserveE3int(List<MapEntry<string, int>>* this, int 1)
+    br if.end
+
+if.else:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    int _2 = capacity.load_0 * int 2
+    void _3 = call _EN3std4ListI8MapEntryI6string3intEE7reserveE3int(List<MapEntry<string, int>>* this, int _2)
+    br if.end
+
+if.end:
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string3intEEE16indexOutOfBoundsE3int(List<List<MapEntry<string, int>>>* this, int index) {
+    string* __str = alloca string
+    int* _0 = alloca int
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "List index ", int 11)
+    store index to _0
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_0, char* " is out of bounds, size is ", int 27)
+    int _4 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE4sizeE(List<List<MapEntry<string, int>>>* this)
+    store _4 to _1
+    never _5 = call _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* __str, int* _0, string* __str_0, int* _1)
+    return void
+}
+
+void _EN3std13ArrayIteratorI8MapEntryI6string3intEE4initE8ArrayRefI8MapEntryI6string3intEE(ArrayIterator<MapEntry<string, int>>* this, ArrayRef<MapEntry<string, int>> array) {
+    ArrayRef<MapEntry<string, int>>* _0 = alloca ArrayRef<MapEntry<string, int>>
+    ArrayRef<MapEntry<string, int>>* _1 = alloca ArrayRef<MapEntry<string, int>>
+    ArrayRef<MapEntry<string, int>>* _2 = alloca ArrayRef<MapEntry<string, int>>
+    MapEntry<string, int>** current = getelementptr this, 0
+    store array to _0
+    MapEntry<string, int>* _3 = call _EN3std8ArrayRefI8MapEntryI6string3intEE4dataE(ArrayRef<MapEntry<string, int>>* _0)
+    store _3 to current
+    MapEntry<string, int>** end = getelementptr this, 1
+    store array to _1
+    MapEntry<string, int>* _4 = call _EN3std8ArrayRefI8MapEntryI6string3intEE4dataE(ArrayRef<MapEntry<string, int>>* _1)
+    store array to _2
+    int _5 = call _EN3std8ArrayRefI8MapEntryI6string3intEE4sizeE(ArrayRef<MapEntry<string, int>>* _2)
+    MapEntry<string, int>* _6 = getelementptr _4, _5
+    store _6 to end
+    return void
+}
+
+void _EN3std8ArrayRefI8MapEntryI6string3intEE4initEP4ListI8MapEntryI6string3intEE(ArrayRef<MapEntry<string, int>>* this, List<MapEntry<string, int>>* list) {
+    MapEntry<string, int>** data = getelementptr this, 0
+    MapEntry<string, int>* _0 = call _EN3std4ListI8MapEntryI6string3intEE4dataE(List<MapEntry<string, int>>* list)
+    store _0 to data
+    int* size = getelementptr this, 1
+    int _1 = call _EN3std4ListI8MapEntryI6string3intEE4sizeE(List<MapEntry<string, int>>* list)
+    store _1 to size
+    return void
+}
+
+ArrayIterator<List<MapEntry<string, string>>> _EN3std4ListI4ListI8MapEntryI6string6stringEEE8iteratorE(List<List<MapEntry<string, string>>>* this) {
+    ArrayIterator<List<MapEntry<string, string>>>* _0 = alloca ArrayIterator<List<MapEntry<string, string>>>
+    ArrayRef<List<MapEntry<string, string>>>* _1 = alloca ArrayRef<List<MapEntry<string, string>>>
+    void _2 = call _EN3std8ArrayRefI4ListI8MapEntryI6string6stringEEE4initEP4ListI4ListI8MapEntryI6string6stringEEE(ArrayRef<List<MapEntry<string, string>>>* _1, List<List<MapEntry<string, string>>>* this)
+    ArrayRef<List<MapEntry<string, string>>> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE4initE8ArrayRefI4ListI8MapEntryI6string6stringEEE(ArrayIterator<List<MapEntry<string, string>>>* _0, ArrayRef<List<MapEntry<string, string>>> .load)
+    ArrayIterator<List<MapEntry<string, string>>> .load_0 = load _0
+    return .load_0
+}
+
+void _EN3std4ListI8MapEntryI6string6stringEE6deinitE(List<MapEntry<string, string>>* this) {
+    ArrayIterator<MapEntry<string, string>>* __iterator = alloca ArrayIterator<MapEntry<string, string>>
+    MapEntry<string, string>** element = alloca MapEntry<string, string>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load != int 0
+    br _0, if.then, if.else
+
+if.then:
+    ArrayIterator<MapEntry<string, string>> _1 = call _EN3std4ListI8MapEntryI6string6stringEE8iteratorE(List<MapEntry<string, string>>* this)
+    store _1 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _2 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE8hasValueE(ArrayIterator<MapEntry<string, string>>* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    MapEntry<string, string>* _3 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE5valueE(ArrayIterator<MapEntry<string, string>>* __iterator)
+    store _3 to element
+    br loop.increment
+
+loop.increment:
+    void _4 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE9incrementE(ArrayIterator<MapEntry<string, string>>* __iterator)
+    br loop.condition
+
+loop.end:
+    MapEntry<string, string>** buffer = getelementptr this, 0
+    MapEntry<string, string>* buffer.load = load buffer
+    void _5 = call _EN3std10deallocateIAU_8MapEntryI6string6stringEEEAU_8MapEntryI6string6stringE(MapEntry<string, string>* buffer.load)
+    br if.end
+}
+
+void _EN3std10deallocateIAU_4ListI8MapEntryI6string6stringEEEEAU_4ListI8MapEntryI6string6stringEE(List<MapEntry<string, string>>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string6stringEEE4pushE4ListI8MapEntryI6string6stringEE(List<List<MapEntry<string, string>>>* this, List<MapEntry<string, string>> element) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = size.load == capacity.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE4growE(List<List<MapEntry<string, string>>>* this)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<string, string>>** buffer = getelementptr this, 0
+    List<MapEntry<string, string>>* buffer.load = load buffer
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    List<MapEntry<string, string>>* _2 = getelementptr buffer.load, size.load_0
+    store element to _2
+    int* size_1 = getelementptr this, 1
+    int size.load_1 = load size_1
+    int _3 = size.load_1 + int 1
+    store _3 to size_1
+    return void
+}
+
+void _EN3std4ListI8MapEntryI6string6stringEE4initE(List<MapEntry<string, string>>* this) {
+    int* size = getelementptr this, 1
+    store int 0 to size
+    int* capacity = getelementptr this, 2
+    store int 0 to capacity
+    return void
+}
+
+ArrayIterator<MapEntry<string, string>> _EN3std4ListI8MapEntryI6string6stringEE8iteratorE(List<MapEntry<string, string>>* this) {
+    ArrayIterator<MapEntry<string, string>>* _0 = alloca ArrayIterator<MapEntry<string, string>>
+    ArrayRef<MapEntry<string, string>>* _1 = alloca ArrayRef<MapEntry<string, string>>
+    void _2 = call _EN3std8ArrayRefI8MapEntryI6string6stringEE4initEP4ListI8MapEntryI6string6stringEE(ArrayRef<MapEntry<string, string>>* _1, List<MapEntry<string, string>>* this)
+    ArrayRef<MapEntry<string, string>> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI8MapEntryI6string6stringEE4initE8ArrayRefI8MapEntryI6string6stringEE(ArrayIterator<MapEntry<string, string>>* _0, ArrayRef<MapEntry<string, string>> .load)
+    ArrayIterator<MapEntry<string, string>> .load_0 = load _0
+    return .load_0
+}
+
+bool _EN3std13ArrayIteratorI8MapEntryI6string6stringEE8hasValueE(ArrayIterator<MapEntry<string, string>>* this) {
+    MapEntry<string, string>** current = getelementptr this, 0
+    MapEntry<string, string>* current.load = load current
+    MapEntry<string, string>** end = getelementptr this, 1
+    MapEntry<string, string>* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
+}
+
+MapEntry<string, string>* _EN3std13ArrayIteratorI8MapEntryI6string6stringEE5valueE(ArrayIterator<MapEntry<string, string>>* this) {
+    MapEntry<string, string>** current = getelementptr this, 0
+    MapEntry<string, string>* current.load = load current
+    return current.load
+}
+
+void _EN3std13ArrayIteratorI8MapEntryI6string6stringEE9incrementE(ArrayIterator<MapEntry<string, string>>* this) {
+    MapEntry<string, string>** current = getelementptr this, 0
+    MapEntry<string, string>* current.load = load current
+    MapEntry<string, string>* _0 = getelementptr current.load, int 1
+    store _0 to current
+    return void
+}
+
+int _EN3std4ListI4ListI8MapEntryI6string6stringEEE4sizeE(List<List<MapEntry<string, string>>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+void _EN3std4ListI8MapEntryI6string6stringEE4growE(List<MapEntry<string, string>>* this) {
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load == int 0
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI6string6stringEE7reserveE3int(List<MapEntry<string, string>>* this, int 1)
+    br if.end
+
+if.else:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    int _2 = capacity.load_0 * int 2
+    void _3 = call _EN3std4ListI8MapEntryI6string6stringEE7reserveE3int(List<MapEntry<string, string>>* this, int _2)
+    br if.end
+
+if.end:
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string6stringEEE16indexOutOfBoundsE3int(List<List<MapEntry<string, string>>>* this, int index) {
+    string* __str = alloca string
+    int* _0 = alloca int
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "List index ", int 11)
+    store index to _0
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_0, char* " is out of bounds, size is ", int 27)
+    int _4 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE4sizeE(List<List<MapEntry<string, string>>>* this)
+    store _4 to _1
+    never _5 = call _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* __str, int* _0, string* __str_0, int* _1)
+    return void
+}
+
+ArrayIterator<List<MapEntry<StringBuffer, int>>> _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE8iteratorE(List<List<MapEntry<StringBuffer, int>>>* this) {
+    ArrayIterator<List<MapEntry<StringBuffer, int>>>* _0 = alloca ArrayIterator<List<MapEntry<StringBuffer, int>>>
+    ArrayRef<List<MapEntry<StringBuffer, int>>>* _1 = alloca ArrayRef<List<MapEntry<StringBuffer, int>>>
+    void _2 = call _EN3std8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE4initEP4ListI4ListI8MapEntryI12StringBuffer3intEEE(ArrayRef<List<MapEntry<StringBuffer, int>>>* _1, List<List<MapEntry<StringBuffer, int>>>* this)
+    ArrayRef<List<MapEntry<StringBuffer, int>>> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI4ListI8MapEntryI12StringBuffer3intEEE4initE8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE(ArrayIterator<List<MapEntry<StringBuffer, int>>>* _0, ArrayRef<List<MapEntry<StringBuffer, int>>> .load)
+    ArrayIterator<List<MapEntry<StringBuffer, int>>> .load_0 = load _0
+    return .load_0
+}
+
+bool _EN3std13ArrayIteratorI4ListI8MapEntryI12StringBuffer3intEEE8hasValueE(ArrayIterator<List<MapEntry<StringBuffer, int>>>* this) {
+    List<MapEntry<StringBuffer, int>>** current = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* current.load = load current
+    List<MapEntry<StringBuffer, int>>** end = getelementptr this, 1
+    List<MapEntry<StringBuffer, int>>* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
+}
+
+List<MapEntry<StringBuffer, int>>* _EN3std13ArrayIteratorI4ListI8MapEntryI12StringBuffer3intEEE5valueE(ArrayIterator<List<MapEntry<StringBuffer, int>>>* this) {
+    List<MapEntry<StringBuffer, int>>** current = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* current.load = load current
+    return current.load
+}
+
+void _EN3std4ListI8MapEntryI12StringBuffer3intEE6deinitE(List<MapEntry<StringBuffer, int>>* this) {
+    ArrayIterator<MapEntry<StringBuffer, int>>* __iterator = alloca ArrayIterator<MapEntry<StringBuffer, int>>
+    MapEntry<StringBuffer, int>** element = alloca MapEntry<StringBuffer, int>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load != int 0
+    br _0, if.then, if.else
+
+if.then:
+    ArrayIterator<MapEntry<StringBuffer, int>> _1 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE8iteratorE(List<MapEntry<StringBuffer, int>>* this)
+    store _1 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _2 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE8hasValueE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    MapEntry<StringBuffer, int>* _3 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE5valueE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator)
+    store _3 to element
+    br loop.increment
+
+loop.increment:
+    void _4 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE9incrementE(ArrayIterator<MapEntry<StringBuffer, int>>* __iterator)
+    br loop.condition
+
+loop.end:
+    MapEntry<StringBuffer, int>** buffer = getelementptr this, 0
+    MapEntry<StringBuffer, int>* buffer.load = load buffer
+    void _5 = call _EN3std10deallocateIAU_8MapEntryI12StringBuffer3intEEEAU_8MapEntryI12StringBuffer3intE(MapEntry<StringBuffer, int>* buffer.load)
+    br if.end
+}
+
+void _EN3std13ArrayIteratorI4ListI8MapEntryI12StringBuffer3intEEE9incrementE(ArrayIterator<List<MapEntry<StringBuffer, int>>>* this) {
+    List<MapEntry<StringBuffer, int>>** current = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* current.load = load current
+    List<MapEntry<StringBuffer, int>>* _0 = getelementptr current.load, int 1
+    store _0 to current
+    return void
+}
+
+void _EN3std10deallocateIAU_4ListI8MapEntryI12StringBuffer3intEEEEAU_4ListI8MapEntryI12StringBuffer3intEE(List<MapEntry<StringBuffer, int>>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4pushE4ListI8MapEntryI12StringBuffer3intEE(List<List<MapEntry<StringBuffer, int>>>* this, List<MapEntry<StringBuffer, int>> element) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = size.load == capacity.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4growE(List<List<MapEntry<StringBuffer, int>>>* this)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    List<MapEntry<StringBuffer, int>>** buffer = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* buffer.load = load buffer
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    List<MapEntry<StringBuffer, int>>* _2 = getelementptr buffer.load, size.load_0
+    store element to _2
+    int* size_1 = getelementptr this, 1
+    int size.load_1 = load size_1
+    int _3 = size.load_1 + int 1
+    store _3 to size_1
+    return void
+}
+
+void _EN3std4ListI8MapEntryI12StringBuffer3intEE4initE(List<MapEntry<StringBuffer, int>>* this) {
+    int* size = getelementptr this, 1
+    store int 0 to size
+    int* capacity = getelementptr this, 2
+    store int 0 to capacity
+    return void
+}
+
+int _EN3std4ListI8MapEntryI12StringBuffer3intEE4sizeE(List<MapEntry<StringBuffer, int>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+ArrayIterator<MapEntry<StringBuffer, int>> _EN3std4ListI8MapEntryI12StringBuffer3intEE8iteratorE(List<MapEntry<StringBuffer, int>>* this) {
+    ArrayIterator<MapEntry<StringBuffer, int>>* _0 = alloca ArrayIterator<MapEntry<StringBuffer, int>>
+    ArrayRef<MapEntry<StringBuffer, int>>* _1 = alloca ArrayRef<MapEntry<StringBuffer, int>>
+    void _2 = call _EN3std8ArrayRefI8MapEntryI12StringBuffer3intEE4initEP4ListI8MapEntryI12StringBuffer3intEE(ArrayRef<MapEntry<StringBuffer, int>>* _1, List<MapEntry<StringBuffer, int>>* this)
+    ArrayRef<MapEntry<StringBuffer, int>> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE4initE8ArrayRefI8MapEntryI12StringBuffer3intEE(ArrayIterator<MapEntry<StringBuffer, int>>* _0, ArrayRef<MapEntry<StringBuffer, int>> .load)
+    ArrayIterator<MapEntry<StringBuffer, int>> .load_0 = load _0
+    return .load_0
+}
+
+bool _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE8hasValueE(ArrayIterator<MapEntry<StringBuffer, int>>* this) {
+    MapEntry<StringBuffer, int>** current = getelementptr this, 0
+    MapEntry<StringBuffer, int>* current.load = load current
+    MapEntry<StringBuffer, int>** end = getelementptr this, 1
+    MapEntry<StringBuffer, int>* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
+}
+
+MapEntry<StringBuffer, int>* _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE5valueE(ArrayIterator<MapEntry<StringBuffer, int>>* this) {
+    MapEntry<StringBuffer, int>** current = getelementptr this, 0
+    MapEntry<StringBuffer, int>* current.load = load current
+    return current.load
+}
+
+bool _EN3stdeqEP12StringBufferP12StringBuffer(StringBuffer* a, StringBuffer* b) {
+}
+
+void _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE9incrementE(ArrayIterator<MapEntry<StringBuffer, int>>* this) {
+    MapEntry<StringBuffer, int>** current = getelementptr this, 0
+    MapEntry<StringBuffer, int>* current.load = load current
+    MapEntry<StringBuffer, int>* _0 = getelementptr current.load, int 1
+    store _0 to current
+    return void
+}
+
+void _EN3std6string4initEP12StringBuffer(string* this, StringBuffer* string) {
+}
+
+int _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4sizeE(List<List<MapEntry<StringBuffer, int>>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+void _EN3std4ListI8MapEntryI12StringBuffer3intEE4growE(List<MapEntry<StringBuffer, int>>* this) {
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load == int 0
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE7reserveE3int(List<MapEntry<StringBuffer, int>>* this, int 1)
+    br if.end
+
+if.else:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    int _2 = capacity.load_0 * int 2
+    void _3 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE7reserveE3int(List<MapEntry<StringBuffer, int>>* this, int _2)
+    br if.end
+
+if.end:
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE16indexOutOfBoundsE3int(List<List<MapEntry<StringBuffer, int>>>* this, int index) {
+    string* __str = alloca string
+    int* _0 = alloca int
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "List index ", int 11)
+    store index to _0
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_0, char* " is out of bounds, size is ", int 27)
+    int _4 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4sizeE(List<List<MapEntry<StringBuffer, int>>>* this)
+    store _4 to _1
+    never _5 = call _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* __str, int* _0, string* __str_0, int* _1)
+    return void
+}
+
+void _EN3std4ListI8MapEntryI6string3intEE16indexOutOfBoundsE3int(List<MapEntry<string, int>>* this, int index) {
+    string* __str = alloca string
+    int* _0 = alloca int
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "List index ", int 11)
+    store index to _0
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_0, char* " is out of bounds, size is ", int 27)
+    int _4 = call _EN3std4ListI8MapEntryI6string3intEE4sizeE(List<MapEntry<string, int>>* this)
+    store _4 to _1
+    never _5 = call _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* __str, int* _0, string* __str_0, int* _1)
+    return void
+}
+
+void _EN3std4ListI8MapEntryI6string3intEE14unsafeRemoveAtE3int(List<MapEntry<string, int>>* this, int index) {
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    MapEntry<string, int>** source = alloca MapEntry<string, int>*
+    MapEntry<string, int>** target = alloca MapEntry<string, int>*
+    int _1 = index + int 1
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _2 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int _1, int size.load)
+    RangeIterator<int> _3 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    int _5 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _5 to i
+    MapEntry<string, int>** buffer = getelementptr this, 0
+    MapEntry<string, int>* buffer.load = load buffer
+    int i.load = load i
+    MapEntry<string, int>* _6 = getelementptr buffer.load, i.load
+    store _6 to source
+    MapEntry<string, int>** buffer_0 = getelementptr this, 0
+    MapEntry<string, int>* buffer.load_0 = load buffer_0
+    int i.load_0 = load i
+    int _7 = i.load_0 - int 1
+    MapEntry<string, int>* _8 = getelementptr buffer.load_0, _7
+    store _8 to target
+    MapEntry<string, int>* target.load = load target
+    MapEntry<string, int>* source.load = load source
+    MapEntry<string, int> source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    int _10 = size.load_0 + int -1
+    store _10 to size_0
+    return void
+}
+
+void _EN3std4ListI8MapEntryI6string6stringEE16indexOutOfBoundsE3int(List<MapEntry<string, string>>* this, int index) {
+    string* __str = alloca string
+    int* _0 = alloca int
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "List index ", int 11)
+    store index to _0
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_0, char* " is out of bounds, size is ", int 27)
+    int _4 = call _EN3std4ListI8MapEntryI6string6stringEE4sizeE(List<MapEntry<string, string>>* this)
+    store _4 to _1
+    never _5 = call _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* __str, int* _0, string* __str_0, int* _1)
+    return void
+}
+
+void _EN3std4ListI8MapEntryI6string6stringEE14unsafeRemoveAtE3int(List<MapEntry<string, string>>* this, int index) {
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    MapEntry<string, string>** source = alloca MapEntry<string, string>*
+    MapEntry<string, string>** target = alloca MapEntry<string, string>*
+    int _1 = index + int 1
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _2 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int _1, int size.load)
+    RangeIterator<int> _3 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    int _5 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _5 to i
+    MapEntry<string, string>** buffer = getelementptr this, 0
+    MapEntry<string, string>* buffer.load = load buffer
+    int i.load = load i
+    MapEntry<string, string>* _6 = getelementptr buffer.load, i.load
+    store _6 to source
+    MapEntry<string, string>** buffer_0 = getelementptr this, 0
+    MapEntry<string, string>* buffer.load_0 = load buffer_0
+    int i.load_0 = load i
+    int _7 = i.load_0 - int 1
+    MapEntry<string, string>* _8 = getelementptr buffer.load_0, _7
+    store _8 to target
+    MapEntry<string, string>* target.load = load target
+    MapEntry<string, string>* source.load = load source
+    MapEntry<string, string> source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    int _10 = size.load_0 + int -1
+    store _10 to size_0
+    return void
+}
+
+void _EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE4initE8ArrayRefI4ListI8MapEntryI6string3intEEE(ArrayIterator<List<MapEntry<string, int>>>* this, ArrayRef<List<MapEntry<string, int>>> array) {
+    ArrayRef<List<MapEntry<string, int>>>* _0 = alloca ArrayRef<List<MapEntry<string, int>>>
+    ArrayRef<List<MapEntry<string, int>>>* _1 = alloca ArrayRef<List<MapEntry<string, int>>>
+    ArrayRef<List<MapEntry<string, int>>>* _2 = alloca ArrayRef<List<MapEntry<string, int>>>
+    List<MapEntry<string, int>>** current = getelementptr this, 0
+    store array to _0
+    List<MapEntry<string, int>>* _3 = call _EN3std8ArrayRefI4ListI8MapEntryI6string3intEEE4dataE(ArrayRef<List<MapEntry<string, int>>>* _0)
+    store _3 to current
+    List<MapEntry<string, int>>** end = getelementptr this, 1
+    store array to _1
+    List<MapEntry<string, int>>* _4 = call _EN3std8ArrayRefI4ListI8MapEntryI6string3intEEE4dataE(ArrayRef<List<MapEntry<string, int>>>* _1)
+    store array to _2
+    int _5 = call _EN3std8ArrayRefI4ListI8MapEntryI6string3intEEE4sizeE(ArrayRef<List<MapEntry<string, int>>>* _2)
+    List<MapEntry<string, int>>* _6 = getelementptr _4, _5
+    store _6 to end
+    return void
+}
+
+void _EN3std8ArrayRefI4ListI8MapEntryI6string3intEEE4initEP4ListI4ListI8MapEntryI6string3intEEE(ArrayRef<List<MapEntry<string, int>>>* this, List<List<MapEntry<string, int>>>* list) {
+    List<MapEntry<string, int>>** data = getelementptr this, 0
+    List<MapEntry<string, int>>* _0 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE4dataE(List<List<MapEntry<string, int>>>* list)
+    store _0 to data
+    int* size = getelementptr this, 1
+    int _1 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE4sizeE(List<List<MapEntry<string, int>>>* list)
+    store _1 to size
+    return void
+}
+
+void _EN3std10deallocateIAU_8MapEntryI6string3intEEEAU_8MapEntryI6string3intE(MapEntry<string, int>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+extern void free(void*)
+
+void _EN3std4ListI4ListI8MapEntryI6string3intEEE4growE(List<List<MapEntry<string, int>>>* this) {
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load == int 0
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE7reserveE3int(List<List<MapEntry<string, int>>>* this, int 1)
+    br if.end
+
+if.else:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    int _2 = capacity.load_0 * int 2
+    void _3 = call _EN3std4ListI4ListI8MapEntryI6string3intEEE7reserveE3int(List<List<MapEntry<string, int>>>* this, int _2)
+    br if.end
+
+if.end:
+    return void
+}
+
+void _EN3std4ListI8MapEntryI6string3intEE7reserveE3int(List<MapEntry<string, int>>* this, int minimumCapacity) {
+    MapEntry<string, int>** newBuffer = alloca MapEntry<string, int>*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    MapEntry<string, int>** source = alloca MapEntry<string, int>*
+    MapEntry<string, int>** target = alloca MapEntry<string, int>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _1 = minimumCapacity > capacity.load
+    br _1, if.then, if.else
+
+if.then:
+    MapEntry<string, int>* _2 = call _EN3std13allocateArrayI8MapEntryI6string3intEEE3int(int minimumCapacity)
+    store _2 to newBuffer
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int size.load)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to index
+    MapEntry<string, int>** buffer = getelementptr this, 0
+    MapEntry<string, int>* buffer.load = load buffer
+    int index.load = load index
+    MapEntry<string, int>* _7 = getelementptr buffer.load, index.load
+    store _7 to source
+    MapEntry<string, int>* newBuffer.load = load newBuffer
+    int index.load_0 = load index
+    MapEntry<string, int>* _8 = getelementptr newBuffer.load, index.load_0
+    store _8 to target
+    MapEntry<string, int>* target.load = load target
+    MapEntry<string, int>* source.load = load source
+    MapEntry<string, int> source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    bool _10 = capacity.load_0 != int 0
+    br _10, if.then, if.else
+
+if.then_0:
+    MapEntry<string, int>** buffer_0 = getelementptr this, 0
+    MapEntry<string, int>* buffer.load_0 = load buffer_0
+    void _11 = call _EN3std10deallocateIAU_8MapEntryI6string3intEEEAU_8MapEntryI6string3intE(MapEntry<string, int>* buffer.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    MapEntry<string, int>** buffer_1 = getelementptr this, 0
+    MapEntry<string, int>* newBuffer.load_0 = load newBuffer
+    store newBuffer.load_0 to buffer_1
+    int* capacity_1 = getelementptr this, 2
+    store minimumCapacity to capacity_1
+    br if.end
+}
+
+never _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* _0, int* _1, string* _2, int* _3) {
+    OutputFileStream* _4 = alloca OutputFileStream
+    OutputFileStream* _5 = alloca OutputFileStream
+    OutputFileStream* _6 = alloca OutputFileStream
+    OutputFileStream* _7 = alloca OutputFileStream
+    OutputFileStream* _8 = alloca OutputFileStream
+    char* _9 = alloca char
+    OutputFileStream _10 = call _EN3std6stderrE()
+    store _10 to _4
+    void _11 = call _EN3std16OutputFileStream5writeI6stringEEP6string(OutputFileStream* _4, string* _0)
+    OutputFileStream _12 = call _EN3std6stderrE()
+    store _12 to _5
+    void _13 = call _EN3std16OutputFileStream5writeI3intEEP3int(OutputFileStream* _5, int* _1)
+    OutputFileStream _14 = call _EN3std6stderrE()
+    store _14 to _6
+    void _15 = call _EN3std16OutputFileStream5writeI6stringEEP6string(OutputFileStream* _6, string* _2)
+    OutputFileStream _16 = call _EN3std6stderrE()
+    store _16 to _7
+    void _17 = call _EN3std16OutputFileStream5writeI3intEEP3int(OutputFileStream* _7, int* _3)
+    OutputFileStream _18 = call _EN3std6stderrE()
+    store _18 to _8
+    store char 10 to _9
+    void _19 = call _EN3std16OutputFileStream5writeI4charEEP4char(OutputFileStream* _8, char* _9)
+    never _20 = call _EN3std12abortWrapperE()
+    unreachable
+}
+
+MapEntry<string, int>* _EN3std8ArrayRefI8MapEntryI6string3intEE4dataE(ArrayRef<MapEntry<string, int>>* this) {
+    MapEntry<string, int>** data = getelementptr this, 0
+    MapEntry<string, int>* data.load = load data
+    return data.load
+}
+
+int _EN3std8ArrayRefI8MapEntryI6string3intEE4sizeE(ArrayRef<MapEntry<string, int>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+MapEntry<string, int>* _EN3std4ListI8MapEntryI6string3intEE4dataE(List<MapEntry<string, int>>* this) {
+    MapEntry<string, int>** buffer = getelementptr this, 0
+    MapEntry<string, int>* buffer.load = load buffer
+    return buffer.load
+}
+
+void _EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE4initE8ArrayRefI4ListI8MapEntryI6string6stringEEE(ArrayIterator<List<MapEntry<string, string>>>* this, ArrayRef<List<MapEntry<string, string>>> array) {
+    ArrayRef<List<MapEntry<string, string>>>* _0 = alloca ArrayRef<List<MapEntry<string, string>>>
+    ArrayRef<List<MapEntry<string, string>>>* _1 = alloca ArrayRef<List<MapEntry<string, string>>>
+    ArrayRef<List<MapEntry<string, string>>>* _2 = alloca ArrayRef<List<MapEntry<string, string>>>
+    List<MapEntry<string, string>>** current = getelementptr this, 0
+    store array to _0
+    List<MapEntry<string, string>>* _3 = call _EN3std8ArrayRefI4ListI8MapEntryI6string6stringEEE4dataE(ArrayRef<List<MapEntry<string, string>>>* _0)
+    store _3 to current
+    List<MapEntry<string, string>>** end = getelementptr this, 1
+    store array to _1
+    List<MapEntry<string, string>>* _4 = call _EN3std8ArrayRefI4ListI8MapEntryI6string6stringEEE4dataE(ArrayRef<List<MapEntry<string, string>>>* _1)
+    store array to _2
+    int _5 = call _EN3std8ArrayRefI4ListI8MapEntryI6string6stringEEE4sizeE(ArrayRef<List<MapEntry<string, string>>>* _2)
+    List<MapEntry<string, string>>* _6 = getelementptr _4, _5
+    store _6 to end
+    return void
+}
+
+void _EN3std8ArrayRefI4ListI8MapEntryI6string6stringEEE4initEP4ListI4ListI8MapEntryI6string6stringEEE(ArrayRef<List<MapEntry<string, string>>>* this, List<List<MapEntry<string, string>>>* list) {
+    List<MapEntry<string, string>>** data = getelementptr this, 0
+    List<MapEntry<string, string>>* _0 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE4dataE(List<List<MapEntry<string, string>>>* list)
+    store _0 to data
+    int* size = getelementptr this, 1
+    int _1 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE4sizeE(List<List<MapEntry<string, string>>>* list)
+    store _1 to size
+    return void
+}
+
+void _EN3std10deallocateIAU_8MapEntryI6string6stringEEEAU_8MapEntryI6string6stringE(MapEntry<string, string>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string6stringEEE4growE(List<List<MapEntry<string, string>>>* this) {
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load == int 0
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE7reserveE3int(List<List<MapEntry<string, string>>>* this, int 1)
+    br if.end
+
+if.else:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    int _2 = capacity.load_0 * int 2
+    void _3 = call _EN3std4ListI4ListI8MapEntryI6string6stringEEE7reserveE3int(List<List<MapEntry<string, string>>>* this, int _2)
+    br if.end
+
+if.end:
+    return void
+}
+
+void _EN3std13ArrayIteratorI8MapEntryI6string6stringEE4initE8ArrayRefI8MapEntryI6string6stringEE(ArrayIterator<MapEntry<string, string>>* this, ArrayRef<MapEntry<string, string>> array) {
+    ArrayRef<MapEntry<string, string>>* _0 = alloca ArrayRef<MapEntry<string, string>>
+    ArrayRef<MapEntry<string, string>>* _1 = alloca ArrayRef<MapEntry<string, string>>
+    ArrayRef<MapEntry<string, string>>* _2 = alloca ArrayRef<MapEntry<string, string>>
+    MapEntry<string, string>** current = getelementptr this, 0
+    store array to _0
+    MapEntry<string, string>* _3 = call _EN3std8ArrayRefI8MapEntryI6string6stringEE4dataE(ArrayRef<MapEntry<string, string>>* _0)
+    store _3 to current
+    MapEntry<string, string>** end = getelementptr this, 1
+    store array to _1
+    MapEntry<string, string>* _4 = call _EN3std8ArrayRefI8MapEntryI6string6stringEE4dataE(ArrayRef<MapEntry<string, string>>* _1)
+    store array to _2
+    int _5 = call _EN3std8ArrayRefI8MapEntryI6string6stringEE4sizeE(ArrayRef<MapEntry<string, string>>* _2)
+    MapEntry<string, string>* _6 = getelementptr _4, _5
+    store _6 to end
+    return void
+}
+
+void _EN3std8ArrayRefI8MapEntryI6string6stringEE4initEP4ListI8MapEntryI6string6stringEE(ArrayRef<MapEntry<string, string>>* this, List<MapEntry<string, string>>* list) {
+    MapEntry<string, string>** data = getelementptr this, 0
+    MapEntry<string, string>* _0 = call _EN3std4ListI8MapEntryI6string6stringEE4dataE(List<MapEntry<string, string>>* list)
+    store _0 to data
+    int* size = getelementptr this, 1
+    int _1 = call _EN3std4ListI8MapEntryI6string6stringEE4sizeE(List<MapEntry<string, string>>* list)
+    store _1 to size
+    return void
+}
+
+void _EN3std4ListI8MapEntryI6string6stringEE7reserveE3int(List<MapEntry<string, string>>* this, int minimumCapacity) {
+    MapEntry<string, string>** newBuffer = alloca MapEntry<string, string>*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    MapEntry<string, string>** source = alloca MapEntry<string, string>*
+    MapEntry<string, string>** target = alloca MapEntry<string, string>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _1 = minimumCapacity > capacity.load
+    br _1, if.then, if.else
+
+if.then:
+    MapEntry<string, string>* _2 = call _EN3std13allocateArrayI8MapEntryI6string6stringEEE3int(int minimumCapacity)
+    store _2 to newBuffer
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int size.load)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to index
+    MapEntry<string, string>** buffer = getelementptr this, 0
+    MapEntry<string, string>* buffer.load = load buffer
+    int index.load = load index
+    MapEntry<string, string>* _7 = getelementptr buffer.load, index.load
+    store _7 to source
+    MapEntry<string, string>* newBuffer.load = load newBuffer
+    int index.load_0 = load index
+    MapEntry<string, string>* _8 = getelementptr newBuffer.load, index.load_0
+    store _8 to target
+    MapEntry<string, string>* target.load = load target
+    MapEntry<string, string>* source.load = load source
+    MapEntry<string, string> source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    bool _10 = capacity.load_0 != int 0
+    br _10, if.then, if.else
+
+if.then_0:
+    MapEntry<string, string>** buffer_0 = getelementptr this, 0
+    MapEntry<string, string>* buffer.load_0 = load buffer_0
+    void _11 = call _EN3std10deallocateIAU_8MapEntryI6string6stringEEEAU_8MapEntryI6string6stringE(MapEntry<string, string>* buffer.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    MapEntry<string, string>** buffer_1 = getelementptr this, 0
+    MapEntry<string, string>* newBuffer.load_0 = load newBuffer
+    store newBuffer.load_0 to buffer_1
+    int* capacity_1 = getelementptr this, 2
+    store minimumCapacity to capacity_1
+    br if.end
+}
+
+void _EN3std13ArrayIteratorI4ListI8MapEntryI12StringBuffer3intEEE4initE8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE(ArrayIterator<List<MapEntry<StringBuffer, int>>>* this, ArrayRef<List<MapEntry<StringBuffer, int>>> array) {
+    ArrayRef<List<MapEntry<StringBuffer, int>>>* _0 = alloca ArrayRef<List<MapEntry<StringBuffer, int>>>
+    ArrayRef<List<MapEntry<StringBuffer, int>>>* _1 = alloca ArrayRef<List<MapEntry<StringBuffer, int>>>
+    ArrayRef<List<MapEntry<StringBuffer, int>>>* _2 = alloca ArrayRef<List<MapEntry<StringBuffer, int>>>
+    List<MapEntry<StringBuffer, int>>** current = getelementptr this, 0
+    store array to _0
+    List<MapEntry<StringBuffer, int>>* _3 = call _EN3std8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE4dataE(ArrayRef<List<MapEntry<StringBuffer, int>>>* _0)
+    store _3 to current
+    List<MapEntry<StringBuffer, int>>** end = getelementptr this, 1
+    store array to _1
+    List<MapEntry<StringBuffer, int>>* _4 = call _EN3std8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE4dataE(ArrayRef<List<MapEntry<StringBuffer, int>>>* _1)
+    store array to _2
+    int _5 = call _EN3std8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE4sizeE(ArrayRef<List<MapEntry<StringBuffer, int>>>* _2)
+    List<MapEntry<StringBuffer, int>>* _6 = getelementptr _4, _5
+    store _6 to end
+    return void
+}
+
+void _EN3std8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE4initEP4ListI4ListI8MapEntryI12StringBuffer3intEEE(ArrayRef<List<MapEntry<StringBuffer, int>>>* this, List<List<MapEntry<StringBuffer, int>>>* list) {
+    List<MapEntry<StringBuffer, int>>** data = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* _0 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4dataE(List<List<MapEntry<StringBuffer, int>>>* list)
+    store _0 to data
+    int* size = getelementptr this, 1
+    int _1 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4sizeE(List<List<MapEntry<StringBuffer, int>>>* list)
+    store _1 to size
+    return void
+}
+
+void _EN3std10deallocateIAU_8MapEntryI12StringBuffer3intEEEAU_8MapEntryI12StringBuffer3intE(MapEntry<StringBuffer, int>* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+void _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4growE(List<List<MapEntry<StringBuffer, int>>>* this) {
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load == int 0
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE7reserveE3int(List<List<MapEntry<StringBuffer, int>>>* this, int 1)
+    br if.end
+
+if.else:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    int _2 = capacity.load_0 * int 2
+    void _3 = call _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE7reserveE3int(List<List<MapEntry<StringBuffer, int>>>* this, int _2)
+    br if.end
+
+if.end:
+    return void
+}
+
+void _EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE4initE8ArrayRefI8MapEntryI12StringBuffer3intEE(ArrayIterator<MapEntry<StringBuffer, int>>* this, ArrayRef<MapEntry<StringBuffer, int>> array) {
+    ArrayRef<MapEntry<StringBuffer, int>>* _0 = alloca ArrayRef<MapEntry<StringBuffer, int>>
+    ArrayRef<MapEntry<StringBuffer, int>>* _1 = alloca ArrayRef<MapEntry<StringBuffer, int>>
+    ArrayRef<MapEntry<StringBuffer, int>>* _2 = alloca ArrayRef<MapEntry<StringBuffer, int>>
+    MapEntry<StringBuffer, int>** current = getelementptr this, 0
+    store array to _0
+    MapEntry<StringBuffer, int>* _3 = call _EN3std8ArrayRefI8MapEntryI12StringBuffer3intEE4dataE(ArrayRef<MapEntry<StringBuffer, int>>* _0)
+    store _3 to current
+    MapEntry<StringBuffer, int>** end = getelementptr this, 1
+    store array to _1
+    MapEntry<StringBuffer, int>* _4 = call _EN3std8ArrayRefI8MapEntryI12StringBuffer3intEE4dataE(ArrayRef<MapEntry<StringBuffer, int>>* _1)
+    store array to _2
+    int _5 = call _EN3std8ArrayRefI8MapEntryI12StringBuffer3intEE4sizeE(ArrayRef<MapEntry<StringBuffer, int>>* _2)
+    MapEntry<StringBuffer, int>* _6 = getelementptr _4, _5
+    store _6 to end
+    return void
+}
+
+void _EN3std8ArrayRefI8MapEntryI12StringBuffer3intEE4initEP4ListI8MapEntryI12StringBuffer3intEE(ArrayRef<MapEntry<StringBuffer, int>>* this, List<MapEntry<StringBuffer, int>>* list) {
+    MapEntry<StringBuffer, int>** data = getelementptr this, 0
+    MapEntry<StringBuffer, int>* _0 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE4dataE(List<MapEntry<StringBuffer, int>>* list)
+    store _0 to data
+    int* size = getelementptr this, 1
+    int _1 = call _EN3std4ListI8MapEntryI12StringBuffer3intEE4sizeE(List<MapEntry<StringBuffer, int>>* list)
+    store _1 to size
+    return void
+}
+
+void _EN3std4ListI8MapEntryI12StringBuffer3intEE7reserveE3int(List<MapEntry<StringBuffer, int>>* this, int minimumCapacity) {
+    MapEntry<StringBuffer, int>** newBuffer = alloca MapEntry<StringBuffer, int>*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    MapEntry<StringBuffer, int>** source = alloca MapEntry<StringBuffer, int>*
+    MapEntry<StringBuffer, int>** target = alloca MapEntry<StringBuffer, int>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _1 = minimumCapacity > capacity.load
+    br _1, if.then, if.else
+
+if.then:
+    MapEntry<StringBuffer, int>* _2 = call _EN3std13allocateArrayI8MapEntryI12StringBuffer3intEEE3int(int minimumCapacity)
+    store _2 to newBuffer
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int size.load)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to index
+    MapEntry<StringBuffer, int>** buffer = getelementptr this, 0
+    MapEntry<StringBuffer, int>* buffer.load = load buffer
+    int index.load = load index
+    MapEntry<StringBuffer, int>* _7 = getelementptr buffer.load, index.load
+    store _7 to source
+    MapEntry<StringBuffer, int>* newBuffer.load = load newBuffer
+    int index.load_0 = load index
+    MapEntry<StringBuffer, int>* _8 = getelementptr newBuffer.load, index.load_0
+    store _8 to target
+    MapEntry<StringBuffer, int>* target.load = load target
+    MapEntry<StringBuffer, int>* source.load = load source
+    MapEntry<StringBuffer, int> source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    bool _10 = capacity.load_0 != int 0
+    br _10, if.then, if.else
+
+if.then_0:
+    MapEntry<StringBuffer, int>** buffer_0 = getelementptr this, 0
+    MapEntry<StringBuffer, int>* buffer.load_0 = load buffer_0
+    void _11 = call _EN3std10deallocateIAU_8MapEntryI12StringBuffer3intEEEAU_8MapEntryI12StringBuffer3intE(MapEntry<StringBuffer, int>* buffer.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    MapEntry<StringBuffer, int>** buffer_1 = getelementptr this, 0
+    MapEntry<StringBuffer, int>* newBuffer.load_0 = load newBuffer
+    store newBuffer.load_0 to buffer_1
+    int* capacity_1 = getelementptr this, 2
+    store minimumCapacity to capacity_1
+    br if.end
+}
+
+List<MapEntry<string, int>>* _EN3std8ArrayRefI4ListI8MapEntryI6string3intEEE4dataE(ArrayRef<List<MapEntry<string, int>>>* this) {
+    List<MapEntry<string, int>>** data = getelementptr this, 0
+    List<MapEntry<string, int>>* data.load = load data
+    return data.load
+}
+
+int _EN3std8ArrayRefI4ListI8MapEntryI6string3intEEE4sizeE(ArrayRef<List<MapEntry<string, int>>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+List<MapEntry<string, int>>* _EN3std4ListI4ListI8MapEntryI6string3intEEE4dataE(List<List<MapEntry<string, int>>>* this) {
+    List<MapEntry<string, int>>** buffer = getelementptr this, 0
+    List<MapEntry<string, int>>* buffer.load = load buffer
+    return buffer.load
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string3intEEE7reserveE3int(List<List<MapEntry<string, int>>>* this, int minimumCapacity) {
+    List<MapEntry<string, int>>** newBuffer = alloca List<MapEntry<string, int>>*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    List<MapEntry<string, int>>** source = alloca List<MapEntry<string, int>>*
+    List<MapEntry<string, int>>** target = alloca List<MapEntry<string, int>>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _1 = minimumCapacity > capacity.load
+    br _1, if.then, if.else
+
+if.then:
+    List<MapEntry<string, int>>* _2 = call _EN3std13allocateArrayI4ListI8MapEntryI6string3intEEEE3int(int minimumCapacity)
+    store _2 to newBuffer
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int size.load)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to index
+    List<MapEntry<string, int>>** buffer = getelementptr this, 0
+    List<MapEntry<string, int>>* buffer.load = load buffer
+    int index.load = load index
+    List<MapEntry<string, int>>* _7 = getelementptr buffer.load, index.load
+    store _7 to source
+    List<MapEntry<string, int>>* newBuffer.load = load newBuffer
+    int index.load_0 = load index
+    List<MapEntry<string, int>>* _8 = getelementptr newBuffer.load, index.load_0
+    store _8 to target
+    List<MapEntry<string, int>>* target.load = load target
+    List<MapEntry<string, int>>* source.load = load source
+    List<MapEntry<string, int>> source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    bool _10 = capacity.load_0 != int 0
+    br _10, if.then, if.else
+
+if.then_0:
+    List<MapEntry<string, int>>** buffer_0 = getelementptr this, 0
+    List<MapEntry<string, int>>* buffer.load_0 = load buffer_0
+    void _11 = call _EN3std10deallocateIAU_4ListI8MapEntryI6string3intEEEEAU_4ListI8MapEntryI6string3intEE(List<MapEntry<string, int>>* buffer.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    List<MapEntry<string, int>>** buffer_1 = getelementptr this, 0
+    List<MapEntry<string, int>>* newBuffer.load_0 = load newBuffer
+    store newBuffer.load_0 to buffer_1
+    int* capacity_1 = getelementptr this, 2
+    store minimumCapacity to capacity_1
+    br if.end
+}
+
+MapEntry<string, int>* _EN3std13allocateArrayI8MapEntryI6string3intEEE3int(int size) {
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(MapEntry<string, int>) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+")
+    unreachable
+
+assert.success:
+    MapEntry<string, int>* _4 = cast _2 to MapEntry<string, int>*
+    return _4
+}
+
+void _EN3std16OutputFileStream5writeI6stringEEP6string(OutputFileStream* this, string* value) {
+}
+
+OutputFileStream _EN3std6stderrE() {
+}
+
+void _EN3std16OutputFileStream5writeI3intEEP3int(OutputFileStream* this, int* value) {
+}
+
+void _EN3std16OutputFileStream5writeI4charEEP4char(OutputFileStream* this, char* value) {
+}
+
+never _EN3std12abortWrapperE() {
+}
+
+List<MapEntry<string, string>>* _EN3std8ArrayRefI4ListI8MapEntryI6string6stringEEE4dataE(ArrayRef<List<MapEntry<string, string>>>* this) {
+    List<MapEntry<string, string>>** data = getelementptr this, 0
+    List<MapEntry<string, string>>* data.load = load data
+    return data.load
+}
+
+int _EN3std8ArrayRefI4ListI8MapEntryI6string6stringEEE4sizeE(ArrayRef<List<MapEntry<string, string>>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+List<MapEntry<string, string>>* _EN3std4ListI4ListI8MapEntryI6string6stringEEE4dataE(List<List<MapEntry<string, string>>>* this) {
+    List<MapEntry<string, string>>** buffer = getelementptr this, 0
+    List<MapEntry<string, string>>* buffer.load = load buffer
+    return buffer.load
+}
+
+void _EN3std4ListI4ListI8MapEntryI6string6stringEEE7reserveE3int(List<List<MapEntry<string, string>>>* this, int minimumCapacity) {
+    List<MapEntry<string, string>>** newBuffer = alloca List<MapEntry<string, string>>*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    List<MapEntry<string, string>>** source = alloca List<MapEntry<string, string>>*
+    List<MapEntry<string, string>>** target = alloca List<MapEntry<string, string>>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _1 = minimumCapacity > capacity.load
+    br _1, if.then, if.else
+
+if.then:
+    List<MapEntry<string, string>>* _2 = call _EN3std13allocateArrayI4ListI8MapEntryI6string6stringEEEE3int(int minimumCapacity)
+    store _2 to newBuffer
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int size.load)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to index
+    List<MapEntry<string, string>>** buffer = getelementptr this, 0
+    List<MapEntry<string, string>>* buffer.load = load buffer
+    int index.load = load index
+    List<MapEntry<string, string>>* _7 = getelementptr buffer.load, index.load
+    store _7 to source
+    List<MapEntry<string, string>>* newBuffer.load = load newBuffer
+    int index.load_0 = load index
+    List<MapEntry<string, string>>* _8 = getelementptr newBuffer.load, index.load_0
+    store _8 to target
+    List<MapEntry<string, string>>* target.load = load target
+    List<MapEntry<string, string>>* source.load = load source
+    List<MapEntry<string, string>> source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    bool _10 = capacity.load_0 != int 0
+    br _10, if.then, if.else
+
+if.then_0:
+    List<MapEntry<string, string>>** buffer_0 = getelementptr this, 0
+    List<MapEntry<string, string>>* buffer.load_0 = load buffer_0
+    void _11 = call _EN3std10deallocateIAU_4ListI8MapEntryI6string6stringEEEEAU_4ListI8MapEntryI6string6stringEE(List<MapEntry<string, string>>* buffer.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    List<MapEntry<string, string>>** buffer_1 = getelementptr this, 0
+    List<MapEntry<string, string>>* newBuffer.load_0 = load newBuffer
+    store newBuffer.load_0 to buffer_1
+    int* capacity_1 = getelementptr this, 2
+    store minimumCapacity to capacity_1
+    br if.end
+}
+
+MapEntry<string, string>* _EN3std8ArrayRefI8MapEntryI6string6stringEE4dataE(ArrayRef<MapEntry<string, string>>* this) {
+    MapEntry<string, string>** data = getelementptr this, 0
+    MapEntry<string, string>* data.load = load data
+    return data.load
+}
+
+int _EN3std8ArrayRefI8MapEntryI6string6stringEE4sizeE(ArrayRef<MapEntry<string, string>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+MapEntry<string, string>* _EN3std13allocateArrayI8MapEntryI6string6stringEEE3int(int size) {
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(MapEntry<string, string>) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+")
+    unreachable
+
+assert.success:
+    MapEntry<string, string>* _4 = cast _2 to MapEntry<string, string>*
+    return _4
+}
+
+List<MapEntry<StringBuffer, int>>* _EN3std8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE4dataE(ArrayRef<List<MapEntry<StringBuffer, int>>>* this) {
+    List<MapEntry<StringBuffer, int>>** data = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* data.load = load data
+    return data.load
+}
+
+int _EN3std8ArrayRefI4ListI8MapEntryI12StringBuffer3intEEE4sizeE(ArrayRef<List<MapEntry<StringBuffer, int>>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+List<MapEntry<StringBuffer, int>>* _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4dataE(List<List<MapEntry<StringBuffer, int>>>* this) {
+    List<MapEntry<StringBuffer, int>>** buffer = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* buffer.load = load buffer
+    return buffer.load
+}
+
+void _EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE7reserveE3int(List<List<MapEntry<StringBuffer, int>>>* this, int minimumCapacity) {
+    List<MapEntry<StringBuffer, int>>** newBuffer = alloca List<MapEntry<StringBuffer, int>>*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    List<MapEntry<StringBuffer, int>>** source = alloca List<MapEntry<StringBuffer, int>>*
+    List<MapEntry<StringBuffer, int>>** target = alloca List<MapEntry<StringBuffer, int>>*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _1 = minimumCapacity > capacity.load
+    br _1, if.then, if.else
+
+if.then:
+    List<MapEntry<StringBuffer, int>>* _2 = call _EN3std13allocateArrayI4ListI8MapEntryI12StringBuffer3intEEEE3int(int minimumCapacity)
+    store _2 to newBuffer
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int size.load)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to index
+    List<MapEntry<StringBuffer, int>>** buffer = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* buffer.load = load buffer
+    int index.load = load index
+    List<MapEntry<StringBuffer, int>>* _7 = getelementptr buffer.load, index.load
+    store _7 to source
+    List<MapEntry<StringBuffer, int>>* newBuffer.load = load newBuffer
+    int index.load_0 = load index
+    List<MapEntry<StringBuffer, int>>* _8 = getelementptr newBuffer.load, index.load_0
+    store _8 to target
+    List<MapEntry<StringBuffer, int>>* target.load = load target
+    List<MapEntry<StringBuffer, int>>* source.load = load source
+    List<MapEntry<StringBuffer, int>> source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    bool _10 = capacity.load_0 != int 0
+    br _10, if.then, if.else
+
+if.then_0:
+    List<MapEntry<StringBuffer, int>>** buffer_0 = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* buffer.load_0 = load buffer_0
+    void _11 = call _EN3std10deallocateIAU_4ListI8MapEntryI12StringBuffer3intEEEEAU_4ListI8MapEntryI12StringBuffer3intEE(List<MapEntry<StringBuffer, int>>* buffer.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    List<MapEntry<StringBuffer, int>>** buffer_1 = getelementptr this, 0
+    List<MapEntry<StringBuffer, int>>* newBuffer.load_0 = load newBuffer
+    store newBuffer.load_0 to buffer_1
+    int* capacity_1 = getelementptr this, 2
+    store minimumCapacity to capacity_1
+    br if.end
+}
+
+MapEntry<StringBuffer, int>* _EN3std8ArrayRefI8MapEntryI12StringBuffer3intEE4dataE(ArrayRef<MapEntry<StringBuffer, int>>* this) {
+    MapEntry<StringBuffer, int>** data = getelementptr this, 0
+    MapEntry<StringBuffer, int>* data.load = load data
+    return data.load
+}
+
+int _EN3std8ArrayRefI8MapEntryI12StringBuffer3intEE4sizeE(ArrayRef<MapEntry<StringBuffer, int>>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+MapEntry<StringBuffer, int>* _EN3std4ListI8MapEntryI12StringBuffer3intEE4dataE(List<MapEntry<StringBuffer, int>>* this) {
+    MapEntry<StringBuffer, int>** buffer = getelementptr this, 0
+    MapEntry<StringBuffer, int>* buffer.load = load buffer
+    return buffer.load
+}
+
+MapEntry<StringBuffer, int>* _EN3std13allocateArrayI8MapEntryI12StringBuffer3intEEE3int(int size) {
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(MapEntry<StringBuffer, int>) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+")
+    unreachable
+
+assert.success:
+    MapEntry<StringBuffer, int>* _4 = cast _2 to MapEntry<StringBuffer, int>*
+    return _4
+}
+
+List<MapEntry<string, int>>* _EN3std13allocateArrayI4ListI8MapEntryI6string3intEEEE3int(int size) {
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(List<MapEntry<string, int>>) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+")
+    unreachable
+
+assert.success:
+    List<MapEntry<string, int>>* _4 = cast _2 to List<MapEntry<string, int>>*
+    return _4
+}
+
+extern void* malloc(uint64)
+
+List<MapEntry<string, string>>* _EN3std13allocateArrayI4ListI8MapEntryI6string6stringEEEE3int(int size) {
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(List<MapEntry<string, string>>) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+")
+    unreachable
+
+assert.success:
+    List<MapEntry<string, string>>* _4 = cast _2 to List<MapEntry<string, string>>*
+    return _4
+}
+
+List<MapEntry<StringBuffer, int>>* _EN3std13allocateArrayI4ListI8MapEntryI12StringBuffer3intEEEE3int(int size) {
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(List<MapEntry<StringBuffer, int>>) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+")
+    unreachable
+
+assert.success:
+    List<MapEntry<StringBuffer, int>>* _4 = cast _2 to List<MapEntry<StringBuffer, int>>*
+    return _4
+}

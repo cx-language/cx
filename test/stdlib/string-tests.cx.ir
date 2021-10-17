@@ -1,0 +1,2575 @@
+
+int main() {
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    string* __str_4 = alloca string
+    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "abc", int 3)
+    string __str.load = load __str
+    void _1 = call _EN3std6string4initEP4char3int(string* __str_0, char* "abc", int 3)
+    string __str.load_0 = load __str_0
+    bool _2 = call _EN3stdeqE6string6string(string __str.load, string __str.load_0)
+    bool assert.condition = _2 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:5:5
+")
+    unreachable
+
+assert.success:
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_1, char* "abc", int 3)
+    string __str.load_1 = load __str_1
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_2, char* "not", int 3)
+    string __str.load_2 = load __str_2
+    bool _6 = call _EN3stdeqE6string6string(string __str.load_1, string __str.load_2)
+    bool _7 = !_6
+    bool assert.condition_0 = _7 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _8 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:6:5
+")
+    unreachable
+
+assert.success_0:
+    void _9 = call _EN3std6string4initEP4char3int(string* __str_3, char* "abc", int 3)
+    void _10 = call _EN3std6string4initEP4char3int(string* __str_4, char* "bcd", int 3)
+    bool _11 = call _EN3stdltI6stringEEP6stringP6string(string* __str_3, string* __str_4)
+    bool assert.condition_1 = _11 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _12 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:7:5
+")
+    unreachable
+
+assert.success_1:
+    void _13 = call _EN4main18testStringIteratorE()
+    void _14 = call _EN4main8testFindE()
+    void _15 = call _EN4main10testSubstrE()
+    void _16 = call _EN4main9testSplitE()
+    void _17 = call _EN4main14testOtherSplitE()
+    void _18 = call _EN4main9testBytesE()
+    void _19 = call _EN4main9testLinesE()
+    void _20 = call _EN4main12testParseIntE()
+    void _21 = call _EN4main10testEscapeE()
+    void _22 = call _EN4main10testRepeatE()
+    return int 0
+}
+
+bool _EN3stdeqE6string6string(string a, string b) {
+}
+
+void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
+}
+
+void _EN3std10assertFailEP4char(char* message) {
+}
+
+bool _EN3stdltI6stringEEP6stringP6string(string* a, string* b) {
+    int _0 = call _EN3std6string7compareEP6string(string* a, string* b)
+    bool _1 = _0 == int 0
+    return _1
+}
+
+void _EN4main18testStringIteratorE() {
+    StringIterator* iterator = alloca StringIterator
+    string* __str = alloca string
+    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "xy", int 2)
+    StringIterator _1 = call _EN3std6string8iteratorE(string* __str)
+    store _1 to iterator
+    bool _2 = call _EN3std14StringIterator8hasValueE(StringIterator* iterator)
+    bool assert.condition = _2 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:24:5
+")
+    unreachable
+
+assert.success:
+    char _4 = call _EN3std14StringIterator5valueE(StringIterator* iterator)
+    bool _5 = _4 == char 120
+    bool assert.condition_0 = _5 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _6 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:25:5
+")
+    unreachable
+
+assert.success_0:
+    void _7 = call _EN3std14StringIterator9incrementE(StringIterator* iterator)
+    bool _8 = call _EN3std14StringIterator8hasValueE(StringIterator* iterator)
+    bool assert.condition_1 = _8 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _9 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:28:5
+")
+    unreachable
+
+assert.success_1:
+    char _10 = call _EN3std14StringIterator5valueE(StringIterator* iterator)
+    bool _11 = _10 == char 121
+    bool assert.condition_2 = _11 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _12 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:29:5
+")
+    unreachable
+
+assert.success_2:
+    void _13 = call _EN3std14StringIterator9incrementE(StringIterator* iterator)
+    bool _14 = call _EN3std14StringIterator8hasValueE(StringIterator* iterator)
+    bool _15 = !_14
+    bool assert.condition_3 = _15 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _16 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:32:5
+")
+    unreachable
+
+assert.success_3:
+    return void
+}
+
+void _EN4main8testFindE() {
+    StringBuffer* s = alloca StringBuffer
+    string* __str = alloca string
+    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "word", int 4)
+    string __str.load = load __str
+    void _1 = call _EN3std12StringBuffer4initE6string(StringBuffer* s, string __str.load)
+    int _2 = call _EN3std12StringBuffer4findE4char(StringBuffer* s, char 119)
+    bool _3 = _2 == int 0
+    bool assert.condition = _3 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _4 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:39:5
+")
+    unreachable
+
+assert.success:
+    int _5 = call _EN3std12StringBuffer4findE4char(StringBuffer* s, char 111)
+    bool _6 = _5 == int 1
+    bool assert.condition_0 = _6 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _7 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:40:5
+")
+    unreachable
+
+assert.success_0:
+    int _8 = call _EN3std12StringBuffer4findE4char(StringBuffer* s, char 114)
+    bool _9 = _8 == int 2
+    bool assert.condition_1 = _9 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _10 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:41:5
+")
+    unreachable
+
+assert.success_1:
+    int _11 = call _EN3std12StringBuffer4findE4char(StringBuffer* s, char 100)
+    bool _12 = _11 == int 3
+    bool assert.condition_2 = _12 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _13 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:42:5
+")
+    unreachable
+
+assert.success_2:
+    int _14 = call _EN3std12StringBuffer4findE4char3int(StringBuffer* s, char 119, int 1)
+    int _15 = call _EN3std12StringBuffer4sizeE(StringBuffer* s)
+    bool _16 = _14 == _15
+    bool assert.condition_3 = _16 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _17 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:45:5
+")
+    unreachable
+
+assert.success_3:
+    int _18 = call _EN3std12StringBuffer4findE4char3int(StringBuffer* s, char 100, int 2)
+    bool _19 = _18 == int 3
+    bool assert.condition_4 = _19 == bool false
+    br assert.condition_4, assert.fail, assert.success
+
+assert.fail_4:
+    void _20 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:46:5
+")
+    unreachable
+
+assert.success_4:
+    void _21 = call _EN3std12StringBuffer6deinitE(StringBuffer* s)
+    return void
+}
+
+void _EN4main10testSubstrE() {
+    StringBuffer* s = alloca StringBuffer
+    string* __str = alloca string
+    Range<int>* _0 = alloca Range<int>
+    string* __str_0 = alloca string
+    Range<int>* _1 = alloca Range<int>
+    string* __str_1 = alloca string
+    Range<int>* _2 = alloca Range<int>
+    string* __str_2 = alloca string
+    Range<int>* _3 = alloca Range<int>
+    string* __str_3 = alloca string
+    Range<int>* _4 = alloca Range<int>
+    string* __str_4 = alloca string
+    Range<int>* _5 = alloca Range<int>
+    string* __str_5 = alloca string
+    Range<int>* _6 = alloca Range<int>
+    string* __str_6 = alloca string
+    Range<int>* _7 = alloca Range<int>
+    string* __str_7 = alloca string
+    StringBuffer* s2 = alloca StringBuffer
+    string* __str_8 = alloca string
+    Range<int>* _8 = alloca Range<int>
+    string* __str_9 = alloca string
+    Range<int>* _9 = alloca Range<int>
+    string* __str_10 = alloca string
+    Range<int>* _10 = alloca Range<int>
+    string* __str_11 = alloca string
+    Range<int>* _11 = alloca Range<int>
+    string* __str_12 = alloca string
+    Range<int>* _12 = alloca Range<int>
+    string* __str_13 = alloca string
+    StringBuffer* s3 = alloca StringBuffer
+    string* __str_14 = alloca string
+    Range<int>* _13 = alloca Range<int>
+    string* __str_15 = alloca string
+    void _14 = call _EN3std6string4initEP4char3int(string* __str, char* "word", int 4)
+    string __str.load = load __str
+    void _15 = call _EN3std12StringBuffer4initE6string(StringBuffer* s, string __str.load)
+    void _16 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int 1)
+    Range<int> .load = load _0
+    string _17 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s, Range<int> .load)
+    void _18 = call _EN3std6string4initEP4char3int(string* __str_0, char* "w", int 1)
+    string __str.load_0 = load __str_0
+    bool _19 = call _EN3stdeqE6string6string(string _17, string __str.load_0)
+    bool assert.condition = _19 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _20 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:51:5
+")
+    unreachable
+
+assert.success:
+    void _21 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _1, int 0, int 2)
+    Range<int> .load_0 = load _1
+    string _22 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s, Range<int> .load_0)
+    void _23 = call _EN3std6string4initEP4char3int(string* __str_1, char* "wo", int 2)
+    string __str.load_1 = load __str_1
+    bool _24 = call _EN3stdeqE6string6string(string _22, string __str.load_1)
+    bool assert.condition_0 = _24 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _25 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:52:5
+")
+    unreachable
+
+assert.success_0:
+    void _26 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _2, int 0, int 3)
+    Range<int> .load_1 = load _2
+    string _27 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s, Range<int> .load_1)
+    void _28 = call _EN3std6string4initEP4char3int(string* __str_2, char* "wor", int 3)
+    string __str.load_2 = load __str_2
+    bool _29 = call _EN3stdeqE6string6string(string _27, string __str.load_2)
+    bool assert.condition_1 = _29 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _30 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:53:5
+")
+    unreachable
+
+assert.success_1:
+    void _31 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _3, int 0, int 4)
+    Range<int> .load_2 = load _3
+    string _32 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s, Range<int> .load_2)
+    void _33 = call _EN3std6string4initEP4char3int(string* __str_3, char* "word", int 4)
+    string __str.load_3 = load __str_3
+    bool _34 = call _EN3stdeqE6string6string(string _32, string __str.load_3)
+    bool assert.condition_2 = _34 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _35 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:54:5
+")
+    unreachable
+
+assert.success_2:
+    void _36 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _4, int 1, int 4)
+    Range<int> .load_3 = load _4
+    string _37 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s, Range<int> .load_3)
+    void _38 = call _EN3std6string4initEP4char3int(string* __str_4, char* "ord", int 3)
+    string __str.load_4 = load __str_4
+    bool _39 = call _EN3stdeqE6string6string(string _37, string __str.load_4)
+    bool assert.condition_3 = _39 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _40 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:55:5
+")
+    unreachable
+
+assert.success_3:
+    void _41 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _5, int 2, int 4)
+    Range<int> .load_4 = load _5
+    string _42 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s, Range<int> .load_4)
+    void _43 = call _EN3std6string4initEP4char3int(string* __str_5, char* "rd", int 2)
+    string __str.load_5 = load __str_5
+    bool _44 = call _EN3stdeqE6string6string(string _42, string __str.load_5)
+    bool assert.condition_4 = _44 == bool false
+    br assert.condition_4, assert.fail, assert.success
+
+assert.fail_4:
+    void _45 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:56:5
+")
+    unreachable
+
+assert.success_4:
+    void _46 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _6, int 1, int 3)
+    Range<int> .load_5 = load _6
+    string _47 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s, Range<int> .load_5)
+    void _48 = call _EN3std6string4initEP4char3int(string* __str_6, char* "or", int 2)
+    string __str.load_6 = load __str_6
+    bool _49 = call _EN3stdeqE6string6string(string _47, string __str.load_6)
+    bool assert.condition_5 = _49 == bool false
+    br assert.condition_5, assert.fail, assert.success
+
+assert.fail_5:
+    void _50 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:57:5
+")
+    unreachable
+
+assert.success_5:
+    void _51 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _7, int 2, int 3)
+    Range<int> .load_6 = load _7
+    string _52 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s, Range<int> .load_6)
+    void _53 = call _EN3std6string4initEP4char3int(string* __str_7, char* "r", int 1)
+    string __str.load_7 = load __str_7
+    bool _54 = call _EN3stdeqE6string6string(string _52, string __str.load_7)
+    bool assert.condition_6 = _54 == bool false
+    br assert.condition_6, assert.fail, assert.success
+
+assert.fail_6:
+    void _55 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:58:5
+")
+    unreachable
+
+assert.success_6:
+    void _56 = call _EN3std6string4initEP4char3int(string* __str_8, char* "this is the best sentence", int 25)
+    string __str.load_8 = load __str_8
+    void _57 = call _EN3std12StringBuffer4initE6string(StringBuffer* s2, string __str.load_8)
+    void _58 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _8, int 0, int 4)
+    Range<int> .load_7 = load _8
+    string _59 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s2, Range<int> .load_7)
+    void _60 = call _EN3std6string4initEP4char3int(string* __str_9, char* "this", int 4)
+    string __str.load_9 = load __str_9
+    bool _61 = call _EN3stdeqE6string6string(string _59, string __str.load_9)
+    bool assert.condition_7 = _61 == bool false
+    br assert.condition_7, assert.fail, assert.success
+
+assert.fail_7:
+    void _62 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:61:5
+")
+    unreachable
+
+assert.success_7:
+    void _63 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _9, int 5, int 7)
+    Range<int> .load_8 = load _9
+    string _64 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s2, Range<int> .load_8)
+    void _65 = call _EN3std6string4initEP4char3int(string* __str_10, char* "is", int 2)
+    string __str.load_10 = load __str_10
+    bool _66 = call _EN3stdeqE6string6string(string _64, string __str.load_10)
+    bool assert.condition_8 = _66 == bool false
+    br assert.condition_8, assert.fail, assert.success
+
+assert.fail_8:
+    void _67 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:62:5
+")
+    unreachable
+
+assert.success_8:
+    void _68 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _10, int 8, int 11)
+    Range<int> .load_9 = load _10
+    string _69 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s2, Range<int> .load_9)
+    void _70 = call _EN3std6string4initEP4char3int(string* __str_11, char* "the", int 3)
+    string __str.load_11 = load __str_11
+    bool _71 = call _EN3stdeqE6string6string(string _69, string __str.load_11)
+    bool assert.condition_9 = _71 == bool false
+    br assert.condition_9, assert.fail, assert.success
+
+assert.fail_9:
+    void _72 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:63:5
+")
+    unreachable
+
+assert.success_9:
+    void _73 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _11, int 12, int 16)
+    Range<int> .load_10 = load _11
+    string _74 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s2, Range<int> .load_10)
+    void _75 = call _EN3std6string4initEP4char3int(string* __str_12, char* "best", int 4)
+    string __str.load_12 = load __str_12
+    bool _76 = call _EN3stdeqE6string6string(string _74, string __str.load_12)
+    bool assert.condition_10 = _76 == bool false
+    br assert.condition_10, assert.fail, assert.success
+
+assert.fail_10:
+    void _77 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:64:5
+")
+    unreachable
+
+assert.success_10:
+    void _78 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _12, int 17, int 25)
+    Range<int> .load_11 = load _12
+    string _79 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s2, Range<int> .load_11)
+    void _80 = call _EN3std6string4initEP4char3int(string* __str_13, char* "sentence", int 8)
+    string __str.load_13 = load __str_13
+    bool _81 = call _EN3stdeqE6string6string(string _79, string __str.load_13)
+    bool assert.condition_11 = _81 == bool false
+    br assert.condition_11, assert.fail, assert.success
+
+assert.fail_11:
+    void _82 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:65:5
+")
+    unreachable
+
+assert.success_11:
+    void _83 = call _EN3std6string4initEP4char3int(string* __str_14, char* "best", int 4)
+    string __str.load_14 = load __str_14
+    void _84 = call _EN3std12StringBuffer4initE6string(StringBuffer* s3, string __str.load_14)
+    void _85 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _13, int 0, int 0)
+    Range<int> .load_12 = load _13
+    string _86 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* s3, Range<int> .load_12)
+    void _87 = call _EN3std6string4initEP4char3int(string* __str_15, char* "", int 0)
+    string __str.load_15 = load __str_15
+    bool _88 = call _EN3stdeqE6string6string(string _86, string __str.load_15)
+    bool assert.condition_12 = _88 == bool false
+    br assert.condition_12, assert.fail, assert.success
+
+assert.fail_12:
+    void _89 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:68:5
+")
+    unreachable
+
+assert.success_12:
+    void _90 = call _EN3std12StringBuffer6deinitE(StringBuffer* s3)
+    void _91 = call _EN3std12StringBuffer6deinitE(StringBuffer* s2)
+    void _92 = call _EN3std12StringBuffer6deinitE(StringBuffer* s)
+    return void
+}
+
+void _EN4main9testSplitE() {
+    StringBuffer* s = alloca StringBuffer
+    string* __str = alloca string
+    List<string>* words = alloca List<string>
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    string* __str_4 = alloca string
+    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "this is the best sentence", int 25)
+    string __str.load = load __str
+    void _1 = call _EN3std12StringBuffer4initE6string(StringBuffer* s, string __str.load)
+    List<string> _2 = call _EN3std12StringBuffer5splitE(StringBuffer* s)
+    store _2 to words
+    int _3 = call _EN3std4ListI6stringE4sizeE(List<string>* words)
+    bool _4 = _3 == int 5
+    bool assert.condition = _4 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _5 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:74:5
+")
+    unreachable
+
+assert.success:
+    string* _6 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 0)
+    string .load = load _6
+    void _7 = call _EN3std6string4initEP4char3int(string* __str_0, char* "this", int 4)
+    string __str.load_0 = load __str_0
+    bool _8 = call _EN3stdeqE6string6string(string .load, string __str.load_0)
+    bool assert.condition_0 = _8 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _9 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:75:5
+")
+    unreachable
+
+assert.success_0:
+    string* _10 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 1)
+    string .load_0 = load _10
+    void _11 = call _EN3std6string4initEP4char3int(string* __str_1, char* "is", int 2)
+    string __str.load_1 = load __str_1
+    bool _12 = call _EN3stdeqE6string6string(string .load_0, string __str.load_1)
+    bool assert.condition_1 = _12 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _13 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:76:5
+")
+    unreachable
+
+assert.success_1:
+    string* _14 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 2)
+    string .load_1 = load _14
+    void _15 = call _EN3std6string4initEP4char3int(string* __str_2, char* "the", int 3)
+    string __str.load_2 = load __str_2
+    bool _16 = call _EN3stdeqE6string6string(string .load_1, string __str.load_2)
+    bool assert.condition_2 = _16 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _17 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:77:5
+")
+    unreachable
+
+assert.success_2:
+    string* _18 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 3)
+    string .load_2 = load _18
+    void _19 = call _EN3std6string4initEP4char3int(string* __str_3, char* "best", int 4)
+    string __str.load_3 = load __str_3
+    bool _20 = call _EN3stdeqE6string6string(string .load_2, string __str.load_3)
+    bool assert.condition_3 = _20 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _21 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:78:5
+")
+    unreachable
+
+assert.success_3:
+    string* _22 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 4)
+    string .load_3 = load _22
+    void _23 = call _EN3std6string4initEP4char3int(string* __str_4, char* "sentence", int 8)
+    string __str.load_4 = load __str_4
+    bool _24 = call _EN3stdeqE6string6string(string .load_3, string __str.load_4)
+    bool assert.condition_4 = _24 == bool false
+    br assert.condition_4, assert.fail, assert.success
+
+assert.fail_4:
+    void _25 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:79:5
+")
+    unreachable
+
+assert.success_4:
+    void _26 = call _EN3std4ListI6stringE6deinitE(List<string>* words)
+    void _27 = call _EN3std12StringBuffer6deinitE(StringBuffer* s)
+    return void
+}
+
+void _EN4main14testOtherSplitE() {
+    StringBuffer* s = alloca StringBuffer
+    string* __str = alloca string
+    List<string>* words = alloca List<string>
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    string* __str_4 = alloca string
+    StringBuffer* s2 = alloca StringBuffer
+    string* __str_5 = alloca string
+    string* __str_6 = alloca string
+    string* __str_7 = alloca string
+    string* __str_8 = alloca string
+    string* __str_9 = alloca string
+    string* __str_10 = alloca string
+    StringBuffer* s3 = alloca StringBuffer
+    string* __str_11 = alloca string
+    string* __str_12 = alloca string
+    string* __str_13 = alloca string
+    string* __str_14 = alloca string
+    string* __str_15 = alloca string
+    string* __str_16 = alloca string
+    string* __str_17 = alloca string
+    string* __str_18 = alloca string
+    string* __str_19 = alloca string
+    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "this,sentence,is,comma,separated", int 32)
+    string __str.load = load __str
+    void _1 = call _EN3std12StringBuffer4initE6string(StringBuffer* s, string __str.load)
+    List<string> _2 = call _EN3std12StringBuffer5splitE4char(StringBuffer* s, char 44)
+    store _2 to words
+    int _3 = call _EN3std4ListI6stringE4sizeE(List<string>* words)
+    bool _4 = _3 == int 5
+    bool assert.condition = _4 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _5 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:85:5
+")
+    unreachable
+
+assert.success:
+    string* _6 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 0)
+    string .load = load _6
+    void _7 = call _EN3std6string4initEP4char3int(string* __str_0, char* "this", int 4)
+    string __str.load_0 = load __str_0
+    bool _8 = call _EN3stdeqE6string6string(string .load, string __str.load_0)
+    bool assert.condition_0 = _8 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _9 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:86:5
+")
+    unreachable
+
+assert.success_0:
+    string* _10 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 1)
+    string .load_0 = load _10
+    void _11 = call _EN3std6string4initEP4char3int(string* __str_1, char* "sentence", int 8)
+    string __str.load_1 = load __str_1
+    bool _12 = call _EN3stdeqE6string6string(string .load_0, string __str.load_1)
+    bool assert.condition_1 = _12 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _13 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:87:5
+")
+    unreachable
+
+assert.success_1:
+    string* _14 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 2)
+    string .load_1 = load _14
+    void _15 = call _EN3std6string4initEP4char3int(string* __str_2, char* "is", int 2)
+    string __str.load_2 = load __str_2
+    bool _16 = call _EN3stdeqE6string6string(string .load_1, string __str.load_2)
+    bool assert.condition_2 = _16 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _17 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:88:5
+")
+    unreachable
+
+assert.success_2:
+    string* _18 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 3)
+    string .load_2 = load _18
+    void _19 = call _EN3std6string4initEP4char3int(string* __str_3, char* "comma", int 5)
+    string __str.load_3 = load __str_3
+    bool _20 = call _EN3stdeqE6string6string(string .load_2, string __str.load_3)
+    bool assert.condition_3 = _20 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _21 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:89:5
+")
+    unreachable
+
+assert.success_3:
+    string* _22 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 4)
+    string .load_3 = load _22
+    void _23 = call _EN3std6string4initEP4char3int(string* __str_4, char* "separated", int 9)
+    string __str.load_4 = load __str_4
+    bool _24 = call _EN3stdeqE6string6string(string .load_3, string __str.load_4)
+    bool assert.condition_4 = _24 == bool false
+    br assert.condition_4, assert.fail, assert.success
+
+assert.fail_4:
+    void _25 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:90:5
+")
+    unreachable
+
+assert.success_4:
+    void _26 = call _EN3std6string4initEP4char3int(string* __str_5, char* ",,1,,2", int 6)
+    string __str.load_5 = load __str_5
+    void _27 = call _EN3std12StringBuffer4initE6string(StringBuffer* s2, string __str.load_5)
+    void _28 = call _EN3std4ListI6stringE6deinitE(List<string>* words)
+    List<string> _29 = call _EN3std12StringBuffer5splitE4char(StringBuffer* s2, char 44)
+    store _29 to words
+    int _30 = call _EN3std4ListI6stringE4sizeE(List<string>* words)
+    bool _31 = _30 == int 5
+    bool assert.condition_5 = _31 == bool false
+    br assert.condition_5, assert.fail, assert.success
+
+assert.fail_5:
+    void _32 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:94:5
+")
+    unreachable
+
+assert.success_5:
+    string* _33 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 0)
+    string .load_4 = load _33
+    void _34 = call _EN3std6string4initEP4char3int(string* __str_6, char* "", int 0)
+    string __str.load_6 = load __str_6
+    bool _35 = call _EN3stdeqE6string6string(string .load_4, string __str.load_6)
+    bool assert.condition_6 = _35 == bool false
+    br assert.condition_6, assert.fail, assert.success
+
+assert.fail_6:
+    void _36 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:95:5
+")
+    unreachable
+
+assert.success_6:
+    string* _37 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 1)
+    string .load_5 = load _37
+    void _38 = call _EN3std6string4initEP4char3int(string* __str_7, char* "", int 0)
+    string __str.load_7 = load __str_7
+    bool _39 = call _EN3stdeqE6string6string(string .load_5, string __str.load_7)
+    bool assert.condition_7 = _39 == bool false
+    br assert.condition_7, assert.fail, assert.success
+
+assert.fail_7:
+    void _40 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:96:5
+")
+    unreachable
+
+assert.success_7:
+    string* _41 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 2)
+    string .load_6 = load _41
+    void _42 = call _EN3std6string4initEP4char3int(string* __str_8, char* "1", int 1)
+    string __str.load_8 = load __str_8
+    bool _43 = call _EN3stdeqE6string6string(string .load_6, string __str.load_8)
+    bool assert.condition_8 = _43 == bool false
+    br assert.condition_8, assert.fail, assert.success
+
+assert.fail_8:
+    void _44 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:97:5
+")
+    unreachable
+
+assert.success_8:
+    string* _45 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 3)
+    string .load_7 = load _45
+    void _46 = call _EN3std6string4initEP4char3int(string* __str_9, char* "", int 0)
+    string __str.load_9 = load __str_9
+    bool _47 = call _EN3stdeqE6string6string(string .load_7, string __str.load_9)
+    bool assert.condition_9 = _47 == bool false
+    br assert.condition_9, assert.fail, assert.success
+
+assert.fail_9:
+    void _48 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:98:5
+")
+    unreachable
+
+assert.success_9:
+    string* _49 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 4)
+    string .load_8 = load _49
+    void _50 = call _EN3std6string4initEP4char3int(string* __str_10, char* "2", int 1)
+    string __str.load_10 = load __str_10
+    bool _51 = call _EN3stdeqE6string6string(string .load_8, string __str.load_10)
+    bool assert.condition_10 = _51 == bool false
+    br assert.condition_10, assert.fail, assert.success
+
+assert.fail_10:
+    void _52 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:99:5
+")
+    unreachable
+
+assert.success_10:
+    void _53 = call _EN3std6string4initEP4char3int(string* __str_11, char* ",,,b,a,,,", int 9)
+    string __str.load_11 = load __str_11
+    void _54 = call _EN3std12StringBuffer4initE6string(StringBuffer* s3, string __str.load_11)
+    void _55 = call _EN3std4ListI6stringE6deinitE(List<string>* words)
+    List<string> _56 = call _EN3std12StringBuffer5splitE4char(StringBuffer* s3, char 44)
+    store _56 to words
+    int _57 = call _EN3std4ListI6stringE4sizeE(List<string>* words)
+    bool _58 = _57 == int 8
+    bool assert.condition_11 = _58 == bool false
+    br assert.condition_11, assert.fail, assert.success
+
+assert.fail_11:
+    void _59 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:103:5
+")
+    unreachable
+
+assert.success_11:
+    string* _60 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 0)
+    string .load_9 = load _60
+    void _61 = call _EN3std6string4initEP4char3int(string* __str_12, char* "", int 0)
+    string __str.load_12 = load __str_12
+    bool _62 = call _EN3stdeqE6string6string(string .load_9, string __str.load_12)
+    bool assert.condition_12 = _62 == bool false
+    br assert.condition_12, assert.fail, assert.success
+
+assert.fail_12:
+    void _63 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:104:5
+")
+    unreachable
+
+assert.success_12:
+    string* _64 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 1)
+    string .load_10 = load _64
+    void _65 = call _EN3std6string4initEP4char3int(string* __str_13, char* "", int 0)
+    string __str.load_13 = load __str_13
+    bool _66 = call _EN3stdeqE6string6string(string .load_10, string __str.load_13)
+    bool assert.condition_13 = _66 == bool false
+    br assert.condition_13, assert.fail, assert.success
+
+assert.fail_13:
+    void _67 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:105:5
+")
+    unreachable
+
+assert.success_13:
+    string* _68 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 2)
+    string .load_11 = load _68
+    void _69 = call _EN3std6string4initEP4char3int(string* __str_14, char* "", int 0)
+    string __str.load_14 = load __str_14
+    bool _70 = call _EN3stdeqE6string6string(string .load_11, string __str.load_14)
+    bool assert.condition_14 = _70 == bool false
+    br assert.condition_14, assert.fail, assert.success
+
+assert.fail_14:
+    void _71 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:106:5
+")
+    unreachable
+
+assert.success_14:
+    string* _72 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 3)
+    string .load_12 = load _72
+    void _73 = call _EN3std6string4initEP4char3int(string* __str_15, char* "b", int 1)
+    string __str.load_15 = load __str_15
+    bool _74 = call _EN3stdeqE6string6string(string .load_12, string __str.load_15)
+    bool assert.condition_15 = _74 == bool false
+    br assert.condition_15, assert.fail, assert.success
+
+assert.fail_15:
+    void _75 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:107:5
+")
+    unreachable
+
+assert.success_15:
+    string* _76 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 4)
+    string .load_13 = load _76
+    void _77 = call _EN3std6string4initEP4char3int(string* __str_16, char* "a", int 1)
+    string __str.load_16 = load __str_16
+    bool _78 = call _EN3stdeqE6string6string(string .load_13, string __str.load_16)
+    bool assert.condition_16 = _78 == bool false
+    br assert.condition_16, assert.fail, assert.success
+
+assert.fail_16:
+    void _79 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:108:5
+")
+    unreachable
+
+assert.success_16:
+    string* _80 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 5)
+    string .load_14 = load _80
+    void _81 = call _EN3std6string4initEP4char3int(string* __str_17, char* "", int 0)
+    string __str.load_17 = load __str_17
+    bool _82 = call _EN3stdeqE6string6string(string .load_14, string __str.load_17)
+    bool assert.condition_17 = _82 == bool false
+    br assert.condition_17, assert.fail, assert.success
+
+assert.fail_17:
+    void _83 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:109:5
+")
+    unreachable
+
+assert.success_17:
+    string* _84 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 6)
+    string .load_15 = load _84
+    void _85 = call _EN3std6string4initEP4char3int(string* __str_18, char* "", int 0)
+    string __str.load_18 = load __str_18
+    bool _86 = call _EN3stdeqE6string6string(string .load_15, string __str.load_18)
+    bool assert.condition_18 = _86 == bool false
+    br assert.condition_18, assert.fail, assert.success
+
+assert.fail_18:
+    void _87 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:110:5
+")
+    unreachable
+
+assert.success_18:
+    string* _88 = call _EN3std4ListI6stringEixE3int(List<string>* words, int 7)
+    string .load_16 = load _88
+    void _89 = call _EN3std6string4initEP4char3int(string* __str_19, char* "", int 0)
+    string __str.load_19 = load __str_19
+    bool _90 = call _EN3stdeqE6string6string(string .load_16, string __str.load_19)
+    bool assert.condition_19 = _90 == bool false
+    br assert.condition_19, assert.fail, assert.success
+
+assert.fail_19:
+    void _91 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:111:5
+")
+    unreachable
+
+assert.success_19:
+    void _92 = call _EN3std12StringBuffer6deinitE(StringBuffer* s3)
+    void _93 = call _EN3std12StringBuffer6deinitE(StringBuffer* s2)
+    void _94 = call _EN3std4ListI6stringE6deinitE(List<string>* words)
+    void _95 = call _EN3std12StringBuffer6deinitE(StringBuffer* s)
+    return void
+}
+
+void _EN4main9testBytesE() {
+    string* text = alloca string
+    string* __str = alloca string
+    int* i = alloca int
+    ByteIterator* __iterator = alloca ByteIterator
+    uint8* byte = alloca uint8
+    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "The quick brown fox jumps over the lazy dog", int 43)
+    string __str.load = load __str
+    store __str.load to text
+    store int 0 to i
+    ByteIterator _1 = call _EN3std6string5bytesE(string* text)
+    store _1 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _2 = call _EN3std12ByteIterator8hasValueE(ByteIterator* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    uint8 _3 = call _EN3std12ByteIterator5valueE(ByteIterator* __iterator)
+    store _3 to byte
+    uint8 byte.load = load byte
+    int i.load = load i
+    char _4 = call _EN3std6stringixE3int(string* text, int i.load)
+    uint8 _5 = cast _4 to uint8
+    bool _6 = byte.load == _5
+    bool assert.condition = _6 == bool false
+    br assert.condition, assert.fail, assert.success
+
+loop.increment:
+    void _7 = call _EN3std12ByteIterator9incrementE(ByteIterator* __iterator)
+    br loop.condition
+
+loop.end:
+    int i.load_0 = load i
+    int _8 = call _EN3std6string4sizeE(string* text)
+    bool _9 = i.load_0 == _8
+    bool assert.condition_0 = _9 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail:
+    void _10 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:120:9
+")
+    unreachable
+
+assert.success:
+    int i.load_1 = load i
+    int _11 = i.load_1 + int 1
+    store _11 to i
+    br loop.increment
+
+assert.fail_0:
+    void _12 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:124:5
+")
+    unreachable
+
+assert.success_0:
+    return void
+}
+
+void _EN4main9testLinesE() {
+    string* text = alloca string
+    string* __str = alloca string
+    string[5]* expected = alloca string[5]
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    string* __str_4 = alloca string
+    int* i = alloca int
+    LineIterator* __iterator = alloca LineIterator
+    string* line = alloca string
+    void _0 = call _EN3std6string4initEP4char3int(string* __str, char* "The quick brown fox 
+
+
+ jumps over
+ the lazy dog
+", int 49)
+    string __str.load = load __str
+    store __str.load to text
+    void _1 = call _EN3std6string4initEP4char3int(string* __str_0, char* "The quick brown fox ", int 20)
+    string __str.load_0 = load __str_0
+    string[5] _2 = insertvalue string[5] undefined, 0, __str.load_0
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_1, char* "", int 0)
+    string __str.load_1 = load __str_1
+    string[5] _4 = insertvalue _2, 1, __str.load_1
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_2, char* "", int 0)
+    string __str.load_2 = load __str_2
+    string[5] _6 = insertvalue _4, 2, __str.load_2
+    void _7 = call _EN3std6string4initEP4char3int(string* __str_3, char* " jumps over", int 11)
+    string __str.load_3 = load __str_3
+    string[5] _8 = insertvalue _6, 3, __str.load_3
+    void _9 = call _EN3std6string4initEP4char3int(string* __str_4, char* " the lazy dog", int 13)
+    string __str.load_4 = load __str_4
+    string[5] _10 = insertvalue _8, 4, __str.load_4
+    store _10 to expected
+    store int 0 to i
+    LineIterator _11 = call _EN3std6string5linesE(string* text)
+    store _11 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _12 = call _EN3std12LineIterator8hasValueE(LineIterator* __iterator)
+    br _12, loop.body, loop.end
+
+loop.body:
+    string _13 = call _EN3std12LineIterator5valueE(LineIterator* __iterator)
+    store _13 to line
+    string line.load = load line
+    int i.load = load i
+    string* _14 = getelementptr expected, int 0, i.load
+    string .load = load _14
+    bool _15 = call _EN3stdeqE6string6string(string line.load, string .load)
+    bool assert.condition = _15 == bool false
+    br assert.condition, assert.fail, assert.success
+
+loop.increment:
+    void _16 = call _EN3std12LineIterator9incrementE(LineIterator* __iterator)
+    br loop.condition
+
+loop.end:
+    int i.load_0 = load i
+    bool _17 = i.load_0 == int 5
+    bool assert.condition_0 = _17 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail:
+    void _18 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:133:9
+")
+    unreachable
+
+assert.success:
+    int i.load_1 = load i
+    int _19 = i.load_1 + int 1
+    store _19 to i
+    br loop.increment
+
+assert.fail_0:
+    void _20 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:137:5
+")
+    unreachable
+
+assert.success_0:
+    return void
+}
+
+void _EN4main12testParseIntE() {
+    string* __str = alloca string
+    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* _1 = alloca Optional<int>
+    string* __str_0 = alloca string
+    Optional<int>* _2 = alloca Optional<int>
+    Optional<int>* _3 = alloca Optional<int>
+    string* __str_1 = alloca string
+    Optional<int>* _4 = alloca Optional<int>
+    Optional<int>* _5 = alloca Optional<int>
+    string* __str_2 = alloca string
+    Optional<int>* _6 = alloca Optional<int>
+    int* _7 = alloca int
+    string* __str_3 = alloca string
+    Optional<int>* _8 = alloca Optional<int>
+    int* _9 = alloca int
+    string* __str_4 = alloca string
+    Optional<int>* _10 = alloca Optional<int>
+    int* _11 = alloca int
+    void _12 = call _EN3std6string4initEP4char3int(string* __str, char* "", int 0)
+    Optional<int> _13 = call _EN3std6string8parseIntE(string* __str)
+    store _13 to _0
+    void _14 = call _EN3std8OptionalI3intE4initE(Optional<int>* _1)
+    bool _15 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* _0, Optional<int>* _1)
+    bool assert.condition = _15 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _16 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:141:5
+")
+    unreachable
+
+assert.success:
+    void _17 = call _EN3std6string4initEP4char3int(string* __str_0, char* "a", int 1)
+    Optional<int> _18 = call _EN3std6string8parseIntE(string* __str_0)
+    store _18 to _2
+    void _19 = call _EN3std8OptionalI3intE4initE(Optional<int>* _3)
+    bool _20 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* _2, Optional<int>* _3)
+    bool assert.condition_0 = _20 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _21 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:142:5
+")
+    unreachable
+
+assert.success_0:
+    void _22 = call _EN3std6string4initEP4char3int(string* __str_1, char* "1a", int 2)
+    Optional<int> _23 = call _EN3std6string8parseIntE(string* __str_1)
+    store _23 to _4
+    void _24 = call _EN3std8OptionalI3intE4initE(Optional<int>* _5)
+    bool _25 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* _4, Optional<int>* _5)
+    bool assert.condition_1 = _25 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _26 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:143:5
+")
+    unreachable
+
+assert.success_1:
+    void _27 = call _EN3std6string4initEP4char3int(string* __str_2, char* "1", int 1)
+    Optional<int> _28 = call _EN3std6string8parseIntE(string* __str_2)
+    store _28 to _6
+    store int 1 to _7
+    bool _29 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* _6, int* _7)
+    bool assert.condition_2 = _29 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _30 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:144:5
+")
+    unreachable
+
+assert.success_2:
+    void _31 = call _EN3std6string4initEP4char3int(string* __str_3, char* "123789", int 6)
+    Optional<int> _32 = call _EN3std6string8parseIntE(string* __str_3)
+    store _32 to _8
+    store int 123789 to _9
+    bool _33 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* _8, int* _9)
+    bool assert.condition_3 = _33 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _34 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:145:5
+")
+    unreachable
+
+assert.success_3:
+    void _35 = call _EN3std6string4initEP4char3int(string* __str_4, char* "2147483647", int 10)
+    Optional<int> _36 = call _EN3std6string8parseIntE(string* __str_4)
+    store _36 to _10
+    store int 2147483647 to _11
+    bool _37 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* _10, int* _11)
+    bool assert.condition_4 = _37 == bool false
+    br assert.condition_4, assert.fail, assert.success
+
+assert.fail_4:
+    void _38 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:146:5
+")
+    unreachable
+
+assert.success_4:
+    return void
+}
+
+void _EN4main10testEscapeE() {
+    string* __str = alloca string
+    StringBuffer* _0 = alloca StringBuffer
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    StringBuffer* _1 = alloca StringBuffer
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    StringBuffer* _2 = alloca StringBuffer
+    string* __str_4 = alloca string
+    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "", int 0)
+    StringBuffer _4 = call _EN3std6string6escapeE(string* __str)
+    store _4 to _0
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_0, char* "", int 0)
+    string __str.load = load __str_0
+    bool _6 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _0, string __str.load)
+    bool assert.condition = _6 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _7 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:150:5
+")
+    unreachable
+
+assert.success:
+    void _8 = call _EN3std6string4initEP4char3int(string* __str_1, char* "0 r t ' n", int 9)
+    StringBuffer _9 = call _EN3std6string6escapeE(string* __str_1)
+    store _9 to _1
+    void _10 = call _EN3std6string4initEP4char3int(string* __str_2, char* "0 r t ' n", int 9)
+    string __str.load_0 = load __str_2
+    bool _11 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _1, string __str.load_0)
+    bool assert.condition_0 = _11 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _12 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:151:5
+")
+    unreachable
+
+assert.success_0:
+    void _13 = call _EN3std6string4initEP4char3int(string* __str_3, char* "  
+ 	 ' " \ 
+", int 13)
+    StringBuffer _14 = call _EN3std6string6escapeE(string* __str_3)
+    store _14 to _2
+    void _15 = call _EN3std6string4initEP4char3int(string* __str_4, char* "\0 \r \t ' \" \\ \n", int 19)
+    string __str.load_1 = load __str_4
+    bool _16 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _2, string __str.load_1)
+    bool assert.condition_1 = _16 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _17 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:152:5
+")
+    unreachable
+
+assert.success_1:
+    return void
+}
+
+void _EN4main10testRepeatE() {
+    string* __str = alloca string
+    StringBuffer* _0 = alloca StringBuffer
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    StringBuffer* _1 = alloca StringBuffer
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    StringBuffer* _2 = alloca StringBuffer
+    string* __str_4 = alloca string
+    string* __str_5 = alloca string
+    StringBuffer* _3 = alloca StringBuffer
+    string* __str_6 = alloca string
+    string* __str_7 = alloca string
+    StringBuffer* _4 = alloca StringBuffer
+    string* __str_8 = alloca string
+    void _5 = call _EN3std6string4initEP4char3int(string* __str, char* "abc", int 3)
+    StringBuffer _6 = call _EN3std6string6repeatE3int(string* __str, int 3)
+    store _6 to _0
+    void _7 = call _EN3std6string4initEP4char3int(string* __str_0, char* "abcabcabc", int 9)
+    string __str.load = load __str_0
+    bool _8 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _0, string __str.load)
+    bool assert.condition = _8 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _9 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:156:5
+")
+    unreachable
+
+assert.success:
+    void _10 = call _EN3std6string4initEP4char3int(string* __str_1, char* "1", int 1)
+    StringBuffer _11 = call _EN3std6string6repeatE3int(string* __str_1, int 5)
+    store _11 to _1
+    void _12 = call _EN3std6string4initEP4char3int(string* __str_2, char* "11111", int 5)
+    string __str.load_0 = load __str_2
+    bool _13 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _1, string __str.load_0)
+    bool assert.condition_0 = _13 == bool false
+    br assert.condition_0, assert.fail, assert.success
+
+assert.fail_0:
+    void _14 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:157:5
+")
+    unreachable
+
+assert.success_0:
+    void _15 = call _EN3std6string4initEP4char3int(string* __str_3, char* "", int 0)
+    StringBuffer _16 = call _EN3std6string6repeatE3int(string* __str_3, int 3)
+    store _16 to _2
+    void _17 = call _EN3std6string4initEP4char3int(string* __str_4, char* "", int 0)
+    string __str.load_1 = load __str_4
+    bool _18 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _2, string __str.load_1)
+    bool assert.condition_1 = _18 == bool false
+    br assert.condition_1, assert.fail, assert.success
+
+assert.fail_1:
+    void _19 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:158:5
+")
+    unreachable
+
+assert.success_1:
+    void _20 = call _EN3std6string4initEP4char3int(string* __str_5, char* "abc", int 3)
+    StringBuffer _21 = call _EN3std6string6repeatE3int(string* __str_5, int 0)
+    store _21 to _3
+    void _22 = call _EN3std6string4initEP4char3int(string* __str_6, char* "", int 0)
+    string __str.load_2 = load __str_6
+    bool _23 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _3, string __str.load_2)
+    bool assert.condition_2 = _23 == bool false
+    br assert.condition_2, assert.fail, assert.success
+
+assert.fail_2:
+    void _24 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:159:5
+")
+    unreachable
+
+assert.success_2:
+    void _25 = call _EN3std6string4initEP4char3int(string* __str_7, char* "abc", int 3)
+    StringBuffer _26 = call _EN3std6string6repeatE3int(string* __str_7, int 1)
+    store _26 to _4
+    void _27 = call _EN3std6string4initEP4char3int(string* __str_8, char* "abc", int 3)
+    string __str.load_3 = load __str_8
+    bool _28 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _4, string __str.load_3)
+    bool assert.condition_3 = _28 == bool false
+    br assert.condition_3, assert.fail, assert.success
+
+assert.fail_3:
+    void _29 = call _EN3std10assertFailEP4char(char* "Assertion failed at string-tests.cx:160:5
+")
+    unreachable
+
+assert.success_3:
+    return void
+}
+
+StringIterator _EN3std6string8iteratorE(string* this) {
+}
+
+bool _EN3std14StringIterator8hasValueE(StringIterator* this) {
+}
+
+char _EN3std14StringIterator5valueE(StringIterator* this) {
+}
+
+void _EN3std14StringIterator9incrementE(StringIterator* this) {
+}
+
+void _EN3std12StringBuffer6deinitE(StringBuffer* this) {
+}
+
+void _EN3std12StringBuffer4initE6string(StringBuffer* this, string s) {
+}
+
+int _EN3std12StringBuffer4findE4char(StringBuffer* this, char c) {
+    int _0 = call _EN3std12StringBuffer4findE4char3int(StringBuffer* this, char c, int 0)
+    return _0
+}
+
+int _EN3std12StringBuffer4findE4char3int(StringBuffer* this, char c, int start) {
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    int _1 = call _EN3std12StringBuffer4sizeE(StringBuffer* this)
+    void _2 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int start, int _1)
+    RangeIterator<int> _3 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    int _5 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _5 to i
+    List<char>* characters = getelementptr this, 0
+    int i.load = load i
+    char* _6 = call _EN3std4ListI4charEixE3int(List<char>* characters, int i.load)
+    char .load = load _6
+    bool _7 = .load == c
+    br _7, if.then, if.else
+
+loop.increment:
+    void _8 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int _9 = call _EN3std12StringBuffer4sizeE(StringBuffer* this)
+    return _9
+
+if.then:
+    int i.load_0 = load i
+    return i.load_0
+
+if.else:
+    br if.end
+
+if.end:
+    br loop.increment
+}
+
+int _EN3std12StringBuffer4sizeE(StringBuffer* this) {
+}
+
+string _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* this, Range<int> range) {
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* _0 = alloca string
+    Range<int>* _1 = alloca Range<int>
+    int start = extractvalue range, 0
+    bool _2 = start < int 0
+    br _2, or.end(_2), or.rhs(_2)
+
+or.rhs:
+    int start_0 = extractvalue range, 0
+    int _3 = call _EN3std12StringBuffer4sizeE(StringBuffer* this)
+    bool _4 = start_0 > _3
+    br or.end(_4)
+
+or.end(bool or):
+    br or, if.then, if.else
+
+if.then:
+    void _5 = call _EN3std6string4initEP4char3int(string* __str, char* "substr", int 6)
+    string __str.load = load __str
+    int start_1 = extractvalue range, 0
+    void _6 = call _EN3std12StringBuffer16indexOutOfBoundsE6string3int(StringBuffer* this, string __str.load, int start_1)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    int end = extractvalue range, 1
+    bool _7 = end < int 0
+    br _7, or.end(_7), or.rhs(_7)
+
+or.rhs_0:
+    int end_0 = extractvalue range, 1
+    int _8 = call _EN3std12StringBuffer4sizeE(StringBuffer* this)
+    bool _9 = end_0 > _8
+    br or.end_0(_9)
+
+or.end_0(bool or_0):
+    br or_0, if.then, if.else
+
+if.then_0:
+    void _10 = call _EN3std6string4initEP4char3int(string* __str_0, char* "substr", int 6)
+    string __str.load_0 = load __str_0
+    int end_1 = extractvalue range, 1
+    void _11 = call _EN3std12StringBuffer16indexOutOfBoundsE6string3int(StringBuffer* this, string __str.load_0, int end_1)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    List<char>* characters = getelementptr this, 0
+    char* _12 = call _EN3std4ListI4charE4dataE(List<char>* characters)
+    int start_2 = extractvalue range, 0
+    char* _13 = getelementptr _12, start_2
+    store range to _1
+    int _14 = call _EN3std5RangeI3intE4sizeE(Range<int>* _1)
+    void _15 = call _EN3std6string4initEP4char3int(string* _0, char* _13, int _14)
+    string .load = load _0
+    return .load
+}
+
+void _EN3std5RangeI3intE4initE3int3int(Range<int>* this, int start, int end) {
+}
+
+void _EN3std4ListI6stringE6deinitE(List<string>* this) {
+    ArrayIterator<string>* __iterator = alloca ArrayIterator<string>
+    string** element = alloca string*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load != int 0
+    br _0, if.then, if.else
+
+if.then:
+    ArrayIterator<string> _1 = call _EN3std4ListI6stringE8iteratorE(List<string>* this)
+    store _1 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _2 = call _EN3std13ArrayIteratorI6stringE8hasValueE(ArrayIterator<string>* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    string* _3 = call _EN3std13ArrayIteratorI6stringE5valueE(ArrayIterator<string>* __iterator)
+    store _3 to element
+    br loop.increment
+
+loop.increment:
+    void _4 = call _EN3std13ArrayIteratorI6stringE9incrementE(ArrayIterator<string>* __iterator)
+    br loop.condition
+
+loop.end:
+    string** buffer = getelementptr this, 0
+    string* buffer.load = load buffer
+    void _5 = call _EN3std10deallocateIAU_6stringEEAU_6string(string* buffer.load)
+    br if.end
+}
+
+List<string> _EN3std12StringBuffer5splitE(StringBuffer* this) {
+    List<string> _0 = call _EN3std12StringBuffer5splitE4char(StringBuffer* this, char 32)
+    return _0
+}
+
+int _EN3std4ListI6stringE4sizeE(List<string>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+string* _EN3std4ListI6stringEixE3int(List<string>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI6stringE16indexOutOfBoundsE3int(List<string>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    string** buffer = getelementptr this, 0
+    string* buffer.load = load buffer
+    string* _2 = getelementptr buffer.load, index
+    return _2
+}
+
+List<string> _EN3std12StringBuffer5splitE4char(StringBuffer* this, char delim) {
+    List<string>* tokens = alloca List<string>
+    int* prev = alloca int
+    int* pos = alloca int
+    string* token = alloca string
+    Range<int>* _0 = alloca Range<int>
+    void _1 = call _EN3std4ListI6stringE4initE(List<string>* tokens)
+    store int 0 to prev
+    store int 0 to pos
+    br loop.condition
+
+loop.condition:
+    br bool true, loop.body, loop.end
+
+loop.body:
+    int prev.load = load prev
+    int _2 = call _EN3std12StringBuffer4findE4char3int(StringBuffer* this, char delim, int prev.load)
+    store _2 to pos
+    int prev.load_0 = load prev
+    int pos.load = load pos
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int prev.load_0, int pos.load)
+    Range<int> .load = load _0
+    string _4 = call _EN3std12StringBuffer6substrE5RangeI3intE(StringBuffer* this, Range<int> .load)
+    store _4 to token
+    string token.load = load token
+    void _5 = call _EN3std4ListI6stringE4pushE6string(List<string>* tokens, string token.load)
+    int pos.load_0 = load pos
+    int _6 = pos.load_0 + int 1
+    store _6 to prev
+    int pos.load_1 = load pos
+    int _7 = call _EN3std12StringBuffer4sizeE(StringBuffer* this)
+    bool _8 = pos.load_1 > _7
+    br _8, or.end(_8), or.rhs(_8)
+
+loop.end:
+    List<string> tokens.load = load tokens
+    return tokens.load
+
+or.rhs:
+    int prev.load_1 = load prev
+    int _9 = call _EN3std12StringBuffer4sizeE(StringBuffer* this)
+    bool _10 = prev.load_1 > _9
+    br or.end(_10)
+
+or.end(bool or):
+    br or, if.then, if.else
+
+if.then:
+    br loop.end
+
+if.else:
+    br if.end
+
+if.end:
+    br loop.condition
+}
+
+ByteIterator _EN3std6string5bytesE(string* this) {
+    ByteIterator* _0 = alloca ByteIterator
+    string this.load = load this
+    void _1 = call _EN3std12ByteIterator4initE6string(ByteIterator* _0, string this.load)
+    ByteIterator .load = load _0
+    return .load
+}
+
+bool _EN3std12ByteIterator8hasValueE(ByteIterator* this) {
+    string* stream = getelementptr this, 0
+    bool _0 = call _EN3std6string5emptyE(string* stream)
+    bool _1 = !_0
+    return _1
+}
+
+uint8 _EN3std12ByteIterator5valueE(ByteIterator* this) {
+    string* stream = getelementptr this, 0
+    char _0 = call _EN3std6string5frontE(string* stream)
+    uint8 _1 = cast _0 to uint8
+    return _1
+}
+
+char _EN3std6stringixE3int(string* this, int index) {
+}
+
+void _EN3std12ByteIterator9incrementE(ByteIterator* this) {
+    string* stream = getelementptr this, 0
+    string* stream_0 = getelementptr this, 0
+    string _0 = call _EN3std6string6substrE3int(string* stream_0, int 1)
+    store _0 to stream
+    return void
+}
+
+int _EN3std6string4sizeE(string* this) {
+}
+
+LineIterator _EN3std6string5linesE(string* this) {
+    LineIterator* _0 = alloca LineIterator
+    string this.load = load this
+    void _1 = call _EN3std12LineIterator4initE6string(LineIterator* _0, string this.load)
+    LineIterator .load = load _0
+    return .load
+}
+
+bool _EN3std12LineIterator8hasValueE(LineIterator* this) {
+    string* stream = getelementptr this, 0
+    bool _0 = call _EN3std6string5emptyE(string* stream)
+    bool _1 = !_0
+    return _1
+}
+
+string _EN3std12LineIterator5valueE(LineIterator* this) {
+    Range<int>* _0 = alloca Range<int>
+    string* stream = getelementptr this, 0
+    int* end = getelementptr this, 1
+    int end.load = load end
+    void _1 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int end.load)
+    Range<int> .load = load _0
+    string _2 = call _EN3std6string6substrE5RangeI3intE(string* stream, Range<int> .load)
+    return _2
+}
+
+void _EN3std12LineIterator9incrementE(LineIterator* this) {
+    string* stream = getelementptr this, 0
+    string* stream_0 = getelementptr this, 0
+    int* end = getelementptr this, 1
+    int end.load = load end
+    int _0 = end.load + int 1
+    string _1 = call _EN3std6string6substrE3int(string* stream_0, int _0)
+    store _1 to stream
+    int* end_0 = getelementptr this, 1
+    string* stream_1 = getelementptr this, 0
+    int _2 = call _EN3std6string4findE4char(string* stream_1, char 10)
+    store _2 to end_0
+    return void
+}
+
+bool _EN3stdeqI3intEEPO3intPO3int(Optional<int>* a, Optional<int>* b) {
+    bool* hasValue = getelementptr a, 0
+    bool hasValue.load = load hasValue
+    bool* hasValue_0 = getelementptr b, 0
+    bool hasValue.load_0 = load hasValue_0
+    bool _0 = hasValue.load != hasValue.load_0
+    br _0, if.then, if.else
+
+if.then:
+    return bool false
+
+if.else:
+    br if.end
+
+if.end:
+    bool* hasValue_1 = getelementptr b, 0
+    bool hasValue.load_1 = load hasValue_1
+    bool _1 = !hasValue.load_1
+    br _1, if.then, if.else
+
+if.then_0:
+    return bool true
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    int* value = getelementptr a, 1
+    int value.load = load value
+    int* value_0 = getelementptr b, 1
+    int value.load_0 = load value_0
+    bool _2 = value.load == value.load_0
+    return _2
+}
+
+Optional<int> _EN3std6string8parseIntE(string* this) {
+    Optional<int>* _0 = alloca Optional<int>
+    int* result = alloca int
+    StringIterator* __iterator = alloca StringIterator
+    char* c = alloca char
+    Optional<int>* _1 = alloca Optional<int>
+    Optional<int>* _2 = alloca Optional<int>
+    bool _3 = call _EN3std6string5emptyE(string* this)
+    br _3, if.then, if.else
+
+if.then:
+    void _4 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
+    Optional<int> .load = load _0
+    return .load
+
+if.else:
+    br if.end
+
+if.end:
+    store int 0 to result
+    StringIterator _5 = call _EN3std6string8iteratorE(string* this)
+    store _5 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _6 = call _EN3std14StringIterator8hasValueE(StringIterator* __iterator)
+    br _6, loop.body, loop.end
+
+loop.body:
+    char _7 = call _EN3std14StringIterator5valueE(StringIterator* __iterator)
+    store _7 to c
+    char c.load = load c
+    bool _8 = c.load >= char 48
+    br _8, and.rhs(_8), and.end(_8)
+
+loop.increment:
+    void _9 = call _EN3std14StringIterator9incrementE(StringIterator* __iterator)
+    br loop.condition
+
+loop.end:
+    int result.load = load result
+    void _10 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _2, int result.load)
+    Optional<int> .load_0 = load _2
+    return .load_0
+
+and.rhs:
+    char c.load_0 = load c
+    bool _11 = c.load_0 <= char 57
+    br and.end(_11)
+
+and.end(bool and):
+    br and, if.then, if.else
+
+if.then_0:
+    int result.load_0 = load result
+    int _12 = result.load_0 * int 10
+    store _12 to result
+    int result.load_1 = load result
+    char c.load_1 = load c
+    char _13 = c.load_1 - char 48
+    int _14 = cast _13 to int
+    int _15 = result.load_1 + _14
+    store _15 to result
+    br if.end_0
+
+if.else_0:
+    void _16 = call _EN3std8OptionalI3intE4initE(Optional<int>* _1)
+    Optional<int> .load_1 = load _1
+    return .load_1
+
+if.end_0:
+    br loop.increment
+}
+
+void _EN3std8OptionalI3intE4initE(Optional<int>* this) {
+    bool* hasValue = getelementptr this, 0
+    store bool false to hasValue
+    return void
+}
+
+bool _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* b) {
+    bool* hasValue = getelementptr a, 0
+    bool hasValue.load = load hasValue
+    bool _0 = !hasValue.load
+    br _0, if.then, if.else
+
+if.then:
+    return bool false
+
+if.else:
+    br if.end
+
+if.end:
+    int* value = getelementptr a, 1
+    int value.load = load value
+    int b.load = load b
+    bool _1 = value.load == b.load
+    return _1
+}
+
+bool _EN3stdeqEP12StringBuffer6string(StringBuffer* a, string b) {
+}
+
+StringBuffer _EN3std6string6escapeE(string* this) {
+    StringBuffer* result = alloca StringBuffer
+    StringIterator* __iterator = alloca StringIterator
+    char* c = alloca char
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* __str_1 = alloca string
+    string* __str_2 = alloca string
+    string* __str_3 = alloca string
+    string* __str_4 = alloca string
+    void _0 = call _EN3std12StringBuffer4initE(StringBuffer* result)
+    StringIterator _1 = call _EN3std6string8iteratorE(string* this)
+    store _1 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _2 = call _EN3std14StringIterator8hasValueE(StringIterator* __iterator)
+    br _2, loop.body, loop.end
+
+loop.body:
+    char _3 = call _EN3std14StringIterator5valueE(StringIterator* __iterator)
+    store _3 to c
+    char c.load = load c
+    switch c.load {
+        char 0 -> switch.case.0
+        char 10 -> switch.case.1
+        char 13 -> switch.case.2
+        char 9 -> switch.case.3
+        char 34 -> switch.case.4
+        char 92 -> switch.case.5
+    }
+
+loop.increment:
+    void _4 = call _EN3std14StringIterator9incrementE(StringIterator* __iterator)
+    br loop.condition
+
+loop.end:
+    StringBuffer result.load = load result
+    return result.load
+
+switch.case.0:
+    StringBuffer result.load_0 = load result
+    void _5 = call _EN3std6string4initEP4char3int(string* __str, char* "\0", int 2)
+    string __str.load = load __str
+    StringBuffer _6 = call _EN3stdplE12StringBuffer6string(StringBuffer result.load_0, string __str.load)
+    store _6 to result
+    br switch.end
+
+switch.case.1:
+    StringBuffer result.load_1 = load result
+    void _7 = call _EN3std6string4initEP4char3int(string* __str_0, char* "\n", int 2)
+    string __str.load_0 = load __str_0
+    StringBuffer _8 = call _EN3stdplE12StringBuffer6string(StringBuffer result.load_1, string __str.load_0)
+    store _8 to result
+    br switch.end
+
+switch.case.2:
+    StringBuffer result.load_2 = load result
+    void _9 = call _EN3std6string4initEP4char3int(string* __str_1, char* "\r", int 2)
+    string __str.load_1 = load __str_1
+    StringBuffer _10 = call _EN3stdplE12StringBuffer6string(StringBuffer result.load_2, string __str.load_1)
+    store _10 to result
+    br switch.end
+
+switch.case.3:
+    StringBuffer result.load_3 = load result
+    void _11 = call _EN3std6string4initEP4char3int(string* __str_2, char* "\t", int 2)
+    string __str.load_2 = load __str_2
+    StringBuffer _12 = call _EN3stdplE12StringBuffer6string(StringBuffer result.load_3, string __str.load_2)
+    store _12 to result
+    br switch.end
+
+switch.case.4:
+    StringBuffer result.load_4 = load result
+    void _13 = call _EN3std6string4initEP4char3int(string* __str_3, char* "\"", int 2)
+    string __str.load_3 = load __str_3
+    StringBuffer _14 = call _EN3stdplE12StringBuffer6string(StringBuffer result.load_4, string __str.load_3)
+    store _14 to result
+    br switch.end
+
+switch.case.5:
+    StringBuffer result.load_5 = load result
+    void _15 = call _EN3std6string4initEP4char3int(string* __str_4, char* "\\", int 2)
+    string __str.load_4 = load __str_4
+    StringBuffer _16 = call _EN3stdplE12StringBuffer6string(StringBuffer result.load_5, string __str.load_4)
+    store _16 to result
+    br switch.end
+
+switch.default:
+    StringBuffer result.load_6 = load result
+    char c.load_0 = load c
+    StringBuffer _17 = call _EN3stdplE12StringBuffer4char(StringBuffer result.load_6, char c.load_0)
+    store _17 to result
+    br switch.end
+
+switch.end:
+    br loop.increment
+}
+
+StringBuffer _EN3std6string6repeatE3int(string* this, int count) {
+    StringBuffer* result = alloca StringBuffer
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* _ = alloca int
+    int _1 = call _EN3std6string4sizeE(string* this)
+    int _2 = _1 * count
+    void _3 = call _EN3std12StringBuffer4initE8capacity3int(StringBuffer* result, int _2)
+    void _4 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int count)
+    RangeIterator<int> _5 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _5 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _6 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _6, loop.body, loop.end
+
+loop.body:
+    int _7 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _7 to _
+    StringBuffer result.load = load result
+    string this.load = load this
+    StringBuffer _8 = call _EN3stdplE12StringBuffer6string(StringBuffer result.load, string this.load)
+    store _8 to result
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    StringBuffer result.load_0 = load result
+    return result.load_0
+}
+
+int _EN3std6string7compareEP6string(string* this, string* other) {
+}
+
+RangeIterator<int> _EN3std5RangeI3intE8iteratorE(Range<int>* this) {
+}
+
+bool _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* this) {
+}
+
+int _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* this) {
+}
+
+char* _EN3std4ListI4charEixE3int(List<char>* this, int index) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = index >= size.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI4charE16indexOutOfBoundsE3int(List<char>* this, int index)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    char** buffer = getelementptr this, 0
+    char* buffer.load = load buffer
+    char* _2 = getelementptr buffer.load, index
+    return _2
+}
+
+void _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* this) {
+}
+
+void _EN3std12StringBuffer16indexOutOfBoundsE6string3int(StringBuffer* this, string function, int index) {
+    string* __str = alloca string
+    string* _0 = alloca string
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    string* __str_1 = alloca string
+    int* _2 = alloca int
+    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "StringBuffer.", int 13)
+    store function to _0
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
+    store index to _1
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
+    int _6 = call _EN3std12StringBuffer4sizeE(StringBuffer* this)
+    store _6 to _2
+    never _7 = call _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6stringP3intP6stringP3int(string* __str, string* _0, string* __str_0, int* _1, string* __str_1, int* _2)
+    return void
+}
+
+char* _EN3std4ListI4charE4dataE(List<char>* this) {
+}
+
+int _EN3std5RangeI3intE4sizeE(Range<int>* this) {
+    int* end = getelementptr this, 1
+    int end.load = load end
+    int* start = getelementptr this, 0
+    int start.load = load start
+    int _0 = end.load - start.load
+    return _0
+}
+
+ArrayIterator<string> _EN3std4ListI6stringE8iteratorE(List<string>* this) {
+    ArrayIterator<string>* _0 = alloca ArrayIterator<string>
+    ArrayRef<string>* _1 = alloca ArrayRef<string>
+    void _2 = call _EN3std8ArrayRefI6stringE4initEP4ListI6stringE(ArrayRef<string>* _1, List<string>* this)
+    ArrayRef<string> .load = load _1
+    void _3 = call _EN3std13ArrayIteratorI6stringE4initE8ArrayRefI6stringE(ArrayIterator<string>* _0, ArrayRef<string> .load)
+    ArrayIterator<string> .load_0 = load _0
+    return .load_0
+}
+
+bool _EN3std13ArrayIteratorI6stringE8hasValueE(ArrayIterator<string>* this) {
+    string** current = getelementptr this, 0
+    string* current.load = load current
+    string** end = getelementptr this, 1
+    string* end.load = load end
+    bool _0 = current.load !== end.load
+    return _0
+}
+
+string* _EN3std13ArrayIteratorI6stringE5valueE(ArrayIterator<string>* this) {
+    string** current = getelementptr this, 0
+    string* current.load = load current
+    return current.load
+}
+
+void _EN3std13ArrayIteratorI6stringE9incrementE(ArrayIterator<string>* this) {
+    string** current = getelementptr this, 0
+    string* current.load = load current
+    string* _0 = getelementptr current.load, int 1
+    store _0 to current
+    return void
+}
+
+void _EN3std10deallocateIAU_6stringEEAU_6string(string* allocation) {
+    void* _0 = cast allocation to void*
+    void _1 = call free(void* _0)
+    return void
+}
+
+void _EN3std4ListI6stringE16indexOutOfBoundsE3int(List<string>* this, int index) {
+    string* __str = alloca string
+    int* _0 = alloca int
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "List index ", int 11)
+    store index to _0
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_0, char* " is out of bounds, size is ", int 27)
+    int _4 = call _EN3std4ListI6stringE4sizeE(List<string>* this)
+    store _4 to _1
+    never _5 = call _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* __str, int* _0, string* __str_0, int* _1)
+    return void
+}
+
+void _EN3std4ListI6stringE4initE(List<string>* this) {
+    int* size = getelementptr this, 1
+    store int 0 to size
+    int* capacity = getelementptr this, 2
+    store int 0 to capacity
+    return void
+}
+
+void _EN3std4ListI6stringE4pushE6string(List<string>* this, string element) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = size.load == capacity.load
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI6stringE4growE(List<string>* this)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    string** buffer = getelementptr this, 0
+    string* buffer.load = load buffer
+    int* size_0 = getelementptr this, 1
+    int size.load_0 = load size_0
+    string* _2 = getelementptr buffer.load, size.load_0
+    store element to _2
+    int* size_1 = getelementptr this, 1
+    int size.load_1 = load size_1
+    int _3 = size.load_1 + int 1
+    store _3 to size_1
+    return void
+}
+
+void _EN3std12ByteIterator4initE6string(ByteIterator* this, string stream) {
+    string* stream_0 = getelementptr this, 0
+    store stream to stream_0
+    return void
+}
+
+bool _EN3std6string5emptyE(string* this) {
+    ArrayRef<char>* characters = getelementptr this, 0
+    int _0 = call _EN3std8ArrayRefI4charE4sizeE(ArrayRef<char>* characters)
+    bool _1 = _0 == int 0
+    return _1
+}
+
+char _EN3std6string5frontE(string* this) {
+    ArrayRef<char>* characters = getelementptr this, 0
+    char* _0 = call _EN3std8ArrayRefI4charE5frontE(ArrayRef<char>* characters)
+    char .load = load _0
+    return .load
+}
+
+string _EN3std6string6substrE3int(string* this, int start) {
+    string* __str = alloca string
+    string* _0 = alloca string
+    bool _1 = start < int 0
+    br _1, or.end(_1), or.rhs(_1)
+
+or.rhs:
+    int _2 = call _EN3std6string4sizeE(string* this)
+    bool _3 = start > _2
+    br or.end(_3)
+
+or.end(bool or):
+    br or, if.then, if.else
+
+if.then:
+    void _4 = call _EN3std6string4initEP4char3int(string* __str, char* "substr", int 6)
+    string __str.load = load __str
+    void _5 = call _EN3std6string16indexOutOfBoundsE6string3int(string* this, string __str.load, int start)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    ArrayRef<char>* characters = getelementptr this, 0
+    char* _6 = call _EN3std8ArrayRefI4charE4dataE(ArrayRef<char>* characters)
+    char* _7 = getelementptr _6, start
+    int _8 = call _EN3std6string4sizeE(string* this)
+    int _9 = _8 - start
+    void _10 = call _EN3std6string4initEP4char3int(string* _0, char* _7, int _9)
+    string .load = load _0
+    return .load
+}
+
+void _EN3std12LineIterator4initE6string(LineIterator* this, string stream) {
+    string* _0 = alloca string
+    string* stream_0 = getelementptr this, 0
+    store stream to stream_0
+    int* end = getelementptr this, 1
+    store stream to _0
+    int _1 = call _EN3std6string4findE4char(string* _0, char 10)
+    store _1 to end
+    return void
+}
+
+string _EN3std6string6substrE5RangeI3intE(string* this, Range<int> range) {
+    string* __str = alloca string
+    string* __str_0 = alloca string
+    string* _0 = alloca string
+    Range<int>* _1 = alloca Range<int>
+    int start = extractvalue range, 0
+    bool _2 = start < int 0
+    br _2, or.end(_2), or.rhs(_2)
+
+or.rhs:
+    int start_0 = extractvalue range, 0
+    int _3 = call _EN3std6string4sizeE(string* this)
+    bool _4 = start_0 > _3
+    br or.end(_4)
+
+or.end(bool or):
+    br or, if.then, if.else
+
+if.then:
+    void _5 = call _EN3std6string4initEP4char3int(string* __str, char* "substr", int 6)
+    string __str.load = load __str
+    int start_1 = extractvalue range, 0
+    void _6 = call _EN3std6string16indexOutOfBoundsE6string3int(string* this, string __str.load, int start_1)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    int end = extractvalue range, 1
+    bool _7 = end < int 0
+    br _7, or.end(_7), or.rhs(_7)
+
+or.rhs_0:
+    int end_0 = extractvalue range, 1
+    int _8 = call _EN3std6string4sizeE(string* this)
+    bool _9 = end_0 > _8
+    br or.end_0(_9)
+
+or.end_0(bool or_0):
+    br or_0, if.then, if.else
+
+if.then_0:
+    void _10 = call _EN3std6string4initEP4char3int(string* __str_0, char* "substr", int 6)
+    string __str.load_0 = load __str_0
+    int end_1 = extractvalue range, 1
+    void _11 = call _EN3std6string16indexOutOfBoundsE6string3int(string* this, string __str.load_0, int end_1)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    ArrayRef<char>* characters = getelementptr this, 0
+    char* _12 = call _EN3std8ArrayRefI4charE4dataE(ArrayRef<char>* characters)
+    int start_2 = extractvalue range, 0
+    char* _13 = getelementptr _12, start_2
+    store range to _1
+    int _14 = call _EN3std5RangeI3intE4sizeE(Range<int>* _1)
+    void _15 = call _EN3std6string4initEP4char3int(string* _0, char* _13, int _14)
+    string .load = load _0
+    return .load
+}
+
+int _EN3std6string4findE4char(string* this, char c) {
+    int _0 = call _EN3std6string4findE4char3int(string* this, char c, int 0)
+    return _0
+}
+
+void _EN3std8OptionalI3intE4initE3int(Optional<int>* this, int value) {
+    bool* hasValue = getelementptr this, 0
+    store bool true to hasValue
+    int* value_0 = getelementptr this, 1
+    store value to value_0
+    return void
+}
+
+void _EN3std12StringBuffer4initE(StringBuffer* this) {
+}
+
+StringBuffer _EN3stdplE12StringBuffer6string(StringBuffer a, string b) {
+}
+
+StringBuffer _EN3stdplE12StringBuffer4char(StringBuffer a, char b) {
+}
+
+void _EN3std12StringBuffer4initE8capacity3int(StringBuffer* this, int capacity) {
+    void _0 = call _EN3std12StringBuffer4initE(StringBuffer* this)
+    List<char>* characters = getelementptr this, 0
+    void _1 = call _EN3std4ListI4charE7reserveE3int(List<char>* characters, int capacity)
+    return void
+}
+
+void _EN3std4ListI4charE16indexOutOfBoundsE3int(List<char>* this, int index) {
+    string* __str = alloca string
+    int* _0 = alloca int
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    void _2 = call _EN3std6string4initEP4char3int(string* __str, char* "List index ", int 11)
+    store index to _0
+    void _3 = call _EN3std6string4initEP4char3int(string* __str_0, char* " is out of bounds, size is ", int 27)
+    int _4 = call _EN3std4ListI4charE4sizeE(List<char>* this)
+    store _4 to _1
+    never _5 = call _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* __str, int* _0, string* __str_0, int* _1)
+    return void
+}
+
+never _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6stringP3intP6stringP3int(string* _0, string* _1, string* _2, int* _3, string* _4, int* _5) {
+}
+
+void _EN3std13ArrayIteratorI6stringE4initE8ArrayRefI6stringE(ArrayIterator<string>* this, ArrayRef<string> array) {
+    ArrayRef<string>* _0 = alloca ArrayRef<string>
+    ArrayRef<string>* _1 = alloca ArrayRef<string>
+    ArrayRef<string>* _2 = alloca ArrayRef<string>
+    string** current = getelementptr this, 0
+    store array to _0
+    string* _3 = call _EN3std8ArrayRefI6stringE4dataE(ArrayRef<string>* _0)
+    store _3 to current
+    string** end = getelementptr this, 1
+    store array to _1
+    string* _4 = call _EN3std8ArrayRefI6stringE4dataE(ArrayRef<string>* _1)
+    store array to _2
+    int _5 = call _EN3std8ArrayRefI6stringE4sizeE(ArrayRef<string>* _2)
+    string* _6 = getelementptr _4, _5
+    store _6 to end
+    return void
+}
+
+void _EN3std8ArrayRefI6stringE4initEP4ListI6stringE(ArrayRef<string>* this, List<string>* list) {
+    string** data = getelementptr this, 0
+    string* _0 = call _EN3std4ListI6stringE4dataE(List<string>* list)
+    store _0 to data
+    int* size = getelementptr this, 1
+    int _1 = call _EN3std4ListI6stringE4sizeE(List<string>* list)
+    store _1 to size
+    return void
+}
+
+extern void free(void*)
+
+never _EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(string* _0, int* _1, string* _2, int* _3) {
+    OutputFileStream* _4 = alloca OutputFileStream
+    OutputFileStream* _5 = alloca OutputFileStream
+    OutputFileStream* _6 = alloca OutputFileStream
+    OutputFileStream* _7 = alloca OutputFileStream
+    OutputFileStream* _8 = alloca OutputFileStream
+    char* _9 = alloca char
+    OutputFileStream _10 = call _EN3std6stderrE()
+    store _10 to _4
+    void _11 = call _EN3std16OutputFileStream5writeI6stringEEP6string(OutputFileStream* _4, string* _0)
+    OutputFileStream _12 = call _EN3std6stderrE()
+    store _12 to _5
+    void _13 = call _EN3std16OutputFileStream5writeI3intEEP3int(OutputFileStream* _5, int* _1)
+    OutputFileStream _14 = call _EN3std6stderrE()
+    store _14 to _6
+    void _15 = call _EN3std16OutputFileStream5writeI6stringEEP6string(OutputFileStream* _6, string* _2)
+    OutputFileStream _16 = call _EN3std6stderrE()
+    store _16 to _7
+    void _17 = call _EN3std16OutputFileStream5writeI3intEEP3int(OutputFileStream* _7, int* _3)
+    OutputFileStream _18 = call _EN3std6stderrE()
+    store _18 to _8
+    store char 10 to _9
+    void _19 = call _EN3std16OutputFileStream5writeI4charEEP4char(OutputFileStream* _8, char* _9)
+    never _20 = call _EN3std12abortWrapperE()
+    unreachable
+}
+
+void _EN3std4ListI6stringE4growE(List<string>* this) {
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _0 = capacity.load == int 0
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std4ListI6stringE7reserveE3int(List<string>* this, int 1)
+    br if.end
+
+if.else:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    int _2 = capacity.load_0 * int 2
+    void _3 = call _EN3std4ListI6stringE7reserveE3int(List<string>* this, int _2)
+    br if.end
+
+if.end:
+    return void
+}
+
+int _EN3std8ArrayRefI4charE4sizeE(ArrayRef<char>* this) {
+}
+
+char* _EN3std8ArrayRefI4charE5frontE(ArrayRef<char>* this) {
+    string* __str = alloca string
+    bool _0 = call _EN3std8ArrayRefI4charE5emptyE(ArrayRef<char>* this)
+    br _0, if.then, if.else
+
+if.then:
+    void _1 = call _EN3std6string4initEP4char3int(string* __str, char* "front", int 5)
+    string __str.load = load __str
+    void _2 = call _EN3std8ArrayRefI4charE16indexOutOfBoundsE6string3int(ArrayRef<char>* this, string __str.load, int 0)
+    br if.end
+
+if.else:
+    br if.end
+
+if.end:
+    char** data = getelementptr this, 0
+    char* data.load = load data
+    char* _3 = getelementptr data.load, int 0
+    return _3
+}
+
+void _EN3std6string16indexOutOfBoundsE6string3int(string* this, string function, int index) {
+    string* __str = alloca string
+    string* _0 = alloca string
+    string* __str_0 = alloca string
+    int* _1 = alloca int
+    string* __str_1 = alloca string
+    int* _2 = alloca int
+    void _3 = call _EN3std6string4initEP4char3int(string* __str, char* "string.", int 7)
+    store function to _0
+    void _4 = call _EN3std6string4initEP4char3int(string* __str_0, char* ": index ", int 8)
+    store index to _1
+    void _5 = call _EN3std6string4initEP4char3int(string* __str_1, char* " is out of bounds, size is ", int 27)
+    int _6 = call _EN3std6string4sizeE(string* this)
+    store _6 to _2
+    never _7 = call _EN3std5abortI6string6string6string3int6string3intEEP6stringP6stringP6stringP3intP6stringP3int(string* __str, string* _0, string* __str_0, int* _1, string* __str_1, int* _2)
+    return void
+}
+
+char* _EN3std8ArrayRefI4charE4dataE(ArrayRef<char>* this) {
+}
+
+int _EN3std6string4findE4char3int(string* this, char c, int start) {
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* i = alloca int
+    int _1 = call _EN3std6string4sizeE(string* this)
+    void _2 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int start, int _1)
+    RangeIterator<int> _3 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _3 to __iterator
+    br loop.condition
+
+loop.condition:
+    bool _4 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _4, loop.body, loop.end
+
+loop.body:
+    int _5 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _5 to i
+    ArrayRef<char>* characters = getelementptr this, 0
+    int i.load = load i
+    char* _6 = call _EN3std8ArrayRefI4charEixE3int(ArrayRef<char>* characters, int i.load)
+    char .load = load _6
+    bool _7 = .load == c
+    br _7, if.then, if.else
+
+loop.increment:
+    void _8 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int _9 = call _EN3std6string4sizeE(string* this)
+    return _9
+
+if.then:
+    int i.load_0 = load i
+    return i.load_0
+
+if.else:
+    br if.end
+
+if.end:
+    br loop.increment
+}
+
+void _EN3std4ListI4charE7reserveE3int(List<char>* this, int minimumCapacity) {
+}
+
+int _EN3std4ListI4charE4sizeE(List<char>* this) {
+}
+
+string* _EN3std8ArrayRefI6stringE4dataE(ArrayRef<string>* this) {
+    string** data = getelementptr this, 0
+    string* data.load = load data
+    return data.load
+}
+
+int _EN3std8ArrayRefI6stringE4sizeE(ArrayRef<string>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    return size.load
+}
+
+string* _EN3std4ListI6stringE4dataE(List<string>* this) {
+    string** buffer = getelementptr this, 0
+    string* buffer.load = load buffer
+    return buffer.load
+}
+
+void _EN3std16OutputFileStream5writeI6stringEEP6string(OutputFileStream* this, string* value) {
+}
+
+OutputFileStream _EN3std6stderrE() {
+}
+
+void _EN3std16OutputFileStream5writeI3intEEP3int(OutputFileStream* this, int* value) {
+}
+
+void _EN3std16OutputFileStream5writeI4charEEP4char(OutputFileStream* this, char* value) {
+}
+
+never _EN3std12abortWrapperE() {
+}
+
+void _EN3std4ListI6stringE7reserveE3int(List<string>* this, int minimumCapacity) {
+    string** newBuffer = alloca string*
+    RangeIterator<int>* __iterator = alloca RangeIterator<int>
+    Range<int>* _0 = alloca Range<int>
+    int* index = alloca int
+    string** source = alloca string*
+    string** target = alloca string*
+    int* capacity = getelementptr this, 2
+    int capacity.load = load capacity
+    bool _1 = minimumCapacity > capacity.load
+    br _1, if.then, if.else
+
+if.then:
+    string* _2 = call _EN3std13allocateArrayI6stringEE3int(int minimumCapacity)
+    store _2 to newBuffer
+    int* size = getelementptr this, 1
+    int size.load = load size
+    void _3 = call _EN3std5RangeI3intE4initE3int3int(Range<int>* _0, int 0, int size.load)
+    RangeIterator<int> _4 = call _EN3std5RangeI3intE8iteratorE(Range<int>* _0)
+    store _4 to __iterator
+    br loop.condition
+
+if.else:
+    br if.end
+
+if.end:
+    return void
+
+loop.condition:
+    bool _5 = call _EN3std13RangeIteratorI3intE8hasValueE(RangeIterator<int>* __iterator)
+    br _5, loop.body, loop.end
+
+loop.body:
+    int _6 = call _EN3std13RangeIteratorI3intE5valueE(RangeIterator<int>* __iterator)
+    store _6 to index
+    string** buffer = getelementptr this, 0
+    string* buffer.load = load buffer
+    int index.load = load index
+    string* _7 = getelementptr buffer.load, index.load
+    store _7 to source
+    string* newBuffer.load = load newBuffer
+    int index.load_0 = load index
+    string* _8 = getelementptr newBuffer.load, index.load_0
+    store _8 to target
+    string* target.load = load target
+    string* source.load = load source
+    string source.load.load = load source.load
+    store source.load.load to target.load
+    br loop.increment
+
+loop.increment:
+    void _9 = call _EN3std13RangeIteratorI3intE9incrementE(RangeIterator<int>* __iterator)
+    br loop.condition
+
+loop.end:
+    int* capacity_0 = getelementptr this, 2
+    int capacity.load_0 = load capacity_0
+    bool _10 = capacity.load_0 != int 0
+    br _10, if.then, if.else
+
+if.then_0:
+    string** buffer_0 = getelementptr this, 0
+    string* buffer.load_0 = load buffer_0
+    void _11 = call _EN3std10deallocateIAU_6stringEEAU_6string(string* buffer.load_0)
+    br if.end_0
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    string** buffer_1 = getelementptr this, 0
+    string* newBuffer.load_0 = load newBuffer
+    store newBuffer.load_0 to buffer_1
+    int* capacity_1 = getelementptr this, 2
+    store minimumCapacity to capacity_1
+    br if.end
+}
+
+bool _EN3std8ArrayRefI4charE5emptyE(ArrayRef<char>* this) {
+    int* size = getelementptr this, 1
+    int size.load = load size
+    bool _0 = size.load == int 0
+    return _0
+}
+
+void _EN3std8ArrayRefI4charE16indexOutOfBoundsE6string3int(ArrayRef<char>* this, string function, int index) {
+}
+
+char* _EN3std8ArrayRefI4charEixE3int(ArrayRef<char>* this, int index) {
+}
+
+string* _EN3std13allocateArrayI6stringEE3int(int size) {
+    uint64 _0 = cast size to uint64
+    uint64 _1 = sizeof(string) * _0
+    void* _2 = call malloc(uint64 _1)
+    bool assert.condition = _2 == void* null
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _3 = call _EN3std10assertFailEP4char(char* "Unwrap failed at allocate.cx:36:61
+")
+    unreachable
+
+assert.success:
+    string* _4 = cast _2 to string*
+    return _4
+}
+
+extern void* malloc(uint64)
