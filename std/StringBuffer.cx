@@ -238,38 +238,38 @@ StringBuffer operator+(StringBuffer a, char[*] b) {
     return a + string(b);
 }
 
-bool operator==(StringBuffer* a, StringBuffer* b) {
+bool operator==(ref StringBuffer a, ref StringBuffer b) {
     return string(a) == string(b);
 }
 
-bool operator==(StringBuffer* a, string b) {
+bool operator==(ref StringBuffer a, string b) {
     return string(a) == b;
 }
 
-bool operator!=(StringBuffer* a, string b) {
+bool operator!=(ref StringBuffer a, string b) {
     return string(a) != b;
 }
 
-bool operator==(string a, StringBuffer* b) {
+bool operator==(string a, ref StringBuffer b) {
     return a == string(b);
 }
 
-bool operator!=(string a, StringBuffer* b) {
+bool operator!=(string a, ref StringBuffer b) {
     return a != string(b);
 }
 
-bool operator==(char[*] a, StringBuffer* b) {
+bool operator==(char[*] a, ref StringBuffer b) {
     return string(a) == string(b);
 }
 
-bool operator!=(char[*] a, StringBuffer* b) {
+bool operator!=(char[*] a, ref StringBuffer b) {
     return string(a) != string(b);
 }
 
-bool operator==(StringBuffer* a, char[*] b) {
+bool operator==(ref StringBuffer a, char[*] b) {
     return string(a) == string(b);
 }
 
-bool operator!=(StringBuffer* a, char[*] b) {
+bool operator!=(ref StringBuffer a, char[*] b) {
     return string(a) != string(b);
 }

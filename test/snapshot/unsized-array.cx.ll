@@ -31,14 +31,15 @@ define i32 @main() {
 }
 
 define void @_EN4main3fooE8ArrayRefI3intE(%"ArrayRef<int>" %ints) {
-  %a = alloca i32*, align 8
+  %a = alloca i32, align 4
   %1 = alloca %"ArrayRef<int>", align 8
   %b = alloca i32, align 4
   %2 = alloca %"ArrayRef<int>", align 8
   %c = alloca %"ArrayRef<int>", align 8
   store %"ArrayRef<int>" %ints, %"ArrayRef<int>"* %1, align 8
   %3 = call i32* @_EN3std8ArrayRefI3intEixE3int(%"ArrayRef<int>"* %1, i32 1)
-  store i32* %3, i32** %a, align 8
+  %.load = load i32, i32* %3, align 4
+  store i32 %.load, i32* %a, align 4
   store %"ArrayRef<int>" %ints, %"ArrayRef<int>"* %2, align 8
   %4 = call i32 @_EN3std8ArrayRefI3intE4sizeE(%"ArrayRef<int>"* %2)
   store i32 %4, i32* %b, align 4

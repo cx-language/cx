@@ -7,7 +7,7 @@ int main() {
     Optional<int> .load = load _0
     store .load to a
     store int 1 to _1
-    bool _3 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* _1)
+    bool _3 = call _EN3stdeqI3intEERO3intR3int(Optional<int>* a, int* _1)
     return int 0
 }
 
@@ -17,11 +17,11 @@ void _EN3std8OptionalI3intE4initE(Optional<int>* this) {
     return void
 }
 
-bool _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* b) {
-    bool* hasValue = getelementptr a, 0
-    bool hasValue.load = load hasValue
-    bool _0 = !hasValue.load
-    br _0, if.then, if.else
+bool _EN3stdeqI3intEERO3intR3int(Optional<int>* a, int* b) {
+    Optional<int>* _0 = alloca Optional<int>
+    void _1 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
+    bool _2 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* a, Optional<int>* _0)
+    br _2, if.then, if.else
 
 if.then:
     return bool false
@@ -33,6 +33,60 @@ if.end:
     int* value = getelementptr a, 1
     int value.load = load value
     int b.load = load b
-    bool _1 = value.load == b.load
-    return _1
+    bool _3 = value.load == b.load
+    return _3
+}
+
+bool _EN3stdeqI3intEERO3intRO3int(Optional<int>* a, Optional<int>* b) {
+    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* _1 = alloca Optional<int>
+    Optional<int>* _2 = alloca Optional<int>
+    Optional<int>* _3 = alloca Optional<int>
+    void _4 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
+    bool _5 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* a, Optional<int>* _0)
+    br _5, and.rhs(_5), and.end(_5)
+
+and.rhs:
+    void _6 = call _EN3std8OptionalI3intE4initE(Optional<int>* _1)
+    bool _7 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* b, Optional<int>* _1)
+    br and.end(_7)
+
+and.end(bool and):
+    br and, if.then, if.else
+
+if.then:
+    return bool true
+
+if.else:
+    br if.end
+
+if.end:
+    void _8 = call _EN3std8OptionalI3intE4initE(Optional<int>* _2)
+    bool _9 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* a, Optional<int>* _2)
+    br _9, if.then, if.else
+
+if.then_0:
+    return bool false
+
+if.else_0:
+    br if.end_0
+
+if.end_0:
+    void _10 = call _EN3std8OptionalI3intE4initE(Optional<int>* _3)
+    bool _11 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* b, Optional<int>* _3)
+    br _11, if.then, if.else
+
+if.then_1:
+    return bool false
+
+if.else_1:
+    br if.end_1
+
+if.end_1:
+    int* value = getelementptr a, 1
+    int value.load = load value
+    int* value_0 = getelementptr b, 1
+    int value.load_0 = load value_0
+    bool _12 = value.load == value.load_0
+    return _12
 }

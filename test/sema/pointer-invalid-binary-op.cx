@@ -1,0 +1,10 @@
+// RUN: %not %cx -typecheck %s -Wno-unused | %FileCheck %s
+
+void main() {
+    int a = 2;
+    int b = 3;
+    int* p = &a;
+    int* q = &b;
+    // CHECK: [[@LINE+1]]:15: error: invalid operands 'int*' and 'int*' to '*'
+    int c = p * q;
+}

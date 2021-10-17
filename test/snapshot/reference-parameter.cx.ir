@@ -1,0 +1,13 @@
+
+bool _EN4main1fER3int(int* i) {
+    int i.load = load i
+    bool _0 = i.load == int 1
+    return _0
+}
+
+int main() {
+    int* _0 = alloca int
+    store int 1 to _0
+    bool _1 = call _EN4main1fER3int(int* _0)
+    return int 0
+}

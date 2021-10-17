@@ -14,7 +14,7 @@ int main() {
     void _5 = call _EN3std12StringBuffer4initE6string(StringBuffer* _0, string __str.load_0)
     char[1024]* a_0 = getelementptr s, 0
     char* _6 = cast a_0 to char*
-    bool _7 = call _EN3stdneEP12StringBufferAU_4char(StringBuffer* _0, char* _6)
+    bool _7 = call _EN3stdneER12StringBufferAU_4char(StringBuffer* _0, char* _6)
     return int 0
 }
 
@@ -24,7 +24,7 @@ bool _EN3stdeqEP4char6string(char* a, string b) {
 void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
 }
 
-bool _EN3stdneEP12StringBufferAU_4char(StringBuffer* a, char* b) {
+bool _EN3stdneER12StringBufferAU_4char(StringBuffer* a, char* b) {
 }
 
 void _EN3std12StringBuffer4initE6string(StringBuffer* this, string s) {

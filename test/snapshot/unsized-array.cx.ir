@@ -24,14 +24,15 @@ int main() {
 }
 
 void _EN4main3fooE8ArrayRefI3intE(ArrayRef<int> ints) {
-    int** a = alloca int*
+    int* a = alloca int
     ArrayRef<int>* _0 = alloca ArrayRef<int>
     int* b = alloca int
     ArrayRef<int>* _1 = alloca ArrayRef<int>
     ArrayRef<int>* c = alloca ArrayRef<int>
     store ints to _0
     int* _2 = call _EN3std8ArrayRefI3intEixE3int(ArrayRef<int>* _0, int 1)
-    store _2 to a
+    int .load = load _2
+    store .load to a
     store ints to _1
     int _3 = call _EN3std8ArrayRefI3intE4sizeE(ArrayRef<int>* _1)
     store _3 to b

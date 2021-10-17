@@ -1045,14 +1045,20 @@ std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind en
     return stmts;
 }
 
-/// param-decl ::= 'public'? type? id
+/// param-decl ::= 'public'? 'ref'? type? id
 ParamDecl Parser::parseParam(bool requireType) {
     bool isPublic = currentToken() == Token::Public;
     if (isPublic) consumeToken();
 
+    bool isRef = currentToken() == Token::Identifier && currentToken().getString() == "ref";
+    if (isRef) consumeToken();
+
     Type type;
     if (requireType || !lookAhead(1).is({ Token::Comma, Token::RightParen })) {
         type = parseType();
+    }
+    if (isRef) {
+        type = ReferenceType::get(type);
     }
 
     auto name = parse(Token::Identifier);

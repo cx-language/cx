@@ -1,0 +1,9 @@
+// RUN: check-snapshots -Wno-unused
+
+bool f(ref int i) {
+    return i == 1;
+}
+
+void main() {
+    f(1);
+}

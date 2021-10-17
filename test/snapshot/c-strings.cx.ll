@@ -23,7 +23,7 @@ define i32 @main() {
   call void @_EN3std12StringBuffer4initE6string(%StringBuffer* %1, %string %__str.load2)
   %a3 = getelementptr inbounds %S, %S* %s, i32 0, i32 0
   %4 = bitcast [1024 x i8]* %a3 to i8*
-  %5 = call i1 @_EN3stdneEP12StringBufferAU_4char(%StringBuffer* %1, i8* %4)
+  %5 = call i1 @_EN3stdneER12StringBufferAU_4char(%StringBuffer* %1, i8* %4)
   ret i32 0
 }
 
@@ -33,4 +33,4 @@ declare i1 @_EN3stdeqEP4char6string(i8*, %string)
 
 declare void @_EN3std12StringBuffer4initE6string(%StringBuffer*, %string)
 
-declare i1 @_EN3stdneEP12StringBufferAU_4char(%StringBuffer*, i8*)
+declare i1 @_EN3stdneER12StringBufferAU_4char(%StringBuffer*, i8*)

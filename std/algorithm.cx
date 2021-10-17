@@ -2,7 +2,7 @@
 
 /// Gives the maximum of the two elements
 T* max<T>(T* a, T* b) {
-    if (a >= b) {
+    if (*a >= *b) {
         return a;
     }
     return b;
@@ -10,7 +10,7 @@ T* max<T>(T* a, T* b) {
 
 /// Gives the minimum of the two elements
 T* min<T>(T* a, T* b) {
-    if (a < b) {
+    if (*a < *b) {
         return a;
     }
     return b;
@@ -37,7 +37,7 @@ void sort<E: Comparable>(List<E>* array) {
 
 // TODO: Use ArrayRef instead of List.
 private int partition<E: Comparable>(List<E>* arr, int low, int high) {
-    var pivot = arr[high];
+    var pivot = &arr[high];
     var i = low - 1;
 
     for (var j in low..high) {

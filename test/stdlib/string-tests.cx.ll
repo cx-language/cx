@@ -230,7 +230,7 @@ assert.fail10:                                    ; preds = %assert.success
 assert.success11:                                 ; preds = %assert.success
   call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @6, i32 0, i32 0), i32 3)
   call void @_EN3std6string4initEP4char3int(%string* %__str5, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @7, i32 0, i32 0), i32 3)
-  %4 = call i1 @_EN3stdltI6stringEEP6stringP6string(%string* %__str4, %string* %__str5)
+  %4 = call i1 @_EN3stdltI6stringEER6stringR6string(%string* %__str4, %string* %__str5)
   %assert.condition12 = icmp eq i1 %4, false
   br i1 %assert.condition12, label %assert.fail13, label %assert.success14
 
@@ -258,7 +258,7 @@ declare i1 @_EN3stdeqE6string6string(%string, %string)
 
 declare void @_EN3std10assertFailEP4char(i8*)
 
-define i1 @_EN3stdltI6stringEEP6stringP6string(%string* %a, %string* %b) {
+define i1 @_EN3stdltI6stringEER6stringR6string(%string* %a, %string* %b) {
   %1 = call i32 @_EN3std6string7compareEP6string(%string* %a, %string* %b)
   %2 = icmp eq i32 %1, 0
   ret i1 %2
@@ -1207,7 +1207,7 @@ define void @_EN4main12testParseIntE() {
   %13 = call %"Optional<int>" @_EN3std6string8parseIntE(%string* %__str)
   store %"Optional<int>" %13, %"Optional<int>"* %1, align 4
   call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %2)
-  %14 = call i1 @_EN3stdeqI3intEEPO3intPO3int(%"Optional<int>"* %1, %"Optional<int>"* %2)
+  %14 = call i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %1, %"Optional<int>"* %2)
   %assert.condition = icmp eq i1 %14, false
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
@@ -1220,7 +1220,7 @@ assert.success:                                   ; preds = %0
   %15 = call %"Optional<int>" @_EN3std6string8parseIntE(%string* %__str1)
   store %"Optional<int>" %15, %"Optional<int>"* %3, align 4
   call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %4)
-  %16 = call i1 @_EN3stdeqI3intEEPO3intPO3int(%"Optional<int>"* %3, %"Optional<int>"* %4)
+  %16 = call i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %3, %"Optional<int>"* %4)
   %assert.condition6 = icmp eq i1 %16, false
   br i1 %assert.condition6, label %assert.fail7, label %assert.success8
 
@@ -1233,7 +1233,7 @@ assert.success8:                                  ; preds = %assert.success
   %17 = call %"Optional<int>" @_EN3std6string8parseIntE(%string* %__str2)
   store %"Optional<int>" %17, %"Optional<int>"* %5, align 4
   call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %6)
-  %18 = call i1 @_EN3stdeqI3intEEPO3intPO3int(%"Optional<int>"* %5, %"Optional<int>"* %6)
+  %18 = call i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %5, %"Optional<int>"* %6)
   %assert.condition9 = icmp eq i1 %18, false
   br i1 %assert.condition9, label %assert.fail10, label %assert.success11
 
@@ -1246,7 +1246,7 @@ assert.success11:                                 ; preds = %assert.success8
   %19 = call %"Optional<int>" @_EN3std6string8parseIntE(%string* %__str3)
   store %"Optional<int>" %19, %"Optional<int>"* %7, align 4
   store i32 1, i32* %8, align 4
-  %20 = call i1 @_EN3stdeqI3intEEPO3intP3int(%"Optional<int>"* %7, i32* %8)
+  %20 = call i1 @_EN3stdeqI3intEERO3intR3int(%"Optional<int>"* %7, i32* %8)
   %assert.condition12 = icmp eq i1 %20, false
   br i1 %assert.condition12, label %assert.fail13, label %assert.success14
 
@@ -1259,7 +1259,7 @@ assert.success14:                                 ; preds = %assert.success11
   %21 = call %"Optional<int>" @_EN3std6string8parseIntE(%string* %__str4)
   store %"Optional<int>" %21, %"Optional<int>"* %9, align 4
   store i32 123789, i32* %10, align 4
-  %22 = call i1 @_EN3stdeqI3intEEPO3intP3int(%"Optional<int>"* %9, i32* %10)
+  %22 = call i1 @_EN3stdeqI3intEERO3intR3int(%"Optional<int>"* %9, i32* %10)
   %assert.condition15 = icmp eq i1 %22, false
   br i1 %assert.condition15, label %assert.fail16, label %assert.success17
 
@@ -1272,7 +1272,7 @@ assert.success17:                                 ; preds = %assert.success14
   %23 = call %"Optional<int>" @_EN3std6string8parseIntE(%string* %__str5)
   store %"Optional<int>" %23, %"Optional<int>"* %11, align 4
   store i32 2147483647, i32* %12, align 4
-  %24 = call i1 @_EN3stdeqI3intEEPO3intP3int(%"Optional<int>"* %11, i32* %12)
+  %24 = call i1 @_EN3stdeqI3intEERO3intR3int(%"Optional<int>"* %11, i32* %12)
   %assert.condition18 = icmp eq i1 %24, false
   br i1 %assert.condition18, label %assert.fail19, label %assert.success20
 
@@ -1299,7 +1299,7 @@ define void @_EN4main10testEscapeE() {
   store %StringBuffer %4, %StringBuffer* %1, align 8
   call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @131, i32 0, i32 0), i32 0)
   %__str.load = load %string, %string* %__str1, align 8
-  %5 = call i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer* %1, %string %__str.load)
+  %5 = call i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer* %1, %string %__str.load)
   %assert.condition = icmp eq i1 %5, false
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
@@ -1313,7 +1313,7 @@ assert.success:                                   ; preds = %0
   store %StringBuffer %6, %StringBuffer* %2, align 8
   call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([10 x i8], [10 x i8]* @134, i32 0, i32 0), i32 9)
   %__str.load6 = load %string, %string* %__str3, align 8
-  %7 = call i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer* %2, %string %__str.load6)
+  %7 = call i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer* %2, %string %__str.load6)
   %assert.condition7 = icmp eq i1 %7, false
   br i1 %assert.condition7, label %assert.fail8, label %assert.success9
 
@@ -1327,7 +1327,7 @@ assert.success9:                                  ; preds = %assert.success
   store %StringBuffer %8, %StringBuffer* %3, align 8
   call void @_EN3std6string4initEP4char3int(%string* %__str5, i8* getelementptr inbounds ([20 x i8], [20 x i8]* @137, i32 0, i32 0), i32 19)
   %__str.load10 = load %string, %string* %__str5, align 8
-  %9 = call i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer* %3, %string %__str.load10)
+  %9 = call i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer* %3, %string %__str.load10)
   %assert.condition11 = icmp eq i1 %9, false
   br i1 %assert.condition11, label %assert.fail12, label %assert.success13
 
@@ -1360,7 +1360,7 @@ define void @_EN4main10testRepeatE() {
   store %StringBuffer %6, %StringBuffer* %1, align 8
   call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([10 x i8], [10 x i8]* @140, i32 0, i32 0), i32 9)
   %__str.load = load %string, %string* %__str1, align 8
-  %7 = call i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer* %1, %string %__str.load)
+  %7 = call i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer* %1, %string %__str.load)
   %assert.condition = icmp eq i1 %7, false
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
@@ -1374,7 +1374,7 @@ assert.success:                                   ; preds = %0
   store %StringBuffer %8, %StringBuffer* %2, align 8
   call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @143, i32 0, i32 0), i32 5)
   %__str.load10 = load %string, %string* %__str3, align 8
-  %9 = call i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer* %2, %string %__str.load10)
+  %9 = call i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer* %2, %string %__str.load10)
   %assert.condition11 = icmp eq i1 %9, false
   br i1 %assert.condition11, label %assert.fail12, label %assert.success13
 
@@ -1388,7 +1388,7 @@ assert.success13:                                 ; preds = %assert.success
   store %StringBuffer %10, %StringBuffer* %3, align 8
   call void @_EN3std6string4initEP4char3int(%string* %__str5, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @146, i32 0, i32 0), i32 0)
   %__str.load14 = load %string, %string* %__str5, align 8
-  %11 = call i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer* %3, %string %__str.load14)
+  %11 = call i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer* %3, %string %__str.load14)
   %assert.condition15 = icmp eq i1 %11, false
   br i1 %assert.condition15, label %assert.fail16, label %assert.success17
 
@@ -1402,7 +1402,7 @@ assert.success17:                                 ; preds = %assert.success13
   store %StringBuffer %12, %StringBuffer* %4, align 8
   call void @_EN3std6string4initEP4char3int(%string* %__str7, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @149, i32 0, i32 0), i32 0)
   %__str.load18 = load %string, %string* %__str7, align 8
-  %13 = call i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer* %4, %string %__str.load18)
+  %13 = call i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer* %4, %string %__str.load18)
   %assert.condition19 = icmp eq i1 %13, false
   br i1 %assert.condition19, label %assert.fail20, label %assert.success21
 
@@ -1416,7 +1416,7 @@ assert.success21:                                 ; preds = %assert.success17
   store %StringBuffer %14, %StringBuffer* %5, align 8
   call void @_EN3std6string4initEP4char3int(%string* %__str9, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @152, i32 0, i32 0), i32 3)
   %__str.load22 = load %string, %string* %__str9, align 8
-  %15 = call i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer* %5, %string %__str.load22)
+  %15 = call i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer* %5, %string %__str.load22)
   %assert.condition23 = icmp eq i1 %15, false
   br i1 %assert.condition23, label %assert.fail24, label %assert.success25
 
@@ -1843,46 +1843,66 @@ define void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %this) {
   ret void
 }
 
-define i1 @_EN3stdeqI3intEEPO3intPO3int(%"Optional<int>"* %a, %"Optional<int>"* %b) {
-  %hasValue = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %a, i32 0, i32 0
-  %hasValue.load = load i1, i1* %hasValue, align 1
-  %hasValue1 = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %b, i32 0, i32 0
-  %hasValue.load2 = load i1, i1* %hasValue1, align 1
-  %1 = icmp ne i1 %hasValue.load, %hasValue.load2
-  br i1 %1, label %if.then, label %if.else
+define i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %a, %"Optional<int>"* %b) {
+  %1 = alloca %"Optional<int>", align 8
+  %2 = alloca %"Optional<int>", align 8
+  %3 = alloca %"Optional<int>", align 8
+  %4 = alloca %"Optional<int>", align 8
+  call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %1)
+  %5 = call i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %a, %"Optional<int>"* %1)
+  br i1 %5, label %and.rhs, label %and.end
 
-if.then:                                          ; preds = %0
-  ret i1 false
+and.rhs:                                          ; preds = %0
+  call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %2)
+  %6 = call i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %b, %"Optional<int>"* %2)
+  br label %and.end
 
-if.else:                                          ; preds = %0
+and.end:                                          ; preds = %and.rhs, %0
+  %and = phi i1 [ %5, %0 ], [ %6, %and.rhs ]
+  br i1 %and, label %if.then, label %if.else
+
+if.then:                                          ; preds = %and.end
+  ret i1 true
+
+if.else:                                          ; preds = %and.end
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  %hasValue3 = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %b, i32 0, i32 0
-  %hasValue.load4 = load i1, i1* %hasValue3, align 1
-  %2 = xor i1 %hasValue.load4, true
-  br i1 %2, label %if.then5, label %if.else6
+  call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %3)
+  %7 = call i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %a, %"Optional<int>"* %3)
+  br i1 %7, label %if.then1, label %if.else2
 
-if.then5:                                         ; preds = %if.end
-  ret i1 true
+if.then1:                                         ; preds = %if.end
+  ret i1 false
 
-if.else6:                                         ; preds = %if.end
-  br label %if.end7
+if.else2:                                         ; preds = %if.end
+  br label %if.end3
 
-if.end7:                                          ; preds = %if.else6
+if.end3:                                          ; preds = %if.else2
+  call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %4)
+  %8 = call i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %b, %"Optional<int>"* %4)
+  br i1 %8, label %if.then4, label %if.else5
+
+if.then4:                                         ; preds = %if.end3
+  ret i1 false
+
+if.else5:                                         ; preds = %if.end3
+  br label %if.end6
+
+if.end6:                                          ; preds = %if.else5
   %value = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %a, i32 0, i32 1
   %value.load = load i32, i32* %value, align 4
-  %value8 = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %b, i32 0, i32 1
-  %value.load9 = load i32, i32* %value8, align 4
-  %3 = icmp eq i32 %value.load, %value.load9
-  ret i1 %3
+  %value7 = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %b, i32 0, i32 1
+  %value.load8 = load i32, i32* %value7, align 4
+  %9 = icmp eq i32 %value.load, %value.load8
+  ret i1 %9
 }
 
-define i1 @_EN3stdeqI3intEEPO3intP3int(%"Optional<int>"* %a, i32* %b) {
-  %hasValue = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %a, i32 0, i32 0
-  %hasValue.load = load i1, i1* %hasValue, align 1
-  %1 = xor i1 %hasValue.load, true
-  br i1 %1, label %if.then, label %if.else
+define i1 @_EN3stdeqI3intEERO3intR3int(%"Optional<int>"* %a, i32* %b) {
+  %1 = alloca %"Optional<int>", align 8
+  call void @_EN3std8OptionalI3intE4initE(%"Optional<int>"* %1)
+  %2 = call i1 @_EN3stdeqI3intEERO3intRO3int(%"Optional<int>"* %a, %"Optional<int>"* %1)
+  br i1 %2, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
   ret i1 false
@@ -1894,8 +1914,8 @@ if.end:                                           ; preds = %if.else
   %value = getelementptr inbounds %"Optional<int>", %"Optional<int>"* %a, i32 0, i32 1
   %value.load = load i32, i32* %value, align 4
   %b.load = load i32, i32* %b, align 4
-  %2 = icmp eq i32 %value.load, %b.load
-  ret i1 %2
+  %3 = icmp eq i32 %value.load, %b.load
+  ret i1 %3
 }
 
 define %StringBuffer @_EN3std6string6escapeE(%string* %this) {
@@ -1997,7 +2017,7 @@ switch.end:                                       ; preds = %switch.default, %sw
   br label %loop.increment
 }
 
-declare i1 @_EN3stdeqEP12StringBuffer6string(%StringBuffer*, %string)
+declare i1 @_EN3stdeqER12StringBuffer6string(%StringBuffer*, %string)
 
 define %StringBuffer @_EN3std6string6repeatE3int(%string* %this, i32 %count) {
   %result = alloca %StringBuffer, align 8

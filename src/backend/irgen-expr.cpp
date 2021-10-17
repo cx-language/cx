@@ -96,6 +96,11 @@ Value* IRGenerator::emitOptionalUnwrap(Expr& operand, const Expr& expr, const ll
         emitAssert(value, &expr, expr.getLocation(), message, name);
         return value;
     } else {
+//        value->print(llvm::outs());
+//        llvm::outs()<<'\n';
+        if (value->getType()->isPointerType()) {
+            value= createLoad(value);
+        }
         emitAssert(createExtractValue(value, optionalHasValueFieldIndex), &expr, expr.getLocation(), message, name);
         return createExtractValue(value, optionalValueFieldIndex);
     }

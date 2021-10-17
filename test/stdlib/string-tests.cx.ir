@@ -37,7 +37,7 @@ assert.fail_0:
 assert.success_0:
     void _9 = call _EN3std6string4initEP4char3int(string* __str_3, char* "abc", int 3)
     void _10 = call _EN3std6string4initEP4char3int(string* __str_4, char* "bcd", int 3)
-    bool _11 = call _EN3stdltI6stringEEP6stringP6string(string* __str_3, string* __str_4)
+    bool _11 = call _EN3stdltI6stringEER6stringR6string(string* __str_3, string* __str_4)
     bool assert.condition_1 = _11 == bool false
     br assert.condition_1, assert.fail, assert.success
 
@@ -69,7 +69,7 @@ void _EN3std6string4initEP4char3int(string* this, char* pointer, int length) {
 void _EN3std10assertFailEP4char(char* message) {
 }
 
-bool _EN3stdltI6stringEEP6stringP6string(string* a, string* b) {
+bool _EN3stdltI6stringEER6stringR6string(string* a, string* b) {
     int _0 = call _EN3std6string7compareEP6string(string* a, string* b)
     bool _1 = _0 == int 0
     return _1
@@ -1080,7 +1080,7 @@ void _EN4main12testParseIntE() {
     Optional<int> _13 = call _EN3std6string8parseIntE(string* __str)
     store _13 to _0
     void _14 = call _EN3std8OptionalI3intE4initE(Optional<int>* _1)
-    bool _15 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* _0, Optional<int>* _1)
+    bool _15 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* _0, Optional<int>* _1)
     bool assert.condition = _15 == bool false
     br assert.condition, assert.fail, assert.success
 
@@ -1094,7 +1094,7 @@ assert.success:
     Optional<int> _18 = call _EN3std6string8parseIntE(string* __str_0)
     store _18 to _2
     void _19 = call _EN3std8OptionalI3intE4initE(Optional<int>* _3)
-    bool _20 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* _2, Optional<int>* _3)
+    bool _20 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* _2, Optional<int>* _3)
     bool assert.condition_0 = _20 == bool false
     br assert.condition_0, assert.fail, assert.success
 
@@ -1108,7 +1108,7 @@ assert.success_0:
     Optional<int> _23 = call _EN3std6string8parseIntE(string* __str_1)
     store _23 to _4
     void _24 = call _EN3std8OptionalI3intE4initE(Optional<int>* _5)
-    bool _25 = call _EN3stdeqI3intEEPO3intPO3int(Optional<int>* _4, Optional<int>* _5)
+    bool _25 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* _4, Optional<int>* _5)
     bool assert.condition_1 = _25 == bool false
     br assert.condition_1, assert.fail, assert.success
 
@@ -1122,7 +1122,7 @@ assert.success_1:
     Optional<int> _28 = call _EN3std6string8parseIntE(string* __str_2)
     store _28 to _6
     store int 1 to _7
-    bool _29 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* _6, int* _7)
+    bool _29 = call _EN3stdeqI3intEERO3intR3int(Optional<int>* _6, int* _7)
     bool assert.condition_2 = _29 == bool false
     br assert.condition_2, assert.fail, assert.success
 
@@ -1136,7 +1136,7 @@ assert.success_2:
     Optional<int> _32 = call _EN3std6string8parseIntE(string* __str_3)
     store _32 to _8
     store int 123789 to _9
-    bool _33 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* _8, int* _9)
+    bool _33 = call _EN3stdeqI3intEERO3intR3int(Optional<int>* _8, int* _9)
     bool assert.condition_3 = _33 == bool false
     br assert.condition_3, assert.fail, assert.success
 
@@ -1150,7 +1150,7 @@ assert.success_3:
     Optional<int> _36 = call _EN3std6string8parseIntE(string* __str_4)
     store _36 to _10
     store int 2147483647 to _11
-    bool _37 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* _10, int* _11)
+    bool _37 = call _EN3stdeqI3intEERO3intR3int(Optional<int>* _10, int* _11)
     bool assert.condition_4 = _37 == bool false
     br assert.condition_4, assert.fail, assert.success
 
@@ -1178,7 +1178,7 @@ void _EN4main10testEscapeE() {
     store _4 to _0
     void _5 = call _EN3std6string4initEP4char3int(string* __str_0, char* "", int 0)
     string __str.load = load __str_0
-    bool _6 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _0, string __str.load)
+    bool _6 = call _EN3stdeqER12StringBuffer6string(StringBuffer* _0, string __str.load)
     bool assert.condition = _6 == bool false
     br assert.condition, assert.fail, assert.success
 
@@ -1193,7 +1193,7 @@ assert.success:
     store _9 to _1
     void _10 = call _EN3std6string4initEP4char3int(string* __str_2, char* "0 r t ' n", int 9)
     string __str.load_0 = load __str_2
-    bool _11 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _1, string __str.load_0)
+    bool _11 = call _EN3stdeqER12StringBuffer6string(StringBuffer* _1, string __str.load_0)
     bool assert.condition_0 = _11 == bool false
     br assert.condition_0, assert.fail, assert.success
 
@@ -1210,7 +1210,7 @@ assert.success_0:
     store _14 to _2
     void _15 = call _EN3std6string4initEP4char3int(string* __str_4, char* "\0 \r \t ' \" \\ \n", int 19)
     string __str.load_1 = load __str_4
-    bool _16 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _2, string __str.load_1)
+    bool _16 = call _EN3stdeqER12StringBuffer6string(StringBuffer* _2, string __str.load_1)
     bool assert.condition_1 = _16 == bool false
     br assert.condition_1, assert.fail, assert.success
 
@@ -1244,7 +1244,7 @@ void _EN4main10testRepeatE() {
     store _6 to _0
     void _7 = call _EN3std6string4initEP4char3int(string* __str_0, char* "abcabcabc", int 9)
     string __str.load = load __str_0
-    bool _8 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _0, string __str.load)
+    bool _8 = call _EN3stdeqER12StringBuffer6string(StringBuffer* _0, string __str.load)
     bool assert.condition = _8 == bool false
     br assert.condition, assert.fail, assert.success
 
@@ -1259,7 +1259,7 @@ assert.success:
     store _11 to _1
     void _12 = call _EN3std6string4initEP4char3int(string* __str_2, char* "11111", int 5)
     string __str.load_0 = load __str_2
-    bool _13 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _1, string __str.load_0)
+    bool _13 = call _EN3stdeqER12StringBuffer6string(StringBuffer* _1, string __str.load_0)
     bool assert.condition_0 = _13 == bool false
     br assert.condition_0, assert.fail, assert.success
 
@@ -1274,7 +1274,7 @@ assert.success_0:
     store _16 to _2
     void _17 = call _EN3std6string4initEP4char3int(string* __str_4, char* "", int 0)
     string __str.load_1 = load __str_4
-    bool _18 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _2, string __str.load_1)
+    bool _18 = call _EN3stdeqER12StringBuffer6string(StringBuffer* _2, string __str.load_1)
     bool assert.condition_1 = _18 == bool false
     br assert.condition_1, assert.fail, assert.success
 
@@ -1289,7 +1289,7 @@ assert.success_1:
     store _21 to _3
     void _22 = call _EN3std6string4initEP4char3int(string* __str_6, char* "", int 0)
     string __str.load_2 = load __str_6
-    bool _23 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _3, string __str.load_2)
+    bool _23 = call _EN3stdeqER12StringBuffer6string(StringBuffer* _3, string __str.load_2)
     bool assert.condition_2 = _23 == bool false
     br assert.condition_2, assert.fail, assert.success
 
@@ -1304,7 +1304,7 @@ assert.success_2:
     store _26 to _4
     void _27 = call _EN3std6string4initEP4char3int(string* __str_8, char* "abc", int 3)
     string __str.load_3 = load __str_8
-    bool _28 = call _EN3stdeqEP12StringBuffer6string(StringBuffer* _4, string __str.load_3)
+    bool _28 = call _EN3stdeqER12StringBuffer6string(StringBuffer* _4, string __str.load_3)
     bool assert.condition_3 = _28 == bool false
     br assert.condition_3, assert.fail, assert.success
 
@@ -1657,39 +1657,58 @@ void _EN3std12LineIterator9incrementE(LineIterator* this) {
     return void
 }
 
-bool _EN3stdeqI3intEEPO3intPO3int(Optional<int>* a, Optional<int>* b) {
-    bool* hasValue = getelementptr a, 0
-    bool hasValue.load = load hasValue
-    bool* hasValue_0 = getelementptr b, 0
-    bool hasValue.load_0 = load hasValue_0
-    bool _0 = hasValue.load != hasValue.load_0
-    br _0, if.then, if.else
+bool _EN3stdeqI3intEERO3intRO3int(Optional<int>* a, Optional<int>* b) {
+    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* _1 = alloca Optional<int>
+    Optional<int>* _2 = alloca Optional<int>
+    Optional<int>* _3 = alloca Optional<int>
+    void _4 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
+    bool _5 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* a, Optional<int>* _0)
+    br _5, and.rhs(_5), and.end(_5)
+
+and.rhs:
+    void _6 = call _EN3std8OptionalI3intE4initE(Optional<int>* _1)
+    bool _7 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* b, Optional<int>* _1)
+    br and.end(_7)
+
+and.end(bool and):
+    br and, if.then, if.else
 
 if.then:
-    return bool false
+    return bool true
 
 if.else:
     br if.end
 
 if.end:
-    bool* hasValue_1 = getelementptr b, 0
-    bool hasValue.load_1 = load hasValue_1
-    bool _1 = !hasValue.load_1
-    br _1, if.then, if.else
+    void _8 = call _EN3std8OptionalI3intE4initE(Optional<int>* _2)
+    bool _9 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* a, Optional<int>* _2)
+    br _9, if.then, if.else
 
 if.then_0:
-    return bool true
+    return bool false
 
 if.else_0:
     br if.end_0
 
 if.end_0:
+    void _10 = call _EN3std8OptionalI3intE4initE(Optional<int>* _3)
+    bool _11 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* b, Optional<int>* _3)
+    br _11, if.then, if.else
+
+if.then_1:
+    return bool false
+
+if.else_1:
+    br if.end_1
+
+if.end_1:
     int* value = getelementptr a, 1
     int value.load = load value
     int* value_0 = getelementptr b, 1
     int value.load_0 = load value_0
-    bool _2 = value.load == value.load_0
-    return _2
+    bool _12 = value.load == value.load_0
+    return _12
 }
 
 Optional<int> _EN3std6string8parseIntE(string* this) {
@@ -1772,11 +1791,11 @@ void _EN3std8OptionalI3intE4initE(Optional<int>* this) {
     return void
 }
 
-bool _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* b) {
-    bool* hasValue = getelementptr a, 0
-    bool hasValue.load = load hasValue
-    bool _0 = !hasValue.load
-    br _0, if.then, if.else
+bool _EN3stdeqI3intEERO3intR3int(Optional<int>* a, int* b) {
+    Optional<int>* _0 = alloca Optional<int>
+    void _1 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
+    bool _2 = call _EN3stdeqI3intEERO3intRO3int(Optional<int>* a, Optional<int>* _0)
+    br _2, if.then, if.else
 
 if.then:
     return bool false
@@ -1788,11 +1807,11 @@ if.end:
     int* value = getelementptr a, 1
     int value.load = load value
     int b.load = load b
-    bool _1 = value.load == b.load
-    return _1
+    bool _3 = value.load == b.load
+    return _3
 }
 
-bool _EN3stdeqEP12StringBuffer6string(StringBuffer* a, string b) {
+bool _EN3stdeqER12StringBuffer6string(StringBuffer* a, string b) {
 }
 
 StringBuffer _EN3std6string6escapeE(string* this) {

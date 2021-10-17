@@ -12,26 +12,26 @@ enum Ordering {
     Greater
 }
 
-bool operator== <T: Comparable>(T* a, T* b) {
+bool operator== <T: Comparable>(ref T a, ref T b) {
     return a.compare(b) == Ordering.Equal;
 }
 
-bool operator!= <T: Comparable>(T* a, T* b) {
+bool operator!= <T: Comparable>(ref T a, ref T b) {
     return a.compare(b) != Ordering.Equal;
 }
 
-bool operator< <T: Comparable>(T* a, T* b) {
+bool operator< <T: Comparable>(ref T a, ref T b) {
     return a.compare(b) == Ordering.Less;
 }
 
-bool operator> <T: Comparable>(T* a, T* b) {
+bool operator> <T: Comparable>(ref T a, ref T b) {
     return a.compare(b) == Ordering.Greater;
 }
 
-bool operator>= <T: Comparable>(T* a, T* b) {
+bool operator>= <T: Comparable>(ref T a, ref T b) {
     return a.compare(b) != Ordering.Less;
 }
 
-bool operator<= <T: Comparable>(T* a, T* b) {
+bool operator<= <T: Comparable>(ref T a, ref T b) {
     return a.compare(b) != Ordering.Greater;
 }

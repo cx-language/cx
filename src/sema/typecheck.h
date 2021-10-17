@@ -62,7 +62,6 @@ private:
     void typecheckVarDecl(VarDecl& decl);
     void typecheckFieldDecl(FieldDecl& decl);
     void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest);
-    void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
     void typecheckFunctionDecl(FunctionDecl& decl);
     void typecheckFunctionTemplate(FunctionTemplate& decl);
     void typecheckMethodDecl(Decl& decl);

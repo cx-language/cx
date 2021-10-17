@@ -120,7 +120,7 @@ FieldDecl FieldDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeD
 }
 
 std::vector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
-    return map(params, [&](auto& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName().str(), param.isPublic, param.getLocation()); });
+    return map(params, [&](const ParamDecl& param) { return ParamDecl(param.getType().resolve(genericArgs), param.getName().str(), param.isPublic, param.getLocation()); });
 }
 
 std::string TypeDecl::getQualifiedName() const {

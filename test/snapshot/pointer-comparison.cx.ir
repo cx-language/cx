@@ -1,17 +1,6 @@
 
-bool _EN4mainltEP1XP1X(X* a, X* b) {
-    return bool true
-}
-
 void _EN4main2fxEP1XP1X(X* a, X* b) {
-    bool _0 = call _EN4mainltEP1XP1X(X* a, X* b)
-    bool _1 = call _EN4mainltEP1XP1X(X* a, X* b)
-    return void
-}
-
-void _EN4main2fyEP1YP1Y(Y* a, Y* b) {
-    uint64 address = cast a to uint64
-    uint64 address_0 = cast b to uint64
-    bool _0 = address < address_0
+    bool _0 = a == b
+    bool _1 = a < b
     return void
 }

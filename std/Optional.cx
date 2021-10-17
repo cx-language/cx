@@ -14,21 +14,29 @@ struct Optional<T> {
     }
 }
 
-bool operator== <T: Comparable>(Optional<T>* a, Optional<T>* b) {
-    if (a.hasValue != b.hasValue) return false;
-    if (!b.hasValue) return true;
+bool operator== <T: Comparable>(ref Optional<T> a, ref Optional<T> b) {
+    //if ((a != null) != (b != null)) return false;
+    //if (b == null) return true;
+    if (a == null && b == null) return true;
+    if (a == null) return false;
+    if (b == null) return false;
     return a.value == b.value;
 }
 
-bool operator!= <T: Comparable>(Optional<T>* a, Optional<T>* b) {
+bool operator!= <T: Comparable>(ref Optional<T> a, ref Optional<T> b) {
     return !(a == b);
 }
 
-bool operator== <T: Comparable>(Optional<T>* a, T* b) {
-    if (!a.hasValue) return false;
+bool operator== <T: Comparable>(ref Optional<T> a, ref T b) {
+    if (a == null) return false;
     return a.value == b;
 }
 
-bool operator!= <T: Comparable>(Optional<T>* a, T* b) {
+bool operator!= <T: Comparable>(ref Optional<T> a, ref T b) {
     return !(a == b);
+}
+
+bool operator== <T: Comparable>(T*? a, ref T b) {
+    if (a == null) return false;
+    return *a == b;
 }

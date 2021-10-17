@@ -241,8 +241,8 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
             break;
         }
         case ExprKind::BinaryExpr: {
-            //            auto& binaryExpr = llvm::cast<BinaryExpr>(expr);
-            stream << "BinaryExpr";
+            auto& binaryExpr = llvm::cast<BinaryExpr>(expr);
+            stream << "BinaryExpr \n" << binaryExpr.getArgs();
             break;
         }
         case ExprKind::CallExpr: {
@@ -292,7 +292,7 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
         }
         case ExprKind::ImplicitCastExpr: {
             auto& implicitCastExpr = llvm::cast<ImplicitCastExpr>(expr);
-            stream << "ImplicitCastExpr " << implicitCastExpr.getImplicitCastKind() << " " << *implicitCastExpr.getOperand();
+            stream << "ImplicitCastExpr " << implicitCastExpr.getImplicitCastKind() << " " << implicitCastExpr.getType() << " " << *implicitCastExpr.getOperand();
             break;
         }
         case ExprKind::VarDeclExpr: {

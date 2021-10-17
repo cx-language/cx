@@ -211,6 +211,10 @@ struct FunctionDecl : Decl {
     }
     bool isExtern() const { return getProto().isExtern(); }
     bool isVariadic() const { return getProto().isVarArg(); }
+    bool isOperator() const {
+        char ch = getName().front();
+        return !std::isalpha(ch) && ch != '_';
+    }
     llvm::StringRef getName() const override { return getProto().getName(); }
     std::string getQualifiedName() const;
     llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }

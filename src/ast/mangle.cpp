@@ -13,11 +13,6 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type);
 
 static const char cxPrefix[] = "_E";
 
-static bool isOperator(const FunctionDecl& functionDecl) {
-    char ch = functionDecl.getName().front();
-    return !std::isalpha(ch) && ch != '_';
-}
-
 static const char* operatorName(const FunctionDecl& functionDecl) {
     // TODO: Handle unary +, -, *, &.
     return llvm::StringSwitch<const char*>(functionDecl.getName())
@@ -98,6 +93,10 @@ static void mangleType(llvm::raw_string_ostream& stream, Type type) {
             stream << 'P';
             mangleType(stream, type.getPointee());
             break;
+        case TypeKind::ReferenceType:
+            stream << 'R';
+            mangleType(stream, type.getPointee());
+            break;
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");
     }
@@ -122,7 +121,7 @@ std::string cx::mangleFunctionDecl(const FunctionDecl& functionDecl) {
             mangleGenericArgs(stream, typeDecl->getGenericArgs());
         }
 
-        if (isOperator(functionDecl)) {
+        if (functionDecl.isOperator()) {
             const char* name = operatorName(functionDecl);
             ASSERT(name);
             stream << name;

@@ -71,10 +71,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
             }
             typecheckType(type.getReturnType(), userAccessLevel);
             break;
-        case TypeKind::PointerType: {
+        case TypeKind::PointerType:
+        case TypeKind::ReferenceType:
             typecheckType(type.getPointee(), userAccessLevel);
             break;
-        }
         case TypeKind::UnresolvedType:
             llvm_unreachable("invalid unresolved type");
     }
@@ -133,12 +133,6 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
     }
 }
 
-void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel) {
-    for (auto& param : params) {
-        typecheckParamDecl(param, userAccessLevel);
-    }
-}
-
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.isTypechecked()) return;
     if (decl.isExtern()) return; // TODO: Typecheck parameters and return type of extern functions.
@@ -148,7 +142,15 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     Scope scope(&decl, &currentModule->getSymbolTable());
     llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
 
-    typecheckParams(decl.getParams(), decl.getAccessLevel());
+    for (auto& param : decl.getParams()) {
+        typecheckParamDecl(param, decl.getAccessLevel());
+    }
+
+    static constexpr auto comparisonOperators = { "==", "!=", "<", ">", "<=", ">=" };
+    if (llvm::is_contained(comparisonOperators, decl.getName()) &&
+        llvm::all_of(decl.getParams(), [](const ParamDecl& param) { return param.getType().isImplementedAsPointer(); })) {
+        REPORT_ERROR(decl.getLocation(), "cannot redefine pointer comparison operators");
+    }
 
     if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
         typecheckType(decl.getReturnType(), decl.getAccessLevel());

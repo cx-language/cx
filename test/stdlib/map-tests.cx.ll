@@ -53,57 +53,57 @@
 @16 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
 @17 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:76:5\0A\00", align 1
 @18 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
-@19 = private unnamed_addr constant [37 x i8] c"Unwrap failed at map-tests.cx:78:15\0A\00", align 1
-@20 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:78:5\0A\00", align 1
+@19 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:78:5\0A\00", align 1
+@20 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
 @21 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
-@22 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
-@23 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:81:5\0A\00", align 1
-@24 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
-@25 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:82:5\0A\00", align 1
+@22 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:81:5\0A\00", align 1
+@23 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
+@24 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:82:5\0A\00", align 1
+@25 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
 @26 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
-@27 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
-@28 = private unnamed_addr constant [37 x i8] c"Unwrap failed at map-tests.cx:37:15\0A\00", align 1
-@29 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:37:5\0A\00", align 1
-@30 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:53:5\0A\00", align 1
-@31 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:28:5\0A\00", align 1
-@32 = private unnamed_addr constant [5 x i8] c"best\00", align 1
-@33 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
-@34 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:30:5\0A\00", align 1
-@35 = private unnamed_addr constant [2 x i8] c"a\00", align 1
-@36 = private unnamed_addr constant [2 x i8] c"a\00", align 1
-@37 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
-@38 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
-@39 = private unnamed_addr constant [3 x i8] c"bb\00", align 1
-@40 = private unnamed_addr constant [3 x i8] c"bb\00", align 1
-@41 = private unnamed_addr constant [2 x i8] c"a\00", align 1
-@42 = private unnamed_addr constant [2 x i8] c"a\00", align 1
+@27 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:37:5\0A\00", align 1
+@28 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:53:5\0A\00", align 1
+@29 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:28:5\0A\00", align 1
+@30 = private unnamed_addr constant [5 x i8] c"best\00", align 1
+@31 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
+@32 = private unnamed_addr constant [39 x i8] c"Assertion failed at map-tests.cx:30:5\0A\00", align 1
+@33 = private unnamed_addr constant [2 x i8] c"a\00", align 1
+@34 = private unnamed_addr constant [2 x i8] c"a\00", align 1
+@35 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
+@36 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
+@37 = private unnamed_addr constant [3 x i8] c"bb\00", align 1
+@38 = private unnamed_addr constant [3 x i8] c"bb\00", align 1
+@39 = private unnamed_addr constant [2 x i8] c"a\00", align 1
+@40 = private unnamed_addr constant [2 x i8] c"a\00", align 1
+@41 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
+@42 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
 @43 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
 @44 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
-@45 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
-@46 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
-@47 = private unnamed_addr constant [2 x i8] c"a\00", align 1
-@48 = private unnamed_addr constant [3 x i8] c"bb\00", align 1
-@49 = private unnamed_addr constant [41 x i8] c"Assertion failed at map-tests.cx:101:13\0A\00", align 1
-@50 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
-@51 = private unnamed_addr constant [41 x i8] c"Assertion failed at map-tests.cx:104:13\0A\00", align 1
-@52 = private unnamed_addr constant [41 x i8] c"Assertion failed at map-tests.cx:107:13\0A\00", align 1
-@53 = private unnamed_addr constant [41 x i8] c"Assertion failed at map-tests.cx:110:13\0A\00", align 1
-@54 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:114:5\0A\00", align 1
-@55 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:115:5\0A\00", align 1
-@56 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:116:5\0A\00", align 1
+@45 = private unnamed_addr constant [2 x i8] c"a\00", align 1
+@46 = private unnamed_addr constant [3 x i8] c"bb\00", align 1
+@47 = private unnamed_addr constant [41 x i8] c"Assertion failed at map-tests.cx:101:13\0A\00", align 1
+@48 = private unnamed_addr constant [4 x i8] c"ccc\00", align 1
+@49 = private unnamed_addr constant [41 x i8] c"Assertion failed at map-tests.cx:104:13\0A\00", align 1
+@50 = private unnamed_addr constant [41 x i8] c"Assertion failed at map-tests.cx:107:13\0A\00", align 1
+@51 = private unnamed_addr constant [41 x i8] c"Assertion failed at map-tests.cx:110:13\0A\00", align 1
+@52 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:114:5\0A\00", align 1
+@53 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:115:5\0A\00", align 1
+@54 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:116:5\0A\00", align 1
+@55 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
+@56 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
 @57 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
 @58 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
 @59 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
-@60 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
+@60 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:126:9\0A\00", align 1
 @61 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
-@62 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:126:9\0A\00", align 1
+@62 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
 @63 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
 @64 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
 @65 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
-@66 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
-@67 = private unnamed_addr constant [4 x i8] c"foo\00", align 1
-@68 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:138:9\0A\00", align 1
-@69 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:141:5\0A\00", align 1
+@66 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:138:9\0A\00", align 1
+@67 = private unnamed_addr constant [40 x i8] c"Assertion failed at map-tests.cx:141:5\0A\00", align 1
+@68 = private unnamed_addr constant [12 x i8] c"List index \00", align 1
+@69 = private unnamed_addr constant [28 x i8] c" is out of bounds, size is \00", align 1
 @70 = private unnamed_addr constant [12 x i8] c"List index \00", align 1
 @71 = private unnamed_addr constant [28 x i8] c" is out of bounds, size is \00", align 1
 @72 = private unnamed_addr constant [12 x i8] c"List index \00", align 1
@@ -112,14 +112,12 @@
 @75 = private unnamed_addr constant [28 x i8] c" is out of bounds, size is \00", align 1
 @76 = private unnamed_addr constant [12 x i8] c"List index \00", align 1
 @77 = private unnamed_addr constant [28 x i8] c" is out of bounds, size is \00", align 1
-@78 = private unnamed_addr constant [12 x i8] c"List index \00", align 1
-@79 = private unnamed_addr constant [28 x i8] c" is out of bounds, size is \00", align 1
+@78 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
+@79 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
 @80 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
 @81 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
 @82 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
 @83 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
-@84 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
-@85 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
 
 define i32 @main() {
   call void @_EN4main10testInsertE()
@@ -264,45 +262,37 @@ assert.fail:                                      ; preds = %0
 assert.success:                                   ; preds = %0
   call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @18, i32 0, i32 0), i32 2)
   %3 = call i32* @_EN3std3MapI6string3intEixEP6string(%"Map<string, int>"* %map, %string* %__str3)
-  %__implicit_unwrap.condition = icmp eq i32* %3, null
-  br i1 %__implicit_unwrap.condition, label %__implicit_unwrap.fail, label %__implicit_unwrap.success
-
-__implicit_unwrap.fail:                           ; preds = %assert.success
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @19, i32 0, i32 0))
-  unreachable
-
-__implicit_unwrap.success:                        ; preds = %assert.success
   store i32 1, i32* %1, align 4
-  %4 = call i1 @_EN3stdeqI3intEEP3intP3int(i32* %3, i32* %1)
+  %4 = call i1 @_EN3stdeqI3intEEOP3intR3int(i32* %3, i32* %1)
   %assert.condition8 = icmp eq i1 %4, false
   br i1 %assert.condition8, label %assert.fail9, label %assert.success10
 
-assert.fail9:                                     ; preds = %__implicit_unwrap.success
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @20, i32 0, i32 0))
+assert.fail9:                                     ; preds = %assert.success
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @19, i32 0, i32 0))
   unreachable
 
-assert.success10:                                 ; preds = %__implicit_unwrap.success
-  call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @21, i32 0, i32 0), i32 2)
+assert.success10:                                 ; preds = %assert.success
+  call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @20, i32 0, i32 0), i32 2)
   call void @_EN3std3MapI6string3intE6removeEP6string(%"Map<string, int>"* %map, %string* %__str4)
-  call void @_EN3std6string4initEP4char3int(%string* %__str5, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @22, i32 0, i32 0), i32 2)
+  call void @_EN3std6string4initEP4char3int(%string* %__str5, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @21, i32 0, i32 0), i32 2)
   %5 = call i1 @_EN3std3MapI6string3intE8containsEP6string(%"Map<string, int>"* %map, %string* %__str5)
   %6 = xor i1 %5, true
   %assert.condition11 = icmp eq i1 %6, false
   br i1 %assert.condition11, label %assert.fail12, label %assert.success13
 
 assert.fail12:                                    ; preds = %assert.success10
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @23, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @22, i32 0, i32 0))
   unreachable
 
 assert.success13:                                 ; preds = %assert.success10
-  call void @_EN3std6string4initEP4char3int(%string* %__str6, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @24, i32 0, i32 0), i32 2)
+  call void @_EN3std6string4initEP4char3int(%string* %__str6, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @23, i32 0, i32 0), i32 2)
   %7 = call i32* @_EN3std3MapI6string3intEixEP6string(%"Map<string, int>"* %map, %string* %__str6)
   %8 = icmp eq i32* %7, null
   %assert.condition14 = icmp eq i1 %8, false
   br i1 %assert.condition14, label %assert.fail15, label %assert.success16
 
 assert.fail15:                                    ; preds = %assert.success13
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @25, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @24, i32 0, i32 0))
   unreachable
 
 assert.success16:                                 ; preds = %assert.success13
@@ -316,29 +306,21 @@ define void @_EN4main10testGetterE() {
   %__str1 = alloca %string, align 8
   %1 = alloca i32, align 4
   call void @_EN3std3MapI6string3intE4initE(%"Map<string, int>"* %map)
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @26, i32 0, i32 0), i32 2)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @25, i32 0, i32 0), i32 2)
   %__str.load = load %string, %string* %__str, align 8
   call void @_EN3std3MapI6string3intE6insertE6string3int(%"Map<string, int>"* %map, %string %__str.load, i32 42)
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @27, i32 0, i32 0), i32 2)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @26, i32 0, i32 0), i32 2)
   %2 = call i32* @_EN3std3MapI6string3intEixEP6string(%"Map<string, int>"* %map, %string* %__str1)
-  %__implicit_unwrap.condition = icmp eq i32* %2, null
-  br i1 %__implicit_unwrap.condition, label %__implicit_unwrap.fail, label %__implicit_unwrap.success
-
-__implicit_unwrap.fail:                           ; preds = %0
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([37 x i8], [37 x i8]* @28, i32 0, i32 0))
-  unreachable
-
-__implicit_unwrap.success:                        ; preds = %0
   store i32 42, i32* %1, align 4
-  %3 = call i1 @_EN3stdeqI3intEEP3intP3int(i32* %2, i32* %1)
+  %3 = call i1 @_EN3stdeqI3intEEOP3intR3int(i32* %2, i32* %1)
   %assert.condition = icmp eq i1 %3, false
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
-assert.fail:                                      ; preds = %__implicit_unwrap.success
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @29, i32 0, i32 0))
+assert.fail:                                      ; preds = %0
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @27, i32 0, i32 0))
   unreachable
 
-assert.success:                                   ; preds = %__implicit_unwrap.success
+assert.success:                                   ; preds = %0
   call void @_EN3std3MapI6string3intE6deinitE(%"Map<string, int>"* %map)
   ret void
 }
@@ -404,7 +386,7 @@ loop.end4:                                        ; preds = %loop.condition1
   br label %loop.increment
 
 assert.fail:                                      ; preds = %loop.end
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @30, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @28, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %loop.end
@@ -423,13 +405,13 @@ define void @_EN4main8testSizeE() {
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @31, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @29, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @32, i32 0, i32 0), i32 4)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @30, i32 0, i32 0), i32 4)
   %__str.load = load %string, %string* %__str, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @33, i32 0, i32 0), i32 2)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @31, i32 0, i32 0), i32 2)
   %__str.load2 = load %string, %string* %__str1, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load, %string %__str.load2)
   %3 = call i32 @_EN3std3MapI6string6stringE4sizeE(%"Map<string, string>"* %map)
@@ -438,7 +420,7 @@ assert.success:                                   ; preds = %0
   br i1 %assert.condition3, label %assert.fail4, label %assert.success5
 
 assert.fail4:                                     ; preds = %assert.success
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @34, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([39 x i8], [39 x i8]* @32, i32 0, i32 0))
   unreachable
 
 assert.success5:                                  ; preds = %assert.success
@@ -469,34 +451,34 @@ define void @_EN4main12testIteratorE() {
   %__str13 = alloca %string, align 8
   %__str14 = alloca %string, align 8
   call void @_EN3std3MapI6string6stringE4initE(%"Map<string, string>"* %map)
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @35, i32 0, i32 0), i32 1)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @33, i32 0, i32 0), i32 1)
   %__str.load = load %string, %string* %__str, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @36, i32 0, i32 0), i32 1)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @34, i32 0, i32 0), i32 1)
   %__str.load15 = load %string, %string* %__str1, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load, %string %__str.load15)
-  call void @_EN3std6string4initEP4char3int(%string* %__str2, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @37, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str2, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @35, i32 0, i32 0), i32 3)
   %__str.load16 = load %string, %string* %__str2, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @38, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @36, i32 0, i32 0), i32 3)
   %__str.load17 = load %string, %string* %__str3, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load16, %string %__str.load17)
-  call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @39, i32 0, i32 0), i32 2)
+  call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @37, i32 0, i32 0), i32 2)
   %__str.load18 = load %string, %string* %__str4, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str5, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @40, i32 0, i32 0), i32 2)
+  call void @_EN3std6string4initEP4char3int(%string* %__str5, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @38, i32 0, i32 0), i32 2)
   %__str.load19 = load %string, %string* %__str5, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load18, %string %__str.load19)
-  call void @_EN3std6string4initEP4char3int(%string* %__str6, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @41, i32 0, i32 0), i32 1)
+  call void @_EN3std6string4initEP4char3int(%string* %__str6, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @39, i32 0, i32 0), i32 1)
   %__str.load20 = load %string, %string* %__str6, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str7, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @42, i32 0, i32 0), i32 1)
+  call void @_EN3std6string4initEP4char3int(%string* %__str7, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @40, i32 0, i32 0), i32 1)
   %__str.load21 = load %string, %string* %__str7, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load20, %string %__str.load21)
-  call void @_EN3std6string4initEP4char3int(%string* %__str8, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @43, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str8, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @41, i32 0, i32 0), i32 3)
   %__str.load22 = load %string, %string* %__str8, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str9, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @44, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str9, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @42, i32 0, i32 0), i32 3)
   %__str.load23 = load %string, %string* %__str9, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load22, %string %__str.load23)
-  call void @_EN3std6string4initEP4char3int(%string* %__str10, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @45, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str10, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @43, i32 0, i32 0), i32 3)
   %__str.load24 = load %string, %string* %__str10, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str11, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @46, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str11, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @44, i32 0, i32 0), i32 3)
   %__str.load25 = load %string, %string* %__str11, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load24, %string %__str.load25)
   store i1 false, i1* %a, align 1
@@ -516,7 +498,7 @@ loop.body:                                        ; preds = %loop.condition
   %e.load = load %"MapEntry<string, string>"*, %"MapEntry<string, string>"** %e, align 8
   %key = getelementptr inbounds %"MapEntry<string, string>", %"MapEntry<string, string>"* %e.load, i32 0, i32 0
   %key.load = load %string, %string* %key, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str12, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @47, i32 0, i32 0), i32 1)
+  call void @_EN3std6string4initEP4char3int(%string* %__str12, i8* getelementptr inbounds ([2 x i8], [2 x i8]* @45, i32 0, i32 0), i32 1)
   %__str.load26 = load %string, %string* %__str12, align 8
   %4 = call i1 @_EN3stdeqE6string6string(%string %key.load, %string %__str.load26)
   br i1 %4, label %if.then, label %if.else
@@ -540,7 +522,7 @@ if.else:                                          ; preds = %loop.body
   %e.load29 = load %"MapEntry<string, string>"*, %"MapEntry<string, string>"** %e, align 8
   %key30 = getelementptr inbounds %"MapEntry<string, string>", %"MapEntry<string, string>"* %e.load29, i32 0, i32 0
   %key.load31 = load %string, %string* %key30, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str13, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @48, i32 0, i32 0), i32 2)
+  call void @_EN3std6string4initEP4char3int(%string* %__str13, i8* getelementptr inbounds ([3 x i8], [3 x i8]* @46, i32 0, i32 0), i32 2)
   %__str.load32 = load %string, %string* %__str13, align 8
   %6 = call i1 @_EN3stdeqE6string6string(%string %key.load31, %string %__str.load32)
   br i1 %6, label %if.then33, label %if.else35
@@ -549,7 +531,7 @@ if.end:                                           ; preds = %if.end40, %assert.s
   br label %loop.increment
 
 assert.fail:                                      ; preds = %if.then
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @49, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @47, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %if.then
@@ -566,7 +548,7 @@ if.else35:                                        ; preds = %if.else
   %e.load36 = load %"MapEntry<string, string>"*, %"MapEntry<string, string>"** %e, align 8
   %key37 = getelementptr inbounds %"MapEntry<string, string>", %"MapEntry<string, string>"* %e.load36, i32 0, i32 0
   %key.load38 = load %string, %string* %key37, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str14, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @50, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str14, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @48, i32 0, i32 0), i32 3)
   %__str.load39 = load %string, %string* %__str14, align 8
   %8 = call i1 @_EN3stdeqE6string6string(%string %key.load38, %string %__str.load39)
   br i1 %8, label %if.then43, label %if.else45
@@ -575,7 +557,7 @@ if.end40:                                         ; preds = %if.end46, %assert.s
   br label %if.end
 
 assert.fail41:                                    ; preds = %if.then33
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @51, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @49, i32 0, i32 0))
   unreachable
 
 assert.success42:                                 ; preds = %if.then33
@@ -595,7 +577,7 @@ if.end46:                                         ; preds = %assert.success50, %
   br label %if.end40
 
 assert.fail47:                                    ; preds = %if.then43
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @52, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @50, i32 0, i32 0))
   unreachable
 
 assert.success48:                                 ; preds = %if.then43
@@ -603,14 +585,14 @@ assert.success48:                                 ; preds = %if.then43
   br label %if.end46
 
 assert.fail49:                                    ; preds = %if.else45
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @53, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([41 x i8], [41 x i8]* @51, i32 0, i32 0))
   unreachable
 
 assert.success50:                                 ; preds = %if.else45
   br label %if.end46
 
 assert.fail51:                                    ; preds = %loop.end
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @54, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @52, i32 0, i32 0))
   unreachable
 
 assert.success52:                                 ; preds = %loop.end
@@ -619,7 +601,7 @@ assert.success52:                                 ; preds = %loop.end
   br i1 %assert.condition54, label %assert.fail55, label %assert.success56
 
 assert.fail55:                                    ; preds = %assert.success52
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @55, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @53, i32 0, i32 0))
   unreachable
 
 assert.success56:                                 ; preds = %assert.success52
@@ -628,7 +610,7 @@ assert.success56:                                 ; preds = %assert.success52
   br i1 %assert.condition58, label %assert.fail59, label %assert.success60
 
 assert.fail59:                                    ; preds = %assert.success56
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @56, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @54, i32 0, i32 0))
   unreachable
 
 assert.success60:                                 ; preds = %assert.success56
@@ -646,17 +628,17 @@ define void @_EN4main20testEmptyMapIteratorE() {
   %__iterator = alloca %"MapIterator<string, string>", align 8
   %e = alloca %"MapEntry<string, string>"*, align 8
   call void @_EN3std3MapI6string6stringE4initE(%"Map<string, string>"* %map)
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @57, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @55, i32 0, i32 0), i32 3)
   %__str.load = load %string, %string* %__str, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @58, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @56, i32 0, i32 0), i32 3)
   %__str.load5 = load %string, %string* %__str1, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load, %string %__str.load5)
-  call void @_EN3std6string4initEP4char3int(%string* %__str2, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @59, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str2, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @57, i32 0, i32 0), i32 3)
   %__str.load6 = load %string, %string* %__str2, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @60, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @58, i32 0, i32 0), i32 3)
   %__str.load7 = load %string, %string* %__str3, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load6, %string %__str.load7)
-  call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @61, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @59, i32 0, i32 0), i32 3)
   call void @_EN3std3MapI6string6stringE6removeEP6string(%"Map<string, string>"* %map, %string* %__str4)
   %1 = call %"MapIterator<string, string>" @_EN3std3MapI6string6stringE8iteratorE(%"Map<string, string>"* %map)
   store %"MapIterator<string, string>" %1, %"MapIterator<string, string>"* %__iterator, align 8
@@ -680,7 +662,7 @@ loop.end:                                         ; preds = %loop.condition
   ret void
 
 assert.fail:                                      ; preds = %loop.body
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @62, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @60, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %loop.body
@@ -698,14 +680,14 @@ define void @_EN4main19testUnitMapIteratorE() {
   %e = alloca %"MapEntry<string, string>"*, align 8
   %__str4 = alloca %string, align 8
   call void @_EN3std3MapI6string6stringE4initE(%"Map<string, string>"* %map)
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @63, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @61, i32 0, i32 0), i32 3)
   %__str.load = load %string, %string* %__str, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @64, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @62, i32 0, i32 0), i32 3)
   %__str.load5 = load %string, %string* %__str1, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load, %string %__str.load5)
-  call void @_EN3std6string4initEP4char3int(%string* %__str2, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @65, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str2, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @63, i32 0, i32 0), i32 3)
   %__str.load6 = load %string, %string* %__str2, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @66, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str3, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @64, i32 0, i32 0), i32 3)
   %__str.load7 = load %string, %string* %__str3, align 8
   call void @_EN3std3MapI6string6stringE6insertE6string6string(%"Map<string, string>"* %map, %string %__str.load6, %string %__str.load7)
   store i32 0, i32* %count, align 4
@@ -726,7 +708,7 @@ loop.body:                                        ; preds = %loop.condition
   %e.load = load %"MapEntry<string, string>"*, %"MapEntry<string, string>"** %e, align 8
   %key = getelementptr inbounds %"MapEntry<string, string>", %"MapEntry<string, string>"* %e.load, i32 0, i32 0
   %key.load = load %string, %string* %key, align 8
-  call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @67, i32 0, i32 0), i32 3)
+  call void @_EN3std6string4initEP4char3int(%string* %__str4, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @65, i32 0, i32 0), i32 3)
   %__str.load8 = load %string, %string* %__str4, align 8
   %5 = call i1 @_EN3stdeqE6string6string(%string %key.load, %string %__str.load8)
   %assert.condition = icmp eq i1 %5, false
@@ -743,14 +725,14 @@ loop.end:                                         ; preds = %loop.condition
   br i1 %assert.condition10, label %assert.fail11, label %assert.success12
 
 assert.fail:                                      ; preds = %loop.body
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @68, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @66, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %loop.body
   br label %loop.increment
 
 assert.fail11:                                    ; preds = %loop.end
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @69, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([40 x i8], [40 x i8]* @67, i32 0, i32 0))
   unreachable
 
 assert.success12:                                 ; preds = %loop.end
@@ -822,7 +804,7 @@ if.end3:                                          ; preds = %if.else2, %if.then1
 
 define i1 @_EN3std3MapI6string3intE8containsEP6string(%"Map<string, int>"* %this, %string* %e) {
   %hashValue = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<string, int>>"*, align 8
+  %slot = alloca %"List<MapEntry<string, int>>", align 8
   %__iterator = alloca %"ArrayIterator<MapEntry<string, int>>", align 8
   %element = alloca %"MapEntry<string, int>"*, align 8
   %1 = call i64 @_EN3std6string4hashE(%string* %e)
@@ -833,21 +815,21 @@ define i1 @_EN3std3MapI6string3intE8containsEP6string(%"Map<string, int>"* %this
   %hashTable = getelementptr inbounds %"Map<string, int>", %"Map<string, int>"* %this, i32 0, i32 0
   %hashValue.load = load i32, i32* %hashValue, align 4
   %5 = call %"List<MapEntry<string, int>>"* @_EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(%"List<List<MapEntry<string, int>>>"* %hashTable, i32 %hashValue.load)
-  store %"List<MapEntry<string, int>>"* %5, %"List<MapEntry<string, int>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %slot, align 8
-  %6 = call i32 @_EN3std4ListI8MapEntryI6string3intEE4sizeE(%"List<MapEntry<string, int>>"* %slot.load)
+  %.load = load %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %5, align 8
+  store %"List<MapEntry<string, int>>" %.load, %"List<MapEntry<string, int>>"* %slot, align 8
+  %6 = call i32 @_EN3std4ListI8MapEntryI6string3intEE4sizeE(%"List<MapEntry<string, int>>"* %slot)
   %7 = icmp eq i32 %6, 0
   br i1 %7, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   ret i1 false
 
 if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  %slot.load1 = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %slot, align 8
-  %8 = call %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %slot.load1)
+  %8 = call %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %slot)
   store %"ArrayIterator<MapEntry<string, int>>" %8, %"ArrayIterator<MapEntry<string, int>>"* %__iterator, align 8
   br label %loop.condition
 
@@ -863,22 +845,24 @@ loop.body:                                        ; preds = %loop.condition
   %key.load = load %string, %string* %key, align 8
   %e.load = load %string, %string* %e, align 8
   %11 = call i1 @_EN3stdeqE6string6string(%string %key.load, %string %e.load)
-  br i1 %11, label %if.then2, label %if.else3
+  br i1 %11, label %if.then1, label %if.else2
 
-loop.increment:                                   ; preds = %if.end4
+loop.increment:                                   ; preds = %if.end3
   call void @_EN3std13ArrayIteratorI8MapEntryI6string3intEE9incrementE(%"ArrayIterator<MapEntry<string, int>>"* %__iterator)
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   ret i1 false
 
-if.then2:                                         ; preds = %loop.body
+if.then1:                                         ; preds = %loop.body
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   ret i1 true
 
-if.else3:                                         ; preds = %loop.body
-  br label %if.end4
+if.else2:                                         ; preds = %loop.body
+  br label %if.end3
 
-if.end4:                                          ; preds = %if.else3
+if.end3:                                          ; preds = %if.else2
   br label %loop.increment
 }
 
@@ -898,7 +882,7 @@ define i32 @_EN3std3MapI6string3intE4sizeE(%"Map<string, int>"* %this) {
 
 define void @_EN3std3MapI6string3intE6removeEP6string(%"Map<string, int>"* %this, %string* %e) {
   %hashValue = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<string, int>>"*, align 8
+  %slot = alloca %"List<MapEntry<string, int>>", align 8
   %__iterator = alloca %"RangeIterator<int>", align 8
   %1 = alloca %"Range<int>", align 8
   %i = alloca i32, align 4
@@ -910,21 +894,21 @@ define void @_EN3std3MapI6string3intE6removeEP6string(%"Map<string, int>"* %this
   %hashTable = getelementptr inbounds %"Map<string, int>", %"Map<string, int>"* %this, i32 0, i32 0
   %hashValue.load = load i32, i32* %hashValue, align 4
   %6 = call %"List<MapEntry<string, int>>"* @_EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(%"List<List<MapEntry<string, int>>>"* %hashTable, i32 %hashValue.load)
-  store %"List<MapEntry<string, int>>"* %6, %"List<MapEntry<string, int>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %slot, align 8
-  %7 = call i32 @_EN3std4ListI8MapEntryI6string3intEE4sizeE(%"List<MapEntry<string, int>>"* %slot.load)
+  %.load = load %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %6, align 8
+  store %"List<MapEntry<string, int>>" %.load, %"List<MapEntry<string, int>>"* %slot, align 8
+  %7 = call i32 @_EN3std4ListI8MapEntryI6string3intEE4sizeE(%"List<MapEntry<string, int>>"* %slot)
   %8 = icmp eq i32 %7, 0
   br i1 %8, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   ret void
 
 if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  %slot.load1 = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %slot, align 8
-  %9 = call i32 @_EN3std4ListI8MapEntryI6string3intEE4sizeE(%"List<MapEntry<string, int>>"* %slot.load1)
+  %9 = call i32 @_EN3std4ListI8MapEntryI6string3intEE4sizeE(%"List<MapEntry<string, int>>"* %slot)
   call void @_EN3std5RangeI3intE4initE3int3int(%"Range<int>"* %1, i32 0, i32 %9)
   %10 = call %"RangeIterator<int>" @_EN3std5RangeI3intE8iteratorE(%"Range<int>"* %1)
   store %"RangeIterator<int>" %10, %"RangeIterator<int>"* %__iterator, align 4
@@ -937,42 +921,42 @@ loop.condition:                                   ; preds = %loop.increment, %if
 loop.body:                                        ; preds = %loop.condition
   %12 = call i32 @_EN3std13RangeIteratorI3intE5valueE(%"RangeIterator<int>"* %__iterator)
   store i32 %12, i32* %i, align 4
-  %slot.load2 = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %slot, align 8
   %i.load = load i32, i32* %i, align 4
-  %13 = call %"MapEntry<string, int>"* @_EN3std4ListI8MapEntryI6string3intEEixE3int(%"List<MapEntry<string, int>>"* %slot.load2, i32 %i.load)
+  %13 = call %"MapEntry<string, int>"* @_EN3std4ListI8MapEntryI6string3intEEixE3int(%"List<MapEntry<string, int>>"* %slot, i32 %i.load)
   %key = getelementptr inbounds %"MapEntry<string, int>", %"MapEntry<string, int>"* %13, i32 0, i32 0
   %key.load = load %string, %string* %key, align 8
   %e.load = load %string, %string* %e, align 8
   %14 = call i1 @_EN3stdeqE6string6string(%string %key.load, %string %e.load)
-  br i1 %14, label %if.then3, label %if.else6
+  br i1 %14, label %if.then1, label %if.else3
 
-loop.increment:                                   ; preds = %if.end7
+loop.increment:                                   ; preds = %if.end4
   call void @_EN3std13RangeIteratorI3intE9incrementE(%"RangeIterator<int>"* %__iterator)
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   ret void
 
-if.then3:                                         ; preds = %loop.body
-  %slot.load4 = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %slot, align 8
-  %i.load5 = load i32, i32* %i, align 4
-  call void @_EN3std4ListI8MapEntryI6string3intEE8removeAtE3int(%"List<MapEntry<string, int>>"* %slot.load4, i32 %i.load5)
+if.then1:                                         ; preds = %loop.body
+  %i.load2 = load i32, i32* %i, align 4
+  call void @_EN3std4ListI8MapEntryI6string3intEE8removeAtE3int(%"List<MapEntry<string, int>>"* %slot, i32 %i.load2)
   %size = getelementptr inbounds %"Map<string, int>", %"Map<string, int>"* %this, i32 0, i32 1
   %size.load = load i32, i32* %size, align 4
   %15 = add i32 %size.load, -1
   store i32 %15, i32* %size, align 4
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   ret void
 
-if.else6:                                         ; preds = %loop.body
-  br label %if.end7
+if.else3:                                         ; preds = %loop.body
+  br label %if.end4
 
-if.end7:                                          ; preds = %if.else6
+if.end4:                                          ; preds = %if.else3
   br label %loop.increment
 }
 
 define i32* @_EN3std3MapI6string3intEixEP6string(%"Map<string, int>"* %this, %string* %e) {
   %hashValue = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<string, int>>"*, align 8
+  %slot = alloca %"List<MapEntry<string, int>>", align 8
   %__iterator = alloca %"ArrayIterator<MapEntry<string, int>>", align 8
   %element = alloca %"MapEntry<string, int>"*, align 8
   %1 = call i64 @_EN3std6string4hashE(%string* %e)
@@ -983,9 +967,9 @@ define i32* @_EN3std3MapI6string3intEixEP6string(%"Map<string, int>"* %this, %st
   %hashTable = getelementptr inbounds %"Map<string, int>", %"Map<string, int>"* %this, i32 0, i32 0
   %hashValue.load = load i32, i32* %hashValue, align 4
   %5 = call %"List<MapEntry<string, int>>"* @_EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(%"List<List<MapEntry<string, int>>>"* %hashTable, i32 %hashValue.load)
-  store %"List<MapEntry<string, int>>"* %5, %"List<MapEntry<string, int>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %slot, align 8
-  %6 = call %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %slot.load)
+  %.load = load %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %5, align 8
+  store %"List<MapEntry<string, int>>" %.load, %"List<MapEntry<string, int>>"* %slot, align 8
+  %6 = call %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %slot)
   store %"ArrayIterator<MapEntry<string, int>>" %6, %"ArrayIterator<MapEntry<string, int>>"* %__iterator, align 8
   br label %loop.condition
 
@@ -1008,9 +992,11 @@ loop.increment:                                   ; preds = %if.end
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   ret i32* null
 
 if.then:                                          ; preds = %loop.body
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   %element.load1 = load %"MapEntry<string, int>"*, %"MapEntry<string, int>"** %element, align 8
   %value = getelementptr inbounds %"MapEntry<string, int>", %"MapEntry<string, int>"* %element.load1, i32 0, i32 1
   ret i32* %value
@@ -1022,9 +1008,20 @@ if.end:                                           ; preds = %if.else
   br label %loop.increment
 }
 
-define i1 @_EN3stdeqI3intEEP3intP3int(i32* %a, i32* %b) {
-  %1 = call i32 @_EN3std3int7compareEP3int(i32* %a, i32* %b)
-  %2 = icmp eq i32 %1, 1
+define i1 @_EN3stdeqI3intEEOP3intR3int(i32* %a, i32* %b) {
+  %1 = icmp eq i32* %a, null
+  br i1 %1, label %if.then, label %if.else
+
+if.then:                                          ; preds = %0
+  ret i1 false
+
+if.else:                                          ; preds = %0
+  br label %if.end
+
+if.end:                                           ; preds = %if.else
+  %a.load = load i32, i32* %a, align 4
+  %b.load = load i32, i32* %b, align 4
+  %2 = icmp eq i32 %a.load, %b.load
   ret i1 %2
 }
 
@@ -1246,7 +1243,7 @@ if.end:                                           ; preds = %if.else, %if.then
 
 define void @_EN3std3MapI6string6stringE6removeEP6string(%"Map<string, string>"* %this, %string* %e) {
   %hashValue = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<string, string>>"*, align 8
+  %slot = alloca %"List<MapEntry<string, string>>", align 8
   %__iterator = alloca %"RangeIterator<int>", align 8
   %1 = alloca %"Range<int>", align 8
   %i = alloca i32, align 4
@@ -1258,21 +1255,21 @@ define void @_EN3std3MapI6string6stringE6removeEP6string(%"Map<string, string>"*
   %hashTable = getelementptr inbounds %"Map<string, string>", %"Map<string, string>"* %this, i32 0, i32 0
   %hashValue.load = load i32, i32* %hashValue, align 4
   %6 = call %"List<MapEntry<string, string>>"* @_EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(%"List<List<MapEntry<string, string>>>"* %hashTable, i32 %hashValue.load)
-  store %"List<MapEntry<string, string>>"* %6, %"List<MapEntry<string, string>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<string, string>>"*, %"List<MapEntry<string, string>>"** %slot, align 8
-  %7 = call i32 @_EN3std4ListI8MapEntryI6string6stringEE4sizeE(%"List<MapEntry<string, string>>"* %slot.load)
+  %.load = load %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %6, align 8
+  store %"List<MapEntry<string, string>>" %.load, %"List<MapEntry<string, string>>"* %slot, align 8
+  %7 = call i32 @_EN3std4ListI8MapEntryI6string6stringEE4sizeE(%"List<MapEntry<string, string>>"* %slot)
   %8 = icmp eq i32 %7, 0
   br i1 %8, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
+  call void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %slot)
   ret void
 
 if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  %slot.load1 = load %"List<MapEntry<string, string>>"*, %"List<MapEntry<string, string>>"** %slot, align 8
-  %9 = call i32 @_EN3std4ListI8MapEntryI6string6stringEE4sizeE(%"List<MapEntry<string, string>>"* %slot.load1)
+  %9 = call i32 @_EN3std4ListI8MapEntryI6string6stringEE4sizeE(%"List<MapEntry<string, string>>"* %slot)
   call void @_EN3std5RangeI3intE4initE3int3int(%"Range<int>"* %1, i32 0, i32 %9)
   %10 = call %"RangeIterator<int>" @_EN3std5RangeI3intE8iteratorE(%"Range<int>"* %1)
   store %"RangeIterator<int>" %10, %"RangeIterator<int>"* %__iterator, align 4
@@ -1285,36 +1282,36 @@ loop.condition:                                   ; preds = %loop.increment, %if
 loop.body:                                        ; preds = %loop.condition
   %12 = call i32 @_EN3std13RangeIteratorI3intE5valueE(%"RangeIterator<int>"* %__iterator)
   store i32 %12, i32* %i, align 4
-  %slot.load2 = load %"List<MapEntry<string, string>>"*, %"List<MapEntry<string, string>>"** %slot, align 8
   %i.load = load i32, i32* %i, align 4
-  %13 = call %"MapEntry<string, string>"* @_EN3std4ListI8MapEntryI6string6stringEEixE3int(%"List<MapEntry<string, string>>"* %slot.load2, i32 %i.load)
+  %13 = call %"MapEntry<string, string>"* @_EN3std4ListI8MapEntryI6string6stringEEixE3int(%"List<MapEntry<string, string>>"* %slot, i32 %i.load)
   %key = getelementptr inbounds %"MapEntry<string, string>", %"MapEntry<string, string>"* %13, i32 0, i32 0
   %key.load = load %string, %string* %key, align 8
   %e.load = load %string, %string* %e, align 8
   %14 = call i1 @_EN3stdeqE6string6string(%string %key.load, %string %e.load)
-  br i1 %14, label %if.then3, label %if.else6
+  br i1 %14, label %if.then1, label %if.else3
 
-loop.increment:                                   ; preds = %if.end7
+loop.increment:                                   ; preds = %if.end4
   call void @_EN3std13RangeIteratorI3intE9incrementE(%"RangeIterator<int>"* %__iterator)
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %slot)
   ret void
 
-if.then3:                                         ; preds = %loop.body
-  %slot.load4 = load %"List<MapEntry<string, string>>"*, %"List<MapEntry<string, string>>"** %slot, align 8
-  %i.load5 = load i32, i32* %i, align 4
-  call void @_EN3std4ListI8MapEntryI6string6stringEE8removeAtE3int(%"List<MapEntry<string, string>>"* %slot.load4, i32 %i.load5)
+if.then1:                                         ; preds = %loop.body
+  %i.load2 = load i32, i32* %i, align 4
+  call void @_EN3std4ListI8MapEntryI6string6stringEE8removeAtE3int(%"List<MapEntry<string, string>>"* %slot, i32 %i.load2)
   %size = getelementptr inbounds %"Map<string, string>", %"Map<string, string>"* %this, i32 0, i32 1
   %size.load = load i32, i32* %size, align 4
   %15 = add i32 %size.load, -1
   store i32 %15, i32* %size, align 4
+  call void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %slot)
   ret void
 
-if.else6:                                         ; preds = %loop.body
-  br label %if.end7
+if.else3:                                         ; preds = %loop.body
+  br label %if.end4
 
-if.end7:                                          ; preds = %if.else6
+if.end4:                                          ; preds = %if.else3
   br label %loop.increment
 }
 
@@ -1518,7 +1515,7 @@ define void @_EN3std3MapI6string3intE6resizeE(%"Map<string, int>"* %this) {
   %__iterator = alloca %"RangeIterator<int>", align 8
   %1 = alloca %"Range<int>", align 8
   %i = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<string, int>>"*, align 8
+  %slot = alloca %"List<MapEntry<string, int>>", align 8
   %__iterator1 = alloca %"ArrayIterator<MapEntry<string, int>>", align 8
   %el = alloca %"MapEntry<string, int>"*, align 8
   call void @_EN3std4ListI4ListI8MapEntryI6string3intEEE4initE(%"List<List<MapEntry<string, int>>>"* %newTable)
@@ -1543,9 +1540,9 @@ loop.body:                                        ; preds = %loop.condition
   %hashTable = getelementptr inbounds %"Map<string, int>", %"Map<string, int>"* %this, i32 0, i32 0
   %i.load = load i32, i32* %i, align 4
   %8 = call %"List<MapEntry<string, int>>"* @_EN3std4ListI4ListI8MapEntryI6string3intEEEixE3int(%"List<List<MapEntry<string, int>>>"* %hashTable, i32 %i.load)
-  store %"List<MapEntry<string, int>>"* %8, %"List<MapEntry<string, int>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %slot, align 8
-  %9 = call %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %slot.load)
+  %.load = load %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %8, align 8
+  store %"List<MapEntry<string, int>>" %.load, %"List<MapEntry<string, int>>"* %slot, align 8
+  %9 = call %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %slot)
   store %"ArrayIterator<MapEntry<string, int>>" %9, %"ArrayIterator<MapEntry<string, int>>"* %__iterator1, align 8
   br label %loop.condition2
 
@@ -1584,6 +1581,7 @@ loop.increment6:                                  ; preds = %loop.body3
   br label %loop.condition2
 
 loop.end7:                                        ; preds = %loop.condition2
+  call void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %slot)
   br label %loop.increment
 }
 
@@ -1591,6 +1589,45 @@ define i32 @_EN3std4ListI8MapEntryI6string3intEE4sizeE(%"List<MapEntry<string, i
   %size = getelementptr inbounds %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %this, i32 0, i32 1
   %size.load = load i32, i32* %size, align 4
   ret i32 %size.load
+}
+
+define void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %this) {
+  %__iterator = alloca %"ArrayIterator<MapEntry<string, int>>", align 8
+  %element = alloca %"MapEntry<string, int>"*, align 8
+  %capacity = getelementptr inbounds %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %this, i32 0, i32 2
+  %capacity.load = load i32, i32* %capacity, align 4
+  %1 = icmp ne i32 %capacity.load, 0
+  br i1 %1, label %if.then, label %if.else
+
+if.then:                                          ; preds = %0
+  %2 = call %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %this)
+  store %"ArrayIterator<MapEntry<string, int>>" %2, %"ArrayIterator<MapEntry<string, int>>"* %__iterator, align 8
+  br label %loop.condition
+
+if.else:                                          ; preds = %0
+  br label %if.end
+
+if.end:                                           ; preds = %loop.end, %if.else
+  ret void
+
+loop.condition:                                   ; preds = %loop.increment, %if.then
+  %3 = call i1 @_EN3std13ArrayIteratorI8MapEntryI6string3intEE8hasValueE(%"ArrayIterator<MapEntry<string, int>>"* %__iterator)
+  br i1 %3, label %loop.body, label %loop.end
+
+loop.body:                                        ; preds = %loop.condition
+  %4 = call %"MapEntry<string, int>"* @_EN3std13ArrayIteratorI8MapEntryI6string3intEE5valueE(%"ArrayIterator<MapEntry<string, int>>"* %__iterator)
+  store %"MapEntry<string, int>"* %4, %"MapEntry<string, int>"** %element, align 8
+  br label %loop.increment
+
+loop.increment:                                   ; preds = %loop.body
+  call void @_EN3std13ArrayIteratorI8MapEntryI6string3intEE9incrementE(%"ArrayIterator<MapEntry<string, int>>"* %__iterator)
+  br label %loop.condition
+
+loop.end:                                         ; preds = %loop.condition
+  %buffer = getelementptr inbounds %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %this, i32 0, i32 0
+  %buffer.load = load %"MapEntry<string, int>"*, %"MapEntry<string, int>"** %buffer, align 8
+  call void @_EN3std10deallocateIAU_8MapEntryI6string3intEEEAU_8MapEntryI6string3intE(%"MapEntry<string, int>"* %buffer.load)
+  br label %if.end
 }
 
 define %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %this) {
@@ -1707,7 +1744,7 @@ loop.end:                                         ; preds = %loop.condition
 
 define i1 @_EN3std3MapI6string6stringE8containsEP6string(%"Map<string, string>"* %this, %string* %e) {
   %hashValue = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<string, string>>"*, align 8
+  %slot = alloca %"List<MapEntry<string, string>>", align 8
   %__iterator = alloca %"ArrayIterator<MapEntry<string, string>>", align 8
   %element = alloca %"MapEntry<string, string>"*, align 8
   %1 = call i64 @_EN3std6string4hashE(%string* %e)
@@ -1718,21 +1755,21 @@ define i1 @_EN3std3MapI6string6stringE8containsEP6string(%"Map<string, string>"*
   %hashTable = getelementptr inbounds %"Map<string, string>", %"Map<string, string>"* %this, i32 0, i32 0
   %hashValue.load = load i32, i32* %hashValue, align 4
   %5 = call %"List<MapEntry<string, string>>"* @_EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(%"List<List<MapEntry<string, string>>>"* %hashTable, i32 %hashValue.load)
-  store %"List<MapEntry<string, string>>"* %5, %"List<MapEntry<string, string>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<string, string>>"*, %"List<MapEntry<string, string>>"** %slot, align 8
-  %6 = call i32 @_EN3std4ListI8MapEntryI6string6stringEE4sizeE(%"List<MapEntry<string, string>>"* %slot.load)
+  %.load = load %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %5, align 8
+  store %"List<MapEntry<string, string>>" %.load, %"List<MapEntry<string, string>>"* %slot, align 8
+  %6 = call i32 @_EN3std4ListI8MapEntryI6string6stringEE4sizeE(%"List<MapEntry<string, string>>"* %slot)
   %7 = icmp eq i32 %6, 0
   br i1 %7, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
+  call void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %slot)
   ret i1 false
 
 if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  %slot.load1 = load %"List<MapEntry<string, string>>"*, %"List<MapEntry<string, string>>"** %slot, align 8
-  %8 = call %"ArrayIterator<MapEntry<string, string>>" @_EN3std4ListI8MapEntryI6string6stringEE8iteratorE(%"List<MapEntry<string, string>>"* %slot.load1)
+  %8 = call %"ArrayIterator<MapEntry<string, string>>" @_EN3std4ListI8MapEntryI6string6stringEE8iteratorE(%"List<MapEntry<string, string>>"* %slot)
   store %"ArrayIterator<MapEntry<string, string>>" %8, %"ArrayIterator<MapEntry<string, string>>"* %__iterator, align 8
   br label %loop.condition
 
@@ -1748,22 +1785,24 @@ loop.body:                                        ; preds = %loop.condition
   %key.load = load %string, %string* %key, align 8
   %e.load = load %string, %string* %e, align 8
   %11 = call i1 @_EN3stdeqE6string6string(%string %key.load, %string %e.load)
-  br i1 %11, label %if.then2, label %if.else3
+  br i1 %11, label %if.then1, label %if.else2
 
-loop.increment:                                   ; preds = %if.end4
+loop.increment:                                   ; preds = %if.end3
   call void @_EN3std13ArrayIteratorI8MapEntryI6string6stringEE9incrementE(%"ArrayIterator<MapEntry<string, string>>"* %__iterator)
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %slot)
   ret i1 false
 
-if.then2:                                         ; preds = %loop.body
+if.then1:                                         ; preds = %loop.body
+  call void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %slot)
   ret i1 true
 
-if.else3:                                         ; preds = %loop.body
-  br label %if.end4
+if.else2:                                         ; preds = %loop.body
+  br label %if.end3
 
-if.end4:                                          ; preds = %if.else3
+if.end3:                                          ; preds = %if.else2
   br label %loop.increment
 }
 
@@ -1846,7 +1885,7 @@ define void @_EN3std3MapI6string6stringE6resizeE(%"Map<string, string>"* %this) 
   %__iterator = alloca %"RangeIterator<int>", align 8
   %1 = alloca %"Range<int>", align 8
   %i = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<string, string>>"*, align 8
+  %slot = alloca %"List<MapEntry<string, string>>", align 8
   %__iterator1 = alloca %"ArrayIterator<MapEntry<string, string>>", align 8
   %el = alloca %"MapEntry<string, string>"*, align 8
   call void @_EN3std4ListI4ListI8MapEntryI6string6stringEEE4initE(%"List<List<MapEntry<string, string>>>"* %newTable)
@@ -1871,9 +1910,9 @@ loop.body:                                        ; preds = %loop.condition
   %hashTable = getelementptr inbounds %"Map<string, string>", %"Map<string, string>"* %this, i32 0, i32 0
   %i.load = load i32, i32* %i, align 4
   %8 = call %"List<MapEntry<string, string>>"* @_EN3std4ListI4ListI8MapEntryI6string6stringEEEixE3int(%"List<List<MapEntry<string, string>>>"* %hashTable, i32 %i.load)
-  store %"List<MapEntry<string, string>>"* %8, %"List<MapEntry<string, string>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<string, string>>"*, %"List<MapEntry<string, string>>"** %slot, align 8
-  %9 = call %"ArrayIterator<MapEntry<string, string>>" @_EN3std4ListI8MapEntryI6string6stringEE8iteratorE(%"List<MapEntry<string, string>>"* %slot.load)
+  %.load = load %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %8, align 8
+  store %"List<MapEntry<string, string>>" %.load, %"List<MapEntry<string, string>>"* %slot, align 8
+  %9 = call %"ArrayIterator<MapEntry<string, string>>" @_EN3std4ListI8MapEntryI6string6stringEE8iteratorE(%"List<MapEntry<string, string>>"* %slot)
   store %"ArrayIterator<MapEntry<string, string>>" %9, %"ArrayIterator<MapEntry<string, string>>"* %__iterator1, align 8
   br label %loop.condition2
 
@@ -1912,37 +1951,8 @@ loop.increment6:                                  ; preds = %loop.body3
   br label %loop.condition2
 
 loop.end7:                                        ; preds = %loop.condition2
+  call void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %slot)
   br label %loop.increment
-}
-
-define i32 @_EN3std3int7compareEP3int(i32* %this, i32* %other) {
-  %this.load = load i32, i32* %this, align 4
-  %other.load = load i32, i32* %other, align 4
-  %1 = icmp slt i32 %this.load, %other.load
-  br i1 %1, label %if.then, label %if.else
-
-if.then:                                          ; preds = %0
-  br label %if.end5
-
-if.else:                                          ; preds = %0
-  %this.load1 = load i32, i32* %this, align 4
-  %other.load2 = load i32, i32* %other, align 4
-  %2 = icmp sgt i32 %this.load1, %other.load2
-  br i1 %2, label %if.then3, label %if.else4
-
-if.then3:                                         ; preds = %if.else
-  br label %if.end
-
-if.else4:                                         ; preds = %if.else
-  br label %if.end
-
-if.end:                                           ; preds = %if.else4, %if.then3
-  %if.result = phi i32 [ 2, %if.then3 ], [ 1, %if.else4 ]
-  br label %if.end5
-
-if.end5:                                          ; preds = %if.end, %if.then
-  %if.result6 = phi i32 [ 0, %if.then ], [ %if.result, %if.end ]
-  ret i32 %if.result6
 }
 
 define void @_EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE6deinitE(%"List<List<MapEntry<StringBuffer, int>>>"* %this) {
@@ -2028,7 +2038,7 @@ declare void @_EN3std12StringBuffer6deinitE(%StringBuffer*)
 
 define i1 @_EN3std3MapI12StringBuffer3intE8containsEP12StringBuffer(%"Map<StringBuffer, int>"* %this, %StringBuffer* %e) {
   %hashValue = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<StringBuffer, int>>"*, align 8
+  %slot = alloca %"List<MapEntry<StringBuffer, int>>", align 8
   %__iterator = alloca %"ArrayIterator<MapEntry<StringBuffer, int>>", align 8
   %element = alloca %"MapEntry<StringBuffer, int>"*, align 8
   %1 = call i64 @_EN3std12StringBuffer4hashE(%StringBuffer* %e)
@@ -2039,21 +2049,21 @@ define i1 @_EN3std3MapI12StringBuffer3intE8containsEP12StringBuffer(%"Map<String
   %hashTable = getelementptr inbounds %"Map<StringBuffer, int>", %"Map<StringBuffer, int>"* %this, i32 0, i32 0
   %hashValue.load = load i32, i32* %hashValue, align 4
   %5 = call %"List<MapEntry<StringBuffer, int>>"* @_EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEEixE3int(%"List<List<MapEntry<StringBuffer, int>>>"* %hashTable, i32 %hashValue.load)
-  store %"List<MapEntry<StringBuffer, int>>"* %5, %"List<MapEntry<StringBuffer, int>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<StringBuffer, int>>"*, %"List<MapEntry<StringBuffer, int>>"** %slot, align 8
-  %6 = call i32 @_EN3std4ListI8MapEntryI12StringBuffer3intEE4sizeE(%"List<MapEntry<StringBuffer, int>>"* %slot.load)
+  %.load = load %"List<MapEntry<StringBuffer, int>>", %"List<MapEntry<StringBuffer, int>>"* %5, align 8
+  store %"List<MapEntry<StringBuffer, int>>" %.load, %"List<MapEntry<StringBuffer, int>>"* %slot, align 8
+  %6 = call i32 @_EN3std4ListI8MapEntryI12StringBuffer3intEE4sizeE(%"List<MapEntry<StringBuffer, int>>"* %slot)
   %7 = icmp eq i32 %6, 0
   br i1 %7, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
+  call void @_EN3std4ListI8MapEntryI12StringBuffer3intEE6deinitE(%"List<MapEntry<StringBuffer, int>>"* %slot)
   ret i1 false
 
 if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else
-  %slot.load1 = load %"List<MapEntry<StringBuffer, int>>"*, %"List<MapEntry<StringBuffer, int>>"** %slot, align 8
-  %8 = call %"ArrayIterator<MapEntry<StringBuffer, int>>" @_EN3std4ListI8MapEntryI12StringBuffer3intEE8iteratorE(%"List<MapEntry<StringBuffer, int>>"* %slot.load1)
+  %8 = call %"ArrayIterator<MapEntry<StringBuffer, int>>" @_EN3std4ListI8MapEntryI12StringBuffer3intEE8iteratorE(%"List<MapEntry<StringBuffer, int>>"* %slot)
   store %"ArrayIterator<MapEntry<StringBuffer, int>>" %8, %"ArrayIterator<MapEntry<StringBuffer, int>>"* %__iterator, align 8
   br label %loop.condition
 
@@ -2066,23 +2076,25 @@ loop.body:                                        ; preds = %loop.condition
   store %"MapEntry<StringBuffer, int>"* %10, %"MapEntry<StringBuffer, int>"** %element, align 8
   %element.load = load %"MapEntry<StringBuffer, int>"*, %"MapEntry<StringBuffer, int>"** %element, align 8
   %key = getelementptr inbounds %"MapEntry<StringBuffer, int>", %"MapEntry<StringBuffer, int>"* %element.load, i32 0, i32 0
-  %11 = call i1 @_EN3stdeqEP12StringBufferP12StringBuffer(%StringBuffer* %key, %StringBuffer* %e)
-  br i1 %11, label %if.then2, label %if.else3
+  %11 = call i1 @_EN3stdeqER12StringBufferR12StringBuffer(%StringBuffer* %key, %StringBuffer* %e)
+  br i1 %11, label %if.then1, label %if.else2
 
-loop.increment:                                   ; preds = %if.end4
+loop.increment:                                   ; preds = %if.end3
   call void @_EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE9incrementE(%"ArrayIterator<MapEntry<StringBuffer, int>>"* %__iterator)
   br label %loop.condition
 
 loop.end:                                         ; preds = %loop.condition
+  call void @_EN3std4ListI8MapEntryI12StringBuffer3intEE6deinitE(%"List<MapEntry<StringBuffer, int>>"* %slot)
   ret i1 false
 
-if.then2:                                         ; preds = %loop.body
+if.then1:                                         ; preds = %loop.body
+  call void @_EN3std4ListI8MapEntryI12StringBuffer3intEE6deinitE(%"List<MapEntry<StringBuffer, int>>"* %slot)
   ret i1 true
 
-if.else3:                                         ; preds = %loop.body
-  br label %if.end4
+if.else2:                                         ; preds = %loop.body
+  br label %if.end3
 
-if.end4:                                          ; preds = %if.else3
+if.end3:                                          ; preds = %if.else2
   br label %loop.increment
 }
 
@@ -2172,7 +2184,7 @@ define void @_EN3std3MapI12StringBuffer3intE6resizeE(%"Map<StringBuffer, int>"* 
   %__iterator = alloca %"RangeIterator<int>", align 8
   %1 = alloca %"Range<int>", align 8
   %i = alloca i32, align 4
-  %slot = alloca %"List<MapEntry<StringBuffer, int>>"*, align 8
+  %slot = alloca %"List<MapEntry<StringBuffer, int>>", align 8
   %__iterator1 = alloca %"ArrayIterator<MapEntry<StringBuffer, int>>", align 8
   %el = alloca %"MapEntry<StringBuffer, int>"*, align 8
   call void @_EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4initE(%"List<List<MapEntry<StringBuffer, int>>>"* %newTable)
@@ -2197,9 +2209,9 @@ loop.body:                                        ; preds = %loop.condition
   %hashTable = getelementptr inbounds %"Map<StringBuffer, int>", %"Map<StringBuffer, int>"* %this, i32 0, i32 0
   %i.load = load i32, i32* %i, align 4
   %8 = call %"List<MapEntry<StringBuffer, int>>"* @_EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEEixE3int(%"List<List<MapEntry<StringBuffer, int>>>"* %hashTable, i32 %i.load)
-  store %"List<MapEntry<StringBuffer, int>>"* %8, %"List<MapEntry<StringBuffer, int>>"** %slot, align 8
-  %slot.load = load %"List<MapEntry<StringBuffer, int>>"*, %"List<MapEntry<StringBuffer, int>>"** %slot, align 8
-  %9 = call %"ArrayIterator<MapEntry<StringBuffer, int>>" @_EN3std4ListI8MapEntryI12StringBuffer3intEE8iteratorE(%"List<MapEntry<StringBuffer, int>>"* %slot.load)
+  %.load = load %"List<MapEntry<StringBuffer, int>>", %"List<MapEntry<StringBuffer, int>>"* %8, align 8
+  store %"List<MapEntry<StringBuffer, int>>" %.load, %"List<MapEntry<StringBuffer, int>>"* %slot, align 8
+  %9 = call %"ArrayIterator<MapEntry<StringBuffer, int>>" @_EN3std4ListI8MapEntryI12StringBuffer3intEE8iteratorE(%"List<MapEntry<StringBuffer, int>>"* %slot)
   store %"ArrayIterator<MapEntry<StringBuffer, int>>" %9, %"ArrayIterator<MapEntry<StringBuffer, int>>"* %__iterator1, align 8
   br label %loop.condition2
 
@@ -2238,6 +2250,7 @@ loop.increment6:                                  ; preds = %loop.body3
   br label %loop.condition2
 
 loop.end7:                                        ; preds = %loop.condition2
+  call void @_EN3std4ListI8MapEntryI12StringBuffer3intEE6deinitE(%"List<MapEntry<StringBuffer, int>>"* %slot)
   br label %loop.increment
 }
 
@@ -2358,6 +2371,45 @@ if.end:                                           ; preds = %if.else
   br label %loop.condition
 }
 
+define void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %this) {
+  %__iterator = alloca %"ArrayIterator<MapEntry<string, string>>", align 8
+  %element = alloca %"MapEntry<string, string>"*, align 8
+  %capacity = getelementptr inbounds %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %this, i32 0, i32 2
+  %capacity.load = load i32, i32* %capacity, align 4
+  %1 = icmp ne i32 %capacity.load, 0
+  br i1 %1, label %if.then, label %if.else
+
+if.then:                                          ; preds = %0
+  %2 = call %"ArrayIterator<MapEntry<string, string>>" @_EN3std4ListI8MapEntryI6string6stringEE8iteratorE(%"List<MapEntry<string, string>>"* %this)
+  store %"ArrayIterator<MapEntry<string, string>>" %2, %"ArrayIterator<MapEntry<string, string>>"* %__iterator, align 8
+  br label %loop.condition
+
+if.else:                                          ; preds = %0
+  br label %if.end
+
+if.end:                                           ; preds = %loop.end, %if.else
+  ret void
+
+loop.condition:                                   ; preds = %loop.increment, %if.then
+  %3 = call i1 @_EN3std13ArrayIteratorI8MapEntryI6string6stringEE8hasValueE(%"ArrayIterator<MapEntry<string, string>>"* %__iterator)
+  br i1 %3, label %loop.body, label %loop.end
+
+loop.body:                                        ; preds = %loop.condition
+  %4 = call %"MapEntry<string, string>"* @_EN3std13ArrayIteratorI8MapEntryI6string6stringEE5valueE(%"ArrayIterator<MapEntry<string, string>>"* %__iterator)
+  store %"MapEntry<string, string>"* %4, %"MapEntry<string, string>"** %element, align 8
+  br label %loop.increment
+
+loop.increment:                                   ; preds = %loop.body
+  call void @_EN3std13ArrayIteratorI8MapEntryI6string6stringEE9incrementE(%"ArrayIterator<MapEntry<string, string>>"* %__iterator)
+  br label %loop.condition
+
+loop.end:                                         ; preds = %loop.condition
+  %buffer = getelementptr inbounds %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %this, i32 0, i32 0
+  %buffer.load = load %"MapEntry<string, string>"*, %"MapEntry<string, string>"** %buffer, align 8
+  call void @_EN3std10deallocateIAU_8MapEntryI6string6stringEEEAU_8MapEntryI6string6stringE(%"MapEntry<string, string>"* %buffer.load)
+  br label %if.end
+}
+
 define %"MapEntry<string, string>"* @_EN3std4ListI8MapEntryI6string6stringEEixE3int(%"List<MapEntry<string, string>>"* %this, i32 %index) {
   %size = getelementptr inbounds %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %this, i32 0, i32 1
   %size.load = load i32, i32* %size, align 4
@@ -2419,45 +2471,6 @@ define %"List<MapEntry<string, int>>"* @_EN3std13ArrayIteratorI4ListI8MapEntryI6
   %current = getelementptr inbounds %"ArrayIterator<List<MapEntry<string, int>>>", %"ArrayIterator<List<MapEntry<string, int>>>"* %this, i32 0, i32 0
   %current.load = load %"List<MapEntry<string, int>>"*, %"List<MapEntry<string, int>>"** %current, align 8
   ret %"List<MapEntry<string, int>>"* %current.load
-}
-
-define void @_EN3std4ListI8MapEntryI6string3intEE6deinitE(%"List<MapEntry<string, int>>"* %this) {
-  %__iterator = alloca %"ArrayIterator<MapEntry<string, int>>", align 8
-  %element = alloca %"MapEntry<string, int>"*, align 8
-  %capacity = getelementptr inbounds %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %this, i32 0, i32 2
-  %capacity.load = load i32, i32* %capacity, align 4
-  %1 = icmp ne i32 %capacity.load, 0
-  br i1 %1, label %if.then, label %if.else
-
-if.then:                                          ; preds = %0
-  %2 = call %"ArrayIterator<MapEntry<string, int>>" @_EN3std4ListI8MapEntryI6string3intEE8iteratorE(%"List<MapEntry<string, int>>"* %this)
-  store %"ArrayIterator<MapEntry<string, int>>" %2, %"ArrayIterator<MapEntry<string, int>>"* %__iterator, align 8
-  br label %loop.condition
-
-if.else:                                          ; preds = %0
-  br label %if.end
-
-if.end:                                           ; preds = %loop.end, %if.else
-  ret void
-
-loop.condition:                                   ; preds = %loop.increment, %if.then
-  %3 = call i1 @_EN3std13ArrayIteratorI8MapEntryI6string3intEE8hasValueE(%"ArrayIterator<MapEntry<string, int>>"* %__iterator)
-  br i1 %3, label %loop.body, label %loop.end
-
-loop.body:                                        ; preds = %loop.condition
-  %4 = call %"MapEntry<string, int>"* @_EN3std13ArrayIteratorI8MapEntryI6string3intEE5valueE(%"ArrayIterator<MapEntry<string, int>>"* %__iterator)
-  store %"MapEntry<string, int>"* %4, %"MapEntry<string, int>"** %element, align 8
-  br label %loop.increment
-
-loop.increment:                                   ; preds = %loop.body
-  call void @_EN3std13ArrayIteratorI8MapEntryI6string3intEE9incrementE(%"ArrayIterator<MapEntry<string, int>>"* %__iterator)
-  br label %loop.condition
-
-loop.end:                                         ; preds = %loop.condition
-  %buffer = getelementptr inbounds %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %this, i32 0, i32 0
-  %buffer.load = load %"MapEntry<string, int>"*, %"MapEntry<string, int>"** %buffer, align 8
-  call void @_EN3std10deallocateIAU_8MapEntryI6string3intEEEAU_8MapEntryI6string3intE(%"MapEntry<string, int>"* %buffer.load)
-  br label %if.end
 }
 
 define void @_EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE9incrementE(%"ArrayIterator<List<MapEntry<string, int>>>"* %this) {
@@ -2547,12 +2560,18 @@ define void @_EN3std4ListI4ListI8MapEntryI6string3intEEE16indexOutOfBoundsE3int(
   %1 = alloca i32, align 4
   %__str1 = alloca %string, align 8
   %2 = alloca i32, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @70, i32 0, i32 0), i32 11)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @68, i32 0, i32 0), i32 11)
   store i32 %index, i32* %1, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @71, i32 0, i32 0), i32 27)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @69, i32 0, i32 0), i32 27)
   %3 = call i32 @_EN3std4ListI4ListI8MapEntryI6string3intEEE4sizeE(%"List<List<MapEntry<string, int>>>"* %this)
   store i32 %3, i32* %2, align 4
   %4 = call %never @_EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(%string* %__str, i32* %1, %string* %__str1, i32* %2)
+  ret void
+}
+
+define void @_EN3std10deallocateIAU_8MapEntryI6string3intEEEAU_8MapEntryI6string3intE(%"MapEntry<string, int>"* %allocation) {
+  %1 = bitcast %"MapEntry<string, int>"* %allocation to i8*
+  call void @free(i8* %1)
   ret void
 }
 
@@ -2592,45 +2611,6 @@ define %"ArrayIterator<List<MapEntry<string, string>>>" @_EN3std4ListI4ListI8Map
   call void @_EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE4initE8ArrayRefI4ListI8MapEntryI6string6stringEEE(%"ArrayIterator<List<MapEntry<string, string>>>"* %1, %"ArrayRef<List<MapEntry<string, string>>>" %.load)
   %.load1 = load %"ArrayIterator<List<MapEntry<string, string>>>", %"ArrayIterator<List<MapEntry<string, string>>>"* %1, align 8
   ret %"ArrayIterator<List<MapEntry<string, string>>>" %.load1
-}
-
-define void @_EN3std4ListI8MapEntryI6string6stringEE6deinitE(%"List<MapEntry<string, string>>"* %this) {
-  %__iterator = alloca %"ArrayIterator<MapEntry<string, string>>", align 8
-  %element = alloca %"MapEntry<string, string>"*, align 8
-  %capacity = getelementptr inbounds %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %this, i32 0, i32 2
-  %capacity.load = load i32, i32* %capacity, align 4
-  %1 = icmp ne i32 %capacity.load, 0
-  br i1 %1, label %if.then, label %if.else
-
-if.then:                                          ; preds = %0
-  %2 = call %"ArrayIterator<MapEntry<string, string>>" @_EN3std4ListI8MapEntryI6string6stringEE8iteratorE(%"List<MapEntry<string, string>>"* %this)
-  store %"ArrayIterator<MapEntry<string, string>>" %2, %"ArrayIterator<MapEntry<string, string>>"* %__iterator, align 8
-  br label %loop.condition
-
-if.else:                                          ; preds = %0
-  br label %if.end
-
-if.end:                                           ; preds = %loop.end, %if.else
-  ret void
-
-loop.condition:                                   ; preds = %loop.increment, %if.then
-  %3 = call i1 @_EN3std13ArrayIteratorI8MapEntryI6string6stringEE8hasValueE(%"ArrayIterator<MapEntry<string, string>>"* %__iterator)
-  br i1 %3, label %loop.body, label %loop.end
-
-loop.body:                                        ; preds = %loop.condition
-  %4 = call %"MapEntry<string, string>"* @_EN3std13ArrayIteratorI8MapEntryI6string6stringEE5valueE(%"ArrayIterator<MapEntry<string, string>>"* %__iterator)
-  store %"MapEntry<string, string>"* %4, %"MapEntry<string, string>"** %element, align 8
-  br label %loop.increment
-
-loop.increment:                                   ; preds = %loop.body
-  call void @_EN3std13ArrayIteratorI8MapEntryI6string6stringEE9incrementE(%"ArrayIterator<MapEntry<string, string>>"* %__iterator)
-  br label %loop.condition
-
-loop.end:                                         ; preds = %loop.condition
-  %buffer = getelementptr inbounds %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %this, i32 0, i32 0
-  %buffer.load = load %"MapEntry<string, string>"*, %"MapEntry<string, string>"** %buffer, align 8
-  call void @_EN3std10deallocateIAU_8MapEntryI6string6stringEEEAU_8MapEntryI6string6stringE(%"MapEntry<string, string>"* %buffer.load)
-  br label %if.end
 }
 
 define void @_EN3std10deallocateIAU_4ListI8MapEntryI6string6stringEEEEAU_4ListI8MapEntryI6string6stringEE(%"List<MapEntry<string, string>>"* %allocation) {
@@ -2741,9 +2721,9 @@ define void @_EN3std4ListI4ListI8MapEntryI6string6stringEEE16indexOutOfBoundsE3i
   %1 = alloca i32, align 4
   %__str1 = alloca %string, align 8
   %2 = alloca i32, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @72, i32 0, i32 0), i32 11)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @70, i32 0, i32 0), i32 11)
   store i32 %index, i32* %1, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @73, i32 0, i32 0), i32 27)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @71, i32 0, i32 0), i32 27)
   %3 = call i32 @_EN3std4ListI4ListI8MapEntryI6string6stringEEE4sizeE(%"List<List<MapEntry<string, string>>>"* %this)
   store i32 %3, i32* %2, align 4
   %4 = call %never @_EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(%string* %__str, i32* %1, %string* %__str1, i32* %2)
@@ -2896,7 +2876,7 @@ define %"MapEntry<StringBuffer, int>"* @_EN3std13ArrayIteratorI8MapEntryI12Strin
   ret %"MapEntry<StringBuffer, int>"* %current.load
 }
 
-declare i1 @_EN3stdeqEP12StringBufferP12StringBuffer(%StringBuffer*, %StringBuffer*)
+declare i1 @_EN3stdeqER12StringBufferR12StringBuffer(%StringBuffer*, %StringBuffer*)
 
 define void @_EN3std13ArrayIteratorI8MapEntryI12StringBuffer3intEE9incrementE(%"ArrayIterator<MapEntry<StringBuffer, int>>"* %this) {
   %current = getelementptr inbounds %"ArrayIterator<MapEntry<StringBuffer, int>>", %"ArrayIterator<MapEntry<StringBuffer, int>>"* %this, i32 0, i32 0
@@ -2940,9 +2920,9 @@ define void @_EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE16indexOutOfBound
   %1 = alloca i32, align 4
   %__str1 = alloca %string, align 8
   %2 = alloca i32, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @74, i32 0, i32 0), i32 11)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @72, i32 0, i32 0), i32 11)
   store i32 %index, i32* %1, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @75, i32 0, i32 0), i32 27)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @73, i32 0, i32 0), i32 27)
   %3 = call i32 @_EN3std4ListI4ListI8MapEntryI12StringBuffer3intEEE4sizeE(%"List<List<MapEntry<StringBuffer, int>>>"* %this)
   store i32 %3, i32* %2, align 4
   %4 = call %never @_EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(%string* %__str, i32* %1, %string* %__str1, i32* %2)
@@ -2954,9 +2934,9 @@ define void @_EN3std4ListI8MapEntryI6string3intEE16indexOutOfBoundsE3int(%"List<
   %1 = alloca i32, align 4
   %__str1 = alloca %string, align 8
   %2 = alloca i32, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @76, i32 0, i32 0), i32 11)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @74, i32 0, i32 0), i32 11)
   store i32 %index, i32* %1, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @77, i32 0, i32 0), i32 27)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @75, i32 0, i32 0), i32 27)
   %3 = call i32 @_EN3std4ListI8MapEntryI6string3intEE4sizeE(%"List<MapEntry<string, int>>"* %this)
   store i32 %3, i32* %2, align 4
   %4 = call %never @_EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(%string* %__str, i32* %1, %string* %__str1, i32* %2)
@@ -3013,14 +2993,20 @@ loop.end:                                         ; preds = %loop.condition
   ret void
 }
 
+define void @_EN3std10deallocateIAU_8MapEntryI6string6stringEEEAU_8MapEntryI6string6stringE(%"MapEntry<string, string>"* %allocation) {
+  %1 = bitcast %"MapEntry<string, string>"* %allocation to i8*
+  call void @free(i8* %1)
+  ret void
+}
+
 define void @_EN3std4ListI8MapEntryI6string6stringEE16indexOutOfBoundsE3int(%"List<MapEntry<string, string>>"* %this, i32 %index) {
   %__str = alloca %string, align 8
   %1 = alloca i32, align 4
   %__str1 = alloca %string, align 8
   %2 = alloca i32, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @78, i32 0, i32 0), i32 11)
+  call void @_EN3std6string4initEP4char3int(%string* %__str, i8* getelementptr inbounds ([12 x i8], [12 x i8]* @76, i32 0, i32 0), i32 11)
   store i32 %index, i32* %1, align 4
-  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @79, i32 0, i32 0), i32 27)
+  call void @_EN3std6string4initEP4char3int(%string* %__str1, i8* getelementptr inbounds ([28 x i8], [28 x i8]* @77, i32 0, i32 0), i32 27)
   %3 = call i32 @_EN3std4ListI8MapEntryI6string6stringEE4sizeE(%"List<MapEntry<string, string>>"* %this)
   store i32 %3, i32* %2, align 4
   %4 = call %never @_EN3std5abortI6string3int6string3intEEP6stringP3intP6stringP3int(%string* %__str, i32* %1, %string* %__str1, i32* %2)
@@ -3102,12 +3088,6 @@ define void @_EN3std13ArrayIteratorI4ListI8MapEntryI6string3intEEE4initE8ArrayRe
   %6 = call i32 @_EN3std8ArrayRefI4ListI8MapEntryI6string3intEEE4sizeE(%"ArrayRef<List<MapEntry<string, int>>>"* %3)
   %7 = getelementptr inbounds %"List<MapEntry<string, int>>", %"List<MapEntry<string, int>>"* %5, i32 %6
   store %"List<MapEntry<string, int>>"* %7, %"List<MapEntry<string, int>>"** %end, align 8
-  ret void
-}
-
-define void @_EN3std10deallocateIAU_8MapEntryI6string3intEEEAU_8MapEntryI6string3intE(%"MapEntry<string, int>"* %allocation) {
-  %1 = bitcast %"MapEntry<string, int>"* %allocation to i8*
-  call void @free(i8* %1)
   ret void
 }
 
@@ -3282,12 +3262,6 @@ define void @_EN3std13ArrayIteratorI4ListI8MapEntryI6string6stringEEE4initE8Arra
   %6 = call i32 @_EN3std8ArrayRefI4ListI8MapEntryI6string6stringEEE4sizeE(%"ArrayRef<List<MapEntry<string, string>>>"* %3)
   %7 = getelementptr inbounds %"List<MapEntry<string, string>>", %"List<MapEntry<string, string>>"* %5, i32 %6
   store %"List<MapEntry<string, string>>"* %7, %"List<MapEntry<string, string>>"** %end, align 8
-  ret void
-}
-
-define void @_EN3std10deallocateIAU_8MapEntryI6string6stringEEEAU_8MapEntryI6string6stringE(%"MapEntry<string, string>"* %allocation) {
-  %1 = bitcast %"MapEntry<string, string>"* %allocation to i8*
-  call void @free(i8* %1)
   ret void
 }
 
@@ -3683,7 +3657,7 @@ define %"MapEntry<string, int>"* @_EN3std13allocateArrayI8MapEntryI6string3intEE
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @80, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @78, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -3817,7 +3791,7 @@ define %"MapEntry<string, string>"* @_EN3std13allocateArrayI8MapEntryI6string6st
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @81, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @79, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -3947,7 +3921,7 @@ define %"MapEntry<StringBuffer, int>"* @_EN3std13allocateArrayI8MapEntryI12Strin
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @82, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @80, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -3963,7 +3937,7 @@ define %"List<MapEntry<string, int>>"* @_EN3std13allocateArrayI4ListI8MapEntryI6
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @83, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @81, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -3981,7 +3955,7 @@ define %"List<MapEntry<string, string>>"* @_EN3std13allocateArrayI4ListI8MapEntr
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @84, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @82, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0
@@ -3997,7 +3971,7 @@ define %"List<MapEntry<StringBuffer, int>>"* @_EN3std13allocateArrayI4ListI8MapE
   br i1 %assert.condition, label %assert.fail, label %assert.success
 
 assert.fail:                                      ; preds = %0
-  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @85, i32 0, i32 0))
+  call void @_EN3std10assertFailEP4char(i8* getelementptr inbounds ([36 x i8], [36 x i8]* @83, i32 0, i32 0))
   unreachable
 
 assert.success:                                   ; preds = %0

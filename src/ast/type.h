@@ -27,6 +27,7 @@ enum class TypeKind {
     TupleType,
     FunctionType,
     PointerType,
+    ReferenceType,
     UnresolvedType, // Placeholder for unresolved generic parameters
 };
 
@@ -60,6 +61,8 @@ struct Type {
     bool isTupleType() const { return getKind() == TypeKind::TupleType; }
     bool isFunctionType() const { return getKind() == TypeKind::FunctionType; }
     bool isPointerType() const { return getKind() == TypeKind::PointerType; }
+    bool isReferenceType() const { return getKind() == TypeKind::ReferenceType; }
+    /// Returns false for references. (References are not considered pointers for the purpose of this function.)
     bool isImplementedAsPointer() const;
     bool isUnresolvedType() const { return getKind() == TypeKind::UnresolvedType; }
     bool isOptionalType() const { return isBasicType() && getName() == "Optional"; }
@@ -107,7 +110,8 @@ struct Type {
     Mutability getMutability() const { return mutability; }
     Type withMutability(Mutability m) const { return Type(typeBase, m, location); }
     Type getPointerTo() const;
-    Type removePointer() const { return isPointerType() ? getPointee() : *this; }
+    Type removePointer() const { return (isPointerType() || isReferenceType()) ? getPointee() : *this; }
+    Type removeReference() const { return isReferenceType() ? getPointee() : *this; }
     Type removeOptional() const { return isOptionalType() ? getWrappedType() : *this; }
     TypeKind getKind() const { return typeBase->getKind(); }
     TypeDecl* getDecl() const;
@@ -154,7 +158,6 @@ struct Type {
 
     static bool isBuiltinScalar(llvm::StringRef typeName);
 
-private:
     TypeBase* typeBase;
     Mutability mutability;
     // TODO: Add a dedicated class hierarchy for storing source locations with types, like TypeLoc in Clang and Swift.
@@ -247,6 +250,18 @@ struct PointerType : TypeBase {
 
 private:
     PointerType(Type pointeeType) : TypeBase(TypeKind::PointerType), pointeeType(pointeeType) {}
+
+private:
+    Type pointeeType;
+};
+
+struct ReferenceType : TypeBase {
+    Type getPointeeType() const { return pointeeType; }
+    static Type get(Type pointeeType, Mutability mutability = Mutability::Mutable, SourceLocation location = SourceLocation());
+    static bool classof(const TypeBase* t) { return t->getKind() == TypeKind::ReferenceType; }
+
+private:
+    ReferenceType(Type pointeeType) : TypeBase(TypeKind::ReferenceType), pointeeType(pointeeType) {}
 
 private:
     Type pointeeType;

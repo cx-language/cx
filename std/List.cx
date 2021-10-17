@@ -250,6 +250,6 @@ struct List<Element> {
     }
 }
 
-bool operator==<T>(List<T>* a, List<T>* b) {
+bool operator==<T>(ref List<T> a, ref List<T> b) {
     return ArrayRef(a) == ArrayRef(b);
 }
