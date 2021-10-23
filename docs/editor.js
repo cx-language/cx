@@ -21,13 +21,13 @@ function initializeCodeEditor(block) {
     }, 1);
 
     const runButton = document.createElement("button");
-    runButton.innerText = "▶\uFE0E";
+    runButton.innerText = "Run";
     runButton.className = "run";
-    editorWrapper.appendChild(runButton);
+    block.parentNode.appendChild(runButton);
 
     const output = document.createElement("div");
     output.className = "output";
-    editorWrapper.appendChild(output);
+    block.parentNode.appendChild(output);
 
     const stdout = document.createElement("div");
     stdout.className = "stdout";

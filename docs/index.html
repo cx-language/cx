@@ -1,42 +1,45 @@
 <link rel="stylesheet" href="index.css">
 
 <section class="intro">
-    <p>
-        C* (pronounced "C star") is a C-based hybrid low-level/high-level programming language focused on runtime
-        performance and developer productivity (in this order of priority). The language is simple and unopinionated,
-        supporting imperative, generic, data-oriented, functional, and object-oriented programming.
-    </p>
+    <div class="intro-grid">
+        <div class="intro-text">
+            <h1>C* is a language designed for <strong>performance and productivity</strong>.</h1>
+            <p>
+                C* (pronounced “C star”) is a hybrid low-level / high-level programming language focused on runtime
+                performance and developer productivity, in this order of priority. The language is simple and
+                unopinionated, has a clean C-like syntax, and supports imperative, generic, data-oriented, functional,
+                and object-oriented programming.
+            </p>
+        </div>
+        <pre class="sourceCode cs">##EXAMPLECODE##</pre>
+    </div>
 </section>
 
 <section class="features">
     <div class="block">
-        <h4>Performance</h4>
+        <h2>Performance</h2>
         C* compiles to efficient native code using LLVM. There's no garbage collection, hidden allocation, or runtime.
         C* takes a performance-first approach to common programming patterns, such as subtyping (tagged unions),
         map/filter/reduce (lazy iterators), and string/array handling (slices). Even fast compilation is a goal of C*.
     </div>
 
     <div class="block">
-        <h4>Expressiveness</h4>
+        <h2>Expressiveness</h2>
         C* is a simple yet expressive language, featuring a strong type system with compile-time null-safety, sum types,
         and trait-like interfaces. It has both high-level programming constructs and support for systems-level
-        programming, such as pointers, destructors, and generics. There's no preprocessor, macros, or metaprogramming.
+        programming, such as pointers, destructors, and generics. There are no preprocessor or macros.
     </div>
 
     <div class="block">
-        <h4>Productivity</h4>
+        <h2>Productivity</h2>
         C* has great C interop: C headers can be imported directly without the need for bindings. The clean and familiar
         C-like syntax avoids unnecessary boilerplate, and allows C/C++ programmers to instantly get productive
         without a steep learning curve. Debug builds check for buffer or arithmetic overflows by default.
     </div>
 </section>
 
-<h4>Example code</h4>
-<pre class="sourceCode cs">
-##EXAMPLECODE##
-</pre>
-
 <section class="bottom-links">
-    <a href="./introduction.html">Learn more</a>
-    <a href="https://github.com/cx-language/cx/tree/main/examples" target="_blank">More examples</a>
+    <a class="button" href="./introduction.html">Why C*</a>
+    <a class="button" href="https://github.com/cx-language/cx/tree/main/examples" target="_blank">More examples</a>
+    <a class="button" href="https://github.com/cx-language/cx" target="_blank">Source code</a>
 </section>

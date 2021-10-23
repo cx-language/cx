@@ -20,7 +20,7 @@ for file in book/*.md index.html; do
     esac
 
     basename="${basename%.*}"
-    pandoc "$file" -o "build/$basename.html" -s --include-before-body="top-nav.html" $toc --metadata pagetitle="C*"
+    pandoc "$file" -o "build/$basename.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --metadata pagetitle="C*"
 
     template=$(<"build/$basename.html")
     example=$(<../examples/tree.cx)

@@ -1,4 +1,5 @@
-// A recursive directory listing program, demonstrating the usage of C APIs.
+// A recursive directory listing program,
+// demonstrating the usage of C APIs.
 
 import "dirent.h";
 

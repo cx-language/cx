@@ -1,9 +1,11 @@
 :root {
     --background-color: #fff;
     --background-color-2: #f9f9fb;
-    --background-color-3: hsla(0, 0%, 0%, 0.1);
+    --background-color-3: hsl(240, 2%, 88%);
+    --header-background: #212938;
+    --header-foreground: var(--background-color-2);
     --text-color: #333;
-    --text-color-subtle: hsla(240, 100%, 5%, 0.4);
+    --text-color-subtle: hsl(245, 5%, 61%);
     --blue: hsl(216, 74%, 46%);
     --string-color: #008000;
     --number-color: #a31515;
@@ -13,6 +15,7 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
+        color-scheme: dark;
         --background-color: hsl(220, 5%, 8%);
         --background-color-2: hsla(0, 0%, 100%, 0.03);
         --background-color-3: hsla(0, 0%, 100%, 0.1);
@@ -31,23 +34,40 @@
 }
 
 html {
-    margin-left: calc(100vw - 100%);
     background: var(--background-color);
     color: var(--text-color);
 }
 
 body {
     position: relative;
-    max-width: 800px;
-    margin: 0 auto 100px auto;
+    max-width: 1000px;
+    margin: 0 auto;
     padding: 20px;
+    padding-top: 0;
     box-sizing: content-box;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Droid Sans, Helvetica Neue, Arial, sans-serif;
     font-size: 15px;
+    line-height: 1.6;
+    display: grid;
+    grid-column-gap: 40px;
+}
+
+@media screen and (min-width: 768px) {
+    body {
+        grid-template-columns: minmax(auto, max-content) auto;
+    }
+}
+
+.top-nav + main {
+    grid-column: 1 / -1;
+}
+
+main {
+    margin-bottom: 100px;
 }
 
 h1 {
-    margin-top: 30px;
+    margin-top: 0;
 }
 
 a, a:visited {
@@ -62,10 +82,6 @@ a:hover {
 a.active {
     font-weight: bold;
     color: unset;
-}
-
-ul {
-    margin: 0;
 }
 
 hr {
@@ -83,17 +99,19 @@ pre, code, .sourceCode {
 }
 
 .sourceCode, pre code {
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+div.sourceCode {
+    position: relative;
+    background: var(--background-color-2);
+    border: 1px solid var(--background-color-3);
+    border-radius: 2px;
 }
 
 pre {
     padding: 10px 15px;
-}
-
-pre, .editor {
-    background: var(--background-color-2);
-    border-radius: 2px;
 }
 
 .top-nav {
@@ -102,8 +120,8 @@ pre, .editor {
     grid-template-rows: auto auto;
     grid-row-gap: 20px;
     align-items: center;
-    border-bottom: 1px solid var(--background-color-3);
     padding: 30px 0;
+    grid-column: 1 / -1;
 }
 
 .top-nav h1 {
@@ -141,8 +159,6 @@ pre, .editor {
 }
 
 .side-nav {
-    margin: 30px 0;
-    padding: 0 30px 0 20px;
     white-space: nowrap;
 }
 
@@ -151,16 +167,50 @@ pre, .editor {
     list-style-type: none;
 }
 
-@media screen and (min-width: 1300px) {
-    .side-nav {
-        width: 250px;
-        position: absolute;
-        margin-left: -250px;
+section {
+    margin: 30px 0;
+}
+
+.intro {
+    margin-top: 0;
+}
+
+.intro-grid {
+    display: grid;
+    grid-gap: 30px;
+    grid-template-rows: auto auto;
+}
+
+@media screen and (min-width: 768px) {
+    .intro-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: none;
     }
 }
 
-section {
-    margin: 30px 0;
+.intro-grid section,
+.intro-grid .sourceCode {
+    margin: 0;
+}
+
+.intro h1 {
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.4;
+    margin: 40px 0;
+}
+
+.intro h1 strong {
+    font-weight: 700;
+}
+
+.intro p {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.intro .CodeMirror-scroll {
+    max-height: 400px;
 }
 
 .features {
@@ -168,6 +218,12 @@ section {
     grid-template-columns: 1fr;
     grid-gap: 30px;
     margin: 30px 0;
+}
+
+.features h2 {
+    color: var(--text-color-subtle);
+    margin-top: 0;
+    margin-bottom: 5px;
 }
 
 @media screen and (min-width: 768px) {
@@ -193,14 +249,20 @@ h4 {
     grid-column: 1 / -1;
 }
 
-button {
+button, a.button {
     border: none;
     border-radius: 2px;
-    background: var(--background-color-2);
+    background: var(--background-color-3);
     color: inherit;
-    padding: 0 15px;
+    padding: 10px 15px;
     height: 30px;
     cursor: pointer;
+    font-size: inherit;
+}
+
+a.button {
+    display: inline-block;
+    height: auto;
 }
 
 button:hover {
@@ -212,6 +274,7 @@ button:focus {
 }
 
 .editor {
+    overflow: auto;
     tab-size: 4;
 }
 
@@ -248,15 +311,21 @@ button:focus {
 
 button.run {
     position: absolute;
-    right: 0;
-    margin: -40px 30px -40px -40px;
+    right: 20px;
+    top: 10px;
     z-index: 10;
-    color: var(--text-color-subtle);
+    padding: 15px;
+    border-radius: 50%;
+    background: var(--background-color-3);
+    background-image: url("lib/play-button.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    text-indent: -10000px; /* Hide text except from screen readers */
 }
 
-button.run:hover {
-    background: none;
-    color: var(--text-color);
+button.run:active {
+    transform: scale(0.9);
 }
 
 .output {
@@ -273,9 +342,15 @@ button.run:hover {
 }
 
 .bottom-links {
-    text-align: center;
+    margin: 40px auto;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    flex-wrap: wrap;
 }
 
-.bottom-links a + a {
-    margin-left: 30px;
+.bottom-links a {
+    width: fit-content;
 }
