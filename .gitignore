@@ -47,3 +47,6 @@ docs/html/
 # CLion
 .idea
 cmake-build-*
+
+# System files
+.DS_Store
