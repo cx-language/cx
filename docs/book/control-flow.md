@@ -3,7 +3,7 @@
 ## for
 
 The for-loop iterates over each element in the range expression.
-The range may be anything that has an `iterator()` method that returns an [iterator](iterators.html).
+The range may be anything that has an `iterator()` method that returns an [iterator](iterators).
 
 ```cs
 void main() {

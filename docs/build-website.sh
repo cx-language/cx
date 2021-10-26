@@ -1,3 +1,6 @@
+# To develop the website locally, run this script after each change,
+# and serve the generated HTML from the build directory using e.g. 'npx serve'.
+
 pandoc --version >/dev/null || exit
 
 cd spec || exit

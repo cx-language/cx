@@ -4,7 +4,7 @@ Pointers, written `T*` (where `T` is the pointed-to type), are used to refer to 
 
 C* pointers are mostly like C/C++ pointers, with the following differences:
 - They cannot be null by default.
-  To create nullable pointers, they need to be marked as [nullable](nullable-types.html).
+  To create nullable pointers, they need to be marked as [nullable](nullable-types).
 - They don't support pointer arithmetic. For pointer arithmetic, array pointers have to be used, see below.
 - When passing a `T*` where a `T` is expected, the pointer is automatically dereferenced. 
 - When passing a `T` value where a `T*` is expected, the address is automatically passed.
