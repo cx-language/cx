@@ -4,7 +4,7 @@ C* (pronounced "C star") is a C-based hybrid low-level/high-level programming la
 performance and developer productivity (in this order of priority). The language is simple and unopinionated,
 supporting imperative, generic, data-oriented, functional, and object-oriented programming.
 
-Learn more about the language at http://cx-lang.org.
+Learn more about the language at https://cx-language.github.io/.
 
 The project is still in early stages of development: some planned features have not yet been implemented,
 existing ones are subject to change, and the documentation is scarce.
