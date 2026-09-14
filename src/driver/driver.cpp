@@ -463,9 +463,34 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     }
 
     std::vector<llvm::StringRef> ccArgStringRefs(ccArgs.begin(), ccArgs.end());
-    int ccExitStatus = useExternalCCompiler ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs) : invokeClang(ccArgs);
+
+    // When running the program right away, capture the C compiler's stdout so
+    // chatty compilers (MSVC cl.exe echoes banners and compiled filenames)
+    // don't pollute the executed program's stdout. Stderr stays visible, and
+    // the captured output is shown if compilation fails.
+    llvm::SmallString<128> ccStdoutLog;
+    bool captureCcOutput = run && useExternalCCompiler
+        && !llvm::sys::fs::createTemporaryFile("cx-cc-stdout", "log", ccStdoutLog);
+    std::vector<std::optional<llvm::StringRef>> ccRedirects;
+    if (captureCcOutput) {
+        ccRedirects = {std::nullopt, ccStdoutLog.str(), std::nullopt};
+    }
+    int ccExitStatus = useExternalCCompiler
+        ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, std::nullopt, ccRedirects)
+        : invokeClang(ccArgs);
     llvm::sys::fs::remove(tempIntermediateFilePath);
-    if (ccExitStatus != 0) return ccExitStatus;
+    if (ccExitStatus != 0) {
+        if (captureCcOutput) {
+            if (auto output = llvm::MemoryBuffer::getFile(ccStdoutLog)) {
+                llvm::errs() << (*output)->getBuffer();
+            }
+            llvm::sys::fs::remove(ccStdoutLog);
+        }
+        return ccExitStatus;
+    }
+    if (captureCcOutput) {
+        llvm::sys::fs::remove(ccStdoutLog);
+    }
 
     if (run) {
         std::string command = (tempOutputFilePath + " 2>&1").str();
