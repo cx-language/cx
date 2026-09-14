@@ -151,8 +151,16 @@ Value* IRGenerator::emitUnaryExpr(const UnaryExpr& expr) {
         }
         return operand;
     }
-    case Token::And:
-        return emitExprAsPointer(expr.getOperand());
+    case Token::And: {
+        auto* value = emitExprAsPointer(expr.getOperand());
+        // Function parameters are SSA values, not memory, so spill them to a temporary to form a real address.
+        // FIXME: This is a point-in-time copy; stores through the address don't update the parameter.
+        // Remove once parameters get entry-block allocas ("Codegen allocas for parameters").
+        if (llvm::isa<Parameter>(value)) {
+            value = createTempAlloca(value);
+        }
+        return value;
+    }
     case Token::Not:
         // FIXME: Temporary hack. Lower implicit null checks such as `if (ptr)` and `if (!ptr)` when expression lowering is implemented.
         if (expr.getOperand().getType().isOptionalType() && !expr.getOperand().getType().getWrappedType().isPointerType()) {
@@ -293,7 +301,9 @@ Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     }
 
     // Handle implicit conversions to void pointer, and to base type pointer.
-    if (expr.getType().isImplementedAsPointer() && targetType->isPointerType()) {
+    // Skip this when the target is a pointer to the source type. AutoReference keeps the source type (see Typechecker::convert),
+    // so that case is taking the address (handled by the temp alloca below), not a bitcast.
+    if (expr.getType().isImplementedAsPointer() && targetType->isPointerType() && !getIRType(expr.getType())->equals(targetType->getPointee())) {
         return createCastIfNeeded(emitExpr(expr), targetType);
     }
 
