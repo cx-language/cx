@@ -25,12 +25,16 @@ void CGenerator::codegenModule(const IRModule& module) {
     }
     stream << "// Module '" << module.name << "' forward declarations\n";
     for (auto* function : module.functions) {
+        // Extern functions from C headers get their declarations from the
+        // included headers, avoiding duplicate or conflicting definitions.
+        // Anything else (including functions defined in CX in libc.cx, such
+        // as the Windows fdopen wrapper) needs a forward declaration, since
+        // use-before-definition is an error in strict C dialects and MSVC.
         llvm::StringRef filePath = function->location.file;
-        if (path::filename(path::parent_path(filePath)) == "std" && path::filename(filePath) == "libc.cx") {
-            continue; // Don't emit the declarations for the C standard library functions in libc.cx, instead rely on including the actual C library headers.
-        }
-        if (path::extension(filePath) == ".h") {
-            continue; // Function will come from the included C header emitted in the generated C code, avoiding duplicate or conflicting definitions.
+        bool fromCHeader = path::filename(path::parent_path(filePath)) == "std" && path::filename(filePath) == "libc.cx";
+        fromCHeader = fromCHeader || path::extension(filePath) == ".h";
+        if (function->isExtern && fromCHeader) {
+            continue;
         }
         codegenFunctionPrototype(function);
         stream << ";\n";
