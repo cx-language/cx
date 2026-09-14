@@ -1,5 +1,6 @@
 #include "typecheck.h"
 #pragma warning(push, 0)
+#include <llvm/ADT/StringSet.h>
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/module.h"
@@ -144,6 +145,32 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     }
 
     currentControlStmts.pop_back();
+
+    warnAboutUnhandledEnumCases(stmt, conditionType);
+}
+
+void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type conditionType) const {
+    if (!conditionType.isEnumType() || !stmt.defaultStmts.empty()) return;
+
+    auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
+    llvm::StringSet<> handledCases;
+    for (auto& switchCase : stmt.cases) {
+        auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
+        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->getDecl()) : nullptr;
+        if (!enumCase || enumCase->getEnumDecl() != enumDecl) return;
+        handledCases.insert(enumCase->getName());
+    }
+
+    // Don't warn when over half of the cases are missing; partial matching is then assumed intentional.
+    size_t totalCases = enumDecl->cases.size();
+    size_t missingCases = totalCases - handledCases.size();
+    if (missingCases == 0 || missingCases * 2 > totalCases) return;
+
+    for (auto& enumCase : enumDecl->cases) {
+        if (!handledCases.contains(enumCase.getName())) {
+            WARN(stmt.condition->location, "enumeration value '" << enumCase.getName() << "' not handled in switch");
+        }
+    }
 }
 
 void Typechecker::typecheckForStmt(ForStmt& forStmt) {

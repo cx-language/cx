@@ -1,0 +1,43 @@
+// RUN: %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: warning
+
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+void foo(Color c) {
+    // CHECK: [[@LINE+1]]:13: warning: enumeration value 'Blue' not handled in switch
+    switch (c) {
+    case Color.Red:
+        break;
+    case Color.Green:
+        break;
+    }
+}
+
+void bar(Color c) {
+    switch (c) {
+    case Color.Red:
+        break;
+    }
+}
+
+void baz(Color c) {
+    switch (c) {
+    case Color.Red:
+        break;
+    default:
+        break;
+    }
+}
+
+void main() {
+    foo(Color.Red);
+    bar(Color.Red);
+    baz(Color.Red);
+}
+
+// CHECK-NOT: warning
