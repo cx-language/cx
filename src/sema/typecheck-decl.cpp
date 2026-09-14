@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include <algorithm>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/SaveAndRestore.h>
@@ -7,6 +8,23 @@
 #include "c-import.h"
 
 using namespace cx;
+
+// Finds the type template to instantiate for a generic type name. A same-named function
+// doesn't prevent using the type in type position.
+static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*> decls) {
+    decls.erase(std::remove_if(decls.begin(), decls.end(), [](Decl* d) { return !d->isTypeTemplate() && !d->isTypeDecl(); }), decls.end());
+
+    if (decls.empty()) {
+        ERROR(type.getLocation(), "'" << type << "' is not a type");
+    }
+
+    if (!decls[0]->isTypeTemplate()) {
+        ERROR(type.getLocation(), "too many generic arguments to '" << type.getName() << "', expected 0");
+    }
+
+    ASSERT(decls.size() == 1);
+    return llvm::cast<TypeTemplate>(decls[0]);
+}
 
 void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
     switch (type.getKind()) {
@@ -36,11 +54,10 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 if (decls.empty()) {
                     ERROR(type.getLocation(), "unknown type '" << type << "'");
                 }
-
-                ASSERT(decls.size() == 1);
-                decl = decls[0];
+                auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
+                decl = typeTemplate;
                 ASSERT(!basicType->getGenericArgs().empty());
-                auto instantiation = llvm::cast<TypeTemplate>(decl)->instantiate(basicType->getGenericArgs());
+                auto instantiation = typeTemplate->instantiate(basicType->getGenericArgs());
                 getCurrentModule()->addToSymbolTable(*instantiation);
                 deferTypechecking(instantiation);
                 checkHasAccess(*decl, type.getLocation(), userAccessLevel);

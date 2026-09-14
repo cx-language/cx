@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void foo(int a) {
+}
+
+void bar() {
+    // CHECK: [[@LINE+1]]:5: error: 'foo<int>' is not a type
+    foo<int> x;
+}

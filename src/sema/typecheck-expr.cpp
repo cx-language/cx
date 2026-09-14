@@ -970,14 +970,21 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         case DeclKind::TypeDecl: {
             auto* typeDecl = llvm::cast<TypeDecl>(decl);
             isConstructorCall = true;
-            validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
             constructorDecls = typeDecl->getConstructors();
             ASSERT(!constructorDecls.empty());
-            ASSERT(decls.size() == 1);
-            candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
+            if (decls.size() == 1) {
+                candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
+            }
+
+            // With explicit generic arguments and competing same-named declarations, let the other declarations
+            // handle the call (a non-generic struct can't match explicitly-generic arguments anyway).
+            if (!expr.getGenericArgs().empty() && decls.size() != 1) {
+                continue;
+            }
+            validateGenericArgCount(0, expr.getGenericArgs(), expr.getFunctionName(), expr.getLocation());
 
             for (auto* constructorDecl : constructorDecls) {
-                if (constructorDecls.size() == 1) {
+                if (decls.size() == 1 && constructorDecls.size() == 1) {
                     validateAndConvertArguments(expr, *constructorDecl, callee, expr.getCallee().getLocation());
                     return constructorDecl;
                 }
@@ -991,13 +998,15 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             auto* typeTemplate = llvm::cast<TypeTemplate>(decl);
             isConstructorCall = true;
             constructorDecls = typeTemplate->typeDecl->getConstructors();
-            ASSERT(decls.size() == 1);
-            candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
+            if (decls.size() == 1) {
+                candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
+            }
 
             std::vector<llvm::StringMap<Type>> genericArgSets;
 
             for (auto* constructorDecl : constructorDecls) {
-                auto genericArgs = getGenericArgsForCall(typeTemplate->genericParams, expr, constructorDecl, constructorDecls.size() != 1, expectedType);
+                auto genericArgs =
+                    getGenericArgsForCall(typeTemplate->genericParams, expr, constructorDecl, decls.size() != 1 || constructorDecls.size() != 1, expectedType);
                 if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
                 if (llvm::find_if(genericArgSets, [&](auto& set) { return equals(set, genericArgs); }) == genericArgSets.end()) {
                     genericArgSets.push_back(genericArgs);
@@ -1019,7 +1028,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                 }
 
                 for (auto* constructorDecl : typeDecl->getConstructors()) {
-                    if (constructorDecls.size() == 1) {
+                    if (decls.size() == 1 && constructorDecls.size() == 1) {
                         validateAndConvertArguments(expr, *constructorDecl, callee, expr.getCallee().getLocation());
                         return constructorDecl;
                     }

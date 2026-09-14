@@ -1,0 +1,16 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:1
+
+struct Rectangle {
+    int x;
+    int y;
+}
+
+Rectangle Rectangle(int a) {
+    return Rectangle(a, a);
+}
+
+void main() {
+    var r = Rectangle(1);
+    println(r.x);
+}
