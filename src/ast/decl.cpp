@@ -1,4 +1,5 @@
 #include "decl.h"
+#include <algorithm>
 #pragma warning(push, 0)
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -53,8 +54,14 @@ bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceive
     if (getName() != other.getName()) return false;
     if (matchReceiver && getTypeDecl() != other.getTypeDecl()) return false;
     if (getReturnType() != other.getReturnType()) return false;
-    if (getParams() != other.getParams()) return false;
-    return true;
+    // Parameter names only matter when they're public (used as argument labels); mirror paramsMatch in module.h.
+    auto params = getParams(), otherParams = other.getParams();
+    if (params.size() != otherParams.size()) return false;
+    return std::equal(params.begin(), params.end(), otherParams.begin(), [](const ParamDecl& a, const ParamDecl& b) {
+        if (a.type != b.type) return false;
+        if (a.isPublic && b.isPublic && a.getName() != b.getName()) return false;
+        return true;
+    });
 }
 
 FunctionDecl* FunctionDecl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray) {

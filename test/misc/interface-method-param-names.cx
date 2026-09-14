@@ -1,0 +1,17 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:bob
+
+interface Greeter {
+    void greet(string name);
+}
+
+struct Person: Greeter {
+    void greet(string who) {
+        println(who);
+    }
+}
+
+void main() {
+    Person p = undefined;
+    p.greet("bob");
+}

@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+interface Greeter {
+    void greet(string name);
+}
+
+// CHECK: [[@LINE+1]]:8: error: 'Person' doesn't have member function 'greet' required by interface 'Greeter'
+struct Person: Greeter {
+    void greet(int who) {
+    }
+}
+
+void main() {
+}
