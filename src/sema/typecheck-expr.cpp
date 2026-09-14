@@ -386,7 +386,12 @@ bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interf
 
             if (!hasMethod(type, *functionDecl)) {
                 if (errorReason) {
-                    *errorReason = ("doesn't have member function '" + functionDecl->getName() + "'").str();
+                    auto params = map(functionDecl->getParams(), [](const ParamDecl& param) {
+                        return ((param.isPublic ? "public " : "") + param.type.toString() + " " + param.getName()).str();
+                    });
+                    *errorReason = ("doesn't have member function '" + functionDecl->getName() + "' (expected prototype '"
+                                    + functionDecl->getReturnType().toString() + " " + functionDecl->getName() + "(" + llvm::join(params, ", ") + ")')")
+                                       .str();
                 }
                 return false;
             }
