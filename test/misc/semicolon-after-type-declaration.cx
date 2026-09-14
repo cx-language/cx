@@ -1,0 +1,29 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:1
+// CHECK-NEXT:1
+// CHECK-NEXT:1
+
+struct S {
+    int x;
+};
+
+struct Wrap<T> {
+    T value;
+};
+
+enum E {
+    A,
+    B
+};
+
+interface I {
+    void f();
+};
+
+void main() {
+    var s = S(x = 1);
+    println(s.x);
+    var b = Wrap<int>(value = 1);
+    println(b.value);
+    println(int(E.B));
+}

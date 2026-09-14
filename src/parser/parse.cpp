@@ -1204,7 +1204,7 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Ty
     return FieldDecl(type, name.str(), defaultValue, typeDecl, accessLevel, location);
 }
 
-/// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}'
+/// type-template-decl ::= ('struct' | 'interface') id generic-param-list? '{' member-decl* '}' ';'?
 TypeTemplate* Parser::parseTypeTemplate(AccessLevel accessLevel) {
     std::vector<GenericParamDecl> genericParams;
     auto typeDecl = parseTypeDecl(&genericParams, accessLevel);
@@ -1226,7 +1226,7 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
     return name;
 }
 
-/// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}'
+/// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}' ';'?
 /// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl
 TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
@@ -1304,10 +1304,12 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
     }
 
     consumeToken();
+    // Allow an optional trailing ';' (e.g. `struct S {...};`).
+    if (currentToken() == Token::Semicolon) consumeToken();
     return typeDecl;
 }
 
-/// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' enum-case-decl* '}'
+/// enum-decl ::= 'enum' id generic-param-list? interface-list? '{' enum-case-decl* '}' ';'?
 /// enum-case-decl ::= id tuple-type? (',' | '\n' | ';')
 EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
     ASSERT(currentToken() == Token::Enum);
@@ -1345,6 +1347,8 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
     }
 
     consumeToken();
+    // Allow an optional trailing ';' (e.g. `enum E {...};`).
+    if (currentToken() == Token::Semicolon) consumeToken();
     return new EnumDecl(name.getString().str(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.getLocation());
 }
 
