@@ -67,12 +67,72 @@ jobs:
           # Tests depending on SDL2 or GLFW are disabled on Windows CI.
           CX_PRINT_STACK_TRACE=true cmake --build . --config ${{ matrix.build_type }} --target check
 
+  build-playground:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git emsdk
+          ./emsdk/emsdk install latest
+          ./emsdk/emsdk activate latest
+          echo "$GITHUB_WORKSPACE/emsdk" >> $GITHUB_PATH
+          echo "$GITHUB_WORKSPACE/emsdk/upstream/emscripten" >> $GITHUB_PATH
+
+      - name: Cache LLVM for WebAssembly
+        uses: actions/cache@v4
+        with:
+          path: wasm/build/llvm-build
+          key: llvm-wasm-23.1.1-${{ hashFiles('wasm/build-frontend.sh') }}
+
+      - name: Build frontend to WebAssembly
+        run: ./wasm/build-frontend.sh wasm/dist
+
+      - name: Build in-browser C toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-23-tools || sudo apt-get install -y llvm
+          export PATH="/usr/lib/llvm-23/bin:$PATH"
+          ./wasm/build-xcc-dist.sh wasm/dist
+
+      - name: Test playground
+        run: |
+          node wasm/test-wasi-shim.mjs wasm/dist
+          node wasm/test-pipeline.mjs wasm/dist
+          node wasm/smoke-playground.mjs wasm/dist
+
+      - name: Upload playground artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playground
+          path: |
+            wasm/dist/cx-wasm.js
+            wasm/dist/cx-wasm.wasm
+            wasm/dist/cx-wasm.data
+            wasm/dist/cc.wasm
+            wasm/dist/wcc-files.zip
+
   deploy-website:
     if: github.repository == 'cx-language/cx' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: [ build, build-playground ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Download playground artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: playground
+          path: wasm/dist
 
       - name: Deploy website
         run: |
@@ -87,9 +147,6 @@ jobs:
           git clone https://github.com/cx-language/cx-language.github.io.git
           cd cx-language.github.io || exit 1
 
-          CX_VERSION=$GITHUB_SHA
-          echo "$CX_VERSION" > server/.cx-version
-
           cp -a ../docs/build/. ./
           git add .
 
@@ -100,7 +157,7 @@ jobs:
 
           git config user.email ""
           git config user.name "C* CI"
-          git commit --message "Update documentation and C* version to $CX_VERSION" $AMEND
+          git commit --message "Update documentation to $GITHUB_SHA" $AMEND
 
           git remote set-url origin "https://${{ secrets.CI_TOKEN }}@github.com/cx-language/cx-language.github.io.git" > /dev/null 2>&1
           git push --quiet --force-with-lease

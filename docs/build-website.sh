@@ -31,3 +31,14 @@ for file in book/*.md index.html; do
 done
 
 cp -r *.css *.js lib build
+
+# Playground WebAssembly artifacts, if built (see wasm/README.md). Without
+# them the site still works, but the Run buttons report that the playground
+# is unavailable until the artifacts are deployed.
+for artifact in cx-wasm.js cx-wasm.wasm cx-wasm.data cc.wasm wcc-files.zip; do
+    if [ -f "../wasm/dist/$artifact" ]; then
+        cp "../wasm/dist/$artifact" build/
+    else
+        echo "warning: ../wasm/dist/$artifact not found, the playground will be unavailable" >&2
+    fi
+done

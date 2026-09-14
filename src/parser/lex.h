@@ -1,10 +1,9 @@
 #pragma once
 
 #include "../ast/token.h"
-
-namespace llvm {
-class MemoryBuffer;
-}
+#pragma warning(push, 0)
+#include <llvm/Support/MemoryBuffer.h>
+#pragma warning(pop)
 
 namespace cx {
 

@@ -1,4 +1,9 @@
 #include "c-import.h"
+
+// Builds that don't link against Clang (such as the WebAssembly build used by
+// the online playground) define CX_NO_C_IMPORT to exclude the Clang-based C
+// header importer. Importing C headers then fails cleanly with an error.
+#ifndef CX_NO_C_IMPORT
 #include <memory>
 #include <string>
 #include <utility>
@@ -499,3 +504,13 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     Module::getAllImportedModulesMap()[headerName] = module;
     return true;
 }
+
+#else // CX_NO_C_IMPORT
+
+bool cx::importCHeader(SourceFile&, ImportDecl&, Typechecker&) {
+    // C header imports are not supported in builds without the Clang-based
+    // importer. Returning false makes the caller report an error.
+    return false;
+}
+
+#endif // CX_NO_C_IMPORT

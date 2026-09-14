@@ -26,15 +26,15 @@ const uint64 uint64_min = 0;
 // TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
 // function for all integer types.
 
-// TODO: Improve print() implementations: optimize + don't depend on libc + don't assume size of int.
+// TODO: Improve print() implementations: optimize + don't depend on libc.
 
-private void printSigned<T>(T value, StringBuffer* stream) {
+private void printSigned(int64 value, StringBuffer* stream) {
     char[22] result = undefined;
     sprintf(result, "%lld", value);
     stream.write(string(result));
 }
 
-private void printUnsigned<T>(T value, StringBuffer* stream) {
+private void printUnsigned(uint64 value, StringBuffer* stream) {
     char[22] result = undefined;
     sprintf(result, "%llu", value);
     stream.write(string(result));
@@ -46,7 +46,7 @@ struct int: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printSigned(this, stream);
+        printSigned(int64(this), stream);
     }
 
     uint64 hash() {
@@ -60,7 +60,7 @@ struct int8: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printSigned(this, stream);
+        printSigned(int64(this), stream);
     }
 
     uint64 hash() {
@@ -74,7 +74,7 @@ struct int16: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printSigned(this, stream);
+        printSigned(int64(this), stream);
     }
 
     uint64 hash() {
@@ -88,7 +88,7 @@ struct int32: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printSigned(this, stream);
+        printSigned(int64(this), stream);
     }
 
     uint64 hash() {
@@ -123,7 +123,7 @@ struct uint: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printUnsigned(this, stream);
+        printUnsigned(uint64(this), stream);
     }
 
     uint64 hash() {
@@ -137,7 +137,7 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printUnsigned(this, stream);
+        printUnsigned(uint64(this), stream);
     }
 
     uint64 hash() {
@@ -151,7 +151,7 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printUnsigned(this, stream);
+        printUnsigned(uint64(this), stream);
     }
 
     uint64 hash() {
@@ -165,7 +165,7 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printUnsigned(this, stream);
+        printUnsigned(uint64(this), stream);
     }
 
     uint64 hash() {

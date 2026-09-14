@@ -1,5 +1,6 @@
 #include "irgen.h"
 #pragma warning(push, 0)
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/Path.h>
 #pragma warning(pop)
 #include "../ast/module.h"

@@ -1,4 +1,6 @@
 #include "c-backend.h"
+#include <algorithm>
+#include <cctype>
 #pragma warning(push, 0)
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Support/Path.h>
@@ -6,6 +8,15 @@
 
 using namespace cx;
 using namespace llvm::sys;
+
+namespace {
+
+bool hasReturnValue(const CallInst* inst) {
+    auto* returnType = inst->function->getType()->getPointee()->getReturnType();
+    return !returnType->isVoid() && !returnType->isNever();
+}
+
+} // namespace
 
 void CGenerator::codegenModule(const IRModule& module) {
     stream << "\n";
@@ -38,10 +49,15 @@ void CGenerator::codegenModule(const IRModule& module) {
 }
 
 void CGenerator::codegenAlloca(const AllocaInst* inst) {
+    auto name = (!inst->name.empty() ? inst->name : "_alloca") + std::to_string(valueSuffixCounter++);
+    if (dispatchMode) {
+        // The declaration is hoisted (see codegenFunctionDispatch); only register the name.
+        emittedValues.insert({inst, "(&" + name + ")"});
+        return;
+    }
     stream.indent(4);
     codegenType(stream, inst->allocatedType, true);
     stream << ' ';
-    auto name = (!inst->name.empty() ? inst->name : "_alloca") + std::to_string(valueSuffixCounter++);
     stream << name;
     codegenTypeSuffix(stream, inst->allocatedType, true);
     stream << ";\n";
@@ -59,42 +75,48 @@ void CGenerator::codegenReturn(const ReturnInst* inst) {
 }
 
 void CGenerator::codegenBranch(const BranchInst* inst) {
-    if (inst->argument) {
-        stream.indent(4) << inst->destination->parameter->name << " = ";
+    if (inst->argument && inst->destination->parameter) {
+        stream.indent(4) << getBlockParamName(inst->destination->parameter) << " = ";
         codegenInst(inst->argument);
         stream << "; // branch argument\n";
     }
-    stream.indent(4) << "goto " << getBlockLabel(inst->destination) << ";\n";
+    if (dispatchMode) {
+        stream.indent(4) << "_cx_pc = " << dispatchBlockIds[inst->destination] << ";\n";
+        stream.indent(4) << "break;\n";
+    } else {
+        stream.indent(4) << "goto " << getBlockLabel(inst->destination) << ";\n";
+    }
+}
+
+static void codegenCondBranchAssignment(CGenerator& generator, llvm::raw_string_ostream& stream, const BasicBlock* block, const Value* argument, int indent) {
+    if (block->parameter && argument) {
+        stream.indent(indent) << generator.getBlockParamName(block->parameter) << " = ";
+        generator.codegenInst(argument);
+        stream << ";\n";
+    }
 }
 
 void CGenerator::codegenCondBranch(const CondBranchInst* inst) {
-    if (inst->trueBlock->parameter) {
-        stream.indent(4);
-        codegenType(stream, inst->trueBlock->parameter->type, true);
-        stream << ' ' << inst->trueBlock->parameter->name << ";\n";
-    }
-    if (inst->falseBlock->parameter) {
-        stream.indent(4);
-        codegenType(stream, inst->falseBlock->parameter->type, true);
-        stream << ' ' << inst->falseBlock->parameter->name << ";\n";
-    }
     stream.indent(4) << "if (";
     codegenInst(inst->condition);
     stream << ") {\n";
-    if (inst->trueBlock->parameter) {
-        stream.indent(8) << inst->trueBlock->parameter->name << " = ";
-        codegenInst(inst->argument);
-        stream << ";\n";
+    codegenCondBranchAssignment(*this, stream, inst->trueBlock, inst->argument, 8);
+    if (dispatchMode) {
+        stream.indent(8) << "_cx_pc = " << dispatchBlockIds[inst->trueBlock] << ";\n";
+    } else {
+        stream.indent(8) << "goto " << getBlockLabel(inst->trueBlock) << ";\n";
     }
-    stream.indent(8) << "goto " << getBlockLabel(inst->trueBlock) << ";\n";
     stream.indent(4) << "} else {\n";
-    if (inst->falseBlock->parameter) {
-        stream.indent(8) << inst->falseBlock->parameter->name << " = ";
-        codegenInst(inst->argument);
-        stream << ";\n";
+    codegenCondBranchAssignment(*this, stream, inst->falseBlock, inst->argument, 8);
+    if (dispatchMode) {
+        stream.indent(8) << "_cx_pc = " << dispatchBlockIds[inst->falseBlock] << ";\n";
+    } else {
+        stream.indent(8) << "goto " << getBlockLabel(inst->falseBlock) << ";\n";
     }
-    stream.indent(8) << "goto " << getBlockLabel(inst->falseBlock) << ";\n";
     stream.indent(4) << "}\n";
+    if (dispatchMode) {
+        stream.indent(4) << "break;\n";
+    }
 }
 
 void CGenerator::codegenSwitch(const SwitchInst* inst) {
@@ -105,19 +127,34 @@ void CGenerator::codegenSwitch(const SwitchInst* inst) {
         stream.indent(8);
         stream << "case ";
         codegenInst(value);
-        stream << ": goto " << getBlockLabel(block) << ";\n";
+        if (dispatchMode) {
+            stream << ": _cx_pc = " << dispatchBlockIds[block] << "; break;\n";
+        } else {
+            stream << ": goto " << getBlockLabel(block) << ";\n";
+        }
     }
-    // TODO: handle inst->defaultBlock
-    stream.indent(4) << "}\n";
+    if (dispatchMode) {
+        stream.indent(8) << "default: _cx_pc = " << dispatchBlockIds[inst->defaultBlock] << "; break;\n";
+        stream.indent(4) << "}\n";
+        stream.indent(4) << "break;\n";
+    } else {
+        stream.indent(4) << "}\n";
+        // A matching case always jumps away above, so reaching here means no
+        // case matched: continue with the default block.
+        stream.indent(4) << "goto " << getBlockLabel(inst->defaultBlock) << ";\n";
+    }
 }
 
 void CGenerator::codegenLoad(const LoadInst* inst) {
     stream.indent(4);
-    auto name = "_load" + std::to_string(valueSuffixCounter++);
-    stream << "__auto_type " << name << " = *";
+    const std::string& name = getOrCreateTempName(inst, "_load");
+    // Emit an explicit type instead of the '__auto_type' GNU extension,
+    // so that the generated code can also be compiled with small,
+    // strictly conforming C compilers (e.g. the one used by the web playground).
+    codegenTempDeclaration(inst, name);
+    stream << " = *";
     codegenInst(inst->value);
     stream << ";\n";
-    emittedValues.insert({inst, std::move(name)});
 }
 
 void CGenerator::codegenStore(const StoreInst* inst) {
@@ -143,11 +180,15 @@ void CGenerator::codegenInsert(const InsertInst* inst) {
     stream.indent(4);
     auto type = inst->aggregate->getType();
     ASSERT(type->isStruct() || type->isArrayType());
-    codegenType(stream, type, true);
-    auto name = "_insert" + std::to_string(valueSuffixCounter++);
-    stream << " " << name;
-    codegenTypeSuffix(stream, type, true);
-    stream << "; ";
+    const std::string& name = getOrCreateTempName(inst, "_insert");
+    if (dispatchMode) {
+        // The declaration is hoisted (see codegenFunctionDispatch).
+    } else {
+        codegenType(stream, type, true);
+        stream << " " << name;
+        codegenTypeSuffix(stream, type, true);
+        stream << "; ";
+    }
     if (inst->aggregate->kind != ValueKind::Undefined) {
         stream << "memcpy(&" << name << ", &";
         codegenInst(inst->aggregate);
@@ -164,30 +205,32 @@ void CGenerator::codegenInsert(const InsertInst* inst) {
     }
     codegenInst(inst->value);
     stream << ";\n";
-    emittedValues.insert({inst, std::move(name)});
 }
 
 void CGenerator::codegenExtract(const ExtractInst* inst) {
     stream.indent(4);
-    auto name = "_extract" + std::to_string(valueSuffixCounter++);
-    stream << "__auto_type " << name << " = ";
+    const std::string& name = getOrCreateTempName(inst, "_extract");
+    codegenTempDeclaration(inst, name);
+    stream << " = ";
     codegenInst(inst->aggregate);
     stream << "." << inst->name;
     stream << ";\n";
-    emittedValues.insert({inst, std::move(name)});
 }
 
 void CGenerator::codegenCall(const CallInst* inst) {
     stream.indent(4);
-    auto returnType = inst->function->getType()->getPointee()->getReturnType();
-    std::string name;
-    bool hasReturnValue = !returnType->isVoid() && !returnType->isNever();
-    if (hasReturnValue) {
-        name = "_call" + std::to_string(valueSuffixCounter++);
-        codegenType(stream, returnType, true);
-        stream << " " << name;
-        codegenTypeSuffix(stream, returnType, true);
-        stream << " = ";
+    if (hasReturnValue(inst)) {
+        const std::string& name = getOrCreateTempName(inst, "_call");
+        if (dispatchMode) {
+            // The declaration is hoisted (see codegenFunctionDispatch).
+            stream << name << " = ";
+        } else {
+            auto* returnType = inst->function->getType()->getPointee()->getReturnType();
+            codegenType(stream, returnType, true);
+            stream << " " << name;
+            codegenTypeSuffix(stream, returnType, true);
+            stream << " = ";
+        }
     }
     codegenInst(inst->function);
     stream << '(';
@@ -196,15 +239,13 @@ void CGenerator::codegenCall(const CallInst* inst) {
         if (&arg != &inst->args.back()) stream << ", ";
     }
     stream << ");\n";
-    if (hasReturnValue) {
-        emittedValues.insert({inst, std::move(name)});
-    }
 }
 
 void CGenerator::codegenBinary(const BinaryInst* inst) {
     stream.indent(4);
-    auto name = "_binary_op" + std::to_string(valueSuffixCounter++);
-    stream << "__auto_type " << name << " = ";
+    const std::string& name = getOrCreateTempName(inst, "_binary_op");
+    codegenTempDeclaration(inst, name);
+    stream << " = ";
     codegenInst(inst->left);
     stream << ' ';
     switch (inst->op.kind) {
@@ -262,13 +303,13 @@ void CGenerator::codegenBinary(const BinaryInst* inst) {
     stream << ' ';
     codegenInst(inst->right);
     stream << ";\n";
-    emittedValues.insert({inst, std::move(name)});
 }
 
 void CGenerator::codegenUnary(const UnaryInst* inst) {
     stream.indent(4);
-    auto name = "_unary_op" + std::to_string(valueSuffixCounter++);
-    stream << "__auto_type " << name << " = ";
+    const std::string& name = getOrCreateTempName(inst, "_unary_op");
+    codegenTempDeclaration(inst, name);
+    stream << " = ";
     switch (inst->op.kind) {
     case Token::Plus:
         stream << '+';
@@ -287,14 +328,18 @@ void CGenerator::codegenUnary(const UnaryInst* inst) {
     }
     codegenInst(inst->operand);
     stream << ";\n";
-    emittedValues.insert({inst, std::move(name)});
 }
 
 void CGenerator::codegenGEP(const GEPInst* inst) {
     stream.indent(4);
-    auto name = "_get_element_ptr" + std::to_string(valueSuffixCounter++);
-    codegenType(stream, inst->getType(), true);
-    stream << " " << name << " = &(";
+    const std::string& name = getOrCreateTempName(inst, "_get_element_ptr");
+    if (dispatchMode) {
+        // The declaration is hoisted (see codegenFunctionDispatch).
+        stream << name << " = &(";
+    } else {
+        codegenType(stream, inst->getType(), true);
+        stream << " " << name << " = &(";
+    }
     codegenInst(inst->pointer);
     for (auto* index : inst->indexes) {
         stream << "[";
@@ -302,36 +347,56 @@ void CGenerator::codegenGEP(const GEPInst* inst) {
         stream << ']';
     }
     stream << ");\n";
-    emittedValues.insert({inst, std::move(name)});
 }
 
 void CGenerator::codegenConstGEP(const ConstGEPInst* inst) {
     stream.indent(4);
-    auto name = "_const_get_element_ptr" + std::to_string(valueSuffixCounter++);
-    stream << "__auto_type " << name << " = &";
+    const std::string& name = getOrCreateTempName(inst, "_const_get_element_ptr");
+    if (dispatchMode) {
+        // The declaration is hoisted (see codegenFunctionDispatch).
+        stream << name << " = &";
+    } else {
+        codegenType(stream, inst->getType(), true);
+        stream << " " << name << " = &";
+    }
     codegenInst(inst->pointer);
     if (inst->pointer->getType()->getPointee()->isArrayType()) {
         stream << "[0][" << inst->index << "];\n";
     } else {
         stream << "->" << inst->name << ";\n";
     }
-    emittedValues.insert({inst, std::move(name)});
 }
 
 void CGenerator::codegenCast(const CastInst* inst) {
     stream.indent(4);
-    auto name = "_cast" + std::to_string(valueSuffixCounter++);
-    stream << "__auto_type " << name << " = ";
+    const std::string& name = getOrCreateTempName(inst, "_cast");
+    codegenTempDeclaration(inst, name);
+    stream << " = ";
     stream << "(";
     codegenType(stream, inst->type, true);
     stream << ") ";
     codegenInst(inst->value);
     stream << ";\n";
-    emittedValues.insert({inst, std::move(name)});
 }
 
-void CGenerator::codegenUnreachable() {
-    // Nothing for now. unreachable() is a C23 extension.
+void CGenerator::codegenUnreachable(const UnreachableInst* inst) {
+    if (!dispatchMode) {
+        // Nothing for now. unreachable() is a C23 extension.
+        return;
+    }
+    // Mirror the default mode, where execution falls through to the next block
+    // in layout order.
+    const BasicBlock* block = inst->parent;
+    const Function* function = block ? block->parent : nullptr;
+    if (function) {
+        auto it = std::find(function->body.begin(), function->body.end(), block);
+        if (it != function->body.end() && ++it != function->body.end()) {
+            stream.indent(4) << "_cx_pc = " << dispatchBlockIds[*it] << ";\n";
+            stream.indent(4) << "break;\n";
+            return;
+        }
+    }
+    stream.indent(4) << "abort();\n";
 }
 
 void CGenerator::codegenSizeof(const SizeofInst* inst) {
@@ -340,8 +405,21 @@ void CGenerator::codegenSizeof(const SizeofInst* inst) {
     stream << ")";
 }
 
+void CGenerator::codegenTempDeclaration(const Value* value, const std::string& name) {
+    if (dispatchMode) {
+        // The declaration is hoisted (see codegenFunctionDispatch); emit just
+        // the name, the caller appends the assignment.
+        stream << name;
+        return;
+    }
+    auto* type = value->getType();
+    codegenType(stream, type, true);
+    stream << ' ' << name;
+    codegenTypeSuffix(stream, type, true);
+}
+
 void CGenerator::codegenBasicBlock(const BasicBlock* block) {
-    if (!block->name.empty()) {
+    if (!dispatchMode && !block->name.empty()) {
         // Extra semicolon to work around "label followed by a declaration is a C23 extension".
         stream << '\n' << getBlockLabel(block) << ": ;\n";
     }
@@ -384,6 +462,14 @@ void CGenerator::codegenConstantNull(const ConstantNull*) {
 
 void CGenerator::codegenUndefined(const Undefined*) {
     llvm_unreachable("undefined instructions should be handled in parent instruction");
+}
+
+const std::string& CGenerator::getOrCreateTempName(const Value* inst, llvm::StringRef prefix) {
+    auto it = emittedValues.find(inst);
+    if (it != emittedValues.end()) {
+        return it->second;
+    }
+    return emittedValues.insert({inst, prefix.str() + std::to_string(valueSuffixCounter++)}).first->second;
 }
 
 const std::string& CGenerator::getBlockLabel(const BasicBlock* block) {
@@ -441,7 +527,7 @@ void CGenerator::codegenInstImpl(const Value* value) {
     case ValueKind::CastInst:
         return codegenCast(llvm::cast<CastInst>(value));
     case ValueKind::UnreachableInst:
-        return codegenUnreachable();
+        return codegenUnreachable(llvm::cast<UnreachableInst>(value));
     case ValueKind::SizeofInst:
         return codegenSizeof(llvm::cast<SizeofInst>(value));
     case ValueKind::BasicBlock:
@@ -451,7 +537,11 @@ void CGenerator::codegenInstImpl(const Value* value) {
         break;
     case ValueKind::Parameter: {
         auto* param = llvm::cast<Parameter>(value);
-        stream << param->name;
+        // Basic block parameters are registered under their sanitized C names
+        // (see getBlockParamName); anything else is a function parameter whose
+        // C name is the source name.
+        auto it = emittedValues.find(param);
+        stream << (it != emittedValues.end() ? it->second : param->name);
         break;
     }
     case ValueKind::GlobalVariable:
@@ -474,6 +564,10 @@ void CGenerator::codegenInstImpl(const Value* value) {
 void CGenerator::codegenFunctionPrototype(const Function* function) {
     codegenType(stream, function->returnType, !function->isExtern);
     stream << ' ' << function->mangledName << '(';
+    if (function->params.empty() && !function->isVariadic) {
+        // An empty parameter list means "unspecified arguments" in C, so spell out 'void' instead.
+        stream << "void";
+    }
     for (auto& param : function->params) {
         codegenType(stream, param.type, !function->isExtern);
         stream << ' ' << param.name;
@@ -490,15 +584,158 @@ void CGenerator::codegenFunction(const Function* function) {
     codegenFunctionPrototype(function);
     if (function->isExtern) {
         stream << ';';
+    } else if (dispatchMode) {
+        codegenFunctionDispatch(function);
+        stream << '\n';
+        return;
     } else {
         stream << " {\n";
         valueSuffixCounter = 0;
+        collectBlockParams(function);
         for (auto* block : function->body) {
             codegenBasicBlock(block);
         }
         stream << '}';
     }
     stream << '\n';
+}
+
+static std::string sanitizeBlockParamName(llvm::StringRef name) {
+    // Basic block parameters are compiler-generated (e.g. "and", "or",
+    // "if.result"), and their raw names are not all valid C identifiers ("and"
+    // and "or" are alternative tokens, '.' is not allowed in identifiers), so
+    // give them a dedicated prefix as well as replacing invalid characters.
+    std::string result = "_cxp_";
+    for (char ch : name) {
+        result += (std::isalnum(static_cast<unsigned char>(ch)) || ch == '_') ? ch : '_';
+    }
+    return result;
+}
+
+const std::string& CGenerator::getBlockParamName(const Parameter* param) {
+    auto it = emittedValues.find(param);
+    if (it != emittedValues.end()) {
+        return it->second;
+    }
+    return emittedValues.insert({param, sanitizeBlockParamName(param->name)}).first->second;
+}
+
+void CGenerator::collectBlockParams(const Function* function) {
+    for (auto* block : function->body) {
+        if (block->parameter && !emittedValues.contains(block->parameter)) {
+            const std::string& name = getBlockParamName(block->parameter);
+            stream.indent(4);
+            codegenType(stream, block->parameter->type, true);
+            stream << ' ' << name;
+            codegenTypeSuffix(stream, block->parameter->type, true);
+            stream << ";\n";
+        }
+    }
+}
+
+void CGenerator::codegenFunctionDispatch(const Function* function) {
+    stream << " {\n";
+    valueSuffixCounter = 0;
+    dispatchBlockIds.clear();
+
+    int id = 0;
+    for (auto* block : function->body) {
+        dispatchBlockIds[block] = id++;
+    }
+
+    // Hoist declarations for basic block parameters and temporaries, so that
+    // the dispatch cases below contain only assignments and control flow.
+    collectBlockParams(function);
+    for (auto* block : function->body) {
+        for (auto* inst : block->body) {
+            switch (inst->kind) {
+            case ValueKind::AllocaInst: {
+                auto* alloca = llvm::cast<AllocaInst>(inst);
+                auto name = (!alloca->name.empty() ? alloca->name : "_alloca") + std::to_string(valueSuffixCounter++);
+                stream.indent(4);
+                codegenType(stream, alloca->allocatedType, true);
+                stream << ' ' << name;
+                codegenTypeSuffix(stream, alloca->allocatedType, true);
+                stream << ";\n";
+                emittedValues.insert({inst, "(&" + std::move(name) + ")"});
+                break;
+            }
+            case ValueKind::CallInst: {
+                auto* call = llvm::cast<CallInst>(inst);
+                if (!hasReturnValue(call)) break;
+                auto name = "_call" + std::to_string(valueSuffixCounter++);
+                stream.indent(4);
+                codegenType(stream, call->getType(), true);
+                stream << ' ' << name;
+                codegenTypeSuffix(stream, call->getType(), true);
+                stream << ";\n";
+                emittedValues.insert({inst, std::move(name)});
+                break;
+            }
+            case ValueKind::LoadInst:
+            case ValueKind::ExtractInst:
+            case ValueKind::BinaryInst:
+            case ValueKind::UnaryInst:
+            case ValueKind::CastInst: {
+                auto name = (inst->kind == ValueKind::LoadInst      ? "_load"
+                             : inst->kind == ValueKind::ExtractInst ? "_extract"
+                             : inst->kind == ValueKind::BinaryInst  ? "_binary_op"
+                             : inst->kind == ValueKind::UnaryInst   ? "_unary_op"
+                                                                    : "_cast")
+                          + std::to_string(valueSuffixCounter++);
+                stream.indent(4);
+                codegenType(stream, inst->getType(), true);
+                stream << ' ' << name;
+                codegenTypeSuffix(stream, inst->getType(), true);
+                stream << ";\n";
+                emittedValues.insert({inst, std::move(name)});
+                break;
+            }
+            case ValueKind::InsertInst: {
+                auto* insert = llvm::cast<InsertInst>(inst);
+                auto* type = insert->aggregate->getType();
+                auto name = "_insert" + std::to_string(valueSuffixCounter++);
+                stream.indent(4);
+                codegenType(stream, type, true);
+                stream << ' ' << name;
+                codegenTypeSuffix(stream, type, true);
+                stream << ";\n";
+                emittedValues.insert({inst, std::move(name)});
+                break;
+            }
+            case ValueKind::GEPInst:
+            case ValueKind::ConstGEPInst: {
+                auto prefix = inst->kind == ValueKind::GEPInst ? "_get_element_ptr" : "_const_get_element_ptr";
+                auto name = prefix + std::to_string(valueSuffixCounter++);
+                stream.indent(4);
+                codegenType(stream, inst->getType(), true);
+                stream << ' ' << name << ";\n";
+                emittedValues.insert({inst, std::move(name)});
+                break;
+            }
+            default:
+                break;
+            }
+        }
+    }
+
+    stream.indent(4) << "int _cx_pc = 0;\n";
+    stream.indent(4) << "while (1) {\n";
+    stream.indent(8) << "switch (_cx_pc) {\n";
+    for (auto* block : function->body) {
+        stream.indent(8) << "case " << dispatchBlockIds[block] << ": {\n";
+        for (auto* inst : block->body) {
+            // Bypass the emittedValues short-circuit in codegenInst: every
+            // name is already registered by the hoisting pass above, and here
+            // we want the assignment, not just the name.
+            codegenInstImpl(inst);
+        }
+        stream.indent(8) << "}\n";
+    }
+    stream.indent(8) << "default: abort();\n";
+    stream.indent(8) << "}\n";
+    stream.indent(4) << "}\n";
+    stream << '}';
 }
 
 void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition) {
@@ -580,6 +817,9 @@ void CGenerator::codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* typ
     case IRTypeKind::IRFunctionType: {
         auto* functionType = llvm::cast<IRFunctionType>(type);
         stream << ")(";
+        if (functionType->paramTypes.empty() && !functionType->isVariadic) {
+            stream << "void";
+        }
         for (auto& paramType : functionType->paramTypes) {
             codegenType(stream, paramType, false);
             codegenTypeSuffix(stream, paramType, false);
@@ -626,6 +866,13 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
             }
 
             stream << "\nstruct " << irStruct->mangledName << " {\n";
+            if (irStruct->fields.empty()) {
+                // Empty structs are a GNU extension, so add a placeholder member to stay
+                // compatible with strictly conforming C compilers. Empty structs carry
+                // no data and are only ever used through pointers, so this is harmless.
+                stream.indent(4);
+                stream << "char _cx_empty;\n";
+            }
             for (auto& field : irStruct->fields) {
                 stream.indent(4);
                 codegenType(stream, field.type, true);
@@ -651,5 +898,26 @@ std::string CGenerator::finish() {
            "#include <stdlib.h>\n"
            "#include <string.h>\n"
            "#include <stdbool.h>\n"
+           "#ifdef __wasm\n"
+           "// xcc's WebAssembly libc neither declares nor defines abort(), so map\n"
+           "// it to exit() (which terminates the process via WASI). Other\n"
+           "// toolchains are unaffected by this fallback.\n"
+           "static void cx_wasm_abort(void) {\n"
+           "    exit(1);\n"
+           "}\n"
+           "#define abort cx_wasm_abort\n"
+           "// The glibc-specific backtrace API is unavailable to WebAssembly\n"
+           "// toolchains, so provide no-op stubs (stack traces are simply empty).\n"
+           "int backtrace(void** array, int size) {\n"
+           "    (void)array;\n"
+           "    (void)size;\n"
+           "    return 0;\n"
+           "}\n"
+           "char** backtrace_symbols(void** array, int size) {\n"
+           "    (void)array;\n"
+           "    (void)size;\n"
+           "    return 0;\n"
+           "}\n"
+           "#endif\n"
          + preludeStream.str() + stream.str();
 }

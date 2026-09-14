@@ -48,8 +48,6 @@ namespace cl = llvm::cl;
 
 namespace cx {
 
-int errors = 0;
-
 cl::SubCommand build("build", "Build a C* project");
 cl::SubCommand run("run", "Build and run a C* executable");
 
@@ -86,6 +84,8 @@ cl::bits<PrintOpt> printOpts(cl::desc("Print output from intermediate steps:"), 
 enum class Backend { LLVM, C };
 cl::opt<Backend> backend("backend", cl::desc("Select code-generation backend to use:"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
                          cl::values(clEnumValN(Backend::LLVM, "llvm", "LLVM backend (default)"), clEnumValN(Backend::C, "c", "C backend")));
+cl::opt<bool> cDispatch("c-dispatch", cl::desc("Generate goto-free C code using dispatch loops (for C compilers without goto support)"),
+                        cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory));
 cl::opt<bool> emitAssembly("emit-assembly", cl::desc("Emit assembly code"), cl::cat(outputCategory));
 cl::alias emitAssemblyAlias("S", cl::aliasopt(emitAssembly), cl::cat(outputCategory));
 cl::opt<bool> emitBitcode("emit-llvm-bitcode", cl::desc("Emit LLVM bitcode"), cl::cat(outputCategory));
@@ -214,14 +214,6 @@ static void emitLLVMBitcode(const llvm::Module& module, llvm::StringRef fileName
     file.flush();
 }
 
-llvm::MemoryBufferRef cx::addFileBufferToModule(llvm::StringRef filePath, Module& targetModule) {
-    auto buffer = llvm::MemoryBuffer::getFile(filePath);
-    if (!buffer) ABORT("couldn't open file '" << filePath << "'");
-    ASSERT((*buffer)->getBufferIdentifier() == filePath);
-    targetModule.fileBuffers.push_back(std::move(*buffer));
-    return targetModule.fileBuffers.back()->getMemBufferRef();
-}
-
 static int buildModuleFromFiles(BuildParams buildParams) {
     Module mainModule("main");
     for (llvm::StringRef filePath : buildParams.filePaths) {
@@ -312,7 +304,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     switch (backend.getValue()) {
     case Backend::C: {
-        CGenerator cGen;
+        CGenerator cGen(cDispatch);
         for (auto* irModule : irGenerator.generatedModules) {
             cGen.codegenModule(*irModule);
         }
@@ -567,6 +559,10 @@ int cx::driverMain(int argc, const char** argv) {
     cl::HideUnrelatedOptions({&stageSelectionCategory, &outputCategory, &dependencyCategory, &diagnosticCategory});
     cl::ParseCommandLineOptions(argc, argv, "C* compiler\n");
     addPlatformCompileOptions();
+
+    diagnosticOptions.disableWarnings = disableWarnings;
+    diagnosticOptions.warningsAsErrors = warningsAsErrors;
+    diagnosticOptions.errorLimit = errorLimit;
 
     if (!inputs.empty()) {
         return buildModuleFromFiles({

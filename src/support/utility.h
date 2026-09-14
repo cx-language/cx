@@ -24,6 +24,21 @@ class StringRef;
 
 namespace cx {
 
+/// Diagnostic options. These mirror the corresponding command-line options
+/// defined in the driver, but live here as plain data so that they can also
+/// be set by API users (such as the WebAssembly build) that don't link
+/// against LLVM's command-line parser.
+struct DiagnosticOptions {
+    bool disableWarnings = false;
+    bool warningsAsErrors = false;
+    int errorLimit = 10;
+};
+
+extern DiagnosticOptions diagnosticOptions;
+
+/// Number of errors reported so far during the current compilation.
+extern int errors;
+
 std::ostream& operator<<(std::ostream& stream, llvm::StringRef string);
 
 template<typename SourceContainer, typename Mapper> auto map(const SourceContainer& source, Mapper mapper) -> std::vector<decltype(mapper(*source.begin()))> {

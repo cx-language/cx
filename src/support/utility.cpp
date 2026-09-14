@@ -3,21 +3,21 @@
 #include <fstream>
 #include <ostream>
 #pragma warning(push, 0)
-#include <llvm/Support/CommandLine.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Process.h>
 #include <llvm/Support/Program.h>
+#ifndef __EMSCRIPTEN__
+// Signal handling is not available in the WebAssembly build.
 #include <llvm/Support/Signals.h>
+#endif
 #pragma warning(pop)
 
 using namespace cx;
 
 namespace cx {
-extern int errors;
-extern llvm::cl::opt<int> errorLimit;
-extern llvm::cl::opt<bool> disableWarnings;
-extern llvm::cl::opt<bool> warningsAsErrors;
+DiagnosticOptions diagnosticOptions;
+int errors = 0;
 } // namespace cx
 
 std::ostream& cx::operator<<(std::ostream& stream, llvm::StringRef string) {
@@ -106,11 +106,15 @@ std::optional<std::string> cx::findExternalCCompiler() {
 }
 
 void cx::printStackTrace() {
+#ifndef __EMSCRIPTEN__
     if (auto env = llvm::sys::Process::GetEnv("CX_PRINT_STACK_TRACE")) {
         if (llvm::StringRef(*env).equals_insensitive("true") || *env == "1") {
             llvm::sys::PrintStackTrace(llvm::errs());
         }
     }
+#else
+    // Stack traces are not supported in the WebAssembly build.
+#endif
 }
 
 void cx::abort(llvm::StringRef message) {
@@ -121,7 +125,18 @@ void cx::abort(llvm::StringRef message) {
 
 void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
     errors++;
-    if (errorLimit > 0 && errors > errorLimit) exit(1);
+    if (diagnosticOptions.errorLimit > 0 && errors > diagnosticOptions.errorLimit) {
+#ifdef __EMSCRIPTEN__
+        // Exiting the process is not an option inside the WebAssembly build,
+        // so unwind to the API boundary instead. The error count already
+        // ensures the compilation is reported as failed. Throwing a silent
+        // dependent error avoids reporting the same error twice, as the
+        // regular error handlers ignore errors with empty messages.
+        throw CompileError::dependentError();
+#else
+        exit(1);
+#endif
+    }
 
     printDiagnostic(location, "error", llvm::raw_ostream::RED, message);
 
@@ -131,9 +146,9 @@ void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<
 }
 
 void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
-    if (disableWarnings) return;
+    if (diagnosticOptions.disableWarnings) return;
 
-    if (warningsAsErrors) {
+    if (diagnosticOptions.warningsAsErrors) {
         reportError(location, message, notes);
     } else {
         printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message);

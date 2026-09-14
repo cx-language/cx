@@ -16,6 +16,8 @@ rules.ninja
 
 # Build products
 build/
+wasm/build/
+wasm/dist/
 *.o
 *.obj
 *.a

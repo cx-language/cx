@@ -71,6 +71,11 @@ file(GLOB_RECURSE LIBCX_SOURCES CONFIGURE_DEPENDS
     src/support/*.h src/support/*.cpp
     src/api.cpp
 )
+# The WebAssembly API in src/wasm/ is linked into the Emscripten module (and
+# test binaries) separately, not into libcx. It must be excluded explicitly:
+# GLOB_RECURSE also matches the src/api.cpp pattern against src/wasm/api.cpp,
+# which would otherwise put a duplicate cxCompileToC definition into libcx.
+list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/wasm/")
 add_library(libcx ${LIBCX_SOURCES})
 set_target_properties(libcx PROPERTIES PREFIX "")
 target_precompile_headers(libcx PRIVATE src/pch.h)
@@ -101,7 +106,22 @@ add_custom_target(check_examples
     DEPENDS example_embedding)
 add_custom_target(check)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
-add_dependencies(check check_examples check_lit)
+add_dependencies(check check_examples check_lit check_compile_api)
+
+# Tests for the in-memory compilation API (also used by the WebAssembly build).
+add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/api.cpp)
+target_include_directories(test_compile_api PRIVATE src)
+target_compile_definitions(test_compile_api PRIVATE CX_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+target_link_libraries(test_compile_api libcx)
+add_custom_target(check_compile_api
+    COMMAND test_compile_api hello
+    COMMAND test_compile_api error
+    COMMAND test_compile_api struct
+    COMMAND test_compile_api warning
+    COMMAND test_compile_api dispatch
+    COMMAND test_compile_api json
+    USES_TERMINAL)
+add_dependencies(check_compile_api test_compile_api)
 
 # Download the LLVM FileCheck utility for tests.
 set(FILECHECK_SRC_PATH "llvmorg-${LLVM_PACKAGE_VERSION}/llvm/utils/FileCheck/FileCheck.cpp")

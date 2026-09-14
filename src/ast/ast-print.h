@@ -1,5 +1,9 @@
 #pragma once
 
+#pragma warning(push, 0)
+#include <llvm/Support/raw_ostream.h>
+#pragma warning(pop)
+
 namespace llvm {
 template<typename T> class ArrayRef;
 }

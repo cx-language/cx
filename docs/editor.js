@@ -3,6 +3,9 @@ document.addEventListener("DOMContentLoaded", function() {
     for (const block of codeBlocks) {
         initializeCodeEditor(block);
     }
+    if (typeof CxPlayground !== "undefined") {
+        CxPlayground.warmUp();
+    }
 });
 
 function initializeCodeEditor(block) {
@@ -61,39 +64,39 @@ function initializeCodeEditor(block) {
     }
 
     runButton.onclick = function() {
+        if (typeof CxPlayground === "undefined") {
+            output.style.display = "block";
+            stdout.innerText = "";
+            stderr.innerText = "Error: the playground is unavailable (JavaScript files missing from this page).";
+            return;
+        }
+
+        if (!CxPlayground.isSupported()) {
+            output.style.display = "block";
+            stdout.innerText = "";
+            stderr.innerText = "Error: the online playground needs WebAssembly, which your browser doesn't support. " +
+                "Please try a recent version of Chrome, Firefox, Safari, or Edge.";
+            return;
+        }
+
         removeErrors();
         output.style.display = "block";
         output.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
+        runButton.disabled = true;
         stdout.innerText = "Running...";
         stderr.innerText = "";
         var outputUpdater = setInterval(function() {
             stdout.innerText += ".";
         }, 1000);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", "https://cx-online-compiler.herokuapp.com/run", true);
-        xhr.onerror = function(error) {
+        CxPlayground.run(editor.getValue()).then(function(response) {
             clearInterval(outputUpdater);
-            stdout.innerText = "";
-            stderr.innerText = "Error: " + error.message;
-        };
-        xhr.onload = function() {
-            if (xhr.readyState === 4) {
-                clearInterval(outputUpdater);
-                if (xhr.status === 200) {
-                    var response = JSON.parse(xhr.response);
-                    stdout.innerText = response.stdout || "";
-                    stderr.innerText = response.stderr || "";
-                    highlightError();
-                } else {
-                    stdout.innerText = "";
-                    stderr.innerText = "Error: " + xhr.statusText;
-                }
-                output.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            }
-        };
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify({ code: editor.getValue() }));
+            runButton.disabled = false;
+            stdout.innerText = response.stdout || "";
+            stderr.innerText = response.stderr || "";
+            highlightError();
+            output.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
     };
 }
