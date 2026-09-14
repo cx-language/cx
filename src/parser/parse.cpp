@@ -423,7 +423,7 @@ Type Parser::parseType() {
         type = parseTupleType();
         break;
     default:
-        unexpectedToken(currentToken());
+        ERROR(getCurrentLocation(), "expected type, got " << quote(currentToken()));
     }
 
     while (true) {

@@ -1,5 +1,4 @@
 // RUN: %not %cx -parse %s | %FileCheck %s
 
-// TODO: Improve error message to say "expected type, got '...'"
-// CHECK: [[@LINE+1]]:15: error: unexpected '...'
+// CHECK: [[@LINE+1]]:15: error: expected type, got '...'
 void f(int i, ...) {}
