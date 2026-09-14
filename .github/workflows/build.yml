@@ -52,14 +52,48 @@ jobs:
         if: matrix.os == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Check DIA SDK (Windows)
+      - name: Provide DIA SDK (Windows)
         if: matrix.os == 'windows-latest'
-        shell: pwsh
+        shell: bash
         run: |
-          $diaguidsLib = Join-Path $env:VSINSTALLDIR 'DIA SDK\lib\amd64\diaguids.lib'
-          if (-not (Test-Path $diaguidsLib)) {
-            throw "DIA SDK not found at $diaguidsLib, but LLVM's LLVMDebugInfoPDB target requires it"
-          }
+          # LLVM's LLVMDebugInfoPDB target needs diaguids.lib. Its FindDIASDK
+          # module only looks at $VSINSTALLDIR, which may point at an install
+          # without it, so search wider and pass an explicit path if needed.
+          DIA_CMAKE_DIR=""
+          if [ -f "$VSINSTALLDIR/DIA SDK/lib/amd64/diaguids.lib" ]; then
+            echo "DIA SDK found via VSINSTALLDIR"
+          else
+            VSWHERE="C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
+            if [ -f "$VSWHERE" ]; then
+              mapfile -t VS_INSTALLS < <("$VSWHERE" -products '*' -property installationPath)
+              for INSTALL_PATH in "${VS_INSTALLS[@]}"; do
+                INSTALL_PATH_UNIX=$(echo "$INSTALL_PATH" | tr -d '\r' | sed -e 's/\\/\//g')
+                if [ -f "$INSTALL_PATH_UNIX/DIA SDK/lib/amd64/diaguids.lib" ]; then
+                  DIA_CMAKE_DIR="$INSTALL_PATH_UNIX/DIA SDK"
+                  break
+                fi
+              done
+            fi
+            if [ -z "$DIA_CMAKE_DIR" ]; then
+              # Fall back to the DIA files shipped in the Windows SDK, staged
+              # into the layout FindDIASDK expects.
+              DIA_LIB=$(ls -d "/c/Program Files (x86)/Windows Kits/10/Lib/"*"/um/x64/diaguids.lib" 2>/dev/null | sort -r | head -n 1 || true)
+              DIA_INC=$(echo "$DIA_LIB" | sed -e 's#/Lib/\(.*\)/um/x64/diaguids.lib#/Include/\1/um/dia2.h#')
+              if [ -n "$DIA_LIB" ] && [ -f "$DIA_INC" ]; then
+                DIA_STAGE="$RUNNER_TEMP/dia-sdk"
+                mkdir -p "$DIA_STAGE/include" "$DIA_STAGE/lib/amd64"
+                cp "$DIA_LIB" "$DIA_STAGE/lib/amd64/diaguids.lib"
+                cp "$DIA_INC" "$DIA_STAGE/include/dia2.h"
+                DIA_CMAKE_DIR=$(echo "$DIA_STAGE" | sed -e 's/\\/\//g')
+              fi
+            fi
+            if [ -z "$DIA_CMAKE_DIR" ]; then
+              echo "ERROR: DIA SDK with lib/amd64/diaguids.lib not found in VSINSTALLDIR, any VS instance, or the Windows Kits"
+              exit 1
+            fi
+            echo "DIA SDK found at: $DIA_CMAKE_DIR"
+            echo "DIA_CMAKE_DIR=$DIA_CMAKE_DIR" >> $GITHUB_ENV
+          fi
 
       # LLVM 22+ links LLVMSupport against the ZLIB::ZLIB and zstd::libzstd_static
       # imported targets, so findable ZLIB and zstd are required at configure
@@ -85,7 +119,7 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR${EXTRA_CMAKE_PREFIX:+;$EXTRA_CMAKE_PREFIX}" -DCMAKE_UNITY_BUILD=OFF $EXTRA_CMAKE_ARGS
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR${EXTRA_CMAKE_PREFIX:+;$EXTRA_CMAKE_PREFIX}" -DCMAKE_UNITY_BUILD=OFF $EXTRA_CMAKE_ARGS ${DIA_CMAKE_DIR:+-DMSVC_DIA_SDK_DIR="$DIA_CMAKE_DIR"}
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
@@ -100,7 +134,9 @@ jobs:
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt-get update
             sudo apt-get install libglfw3-dev
-            # No libsdl3-dev on Ubuntu 24.04, so build SDL3 from source.
+            # Build dependencies for SDL3, see https://wiki.libsdl.org/SDL3/README-linux
+            # (no libsdl3-dev on Ubuntu 24.04, so build SDL3 from source below).
+            sudo apt-get install -y pkg-config ninja-build libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libthai-dev libusb-1.0-0-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
             git clone --depth 1 --branch release-3.4.16 https://github.com/libsdl-org/SDL.git /tmp/SDL
             cmake -S /tmp/SDL -B /tmp/SDL/build -DCMAKE_BUILD_TYPE=Release
             cmake --build /tmp/SDL/build --parallel
