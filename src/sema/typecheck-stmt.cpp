@@ -98,6 +98,19 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
 void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     Type conditionType = typecheckExpr(*stmt.condition);
 
+    if (conditionType.isPointerType()) {
+        Type pointeeType = conditionType.getPointee();
+        // Automatically dereference pointers to switchable values. Enums with associated values are excluded;
+        // they need the address for tag/associated-value access, so dereference those explicitly (e.g. `switch (*p)`).
+        bool isPlainEnum = pointeeType.isEnumType() && !llvm::cast<EnumDecl>(pointeeType.getDecl())->hasAssociatedValues();
+        if (pointeeType.isInteger() || pointeeType.isChar() || isPlainEnum) {
+            if (auto dereferenced = convert(stmt.condition, pointeeType)) {
+                stmt.condition = dereferenced;
+                conditionType = pointeeType;
+            }
+        }
+    }
+
     if (!conditionType.isInteger() && !conditionType.isChar() && !conditionType.isEnumType()) {
         ERROR(stmt.condition->location, "switch condition must have integer, char, or enum type, got '" << conditionType << "'");
     }

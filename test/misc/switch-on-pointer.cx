@@ -1,0 +1,48 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:red
+// CHECK-NEXT:1
+// CHECK-NEXT:a
+
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+void foo(Color* c) {
+    switch (c) {
+    case Color.Red:
+        println("red");
+    case Color.Green:
+        println("green");
+    default:
+        println("other");
+    }
+}
+
+void bar(int* i) {
+    switch (i) {
+    case 1:
+        println(1);
+    default:
+        println(2);
+    }
+}
+
+void baz(char* c) {
+    switch (c) {
+    case 'a':
+        println("a");
+    default:
+        println("other");
+    }
+}
+
+void main() {
+    Color c = Color.Red;
+    foo(&c);
+    int i = 1;
+    bar(&i);
+    char ch = 'a';
+    baz(&ch);
+}
