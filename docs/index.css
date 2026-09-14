@@ -278,6 +278,27 @@ button:focus {
     tab-size: 4;
 }
 
+#example-selector {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--text-color);
+    background: var(--background-color-2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M1 1l4 4 4-4" stroke="%23888" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>') no-repeat right 8px center;
+    border: 1px solid var(--background-color-3);
+    border-radius: 2px;
+    padding: 2px 26px 2px 8px;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+#example-selector option {
+    padding: 2px 8px;
+}
+
+#example-selector:focus:not(:focus-visible) {
+    outline: none;
+}
+
 .CodeMirror {
     font-family: inherit;
     background: unset !important;

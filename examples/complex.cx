@@ -1,0 +1,29 @@
+// Complex numbers with operator overloading.
+struct Complex: Copyable {
+    float real;
+    float imag;
+
+    float absSquared() {
+        return real * real + imag * imag;
+    }
+}
+
+Complex operator+(Complex a, Complex b) {
+    return Complex(a.real + b.real, a.imag + b.imag);
+}
+
+Complex operator*(Complex a, Complex b) {
+    return Complex(a.real * b.real - a.imag * b.imag, a.real * b.imag + a.imag * b.real);
+}
+
+void main() {
+    var a = Complex(1, 2);
+    var b = Complex(3, 4);
+    var sum = a + b;
+    var product = a * b;
+    println(sum.real);
+    println(sum.imag);
+    println(product.real);
+    println(product.imag);
+    println(a.absSquared());
+}

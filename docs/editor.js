@@ -42,6 +42,44 @@ function initializeCodeEditor(block) {
 
     block.parentNode.replaceChild(editorWrapper, block);
 
+    // The front-page showcase lets the reader switch between runnable
+    // examples. Its <select> is baked into index.html at website build time;
+    // the example sources come from playground-examples.js.
+    var showcase = editorWrapper.closest("div.showcase");
+    if (showcase) {
+        var selector = showcase.querySelector("#example-selector");
+        if (selector) {
+            if (typeof CxExamples === "undefined") {
+                selector.style.display = "none";
+            } else {
+                // Chromium keeps showing the focus ring on selects after mouse
+                // selection, so drop focus then. Keyboard selection keeps focus
+                // so arrow keys keep navigating the options.
+                var selectedWithPointer = false;
+                selector.addEventListener("pointerdown", function() {
+                    selectedWithPointer = true;
+                });
+                selector.addEventListener("keydown", function() {
+                    selectedWithPointer = false;
+                });
+                selector.onchange = function() {
+                    if (selectedWithPointer) {
+                        selectedWithPointer = false;
+                        selector.blur();
+                    }
+                    var example = CxExamples[Number(selector.value)];
+                    if (!example) return;
+                    editor.setValue(example.code);
+                    removeErrors();
+                    output.style.display = "none";
+                    stdout.innerText = "";
+                    stderr.innerText = "";
+                    runButton.click();
+                };
+            }
+        }
+    }
+
     var widgets = [];
 
     function highlightError() {
