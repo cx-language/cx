@@ -1,0 +1,17 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+void foo<T>(T a) {
+}
+
+void foo<T>(T b) {
+}
+
+void main() {
+    // CHECK: [[@LINE+6]]:5: error: ambiguous reference to 'foo<int>'
+    // CHECK: 3:6: note: candidate function:
+    // CHECK-NEXT: void foo<T>(T a) {
+    // CHECK: 6:6: note: candidate function:
+    // CHECK-NEXT: void foo<T>(T b) {
+    // CHECK-NOT: note
+    foo<int>(1);
+}

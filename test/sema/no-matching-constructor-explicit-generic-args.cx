@@ -1,0 +1,20 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct Wrapper<T> {
+    T value;
+    Wrapper(T value) {
+        this.value = value;
+    }
+    Wrapper() {
+    }
+}
+
+void main() {
+    // CHECK: [[@LINE+6]]:13: error: no matching constructor 'Wrapper<bool>(int, int)'
+    // CHECK: 5:5: note: candidate function:
+    // CHECK-NEXT: Wrapper(T value) {
+    // CHECK: 8:5: note: candidate function:
+    // CHECK-NEXT: Wrapper() {
+    // CHECK-NOT: note
+    var b = Wrapper<bool>(1, 2);
+}

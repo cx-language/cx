@@ -1,0 +1,19 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+T foo<T>(T a) {
+    return a;
+}
+
+T foo<T>(T a, T b) {
+    return a;
+}
+
+void main() {
+    // CHECK: [[@LINE+6]]:13: error: no matching function 'foo<int>(bool, int, float)'
+    // CHECK: 3:3: note: candidate function:
+    // CHECK-NEXT: T foo<T>(T a) {
+    // CHECK: 7:3: note: candidate function:
+    // CHECK-NEXT: T foo<T>(T a, T b) {
+    // CHECK-NOT: note
+    var f = foo<int>(true, 1, 2.5);
+}

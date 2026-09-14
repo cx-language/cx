@@ -1075,6 +1075,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         matches = std::move(templateMatches);
     }
 
+    auto calleeWithGenericArgs = getQualifiedTypeName(callee, expr.getGenericArgs());
+
     if (matches.size() > 1) {
         for (auto& arg : expr.getArgs()) {
             if (!arg.getValue()->hasType()) {
@@ -1086,7 +1088,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             matches = {*match};
         } else {
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(map(matches, [](auto& match) { return match.decl; }), expr),
-                             "ambiguous reference to '" << callee << "'" << (isConstructorCall ? " constructor" : ""));
+                             "ambiguous reference to '" << calleeWithGenericArgs << "'" << (isConstructorCall ? " constructor" : ""));
         }
     }
 
@@ -1113,7 +1115,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             auto argTypes = map(expr.getArgs(), [&](NamedValue& arg) { return typecheckExpr(*arg.getValue()).toString(); });
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates, expr),
                              (isConstructorCall ? "no matching constructor '" : "no matching function '")
-                                 << callee << "(" << llvm::join(argTypes, ", ") << ")'");
+                                 << calleeWithGenericArgs << "(" << llvm::join(argTypes, ", ") << ")'");
         }
     } else {
         ERROR(expr.getCallee().getLocation(), "'" << callee << "' is not a function");
