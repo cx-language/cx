@@ -417,8 +417,9 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     ccArgs.push_back(isMSVC ? "-Fe:" : "-o");
     ccArgs.push_back(tempOutputFilePath.c_str());
 
-    if (backend == Backend::C) {
+    if (backend == Backend::C && !isMSVC) {
         // TODO: remove these and fix errors
+        // Note: GCC/Clang-only flags, MSVC rejects unknown -W options.
         ccArgs.push_back("-Wno-incompatible-pointer-types");
         ccArgs.push_back("-Wno-format");
     }
