@@ -22,22 +22,22 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 20 all
-          echo "/usr/lib/llvm-20/bin" >> $GITHUB_PATH
+          sudo ./llvm.sh 21 all
+          echo "/usr/lib/llvm-21/bin" >> $GITHUB_PATH
 
       - name: Download LLVM (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          brew install llvm@20
-          echo LLVMDIR=$(brew --prefix llvm@20) >> $GITHUB_ENV
+          brew install llvm@21
+          echo LLVMDIR=$(brew --prefix llvm@21) >> $GITHUB_ENV
 
       - name: Download LLVM (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          curl -L "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/clang+llvm-20.1.6-x86_64-pc-windows-msvc.tar.xz" --output llvm.tar.xz && 7z x llvm.tar.xz && 7z x llvm.tar
+          curl -L "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/clang+llvm-21.1.8-x86_64-pc-windows-msvc.tar.xz" --output llvm.tar.xz && 7z x llvm.tar.xz && 7z x llvm.tar
           # The sed below converts the path to a Windows-style path
-          echo LLVMDIR="$(echo "$PWD/clang+llvm-20.1.6-x86_64-pc-windows-msvc" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')" >> $GITHUB_ENV
+          echo LLVMDIR="$(echo "$PWD/clang+llvm-21.1.8-x86_64-pc-windows-msvc" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')" >> $GITHUB_ENV
 
       - name: Create Build Environment
         run: cmake -E make_directory ${{runner.workspace}}/build

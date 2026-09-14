@@ -69,7 +69,7 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
         // Use hidden sret pointer parameter to return larger structs to be compatible with the C calling convention.
         if (shouldUseSret(returnType)) {
             if (isSret) *isSret = true;
-            paramTypes.insert(paramTypes.begin(), llvm::PointerType::get(returnType, 0));
+            paramTypes.insert(paramTypes.begin(), llvm::PointerType::get(ctx, 0));
             returnType = llvm::Type::getVoidTy(ctx);
         } else {
             if (isSret) *isSret = false;
@@ -77,9 +77,7 @@ llvm::Type* LLVMGenerator::getLLVMType(IRType* type, bool* isSret) {
         return llvm::FunctionType::get(returnType, paramTypes, functionType->isVariadic);
     }
     case IRTypeKind::IRPointerType: {
-        auto pointerType = llvm::cast<IRPointerType>(type);
-        auto* pointeeType = getLLVMType(pointerType->pointee);
-        return llvm::PointerType::get(pointeeType->isVoidTy() ? llvm::Type::getInt8Ty(ctx) : pointeeType, 0);
+        return llvm::PointerType::get(ctx, 0);
     }
     case IRTypeKind::IRStructType: {
         auto structType = llvm::cast<IRStructType>(type);

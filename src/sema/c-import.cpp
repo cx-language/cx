@@ -389,7 +389,7 @@ private:
 
 // Silently drops errors in system headers.
 struct ErrorIgnoringTextDiagPrinter final : clang::TextDiagnosticPrinter {
-    ErrorIgnoringTextDiagPrinter(llvm::raw_ostream& os, clang::DiagnosticOptions* diags, bool ownsOutputStream = false)
+    ErrorIgnoringTextDiagPrinter(llvm::raw_ostream& os, clang::DiagnosticOptions& diags, bool ownsOutputStream = false)
     : clang::TextDiagnosticPrinter(os, diags, ownsOutputStream), srcManager(nullptr) {}
 
     void HandleDiagnostic(clang::DiagnosticsEngine::Level level, const clang::Diagnostic& info) override {
@@ -412,15 +412,16 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     }
 
     clang::CompilerInstance ci;
-    auto* diagClient = new ErrorIgnoringTextDiagPrinter(llvm::errs(), new clang::DiagnosticOptions());
+    clang::DiagnosticOptions diagOpts;
+    auto* diagClient = new ErrorIgnoringTextDiagPrinter(llvm::errs(), diagOpts);
     ci.createDiagnostics(*llvm::vfs::getRealFileSystem(), diagClient);
 
     auto args = map(typechecker.options.cflags, [](auto& cflag) { return cflag.c_str(); });
     args.push_back("-fgnuc-version=4.2.1"); // Enable compatibility with GCC macros in imported headers.
     clang::CompilerInvocation::CreateFromArgs(ci.getInvocation(), args, ci.getDiagnostics());
 
-    auto pto = std::make_shared<clang::TargetOptions>();
-    pto->Triple = llvm::sys::getDefaultTargetTriple();
+    clang::TargetOptions pto;
+    pto.Triple = llvm::sys::getDefaultTargetTriple();
     auto targetInfo = clang::TargetInfo::CreateTargetInfo(ci.getDiagnostics(), pto);
     ci.setTarget(targetInfo);
 

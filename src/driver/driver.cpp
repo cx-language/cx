@@ -183,15 +183,14 @@ static void emitLLVMModuleToMachineCode(llvm::Module& module, llvm::StringRef fi
     llvm::InitializeNativeTargetAsmParser();
 
     llvm::Triple triple(llvm::sys::getDefaultTargetTriple());
-    const std::string& targetTriple = triple.str();
-    module.setTargetTriple(targetTriple);
+    module.setTargetTriple(triple);
 
     std::string errorMessage;
-    auto* target = llvm::TargetRegistry::lookupTarget(targetTriple, errorMessage);
+    auto* target = llvm::TargetRegistry::lookupTarget(triple, errorMessage);
     if (!target) ABORT(errorMessage);
 
     llvm::TargetOptions options;
-    auto* targetMachine = target->createTargetMachine(targetTriple, "generic", "", options, relocModel);
+    auto* targetMachine = target->createTargetMachine(triple, "generic", "", options, relocModel);
     module.setDataLayout(targetMachine->createDataLayout());
 
     std::error_code error;

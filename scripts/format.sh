@@ -21,7 +21,7 @@ while test $# -gt 0; do
 done
 
 check_version() {
-    CLANG_TOOLS_VERSION=20
+    CLANG_TOOLS_VERSION=21
     if ! $1 --version | grep --quiet "version $CLANG_TOOLS_VERSION"; then
         echo "WARNING: Wrong $1 version, expected $CLANG_TOOLS_VERSION."
     fi
