@@ -281,6 +281,12 @@ static bool isBuiltinArrayToArrayRefConversion(Type sourceType, IRType* targetTy
 
 Value* IRGenerator::emitExprForPassing(const Expr& expr, IRType* targetType) {
     if (!targetType) {
+        // In variadic calls, arrays decay to pointers to their first element (as in C).
+        if (expr.getType().isConstantArray()) {
+            auto* value = emitExprAsPointer(expr);
+            ASSERT(value->getType()->getPointee()->isArrayType());
+            return createGEP(value, 0);
+        }
         return emitExpr(expr);
     }
 
