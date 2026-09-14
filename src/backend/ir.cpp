@@ -582,23 +582,23 @@ void IRModule::print(llvm::raw_ostream& stream) const {
 bool IRType::isInteger() {
     if (!isBasicType()) return false;
     return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name)
-        .Cases("int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", true)
+        .Cases({"int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64"}, true)
         .Default(false);
 }
 
 bool IRType::isSignedInteger() {
     if (!isBasicType()) return false;
-    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases("int", "int8", "int16", "int32", "int64", true).Default(false);
+    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"int", "int8", "int16", "int32", "int64"}, true).Default(false);
 }
 
 bool IRType::isUnsignedInteger() {
     if (!isBasicType()) return false;
-    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases("uint", "uint8", "uint16", "uint32", "uint64", true).Default(false);
+    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"uint", "uint8", "uint16", "uint32", "uint64"}, true).Default(false);
 }
 
 bool IRType::isFloatingPoint() {
     if (!isBasicType()) return false;
-    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases("float", "float32", "float64", "float80", true).Default(false);
+    return llvm::StringSwitch<bool>(llvm::cast<IRBasicType>(this)->name).Cases({"float", "float32", "float64", "float80"}, true).Default(false);
 }
 
 bool IRType::isChar() {

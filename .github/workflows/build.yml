@@ -22,22 +22,22 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 21 all
-          echo "/usr/lib/llvm-21/bin" >> $GITHUB_PATH
+          sudo ./llvm.sh 23 all
+          echo "/usr/lib/llvm-23/bin" >> $GITHUB_PATH
 
       - name: Download LLVM (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          brew install llvm@21
-          echo LLVMDIR=$(brew --prefix llvm@21) >> $GITHUB_ENV
+          brew install llvm@23
+          echo LLVMDIR=$(brew --prefix llvm@23) >> $GITHUB_ENV
 
       - name: Download LLVM (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          curl -L "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/clang+llvm-21.1.8-x86_64-pc-windows-msvc.tar.xz" --output llvm.tar.xz && 7z x llvm.tar.xz && 7z x llvm.tar
+          curl -L "https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.1/clang+llvm-23.1.1-x86_64-pc-windows-msvc.tar.xz" --output llvm.tar.xz && 7z x llvm.tar.xz && 7z x llvm.tar
           # The sed below converts the path to a Windows-style path
-          echo LLVMDIR="$(echo "$PWD/clang+llvm-21.1.8-x86_64-pc-windows-msvc" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')" >> $GITHUB_ENV
+          echo LLVMDIR="$(echo "$PWD/clang+llvm-23.1.1-x86_64-pc-windows-msvc" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')" >> $GITHUB_ENV
 
       - name: Create Build Environment
         run: cmake -E make_directory ${{runner.workspace}}/build
@@ -46,14 +46,6 @@ jobs:
         shell: bash
         working-directory: ${{runner.workspace}}/build
         run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR" -DCMAKE_UNITY_BUILD=OFF
-
-      - name: install DIA SDK # Workaround for https://github.com/llvm/llvm-project/issues/86250
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          set -x
-          mkdir -p "C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional" || true
-          cp -rv "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/DIA SDK" "C:/Program Files (x86)/Microsoft Visual Studio/2019/Professional/DIA SDK"
 
       - name: Build
         working-directory: ${{runner.workspace}}/build

@@ -39,6 +39,8 @@ struct CToCxConverter final : clang::ASTConsumer {
     CToCxConverter(Module& module, Typechecker& typechecker, clang::TargetInfo* targetInfo, clang::SourceManager& sourceManager)
     : module(module), typechecker(typechecker), targetInfo(targetInfo), sourceManager(sourceManager) {}
 
+    void Initialize(clang::ASTContext& context) override { astContext = &context; }
+
     Type getIntTypeByWidth(unsigned widthInBits, bool asSigned) {
         switch (widthInBits) {
         case 8:
@@ -131,8 +133,11 @@ struct CToCxConverter final : clang::ASTConsumer {
             if (mutability == Mutability::Const) desugared.addConst();
             return toCx(desugared);
         }
-        case clang::Type::Elaborated:
-            return toCx(llvm::cast<clang::ElaboratedType>(type).getNamedType());
+        case clang::Type::PredefinedSugar: {
+            auto desugared = llvm::cast<clang::PredefinedSugarType>(type).desugar();
+            if (mutability == Mutability::Const) desugared.addConst();
+            return toCx(desugared);
+        }
         case clang::Type::Record: {
             auto& recordType = llvm::cast<clang::RecordType>(type);
             auto* recordDecl = recordType.getDecl();
@@ -271,7 +276,7 @@ struct CToCxConverter final : clang::ASTConsumer {
                 }
                 case clang::Decl::Enum: {
                     auto& enumDecl = llvm::cast<clang::EnumDecl>(*decl);
-                    auto type = getName(enumDecl).empty() ? enumDecl.getIntegerType() : clang::QualType(enumDecl.getTypeForDecl(), 0);
+                    bool isAnonymous = getName(enumDecl).empty();
                     std::vector<EnumCase> cases;
 
                     for (clang::EnumConstantDecl* enumerator : enumDecl.enumerators()) {
@@ -279,6 +284,8 @@ struct CToCxConverter final : clang::ASTConsumer {
                         auto value = enumerator->getInitVal();
                         auto valueExpr = new IntLiteralExpr(value, Location());
                         cases.push_back(EnumCase(enumeratorName.str(), valueExpr, Type(), AccessLevel::Default, Location()));
+                        auto type = isAnonymous ? enumDecl.getIntegerType()
+                                                : astContext->getTagType(clang::ElaboratedTypeKeyword::None, clang::NestedNameSpecifier(), &enumDecl, false);
                         addIntegerConstantToSymbolTable(enumeratorName, value, type);
                     }
 
@@ -344,6 +351,7 @@ private:
     Typechecker& typechecker;
     clang::TargetInfo* targetInfo;
     clang::SourceManager& sourceManager;
+    clang::ASTContext* astContext = nullptr;
     std::unordered_map<const clang::RecordDecl*, TypeDecl*> importedRecordDecls;
 };
 
@@ -414,7 +422,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     clang::CompilerInstance ci;
     clang::DiagnosticOptions diagOpts;
     auto* diagClient = new ErrorIgnoringTextDiagPrinter(llvm::errs(), diagOpts);
-    ci.createDiagnostics(*llvm::vfs::getRealFileSystem(), diagClient);
+    ci.createDiagnostics(diagClient);
 
     auto args = map(typechecker.options.cflags, [](auto& cflag) { return cflag.c_str(); });
     args.push_back("-fgnuc-version=4.2.1"); // Enable compatibility with GCC macros in imported headers.
@@ -426,7 +434,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     ci.setTarget(targetInfo);
 
     ci.createFileManager();
-    ci.createSourceManager(ci.getFileManager());
+    ci.createSourceManager();
     diagClient->srcManager = &ci.getSourceManager();
 
     llvm::SmallString<256> importerDirectory;
@@ -482,7 +490,6 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(), &ci.getPreprocessor());
     clang::ParseAST(ci.getPreprocessor(), &ci.getASTConsumer(), ci.getASTContext(), false, clang::TU_Complete, nullptr, /*SkipFunctionBodies*/ true);
     ci.getDiagnosticClient().EndSourceFile();
-    ci.getDiagnosticClient().finish();
 
     if (ci.getDiagnosticClient().getNumErrors() > 0) {
         return false;

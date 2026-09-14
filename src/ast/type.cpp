@@ -75,9 +75,9 @@ bool Type::isUnsizedArrayPointer() const {
 
 bool Type::isBuiltinScalar(llvm::StringRef typeName) {
     return llvm::StringSwitch<bool>(typeName)
-        .Cases("int", "int8", "int16", "int32", "int64", "int128", true)
-        .Cases("uint", "uint8", "uint16", "uint32", "uint64", "uint128", true)
-        .Cases("float", "float16", "float32", "float64", "float80", "bool", "char", true)
+        .Cases({"int", "int8", "int16", "int32", "int64", "int128"}, true)
+        .Cases({"uint", "uint8", "uint16", "uint32", "uint64", "uint128"}, true)
+        .Cases({"float", "float16", "float32", "float64", "float80", "bool", "char"}, true)
         .Default(false);
 }
 
@@ -212,11 +212,11 @@ bool Type::isUnsigned() const {
 int Type::getIntegerBitWidth() const {
     ASSERT(isInteger());
     return llvm::StringSwitch<int>(getName())
-        .Cases("int", "uint", 32)
-        .Cases("int8", "uint8", 8)
-        .Cases("int16", "uint16", 16)
-        .Cases("int32", "uint32", 32)
-        .Cases("int64", "uint64", 64);
+        .Cases({"int", "uint"}, 32)
+        .Cases({"int8", "uint8"}, 8)
+        .Cases({"int16", "uint16"}, 16)
+        .Cases({"int32", "uint32"}, 32)
+        .Cases({"int64", "uint64"}, 64);
 }
 
 Type Type::getPointerTo() const {

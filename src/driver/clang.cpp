@@ -45,8 +45,6 @@ int cx::invokeClang(llvm::ArrayRef<const char*> args) {
         }
     }
 
-    diags.getClient()->finish();
-
 #ifdef _WIN32
     // Exit status should not be negative on Win32, unless abnormal termination.
     // Once abnormal termination was caught, negative status should not be

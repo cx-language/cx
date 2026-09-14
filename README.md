@@ -28,12 +28,12 @@ To ask a question or open a discussion, create an issue or join the [C* Discord 
 ## Building from source
 
 Compiling C* requires a C++17 compiler, [CMake](https://cmake.org), and
-[LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 21.0.
+[LLVM](https://llvm.org)/[Clang](https://clang.llvm.org) 23.0.
 
 - ### Unix / macOS
 
-  Download and extract LLVM/Clang 21.0 pre-built binaries for your platform from
-  https://github.com/llvm/llvm-project/releases, or using a package manager, e.g. `brew install llvm@21`.
+  Download and extract LLVM/Clang 23.0 pre-built binaries for your platform from
+  https://github.com/llvm/llvm-project/releases, or using a package manager, e.g. `brew install llvm@23`.
   Then run the following commands:
 
       mkdir build
@@ -42,7 +42,7 @@ Compiling C* requires a C++17 compiler, [CMake](https://cmake.org), and
 
 - ### Windows with Visual Studio
 
-  Download and extract LLVM/Clang 21.0 pre-built binaries from https://github.com/llvm/llvm-project/releases.
+  Download and extract LLVM/Clang 23.0 pre-built binaries from https://github.com/llvm/llvm-project/releases.
   Then run the following commands:
 
       mkdir build
