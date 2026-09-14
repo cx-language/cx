@@ -16,13 +16,11 @@
 namespace std {
 template<> struct hash<std::vector<cx::Type>> {
     size_t operator()(llvm::ArrayRef<cx::Type> types) const {
-        // FIXME?: Doesn't include mutability into hash value.
-        // Hash by name or string representation instead?
         ASSERT(!types.empty());
-        size_t hashValue = reinterpret_cast<size_t>(types[0].typeBase);
+        size_t hashValue = reinterpret_cast<size_t>(types[0].typeBase) ^ static_cast<size_t>(types[0].mutability);
 
         for (auto type : types.drop_front()) {
-            hashValue ^= reinterpret_cast<size_t>(type.typeBase);
+            hashValue ^= reinterpret_cast<size_t>(type.typeBase) ^ static_cast<size_t>(type.mutability);
         }
 
         return hashValue;
