@@ -418,7 +418,8 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* m
     // TODO: Print import search paths as part of the below error messages.
 
     if (decl.target.ends_with(".h")) {
-        if (!importCHeader(*currentSourceFile, decl, *this)) {
+        const int errorsBefore = errors;
+        if (!importCHeader(*currentSourceFile, decl, *this) && errors == errorsBefore) {
             REPORT_ERROR(decl.getLocation(), "couldn't import C header file '" << decl.target << "'");
         }
     } else {
