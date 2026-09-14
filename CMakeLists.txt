@@ -88,7 +88,15 @@ if(LLVM_LINK_LLVM_DYLIB)
 else()
     llvm_map_components_to_libnames(LLVM_LIBS core native linker support)
 endif()
-list(APPEND LLVM_LIBS clangAST clangBasic clangDriver clangFrontend clangLex clangParse clangSema)
+list(APPEND LLVM_LIBS clangAST clangBasic clangFrontend clangLex clangParse clangSema)
+if(LLVM_LINK_LLVM_DYLIB AND TARGET clang-cpp)
+    # Shared LLVM build: use the shared libclang-cpp for the Clang C++ API
+    # instead of the static archives. (Homebrew's static libclangDriver.a
+    # ships an LLVM-bitcode object file that the system linker rejects.)
+    list(APPEND LLVM_LIBS clang-cpp)
+else()
+    list(APPEND LLVM_LIBS clangDriver)
+endif()
 target_link_libraries(libcx ${LLVM_LIBS})
 
 # Tests
