@@ -26,7 +26,10 @@ for file in book/*.md index.html; do
     pandoc "$file" -o "build/$basename.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --metadata pagetitle="C*"
 
     template=$(<"build/$basename.html")
-    example=$(<../examples/tree.cx)
+    # The front page embeds a runnable example: unlike e.g. tree.cx, it must
+    # not depend on C headers or the file system, which don't exist in the
+    # browser playground.
+    example=$(<../examples/sieve.cx)
     echo "${template//##EXAMPLECODE##/$example}" > "build/$basename.html"
 done
 
