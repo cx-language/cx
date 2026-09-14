@@ -7,6 +7,7 @@
 // CHECK-NEXT:foo_opt
 // CHECK-NEXT:foo_array
 // CHECK-NEXT:foo_array_opt
+// CHECK-NEXT:foo_opt
 
 const char* foo() { return "foo"; }
 const char*? foo_opt() { return "foo_opt"; }
@@ -23,4 +24,6 @@ void main() {
     println(foo_opt());
     println(foo_array());
     println(foo_array_opt());
+    print(foo_opt());
+    print('\n');
 }
