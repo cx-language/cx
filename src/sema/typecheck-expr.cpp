@@ -1100,9 +1100,10 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
 
     if (atLeastOneFunction) {
         if (auto binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
-            ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates, expr),
-                             "no matching operator '" << binaryExpr->getOperator() << "' with arguments '" << binaryExpr->getLHS().getType() << "' and '"
-                                                      << binaryExpr->getRHS().getType() << "'");
+            // Don't list candidate functions for operators; they're usually irrelevant stdlib overloads that drown out the actual error.
+            ERROR(expr.getCallee().getLocation(), "no matching operator '" << binaryExpr->getOperator() << "' with arguments '"
+                                                                           << binaryExpr->getLHS().getType() << "' and '" << binaryExpr->getRHS().getType()
+                                                                           << "'");
         } else {
             auto argTypes = map(expr.getArgs(), [&](NamedValue& arg) { return typecheckExpr(*arg.getValue()).toString(); });
             ERROR_WITH_NOTES(expr.getCallee().getLocation(), getCandidateNotes(candidates, expr),

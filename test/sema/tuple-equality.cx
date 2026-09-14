@@ -3,4 +3,5 @@
 void main() {
     // CHECK: [[@LINE+1]]:13: error: no matching operator '==' with arguments '(int a)' and '(int a)'
     (a = 1) == (a = 1); // TODO: Implement tuple equality comparison
+    // CHECK-NOT: note:
 }
