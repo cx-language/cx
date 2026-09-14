@@ -1,0 +1,13 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:3
+// CHECK-NEXT:6
+
+void foo(ArrayRef<int> x) {
+    println(x.size());
+    println(x[0] + x[1] + x[2]);
+}
+
+void main() {
+    foo([1, 2, 3]);
+}

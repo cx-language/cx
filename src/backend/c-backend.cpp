@@ -157,7 +157,10 @@ void CGenerator::codegenInsert(const InsertInst* inst) {
     if (type->isArrayType()) {
         stream << "[" << inst->index << "] = ";
     } else {
-        stream << "._" << inst->index << " = ";
+        // Named structs use field names (see codegenTypeDefinition); anonymous tuples fall back to indices.
+        const auto& fieldName = type->getFields()[inst->index].name;
+        ASSERT(inst->index < (int)type->getFields().size());
+        stream << "." << (fieldName.empty() ? "_" + std::to_string(inst->index) : fieldName) << " = ";
     }
     codegenInst(inst->value);
     stream << ";\n";
@@ -311,7 +314,11 @@ void CGenerator::codegenConstGEP(const ConstGEPInst* inst) {
     auto name = "_const_get_element_ptr" + std::to_string(valueSuffixCounter++);
     stream << "__auto_type " << name << " = &";
     codegenInst(inst->pointer);
-    stream << "->" << inst->name << ";\n";
+    if (inst->pointer->getType()->getPointee()->isArrayType()) {
+        stream << "[0][" << inst->index << "];\n";
+    } else {
+        stream << "->" << inst->name << ";\n";
+    }
     emittedValues.insert({inst, std::move(name)});
 }
 
