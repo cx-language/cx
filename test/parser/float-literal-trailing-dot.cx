@@ -1,0 +1,6 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+void main() {
+    var a = 0.
+// CHECK: [[@LINE+1]]:1: error: expected identifier, got '}'
+}

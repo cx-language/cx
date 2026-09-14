@@ -219,13 +219,16 @@ Token Lexer::readNumber() {
     }
 
 end:
-    unreadChar(ch);
-
     ASSERT(begin != end);
     if (end[-1] == '.') {
-        unreadChar('.'); // Lex the '.' as a Token::Dot.
-        isFloat = false;
+        // Exclude the trailing '.' so it's lexed separately (e.g. member access `0.foo`, ranges `0..10`).
+        // Rewind explicitly instead of unreading: the terminator may be a newline, whose column unreadChar can't restore.
         end--;
+        currentFilePosition = end - 1;
+        lastLocation = Location(getFilePath(), firstLocation.line, firstLocation.column + (end - begin) - 1);
+        isFloat = false;
+    } else {
+        unreadChar(ch);
     }
 
     if (isFloat) return Token(Token::FloatLiteral, getCurrentLocation(), llvm::StringRef(begin, end - begin));
