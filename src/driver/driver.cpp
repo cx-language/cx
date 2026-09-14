@@ -554,7 +554,9 @@ static void addPlatformCompileOptions() {
     sdkPath = llvm::StringRef(sdkPath).trim();
     if (!sdkPath.empty()) {
         cflags.push_back("-isysroot");
-        cflags.push_back(std::move(sdkPath));
+        cflags.push_back(sdkPath);
+        // The Clang driver implicitly searches the SDK frameworks directories, so do the same to find framework headers when importing C headers.
+        frameworkSearchPaths.push_back(sdkPath + "/System/Library/Frameworks");
     }
 #endif
 }
