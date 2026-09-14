@@ -121,15 +121,15 @@ add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/a
 target_include_directories(test_compile_api PRIVATE src)
 target_compile_definitions(test_compile_api PRIVATE CX_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(test_compile_api libcx)
-add_custom_target(check_compile_api
-    COMMAND test_compile_api hello
-    COMMAND test_compile_api error
-    COMMAND test_compile_api struct
-    COMMAND test_compile_api warning
-    COMMAND test_compile_api dispatch
-    COMMAND test_compile_api json
-    USES_TERMINAL)
-add_dependencies(check_compile_api test_compile_api)
+add_custom_target(check_compile_api)
+# One target per test case so failures identify the failing case.
+foreach(test_case hello error struct warning dispatch json)
+    add_custom_target(check_compile_api_${test_case}
+        COMMAND test_compile_api ${test_case}
+        USES_TERMINAL)
+    add_dependencies(check_compile_api_${test_case} test_compile_api)
+    add_dependencies(check_compile_api check_compile_api_${test_case})
+endforeach()
 
 # Download the LLVM FileCheck utility for tests.
 set(FILECHECK_SRC_PATH "llvmorg-${LLVM_PACKAGE_VERSION}/llvm/utils/FileCheck/FileCheck.cpp")
