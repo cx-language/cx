@@ -144,12 +144,16 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
 }
 
 void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel) {
-    if (auto existing = currentModule->symbolTable.findInCurrentScope(decl.getName()); !existing.empty()) {
-        ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getName() << "'");
+    if (!decl.getName().empty()) {
+        if (auto existing = currentModule->symbolTable.findInCurrentScope(decl.getName()); !existing.empty()) {
+            ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getName() << "'");
+        }
     }
 
     typecheckType(decl.type, userAccessLevel);
-    currentModule->symbolTable.add(decl.getName(), &decl);
+    if (!decl.getName().empty()) {
+        currentModule->symbolTable.add(decl.getName(), &decl);
+    }
 }
 
 static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
@@ -212,7 +216,20 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
 
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.typechecked) return;
-    if (decl.isExtern()) return; // TODO: Typecheck parameters and return type of extern functions.
+
+    if (decl.isExtern()) {
+        Scope scope(&decl, &currentModule->symbolTable);
+        llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
+
+        typecheckParams(decl.getParams(), decl.accessLevel);
+
+        if (!decl.isConstructorDecl() && !decl.isDestructorDecl() && decl.getReturnType()) {
+            typecheckType(decl.getReturnType(), decl.accessLevel);
+        }
+
+        decl.typechecked = true;
+        return;
+    }
 
     TypeDecl* receiverTypeDecl = decl.getTypeDecl();
 

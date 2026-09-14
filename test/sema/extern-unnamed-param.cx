@@ -1,0 +1,8 @@
+// RUN: %cx -typecheck %s
+
+import "inputs/extern-unnamed-param.h";
+
+void main() {
+    var x = my_abs(-42);
+    assert(x == 42);
+}

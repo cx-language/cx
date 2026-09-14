@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:15: error: unknown type 'UnknownParamType'
+extern void f(UnknownParamType x);
+
+// CHECK: [[@LINE+1]]:8: error: unknown type 'UnknownReturnType'
+extern UnknownReturnType g();
