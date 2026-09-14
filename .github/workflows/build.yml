@@ -6,6 +6,9 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      # Platform legs are independent; a toolchain flake on one OS
+      # must not cancel validation of the others.
+      fail-fast: false
       matrix:
         os: [ windows-latest, ubuntu-latest, macos-latest ]
         build_type: [ Debug, RelWithDebInfo ]
@@ -28,6 +31,10 @@ jobs:
       - name: Download LLVM (macOS)
         if: matrix.os == 'macos-latest'
         run: |
+          # Refresh Homebrew first: a stale snapshot installs an older LLVM
+          # bottle (e.g. 23.1.0, whose libclangDriver.a ships an LLVM-bitcode
+          # object that the system linker can't parse).
+          brew update
           brew install llvm@23
           echo LLVMDIR=$(brew --prefix llvm@23) >> $GITHUB_ENV
 
