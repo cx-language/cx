@@ -111,11 +111,15 @@ void IRGenerator::emitForStmt(const ForStmt& forStmt) {
     createBr(condition);
 
     setInsertPoint(condition);
-    auto* conditionValue = emitExpr(*forStmt.condition);
-    if (conditionValue->getType()->isPointerType()) {
-        conditionValue = emitImplicitNullComparison(conditionValue);
+    if (forStmt.condition) {
+        auto* conditionValue = emitExpr(*forStmt.condition);
+        if (conditionValue->getType()->isPointerType()) {
+            conditionValue = emitImplicitNullComparison(conditionValue);
+        }
+        createCondBr(conditionValue, body, end);
+    } else {
+        createBr(body);
     }
-    createCondBr(conditionValue, body, end);
 
     setInsertPoint(body);
     emitBlock(forStmt.body, afterBody);

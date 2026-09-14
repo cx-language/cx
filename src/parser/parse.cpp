@@ -894,8 +894,8 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
 }
 
 /// for-stmt ::= 'for' for-header block-or-stmt
-/// for-header ::= var-decl ';' expr ';' stmt |
-///            '(' var-decl ';' expr ';' stmt ')'
+/// for-header ::= var-decl ';' expr? ';' expr? |
+///            '(' var-decl ';' expr? ';' expr? ')'
 /// foreach-stmt ::= 'for' foreach-header block-or-stmt
 /// foreach-header ::= (type | 'var') id 'in' expr |
 ///                '(' (type | 'var') id 'in' expr ')'
@@ -907,10 +907,18 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
     auto varStmt = currentToken() == Token::Semicolon ? (consumeToken(), nullptr) : parseVarStmt(parent);
 
     if (!varStmt || varStmt->decl->initializer) {
-        // Semicolon is parsed inside parseVarDecl
-        auto condition = parseExpr();
-        parse(Token::Semicolon);
-        auto increment = parseExpr();
+        // C-style for loop. The condition and increment expressions may be omitted.
+        Expr* condition = nullptr;
+        if (currentToken() == Token::Semicolon) {
+            consumeToken();
+        } else {
+            condition = parseExpr();
+            parse(Token::Semicolon);
+        }
+        Expr* increment = nullptr;
+        if (currentToken() != Token::RightParen && currentToken() != Token::LeftBrace) {
+            increment = parseExpr();
+        }
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
         return new ForStmt(varStmt, condition, increment, std::move(body), location);
