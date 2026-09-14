@@ -1,0 +1,11 @@
+// RUN: %cx -print-llvm %s
+
+int f(bool b) {
+    if (b) {
+        return 1;
+    }
+    assert(false);
+}
+
+void main() {
+}

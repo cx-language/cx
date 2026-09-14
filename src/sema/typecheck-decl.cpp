@@ -120,7 +120,15 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
     case StmtKind::ExprStmt: {
         auto& exprStmt = llvm::cast<ExprStmt>(*block.back());
         auto call = llvm::dyn_cast<CallExpr>(exprStmt.expr);
-        return call && call->getType().isNeverType();
+        if (!call) return false;
+        if (call->getType().isNeverType()) return true;
+        // Builtin `assert(false)` branches to `assertFail`, which aborts, so it terminates all paths.
+        if (!call->isMethodCall() && call->getFunctionName() == "assert" && call->getArgs().size() == 1) {
+            if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->getArgs()[0].getValue())) {
+                return !condition->getValue();
+            }
+        }
+        return false;
     }
     case StmtKind::IfStmt: {
         auto& ifStmt = llvm::cast<IfStmt>(*block.back());
