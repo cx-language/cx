@@ -8,6 +8,9 @@
 // CHECK-NEXT:foo_array
 // CHECK-NEXT:foo_array_opt
 // CHECK-NEXT:foo_opt
+// CHECK-NEXT:hi
+// CHECK-NEXT:null
+// CHECK-NEXT:hi
 
 const char* foo() { return "foo"; }
 const char*? foo_opt() { return "foo_opt"; }
@@ -26,4 +29,16 @@ void main() {
     println(foo_array_opt());
     print(foo_opt());
     print('\n');
+    StringBuffer sb = StringBuffer(uninitializedSize = 3);
+    sb[0] = 'h';
+    sb[1] = 'i';
+    sb[2] = char(0);
+    println(sb.data());
+    char*? n = null;
+    println(n);
+    StringBuffer sb2 = StringBuffer(uninitializedSize = 3);
+    sb2[0] = 'h';
+    sb2[1] = 'i';
+    sb2[2] = char(0);
+    println(sb2.cString());
 }

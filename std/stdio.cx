@@ -13,6 +13,11 @@ void println(const char[*]? value) {
     print('\n');
 }
 
+void println(char[*]? value) {
+    print(value);
+    print('\n');
+}
+
 void print<T: Printable>(T value) {
     var s = value.toString();
     printf("%.*s", s.size(), s.data());
@@ -49,6 +54,14 @@ void print<T: Printable>(Optional<T>* optional) {
 }
 
 void print(const char[*]? cString) {
+    if (cString) {
+        printf("%s", cString);
+    } else {
+        printf("null");
+    }
+}
+
+void print(char[*]? cString) {
     if (cString) {
         printf("%s", cString);
     } else {
