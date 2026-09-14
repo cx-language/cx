@@ -317,7 +317,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
             if (!remainingPrintOpts) return 0;
         }
 
-        // TODO: emitAssembly not supported, report to user
+        if (emitAssembly) ABORT("--emit-assembly is not supported with the C backend");
         outputFileExtension = "c";
         int fileDescriptor;
         if (auto error = llvm::sys::fs::createTemporaryFile("cx", outputFileExtension, fileDescriptor, tempIntermediateFilePath)) {

@@ -1,0 +1,5 @@
+// RUN: %not %cx --backend=c -S %s 2>&1 | %FileCheck %s
+
+void main() {}
+
+// CHECK: error: --emit-assembly is not supported with the C backend
