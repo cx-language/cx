@@ -294,18 +294,14 @@ void CGenerator::codegenGEP(const GEPInst* inst) {
     stream.indent(4);
     auto name = "_get_element_ptr" + std::to_string(valueSuffixCounter++);
     codegenType(stream, inst->getType(), true);
-    stream << " " << name << " = ";
-    for (auto* index : inst->indexes) {
-        (void)index;
-        stream << "&(";
-    }
+    stream << " " << name << " = &(";
     codegenInst(inst->pointer);
     for (auto* index : inst->indexes) {
-        stream << ")[";
+        stream << "[";
         codegenInst(index);
         stream << ']';
     }
-    stream << ";\n";
+    stream << ");\n";
     emittedValues.insert({inst, std::move(name)});
 }
 

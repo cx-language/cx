@@ -1,0 +1,11 @@
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:100
+
+void main() {
+    int[4] arr = undefined;
+    arr[0] = 10;
+    arr[1] = 20;
+    arr[2] = 30;
+    arr[3] = 40;
+    println(arr[0] + arr[1] + arr[2] + arr[3]);
+}
