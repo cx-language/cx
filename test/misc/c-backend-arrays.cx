@@ -1,0 +1,38 @@
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c --c-dispatch %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:9
+// CHECK-NEXT:6
+// CHECK-NEXT:21
+
+// Exercises fixed-size array struct fields (which the C backend addresses as
+// pointers to arrays) and `undefined` call arguments through both C code
+// generation modes.
+
+struct Particle {
+    float[3] pos;
+    float[3] vel;
+}
+
+float sum(Particle* p) {
+    var total = 0.0;
+    for (var i in 0..3) {
+        total += p.pos[i] + p.vel[i];
+    }
+    return total;
+}
+
+void main() {
+    var p = Particle(undefined, undefined);
+    for (var i in 0..3) {
+        p.pos[i] = float(i) * 1.5;
+        p.vel[i] = float(i) + 0.5;
+    }
+    println(sum(&p));
+
+    var q = Particle(undefined, undefined);
+    q.pos[0] = 6;
+    println(q.pos[0]);
+
+    var r = Particle([1, 2, 3], [4, 5, 6]);
+    println(sum(&r));
+}

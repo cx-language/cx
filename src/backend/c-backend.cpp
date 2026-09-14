@@ -69,15 +69,26 @@ void CGenerator::codegenReturn(const ReturnInst* inst) {
     stream << "return";
     if (inst->value) {
         stream << ' ';
-        codegenInst(inst->value);
+        codegenArgument(inst->value);
     }
     stream << ";\n";
+}
+
+void CGenerator::codegenArgument(const Value* value) {
+    if (value->kind == ValueKind::Undefined) {
+        stream << "(";
+        codegenType(stream, value->getType(), true);
+        codegenTypeSuffix(stream, value->getType(), true);
+        stream << "){0}";
+    } else {
+        codegenInst(value);
+    }
 }
 
 void CGenerator::codegenBranch(const BranchInst* inst) {
     if (inst->argument && inst->destination->parameter) {
         stream.indent(4) << getBlockParamName(inst->destination->parameter) << " = ";
-        codegenInst(inst->argument);
+        codegenArgument(inst->argument);
         stream << "; // branch argument\n";
     }
     if (dispatchMode) {
@@ -87,11 +98,10 @@ void CGenerator::codegenBranch(const BranchInst* inst) {
         stream.indent(4) << "goto " << getBlockLabel(inst->destination) << ";\n";
     }
 }
-
 static void codegenCondBranchAssignment(CGenerator& generator, llvm::raw_string_ostream& stream, const BasicBlock* block, const Value* argument, int indent) {
     if (block->parameter && argument) {
         stream.indent(indent) << generator.getBlockParamName(block->parameter) << " = ";
-        generator.codegenInst(argument);
+        generator.codegenArgument(argument);
         stream << ";\n";
     }
 }
@@ -225,18 +235,15 @@ void CGenerator::codegenCall(const CallInst* inst) {
             // The declaration is hoisted (see codegenFunctionDispatch).
             stream << name << " = ";
         } else {
-            auto* returnType = inst->function->getType()->getPointee()->getReturnType();
-            codegenType(stream, returnType, true);
-            stream << " " << name;
-            codegenTypeSuffix(stream, returnType, true);
+            codegenTempDeclarationForType(inst->function->getType()->getPointee()->getReturnType(), name);
             stream << " = ";
         }
     }
     codegenInst(inst->function);
     stream << '(';
-    for (auto& arg : inst->args) {
-        codegenInst(arg);
-        if (&arg != &inst->args.back()) stream << ", ";
+    for (size_t i = 0; i < inst->args.size(); ++i) {
+        codegenArgument(inst->args[i]);
+        if (i + 1 < inst->args.size()) stream << ", ";
     }
     stream << ");\n";
 }
@@ -356,8 +363,8 @@ void CGenerator::codegenConstGEP(const ConstGEPInst* inst) {
         // The declaration is hoisted (see codegenFunctionDispatch).
         stream << name << " = &";
     } else {
-        codegenType(stream, inst->getType(), true);
-        stream << " " << name << " = &";
+        codegenTempDeclarationForType(inst->getType(), name);
+        stream << " = &";
     }
     codegenInst(inst->pointer);
     if (inst->pointer->getType()->getPointee()->isArrayType()) {
@@ -412,7 +419,26 @@ void CGenerator::codegenTempDeclaration(const Value* value, const std::string& n
         stream << name;
         return;
     }
-    auto* type = value->getType();
+    codegenTempDeclarationForType(value->getType(), name);
+}
+
+void CGenerator::codegenTempDeclarationForType(IRType* type, const std::string& name) {
+    if (type->isPointerType() && type->getPointee()->isArrayType()) {
+        // A pointer to an array needs parenthesized declarator syntax:
+        // `int* name[4]` would declare an array of pointers instead.
+        IRType* elementType = type->getPointee();
+        std::vector<int> dimensions;
+        while (auto* arrayType = llvm::dyn_cast<IRArrayType>(elementType)) {
+            dimensions.push_back(arrayType->getArraySize());
+            elementType = arrayType->getElementType();
+        }
+        codegenType(stream, elementType, true);
+        stream << " (*" << name << ")";
+        for (int size : dimensions) {
+            stream << "[" << size << "]";
+        }
+        return;
+    }
     codegenType(stream, type, true);
     stream << ' ' << name;
     codegenTypeSuffix(stream, type, true);
@@ -592,6 +618,7 @@ void CGenerator::codegenFunction(const Function* function) {
         stream << " {\n";
         valueSuffixCounter = 0;
         collectBlockParams(function);
+        copyArrayParams(function);
         for (auto* block : function->body) {
             codegenBasicBlock(block);
         }
@@ -633,9 +660,24 @@ void CGenerator::collectBlockParams(const Function* function) {
     }
 }
 
+void CGenerator::copyArrayParams(const Function* function) {
+    for (auto& param : function->params) {
+        if (!param.type->isArrayType()) continue;
+        std::string copyName = "_cx_arg_" + param.name;
+        stream.indent(4);
+        codegenType(stream, param.type, true);
+        stream << ' ' << copyName;
+        codegenTypeSuffix(stream, param.type, true);
+        stream << ";\n";
+        stream.indent(4) << "memcpy(" << copyName << ", " << param.name << ", sizeof(" << copyName << "));\n";
+        emittedValues[&param] = copyName;
+    }
+}
+
 void CGenerator::codegenFunctionDispatch(const Function* function) {
     stream << " {\n";
     valueSuffixCounter = 0;
+    copyArrayParams(function);
     dispatchBlockIds.clear();
 
     int id = 0;
@@ -665,9 +707,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
                 if (!hasReturnValue(call)) break;
                 auto name = "_call" + std::to_string(valueSuffixCounter++);
                 stream.indent(4);
-                codegenType(stream, call->getType(), true);
-                stream << ' ' << name;
-                codegenTypeSuffix(stream, call->getType(), true);
+                codegenTempDeclarationForType(call->getType(), name);
                 stream << ";\n";
                 emittedValues.insert({inst, std::move(name)});
                 break;
@@ -684,9 +724,7 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
                                                                     : "_cast")
                           + std::to_string(valueSuffixCounter++);
                 stream.indent(4);
-                codegenType(stream, inst->getType(), true);
-                stream << ' ' << name;
-                codegenTypeSuffix(stream, inst->getType(), true);
+                codegenTempDeclarationForType(inst->getType(), name);
                 stream << ";\n";
                 emittedValues.insert({inst, std::move(name)});
                 break;
@@ -708,8 +746,8 @@ void CGenerator::codegenFunctionDispatch(const Function* function) {
                 auto prefix = inst->kind == ValueKind::GEPInst ? "_get_element_ptr" : "_const_get_element_ptr";
                 auto name = prefix + std::to_string(valueSuffixCounter++);
                 stream.indent(4);
-                codegenType(stream, inst->getType(), true);
-                stream << ' ' << name << ";\n";
+                codegenTempDeclarationForType(inst->getType(), name);
+                stream << ";\n";
                 emittedValues.insert({inst, std::move(name)});
                 break;
             }

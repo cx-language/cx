@@ -41,7 +41,15 @@ struct CGenerator {
     void codegenUndefined(const Undefined* inst);
     void codegenInst(const Value* value);
     void codegenInstImpl(const Value* value);
+    // Emits a call, branch, or return argument. `undefined` has no C
+    // equivalent, so a zero value of the argument type is passed instead
+    // (matching LLVM's undef, which the recipient must not meaningfully use).
+    void codegenArgument(const Value* value);
     void codegenTempDeclaration(const Value* value, const std::string& name);
+    // Emits a `type name;` declaration, using parenthesized declarator syntax
+    // for pointers to arrays (e.g. `int (*name)[4]`), which the split
+    // codegenType/codegenTypeSuffix pair cannot express.
+    void codegenTempDeclarationForType(IRType* type, const std::string& name);
     void codegenFunctionPrototype(const Function* function);
     void codegenFunction(const Function* function);
     void codegenFunctionDispatch(const Function* function);
@@ -65,6 +73,11 @@ struct CGenerator {
     // branch sites only assign); in dispatch mode their declarations are
     // hoisted together with the other temporaries.
     void collectBlockParams(const Function* function);
+    // Copies array-typed parameters into local arrays on function entry.
+    // Array parameters arrive decayed to pointers, so the body uses the
+    // copies, which behave like any other array. This also implements
+    // by-value semantics.
+    void copyArrayParams(const Function* function);
     std::string finish();
 
     bool dispatchMode = false;
