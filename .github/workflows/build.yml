@@ -39,13 +39,42 @@ jobs:
           # The sed below converts the path to a Windows-style path
           echo LLVMDIR="$(echo "$PWD/clang+llvm-23.1.1-x86_64-pc-windows-msvc" | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')" >> $GITHUB_ENV
 
+      # LLVM 22+ locates the DIA SDK via $VSINSTALLDIR (see llvm/cmake/modules/FindDIASDK.cmake),
+      # which is only set inside a Visual Studio developer environment.
+      - name: Set up MSVC environment (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Check DIA SDK (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $diaguidsLib = Join-Path $env:VSINSTALLDIR 'DIA SDK\lib\amd64\diaguids.lib'
+          if (-not (Test-Path $diaguidsLib)) {
+            throw "DIA SDK not found at $diaguidsLib, but LLVM's LLVMDebugInfoPDB target requires it"
+          }
+
+      # LLVM 22+ links LLVMSupport against the ZLIB::ZLIB imported target,
+      # so a findable ZLIB is required at configure time. Use the static
+      # triplet to match the /MT runtime used with the prebuilt LLVM.
+      # Note: vcpkg names the static libs zs/zsd, which FindZLIB only
+      # searches for with ZLIB_USE_STATIC_LIBS=ON.
+      - name: Install zlib (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          vcpkg install zlib:x64-windows-static
+          ls "$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static/lib"
+          echo "EXTRA_CMAKE_PREFIX=$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static" >> $GITHUB_ENV
+          echo "EXTRA_CMAKE_ARGS=-DZLIB_USE_STATIC_LIBS=ON" >> $GITHUB_ENV
+
       - name: Create Build Environment
         run: cmake -E make_directory ${{runner.workspace}}/build
 
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR" -DCMAKE_UNITY_BUILD=OFF
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_PREFIX_PATH="$LLVMDIR${EXTRA_CMAKE_PREFIX:+;$EXTRA_CMAKE_PREFIX}" -DCMAKE_UNITY_BUILD=OFF $EXTRA_CMAKE_ARGS
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
