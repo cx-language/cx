@@ -31,7 +31,7 @@ void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
     // FIXME: Lower implicit null checks such as `if (ptr)` and `if (!ptr)` to null comparisons.
     if (condition->getType()->isPointerType()) {
         condition = emitImplicitNullComparison(condition);
-    } else if (ifStmt.condition->getType().isOptionalType() && !ifStmt.condition->getType().getWrappedType().isPointerType()) {
+    } else if (ifStmt.condition->type.isOptionalType() && !ifStmt.condition->type.getWrappedType().isPointerType()) {
         condition = createExtractValue(condition, optionalHasValueFieldIndex);
     }
 

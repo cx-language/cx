@@ -381,7 +381,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         if (error) ABORT(error.message());
     }
 
-    bool treatAsLibrary = mainModule.getSymbolTable().findInTopLevelScope("main").empty() && !run;
+    bool treatAsLibrary = mainModule.symbolTable.findInTopLevelScope("main").empty() && !run;
     if (treatAsLibrary && !buildParams.createSharedLib) {
         compileOnly = true;
     }
@@ -522,10 +522,10 @@ static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
 
     for (auto& targetRootDir : manifest.getTargetRootDirectories()) {
         llvm::StringRef outputFileName;
-        if (manifest.isMultiTarget() || manifest.getPackageName().empty()) {
+        if (manifest.multitarget || manifest.packageName.empty()) {
             outputFileName = llvm::sys::path::filename(targetRootDir);
         } else {
-            outputFileName = manifest.getPackageName();
+            outputFileName = manifest.packageName;
         }
         auto sourceFiles = getSourceFiles(targetRootDir, manifestPath);
         // TODO: Add support for library packages.
@@ -533,7 +533,7 @@ static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
             .filePaths = sourceFiles,
             .manifest = &manifest,
             .argv0 = argv0,
-            .outputDirectory = manifest.getOutputDirectory(),
+            .outputDirectory = manifest.outputDirectory,
             .outputFileName = outputFileName.str(),
         });
         if (exitStatus != 0) return exitStatus;

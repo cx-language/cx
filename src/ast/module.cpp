@@ -16,38 +16,38 @@ Module* Module::getStdlibModule() {
 }
 
 void Module::addToSymbolTableWithName(Decl& decl, llvm::StringRef name) {
-    if (auto existing = getSymbolTable().findInCurrentScope(name); !existing.empty()) {
+    if (auto existing = symbolTable.findInCurrentScope(name); !existing.empty()) {
         REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << name << "'");
     }
 
     if (decl.isGlobal()) {
-        getSymbolTable().addGlobal(name, &decl);
+        symbolTable.addGlobal(name, &decl);
     } else {
-        getSymbolTable().add(name, &decl);
+        symbolTable.add(name, &decl);
     }
 }
 
 void Module::addToSymbolTable(FunctionTemplate& decl) {
-    if (auto existing = getSymbolTable().findWithMatchingPrototype(*decl.functionDecl)) {
+    if (auto existing = symbolTable.findWithMatchingPrototype(*decl.functionDecl)) {
         REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getQualifiedName() << "'");
     }
-    getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
+    symbolTable.addGlobal(decl.getQualifiedName(), &decl);
 }
 
 void Module::addToSymbolTable(FunctionDecl& decl) {
-    if (auto existing = getSymbolTable().findWithMatchingPrototype(decl)) {
+    if (auto existing = symbolTable.findWithMatchingPrototype(decl)) {
         REPORT_ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getQualifiedName() << "'");
     }
-    getSymbolTable().addGlobal(decl.getQualifiedName(), &decl);
+    symbolTable.addGlobal(decl.getQualifiedName(), &decl);
 }
 
 void Module::addToSymbolTable(TypeTemplate& decl) {
-    llvm::cast<BasicType>(decl.typeDecl->getType().getBase())->setDecl(decl.typeDecl);
+    llvm::cast<BasicType>(decl.typeDecl->getType().typeBase)->decl = decl.typeDecl;
     addToSymbolTableWithName(decl, decl.typeDecl->getName());
 }
 
 void Module::addToSymbolTable(TypeDecl& decl) {
-    llvm::cast<BasicType>(decl.getType().getBase())->setDecl(&decl);
+    llvm::cast<BasicType>(decl.getType().typeBase)->decl = &decl;
     addToSymbolTableWithName(decl, decl.getQualifiedName());
 
     for (auto& memberDecl : decl.methods) {
@@ -58,7 +58,7 @@ void Module::addToSymbolTable(TypeDecl& decl) {
 }
 
 void Module::addToSymbolTable(EnumDecl& decl) {
-    llvm::cast<BasicType>(decl.getType().getBase())->setDecl(&decl);
+    llvm::cast<BasicType>(decl.getType().typeBase)->decl = &decl;
     addToSymbolTableWithName(decl, decl.getName());
 }
 
@@ -67,21 +67,21 @@ void Module::addToSymbolTable(VarDecl& decl) {
 }
 
 void Module::addToSymbolTable(Decl* decl) {
-    getSymbolTable().add(decl->getName(), decl);
+    symbolTable.add(decl->getName(), decl);
 
     if (auto* typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-        llvm::cast<BasicType>(*typeDecl->getType()).setDecl(typeDecl);
+        llvm::cast<BasicType>(*typeDecl->getType()).decl = typeDecl;
     }
 }
 
 void Module::addIdentifierReplacement(llvm::StringRef source, llvm::StringRef target) {
     ASSERT(!target.empty());
-    getSymbolTable().addIdentifierReplacement(source, target);
+    symbolTable.addIdentifierReplacement(source, target);
 }
 
 void Module::print(llvm::raw_ostream& stream) const {
     for (auto& sourceFile : sourceFiles) {
-        for (auto* topLevelDecl : sourceFile.getTopLevelDecls()) {
+        for (auto* topLevelDecl : sourceFile.topLevelDecls) {
             stream << *topLevelDecl << "\n";
         }
     }

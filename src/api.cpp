@@ -42,7 +42,7 @@ CxCompileResult cxCompileModule(CxModule* module) {
 
 CxFunction cxGetFunction(CxModule* module, const char* name) {
     CxFunction function = {};
-    auto* decl = module->module.getSymbolTable().findOne(name);
+    auto* decl = module->module.symbolTable.findOne(name);
 
     if (auto* functionDecl = llvm::dyn_cast_or_null<FunctionDecl>(decl)) {
         auto mangledName = mangleFunctionDecl(*functionDecl);

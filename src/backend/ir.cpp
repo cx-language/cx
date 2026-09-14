@@ -19,7 +19,7 @@ BasicBlock::BasicBlock(std::string name, cx::Function* parent) : Value{ValueKind
 static std::unordered_map<TypeBase*, IRType*> irTypes = {{nullptr, nullptr}};
 
 IRType* cx::getIRType(Type astType) {
-    auto it = irTypes.find(astType.getBase());
+    auto it = irTypes.find(astType.typeBase);
     if (it != irTypes.end()) return it->second;
 
     IRType* irType = nullptr;
@@ -42,7 +42,7 @@ IRType* cx::getIRType(Type astType) {
                                           '_' + mangleType(astType),
                                           false,
                                           false};
-                irTypes.emplace(astType.getBase(), irType);
+                irTypes.emplace(astType.typeBase, irType);
                 auto associatedTypes = map(enumDecl->cases, [](const EnumCase& c) { return IRField{getIRType(c.associatedType), c.name}; });
                 unionType->fields = std::move(associatedTypes);
                 return irType;
@@ -52,7 +52,7 @@ IRType* cx::getIRType(Type astType) {
         } else if (auto decl = astType.getDecl()) {
             if (decl->isUnion()) {
                 auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, astType.getQualifiedTypeName()};
-                irTypes.emplace(astType.getBase(), unionType);
+                irTypes.emplace(astType.typeBase, unionType);
                 // Fields are set late to handle recursive types.
                 unionType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name}; });
                 return unionType;
@@ -64,7 +64,7 @@ IRType* cx::getIRType(Type astType) {
                                                    isImportedFromC ? astType.getName().str() : ('_' + mangleType(astType)),
                                                    decl->packed,
                                                    isImportedFromC};
-                irTypes.emplace(astType.getBase(), structType);
+                irTypes.emplace(astType.typeBase, structType);
                 // Fields are set late to handle recursive types.
                 structType->fields = map(decl->fields, [](const FieldDecl& f) { return IRField{getIRType(f.type), f.name}; });
                 return structType;
@@ -96,7 +96,7 @@ IRType* cx::getIRType(Type astType) {
             IRTypeKind::IRFunctionType,
             returnType,
             std::move(paramTypes),
-            llvm::cast<FunctionType>(astType.getBase())->isVariadic,
+            llvm::cast<FunctionType>(astType.typeBase)->isVariadic,
         };
         irType = new IRPointerType{IRTypeKind::IRPointerType, functionType, astType.isMutable()};
         break;
@@ -110,7 +110,7 @@ IRType* cx::getIRType(Type astType) {
         llvm_unreachable("cannot convert unresolved type to IR");
     }
 
-    irTypes.emplace(astType.getBase(), irType);
+    irTypes.emplace(astType.typeBase, irType);
     return irType;
 }
 

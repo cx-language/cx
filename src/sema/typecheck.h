@@ -53,7 +53,6 @@ struct Typechecker {
       isPostProcessing(false), options(options) {}
     void typecheckModule(Module& module, const PackageManifest* manifest);
 
-    Module* getCurrentModule() const { return NOTNULL(currentModule); }
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
     void typecheckVarDecl(VarDecl& decl);
     void typecheckFieldDecl(FieldDecl& decl);

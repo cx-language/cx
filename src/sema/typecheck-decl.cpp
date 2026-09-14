@@ -15,11 +15,11 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
     decls.erase(std::remove_if(decls.begin(), decls.end(), [](Decl* d) { return !d->isTypeTemplate() && !d->isTypeDecl(); }), decls.end());
 
     if (decls.empty()) {
-        ERROR(type.getLocation(), "'" << type << "' is not a type");
+        ERROR(type.location, "'" << type << "' is not a type");
     }
 
     if (!decls[0]->isTypeTemplate()) {
-        ERROR(type.getLocation(), "too many generic arguments to '" << type.getName() << "', expected 0");
+        ERROR(type.location, "too many generic arguments to '" << type.getName() << "', expected 0");
     }
 
     ASSERT(decls.size() == 1);
@@ -71,18 +71,18 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
     switch (type.getKind()) {
     case TypeKind::BasicType: {
         Decl* decl;
-        auto* basicType = llvm::cast<BasicType>(type.getBase());
+        auto* basicType = llvm::cast<BasicType>(type.typeBase);
         if (basicType->decl) {
             decl = basicType->decl;
         } else {
             if (basicType->name.empty()) break; // Nothing to type-check.
 
             if (!type.isOptionalType() && type.isBuiltinType()) {
-                validateGenericArgCount(0, type.getGenericArgs(), type.getName(), type.getLocation());
+                validateGenericArgCount(0, type.getGenericArgs(), type.getName(), type.location);
                 break;
             }
 
-            for (auto genericArg : basicType->getGenericArgs()) {
+            for (auto genericArg : basicType->genericArgs) {
                 typecheckType(genericArg, userAccessLevel);
             }
 
@@ -90,34 +90,34 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
 
             if (decls.empty()) {
                 // For generic types, search again with the base name (without generic args).
-                auto decls = findDecls(basicType->getName());
+                auto decls = findDecls(basicType->name);
 
                 if (decls.empty()) {
-                    ERROR(type.getLocation(), "unknown type '" << type << "'");
+                    ERROR(type.location, "unknown type '" << type << "'");
                 }
                 auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
                 decl = typeTemplate;
-                ASSERT(!basicType->getGenericArgs().empty());
-                auto instantiation = typeTemplate->instantiate(basicType->getGenericArgs());
-                getCurrentModule()->addToSymbolTable(*instantiation);
+                ASSERT(!basicType->genericArgs.empty());
+                auto instantiation = typeTemplate->instantiate(basicType->genericArgs);
+                currentModule->addToSymbolTable(*instantiation);
                 deferTypechecking(instantiation);
-                checkHasAccess(*decl, type.getLocation(), userAccessLevel);
+                checkHasAccess(*decl, type.location, userAccessLevel);
                 break;
             } else if (decls.size() > 1) {
-                ERROR(type.getLocation(), "ambiguous reference to '" << type.getName() << "'"); // TODO: add candidate notes
+                ERROR(type.location, "ambiguous reference to '" << type.getName() << "'"); // TODO: add candidate notes
             } else {
                 decl = decls.front();
             }
         }
 
         if (decl->isTypeTemplate()) {
-            validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->genericParams.size(), basicType->getGenericArgs(), basicType->getName(),
-                                    type.getLocation());
+            validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->genericParams.size(), basicType->genericArgs, basicType->name,
+                                    type.location);
         } else if (!decl->isTypeDecl()) {
-            ERROR(type.getLocation(), "'" << type << "' is not a type");
+            ERROR(type.location, "'" << type << "' is not a type");
         }
 
-        checkHasAccess(*decl, type.getLocation(), userAccessLevel);
+        checkHasAccess(*decl, type.location, userAccessLevel);
         break;
     }
     case TypeKind::ArrayType:
@@ -144,12 +144,12 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
 }
 
 void Typechecker::typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel) {
-    if (auto existing = getCurrentModule()->getSymbolTable().findInCurrentScope(decl.getName()); !existing.empty()) {
+    if (auto existing = currentModule->symbolTable.findInCurrentScope(decl.getName()); !existing.empty()) {
         ERROR_WITH_NOTES(decl.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << decl.getName() << "'");
     }
 
     typecheckType(decl.type, userAccessLevel);
-    getCurrentModule()->getSymbolTable().add(decl.getName(), &decl);
+    currentModule->symbolTable.add(decl.getName(), &decl);
 }
 
 static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
@@ -162,11 +162,11 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
         auto& exprStmt = llvm::cast<ExprStmt>(*block.back());
         auto call = llvm::dyn_cast<CallExpr>(exprStmt.expr);
         if (!call) return false;
-        if (call->getType().isNeverType()) return true;
+        if (call->type.isNeverType()) return true;
         // Builtin `assert(false)` branches to `assertFail`, which aborts, so it terminates all paths.
-        if (!call->isMethodCall() && call->getFunctionName() == "assert" && call->getArgs().size() == 1) {
-            if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->getArgs()[0].getValue())) {
-                return !condition->getValue();
+        if (!call->isMethodCall() && call->getFunctionName() == "assert" && call->args.size() == 1) {
+            if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[0].value)) {
+                return !condition->value;
             }
         }
         return false;
@@ -186,7 +186,7 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
 
 void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel) {
     for (auto& genericParam : genericParams) {
-        if (auto existing = getCurrentModule()->getSymbolTable().findFirst(genericParam.getName()); !existing.empty()) {
+        if (auto existing = currentModule->symbolTable.findFirst(genericParam.getName()); !existing.empty()) {
             ERROR_WITH_NOTES(genericParam.getLocation(), getPreviousDefinitionNotes(existing), "redefinition of '" << genericParam.getName() << "'");
         }
 
@@ -195,7 +195,7 @@ void Typechecker::typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> ge
                 typecheckType(constraint, userAccessLevel);
 
                 if (!constraint.getDecl()->isInterface()) {
-                    ERROR(constraint.getLocation(), "only interface types can be used as generic constraints");
+                    ERROR(constraint.location, "only interface types can be used as generic constraints");
                 }
             } catch (const CompileError& error) {
                 error.report();
@@ -216,7 +216,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
     TypeDecl* receiverTypeDecl = decl.getTypeDecl();
 
-    Scope scope(&decl, &currentModule->getSymbolTable());
+    Scope scope(&decl, &currentModule->symbolTable);
     llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
 
     typecheckParams(decl.getParams(), decl.accessLevel);
@@ -231,8 +231,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
         if (receiverTypeDecl) {
             Type thisType = receiverTypeDecl->getTypeForPassing();
-            auto* varDecl = new VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *getCurrentModule(), decl.getLocation());
-            getCurrentModule()->addToSymbolTable(varDecl);
+            auto* varDecl = new VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *currentModule, decl.getLocation());
+            currentModule->addToSymbolTable(varDecl);
         }
 
         bool delegatedInit = false;
@@ -251,7 +251,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                 if (decl.isConstructorDecl()) {
                     if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
                         if (auto* callExpr = llvm::dyn_cast<CallExpr>(exprStmt->expr)) {
-                            if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->getCalleeDecl())) {
+                            if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->calleeDecl)) {
                                 if (constructorDecl->getTypeDecl() == receiverTypeDecl || receiverTypeDecl->hasInterface(*constructorDecl->getTypeDecl())) {
                                     delegatedInit = true;
                                 }
@@ -310,7 +310,7 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
         auto* interfaceDecl = interface.getDecl();
 
         if (!interfaceDecl->isInterface()) {
-            REPORT_ERROR(interface.getLocation(), "'" << interface << "' is not an interface");
+            REPORT_ERROR(interface.location, "'" << interface << "' is not an interface");
             continue;
         }
 
@@ -374,14 +374,14 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
         try {
             typecheckExpr(*decl.initializer, false, declaredType);
         } catch (const CompileError&) {
-            if (!decl.isGlobal()) getCurrentModule()->addToSymbolTable(decl);
+            if (!decl.isGlobal()) currentModule->addToSymbolTable(decl);
             throw;
         }
     }
 
-    if (!decl.isGlobal()) getCurrentModule()->addToSymbolTable(decl);
+    if (!decl.isGlobal()) currentModule->addToSymbolTable(decl);
     if (!decl.initializer) return;
-    Type initializerType = decl.initializer->getType();
+    Type initializerType = decl.initializer->type;
     if (!initializerType) return;
 
     if (declaredType) {
@@ -395,14 +395,14 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
                 hint = " (add '?' to the type to make it nullable)";
             }
 
-            ERROR(decl.initializer->getLocation(), "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint);
+            ERROR(decl.initializer->location, "cannot assign '" << initializerType << "' to '" << declaredType << "'" << hint);
         }
     } else {
         if (initializerType.isNull()) {
             ERROR(decl.getLocation(), "couldn't infer type of '" << decl.getName() << "', add a type annotation");
         }
 
-        decl.type = NOTNULL(initializerType.withMutability(decl.type.getMutability()));
+        decl.type = NOTNULL(initializerType.withMutability(decl.type.mutability));
     }
 
     if (!decl.type.isImplicitlyCopyable()) {

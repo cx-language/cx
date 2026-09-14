@@ -31,7 +31,7 @@ Token Parser::currentToken() {
 }
 
 Location Parser::getCurrentLocation() {
-    return currentToken().getLocation();
+    return currentToken().location;
 }
 
 Token Parser::lookAhead(int offset) {
@@ -87,9 +87,9 @@ static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
 
 [[noreturn]] static void unexpectedToken(Token token, llvm::ArrayRef<Token::Kind> expected = {}, const char* contextInfo = nullptr) {
     if (expected.size() == 0) {
-        ERROR(token.getLocation(), "unexpected " << quote(token) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : ""));
+        ERROR(token.location, "unexpected " << quote(token) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : ""));
     } else {
-        ERROR(token.getLocation(),
+        ERROR(token.location,
               "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "") << ", got " << quote(token));
     }
 }
@@ -102,7 +102,7 @@ Token Parser::parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInf
 }
 
 void Parser::parseStmtTerminator(const char* contextInfo) {
-    if (getCurrentLocation().line != lookAhead(-1).getLocation().line) return;
+    if (getCurrentLocation().line != lookAhead(-1).location.line) return;
 
     switch (currentToken()) {
     case Token::RightBrace:
@@ -135,11 +135,11 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
         if (lookAhead(1) == Token::Assignment) {
             auto result = parse(Token::Identifier);
             name = result.getString().str();
-            location = result.getLocation();
+            location = result.location;
             consumeToken();
         }
         auto value = parseExpr();
-        if (!location.isValid()) location = value->getLocation();
+        if (!location.isValid()) location = value->location;
         args.push_back({std::move(name), value, location});
 
         if (parse({Token::Comma, Token::RightParen}) == Token::RightParen) return args;
@@ -155,7 +155,7 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
 VarExpr* Parser::parseVarExpr() {
     ASSERT(currentToken() == Token::Identifier);
     auto id = consumeToken();
-    return new VarExpr(id.getString().str(), id.getLocation());
+    return new VarExpr(id.getString().str(), id.location);
 }
 
 VarExpr* Parser::parseThis() {
@@ -287,14 +287,14 @@ Expr* Parser::parseTupleLiteralOrParenExpr() {
     auto location = getCurrentLocation();
     auto elements = parseArgumentList(false);
 
-    if (elements.size() == 1 && elements[0].getName().empty()) {
-        return elements[0].getValue();
+    if (elements.size() == 1 && elements[0].name.empty()) {
+        return elements[0].value;
     }
 
     for (auto& element : elements) {
-        if (element.getName().empty()) {
-            if (auto* varExpr = llvm::dyn_cast<VarExpr>(element.getValue())) {
-                element.setName(varExpr->getIdentifier().str());
+        if (element.name.empty()) {
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(element.value)) {
+                element.name = varExpr->identifier;
             }
         }
     }
@@ -313,8 +313,8 @@ std::vector<Type> Parser::parseNonEmptyTypeList() {
             consumeToken();
         } else {
             if (currentToken() == Token::RightShift) {
-                tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().getLocation());
-                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().getLocation().nextColumn()));
+                tokenBuffer[currentTokenIndex] = Token(Token::Greater, currentToken().location);
+                tokenBuffer.insert(tokenBuffer.begin() + currentTokenIndex + 1, Token(Token::Greater, currentToken().location.nextColumn()));
             }
             return types;
         }
@@ -364,9 +364,9 @@ Type Parser::parseSimpleType(Mutability mutability) {
         genericArgs = parseGenericArgumentList();
         LLVM_FALLTHROUGH;
     default:
-        return BasicType::get(identifier.getString(), std::move(genericArgs), mutability, identifier.getLocation());
+        return BasicType::get(identifier.getString(), std::move(genericArgs), mutability, identifier.location);
     case Token::LeftBracket:
-        return parseArrayType(BasicType::get(identifier.getString(), {}, mutability, identifier.getLocation()));
+        return parseArrayType(BasicType::get(identifier.getString(), {}, mutability, identifier.location));
     }
 }
 
@@ -403,7 +403,7 @@ Type Parser::parseFunctionType(Type returnType) {
     }
 
     consumeToken();
-    return FunctionType::get(returnType, std::move(paramTypes), false, Mutability::Mutable, returnType.getLocation());
+    return FunctionType::get(returnType, std::move(paramTypes), false, Mutability::Mutable, returnType.location);
 }
 
 /// type ::= simple-type | 'const' simple-type | type '*' | type '?' | function-type | tuple-type
@@ -511,7 +511,7 @@ LambdaExpr* Parser::parseLambdaExpr() {
 
     if (currentToken() == Token::Identifier) {
         auto paramName = consumeToken();
-        params.push_back(ParamDecl(Type(), paramName.getString().str(), false, paramName.getLocation()));
+        params.push_back(ParamDecl(Type(), paramName.getString().str(), false, paramName.location));
     } else {
         params = parseParamList(nullptr, false);
     }
@@ -523,7 +523,7 @@ LambdaExpr* Parser::parseLambdaExpr() {
         lambda->functionDecl->body = parseBlock(lambda->functionDecl);
     } else {
         auto expr = parseExpr();
-        lambda->functionDecl->body = {new ReturnStmt(expr, expr->getLocation())};
+        lambda->functionDecl->body = {new ReturnStmt(expr, expr->location)};
     }
 
     return lambda;
@@ -554,14 +554,14 @@ bool Parser::shouldParseVarStmt() {
                     return true;
                 }
                 if (lookAhead(offset - 2).is(Token::Star)) {
-                    if (lookAhead(offset - 3).is(Token::Semicolon) || lookAhead(offset - 2).getLocation().line != lookAhead(offset - 3).getLocation().line) {
+                    if (lookAhead(offset - 3).is(Token::Semicolon) || lookAhead(offset - 2).location.line != lookAhead(offset - 3).location.line) {
                         return false;
                     }
                     return true;
                 }
             }
             return false;
-        } else if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).getLocation().line != lookAhead(offset - 1).getLocation().line) {
+        } else if (lookAhead(offset).is(Token::Semicolon) || lookAhead(offset).location.line != lookAhead(offset - 1).location.line) {
             if (lookAhead(offset - 1).is(Token::Identifier)) {
                 if (lookAhead(offset - 2).is({Token::Identifier, Token::RightBracket, Token::QuestionMark, Token::Greater, Token::Star})) {
                     return true;
@@ -578,8 +578,8 @@ bool Parser::shouldParseGenericArgumentList() {
     // Temporary hack: use spacing to determine whether to parse a generic argument list
     // of a less-than binary expression. Zero spaces on either side of '<' will cause it
     // to be interpreted as a generic argument list, for now.
-    return lookAhead(0).getLocation().column + int(lookAhead(0).getString().size()) == lookAhead(1).getLocation().column
-        || lookAhead(1).getLocation().column + 1 == lookAhead(2).getLocation().column;
+    return lookAhead(0).location.column + int(lookAhead(0).getString().size()) == lookAhead(1).location.column
+        || lookAhead(1).location.column + 1 == lookAhead(2).location.column;
 }
 
 /// Returns true if a right-arrow token immediately follows the current set of parentheses.
@@ -702,7 +702,7 @@ Expr* Parser::parsePostfixExpr() {
 UnaryExpr* Parser::parsePrefixExpr() {
     ASSERT(isUnaryOperator(currentToken()));
     auto op = consumeToken();
-    return new UnaryExpr(op.getKind(), parsePreOrPostfixExpr(), op.getLocation());
+    return new UnaryExpr(op.kind, parsePreOrPostfixExpr(), op.location);
 }
 
 Expr* Parser::parsePreOrPostfixExpr() {
@@ -713,7 +713,7 @@ Expr* Parser::parsePreOrPostfixExpr() {
 /// dec-expr ::= expr '--'
 UnaryExpr* Parser::parseIncrementOrDecrementExpr(Expr* operand) {
     auto op = parse({Token::Increment, Token::Decrement});
-    return new UnaryExpr(op.getKind(), operand, op.getLocation());
+    return new UnaryExpr(op.kind, operand, op.location);
 }
 
 /// binary-expr ::= expr op expr
@@ -735,7 +735,7 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
             break;
         }
 
-        lhs = new BinaryExpr(op.getKind(), lhs, rhs, op.getLocation());
+        lhs = new BinaryExpr(op.kind, lhs, rhs, op.location);
     }
 
     return lhs;
@@ -806,7 +806,7 @@ VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel) {
     }
 
     auto name = parse(Token::Identifier);
-    return parseVarDeclAfterName(parent, accessLevel, type.withMutability(mutability), name.getString(), name.getLocation());
+    return parseVarDeclAfterName(parent, accessLevel, type.withMutability(mutability), name.getString(), name.location);
 }
 
 VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation) {
@@ -815,7 +815,7 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     if (currentToken() == Token::Assignment) {
         consumeToken();
         initializer = parseExpr();
-    } else if (currentToken() == Token::Semicolon || currentToken().getLocation().line != lookAhead(-1).getLocation().line) {
+    } else if (currentToken() == Token::Semicolon || currentToken().location.line != lookAhead(-1).location.line) {
         WARN(nameLocation, "missing initializer");
     }
 
@@ -884,7 +884,7 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
 /// while-stmt ::= 'while' (expr | var-decl) block-or-stmt
 WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     ASSERT(currentToken() == Token::While);
-    auto location = consumeToken().getLocation();
+    auto location = consumeToken().location;
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
     auto condition = parseExprOrVarDecl(parent);
@@ -901,7 +901,7 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
 ///                '(' (type | 'var') id 'in' expr ')'
 Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
-    auto location = consumeToken().getLocation();
+    auto location = consumeToken().location;
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
     auto varStmt = currentToken() == Token::Semicolon ? (consumeToken(), nullptr) : parseVarStmt(parent);
@@ -954,8 +954,8 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
                 consumeToken();
                 auto name = parse(Token::Identifier);
                 // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
-                associatedValue = new VarDecl(Type(), name.getString().str(), new UndefinedLiteralExpr(name.getLocation()), parent, AccessLevel::None,
-                                              *currentModule, name.getLocation());
+                associatedValue = new VarDecl(Type(), name.getString().str(), new UndefinedLiteralExpr(name.location), parent, AccessLevel::None,
+                                              *currentModule, name.location);
             }
 
             parse(Token::Colon);
@@ -1052,7 +1052,7 @@ ParamDecl Parser::parseParam(bool requireType) {
     }
 
     auto name = parse(Token::Identifier);
-    return ParamDecl(type, name.getString().str(), isPublic, name.getLocation());
+    return ParamDecl(type, name.getString().str(), isPublic, name.location);
 }
 
 /// param-list ::= '(' params ')'
@@ -1078,7 +1078,7 @@ void Parser::parseGenericParamList(std::vector<GenericParamDecl>& genericParams)
     parse(Token::Less);
     while (true) {
         auto genericParamName = parse(Token::Identifier);
-        genericParams.emplace_back(genericParamName.getString().str(), genericParamName.getLocation());
+        genericParams.emplace_back(genericParamName.getString().str(), genericParamName.location);
 
         if (currentToken() == Token::Colon) {
             consumeToken();
@@ -1109,7 +1109,7 @@ llvm::StringRef Parser::parseFunctionName(TypeDecl* receiverTypeDecl) {
                 unexpectedToken(op, {}, "as function name");
             }
             if (receiverTypeDecl) {
-                ERROR(name.getLocation(), "operator functions other than 'operator[]' must be non-member functions");
+                ERROR(name.location, "operator functions other than 'operator[]' must be non-member functions");
             }
             return toString(op);
         }
@@ -1178,7 +1178,7 @@ FunctionDecl* Parser::parseExternFunctionDecl(Type type, llvm::StringRef name, L
 /// constructor-decl ::= id param-list '{' stmt* '}'
 ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, AccessLevel accessLevel) {
     ASSERT(currentToken() == Token::Identifier);
-    auto location = consumeToken().getLocation();
+    auto location = consumeToken().location;
     auto params = parseParamList(nullptr);
     auto decl = new ConstructorDecl(receiverTypeDecl, std::move(params), accessLevel, location);
     decl->body = parseBlock(decl);
@@ -1188,7 +1188,7 @@ ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, Access
 /// destructor-decl ::= '~' id param-list '{' stmt* '}'
 DestructorDecl* Parser::parseDestructorDecl(TypeDecl& receiverTypeDecl) {
     ASSERT(currentToken() == Token::Tilde);
-    auto location = consumeToken().getLocation();
+    auto location = consumeToken().location;
     if (parse(Token::Identifier).getString() != receiverTypeDecl.getName()) {
         REPORT_ERROR(location, "expected '" << receiverTypeDecl.getName() << "' after '~'");
     }
@@ -1253,7 +1253,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
     auto typeDecl = new TypeDecl(tag, typeName.getString().str(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
-                                 typeName.getLocation());
+                                 typeName.location);
     bool hasConstructor = false;
     parse(Token::LeftBrace);
 
@@ -1274,7 +1274,7 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             goto start;
         case Token::Tilde:
             if (accessLevel != AccessLevel::Default) {
-                WARN(lookAhead(-1).getLocation(), "destructors cannot be " << accessLevel);
+                WARN(lookAhead(-1).location, "destructors cannot be " << accessLevel);
             }
             typeDecl->addMethod(parseDestructorDecl(*typeDecl));
             break;
@@ -1343,8 +1343,8 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
             associatedType = parseTupleType();
         }
 
-        auto value = new IntLiteralExpr(valueCounter, caseName.getLocation());
-        cases.push_back(EnumCase(caseName.getString().str(), value, associatedType, typeAccessLevel, caseName.getLocation()));
+        auto value = new IntLiteralExpr(valueCounter, caseName.location);
+        cases.push_back(EnumCase(caseName.getString().str(), value, associatedType, typeAccessLevel, caseName.location));
         ++valueCounter;
 
         if (currentToken() == Token::Comma) {
@@ -1357,7 +1357,7 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
     consumeToken();
     // Allow an optional trailing ';' (e.g. `enum E {...};`).
     if (currentToken() == Token::Semicolon) consumeToken();
-    return new EnumDecl(name.getString().str(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.getLocation());
+    return new EnumDecl(name.getString().str(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.location);
 }
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')
@@ -1369,7 +1369,7 @@ ImportDecl* Parser::parseImportDecl() {
     std::string importTarget;
 
     if (currentToken() == Token::StringLiteral) {
-        importTarget = parseStringLiteral()->getValue().str();
+        importTarget = parseStringLiteral()->value;
     } else {
         importTarget = parse({Token::Identifier, Token::StringLiteral}, "after 'import'").getString().str();
     }
@@ -1445,7 +1445,7 @@ start:
         goto start;
     case Token::Extern:
         if (accessLevel != AccessLevel::Default) {
-            WARN(lookAhead(-1).getLocation(), "extern functions cannot have access specifiers");
+            WARN(lookAhead(-1).location, "extern functions cannot have access specifiers");
         }
         consumeToken();
         return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
@@ -1474,7 +1474,7 @@ start:
         break;
     case Token::Import:
         if (accessLevel != AccessLevel::Default) {
-            WARN(lookAhead(-1).getLocation(), "imports cannot have access specifiers");
+            WARN(lookAhead(-1).location, "imports cannot have access specifiers");
         }
         return parseImportDecl();
     default:
@@ -1530,6 +1530,6 @@ void Parser::parse() {
         error.report();
     }
 
-    sourceFile.setDecls(std::move(topLevelDecls));
+    sourceFile.topLevelDecls = std::move(topLevelDecls);
     currentModule->addSourceFile(std::move(sourceFile));
 }

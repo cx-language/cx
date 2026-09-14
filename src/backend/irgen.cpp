@@ -169,9 +169,9 @@ Value* IRGenerator::emitAssignmentLHS(const Expr& lhs) {
         Decl* referencedDecl = nullptr;
 
         if (auto* varExpr = llvm::dyn_cast<VarExpr>(&lhs)) {
-            referencedDecl = varExpr->getDecl();
-        } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&lhs); memberExpr && memberExpr->getBaseExpr()->isThis()) {
-            referencedDecl = memberExpr->getDecl();
+            referencedDecl = varExpr->decl;
+        } else if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&lhs); memberExpr && memberExpr->base->isThis()) {
+            referencedDecl = memberExpr->decl;
         }
 
         if (auto* fieldDecl = llvm::dyn_cast_or_null<FieldDecl>(referencedDecl)) {
@@ -182,8 +182,8 @@ Value* IRGenerator::emitAssignmentLHS(const Expr& lhs) {
     }
 
     // Call destructor for LHS.
-    if (auto* basicType = llvm::dyn_cast<BasicType>(lhs.getType().getBase())) {
-        if (auto* typeDecl = basicType->getDecl()) {
+    if (auto* basicType = llvm::dyn_cast<BasicType>(lhs.type.typeBase)) {
+        if (auto* typeDecl = basicType->decl) {
             if (auto* destructor = typeDecl->getDestructor()) {
                 createDestructorCall(getFunction(*destructor), value);
             }
@@ -202,7 +202,7 @@ void IRGenerator::createDestructorCall(Function* destructor, Value* receiver) {
 }
 
 Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
-    const Decl* decl = call.getCalleeDecl();
+    const Decl* decl = call.calleeDecl;
     if (!decl) return nullptr;
 
     switch (decl->kind) {
@@ -228,10 +228,10 @@ Value* IRGenerator::getFunctionForCall(const CallExpr& call) {
 IRModule& IRGenerator::emitModule(const Module& sourceModule) {
     ASSERT(!module);
     module = new IRModule;
-    module->name = sourceModule.getName().str();
+    module->name = sourceModule.name;
 
-    for (auto& sourceFile : sourceModule.getSourceFiles()) {
-        for (auto& decl : sourceFile.getTopLevelDecls()) {
+    for (auto& sourceFile : sourceModule.sourceFiles) {
+        for (auto& decl : sourceFile.topLevelDecls) {
             emitDecl(*decl);
         }
     }

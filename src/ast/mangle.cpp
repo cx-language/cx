@@ -127,7 +127,7 @@ std::string cx::mangleFunctionDecl(const FunctionDecl& functionDecl) {
             mangleIdentifier(stream, functionDecl.getName());
         }
 
-        mangleGenericArgs(stream, functionDecl.getGenericArgs());
+        mangleGenericArgs(stream, functionDecl.genericArgs);
         stream << 'E';
 
         for (auto& param : functionDecl.getParams()) {

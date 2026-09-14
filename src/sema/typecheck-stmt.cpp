@@ -9,7 +9,7 @@ using namespace cx;
 
 void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     if (auto* unaryExpr = llvm::dyn_cast<UnaryExpr>(returnValue)) {
-        if (unaryExpr->getOperator() == Token::And) {
+        if (unaryExpr->op == Token::And) {
             returnValue = &unaryExpr->getOperand();
         }
     }
@@ -18,20 +18,20 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
     const Expr* operand = returnValue;
 
     if (auto implicitCastExpr = llvm::dyn_cast<ImplicitCastExpr>(returnValue)) {
-        operand = implicitCastExpr->getOperand();
+        operand = implicitCastExpr->operand;
     }
 
     if (auto varExpr = llvm::dyn_cast<VarExpr>(operand)) {
-        switch (varExpr->getDecl()->kind) {
+        switch (varExpr->decl->kind) {
         case DeclKind::VarDecl: {
-            auto* varDecl = llvm::cast<VarDecl>(varExpr->getDecl());
+            auto* varDecl = llvm::cast<VarDecl>(varExpr->decl);
             if (varDecl->parent && varDecl->parent->isFunctionDecl()) {
                 localVariableType = varDecl->type;
             }
             break;
         }
         case DeclKind::ParamDecl:
-            localVariableType = llvm::cast<ParamDecl>(varExpr->getDecl())->type;
+            localVariableType = llvm::cast<ParamDecl>(varExpr->decl)->type;
             break;
 
         default:
@@ -41,7 +41,7 @@ void Typechecker::checkReturnPointerToLocal(const Expr* returnValue) const {
 
     if (localVariableType && currentFunction->getReturnType().removeOptional().isPointerType()
         && currentFunction->getReturnType().removeOptional().getPointee().equalsIgnoreTopLevelMutable(localVariableType)) {
-        WARN(returnValue->getLocation(), "returning pointer to local variable (local variables will not exist after the function returns)");
+        WARN(returnValue->location, "returning pointer to local variable (local variables will not exist after the function returns)");
     }
 }
 
@@ -127,10 +127,10 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }
 
-        Scope scope(nullptr, &currentModule->getSymbolTable());
+        Scope scope(nullptr, &currentModule->symbolTable);
 
         if (auto* associatedValue = switchCase.associatedValue) {
-            auto* enumCase = llvm::cast<EnumCase>(llvm::cast<MemberExpr>(switchCase.value)->getDecl());
+            auto* enumCase = llvm::cast<EnumCase>(llvm::cast<MemberExpr>(switchCase.value)->decl);
             associatedValue->type = NOTNULL(enumCase->associatedType);
             typecheckVarDecl(*associatedValue);
         }
@@ -156,7 +156,7 @@ void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type condi
     llvm::StringSet<> handledCases;
     for (auto& switchCase : stmt.cases) {
         auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
-        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->getDecl()) : nullptr;
+        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
         if (!enumCase || enumCase->getEnumDecl() != enumDecl) return;
         handledCases.insert(enumCase->getName());
     }
@@ -174,7 +174,7 @@ void Typechecker::warnAboutUnhandledEnumCases(const SwitchStmt& stmt, Type condi
 }
 
 void Typechecker::typecheckForStmt(ForStmt& forStmt) {
-    Scope scope(currentFunction, &currentModule->getSymbolTable());
+    Scope scope(currentFunction, &currentModule->symbolTable);
 
     if (forStmt.variable) {
         typecheckVarStmt(*forStmt.variable);
@@ -211,7 +211,7 @@ void Typechecker::typecheckContinueStmt(ContinueStmt& continueStmt) {
 }
 
 void Typechecker::typecheckCompoundStmt(CompoundStmt& compoundStmt) {
-    Scope scope(currentFunction, &currentModule->getSymbolTable());
+    Scope scope(currentFunction, &currentModule->symbolTable);
 
     for (auto& stmt : compoundStmt.body) {
         typecheckStmt(stmt);

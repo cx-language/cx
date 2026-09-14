@@ -118,7 +118,7 @@ Stmt* ForEachStmt::lower(int nestLevel) {
     auto iteratorVariableName = "__iterator" + (nestLevel > 0 ? std::to_string(nestLevel) : "");
 
     Expr* iteratorValue;
-    auto* rangeTypeDecl = range->getType().removePointer().getDecl();
+    auto* rangeTypeDecl = range->type.removePointer().getDecl();
     bool isIterator = rangeTypeDecl && llvm::any_of(rangeTypeDecl->interfaces, [](Type interface) { return interface.getName() == "Iterator"; });
 
     if (isIterator) {

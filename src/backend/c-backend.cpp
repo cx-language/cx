@@ -207,7 +207,7 @@ void CGenerator::codegenBinary(const BinaryInst* inst) {
     stream << "__auto_type " << name << " = ";
     codegenInst(inst->left);
     stream << ' ';
-    switch (inst->op.getKind()) {
+    switch (inst->op.kind) {
     case Token::Plus:
         stream << '+';
         break;
@@ -269,7 +269,7 @@ void CGenerator::codegenUnary(const UnaryInst* inst) {
     stream.indent(4);
     auto name = "_unary_op" + std::to_string(valueSuffixCounter++);
     stream << "__auto_type " << name << " = ";
-    switch (inst->op.getKind()) {
+    switch (inst->op.kind) {
     case Token::Plus:
         stream << '+';
         break;

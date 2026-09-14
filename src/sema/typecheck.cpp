@@ -12,7 +12,7 @@
 using namespace cx;
 
 TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
-    if (auto* typeDecl = type.getDecl()) {
+    if (auto* typeDecl = type.decl) {
         return typeDecl;
     }
 
@@ -23,11 +23,11 @@ TypeDecl* Typechecker::getTypeDecl(const BasicType& type) {
         return llvm::dyn_cast_or_null<TypeDecl>(decls[0]);
     }
 
-    decls = findDecls(type.getName());
+    decls = findDecls(type.name);
     if (decls.empty()) return nullptr;
     ASSERT(decls.size() == 1);
-    auto instantiation = llvm::cast<TypeTemplate>(decls[0])->instantiate(type.getGenericArgs());
-    getCurrentModule()->addToSymbolTable(*instantiation);
+    auto instantiation = llvm::cast<TypeTemplate>(decls[0])->instantiate(type.genericArgs);
+    currentModule->addToSymbolTable(*instantiation);
     deferTypechecking(instantiation);
     return instantiation;
 }
@@ -52,8 +52,8 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
         }
     }
 
-    if (module.getSourceFiles().empty()) {
-        REPORT_ERROR(Location(), "Module '" << module.getName() << "' import failed: no source files found in '" << directoryPath << "' or its subdirectories");
+    if (module.sourceFiles.empty()) {
+        REPORT_ERROR(Location(), "Module '" << module.name << "' import failed: no source files found in '" << directoryPath << "' or its subdirectories");
     }
 
     return error;
@@ -70,8 +70,8 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
     std::error_code error;
 
     if (manifest) {
-        for (auto& dependency : manifest->getDeclaredDependencies()) {
-            if (dependency.getPackageIdentifier() == moduleName) {
+        for (auto& dependency : manifest->declaredDependencies) {
+            if (dependency.packageIdentifier == moduleName) {
                 error = importModuleSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, options);
                 goto done;
             }
@@ -89,7 +89,7 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
 done:
     if (error) return error;
     if (importer) importer->addImportedModule(module);
-    Module::getAllImportedModulesMap()[module->getName()] = module;
+    Module::getAllImportedModulesMap()[module->name] = module;
     typecheckModule(*module, nullptr);
     return *module;
 }
@@ -131,8 +131,8 @@ void Typechecker::postProcess() {
 }
 
 static void checkUnusedDecls(const Module& module) {
-    for (auto& sourceFile : module.getSourceFiles()) {
-        for (auto& decl : sourceFile.getTopLevelDecls()) {
+    for (auto& sourceFile : module.sourceFiles) {
+        for (auto& decl : sourceFile.topLevelDecls) {
             if (decl->isReferenced()) continue;
 
             if (decl->isFunctionDecl() || decl->isFunctionTemplate()) {
@@ -153,8 +153,8 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
     }
 
     // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
-    for (auto& sourceFile : module.getSourceFiles()) {
-        for (auto& decl : sourceFile.getTopLevelDecls()) {
+    for (auto& sourceFile : module.sourceFiles) {
+        for (auto& decl : sourceFile.topLevelDecls) {
             currentModule = &module;
             currentSourceFile = &sourceFile;
 
@@ -179,7 +179,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
                         auto methodDecl = llvm::cast<MethodDecl>(member);
                         if (methodDecl->body) {
                             auto copy = methodDecl->instantiate(genericArgs, {}, *typeDecl);
-                            getCurrentModule()->addToSymbolTable(*copy);
+                            currentModule->addToSymbolTable(*copy);
                             typeDecl->addMethod(copy);
                         }
                     }
@@ -189,11 +189,11 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
     }
 
     // Infer the types of global variables for use before their declaration.
-    for (auto& sourceFile : module.getSourceFiles()) {
+    for (auto& sourceFile : module.sourceFiles) {
         currentModule = &module;
         currentSourceFile = &sourceFile;
 
-        for (auto& decl : sourceFile.getTopLevelDecls()) {
+        for (auto& decl : sourceFile.topLevelDecls) {
             if (auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
                 try {
                     typecheckVarDecl(*varDecl);
@@ -206,8 +206,8 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         postProcess();
     }
 
-    for (auto& sourceFile : module.getSourceFiles()) {
-        for (auto& decl : sourceFile.getTopLevelDecls()) {
+    for (auto& sourceFile : module.sourceFiles) {
+        for (auto& decl : sourceFile.topLevelDecls) {
             currentModule = &module;
             currentSourceFile = &sourceFile;
 
@@ -222,7 +222,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         }
     }
 
-    if (module.getName() != "std" && !options.noUnusedWarnings) {
+    if (module.name != "std" && !options.noUnusedWarnings) {
         checkUnusedDecls(module);
     }
 }
@@ -277,7 +277,7 @@ Decl* Typechecker::findDecl(llvm::StringRef name, Location location) const {
         return match;
     }
 
-    if (Decl* match = findDeclInModules(name, location, currentSourceFile->getImportedModules())) {
+    if (Decl* match = findDeclInModules(name, location, currentSourceFile->importedModules)) {
         return match;
     }
 
@@ -322,7 +322,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
         }
     }
 
-    if (currentModule->getName() != "std") {
+    if (currentModule->name != "std") {
         appendUnique(decls, findDeclsInModules(name, currentModule, false));
         appendUnique(decls, findDeclsInModules(name, currentModule, true)); // HACK, TODO: one find function should be enough
     }
@@ -330,7 +330,7 @@ std::vector<Decl*> Typechecker::findDecls(llvm::StringRef name, TypeDecl* receiv
     appendUnique(decls, findDeclsInModules(name, Module::getStdlibModule()));
 
     if (currentSourceFile && !inAllImportedModules) {
-        appendUnique(decls, findDeclsInModules(name, currentSourceFile->getImportedModules()));
+        appendUnique(decls, findDeclsInModules(name, currentSourceFile->importedModules));
     } else {
         appendUnique(decls, findDeclsInModules(name, Module::getAllImportedModules()));
     }

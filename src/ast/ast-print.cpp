@@ -24,10 +24,10 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, llvm::ArrayRef<NamedVal
     indent++;
     for (auto& namedValue : namedValues) {
         stream << std::string(indent * 4, ' ');
-        if (!namedValue.getName().empty()) {
-            stream << namedValue.getName() << " ";
+        if (!namedValue.name.empty()) {
+            stream << namedValue.name << " ";
         }
-        stream << *namedValue.getValue() << '\n';
+        stream << *namedValue.value << '\n';
     }
     indent--;
     return stream;
@@ -184,10 +184,10 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Stmt& stmt) {
 }
 
 llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
-    switch (expr.getKind()) {
+    switch (expr.kind) {
     case ExprKind::VarExpr: {
         auto& varExpr = llvm::cast<VarExpr>(expr);
-        stream << "VarExpr " << varExpr.getIdentifier() << " type=" << varExpr.getTypeOrNull();
+        stream << "VarExpr " << varExpr.identifier << " type=" << varExpr.type;
         break;
     }
     case ExprKind::StringLiteralExpr: {
@@ -247,7 +247,7 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
     }
     case ExprKind::CallExpr: {
         auto& callExpr = llvm::cast<CallExpr>(expr);
-        stream << "CallExpr " << callExpr.getCallee() << "\n" << callExpr.getArgs();
+        stream << "CallExpr " << *callExpr.callee << "\n" << callExpr.args;
         break;
     }
     case ExprKind::SizeofExpr: {
@@ -287,7 +287,7 @@ llvm::raw_ostream& operator<<(llvm::raw_ostream& stream, const Expr& expr) {
     }
     case ExprKind::ImplicitCastExpr: {
         auto& implicitCastExpr = llvm::cast<ImplicitCastExpr>(expr);
-        stream << "ImplicitCastExpr " << implicitCastExpr.getImplicitCastKind() << " " << *implicitCastExpr.getOperand();
+        stream << "ImplicitCastExpr " << implicitCastExpr.castKind << " " << *implicitCastExpr.operand;
         break;
     }
     case ExprKind::VarDeclExpr: {

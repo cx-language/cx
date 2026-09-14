@@ -19,11 +19,6 @@ struct SymbolTable;
 /// Container for the AST of a single file.
 struct SourceFile {
     explicit SourceFile(llvm::StringRef filePath, Module* parentModule) : filePath(filePath), parentModule(parentModule) {}
-    llvm::ArrayRef<Decl*> getTopLevelDecls() const { return topLevelDecls; }
-    llvm::StringRef getFilePath() const { return filePath; }
-    Module* getModule() const { return parentModule; }
-    llvm::ArrayRef<Module*> getImportedModules() const { return importedModules; }
-    void setDecls(std::vector<Decl*>&& decls) { topLevelDecls = std::move(decls); }
 
     void addImportedModule(Module* module) {
         if (!llvm::is_contained(importedModules, module)) {
@@ -128,15 +123,11 @@ private:
 struct Module {
     Module(std::string&& name) : name(std::move(name)) {}
     void addSourceFile(SourceFile&& file) { sourceFiles.emplace_back(std::move(file)); }
-    llvm::ArrayRef<SourceFile> getSourceFiles() const { return sourceFiles; }
-    llvm::MutableArrayRef<SourceFile> getSourceFiles() { return sourceFiles; }
-    llvm::StringRef getName() const { return name; }
-    SymbolTable& getSymbolTable() { return symbolTable; }
 
     std::vector<Module*> getImportedModules() const {
         std::vector<Module*> importedModules;
-        for (auto& sourceFile : getSourceFiles()) {
-            for (auto& importedModule : sourceFile.getImportedModules()) {
+        for (auto& sourceFile : sourceFiles) {
+            for (auto& importedModule : sourceFile.importedModules) {
                 importedModules.push_back(importedModule);
             }
         }

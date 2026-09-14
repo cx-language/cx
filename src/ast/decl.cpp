@@ -42,7 +42,7 @@ std::string cx::getQualifiedFunctionName(Type receiver, llvm::StringRef name, ll
 
 std::string FunctionDecl::getQualifiedName() const {
     Type receiver = getTypeDecl() ? getTypeDecl()->getType() : Type();
-    return getQualifiedFunctionName(receiver, getName(), getGenericArgs());
+    return getQualifiedFunctionName(receiver, getName(), genericArgs);
 }
 
 FunctionType* FunctionDecl::getFunctionType() const {

@@ -105,8 +105,8 @@ Value* IRGenerator::emitVarDecl(const VarDecl& decl) {
         if (!initializer) return alloca;
 
         if (auto* callExpr = llvm::dyn_cast<CallExpr>(initializer)) {
-            if (callExpr->getCalleeDecl()) {
-                if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(callExpr->getCalleeDecl())) {
+            if (callExpr->calleeDecl) {
+                if (auto* constructorDecl = llvm::dyn_cast<ConstructorDecl>(callExpr->calleeDecl)) {
                     if (constructorDecl->getTypeDecl()->getType() == decl.type) {
                         emitCallExpr(*callExpr, alloca);
                         return alloca;

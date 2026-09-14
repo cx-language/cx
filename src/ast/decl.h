@@ -19,10 +19,10 @@ template<> struct hash<std::vector<cx::Type>> {
         // FIXME?: Doesn't include mutability into hash value.
         // Hash by name or string representation instead?
         ASSERT(!types.empty());
-        size_t hashValue = reinterpret_cast<size_t>(types[0].getBase());
+        size_t hashValue = reinterpret_cast<size_t>(types[0].typeBase);
 
         for (auto type : types.drop_front()) {
-            hashValue ^= reinterpret_cast<size_t>(type.getBase());
+            hashValue ^= reinterpret_cast<size_t>(type.typeBase);
         }
 
         return hashValue;
@@ -183,7 +183,6 @@ struct FunctionDecl : Decl {
     bool isVariadic() const { return proto.varArg; }
     llvm::StringRef getName() const override { return proto.name; }
     std::string getQualifiedName() const;
-    llvm::ArrayRef<Type> getGenericArgs() const { return genericArgs; }
     Type getReturnType() const { return proto.returnType; }
     llvm::ArrayRef<ParamDecl> getParams() const { return proto.params; }
     llvm::MutableArrayRef<ParamDecl> getParams() { return proto.params; }
