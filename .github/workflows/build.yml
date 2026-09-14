@@ -54,16 +54,20 @@ jobs:
             throw "DIA SDK not found at $diaguidsLib, but LLVM's LLVMDebugInfoPDB target requires it"
           }
 
-      # LLVM 22+ links LLVMSupport against the ZLIB::ZLIB imported target,
-      # so a findable ZLIB is required at configure time. Use the static
-      # triplet to match the /MT runtime used with the prebuilt LLVM.
+      # LLVM 22+ links LLVMSupport against the ZLIB::ZLIB and zstd::libzstd_static
+      # imported targets, so findable ZLIB and zstd are required at configure
+      # time. Use the static triplets to match the /MT runtime used with the
+      # prebuilt LLVM.
       # Note: vcpkg names the static libs zs/zsd, which FindZLIB only
-      # searches for with ZLIB_USE_STATIC_LIBS=ON.
-      - name: Install zlib (Windows)
+      # searches for with ZLIB_USE_STATIC_LIBS=ON. Similarly, LLVM's Findzstd
+      # module only defines zstd::libzstd_static for a library literally named
+      # zstd_static.lib, which vcpkg doesn't ship (only zstd.lib), so copy it.
+      - name: Install zlib and zstd (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          vcpkg install zlib:x64-windows-static
+          vcpkg install zlib:x64-windows-static zstd:x64-windows-static
+          cp "$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static/lib/zstd.lib" "$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static/lib/zstd_static.lib"
           ls "$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static/lib"
           echo "EXTRA_CMAKE_PREFIX=$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static" >> $GITHUB_ENV
           echo "EXTRA_CMAKE_ARGS=-DZLIB_USE_STATIC_LIBS=ON" >> $GITHUB_ENV
