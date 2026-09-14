@@ -99,36 +99,29 @@ else()
 endif()
 target_link_libraries(libcx ${LLVM_LIBS})
 
-# Tests
-add_custom_target(check_lit COMMAND lit --verbose --succinct ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
-    -Dcx_path="$<TARGET_FILE:cx>"
-    -Dfilecheck_path="$<TARGET_FILE:FileCheck>"
-    -Dtest_dir="${PROJECT_SOURCE_DIR}/test"
-    USES_TERMINAL)
+# Tests. Note: tests are run with CTest rather than custom build targets so
+# that expected compiler error output isn't misinterpreted as build errors
+# (MSBuild fails custom build steps whose output matches its error pattern).
+add_test(NAME lit COMMAND lit --verbose --succinct ${EXTRA_LIT_FLAGS} ${PROJECT_SOURCE_DIR}/test
+    -Dcx_path=$<TARGET_FILE:cx>
+    -Dfilecheck_path=$<TARGET_FILE:FileCheck>
+    -Dtest_dir=${PROJECT_SOURCE_DIR}/test)
 add_executable(example_embedding examples/embedding/embedding.cpp)
 target_include_directories(example_embedding PRIVATE src)
 target_link_libraries(example_embedding libcx)
-add_custom_target(check_examples
-    COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>"
-    COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>" "--backend=c"
-    DEPENDS example_embedding)
-add_custom_target(check)
+add_test(NAME examples COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>")
+add_test(NAME examples-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
-add_dependencies(check check_examples check_lit check_compile_api)
+add_dependencies(check cx FileCheck example_embedding test_compile_api)
 
 # Tests for the in-memory compilation API (also used by the WebAssembly build).
 add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/api.cpp)
 target_include_directories(test_compile_api PRIVATE src)
 target_compile_definitions(test_compile_api PRIVATE CX_TEST_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(test_compile_api libcx)
-add_custom_target(check_compile_api)
-# One target per test case so failures identify the failing case.
 foreach(test_case hello error struct warning dispatch json)
-    add_custom_target(check_compile_api_${test_case}
-        COMMAND test_compile_api ${test_case}
-        USES_TERMINAL)
-    add_dependencies(check_compile_api_${test_case} test_compile_api)
-    add_dependencies(check_compile_api check_compile_api_${test_case})
+    add_test(NAME compile-api-${test_case} COMMAND test_compile_api ${test_case})
 endforeach()
 
 # Download the LLVM FileCheck utility for tests.
@@ -154,8 +147,6 @@ if(MSVC)
 else()
     set_target_properties(FileCheck PROPERTIES COMPILE_FLAGS "${LLVM_DEFINITIONS} -w -O3")
 endif()
-
-add_dependencies(check_lit cx FileCheck)
 
 file(DOWNLOAD
     "https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-${LLVM_PACKAGE_VERSION}/clang-tools-extra/clang-tidy/tool/run-clang-tidy.py"
