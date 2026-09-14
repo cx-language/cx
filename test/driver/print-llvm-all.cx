@@ -1,0 +1,6 @@
+// RUN: %cx -print-llvm-all %s | %FileCheck %s
+
+void main() {}
+
+// CHECK: define
+// CHECK: define i32 @main()

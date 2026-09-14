@@ -72,15 +72,15 @@ cl::opt<bool> typecheck("typecheck", cl::desc("Parse and type-check only"), cl::
 cl::opt<bool> compileOnly("c", cl::desc("Compile only, generating an object file; don't link"), cl::cat(stageSelectionCategory));
 
 cl::OptionCategory outputCategory("Output Options");
-// TODO: Add -print-llvm-all option.
 // TODO: support simultaneous -print-c and -print-llvm? (requires both C backend and LLVM backend)
-enum class PrintOpt { AST, IR, IRAll, C, LLVM };
+enum class PrintOpt { AST, IR, IRAll, C, LLVM, LLVMAll };
 cl::bits<PrintOpt> printOpts(cl::desc("Print output from intermediate steps:"), cl::sub(build), cl::sub(cl::SubCommand::getTopLevel()), cl::cat(outputCategory),
                              cl::values(clEnumValN(PrintOpt::AST, "print-ast", "Print the abstract syntax tree of main module"),
                                         clEnumValN(PrintOpt::IR, "print-ir", "Print C* intermediate representation of main module"),
                                         clEnumValN(PrintOpt::IRAll, "print-ir-all", "Print C* intermediate representation of all compiled modules"),
                                         clEnumValN(PrintOpt::C, "print-c", "Print generated C code"),
-                                        clEnumValN(PrintOpt::LLVM, "print-llvm", "Print LLVM intermediate representation of main module")));
+                                        clEnumValN(PrintOpt::LLVM, "print-llvm", "Print LLVM intermediate representation of main module"),
+                                        clEnumValN(PrintOpt::LLVMAll, "print-llvm-all", "Print LLVM intermediate representation of all compiled modules")));
 enum class Backend { LLVM, C };
 cl::opt<Backend> backend("backend", cl::desc("Select code-generation backend to use:"), cl::sub(cl::SubCommand::getAll()), cl::cat(outputCategory),
                          cl::values(clEnumValN(Backend::LLVM, "llvm", "LLVM backend (default)"), clEnumValN(Backend::C, "c", "C backend")));
@@ -335,7 +335,17 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         }
         llvm::Module* llvmModule = llvmGenerator.generatedModules.back();
 
-        if (handlePrintOpt(PrintOpt::LLVM)) {
+        if (handlePrintOpt(PrintOpt::LLVMAll)) {
+            handlePrintOpt(PrintOpt::LLVM);
+            if (printSectionDividers) llvm::outs() << "=== BEGIN LLVM ===\n";
+            for (auto* module : llvmGenerator.generatedModules) {
+                module->setModuleIdentifier("");
+                module->setSourceFileName("");
+                module->print(llvm::outs(), nullptr);
+            }
+            if (printSectionDividers) llvm::outs() << "=== END LLVM ===\n";
+            if (!remainingPrintOpts) return 0;
+        } else if (handlePrintOpt(PrintOpt::LLVM)) {
             llvmModule->setModuleIdentifier("");
             llvmModule->setSourceFileName("");
             if (printSectionDividers) llvm::outs() << "=== BEGIN LLVM ===\n";
