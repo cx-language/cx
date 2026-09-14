@@ -1,0 +1,34 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:3
+// CHECK-NEXT:3
+// CHECK-NEXT:3
+// CHECK-NEXT:1
+// CHECK-NEXT:3
+// CHECK-NEXT:1
+// CHECK-NEXT:1
+
+enum E {
+    A,
+    B,
+}
+
+void add(int a, int b,) {
+    println(a + b);
+}
+
+void useTuple((int a, float b,) t) {
+    println(t.a);
+}
+
+void main() {
+    add(1, 2,);
+    add(a = 1, b = 2,);
+    var array = [1, 2,];
+    println(array[0] + array[1]);
+    var single = [1,];
+    println(single[0]);
+    var tuple = (a = 1, b = 2,);
+    println(tuple.a + tuple.b);
+    println((1,));
+    useTuple((a = 1, b = 2.5,));
+}

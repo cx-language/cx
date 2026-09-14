@@ -1,0 +1,6 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:16: error: unexpected ','
+    var a = [1,, 2];
+}

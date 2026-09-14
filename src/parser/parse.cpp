@@ -117,7 +117,7 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
     }
 }
 
-/// argument-list ::= '(' ')' | '(' nonempty-argument-list ')'
+/// argument-list ::= '(' ')' | '(' nonempty-argument-list ','? ')'
 /// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
 /// argument ::= (id '=')? expr
 std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
@@ -129,7 +129,7 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
         return {};
     }
 
-    do {
+    while (true) {
         std::string name;
         Location location = Location();
         if (lookAhead(1) == Token::Assignment) {
@@ -141,9 +141,14 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
         auto value = parseExpr();
         if (!location.isValid()) location = value->getLocation();
         args.push_back({std::move(name), value, location});
-    } while (parse({Token::Comma, Token::RightParen}) == Token::Comma);
 
-    return args;
+        if (parse({Token::Comma, Token::RightParen}) == Token::RightParen) return args;
+        // Allow trailing comma (e.g. `foo(a, b,)`).
+        if (currentToken() == Token::RightParen) {
+            consumeToken();
+            return args;
+        }
+    }
 }
 
 /// var-expr ::= id
@@ -749,7 +754,7 @@ Expr* Parser::parseExprOrVarDecl(Decl* parent) {
     }
 }
 
-/// expr-list ::= '' | nonempty-expr-list
+/// expr-list ::= '' | nonempty-expr-list ','?
 /// nonempty-expr-list ::= expr | expr ',' nonempty-expr-list
 std::vector<Expr*> Parser::parseExprList() {
     std::vector<Expr*> exprs;
@@ -767,6 +772,8 @@ std::vector<Expr*> Parser::parseExprList() {
         exprs.emplace_back(parseExpr());
         if (currentToken() != Token::Comma) return exprs;
         consumeToken();
+        // Allow trailing comma (e.g. `[1, 2,]`).
+        if (currentToken() == Token::RightBracket) return exprs;
     }
 }
 

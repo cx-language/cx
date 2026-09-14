@@ -1,0 +1,9 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+void foo(int a, int b) {
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:11: error: unexpected ','
+    foo(1,, 2);
+}
