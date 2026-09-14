@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:8: error: 'S' has infinite size because it contains itself
+struct S {
+    S s;
+}
+
+void main() {
+}

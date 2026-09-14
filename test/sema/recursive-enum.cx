@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:6: error: 'E' has infinite size because it contains itself
+enum E {
+    A(S s)
+}
+
+// CHECK: [[@LINE+1]]:8: error: 'S' has infinite size because it contains itself
+struct S {
+    E e;
+}
+
+void main() {
+}

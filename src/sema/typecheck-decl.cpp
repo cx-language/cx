@@ -26,6 +26,47 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
     return llvm::cast<TypeTemplate>(decls[0]);
 }
 
+// Returns true if values of the given type transitively contain the target type declaration without pointer indirection,
+// meaning the target type would have infinite size. `visiting` holds the declarations on the current search path.
+static bool containsItselfByValue(Type type, const TypeDecl& target, llvm::SmallPtrSetImpl<const TypeDecl*>& visiting) {
+    // Pointers, unsized arrays, and functions are pointer-sized (see getIRType), as are builtins.
+    if (!type || type.isBuiltinType() || type.isFunctionType() || type.isImplementedAsPointer()) return false;
+
+    if (type.isArrayType()) {
+        if (type.getArraySize() == 0) return false; // Zero-sized arrays occupy no storage.
+        return containsItselfByValue(type.getElementType(), target, visiting);
+    }
+
+    if (type.isTupleType()) {
+        return llvm::any_of(type.getTupleElements(), [&](const TupleElement& element) { return containsItselfByValue(element.type, target, visiting); });
+    }
+
+    if (type.isOptionalType()) {
+        return containsItselfByValue(type.getWrappedType(), target, visiting);
+    }
+
+    auto* typeDecl = type.getDecl();
+    if (!typeDecl) return false;
+    if (typeDecl == &target) return true;
+    if (!visiting.insert(typeDecl).second) return true; // Found a by-value cycle; anything on it is infinitely sized.
+    bool result = false;
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(typeDecl)) {
+        result = llvm::any_of(enumDecl->cases, [&](const EnumCase& enumCase) { return containsItselfByValue(enumCase.associatedType, target, visiting); });
+    } else {
+        result = llvm::any_of(typeDecl->fields, [&](const FieldDecl& field) { return containsItselfByValue(field.type, target, visiting); });
+    }
+    visiting.erase(typeDecl);
+    return result;
+}
+
+static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> memberTypes) {
+    llvm::SmallPtrSet<const TypeDecl*, 8> visiting;
+    visiting.insert(&target);
+    if (llvm::any_of(memberTypes, [&](Type type) { return containsItselfByValue(type, target, visiting); })) {
+        ERROR(target.getLocation(), "'" << target.getName() << "' has infinite size because it contains itself");
+    }
+}
+
 void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
     switch (type.getKind()) {
     case TypeKind::BasicType: {
@@ -295,6 +336,8 @@ void Typechecker::typecheckTypeDecl(TypeDecl& decl) {
     for (auto& methodDecl : realDecl->methods) {
         typecheckMethodDecl(*methodDecl);
     }
+
+    checkForInfiniteSize(decl, map(realDecl->fields, [](const FieldDecl& field) { return field.type; }));
 }
 
 void Typechecker::typecheckTypeTemplate(TypeTemplate& decl) {
@@ -317,6 +360,8 @@ void Typechecker::typecheckEnumDecl(EnumDecl& decl) {
             typecheckType(enumCase.associatedType, enumCase.accessLevel);
         }
     }
+
+    checkForInfiniteSize(decl, map(decl.cases, [](const EnumCase& enumCase) { return enumCase.associatedType; }));
 }
 
 void Typechecker::typecheckVarDecl(VarDecl& decl) {

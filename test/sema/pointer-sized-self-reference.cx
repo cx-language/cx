@@ -1,0 +1,11 @@
+// RUN: %cx -typecheck %s
+
+struct S {
+    S* ptr;
+    S[*] view;
+    S[] slice;
+    S[*]? optionalView;
+}
+
+void main() {
+}
