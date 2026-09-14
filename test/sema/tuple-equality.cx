@@ -1,7 +1,22 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: check_exit_status 0 %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
+// CHECK-NEXT:true
+// CHECK-NEXT:false
 
 void main() {
-    // CHECK: [[@LINE+1]]:13: error: no matching operator '==' with arguments '(int a)' and '(int a)'
-    (a = 1) == (a = 1); // TODO: Implement tuple equality comparison
-    // CHECK-NOT: note:
+    var t1 = (a = 1, b = 2);
+    var t2 = (a = 1, b = 2);
+    var t3 = (a = 1, b = 3);
+    println(t1 == t2);
+    println(t1 == t3);
+    println(t1 != t3);
+    println(t1 != t2);
+    var n1 = (a = 1, b = (c = true, d = 2.5));
+    var n2 = (a = 1, b = (c = true, d = 2.5));
+    var n3 = (a = 1, b = (c = false, d = 2.5));
+    println(n1 == n2);
+    println(n1 == n3);
 }

@@ -2,9 +2,11 @@
 #include <algorithm>
 #include <limits>
 #include <string>
+#include <tuple>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
@@ -257,6 +259,40 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
+
+    if ((op == Token::Equal || op == Token::NotEqual) && leftType.isTupleType() && rightType.isTupleType()) {
+        auto leftElements = leftType.getTupleElements();
+        auto rightElements = rightType.getTupleElements();
+        auto hasDistinctNames = [](llvm::ArrayRef<TupleElement> elements) {
+            for (size_t i = 0; i < elements.size(); ++i) {
+                for (size_t j = i + 1; j < elements.size(); ++j) {
+                    if (elements[i].name == elements[j].name) return false;
+                }
+            }
+            return true;
+        };
+        // Only comparable nominally: same arity, same distinct non-empty element names. The lowering below accesses elements by name.
+        // FIXME: operands with side effects are evaluated once per element; bind them to temporaries.
+        auto namesMatch = leftElements.size() == rightElements.size() && !leftElements.empty() && hasDistinctNames(leftElements)
+                       && hasDistinctNames(rightElements) && llvm::all_of(llvm::zip_first(leftElements, rightElements), [](auto&& pair) {
+                              auto&& [left, right] = pair;
+                              return !left.name.empty() && left.name == right.name;
+                          });
+
+        if (namesMatch) {
+            // Lower tuple comparison to elementwise comparison (e.g. `(a == b) && (c == d)`).
+            auto combiner = op == Token::Equal ? Token::AndAnd : Token::OrOr;
+            Expr* result = nullptr;
+            for (size_t i = 0; i < leftElements.size(); ++i) {
+                auto* comparison = new BinaryExpr(op, new MemberExpr(&expr.getLHS(), std::string(leftElements[i].name), expr.getLocation()),
+                                                  new MemberExpr(&expr.getRHS(), std::string(rightElements[i].name), expr.getLocation()), expr.getLocation());
+                result = result ? new BinaryExpr(combiner, result, comparison, expr.getLocation()) : comparison;
+            }
+            ASSERT(result);
+            expr = llvm::cast<BinaryExpr>(*result);
+            return typecheckBinaryExpr(expr);
+        }
+    }
 
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
