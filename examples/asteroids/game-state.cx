@@ -1,10 +1,10 @@
-import "SDL.h";
+import "SDL3/SDL.h";
 
 struct GameState {
     Player player;
     List<Asteroid> asteroids;
-    uint ticks;
-    uint timeOfLastAsteroidSpawn;
+    uint64 ticks;
+    uint64 timeOfLastAsteroidSpawn;
     float asteroidSpawnInterval;
 
     GameState() {
@@ -28,7 +28,7 @@ struct GameState {
             asteroid.update(delta);
         }
 
-        if (newTicks - timeOfLastAsteroidSpawn > uint(asteroidSpawnInterval)) {
+        if (newTicks - timeOfLastAsteroidSpawn > uint64(asteroidSpawnInterval)) {
             asteroids.push(Asteroid());
             timeOfLastAsteroidSpawn = newTicks;
             asteroidSpawnInterval *= 0.99;

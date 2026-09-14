@@ -1,27 +1,23 @@
-import "SDL.h";
+import "SDL3/SDL.h";
 import "stdio.h";
-
-// FIXME: For some reason this is not parsed correctly from the included headers.
-const SDL_WINDOWPOS_UNDEFINED = 0x1FFF0000;
 
 const width = 640;
 const height = 480;
 
-const uint8[*]? keyState = null;
+const bool[*]? keyState = null;
 
 bool isKeyDown(SDL_Scancode key) {
-    return keyState![key] != 0;
+    return keyState![key];
 }
 
 void main() {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
         puts(SDL_GetError());
         return;
     }
     defer SDL_Quit();
 
     var window = SDL_CreateWindow("C* Asteroids",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         int(width), int(height), 0);
 
     if (window == null) {
@@ -31,7 +27,7 @@ void main() {
 
     defer SDL_DestroyWindow(window);
 
-    var renderer = SDL_CreateRenderer(window, -1, 0);
+    var renderer = SDL_CreateRenderer(window, null);
 
     if (renderer == null) {
         puts(SDL_GetError());
@@ -46,15 +42,15 @@ void main() {
 void mainLoop(SDL_Renderer* renderer) {
     SDL_Event event = undefined;
     var state = GameState();
-    keyState = cast<const uint8[*]>(SDL_GetKeyboardState(null)!);
+    keyState = cast<const bool[*]>(SDL_GetKeyboardState(null)!);
 
     while (true) {
-        if (SDL_PollEvent(event) != 0) {
+        if (SDL_PollEvent(event)) {
             switch (event.type) {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                     return;
-                case SDL_KEYDOWN:
-                    if (event.key.keysym.sym == SDLK_ESCAPE) {
+                case SDL_EVENT_KEY_DOWN:
+                    if (event.key.key == SDLK_ESCAPE) {
                         return;
                     }
             }

@@ -1,4 +1,6 @@
-import "SDL.h";
+import "SDL3/SDL.h";
+import "math.h";
+import "stdlib.h";
 
 const maxRotationSpeed = 0.007;
 const formVariation = 0.4;
@@ -56,7 +58,7 @@ struct Asteroid {
                     var l = (k + 1) % vertices.size();
                     var a = position + vertices[k] + diff;
                     var b = position + vertices[l] + diff;
-                    SDL_RenderDrawLine(renderer, int(a.x), int(a.y), int(b.x), int(b.y));
+                    SDL_RenderLine(renderer, a.x, a.y, b.x, b.y);
                 }
             }
         }

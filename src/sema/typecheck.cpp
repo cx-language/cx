@@ -152,6 +152,24 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         ABORT("couldn't import the standard library: " << stdModule.getError().message());
     }
 
+    // Process all imports before typechecking anything else, so that deferred typechecking
+    // doesn't depend on the order in which files happen to be processed. C headers in particular
+    // can't refer to declarations in the importing module, so importing them early is always safe.
+    for (auto& sourceFile : module.sourceFiles) {
+        for (auto& decl : sourceFile.topLevelDecls) {
+            if (!llvm::isa<ImportDecl>(decl)) continue;
+            currentModule = &module;
+            currentSourceFile = &sourceFile;
+
+            try {
+                typecheckImportDecl(*llvm::cast<ImportDecl>(decl), manifest);
+                postProcess();
+            } catch (const CompileError& error) {
+                error.report();
+            }
+        }
+    }
+
     // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
     for (auto& sourceFile : module.sourceFiles) {
         for (auto& decl : sourceFile.topLevelDecls) {
@@ -211,7 +229,8 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             currentModule = &module;
             currentSourceFile = &sourceFile;
 
-            if (!decl->isVarDecl()) {
+            // Imports were already processed in the pre-pass above.
+            if (!decl->isVarDecl() && !decl->isImportDecl()) {
                 try {
                     typecheckTopLevelDecl(*decl, manifest);
                     postProcess();

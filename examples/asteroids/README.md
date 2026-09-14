@@ -2,11 +2,11 @@ This directory contains a bare-bones clone of the Asteroids game. It uses the [S
 To build the project, run `make`.
 
 On Windows:
-1. Download the SDL2 Visual C++ development libraries from https://www.libsdl.org/download-2.0.php.
-2. Set the environment variable SDLDIR to point to the extracted SDL2 directory.
+1. Download the SDL3 Visual C++ development libraries from https://github.com/libsdl-org/SDL/releases.
+2. Set the environment variable SDLDIR to point to the extracted SDL3 directory.
 3. Install LLVM/Clang from https://releases.llvm.org/download.html. The build uses the LLVM linker.
 4. Run `build.bat`. This should create an `output.exe` file.
-5. Copy SDL2.dll to the same directory as the executable.
+5. Copy SDL3.dll to the same directory as the executable.
 6. Run `output.exe`.
 
 __Controls:__ arrow keys to move, space to shoot, esc to quit.

@@ -1,4 +1,5 @@
-import "SDL.h";
+import "SDL3/SDL.h";
+import "math.h";
 
 const turningSpeed = 0.008;
 const movementSpeed = 0.002;
@@ -35,9 +36,9 @@ struct Player {
                 var aa = a + diff;
                 var bb = b + diff;
                 var cc = c + diff;
-                SDL_RenderDrawLine(renderer, int(aa.x), int(aa.y), int(bb.x), int(bb.y));
-                SDL_RenderDrawLine(renderer, int(bb.x), int(bb.y), int(cc.x), int(cc.y));
-                SDL_RenderDrawLine(renderer, int(cc.x), int(cc.y), int(aa.x), int(aa.y));
+                SDL_RenderLine(renderer, aa.x, aa.y, bb.x, bb.y);
+                SDL_RenderLine(renderer, bb.x, bb.y, cc.x, cc.y);
+                SDL_RenderLine(renderer, cc.x, cc.y, aa.x, aa.y);
             }
         }
 

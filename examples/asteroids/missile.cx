@@ -1,4 +1,4 @@
-import "SDL.h";
+import "SDL3/SDL.h";
 
 const missileSize = 20;
 const missileSpeed = 0.3;
@@ -11,7 +11,7 @@ struct Missile {
     void render(SDL_Renderer* renderer) {
         var a = position;
         var b = tailPosition();
-        SDL_RenderDrawLine(renderer, int(a.x), int(a.y), int(b.x), int(b.y));
+        SDL_RenderLine(renderer, a.x, a.y, b.x, b.y);
     }
 
     void update(float delta, GameState* state) {

@@ -416,6 +416,12 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     for (auto& flag : options.cflags) {
         ccArgs.push_back(flag.c_str());
     }
+    // The generated C code includes the same C headers that were imported,
+    // so pass the import search paths to the C compiler as well.
+    for (auto& path : options.importSearchPaths) {
+        ccArgs.push_back("-I");
+        ccArgs.push_back(path.c_str());
+    }
     for (auto& flag : options.defines) {
         ccArgs.push_back("-D");
         ccArgs.push_back(flag.c_str());

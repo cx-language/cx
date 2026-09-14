@@ -59,12 +59,18 @@ jobs:
           pip install lit psutil
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt-get update
-            sudo apt-get install libsdl2-dev libglfw3-dev
+            sudo apt-get install libglfw3-dev
+            # No libsdl3-dev on Ubuntu 24.04, so build SDL3 from source.
+            git clone --depth 1 --branch release-3.4.16 https://github.com/libsdl-org/SDL.git /tmp/SDL
+            cmake -S /tmp/SDL -B /tmp/SDL/build -DCMAKE_BUILD_TYPE=Release
+            cmake --build /tmp/SDL/build --parallel
+            sudo cmake --install /tmp/SDL/build
+            sudo ldconfig
           fi
           if [ "$RUNNER_OS" == "macOS" ]; then
-            brew install sdl2 glfw3
+            brew install sdl3 glfw3
           fi
-          # Tests depending on SDL2 or GLFW are disabled on Windows CI.
+          # Tests depending on SDL3 or GLFW are disabled on Windows CI.
           CX_PRINT_STACK_TRACE=true cmake --build . --config ${{ matrix.build_type }} --target check
 
   build-playground:
