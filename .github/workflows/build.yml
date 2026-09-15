@@ -204,7 +204,7 @@ jobs:
             wasm/dist/wcc-files.zip
 
   deploy-website:
-    if: github.repository == 'cx-language/cx' && github.ref == 'refs/heads/main'
+    if: github.repository == 'emillaine/cx' && github.ref == 'refs/heads/main'
     needs: [ build, build-playground ]
     runs-on: ubuntu-latest
     steps:
@@ -226,7 +226,7 @@ jobs:
             ./build-website.sh
           )
 
-          git clone https://github.com/cx-language/cx-language.github.io.git
+          git clone https://github.com/emillaine/cx-language.github.io.git
           cd cx-language.github.io || exit 1
 
           cp -a ../docs/build/. ./
@@ -241,5 +241,5 @@ jobs:
           git config user.name "C* CI"
           git commit --message "Update documentation to $GITHUB_SHA" $AMEND
 
-          git remote set-url origin "https://${{ secrets.CI_TOKEN }}@github.com/cx-language/cx-language.github.io.git" > /dev/null 2>&1
+          git remote set-url origin "https://${{ secrets.CI_TOKEN }}@github.com/emillaine/cx-language.github.io.git" > /dev/null 2>&1
           git push --quiet --force-with-lease

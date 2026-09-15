@@ -596,7 +596,7 @@ static void addPlatformCompileOptions() {
 }
 
 int cx::driverMain(int argc, const char** argv) {
-    llvm::setBugReportMsg("Please submit a bug report to https://github.com/cx-language/cx/issues and include the crash backtrace.\n");
+    llvm::setBugReportMsg("Please submit a bug report to https://github.com/emillaine/cx/issues and include the crash backtrace.\n");
     llvm::InitLLVM x(argc, argv);
     cl::HideUnrelatedOptions({&stageSelectionCategory, &outputCategory, &dependencyCategory, &diagnosticCategory});
     cl::ParseCommandLineOptions(argc, argv, "C* compiler\n");
