@@ -13,7 +13,7 @@ C* (pronounced "C star") is a C-based hybrid low-level/high-level programming la
 performance and developer productivity (in this order of priority). The language is simple and unopinionated,
 supporting imperative, generic, data-oriented, functional, and object-oriented programming.
 
-Learn more about the language at https://emillaine.github.io/cx-language.github.io/.  
+Learn more about the language at https://emillaine.github.io/cx/.  
 See code samples under [`examples`](https://github.com/emillaine/cx/tree/main/examples).
 
 The project is still in early stages of development: some planned features have not yet been implemented,

@@ -204,11 +204,20 @@ jobs:
             wasm/dist/wcc-files.zip
 
   deploy-website:
-    if: github.repository == 'emillaine/cx' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     needs: [ build, build-playground ]
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Download playground artifacts
         uses: actions/download-artifact@v4
@@ -216,7 +225,7 @@ jobs:
           name: playground
           path: wasm/dist
 
-      - name: Deploy website
+      - name: Build website
         run: |
           wget --no-verbose https://github.com/jgm/pandoc/releases/download/2.13/pandoc-2.13-1-amd64.deb
           sudo dpkg -i pandoc-2.13-1-amd64.deb
@@ -226,20 +235,13 @@ jobs:
             ./build-website.sh
           )
 
-          git clone https://github.com/emillaine/cx-language.github.io.git
-          cd cx-language.github.io || exit 1
+          touch docs/build/.nojekyll
 
-          cp -a ../docs/build/. ./
-          git add .
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build
 
-          PREVIOUS_COMMIT_AUTHOR=$(git log -1 --pretty=format:%an)
-          if [ "$PREVIOUS_COMMIT_AUTHOR" = "C* CI" ]; then
-            AMEND=--amend
-          fi
-
-          git config user.email ""
-          git config user.name "C* CI"
-          git commit --message "Update documentation to $GITHUB_SHA" $AMEND
-
-          git remote set-url origin "https://${{ secrets.CI_TOKEN }}@github.com/emillaine/cx-language.github.io.git" > /dev/null 2>&1
-          git push --quiet --force-with-lease
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
