@@ -1,5 +1,37 @@
 # To develop the website locally, run this script after each change,
 # and serve the generated HTML from the build directory using e.g. 'npx serve'.
+# Or run with --serve to build and serve in one step:
+#   docs/build-website.sh --serve [--port <port>]
+
+SERVE=0
+PORT=8000
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --serve)
+            SERVE=1
+            shift
+            ;;
+        --port|-p)
+            PORT="$2"
+            shift 2
+            ;;
+        --port=*)
+            PORT="${1#--port=}"
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $(basename "$0") [--serve] [--port <port>]"
+            exit 0
+            ;;
+        *)
+            echo "unknown option: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+cd "$(dirname "$0")" || exit
 
 pandoc --version >/dev/null || exit
 
@@ -91,3 +123,8 @@ for artifact in cx-wasm.js cx-wasm.wasm cx-wasm.data cc.wasm wcc-files.zip; do
         echo "warning: ../wasm/dist/$artifact not found, the playground will be unavailable" >&2
     fi
 done
+
+if [ "$SERVE" = 1 ]; then
+    echo "Serving build/ at http://localhost:$PORT"
+    exec python3 -m http.server "$PORT" --directory build
+fi
