@@ -338,7 +338,8 @@ button.run {
     padding: 15px;
     border-radius: 50%;
     background: transparent;
-    text-indent: -10000px; /* Hide text except from screen readers */
+    width: 30px;
+    height: 30px;
 }
 
 button.run::before {

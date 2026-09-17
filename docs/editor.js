@@ -24,7 +24,7 @@ function initializeCodeEditor(block) {
     }, 1);
 
     const runButton = document.createElement("button");
-    runButton.innerText = "Run";
+    runButton.setAttribute("aria-label", "Run");
     runButton.className = "run";
     block.parentNode.appendChild(runButton);
 
