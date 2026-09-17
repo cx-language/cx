@@ -18,6 +18,7 @@ using namespace cx;
 namespace cx {
 DiagnosticOptions diagnosticOptions;
 int errors = 0;
+std::vector<CollectedDiagnostic>* diagnosticCollector = nullptr;
 } // namespace cx
 
 std::ostream& cx::operator<<(std::ostream& stream, llvm::StringRef string) {
@@ -118,6 +119,12 @@ void cx::printStackTrace() {
 }
 
 void cx::abort(llvm::StringRef message) {
+    if (diagnosticCollector) {
+        // Single-shot structured-diagnostics mode (LSP query process):
+        // unwind to the API boundary so the failure is reported as a
+        // diagnostic instead of killing the process with exit(1).
+        throw CompileError(Location(), message.str());
+    }
     printColored("error: ", llvm::raw_ostream::RED);
     llvm::outs() << message << '\n';
     exit(1);
@@ -125,6 +132,18 @@ void cx::abort(llvm::StringRef message) {
 
 void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
     errors++;
+    if (diagnosticCollector) {
+        CollectedDiagnostic diagnostic;
+        diagnostic.location = location;
+        diagnostic.severity = "error";
+        diagnostic.message = message.str();
+        diagnostic.notes.assign(notes.begin(), notes.end());
+        diagnosticCollector->push_back(std::move(diagnostic));
+        if (diagnosticOptions.errorLimit > 0 && errors > diagnosticOptions.errorLimit) {
+            throw CompileError::dependentError();
+        }
+        return;
+    }
     if (diagnosticOptions.errorLimit > 0 && errors > diagnosticOptions.errorLimit) {
 #ifdef __EMSCRIPTEN__
         // Exiting the process is not an option inside the WebAssembly build,
@@ -151,6 +170,15 @@ void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRe
     if (diagnosticOptions.warningsAsErrors) {
         reportError(location, message, notes);
     } else {
+        if (diagnosticCollector) {
+            CollectedDiagnostic diagnostic;
+            diagnostic.location = location;
+            diagnostic.severity = "warning";
+            diagnostic.message = message.str();
+            diagnostic.notes.assign(notes.begin(), notes.end());
+            diagnosticCollector->push_back(std::move(diagnostic));
+            return;
+        }
         printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message);
 
         for (auto& note : notes) {

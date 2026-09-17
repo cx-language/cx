@@ -15,6 +15,7 @@ supporting imperative, generic, data-oriented, functional, and object-oriented p
 
 Learn more about the language at https://emillaine.github.io/cx/.  
 See code samples under [`examples`](https://github.com/emillaine/cx/tree/main/examples).
+For editor support (diagnostics, hover, go to definition, ...), see the [language server setup guide](docs/lsp.md).
 
 The project is still in early stages of development: some planned features have not yet been implemented,
 existing ones are subject to change, and the documentation is scarce.

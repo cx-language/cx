@@ -69,6 +69,28 @@ struct Note {
     std::string message;
 };
 
+/// A single diagnostic collected during compilation.
+///
+/// When `diagnosticCollector` is non-null, `reportError()` and
+/// `reportWarning()` append to it instead of printing to stdout. Instead of
+/// exiting the process when the error limit is exceeded, they unwind with a
+/// silent `CompileError` so the caller still gets back every diagnostic
+/// collected so far. This is used by single-shot compiler invocations that
+/// report structured diagnostics (currently the language server's one-shot
+/// query processes), each of which runs the frontend exactly once in a fresh
+/// process and then exits.
+struct CollectedDiagnostic {
+    Location location;
+    std::string severity; // "error" or "warning".
+    std::string message;
+    std::vector<Note> notes;
+};
+
+/// When non-null, diagnostics are collected here instead of being printed.
+/// Owned by the caller. Only used in fresh single-shot processes that run one
+/// compilation and exit; never reused across compilations. Not thread-safe.
+extern std::vector<CollectedDiagnostic>* diagnosticCollector;
+
 struct CompileError : std::exception {
     CompileError(Location location, std::string&& message, std::vector<Note>&& notes = {});
     /// Creates a specific type of compile error used for propagating non-reported errors that are the result of a previous, reported error.

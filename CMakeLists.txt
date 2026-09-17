@@ -69,6 +69,7 @@ file(GLOB_RECURSE LIBCX_SOURCES CONFIGURE_DEPENDS
     src/parser/*.h src/parser/*.cpp
     src/sema/*.h src/sema/*.cpp
     src/support/*.h src/support/*.cpp
+    src/lsp/*.h src/lsp/*.cpp
     src/api.cpp
 )
 # The WebAssembly API in src/wasm/ is linked into the Emscripten module (and
@@ -76,12 +77,21 @@ file(GLOB_RECURSE LIBCX_SOURCES CONFIGURE_DEPENDS
 # GLOB_RECURSE also matches the src/api.cpp pattern against src/wasm/api.cpp,
 # which would otherwise put a duplicate cxCompileToC definition into libcx.
 list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/wasm/")
+# The language server entry point has its own main() and lives in the cx-lsp
+# binary, not in libcx.
+list(FILTER LIBCX_SOURCES EXCLUDE REGEX "src/lsp/main.cpp")
 add_library(libcx ${LIBCX_SOURCES})
 set_target_properties(libcx PROPERTIES PREFIX "")
 target_precompile_headers(libcx PRIVATE src/pch.h)
 
 add_executable(cx src/cli/main.cpp)
 target_link_libraries(cx libcx)
+
+# The language server: a thin stdio process that answers every operation by
+# spawning a fresh `cx-lsp --query` subprocess (one compilation per process),
+# honoring the compiler's start-fast/compile-fast/exit design.
+add_executable(cx-lsp src/lsp/main.cpp)
+target_link_libraries(cx-lsp libcx)
 
 if(LLVM_LINK_LLVM_DYLIB)
     set(LLVM_LIBS LLVM)
@@ -111,9 +121,11 @@ target_include_directories(example_embedding PRIVATE src)
 target_link_libraries(example_embedding libcx)
 add_test(NAME examples COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>")
 add_test(NAME examples-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
+# Language server end-to-end tests (query subprocess + stdio server session).
+add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "--cx-lsp=$<TARGET_FILE:cx-lsp>" "--cx=$<TARGET_FILE:cx>")
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
-add_dependencies(check cx FileCheck example_embedding test_compile_api)
+add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api)
 
 # Tests for the in-memory compilation API (also used by the WebAssembly build).
 add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/api.cpp)

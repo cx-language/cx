@@ -100,6 +100,8 @@ cl::opt<bool> noUnusedWarnings("Wno-unused", cl::desc("Disable warnings about un
 cl::opt<int> errorLimit("error-limit", cl::desc("Limit the number of reported errors (10 by default, 0 removes limit)"), cl::init(10),
                         cl::sub(cl::SubCommand::getAll()), cl::cat(diagnosticCategory));
 
+cl::SubCommand lspSubcommand("lsp", "Start the C* language server (LSP over stdio)");
+
 } // namespace cx
 
 static int exec(const char* command, std::string& output) {
@@ -620,6 +622,36 @@ int cx::driverMain(int argc, const char** argv) {
             ABORT(error.message());
         }
         return buildPackage(currentPath, argv[0]);
+    } else if (lspSubcommand) {
+        // The server lives in the cx-lsp binary so that every compilation it
+        // triggers runs in a fresh process (see src/lsp/). Forward stdio.
+        std::string lspExecutable;
+        {
+            // Probe both spellings: the binary is cx-lsp.exe on Windows,
+            // where the extensionless probe below would miss it.
+            for (llvm::StringRef suffix : {"", ".exe"}) {
+                llvm::SmallString<128> candidate(argv[0]);
+                llvm::sys::path::remove_filename(candidate);
+                llvm::sys::path::append(candidate, "cx-lsp");
+                candidate += suffix;
+                if (llvm::sys::fs::can_execute(candidate)) {
+                    lspExecutable = candidate.str().str();
+                    break;
+                }
+            }
+            if (lspExecutable.empty()) {
+                if (auto path = llvm::sys::findProgramByName("cx-lsp")) {
+                    lspExecutable = *path;
+                } else {
+                    ABORT("couldn't find the 'cx-lsp' language server binary");
+                }
+            }
+        }
+        std::string errorMessage;
+        bool executionFailed = false;
+        int status = llvm::sys::ExecuteAndWait(lspExecutable, {lspExecutable}, std::nullopt, {}, 0, 0, &errorMessage, &executionFailed);
+        if (executionFailed) ABORT("couldn't start the language server: " << errorMessage);
+        return status;
     } else {
         cl::PrintHelpMessage(false, true);
         return 0;
