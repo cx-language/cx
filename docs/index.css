@@ -337,15 +337,23 @@ button.run {
     z-index: 10;
     padding: 15px;
     border-radius: 50%;
+    background: transparent;
+    text-indent: -10000px; /* Hide text except from screen readers */
+}
+
+button.run::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
     background: var(--background-color-3);
     background-image: url("lib/play-button.svg");
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
-    text-indent: -10000px; /* Hide text except from screen readers */
 }
 
-button.run:active {
+button.run:active::before {
     transform: scale(0.9);
 }
 
