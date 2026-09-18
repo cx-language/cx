@@ -29,6 +29,7 @@
 #include <llvm/Support/SaveAndRestore.h>
 #include <llvm/TargetParser/Host.h>
 #pragma warning(pop)
+#include "../ast/arena.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../ast/type.h"
@@ -210,7 +211,8 @@ struct CToCxConverter final : clang::ASTConsumer {
         auto it = importedRecordDecls.find(canonical);
         if (it == importedRecordDecls.end()) {
             auto tag = recordDecl.isUnion() ? TypeTag::Union : TypeTag::Struct;
-            auto* typeDecl = new TypeDecl(tag, getName(recordDecl).str(), {}, {}, AccessLevel::Default, module, nullptr, Location());
+            auto* typeDecl =
+                makeAST<TypeDecl>(tag, getName(recordDecl).str(), std::vector<Type>(), std::vector<Type>(), AccessLevel::Default, module, nullptr, Location());
             it = importedRecordDecls.emplace(canonical, typeDecl).first;
 
             // Add to symbol table before type-checking so that type-checker finds the struct decl.
@@ -259,19 +261,19 @@ struct CToCxConverter final : clang::ASTConsumer {
     */
 
     void addIntegerConstantToSymbolTable(llvm::StringRef name, llvm::APSInt value, clang::QualType qualType) {
-        auto initializer = new IntLiteralExpr(std::move(value), Location());
+        auto initializer = makeAST<IntLiteralExpr>(std::move(value), Location());
         auto type = toCx(qualType).withMutability(Mutability::Const);
         initializer->type = type;
-        auto* varDecl = new VarDecl(type, name.str(), initializer, nullptr, AccessLevel::Default, module, Location());
+        auto* varDecl = makeAST<VarDecl>(type, name.str(), initializer, nullptr, AccessLevel::Default, module, Location());
         module.addToSymbolTable(varDecl);
         module.sourceFiles.front().topLevelDecls.push_back(varDecl);
     }
 
     void addFloatConstantToSymbolTable(llvm::StringRef name, llvm::APFloat value) {
-        auto initializer = new FloatLiteralExpr(std::move(value), Location());
+        auto initializer = makeAST<FloatLiteralExpr>(std::move(value), Location());
         auto type = Type::getFloat64(Mutability::Const);
         initializer->type = type;
-        auto* varDecl = new VarDecl(type, name.str(), initializer, nullptr, AccessLevel::Default, module, Location());
+        auto* varDecl = makeAST<VarDecl>(type, name.str(), initializer, nullptr, AccessLevel::Default, module, Location());
         module.addToSymbolTable(varDecl);
         module.sourceFiles.front().topLevelDecls.push_back(varDecl);
     }
@@ -304,14 +306,14 @@ struct CToCxConverter final : clang::ASTConsumer {
                     for (clang::EnumConstantDecl* enumerator : enumDecl.enumerators()) {
                         auto enumeratorName = enumerator->getName();
                         auto value = enumerator->getInitVal();
-                        auto valueExpr = new IntLiteralExpr(value, Location());
+                        auto valueExpr = makeAST<IntLiteralExpr>(value, Location());
                         cases.push_back(EnumCase(enumeratorName.str(), valueExpr, Type(), AccessLevel::Default, Location()));
                         auto type = isAnonymous ? enumDecl.getIntegerType()
                                                 : astContext->getTagType(clang::ElaboratedTypeKeyword::None, clang::NestedNameSpecifier(), &enumDecl, false);
                         addIntegerConstantToSymbolTable(enumeratorName, value, type);
                     }
 
-                    auto* cxEnumDecl = new EnumDecl(getName(enumDecl).str(), std::move(cases), AccessLevel::Default, module, nullptr, Location());
+                    auto* cxEnumDecl = makeAST<EnumDecl>(getName(enumDecl).str(), std::move(cases), AccessLevel::Default, module, nullptr, Location());
                     module.addToSymbolTable(cxEnumDecl);
                     module.sourceFiles.front().topLevelDecls.push_back(cxEnumDecl);
                     break;
@@ -360,7 +362,7 @@ struct CToCxConverter final : clang::ASTConsumer {
         if (auto asmLabelAttr = decl.getAttr<clang::AsmLabelAttr>()) {
             proto.asmLabel = asmLabelAttr->getLabel().str();
         }
-        return new FunctionDecl(std::move(proto), {}, AccessLevel::Default, module, toCx(decl.getLocation()));
+        return makeAST<FunctionDecl>(std::move(proto), std::vector<Type>(), AccessLevel::Default, module, toCx(decl.getLocation()));
     }
 
     Location toCx(clang::SourceLocation location) {

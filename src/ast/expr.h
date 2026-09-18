@@ -8,6 +8,7 @@
 #include <llvm/ADT/APSInt.h>
 #include <llvm/Support/Casting.h>
 #pragma warning(pop)
+#include "arena.h"
 #include "location.h"
 #include "token.h"
 #include "type.h"
@@ -213,7 +214,7 @@ protected:
 
 struct UnaryExpr : CallExpr {
     UnaryExpr(UnaryOperator op, Expr* operand, Location location)
-    : CallExpr(ExprKind::UnaryExpr, new VarExpr(toString(op.kind), location), {NamedValue(operand)}, location), op(op) {}
+    : CallExpr(ExprKind::UnaryExpr, makeAST<VarExpr>(toString(op.kind), location), {NamedValue(operand)}, location), op(op) {}
     Expr& getOperand() { return *args[0].value; }
     const Expr& getOperand() const { return *args[0].value; }
     llvm::APSInt getConstantIntegerValue() const;
@@ -224,7 +225,7 @@ struct UnaryExpr : CallExpr {
 
 struct BinaryExpr : CallExpr {
     BinaryExpr(BinaryOperator op, Expr* left, Expr* right, Location location)
-    : CallExpr(ExprKind::BinaryExpr, new VarExpr(cx::getFunctionName(op), location), {NamedValue(left), NamedValue(right)}, location), op(op) {}
+    : CallExpr(ExprKind::BinaryExpr, makeAST<VarExpr>(cx::getFunctionName(op), location), {NamedValue(left), NamedValue(right)}, location), op(op) {}
     const Expr& getLHS() const { return *args[0].value; }
     const Expr& getRHS() const { return *args[1].value; }
     Expr& getLHS() { return *args[0].value; }
@@ -260,7 +261,7 @@ struct MemberExpr : Expr {
 /// An element access expression using the element's index in brackets: 'base[index]'.
 struct IndexExpr : CallExpr {
     IndexExpr(Expr* base, Expr* index, Location location)
-    : CallExpr(ExprKind::IndexExpr, new MemberExpr(base, "[]", location), {NamedValue("", index)}, location) {}
+    : CallExpr(ExprKind::IndexExpr, makeAST<MemberExpr>(base, "[]", location), {NamedValue("", index)}, location) {}
     const Expr* getBase() const { return getReceiver(); }
     const Expr* getIndex() const { return args[0].value; }
     Expr* getBase() { return getReceiver(); }
@@ -270,7 +271,7 @@ struct IndexExpr : CallExpr {
 
 protected:
     IndexExpr(Expr* base, Expr* index, Expr* value, Location location)
-    : CallExpr(ExprKind::IndexAssignmentExpr, new MemberExpr(base, "[]=", location), {NamedValue("", index), NamedValue("", value)}, location) {}
+    : CallExpr(ExprKind::IndexAssignmentExpr, makeAST<MemberExpr>(base, "[]=", location), {NamedValue("", index), NamedValue("", value)}, location) {}
 };
 
 /// An assignment to an indexed access: 'base[index] = value'.

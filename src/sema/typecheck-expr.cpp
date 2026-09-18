@@ -10,6 +10,7 @@
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
+#include "../ast/arena.h"
 #include "../ast/decl.h"
 #include "../ast/expr.h"
 #include "../ast/module.h"
@@ -139,9 +140,7 @@ Type Typechecker::typecheckArrayLiteralExpr(ArrayLiteralExpr& array, Type expect
 }
 
 Type Typechecker::typecheckTupleExpr(TupleExpr& expr) {
-    auto elements = map(expr.elements, [&](const NamedValue& namedValue) {
-        return TupleElement{namedValue.name, typecheckExpr(*namedValue.value)};
-    });
+    auto elements = map(expr.elements, [&](const NamedValue& namedValue) { return TupleElement{namedValue.name, typecheckExpr(*namedValue.value)}; });
     return TupleType::get(std::move(elements));
 }
 
@@ -222,8 +221,7 @@ static void throwInvalidOperandsToBinaryExpr(const BinaryExpr& expr, Token::Kind
         hint = "";
     }
 
-    ERROR(expr.location,
-          "invalid operands '" << expr.getLHS().type << "' and '" << expr.getRHS().type << "' to '" << toString(op) << "'" << hint);
+    ERROR(expr.location, "invalid operands '" << expr.getLHS().type << "' and '" << expr.getRHS().type << "' to '" << toString(op) << "'" << hint);
 }
 
 static bool allowAssignmentOfUndefined(const Expr& lhs, const FunctionDecl* currentFunction) {
@@ -253,7 +251,7 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     }
 
     if (isCompoundAssignmentOperator(op)) {
-        auto rhs = new BinaryExpr(withoutCompoundEqSuffix(op), &expr.getLHS(), &expr.getRHS(), expr.location);
+        auto rhs = makeAST<BinaryExpr>(withoutCompoundEqSuffix(op), &expr.getLHS(), &expr.getRHS(), expr.location);
         expr = BinaryExpr(Token::Assignment, &expr.getLHS(), rhs, expr.location);
         return typecheckBinaryExpr(expr);
     }
@@ -285,9 +283,9 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
             auto combiner = op == Token::Equal ? Token::AndAnd : Token::OrOr;
             Expr* result = nullptr;
             for (size_t i = 0; i < leftElements.size(); ++i) {
-                auto* comparison = new BinaryExpr(op, new MemberExpr(&expr.getLHS(), std::string(leftElements[i].name), expr.location),
-                                                  new MemberExpr(&expr.getRHS(), std::string(rightElements[i].name), expr.location), expr.location);
-                result = result ? new BinaryExpr(combiner, result, comparison, expr.location) : comparison;
+                auto* comparison = makeAST<BinaryExpr>(op, makeAST<MemberExpr>(&expr.getLHS(), std::string(leftElements[i].name), expr.location),
+                                                       makeAST<MemberExpr>(&expr.getRHS(), std::string(rightElements[i].name), expr.location), expr.location);
+                result = result ? makeAST<BinaryExpr>(combiner, result, comparison, expr.location) : comparison;
             }
             ASSERT(result);
             expr = llvm::cast<BinaryExpr>(*result);
@@ -444,7 +442,7 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
     if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind)) {
         if (implicitCastKind) {
-            return new ImplicitCastExpr(expr, convertedType, *implicitCastKind);
+            return makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
         } else if (convertedType != expr->type) {
             expr->type = convertedType;
 
@@ -535,9 +533,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
 
         if (expr->isArrayLiteralExpr() && target.isConstantArray()) {
             auto arrayLiteralExpr = llvm::cast<ArrayLiteralExpr>(expr);
-            bool isConvertible = llvm::all_of(arrayLiteralExpr->elements, [&](Expr* element) {
-                return isImplicitlyConvertible(element, source.getElementType(), target.getElementType());
-            });
+            bool isConvertible = llvm::all_of(
+                arrayLiteralExpr->elements, [&](Expr* element) { return isImplicitlyConvertible(element, source.getElementType(), target.getElementType()); });
 
             if (isConvertible) {
                 for (auto& element : arrayLiteralExpr->elements) {
@@ -1145,9 +1142,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     if (atLeastOneFunction) {
         if (auto binaryExpr = llvm::dyn_cast<BinaryExpr>(&expr)) {
             // Don't list candidate functions for operators; they're usually irrelevant stdlib overloads that drown out the actual error.
-            ERROR(expr.callee->location, "no matching operator '" << binaryExpr->op << "' with arguments '"
-                                                                           << binaryExpr->getLHS().type << "' and '" << binaryExpr->getRHS().type
-                                                                           << "'");
+            ERROR(expr.callee->location, "no matching operator '" << binaryExpr->op << "' with arguments '" << binaryExpr->getLHS().type << "' and '"
+                                                                  << binaryExpr->getRHS().type << "'");
         } else {
             auto argTypes = map(expr.args, [&](const NamedValue& arg) { return typecheckExpr(*arg.value).toString(); });
             ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(candidates, expr),
@@ -1392,8 +1388,8 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
     case ArgumentValidation::InvalidType: {
         auto& arg = expr.args[result.index];
         auto* param = &params[result.index];
-        ERROR(arg.location, "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '"
-                                                      << param->type << "'");
+        ERROR(arg.location,
+              "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type << "'");
         break;
     }
     }

@@ -6,6 +6,7 @@
 #include <llvm/Support/ErrorHandling.h>
 #pragma warning(pop)
 #include "../support/utility.h"
+#include "arena.h"
 #include "decl.h"
 
 using namespace cx;
@@ -134,7 +135,7 @@ template<typename T> static Type getType(T&& typeBase, Mutability mutability, Lo
         }
     }
 
-    typeBases.push_back(new T(std::forward<T>(typeBase)));
+    typeBases.push_back(makeAST<T>(std::forward<T>(typeBase)));
     return Type(typeBases.back(), mutability, location);
 }
 
