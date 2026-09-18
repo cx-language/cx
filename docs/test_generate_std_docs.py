@@ -105,11 +105,11 @@ class FixtureTest(unittest.TestCase):
         self.assertIn("Auto-generated from [fixture.cx]", self.markdown)
 
     def test_type_header_and_doc(self):
-        self.assertIn("## `struct Widget: Copyable` {#type-Widget}", self.markdown)
+        self.assertIn("## struct Widget: Copyable {#type-Widget}", self.markdown)
         self.assertIn("A widget.", self.markdown)
 
     def test_members(self):
-        self.assertIn("### `size` {#Widget-size}", self.markdown)
+        self.assertIn("### size {#Widget-size}", self.markdown)
         self.assertIn(fenced("int size()"), self.markdown)
         self.assertIn("Returns the size.", self.markdown)
         self.assertIn(fenced("int size;"), self.markdown)
@@ -125,14 +125,14 @@ class FixtureTest(unittest.TestCase):
         self.assertNotIn("Section marker", self.markdown)
 
     def test_operator_slug(self):
-        self.assertIn("## `operator==` {#fn-operator-eq}", self.markdown)
+        self.assertIn("## operator== {#fn-operator-eq}", self.markdown)
 
     def test_interface_keeps_semicolon(self):
         self.assertIn(fenced("void run();"), self.markdown)
 
     def test_enum_variants(self):
-        self.assertIn("### `Red` {#Color-Red}", self.markdown)
-        self.assertIn("### `Green` {#Color-Green}", self.markdown)
+        self.assertIn("### Red {#Color-Red}", self.markdown)
+        self.assertIn("### Green {#Color-Green}", self.markdown)
 
     def test_extern_and_const(self):
         self.assertIn(fenced("extern int puts(const char* str);"), self.markdown)
@@ -209,8 +209,9 @@ class StdlibTest(unittest.TestCase):
         page = self.rendered["List.cx"]
         for snippet in [
             "# List",
-            "## `struct List<Element>` {#type-List}",
-            "### `push` {#List-push}",
+            "## struct List\\<Element\\> {#type-List}",
+            "### push {#List-push}",
+            "### operator\\[\\] {#List-operator-index}",
             fenced("void push(Element element)"),
             "Adds the given element to the end of the list.",
         ]:
@@ -218,7 +219,7 @@ class StdlibTest(unittest.TestCase):
 
     def test_overloads_grouped(self):
         stdio = self.rendered["stdio.cx"]
-        self.assertEqual(stdio.count("## `println` {#fn-println}"), 1)
+        self.assertEqual(stdio.count("## println {#fn-println}"), 1)
         self.assertGreater(len(self.by_path["stdio.cx"][1]["println"].declarations), 10)
 
     def test_private_declarations_omitted(self):
@@ -253,7 +254,7 @@ class StagingTest(unittest.TestCase):
             toc = (out / "toc.html").read_text()
         self.assertIn("# Standard library reference", index)
         self.assertIn("- [fixture.cx](./std-fixture): ", index)
-        self.assertIn("## `struct Widget: Copyable` {#type-Widget}", page)
+        self.assertIn("## struct Widget: Copyable {#type-Widget}", page)
         self.assertIn('<li><a href="./std-fixture">fixture</a></li>', toc)
         self.assertNotIn("<!--STD-PAGES-->", toc)
 

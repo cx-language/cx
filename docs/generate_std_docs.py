@@ -221,6 +221,10 @@ def by_name(name):
     return (name.lower(), name)
 
 
+def heading_text(text):
+    return re.sub(r"([\\<>\[\]*_])", r"\\\1", text)
+
+
 def render_file_page(relpath, types, functions, constants, conditional):
     types = sorted(types, key=lambda t: (t.name.lower(), t.name))
     function_names = sorted(functions, key=by_name)
@@ -236,21 +240,21 @@ def render_file_page(relpath, types, functions, constants, conditional):
         out += ["*Note: parts of this file are platform-conditional (`#if`).*", ""]
 
     for entry in types:
-        out.append(f"## `{entry.header}` {{#type-{entry.name}}}")
+        out.append(f"## {heading_text(entry.header)} {{#type-{entry.name}}}")
         out.append("")
         render_doc(entry.doc, out)
         for name in sorted(entry.members, key=by_name):
-            out.append(f"### `{name}` {{#{entry.name}-{slug(name)}}}")
+            out.append(f"### {heading_text(name)} {{#{entry.name}-{slug(name)}}}")
             out.append("")
             render_group(entry.members[name], out)
 
     for name in function_names:
-        out.append(f"## `{name}` {{#fn-{slug(name)}}}")
+        out.append(f"## {heading_text(name)} {{#fn-{slug(name)}}}")
         out.append("")
         render_group(functions[name], out)
 
     for name, declaration in constants:
-        out.append(f"## `{name}` {{#const-{name}}}")
+        out.append(f"## {heading_text(name)} {{#const-{name}}}")
         out.append("")
         render_signature(declaration.signature, out)
         render_doc(declaration.doc, out)
