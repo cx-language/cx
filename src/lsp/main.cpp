@@ -15,13 +15,25 @@
 // `cx lsp` forwards to this binary.
 #include "query.h"
 #include "server.h"
+#include <cstdio>
 #include <cstring>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 #pragma warning(push, 0)
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 
 int main(int argc, const char** argv) {
+#ifdef _WIN32
+    // LSP framing counts bytes, but stdio defaults to text mode on Windows,
+    // which expands \n to \r\n on stdout and breaks Content-Length framing.
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
+
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--query") == 0) {
             return cx::lsp::runQueryProcess();

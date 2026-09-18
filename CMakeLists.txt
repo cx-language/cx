@@ -125,6 +125,10 @@ add_test(NAME docs-snippets COMMAND python3 "${PROJECT_SOURCE_DIR}/docs/check_sn
 add_test(NAME docs-snippets-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/docs/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
 # Language server end-to-end tests (query subprocess + stdio server session).
 add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "--cx-lsp=$<TARGET_FILE:cx-lsp>" "--cx=$<TARGET_FILE:cx>")
+# Bound the stdio session: a framing regression would otherwise block on a
+# pipe read forever instead of failing (takes ~2s locally; 600s is ample
+# even for Windows Debug).
+set_tests_properties(lsp PROPERTIES TIMEOUT 600)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
 add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api)

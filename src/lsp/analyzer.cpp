@@ -154,7 +154,9 @@ std::optional<std::string> findManifestRoot(const std::string& filePath, const s
         if (!llvm::sys::fs::is_regular_file(manifestPath, isFile) && isFile) {
             PackageManifest manifest{std::string(dir)};
             for (auto& root : manifest.getTargetRootDirectories()) {
-                if (filePath == root || llvm::StringRef(filePath).starts_with(root + "/")) {
+                // Either separator: file paths may use backslashes on Windows
+                // while roots built from URIs use forward slashes.
+                if (filePath == root || llvm::StringRef(filePath).starts_with(root + "/") || llvm::StringRef(filePath).starts_with(root + "\\")) {
                     return root;
                 }
             }

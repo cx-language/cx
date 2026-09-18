@@ -34,7 +34,9 @@ def check_snippet(path, index, code, reference_only):
             return
 
         try:
-            run = subprocess.run(os.path.join(".", output), capture_output=True, text=True, timeout=30, cwd=directory)
+            # Absolute path: on Windows the executable resolves against the
+            # parent's directory, not cwd, so ./output is not found.
+            run = subprocess.run([os.path.join(directory, output)], capture_output=True, text=True, timeout=30, cwd=directory)
         except subprocess.TimeoutExpired:
             failures.append(name)
             print(f"FAIL: {name} timed out")
