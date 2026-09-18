@@ -68,4 +68,10 @@ struct MapEntry<Key: Hashable, Value> {
     Key key;
     Value value;
 }
+
+void main() {
+    var entry = MapEntry<int, string>(key = 1, value = "one");
+    println(entry.key); // prints 1
+    println(entry.value); // prints one
+}
 ```
