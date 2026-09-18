@@ -750,7 +750,7 @@ Expr* Parser::parseExprOrVarDecl(Decl* parent) {
     if (!shouldParseVarStmt()) {
         return parseExpr();
     } else {
-        return makeAST<VarDeclExpr>(parseVarDecl(parent, AccessLevel::None));
+        return makeAST<VarDeclExpr>(parseVarDecl(parent, AccessLevel::None, false));
     }
 }
 
@@ -790,7 +790,7 @@ ReturnStmt* Parser::parseReturnStmt() {
 /// var-decl ::= type-specifier id '=' initializer ('\n' | ';')
 /// type-specifier ::= 'const' | 'const' type | type | 'var'
 /// initializer ::= expr | 'undefined'
-VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel) {
+VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel, bool requireTerminator) {
     Type type;
     auto mutability = Mutability::Mutable;
 
@@ -806,10 +806,10 @@ VarDecl* Parser::parseVarDecl(Decl* parent, AccessLevel accessLevel) {
     }
 
     auto name = parse(Token::Identifier);
-    return parseVarDeclAfterName(parent, accessLevel, type.withMutability(mutability), name.getString(), name.location);
+    return parseVarDeclAfterName(parent, accessLevel, type.withMutability(mutability), name.getString(), name.location, requireTerminator);
 }
 
-VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation) {
+VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation, bool requireTerminator) {
     Expr* initializer = nullptr;
 
     if (currentToken() == Token::Assignment) {
@@ -819,7 +819,7 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
         WARN(nameLocation, "missing initializer");
     }
 
-    parseStmtTerminator();
+    if (requireTerminator) parseStmtTerminator();
     return makeAST<VarDecl>(type, name.str(), initializer, parent, accessLevel, *currentModule, nameLocation);
 }
 

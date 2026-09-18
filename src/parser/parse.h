@@ -119,8 +119,9 @@ private:
     Expr* parseExprOrVarDecl(Decl* parent);
     std::vector<Expr*> parseExprList();
     ReturnStmt* parseReturnStmt();
-    VarDecl* parseVarDecl(Decl* parent, AccessLevel accessLevel);
-    VarDecl* parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation);
+    VarDecl* parseVarDecl(Decl* parent, AccessLevel accessLevel, bool requireTerminator = true);
+    VarDecl* parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Type type, llvm::StringRef name, Location nameLocation,
+                                   bool requireTerminator = true);
     VarStmt* parseVarStmt(Decl* parent);
     ExprStmt* parseExprStmt();
     DeferStmt* parseDeferStmt();

@@ -10,6 +10,28 @@ void f() {
     }
 }
 
+void g() {
+    while var c1 = h() {
+        j(c1);
+    }
+
+    if var c2 = h() {
+        j(c2);
+    }
+
+    while int*? c3 = h() {
+        j(c3);
+    }
+
+    if var c4 = h()
+    {
+        j(c4);
+    }
+
+    if var c5 = h()
+        j(c5);
+}
+
 int*? h() {
     return null
 }
