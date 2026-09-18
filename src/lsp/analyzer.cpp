@@ -1435,14 +1435,16 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         options.noUnusedWarnings = true; // unused warnings are noisy during editing
         options.defines = query.defines;
         // Import search paths: file's directory first, then workspace folders,
-        // then explicit extras, then the repo root (for std/) and system paths.
+        // then explicit extras, then the distribution root (for std/) and system paths.
         std::string parentDir = llvm::sys::path::parent_path(filePath).str();
         if (!parentDir.empty()) options.importSearchPaths.push_back(parentDir);
         for (auto& folder : query.workspaceFolders)
             options.importSearchPaths.push_back(folder);
         for (auto& path : query.importSearchPaths)
             options.importSearchPaths.push_back(path);
-        options.importSearchPaths.push_back(CX_ROOT_DIR);
+        if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
+            options.importSearchPaths.push_back(std::move(rootDir));
+        }
 #ifdef CLANG_BUILTIN_INCLUDE_PATH
         options.importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
 #endif

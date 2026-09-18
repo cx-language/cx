@@ -153,4 +153,10 @@ void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<No
 
 std::optional<std::string> findExternalCCompiler();
 
+/// Locates the directory containing the `std/` standard-library directory.
+/// `CX_ROOT` wins, then directories relative to the running executable are
+/// probed (installed `<prefix>/bin` + `<prefix>/share/cx` layouts and in-tree
+/// build dirs), with the compile-time source directory as a dev fallback.
+std::string getCxRootDir();
+
 } // namespace cx

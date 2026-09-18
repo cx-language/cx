@@ -220,7 +220,11 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
         importSearchPaths.push_back(keyValue.getKey().str());
     }
 
-    importSearchPaths.push_back(CX_ROOT_DIR);
+    // The standard library root is resolved at runtime (see getCxRootDir) so
+    // a compiler built on one machine works when distributed to another.
+    if (auto rootDir = getCxRootDir(); !rootDir.empty()) {
+        importSearchPaths.push_back(std::move(rootDir));
+    }
     importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
     importSearchPaths.push_back("/usr/include");
     importSearchPaths.push_back("/usr/local/include");

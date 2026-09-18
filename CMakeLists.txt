@@ -220,3 +220,10 @@ endif()
 
 add_custom_target(lint COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh" --check)
 add_custom_target(format COMMAND "${PROJECT_SOURCE_DIR}/scripts/format.sh")
+
+# Relocatable install layout: binaries in <prefix>/bin locate std/ at
+# <prefix>/share/cx/std at runtime (see getCxRootDir), so an installed
+# tree works wherever it is unpacked.
+include(GNUInstallDirs)
+install(TARGETS cx cx-lsp RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(DIRECTORY std/ DESTINATION "${CMAKE_INSTALL_DATADIR}/cx/std")
