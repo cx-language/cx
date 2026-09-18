@@ -1,25 +1,33 @@
+/// Iterates over the lines of a string.
 struct LineIterator: Copyable, Iterator<string> {
+    /// Remaining input.
     string stream;
+    /// Index of the next newline.
     int end;
 
+    /// Initializes an iterator over the given string.
     LineIterator(string stream) {
         this.stream = stream;
         end = stream.find('\n');
     }
 
+    /// Returns true if there are more lines.
     bool hasValue() {
         return !stream.empty();
     }
 
+    /// Returns the current line.
     string value() {
         return stream.substr(0..end);
     }
 
+    /// Advances to the next line.
     void increment() {
         stream = stream.substr(end + 1);
         end = stream.find('\n');
     }
 
+    /// Returns itself.
     LineIterator iterator() {
         return this;
     }

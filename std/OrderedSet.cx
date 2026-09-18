@@ -1,5 +1,6 @@
 /// An ordered Set that supports fast lookup, insertion and deletion.
 struct OrderedSet<Element> {
+    /// Underlying ordered map.
     OrderedMap<Element, bool> map;
 
     /// Initiates an empty Set.

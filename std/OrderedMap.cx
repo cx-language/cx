@@ -1,13 +1,17 @@
 /// An ordered key-value container that supports fast insertion, deletion and lookup
 struct OrderedMap<Key, Value> {
+    /// Root of the AVL tree.
     AVLnode<Key, Value>*? root;
+    /// Number of entries.
     int size;
 
+    /// Initializes an empty map.
     OrderedMap() {
         root = null;
         size = 0;
     }
 
+    /// Frees all nodes.
     ~OrderedMap() {
         if (root != null) {
             root.deallocate();
@@ -363,12 +367,18 @@ struct OrderedMap<Key, Value> {
 
 /// One node in the AVL tree
 struct AVLnode<Key, Value> {
+    /// The stored key-value pair.
     MapEntry<Key, Value> entry;
+    /// Right subtree height minus left subtree height.
     int balance;
+    /// Parent node, or null for the root.
     AVLnode<Key, Value>*? parent;
+    /// Left subtree.
     AVLnode<Key, Value>*? left;
+    /// Right subtree.
     AVLnode<Key, Value>*? right;
 
+    /// Initializes a node holding the given key and value.
     AVLnode(Key key, AVLnode<Key, Value>*? parent, Value value) {
         this.entry = MapEntry(key, value);
         this.parent = parent;
@@ -377,6 +387,7 @@ struct AVLnode<Key, Value> {
         this.right = null;
     }
 
+    /// Frees the subtree rooted at this node.
     void deallocate() {
         if (left != null) {
             left.deallocate();

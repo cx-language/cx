@@ -2,9 +2,12 @@
 
 #if hasInclude("execinfo.h")
 
+/// Captures a stack trace.
 extern int backtrace(void** array, int size);
+/// Translates a stack trace into symbols.
 extern char*[*]? backtrace_symbols(void** array, int size);
 
+/// Prints the current stack trace.
 void printStackTrace() {
     void*[128] callstack = undefined;
     var frames = backtrace(&callstack[0], callstack.size());
@@ -23,11 +26,13 @@ void printStackTrace() {
 
 #else
 
+/// Prints the current stack trace.
 void printStackTrace() {
 }
 
 #endif
 
+/// Configures abort behavior. Does nothing on this platform.
 void setAbortBehavior() {
 }
 

@@ -1,6 +1,9 @@
+/// Writes formatted output to a file.
 struct OutputFileStream {
+    /// Underlying C file handle.
     FILE*? file;
 
+    /// Opens the given file descriptor for writing.
     OutputFileStream(public int fileDescriptor) {
         file = fdopen(fileDescriptor, "w");
 
@@ -10,12 +13,14 @@ struct OutputFileStream {
         }
     }
 
+    /// Closes the file.
     ~OutputFileStream() {
         if (file) {
             fclose(file);
         }
     }
 
+    /// Writes the given value to the file.
     void write<T: Printable>(T* value) {
         var s = value.toString();
         fprintf(file!, "%.*s", s.size(), s.data());
@@ -23,10 +28,12 @@ struct OutputFileStream {
     }
 }
 
+/// Returns a stream writing to standard output.
 OutputFileStream stdout() {
     return OutputFileStream(fileDescriptor = 1);
 }
 
+/// Returns a stream writing to standard error.
 OutputFileStream stderr() {
     return OutputFileStream(fileDescriptor = 2);
 }

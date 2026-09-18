@@ -1,6 +1,9 @@
+/// Owns a heap-allocated value.
 struct Box<T> {
+    /// Pointer to the owned value.
     T* pointer;
 
+    /// Moves the given value onto the heap.
     Box(T value) {
         this.pointer = allocate(value);
     }
@@ -9,10 +12,12 @@ struct Box<T> {
 //        this.pointer = pointer;
 //    }
 
+    /// Frees the owned value.
     ~Box() {
         deallocate(pointer);
     }
 
+    /// Returns a pointer to the owned value.
     T* get() {
         return pointer;
     }

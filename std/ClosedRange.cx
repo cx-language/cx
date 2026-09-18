@@ -1,35 +1,47 @@
+/// An inclusive range from start to end.
 struct ClosedRange<T>: Copyable {
+    /// First value, inclusive.
     T start;
+    /// Last value, inclusive.
     T end;
 
+    /// Initializes a range from start to end.
     ClosedRange(T start, T end) {
         this.start = start;
         this.end = end;
     }
 
+    /// Initializes a range from 0 to end.
     ClosedRange(T end) {
         init(0, end);
     }
 
     // Returns the number of elements this range contains.
+    /// Returns the number of values in the range.
     T size() {
         return end - start + 1;
     }
 
+    /// Returns the first value.
     T start() {
         return start;
     }
 
+    /// Returns the last value.
     T end() {
         return end;
     }
 
+    /// Returns an iterator over the values.
     ClosedRangeIterator<T> iterator() {
         return ClosedRangeIterator(this);
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    /// Returns true if all values satisfy the predicate.
     bool all(bool(T) predicate) { return all(iterator(), predicate); }
+    /// Returns true if any value satisfies the predicate.
     bool any(bool(T) predicate) { return any(iterator(), predicate); }
+    /// Returns true if no value satisfies the predicate.
     bool none(bool(T) predicate) { return none(iterator(), predicate); }
 }

@@ -1,21 +1,28 @@
+/// Iterates over the entries of a map.
 struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
+    /// Iterator over the hash table buckets.
     ArrayIterator<List<MapEntry<Key, Value>>> hashTableIterator;
+    /// Pointer to the current entry.
     MapEntry<Key, Value>[*] current;
 
+    /// Initializes an iterator over the given map.
     MapIterator(Map<Key, Value>* map) {
         hashTableIterator = map.hashTable.iterator();
         current = undefined;
         skipEmptySlots();
     }
 
+    /// Returns true if there are more entries.
     bool hasValue() {
         return hashTableIterator.hasValue();
     }
 
+    /// Returns the current entry.
     MapEntry<Key, Value>* value() {
         return current;
     }
 
+    /// Advances to the next entry.
     void increment() {
         var slot = hashTableIterator.value();
         var slotEnd = &slot.data()[slot.size()];

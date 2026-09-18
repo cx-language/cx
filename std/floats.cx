@@ -8,47 +8,61 @@ private void printFloat(float64 value, StringBuffer* stream) {
     stream.write(string(result));
 }
 
+/// A floating-point number.
 struct float: Copyable, Comparable, Printable {
+    /// Compares this value to another.
     Ordering compare(float* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printFloat(float64(this), stream);
     }
 }
 
+/// A 16-bit floating-point number.
 struct float16: Copyable, Comparable, Printable {
+    /// Compares this value to another.
     Ordering compare(float16* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printFloat(float64(this), stream);
     }
 }
 
+/// A 32-bit floating-point number.
 struct float32: Copyable, Comparable, Printable {
+    /// Compares this value to another.
     Ordering compare(float32* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printFloat(float64(this), stream);
     }
 }
 
+/// A 64-bit floating-point number.
 struct float64: Copyable, Comparable, Printable {
+    /// Compares this value to another.
     Ordering compare(float64* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printFloat(this, stream);
     }
 }
 
+/// An 80-bit floating-point number.
 struct float80: Copyable, Comparable {
+    /// Compares this value to another.
     Ordering compare(float80* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }

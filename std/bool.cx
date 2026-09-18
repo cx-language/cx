@@ -1,12 +1,16 @@
+/// A boolean value.
 struct bool: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(bool* other) {
         return int(this).compare(int(other));
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         stream.write(this ? "true" : "false");
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }

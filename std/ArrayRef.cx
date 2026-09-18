@@ -1,5 +1,8 @@
+/// A non-owning reference to a contiguous array of elements.
 struct ArrayRef<Element>: Copyable {
+    /// Pointer to the first element.
     Element[*] data;
+    /// Number of elements.
     int size;
 
     /// Initializes an ArrayRef referring to an empty array.
@@ -21,6 +24,7 @@ struct ArrayRef<Element>: Copyable {
         this.size = size;
     }
 
+    /// Returns true if the array has no elements.
     bool empty() {
         return size == 0;
     }
@@ -42,14 +46,17 @@ struct ArrayRef<Element>: Copyable {
         return data[index];
     }
 
+    /// Returns a pointer to the first element.
     Element[*] data() {
         return data;
     }
 
+    /// Returns an iterator over the elements.
     ArrayIterator<Element> iterator() {
         return ArrayIterator(this);
     }
 
+    /// Returns the first element satisfying the predicate, or null.
     Element*? find(bool(Element*) predicate) {
         for (var element in this) {
             if (predicate(element)) {
@@ -61,8 +68,11 @@ struct ArrayRef<Element>: Copyable {
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    /// Returns true if all elements satisfy the predicate.
     bool all(bool(Element*) predicate) { return all(iterator(), predicate); }
+    /// Returns true if any element satisfies the predicate.
     bool any(bool(Element*) predicate) { return any(iterator(), predicate); }
+    /// Returns true if no element satisfies the predicate.
     bool none(bool(Element*) predicate) { return none(iterator(), predicate); }
 
     private void indexOutOfBounds(string function, int index) {
@@ -70,6 +80,7 @@ struct ArrayRef<Element>: Copyable {
     }
 }
 
+/// Returns true if both arrays have equal elements.
 bool operator==<T>(ArrayRef<T> a, ArrayRef<T> b) {
     if (a.size() != b.size()) {
         return false;

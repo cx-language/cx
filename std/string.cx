@@ -1,6 +1,9 @@
+/// A non-owning string view.
 struct string: Copyable, Comparable, Hashable, Printable {
+    /// Character data.
     ArrayRef<char> characters;
 
+    /// Initializes a string of the given length at the given address.
     string(char* pointer, int length) {
         characters = ArrayRef(pointer, length);
     }
@@ -15,14 +18,17 @@ struct string: Copyable, Comparable, Hashable, Printable {
         characters = ArrayRef(cString, int(strlen(cString)));
     }
 
+    /// Initializes a string viewing the given buffer.
     string(StringBuffer* stringBuffer) {
         characters = ArrayRef(stringBuffer.data(), stringBuffer.size());
     }
 
+    /// Returns true if the string has no characters.
     bool empty() {
         return characters.size() == 0;
     }
 
+    /// Returns the number of characters.
     int size() {
         return characters.size();
     }
@@ -37,10 +43,12 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return characters[index];
     }
 
+    /// Returns a pointer to the first character.
     char[*] data() {
         return characters.data();
     }
 
+    /// Returns true if the string contains the given character.
     bool contains(char c) {
         return find(c, 0) != size();
     }
@@ -91,6 +99,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return hashValue;
     }
 
+    /// Returns an iterator over the characters.
     StringIterator iterator() {
         return StringIterator(this);
     }
@@ -106,6 +115,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     // TODO: Support plus and minus signs, non-base-10 numbers, and handle range errors.
+    /// Parses the string as an integer, or returns null.
     int? parseInt() {
         if (empty()) {
             return null;
@@ -126,6 +136,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     // TODO: return iterator instead of eagerly allocating?
+    /// Returns the string with special characters escaped.
     StringBuffer escape() {
         var result = StringBuffer();
 
@@ -145,6 +156,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     // TODO: Return non-allocating iterator instead of allocating a string buffer.
+    /// Returns the string repeated the given number of times.
     StringBuffer repeat(int count) {
         var result = StringBuffer(capacity = this.size() * count);
         for (var _ in 0..count) {
@@ -153,10 +165,12 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return result;
     }
 
+    /// Writes this string to the given stream.
     void print(StringBuffer* stream) {
         stream.write(this);
     }
 
+    /// Compares this string to another.
     Ordering compare(string* other) {
         for (var index in 0..min(size(), other.size())) {
             if (this[index] < other[index]) { return Ordering.Less; }
@@ -167,8 +181,11 @@ struct string: Copyable, Comparable, Hashable, Printable {
         return Ordering.Equal;
     }
 
+    /// Returns true if all characters satisfy the predicate.
     bool all(bool(char) predicate) { return all(iterator(), predicate); }
+    /// Returns true if any character satisfies the predicate.
     bool any(bool(char) predicate) { return any(iterator(), predicate); }
+    /// Returns true if no character satisfies the predicate.
     bool none(bool(char) predicate) { return none(iterator(), predicate); }
 
     private void indexOutOfBounds(string function, int index) {
@@ -176,6 +193,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 }
 
+/// Returns true if both strings are equal.
 bool operator==(string a, string b) {
     if (a.size() != b.size()) {
         return false;
@@ -190,18 +208,22 @@ bool operator==(string a, string b) {
     return true;
 }
 
+/// Returns true if both strings are equal.
 bool operator==(char* a, string b) {
     return string(a) == b;
 }
 
+/// Returns true if both strings differ.
 bool operator!=(char* a, string b) {
     return string(a) != b;
 }
 
+/// Returns true if both strings are equal.
 bool operator==(string a, char* b) {
     return a == string(b);
 }
 
+/// Returns true if both strings differ.
 bool operator!=(string a, char* b) {
     return a != string(b);
 }

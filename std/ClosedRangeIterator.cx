@@ -1,20 +1,27 @@
+/// Iterates over the values of a closed range.
 struct ClosedRangeIterator<T>: Copyable, Iterator<T> {
+    /// Current value.
     T current;
+    /// Last value.
     T end;
 
+    /// Initializes an iterator over the given range.
     ClosedRangeIterator(ClosedRange<T> range) {
         current = range.start();
         end = range.end();
     }
 
+    /// Returns true if there are more values.
     bool hasValue() {
         return current <= end;
     }
 
+    /// Returns the current value.
     T value() {
         return current;
     }
 
+    /// Advances to the next value.
     void increment() {
         current++;
     }
