@@ -1,0 +1,16 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+interface I {
+    void f();
+    // CHECK: [[@LINE+1]]:5: error: interfaces cannot have constructors
+    I(int x) {}
+}
+
+struct S: I {
+    void f() {}
+
+    S(int x) {
+        // CHECK: [[@LINE+1]]:11: error: unknown identifier 'I.init'
+        I.init(x);
+    }
+}

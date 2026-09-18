@@ -1,20 +1,21 @@
 // RUN: check-snapshots
 
 interface Interface {
-    This* that;
-
     This* foo(This* a);
-
-    This* bar() {
-        return foo(foo(this));
-    }
+    This* bar();
 }
 
 struct S: Interface {
+    S* that;
+
     S() { that = this; }
 
     S* foo(S* a) {
         return this;
+    }
+
+    S* bar() {
+        return foo(foo(this));
     }
 }
 

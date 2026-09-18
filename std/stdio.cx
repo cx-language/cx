@@ -19,12 +19,14 @@ void println(char[*]? value) {
 }
 
 void print<T: Printable>(T value) {
-    var s = value.toString();
+    var s = StringBuffer();
+    value.print(s);
     printf("%.*s", s.size(), s.data());
 }
 
 void print<T: Printable>(T* value) {
-    var s = value.toString();
+    var s = StringBuffer();
+    value.print(s);
     printf("%.*s", s.size(), s.data());
 }
 

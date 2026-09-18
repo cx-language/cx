@@ -272,7 +272,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
                     if (auto* exprStmt = llvm::dyn_cast<ExprStmt>(stmt)) {
                         if (auto* callExpr = llvm::dyn_cast<CallExpr>(exprStmt->expr)) {
                             if (auto* constructorDecl = llvm::dyn_cast_or_null<ConstructorDecl>(callExpr->calleeDecl)) {
-                                if (constructorDecl->getTypeDecl() == receiverTypeDecl || receiverTypeDecl->hasInterface(*constructorDecl->getTypeDecl())) {
+                                if (constructorDecl->getTypeDecl() == receiverTypeDecl) {
                                     delegatedInit = true;
                                 }
                             }

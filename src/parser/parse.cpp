@@ -1237,6 +1237,7 @@ Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<Generic
 /// type-decl ::= ('struct' | 'interface') id generic-param-list? interface-list? '{' member-decl* '}' ';'?
 /// interface-list ::= ':' non-empty-type-list
 /// member-decl ::= field-decl | function-decl | constructor-decl | destructor-decl
+/// interface-member-decl ::= function-proto | function-template-proto
 TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel) {
     TypeTag tag;
     switch (consumeToken()) {
@@ -1276,10 +1277,20 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             if (accessLevel != AccessLevel::Default) {
                 WARN(lookAhead(-1).location, "destructors cannot be " << accessLevel);
             }
+            if (tag == TypeTag::Interface) {
+                REPORT_ERROR(getCurrentLocation(), "interfaces cannot have destructors");
+                parseDestructorDecl(*typeDecl);
+                break;
+            }
             typeDecl->addMethod(parseDestructorDecl(*typeDecl));
             break;
         case Token::Identifier:
             if (lookAhead(1) == Token::LeftParen && currentToken().getString() == typeName.getString()) {
+                if (tag == TypeTag::Interface) {
+                    REPORT_ERROR(getCurrentLocation(), "interfaces cannot have constructors");
+                    parseConstructorDecl(*typeDecl, accessLevel);
+                    break;
+                }
                 typeDecl->addMethod(parseConstructorDecl(*typeDecl, accessLevel));
                 hasConstructor = true;
                 break;
@@ -1289,16 +1300,37 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
             auto type = parseType();
             auto location = getCurrentLocation();
             auto name = parseFunctionName(&*typeDecl);
-            auto requireBody = tag != TypeTag::Interface;
 
             switch (currentToken()) {
-            case Token::LeftParen:
-                typeDecl->addMethod(parseFunctionDecl(typeDecl, accessLevel, requireBody, type, name, location));
+            case Token::LeftParen: {
+                auto* method = parseFunctionDecl(typeDecl, accessLevel, tag != TypeTag::Interface, type, name, location);
+                if (tag == TypeTag::Interface && method->body) {
+                    REPORT_ERROR(location, "interface methods cannot have bodies");
+                    break;
+                }
+                typeDecl->addMethod(method);
                 break;
+            }
             case Token::Less:
+                if (tag == TypeTag::Interface) {
+                    auto* method = parseFunctionTemplateProto(typeDecl, accessLevel, type, name, location);
+                    if (currentToken() == Token::LeftBrace) {
+                        REPORT_ERROR(location, "interface methods cannot have bodies");
+                        parseBlock(method);
+                        break;
+                    }
+                    parseStmtTerminator();
+                    typeDecl->addMethod(method);
+                    break;
+                }
                 typeDecl->addMethod(parseFunctionTemplate(typeDecl, accessLevel, type, name, location));
                 break;
             default:
+                if (tag == TypeTag::Interface) {
+                    REPORT_ERROR(location, "interfaces cannot have fields");
+                    parseFieldDecl(*typeDecl, accessLevel, type, name, location);
+                    break;
+                }
                 typeDecl->addField(parseFieldDecl(*typeDecl, accessLevel, type, name, location));
                 break;
             }

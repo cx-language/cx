@@ -1,0 +1,9 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+interface I {
+    // CHECK: [[@LINE+1]]:9: error: interface methods cannot have bodies
+    int f() { return 1; }
+
+    // CHECK: [[@LINE+1]]:9: error: interface methods cannot have bodies
+    int g<T>(T x) { return 1; }
+}

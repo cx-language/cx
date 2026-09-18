@@ -1,20 +1,12 @@
 # Interfaces
 
-Interfaces are abstract types that define a set of requirements (methods and/or fields).
-Other types can implement an interface, and the compiler checks that all the 
-required methods and fields are provided by the implementing type.
-
-Interfaces can also provide default implementations of methods.
-The implementing types will automatically inherit them.
-Fields defined in an interface are also automatically inherited.
+Interfaces are abstract types that define a set of requirements (methods).
+Other types can implement an interface, and the compiler checks that all the
+required methods are provided by the implementing type.
 
 ```cs
 interface Fooable {
     int foo();
-
-    int fooSquared() {
-        return foo() * foo();
-    }
 }
 
 struct X: Fooable {
@@ -29,7 +21,6 @@ void callFoo<T: Fooable>(T* f) {
 
 void main() {
     var x = X();
-    println(x.fooSquared()); // prints 4
     callFoo(x); // prints 2
 }
 ```

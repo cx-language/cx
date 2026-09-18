@@ -1,0 +1,6 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+interface I {
+    // CHECK: [[@LINE+1]]:9: error: interfaces cannot have fields
+    int x;
+}

@@ -23,8 +23,7 @@ const uint16 uint16_min = 0;
 const uint32 uint32_min = 0;
 const uint64 uint64_min = 0;
 
-// TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
-// function for all integer types.
+// TODO: Remove code duplication by sharing the 'compare' implementation between all integer types.
 
 // TODO: Improve print() implementations: optimize + don't depend on libc.
 

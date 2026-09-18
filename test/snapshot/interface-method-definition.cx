@@ -2,11 +2,12 @@
 
 interface A {
     int f();
-    int g() { return f() * 2; }
+    int g();
 }
 
 struct B: A {
     int f() { return 21; }
+    int g() { return f() * 2; }
 }
 
 void main() {

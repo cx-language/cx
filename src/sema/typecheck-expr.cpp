@@ -385,10 +385,6 @@ static void checkRange(const Expr& expr, const llvm::APSInt& value, Type type) {
     }
 }
 
-static bool hasField(TypeDecl& type, const FieldDecl& field) {
-    return llvm::any_of(type.fields, [&](const FieldDecl& f) { return f.getName() == field.getName() && f.type == field.type; });
-}
-
 bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
     auto decls = findDecls(getQualifiedFunctionName(type.getType(), functionDecl.getName(), {}));
 
@@ -406,19 +402,8 @@ bool Typechecker::hasMethod(TypeDecl& type, FunctionDecl& functionDecl) const {
 bool Typechecker::providesInterfaceRequirements(TypeDecl& type, TypeDecl& interface, std::string* errorReason) const {
     auto thisTypeResolvedInterface = llvm::cast<TypeDecl>(interface.instantiate({{"This", type.getType()}}, {}));
 
-    for (auto& fieldRequirement : thisTypeResolvedInterface->fields) {
-        if (!hasField(type, fieldRequirement)) {
-            if (errorReason) {
-                *errorReason = ("doesn't have field '" + fieldRequirement.getName() + "'").str();
-            }
-            return false;
-        }
-    }
-
     for (auto& requiredMethod : thisTypeResolvedInterface->methods) {
         if (auto* functionDecl = llvm::dyn_cast<FunctionDecl>(requiredMethod)) {
-            if (functionDecl->body) continue;
-
             if (!hasMethod(type, *functionDecl)) {
                 if (errorReason) {
                     auto params = map(functionDecl->getParams(), [](const ParamDecl& param) {
@@ -951,6 +936,12 @@ static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& 
     return true;
 }
 
+static void checkCallable(const FunctionDecl& functionDecl, llvm::StringRef callee, Location location) {
+    if (!functionDecl.body && !functionDecl.isExtern()) {
+        ERROR(location, "cannot call '" << callee << "' because it has no body");
+    }
+}
+
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
     std::vector<Match> matches;
     std::vector<Match> templateMatches;
@@ -975,6 +966,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             if (genericArgs.empty()) continue; // Couldn't infer generic arguments.
 
             auto* functionDecl = functionTemplate->instantiate(genericArgs);
+            checkCallable(*functionDecl, callee, expr.callee->location);
 
             if (decls.size() == 1) {
                 validateAndConvertArguments(expr, *functionDecl, callee, expr.callee->location);
@@ -990,11 +982,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         case DeclKind::MethodDecl:
         case DeclKind::ConstructorDecl: {
             auto functionDecl = llvm::cast<FunctionDecl>(decl);
-
-            // TODO: Figure out where to perform this.
-            if (functionDecl && functionDecl->getTypeDecl() && functionDecl->getTypeDecl()->isInterface()) {
-                functionDecl = functionDecl->instantiate({{"This", functionDecl->getTypeDecl()->getType()}}, {});
-            }
+            checkCallable(*functionDecl, callee, expr.callee->location);
 
             if (decls.size() == 1) {
                 validateGenericArgCount(0, expr.genericArgs, expr.getFunctionName(), expr.location);
@@ -1284,10 +1272,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     decl->referenced = true;
 
     if (auto constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
-        if (constructorDecl->getTypeDecl()->isInterface()) {
-            typecheckFunctionDecl(*constructorDecl);
-        }
-        return llvm::cast<ConstructorDecl>(decl)->getTypeDecl()->getType();
+        return constructorDecl->getTypeDecl()->getType();
     } else if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
         return functionDecl->getFunctionType()->returnType;
     } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {

@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+interface I {
+    int g();
+}
+
+struct B: I {
+    int g() { return 1; }
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:15: error: cannot call 'I.g' because it has no body
+    var x = I.g();
+}

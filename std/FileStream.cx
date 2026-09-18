@@ -17,7 +17,8 @@ struct OutputFileStream {
     }
 
     void write<T: Printable>(T* value) {
-        var s = value.toString();
+        var s = StringBuffer();
+        value.print(s);
         fprintf(file!, "%.*s", s.size(), s.data());
         fflush(file);
     }

@@ -16,5 +16,7 @@ struct A: Printable {
 }
 
 void testCustomPrintableStruct() {
-    assert(string(A("foo", "bar").toString()) == "foo+bar");
+    var stream = StringBuffer();
+    A("foo", "bar").print(stream);
+    assert(string(stream) == "foo+bar");
 }

@@ -170,42 +170,6 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
         }
     }
 
-    // Typecheck implemented interfaces so that inherited methods and fields are added to the implementing type before they're referenced.
-    for (auto& sourceFile : module.sourceFiles) {
-        for (auto& decl : sourceFile.topLevelDecls) {
-            currentModule = &module;
-            currentSourceFile = &sourceFile;
-
-            if (auto typeDecl = llvm::dyn_cast<TypeDecl>(decl)) {
-                llvm::StringMap<Type> genericArgs = {{"This", typeDecl->getType()}};
-
-                for (Type interface : typeDecl->interfaces) {
-                    try {
-                        typecheckType(interface, typeDecl->accessLevel);
-                    } catch (const CompileError& error) {
-                        error.report();
-                    }
-                    std::vector<FieldDecl> inheritedFields;
-
-                    for (auto& field : interface.getDecl()->fields) {
-                        inheritedFields.push_back(field.instantiate(genericArgs, *typeDecl));
-                    }
-
-                    typeDecl->fields.insert(typeDecl->fields.begin(), inheritedFields.begin(), inheritedFields.end());
-
-                    for (auto member : interface.getDecl()->methods) {
-                        auto methodDecl = llvm::cast<MethodDecl>(member);
-                        if (methodDecl->body) {
-                            auto copy = methodDecl->instantiate(genericArgs, {}, *typeDecl);
-                            currentModule->addToSymbolTable(*copy);
-                            typeDecl->addMethod(copy);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // Infer the types of global variables for use before their declaration.
     for (auto& sourceFile : module.sourceFiles) {
         currentModule = &module;

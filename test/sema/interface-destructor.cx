@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+interface I {
+    void f();
+    // CHECK: [[@LINE+1]]:5: error: interfaces cannot have destructors
+    ~I() {}
+}
