@@ -78,6 +78,10 @@ def parse_fixture(source=FIXTURE):
     return directory, parse_file(path)
 
 
+def fenced(signature):
+    return f"```cs {{.noRun}}\n{signature}\n```"
+
+
 class PageNameTest(unittest.TestCase):
     def test_top_level(self):
         self.assertEqual(page_name("List.cx"), "std-List")
@@ -106,16 +110,16 @@ class FixtureTest(unittest.TestCase):
 
     def test_members(self):
         self.assertIn("### `size` {#Widget-size}", self.markdown)
-        self.assertIn("`int size()`", self.markdown)
+        self.assertIn(fenced("int size()"), self.markdown)
         self.assertIn("Returns the size.", self.markdown)
-        self.assertIn("`int size;`", self.markdown)
-        self.assertIn("`Widget(int size)`", self.markdown)
+        self.assertIn(fenced("int size;"), self.markdown)
+        self.assertIn(fenced("Widget(int size)"), self.markdown)
 
     def test_private_member_omitted(self):
         self.assertNotIn("helper", self.markdown)
 
     def test_commented_out_code_ignored(self):
-        self.assertEqual(self.markdown.count("`Widget(int size)`"), 1)
+        self.assertEqual(self.markdown.count(fenced("Widget(int size)")), 1)
 
     def test_section_marker_dropped(self):
         self.assertNotIn("Section marker", self.markdown)
@@ -124,15 +128,15 @@ class FixtureTest(unittest.TestCase):
         self.assertIn("## `operator==` {#fn-operator-eq}", self.markdown)
 
     def test_interface_keeps_semicolon(self):
-        self.assertIn("`void run();`", self.markdown)
+        self.assertIn(fenced("void run();"), self.markdown)
 
     def test_enum_variants(self):
         self.assertIn("### `Red` {#Color-Red}", self.markdown)
         self.assertIn("### `Green` {#Color-Green}", self.markdown)
 
     def test_extern_and_const(self):
-        self.assertIn("`extern int puts(const char* str);`", self.markdown)
-        self.assertIn("`const int answer = 42;`", self.markdown)
+        self.assertIn(fenced("extern int puts(const char* str);"), self.markdown)
+        self.assertIn(fenced("const int answer = 42;"), self.markdown)
 
     def test_no_conditional_note(self):
         self.assertNotIn("platform-conditional", self.markdown)
@@ -207,7 +211,7 @@ class StdlibTest(unittest.TestCase):
             "# List.cx",
             "## `struct List<Element>` {#type-List}",
             "### `push` {#List-push}",
-            "`void push(Element element)`",
+            fenced("void push(Element element)"),
             "Adds the given element to the end of the list.",
         ]:
             self.assertIn(snippet, page)
@@ -226,9 +230,11 @@ class StdlibTest(unittest.TestCase):
             self.assertNotIn(f"`{name}`", combined, name)
             self.assertNotIn(f" {name}(", combined, name)
 
-    def test_no_fenced_code_blocks(self):
+    def test_fences_are_all_highlighted_and_not_runnable(self):
         for relpath, markdown in self.rendered.items():
-            self.assertNotIn("```", markdown, relpath)
+            for line in markdown.splitlines():
+                if line.startswith("```") and line != "```":
+                    self.assertEqual(line, "```cs {.noRun}", relpath)
 
     def test_no_duplicate_ids_per_page(self):
         for relpath, markdown in self.rendered.items():

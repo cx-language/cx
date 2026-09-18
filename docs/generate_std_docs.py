@@ -196,10 +196,16 @@ def render_doc(doc, out):
         out.append("")
 
 
+def render_signature(signature, out):
+    out.append("```cs {.noRun}")
+    out.append(signature)
+    out.append("```")
+    out.append("")
+
+
 def render_group(group, out):
     for declaration in group.declarations:
-        out.append(f"`{declaration.signature}`")
-        out.append("")
+        render_signature(declaration.signature, out)
         render_doc(declaration.doc, out)
 
 
@@ -242,8 +248,7 @@ def render_file_page(relpath, types, functions, constants, conditional):
     for name, declaration in constants:
         out.append(f"## `{name}` {{#const-{name}}}")
         out.append("")
-        out.append(f"`{declaration.signature}`")
-        out.append("")
+        render_signature(declaration.signature, out)
         render_doc(declaration.doc, out)
 
     return finish(out)
