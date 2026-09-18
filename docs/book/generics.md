@@ -40,13 +40,23 @@ A type parameter can be constrained to only accept types that implement a given 
 The constraint is written after a colon following the parameter name.
 
 ```cs
+interface Fooable {
+    int foo();
+}
+
+struct X: Fooable {
+    int foo() {
+        return 42;
+    }
+}
+
 void callFoo<T: Fooable>(T* f) {
     println(f.foo());
 }
 
 void main() {
     var x = X();
-    callFoo(x);
+    callFoo(x); // prints 42
 }
 ```
 
