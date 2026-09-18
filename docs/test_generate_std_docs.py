@@ -101,7 +101,7 @@ class FixtureTest(unittest.TestCase):
         cls.directory.cleanup()
 
     def test_page_title_and_source(self):
-        self.assertIn("# fixture.cx", self.markdown)
+        self.assertIn("# fixture\n", self.markdown)
         self.assertIn("Auto-generated from [fixture.cx]", self.markdown)
 
     def test_type_header_and_doc(self):
@@ -181,8 +181,8 @@ class TocTest(unittest.TestCase):
         self.assertEqual(
             items,
             [
-                '                <li><a href="./std-List">List.cx</a></li>',
-                '                <li><a href="./std-os-gnu">os/gnu.cx</a></li>',
+                '                <li><a href="./std-List">List</a></li>',
+                '                <li><a href="./std-os-gnu">os/gnu</a></li>',
             ],
         )
 
@@ -208,7 +208,7 @@ class StdlibTest(unittest.TestCase):
     def test_known_entries(self):
         page = self.rendered["List.cx"]
         for snippet in [
-            "# List.cx",
+            "# List",
             "## `struct List<Element>` {#type-List}",
             "### `push` {#List-push}",
             fenced("void push(Element element)"),
@@ -254,7 +254,7 @@ class StagingTest(unittest.TestCase):
         self.assertIn("# Standard library reference", index)
         self.assertIn("- [fixture.cx](./std-fixture): ", index)
         self.assertIn("## `struct Widget: Copyable` {#type-Widget}", page)
-        self.assertIn('<li><a href="./std-fixture">fixture.cx</a></li>', toc)
+        self.assertIn('<li><a href="./std-fixture">fixture</a></li>', toc)
         self.assertNotIn("<!--STD-PAGES-->", toc)
 
 

@@ -189,6 +189,10 @@ def page_name(relpath):
     return "std-" + relpath.removesuffix(".cx").replace("/", "-")
 
 
+def display_name(relpath):
+    return relpath.removesuffix(".cx")
+
+
 def render_doc(doc, out):
     for line in doc:
         out.append(line)
@@ -223,7 +227,7 @@ def render_file_page(relpath, types, functions, constants, conditional):
     constants = sorted(constants, key=lambda c: c[0])
 
     out = [
-        f"# {relpath}",
+        f"# {display_name(relpath)}",
         "",
         f"Auto-generated from [{relpath}]({SOURCE_URL}/{relpath}).",
         "",
@@ -277,7 +281,10 @@ TOC_PLACEHOLDER = "<!--STD-PAGES-->"
 
 
 def render_toc_items(pages):
-    return [f'                <li><a href="./{page_name(relpath)}">{relpath}</a></li>' for relpath, *_ in pages]
+    return [
+        f'                <li><a href="./{page_name(relpath)}">{display_name(relpath)}</a></li>'
+        for relpath, *_ in pages
+    ]
 
 
 def write_toc(output_dir, pages):
