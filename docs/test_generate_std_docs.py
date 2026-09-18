@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from generate_std_docs import (
     main,
+    member_name,
     page_name,
     parse_file,
     parse_std,
@@ -80,6 +81,17 @@ def parse_fixture(source=FIXTURE):
 
 def fenced(signature):
     return f"```cs {{.noRun}}\n{signature}\n```"
+
+
+class MemberNameTest(unittest.TestCase):
+    def test_generic_method_with_generic_return(self):
+        self.assertEqual(member_name("List<Output> map<Output>(Output(Element*) transform)"), "map")
+
+    def test_plain_method(self):
+        self.assertEqual(member_name("void push(Element element)"), "push")
+
+    def test_operator(self):
+        self.assertEqual(member_name("bool operator== <T: Comparable>(T* a, T* b)"), "operator==")
 
 
 class PageNameTest(unittest.TestCase):
