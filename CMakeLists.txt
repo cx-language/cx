@@ -121,6 +121,8 @@ target_include_directories(example_embedding PRIVATE src)
 target_link_libraries(example_embedding libcx)
 add_test(NAME examples COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>")
 add_test(NAME examples-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/examples/build_examples.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
+add_test(NAME docs-snippets COMMAND python3 "${PROJECT_SOURCE_DIR}/docs/check_snippets.py" "--cx=$<TARGET_FILE:cx>")
+add_test(NAME docs-snippets-c-backend COMMAND python3 "${PROJECT_SOURCE_DIR}/docs/check_snippets.py" "--cx=$<TARGET_FILE:cx>" "--backend=c")
 # Language server end-to-end tests (query subprocess + stdio server session).
 add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "--cx-lsp=$<TARGET_FILE:cx-lsp>" "--cx=$<TARGET_FILE:cx>")
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
