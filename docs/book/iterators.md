@@ -6,14 +6,11 @@ which includes arrays, lists, strings, maps, sets, and numeric ranges.
 
 An iterator is any type that implements the `Iterator` interface:
 
-```cs
+```cs {.noRun}
 interface Iterator<Element> {
     bool hasValue();
     Element value();
     void increment();
-}
-
-void main() {
 }
 ```
 
