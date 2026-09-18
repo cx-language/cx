@@ -55,7 +55,15 @@ for file in book/*.md index.html; do
     esac
 
     basename="${basename%.*}"
-    pandoc "$file" -o "build/$basename.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --metadata pagetitle="C*"
+
+    if [ "$basename" = "index" ]; then
+        title="C* Programming Language"
+    else
+        # The first '# ' heading is the section name.
+        title="C* - $(sed -n 's/^# //p' "$file" | head -n 1)"
+    fi
+
+    pandoc "$file" -o "build/$basename.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -126,5 +134,29 @@ done
 
 if [ "$SERVE" = 1 ]; then
     echo "Serving build/ at http://localhost:$PORT"
-    exec python3 -m http.server "$PORT" --directory build
+    # The site links pages without the .html suffix (./introduction), which
+    # GitHub Pages resolves to introduction.html. Plain 'http.server' does a
+    # literal lookup and would 404, so resolve 'path' to 'path.html' as well.
+    exec python3 - "$PORT" <<'EOF'
+import functools
+import http.server
+import os
+import sys
+
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def translate_path(self, path):
+        translated = super().translate_path(path)
+        if not os.path.exists(translated):
+            html_path = translated + ".html"
+            if os.path.isfile(html_path):
+                return html_path
+        return translated
+
+
+http.server.ThreadingHTTPServer(
+    ("", int(sys.argv[1])),
+    functools.partial(Handler, directory="build"),
+).serve_forever()
+EOF
 fi

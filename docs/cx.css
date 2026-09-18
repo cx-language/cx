@@ -16,21 +16,22 @@
 .cm-s-cx span.cm-attribute { color: var(--blue); }
 .cm-s-cx span.cm-tag { color: #0000a0; }
 .cm-s-cx span.cm-link { color: var(--blue); }
-.cm-s-cx .CodeMirror-activeline-background { background: #FFFAE3; }
+.cm-s-cx .CodeMirror-activeline-background { background: var(--background-color-3); }
 
-.cm-s-cx span.cm-builtin { color: #30a; }
+.cm-s-cx span.cm-builtin { color: var(--blue); }
 .cm-s-cx span.cm-bracket { color: #cc7; }
 
 .cm-s-cx .CodeMirror-matchingbracket { outline: 1px solid grey; color: var(--text-color) !important; }
 
 .CodeMirror-hints.cx {
-  color: #616569;
-  background-color: #ebf3fd !important;
+  color: var(--text-color);
+  background-color: var(--background-color-2) !important;
+  border: 1px solid var(--background-color-3);
 }
 
 .CodeMirror-hints.cx .CodeMirror-hint-active {
-  background-color: #a2b8c9 !important;
-  color: #5c6065 !important;
+  background-color: var(--background-color-3) !important;
+  color: var(--text-color) !important;
 }
 
 .CodeMirror-selected { background-color: var(--background-color-3) !important; }
