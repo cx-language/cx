@@ -1,0 +1,7 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+int foo() {
+    // CHECK: [[@LINE+1]]:5: error: unknown identifier 'nosuchfunc'
+    nosuchfunc();
+}
+// CHECK: 3:5: error: 'foo' is missing a return statement

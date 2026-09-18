@@ -166,7 +166,10 @@ static bool allPathsReturn(llvm::ArrayRef<Stmt*> block) {
         auto& exprStmt = llvm::cast<ExprStmt>(*block.back());
         auto call = llvm::dyn_cast<CallExpr>(exprStmt.expr);
         if (!call) return false;
-        if (call->type.isNeverType()) return true;
+        // The call can lack a type if it failed to typecheck (the error was
+        // already reported by typecheckStmt, which continues with the rest of
+        // the function body instead of bailing out).
+        if (call->type && call->type.isNeverType()) return true;
         // Builtin `assert(false)` branches to `assertFail`, which aborts, so it terminates all paths.
         if (!call->isMethodCall() && call->getFunctionName() == "assert" && call->args.size() == 1) {
             if (auto* condition = llvm::dyn_cast<BoolLiteralExpr>(call->args[0].value)) {
