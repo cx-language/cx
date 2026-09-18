@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from generate_std_docs import parse_all, render
+from generate_std_docs import main, parse_all, render
 
 DOCS_DIR = Path(__file__).resolve().parent
 STD_DIR = DOCS_DIR.parent / "std"
@@ -148,6 +148,16 @@ class StdlibTest(unittest.TestCase):
     def test_no_duplicate_ids(self):
         ids = re.findall(r"\{#(.*?)\}", self.markdown)
         self.assertEqual(len(ids), len(set(ids)))
+
+
+class StagingTest(unittest.TestCase):
+    def test_main_writes_index_to_output_dir(self):
+        with tempfile.TemporaryDirectory() as std_dir, tempfile.TemporaryDirectory() as output_dir:
+            Path(std_dir, "fixture.cx").write_text(FIXTURE)
+            self.assertEqual(main(["--std-dir", std_dir, "--output-dir", output_dir]), 0)
+            markdown = Path(output_dir, "std.md").read_text()
+        self.assertIn("# Standard library reference", markdown)
+        self.assertIn("## `struct Widget: Copyable` {#type-Widget}", markdown)
 
 
 if __name__ == "__main__":

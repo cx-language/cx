@@ -32,6 +32,7 @@ examples/opengl/opengl
 
 # Generated documentation
 docs/html/
+docs/.generated/
 
 # LaTeX
 *.aux

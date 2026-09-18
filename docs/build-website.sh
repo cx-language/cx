@@ -42,10 +42,12 @@ mkdir ../build
 # pandoc spec.tex -o ../build/spec.html -s --toc --include-before-body="../top-nav.html" --include-before-body="../toc.html"
 cd ..
 
-# Regenerate the standard library reference from the stdlib sources.
+# Regenerate the standard library reference from the stdlib sources into a
+# staging directory. The generated pages are build products, not versioned.
+rm -rf .generated
 python3 generate_std_docs.py || exit
 
-for file in book/*.md index.html; do
+for file in book/*.md .generated/*.md index.html; do
     basename=$(basename "$file")
 
     case $basename in

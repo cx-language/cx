@@ -2,12 +2,13 @@
 """Generate the website's standard library reference from the stdlib sources.
 
 Reads the public declarations and /// doc comments in std/*.cx and writes
-them as Markdown to docs/book/std.md. Private declarations are omitted.
+them as Markdown to a staging directory for the website build.
+Private declarations are omitted.
 Only single-line declarations are recognized; anything else is ignored.
 
 Usage:
-    docs/generate_std_docs.py           regenerate docs/book/std.md
-    docs/generate_std_docs.py --check   exit 1 if docs/book/std.md is stale
+    docs/generate_std_docs.py                       regenerate into docs/.generated
+    docs/generate_std_docs.py --output-dir <dir>    regenerate elsewhere
 """
 
 import argparse
@@ -17,7 +18,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 STD_DIR = ROOT / "std"
-OUTPUT = ROOT / "docs" / "book" / "std.md"
+STAGING_DIR = ROOT / "docs" / ".generated"
 SOURCE_URL = "https://github.com/emillaine/cx/blob/main/std"
 
 OPERATOR_SLUGS = {
@@ -254,23 +255,17 @@ def render(types, functions, constants):
     return "\n".join(out).rstrip() + "\n"
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Generate the standard library reference.")
-    parser.add_argument("--check", action="store_true", help="fail if the output is out of date")
     parser.add_argument("--std-dir", default=STD_DIR, help="stdlib source directory")
-    parser.add_argument("--output", default=OUTPUT, help="output Markdown file")
-    args = parser.parse_args()
+    parser.add_argument("--output-dir", default=STAGING_DIR, help="output directory for generated Markdown")
+    args = parser.parse_args(argv)
 
     types, functions, constants = parse_all(pathlib.Path(args.std_dir))
-    markdown = render(types, functions, constants)
-    output = pathlib.Path(args.output)
-    if args.check:
-        if not output.exists() or output.read_text() != markdown:
-            print(f"{output} is out of date, run docs/generate_std_docs.py to update it", file=sys.stderr)
-            return 1
-        print(f"{output} is up to date.")
-        return 0
-    output.write_text(markdown)
+    output_dir = pathlib.Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output = output_dir / "std.md"
+    output.write_text(render(types, functions, constants))
     print(f"Wrote {output} from {len(types)} types, {len(functions)} functions, {len(constants)} constants.")
     return 0
 
