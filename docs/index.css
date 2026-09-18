@@ -157,6 +157,7 @@ pre, code, .sourceCode {
     border: 1px solid var(--background-color-3);
     border-radius: 4px;
     padding: 0.15em 0.4em;
+    white-space: nowrap;
 }
 
 .sourceCode, pre code {
