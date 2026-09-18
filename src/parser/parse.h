@@ -83,6 +83,7 @@ private:
     void parseStmtTerminator(const char* contextInfo = nullptr);
     std::vector<NamedValue> parseArgumentList(bool allowEmpty);
     std::vector<NamedValue> parseBraceArgumentList();
+    std::vector<NamedValue> parseArgumentListImpl(Token::Kind left, Token::Kind right, bool allowEmpty);
     VarExpr* parseVarExpr();
     VarExpr* parseThis();
     StringLiteralExpr* parseStringLiteral();

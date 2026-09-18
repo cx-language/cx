@@ -118,47 +118,22 @@ void Parser::parseStmtTerminator(const char* contextInfo) {
 }
 
 /// argument-list ::= '(' ')' | '(' nonempty-argument-list ','? ')'
-/// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
-/// argument ::= (id '=')? expr
-std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
-    parse(Token::LeftParen);
-    std::vector<NamedValue> args;
-
-    if (currentToken() == Token::RightParen && allowEmpty) {
-        consumeToken();
-        return {};
-    }
-
-    while (true) {
-        std::string name;
-        Location location = Location();
-        if (lookAhead(1) == Token::Assignment) {
-            auto result = parse(Token::Identifier);
-            name = result.getString().str();
-            location = result.location;
-            consumeToken();
-        }
-        auto value = parseExpr();
-        if (!location.isValid()) location = value->location;
-        args.push_back({std::move(name), value, location});
-
-        if (parse({Token::Comma, Token::RightParen}) == Token::RightParen) return args;
-        // Allow trailing comma (e.g. `foo(a, b,)`).
-        if (currentToken() == Token::RightParen) {
-            consumeToken();
-            return args;
-        }
-    }
-}
-
 /// brace-argument-list ::= '{' '}' | '{' nonempty-argument-list ','? '}'
 /// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
 /// argument ::= (id '=')? expr
+std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
+    return parseArgumentListImpl(Token::LeftParen, Token::RightParen, allowEmpty);
+}
+
 std::vector<NamedValue> Parser::parseBraceArgumentList() {
-    parse(Token::LeftBrace);
+    return parseArgumentListImpl(Token::LeftBrace, Token::RightBrace, true);
+}
+
+std::vector<NamedValue> Parser::parseArgumentListImpl(Token::Kind left, Token::Kind right, bool allowEmpty) {
+    parse(left);
     std::vector<NamedValue> args;
 
-    if (currentToken() == Token::RightBrace) {
+    if (currentToken() == right && allowEmpty) {
         consumeToken();
         return {};
     }
@@ -176,9 +151,10 @@ std::vector<NamedValue> Parser::parseBraceArgumentList() {
         if (!location.isValid()) location = value->location;
         args.push_back({std::move(name), value, location});
 
-        if (parse({Token::Comma, Token::RightBrace}) == Token::RightBrace) return args;
-        // Allow trailing comma (e.g. `Foo{a, b,}`).
-        if (currentToken() == Token::RightBrace) {
+        Token::Kind expected[] = {Token::Comma, right};
+        if (parse(expected) == right) return args;
+        // Allow trailing comma (e.g. `foo(a, b,)` or `Foo{a, b,}`).
+        if (currentToken() == right) {
             consumeToken();
             return args;
         }
@@ -563,13 +539,8 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
 
 /// constructor-call ::= expr generic-argument-list? brace-argument-list
 CallExpr* Parser::parseBraceCallExpr(Expr* callee) {
-    std::vector<Type> genericArgs;
-    if (currentToken() == Token::Less) {
-        genericArgs = parseGenericArgumentList();
-    }
-    auto location = getCurrentLocation();
-    auto args = parseBraceArgumentList();
-    return new CallExpr(callee, std::move(args), std::move(genericArgs), location);
+    ASSERT(currentToken().is({Token::Less, Token::LeftBrace}));
+    return parseCallExpr(callee);
 }
 
 LambdaExpr* Parser::parseLambdaExpr() {
