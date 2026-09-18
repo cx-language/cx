@@ -82,6 +82,7 @@ private:
     Token parse(llvm::ArrayRef<Token::Kind> expected, const char* contextInfo = nullptr);
     void parseStmtTerminator(const char* contextInfo = nullptr);
     std::vector<NamedValue> parseArgumentList(bool allowEmpty);
+    std::vector<NamedValue> parseBraceArgumentList();
     VarExpr* parseVarExpr();
     VarExpr* parseThis();
     StringLiteralExpr* parseStringLiteral();
@@ -105,6 +106,7 @@ private:
     Expr* parseIndexExprOrIndexAssignmentExpr(Expr* base);
     UnwrapExpr* parseUnwrapExpr(Expr* operand);
     CallExpr* parseCallExpr(Expr* callee);
+    CallExpr* parseBraceCallExpr(Expr* callee);
     LambdaExpr* parseLambdaExpr();
     IfExpr* parseIfExpr(Expr* condition);
     bool shouldParseVarStmt();

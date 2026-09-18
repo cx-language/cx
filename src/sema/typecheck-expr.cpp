@@ -1150,9 +1150,13 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
                                                                            << "'");
         } else {
             auto argTypes = map(expr.args, [&](const NamedValue& arg) { return typecheckExpr(*arg.value).toString(); });
-            ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(candidates, expr),
-                             (isConstructorCall ? "no matching constructor '" : "no matching function '")
-                                 << calleeWithGenericArgs << "(" << llvm::join(argTypes, ", ") << ")'");
+            if (isConstructorCall) {
+                ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(candidates, expr),
+                                 "no matching constructor '" << calleeWithGenericArgs << "{" << llvm::join(argTypes, ", ") << "}'");
+            } else {
+                ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(candidates, expr),
+                                 "no matching function '" << calleeWithGenericArgs << "(" << llvm::join(argTypes, ", ") << ")'");
+            }
         }
     } else {
         ERROR(expr.callee->location, "'" << callee << "' is not a function");

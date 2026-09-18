@@ -151,6 +151,40 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
     }
 }
 
+/// brace-argument-list ::= '{' '}' | '{' nonempty-argument-list ','? '}'
+/// nonempty-argument-list ::= argument | nonempty-argument-list ',' argument
+/// argument ::= (id '=')? expr
+std::vector<NamedValue> Parser::parseBraceArgumentList() {
+    parse(Token::LeftBrace);
+    std::vector<NamedValue> args;
+
+    if (currentToken() == Token::RightBrace) {
+        consumeToken();
+        return {};
+    }
+
+    while (true) {
+        std::string name;
+        Location location = Location();
+        if (lookAhead(1) == Token::Assignment) {
+            auto result = parse(Token::Identifier);
+            name = result.getString().str();
+            location = result.location;
+            consumeToken();
+        }
+        auto value = parseExpr();
+        if (!location.isValid()) location = value->location;
+        args.push_back({std::move(name), value, location});
+
+        if (parse({Token::Comma, Token::RightBrace}) == Token::RightBrace) return args;
+        // Allow trailing comma (e.g. `Foo{a, b,}`).
+        if (currentToken() == Token::RightBrace) {
+            consumeToken();
+            return args;
+        }
+    }
+}
+
 /// var-expr ::= id
 VarExpr* Parser::parseVarExpr() {
     ASSERT(currentToken() == Token::Identifier);
@@ -494,13 +528,47 @@ UnwrapExpr* Parser::parseUnwrapExpr(Expr* operand) {
 }
 
 /// call-expr ::= expr generic-argument-list? argument-list
+/// constructor-call ::= expr generic-argument-list? brace-argument-list
+static bool isTypeLikeName(llvm::StringRef name) {
+    if (name.empty()) return false;
+    if (name[0] >= 'A' && name[0] <= 'Z') return true;
+    if (Type::isBuiltinScalar(name)) return true;
+    if (name == "string" || name == "never") return true;
+    return false;
+}
+
+static bool isBraceCallCallee(Expr* callee) {
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(callee)) {
+        return isTypeLikeName(varExpr->identifier);
+    }
+    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(callee)) {
+        return isTypeLikeName(memberExpr->member);
+    }
+    return false;
+}
+
 CallExpr* Parser::parseCallExpr(Expr* callee) {
     std::vector<Type> genericArgs;
     if (currentToken() == Token::Less) {
         genericArgs = parseGenericArgumentList();
     }
     auto location = getCurrentLocation();
+    if (currentToken() == Token::LeftBrace) {
+        auto args = parseBraceArgumentList();
+        return new CallExpr(callee, std::move(args), std::move(genericArgs), location);
+    }
     auto args = parseArgumentList(true);
+    return new CallExpr(callee, std::move(args), std::move(genericArgs), location);
+}
+
+/// constructor-call ::= expr generic-argument-list? brace-argument-list
+CallExpr* Parser::parseBraceCallExpr(Expr* callee) {
+    std::vector<Type> genericArgs;
+    if (currentToken() == Token::Less) {
+        genericArgs = parseGenericArgumentList();
+    }
+    auto location = getCurrentLocation();
+    auto args = parseBraceArgumentList();
     return new CallExpr(callee, std::move(args), std::move(genericArgs), location);
 }
 
@@ -616,6 +684,13 @@ Expr* Parser::parsePostfixExpr() {
         case Token::LeftParen:
             expr = parseCallExpr(parseVarExpr());
             break;
+        case Token::LeftBrace:
+            if (isTypeLikeName(currentToken().getString()) && lookAhead(1).location.line == currentToken().location.line) {
+                expr = parseBraceCallExpr(parseVarExpr());
+            } else {
+                expr = parseVarExpr();
+            }
+            break;
         case Token::RightArrow:
             expr = parseLambdaExpr();
             break;
@@ -680,6 +755,13 @@ Expr* Parser::parsePostfixExpr() {
             break;
         case Token::LeftParen:
             expr = parseCallExpr(expr);
+            break;
+        case Token::LeftBrace:
+            if (isBraceCallCallee(expr) && currentToken().location.line == expr->location.line) {
+                expr = parseBraceCallExpr(expr);
+            } else {
+                return expr;
+            }
             break;
         case Token::Dot:
             consumeToken();

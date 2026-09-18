@@ -6,11 +6,11 @@ struct Foo: Copyable {
 }
 
 void main() {
-    // CHECK: 15:9: error: no matching constructor 'Foo(float)'
+    // CHECK: 15:9: error: no matching constructor 'Foo{float}'
     // CHECK-NOT: 4:5: note: candidate function:
     // CHECK-NOT: Foo() { }
     // CHECK: 5:5: note: candidate function:
     // CHECK-NEXT: Foo(int i) { }
     // CHECK-NOT: note
-    _ = Foo(3.14)
+    _ = Foo { 3.14 }
 }
