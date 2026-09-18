@@ -255,6 +255,84 @@ int symbolKindToLsp(const std::string& kind) {
     return 13; // Variable
 }
 
+struct DecodedToken {
+    int line = 0;
+    int start = 0;
+    int length = 0;
+    int type = 0;
+    int modifiers = 0;
+};
+
+/// Maps query token names to legend indices, dropping unknown types and empty spans.
+std::vector<DecodedToken> decodeSemanticTokens(const JsonValue* entries) {
+    std::vector<DecodedToken> tokens;
+    if (!entries || !entries->isArray()) return tokens;
+    const auto& types = semanticTokenTypes();
+    const auto& modifiers = semanticTokenModifiers();
+    for (auto& entry : entries->array) {
+        std::string typeName = entry.getString("type");
+        int typeIndex = -1;
+        for (size_t i = 0; i < types.size(); ++i) {
+            if (types[i] == typeName) {
+                typeIndex = static_cast<int>(i);
+                break;
+            }
+        }
+        if (typeIndex < 0) continue;
+        int mask = 0;
+        if (auto* mods = entry.find("modifiers")) {
+            for (auto& mod : mods->array) {
+                for (size_t i = 0; i < modifiers.size(); ++i) {
+                    if (mod.isString() && mod.str == modifiers[i]) mask |= 1 << static_cast<int>(i);
+                }
+            }
+        }
+        DecodedToken token;
+        token.line = static_cast<int>(entry.getInt("line"));
+        token.start = static_cast<int>(entry.getInt("start"));
+        token.length = static_cast<int>(entry.getInt("length"));
+        token.type = typeIndex;
+        token.modifiers = mask;
+        if (token.length <= 0) continue;
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
+bool tokenOverlapsRange(const DecodedToken& token, LspPosition rangeStart, LspPosition rangeEnd) {
+    if (token.line < rangeStart.line || token.line > rangeEnd.line) return false;
+    if (token.line == rangeStart.line && token.start + token.length <= rangeStart.character) return false;
+    if (token.line == rangeEnd.line && token.start >= rangeEnd.character) return false;
+    return true;
+}
+
+/// Delta-encodes absolute tokens into the LSP `{"data": [...]}` response.
+JsonValue encodeSemanticTokens(std::vector<DecodedToken> tokens) {
+    std::sort(tokens.begin(), tokens.end(), [](const DecodedToken& a, const DecodedToken& b) {
+        if (a.line != b.line) return a.line < b.line;
+        return a.start < b.start;
+    });
+    std::vector<JsonValue> data;
+    int prevLine = 0;
+    int prevStart = 0;
+    bool first = true;
+    for (auto& token : tokens) {
+        int deltaLine = first ? token.line : token.line - prevLine;
+        int deltaStart = (first || token.line != prevLine) ? token.start : token.start - prevStart;
+        data.push_back(JsonValue::numberValue(deltaLine));
+        data.push_back(JsonValue::numberValue(deltaStart));
+        data.push_back(JsonValue::numberValue(token.length));
+        data.push_back(JsonValue::numberValue(token.type));
+        data.push_back(JsonValue::numberValue(token.modifiers));
+        prevLine = token.line;
+        prevStart = token.start;
+        first = false;
+    }
+    JsonValue response = JsonValue::objectValue();
+    response.set("data", JsonValue::arrayValue(std::move(data)));
+    return response;
+}
+
 /// True for JSON-RPC requests (which demand a response), false for
 /// notifications - including notifications with an explicit null id, which
 /// must never be answered per spec.
@@ -533,6 +611,20 @@ int runServer(const ServerOptions& options) {
             capabilities.set("completionProvider", std::move(completion));
             capabilities.set("documentSymbolProvider", JsonValue::booleanValue(true));
             capabilities.set("referencesProvider", JsonValue::booleanValue(true));
+            JsonValue legend = JsonValue::objectValue();
+            std::vector<JsonValue> tokenTypes;
+            for (auto& type : semanticTokenTypes())
+                tokenTypes.push_back(JsonValue::stringValue(type));
+            legend.set("tokenTypes", JsonValue::arrayValue(std::move(tokenTypes)));
+            std::vector<JsonValue> tokenModifiers;
+            for (auto& modifier : semanticTokenModifiers())
+                tokenModifiers.push_back(JsonValue::stringValue(modifier));
+            legend.set("tokenModifiers", JsonValue::arrayValue(std::move(tokenModifiers)));
+            JsonValue semanticTokens = JsonValue::objectValue();
+            semanticTokens.set("legend", std::move(legend));
+            semanticTokens.set("full", JsonValue::booleanValue(true));
+            semanticTokens.set("range", JsonValue::booleanValue(true));
+            capabilities.set("semanticTokensProvider", std::move(semanticTokens));
 
             JsonValue serverInfo = JsonValue::objectValue();
             serverInfo.set("name", JsonValue::stringValue("cx-lsp"));
@@ -758,6 +850,41 @@ int runServer(const ServerOptions& options) {
             JsonValue array = JsonValue::arrayValue();
             array.array = std::move(items);
             writeLspMessage(serializeJson(makeResponse(*id, std::move(array))));
+        } else if (method == "textDocument/semanticTokens/full" || method == "textDocument/semanticTokens/range") {
+            if (!wantResponse) continue;
+            auto* docId = params->find("textDocument");
+            if (!docId) {
+                writeLspMessage(serializeJson(makeResponse(*id, JsonValue::null())));
+                continue;
+            }
+            std::string path = uriToPath(docId->getString("uri"));
+            auto it = state.openDocs.find(path);
+            if (it == state.openDocs.end()) {
+                writeLspMessage(serializeJson(makeResponse(*id, JsonValue::null())));
+                continue;
+            }
+            JsonValue query = buildBaseQuery(state, "semanticTokens", it->second);
+            auto result = runQuerySubprocess(state, std::move(query));
+            if (!result) {
+                // Null keeps the client's current tokens; empty data would wipe them.
+                writeLspMessage(serializeJson(makeResponse(*id, JsonValue::null())));
+                continue;
+            }
+            std::vector<DecodedToken> tokens = decodeSemanticTokens(result->find("tokens"));
+            if (method == "textDocument/semanticTokens/range") {
+                LspPosition rangeStart;
+                LspPosition rangeEnd;
+                if (auto* range = params->find("range")) {
+                    rangeStart = positionFromJson(range->find("start"));
+                    rangeEnd = positionFromJson(range->find("end"));
+                }
+                std::vector<DecodedToken> filtered;
+                for (auto& token : tokens) {
+                    if (tokenOverlapsRange(token, rangeStart, rangeEnd)) filtered.push_back(token);
+                }
+                tokens = std::move(filtered);
+            }
+            writeLspMessage(serializeJson(makeResponse(*id, encodeSemanticTokens(std::move(tokens)))));
         } else {
             // Unknown method: per JSON-RPC, only requests get error responses.
             if (wantResponse) {

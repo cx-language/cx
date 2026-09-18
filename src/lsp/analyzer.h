@@ -6,7 +6,8 @@
 // never frees memory and is built to start fast, compile fast, and exit. The
 // LSP honors that: the long-lived server process (see server.h) never runs
 // the compiler frontend itself. Every user-visible operation (diagnostics,
-// hover, definition, completion, symbols, references) spawns a fresh one-shot
+// hover, definition, completion, symbols, references, semantic tokens) spawns
+// a fresh one-shot
 // query process (`cx-lsp --query`, see query.h) which calls runFrontendOnce()
 // exactly once in a pristine address space and then exits. Nothing here is
 // ever reused across compilations, so there are intentionally no "reset"
@@ -71,6 +72,19 @@ struct DocumentSymbol {
     LspRange selectionRange;
 };
 
+struct SemanticToken {
+    int line = 0; // 0-based.
+    int start = 0; // 0-based byte column; single-line span.
+    int length = 0;
+    std::string type; // LSP token type name, e.g. "keyword" (see semanticTokenTypes()).
+    bool definition = false; // Definition site (maps to the "definition" modifier).
+};
+
+/// The semantic-tokens legend: token type and modifier names indexed by the
+/// LSP `data` encoding. The server advertises these verbatim.
+const std::vector<std::string>& semanticTokenTypes();
+const std::vector<std::string>& semanticTokenModifiers();
+
 /// Converts a file:// URI to a filesystem path. Returns the input unchanged
 /// if it doesn't look like a file URI. Handles percent-encoding.
 std::string uriToPath(const std::string& uri);
@@ -80,7 +94,7 @@ std::string pathToUri(const std::string& path);
 /// A single language-server query, deserialized from the JSON the server
 /// pipes to the query process's stdin.
 struct LspQuery {
-    std::string method; // "check", "hover", "definition", "completion", "documentSymbol" or "references".
+    std::string method; // "check", "hover", "definition", "completion", "documentSymbol", "references" or "semanticTokens".
     std::string filePath;
     std::string content; // Unsaved (or on-disk) text of filePath.
     llvm::StringMap<std::string> openDocs; // Unsaved-text overlay for sibling files.
@@ -118,6 +132,10 @@ bool gotoDefinitionAt(Module* mainModule, const std::string& filePath, LspPositi
 std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& filePath, LspPosition pos);
 std::vector<DocumentSymbol> documentSymbolsIn(Module* mainModule, const std::string& filePath);
 std::vector<std::pair<std::string, LspRange>> referencesTo(Module* mainModule, const std::string& filePath, LspPosition pos);
+/// Highlight tokens for one file, sorted by (line, start). Works on raw text
+/// alone when the frontend failed (mainModule null), so broken code still
+/// highlights keywords, strings, numbers and comments.
+std::vector<SemanticToken> semanticTokensIn(Module* mainModule, const std::string& filePath, const std::string& content);
 std::vector<LspDiagnostic> toLspDiagnostics(const std::vector<CollectedDiagnostic>& collected, const std::string& filePath, const std::string& content);
 
 LspRange locationToRange(const Location& loc, const std::string& lineText);
