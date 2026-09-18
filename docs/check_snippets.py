@@ -16,8 +16,10 @@ book_dir = os.path.join(os.path.dirname(__file__), "book")
 failures = []
 
 
-def check_snippet(path, index, code):
+def check_snippet(path, index, code, reference_only):
     name = f"{os.path.splitext(os.path.basename(path))[0]}-{index}"
+    if reference_only:
+        code += "\nvoid main() {}\n"
     with tempfile.TemporaryDirectory(prefix="cx-snippet-") as directory:
         with open(os.path.join(directory, "main.cx"), "w") as file:
             file.write(code)
@@ -50,8 +52,9 @@ for filename in sorted(os.listdir(book_dir)):
         continue
 
     with open(os.path.join(book_dir, filename)) as file:
-        for index, code in enumerate(re.findall(r"^```cs\n(.*?)^```", file.read(), re.M | re.S)):
-            check_snippet(filename, index, code)
+        blocks = re.findall(r"^```cs( \{\.noRun\})?\n(.*?)^```", file.read(), re.M | re.S)
+        for index, (marker, code) in enumerate(blocks):
+            check_snippet(filename, index, code, reference_only=bool(marker))
 
 if failures:
     sys.exit(1)

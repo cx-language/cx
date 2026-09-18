@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function() {
-    const codeBlocks = document.querySelectorAll("pre.sourceCode:not(.sh)");
+    const codeBlocks = document.querySelectorAll("pre.sourceCode:not(.sh):not(.noRun)");
     for (const block of codeBlocks) {
         initializeCodeEditor(block);
     }
