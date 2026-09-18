@@ -37,7 +37,7 @@ IRType* cx::getIRType(Type astType) {
             if (enumDecl->hasAssociatedValues()) {
                 auto unionType = new IRUnionType{IRTypeKind::IRUnionType, {}, ""};
                 irType = new IRStructType{IRTypeKind::IRStructType,
-                                          {IRField{tagType, "tag"}, IRField{unionType, "union"}},
+                                          {IRField{tagType, "tag"}, IRField{unionType, "payload"}},
                                           astType.getQualifiedTypeName(),
                                           '_' + mangleType(astType),
                                           false,

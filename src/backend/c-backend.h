@@ -55,7 +55,9 @@ struct CGenerator {
     void codegenFunctionDispatch(const Function* function);
     void codegenType(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition);
     void codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* type, bool needsTypeDefinition);
-    void codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType* type);
+    // Emits a forward declaration for a struct or union type, plus the full definition when `define` is true.
+    // Dependencies behind pointers only need declarations; by-value dependencies need full definitions.
+    void codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType* type, bool define);
     const std::string& getBlockLabel(const BasicBlock* block);
     // Returns the C name for a temporary value, assigning (prefix + counter)
     // and registering it on first use. In dispatch mode the hoisting pass
@@ -63,6 +65,9 @@ struct CGenerator {
     // uses during body emission find the existing registration.
     const std::string& getOrCreateTempName(const Value* inst, llvm::StringRef prefix);
     const std::string& getTempName(const Value* inst, llvm::StringRef prefix);
+    // Returns the C name for a struct or union type, generating and registering
+    // one for anonymous types (tuples, enum payload unions) on first use.
+    const std::string& getOrCreateTypeName(IRType* type, const std::string& name, llvm::StringRef prefix);
     // Returns the (sanitized) C name for a basic block parameter, registering
     // and declaring it on first use. Block parameters are compiler-generated
     // (e.g. "and", "or", "if.result"), and their raw names are not all valid
@@ -86,6 +91,8 @@ struct CGenerator {
     llvm::raw_string_ostream preludeStream; // Contains struct definitions
     llvm::raw_string_ostream stream; // Contains functions
     std::unordered_set<IRType*> alreadyEmittedTypes;
+    std::unordered_set<IRType*> forwardDeclaredTypes;
+    std::unordered_map<IRType*, std::string> generatedTypeNames;
     std::unordered_set<std::string> alreadyDefinedFunctions;
     std::unordered_map<const Value*, std::string> emittedValues;
     // Program counter value per basic block, used only in dispatch mode.

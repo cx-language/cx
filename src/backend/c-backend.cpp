@@ -16,6 +16,13 @@ bool hasReturnValue(const CallInst* inst) {
     return !returnType->isVoid() && !returnType->isNever();
 }
 
+// Named structs use field names (see codegenTypeDefinition); anonymous tuples fall back to indices.
+std::string getFieldName(IRType* type, int index) {
+    ASSERT(index < (int)type->getFields().size());
+    const auto& fieldName = type->getFields()[index].name;
+    return fieldName.empty() ? "_" + std::to_string(index) : fieldName;
+}
+
 } // namespace
 
 void CGenerator::codegenModule(const IRModule& module) {
@@ -212,10 +219,7 @@ void CGenerator::codegenInsert(const InsertInst* inst) {
     if (type->isArrayType()) {
         stream << "[" << inst->index << "] = ";
     } else {
-        // Named structs use field names (see codegenTypeDefinition); anonymous tuples fall back to indices.
-        const auto& fieldName = type->getFields()[inst->index].name;
-        ASSERT(inst->index < (int)type->getFields().size());
-        stream << "." << (fieldName.empty() ? "_" + std::to_string(inst->index) : fieldName) << " = ";
+        stream << "." << getFieldName(type, inst->index) << " = ";
     }
     codegenInst(inst->value);
     stream << ";\n";
@@ -227,7 +231,7 @@ void CGenerator::codegenExtract(const ExtractInst* inst) {
     codegenTempDeclaration(inst, name);
     stream << " = ";
     codegenInst(inst->aggregate);
-    stream << "." << inst->name;
+    stream << "." << getFieldName(inst->aggregate->getType(), inst->index);
     stream << ";\n";
 }
 
@@ -374,7 +378,7 @@ void CGenerator::codegenConstGEP(const ConstGEPInst* inst) {
     if (inst->pointer->getType()->getPointee()->isArrayType()) {
         stream << "[0][" << inst->index << "];\n";
     } else {
-        stream << "->" << inst->name << ";\n";
+        stream << "->" << getFieldName(inst->pointer->getType()->getPointee(), inst->index) << ";\n";
     }
 }
 
@@ -500,6 +504,13 @@ const std::string& CGenerator::getOrCreateTempName(const Value* inst, llvm::Stri
         return it->second;
     }
     return emittedValues.insert({inst, prefix.str() + std::to_string(valueSuffixCounter++)}).first->second;
+}
+
+const std::string& CGenerator::getOrCreateTypeName(IRType* type, const std::string& name, llvm::StringRef prefix) {
+    if (!name.empty()) return name;
+    auto it = generatedTypeNames.find(type);
+    if (it != generatedTypeNames.end()) return it->second;
+    return generatedTypeNames.insert({type, prefix.str() + std::to_string(generatedTypeNames.size())}).first->second;
 }
 
 const std::string& CGenerator::getBlockLabel(const BasicBlock* block) {
@@ -838,14 +849,17 @@ void CGenerator::codegenType(llvm::raw_string_ostream& stream, IRType* type, boo
         if (irStruct->name == "never") {
             stream << "void";
         } else {
-            if (needsTypeDefinition) codegenTypeDefinition(preludeStream, type);
-            stream << "struct " << irStruct->mangledName;
+            codegenTypeDefinition(preludeStream, type, needsTypeDefinition);
+            stream << "struct " << getOrCreateTypeName(type, irStruct->mangledName, "_cx_struct");
         }
         break;
     }
-    case IRTypeKind::IRUnionType:
-        stream << "union " << llvm::cast<IRUnionType>(type)->name;
+    case IRTypeKind::IRUnionType: {
+        auto* unionType = llvm::cast<IRUnionType>(type);
+        codegenTypeDefinition(preludeStream, type, needsTypeDefinition);
+        stream << "union " << getOrCreateTypeName(type, unionType->name, "_cx_union");
         break;
+    }
     }
 }
 
@@ -880,44 +894,82 @@ void CGenerator::codegenTypeSuffix(llvm::raw_string_ostream& stream, IRType* typ
     }
 }
 
-void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType* type) {
+void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType* type, bool define) {
     switch (type->kind) {
     case IRTypeKind::IRBasicType:
         break;
     case IRTypeKind::IRPointerType:
-        codegenTypeDefinition(stream, llvm::cast<IRPointerType>(type)->pointee);
+        // Pointers only need their pointee declared, which also cuts reference cycles.
+        codegenTypeDefinition(stream, llvm::cast<IRPointerType>(type)->pointee, false);
         break;
     case IRTypeKind::IRFunctionType:
-        codegenTypeDefinition(stream, llvm::cast<IRFunctionType>(type)->returnType);
+        codegenTypeDefinition(stream, llvm::cast<IRFunctionType>(type)->returnType, define);
         for (auto paramType : llvm::cast<IRFunctionType>(type)->paramTypes) {
-            codegenTypeDefinition(stream, paramType);
+            codegenTypeDefinition(stream, paramType, define);
         }
         break;
     case IRTypeKind::IRArrayType:
-        codegenTypeDefinition(stream, llvm::cast<IRArrayType>(type)->elementType);
+        codegenTypeDefinition(stream, llvm::cast<IRArrayType>(type)->elementType, define);
         break;
     case IRTypeKind::IRStructType: {
-        // Generate struct definition if this is the first time we encounter this type.
         auto* irStruct = llvm::cast<IRStructType>(type);
-        if (!irStruct->isImportedFromC && !alreadyEmittedTypes.contains(type)) {
-            alreadyEmittedTypes.insert(type);
+        if (irStruct->isImportedFromC || alreadyEmittedTypes.contains(type)) break;
+        if (!forwardDeclaredTypes.contains(type)) {
+            stream << "\nstruct " << getOrCreateTypeName(type, irStruct->mangledName, "_cx_struct") << ";\n";
+            forwardDeclaredTypes.insert(type);
+        }
+        if (!define) break;
+        // Mark as emitted before generating dependencies: re-entry happens only through pointers,
+        // for which the forward declaration above suffices. By-value cycles are rejected during typechecking.
+        alreadyEmittedTypes.insert(type);
 
-            // Generate type dependencies first.
-            for (auto& field : irStruct->fields) {
-                codegenTypeDefinition(stream, field.type);
-            }
+        // Generate type dependencies first.
+        for (auto& field : irStruct->fields) {
+            codegenTypeDefinition(stream, field.type, true);
+        }
 
-            stream << "\nstruct " << irStruct->mangledName << " {\n";
-            if (irStruct->fields.empty()) {
-                // Empty structs are a GNU extension, so add a placeholder member to stay
-                // compatible with strictly conforming C compilers. Empty structs carry
-                // no data and are only ever used through pointers, so this is harmless.
+        stream << "\nstruct " << getOrCreateTypeName(type, irStruct->mangledName, "_cx_struct") << " {\n";
+        if (irStruct->fields.empty()) {
+            // Empty structs are a GNU extension, so add a placeholder member to stay
+            // compatible with strictly conforming C compilers. Empty structs carry
+            // no data and are only ever used through pointers, so this is harmless.
+            stream.indent(4);
+            stream << "char _cx_empty;\n";
+        }
+        for (auto& field : irStruct->fields) {
+            stream.indent(4);
+            // Pointer members only need their pointee declared, which also keeps in-progress
+            // ancestor types from being re-entered here; by-value members need full definitions.
+            codegenType(stream, field.type, !field.type->isPointerType());
+            stream << " " << field.name;
+            codegenTypeSuffix(stream, field.type, true);
+            stream << ";\n";
+        }
+        stream << "};\n";
+        break;
+    }
+    case IRTypeKind::IRUnionType: {
+        auto* unionType = llvm::cast<IRUnionType>(type);
+        if (alreadyEmittedTypes.contains(type)) break;
+        if (!forwardDeclaredTypes.contains(type)) {
+            stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << ";\n";
+            forwardDeclaredTypes.insert(type);
+        }
+        if (!define) break;
+        alreadyEmittedTypes.insert(type);
+
+        // Generate type dependencies first. Cases without associated values have no type.
+        for (auto& field : unionType->fields) {
+            if (field.type) codegenTypeDefinition(stream, field.type, true);
+        }
+
+        // Named unions are defined in C headers; only anonymous enum payload unions need definitions here.
+        if (unionType->name.empty()) {
+            stream << "\nunion " << getOrCreateTypeName(type, unionType->name, "_cx_union") << " {\n";
+            for (auto& field : unionType->fields) {
+                if (!field.type) continue; // Cases without associated values carry no data.
                 stream.indent(4);
-                stream << "char _cx_empty;\n";
-            }
-            for (auto& field : irStruct->fields) {
-                stream.indent(4);
-                codegenType(stream, field.type, true);
+                codegenType(stream, field.type, !field.type->isPointerType());
                 stream << " " << field.name;
                 codegenTypeSuffix(stream, field.type, true);
                 stream << ";\n";
@@ -926,11 +978,6 @@ void CGenerator::codegenTypeDefinition(llvm::raw_string_ostream& stream, IRType*
         }
         break;
     }
-    case IRTypeKind::IRUnionType:
-        for (auto& field : llvm::cast<IRUnionType>(type)->fields) {
-            codegenTypeDefinition(stream, field.type);
-        }
-        break;
     }
 }
 
