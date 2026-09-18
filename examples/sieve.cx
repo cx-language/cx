@@ -1,10 +1,7 @@
 // Prime number sieve.
 void main() {
     const count = 30;
-    var isPrime = List<bool>();
-    for (var i in 0..count) {
-        isPrime.push(true);
-    }
+    var isPrime = List(count, true);
     for (var i in 2..count) {
         if (!isPrime[i]) continue;
         println(i);
