@@ -57,14 +57,15 @@ C struct fields are accessed with `.`, just like C* struct fields.
 A C* function can be passed where a C function pointer is expected:
 
 ```cs
-import "c-callback-function.h";
+import "stdlib.h";
 
-int f(int a) {
-    return a;
+void onExit() {
+    println("exiting");
 }
 
 void main() {
-    foo(f);
+    atexit(onExit);
+    println("running");
 }
 ```
 
