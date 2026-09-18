@@ -10,7 +10,7 @@ struct Wrapper<T> {
 }
 
 void main() {
-    // CHECK: [[@LINE+6]]:13: error: no matching constructor 'Wrapper<bool>{int, int}'
+    // CHECK: [[@LINE+6]]:13: error: no matching constructor 'Wrapper<bool> { int, int }'
     // CHECK: 5:5: note: candidate function:
     // CHECK-NEXT: Wrapper(T value) {
     // CHECK: 8:5: note: candidate function:
