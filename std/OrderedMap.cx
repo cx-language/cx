@@ -9,7 +9,7 @@ struct OrderedMap<Key, Value> {
     }
 
     ~OrderedMap() {
-        if (root != null) {
+        if root != null {
             root.deallocate();
         }
     }
@@ -28,21 +28,21 @@ struct OrderedMap<Key, Value> {
         var n = node;
         setBalance(n);
 
-        if (n.balance == -2) {
-            if (height(n.left!.left) >= height(n.left.right)) {
+        if n.balance == -2 {
+            if height(n.left!.left) >= height(n.left.right) {
                 n = rotateRight(n);
             } else {
                 n = rotateLeftThenRight(n);
             }
-        } else if (n.balance == 2) {
-            if (height(n.right!.right) >= height(n.right.left)) {
+        } else if n.balance == 2 {
+            if height(n.right!.right) >= height(n.right.left) {
                 n = rotateLeft(n);
             } else {
                 n = rotateRightThenLeft(n);
             }
         }
 
-        if (n.parent != null) {
+        if n.parent != null {
             rebalance(n.parent);
         } else {
             root = n;
@@ -55,15 +55,15 @@ struct OrderedMap<Key, Value> {
         b.parent = a.parent;
         a.right = b.left;
 
-        if (a.right != null) {
+        if a.right != null {
             a.right.parent = a;
         }
 
         b.left = a;
         a.parent = b;
 
-        if (b.parent != null) {
-            if (b.parent.right == a) {
+        if b.parent != null {
+            if b.parent.right == a {
                 b.parent.right = b;
             } else {
                 b.parent.left = b;
@@ -81,15 +81,15 @@ struct OrderedMap<Key, Value> {
         b.parent = a.parent;
         a.left = b.right;
 
-        if (a.left != null) {
+        if a.left != null {
             a.left.parent = a;
         }
 
         b.right = a;
         a.parent = b;
 
-        if (b.parent != null) {
-            if (b.parent.right == a) {
+        if b.parent != null {
+            if b.parent.right == a {
                 b.parent.right = b;
             } else {
                 b.parent.left = b;
@@ -112,7 +112,7 @@ struct OrderedMap<Key, Value> {
     }
 
     private int height(AVLnode<Key, Value>*? n) {
-        if (n == null) {
+        if n == null {
             return -1;
         }
         return 1 + max(height(n.left), height(n.right));
@@ -130,7 +130,7 @@ struct OrderedMap<Key, Value> {
     /// Returns the value of the given key, if it exists in the Map. Otherwise, returns null.
     Value*? operator[](Key* key) {
         var found = findNode(key);
-        if (found != null) {
+        if found != null {
             return found.entry.value;
         }
         return null;
@@ -138,13 +138,13 @@ struct OrderedMap<Key, Value> {
 
     /// Inserts a key-value pair into the Map.
     bool insert(Key key, Value value) {
-        if (root == null) {
+        if root == null {
             root = allocate(AVLnode(key, null, value));
         } else {
             var n = root;
 
-            while (true) {
-                if (n.entry.key == key) {
+            while true {
+                if n.entry.key == key {
                     return false;
                 }
 
@@ -152,8 +152,8 @@ struct OrderedMap<Key, Value> {
                 var goLeft = n.entry.key > key;
                 var newNode = goLeft ? n.left : n.right;
 
-                if (newNode == null) {
-                    if (goLeft) {
+                if newNode == null {
+                    if goLeft {
                         parent.left = allocate(AVLnode<Key, Value>(key, parent, value)); // TODO: Should work without specifying generic arguments.
                     } else {
                         parent.right = allocate(AVLnode<Key, Value>(key, parent, value));
@@ -172,7 +172,7 @@ struct OrderedMap<Key, Value> {
 
     /// Removes a key and it's associated value from the Map
     void remove(Key* key) {
-        if (root == null) {
+        if root == null {
             return;
         }
 
@@ -181,25 +181,25 @@ struct OrderedMap<Key, Value> {
         AVLnode<Key, Value>*? delNode = null;
         AVLnode<Key, Value>*? child = root;
 
-        while (child != null) {
+        while child != null {
             parent = n;
             n = child;
             child = *key >= n.entry.key ? n.right : n.left;
-            if (*key == n.entry.key) {
+            if *key == n.entry.key {
                 delNode = n;
             }
         }
 
-        if (delNode != null) {
+        if delNode != null {
             delNode.entry.key = n.entry.key;
             delNode.entry.value = n.entry.value;
 
             child = n.left != null ? n.left : n.right;
 
-            if (root.entry.key == *key) {
+            if root.entry.key == *key {
                 root = child;
             } else {
-                if (parent.left == n) {
+                if parent.left == n {
                     parent.left = child;
                 } else {
                     parent.right = child;
@@ -216,7 +216,7 @@ struct OrderedMap<Key, Value> {
     /// Returns the key-value pair corresponding to `key`, or null if it doesn't exist in the Map
     MapEntry<Key, Value>*? find(Key* key) {
         var node = findNode(key);
-        if (node != null) {
+        if node != null {
             return node.entry;
         }
         return null;
@@ -226,12 +226,12 @@ struct OrderedMap<Key, Value> {
     AVLnode<Key, Value>*? findNode(Key* key) {
         var n = root;
 
-        while (true) {
-            if (n == null) {
+        while true {
+            if n == null {
                 return null;
             }
 
-            if (n.entry.key == *key) {
+            if n.entry.key == *key {
                 return n;
             }
 
@@ -246,12 +246,12 @@ struct OrderedMap<Key, Value> {
     /// or null, if `key` is the smallest in the Map.
     Key*? lowerKey(Key* key) {
         var found = findNode(key);
-        if (found == null) {
+        if found == null {
             return null;
         }
         var lower = lowerNode(found);
 
-        if (lower == null) {
+        if lower == null {
             return null;
         }
         return lower.entry.key;
@@ -259,7 +259,7 @@ struct OrderedMap<Key, Value> {
 
     private AVLnode<Key, Value>* maxInSubtree(AVLnode<Key, Value>* node) {
         var n = node;
-        while (n.right != null) {
+        while n.right != null {
             n = n.right;
         }
         return n;
@@ -267,7 +267,7 @@ struct OrderedMap<Key, Value> {
 
     private AVLnode<Key, Value>* minInSubtree(AVLnode<Key, Value>* node) {
         var n = node;
-        while (n.left != null) {
+        while n.left != null {
             n = n.left;
         }
         return n;
@@ -276,13 +276,13 @@ struct OrderedMap<Key, Value> {
     /// Returns the node that contains the key immediately smaller than the key of the given node,
     /// or null, if the key of `node` is the smallest value.
     AVLnode<Key, Value>*? lowerNode(AVLnode<Key, Value>* node) {
-        if (node.left != null) {
+        if node.left != null {
             return maxInSubtree(node.left);
         }
 
         var n = node;
-        while (n.parent != null) {
-            if (n == n.parent.right) {
+        while n.parent != null {
+            if n == n.parent.right {
                 return n.parent;
             }
             n = n.parent;
@@ -294,13 +294,13 @@ struct OrderedMap<Key, Value> {
     /// or null, if `key` is the largest in the Map.
     Key*? higherKey(Key* key) {
         var found = findNode(key);
-        if (found == null) {
+        if found == null {
             return null;
         }
 
         var higher = higherNode(found);
 
-        if (higher == null) {
+        if higher == null {
             return null;
         }
         return higher.entry.key;
@@ -309,13 +309,13 @@ struct OrderedMap<Key, Value> {
     /// Returns the node that contains the key immediately larger than the key of the given node,
     /// or null, if the key of `node` is the largest value.
     AVLnode<Key, Value>*? higherNode(AVLnode<Key, Value>* node) {
-        if (node.right != null) {
+        if node.right != null {
             return minInSubtree(node.right);
         }
 
         var n = node;
-        while (n.parent != null) {
-            if (n == n.parent.left) {
+        while n.parent != null {
+            if n == n.parent.left {
                 return n.parent;
             }
             n = n.parent;
@@ -325,7 +325,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the smallest element in the Map, or null if the Map is empty.
     Key*? first() {
-        if (root == null) {
+        if root == null {
             return null;
         }
         return minInSubtree(root).entry.key;
@@ -333,7 +333,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the node with the smallest key in the Map, or null if the Map is empty.
     AVLnode<Key, Value>*? firstNode() {
-        if (root == null) {
+        if root == null {
             return null;
         }
         return minInSubtree(root);
@@ -341,7 +341,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the largest element in the Map, or null if the map is empty.
     Key*? last() {
-        if (root == null) {
+        if root == null {
             return null;
         }
         return maxInSubtree(root).entry.key;
@@ -349,7 +349,7 @@ struct OrderedMap<Key, Value> {
 
     /// Returns the node with the largest key in the Map, or null if the Map is empty.
     AVLnode<Key, Value>*? lastNode() {
-        if (root == null) {
+        if root == null {
             return null;
         }
         return maxInSubtree(root);
@@ -378,10 +378,10 @@ struct AVLnode<Key, Value> {
     }
 
     void deallocate() {
-        if (left != null) {
+        if left != null {
             left.deallocate();
         }
-        if (right != null) {
+        if right != null {
             right.deallocate();
         }
         deallocate(this);

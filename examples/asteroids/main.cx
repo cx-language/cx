@@ -11,7 +11,7 @@ bool isKeyDown(SDL_Scancode key) {
 }
 
 void main() {
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    if !SDL_Init(SDL_INIT_VIDEO) {
         puts(SDL_GetError());
         return;
     }
@@ -20,7 +20,7 @@ void main() {
     var window = SDL_CreateWindow("C* Asteroids",
         int(width), int(height), 0);
 
-    if (window == null) {
+    if window == null {
         puts(SDL_GetError());
         return;
     }
@@ -29,7 +29,7 @@ void main() {
 
     var renderer = SDL_CreateRenderer(window, null);
 
-    if (renderer == null) {
+    if renderer == null {
         puts(SDL_GetError());
         return;
     }
@@ -44,13 +44,13 @@ void mainLoop(SDL_Renderer* renderer) {
     var state = GameState();
     keyState = cast<const bool[*]>(SDL_GetKeyboardState(null)!);
 
-    while (true) {
-        if (SDL_PollEvent(event)) {
+    while true {
+        if SDL_PollEvent(event) {
             switch (event.type) {
                 case SDL_EVENT_QUIT:
                     return;
                 case SDL_EVENT_KEY_DOWN:
-                    if (event.key.key == SDLK_ESCAPE) {
+                    if event.key.key == SDLK_ESCAPE {
                         return;
                     }
             }

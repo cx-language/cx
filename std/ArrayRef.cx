@@ -32,13 +32,13 @@ struct ArrayRef<Element>: Copyable {
 
     /// Returns the first element in the array.
     Element* front() {
-        if (empty()) indexOutOfBounds("front", 0);
+        if empty() indexOutOfBounds("front", 0);
         return data[0];
     }
 
     /// Returns a reference to the element at the given index.
     Element* operator[](int index) {
-        if (index < 0 || index >= size()) indexOutOfBounds("operator[]", index);
+        if index < 0 || index >= size() indexOutOfBounds("operator[]", index);
         return data[index];
     }
 
@@ -51,8 +51,8 @@ struct ArrayRef<Element>: Copyable {
     }
 
     Element*? find(bool(Element*) predicate) {
-        for (var element in this) {
-            if (predicate(element)) {
+        for var element in this {
+            if predicate(element) {
                 return element;
             }
         }
@@ -71,12 +71,12 @@ struct ArrayRef<Element>: Copyable {
 }
 
 bool operator==<T>(ArrayRef<T> a, ArrayRef<T> b) {
-    if (a.size() != b.size()) {
+    if a.size() != b.size() {
         return false;
     }
 
-    for (var i in 0..a.size()) {
-        if (a[i] != b[i]) {
+    for var i in 0..a.size() {
+        if a[i] != b[i] {
             return false;
         }
     }

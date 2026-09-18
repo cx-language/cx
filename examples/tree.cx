@@ -5,17 +5,17 @@ import "dirent.h";
 
 void listdir(string name, int indent) {
     var dir = opendir(StringBuffer(name).cString());
-    if (!dir) return;
+    if !dir return;
     defer closedir(dir);
 
-    while (var entry = readdir(dir)) {
-        if (entry.d_name == "." || entry.d_name == "..")
+    while var entry = readdir(dir) {
+        if entry.d_name == "." || entry.d_name == ".."
             continue;
 
         var path = name + '/' + entry.d_name;
         println(" ".repeat(indent), path);
 
-        if (entry.d_type == DT_DIR) {
+        if entry.d_type == DT_DIR {
             listdir(string(path), indent + 4);
         }
     }

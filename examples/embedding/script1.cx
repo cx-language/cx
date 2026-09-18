@@ -1,3 +1,3 @@
 void hello() {
-    println(getMessage())
+    println(getMessage());
 }

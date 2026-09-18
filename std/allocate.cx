@@ -19,7 +19,7 @@ Type* allocate<Type>(Type value) {
 ///
 Type*? safeAllocate<Type>(Type value) {
     var allocation = cast<Type*?>(malloc(sizeof(Type)));
-    if (allocation != null) {
+    if allocation != null {
         allocation.init(value);
     }
     return allocation;

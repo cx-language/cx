@@ -15,7 +15,7 @@ void main() {
     foo = null;
     println(foo); // prints null
 
-    if (foo) {
+    if foo {
         println("foo is non-null"); // this is not executed because foo is null
     }
 
@@ -23,7 +23,7 @@ void main() {
     // This will also abort at runtime if foo is null.
     // takeInt(foo);
 
-    if (foo) {
+    if foo {
         takeInt(foo); // fine, foo was checked for null
     }
 }
@@ -40,7 +40,7 @@ If we use it on a value that's actually null, an assertion error will be trigger
 
 ```cs
 void main() {
-    int? x = 1
+    int? x = 1;
 
     // println(x + 1); // doesn't work, cannot add to potentially null value
     println(x! + 1); // fine if x is non-null, otherwise will abort at runtime

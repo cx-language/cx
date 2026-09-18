@@ -30,13 +30,10 @@ If we use the `run` command, the executable file `hello` will not be created.
 ## Syntax
 
 The syntax of C* is mostly similar to the C family of languages, 
-but there are some stylistic differences worth noting:
+but there are some minor differences intended to make the language slightly easier to read and write:
 
 - Semicolons are optional.
 - Parentheses around conditions of control flow statements (if, for, while, switch) are optional.
-
-However, to attract attention to more important differences, this documentation
-uses semicolons and parentheses even if not required. 
 
 ### Comments
 

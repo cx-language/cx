@@ -18,11 +18,11 @@ struct Missile {
         var velocity = Vector2(direction) * missileSpeed;
         position = position + velocity * delta;
 
-        for (var i in 0..state.asteroids.size()) {
+        for var i in 0..state.asteroids.size() {
             var asteroid = state.asteroids[i];
 
-            if (asteroid.position.distance(position) <= asteroid.size ||
-                asteroid.position.distance(tailPosition()) <= asteroid.size) {
+            if asteroid.position.distance(position) <= asteroid.size ||
+                asteroid.position.distance(tailPosition()) <= asteroid.size {
                 state.asteroids.removeAt(i);
                 break; // state.asteroids has been mutated, stop iteration.
             }

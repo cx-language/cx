@@ -8,17 +8,17 @@ The range may be anything that has an `iterator()` method that returns an [itera
 ```cs
 void main() {
     println("the range can be any collection");
-    for (var element in [1, 2, 3]) {
+    for var element in [1, 2, 3] {
         println(element);
     }
 
     println("or an exclusive numeric range");
-    for (var element in 1..3) {
+    for var element in 1..3 {
         println(element);
     }
 
     println("or an inclusive numeric range");
-    for (var element in 1...3) {
+    for var element in 1...3 {
         println(element);
     }
 }
@@ -31,7 +31,7 @@ The while-loop loops until its condition evaluates to false.
 ```cs
 void main() {
     int i = 0;
-    while (i < 3) {
+    while i < 3 {
         println(i); // prints: 0 1 2
         i++;
     }
@@ -44,9 +44,9 @@ void main() {
 void main() {
     var answer = 42;
 
-    if (answer == 0) {
+    if answer == 0 {
         println("answer is zero");
-    } else if (answer < 0) {
+    } else if answer < 0 {
         println("answer is negative");
     } else {
         println("answer is ", answer);
@@ -88,7 +88,7 @@ int main() {
     var p = malloc(sizeof(int)); // allocate some resource
     defer free(p); // defer deallocation of the resource
 
-    if (p == null) {
+    if p == null {
         return 1; // free(p) will be called immediately before this return
     }
 

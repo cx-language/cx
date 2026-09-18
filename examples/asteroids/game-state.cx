@@ -24,11 +24,11 @@ struct GameState {
 
         player.update(delta, this);
 
-        for (var asteroid in asteroids) {
+        for var asteroid in asteroids {
             asteroid.update(delta);
         }
 
-        if (newTicks - timeOfLastAsteroidSpawn > uint64(asteroidSpawnInterval)) {
+        if newTicks - timeOfLastAsteroidSpawn > uint64(asteroidSpawnInterval) {
             asteroids.push(Asteroid());
             timeOfLastAsteroidSpawn = newTicks;
             asteroidSpawnInterval *= 0.99;
@@ -38,7 +38,7 @@ struct GameState {
     void render(SDL_Renderer* renderer) {
         player.render(renderer);
 
-        for (var asteroid in asteroids) {
+        for var asteroid in asteroids {
             asteroid.render(renderer);
         }
     }

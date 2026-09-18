@@ -1,11 +1,9 @@
 import "GLFW/glfw3.h";
 
-int main()
-{
+int main() {
     glfwSetErrorCallback(ErrorCallback);
 
-    if (glfwInit() == 0)
-    {
+    if glfwInit() == 0 {
         println("glfwInit failed");
         return 1;
     }
@@ -17,8 +15,7 @@ int main()
     additionalWindowHints();
 
     GLFWwindow*? window = glfwCreateWindow(1024, 768, "OpenGL example", null, null);
-    if (!window)
-    {
+    if !window {
         println("glfwCreateWindow failed");
         return 1;
     }
@@ -44,8 +41,7 @@ int main()
 
     GLint infoLogLength = 0;
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
-    if (infoLogLength > 0)
-    {
+    if infoLogLength > 0 {
         var infoLog = StringBuffer(uninitializedSize = infoLogLength + 1);
         glGetProgramInfoLog(program, infoLogLength, null, infoLog.data());
         println(infoLog);
@@ -68,8 +64,7 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, int64(vertexBufferData.size()) * int64(sizeof(float)), &vertexBufferData[0], GL_STATIC_DRAW);
 
-    while (glfwWindowShouldClose(window) == 0)
-    {
+    while glfwWindowShouldClose(window) == 0 {
         glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(program);
         glEnableVertexAttribArray(0);
@@ -88,8 +83,7 @@ int main()
     return 0;
 }
 
-void LoadShader(GLuint shaderID, string path)
-{
+void LoadShader(GLuint shaderID, string path) {
     StringBuffer shaderSource = readFile(path);
     const char* shaderSourcePointer = shaderSource.cString();
 
@@ -98,28 +92,24 @@ void LoadShader(GLuint shaderID, string path)
 
     GLint infoLogLength = 0;
     glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
-    if (infoLogLength > 0)
-    {
+    if infoLogLength > 0 {
         var infoLog = StringBuffer(uninitializedSize = infoLogLength + 1);
         glGetShaderInfoLog(shaderID, infoLogLength, null, infoLog.data());
         println(infoLog);
     }
 }
 
-void ErrorCallback(int error, const char*? description)
-{
+void ErrorCallback(int error, const char*? description) {
     println(description);
 }
 
-void KeyCallback(GLFWwindow*? window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+void KeyCallback(GLFWwindow*? window, int key, int scancode, int action, int mods) {
+    if key == GLFW_KEY_ESCAPE && action == GLFW_PRESS
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 #if macOS
-void additionalWindowHints()
-{
+void additionalWindowHints() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 }

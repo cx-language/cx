@@ -22,12 +22,12 @@ struct Tape {
     void forward() {
         pos++;
 
-        if (pos >= tape.size())
+        if pos >= tape.size()
             tape.push(0);
     }
 
     void backward() {
-        if (pos > 0)
+        if pos > 0
             pos--;
     }
 }
@@ -43,8 +43,8 @@ struct Program {
         var leftStack = List<int>();
         var pc = 0;
 
-        for (var ch in text) {
-            if (!"+-><[].,".contains(ch))
+        for var ch in text {
+            if !"+-><[].,".contains(ch)
                 continue;
 
             switch (ch) {
@@ -52,7 +52,7 @@ struct Program {
                     leftStack.push(pc);
 
                 case ']':
-                    if (!leftStack.empty()) {
+                    if !leftStack.empty() {
                         var left = leftStack.pop();
                         var right = pc;
                         bracketMap.set(left, right);
@@ -70,7 +70,7 @@ struct Program {
         var pc = 0;
         var size = code.size();
 
-        while (pc < size) {
+        while pc < size {
             switch (code[pc]) {
                 case '+':
                     tape.increment();
@@ -85,11 +85,11 @@ struct Program {
                     tape.backward();
 
                 case '[':
-                    if (tape.value() == 0)
+                    if tape.value() == 0
                         pc = bracketMap[pc]!;
 
                 case ']':
-                    if (tape.value() != 0)
+                    if tape.value() != 0
                         pc = bracketMap[pc]!;
 
                 case '.':

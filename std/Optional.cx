@@ -15,8 +15,8 @@ struct Optional<T> {
 }
 
 bool operator== <T: Comparable>(Optional<T>* a, Optional<T>* b) {
-    if (a.hasValue != b.hasValue) return false;
-    if (!b.hasValue) return true;
+    if a.hasValue != b.hasValue return false;
+    if !b.hasValue return true;
     return a.value == b.value;
 }
 
@@ -25,7 +25,7 @@ bool operator!= <T: Comparable>(Optional<T>* a, Optional<T>* b) {
 }
 
 bool operator== <T: Comparable>(Optional<T>* a, T* b) {
-    if (!a.hasValue) return false;
+    if !a.hasValue return false;
     return a.value == *b;
 }
 

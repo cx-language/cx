@@ -16,7 +16,7 @@ struct Map<Key: Hashable, Value> {
     // FIXME: Should assert that the key is not in the map, instead of no-oping.
     /// Inserts an element into the map. If the element exists already, nothing is done.
     void insert(Key key, Value value) {
-        if (contains(key)) {
+        if contains(key) {
             return;
         }
 
@@ -24,7 +24,7 @@ struct Map<Key: Hashable, Value> {
         hashTable[hashValue].push(MapEntry(key, value));
         size++;
 
-        if (loadFactor() > 0.66) {
+        if loadFactor() > 0.66 {
             resize();
         }
     }
@@ -33,7 +33,7 @@ struct Map<Key: Hashable, Value> {
     void set(Key key, Value value) {
         var existing = &this[key];
 
-        if (existing) {
+        if existing {
             *existing = value;
         } else {
             insert(key, value);
@@ -45,12 +45,12 @@ struct Map<Key: Hashable, Value> {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
 
-        if (slot.size() == 0) {
+        if slot.size() == 0 {
             return;
         }
 
-        for (var i in 0..slot.size()) {
-            if (slot[i].key == *e) {
+        for var i in 0..slot.size() {
+            if slot[i].key == *e {
                 slot.removeAt(i);
                 size--;
                 return;
@@ -71,10 +71,10 @@ struct Map<Key: Hashable, Value> {
         var newCapacity = capacity() * 2;
         var newTable = List(newCapacity, List<MapEntry<Key, Value>>());
 
-        for (var i in 0..capacity()) {
+        for var i in 0..capacity() {
             var slot = &hashTable[i];
 
-            for (var el in slot) {
+            for var el in slot {
                 newTable[convertHash(el.key.hash()) % newCapacity].push(*el);
             }
         }
@@ -86,8 +86,8 @@ struct Map<Key: Hashable, Value> {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
 
-        for (var element in slot) {
-            if (element.key == *e) {
+        for var element in slot {
+            if element.key == *e {
                 return element.value;
             }
         }
@@ -100,12 +100,12 @@ struct Map<Key: Hashable, Value> {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
 
-        if (slot.size() == 0) {
+        if slot.size() == 0 {
             return false;
         }
 
-        for (var element in slot) {
-            if (element.key == *e) {
+        for var element in slot {
+            if element.key == *e {
                 return true;
             }
         }

@@ -53,8 +53,8 @@ struct string: Copyable, Comparable, Hashable, Printable {
     // TODO: Do we need 'find(char, int)', because basically the same can be accomplish with `substr(start).find(c)`?
     /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
     int find(char c, int start) {
-        for (var i in start..size()) {
-            if (characters[i] == c) {
+        for var i in start..size() {
+            if characters[i] == c {
                 return i;
             }
         }
@@ -63,7 +63,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Returns the substring of the string starting from the given index, until the end of the string.
     string substr(int start) {
-        if (start < 0 || start > size()) {
+        if start < 0 || start > size() {
             indexOutOfBounds("substr", start);
         }
         return string(&characters.data()[start], size() - start);
@@ -71,10 +71,10 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Returns the substring of the string in the given range, [inclusive, exclusive]
     string substr(Range<int> range) {
-        if (range.start < 0 || range.start > size()) {
+        if range.start < 0 || range.start > size() {
             indexOutOfBounds("substr", range.start);
         }
-        if (range.end < 0 || range.end > size()) {
+        if range.end < 0 || range.end > size() {
             indexOutOfBounds("substr", range.end);
         }
         return string(&characters.data()[range.start], range.size());
@@ -84,7 +84,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     uint64 hash() {
         uint64 hashValue = 5381;
 
-        for (var index in 0..characters.size()) {
+        for var index in 0..characters.size() {
             hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
         }
 
@@ -107,14 +107,14 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     // TODO: Support plus and minus signs, non-base-10 numbers, and handle range errors.
     int? parseInt() {
-        if (empty()) {
+        if empty() {
             return null;
         }
 
         int result = 0;
 
-        for (var c in this) {
-            if (c >= '0' && c <= '9') {
+        for var c in this {
+            if c >= '0' && c <= '9' {
                 result *= 10;
                 result += int(c - '0');
             } else {
@@ -129,7 +129,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     StringBuffer escape() {
         var result = StringBuffer();
 
-        for (var c in this) {
+        for var c in this {
             switch (c) {
                 case '\0': result += "\\0";
                 case '\n': result += "\\n";
@@ -147,7 +147,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     // TODO: Return non-allocating iterator instead of allocating a string buffer.
     StringBuffer repeat(int count) {
         var result = StringBuffer(capacity = this.size() * count);
-        for (var _ in 0..count) {
+        for var _ in 0..count {
             result += this;
         }
         return result;
@@ -158,12 +158,12 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     Ordering compare(string* other) {
-        for (var index in 0..min(size(), other.size())) {
-            if (this[index] < other[index]) { return Ordering.Less; }
-            if (this[index] > other[index]) { return Ordering.Greater; }
+        for var index in 0..min(size(), other.size()) {
+            if this[index] < other[index] { return Ordering.Less; }
+            if this[index] > other[index] { return Ordering.Greater; }
         }
-        if (size() < other.size()) { return Ordering.Less; }
-        if (size() > other.size()) { return Ordering.Greater; }
+        if size() < other.size() { return Ordering.Less; }
+        if size() > other.size() { return Ordering.Greater; }
         return Ordering.Equal;
     }
 
@@ -177,12 +177,12 @@ struct string: Copyable, Comparable, Hashable, Printable {
 }
 
 bool operator==(string a, string b) {
-    if (a.size() != b.size()) {
+    if a.size() != b.size() {
         return false;
     }
 
-    for (var index in 0..a.size()) {
-        if (a[index] != b[index]) {
+    for var index in 0..a.size() {
+        if a[index] != b[index] {
             return false;
         }
     }

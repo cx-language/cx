@@ -2,7 +2,7 @@
 
 /// Gives the maximum of the two elements
 T* max<T>(T* a, T* b) {
-    if (*a >= *b) {
+    if *a >= *b {
         return a;
     }
     return b;
@@ -10,7 +10,7 @@ T* max<T>(T* a, T* b) {
 
 /// Gives the minimum of the two elements
 T* min<T>(T* a, T* b) {
-    if (*a < *b) {
+    if *a < *b {
         return a;
     }
     return b;
@@ -26,7 +26,7 @@ void swap<E>(E* a, E* b) {
 // TODO: Use ArrayRef instead of List.
 /// Sorts a array. Uses insertion sort if the array is small enough, and quickSort otherwise.
 void sort<E: Comparable>(List<E>* array) {
-    if (array.size() <= 32) {
+    if array.size() <= 32 {
         insertionSort(array);
     } else {
         quickSort(array, 0, array.size() - 1);
@@ -40,13 +40,13 @@ private int partition<E: Comparable>(List<E>* arr, int low, int high) {
     var pivot = &arr[high];
     var i = low - 1;
 
-    for (var j in low..high) {
-        if (arr[j] < pivot) {
+    for var j in low..high {
+        if arr[j] < pivot {
             i++;
             swap(arr[i], arr[j]);
         }
     }
-    if (arr[high] < arr[i+1]) {
+    if arr[high] < arr[i+1] {
         swap(arr[i + 1], arr[high]);
     }
     return i + 1;
@@ -55,13 +55,13 @@ private int partition<E: Comparable>(List<E>* arr, int low, int high) {
 // TODO: Use ArrayRef instead of List.
 /// Quicksorts the given array, in place. Not stable.
 private void quickSort<E: Comparable>(List<E>* arr, int low, int high) {
-    if (low < high) {
+    if low < high {
         var index = partition(arr, low, high);
 
-        if (low < index) {
+        if low < index {
             quickSort(arr, low, index - 1);
         }
-        if (index < high) {
+        if index < high {
             quickSort(arr, index + 1, high);
         }
     }
@@ -71,9 +71,9 @@ private void quickSort<E: Comparable>(List<E>* arr, int low, int high) {
 /// Insertion sorts the given array, in place. Good for small arrays.
 private void insertionSort<E: Comparable>(List<E>* arr) {
     var i = 1;
-    while (i < arr.size()) {
+    while i < arr.size() {
         var j = i;
-        while (j > 0 && arr[j-1] > arr[j]) {
+        while j > 0 && arr[j-1] > arr[j] {
             swap(arr[j], arr[j-1]);
             j--;
         }

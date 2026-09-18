@@ -35,10 +35,10 @@ void print<T: Printable>(List<T>* list) {
 void print<T: Printable>(ArrayRef<T> array) {
     print('[');
 
-    for (var index in 0..array.size()) {
+    for var index in 0..array.size() {
         print(array[index]);
 
-        if (index != array.size() - 1)
+        if index != array.size() - 1
             print(", ");
     }
 
@@ -46,7 +46,7 @@ void print<T: Printable>(ArrayRef<T> array) {
 }
 
 void print<T: Printable>(Optional<T>* optional) {
-    if (optional.hasValue) {
+    if optional.hasValue {
         print(optional.value);
     } else {
         print("null");
@@ -54,7 +54,7 @@ void print<T: Printable>(Optional<T>* optional) {
 }
 
 void print(const char[*]? cString) {
-    if (cString) {
+    if cString {
         printf("%s", cString);
     } else {
         printf("null");
@@ -62,7 +62,7 @@ void print(const char[*]? cString) {
 }
 
 void print(char[*]? cString) {
-    if (cString) {
+    if cString {
         printf("%s", cString);
     } else {
         printf("null");
@@ -89,10 +89,10 @@ void println<T0: Printable, T1: Printable, T2: Printable, T3: Printable, T4: Pri
 StringBuffer readLine() {
     var line = StringBuffer();
 
-    while (true) {
+    while true {
         var c = getchar();
 
-        if (c == '\n' || c < 0) {
+        if c == '\n' || c < 0 {
             break;
         }
 
@@ -104,7 +104,7 @@ StringBuffer readLine() {
 
 StringBuffer readFile(string path) {
     var file = fopen(StringBuffer(path).cString(), "rb");
-    if (!file) return StringBuffer(); // FIXME: Return null on error.
+    if !file return StringBuffer(); // FIXME: Return null on error.
     defer fclose(file);
 
     fseek(file, 0, SEEK_END);
@@ -119,7 +119,7 @@ StringBuffer readFile(string path) {
 
 bool writeFile(string path, string content) {
     var file = fopen(StringBuffer(path).cString(), "wb");
-    if (!file) return false;
+    if !file return false;
     defer fclose(file);
 
     fwrite(content.data(), sizeof(char), uint64(content.size()), file);
@@ -128,7 +128,7 @@ bool writeFile(string path, string content) {
 
 void assertFail(const char* message) {
     var stream = fdopen(2, "w");
-    if (stream) {
+    if stream {
         fprintf(stream, "%s", message);
         fclose(stream);
     }

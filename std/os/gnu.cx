@@ -10,11 +10,11 @@ void printStackTrace() {
     var frames = backtrace(&callstack[0], callstack.size());
     var strings = backtrace_symbols(&callstack[0], frames);
 
-    if (strings == null) {
+    if strings == null {
         return;
     }
 
-    for (var i in 0..frames) {
+    for var i in 0..frames {
         printf("%s\n", strings[i]);
     }
 

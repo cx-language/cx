@@ -30,8 +30,8 @@ struct Player {
         b = b.rotated(origin = position, angle = direction);
         c = c.rotated(origin = position, angle = direction);
 
-        for (var i in -1...1) {
-            for (var j in -1...1) {
+        for var i in -1...1 {
+            for var j in -1...1 {
                 var diff = Vector2(float(i) * width, float(j) * height);
                 var aa = a + diff;
                 var bb = b + diff;
@@ -42,27 +42,27 @@ struct Player {
             }
         }
 
-        for (var missile in missiles) {
+        for var missile in missiles {
             missile.render(renderer);
         }
     }
 
     void update(float delta, GameState* state) {
-        if (isKeyDown(SDL_SCANCODE_RIGHT)) {
+        if isKeyDown(SDL_SCANCODE_RIGHT) {
             direction += turningSpeed * delta;
         }
-        if (isKeyDown(SDL_SCANCODE_LEFT)) {
+        if isKeyDown(SDL_SCANCODE_LEFT) {
             direction -= turningSpeed * delta;
         }
-        if (isKeyDown(SDL_SCANCODE_UP)) {
+        if isKeyDown(SDL_SCANCODE_UP) {
             velocity.x += cosf(direction) * movementSpeed * delta;
             velocity.y += sinf(direction) * movementSpeed * delta;
         }
-        if (isKeyDown(SDL_SCANCODE_DOWN)) {
+        if isKeyDown(SDL_SCANCODE_DOWN) {
             velocity.x -= cosf(direction) * movementSpeed * delta;
             velocity.y -= sinf(direction) * movementSpeed * delta;
         }
-        if (isKeyDown(SDL_SCANCODE_SPACE)) {
+        if isKeyDown(SDL_SCANCODE_SPACE) {
             shootMissile();
         }
 
@@ -71,20 +71,20 @@ struct Player {
         velocity.x *= 1 - deceleration * delta;
         velocity.y *= 1 - deceleration * delta;
 
-        while (position.x < 0) position.x += width;
-        while (position.y < 0) position.y += height;
-        while (position.x >= width) position.x -= width;
-        while (position.y >= height) position.y -= height;
+        while position.x < 0 position.x += width;
+        while position.y < 0 position.y += height;
+        while position.x >= width position.x -= width;
+        while position.y >= height position.y -= height;
 
         timeSinceLastMissileShot += delta;
 
-        for (var missile in missiles) {
+        for var missile in missiles {
             missile.update(delta, state);
         }
     }
 
     void shootMissile() {
-        if (timeSinceLastMissileShot > missileCooldown) {
+        if timeSinceLastMissileShot > missileCooldown {
             var position = this.position + Vector2(direction) * playerSize * 2 + Vector2(direction) * missileSize;
             missiles.push(Missile(position, direction));
             timeSinceLastMissileShot = 0;

@@ -12,7 +12,7 @@ struct Queue<T> {
     }
 
     ~Queue() {
-        while (!empty()) {
+        while !empty() {
             var next = head!.next;
             deallocate(head);
             head = next;
@@ -23,7 +23,7 @@ struct Queue<T> {
     void push(T value) {
         var newNode = allocate(Node(value));
 
-        if (empty()) {
+        if empty() {
             head = newNode;
             tail = newNode;
         } else {
@@ -41,7 +41,7 @@ struct Queue<T> {
         deallocate(head);
         head = next;
 
-        if (head == null) {
+        if head == null {
             tail = null;
         }
 

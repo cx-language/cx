@@ -4,14 +4,14 @@ struct OutputFileStream {
     OutputFileStream(public int fileDescriptor) {
         file = fdopen(fileDescriptor, "w");
 
-        if (!file) { // TODO: Error handling
+        if !file { // TODO: Error handling
             println("Couldn't open file descriptor ", fileDescriptor, " for writing");
             abort();
         }
     }
 
     ~OutputFileStream() {
-        if (file) {
+        if file {
             fclose(file);
         }
     }
