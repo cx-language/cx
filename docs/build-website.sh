@@ -55,7 +55,15 @@ for file in book/*.md index.html; do
     esac
 
     basename="${basename%.*}"
-    pandoc "$file" -o "build/$basename.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="C*"
+
+    if [ "$basename" = "index" ]; then
+        title="C* Programming Language"
+    else
+        # The first '# ' heading is the section name.
+        title="C* - $(sed -n 's/^# //p' "$file" | head -n 1)"
+    fi
+
+    pandoc "$file" -o "build/$basename.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
