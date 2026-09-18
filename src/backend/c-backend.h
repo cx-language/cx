@@ -12,7 +12,7 @@ struct CGenerator {
     // loops (a while(1)/switch over a program counter) instead of using labels
     // and gotos. This supports C compilers that can't handle arbitrary gotos,
     // such as the one used by the web playground toolchain.
-    explicit CGenerator(bool dispatchMode) : preludeStream(prelude), stream(result), dispatchMode(dispatchMode) {}
+    explicit CGenerator(bool dispatchMode) : dispatchMode(dispatchMode), preludeStream(prelude), stream(result) {}
     void codegenModule(const IRModule& module);
     void codegenAlloca(const AllocaInst* inst);
     void codegenReturn(const ReturnInst* inst);
