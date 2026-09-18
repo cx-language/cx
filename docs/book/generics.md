@@ -30,7 +30,7 @@ or inferred when possible.
 void main() {
     var list = List<int>();
     var boolList = List([true, false]);
-    Map<int, int> map;
+    var map = Map<int, int>();
 }
 ```
 
