@@ -1115,6 +1115,16 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         matches = std::move(templateMatches);
     }
 
+    // Distinct same-named templates (e.g. a local type shadowing a stdlib type) resolve to the same
+    // instantiation, matching the same declaration twice. A duplicate match is still one candidate.
+    std::vector<Match> uniqueMatches;
+    for (auto& match : matches) {
+        if (!llvm::any_of(uniqueMatches, [&](auto& unique) { return unique.decl == match.decl; })) {
+            uniqueMatches.push_back(match);
+        }
+    }
+    matches = std::move(uniqueMatches);
+
     auto calleeWithGenericArgs = getQualifiedTypeName(callee, expr.genericArgs);
 
     if (matches.size() > 1) {

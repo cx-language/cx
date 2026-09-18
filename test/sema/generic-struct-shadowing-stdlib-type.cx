@@ -1,0 +1,20 @@
+// RUN: %cx -typecheck %s
+
+// Local generic types shadowing same-named stdlib types (Box, MapEntry)
+// must resolve to the local type instead of reporting ambiguity.
+
+struct Box<T> {
+    T value;
+}
+
+struct MapEntry<Key: Hashable, Value> {
+    Key key;
+    Value value;
+}
+
+void main() {
+    println(Box<int>(value = 1).value);
+    println(Box(2).value);
+    println(MapEntry<int, string>(key = 1, value = "one").value);
+    println(MapEntry(key = 2, value = "two").value);
+}
