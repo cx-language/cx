@@ -326,6 +326,12 @@ th {
     gap: 2px 18px;
 }
 
+.side-nav ul ul {
+    margin: 0;
+    padding-left: 1em;
+    list-style-type: none;
+}
+
 .side-nav a {
     color: var(--text-color-subtle);
     padding: 2px 0;

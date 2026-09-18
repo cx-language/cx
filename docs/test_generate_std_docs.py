@@ -9,7 +9,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from generate_std_docs import main, parse_all, render
+from generate_std_docs import (
+    main,
+    page_name,
+    parse_file,
+    parse_std,
+    render_file_page,
+    render_index,
+    render_toc_items,
+)
 
 DOCS_DIR = Path(__file__).resolve().parent
 STD_DIR = DOCS_DIR.parent / "std"
@@ -63,13 +71,34 @@ const int answer = 42;
 """
 
 
+def parse_fixture(source=FIXTURE):
+    directory = tempfile.TemporaryDirectory()
+    path = Path(directory.name, "fixture.cx")
+    path.write_text(source)
+    return directory, parse_file(path)
+
+
+class PageNameTest(unittest.TestCase):
+    def test_top_level(self):
+        self.assertEqual(page_name("List.cx"), "std-List")
+
+    def test_nested(self):
+        self.assertEqual(page_name("os/gnu.cx"), "std-os-gnu")
+
+
 class FixtureTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with tempfile.TemporaryDirectory() as directory:
-            Path(directory, "fixture.cx").write_text(FIXTURE)
-            types, functions, constants = parse_all(Path(directory))
-        cls.markdown = render(types, functions, constants)
+        cls.directory, (types, functions, constants) = parse_fixture()
+        cls.markdown = render_file_page("fixture.cx", types, functions, constants, False)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.directory.cleanup()
+
+    def test_page_title_and_source(self):
+        self.assertIn("# fixture.cx", self.markdown)
+        self.assertIn("Auto-generated from [fixture.cx]", self.markdown)
 
     def test_type_header_and_doc(self):
         self.assertIn("## `struct Widget: Copyable` {#type-Widget}", self.markdown)
@@ -105,59 +134,122 @@ class FixtureTest(unittest.TestCase):
         self.assertIn("`extern int puts(const char* str);`", self.markdown)
         self.assertIn("`const int answer = 42;`", self.markdown)
 
+    def test_no_conditional_note(self):
+        self.assertNotIn("platform-conditional", self.markdown)
+
+
+class ConditionalTest(unittest.TestCase):
+    def test_if_marked_conditional(self):
+        with tempfile.TemporaryDirectory() as std_dir:
+            Path(std_dir, "cond.cx").write_text("#if Windows\nvoid f() {}\n#endif\n")
+            Path(std_dir, "plain.cx").write_text("void g() {}\n")
+            pages = {relpath: conditional for relpath, *_ , conditional in parse_std(Path(std_dir))}
+        self.assertTrue(pages["cond.cx"])
+        self.assertFalse(pages["plain.cx"])
+
+    def test_conditional_note_rendered(self):
+        self.assertIn("platform-conditional", render_file_page("c.cx", [], {}, [], True))
+        self.assertNotIn("platform-conditional", render_file_page("c.cx", [], {}, [], False))
+
+
+class IndexTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.keepalive, parts = parse_fixture()
+        types, functions, constants = parts
+        cls.markdown = render_index([("fixture.cx", types, functions, constants, False)])
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.keepalive.cleanup()
+
+    def test_bullet_links_to_page(self):
+        self.assertIn("- [fixture.cx](./std-fixture): ", self.markdown)
+
+    def test_bullet_lists_declarations(self):
+        for name in ["`Widget`", "`Action`", "`Color`", "`operator==`", "`puts`", "`answer`"]:
+            self.assertIn(name, self.markdown)
+
+
+class TocTest(unittest.TestCase):
+    def test_items_link_to_pages(self):
+        items = render_toc_items([("List.cx", [], {}, [], False), ("os/gnu.cx", [], {}, [], False)])
+        self.assertEqual(
+            items,
+            [
+                '                <li><a href="./std-List">List.cx</a></li>',
+                '                <li><a href="./std-os-gnu">os/gnu.cx</a></li>',
+            ],
+        )
+
 
 class StdlibTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        types, functions, constants = parse_all(STD_DIR)
-        cls.markdown = render(types, functions, constants)
-        cls.functions = functions
+        cls.pages = parse_std(STD_DIR)
+        cls.by_path = {page[0]: page[1:] for page in cls.pages}
+        cls.rendered = {
+            relpath: render_file_page(relpath, *rest) for relpath, rest in cls.by_path.items()
+        }
+
+    def test_one_page_per_file(self):
+        self.assertEqual(
+            sorted(self.by_path), sorted(p.relative_to(STD_DIR).as_posix() for p in STD_DIR.rglob("*.cx"))
+        )
+
+    def test_os_files_included(self):
+        self.assertIn("os/gnu.cx", self.by_path)
+        self.assertIn("os/windows.cx", self.by_path)
 
     def test_known_entries(self):
+        page = self.rendered["List.cx"]
         for snippet in [
+            "# List.cx",
             "## `struct List<Element>` {#type-List}",
             "### `push` {#List-push}",
             "`void push(Element element)`",
             "Adds the given element to the end of the list.",
-            "## `println` {#fn-println}",
-            "## `int_max` {#const-int_max}",
-            "`const int int_max = 2147483647;`",
         ]:
-            self.assertIn(snippet, self.markdown)
+            self.assertIn(snippet, page)
 
     def test_overloads_grouped(self):
-        self.assertGreater(len(self.functions["println"].declarations), 10)
-        self.assertEqual(self.markdown.count("## `println` {#fn-println}"), 1)
+        stdio = self.rendered["stdio.cx"]
+        self.assertEqual(stdio.count("## `println` {#fn-println}"), 1)
+        self.assertGreater(len(self.by_path["stdio.cx"][1]["println"].declarations), 10)
 
     def test_private_declarations_omitted(self):
+        combined = "\n".join(self.rendered.values())
         for name in ["unsafeRemoveAt", "quickSort", "insertionSort", "partition",
                      "printSigned", "printUnsigned", "skipEmptySlots", "rebalance",
                      "rotateLeft", "rotateRight", "grow", "indexOutOfBounds",
                      "setBalance", "height", "minInSubtree", "maxInSubtree"]:
-            self.assertNotIn(f"`{name}`", self.markdown, name)
-            self.assertNotIn(f" {name}(", self.markdown, name)
+            self.assertNotIn(f"`{name}`", combined, name)
+            self.assertNotIn(f" {name}(", combined, name)
 
     def test_no_fenced_code_blocks(self):
-        self.assertNotIn("```", self.markdown)
+        for relpath, markdown in self.rendered.items():
+            self.assertNotIn("```", markdown, relpath)
 
-    def test_index_links_resolve(self):
-        links = set(re.findall(r"\(#(.*?)\)", self.markdown))
-        ids = set(re.findall(r"\{#(.*?)\}", self.markdown))
-        self.assertEqual(links - ids, set())
-
-    def test_no_duplicate_ids(self):
-        ids = re.findall(r"\{#(.*?)\}", self.markdown)
-        self.assertEqual(len(ids), len(set(ids)))
+    def test_no_duplicate_ids_per_page(self):
+        for relpath, markdown in self.rendered.items():
+            ids = re.findall(r"\{#(.*?)\}", markdown)
+            self.assertEqual(len(ids), len(set(ids)), relpath)
 
 
 class StagingTest(unittest.TestCase):
-    def test_main_writes_index_to_output_dir(self):
+    def test_main_writes_index_pages_and_toc(self):
         with tempfile.TemporaryDirectory() as std_dir, tempfile.TemporaryDirectory() as output_dir:
             Path(std_dir, "fixture.cx").write_text(FIXTURE)
             self.assertEqual(main(["--std-dir", std_dir, "--output-dir", output_dir]), 0)
-            markdown = Path(output_dir, "std.md").read_text()
-        self.assertIn("# Standard library reference", markdown)
-        self.assertIn("## `struct Widget: Copyable` {#type-Widget}", markdown)
+            out = Path(output_dir)
+            index = (out / "std.md").read_text()
+            page = (out / "std-fixture.md").read_text()
+            toc = (out / "toc.html").read_text()
+        self.assertIn("# Standard library reference", index)
+        self.assertIn("- [fixture.cx](./std-fixture): ", index)
+        self.assertIn("## `struct Widget: Copyable` {#type-Widget}", page)
+        self.assertIn('<li><a href="./std-fixture">fixture.cx</a></li>', toc)
+        self.assertNotIn("<!--STD-PAGES-->", toc)
 
 
 if __name__ == "__main__":

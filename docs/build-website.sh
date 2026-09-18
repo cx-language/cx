@@ -55,7 +55,7 @@ for file in book/*.md .generated/*.md index.html; do
             toc=""
             ;;
         *)
-            toc=--include-before-body="toc.html"
+            toc=--include-before-body=".generated/toc.html"
             ;;
     esac
 

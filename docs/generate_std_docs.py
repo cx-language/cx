@@ -169,19 +169,24 @@ def parse_file(path):
     return types, functions, constants
 
 
-def parse_all(std_dir):
-    types = []
-    functions = {}
-    constants = []
-    for path in sorted(std_dir.glob("*.cx")):
-        file_types, file_functions, file_constants = parse_file(path)
-        types.extend(file_types)
-        for name, group in file_functions.items():
-            merged = functions.setdefault(name, Group(name))
-            for declaration in group.declarations:
-                merged.add(declaration.signature, declaration.doc, declaration.source)
-        constants.extend(file_constants)
-    return types, functions, constants
+def parse_std(std_dir):
+    """Returns one (path, types, functions, constants, conditional) tuple per .cx file.
+
+    Path is relative to std_dir with forward slashes; conditional marks files
+    containing #if directives, whose declarations may be platform-specific.
+    """
+    pages = []
+    for path in sorted(std_dir.rglob("*.cx")):
+        types, functions, constants = parse_file(path)
+        conditional = any(
+            strip_line_comment(line).strip().startswith("#if") for line in path.read_text().splitlines()
+        )
+        pages.append((path.relative_to(std_dir).as_posix(), types, functions, constants, conditional))
+    return pages
+
+
+def page_name(relpath):
+    return "std-" + relpath.removesuffix(".cx").replace("/", "-")
 
 
 def render_doc(doc, out):
@@ -198,50 +203,41 @@ def render_group(group, out):
         render_doc(declaration.doc, out)
 
 
-def index_link(name, anchor):
-    return f"[`{name}`](#{anchor})"
+def finish(out):
+    return "\n".join(out).rstrip() + "\n"
 
 
-def render(types, functions, constants):
-    by_name = lambda n: (n.lower(), n)
+def by_name(name):
+    return (name.lower(), name)
+
+
+def render_file_page(relpath, types, functions, constants, conditional):
     types = sorted(types, key=lambda t: (t.name.lower(), t.name))
     function_names = sorted(functions, key=by_name)
     constants = sorted(constants, key=lambda c: c[0])
 
     out = [
-        "# Standard library reference",
+        f"# {relpath}",
         "",
-        "Auto-generated from the [standard library sources](https://github.com/emillaine/cx/tree/main/std)",
-        "by [generate_std_docs.py](https://github.com/emillaine/cx/blob/main/docs/generate_std_docs.py).",
-        "Do not edit by hand.",
-        "",
-        "**Types:** " + ", ".join(index_link(t.name, f"type-{t.name}") for t in types),
-        "",
-        "**Functions:** " + ", ".join(index_link(n, f"fn-{slug(n)}") for n in function_names),
-        "",
-        "**Constants:** " + ", ".join(index_link(n, f"const-{n}") for n, _ in constants),
+        f"Auto-generated from [{relpath}]({SOURCE_URL}/{relpath}).",
         "",
     ]
+    if conditional:
+        out += ["*Note: parts of this file are platform-conditional (`#if`).*", ""]
 
     for entry in types:
         out.append(f"## `{entry.header}` {{#type-{entry.name}}}")
         out.append("")
         render_doc(entry.doc, out)
-        out.append(f"Source: [{entry.source}]({SOURCE_URL}/{entry.source})")
-        out.append("")
         for name in sorted(entry.members, key=by_name):
             out.append(f"### `{name}` {{#{entry.name}-{slug(name)}}}")
             out.append("")
             render_group(entry.members[name], out)
 
     for name in function_names:
-        group = functions[name]
         out.append(f"## `{name}` {{#fn-{slug(name)}}}")
         out.append("")
-        sources = ", ".join(f"[{s}]({SOURCE_URL}/{s})" for s in group.sources)
-        out.append(f"Source: {sources}")
-        out.append("")
-        render_group(group, out)
+        render_group(functions[name], out)
 
     for name, declaration in constants:
         out.append(f"## `{name}` {{#const-{name}}}")
@@ -249,10 +245,42 @@ def render(types, functions, constants):
         out.append(f"`{declaration.signature}`")
         out.append("")
         render_doc(declaration.doc, out)
-        out.append(f"Source: [{declaration.source}]({SOURCE_URL}/{declaration.source})")
-        out.append("")
 
-    return "\n".join(out).rstrip() + "\n"
+    return finish(out)
+
+
+def render_index(pages):
+    out = [
+        "# Standard library reference",
+        "",
+        "Auto-generated from the [standard library sources](https://github.com/emillaine/cx/tree/main/std)",
+        "by [generate_std_docs.py](https://github.com/emillaine/cx/blob/main/docs/generate_std_docs.py).",
+        "",
+    ]
+    for relpath, types, functions, constants, _ in pages:
+        names = (
+            [f"`{t.name}`" for t in sorted(types, key=lambda t: (t.name.lower(), t.name))]
+            + [f"`{n}`" for n in sorted(functions, key=by_name)]
+            + [f"`{n}`" for n, _ in sorted(constants, key=lambda c: c[0])]
+        )
+        out.append(f"- [{relpath}](./{page_name(relpath)}): " + ", ".join(names))
+    out.append("")
+    return finish(out)
+
+
+TOC_PLACEHOLDER = "<!--STD-PAGES-->"
+
+
+def render_toc_items(pages):
+    return [f'                <li><a href="./{page_name(relpath)}">{relpath}</a></li>' for relpath, *_ in pages]
+
+
+def write_toc(output_dir, pages):
+    toc = (ROOT / "docs" / "toc.html").read_text()
+    if TOC_PLACEHOLDER not in toc:
+        raise SystemExit(f"docs/toc.html lacks the {TOC_PLACEHOLDER} marker")
+    items = "\n".join(render_toc_items(pages))
+    (output_dir / "toc.html").write_text(re.sub(r"[ \t]*" + re.escape(TOC_PLACEHOLDER), items, toc))
 
 
 def main(argv=None):
@@ -261,12 +289,16 @@ def main(argv=None):
     parser.add_argument("--output-dir", default=STAGING_DIR, help="output directory for generated Markdown")
     args = parser.parse_args(argv)
 
-    types, functions, constants = parse_all(pathlib.Path(args.std_dir))
+    pages = parse_std(pathlib.Path(args.std_dir))
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    output = output_dir / "std.md"
-    output.write_text(render(types, functions, constants))
-    print(f"Wrote {output} from {len(types)} types, {len(functions)} functions, {len(constants)} constants.")
+    (output_dir / "std.md").write_text(render_index(pages))
+    for relpath, types, functions, constants, conditional in pages:
+        (output_dir / f"{page_name(relpath)}.md").write_text(
+            render_file_page(relpath, types, functions, constants, conditional)
+        )
+    write_toc(output_dir, pages)
+    print(f"Wrote {len(pages)} stdlib pages to {output_dir}.")
     return 0
 
 
