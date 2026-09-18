@@ -23,7 +23,10 @@ static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*
         ERROR(type.location, "too many generic arguments to '" << type.getName() << "', expected 0");
     }
 
-    ASSERT(decls.size() == 1);
+    if (decls.size() > 1) {
+        ERROR(type.location, "ambiguous reference to '" << type.getName() << "'"); // TODO: add candidate notes
+    }
+
     return llvm::cast<TypeTemplate>(decls[0]);
 }
 

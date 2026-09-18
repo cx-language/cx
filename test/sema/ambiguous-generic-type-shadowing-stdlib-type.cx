@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+struct Local {
+    int x;
+}
+
+struct Box<T> {
+    T value;
+}
+
+void main() {
+    // CHECK: [[@LINE+2]]:5: error: ambiguous reference to 'Box'
+    // CHECK-NEXT: Box<Local>? x = null;
+    Box<Local>? x = null;
+}
