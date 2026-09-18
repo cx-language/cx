@@ -1,0 +1,9 @@
+var name = "opengl"
+var pkgConfigDependencies = ["glfw3"]
+#if macOS
+var defines = ["GLFW_INCLUDE_GLCOREARB", "GL_SILENCE_DEPRECATION"]
+var frameworks = ["OpenGL"]
+#else
+var defines = ["GLFW_INCLUDE_GLCOREARB", "GL_SILENCE_DEPRECATION", "GL_GLEXT_PROTOTYPES"]
+var libraries = ["GL"]
+#endif
