@@ -165,7 +165,6 @@ struct BasicType : TypeBase {
     static bool classof(const TypeBase* t) { return t->kind == TypeKind::BasicType; }
 
 private:
-    friend Type;
     BasicType(llvm::StringRef name, std::vector<Type>&& genericArgs)
     : TypeBase(TypeKind::BasicType), name(name), genericArgs(std::move(genericArgs)), decl(nullptr) {}
 
