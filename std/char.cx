@@ -8,19 +8,19 @@ struct char: Copyable, Comparable, Printable, Hashable {
     }
 
     bool isWhitespace() {
-        return this == ' ' || (this >= char(0x9) && this <= char(0xD));
+        return this == ' ' || (this >= char { 0x9 } && this <= char { 0xD });
     }
 
     Ordering compare(char* other) {
-        return int(this).compare(int(other));
+        return int { this }.compare(int { other });
     }
 
     void print(StringBuffer* stream) {
         // TODO: Use char overload of 'write' when it's implemented.
-        stream.write(string(this, 1));
+        stream.write(string { this, 1 });
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }

@@ -12,5 +12,5 @@ void main() {
     // CHECK: 5:5: note: candidate function:
     // CHECK-NEXT: Foo(public int b) { }
     // CHECK-NOT: note
-    _ = Foo(1)
+    _ = Foo { 1 }
 }

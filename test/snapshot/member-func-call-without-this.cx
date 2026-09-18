@@ -25,9 +25,9 @@ struct Foo<U> {
 }
 
 void main() {
-    var s = S()
+    var s = S {}
     s.foo()
 
-    var t = Foo<int>()
+    var t = Foo<int> {}
     t.baz()
 }

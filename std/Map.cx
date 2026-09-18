@@ -10,7 +10,7 @@ struct Map<Key: Hashable, Value> {
     /// Initializes an empty map
     Map() {
         size = 0;
-        hashTable = List();
+        hashTable = List {};
         increaseTableSize(hashTable, 128);
     }
 
@@ -22,7 +22,7 @@ struct Map<Key: Hashable, Value> {
         }
 
         var hashValue = convertHash(key.hash()) % capacity();
-        hashTable[hashValue].push(MapEntry(key, value));
+        hashTable[hashValue].push(MapEntry { key, value });
         size++;
 
         if (loadFactor() > 0.66) {
@@ -62,7 +62,7 @@ struct Map<Key: Hashable, Value> {
     /// Expands the hash table size, needed when there's too many elements in the map
     void increaseTableSize(List<List<MapEntry<Key, Value>>>* newTable, int newCapacity) {
         for (var i in 0..newCapacity) {
-            newTable.push(List<MapEntry<Key, Value>>());
+            newTable.push(List<MapEntry<Key, Value>> {});
         }
     }
 
@@ -76,7 +76,7 @@ struct Map<Key: Hashable, Value> {
 
     /// Resizes the map. This includes copying the old table into a new, bigger one
     void resize() {
-        var newTable = List<List<MapEntry<Key, Value>>>();
+        var newTable = List<List<MapEntry<Key, Value>>> {};
         var newCapacity = capacity() * 2;
 
         increaseTableSize(newTable, newCapacity);
@@ -130,15 +130,15 @@ struct Map<Key: Hashable, Value> {
     /// Returns the load factor for the map. This is used to increase the map size once
     /// the load factor gets too big.
     float64 loadFactor() {
-        return float64(size) / (float64(capacity()));
+        return float64 { size } / (float64 { capacity() });
     }
 
     /// Iterate over the map
     MapIterator<Key, Value> iterator() {
-        return MapIterator(this);
+        return MapIterator { this };
     }
 }
 
 int convertHash(uint64 hash) {
-    return int(hash) & int_max;
+    return int { hash } & int_max;
 }

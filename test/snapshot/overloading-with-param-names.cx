@@ -9,8 +9,8 @@ struct Foo {
 }
 
 void foo(public int i) {
-    Foo(i = i).foo(i = i)
-    Foo(qux = i).foo(qux = i)
+    Foo { i = i }.foo(i = i)
+    Foo { qux = i }.foo(qux = i)
 }
 
 void foo(public int qux) { }

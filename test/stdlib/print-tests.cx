@@ -13,13 +13,13 @@ struct A: Printable {
 void main() {
     println(true); // CHECK: true
     println(false); // CHECK-NEXT: false
-    println(A("foo")); // CHECK-NEXT: foofoo!
+    println(A { "foo" }); // CHECK-NEXT: foofoo!
     println(0.1 + 0.2); // CHECK-NEXT: 0.3
     println("f", 0, '0'); // CHECK-NEXT: f00
     println([1, 2, 3]); // CHECK-NEXT: [1, 2, 3]
-    println(List([1, 2, 3])); // CHECK-NEXT: [1, 2, 3]
-    println(List([1])); // CHECK-NEXT: [1]
-    println(List<int>()); // CHECK-NEXT: []
-    println(Optional<int>()); // CHECK-NEXT: null
-    println(Optional<int>(42)); // CHECK-NEXT: 42
+    println(List { [1, 2, 3] }); // CHECK-NEXT: [1, 2, 3]
+    println(List { [1] }); // CHECK-NEXT: [1]
+    println(List<int> {}); // CHECK-NEXT: []
+    println(Optional<int> {}); // CHECK-NEXT: null
+    println(Optional<int> { 42 }); // CHECK-NEXT: 42
 }

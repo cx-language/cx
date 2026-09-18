@@ -2,7 +2,7 @@
 
 struct S<E> {
     S() {
-        E().h();
+        E {}.h();
     }
     void s() {}
 }
@@ -12,6 +12,6 @@ struct A: Copyable {
 }
 
 void main() {
-    var x = S<A>();
+    var x = S<A> {};
     x.s();
 }

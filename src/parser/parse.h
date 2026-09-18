@@ -120,6 +120,7 @@ private:
     Expr* parseBinaryExpr(int minPrecedence);
     Expr* parseExpr();
     Expr* parseExprOrVarDecl(Decl* parent);
+    Expr* parseHeaderExpr();
     std::vector<Expr*> parseExprList();
     ReturnStmt* parseReturnStmt();
     VarDecl* parseVarDecl(Decl* parent, AccessLevel accessLevel);
@@ -166,6 +167,7 @@ private:
     std::vector<Token> tokenBuffer;
     size_t currentTokenIndex;
     const CompileOptions& options;
+    bool allowBraceCalls = true;
 };
 
 } // namespace cx

@@ -13,9 +13,9 @@ struct S {
 
 void main() {
     if (true) {
-        var a = List<S>();
-        a.push(S());
-        a.push(S());
-        a.push(S());
+        var a = List<S> {};
+        a.push(S {});
+        a.push(S {});
+        a.push(S {});
     }
 }

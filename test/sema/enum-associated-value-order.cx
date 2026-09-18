@@ -5,6 +5,6 @@ enum E {
 }
 
 void main() {
-    // CHECK: [[@LINE+1]]:17: error: invalid argument name 'b' for parameter 'a'
-    var a = E.A(b = 1, a = 2);
+    // CHECK: [[@LINE+1]]:19: error: invalid argument name 'b' for parameter 'a'
+    var a = E.A { b = 1, a = 2 };
 }

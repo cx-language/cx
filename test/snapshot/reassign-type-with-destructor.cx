@@ -5,6 +5,6 @@ struct X {
 }
 
 void main() {
-    var x = X();
-    x = X();
+    var x = X {};
+    x = X {};
 }

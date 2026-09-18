@@ -9,6 +9,6 @@ struct S<T>: Copyable {
 }
 
 void main() {
-    _ = S<int>()
-    _ = S<bool>()
+    _ = S<int> {}
+    _ = S<bool> {}
 }

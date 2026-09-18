@@ -12,7 +12,7 @@ struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<E
     }
 
     EnumeratedIteratorEntry<Element> value() {
-        return EnumeratedIteratorEntry(base.value(), index);
+        return EnumeratedIteratorEntry { base.value(), index };
     }
 
     void increment() {

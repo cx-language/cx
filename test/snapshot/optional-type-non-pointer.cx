@@ -2,9 +2,9 @@
 
 void main() {
     int? a = null;
-    int? b = Optional(2);
+    int? b = Optional { 2 };
     int? c = 3;
-    int? d = Optional();
+    int? d = Optional {};
 
     if (d == null) {}
     if (d != null) {}
@@ -14,9 +14,9 @@ void main() {
 
 void f() {
     Optional<int> a = null;
-    Optional<int> b = Optional(2);
+    Optional<int> b = Optional { 2 };
     Optional<int> c = 3;
-    Optional<int> d = Optional();
+    Optional<int> d = Optional {};
 
     c = null;
     if (c) {

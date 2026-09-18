@@ -3,7 +3,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Initializes an empty string.
     StringBuffer() {
-        characters = List();
+        characters = List {};
         characters.push('\0');
     }
 
@@ -14,7 +14,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     StringBuffer(string s) {
-        characters = List(capacity = s.size() + 1);
+        characters = List { capacity = s.size() + 1 };
 
         for (var ch in s) {
             characters.push(ch);
@@ -25,7 +25,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Initializes a string with the characters from a character array of known length.
     StringBuffer(char* pointer, int length) {
-        init(string(pointer, length));
+        init(string { pointer, length });
     }
 
     /// Initializes a string with the contents of a null-terminated C-style string.
@@ -35,12 +35,12 @@ struct StringBuffer: Comparable, Hashable, Printable {
     /// `StringBuffer(char* pointer, int length)` instead.
     ///
     StringBuffer(char* cString) {
-        init(string(cString, int(strlen(cString))));
+        init(string { cString, int { strlen(cString) } });
     }
 
     /// Initializes the buffer to contain the given number of uninitialized bytes.
     StringBuffer(public int uninitializedSize) {
-        characters = List(uninitializedSize = uninitializedSize + 1);
+        characters = List { uninitializedSize = uninitializedSize + 1 };
         characters[uninitializedSize] = '\0';
     }
 
@@ -99,12 +99,12 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Supports using strings with sets and dicts
     uint64 hash() {
-        return string(this).hash();
+        return string { this }.hash();
     }
 
     StringIterator iterator() {
         // TODO: When implicit constructors have been implemented, remove the string() call below.
-        return StringIterator(string(this));
+        return StringIterator { string { this } };
     }
 
     bool contains(char c) {
@@ -131,7 +131,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
         if (start < 0 || start > size()) {
             indexOutOfBounds("substr", start);
         }
-        return string(&characters.data()[start], size() - start);
+        return string { &characters.data()[start], size() - start };
     }
 
     /// Returns the substring of the string in the given range, [inclusive, exclusive]
@@ -142,12 +142,12 @@ struct StringBuffer: Comparable, Hashable, Printable {
         if (range.end < 0 || range.end > size()) {
             indexOutOfBounds("substr", range.end);
         }
-        return string(&characters.data()[range.start], range.size());
+        return string { &characters.data()[range.start], range.size() };
     }
 
     // Splits the string by the given delimiter
     List<string> split(char delim) {
-        var tokens = List<string>();
+        var tokens = List<string> {};
         var prev = 0;
         var pos = 0;
 
@@ -171,19 +171,19 @@ struct StringBuffer: Comparable, Hashable, Printable {
     }
 
     int? parseInt() {
-        return string(this).parseInt();
+        return string { this }.parseInt();
     }
 
     StringBuffer escape() {
-        return string(this).escape();
+        return string { this }.escape();
     }
 
     void print(StringBuffer* stream) {
-        stream.write(string(this));
+        stream.write(string { this });
     }
 
     Ordering compare(StringBuffer* other) {
-        return string(this).compare(string(other));
+        return string { this }.compare(string { other });
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
@@ -197,7 +197,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
 }
 
 StringBuffer operator+(string a, string b) {
-    var result = StringBuffer();
+    var result = StringBuffer {};
 
     for (var ch in a) {
         result.push(ch);
@@ -211,11 +211,11 @@ StringBuffer operator+(string a, string b) {
 }
 
 StringBuffer operator+(string a, char b) {
-    return a + string(b, 1);
+    return a + string { b, 1 };
 }
 
 StringBuffer operator+(string a, char[*] b) {
-    return a + string(b);
+    return a + string { b };
 }
 
 StringBuffer operator+(StringBuffer a, string b) {
@@ -235,41 +235,41 @@ StringBuffer operator+(StringBuffer a, char b) {
 }
 
 StringBuffer operator+(StringBuffer a, char[*] b) {
-    return a + string(b);
+    return a + string { b };
 }
 
 bool operator==(StringBuffer* a, StringBuffer* b) {
-    return string(a) == string(b);
+    return string { a } == string { b };
 }
 
 bool operator==(StringBuffer* a, string b) {
-    return string(a) == b;
+    return string { a } == b;
 }
 
 bool operator!=(StringBuffer* a, string b) {
-    return string(a) != b;
+    return string { a } != b;
 }
 
 bool operator==(string a, StringBuffer* b) {
-    return a == string(b);
+    return a == string { b };
 }
 
 bool operator!=(string a, StringBuffer* b) {
-    return a != string(b);
+    return a != string { b };
 }
 
 bool operator==(char[*] a, StringBuffer* b) {
-    return string(a) == string(b);
+    return string { a } == string { b };
 }
 
 bool operator!=(char[*] a, StringBuffer* b) {
-    return string(a) != string(b);
+    return string { a } != string { b };
 }
 
 bool operator==(StringBuffer* a, char[*] b) {
-    return string(a) == string(b);
+    return string { a } == string { b };
 }
 
 bool operator!=(StringBuffer* a, char[*] b) {
-    return string(a) != string(b);
+    return string { a } != string { b };
 }

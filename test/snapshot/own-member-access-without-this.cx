@@ -35,10 +35,10 @@ struct B: Copyable {
 }
 
 void main() {
-    var a = A()
+    var a = A {}
     a.foo()
     a.bar()
-    var b = B()
+    var b = B {}
     b.foo()
     b.bar()
 }

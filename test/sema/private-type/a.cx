@@ -6,7 +6,7 @@ private struct A {}
 
 private void i(A* q) {
     A a = undefined;
-    a = A();
+    a = A {};
 }
 
 private void j(A a) {}
@@ -31,7 +31,7 @@ void m(A* r) {
     // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.cx:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
     A a = undefined;
     // CHECK-PRIVATE-IN-PUBLIC-DECL-NOT: a.cx:[[@LINE+1]]:{{[0-9]+}}: warning: using private type 'A' in public declaration
-    a = A();
+    a = A {};
 }
 
 void o(A*? a) {} // TODO: Here should be a warning

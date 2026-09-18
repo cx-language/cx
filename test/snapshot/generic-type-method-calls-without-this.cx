@@ -6,6 +6,6 @@ struct S<T>: Copyable {
 }
 
 void main() {
-    S<int>().f()
-    S<float>().f()
+    S<int> {}.f()
+    S<float> {}.f()
 }

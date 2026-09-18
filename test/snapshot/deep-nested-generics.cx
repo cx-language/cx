@@ -39,6 +39,6 @@ struct S<E: H> {
 }
 
 void main() {
-    var s = S<R>();
+    var s = S<R> {};
     s.s();
 }

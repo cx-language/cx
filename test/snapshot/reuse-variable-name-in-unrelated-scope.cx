@@ -3,11 +3,11 @@
 void f() {
     var index = 0;
     var x = g();
-    X<int>().g();
+    X<int> {}.g();
 }
 
 X<int> g() {
-    var x = X<int>();
+    var x = X<int> {};
     return x;
 }
 

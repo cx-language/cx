@@ -2,7 +2,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     ArrayRef<char> characters;
 
     string(char* pointer, int length) {
-        characters = ArrayRef(pointer, length);
+        characters = ArrayRef { pointer, length };
     }
 
     /// Initializes a string referring to a null-terminated C-style string.
@@ -12,11 +12,11 @@ struct string: Copyable, Comparable, Hashable, Printable {
     /// `string(char* pointer, int length)` instead.
     ///
     string(char* cString) {
-        characters = ArrayRef(cString, int(strlen(cString)));
+        characters = ArrayRef { cString, int { strlen(cString) } };
     }
 
     string(StringBuffer* stringBuffer) {
-        characters = ArrayRef(stringBuffer.data(), stringBuffer.size());
+        characters = ArrayRef { stringBuffer.data(), stringBuffer.size() };
     }
 
     bool empty() {
@@ -66,7 +66,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
         if (start < 0 || start > size()) {
             indexOutOfBounds("substr", start);
         }
-        return string(&characters.data()[start], size() - start);
+        return string { &characters.data()[start], size() - start };
     }
 
     /// Returns the substring of the string in the given range, [inclusive, exclusive]
@@ -77,7 +77,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
         if (range.end < 0 || range.end > size()) {
             indexOutOfBounds("substr", range.end);
         }
-        return string(&characters.data()[range.start], range.size());
+        return string { &characters.data()[range.start], range.size() };
     }
 
     /// Supports using strings with sets and dicts
@@ -85,24 +85,24 @@ struct string: Copyable, Comparable, Hashable, Printable {
         uint64 hashValue = 5381;
 
         for (var index in 0..characters.size()) {
-            hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
+            hashValue = ((hashValue << 5) + hashValue) + uint64 { this[index] };
         }
 
         return hashValue;
     }
 
     StringIterator iterator() {
-        return StringIterator(this);
+        return StringIterator { this };
     }
 
     /// Returns an iterator over each line in the string.
     LineIterator lines() {
-        return LineIterator(this);
+        return LineIterator { this };
     }
 
     /// Returns an iterator over each byte in the string.
     ByteIterator bytes() {
-        return ByteIterator(this);
+        return ByteIterator { this };
     }
 
     // TODO: Support plus and minus signs, non-base-10 numbers, and handle range errors.
@@ -116,7 +116,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
         for (var c in this) {
             if (c >= '0' && c <= '9') {
                 result *= 10;
-                result += int(c - '0');
+                result += int { c - '0' };
             } else {
                 return null;
             }
@@ -127,7 +127,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     // TODO: return iterator instead of eagerly allocating?
     StringBuffer escape() {
-        var result = StringBuffer();
+        var result = StringBuffer {};
 
         for (var c in this) {
             switch (c) {
@@ -146,7 +146,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     // TODO: Return non-allocating iterator instead of allocating a string buffer.
     StringBuffer repeat(int count) {
-        var result = StringBuffer(capacity = this.size() * count);
+        var result = StringBuffer { capacity = this.size() * count };
         for (var _ in 0..count) {
             result += this;
         }
@@ -191,17 +191,17 @@ bool operator==(string a, string b) {
 }
 
 bool operator==(char* a, string b) {
-    return string(a) == b;
+    return string { a } == b;
 }
 
 bool operator!=(char* a, string b) {
-    return string(a) != b;
+    return string { a } != b;
 }
 
 bool operator==(string a, char* b) {
-    return a == string(b);
+    return a == string { b };
 }
 
 bool operator!=(string a, char* b) {
-    return a != string(b);
+    return a != string { b };
 }

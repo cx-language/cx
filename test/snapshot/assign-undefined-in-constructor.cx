@@ -9,5 +9,5 @@ struct A {
 }
 
 void main() {
-    var a = A();
+    var a = A {};
 }

@@ -47,7 +47,7 @@ struct ArrayRef<Element>: Copyable {
     }
 
     ArrayIterator<Element> iterator() {
-        return ArrayIterator(this);
+        return ArrayIterator { this };
     }
 
     Element*? find(bool(Element*) predicate) {

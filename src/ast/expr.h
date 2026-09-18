@@ -176,8 +176,9 @@ struct TupleExpr : Expr {
 };
 
 struct CallExpr : Expr {
-    CallExpr(Expr* callee, std::vector<NamedValue>&& args, std::vector<Type>&& genericArgs, Location location)
-    : Expr(ExprKind::CallExpr, location), callee(callee), args(std::move(args)), genericArgs(std::move(genericArgs)), calleeDecl(nullptr) {}
+    CallExpr(Expr* callee, std::vector<NamedValue>&& args, std::vector<Type>&& genericArgs, Location location, bool braceCall = false)
+    : Expr(ExprKind::CallExpr, location), callee(callee), args(std::move(args)), genericArgs(std::move(genericArgs)), calleeDecl(nullptr),
+      braceCall(braceCall) {}
     bool callsNamedFunction() const { return callee->isVarExpr() || callee->isMemberExpr(); }
     llvm::StringRef getFunctionName() const;
     std::string getQualifiedFunctionName() const;
@@ -205,10 +206,11 @@ struct CallExpr : Expr {
     std::vector<Type> genericArgs;
     Type receiverType;
     Decl* calleeDecl;
+    bool braceCall;
 
 protected:
     CallExpr(ExprKind kind, Expr* callee, std::vector<NamedValue>&& args, Location location)
-    : Expr(kind, location), callee(callee), args(std::move(args)), calleeDecl(nullptr) {}
+    : Expr(kind, location), callee(callee), args(std::move(args)), calleeDecl(nullptr), braceCall(false) {}
 };
 
 struct UnaryExpr : CallExpr {

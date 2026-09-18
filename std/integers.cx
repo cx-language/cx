@@ -31,13 +31,13 @@ const uint64 uint64_min = 0;
 private void printSigned(int64 value, StringBuffer* stream) {
     char[22] result = undefined;
     sprintf(result, "%lld", value);
-    stream.write(string(result));
+    stream.write(string { result });
 }
 
 private void printUnsigned(uint64 value, StringBuffer* stream) {
     char[22] result = undefined;
     sprintf(result, "%llu", value);
-    stream.write(string(result));
+    stream.write(string { result });
 }
 
 struct int: Copyable, Comparable, Printable, Hashable {
@@ -46,11 +46,11 @@ struct int: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printSigned(int64(this), stream);
+        printSigned(int64 { this }, stream);
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 
@@ -60,11 +60,11 @@ struct int8: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printSigned(int64(this), stream);
+        printSigned(int64 { this }, stream);
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 
@@ -74,11 +74,11 @@ struct int16: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printSigned(int64(this), stream);
+        printSigned(int64 { this }, stream);
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 
@@ -88,11 +88,11 @@ struct int32: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printSigned(int64(this), stream);
+        printSigned(int64 { this }, stream);
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 
@@ -106,7 +106,7 @@ struct int64: Copyable, Comparable, Printable, Hashable {
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 
@@ -123,11 +123,11 @@ struct uint: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printUnsigned(uint64(this), stream);
+        printUnsigned(uint64 { this }, stream);
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 
@@ -137,11 +137,11 @@ struct uint8: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printUnsigned(uint64(this), stream);
+        printUnsigned(uint64 { this }, stream);
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 
@@ -151,11 +151,11 @@ struct uint16: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printUnsigned(uint64(this), stream);
+        printUnsigned(uint64 { this }, stream);
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 
@@ -165,11 +165,11 @@ struct uint32: Copyable, Comparable, Printable, Hashable {
     }
 
     void print(StringBuffer* stream) {
-        printUnsigned(uint64(this), stream);
+        printUnsigned(uint64 { this }, stream);
     }
 
     uint64 hash() {
-        return uint64(this);
+        return uint64 { this };
     }
 }
 

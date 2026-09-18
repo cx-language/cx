@@ -28,8 +28,8 @@ or inferred when possible.
 
 ```cs
 void main() {
-    var list = List<int>();
-    var boolList = List([true, false]);
+    var list = List<int> {};
+    var boolList = List { [true, false] };
     Map<int, int> map;
 }
 ```
@@ -45,7 +45,7 @@ void callFoo<T: Fooable>(T* f) {
 }
 
 void main() {
-    var x = X();
+    var x = X {};
     callFoo(x);
 }
 ```

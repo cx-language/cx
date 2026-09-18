@@ -19,8 +19,8 @@ struct S: Interface {
 }
 
 void main() {
-    var a = S();
-    var b = S();
+    var a = S {};
+    var b = S {};
     f(a.foo(b));
 }
 

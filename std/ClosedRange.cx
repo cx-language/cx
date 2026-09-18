@@ -25,7 +25,7 @@ struct ClosedRange<T>: Copyable {
     }
 
     ClosedRangeIterator<T> iterator() {
-        return ClosedRangeIterator(this);
+        return ClosedRangeIterator { this };
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.

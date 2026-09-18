@@ -3,5 +3,5 @@
 import inputs
 
 void main() {
-    A<int>().f()
+    A<int> {}.f()
 }

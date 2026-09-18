@@ -6,8 +6,8 @@ import "stdio.h";
 
 void main() {
     char[8] arr = undefined;
-    arr[0] = char(104);
-    arr[1] = char(105);
-    arr[2] = char(0);
+    arr[0] = char { 104 };
+    arr[1] = char { 105 };
+    arr[2] = char { 0 };
     printf("%s\n", arr);
 }

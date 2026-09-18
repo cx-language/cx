@@ -10,7 +10,7 @@ struct S2 {
 }
 
 S2 returnsLargeStruct2() {
-    return S2(0, 1, 2, 3);
+    return S2 { 0, 1, 2, 3 };
 }
 
 void main() {

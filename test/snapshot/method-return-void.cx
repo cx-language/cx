@@ -7,6 +7,6 @@ struct C {
 }
 
 void main() {
-    var c = C()
+    var c = C {}
     c.f()
 }

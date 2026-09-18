@@ -10,6 +10,6 @@ struct Bar {
 }
 
 void main() {
-    var foo = Foo();
-    var bar = Bar(j = -1);
+    var foo = Foo {};
+    var bar = Bar { j = -1 };
 }

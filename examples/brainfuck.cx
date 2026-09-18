@@ -3,7 +3,7 @@ struct Tape {
     int pos;
 
     Tape() {
-        tape = List([0]);
+        tape = List { [0] };
         pos = 0;
     }
 
@@ -37,10 +37,10 @@ struct Program {
     Map<int, int> bracketMap;
 
     Program(string text) {
-        code = StringBuffer();
-        bracketMap = Map();
+        code = StringBuffer {};
+        bracketMap = Map {};
 
-        var leftStack = List<int>();
+        var leftStack = List<int> {};
         var pc = 0;
 
         for (var ch in text) {
@@ -66,7 +66,7 @@ struct Program {
     }
 
     void run() {
-        var tape = Tape();
+        var tape = Tape {};
         var pc = 0;
         var size = code.size();
 
@@ -93,7 +93,7 @@ struct Program {
                         pc = bracketMap[pc]!;
 
                 case '.':
-                    printf("%c", char(tape.value()));
+                    printf("%c", char { tape.value() });
             }
 
             pc++;
@@ -103,5 +103,5 @@ struct Program {
 
 void main() {
     var text = readFile("inputs/mandel.b");
-    Program(string(text)).run();
+    Program { string { text } }.run();
 }

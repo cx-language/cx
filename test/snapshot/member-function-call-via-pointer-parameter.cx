@@ -18,7 +18,7 @@ void qux(Foo* f, Bar* b) {
 }
 
 void main() {
-    var f = Foo();
-    var b = Bar();
+    var f = Foo {};
+    var b = Bar {};
     qux(f, b);
 }

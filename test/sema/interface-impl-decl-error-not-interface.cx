@@ -4,5 +4,5 @@
 struct Z<T>: StringBuffer {}
 
 void main() {
-    var z = Z<int>();
+    var z = Z<int> {};
 }

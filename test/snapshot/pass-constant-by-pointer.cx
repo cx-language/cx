@@ -7,7 +7,7 @@ struct S<T> {
 }
 
 void main() {
-    var s = S<int>();
+    var s = S<int> {};
     s.f(/*&*/i); // TODO: Allow '&' here or don't allow mutable pointers to constants at all.
     s.f(i);
 }

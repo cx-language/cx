@@ -10,7 +10,7 @@ int g() { return 0; }
 bool h() { return false; }
 
 void main() {
-    var x = X();
+    var x = X {};
     x.f(g);
     x.f(h);
 }

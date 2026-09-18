@@ -5,7 +5,7 @@ struct X {
 }
 
 X f() {
-    var x = X();
+    var x = X {};
     return x;
 }
 

@@ -5,7 +5,7 @@ private void printFloat(float64 value, StringBuffer* stream) {
     // Maximum length from https://stackoverflow.com/a/1701272/3425536
     char[1080] result = undefined;
     sprintf(result, "%g", value);
-    stream.write(string(result));
+    stream.write(string { result });
 }
 
 struct float: Copyable, Comparable, Printable {
@@ -14,7 +14,7 @@ struct float: Copyable, Comparable, Printable {
     }
 
     void print(StringBuffer* stream) {
-        printFloat(float64(this), stream);
+        printFloat(float64 { this }, stream);
     }
 }
 
@@ -24,7 +24,7 @@ struct float16: Copyable, Comparable, Printable {
     }
 
     void print(StringBuffer* stream) {
-        printFloat(float64(this), stream);
+        printFloat(float64 { this }, stream);
     }
 }
 
@@ -34,7 +34,7 @@ struct float32: Copyable, Comparable, Printable {
     }
 
     void print(StringBuffer* stream) {
-        printFloat(float64(this), stream);
+        printFloat(float64 { this }, stream);
     }
 }
 

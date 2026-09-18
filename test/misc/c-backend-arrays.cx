@@ -22,17 +22,17 @@ float sum(Particle* p) {
 }
 
 void main() {
-    var p = Particle(undefined, undefined);
+    var p = Particle { undefined, undefined };
     for (var i in 0..3) {
-        p.pos[i] = float(i) * 1.5;
-        p.vel[i] = float(i) + 0.5;
+        p.pos[i] = float { i } * 1.5;
+        p.vel[i] = float { i } + 0.5;
     }
     println(sum(&p));
 
-    var q = Particle(undefined, undefined);
+    var q = Particle { undefined, undefined };
     q.pos[0] = 6;
     println(q.pos[0]);
 
-    var r = Particle([1, 2, 3], [4, 5, 6]);
+    var r = Particle { [1, 2, 3], [4, 5, 6] };
     println(sum(&r));
 }

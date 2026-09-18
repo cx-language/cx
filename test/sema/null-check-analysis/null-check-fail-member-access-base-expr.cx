@@ -14,6 +14,6 @@ struct S {
 }
 
 void main() {
-    var s = S(null);
+    var s = S { null };
     s.f();
 }

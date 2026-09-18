@@ -7,10 +7,10 @@ struct C {
 
 struct A<T> {
     A() {
-        var t = T();
+        var t = T {};
     }
 }
 
 void main() {
-    var a = A<C>();
+    var a = A<C> {};
 }

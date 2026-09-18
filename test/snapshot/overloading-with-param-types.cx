@@ -16,8 +16,8 @@ void operator+(S a, S b) {}
 void operator+(T a, T b) {}
 
 void main() {
-    var s = S();
-    var t = T();
+    var s = S {};
+    var t = T {};
     f(s);
     f(t);
     _ = s + s;

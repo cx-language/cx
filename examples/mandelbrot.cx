@@ -10,22 +10,22 @@ struct Complex: Copyable {
 }
 
 Complex operator+(Complex* a, Complex* b) {
-    return Complex(a.r + b.r, a.i + b.i);
+    return Complex { a.r + b.r, a.i + b.i };
 }
 
 Complex operator*(Complex* a, Complex* b) {
-    return Complex(a.r * b.r - a.i * b.i, a.r * b.i + a.i * b.r);
+    return Complex { a.r * b.r - a.i * b.i, a.r * b.i + a.i * b.r };
 }
 
 void main() {
     for (var y = -0.9; y < 0.9; y += 0.09) {
         for (var x = -1.4; x < 0.4; x += 0.045) {
-            var z = Complex(0, 0);
+            var z = Complex { 0, 0 };
             for (var _ in 0...100) {
-                z = z * z + Complex(x, y);
+                z = z * z + Complex { x, y };
             }
             var chars = " .:-;!/>)|&IH%*#";
-            var index = clamp(int(z.abs() * 50), 0, chars.size() - 1);
+            var index = clamp(int { z.abs() * 50 }, 0, chars.size() - 1);
             print(chars[index]);
         }
         print('\n');

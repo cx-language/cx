@@ -960,10 +960,12 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     llvm::ArrayRef<Decl*> candidates = decls;
     std::vector<ConstructorDecl*> constructorDecls;
     bool isConstructorCall = false;
+    bool sawTypeDecl = false;
 
     for (Decl* decl : decls) {
         switch (decl->kind) {
         case DeclKind::FunctionTemplate: {
+            if (expr.braceCall) continue;
             auto* functionTemplate = llvm::cast<FunctionTemplate>(decl);
             auto genericParams = functionTemplate->genericParams;
 
@@ -992,6 +994,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         case DeclKind::FunctionDecl:
         case DeclKind::MethodDecl:
         case DeclKind::ConstructorDecl: {
+            if (expr.braceCall) continue;
             auto functionDecl = llvm::cast<FunctionDecl>(decl);
 
             // TODO: Figure out where to perform this.
@@ -1010,6 +1013,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             break;
         }
         case DeclKind::TypeDecl: {
+            sawTypeDecl = true;
+            if (!expr.braceCall) continue;
             auto* typeDecl = llvm::cast<TypeDecl>(decl);
             isConstructorCall = true;
             constructorDecls = typeDecl->getConstructors();
@@ -1037,6 +1042,8 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             break;
         }
         case DeclKind::TypeTemplate: {
+            sawTypeDecl = true;
+            if (!expr.braceCall) continue;
             auto* typeTemplate = llvm::cast<TypeTemplate>(decl);
             isConstructorCall = true;
             constructorDecls = typeTemplate->typeDecl->getConstructors();
@@ -1084,6 +1091,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         case DeclKind::VarDecl:
         case DeclKind::ParamDecl:
         case DeclKind::FieldDecl: {
+            if (expr.braceCall) continue;
             auto* variableDecl = llvm::cast<VariableDecl>(decl);
 
             if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->type.typeBase)) {
@@ -1100,7 +1108,7 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             break;
         }
         case DeclKind::DestructorDecl:
-            matches.push_back({decl, false});
+            if (!expr.braceCall) matches.push_back({decl, false});
             break;
 
         default:
@@ -1113,6 +1121,15 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
     }
 
     auto calleeWithGenericArgs = getQualifiedTypeName(callee, expr.genericArgs);
+
+    if (!expr.braceCall && sawTypeDecl && matches.empty()) {
+        ERROR_WITH_NOTES(expr.callee->location, getCandidateNotes(candidates, expr),
+                         "use braces for object construction: '" << calleeWithGenericArgs << " { ... }'");
+    }
+
+    if (expr.braceCall && !sawTypeDecl && !decls.empty()) {
+        ERROR(expr.callee->location, "'" << callee << "' is not a type");
+    }
 
     if (matches.size() > 1) {
         for (auto& arg : expr.args) {
@@ -1181,14 +1198,23 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     }
 
     if (Type::isBuiltinScalar(expr.getFunctionName())) {
+        if (!expr.braceCall) {
+            ERROR(expr.callee->location, "use braces for object construction: '" << expr.getFunctionName() << " { ... }'");
+        }
         return typecheckBuiltinConversion(expr);
     }
 
     if (expr.isBuiltinCast()) {
+        if (expr.braceCall) {
+            ERROR(expr.callee->location, "'cast' is not a type");
+        }
         return typecheckBuiltinCast(expr);
     }
 
     if (expr.getFunctionName() == "assert") {
+        if (expr.braceCall) {
+            ERROR(expr.callee->location, "'assert' is not a type");
+        }
         ParamDecl assertParam(Type::getBool(), "", false, Location());
         validateAndConvertArguments(expr, assertParam, false, expr.getFunctionName(), expr.location);
         validateGenericArgCount(0, expr.genericArgs, expr.getFunctionName(), expr.location);
@@ -1198,6 +1224,11 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     Decl* decl;
 
     if (auto* enumCase = getEnumCase(*expr.callee)) {
+        if (!expr.braceCall) {
+            auto& memberExpr = llvm::cast<MemberExpr>(*expr.callee);
+            auto& base = llvm::cast<VarExpr>(*memberExpr.base);
+            ERROR(expr.callee->location, "use braces for object construction: '" << base.identifier << "." << memberExpr.member << " { ... }'");
+        }
         decl = enumCase;
         llvm::cast<MemberExpr>(*expr.callee).decl = decl;
     } else if (expr.callee->isMemberExpr()) {

@@ -4,7 +4,7 @@
 import "dirent.h";
 
 void listdir(string name, int indent) {
-    var dir = opendir(StringBuffer(name).cString());
+    var dir = opendir(StringBuffer { name }.cString());
     if (!dir) return;
     defer closedir(dir);
 
@@ -16,7 +16,7 @@ void listdir(string name, int indent) {
         println(" ".repeat(indent), path);
 
         if (entry.d_type == DT_DIR) {
-            listdir(string(path), indent + 4);
+            listdir(string { path }, indent + 4);
         }
     }
 }

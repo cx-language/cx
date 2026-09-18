@@ -9,5 +9,5 @@ struct S: Copyable {
 }
 
 void main() {
-    S(1).foo()
+    S { 1 }.foo()
 }

@@ -1,24 +1,15 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %cx -typecheck %s
 
 struct Rectangle {
     int x;
 }
 
 Rectangle Rectangle(int a) {
-    // CHECK: 13:12: error: ambiguous reference to 'Rectangle' constructor
-    // CHECK: 3:8: note: candidate function:
-    // CHECK-NEXT: struct Rectangle {
-    // CHECK: 7:11: note: candidate function:
-    // CHECK-NEXT: Rectangle Rectangle(int a) {
-    return Rectangle(a);
+    return Rectangle { a };
 }
 
 void main() {
-    // CHECK: 23:13: error: ambiguous reference to 'Rectangle' constructor
-    // CHECK: 3:8: note: candidate function:
-    // CHECK-NEXT: struct Rectangle {
-    // CHECK: 7:11: note: candidate function:
-    // CHECK-NEXT: Rectangle Rectangle(int a) {
-    // CHECK-NOT: note
+    // Parenthesized calls resolve to the function, brace calls to the constructor.
     var r = Rectangle(1);
+    var s = Rectangle { 2 };
 }

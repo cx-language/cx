@@ -15,7 +15,7 @@ struct Missile {
     }
 
     void update(float delta, GameState* state) {
-        var velocity = Vector2(direction) * missileSpeed;
+        var velocity = Vector2 { direction } * missileSpeed;
         position = position + velocity * delta;
 
         for (var i in 0..state.asteroids.size()) {
@@ -30,6 +30,6 @@ struct Missile {
     }
 
     Vector2 tailPosition() {
-        return (position - Vector2(missileSize, 0)).rotated(origin = position, angle = direction);
+        return (position - Vector2 { missileSize, 0 }).rotated(origin = position, angle = direction);
     }
 }

@@ -1,7 +1,7 @@
 // RUN: %not %cx run %s 2>&1 | %FileCheck %s
 
 void main() {
-    var array = List<int>();
+    var array = List<int> {};
     array.removeFirst();
 }
 

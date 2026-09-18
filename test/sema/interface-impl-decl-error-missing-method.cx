@@ -8,5 +8,5 @@ interface X {
 struct Z<T>: X {}
 
 void main() {
-    var z = Z<int>();
+    var z = Z<int> {};
 }

@@ -47,8 +47,8 @@ struct B : O {
 //List<O> list;
 
 void main() {
-    var a = A(false, 0);
-    var b = B(4);
+    var a = A { false, 0 };
+    var b = B { 4 };
 //    O o = A(false, 0);
 //    o = B(4);
 }

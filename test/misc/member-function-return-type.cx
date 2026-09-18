@@ -9,6 +9,6 @@ struct Foo: Copyable {
 }
 
 int main() {
-    var foo = Foo(42);
+    var foo = Foo { 42 };
     return foo.add(-21);
 }

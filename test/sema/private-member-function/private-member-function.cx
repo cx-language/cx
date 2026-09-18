@@ -2,7 +2,7 @@
 // RUN: %cx -typecheck %s %p/a.cx | %FileCheck %p/a.cx
 
 void main() {
-    var a = A();
+    var a = A {};
     // CHECK: [[@LINE+1]]:7: warning: 'f' is private
     a.f();
 }

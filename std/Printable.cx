@@ -3,7 +3,7 @@ interface Printable {
     void print(StringBuffer* stream);
 
     StringBuffer toString() {
-        var result = StringBuffer();
+        var result = StringBuffer {};
         this.print(result);
         return result;
     }

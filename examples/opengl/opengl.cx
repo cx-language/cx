@@ -46,7 +46,7 @@ int main()
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
     if (infoLogLength > 0)
     {
-        var infoLog = StringBuffer(uninitializedSize = infoLogLength + 1);
+        var infoLog = StringBuffer { uninitializedSize = infoLogLength + 1 };
         glGetProgramInfoLog(program, infoLogLength, null, infoLog.data());
         println(infoLog);
     }
@@ -66,7 +66,7 @@ int main()
     GLuint vertexBuffer = undefined;
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, int64(vertexBufferData.size()) * int64(sizeof(float)), &vertexBufferData[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, int64 { vertexBufferData.size() } * int64 { sizeof(float) }, &vertexBufferData[0], GL_STATIC_DRAW);
 
     while (glfwWindowShouldClose(window) == 0)
     {
@@ -100,7 +100,7 @@ void LoadShader(GLuint shaderID, string path)
     glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &infoLogLength);
     if (infoLogLength > 0)
     {
-        var infoLog = StringBuffer(uninitializedSize = infoLogLength + 1);
+        var infoLog = StringBuffer { uninitializedSize = infoLogLength + 1 };
         glGetShaderInfoLog(shaderID, infoLogLength, null, infoLog.data());
         println(infoLog);
     }

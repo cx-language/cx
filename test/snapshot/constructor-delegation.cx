@@ -1,7 +1,7 @@
 // RUN: check-snapshots
 
 void main() {
-    var x = X(4, 2);
+    var x = X { 4, 2 };
 }
 
 struct X {

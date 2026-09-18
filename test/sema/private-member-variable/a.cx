@@ -12,6 +12,6 @@ struct A {
 }
 
 void f() {
-    var a = A();
+    var a = A {};
     a.a++;
 }

@@ -11,6 +11,6 @@ struct A {
 }
 
 void g() {
-    var a = A();
+    var a = A {};
     a.g();
 }

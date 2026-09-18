@@ -21,9 +21,9 @@ interface I {
 };
 
 void main() {
-    var s = S(x = 1);
+    var s = S { x = 1 };
     println(s.x);
-    var b = Wrap<int>(value = 1);
+    var b = Wrap<int> { value = 1 };
     println(b.value);
-    println(int(E.B));
+    println(int { E.B });
 }

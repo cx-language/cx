@@ -8,9 +8,9 @@ struct GameState {
     float asteroidSpawnInterval;
 
     GameState() {
-        player = Player();
-        asteroids = List();
-        asteroids.push(Asteroid());
+        player = Player {};
+        asteroids = List {};
+        asteroids.push(Asteroid {});
 
         ticks = SDL_GetTicks();
         timeOfLastAsteroidSpawn = ticks;
@@ -19,7 +19,7 @@ struct GameState {
 
     void update() {
         var newTicks = SDL_GetTicks();
-        var delta = float(newTicks - ticks);
+        var delta = float { newTicks - ticks };
         ticks = newTicks;
 
         player.update(delta, this);
@@ -28,8 +28,8 @@ struct GameState {
             asteroid.update(delta);
         }
 
-        if (newTicks - timeOfLastAsteroidSpawn > uint64(asteroidSpawnInterval)) {
-            asteroids.push(Asteroid());
+        if (newTicks - timeOfLastAsteroidSpawn > uint64 { asteroidSpawnInterval }) {
+            asteroids.push(Asteroid {});
             timeOfLastAsteroidSpawn = newTicks;
             asteroidSpawnInterval *= 0.99;
         }

@@ -3,5 +3,5 @@
 import "opaque-pointer.h"
 
 void main() {
-    var s = S(opaque = null);
+    var s = S { opaque = null };
 }

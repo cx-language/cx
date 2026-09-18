@@ -1,18 +1,15 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %cx -typecheck %s
 
-struct Box<T> {
+struct Wrapper<T> {
     T value;
 }
 
-Box<T> Box<T>(T a) {
-    abort("unreachable");
+Wrapper<T> Wrapper<T>(T a) {
+    return Wrapper { value = a };
 }
 
 void main() {
-    // CHECK: 17:13: error: ambiguous reference to 'Box<int>' constructor
-    // CHECK: 3:8: note: candidate function:
-    // CHECK-NEXT: struct Box<T> {
-    // CHECK: 7:8: note: candidate function:
-    // CHECK-NEXT: Box<T> Box<T>(T a) {
-    var b = Box<int>(1);
+    // Parenthesized calls resolve to the function, brace calls to the constructor.
+    var b = Wrapper<int>(1);
+    var c = Wrapper<int> { value = 2 };
 }

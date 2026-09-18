@@ -33,7 +33,7 @@ Type*? safeAllocate<Type>(Type value) {
 /// undefined behavior (when compiled in unchecked mode).
 ///
 Type[*] allocateArray<Type>(int size) {
-    return cast<Type[*]>(malloc(sizeof(Type) * uint64(size))!);
+    return cast<Type[*]>(malloc(sizeof(Type) * uint64 { size })!);
 }
 
 /// Allocates a block of dynamic memory to hold an array with the given element type and size, and

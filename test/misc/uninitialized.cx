@@ -13,5 +13,5 @@ int main() {
     } else {
         magic = buffer[0];
     }
-    return int(magic);
+    return int { magic };
 }

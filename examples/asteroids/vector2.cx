@@ -19,7 +19,7 @@ struct Vector2: Copyable {
         var dy = y - origin.y;
         var c = cosf(angle);
         var s = sinf(angle);
-        return Vector2(c * dx - s * dy + origin.x, s * dx + c * dy + origin.y);
+        return Vector2 { c * dx - s * dy + origin.x, s * dx + c * dy + origin.y };
     }
 
     float distance(Vector2 other) {
@@ -30,13 +30,13 @@ struct Vector2: Copyable {
 }
 
 Vector2 operator+(Vector2 a, Vector2 b) {
-    return Vector2(a.x + b.x, a.y + b.y);
+    return Vector2 { a.x + b.x, a.y + b.y };
 }
 
 Vector2 operator-(Vector2 a, Vector2 b) {
-    return Vector2(a.x - b.x, a.y - b.y);
+    return Vector2 { a.x - b.x, a.y - b.y };
 }
 
 Vector2 operator*(Vector2 a, float b) {
-    return Vector2(a.x * b, a.y * b);
+    return Vector2 { a.x * b, a.y * b };
 }

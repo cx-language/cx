@@ -170,12 +170,12 @@ struct List<Element> {
     }
 
     ArrayIterator<Element> iterator() {
-        // TODO: When implicit constructors have been implemented, remove the ArrayRef() call below.
-        return ArrayIterator(ArrayRef(this));
+        // TODO: When implicit constructors have been implemented, remove the ArrayRef {} call below.
+        return ArrayIterator { ArrayRef { this } };
     }
 
     EnumeratedIterator<Element> enumerate() {
-        return EnumeratedIterator(iterator());
+        return EnumeratedIterator { iterator() };
     }
 
     Element*? find(bool(Element*) predicate) {
@@ -189,7 +189,7 @@ struct List<Element> {
     }
 
     List<Output> map<Output>(Output(Element*) transform) {
-        var output = List<Output>(capacity = this.size);
+        var output = List<Output> { capacity = this.size };
 
         for (var element in this) {
             output.push(transform(element));
@@ -209,7 +209,7 @@ struct List<Element> {
     }
 
     List<Element> filter(bool(Element*) include) {
-        var output = List<Element>();
+        var output = List<Element> {};
 
         for (var element in this) {
             if (include(element)) {
@@ -221,7 +221,7 @@ struct List<Element> {
     }
 
     List<Element> filter(bool(Element) include) {
-        var output = List<Element>();
+        var output = List<Element> {};
 
         for (var element in this) {
             if (include(element)) {
@@ -251,5 +251,5 @@ struct List<Element> {
 }
 
 bool operator==<T>(List<T>* a, List<T>* b) {
-    return ArrayRef(a) == ArrayRef(b);
+    return ArrayRef { a } == ArrayRef { b };
 }

@@ -11,6 +11,6 @@ struct Y<T> {
 }
 
 void main() {
-    var a = X();
-    Y<bool>().f();
+    var a = X {};
+    Y<bool> {}.f();
 }

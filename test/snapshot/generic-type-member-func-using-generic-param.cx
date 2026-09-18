@@ -5,6 +5,6 @@ struct A<E>: Copyable {
 }
 
 void main() {
-    var a = A<int>()
+    var a = A<int> {}
     a.a(5)
 }

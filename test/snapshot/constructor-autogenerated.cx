@@ -2,11 +2,11 @@
 
 void main() {
     var b = 2;
-    var x = X(4, b);
-    var y = X(a = 4, b = b);
-    var e = Empty();
-    var g = Generic(4.5);
-    var h = Generic(e);
+    var x = X { 4, b };
+    var y = X { a = 4, b = b };
+    var e = Empty {};
+    var g = Generic { 4.5 };
+    var h = Generic { e };
 }
 
 struct X {

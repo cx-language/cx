@@ -130,6 +130,7 @@ std::vector<NamedValue> Parser::parseBraceArgumentList() {
 }
 
 std::vector<NamedValue> Parser::parseArgumentListImpl(Token::Kind left, Token::Kind right, bool allowEmpty) {
+    llvm::SaveAndRestore allowBraces(allowBraceCalls, true);
     parse(left);
     std::vector<NamedValue> args;
 
@@ -281,6 +282,7 @@ UndefinedLiteralExpr* Parser::parseUndefinedLiteral() {
 /// array-literal ::= '[' expr-list ']'
 ArrayLiteralExpr* Parser::parseArrayLiteral() {
     ASSERT(currentToken() == Token::LeftBracket);
+    llvm::SaveAndRestore allowBraces(allowBraceCalls, true);
     auto location = getCurrentLocation();
     consumeToken();
     auto elements = parseExprList();
@@ -482,6 +484,7 @@ MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
 /// index-assignment-expr ::= index-expr '=' expr
 Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
     ASSERT(currentToken() == Token::LeftBracket);
+    llvm::SaveAndRestore allowBraces(allowBraceCalls, true);
     auto location = getCurrentLocation();
     consumeToken();
     auto index = parseExpr();
@@ -505,33 +508,15 @@ UnwrapExpr* Parser::parseUnwrapExpr(Expr* operand) {
 
 /// call-expr ::= expr generic-argument-list? argument-list
 /// constructor-call ::= expr generic-argument-list? brace-argument-list
-static bool isTypeLikeName(llvm::StringRef name) {
-    if (name.empty()) return false;
-    if (name[0] >= 'A' && name[0] <= 'Z') return true;
-    if (Type::isBuiltinScalar(name)) return true;
-    if (name == "string" || name == "never") return true;
-    return false;
-}
-
-static bool isBraceCallCallee(Expr* callee) {
-    if (auto* varExpr = llvm::dyn_cast<VarExpr>(callee)) {
-        return isTypeLikeName(varExpr->identifier);
-    }
-    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(callee)) {
-        return isTypeLikeName(memberExpr->member);
-    }
-    return false;
-}
-
 CallExpr* Parser::parseCallExpr(Expr* callee) {
     std::vector<Type> genericArgs;
     if (currentToken() == Token::Less) {
         genericArgs = parseGenericArgumentList();
     }
     auto location = getCurrentLocation();
-    if (currentToken() == Token::LeftBrace) {
+    if (allowBraceCalls && currentToken() == Token::LeftBrace) {
         auto args = parseBraceArgumentList();
-        return new CallExpr(callee, std::move(args), std::move(genericArgs), location);
+        return new CallExpr(callee, std::move(args), std::move(genericArgs), location, true);
     }
     auto args = parseArgumentList(true);
     return new CallExpr(callee, std::move(args), std::move(genericArgs), location);
@@ -539,7 +524,7 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
 
 /// constructor-call ::= expr generic-argument-list? brace-argument-list
 CallExpr* Parser::parseBraceCallExpr(Expr* callee) {
-    ASSERT(currentToken().is({Token::Less, Token::LeftBrace}));
+    ASSERT(currentToken() == Token::LeftBrace);
     return parseCallExpr(callee);
 }
 
@@ -656,7 +641,7 @@ Expr* Parser::parsePostfixExpr() {
             expr = parseCallExpr(parseVarExpr());
             break;
         case Token::LeftBrace:
-            if (isTypeLikeName(currentToken().getString()) && lookAhead(1).location.line == currentToken().location.line) {
+            if (allowBraceCalls && lookAhead(1).location.line == currentToken().location.line) {
                 expr = parseBraceCallExpr(parseVarExpr());
             } else {
                 expr = parseVarExpr();
@@ -728,7 +713,7 @@ Expr* Parser::parsePostfixExpr() {
             expr = parseCallExpr(expr);
             break;
         case Token::LeftBrace:
-            if (isBraceCallCallee(expr) && currentToken().location.line == expr->location.line) {
+            if (allowBraceCalls && (expr->isVarExpr() || expr->isMemberExpr()) && currentToken().location.line == expr->location.line) {
                 expr = parseBraceCallExpr(expr);
             } else {
                 return expr;
@@ -788,7 +773,9 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
             break;
         }
 
-        lhs = new BinaryExpr(op.kind, lhs, rhs, op.location);
+        auto* binaryExpr = new BinaryExpr(op.kind, lhs, rhs, op.location);
+        if (op == Token::DotDot || op == Token::DotDotDot) binaryExpr->braceCall = true; // `a..b` desugars to Range construction.
+        lhs = binaryExpr;
     }
 
     return lhs;
@@ -805,6 +792,14 @@ Expr* Parser::parseExprOrVarDecl(Decl* parent) {
     } else {
         return new VarDeclExpr(parseVarDecl(parent, AccessLevel::None));
     }
+}
+
+/// Parses an unparenthesized control-flow header expression, where a trailing
+/// '{' starts the body rather than a brace construction. Parenthesize to
+/// construct values in headers.
+Expr* Parser::parseHeaderExpr() {
+    llvm::SaveAndRestore disableBraceCalls(allowBraceCalls, false);
+    return parseExpr();
 }
 
 /// expr-list ::= '' | nonempty-expr-list ','?
@@ -923,6 +918,8 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
     consumeToken();
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
+    // Without parentheses a trailing '{' starts the body, so brace construction needs parentheses here.
+    llvm::SaveAndRestore disableBraceCalls(allowBraceCalls, parens);
     auto condition = parseExprOrVarDecl(parent);
     if (parens) parse(Token::RightParen);
     auto thenStmts = parseBlockOrStmt(parent);
@@ -940,6 +937,8 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     auto location = consumeToken().location;
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
+    // Without parentheses a trailing '{' starts the body, so brace construction needs parentheses here.
+    llvm::SaveAndRestore disableBraceCalls(allowBraceCalls, parens);
     auto condition = parseExprOrVarDecl(parent);
     if (parens) parse(Token::RightParen);
     auto body = parseBlockOrStmt(parent);
@@ -970,14 +969,14 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         }
         Expr* increment = nullptr;
         if (currentToken() != Token::RightParen && currentToken() != Token::LeftBrace) {
-            increment = parseExpr();
+            increment = parens ? parseExpr() : parseHeaderExpr();
         }
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
         return new ForStmt(varStmt, condition, increment, std::move(body), location);
     } else {
         parse(Token::In);
-        auto range = parseExpr();
+        auto range = parens ? parseExpr() : parseHeaderExpr();
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
         return new ForEachStmt(varStmt->decl, range, std::move(body), location);
@@ -991,7 +990,7 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
 SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
     ASSERT(currentToken() == Token::Switch);
     consumeToken();
-    auto condition = parseExpr();
+    auto condition = parseHeaderExpr();
     parse(Token::LeftBrace);
     std::vector<SwitchCase> cases;
     std::vector<Stmt*> defaultStmts;

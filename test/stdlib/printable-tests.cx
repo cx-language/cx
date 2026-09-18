@@ -16,5 +16,5 @@ struct A: Printable {
 }
 
 void testCustomPrintableStruct() {
-    assert(string(A("foo", "bar").toString()) == "foo+bar");
+    assert(string { A { "foo", "bar" }.toString() } == "foo+bar");
 }

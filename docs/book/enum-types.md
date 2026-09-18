@@ -13,11 +13,11 @@ enum JSONValue {
 }
 
 void main() {
-    JSONValue a = JSONValue.Array(List([
-        JSONValue.Boolean(false), 
-        JSONValue.Number(42), 
+    JSONValue a = JSONValue.Array { List { [
+        JSONValue.Boolean { false }, 
+        JSONValue.Number { 42 }, 
         JSONValue.Null
-    ]));
+    ] } };
 
     switch (a) {
         case JSONValue.String: println("it's a string");

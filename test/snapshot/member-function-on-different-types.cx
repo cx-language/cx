@@ -11,6 +11,6 @@ struct Bar {
 }
 
 void main() {
-    Foo(1).doStuff();
-    Bar(2).doStuff();
+    Foo { 1 }.doStuff();
+    Bar { 2 }.doStuff();
 }

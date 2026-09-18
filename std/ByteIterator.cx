@@ -10,7 +10,7 @@ struct ByteIterator: Copyable, Iterator<uint8> {
     }
 
     uint8 value() {
-        return uint8(stream.front());
+        return uint8 { stream.front() };
     }
 
     void increment() {

@@ -36,6 +36,6 @@ struct C {
 }
 
 void main() {
-    var a = A();
-    var c = C();
+    var a = A {};
+    var c = C {};
 }

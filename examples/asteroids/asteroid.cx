@@ -10,7 +10,7 @@ const minSize = 5;
 const maxSize = 30;
 
 float randomFloat(float a, float b) {
-    return a + float(rand()) / float(RAND_MAX) * (b - a);
+    return a + float { rand() } / float { RAND_MAX } * (b - a);
 }
 
 struct Asteroid {
@@ -22,10 +22,10 @@ struct Asteroid {
     Vector2[8] vertices;
 
     Asteroid() {
-        position = Vector2(randomFloat(0, width), randomFloat(0, height));
+        position = Vector2 { randomFloat(0, width), randomFloat(0, height) };
         var direction = randomFloat(-M_PI, M_PI);
         var speed = randomFloat(minSpeed, maxSpeed);
-        velocity = Vector2(direction) * speed;
+        velocity = Vector2 { direction } * speed;
         rotation = 0;
         rotationSpeed = randomFloat(-maxRotationSpeed, maxRotationSpeed);
         size = randomFloat(minSize, maxSize);
@@ -33,8 +33,8 @@ struct Asteroid {
 
         for (var i in 0..vertices.size()) {
             var offset = 1 + randomFloat(-formVariation, formVariation);
-            var angle = float(i) / float(vertices.size()) * M_PI * 2;
-            vertices[i] = Vector2(angle) * (offset * size);
+            var angle = float { i } / float { vertices.size() } * M_PI * 2;
+            vertices[i] = Vector2 { angle } * (offset * size);
         }
     }
 
@@ -52,7 +52,7 @@ struct Asteroid {
     void render(SDL_Renderer* renderer) {
         for (var i in -1...1) {
             for (var j in -1...1) {
-                var diff = Vector2(float(i) * width, float(j) * height);
+                var diff = Vector2 { float { i } * width, float { j } * height };
 
                 for (var k in 0..vertices.size()) {
                     var l = (k + 1) % vertices.size();

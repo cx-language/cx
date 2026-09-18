@@ -3,7 +3,7 @@
 struct A {}
 
 void f<T>() {
-    var t = T();
+    var t = T {};
     var a = t;
 }
 
@@ -14,6 +14,6 @@ void g<T>(T t) {
 void main() {
     f<A>();
     f<A>();
-    g(A());
-    g(A());
+    g(A {});
+    g(A {});
 }

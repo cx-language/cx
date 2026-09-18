@@ -19,5 +19,5 @@ struct Y<T> {
 }
 
 void main() {
-    var x = X<int>();
+    var x = X<int> {};
 }

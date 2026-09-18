@@ -13,6 +13,6 @@ struct S {
 void f() {}
 
 void main() {
-    var s = S();
+    var s = S {};
     s.foo(f);
 }

@@ -8,7 +8,7 @@ void main() {
 }
 
 void testPushPop() {
-    var q = Queue<int>();
+    var q = Queue<int> {};
 
     assert(q.size() == 0);
     q.push(23);
@@ -27,7 +27,7 @@ void testPushPop() {
 }
 
 void testEmpty() {
-    var q = Queue<string>();
+    var q = Queue<string> {};
 
     assert(q.empty());
 
@@ -41,7 +41,7 @@ void testEmpty() {
 }
 
 void testPushAfterPop() {
-    var q = Queue<string>();
+    var q = Queue<string> {};
 
     q.push("foo");
     assert(q.size() == 1);
@@ -54,7 +54,7 @@ void testPushAfterPop() {
 }
 
 void testFirst() {
-    var q = Queue<string>();
+    var q = Queue<string> {};
 
     q.push("foo");
     q.push("bar");

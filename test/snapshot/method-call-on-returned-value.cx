@@ -12,12 +12,12 @@ struct C {
     void f() {}
 }
 
-S s() { return S(); }
-C c() { return C(); }
+S s() { return S {}; }
+C c() { return C {}; }
 
 void main() {
     s().f();
     c().f();
-    S().f();
-    C().f();
+    S {}.f();
+    C {}.f();
 }

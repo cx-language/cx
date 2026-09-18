@@ -3,6 +3,6 @@
 import "a.h"
 
 void main() {
-    var a = List<int>()
+    var a = List<int> {}
     a.push(1)
 }

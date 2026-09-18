@@ -3,7 +3,7 @@ struct Set<Key: Hashable> {
 
     /// Initializes an empty set
     Set() {
-        map = Map();
+        map = Map {};
     }
 
     /// Inserts an element into the set. If the element exists already, nothing is done.
@@ -30,6 +30,6 @@ struct Set<Key: Hashable> {
     }
 
     SetIterator<Key> iterator() {
-        return SetIterator(this);
+        return SetIterator { this };
     }
 }

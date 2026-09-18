@@ -11,6 +11,6 @@ struct C<T>: Copyable {
 }
 
 void main() {
-    var c = C<bool>()
+    var c = C<bool> {}
     c.f()
 }

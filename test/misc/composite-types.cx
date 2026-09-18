@@ -12,6 +12,6 @@ struct Y {
 }
 
 int main() {
-    var x = X(5);
+    var x = X { 5 };
     return x.a;
 }

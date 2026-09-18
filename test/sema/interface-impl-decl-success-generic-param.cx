@@ -9,5 +9,5 @@ struct Z<T>: T {
 }
 
 void main() {
-    var z = Z<X>();
+    var z = Z<X> {};
 }

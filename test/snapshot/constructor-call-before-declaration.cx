@@ -1,7 +1,7 @@
 // RUN: check-snapshots
 
 void main() {
-    var f = Foo(5);
+    var f = Foo { 5 };
 }
 
 struct Foo: Copyable {

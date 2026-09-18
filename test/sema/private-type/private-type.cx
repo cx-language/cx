@@ -7,7 +7,7 @@ void main() {
     A a = undefined;
 
     // CHECK: [[@LINE+1]]:9: warning: 'A' is private
-    a = A();
+    a = A {};
 }
 
 // CHECK: [[@LINE+1]]:8: warning: 'A' is private

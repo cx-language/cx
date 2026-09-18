@@ -5,7 +5,7 @@
 %"RangeIterator<int>" = type { i32, i32 }
 %"Range<int>" = type { i32, i32 }
 
-@0 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:61\0A\00", align 1
+@0 = private unnamed_addr constant [36 x i8] c"Unwrap failed at allocate.cx:36:64\0A\00", align 1
 
 define i32 @main() {
   %i = alloca %"List<int>", align 8

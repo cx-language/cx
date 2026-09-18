@@ -16,7 +16,7 @@ int foo(int a) {
 }
 
 void main() {
-    var x = X(foo);
+    var x = X { foo };
     x.p(42);
     x.f();
 }

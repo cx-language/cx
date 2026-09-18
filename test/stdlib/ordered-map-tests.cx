@@ -13,7 +13,7 @@ void main() {
 }
 
 void testInsertAndContains() {
-    var m = OrderedMap<int, int>();
+    var m = OrderedMap<int, int> {};
     assert(m.size() == 0);
 
     m.insert(7, 8);
@@ -29,7 +29,7 @@ void testInsertAndContains() {
 }
 
 void testInsertAndDelete() {
-    var m = OrderedMap<int, int>();
+    var m = OrderedMap<int, int> {};
 
     m.insert(42, 39);
     assert(m.contains(42));
@@ -49,7 +49,7 @@ void testInsertAndDelete() {
 }
 
 void testInsertAndIndex() {
-    var m = OrderedMap<int, int>();
+    var m = OrderedMap<int, int> {};
 
     m.insert(42, 39);
     assert(m[42] == 39);
@@ -69,7 +69,7 @@ void testInsertAndIndex() {
 }
 
 void testLowerAndHigher() {
-    var m = OrderedMap<int, int>();
+    var m = OrderedMap<int, int> {};
 
     for (var i in 0..100) {
         m.insert(i, i+6);
@@ -87,7 +87,7 @@ void testLowerAndHigher() {
 }
 
 void testFirstLast() {
-    var m = OrderedMap<int, int>();
+    var m = OrderedMap<int, int> {};
 
     m.insert(63, 3);
     m.insert(69, 3);
@@ -99,7 +99,7 @@ void testFirstLast() {
 }
 
 void testEmptyMapFunctions() {
-    var m = OrderedMap<int, int>();
+    var m = OrderedMap<int, int> {};
 
     assert(m.first() == null);
     assert(m.last() == null);
@@ -109,7 +109,7 @@ void testEmptyMapFunctions() {
 
 
 void testIteratorOrder() {
-    var map = OrderedMap<int, int>();
+    var map = OrderedMap<int, int> {};
 
     for (var i in 0..100) {
         map.insert(i, i-12);
@@ -124,7 +124,7 @@ void testIteratorOrder() {
 
     assert(called == 100);
 
-    map = OrderedMap();
+    map = OrderedMap {};
 
     for (var i in 0..100) {
         map.insert(99 - i, i-12);
@@ -144,7 +144,7 @@ void testIteratorOrder() {
 }
 
 void testEmptyMapIterator() {
-    var map = OrderedMap<int, int>();
+    var map = OrderedMap<int, int> {};
     map.insert(1, 2);
     map.insert(1, 2);
     map.remove(1);
@@ -155,7 +155,7 @@ void testEmptyMapIterator() {
 }
 
 void testUnitMapIterator() {
-    var map = OrderedMap<int, int>();
+    var map = OrderedMap<int, int> {};
     map.insert(1, 2);
     map.insert(1, 4);
 

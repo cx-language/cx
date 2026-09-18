@@ -11,35 +11,35 @@ void testAllAnyNone() {
     assert((0...3).all(x -> x < 4));
     assert(!(0..3).all(x -> x != 2));
     assert("abc".any(x -> x == 'c'));
-    assert(!StringBuffer("abc").any(x -> x == 'd'));
-    assert(List([0,1,2,3]).none(x -> x > 3));
-    assert(ArrayRef<int>().none(x -> true));
+    assert(!StringBuffer { "abc" }.any(x -> x == 'd'));
+    assert(List { [0,1,2,3] }.none(x -> x > 3));
+    assert(ArrayRef<int> {}.none(x -> true));
 }
 
 void testInsertionSort() {
-    var a = List<int>();
+    var a = List<int> {};
     for (var i in 0..5) {
         a.push(5 - i);
     }
 
-    var real = List<int>();
+    var real = List<int> {};
     for (var i in 0..5) {
         real.push(i + 1);
     }
 
     sort(a);
 
-    assert(ArrayRef(a) == ArrayRef(real));
+    assert(ArrayRef { a } == ArrayRef { real });
 }
 
 void testQuickSort() {
-    var a = List<int>();
+    var a = List<int> {};
 
     for (var i in 0..64) {
         a.push(64 - i);
     }
 
-    var real = List<int>();
+    var real = List<int> {};
 
     for (var i in 0..64) {
         real.push(i + 1);
@@ -47,7 +47,7 @@ void testQuickSort() {
 
     sort(a);
 
-    assert(ArrayRef(a) == ArrayRef(real));
+    assert(ArrayRef { a } == ArrayRef { real });
 }
 
 void testMax() {

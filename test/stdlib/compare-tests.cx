@@ -9,8 +9,8 @@ struct C: Comparable {
 }
 
 void main() {
-    var a = C(6);
-    var b = C(99);
+    var a = C { 6 };
+    var b = C { 99 };
 
     assert(a <= b);
     assert(!(a >= b));

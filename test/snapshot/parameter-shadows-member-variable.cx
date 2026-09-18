@@ -9,5 +9,5 @@ struct S {
 }
 
 void main() {
-    S().foo(30);
+    S {}.foo(30);
 }

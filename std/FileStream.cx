@@ -24,9 +24,9 @@ struct OutputFileStream {
 }
 
 OutputFileStream stdout() {
-    return OutputFileStream(fileDescriptor = 1);
+    return OutputFileStream { fileDescriptor = 1 };
 }
 
 OutputFileStream stderr() {
-    return OutputFileStream(fileDescriptor = 2);
+    return OutputFileStream { fileDescriptor = 2 };
 }

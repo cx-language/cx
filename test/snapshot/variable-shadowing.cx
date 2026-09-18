@@ -17,6 +17,6 @@ struct S {
 
 void main() {
     int i = 0;
-    S s = S();
+    S s = S {};
     s.f();
 }

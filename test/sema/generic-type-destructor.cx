@@ -8,5 +8,5 @@ struct C<T> {
 }
 
 void main() {
-    var c = C<int>()
+    var c = C<int> {}
 }

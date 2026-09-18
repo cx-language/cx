@@ -14,17 +14,17 @@ struct Player {
     float timeSinceLastMissileShot;
 
     Player() {
-        position = Vector2(width / 2, height / 2);
-        velocity = Vector2(0, 0);
+        position = Vector2 { width / 2, height / 2 };
+        velocity = Vector2 { 0, 0 };
         direction = 0;
-        missiles = List();
+        missiles = List {};
         timeSinceLastMissileShot = 0;
     }
 
     void render(SDL_Renderer* renderer) {
-        var a = Vector2(position.x - playerSize, position.y - playerSize);
-        var b = Vector2(position.x - playerSize, position.y + playerSize);
-        var c = Vector2(position.x + playerSize + playerSize, position.y);
+        var a = Vector2 { position.x - playerSize, position.y - playerSize };
+        var b = Vector2 { position.x - playerSize, position.y + playerSize };
+        var c = Vector2 { position.x + playerSize + playerSize, position.y };
 
         a = a.rotated(origin = position, angle = direction);
         b = b.rotated(origin = position, angle = direction);
@@ -32,7 +32,7 @@ struct Player {
 
         for (var i in -1...1) {
             for (var j in -1...1) {
-                var diff = Vector2(float(i) * width, float(j) * height);
+                var diff = Vector2 { float { i } * width, float { j } * height };
                 var aa = a + diff;
                 var bb = b + diff;
                 var cc = c + diff;
@@ -85,8 +85,8 @@ struct Player {
 
     void shootMissile() {
         if (timeSinceLastMissileShot > missileCooldown) {
-            var position = this.position + Vector2(direction) * playerSize * 2 + Vector2(direction) * missileSize;
-            missiles.push(Missile(position, direction));
+            var position = this.position + Vector2 { direction } * playerSize * 2 + Vector2 { direction } * missileSize;
+            missiles.push(Missile { position, direction });
             timeSinceLastMissileShot = 0;
         }
     }

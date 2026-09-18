@@ -8,7 +8,7 @@ struct Foo: Copyable {
 }
 
 void main() {
-    var foo = Foo();
+    var foo = Foo {};
     foo.bar();
     var i = foo.qux();
 }

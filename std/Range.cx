@@ -25,7 +25,7 @@ struct Range<T>: Copyable {
     }
 
     RangeIterator<T> iterator() {
-        return RangeIterator(this);
+        return RangeIterator { this };
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.

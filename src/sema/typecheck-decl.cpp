@@ -11,12 +11,19 @@ using namespace cx;
 
 // Finds the type template to instantiate for a generic type name. A same-named function
 // doesn't prevent using the type in type position.
-static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*> decls) {
+static TypeTemplate* findTypeTemplateForGenericArgs(Type type, std::vector<Decl*> decls, const Module& currentModule) {
     decls.erase(std::remove_if(decls.begin(), decls.end(), [](Decl* d) { return !d->isTypeTemplate() && !d->isTypeDecl(); }), decls.end());
 
     if (decls.empty()) {
         ERROR(type.location, "'" << type << "' is not a type");
     }
+
+    // A same-named type from another module doesn't prevent using the current module's type.
+    std::vector<Decl*> localDecls;
+    for (Decl* decl : decls) {
+        if (decl->getModule() == &currentModule) localDecls.push_back(decl);
+    }
+    if (localDecls.size() == 1) decls = std::move(localDecls);
 
     if (!decls[0]->isTypeTemplate()) {
         ERROR(type.location, "too many generic arguments to '" << type.getName() << "', expected 0");
@@ -95,7 +102,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
                 if (decls.empty()) {
                     ERROR(type.location, "unknown type '" << type << "'");
                 }
-                auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls));
+                auto* typeTemplate = findTypeTemplateForGenericArgs(type, std::move(decls), *currentModule);
                 decl = typeTemplate;
                 ASSERT(!basicType->genericArgs.empty());
                 auto instantiation = typeTemplate->instantiate(basicType->genericArgs);

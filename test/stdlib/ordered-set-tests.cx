@@ -14,7 +14,7 @@ void main() {
 }
 
 void testInsert() {
-    var s = OrderedSet<int>();
+    var s = OrderedSet<int> {};
 
     s.insert(42);
 
@@ -23,7 +23,7 @@ void testInsert() {
 }
 
 void testRemoval() {
-    var s = OrderedSet<int>();
+    var s = OrderedSet<int> {};
 
     s.insert(42);
     assert(s.contains(42));
@@ -33,7 +33,7 @@ void testRemoval() {
 }
 
 void testDuplicates() {
-    var s = OrderedSet<int>();
+    var s = OrderedSet<int> {};
 
     s.insert(42);
     s.insert(42);
@@ -44,7 +44,7 @@ void testDuplicates() {
 }
 
 void testIterator() {
-    var s = OrderedSet<int>();
+    var s = OrderedSet<int> {};
 
     s.insert(1);
     s.insert(2);
@@ -78,7 +78,7 @@ void testIterator() {
 }
 
 void testEmptyOrderedSetIterator() {
-    var s = OrderedSet<int>();
+    var s = OrderedSet<int> {};
     s.insert(79);
     s.insert(79);
     s.remove(79);
@@ -89,7 +89,7 @@ void testEmptyOrderedSetIterator() {
 }
 
 void testUnitOrderedSetIterator() {
-    var s = OrderedSet<int>();
+    var s = OrderedSet<int> {};
     s.insert(79);
     s.insert(79);
     var count = 0;
@@ -103,7 +103,7 @@ void testUnitOrderedSetIterator() {
 }
 
 void testLowerAndHigher() {
-    var m = OrderedSet<int>();
+    var m = OrderedSet<int> {};
 
     for (var i in 0..100) {
         m.insert(i);
@@ -121,7 +121,7 @@ void testLowerAndHigher() {
 }
 
 void testFirstLast() {
-    var s = OrderedSet<uint>();
+    var s = OrderedSet<uint> {};
 
     s.insert(63);
     s.insert(69);
@@ -133,7 +133,7 @@ void testFirstLast() {
 }
 
 void testEmptyOrderedSetFunctions() {
-    var s = OrderedSet<uint>();
+    var s = OrderedSet<uint> {};
 
     assert(s.first() == null);
     assert(s.last() == null);
@@ -142,10 +142,10 @@ void testEmptyOrderedSetFunctions() {
 }
 
 void testIteratorOrder() {
-    var set = OrderedSet<uint>();
+    var set = OrderedSet<uint> {};
 
     for (var i in 0..100) {
-        set.insert(uint(i));
+        set.insert(uint { i });
     }
 
     uint called = 0;
@@ -156,10 +156,10 @@ void testIteratorOrder() {
 
     assert(called == 100);
 
-    set = OrderedSet();
+    set = OrderedSet {};
 
     for (var i in 0..100) {
-        set.insert(uint(99 - i));
+        set.insert(uint { 99 - i });
     }
 
     called = 0;

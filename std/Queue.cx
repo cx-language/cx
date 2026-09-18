@@ -21,7 +21,7 @@ struct Queue<T> {
 
     /// Add to the back of the queue
     void push(T value) {
-        var newNode = allocate(Node(value));
+        var newNode = allocate(Node { value });
 
         if (empty()) {
             head = newNode;

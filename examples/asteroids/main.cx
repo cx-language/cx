@@ -18,7 +18,7 @@ void main() {
     defer SDL_Quit();
 
     var window = SDL_CreateWindow("C* Asteroids",
-        int(width), int(height), 0);
+        int { width }, int { height }, 0);
 
     if (window == null) {
         puts(SDL_GetError());
@@ -41,7 +41,7 @@ void main() {
 
 void mainLoop(SDL_Renderer* renderer) {
     SDL_Event event = undefined;
-    var state = GameState();
+    var state = GameState {};
     keyState = cast<const bool[*]>(SDL_GetKeyboardState(null)!);
 
     while (true) {

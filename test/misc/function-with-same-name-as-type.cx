@@ -7,7 +7,7 @@ struct Rectangle {
 }
 
 Rectangle Rectangle(int a) {
-    return Rectangle(a, a);
+    return Rectangle { a, a };
 }
 
 void main() {

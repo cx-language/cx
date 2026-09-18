@@ -12,7 +12,7 @@ struct S: Copyable {
 
 struct A<E> {
     E a() {
-        return E();
+        return E {};
     }
 }
 
@@ -22,12 +22,12 @@ struct M<T: I> {
     M() {}
 
     void f() {
-        var a = A<T>();
+        var a = A<T> {};
         a.a().i();
     }
 }
 
 void main() {
-    var m = M<S>();
+    var m = M<S> {};
     m.f();
 }

@@ -188,14 +188,16 @@ Expr* Expr::instantiate(const llvm::StringMap<Type>& genericArgs) const {
         auto* binaryExpr = llvm::cast<BinaryExpr>(this);
         auto lhs = binaryExpr->getLHS().instantiate(genericArgs);
         auto rhs = binaryExpr->getRHS().instantiate(genericArgs);
-        return new BinaryExpr(binaryExpr->op, lhs, rhs, binaryExpr->location);
+        auto* result = new BinaryExpr(binaryExpr->op, lhs, rhs, binaryExpr->location);
+        result->braceCall = binaryExpr->braceCall;
+        return result;
     }
     case ExprKind::CallExpr: {
         auto* callExpr = llvm::cast<CallExpr>(this);
         auto callee = callExpr->callee->instantiate(genericArgs);
         auto args = map(callExpr->args, [&](auto& arg) { return NamedValue(std::string(arg.name), arg.value->instantiate(genericArgs)); });
         auto callGenericArgs = map(callExpr->genericArgs, [&](Type type) { return type.resolve(genericArgs); });
-        return new CallExpr(callee, std::move(args), std::move(callGenericArgs), callExpr->location);
+        return new CallExpr(callee, std::move(args), std::move(callGenericArgs), callExpr->location, callExpr->braceCall);
     }
     case ExprKind::SizeofExpr: {
         auto* sizeofExpr = llvm::cast<SizeofExpr>(this);

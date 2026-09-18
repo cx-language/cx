@@ -5,7 +5,7 @@ struct X: Copyable {
 }
 
 int main() {
-    var x = X(0);
+    var x = X { 0 };
     x.a = 5;
     x.a++;
     return x.a;

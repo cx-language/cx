@@ -8,6 +8,6 @@ struct S<T>: Copyable {
 }
 
 void main() {
-    var s = S<int>();
+    var s = S<int> {};
     s.f(1);
 }

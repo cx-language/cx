@@ -5,6 +5,6 @@ struct C<T> {
 }
 
 void main() {
-    var i = C<int>()
-    var b = C<bool>()
+    var i = C<int> {}
+    var b = C<bool> {}
 }

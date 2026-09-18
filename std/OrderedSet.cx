@@ -4,7 +4,7 @@ struct OrderedSet<Element> {
 
     /// Initiates an empty Set.
     OrderedSet() {
-        map = OrderedMap();
+        map = OrderedMap {};
     }
 
     /// Inserts an element into the Set.
@@ -56,6 +56,6 @@ struct OrderedSet<Element> {
 
     /// Iterate over the map, in order
     OrderedSetIterator<Element> iterator() {
-        return OrderedSetIterator(this);
+        return OrderedSetIterator { this };
     }
 }

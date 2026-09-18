@@ -10,6 +10,6 @@ struct B: A {
 }
 
 void main() {
-    var b = B();
+    var b = B {};
     var x = b.g();
 }

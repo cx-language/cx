@@ -11,6 +11,6 @@ struct S: Copyable {
 }
 
 void main() {
-    var s = S();
-    var t = S(1);
+    var s = S {};
+    var t = S { 1 };
 }

@@ -4,5 +4,5 @@
 struct Z<T>: T {}
 
 void main() {
-    var z = Z<bool>();
+    var z = Z<bool> {};
 }

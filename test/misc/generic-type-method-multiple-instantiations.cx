@@ -7,6 +7,6 @@ struct S<T>: Copyable {
 }
 
 void main() {
-    S<int>().f(1)
-    S<bool>().f(false)
+    S<int> {}.f(1)
+    S<bool> {}.f(false)
 }
