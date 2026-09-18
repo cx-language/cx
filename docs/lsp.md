@@ -15,6 +15,13 @@ lsp` (which forwards stdio to `cx-lsp` found next to `cx` or on `PATH`).
 | Completions (keywords, locals, top-level and stdlib declarations) | `textDocument/completion` |
 | File outline (functions, types, fields, methods, enum cases) | `textDocument/documentSymbol` |
 | Find references (same package + imports, including type names) | `textDocument/references` |
+| Syntax highlighting (whole file + ranges) | `textDocument/semanticTokens/full`, `textDocument/semanticTokens/range` |
+
+Token types: `comment`, `string`, `number`, `keyword`, `macro` (`#if`/`#else`/`#endif`),
+`type`, `struct`, `enum`, `interface`, `typeParameter`, `parameter`, `variable`,
+`property` (fields), `enumMember`, `function`, `method`. Definitions carry the
+`definition` modifier. Keywords, strings, numbers, comments and macros highlight
+even when the file doesn't compile.
 
 Positions assume UTF-8/ASCII source (one byte per character).
 
@@ -117,7 +124,7 @@ Request:
 ```jsonc
 {
     "method": "check",        // or "hover" | "definition" | "completion"
-                              // | "documentSymbol" | "references"
+                              // | "documentSymbol" | "references" | "semanticTokens"
     "file": "/abs/path/main.cx",
     "content": "<full unsaved text>",
     "openDocs": {"/abs/path/other.cx": "<text>"},  // sibling overlay
@@ -132,7 +139,10 @@ Request:
 `check` returns `{"diagnostics": [{"file", "range", "severity" (1=error,
 2=warning), "message", "relatedInformation"}]}`. Every other method returns
 the same `diagnostics` array plus its own payload (`hover`, `found`/`file`/
-`range`, `items`, `symbols`, `references`). All ranges are 0-based.
+`range`, `items`, `symbols`, `references`, `tokens`). All ranges are 0-based.
+`semanticTokens` returns `tokens` sorted by position as
+`[{"line", "start", "length", "type", "modifiers"}]` (absolute positions; the
+server delta-encodes them for LSP).
 
 Example:
 

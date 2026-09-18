@@ -1,4 +1,5 @@
 #include "analyzer.h"
+#include <algorithm>
 #include <cctype>
 #include <cstdio>
 #include <fstream>
@@ -839,6 +840,516 @@ void ReferenceCollector::visitDecl(Decl* decl) {
     }
 }
 
+/// Maps a resolved declaration to its highlight type, or null when it has no
+/// highlightable name (imports).
+const char* tokenTypeForDecl(const Decl& decl) {
+    switch (decl.kind) {
+    case DeclKind::FunctionDecl:
+        return "function";
+    case DeclKind::MethodDecl:
+    case DeclKind::ConstructorDecl:
+    case DeclKind::DestructorDecl:
+        return "method";
+    case DeclKind::FunctionTemplate: {
+        auto* fn = llvm::cast<FunctionTemplate>(&decl)->functionDecl;
+        if (fn && fn->isMethodDecl()) return "method";
+        return "function";
+    }
+    case DeclKind::TypeDecl:
+        if (llvm::cast<TypeDecl>(&decl)->isInterface()) return "interface";
+        return "struct";
+    case DeclKind::TypeTemplate: {
+        auto* inner = llvm::cast<TypeTemplate>(&decl)->typeDecl;
+        if (inner && inner->isInterface()) return "interface";
+        return "struct";
+    }
+    case DeclKind::EnumDecl:
+        return "enum";
+    case DeclKind::EnumCase:
+        return "enumMember";
+    case DeclKind::VarDecl:
+        return "variable";
+    case DeclKind::FieldDecl:
+        return "property";
+    case DeclKind::ParamDecl:
+        return "parameter";
+    case DeclKind::GenericParamDecl:
+        return "typeParameter";
+    case DeclKind::ImportDecl:
+        return nullptr;
+    }
+    return nullptr;
+}
+
+/// Tolerant single-pass scanner for syntax-only tokens (comments, strings,
+/// numbers, keywords). Deliberately independent of Lexer: it never reports
+/// errors or throws, so half-typed code still highlights something sane.
+/// Identifiers are left to the AST pass, which knows their semantic type.
+void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>& out) {
+    // Mirrors the keyword table in lex.cpp; hash-directives highlight as macros.
+    static const llvm::StringMap<const char*> keywords = {
+        {"as", "keyword"},     {"break", "keyword"},     {"case", "keyword"},   {"const", "keyword"},     {"continue", "keyword"}, {"default", "keyword"},
+        {"defer", "keyword"},  {"else", "keyword"},      {"enum", "keyword"},   {"extern", "keyword"},    {"false", "keyword"},    {"for", "keyword"},
+        {"if", "keyword"},     {"import", "keyword"},    {"in", "keyword"},     {"interface", "keyword"}, {"null", "keyword"},     {"private", "keyword"},
+        {"public", "keyword"}, {"return", "keyword"},    {"sizeof", "keyword"}, {"struct", "keyword"},    {"switch", "keyword"},   {"this", "keyword"},
+        {"true", "keyword"},   {"undefined", "keyword"}, {"var", "keyword"},    {"while", "keyword"},     {"#if", "macro"},        {"#else", "macro"},
+        {"#endif", "macro"},
+    };
+    auto emit = [&](int line, int start, int length, const char* type) {
+        if (length <= 0) return;
+        SemanticToken token;
+        token.line = line;
+        token.start = start;
+        token.length = length;
+        token.type = type;
+        out.push_back(std::move(token));
+    };
+
+    size_t i = 0;
+    int line = 0;
+    int col = 0;
+    while (i < content.size()) {
+        char ch = content[i];
+        if (ch == '\n') {
+            ++i;
+            ++line;
+            col = 0;
+            continue;
+        }
+        if (ch == '\r') {
+            ++i;
+            continue;
+        }
+        if (ch == '/' && i + 1 < content.size() && content[i + 1] == '/') {
+            int start = col;
+            while (i < content.size() && content[i] != '\n') {
+                if (content[i] != '\r') ++col;
+                ++i;
+            }
+            emit(line, start, col - start, "comment");
+            continue;
+        }
+        if (ch == '/' && i + 1 < content.size() && content[i + 1] == '*') {
+            // Nested block comment, split per line for the single-line LSP encoding.
+            int nest = 0;
+            int segLine = line;
+            int segStart = col;
+            while (i < content.size()) {
+                if (content[i] == '\n') {
+                    emit(segLine, segStart, col - segStart, "comment");
+                    ++i;
+                    ++line;
+                    col = 0;
+                    segLine = line;
+                    segStart = 0;
+                    continue;
+                }
+                if (content[i] == '\r') {
+                    ++i;
+                    continue;
+                }
+                if (content[i] == '/' && i + 1 < content.size() && content[i + 1] == '*') {
+                    ++nest;
+                    i += 2;
+                    col += 2;
+                    continue;
+                }
+                if (content[i] == '*' && i + 1 < content.size() && content[i + 1] == '/') {
+                    --nest;
+                    i += 2;
+                    col += 2;
+                    if (nest == 0) break;
+                    continue;
+                }
+                ++i;
+                ++col;
+            }
+            emit(segLine, segStart, col - segStart, "comment");
+            continue;
+        }
+        if (ch == '"' || ch == '\'') {
+            char delimiter = ch;
+            int start = col;
+            ++i;
+            ++col;
+            while (i < content.size()) {
+                char c = content[i];
+                if (c == '\n' || c == '\r') break; // Unterminated: highlight to end of line.
+                if (c == '\\' && i + 1 < content.size() && content[i + 1] != '\n' && content[i + 1] != '\r') {
+                    i += 2;
+                    col += 2;
+                    continue;
+                }
+                ++i;
+                ++col;
+                if (c == delimiter) break;
+            }
+            emit(line, start, col - start, "string");
+            continue;
+        }
+        if (ch >= '0' && ch <= '9') {
+            int start = col;
+            // Like lex.cpp readNumber: only 0x/0b/0o-prefixed literals take
+            // letters, so `123abc` highlights as `123` plus an identifier.
+            bool prefixed = ch == '0' && i + 1 < content.size() && (content[i + 1] == 'x' || content[i + 1] == 'b' || content[i + 1] == 'o');
+            while (i < content.size()) {
+                char c = content[i];
+                if (std::isdigit(static_cast<unsigned char>(c)) || c == '_') {
+                    ++i;
+                    ++col;
+                    continue;
+                }
+                if (prefixed && std::isalpha(static_cast<unsigned char>(c))) {
+                    ++i;
+                    ++col;
+                    continue;
+                }
+                // A dot only continues the number before a digit (`1.5`, not `0..10` or `0.foo`).
+                if (!prefixed && c == '.' && i + 1 < content.size() && std::isdigit(static_cast<unsigned char>(content[i + 1]))) {
+                    ++i;
+                    ++col;
+                    continue;
+                }
+                break;
+            }
+            emit(line, start, col - start, "number");
+            continue;
+        }
+        if (std::isalpha(static_cast<unsigned char>(ch)) || ch == '_' || ch == '#') {
+            int start = col;
+            size_t begin = i;
+            ++i;
+            ++col;
+            while (i < content.size() && (std::isalnum(static_cast<unsigned char>(content[i])) || content[i] == '_')) {
+                ++i;
+                ++col;
+            }
+            auto it = keywords.find(llvm::StringRef(content.data() + begin, i - begin));
+            if (it != keywords.end()) emit(line, start, col - start, it->second);
+            continue;
+        }
+        ++i;
+        ++col;
+    }
+}
+
+/// Emits one highlight token per declaration and reference in the target file.
+/// Traversal mirrors Finder; only filePath locations are kept.
+struct SemanticCollector {
+    const std::string& file;
+    const std::vector<std::string>& lines;
+    std::vector<SemanticToken>& out;
+    std::vector<std::string> genericParamNames; // In-scope generic parameters, for typeParameter uses.
+
+    void emit(const Location& loc, llvm::StringRef name, const char* type, bool definition) {
+        if (!loc.isValid() || !loc.file || name.empty()) return;
+        if (file != loc.file) return;
+        // Synthesized nodes (autogenerated constructors) reuse real source
+        // locations, so only highlight when the source actually spells the name.
+        if (loc.line - 1 >= static_cast<int>(lines.size())) return;
+        const std::string& lineText = lines[loc.line - 1];
+        if (loc.column - 1 + static_cast<int>(name.size()) > static_cast<int>(lineText.size())) return;
+        if (lineText.compare(loc.column - 1, name.size(), name.data(), name.size()) != 0) return;
+        SemanticToken token;
+        token.line = loc.line - 1;
+        token.start = loc.column - 1;
+        token.length = static_cast<int>(name.size());
+        token.type = type;
+        token.definition = definition;
+        out.push_back(std::move(token));
+    }
+
+    void emitDecl(Decl* decl, bool definition) {
+        if (!decl) return;
+        if (const char* type = tokenTypeForDecl(*decl)) emit(decl->getLocation(), decl->getName(), type, definition);
+    }
+
+    void visitExpr(Expr* expr);
+    void visitStmt(Stmt* stmt);
+    void visitDecl(Decl* decl);
+    void visitType(Type type) {
+        if (!type) return;
+        switch (type.getKind()) {
+        case TypeKind::BasicType: {
+            // Optional (`T?`) and ArrayRef (`T[]`) wrappers are synthesized: the
+            // location points at the sugar or is invalid, so only the wrapped
+            // type highlights. The direct generic args (not getWrappedType())
+            // preserve the inner locations.
+            if ((type.isOptionalType() || type.isArrayRef()) && !type.getGenericArgs().empty()) {
+                for (Type arg : type.getGenericArgs())
+                    visitType(arg);
+                return;
+            }
+            if (TypeDecl* typeDecl = type.getDecl()) {
+                if (const char* tokenType = tokenTypeForDecl(*typeDecl)) emit(type.location, type.getName(), tokenType, false);
+            } else if (llvm::is_contained(genericParamNames, type.getName())) {
+                emit(type.location, type.getName(), "typeParameter", false);
+            } else {
+                // Builtins without decls (`void`) and unresolved names.
+                emit(type.location, type.getName(), "type", false);
+            }
+            for (Type arg : type.getGenericArgs())
+                visitType(arg);
+            return;
+        }
+        case TypeKind::ArrayType:
+            visitType(llvm::cast<ArrayType>(type.typeBase)->elementType);
+            return;
+        case TypeKind::TupleType:
+            for (auto& element : llvm::cast<TupleType>(type.typeBase)->elements)
+                visitType(element.type);
+            return;
+        case TypeKind::FunctionType: {
+            auto* fn = llvm::cast<FunctionType>(type.typeBase);
+            visitType(fn->returnType);
+            for (Type param : fn->paramTypes)
+                visitType(param);
+            return;
+        }
+        case TypeKind::PointerType:
+            visitType(llvm::cast<PointerType>(type.typeBase)->pointeeType);
+            return;
+        case TypeKind::UnresolvedType:
+            return;
+        }
+    }
+};
+
+void SemanticCollector::visitExpr(Expr* expr) {
+    if (!expr) return;
+    switch (expr->kind) {
+    case ExprKind::VarExpr: {
+        auto* var = llvm::cast<VarExpr>(expr);
+        if (var->decl) {
+            if (const char* type = tokenTypeForDecl(*var->decl)) emit(var->location, var->identifier, type, false);
+        }
+        return;
+    }
+    case ExprKind::MemberExpr: {
+        auto* member = llvm::cast<MemberExpr>(expr);
+        visitExpr(member->base);
+        if (member->decl) {
+            if (const char* type = tokenTypeForDecl(*member->decl)) emit(member->location, member->member, type, false);
+        }
+        return;
+    }
+    case ExprKind::CallExpr:
+    case ExprKind::UnaryExpr:
+    case ExprKind::BinaryExpr:
+    case ExprKind::IndexExpr:
+    case ExprKind::IndexAssignmentExpr: {
+        auto* call = llvm::cast<CallExpr>(expr);
+        visitExpr(call->callee);
+        // See Finder: plain calls resolve through calleeDecl, leaving the
+        // callee VarExpr's decl null.
+        if (call->calleeDecl) {
+            if (const char* type = tokenTypeForDecl(*call->calleeDecl)) {
+                if (auto* var = llvm::dyn_cast<VarExpr>(call->callee)) {
+                    emit(var->location, var->identifier, type, false);
+                } else if (auto* member = llvm::dyn_cast<MemberExpr>(call->callee)) {
+                    emit(member->location, member->member, type, false);
+                }
+            }
+        }
+        for (auto& arg : call->args)
+            visitExpr(arg.value);
+        for (Type arg : call->genericArgs)
+            visitType(arg);
+        return;
+    }
+    case ExprKind::ArrayLiteralExpr:
+        for (auto* el : llvm::cast<ArrayLiteralExpr>(expr)->elements)
+            visitExpr(el);
+        return;
+    case ExprKind::TupleExpr:
+        for (auto& el : llvm::cast<TupleExpr>(expr)->elements)
+            visitExpr(el.value);
+        return;
+    case ExprKind::UnwrapExpr:
+        visitExpr(llvm::cast<UnwrapExpr>(expr)->operand);
+        return;
+    case ExprKind::LambdaExpr:
+        if (auto* fn = llvm::cast<LambdaExpr>(expr)->functionDecl) visitDecl(fn);
+        return;
+    case ExprKind::IfExpr: {
+        auto* ifExpr = llvm::cast<IfExpr>(expr);
+        visitExpr(ifExpr->condition);
+        visitExpr(ifExpr->thenExpr);
+        visitExpr(ifExpr->elseExpr);
+        return;
+    }
+    case ExprKind::ImplicitCastExpr:
+        visitExpr(llvm::cast<ImplicitCastExpr>(expr)->operand);
+        return;
+    case ExprKind::VarDeclExpr:
+        visitDecl(llvm::cast<VarDeclExpr>(expr)->varDecl);
+        return;
+    case ExprKind::SizeofExpr:
+        visitType(llvm::cast<SizeofExpr>(expr)->operandType);
+        return;
+    default:
+        return;
+    }
+}
+
+void SemanticCollector::visitStmt(Stmt* stmt) {
+    if (!stmt) return;
+    switch (stmt->kind) {
+    case StmtKind::ReturnStmt:
+        visitExpr(llvm::cast<ReturnStmt>(stmt)->value);
+        return;
+    case StmtKind::VarStmt:
+        visitDecl(llvm::cast<VarStmt>(stmt)->decl);
+        return;
+    case StmtKind::ExprStmt:
+        visitExpr(llvm::cast<ExprStmt>(stmt)->expr);
+        return;
+    case StmtKind::DeferStmt:
+        visitExpr(llvm::cast<DeferStmt>(stmt)->expr);
+        return;
+    case StmtKind::IfStmt: {
+        auto* ifStmt = llvm::cast<IfStmt>(stmt);
+        visitExpr(ifStmt->condition);
+        for (auto* s : ifStmt->thenBody)
+            visitStmt(s);
+        for (auto* s : ifStmt->elseBody)
+            visitStmt(s);
+        return;
+    }
+    case StmtKind::SwitchStmt: {
+        auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
+        visitExpr(switchStmt->condition);
+        for (auto& c : switchStmt->cases) {
+            visitExpr(c.value);
+            if (c.associatedValue) visitDecl(c.associatedValue);
+            for (auto* s : c.stmts)
+                visitStmt(s);
+        }
+        for (auto* s : switchStmt->defaultStmts)
+            visitStmt(s);
+        return;
+    }
+    case StmtKind::WhileStmt: {
+        auto* whileStmt = llvm::cast<WhileStmt>(stmt);
+        visitExpr(whileStmt->condition);
+        for (auto* s : whileStmt->body)
+            visitStmt(s);
+        return;
+    }
+    case StmtKind::ForStmt: {
+        auto* forStmt = llvm::cast<ForStmt>(stmt);
+        if (forStmt->variable) visitStmt(forStmt->variable);
+        visitExpr(forStmt->condition);
+        visitExpr(forStmt->increment);
+        for (auto* s : forStmt->body)
+            visitStmt(s);
+        return;
+    }
+    case StmtKind::ForEachStmt: {
+        auto* forEach = llvm::cast<ForEachStmt>(stmt);
+        if (forEach->variable) visitDecl(forEach->variable);
+        visitExpr(forEach->range);
+        for (auto* s : forEach->body)
+            visitStmt(s);
+        return;
+    }
+    case StmtKind::CompoundStmt:
+        for (auto* s : llvm::cast<CompoundStmt>(stmt)->body)
+            visitStmt(s);
+        return;
+    default:
+        return;
+    }
+}
+
+void SemanticCollector::visitDecl(Decl* decl) {
+    if (!decl) return;
+    emitDecl(decl, true);
+    switch (decl->kind) {
+    case DeclKind::FunctionDecl:
+    case DeclKind::MethodDecl:
+    case DeclKind::ConstructorDecl:
+    case DeclKind::DestructorDecl: {
+        auto* fn = llvm::cast<FunctionDecl>(decl);
+        visitType(fn->getReturnType());
+        for (auto& param : fn->getParams()) {
+            emitDecl(&param, true);
+            visitType(param.type);
+        }
+        if (fn->body) {
+            for (auto* s : *fn->body)
+                visitStmt(s);
+        }
+        return;
+    }
+    case DeclKind::FunctionTemplate: {
+        auto* tmpl = llvm::cast<FunctionTemplate>(decl);
+        size_t scope = genericParamNames.size();
+        for (auto& param : tmpl->genericParams)
+            genericParamNames.push_back(param.getName().str());
+        for (auto& param : tmpl->genericParams) {
+            emitDecl(&param, true);
+            for (Type constraint : param.constraints)
+                visitType(constraint);
+        }
+        visitDecl(tmpl->functionDecl);
+        genericParamNames.resize(scope);
+        return;
+    }
+    case DeclKind::TypeDecl: {
+        auto* typeDecl = llvm::cast<TypeDecl>(decl);
+        for (Type interface : typeDecl->interfaces)
+            visitType(interface);
+        for (Type arg : typeDecl->genericArgs)
+            visitType(arg);
+        for (auto& field : typeDecl->fields) {
+            emitDecl(&field, true);
+            visitType(field.type);
+            if (field.defaultValue) visitExpr(field.defaultValue);
+        }
+        for (auto* method : typeDecl->methods)
+            visitDecl(method);
+        return;
+    }
+    case DeclKind::TypeTemplate: {
+        auto* tmpl = llvm::cast<TypeTemplate>(decl);
+        size_t scope = genericParamNames.size();
+        for (auto& param : tmpl->genericParams)
+            genericParamNames.push_back(param.getName().str());
+        for (auto& param : tmpl->genericParams) {
+            emitDecl(&param, true);
+            for (Type constraint : param.constraints)
+                visitType(constraint);
+        }
+        visitDecl(tmpl->typeDecl);
+        genericParamNames.resize(scope);
+        return;
+    }
+    case DeclKind::EnumDecl: {
+        auto* enumDecl = llvm::cast<EnumDecl>(decl);
+        for (auto& c : enumDecl->cases) {
+            emitDecl(&c, true);
+            visitType(c.associatedType);
+        }
+        return;
+    }
+    case DeclKind::VarDecl: {
+        auto* var = llvm::cast<VarDecl>(decl);
+        visitType(var->type);
+        if (var->initializer) visitExpr(var->initializer);
+        return;
+    }
+    case DeclKind::FieldDecl: {
+        auto* field = llvm::cast<FieldDecl>(decl);
+        visitType(field->type);
+        if (field->defaultValue) visitExpr(field->defaultValue);
+        return;
+    }
+    default:
+        return;
+    }
+}
+
 } // namespace
 
 FrontendResult runFrontendOnce(const LspQuery& query) {
@@ -1385,6 +1896,63 @@ std::vector<std::pair<std::string, LspRange>> referencesTo(Module* mainModule, c
     return result;
 }
 
+const std::vector<std::string>& semanticTokenTypes() {
+    static const std::vector<std::string> types = {
+        "comment",   "string",        "number",    "keyword",  "macro",    "type",       "struct",   "enum",
+        "interface", "typeParameter", "parameter", "variable", "property", "enumMember", "function", "method",
+    };
+    return types;
+}
+
+const std::vector<std::string>& semanticTokenModifiers() {
+    static const std::vector<std::string> modifiers = {"definition"};
+    return modifiers;
+}
+
+std::vector<SemanticToken> semanticTokensIn(Module* mainModule, const std::string& filePath, const std::string& content) {
+    std::vector<SemanticToken> tokens;
+    collectSyntaxTokens(content, tokens);
+    if (mainModule) {
+        std::vector<std::string> lines;
+        std::string current;
+        for (char ch : content) {
+            if (ch == '\n') {
+                lines.push_back(current);
+                current.clear();
+            } else if (ch != '\r') {
+                current += ch;
+            }
+        }
+        lines.push_back(current);
+        SemanticCollector collector{filePath, lines, tokens};
+        for (auto& sourceFile : mainModule->sourceFiles) {
+            for (auto* decl : sourceFile.topLevelDecls)
+                collector.visitDecl(decl);
+        }
+    }
+    // Stable by (line, start): definitions precede references at the same span,
+    // otherwise insertion order wins (real decls precede synthesized ones).
+    std::stable_sort(tokens.begin(), tokens.end(), [](const SemanticToken& a, const SemanticToken& b) {
+        if (a.line != b.line) return a.line < b.line;
+        if (a.start != b.start) return a.start < b.start;
+        return a.definition > b.definition;
+    });
+    // Templates visit the inner decl at the same span as the wrapper, and
+    // synthesized nodes share spans with real ones; keep the first token per
+    // span so the output never overlaps.
+    std::vector<SemanticToken> kept;
+    kept.reserve(tokens.size());
+    int keptLine = -1;
+    int keptEnd = 0;
+    for (auto& token : tokens) {
+        if (token.line == keptLine && token.start < keptEnd) continue;
+        kept.push_back(token);
+        keptLine = token.line;
+        keptEnd = token.start + token.length;
+    }
+    return kept;
+}
+
 LspQuery parseLspQuery(const JsonValue& queryJson) {
     LspQuery query;
     if (!queryJson.isObject()) throw JsonParseError("query must be a JSON object");
@@ -1531,6 +2099,23 @@ JsonValue handleQuery(const JsonValue& queryJson) {
         JsonValue array = JsonValue::arrayValue();
         array.array = std::move(items);
         result.set("references", std::move(array));
+        return result;
+    } else if (query.method == "semanticTokens") {
+        std::vector<JsonValue> items;
+        for (auto& token : semanticTokensIn(frontend.mainModule, query.filePath, frontend.content)) {
+            JsonValue entry = JsonValue::objectValue();
+            entry.set("line", JsonValue::numberValue(token.line));
+            entry.set("start", JsonValue::numberValue(token.start));
+            entry.set("length", JsonValue::numberValue(token.length));
+            entry.set("type", JsonValue::stringValue(token.type));
+            std::vector<JsonValue> modifiers;
+            if (token.definition) modifiers.push_back(JsonValue::stringValue("definition"));
+            entry.set("modifiers", JsonValue::arrayValue(std::move(modifiers)));
+            items.push_back(std::move(entry));
+        }
+        JsonValue array = JsonValue::arrayValue();
+        array.array = std::move(items);
+        result.set("tokens", std::move(array));
         return result;
     }
     throw JsonParseError("unknown query method: " + query.method);

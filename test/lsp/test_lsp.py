@@ -109,6 +109,48 @@ void main() {
 }
 """
 
+TOKENS_COMMENT_SOURCE = """\
+// line comment
+/* block
+   comment */
+#if Feature
+void enabled() {}
+#else
+void disabled() {}
+#endif
+"""
+
+UNTERMINATED_SOURCE = """\
+void main() {
+    return 1;
+"""
+
+TOKENS_GENERICS_SOURCE = """\
+struct Box<T> {
+    T value;
+}
+T first<T>(T x) {
+    return x;
+}
+void main() {
+    var xs = List<int>();
+    int total = first(42);
+}
+"""
+
+# The unterminated block comment keeps this from parsing, so every token
+# below comes from the syntax scanner alone.
+TOKENS_SCANNER_SOURCE = """\
+var a = 0xFF + 0b101 + 0o17 + 123abc;
+var b = 1.5 + 0..10 + 0.foo;
+var c = "a\\"b";
+var d = "unterminated;
+var e = /* outer /* inner */ still */;
+var f = /* unterminated;
+"""
+
+TOKENS_CRLF_SOURCE = "int add(int x, int y) {\r\n    return x;\r\n}\r\n"
+
 
 def base_query(method, path, content, position=None):
     query = {
@@ -189,6 +231,119 @@ def test_query_modes(cx_lsp, path):
     result = run_query(cx_lsp, base_query("references", path, GOOD_SOURCE, (20, 5)))
     locations = [(r["range"]["start"]["line"], r["range"]["start"]["character"]) for r in result.get("references", [])]
     check("query-references-type", (9, 7) in locations and (20, 4) in locations, json.dumps(locations)[:300])
+
+    result = run_query(cx_lsp, base_query("semanticTokens", path, GOOD_SOURCE))
+    ordered = result.get("tokens", [])
+    tokens = {(t["line"], t["start"], t["length"], t["type"]): t["modifiers"] for t in ordered}
+    check("query-tokens-function-def", tokens.get((0, 4, 3, "function")) == ["definition"])
+    check("query-tokens-function-ref", tokens.get((5, 17, 3, "function")) == [])
+    check("query-tokens-keyword", tokens.get((1, 4, 6, "keyword")) == [])
+    check("query-tokens-string", tokens.get((6, 12, 6, "string")) == [])
+    check("query-tokens-number", tokens.get((5, 21, 1, "number")) == [])
+    check("query-tokens-struct-def", tokens.get((9, 7, 5, "struct")) == ["definition"])
+    check("query-tokens-enum-member", tokens.get((15, 4, 3, "enumMember")) == ["definition"])
+    check("query-tokens-method-def", tokens.get((26, 9, 4, "method")) == ["definition"])
+    check("query-tokens-type-ref", tokens.get((20, 4, 5, "struct")) == [])
+    check("query-tokens-property", tokens.get((21, 19, 1, "property")) == [])
+    check("query-tokens-param-def", tokens.get((0, 12, 1, "parameter")) == ["definition"])
+    check("query-tokens-interface", tokens.get((9, 14, 8, "interface")) == [])
+    check("query-tokens-enum-def", tokens.get((14, 5, 5, "enum")) == ["definition"])
+    check("query-tokens-param-ref", tokens.get((27, 22, 4, "parameter")) == [])
+    check("query-tokens-variable-ref", tokens.get((28, 16, 7, "variable")) == [])
+    check(
+        "query-tokens-sorted",
+        all((b["line"], b["start"]) >= (a["line"], a["start"]) for a, b in zip(ordered, ordered[1:])),
+    )
+    check(
+        "query-tokens-no-overlap",
+        all(b["line"] != a["line"] or b["start"] >= a["start"] + a["length"] for a, b in zip(ordered, ordered[1:])),
+    )
+
+    result = run_query(cx_lsp, base_query("semanticTokens", path, TOKENS_COMMENT_SOURCE))
+    tokens = {(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])}
+    check("query-tokens-line-comment", (0, 0, 15, "comment") in tokens)
+    check("query-tokens-block-comment", (1, 0, 8, "comment") in tokens and (2, 0, 13, "comment") in tokens)
+    check(
+        "query-tokens-macro",
+        (3, 0, 3, "macro") in tokens and (5, 0, 5, "macro") in tokens and (7, 0, 6, "macro") in tokens,
+    )
+    check("query-tokens-active-branch", (6, 5, 8, "function") in tokens and (4, 5, 7, "function") not in tokens)
+
+    # A file that doesn't parse still highlights keywords/numbers/strings/comments.
+    result = run_query(cx_lsp, base_query("semanticTokens", path, UNTERMINATED_SOURCE))
+    tokens = {(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])}
+    check("query-tokens-fallback", (1, 4, 6, "keyword") in tokens and (1, 11, 1, "number") in tokens)
+    check(
+        "query-tokens-fallback-syntax-only",
+        {t["type"] for t in result.get("tokens", [])} <= {"keyword", "comment", "string", "number", "macro"},
+        json.dumps(result.get("tokens"))[:300],
+    )
+
+    result = run_query(cx_lsp, base_query("semanticTokens", path, TOKENS_GENERICS_SOURCE))
+    ordered = result.get("tokens", [])
+    tokens = {(t["line"], t["start"], t["length"], t["type"]): t["modifiers"] for t in ordered}
+    check("query-tokens-type-param-def", tokens.get((0, 11, 1, "typeParameter")) == ["definition"])
+    check("query-tokens-type-param-ref", tokens.get((1, 4, 1, "typeParameter")) == [])
+    check("query-tokens-func-type-param", tokens.get((3, 8, 1, "typeParameter")) == ["definition"])
+    check("query-tokens-call-site-generic", tokens.get((7, 18, 3, "struct")) == [])
+    check("query-tokens-generic-ctor", tokens.get((7, 13, 4, "method")) == [])
+    check(
+        "query-tokens-generics-sorted",
+        all((b["line"], b["start"]) >= (a["line"], a["start"]) for a, b in zip(ordered, ordered[1:])),
+    )
+    check(
+        "query-tokens-generics-no-overlap",
+        all(b["line"] != a["line"] or b["start"] >= a["start"] + a["length"] for a, b in zip(ordered, ordered[1:])),
+    )
+
+    result = run_query(cx_lsp, base_query("semanticTokens", path, TOKENS_SCANNER_SOURCE))
+    check("query-tokens-scanner-fallback", result["diagnostics"] != [])
+    check(
+        "query-tokens-scanner-exact",
+        [(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])]
+        == [
+            (0, 0, 3, "keyword"),
+            (0, 8, 4, "number"),
+            (0, 15, 5, "number"),
+            (0, 23, 4, "number"),
+            (0, 30, 3, "number"),
+            (1, 0, 3, "keyword"),
+            (1, 8, 3, "number"),
+            (1, 14, 1, "number"),
+            (1, 17, 2, "number"),
+            (1, 22, 1, "number"),
+            (2, 0, 3, "keyword"),
+            (2, 8, 6, "string"),
+            (3, 0, 3, "keyword"),
+            (3, 8, 14, "string"),
+            (4, 0, 3, "keyword"),
+            (4, 8, 29, "comment"),
+            (5, 0, 3, "keyword"),
+            (5, 8, 16, "comment"),
+        ],
+        json.dumps(result.get("tokens"))[:500],
+    )
+
+    result = run_query(cx_lsp, base_query("semanticTokens", path, TOKENS_CRLF_SOURCE))
+    tokens = {(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])}
+    check(
+        "query-tokens-crlf",
+        (0, 4, 3, "function") in tokens and (1, 4, 6, "keyword") in tokens and (1, 11, 1, "parameter") in tokens,
+        json.dumps(result.get("tokens"))[:300],
+    )
+
+    # The scanner's keyword table must cover every keyword completion offers.
+    result = run_query(cx_lsp, base_query("completion", path, "void main() {\n}\n", (0, 0)))
+    keywords = sorted(item["label"] for item in result.get("items", []) if item["kind"] == "keyword")
+    probe = " ".join(keywords)
+    result = run_query(cx_lsp, base_query("semanticTokens", path, probe))
+    highlighted = {(t["line"], t["start"], t["length"], t["type"]) for t in result.get("tokens", [])}
+    expected = set()
+    offset = 0
+    for word in keywords:
+        expected.add((0, offset, len(word), "keyword"))
+        offset += len(word) + 1
+    check("query-keyword-parity", highlighted == expected, json.dumps(sorted(highlighted))[:500])
 
     # Errors with notes surface as relatedInformation.
     result = run_query(cx_lsp, base_query("check", path, REDEF_SOURCE))
@@ -350,6 +505,22 @@ class LspSession:
         return self.proc.returncode, stderr.decode()[:2000]
 
 
+def decode_semantic_data(data):
+    tokens = []
+    line, start = 0, 0
+    first = True
+    for i in range(0, len(data), 5):
+        delta_line, delta_start, length, token_type, modifiers = data[i : i + 5]
+        if delta_line != 0 or first:
+            start = delta_start
+        else:
+            start += delta_start
+        line += delta_line
+        first = False
+        tokens.append((line, start, length, token_type, modifiers))
+    return tokens
+
+
 def test_server(command, path, label):
     session = LspSession(command)
     # Malformed input must be skipped without killing the session.
@@ -358,6 +529,12 @@ def test_server(command, path, label):
     response = session.read()
     capabilities = response["result"]["capabilities"]
     check(f"{label}-initialize", capabilities.get("hoverProvider") is True, json.dumps(capabilities)[:300])
+    legend = capabilities.get("semanticTokensProvider", {}).get("legend", {})
+    check(
+        f"{label}-semantic-legend",
+        "keyword" in legend.get("tokenTypes", []) and "function" in legend.get("tokenTypes", []),
+        json.dumps(legend)[:300],
+    )
 
     session.send({"jsonrpc": "2.0", "method": "initialized", "params": {}})
     uri = "file://" + path
@@ -389,6 +566,101 @@ def test_server(command, path, label):
         "int add(int x, int y)" in response["result"]["contents"]["value"],
         json.dumps(response)[:300],
     )
+
+    function_type = legend.get("tokenTypes", []).index("function")
+    definition_bit = 1 << legend.get("tokenModifiers", []).index("definition")
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 10,
+            "method": "textDocument/semanticTokens/full",
+            "params": {"textDocument": {"uri": uri}},
+        }
+    )
+    response = session.read()
+    decoded = decode_semantic_data(response["result"]["data"])
+    check(
+        f"{label}-semantic-full",
+        (0, 4, 3, function_type, definition_bit) in decoded and (5, 17, 3, function_type, 0) in decoded,
+        json.dumps(decoded[:8]),
+    )
+
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 11,
+            "method": "textDocument/semanticTokens/range",
+            "params": {
+                "textDocument": {"uri": uri},
+                "range": {"start": {"line": 0, "character": 0}, "end": {"line": 1, "character": 100}},
+            },
+        }
+    )
+    response = session.read()
+    decoded = decode_semantic_data(response["result"]["data"])
+    check(
+        f"{label}-semantic-range",
+        decoded != [] and all(line <= 1 for line, _, _, _, _ in decoded) and (0, 4, 3, function_type, definition_bit) in decoded,
+        json.dumps(decoded[:8]),
+    )
+    check(f"{label}-semantic-data-shape", len(response["result"]["data"]) % 5 == 0)
+
+    # Range edges: the token starting at the range start is included, the
+    # tokens ending/starting exactly at the edges are excluded.
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 12,
+            "method": "textDocument/semanticTokens/range",
+            "params": {
+                "textDocument": {"uri": uri},
+                "range": {"start": {"line": 0, "character": 4}, "end": {"line": 0, "character": 7}},
+            },
+        }
+    )
+    response = session.read()
+    check(
+        f"{label}-semantic-range-edges",
+        decode_semantic_data(response["result"]["data"]) == [(0, 4, 3, function_type, definition_bit)],
+        json.dumps(response["result"]["data"])[:200],
+    )
+
+    # Unknown documents answer null; empty files answer empty data.
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 13,
+            "method": "textDocument/semanticTokens/full",
+            "params": {"textDocument": {"uri": "file:///nonexistent.cx"}},
+        }
+    )
+    response = session.read()
+    check(f"{label}-semantic-unopened", response["result"] is None, json.dumps(response)[:200])
+
+    empty_uri = uri + ".empty.cx"
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "method": "textDocument/didOpen",
+            "params": {"textDocument": {"uri": empty_uri, "languageId": "cx", "version": 1, "text": ""}},
+        }
+    )
+    session.send(
+        {
+            "jsonrpc": "2.0",
+            "id": 14,
+            "method": "textDocument/semanticTokens/full",
+            "params": {"textDocument": {"uri": empty_uri}},
+        }
+    )
+    notification = session.read()
+    response = session.read()
+    check(
+        f"{label}-semantic-empty",
+        notification["method"] == "textDocument/publishDiagnostics" and response["result"] == {"data": []},
+        json.dumps(response)[:200],
+    )
+    session.send({"jsonrpc": "2.0", "method": "textDocument/didClose", "params": {"textDocument": {"uri": empty_uri}}})
 
     session.send(
         {
