@@ -100,13 +100,14 @@ struct FrontendResult {
 };
 
 /// Parses the frontend (parse + typecheck) exactly once. Must be called at
-/// most once per process.
-FrontendResult runFrontendOnce(const LspQuery& query);
+/// most once per process. `argv0` locates the standard library at runtime
+/// (see getCxRootDir); pass the query process's argv[0].
+FrontendResult runFrontendOnce(const LspQuery& query, const char* argv0);
 
 /// Runs the frontend once and answers the query, returning the JSON "result"
 /// object for the query subprocess to print (or "diagnostics" array for
 /// "check"). Throws JsonParseError on malformed queries.
-JsonValue handleQuery(const JsonValue& queryJson);
+JsonValue handleQuery(const JsonValue& queryJson, const char* argv0);
 
 /// Parses stdin-style query JSON into an LspQuery. Throws JsonParseError.
 LspQuery parseLspQuery(const JsonValue& queryJson);

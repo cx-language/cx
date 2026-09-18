@@ -24,7 +24,7 @@
 int main(int argc, const char** argv) {
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--query") == 0) {
-            return cx::lsp::runQueryProcess();
+            return cx::lsp::runQueryProcess(argv[0]);
         }
         if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
             llvm::outs() << "Usage:\n"

@@ -841,7 +841,7 @@ void ReferenceCollector::visitDecl(Decl* decl) {
 
 } // namespace
 
-FrontendResult runFrontendOnce(const LspQuery& query) {
+FrontendResult runFrontendOnce(const LspQuery& query, const char* argv0) {
     FrontendResult result;
     result.filePath = query.filePath;
     result.content = query.content;
@@ -863,17 +863,20 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
         options.noUnusedWarnings = true; // unused warnings are noisy during editing
         options.defines = query.defines;
         // Import search paths: file's directory first, then workspace folders,
-        // then explicit extras, then the repo root (for std/) and system paths.
+        // then explicit extras, then the distribution root (for std/, resolved
+        // at runtime so a distributed binary works) and system paths.
         std::string parentDir = llvm::sys::path::parent_path(filePath).str();
         if (!parentDir.empty()) options.importSearchPaths.push_back(parentDir);
         for (auto& folder : query.workspaceFolders)
             options.importSearchPaths.push_back(folder);
         for (auto& path : query.importSearchPaths)
             options.importSearchPaths.push_back(path);
-        options.importSearchPaths.push_back(CX_ROOT_DIR);
-#ifdef CLANG_BUILTIN_INCLUDE_PATH
-        options.importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
-#endif
+        if (auto rootDir = getCxRootDir(argv0); !rootDir.empty()) {
+            options.importSearchPaths.push_back(std::move(rootDir));
+        }
+        if (auto builtinIncludePath = getClangBuiltinIncludePath(); !builtinIncludePath.empty()) {
+            options.importSearchPaths.push_back(std::move(builtinIncludePath));
+        }
         options.importSearchPaths.push_back("/usr/include");
         options.importSearchPaths.push_back("/usr/local/include");
         // Same bonus search paths as `cx build` (see driver.cpp). Unlike the
@@ -1468,9 +1471,9 @@ JsonValue diagnosticsToJson(const std::vector<LspDiagnostic>& diagnostics) {
 
 } // namespace
 
-JsonValue handleQuery(const JsonValue& queryJson) {
+JsonValue handleQuery(const JsonValue& queryJson, const char* argv0) {
     LspQuery query = parseLspQuery(queryJson);
-    FrontendResult frontend = runFrontendOnce(query);
+    FrontendResult frontend = runFrontendOnce(query, argv0);
     std::vector<LspDiagnostic> diagnostics = toLspDiagnostics(frontend.diagnostics, frontend.filePath, frontend.content);
 
     JsonValue result = JsonValue::objectValue();

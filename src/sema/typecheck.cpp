@@ -1,4 +1,5 @@
 #include "typecheck.h"
+#include <system_error>
 #pragma warning(push, 0)
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
@@ -68,11 +69,13 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
 
     auto module = new Module(moduleName.str());
     std::error_code error;
+    bool found = false;
 
     if (manifest) {
         for (auto& dependency : manifest->declaredDependencies) {
             if (dependency.packageIdentifier == moduleName) {
                 error = importModuleSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, options);
+                found = true;
                 goto done;
             }
         }
@@ -82,11 +85,13 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
         auto modulePath = (importPath + "/" + moduleName).str();
         if (llvm::sys::fs::is_directory(modulePath)) {
             error = importModuleSourcesInDirectoryRecursively(modulePath, *module, options);
+            found = true;
             goto done;
         }
     }
 
 done:
+    if (!found) return std::make_error_code(std::errc::no_such_file_or_directory);
     if (error) return error;
     if (importer) importer->addImportedModule(module);
     Module::getAllImportedModulesMap()[module->name] = module;
@@ -149,7 +154,12 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
 
     auto stdModule = importModule(nullptr, nullptr, "std");
     if (!stdModule) {
-        ABORT("couldn't import the standard library: " << stdModule.getError().message());
+        std::string searched;
+        for (auto& path : options.importSearchPaths) {
+            searched += "\n  " + path + "/std";
+        }
+        ABORT("couldn't import the standard library (" << stdModule.getError().message() << "); searched:" << searched
+                                                       << "\n(set CX_ROOT to the directory containing std/ to override)");
     }
 
     // Process all imports before typechecking anything else, so that deferred typechecking

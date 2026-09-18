@@ -17,11 +17,11 @@ std::string readAllStdin() {
     return input;
 }
 
-int runQueryProcess() {
+int runQueryProcess(const char* argv0) {
     std::string input = readAllStdin();
     try {
         JsonValue query = parseJson(input);
-        JsonValue result = handleQuery(query);
+        JsonValue result = handleQuery(query, argv0);
         JsonValue envelope = JsonValue::objectValue();
         envelope.set("ok", JsonValue::booleanValue(true));
         envelope.set("result", std::move(result));

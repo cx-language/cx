@@ -15,6 +15,6 @@ std::string readAllStdin();
 /// `{"ok":true,"result":{...}}` (or `{"ok":false,"error":"..."}`) to stdout.
 /// Returns the process exit code (always 0: even compiler crashes surface as
 /// JSON diagnostics, so the server can stay alive).
-int runQueryProcess();
+int runQueryProcess(const char* argv0);
 
 } // namespace cx::lsp

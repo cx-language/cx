@@ -156,7 +156,7 @@ static void addHeaderSearchPathsFromCCompilerOutput() {
     }
 }
 
-static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFiles) {
+static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFiles, const char* argv0) {
     llvm::StringSet<> relativeImportSearchPaths;
 
     for (llvm::StringRef filePath : inputFiles) {
@@ -169,8 +169,15 @@ static void addPredefinedImportSearchPaths(llvm::ArrayRef<std::string> inputFile
         importSearchPaths.push_back(keyValue.getKey().str());
     }
 
-    importSearchPaths.push_back(CX_ROOT_DIR);
-    importSearchPaths.push_back(CLANG_BUILTIN_INCLUDE_PATH);
+    // The standard library root is resolved at runtime (see getCxRootDir) so
+    // that a compiler built on one machine works when distributed to another;
+    // the compile-time source directory is only a fallback for dev builds.
+    if (auto rootDir = getCxRootDir(argv0); !rootDir.empty()) {
+        importSearchPaths.push_back(std::move(rootDir));
+    }
+    if (auto builtinIncludePath = getClangBuiltinIncludePath(); !builtinIncludePath.empty()) {
+        importSearchPaths.push_back(std::move(builtinIncludePath));
+    }
     importSearchPaths.push_back("/usr/include");
     importSearchPaths.push_back("/usr/local/include");
     addHeaderSearchPathsFromEnvVar("CPATH");
@@ -229,7 +236,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         ABORT("no input files");
     }
 
-    addPredefinedImportSearchPaths(buildParams.filePaths);
+    addPredefinedImportSearchPaths(buildParams.filePaths, buildParams.argv0);
 
     CompileOptions options = {noUnusedWarnings, importSearchPaths, frameworkSearchPaths, defines, cflags};
     auto remainingPrintOpts = std::popcount(printOpts.getBits());

@@ -153,4 +153,21 @@ void reportWarning(Location location, llvm::StringRef message, llvm::ArrayRef<No
 
 std::optional<std::string> findExternalCCompiler();
 
+/// Locates the C* distribution root: the directory containing the `std/`
+/// standard-library directory.
+///
+/// Resolved at runtime so a compiler built on one machine keeps working when
+/// the binary is distributed to another: an explicit `CX_ROOT` environment
+/// variable wins, then directories relative to the running executable are
+/// probed (covering both installed `<prefix>/bin/cx` + `<prefix>/share/cx`
+/// layouts and in-tree `build/` directories), with the compile-time source
+/// directory as a final fallback for development builds.
+std::string getCxRootDir(const char* argv0);
+
+/// Locates Clang's builtin headers (stddef.h etc.) needed when importing C
+/// headers. An explicit `CLANG_BUILTIN_INCLUDE_PATH` environment variable wins,
+/// falling back to the path probed at configure time. Empty when unknown, in
+/// which case callers must not add it to the search paths.
+std::string getClangBuiltinIncludePath();
+
 } // namespace cx
