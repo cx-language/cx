@@ -55,3 +55,6 @@ cmake-build-*
 
 # LLVM Integrated Tester
 .lit_test_times.txt
+
+# Python
+__pycache__/

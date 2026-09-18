@@ -42,6 +42,9 @@ mkdir ../build
 # pandoc spec.tex -o ../build/spec.html -s --toc --include-before-body="../top-nav.html" --include-before-body="../toc.html"
 cd ..
 
+# Regenerate the standard library reference from the stdlib sources.
+python3 generate_std_docs.py || exit
+
 for file in book/*.md index.html; do
     basename=$(basename "$file")
 
