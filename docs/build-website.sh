@@ -126,5 +126,29 @@ done
 
 if [ "$SERVE" = 1 ]; then
     echo "Serving build/ at http://localhost:$PORT"
-    exec python3 -m http.server "$PORT" --directory build
+    # The site links pages without the .html suffix (./introduction), which
+    # GitHub Pages resolves to introduction.html. Plain 'http.server' does a
+    # literal lookup and would 404, so resolve 'path' to 'path.html' as well.
+    exec python3 - "$PORT" <<'EOF'
+import functools
+import http.server
+import os
+import sys
+
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def translate_path(self, path):
+        translated = super().translate_path(path)
+        if not os.path.exists(translated):
+            html_path = translated + ".html"
+            if os.path.isfile(html_path):
+                return html_path
+        return translated
+
+
+http.server.ThreadingHTTPServer(
+    ("", int(sys.argv[1])),
+    functools.partial(Handler, directory="build"),
+).serve_forever()
+EOF
 fi
