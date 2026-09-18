@@ -11,6 +11,7 @@
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
+#include "../ast/arena.h"
 #include "../ast/decl.h"
 #include "../ast/module.h"
 #include "../ast/token.h"
@@ -89,8 +90,7 @@ static std::string formatList(llvm::ArrayRef<Token::Kind> tokens) {
     if (expected.size() == 0) {
         ERROR(token.location, "unexpected " << quote(token) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : ""));
     } else {
-        ERROR(token.location,
-              "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "") << ", got " << quote(token));
+        ERROR(token.location, "expected " << formatList(expected) << (contextInfo ? " " : "") << (contextInfo ? contextInfo : "") << ", got " << quote(token));
     }
 }
 
@@ -155,12 +155,12 @@ std::vector<NamedValue> Parser::parseArgumentList(bool allowEmpty) {
 VarExpr* Parser::parseVarExpr() {
     ASSERT(currentToken() == Token::Identifier);
     auto id = consumeToken();
-    return new VarExpr(id.getString().str(), id.location);
+    return makeAST<VarExpr>(id.getString().str(), id.location);
 }
 
 VarExpr* Parser::parseThis() {
     ASSERT(currentToken() == Token::This);
-    auto expr = new VarExpr("this", getCurrentLocation());
+    auto expr = makeAST<VarExpr>("this", getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -210,7 +210,7 @@ static std::string replaceEscapeChars(llvm::StringRef literalContent, Location l
 StringLiteralExpr* Parser::parseStringLiteral() {
     ASSERT(currentToken() == Token::StringLiteral);
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
-    auto expr = new StringLiteralExpr(std::move(content), getCurrentLocation());
+    auto expr = makeAST<StringLiteralExpr>(std::move(content), getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -219,21 +219,21 @@ CharacterLiteralExpr* Parser::parseCharacterLiteral() {
     ASSERT(currentToken() == Token::CharacterLiteral);
     auto content = replaceEscapeChars(currentToken().getString().drop_back().drop_front(), getCurrentLocation());
     if (content.size() != 1) ERROR(getCurrentLocation(), "character literal must consist of a single UTF-8 byte");
-    auto expr = new CharacterLiteralExpr(content[0], getCurrentLocation());
+    auto expr = makeAST<CharacterLiteralExpr>(content[0], getCurrentLocation());
     consumeToken();
     return expr;
 }
 
 IntLiteralExpr* Parser::parseIntLiteral() {
     ASSERT(currentToken() == Token::IntegerLiteral);
-    auto expr = new IntLiteralExpr(currentToken().getIntegerValue(), getCurrentLocation());
+    auto expr = makeAST<IntLiteralExpr>(currentToken().getIntegerValue(), getCurrentLocation());
     consumeToken();
     return expr;
 }
 
 FloatLiteralExpr* Parser::parseFloatLiteral() {
     ASSERT(currentToken() == Token::FloatLiteral);
-    auto expr = new FloatLiteralExpr(currentToken().getFloatingPointValue(), getCurrentLocation());
+    auto expr = makeAST<FloatLiteralExpr>(currentToken().getFloatingPointValue(), getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -242,10 +242,10 @@ BoolLiteralExpr* Parser::parseBoolLiteral() {
     BoolLiteralExpr* expr;
     switch (currentToken()) {
     case Token::True:
-        expr = new BoolLiteralExpr(true, getCurrentLocation());
+        expr = makeAST<BoolLiteralExpr>(true, getCurrentLocation());
         break;
     case Token::False:
-        expr = new BoolLiteralExpr(false, getCurrentLocation());
+        expr = makeAST<BoolLiteralExpr>(false, getCurrentLocation());
         break;
     default:
         llvm_unreachable("all cases handled");
@@ -256,14 +256,14 @@ BoolLiteralExpr* Parser::parseBoolLiteral() {
 
 NullLiteralExpr* Parser::parseNullLiteral() {
     ASSERT(currentToken() == Token::Null);
-    auto expr = new NullLiteralExpr(getCurrentLocation());
+    auto expr = makeAST<NullLiteralExpr>(getCurrentLocation());
     consumeToken();
     return expr;
 }
 
 UndefinedLiteralExpr* Parser::parseUndefinedLiteral() {
     ASSERT(currentToken() == Token::Undefined);
-    auto expr = new UndefinedLiteralExpr(getCurrentLocation());
+    auto expr = makeAST<UndefinedLiteralExpr>(getCurrentLocation());
     consumeToken();
     return expr;
 }
@@ -275,7 +275,7 @@ ArrayLiteralExpr* Parser::parseArrayLiteral() {
     consumeToken();
     auto elements = parseExprList();
     parse(Token::RightBracket);
-    return new ArrayLiteralExpr(std::move(elements), location);
+    return makeAST<ArrayLiteralExpr>(std::move(elements), location);
 }
 
 /// tuple-literal ::= '(' tuple-literal-elements ')'
@@ -299,7 +299,7 @@ Expr* Parser::parseTupleLiteralOrParenExpr() {
         }
     }
 
-    return new TupleExpr(std::move(elements), location);
+    return makeAST<TupleExpr>(std::move(elements), location);
 }
 
 /// non-empty-type-list ::= type | type ',' non-empty-type-list
@@ -458,14 +458,14 @@ SizeofExpr* Parser::parseSizeofExpr() {
     parse(Token::LeftParen);
     auto type = parseType();
     parse(Token::RightParen);
-    return new SizeofExpr(type, location);
+    return makeAST<SizeofExpr>(type, location);
 }
 
 /// member-expr ::= expr '.' id
 MemberExpr* Parser::parseMemberExpr(Expr* lhs) {
     auto location = getCurrentLocation();
     auto member = parse(Token::Identifier);
-    return new MemberExpr(lhs, member.getString().str(), location);
+    return makeAST<MemberExpr>(lhs, member.getString().str(), location);
 }
 
 /// index-expr ::= expr '[' expr ']'
@@ -479,10 +479,10 @@ Expr* Parser::parseIndexExprOrIndexAssignmentExpr(Expr* base) {
 
     if (currentToken() == Token::Assignment) {
         consumeToken();
-        return new IndexAssignmentExpr(base, index, parseExpr(), location);
+        return makeAST<IndexAssignmentExpr>(base, index, parseExpr(), location);
     }
 
-    return new IndexExpr(base, index, location);
+    return makeAST<IndexExpr>(base, index, location);
 }
 
 /// unwrap-expr ::= expr '!'
@@ -490,7 +490,7 @@ UnwrapExpr* Parser::parseUnwrapExpr(Expr* operand) {
     ASSERT(currentToken() == Token::Not);
     auto location = getCurrentLocation();
     consumeToken();
-    return new UnwrapExpr(operand, location);
+    return makeAST<UnwrapExpr>(operand, location);
 }
 
 /// call-expr ::= expr generic-argument-list? argument-list
@@ -501,7 +501,7 @@ CallExpr* Parser::parseCallExpr(Expr* callee) {
     }
     auto location = getCurrentLocation();
     auto args = parseArgumentList(true);
-    return new CallExpr(callee, std::move(args), std::move(genericArgs), location);
+    return makeAST<CallExpr>(callee, std::move(args), std::move(genericArgs), location);
 }
 
 LambdaExpr* Parser::parseLambdaExpr() {
@@ -517,13 +517,13 @@ LambdaExpr* Parser::parseLambdaExpr() {
     }
 
     parse(Token::RightArrow);
-    auto lambda = new LambdaExpr(std::move(params), currentModule, location);
+    auto lambda = makeAST<LambdaExpr>(std::move(params), currentModule, location);
 
     if (currentToken() == Token::LeftBrace) {
         lambda->functionDecl->body = parseBlock(lambda->functionDecl);
     } else {
         auto expr = parseExpr();
-        lambda->functionDecl->body = {new ReturnStmt(expr, expr->location)};
+        lambda->functionDecl->body = {makeAST<ReturnStmt>(expr, expr->location)};
     }
 
     return lambda;
@@ -538,7 +538,7 @@ IfExpr* Parser::parseIfExpr(Expr* condition) {
     auto thenExpr = parseExpr();
     parse(Token::Colon);
     auto elseExpr = parseExpr();
-    return new IfExpr(condition, thenExpr, elseExpr, location);
+    return makeAST<IfExpr>(condition, thenExpr, elseExpr, location);
 }
 
 bool Parser::shouldParseVarStmt() {
@@ -702,7 +702,7 @@ Expr* Parser::parsePostfixExpr() {
 UnaryExpr* Parser::parsePrefixExpr() {
     ASSERT(isUnaryOperator(currentToken()));
     auto op = consumeToken();
-    return new UnaryExpr(op.kind, parsePreOrPostfixExpr(), op.location);
+    return makeAST<UnaryExpr>(op.kind, parsePreOrPostfixExpr(), op.location);
 }
 
 Expr* Parser::parsePreOrPostfixExpr() {
@@ -713,7 +713,7 @@ Expr* Parser::parsePreOrPostfixExpr() {
 /// dec-expr ::= expr '--'
 UnaryExpr* Parser::parseIncrementOrDecrementExpr(Expr* operand) {
     auto op = parse({Token::Increment, Token::Decrement});
-    return new UnaryExpr(op.kind, operand, op.location);
+    return makeAST<UnaryExpr>(op.kind, operand, op.location);
 }
 
 /// binary-expr ::= expr op expr
@@ -735,7 +735,7 @@ Expr* Parser::parseBinaryExpr(int minPrecedence) {
             break;
         }
 
-        lhs = new BinaryExpr(op.kind, lhs, rhs, op.location);
+        lhs = makeAST<BinaryExpr>(op.kind, lhs, rhs, op.location);
     }
 
     return lhs;
@@ -750,7 +750,7 @@ Expr* Parser::parseExprOrVarDecl(Decl* parent) {
     if (!shouldParseVarStmt()) {
         return parseExpr();
     } else {
-        return new VarDeclExpr(parseVarDecl(parent, AccessLevel::None));
+        return makeAST<VarDeclExpr>(parseVarDecl(parent, AccessLevel::None));
     }
 }
 
@@ -784,7 +784,7 @@ ReturnStmt* Parser::parseReturnStmt() {
     consumeToken();
     auto returnValue = currentToken().is({Token::Semicolon, Token::RightBrace}) ? nullptr : parseExpr();
     parseStmtTerminator();
-    return new ReturnStmt(returnValue, location);
+    return makeAST<ReturnStmt>(returnValue, location);
 }
 
 /// var-decl ::= type-specifier id '=' initializer ('\n' | ';')
@@ -820,17 +820,17 @@ VarDecl* Parser::parseVarDeclAfterName(Decl* parent, AccessLevel accessLevel, Ty
     }
 
     parseStmtTerminator();
-    return new VarDecl(type, name.str(), initializer, parent, accessLevel, *currentModule, nameLocation);
+    return makeAST<VarDecl>(type, name.str(), initializer, parent, accessLevel, *currentModule, nameLocation);
 }
 
 /// var-stmt ::= var-decl
 VarStmt* Parser::parseVarStmt(Decl* parent) {
-    return new VarStmt(parseVarDecl(parent, AccessLevel::None));
+    return makeAST<VarStmt>(parseVarDecl(parent, AccessLevel::None));
 }
 
 /// expr-stmt ::= expr ('\n' | ';')
 ExprStmt* Parser::parseExprStmt() {
-    auto stmt = new ExprStmt(parseExpr());
+    auto stmt = makeAST<ExprStmt>(parseExpr());
     parseStmtTerminator();
     return stmt;
 }
@@ -859,7 +859,7 @@ std::vector<Stmt*> Parser::parseBlockOrStmt(Decl* parent) {
 DeferStmt* Parser::parseDeferStmt() {
     ASSERT(currentToken() == Token::Defer);
     consumeToken();
-    auto stmt = new DeferStmt(parseExpr());
+    auto stmt = makeAST<DeferStmt>(parseExpr());
     parseStmtTerminator();
     return stmt;
 }
@@ -878,7 +878,7 @@ IfStmt* Parser::parseIfStmt(Decl* parent) {
         consumeToken();
         elseStmts = parseBlockOrStmt(parent);
     }
-    return new IfStmt(condition, std::move(thenStmts), std::move(elseStmts));
+    return makeAST<IfStmt>(condition, std::move(thenStmts), std::move(elseStmts));
 }
 
 /// while-stmt ::= 'while' (expr | var-decl) block-or-stmt
@@ -890,7 +890,7 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
     auto condition = parseExprOrVarDecl(parent);
     if (parens) parse(Token::RightParen);
     auto body = parseBlockOrStmt(parent);
-    return new WhileStmt(condition, std::move(body), location);
+    return makeAST<WhileStmt>(condition, std::move(body), location);
 }
 
 /// for-stmt ::= 'for' for-header block-or-stmt
@@ -921,13 +921,13 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         }
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
-        return new ForStmt(varStmt, condition, increment, std::move(body), location);
+        return makeAST<ForStmt>(varStmt, condition, increment, std::move(body), location);
     } else {
         parse(Token::In);
         auto range = parseExpr();
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
-        return new ForEachStmt(varStmt->decl, range, std::move(body), location);
+        return makeAST<ForEachStmt>(varStmt->decl, range, std::move(body), location);
     }
 }
 
@@ -954,8 +954,8 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
                 consumeToken();
                 auto name = parse(Token::Identifier);
                 // TODO: UndefinedLiteralExpr as initializer is a hack, should be nullptr.
-                associatedValue = new VarDecl(Type(), name.getString().str(), new UndefinedLiteralExpr(name.location), parent, AccessLevel::None,
-                                              *currentModule, name.location);
+                associatedValue = makeAST<VarDecl>(Type(), name.getString().str(), makeAST<UndefinedLiteralExpr>(name.location), parent, AccessLevel::None,
+                                                   *currentModule, name.location);
             }
 
             parse(Token::Colon);
@@ -977,7 +977,7 @@ SwitchStmt* Parser::parseSwitchStmt(Decl* parent) {
     }
 
     consumeToken();
-    return new SwitchStmt(condition, std::move(cases), std::move(defaultStmts));
+    return makeAST<SwitchStmt>(condition, std::move(cases), std::move(defaultStmts));
 }
 
 /// break-stmt ::= 'break' ('\n' | ';')
@@ -985,7 +985,7 @@ BreakStmt* Parser::parseBreakStmt() {
     auto location = getCurrentLocation();
     consumeToken();
     parseStmtTerminator();
-    return new BreakStmt(location);
+    return makeAST<BreakStmt>(location);
 }
 
 /// continue-stmt ::= 'continue' ('\n' | ';')
@@ -993,7 +993,7 @@ ContinueStmt* Parser::parseContinueStmt() {
     auto location = getCurrentLocation();
     consumeToken();
     parseStmtTerminator();
-    return new ContinueStmt(location);
+    return makeAST<ContinueStmt>(location);
 }
 
 /// stmt ::= var-stmt | return-stmt | expr-stmt | defer-stmt | if-stmt | switch-stmt |
@@ -1130,9 +1130,9 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
     FunctionProto proto(name.str(), std::move(params), returnType, isVariadic, isExtern);
 
     if (receiverTypeDecl) {
-        return new MethodDecl(std::move(proto), *receiverTypeDecl, std::vector<Type>(), accessLevel, location);
+        return makeAST<MethodDecl>(std::move(proto), *receiverTypeDecl, std::vector<Type>(), accessLevel, location);
     } else {
-        return new FunctionDecl(std::move(proto), std::vector<Type>(), accessLevel, *currentModule, location);
+        return makeAST<FunctionDecl>(std::move(proto), std::vector<Type>(), accessLevel, *currentModule, location);
     }
 }
 
@@ -1142,7 +1142,7 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
 FunctionTemplate* Parser::parseFunctionTemplateProto(TypeDecl* receiverTypeDecl, AccessLevel accessLevel, Type type, llvm::StringRef name, Location location) {
     std::vector<GenericParamDecl> genericParams;
     auto decl = parseFunctionProto(false, receiverTypeDecl, accessLevel, &genericParams, type, name, location);
-    return new FunctionTemplate(std::move(genericParams), decl, accessLevel);
+    return makeAST<FunctionTemplate>(std::move(genericParams), decl, accessLevel);
 }
 
 /// function-decl ::= function-proto '{' stmt* '}'
@@ -1180,7 +1180,7 @@ ConstructorDecl* Parser::parseConstructorDecl(TypeDecl& receiverTypeDecl, Access
     ASSERT(currentToken() == Token::Identifier);
     auto location = consumeToken().location;
     auto params = parseParamList(nullptr);
-    auto decl = new ConstructorDecl(receiverTypeDecl, std::move(params), accessLevel, location);
+    auto decl = makeAST<ConstructorDecl>(receiverTypeDecl, std::move(params), accessLevel, location);
     decl->body = parseBlock(decl);
     return decl;
 }
@@ -1194,7 +1194,7 @@ DestructorDecl* Parser::parseDestructorDecl(TypeDecl& receiverTypeDecl) {
     }
     auto params = parseParamList(nullptr);
     if (!params.empty()) REPORT_ERROR(location, "destructors cannot have parameters");
-    auto decl = new DestructorDecl(receiverTypeDecl, location);
+    auto decl = makeAST<DestructorDecl>(receiverTypeDecl, location);
     decl->body = parseBlock(decl);
     return decl;
 }
@@ -1216,7 +1216,7 @@ FieldDecl Parser::parseFieldDecl(TypeDecl& typeDecl, AccessLevel accessLevel, Ty
 TypeTemplate* Parser::parseTypeTemplate(AccessLevel accessLevel) {
     std::vector<GenericParamDecl> genericParams;
     auto typeDecl = parseTypeDecl(&genericParams, accessLevel);
-    return new TypeTemplate(std::move(genericParams), typeDecl, accessLevel);
+    return makeAST<TypeTemplate>(std::move(genericParams), typeDecl, accessLevel);
 }
 
 Token Parser::parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams) {
@@ -1252,8 +1252,8 @@ TypeDecl* Parser::parseTypeDecl(std::vector<GenericParamDecl>* genericParams, Ac
 
     std::vector<Type> interfaces;
     auto typeName = parseTypeHeader(interfaces, genericParams);
-    auto typeDecl = new TypeDecl(tag, typeName.getString().str(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
-                                 typeName.location);
+    auto typeDecl = makeAST<TypeDecl>(tag, typeName.getString().str(), std::vector<Type>(), std::move(interfaces), typeAccessLevel, *currentModule, nullptr,
+                                      typeName.location);
     bool hasConstructor = false;
     parse(Token::LeftBrace);
 
@@ -1343,7 +1343,7 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
             associatedType = parseTupleType();
         }
 
-        auto value = new IntLiteralExpr(valueCounter, caseName.location);
+        auto value = makeAST<IntLiteralExpr>(valueCounter, caseName.location);
         cases.push_back(EnumCase(caseName.getString().str(), value, associatedType, typeAccessLevel, caseName.location));
         ++valueCounter;
 
@@ -1357,7 +1357,7 @@ EnumDecl* Parser::parseEnumDecl(AccessLevel typeAccessLevel) {
     consumeToken();
     // Allow an optional trailing ';' (e.g. `enum E {...};`).
     if (currentToken() == Token::Semicolon) consumeToken();
-    return new EnumDecl(name.getString().str(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.location);
+    return makeAST<EnumDecl>(name.getString().str(), std::move(cases), typeAccessLevel, *currentModule, nullptr, name.location);
 }
 
 /// import-decl ::= 'import' (id | string-literal) ('\n' | ';')
@@ -1375,7 +1375,7 @@ ImportDecl* Parser::parseImportDecl() {
     }
 
     parseStmtTerminator("after 'import' declaration");
-    return new ImportDecl(std::move(importTarget), *currentModule, location);
+    return makeAST<ImportDecl>(std::move(importTarget), *currentModule, location);
 }
 
 void Parser::parseIfdefBody(std::vector<Decl*>* activeDecls) {

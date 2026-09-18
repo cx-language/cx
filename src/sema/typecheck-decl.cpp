@@ -4,6 +4,7 @@
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
+#include "../ast/arena.h"
 #include "../ast/module.h"
 #include "c-import.h"
 
@@ -111,8 +112,7 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
         }
 
         if (decl->isTypeTemplate()) {
-            validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->genericParams.size(), basicType->genericArgs, basicType->name,
-                                    type.location);
+            validateGenericArgCount(llvm::cast<TypeTemplate>(decl)->genericParams.size(), basicType->genericArgs, basicType->name, type.location);
         } else if (!decl->isTypeDecl()) {
             ERROR(type.location, "'" << type << "' is not a type");
         }
@@ -251,7 +251,7 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
         if (receiverTypeDecl) {
             Type thisType = receiverTypeDecl->getTypeForPassing();
-            auto* varDecl = new VarDecl(thisType, "this", nullptr, &decl, AccessLevel::None, *currentModule, decl.getLocation());
+            auto* varDecl = makeAST<VarDecl>(thisType, "this", nullptr, &decl, AccessLevel::None, *currentModule, decl.getLocation());
             currentModule->addToSymbolTable(varDecl);
         }
 

@@ -1,4 +1,5 @@
 #include "irgen.h"
+#include "../ast/arena.h"
 #include "../ast/module.h"
 
 using namespace cx;
@@ -91,7 +92,7 @@ DestructorDecl* IRGenerator::getDefaultDestructor(TypeDecl& typeDecl) {
 
     for (auto& field : typeDecl.fields) {
         if (field.type.getDestructor()) {
-            auto destructor = new DestructorDecl(typeDecl, typeDecl.getLocation());
+            auto destructor = makeAST<DestructorDecl>(typeDecl, typeDecl.getLocation());
             destructor->body = std::vector<Stmt*>();
             return destructor;
         }
