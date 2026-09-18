@@ -12,6 +12,9 @@ interface Iterator<Element> {
     Element value();
     void increment();
 }
+
+void main() {
+}
 ```
 
 A `for` loop like `for (var element in collection)` is shorthand for
