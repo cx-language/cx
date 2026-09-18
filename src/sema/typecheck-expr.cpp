@@ -1013,7 +1013,13 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             auto* typeDecl = llvm::cast<TypeDecl>(decl);
             isConstructorCall = true;
             constructorDecls = typeDecl->getConstructors();
-            ASSERT(!constructorDecls.empty());
+            if (constructorDecls.empty()) {
+                // Interfaces and C-imported unions have no constructors, so calling one is always an error.
+                if (typeDecl->isInterface()) {
+                    ERROR(expr.callee->location, "cannot construct interface '" << typeDecl->getName() << "'");
+                }
+                ERROR(expr.callee->location, "type '" << typeDecl->getName() << "' has no constructors");
+            }
             if (decls.size() == 1) {
                 candidates = llvm::ArrayRef(reinterpret_cast<Decl**>(constructorDecls.data()), constructorDecls.size());
             }

@@ -1,0 +1,10 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+interface Printable {
+    void print(StringBuffer* stream);
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:5: error: cannot construct interface 'Printable'
+    Printable();
+}
