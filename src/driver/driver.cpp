@@ -607,7 +607,6 @@ static void addManifestBuildFlags(const PackageManifest& manifest) {
 }
 
 static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
-    auto manifestPath = (packageRoot + "/" + PackageManifest::manifestFileName).str();
     PackageManifest manifest(packageRoot.str(), {defines.begin(), defines.end()});
     fetchDependencies(manifest);
     addManifestBuildFlags(manifest);
@@ -619,7 +618,7 @@ static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
         } else {
             outputFileName = manifest.packageName;
         }
-        auto sourceFiles = getSourceFiles(targetRootDir, manifestPath);
+        auto sourceFiles = getSourceFiles(targetRootDir);
         // TODO: Add support for library packages.
         int exitStatus = buildModuleFromFiles({
             .filePaths = sourceFiles,

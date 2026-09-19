@@ -1,0 +1,7 @@
+// RUN: cd %S && %cx run | %FileCheck -match-full-lines -strict-whitespace %s
+
+// CHECK:hello
+
+void main() {
+    println("hello");
+}
