@@ -40,7 +40,7 @@ private int partition<E: Comparable>(List<E>* arr, int low, int high) {
     var pivot = &arr[high];
     var i = low - 1;
 
-    for var j in low..high {
+    for j in low..high {
         if arr[j] < pivot {
             i++;
             swap(arr[i], arr[j]);

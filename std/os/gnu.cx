@@ -14,7 +14,7 @@ void printStackTrace() {
         return;
     }
 
-    for var i in 0..frames {
+    for i in 0..frames {
         printf("%s\n", strings[i]);
     }
 

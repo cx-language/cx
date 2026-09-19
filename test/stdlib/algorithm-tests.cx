@@ -18,12 +18,12 @@ void testAllAnyNone() {
 
 void testInsertionSort() {
     var a = List<int>();
-    for (var i in 0..5) {
+    for (i in 0..5) {
         a.push(5 - i);
     }
 
     var real = List<int>();
-    for (var i in 0..5) {
+    for (i in 0..5) {
         real.push(i + 1);
     }
 
@@ -35,13 +35,13 @@ void testInsertionSort() {
 void testQuickSort() {
     var a = List<int>();
 
-    for (var i in 0..64) {
+    for (i in 0..64) {
         a.push(64 - i);
     }
 
     var real = List<int>();
 
-    for (var i in 0..64) {
+    for (i in 0..64) {
         real.push(i + 1);
     }
 

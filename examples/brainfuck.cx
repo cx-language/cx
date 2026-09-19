@@ -43,7 +43,7 @@ struct Program {
         var leftStack = List<int>();
         var pc = 0;
 
-        for var ch in text {
+        for ch in text {
             if !"+-><[].,".contains(ch)
                 continue;
 

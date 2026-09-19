@@ -21,7 +21,7 @@ void main() {
     for var y = -0.9; y < 0.9; y += 0.09 {
         for var x = -1.4; x < 0.4; x += 0.045 {
             var z = Complex(0, 0);
-            for var _ in 0...100 {
+            for _ in 0...100 {
                 z = z * z + Complex(x, y);
             }
             var chars = " .:-;!/>)|&IH%*#";

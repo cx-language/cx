@@ -115,7 +115,7 @@ void testBytes() {
     var text = "The quick brown fox jumps over the lazy dog";
     var i = 0;
 
-    for (var byte in text.bytes()) {
+    for (byte in text.bytes()) {
         assert(byte == uint8(text[i]));
         i++;
     }
@@ -128,7 +128,7 @@ void testLines() {
     var expected = ["The quick brown fox ", "", "", " jumps over", " the lazy dog"];
     var i = 0;
 
-    for (var line in text.lines()) {
+    for (line in text.lines()) {
         assert(line == expected[i]);
         i++;
     }

@@ -24,7 +24,7 @@ void main() {
     // println(list[3]); // invalid index, this would cause an assertion error
 
     // Print each element in the list.
-    for var element in list {
+    for element in list {
         println(element);
     }
 }
@@ -44,7 +44,7 @@ It is known in other languages by the name slice, span, or array view.
 int calculateSum(int[] array) {
     var sum = 0;
 
-    for var element in array {
+    for element in array {
         sum += element;
     }
 

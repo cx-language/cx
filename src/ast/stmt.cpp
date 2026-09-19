@@ -110,7 +110,7 @@ Stmt* WhileStmt::lower() {
     return makeAST<ForStmt>(nullptr, condition, nullptr, std::move(body), location);
 }
 
-// Lowers 'for (var id in range) { ... }' into:
+// Lowers 'for (id in range) { ... }' into:
 // for (var __iterator = range.iterator(); __iterator.hasValue(); __iterator.increment()) {
 //     var id = __iterator.value();
 //     ...

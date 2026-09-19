@@ -897,13 +897,23 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
 /// for-header ::= var-decl ';' expr? ';' expr? |
 ///            '(' var-decl ';' expr? ';' expr? ')'
 /// foreach-stmt ::= 'for' foreach-header block-or-stmt
-/// foreach-header ::= (type | 'var') id 'in' expr |
-///                '(' (type | 'var') id 'in' expr ')'
+/// foreach-header ::= id 'in' expr | '(' id 'in' expr ')'
 Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
     auto location = consumeToken().location;
     bool parens = currentToken() == Token::LeftParen;
     if (parens) consumeToken();
+
+    if (currentToken() == Token::Identifier && lookAhead(1) == Token::In) {
+        auto name = parse(Token::Identifier);
+        auto* varDecl = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
+        parse(Token::In);
+        auto range = parseExpr();
+        if (parens) parse(Token::RightParen);
+        auto body = parseBlockOrStmt(parent);
+        return makeAST<ForEachStmt>(varDecl, range, std::move(body), location);
+    }
+
     auto varStmt = currentToken() == Token::Semicolon ? (consumeToken(), nullptr) : parseVarStmt(parent);
 
     if (!varStmt || varStmt->decl->initializer) {
@@ -922,12 +932,11 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
         if (parens) parse(Token::RightParen);
         auto body = parseBlockOrStmt(parent);
         return makeAST<ForStmt>(varStmt, condition, increment, std::move(body), location);
+    } else if (currentToken() == Token::In) {
+        ERROR(varStmt->decl->getLocation(), "for-each loop variable must be a bare identifier, write 'for " << varStmt->decl->getName() << " in ...'");
     } else {
         parse(Token::In);
-        auto range = parseExpr();
-        if (parens) parse(Token::RightParen);
-        auto body = parseBlockOrStmt(parent);
-        return makeAST<ForEachStmt>(varStmt->decl, range, std::move(body), location);
+        llvm_unreachable("parse() throws on mismatch");
     }
 }
 
