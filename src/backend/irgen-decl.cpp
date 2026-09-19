@@ -17,6 +17,12 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
 
     auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.type), p.getName().str()}; });
 
+    if (!decl.captures.empty()) {
+        auto captureParams =
+            map(decl.captures, [](const VariableDecl* c) { return Parameter{ValueKind::Parameter, getIRType(c->type), ("__capture_" + c->getName()).str()}; });
+        params.insert(params.begin(), captureParams.begin(), captureParams.end());
+    }
+
     if (decl.isMethodDecl()) {
         params.insert(params.begin(), Parameter{ValueKind::Parameter, getIRType(decl.getTypeDecl()->getType().getPointerTo()), "this"});
     }
@@ -46,6 +52,19 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
 
     if (decl.getTypeDecl()) {
         setLocalValue(&*arg++, nullptr);
+    }
+
+    for (auto* captured : decl.captures) {
+        // Captures are per-call copies of the closure's stored values, so unlike regular
+        // locals they get no destructor call here; the stored values are destroyed with the closure.
+        auto inserted = scopes.back().valuesByDecl.try_emplace(captured, &*arg);
+        ASSERT(inserted.second);
+        // Field accesses lower to getThis(); captured `this` must answer those too.
+        if (captured->getName() == "this") {
+            auto thisInserted = scopes.back().valuesByDecl.try_emplace(nullptr, &*arg);
+            ASSERT(thisInserted.second);
+        }
+        ++arg;
     }
 
     for (auto& param : decl.getParams()) {

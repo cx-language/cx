@@ -1,0 +1,25 @@
+// RUN: check-snapshots
+
+void capturesParam(int p) {
+    var d = 3;
+    var b = (int c) -> c + p + d;
+    _ = b(1);
+}
+
+struct S {
+    int d;
+
+    int get(int c) {
+        var b = (int x) -> x + c + d;
+        return b(1);
+    }
+}
+
+void main() {
+    capturesParam(100);
+    var s = S(d = 5);
+    _ = s.get(1);
+    var a = 1;
+    var b = (int c) -> c + a;
+    _ = b(2);
+}

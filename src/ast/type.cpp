@@ -341,6 +341,28 @@ bool Type::containsUnresolvedPlaceholder() const {
     llvm_unreachable("all cases handled");
 }
 
+bool Type::isClosureType() const {
+    auto* typeDecl = getDecl();
+    return typeDecl && typeDecl->isClosure();
+}
+
+// Closure structs hold the function pointer in field 0, followed by one field per capture.
+// The function takes the captures as hidden leading parameters; the user-visible signature skips them.
+llvm::ArrayRef<Type> Type::getClosureParamTypes() const {
+    ASSERT(isClosureType());
+    auto* closureDecl = getDecl();
+    Type functionType = closureDecl->fields.front().type;
+    ASSERT(functionType.isFunctionType());
+    return functionType.getParamTypes().drop_front(closureDecl->fields.size() - 1);
+}
+
+Type Type::getClosureReturnType() const {
+    ASSERT(isClosureType());
+    Type functionType = getDecl()->fields.front().type;
+    ASSERT(functionType.isFunctionType());
+    return functionType.getReturnType();
+}
+
 TypeDecl* Type::getDecl() const {
     auto* basicType = llvm::dyn_cast<BasicType>(typeBase);
     return basicType ? basicType->decl : nullptr;
@@ -359,6 +381,17 @@ void Type::printTo(std::ostream& stream) const {
 
     switch (typeBase->kind) {
     case TypeKind::BasicType: {
+        if (isClosureType()) {
+            stream << "(";
+            for (const Type& paramType : getClosureParamTypes()) {
+                stream << paramType;
+                if (&paramType != &getClosureParamTypes().back()) stream << ", ";
+            }
+            stream << ") -> ";
+            getClosureReturnType().printTo(stream);
+            break;
+        }
+
         if (isOptionalType()) {
             getWrappedType().printTo(stream);
             if (!isMutable()) stream << " const";

@@ -1,0 +1,75 @@
+
+void _EN4main13capturesParamE3int(int p) {
+    int* d = alloca int
+    __closure0* b = alloca __closure0
+    store int 3 to d
+    __closure0 _0 = insertvalue __closure0 undefined, 0, _EN4main9__lambda0E3int
+    __closure0 _1 = insertvalue _0, 1, p
+    int d.load = load d
+    __closure0 _2 = insertvalue _1, 2, d.load
+    store _2 to b
+    __closure0 b.load = load b
+    int(int, int, int)* _3 = extractvalue b.load, 0
+    int _4 = extractvalue b.load, 1
+    int _5 = extractvalue b.load, 2
+    int _6 = call _3(int _4, int _5, int 1)
+    return void
+}
+
+int _EN4main9__lambda0E3int(int __capture_p, int __capture_d, int c) {
+    int _0 = c + __capture_p
+    int _1 = _0 + __capture_d
+    return _1
+}
+
+int main() {
+    S* s = alloca S
+    int* a = alloca int
+    __closure2* b = alloca __closure2
+    void _0 = call _EN4main13capturesParamE3int(int 100)
+    void _1 = call _EN4main1S4initE3int(S* s, int 5)
+    int _2 = call _EN4main1S3getE3int(S* s, int 1)
+    store int 1 to a
+    __closure2 _3 = insertvalue __closure2 undefined, 0, _EN4main9__lambda2E3int
+    int a.load = load a
+    __closure2 _4 = insertvalue _3, 1, a.load
+    store _4 to b
+    __closure2 b.load = load b
+    int(int, int)* _5 = extractvalue b.load, 0
+    int _6 = extractvalue b.load, 1
+    int _7 = call _5(int _6, int 2)
+    return int 0
+}
+
+void _EN4main1S4initE3int(S* this, int d) {
+    int* d_0 = getelementptr this, 0
+    store d to d_0
+    return void
+}
+
+int _EN4main1S3getE3int(S* this, int c) {
+    __closure1* b = alloca __closure1
+    __closure1 _0 = insertvalue __closure1 undefined, 0, _EN4main9__lambda1E3int
+    __closure1 _1 = insertvalue _0, 1, c
+    __closure1 _2 = insertvalue _1, 2, this
+    store _2 to b
+    __closure1 b.load = load b
+    int(int, S*, int)* _3 = extractvalue b.load, 0
+    int _4 = extractvalue b.load, 1
+    S* _5 = extractvalue b.load, 2
+    int _6 = call _3(int _4, S* _5, int 1)
+    return _6
+}
+
+int _EN4main9__lambda2E3int(int __capture_a, int c) {
+    int _0 = c + __capture_a
+    return _0
+}
+
+int _EN4main9__lambda1E3int(int __capture_c, S* __capture_this, int x) {
+    int _0 = x + __capture_c
+    int* d = getelementptr __capture_this, 0
+    int d.load = load d
+    int _1 = _0 + d.load
+    return _1
+}

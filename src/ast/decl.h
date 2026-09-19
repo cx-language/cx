@@ -201,6 +201,11 @@ struct FunctionDecl : Decl {
     Module& module;
     bool typechecked;
     bool isPackInstantiation = false;
+    // Enclosing function for lambdas, null otherwise. Set during typechecking.
+    FunctionDecl* parentFunction = nullptr;
+    // Outer locals and parameters captured by value, in first-use order. Only lambdas capture.
+    // Codegen passes these as hidden leading parameters; the AST params only hold user parameters.
+    std::vector<VariableDecl*> captures;
 
 protected:
     FunctionDecl(DeclKind kind, FunctionProto&& proto, std::vector<Type>&& genericArgs, AccessLevel accessLevel, Module& module, Location location)
@@ -280,6 +285,7 @@ struct TypeDecl : Decl {
     std::vector<ConstructorDecl*> getConstructors() const;
     DestructorDecl* getDestructor() const;
     Type getType(Mutability mutability = Mutability::Mutable) const;
+    bool isClosure() const { return isStruct() && getName().starts_with("__closure"); }
     Type getTypeForPassing() const;
     bool passByValue() const { return (isStruct() && isCopyable()) || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }

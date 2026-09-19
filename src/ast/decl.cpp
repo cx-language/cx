@@ -290,7 +290,11 @@ bool FunctionTemplate::isReferenced() const {
 }
 
 MethodDecl::MethodDecl(DeclKind kind, FunctionProto proto, TypeDecl& typeDecl, std::vector<Type>&& genericArgs, AccessLevel accessLevel, Location location)
-: FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl) {}
+: FunctionDecl(kind, std::move(proto), std::move(genericArgs), accessLevel, *typeDecl.getModule(), location), typeDecl(&typeDecl) {
+    for (auto& param : getParams()) {
+        param.parent = this;
+    }
+}
 
 MethodDecl* MethodDecl::instantiate(const llvm::StringMap<Type>& genericArgs, llvm::ArrayRef<Type> genericArgsArray, TypeDecl& typeDecl) {
     switch (kind) {

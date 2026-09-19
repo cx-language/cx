@@ -27,10 +27,13 @@ void Typechecker::checkHasAccess(const Decl& decl, Location location, AccessLeve
     }
 }
 
-void Typechecker::checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const {
-    auto* parent = currentModule->symbolTable.getCurrentScope().parent;
-    if (parent && parent->isLambda() && variableDecl.parent != parent) {
-        ERROR(varExpr.location, "lambda capturing not implemented yet");
+void Typechecker::maybeCaptureVariable(VariableDecl& variableDecl) {
+    if (!currentFunction || !currentFunction->isLambda()) return;
+    if (variableDecl.kind != DeclKind::VarDecl && variableDecl.kind != DeclKind::ParamDecl) return;
+    auto* parent = variableDecl.parent;
+    if (!parent || !parent->isFunctionDecl() || parent == currentFunction) return;
+    if (!llvm::is_contained(currentFunction->captures, &variableDecl)) {
+        currentFunction->captures.push_back(&variableDecl);
     }
 }
 
@@ -143,7 +146,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     expr.decl = decl;
 
     if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
-        checkLambdaCapture(*variableDecl, expr);
+        maybeCaptureVariable(*variableDecl);
     }
 
     switch (decl->kind) {
@@ -178,8 +181,12 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
         ERROR(expr.location, "'" << expr.identifier << "' is not a variable");
     case DeclKind::EnumCase:
         return llvm::cast<EnumCase>(decl)->type;
-    case DeclKind::FieldDecl:
+    case DeclKind::FieldDecl: {
+        if (currentFunction && currentFunction->isLambda()) {
+            maybeCaptureVariable(*llvm::cast<VariableDecl>(findDecl("this", expr.location)));
+        }
         return llvm::cast<FieldDecl>(decl)->type;
+    }
     case DeclKind::ImportDecl:
         llvm_unreachable("import statement validation not implemented yet");
     }
@@ -479,6 +486,7 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
         expr.setRHS(converted);
         rhs = converted;
     } else {
+        diagnoseClosureConversion(rhsType, lhsType, location);
         ERROR(location, "cannot assign '" << rhsType << "' to '" << lhsType << "'");
     }
 
@@ -803,6 +811,14 @@ Type Typechecker::findGenericArg(Type argType, Type paramType, llvm::StringRef g
         return argType;
     }
 
+    if (argType.isClosureType()) {
+        // Infer from the user-visible signature; argument conversion still rejects
+        // capturing lambdas where plain function pointers are expected.
+        auto closureParams = argType.getClosureParamTypes();
+        std::vector<Type> paramTypes(closureParams.begin(), closureParams.end());
+        return findGenericArg(FunctionType::get(argType.getClosureReturnType(), std::move(paramTypes), false), paramType, genericParam);
+    }
+
     switch (argType.getKind()) {
     case TypeKind::BasicType:
         if (!argType.getGenericArgs().empty() && paramType.isBasicType() && paramType.getName() == argType.getName()) {
@@ -1076,6 +1092,12 @@ std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::A
     return result;
 }
 
+void cx::diagnoseClosureConversion(Type source, Type target, Location location) {
+    if (source.isClosureType() && target.isFunctionType()) {
+        ERROR(location, "cannot convert capturing lambda '" << source << "' to function type '" << target << "'");
+    }
+}
+
 void cx::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location) {
     if (genericArgs.size() < genericParamCount) {
         REPORT_ERROR(location, "too few generic arguments to '" << name << "', expected " << genericParamCount);
@@ -1224,6 +1246,13 @@ static bool equals(const llvm::StringMap<Type>& a, const llvm::StringMap<Type>& 
     }
 
     return true;
+}
+
+static std::vector<ParamDecl> getVariableCalleeParams(const VariableDecl& calleeDecl) {
+    if (calleeDecl.type.isClosureType()) {
+        return map(calleeDecl.type.getClosureParamTypes(), [&](Type paramType) { return ParamDecl(paramType, "", false, calleeDecl.getLocation()); });
+    }
+    return llvm::cast<FunctionType>(calleeDecl.type.typeBase)->getParamDecls(calleeDecl.getLocation());
 }
 
 Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType) {
@@ -1388,8 +1417,14 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         case DeclKind::FieldDecl: {
             auto* variableDecl = llvm::cast<VariableDecl>(decl);
 
-            if (auto* functionType = llvm::dyn_cast<FunctionType>(variableDecl->type.typeBase)) {
-                auto paramDecls = functionType->getParamDecls(variableDecl->getLocation());
+            // The initializer errored; the real error was already reported.
+            if (!variableDecl->type) {
+                if (decls.size() == 1) throw CompileError::dependentError();
+                break;
+            }
+
+            if (variableDecl->type.isFunctionType() || variableDecl->type.isClosureType()) {
+                auto paramDecls = getVariableCalleeParams(*variableDecl);
 
                 if (decls.size() == 1) {
                     validateAndConvertArguments(expr, paramDecls, false, callee, expr.callee->location);
@@ -1577,6 +1612,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
             expr.receiverType = constructorDecl->getTypeDecl()->getType();
         } else if (decl->isMethodDecl()) {
             auto* varDecl = llvm::cast<VarDecl>(findDecl("this", expr.callee->location));
+            maybeCaptureVariable(*varDecl);
             expr.receiverType = varDecl->type;
         }
     }
@@ -1591,7 +1627,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
         params = functionDecl->getParams();
     } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
-        params = llvm::cast<FunctionType>(variableDecl->type.typeBase)->getParamDecls();
+        params = getVariableCalleeParams(*variableDecl);
     } else {
         auto type = llvm::cast<EnumCase>(decl)->associatedType;
         params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
@@ -1607,6 +1643,21 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     expr.calleeDecl = decl;
     decl->referenced = true;
 
+    if (auto* variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
+        maybeCaptureVariable(*variableDecl);
+        // Closure calls emit the callee to load the closure value, so it must be resolved like other lvalues.
+        if (variableDecl->type.isClosureType()) {
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr.callee)) {
+                checkNotMoved(*variableDecl, *varExpr);
+                varExpr->decl = variableDecl;
+                varExpr->type = variableDecl->type;
+                varExpr->assignableType = variableDecl->type;
+            } else if (llvm::isa<MemberExpr>(expr.callee)) {
+                typecheckExpr(*expr.callee);
+            }
+        }
+    }
+
     if (auto constructorDecl = llvm::dyn_cast<ConstructorDecl>(decl)) {
         if (constructorDecl->getTypeDecl()->isInterface()) {
             typecheckFunctionDecl(*constructorDecl);
@@ -1615,6 +1666,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
     } else if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(decl)) {
         return functionDecl->getFunctionType()->returnType;
     } else if (auto variableDecl = llvm::dyn_cast<VariableDecl>(decl)) {
+        if (variableDecl->type.isClosureType()) {
+            return variableDecl->type.getClosureReturnType();
+        }
         return llvm::cast<FunctionType>(variableDecl->type.typeBase)->returnType;
     } else {
         return llvm::cast<EnumCase>(decl)->type;
@@ -1678,8 +1732,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, const Decl& callee
     if (auto functionDecl = llvm::dyn_cast<FunctionDecl>(&calleeDecl)) {
         validateAndConvertArguments(expr, functionDecl->getParams(), functionDecl->isVariadic(), functionName, location);
     } else {
-        auto functionType = llvm::cast<FunctionType>(llvm::cast<VariableDecl>(calleeDecl).type.typeBase);
-        auto paramDecls = functionType->getParamDecls(calleeDecl.getLocation());
+        auto paramDecls = getVariableCalleeParams(llvm::cast<VariableDecl>(calleeDecl));
         validateAndConvertArguments(expr, paramDecls, false, functionName, location);
     }
 }
@@ -1739,6 +1792,7 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
     case ArgumentValidation::InvalidType: {
         auto& arg = expr.args[result.index];
         auto* param = &params[result.index];
+        diagnoseClosureConversion(arg.value->type, param->type, arg.location);
         ERROR(arg.location,
               "invalid argument #" << (result.index + 1) << " type '" << arg.value->type << "' to '" << callee << "', expected '" << param->type << "'");
         break;
@@ -1930,11 +1984,49 @@ Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
     return type.getWrappedType();
 }
 
+// A capturing lambda evaluates to a closure: an anonymous struct holding the function
+// plus the captured values. The function takes the captures as hidden leading parameters,
+// so its stored type includes them ahead of the user parameters.
+static Type createClosureType(FunctionDecl& lambdaDecl, Location location) {
+    static uint64_t nameCounter = 0;
+    std::string name = "__closure" + std::to_string(nameCounter++);
+    Module& module = *lambdaDecl.getModule();
+
+    std::vector<Type> fnParamTypes;
+    for (auto* captured : lambdaDecl.captures) {
+        fnParamTypes.push_back(captured->type);
+    }
+    for (auto& param : lambdaDecl.getParams()) {
+        fnParamTypes.push_back(param.type);
+    }
+    Type fnType = FunctionType::get(lambdaDecl.getReturnType(), std::move(fnParamTypes), false);
+
+    std::vector<Type> interfaces;
+    if (llvm::all_of(lambdaDecl.captures, [](auto* captured) { return captured->type.isImplicitlyCopyable(); })) {
+        interfaces.push_back(BasicType::get("Copyable", {}));
+    }
+
+    // Default access: closures are anonymous, so they can't leak through API surfaces the way named private types can.
+    auto* closureDecl =
+        makeAST<TypeDecl>(TypeTag::Struct, std::move(name), std::vector<Type>(), std::move(interfaces), AccessLevel::Default, module, nullptr, location);
+    closureDecl->addField(FieldDecl(fnType, "__fn", nullptr, *closureDecl, AccessLevel::Private, location));
+    for (auto* captured : lambdaDecl.captures) {
+        closureDecl->addField(FieldDecl(captured->type, ("__capture_" + captured->getName()).str(), nullptr, *closureDecl, AccessLevel::Private, location));
+    }
+
+    Type closureType = BasicType::get(closureDecl->getName(), {});
+    llvm::cast<BasicType>(closureType.typeBase)->decl = closureDecl;
+    return closureType.withLocation(location);
+}
+
 Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
     for (size_t i = 0, e = expr.functionDecl->getParams().size(); i < e; ++i) {
         auto& param = expr.functionDecl->getParams()[i];
         if (!param.type) {
-            auto inferredType = expectedType ? expectedType.getParamTypes()[i] : Type();
+            Type inferredType;
+            if (expectedType && expectedType.isFunctionType() && i < expectedType.getParamTypes().size()) {
+                inferredType = expectedType.getParamTypes()[i];
+            }
             if (!inferredType) {
                 ERROR(param.getLocation(), "couldn't infer type for parameter '" << param.getName() << "'");
             }
@@ -1942,8 +2034,22 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
         }
     }
 
+    expr.functionDecl->parentFunction = currentFunction;
     typecheckFunctionDecl(*expr.functionDecl);
-    return Type(expr.functionDecl->getFunctionType(), Mutability::Mutable, expr.location);
+
+    if (expr.functionDecl->captures.empty()) {
+        return Type(expr.functionDecl->getFunctionType(), Mutability::Mutable, expr.location);
+    }
+
+    for (auto* captured : expr.functionDecl->captures) {
+        VarExpr use(captured->getName().str(), expr.location);
+        checkNotMoved(*captured, use);
+        if (!captured->type.isImplicitlyCopyable()) {
+            movedDecls.insert(captured);
+        }
+    }
+
+    return createClosureType(*expr.functionDecl, expr.location);
 }
 
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {
@@ -2085,6 +2191,18 @@ EnumCase* Typechecker::getEnumCase(const Expr& expr) {
 void Typechecker::setMoved(Expr* expr, bool isMoved) {
     if (auto* varExpr = llvm::dyn_cast<VarExpr>(expr)) {
         ASSERT(varExpr->decl);
+
+        // Moving out of a capture would leave the closure's stored copy in a moved-from state
+        // while the closure stays callable, so only copies of implicitly copyable captures are allowed out.
+        if (isMoved && currentFunction && currentFunction->isLambda() && varExpr->type && !varExpr->type.isImplicitlyCopyable()) {
+            if (auto* variableDecl = llvm::dyn_cast<VariableDecl>(varExpr->decl)) {
+                auto* parent = variableDecl->parent;
+                if ((variableDecl->kind == DeclKind::VarDecl || variableDecl->kind == DeclKind::ParamDecl) && parent && parent->isFunctionDecl()
+                    && parent != currentFunction) {
+                    ERROR(varExpr->location, "cannot move from captured variable '" << varExpr->identifier << "'");
+                }
+            }
+        }
 
         if (isMoved) {
             movedDecls.insert(varExpr->decl);

@@ -137,7 +137,7 @@ struct Typechecker {
     EnumCase* getEnumCase(const Expr& expr);
     void checkReturnPointerToLocal(const Expr* returnValue) const;
     static void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
-    void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;
+    void maybeCaptureVariable(VariableDecl& variableDecl);
     llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const BuildConfig* config, llvm::StringRef moduleName);
     void deferTypechecking(Decl* decl);
     void postProcess();
@@ -164,5 +164,6 @@ struct Typechecker {
 
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location);
 bool containsGenericParam(Type type, llvm::StringRef genericParam);
+void diagnoseClosureConversion(Type source, Type target, Location location);
 
 } // namespace cx
