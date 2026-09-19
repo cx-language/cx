@@ -78,8 +78,16 @@ for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md 
         title="C* - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
     fi
 
-    mkdir -p "build/$(dirname "$relpath")"
-    pandoc "$file" -o "build/$relpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
+    # The std index page lives at std/index.html: build/std.html would be
+    # shadowed by the build/std/ subpage directory.
+    if [ "$relpath" = "std" ]; then
+        outpath="std/index"
+    else
+        outpath="$relpath"
+    fi
+
+    mkdir -p "build/$(dirname "$outpath")"
+    pandoc "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -91,20 +99,20 @@ for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md 
     # check_examples) and run in the browser playground: no C header imports,
     # no file system access, and no float-to-int conversions of unbounded
     # values (those trap on WebAssembly). The first entry is shown by default.
-    python3 - "$relpath" <<'EOF'
+    python3 - "$outpath" <<'EOF'
 import html
 import json
 import re
 import sys
 
-relpath = sys.argv[1]
-path = "build/" + relpath + ".html"
+outpath = sys.argv[1]
+path = "build/" + outpath + ".html"
 with open(path) as file:
     template = file.read()
 
 # Pages below the site root resolve sibling links and assets relatively,
 # so prefix them back up to the root (anchors and absolute URLs excluded).
-depth = relpath.count("/")
+depth = outpath.count("/")
 if depth:
     prefix = "../" * depth
     template = re.sub(r'(href|src)="(\./)?(?!#|/|[a-zA-Z][a-zA-Z0-9+.-]*:)', r'\1="' + prefix, template)
@@ -134,7 +142,7 @@ if "##EXAMPLESELECTOR##" in template:
 with open(path, "w") as file:
     file.write(template)
 
-if relpath == "index":
+if outpath == "index":
     examples = [{"name": name, "code": open("../examples/" + filename).read()} for name, filename in showcase]
     for example in examples:
         assert "</script" not in example["code"], "example breaks out of playground-examples.js: " + example["name"]
