@@ -31,7 +31,7 @@ run_clang_tidy() {
     if [ -n "$SKIP_CLANG_TIDY" ]; then
         return 0
     fi
-    python "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet "$@" $FILES 2>&1 \
+    python3 "$BUILD_PATH/run-clang-tidy.py" -header-filter="^$ROOTDIR/src/.*" -quiet "$@" $FILES 2>&1 \
         | sed -E '/^($|clang-tidy|[0-9]+ warnings generated)/d'
 }
 
