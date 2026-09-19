@@ -188,9 +188,17 @@ jobs:
 
       - name: Test playground
         run: |
+          node wasm/test-editor.mjs
           node wasm/test-wasi-shim.mjs wasm/dist
           node wasm/test-pipeline.mjs wasm/dist
           node wasm/smoke-playground.mjs wasm/dist
+
+      - name: Check vendored editor bundle is up to date
+        run: |
+          cd docs
+          npm ci
+          npm run build
+          git diff --exit-code --quiet -- lib/editor.bundle.js || (echo "docs/lib/editor.bundle.js is stale; run 'npm run build' in docs/ and commit it" >&2; exit 1)
 
       - name: Upload playground artifacts
         uses: actions/upload-artifact@v4

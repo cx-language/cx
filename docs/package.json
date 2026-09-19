@@ -1,0 +1,20 @@
+{
+  "name": "cx-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Bundles the documentation site's CodeMirror 6 editor (docs/src/) into docs/lib/editor.bundle.js.",
+  "scripts": {
+    "build": "esbuild src/editor.js --bundle --minify --format=iife --outfile=lib/editor.bundle.js --banner:js='// Generated from docs/src/ by `npm run build`. Do not edit.'"
+  },
+  "dependencies": {
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/language": "6.12.4",
+    "@codemirror/state": "6.7.5",
+    "@codemirror/view": "6.43.12",
+    "@lezer/highlight": "1.2.3"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

@@ -175,7 +175,7 @@ div.sourceCode {
 }
 
 /* Static code blocks (reference-only snippets) keep pandoc's syntax
-   highlighting instead of the CodeMirror editor. Map its token classes
+   highlighting instead of the playground editor. Map its token classes
    to the cx palette so both render identically. */
 pre.sourceCode.cs code span.kw,
 pre.sourceCode.cs code span.dt {
@@ -418,7 +418,7 @@ section {
     margin: 0;
 }
 
-.intro .CodeMirror-scroll {
+.intro .cm-scroller {
     max-height: 400px;
 }
 
@@ -540,28 +540,9 @@ a.button:hover, button:hover {
     padding: 2px 8px;
 }
 
-.CodeMirror {
-    font-family: inherit;
-    background: transparent !important;
-    color: var(--text-color);
-    height: auto;
-    width: 100%;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.CodeMirror-lines {
-    padding: 12px 0 !important;
-}
-
-.CodeMirror-line,
-.CodeMirror-linewidget .diagnostic {
-    padding: 0 18px !important;
-}
-
 .diagnostic {
     color: var(--text-color);
-    padding: 0 4px;
+    padding: 0 18px;
     white-space: pre-wrap;
     font-family: var(--mono);
     font-size: 12px;

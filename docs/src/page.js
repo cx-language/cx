@@ -1,27 +1,26 @@
-document.addEventListener("DOMContentLoaded", function() {
+// Turns documentation code blocks into runnable playground editors.
+//
+// `createEditor` builds the code editor hosted in `wrapper` showing
+// `initialText`, and returns its {getValue, setValue, setDiagnostics}
+// interface. It is injected so tests can substitute a fake.
+
+import { parseDiagnostics } from "./diagnostics.js";
+
+export function initializeAllCodeEditors(createEditor) {
     const codeBlocks = document.querySelectorAll("pre.sourceCode:not(.sh):not(.noRun)");
     for (const block of codeBlocks) {
-        initializeCodeEditor(block);
+        initializeCodeEditor(block, createEditor);
     }
     if (typeof CxPlayground !== "undefined") {
         CxPlayground.warmUp();
     }
-});
+}
 
-function initializeCodeEditor(block) {
+export function initializeCodeEditor(block, createEditor) {
     const editorWrapper = document.createElement("div");
     editorWrapper.className = "editor";
 
-    const editor = CodeMirror(editorWrapper, {
-        mode: "cx",
-        theme: "cx",
-        indentUnit: 4,
-        value: block.innerText,
-        viewportMargin: Infinity
-    });
-    setTimeout(function() {
-        editor.refresh();
-    }, 1);
+    const editor = createEditor(editorWrapper, block.innerText);
 
     const runButton = document.createElement("button");
     runButton.setAttribute("aria-label", "Run");
@@ -70,7 +69,7 @@ function initializeCodeEditor(block) {
                     var example = CxExamples[Number(selector.value)];
                     if (!example) return;
                     editor.setValue(example.code);
-                    removeErrors();
+                    editor.setDiagnostics([]);
                     output.style.display = "none";
                     stdout.innerText = "";
                     stderr.innerText = "";
@@ -78,27 +77,6 @@ function initializeCodeEditor(block) {
                 };
             }
         }
-    }
-
-    var widgets = [];
-
-    function highlightError() {
-        var regex = /^main\.cx:(\d+):(\d+): (.*)(?:\n.*\n([ \t]*)\^)?/gm;
-        var match;
-        while ((match = regex.exec(output.innerText))) {
-            var [, line, column, message, indent] = match;
-            var node = document.createElement("div");
-            node.appendChild(document.createTextNode(indent + "^ " + message));
-            node.classList.add("diagnostic", message.startsWith("warning") ? "warning" : "error");
-            widgets.push(editor.addLineWidget(line - 1, node, true));
-        }
-    }
-
-    function removeErrors() {
-        for (var i = 0; i < widgets.length; ++i) {
-            widgets[i].clear();
-        }
-        widgets.length = 0;
     }
 
     runButton.onclick = function() {
@@ -117,7 +95,7 @@ function initializeCodeEditor(block) {
             return;
         }
 
-        removeErrors();
+        editor.setDiagnostics([]);
         output.style.display = "block";
         output.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
@@ -133,7 +111,7 @@ function initializeCodeEditor(block) {
             runButton.disabled = false;
             stdout.innerText = response.stdout || "";
             stderr.innerText = response.stderr || "";
-            highlightError();
+            editor.setDiagnostics(parseDiagnostics(output.innerText));
             output.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
     };

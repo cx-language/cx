@@ -2,6 +2,10 @@
 # and serve the generated HTML from the build directory using e.g. 'npx serve'.
 # Or run with --serve to build and serve in one step:
 #   docs/build-website.sh --serve [--port <port>]
+#
+# The runnable code editors use CodeMirror 6, bundled into
+# docs/lib/editor.bundle.js. After changing docs/src/, regenerate it with
+# `npm run build` (from docs/) and commit the result.
 
 SERVE=0
 PORT=8000
