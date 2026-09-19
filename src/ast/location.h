@@ -11,12 +11,10 @@ namespace cx {
 struct Location {
     using IntegerType = short;
 
-    const char* file;
-    IntegerType line;
-    IntegerType column;
+    const char* file = nullptr;
+    IntegerType line = std::numeric_limits<IntegerType>::min();
+    IntegerType column = std::numeric_limits<IntegerType>::min();
 
-    Location() : Location(nullptr, std::numeric_limits<IntegerType>::min(), std::numeric_limits<IntegerType>::min()) {}
-    Location(const char* file, IntegerType line, IntegerType column) : file(file), line(line), column(column) {}
     Location nextColumn() const { return Location(file, line, column + 1); }
     bool isValid() const { return line > 0 && column > 0; }
 

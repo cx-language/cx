@@ -7,12 +7,6 @@
 namespace cx {
 
 struct CGenerator {
-    CGenerator() : preludeStream(prelude), stream(result) {}
-    // When dispatchMode is true, functions are emitted as goto-free dispatch
-    // loops (a while(1)/switch over a program counter) instead of using labels
-    // and gotos. This supports C compilers that can't handle arbitrary gotos,
-    // such as the one used by the web playground toolchain.
-    explicit CGenerator(bool dispatchMode) : dispatchMode(dispatchMode), preludeStream(prelude), stream(result) {}
     void codegenModule(const IRModule& module);
     void codegenAlloca(const AllocaInst* inst);
     void codegenReturn(const ReturnInst* inst);
@@ -85,11 +79,15 @@ struct CGenerator {
     void copyArrayParams(const Function* function);
     std::string finish();
 
+    // When dispatchMode is true, functions are emitted as goto-free dispatch
+    // loops (a while(1)/switch over a program counter) instead of using labels
+    // and gotos. This supports C compilers that can't handle arbitrary gotos,
+    // such as the one used by the web playground toolchain.
     bool dispatchMode = false;
     std::string prelude;
     std::string result;
-    llvm::raw_string_ostream preludeStream; // Contains struct definitions
-    llvm::raw_string_ostream stream; // Contains functions
+    llvm::raw_string_ostream preludeStream{prelude}; // Contains struct definitions
+    llvm::raw_string_ostream stream{result}; // Contains functions
     std::unordered_set<IRType*> alreadyEmittedTypes;
     std::unordered_set<IRType*> forwardDeclaredTypes;
     std::unordered_map<IRType*, std::string> generatedTypeNames;

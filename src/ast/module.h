@@ -18,8 +18,6 @@ struct SymbolTable;
 
 /// Container for the AST of a single file.
 struct SourceFile {
-    explicit SourceFile(llvm::StringRef filePath, Module* parentModule) : filePath(filePath), parentModule(parentModule) {}
-
     void addImportedModule(Module* module) {
         if (!llvm::is_contained(importedModules, module)) {
             importedModules.push_back(module);
@@ -121,7 +119,6 @@ private:
 
 /// Container for the AST of a whole module, comprised of one or more SourceFiles.
 struct Module {
-    Module(std::string&& name) : name(std::move(name)) {}
     void addSourceFile(SourceFile&& file) { sourceFiles.emplace_back(std::move(file)); }
 
     std::vector<Module*> getImportedModules() const {

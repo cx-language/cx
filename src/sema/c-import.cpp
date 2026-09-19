@@ -501,7 +501,7 @@ bool cx::importCHeader(SourceFile& importer, ImportDecl& importDecl, Typechecker
     std::string headerModuleName = headerName.str();
     llvm::replace(headerModuleName, '.', '_');
     auto module = new Module(std::move(headerModuleName));
-    module->addSourceFile(SourceFile(headerPath, module));
+    module->addSourceFile(SourceFile(headerPath.str(), module));
 
     auto cToCxConverter = new CToCxConverter(*module, typechecker, targetInfo, ci.getSourceManager());
     ci.setASTConsumer(std::unique_ptr<CToCxConverter>(cToCxConverter));

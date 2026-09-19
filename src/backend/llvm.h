@@ -17,7 +17,6 @@ struct Function;
 struct BasicBlock;
 
 struct LLVMGenerator {
-    LLVMGenerator() : builder(ctx) {}
     llvm::Module& codegenModule(const IRModule& sourceModule);
     llvm::Value* codegenAlloca(const AllocaInst* inst);
     llvm::Value* codegenReturn(const ReturnInst* inst);
@@ -56,7 +55,7 @@ struct LLVMGenerator {
     llvm::Type* getStructType(IRStructType* type);
 
     llvm::LLVMContext ctx;
-    llvm::IRBuilder<> builder;
+    llvm::IRBuilder<> builder{ctx};
     llvm::Module* module = nullptr;
     std::vector<llvm::Module*> generatedModules;
     std::unordered_map<const Value*, llvm::Value*> generatedValues;

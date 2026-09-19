@@ -42,8 +42,6 @@ protected:
 inline TypeBase::~TypeBase() {}
 
 struct Type {
-    Type() : typeBase(nullptr), mutability(Mutability::Mutable) {}
-    Type(TypeBase* typeBase, Mutability mutability, Location location) : typeBase(typeBase), mutability(mutability), location(location) {}
     TypeBase& operator*() const { return *typeBase; }
     explicit operator bool() const { return typeBase != nullptr; }
     Type withLocation(Location location) const { return Type(typeBase, mutability, location); }
@@ -150,8 +148,8 @@ struct Type {
 
     static bool isBuiltinScalar(llvm::StringRef typeName);
 
-    TypeBase* typeBase;
-    Mutability mutability;
+    TypeBase* typeBase = nullptr;
+    Mutability mutability = Mutability::Mutable;
     // TODO: Add a dedicated class hierarchy for storing source locations with types, like TypeLoc in Clang and Swift.
     Location location;
 };
