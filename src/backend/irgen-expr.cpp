@@ -636,8 +636,10 @@ Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     for (auto* captured : functionDecl->captures) {
         VarExpr captureExpr(std::string(captured->getName()), captured->getLocation());
         captureExpr.decl = captured;
-        captureExpr.type = captured->type;
-        captureExpr.assignableType = captured->type;
+        // emitExpr loads iff the pointee matches the expression type, so typing `this`
+        // captures as pointers stores the pointer instead of a copy of the object.
+        captureExpr.type = captured->getCaptureType();
+        captureExpr.assignableType = captured->getCaptureType();
         closure = createInsertValue(closure, emitExpr(captureExpr), index++);
     }
     return closure;

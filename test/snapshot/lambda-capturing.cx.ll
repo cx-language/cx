@@ -79,13 +79,10 @@ define i32 @_EN4main9__lambda2E3int(i32 %__capture_a, i32 %c) {
 
 define i32 @_EN4main9__lambda1E3int(i32 %__capture_c, ptr %__capture_this, i32 %x) {
   %__capture_c1 = alloca i32, align 4
-  %__capture_this2 = alloca ptr, align 8
   store i32 %__capture_c, ptr %__capture_c1, align 4
-  store ptr %__capture_this, ptr %__capture_this2, align 8
   %__capture_c.load = load i32, ptr %__capture_c1, align 4
   %1 = add i32 %x, %__capture_c.load
-  %__capture_this.load = load ptr, ptr %__capture_this2, align 8
-  %d = getelementptr inbounds %S, ptr %__capture_this.load, i32 0, i32 0
+  %d = getelementptr inbounds %S, ptr %__capture_this, i32 0, i32 0
   %d.load = load i32, ptr %d, align 4
   %2 = add i32 %1, %d.load
   ret i32 %2

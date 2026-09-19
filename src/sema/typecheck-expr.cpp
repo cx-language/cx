@@ -1998,7 +1998,7 @@ static Type createClosureType(FunctionDecl& lambdaDecl, Location location) {
 
     std::vector<Type> fnParamTypes;
     for (auto* captured : lambdaDecl.captures) {
-        fnParamTypes.push_back(captured->type);
+        fnParamTypes.push_back(captured->getCaptureType());
     }
     for (auto& param : lambdaDecl.getParams()) {
         fnParamTypes.push_back(param.type);
@@ -2015,7 +2015,8 @@ static Type createClosureType(FunctionDecl& lambdaDecl, Location location) {
         makeAST<TypeDecl>(TypeTag::Struct, std::move(name), std::vector<Type>(), std::move(interfaces), AccessLevel::Default, module, nullptr, location);
     closureDecl->addField(FieldDecl(fnType, "__fn", nullptr, *closureDecl, AccessLevel::Private, location));
     for (auto* captured : lambdaDecl.captures) {
-        closureDecl->addField(FieldDecl(captured->type, ("__capture_" + captured->getName()).str(), nullptr, *closureDecl, AccessLevel::Private, location));
+        closureDecl->addField(
+            FieldDecl(captured->getCaptureType(), ("__capture_" + captured->getName()).str(), nullptr, *closureDecl, AccessLevel::Private, location));
     }
 
     Type closureType = BasicType::get(closureDecl->getName(), {});

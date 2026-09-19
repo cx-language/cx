@@ -122,6 +122,12 @@ struct VariableDecl : Decl {
     Decl* parent;
     Type type;
 
+    /// The implicit `this` is a pointer at runtime even with a by-value declared type
+    /// (Copyable struct or union receiver), so capturing it carries the pointer.
+    bool isReferenceCapture() const { return getName() == "this"; }
+    /// The closure field and hidden parameter type when capturing this variable.
+    Type getCaptureType() const { return isReferenceCapture() ? type.removePointer().getPointerTo() : type; }
+
 protected:
     VariableDecl(DeclKind kind, AccessLevel accessLevel, Decl* parent, Type type) : Decl(kind, accessLevel), parent(parent), type(type) {}
 };

@@ -18,8 +18,9 @@ Function* IRGenerator::getFunction(const FunctionDecl& decl) {
     auto params = map(decl.getParams(), [](const ParamDecl& p) { return Parameter{ValueKind::Parameter, getIRType(p.type), p.getName().str()}; });
 
     if (!decl.captures.empty()) {
-        auto captureParams =
-            map(decl.captures, [](const VariableDecl* c) { return Parameter{ValueKind::Parameter, getIRType(c->type), ("__capture_" + c->getName()).str()}; });
+        auto captureParams = map(decl.captures, [](const VariableDecl* c) {
+            return Parameter{ValueKind::Parameter, getIRType(c->getCaptureType()), ("__capture_" + c->getName()).str()};
+        });
         params.insert(params.begin(), captureParams.begin(), captureParams.end());
     }
 
@@ -55,6 +56,16 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     for (auto* captured : decl.captures) {
+        if (captured->isReferenceCapture()) {
+            // Captured `this` is already a pointer to the caller's object; bind it directly
+            // like a method's `this` param so member access aliases the object, not a copy.
+            Value* thisParam = &*arg++;
+            auto inserted = scopes.back().valuesByDecl.try_emplace(captured, thisParam);
+            ASSERT(inserted.second);
+            auto thisInserted = scopes.back().valuesByDecl.try_emplace(nullptr, thisParam);
+            ASSERT(thisInserted.second);
+            continue;
+        }
         // Captures spill to allocas so stores, member access, and address-of treat them like
         // locals. The allocas hold per-call copies, so unlike regular locals they get no
         // destructor call here; the closure's stored values are destroyed with the closure.
@@ -62,11 +73,6 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
         createStore(&*arg++, spill);
         auto inserted = scopes.back().valuesByDecl.try_emplace(captured, spill);
         ASSERT(inserted.second);
-        // Field accesses lower to getThis(); captured `this` must answer those too.
-        if (captured->getName() == "this") {
-            auto thisInserted = scopes.back().valuesByDecl.try_emplace(nullptr, spill);
-            ASSERT(thisInserted.second);
-        }
     }
 
     for (auto& param : decl.getParams()) {

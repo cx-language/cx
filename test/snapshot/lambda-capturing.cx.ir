@@ -77,13 +77,10 @@ int _EN4main9__lambda2E3int(int __capture_a, int c) {
 
 int _EN4main9__lambda1E3int(int __capture_c, S* __capture_this, int x) {
     int* __capture_c_0 = alloca int
-    S** __capture_this_0 = alloca S*
     store __capture_c to __capture_c_0
-    store __capture_this to __capture_this_0
     int __capture_c.load = load __capture_c_0
     int _0 = x + __capture_c.load
-    S* __capture_this.load = load __capture_this_0
-    int* d = getelementptr __capture_this.load, 0
+    int* d = getelementptr __capture_this, 0
     int d.load = load d
     int _1 = _0 + d.load
     return _1

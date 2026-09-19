@@ -20,7 +20,8 @@
 // CHECK-NEXT:end
 // CHECK-NEXT:deinit 7
 // CHECK-NEXT:3
-// CHECK-NEXT:0
+// CHECK-NEXT:5
+// CHECK-NEXT:7
 // CHECK-NEXT:1
 // CHECK-NEXT:1
 
@@ -149,6 +150,16 @@ struct CopyableCounter: Copyable {
         };
         f();
     }
+
+    void bumpNested() {
+        var g = () -> {
+            var f = () -> {
+                n = 7;
+            };
+            f();
+        };
+        g();
+    }
 }
 
 void captureStoreIsLocal() {
@@ -197,6 +208,8 @@ void main() {
     println(c.n);
     var cc = CopyableCounter(n = 0);
     cc.bump();
+    println(cc.n);
+    cc.bumpNested();
     println(cc.n);
     captureStoreIsLocal();
     structFieldStoreIsLocal();
