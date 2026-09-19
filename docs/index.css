@@ -332,7 +332,7 @@ th {
     list-style-type: none;
 }
 
-.side-nav a {
+.side-nav a, .side-nav .toc-category {
     color: var(--text-color-subtle);
     padding: 2px 0;
 }
@@ -340,13 +340,6 @@ th {
 .side-nav a:hover {
     color: var(--text-color);
     text-decoration: none;
-}
-
-.side-nav .toc-category {
-    display: block;
-    padding: 2px 0;
-    font-weight: 650;
-    color: var(--text-color);
 }
 
 @media screen and (min-width: 768px) {
@@ -364,7 +357,7 @@ th {
         display: block;
     }
 
-    .side-nav a {
+    .side-nav a, .side-nav .toc-category {
         display: block;
         padding: 3px 0;
     }
