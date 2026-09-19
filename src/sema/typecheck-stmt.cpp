@@ -119,6 +119,17 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     currentControlStmts.push_back(&stmt);
 
     for (auto& switchCase : stmt.cases) {
+        if (conditionType.isEnumType()) {
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(switchCase.value)) {
+                auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
+                if (enumDecl->getCaseByName(varExpr->identifier)) {
+                    // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
+                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location),
+                                                           std::string(varExpr->identifier), varExpr->location);
+                }
+            }
+        }
+
         Type caseType = typecheckExpr(*switchCase.value);
 
         if (auto converted = convert(switchCase.value, conditionType)) {

@@ -20,12 +20,12 @@ void main() {
     ]));
 
     switch (a) {
-        case JsonValue.String: println("it's a string");
-        case JsonValue.Array: println("it's an array");
-        case JsonValue.Object: println("it's an object");
-        case JsonValue.Number: println("it's a number");
-        case JsonValue.Boolean: println("it's a boolean");
-        case JsonValue.Null: println("it's null");
+        case String: println("it's a string");
+        case Array: println("it's an array");
+        case Object: println("it's an object");
+        case Number: println("it's a number");
+        case Boolean: println("it's a boolean");
+        case Null: println("it's null");
     }
 }
 ```
