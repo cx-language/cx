@@ -1,0 +1,10 @@
+// Ranges, loops, and list initialization.
+void main() {
+    for i in 1...5 {
+        var row = List(5, 0);
+        for j in 0..row.size() {
+            row[j] = i * (j + 1);
+        }
+        println(row);
+    }
+}

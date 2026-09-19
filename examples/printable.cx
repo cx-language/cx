@@ -1,0 +1,20 @@
+// Implement Printable::print, get toString() for free.
+struct Point: Printable {
+    int x;
+    int y;
+
+    void print(StringBuffer* stream) {
+        stream.write("(");
+        x.print(stream);
+        stream.write(", ");
+        y.print(stream);
+        stream.write(")");
+    }
+}
+
+void main() {
+    var p = Point(x = 3, y = 4);
+    println(p);                  // (3, 4)
+    println(p.toString());       // (3, 4)
+    println(p.toString() + "!"); // (3, 4)!
+}

@@ -1,0 +1,14 @@
+// Nullable types with compile-time null-safety.
+int? findAge(string name) {
+    if name == "ada" return 36;
+    return null;
+}
+
+void main() {
+    int? age = findAge("ada");
+    if age {
+        int years = age;
+        println("ada is ", years);
+    }
+    println(findAge("grace")); // null
+}
