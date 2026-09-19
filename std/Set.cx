@@ -1,7 +1,7 @@
 /// A set of unique values.
 struct Set<Key: Hashable> {
     /// Underlying map.
-    Map<Key, bool> map;
+    private Map<Key, bool> map;
 
     /// Initializes an empty set
     Set() {
@@ -36,5 +36,31 @@ struct Set<Key: Hashable> {
     /// Returns an iterator over the elements.
     SetIterator<Key> iterator() {
         return SetIterator(this);
+    }
+}
+
+/// Iterates over the elements of a set.
+struct SetIterator<Element>: Copyable, Iterator<Element*> {
+    /// Underlying map iterator.
+    private MapIterator<Element, bool> iterator;
+
+    /// Initializes an iterator over the given set.
+    SetIterator(Set<Element>*  set) {
+        iterator = MapIterator(set.map);
+    }
+
+    /// Returns true if there are more elements.
+    bool hasValue() {
+        return iterator.hasValue();
+    }
+
+    /// Returns the current element.
+    Element* value() {
+        return iterator.value().key;
+    }
+
+    /// Advances to the next element.
+    void increment() {
+        iterator.increment();
     }
 }

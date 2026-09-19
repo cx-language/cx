@@ -2,9 +2,9 @@
 /// A value that may be absent.
 struct Optional<T> {
     /// Whether a value is present.
-    bool hasValue;
+    private bool hasValue;
     /// The contained value, if present.
-    T value;
+    private T value;
 
     /// Initializes an empty optional.
     Optional() {
@@ -40,4 +40,13 @@ bool operator== <T: Comparable>(Optional<T>* a, T* b) {
 /// Returns true if the optional holds a value differing from b.
 bool operator!= <T: Comparable>(Optional<T>* a, T* b) {
     return !(*a == *b);
+}
+
+/// Prints the given value.
+void print<T: Printable>(Optional<T>* optional) {
+    if optional.hasValue {
+        print(optional.value);
+    } else {
+        print("null");
+    }
 }

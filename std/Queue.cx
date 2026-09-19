@@ -1,11 +1,11 @@
 /// First-in-first-out data structure
 struct Queue<T> {
     /// First node.
-    Node<T>*? head;
+    private Node<T>*? head;
     /// Last node.
-    Node<T>*? tail;
+    private Node<T>*? tail;
     /// Number of elements.
-    int size;
+    private int size;
 
     /// Initialize an empty Queue
     Queue() {
@@ -72,9 +72,9 @@ struct Queue<T> {
 /// One element of a queue.
 struct Node<T> {
     /// Next node.
-    Node<T>*? next;
+    private Node<T>*? next;
     /// Stored element.
-    T value;
+    private T value;
 
     /// Initializes a node holding the given value.
     Node(T val) {

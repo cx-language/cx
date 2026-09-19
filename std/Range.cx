@@ -1,9 +1,9 @@
 /// A half-open range from start to end.
 struct Range<T>: Copyable {
     /// First value, inclusive.
-    T start;
+    private T start;
     /// Last value, exclusive.
-    T end;
+    private T end;
 
     /// Initializes a range from start to end.
     Range(T start, T end) {

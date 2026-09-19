@@ -1,7 +1,7 @@
 /// An ordered Set that supports fast lookup, insertion and deletion.
 struct OrderedSet<Element> {
     /// Underlying ordered map.
-    OrderedMap<Element, bool> map;
+    private OrderedMap<Element, bool> map;
 
     /// Initiates an empty Set.
     OrderedSet() {
@@ -58,5 +58,31 @@ struct OrderedSet<Element> {
     /// Iterate over the map, in order
     OrderedSetIterator<Element> iterator() {
         return OrderedSetIterator(this);
+    }
+}
+
+/// Iterates over the elements of an ordered set, in order.
+struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
+    /// Underlying map iterator.
+    private OrderedMapIterator<Element, bool> mapIter;
+
+    /// Initializes an iterator over the given set.
+    OrderedSetIterator(OrderedSet<Element>* set) {
+        this.mapIter = set.map.iterator();
+    }
+
+    /// Returns true if there are more elements.
+    bool hasValue() {
+        return mapIter.hasValue();
+    }
+
+    /// Returns the current element.
+    Element* value() {
+        return mapIter.value().key;
+    }
+
+    /// Advances to the next element.
+    void increment() {
+        mapIter.increment();
     }
 }

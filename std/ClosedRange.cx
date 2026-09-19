@@ -1,9 +1,9 @@
 /// An inclusive range from start to end.
 struct ClosedRange<T>: Copyable {
     /// First value, inclusive.
-    T start;
+    private T start;
     /// Last value, inclusive.
-    T end;
+    private T end;
 
     /// Initializes a range from start to end.
     ClosedRange(T start, T end) {

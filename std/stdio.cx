@@ -54,15 +54,6 @@ void print<T: Printable>(ArrayRef<T> array) {
 }
 
 /// Prints the given value.
-void print<T: Printable>(Optional<T>* optional) {
-    if optional.hasValue {
-        print(optional.value);
-    } else {
-        print("null");
-    }
-}
-
-/// Prints the given value.
 void print(const char[*]? cString) {
     if cString {
         printf("%s", cString);

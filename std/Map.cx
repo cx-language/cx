@@ -9,9 +9,9 @@ struct MapEntry<Key: Hashable, Value> {
 /// A hash map from keys to values.
 struct Map<Key: Hashable, Value> {
     /// Hash table buckets.
-    List<List<MapEntry<Key, Value>>> hashTable;
+    private List<List<MapEntry<Key, Value>>> hashTable;
     /// Number of entries.
-    int size;
+    private int size;
 
     /// Initializes an empty map
     Map() {
@@ -142,4 +142,52 @@ struct Map<Key: Hashable, Value> {
 /// Converts a hash into a bucket index.
 int convertHash(uint64 hash) {
     return int(hash) & int_max;
+}
+
+/// Iterates over the entries of a map.
+struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
+    /// Iterator over the hash table buckets.
+    private ArrayIterator<List<MapEntry<Key, Value>>> hashTableIterator;
+    /// Pointer to the current entry.
+    private MapEntry<Key, Value>[*] current;
+
+    /// Initializes an iterator over the given map.
+    MapIterator(Map<Key, Value>* map) {
+        hashTableIterator = map.hashTable.iterator();
+        current = undefined;
+        skipEmptySlots();
+    }
+
+    /// Returns true if there are more entries.
+    bool hasValue() {
+        return hashTableIterator.hasValue();
+    }
+
+    /// Returns the current entry.
+    MapEntry<Key, Value>* value() {
+        return current;
+    }
+
+    /// Advances to the next entry.
+    void increment() {
+        var slot = hashTableIterator.value();
+        var slotEnd = &slot.data()[slot.size()];
+        current++;
+
+        // TODO: Allow comparing T[*] and T* without casts.
+        if cast<void*>(current) == cast<void*>(slotEnd) {
+            hashTableIterator.increment();
+            skipEmptySlots();
+        }
+    }
+
+    private void skipEmptySlots() {
+        while hashTableIterator.hasValue() {
+            if hashTableIterator.value().size() != 0 {
+                current = hashTableIterator.value().data();
+                break;
+            }
+            hashTableIterator.increment();
+        }
+    }
 }

@@ -1,7 +1,7 @@
 /// A non-owning string view.
 struct string: Copyable, Comparable, Hashable, Printable {
     /// Character data.
-    ArrayRef<char> characters;
+    private ArrayRef<char> characters;
 
     /// Initializes a string of the given length at the given address.
     string(char* pointer, int length) {
@@ -79,13 +79,13 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
     /// Returns the substring of the string in the given range, [inclusive, exclusive]
     string substr(Range<int> range) {
-        if range.start < 0 || range.start > size() {
-            indexOutOfBounds("substr", range.start);
+        if range.start() < 0 || range.start() > size() {
+            indexOutOfBounds("substr", range.start());
         }
-        if range.end < 0 || range.end > size() {
-            indexOutOfBounds("substr", range.end);
+        if range.end() < 0 || range.end() > size() {
+            indexOutOfBounds("substr", range.end());
         }
-        return string(&characters.data()[range.start], range.size());
+        return string(&characters.data()[range.start()], range.size());
     }
 
     /// Supports using strings with sets and dicts

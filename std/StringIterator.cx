@@ -1,9 +1,9 @@
 /// Iterates over the characters of a string.
 struct StringIterator: Copyable, Iterator<char> {
     /// Pointer to the current character.
-    char[*] current;
+    private char[*] current;
     /// Pointer past the last character.
-    char[*] end;
+    private char[*] end;
 
     /// Initializes an iterator over the given string.
     StringIterator(string s) {

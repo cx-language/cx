@@ -1,9 +1,9 @@
 /// Iterates over the elements of an array.
 struct ArrayIterator<Element>: Copyable, Iterator<Element*> {
     /// Pointer to the current element.
-    Element[*] current;
+    private Element[*] current;
     /// Pointer past the last element.
-    Element[*] end;
+    private Element[*] end;
 
     /// Initializes an iterator over the given array.
     ArrayIterator(Element[] array) {

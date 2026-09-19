@@ -1,7 +1,7 @@
 /// A resizable string buffer.
 struct StringBuffer: Comparable, Hashable, Printable {
     /// Stored characters, including a trailing null.
-    List<char> characters;
+    private List<char> characters;
 
     /// Initializes an empty string.
     StringBuffer() {
@@ -145,13 +145,13 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Returns the substring of the string in the given range, [inclusive, exclusive]
     string substr(Range<int> range) {
-        if range.start < 0 || range.start > size() {
-            indexOutOfBounds("substr", range.start);
+        if range.start() < 0 || range.start() > size() {
+            indexOutOfBounds("substr", range.start());
         }
-        if range.end < 0 || range.end > size() {
-            indexOutOfBounds("substr", range.end);
+        if range.end() < 0 || range.end() > size() {
+            indexOutOfBounds("substr", range.end());
         }
-        return string(&characters.data()[range.start], range.size());
+        return string(&characters.data()[range.start()], range.size());
     }
 
     // Splits the string by the given delimiter

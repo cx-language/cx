@@ -1,7 +1,7 @@
 /// Owns a heap-allocated value.
 struct Box<T> {
     /// Pointer to the owned value.
-    T* pointer;
+    private T* pointer;
 
     /// Moves the given value onto the heap.
     Box(T value) {

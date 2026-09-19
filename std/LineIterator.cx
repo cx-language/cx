@@ -1,9 +1,9 @@
 /// Iterates over the lines of a string.
 struct LineIterator: Copyable, Iterator<string> {
     /// Remaining input.
-    string stream;
+    private string stream;
     /// Index of the next newline.
-    int end;
+    private int end;
 
     /// Initializes an iterator over the given string.
     LineIterator(string stream) {

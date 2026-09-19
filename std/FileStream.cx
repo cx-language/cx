@@ -1,7 +1,7 @@
 /// Writes formatted output to a file.
 struct OutputFileStream {
     /// Underlying C file handle.
-    FILE*? file;
+    private FILE*? file;
 
     /// Opens the given file descriptor for writing.
     OutputFileStream(public int fileDescriptor) {
