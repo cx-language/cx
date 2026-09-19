@@ -69,3 +69,51 @@ struct MapEntry<Key: Hashable, Value> {
     Value value;
 }
 ```
+
+## Generic interfaces
+
+Interfaces can also take type parameters.
+This pays off when the interface needs to talk about a type:
+`Iterator<T>`'s `value()` returns `T`, so one interface serves every element type
+while keeping everything statically typed.
+A generic algorithm constrained on `Iterator<int>` accepts any implementation,
+standard or hand-written, and knows `value()` returns `int`:
+
+```cs
+int sumFirst<It: Iterator<int>>(It* iterator, int n) {
+    var total = 0;
+    var i = 0;
+    while i < n && iterator.hasValue() {
+        total += iterator.value();
+        iterator.increment();
+        i++;
+    }
+    return total;
+}
+
+struct Counter: Iterator<int> {
+    int current;
+
+    bool hasValue() {
+        return current > 0;
+    }
+
+    int value() {
+        return current;
+    }
+
+    void increment() {
+        current--;
+    }
+}
+
+void main() {
+    println(sumFirst((1..10).iterator(), 3)); // prints 6
+    var counter = Counter(3);
+    println(sumFirst(counter, 2)); // prints 5
+}
+```
+
+Without the type parameter, each element type would need its own interface,
+and `value()` couldn't declare what it returns.
+See [Iterators](iterators) for more on the `Iterator` interface.

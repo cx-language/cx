@@ -71,3 +71,4 @@ void main() {
 
 Additional include directories, preprocessor definitions, and libraries
 are passed on the command line with `-I`, `-D`, `-L`, and `-l`.
+See [Modules and imports](modules) for how imports are resolved.
