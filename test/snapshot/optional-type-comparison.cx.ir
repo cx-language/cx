@@ -1,27 +1,24 @@
 
 int main() {
     Optional<int>* a = alloca Optional<int>
-    Optional<int>* _0 = alloca Optional<int>
-    int* _1 = alloca int
-    void _2 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
-    Optional<int> .load = load _0
-    store .load to a
-    store int 1 to _1
-    bool _3 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* _1)
+    Optional<int>* enum = alloca Optional<int>
+    int* _0 = alloca int
+    int* tag = getelementptr enum, 0
+    store int 0 to tag
+    Optional<int> enum.load = load enum
+    store enum.load to a
+    store int 1 to _0
+    bool _1 = call _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* _0)
     return int 0
 }
 
-void _EN3std8OptionalI3intE4initE(Optional<int>* this) {
-    bool* hasValue = getelementptr this, 0
-    store bool false to hasValue
-    return void
-}
-
 bool _EN3stdeqI3intEEPO3intP3int(Optional<int>* a, int* b) {
-    bool* hasValue = getelementptr a, 0
-    bool hasValue.load = load hasValue
-    bool _0 = !hasValue.load
-    br _0, if.then, if.else
+    Optional<int>* _0 = alloca Optional<int>
+    Optional<int> a.load = load a
+    int _1 = extractvalue a.load, 0
+    bool _2 = _1 == int 1
+    bool _3 = !_2
+    br _3, if.then, if.else
 
 if.then:
     return bool false
@@ -30,9 +27,26 @@ if.else:
     br if.end
 
 if.end:
-    int* value = getelementptr a, 1
-    int value.load = load value
+    Optional<int> a.load_0 = load a
+    int _4 = extractvalue a.load_0, 0
+    bool _5 = _4 == int 1
+    bool assert.condition = _5 == bool false
+    br assert.condition, assert.fail, assert.success
+
+assert.fail:
+    void _6 = call _EN3std10assertFailEP4char(char* "Unwrap failed at Optional.cx:22:16
+")
+    unreachable
+
+assert.success:
+    store a.load_0 to _0
+    union { void, struct { int } }* _7 = getelementptr _0, 1
+    int* _8 = cast _7 to int*
+    int .load = load _8
     int b.load = load b
-    bool _1 = value.load == b.load
-    return _1
+    bool _9 = .load == b.load
+    return _9
+}
+
+void _EN3std10assertFailEP4char(char* message) {
 }

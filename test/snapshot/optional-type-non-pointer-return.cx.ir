@@ -1,18 +1,15 @@
 
 Optional<int> _EN4main1fE() {
     int* i = alloca int
-    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* enum = alloca Optional<int>
     store int 1 to i
+    int* tag = getelementptr enum, 0
+    store int 1 to tag
     int i.load = load i
-    void _1 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _0, int i.load)
-    Optional<int> .load = load _0
-    return .load
-}
-
-void _EN3std8OptionalI3intE4initE3int(Optional<int>* this, int value) {
-    bool* hasValue = getelementptr this, 0
-    store bool true to hasValue
-    int* value_0 = getelementptr this, 1
-    store value to value_0
-    return void
+    struct { int } _0 = insertvalue struct { int } undefined, 0, i.load
+    union { void, struct { int } }* associatedValue = getelementptr enum, 1
+    struct { int }* _1 = cast associatedValue to struct { int }*
+    store _0 to _1
+    Optional<int> enum.load = load enum
+    return enum.load
 }

@@ -1,27 +1,14 @@
-// TODO: Convert into enum once generic enums are supported.
 /// A value that may be absent.
-struct Optional<T> {
-    private bool hasValue;
-    private T value;
-
-    /// Initializes an empty optional.
-    Optional() {
-        hasValue = false;
-        value = undefined;
-    }
-
-    /// Initializes an optional holding the given value.
-    Optional(T value) {
-        hasValue = true;
-        this.value = value;
-    }
+enum Optional<T> {
+    None,
+    Some(T value),
 }
 
 /// Returns true if both optionals are equal.
 bool operator== <T: Comparable>(Optional<T>* a, Optional<T>* b) {
-    if a.hasValue != b.hasValue return false;
-    if !b.hasValue return true;
-    return a.value == b.value;
+    if ((*a == null) != (*b == null)) return false;
+    if (*b == null) return true;
+    return (*a)! == (*b)!;
 }
 
 /// Returns true if both optionals differ.
@@ -31,8 +18,8 @@ bool operator!= <T: Comparable>(Optional<T>* a, Optional<T>* b) {
 
 /// Returns true if the optional holds a value equal to b.
 bool operator== <T: Comparable>(Optional<T>* a, T* b) {
-    if !a.hasValue return false;
-    return a.value == *b;
+    if (*a == null) return false;
+    return (*a)! == *b;
 }
 
 /// Returns true if the optional holds a value differing from b.
@@ -42,9 +29,9 @@ bool operator!= <T: Comparable>(Optional<T>* a, T* b) {
 
 /// Prints the given value.
 void print<T: Printable>(Optional<T>* optional) {
-    if optional.hasValue {
-        print(optional.value);
-    } else {
+    if (*optional == null) {
         print("null");
+    } else {
+        print((*optional)!);
     }
 }

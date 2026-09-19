@@ -108,7 +108,7 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
             }
         }
 
-        // Non-pointer optionals branch directly on the extracted hasValue flag, e.g. `if (opt)`.
+        // Value-implemented optionals branch on an enum tag comparison, e.g. `if (opt)` lowers to `tag == Some`.
         auto* condition = condBr->condition;
         bool negated = false;
 
@@ -119,12 +119,20 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
             }
         }
 
-        if (auto extract = llvm::dyn_cast<ExtractInst>(condition)) {
-            if (extract->index == IRGenerator::optionalHasValueFieldIndex
+        if (auto binary = llvm::dyn_cast<BinaryInst>(condition)) {
+            auto* extract = llvm::dyn_cast<ExtractInst>(binary->left);
+            auto* constant = llvm::dyn_cast<ConstantInt>(binary->right);
+            if (extract && constant && extract->index == IRGenerator::optionalTagFieldIndex
                 && (extract->aggregate == nullableValue || extract->aggregate->loads(nullableValue, gepIndex))) {
-                if (destination == (negated ? condBr->falseBlock : condBr->trueBlock)) return Nullability::DefinitelyNotNull;
-                if (destination == (negated ? condBr->trueBlock : condBr->falseBlock)) return Nullability::DefinitelyNullable;
-                return Nullability::IndefiniteNullability;
+                int64_t tag = constant->value.getSExtValue();
+                bool isSomeTag = tag == IRGenerator::getOptionalSomeTag();
+                bool isNoneTag = tag == IRGenerator::getOptionalNoneTag();
+                if (isSomeTag || isNoneTag) {
+                    bool trueMeansNotNull = ((binary->op == Token::Equal) == isSomeTag) != negated;
+                    if (destination == condBr->trueBlock) return trueMeansNotNull ? Nullability::DefinitelyNotNull : Nullability::DefinitelyNullable;
+                    if (destination == condBr->falseBlock) return trueMeansNotNull ? Nullability::DefinitelyNullable : Nullability::DefinitelyNotNull;
+                    return Nullability::IndefiniteNullability;
+                }
             }
         }
     }
@@ -150,9 +158,7 @@ void NullAnalyzer::analyze(Value* value) {
         auto call = llvm::cast<CallInst>(value);
         if (call->expr) {
             if (auto receiverType = call->expr->receiverType) {
-                // isConstructorDecl check filters out Optional() calls.
-                if (receiverType.isOptionalType() && !call->expr->calleeDecl->isConstructorDecl()
-                    && analyzeNullability(call->args[0], call) == Nullability::DefinitelyNullable) {
+                if (receiverType.isOptionalType() && analyzeNullability(call->args[0], call) == Nullability::DefinitelyNullable) {
                     // TODO: Store the implicit 'this' receiver to the call expr during typechecking to simplify this code.
                     auto location = call->expr->getReceiver() ? call->expr->getReceiver()->location : call->expr->location;
                     WARN(location, "receiver may be null; unwrap it with a postfix '!' to silence this warning");

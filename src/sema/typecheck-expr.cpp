@@ -626,13 +626,19 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return source;
     }
 
-    if (source.isOptionalType() && target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable())
-        && isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType())) {
-        return source;
+    if (source.isOptionalType() && target.isOptionalType() && (source.getWrappedType().isMutable() || !target.getWrappedType().isMutable())) {
+        // Only a no-op when the wrapped conversion needs no cast; nesting changes (e.g. `int?` to `int??`)
+        // fall through to the wrap rule below.
+        std::optional<ImplicitCastExpr::Kind> wrappedCastKind;
+        if (isImplicitlyConvertible(nullptr, source.getWrappedType(), target.getWrappedType(), false, &wrappedCastKind) && !wrappedCastKind) {
+            return source;
+        }
     }
 
     if (expr) {
-        if (expr->type.isEnumType() && llvm::cast<EnumDecl>(expr->type.getDecl())->getTagType() == target) {
+        // Only tag-only enums convert to their tag type; payload enums (including optionals) don't.
+        if (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()
+            && llvm::cast<EnumDecl>(expr->type.getDecl())->getTagType() == target) {
             return source;
         }
 
@@ -644,7 +650,8 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         }
 
         // Auto-cast integer constants to target type if within range, error out if not within range.
-        if ((expr->type.isInteger() || expr->type.isChar() || expr->type.isEnumType()) && expr->isConstant()) {
+        if ((expr->type.isInteger() || expr->type.isChar() || (expr->type.isEnumType() && !llvm::cast<EnumDecl>(expr->type.getDecl())->hasAssociatedValues()))
+            && expr->isConstant()) {
             auto value = expr->getConstantIntegerValue();
             auto adjustedTarget = allowPointerToTemporary ? target.removePointer() : target; // Convert e.g. int literal to uint when comparing to uint*.
 
@@ -2072,6 +2079,21 @@ static bool enumTemplateMatchesExpectedType(TypeTemplate& typeTemplate, Type exp
     return BasicType::get(expectedType.getName(), {}).getDecl() == typeTemplate.typeDecl;
 }
 
+// Returns the expected type to take generic arguments from: the expected type itself,
+// or the type it wraps if the expected type is an optional of another instantiation.
+// The latter lets e.g. `Opt<int>? x = Opt.None` resolve through the outer optional.
+static Type matchEnumTemplateExpectedType(TypeTemplate& typeTemplate, Type expectedType) {
+    Type candidates[] = {expectedType, expectedType ? expectedType.removeOptional() : Type()};
+    for (Type candidate : candidates) {
+        if (candidate && candidate.isBasicType() && !candidate.getGenericArgs().empty()
+            && llvm::none_of(candidate.getGenericArgs(), [](Type type) { return type.isUnresolvedType(); })
+            && enumTemplateMatchesExpectedType(typeTemplate, candidate)) {
+            return candidate;
+        }
+    }
+    return Type();
+}
+
 EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr* call) {
     auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr);
     if (!memberExpr) return nullptr;
@@ -2123,15 +2145,13 @@ EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::Str
 
     std::vector<Type> inferredGenericArgs;
     llvm::ArrayRef<Type> genericArgTypes;
-    Type unwrappedExpectedType = expectedType ? expectedType.removeOptional() : Type();
+    Type matchedExpectedType = matchEnumTemplateExpectedType(typeTemplate, expectedType);
 
     if (call && !call->genericArgs.empty()) {
         validateGenericArgCount(typeTemplate.genericParams.size(), call->genericArgs, templateDecl->getName(), call->location);
         genericArgTypes = call->genericArgs;
-    } else if (unwrappedExpectedType && unwrappedExpectedType.isBasicType() && !unwrappedExpectedType.getGenericArgs().empty()
-               && llvm::none_of(unwrappedExpectedType.getGenericArgs(), [](Type type) { return type.isUnresolvedType(); })
-               && enumTemplateMatchesExpectedType(typeTemplate, unwrappedExpectedType)) {
-        genericArgTypes = unwrappedExpectedType.getGenericArgs();
+    } else if (matchedExpectedType) {
+        genericArgTypes = matchedExpectedType.getGenericArgs();
     } else if (call && templateCase->associatedType) {
         auto params = map(templateCase->associatedType.getTupleElements(),
                           [&](const TupleElement& element) { return ParamDecl(element.type, std::string(element.name), false, templateCase->getLocation()); });

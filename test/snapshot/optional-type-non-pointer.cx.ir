@@ -1,23 +1,42 @@
 
 int main() {
     Optional<int>* a = alloca Optional<int>
-    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* enum = alloca Optional<int>
     Optional<int>* b = alloca Optional<int>
+    Optional<int>* enum_0 = alloca Optional<int>
     Optional<int>* c = alloca Optional<int>
-    Optional<int>* _1 = alloca Optional<int>
+    Optional<int>* enum_1 = alloca Optional<int>
     Optional<int>* d = alloca Optional<int>
-    void _2 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
-    Optional<int> .load = load _0
-    store .load to a
-    void _3 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* b, int 2)
-    void _4 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _1, int 3)
-    Optional<int> .load_0 = load _1
-    store .load_0 to c
-    void _5 = call _EN3std8OptionalI3intE4initE(Optional<int>* d)
+    Optional<int>* enum_2 = alloca Optional<int>
+    int* tag = getelementptr enum, 0
+    store int 0 to tag
+    Optional<int> enum.load = load enum
+    store enum.load to a
+    int* tag_0 = getelementptr enum_0, 0
+    store int 1 to tag_0
+    struct { int } _0 = insertvalue struct { int } undefined, 0, int 2
+    union { void, struct { int } }* associatedValue = getelementptr enum_0, 1
+    struct { int }* _1 = cast associatedValue to struct { int }*
+    store _0 to _1
+    Optional<int> enum.load_0 = load enum_0
+    store enum.load_0 to b
+    int* tag_1 = getelementptr enum_1, 0
+    store int 1 to tag_1
+    struct { int } _2 = insertvalue struct { int } undefined, 0, int 3
+    union { void, struct { int } }* associatedValue_0 = getelementptr enum_1, 1
+    struct { int }* _3 = cast associatedValue_0 to struct { int }*
+    store _2 to _3
+    Optional<int> enum.load_1 = load enum_1
+    store enum.load_1 to c
+    int* tag_2 = getelementptr enum_2, 0
+    store int 0 to tag_2
+    Optional<int> enum.load_2 = load enum_2
+    store enum.load_2 to d
     Optional<int> d.load = load d
-    bool _6 = extractvalue d.load, 0
-    bool _7 = !_6
-    br _7, if.then, if.else
+    int _4 = extractvalue d.load, 0
+    bool _5 = _4 == int 1
+    bool _6 = !_5
+    br _6, if.then, if.else
 
 if.then:
     br if.end
@@ -27,7 +46,8 @@ if.else:
 
 if.end:
     Optional<int> d.load_0 = load d
-    bool _8 = extractvalue d.load_0, 0
+    int _7 = extractvalue d.load_0, 0
+    bool _8 = _7 == int 1
     br _8, if.then, if.else
 
 if.then_0:
@@ -38,9 +58,10 @@ if.else_0:
 
 if.end_0:
     Optional<int> d.load_1 = load d
-    bool _9 = extractvalue d.load_1, 0
-    bool _10 = !_9
-    br _10, if.then, if.else
+    int _9 = extractvalue d.load_1, 0
+    bool _10 = _9 == int 1
+    bool _11 = !_10
+    br _11, if.then, if.else
 
 if.then_1:
     br if.end_1
@@ -50,8 +71,9 @@ if.else_1:
 
 if.end_1:
     Optional<int> d.load_2 = load d
-    bool _11 = extractvalue d.load_2, 0
-    br _11, if.then, if.else
+    int _12 = extractvalue d.load_2, 0
+    bool _13 = _12 == int 1
+    br _13, if.then, if.else
 
 if.then_2:
     br if.end_2
@@ -61,8 +83,9 @@ if.else_2:
 
 if.end_2:
     Optional<int> d.load_3 = load d
-    bool _12 = extractvalue d.load_3, 0
-    br _12, if.then, if.else
+    int _14 = extractvalue d.load_3, 0
+    bool _15 = _14 == int 1
+    br _15, if.then, if.else
 
 if.then_3:
     br if.end_3
@@ -72,9 +95,10 @@ if.else_3:
 
 if.end_3:
     Optional<int> d.load_4 = load d
-    bool _13 = extractvalue d.load_4, 0
-    bool _14 = !_13
-    br _14, if.then, if.else
+    int _16 = extractvalue d.load_4, 0
+    bool _17 = _16 == int 1
+    bool _18 = !_17
+    br _18, if.then, if.else
 
 if.then_4:
     br if.end_4
@@ -86,59 +110,74 @@ if.end_4:
     return int 0
 }
 
-void _EN3std8OptionalI3intE4initE(Optional<int>* this) {
-    bool* hasValue = getelementptr this, 0
-    store bool false to hasValue
-    return void
-}
-
-void _EN3std8OptionalI3intE4initE3int(Optional<int>* this, int value) {
-    bool* hasValue = getelementptr this, 0
-    store bool true to hasValue
-    int* value_0 = getelementptr this, 1
-    store value to value_0
-    return void
-}
-
 void _EN4main1fE() {
     Optional<int>* a = alloca Optional<int>
-    Optional<int>* _0 = alloca Optional<int>
+    Optional<int>* enum = alloca Optional<int>
     Optional<int>* b = alloca Optional<int>
+    Optional<int>* enum_0 = alloca Optional<int>
     Optional<int>* c = alloca Optional<int>
-    Optional<int>* _1 = alloca Optional<int>
+    Optional<int>* enum_1 = alloca Optional<int>
     Optional<int>* d = alloca Optional<int>
-    Optional<int>* _2 = alloca Optional<int>
+    Optional<int>* enum_2 = alloca Optional<int>
+    Optional<int>* enum_3 = alloca Optional<int>
     int* x = alloca int
-    Optional<int>* _3 = alloca Optional<int>
-    void _4 = call _EN3std8OptionalI3intE4initE(Optional<int>* _0)
-    Optional<int> .load = load _0
-    store .load to a
-    void _5 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* b, int 2)
-    void _6 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _1, int 3)
-    Optional<int> .load_0 = load _1
-    store .load_0 to c
-    void _7 = call _EN3std8OptionalI3intE4initE(Optional<int>* d)
-    void _8 = call _EN3std8OptionalI3intE4initE(Optional<int>* _2)
-    Optional<int> .load_1 = load _2
-    store .load_1 to c
+    Optional<int>* enum_4 = alloca Optional<int>
+    Optional<int>* _0 = alloca Optional<int>
+    int* tag = getelementptr enum, 0
+    store int 0 to tag
+    Optional<int> enum.load = load enum
+    store enum.load to a
+    int* tag_0 = getelementptr enum_0, 0
+    store int 1 to tag_0
+    struct { int } _1 = insertvalue struct { int } undefined, 0, int 2
+    union { void, struct { int } }* associatedValue = getelementptr enum_0, 1
+    struct { int }* _2 = cast associatedValue to struct { int }*
+    store _1 to _2
+    Optional<int> enum.load_0 = load enum_0
+    store enum.load_0 to b
+    int* tag_1 = getelementptr enum_1, 0
+    store int 1 to tag_1
+    struct { int } _3 = insertvalue struct { int } undefined, 0, int 3
+    union { void, struct { int } }* associatedValue_0 = getelementptr enum_1, 1
+    struct { int }* _4 = cast associatedValue_0 to struct { int }*
+    store _3 to _4
+    Optional<int> enum.load_1 = load enum_1
+    store enum.load_1 to c
+    int* tag_2 = getelementptr enum_2, 0
+    store int 0 to tag_2
+    Optional<int> enum.load_2 = load enum_2
+    store enum.load_2 to d
+    int* tag_3 = getelementptr enum_3, 0
+    store int 0 to tag_3
+    Optional<int> enum.load_3 = load enum_3
+    store enum.load_3 to c
     Optional<int> c.load = load c
-    bool _9 = extractvalue c.load, 0
-    br _9, if.then, if.else
+    int _5 = extractvalue c.load, 0
+    bool _6 = _5 == int 1
+    br _6, if.then, if.else
 
 if.then:
-    int* _10 = getelementptr c, 1
-    int .load_2 = load _10
-    int _11 = .load_2 + int 1
-    store _11 to x
-    int* _12 = getelementptr c, 1
-    int .load_3 = load _12
-    int _13 = int 1 + .load_3
-    int* _14 = getelementptr c, 1
-    int .load_4 = load _14
-    int _15 = -.load_4
-    void _16 = call _EN3std8OptionalI3intE4initE3int(Optional<int>* _3, int _15)
-    Optional<int> .load_5 = load _3
-    store .load_5 to c
+    union { void, struct { int } }* _7 = getelementptr c, 1
+    int* _8 = cast _7 to int*
+    int .load = load _8
+    int _9 = .load + int 1
+    store _9 to x
+    union { void, struct { int } }* _10 = getelementptr c, 1
+    int* _11 = cast _10 to int*
+    int .load_0 = load _11
+    int _12 = int 1 + .load_0
+    int* tag_4 = getelementptr enum_4, 0
+    store int 1 to tag_4
+    union { void, struct { int } }* _13 = getelementptr c, 1
+    int* _14 = cast _13 to int*
+    int .load_1 = load _14
+    int _15 = -.load_1
+    struct { int } _16 = insertvalue struct { int } undefined, 0, _15
+    union { void, struct { int } }* associatedValue_1 = getelementptr enum_4, 1
+    struct { int }* _17 = cast associatedValue_1 to struct { int }*
+    store _16 to _17
+    Optional<int> enum.load_4 = load enum_4
+    store enum.load_4 to c
     br if.end
 
 if.else:
@@ -146,14 +185,16 @@ if.else:
 
 if.end:
     Optional<int> c.load_0 = load c
-    bool _17 = extractvalue c.load_0, 0
-    br _17, if.then, if.else
+    int _18 = extractvalue c.load_0, 0
+    bool _19 = _18 == int 1
+    br _19, if.then, if.else
 
 if.then_0:
-    int* _18 = getelementptr c, 1
-    int .load_6 = load _18
-    int _19 = .load_6 + int 1
-    store _19 to _18
+    union { void, struct { int } }* _20 = getelementptr c, 1
+    int* _21 = cast _20 to int*
+    int .load_2 = load _21
+    int _22 = .load_2 + int 1
+    store _22 to _21
     br if.end_0
 
 if.else_0:
@@ -161,26 +202,32 @@ if.else_0:
 
 if.end_0:
     Optional<int> c.load_1 = load c
-    bool _20 = extractvalue c.load_1, 0
-    bool __implicit_unwrap.condition = _20 == bool false
+    int _23 = extractvalue c.load_1, 0
+    bool _24 = _23 == int 1
+    bool __implicit_unwrap.condition = _24 == bool false
     br __implicit_unwrap.condition, __implicit_unwrap.fail, __implicit_unwrap.success
 
 __implicit_unwrap.fail:
-    void _21 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
+    void _25 = call _EN3std10assertFailEP4char(char* "Unwrap failed at optional-type-non-pointer.cx:33:18
 ")
     unreachable
 
 __implicit_unwrap.success:
-    int _22 = extractvalue c.load_1, 1
-    void _23 = call _EN4main12takesNonNullE3int(int _22)
+    store c.load_1 to _0
+    union { void, struct { int } }* _26 = getelementptr _0, 1
+    int* _27 = cast _26 to int*
+    int .load_3 = load _27
+    void _28 = call _EN4main12takesNonNullE3int(int .load_3)
     Optional<int> c.load_2 = load c
-    bool _24 = extractvalue c.load_2, 0
-    br _24, if.then, if.else
+    int _29 = extractvalue c.load_2, 0
+    bool _30 = _29 == int 1
+    br _30, if.then, if.else
 
 if.then_1:
-    int* _25 = getelementptr c, 1
-    int .load_7 = load _25
-    void _26 = call _EN4main12takesNonNullE3int(int .load_7)
+    union { void, struct { int } }* _31 = getelementptr c, 1
+    int* _32 = cast _31 to int*
+    int .load_4 = load _32
+    void _33 = call _EN4main12takesNonNullE3int(int .load_4)
     br if.end_1
 
 if.else_1:

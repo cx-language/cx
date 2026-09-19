@@ -338,9 +338,10 @@ llvm::APSInt UnaryExpr::getConstantIntegerValue() const {
 bool cx::isBuiltinOp(Token::Kind op, Type left, Type right) {
     if (op == Token::Assignment) return true;
     if (op == Token::DotDot || op == Token::DotDotDot) return false;
-    if (left.isEnumType() && left.equalsIgnoreTopLevelMutable(right)) return true;
-    if (left.isEnumType() && right.isInteger()) return true;
-    if (left.isInteger() && right.isEnumType()) return true;
+    // Optionals keep resolving to the stdlib operators rather than builtin tag comparisons.
+    if (left.isEnumType() && !left.isOptionalType() && left.equalsIgnoreTopLevelMutable(right)) return true;
+    if (left.isEnumType() && !left.isOptionalType() && right.isInteger()) return true;
+    if (left.isInteger() && right.isEnumType() && !right.isOptionalType()) return true;
     if (left.isImplementedAsPointer() && right.isImplementedAsPointer()) return true;
     return left.isBuiltinType() && right.isBuiltinType();
 }

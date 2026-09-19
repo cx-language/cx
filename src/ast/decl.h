@@ -281,7 +281,7 @@ struct TypeDecl : Decl {
     DestructorDecl* getDestructor() const;
     Type getType(Mutability mutability = Mutability::Mutable) const;
     Type getTypeForPassing() const;
-    bool passByValue() const { return (isStruct() && isCopyable()) || isUnion(); }
+    bool passByValue() const { return ((isStruct() || tag == TypeTag::Enum) && isCopyable()) || isUnion(); }
     bool isStruct() const { return tag == TypeTag::Struct; }
     bool isInterface() const { return tag == TypeTag::Interface; }
     bool isUnion() const { return tag == TypeTag::Union; }

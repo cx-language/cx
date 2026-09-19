@@ -30,6 +30,8 @@ int main() {
     Opt<int> none = Opt.None;
     // Explicit generic arguments on a unit case.
     var explicitNone = Opt.None<int>();
+    // A unit case resolves through an outer optional.
+    Opt<int>? maybeNone = Opt.None;
     Result<int> err = Result.Err(code = 5);
     Either<int, bool> either = Either.Right(value = true);
     // Distinct instantiations of the same enum coexist.
@@ -86,6 +88,18 @@ int main() {
             return 15;
         case Opt.None:
             break;
+    }
+
+    switch (maybeNone) {
+        case Some inner:
+            switch (inner.value) {
+                case Opt.Some some:
+                    return 16;
+                case Opt.None:
+                    break;
+            }
+        case None:
+            return 17;
     }
 
     return 42;

@@ -32,7 +32,7 @@ void IRGenerator::emitIfStmt(const IfStmt& ifStmt) {
     if (condition->getType()->isPointerType()) {
         condition = emitImplicitNullComparison(condition);
     } else if (ifStmt.condition->type.isOptionalType() && !ifStmt.condition->type.getWrappedType().isPointerType()) {
-        condition = createExtractValue(condition, optionalHasValueFieldIndex);
+        condition = emitOptionalHasValueTest(condition);
     }
 
     auto* function = insertBlock->parent;
