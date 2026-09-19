@@ -25,7 +25,12 @@
 </div>
 
 <script>
-    var currentPage = window.location.pathname.split("/").pop();
-    var link = document.querySelector(".side-nav a[href='./" + currentPage + "']");
-    link.className = "active";
+    var page = window.location.pathname.split("/").pop().replace(/\.html$/, "");
+    var links = document.querySelectorAll(".side-nav a");
+    for (var i = 0; i < links.length; i++) {
+        if (links[i].getAttribute("href").split("/").pop() === page) {
+            links[i].className = "active";
+            break;
+        }
+    }
 </script>

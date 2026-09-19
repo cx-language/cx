@@ -47,11 +47,23 @@ cd ..
 rm -rf .generated
 python3 generate_std_docs.py || exit
 
-for file in book/*.md .generated/*.md index.html; do
-    basename=$(basename "$file")
-
-    case $basename in
+for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html; do
+    case $file in
+        book/*)
+            relpath="${file#book/}"
+            relpath="${relpath%.md}"
+            ;;
+        .generated/*)
+            relpath="${file#.generated/}"
+            relpath="${relpath%.md}"
+            ;;
         index.html)
+            relpath="index"
+            ;;
+    esac
+
+    case $relpath in
+        index)
             toc=""
             ;;
         *)
@@ -59,16 +71,15 @@ for file in book/*.md .generated/*.md index.html; do
             ;;
     esac
 
-    basename="${basename%.*}"
-
-    if [ "$basename" = "index" ]; then
+    if [ "$relpath" = "index" ]; then
         title="C* Programming Language"
     else
         # The first '# ' heading is the section name.
         title="C* - $(sed -n 's/^# //p' "$file" | head -n 1)"
     fi
 
-    pandoc "$file" -o "build/$basename.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
+    mkdir -p "build/$(dirname "$relpath")"
+    pandoc "$file" -o "build/$relpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -80,15 +91,23 @@ for file in book/*.md .generated/*.md index.html; do
     # check_examples) and run in the browser playground: no C header imports,
     # no file system access, and no float-to-int conversions of unbounded
     # values (those trap on WebAssembly). The first entry is shown by default.
-    python3 - "$basename" <<'EOF'
+    python3 - "$relpath" <<'EOF'
 import html
 import json
+import re
 import sys
 
-basename = sys.argv[1]
-path = "build/" + basename + ".html"
+relpath = sys.argv[1]
+path = "build/" + relpath + ".html"
 with open(path) as file:
     template = file.read()
+
+# Pages below the site root resolve sibling links and assets relatively,
+# so prefix them back up to the root (anchors and absolute URLs excluded).
+depth = relpath.count("/")
+if depth:
+    prefix = "../" * depth
+    template = re.sub(r'(href|src)="(\./)?(?!#|/|[a-zA-Z][a-zA-Z0-9+.-]*:)', r'\1="' + prefix, template)
 
 showcase = [
     ("Prime sieve", "sieve.cx"),
@@ -115,7 +134,7 @@ if "##EXAMPLESELECTOR##" in template:
 with open(path, "w") as file:
     file.write(template)
 
-if basename == "index":
+if relpath == "index":
     examples = [{"name": name, "code": open("../examples/" + filename).read()} for name, filename in showcase]
     for example in examples:
         assert "</script" not in example["code"], "example breaks out of playground-examples.js: " + example["name"]

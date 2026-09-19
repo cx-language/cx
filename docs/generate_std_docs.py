@@ -186,7 +186,7 @@ def parse_std(std_dir):
 
 
 def page_name(relpath):
-    return "std-" + relpath.removesuffix(".cx").replace("/", "-")
+    return "std/" + relpath.removesuffix(".cx")
 
 
 def display_name(relpath):
@@ -310,9 +310,9 @@ def main(argv=None):
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "std.md").write_text(render_index(pages))
     for relpath, types, functions, constants, conditional in pages:
-        (output_dir / f"{page_name(relpath)}.md").write_text(
-            render_file_page(relpath, types, functions, constants, conditional)
-        )
+        page_path = output_dir / f"{page_name(relpath)}.md"
+        page_path.parent.mkdir(parents=True, exist_ok=True)
+        page_path.write_text(render_file_page(relpath, types, functions, constants, conditional))
     write_toc(output_dir, pages)
     print(f"Wrote {len(pages)} stdlib pages to {output_dir}.")
     return 0

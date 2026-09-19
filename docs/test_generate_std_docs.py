@@ -96,10 +96,10 @@ class MemberNameTest(unittest.TestCase):
 
 class PageNameTest(unittest.TestCase):
     def test_top_level(self):
-        self.assertEqual(page_name("List.cx"), "std-List")
+        self.assertEqual(page_name("List.cx"), "std/List")
 
     def test_nested(self):
-        self.assertEqual(page_name("os/gnu.cx"), "std-os-gnu")
+        self.assertEqual(page_name("os/gnu.cx"), "std/os/gnu")
 
 
 class FixtureTest(unittest.TestCase):
@@ -180,7 +180,7 @@ class IndexTest(unittest.TestCase):
         cls.keepalive.cleanup()
 
     def test_bullet_links_to_page(self):
-        self.assertIn("- [fixture.cx](./std-fixture): ", self.markdown)
+        self.assertIn("- [fixture.cx](./std/fixture): ", self.markdown)
 
     def test_bullet_lists_declarations(self):
         for name in ["`Widget`", "`Action`", "`Color`", "`operator==`", "`puts`", "`answer`"]:
@@ -193,8 +193,8 @@ class TocTest(unittest.TestCase):
         self.assertEqual(
             items,
             [
-                '                <li><a href="./std-List">List</a></li>',
-                '                <li><a href="./std-os-gnu">os/gnu</a></li>',
+                '                <li><a href="./std/List">List</a></li>',
+                '                <li><a href="./std/os/gnu">os/gnu</a></li>',
             ],
         )
 
@@ -262,12 +262,12 @@ class StagingTest(unittest.TestCase):
             self.assertEqual(main(["--std-dir", std_dir, "--output-dir", output_dir]), 0)
             out = Path(output_dir)
             index = (out / "std.md").read_text()
-            page = (out / "std-fixture.md").read_text()
+            page = (out / "std/fixture.md").read_text()
             toc = (out / "toc.html").read_text()
         self.assertIn("# Standard library reference", index)
-        self.assertIn("- [fixture.cx](./std-fixture): ", index)
+        self.assertIn("- [fixture.cx](./std/fixture): ", index)
         self.assertIn("## struct Widget: Copyable {#type-Widget}", page)
-        self.assertIn('<li><a href="./std-fixture">fixture</a></li>', toc)
+        self.assertIn('<li><a href="./std/fixture">fixture</a></li>', toc)
         self.assertNotIn("<!--STD-PAGES-->", toc)
 
 
