@@ -16,7 +16,7 @@
 namespace std {
 template<> struct hash<std::vector<cx::Type>> {
     size_t operator()(llvm::ArrayRef<cx::Type> types) const {
-        ASSERT(!types.empty());
+        if (types.empty()) return 0; // Variadic instantiation with an empty pack.
         size_t hashValue = reinterpret_cast<size_t>(types[0].typeBase) ^ static_cast<size_t>(types[0].mutability);
 
         for (auto type : types.drop_front()) {
@@ -134,11 +134,12 @@ struct ParamDecl : VariableDecl, Movable {
     Module* getModule() const override { return nullptr; }
     Location getLocation() const override { return location; }
     static bool classof(const Decl* d) { return d->kind == DeclKind::ParamDecl; }
-    bool operator==(const ParamDecl& other) const { return type == other.type && getName() == other.getName(); }
+    bool operator==(const ParamDecl& other) const { return type == other.type && getName() == other.getName() && isPack == other.isPack; }
 
     std::string name;
     Location location;
     bool isPublic;
+    bool isPack = false;
 };
 
 std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs);
@@ -177,6 +178,8 @@ struct FunctionDecl : Decl {
     }
     bool isExtern() const { return proto.external; }
     bool isVariadic() const { return proto.varArg; }
+    bool hasPack() const { return !proto.params.empty() && proto.params.back().isPack; }
+    const ParamDecl* getPackParam() const { return hasPack() ? &proto.params.back() : nullptr; }
     llvm::StringRef getName() const override { return proto.name; }
     std::string getQualifiedName() const;
     Type getReturnType() const { return proto.returnType; }
@@ -196,6 +199,7 @@ struct FunctionDecl : Decl {
     Location location;
     Module& module;
     bool typechecked;
+    bool isPackInstantiation = false;
 
 protected:
     FunctionDecl(DeclKind kind, FunctionProto&& proto, std::vector<Type>&& genericArgs, AccessLevel accessLevel, Module& module, Location location)
@@ -232,6 +236,7 @@ struct FunctionTemplate : Decl {
     bool isReferenced() const override;
     static bool classof(const Decl* d) { return d->isFunctionTemplate(); }
     FunctionDecl* instantiate(const llvm::StringMap<Type>& genericArgs);
+    FunctionDecl* instantiateVariadic(const llvm::StringMap<Type>& fixedArgs, const std::vector<llvm::StringMap<Type>>& packArgs, std::vector<Type>&& cacheKey);
     Module* getModule() const override { return functionDecl->getModule(); }
     Location getLocation() const override { return functionDecl->getLocation(); }
 

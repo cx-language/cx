@@ -1,0 +1,4 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:15: error: variadic parameter requires a generic function
+void f(int... args) {}

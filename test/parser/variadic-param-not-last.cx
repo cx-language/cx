@@ -1,0 +1,4 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:16: error: variadic parameter must be the last parameter
+void f<T>(T... args, int i) {}
