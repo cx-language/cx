@@ -132,6 +132,8 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
     return analyzeNullability_recursive(nullableValue, lastInst, gepIndex);
 }
 
+// Runs after type-checking (which implicitly unwraps optionals as needed),
+// emitting warnings for null-safety violations.
 void NullAnalyzer::analyze(IRModule* module) {
     for (auto function : module->functions) {
         for (auto block : function->body) {

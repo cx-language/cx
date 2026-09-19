@@ -44,12 +44,8 @@ if [ "${major:-0}" -lt 3 ]; then
     exit 1
 fi
 
-cd spec || exit
-rm -rf ../build
-mkdir ../build
-# Disabled for now
-# pandoc spec.tex -o ../build/spec.html -s --toc --include-before-body="../top-nav.html" --include-before-body="../toc.html"
-cd ..
+rm -rf build
+mkdir build
 
 # Regenerate the standard library reference from the stdlib sources into a
 # staging directory. The generated pages are build products, not versioned.
