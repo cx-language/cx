@@ -897,7 +897,7 @@ WhileStmt* Parser::parseWhileStmt(Decl* parent) {
 /// for-header ::= var-decl ';' expr? ';' expr? |
 ///            '(' var-decl ';' expr? ';' expr? ')'
 /// foreach-stmt ::= 'for' foreach-header block-or-stmt
-/// foreach-header ::= id 'in' expr | '(' id 'in' expr ')'
+/// foreach-header ::= id 'in' expr
 Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
     ASSERT(currentToken() == Token::For);
     auto location = consumeToken().location;
@@ -906,6 +906,9 @@ Stmt* Parser::parseForOrForEachStmt(Decl* parent) {
 
     if (currentToken() == Token::Identifier && lookAhead(1) == Token::In) {
         auto name = parse(Token::Identifier);
+        if (parens) {
+            ERROR(location, "for-each loop header must not be parenthesized, write 'for " << name.getString() << " in ...'");
+        }
         auto* varDecl = makeAST<VarDecl>(Type(), name.getString().str(), nullptr, parent, AccessLevel::None, *currentModule, name.location);
         parse(Token::In);
         auto range = parseExpr();

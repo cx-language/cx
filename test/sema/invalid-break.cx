@@ -1,7 +1,7 @@
 // RUN: %not %cx -typecheck %s | %FileCheck %s
 
 void main() {
-    for (i in 0..1) {
+    for i in 0..1 {
         // CHECK-NOT: [[@LINE+1]]:9: error
         break;
     }

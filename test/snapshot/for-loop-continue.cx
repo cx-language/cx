@@ -1,7 +1,7 @@
 // RUN: check-snapshots
 
 void main() {
-    for (ch in "abc") {
+    for ch in "abc" {
         if (ch == 'b') {
             continue;
         }

@@ -15,7 +15,7 @@ struct Particle {
 
 float sum(Particle* p) {
     var total = 0.0;
-    for (i in 0..3) {
+    for i in 0..3 {
         total += p.pos[i] + p.vel[i];
     }
     return total;
@@ -23,7 +23,7 @@ float sum(Particle* p) {
 
 void main() {
     var p = Particle(undefined, undefined);
-    for (i in 0..3) {
+    for i in 0..3 {
         p.pos[i] = float(i) * 1.5;
         p.vel[i] = float(i) + 0.5;
     }

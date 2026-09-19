@@ -2,7 +2,7 @@
 // RUN: %cx run %s | %FileCheck -match-full-lines %s
 
 void main() {
-    for (e in [1,2,3]) {
+    for e in [1,2,3] {
         // CHECK: 1
         // CHECK-NEXT: 2
         // CHECK-NEXT: 3
@@ -10,7 +10,7 @@ void main() {
     }
 
     var a = [4,5]
-    for (e in a) {
+    for e in a {
         // CHECK-NEXT: 4
         // CHECK-NEXT: 5
         println(e)

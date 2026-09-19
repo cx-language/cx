@@ -57,7 +57,7 @@ void testIterator() {
     var bb = false;
     var ccc = false;
 
-    for (e in s) {
+    for e in s {
         if (e == 1) {
             assert(!a);
             a = true;
@@ -83,7 +83,7 @@ void testEmptyOrderedSetIterator() {
     s.insert(79);
     s.remove(79);
 
-    for (e in s) {
+    for e in s {
         assert(false);
     }
 }
@@ -94,7 +94,7 @@ void testUnitOrderedSetIterator() {
     s.insert(79);
     var count = 0;
 
-    for (e in s) {
+    for e in s {
         count++;
         assert(e == 79);
     }
@@ -105,17 +105,17 @@ void testUnitOrderedSetIterator() {
 void testLowerAndHigher() {
     var m = OrderedSet<int>();
 
-    for (i in 0..100) {
+    for i in 0..100 {
         m.insert(i);
     }
 
     assert(m.lower(0) == null);
-    for (i in 1..100) {
+    for i in 1..100 {
         assert(m.lower(i)! == i-1);
     }
 
     assert(m.higher(99) == null);
-    for (i in 0..99) {
+    for i in 0..99 {
         assert(m.higher(i)! == i+1);
     }
 }
@@ -144,12 +144,12 @@ void testEmptyOrderedSetFunctions() {
 void testIteratorOrder() {
     var set = OrderedSet<uint>();
 
-    for (i in 0..100) {
+    for i in 0..100 {
         set.insert(uint(i));
     }
 
     uint called = 0;
-    for (e in set) {
+    for e in set {
         assert(e == called);
         called++;
     }
@@ -158,13 +158,13 @@ void testIteratorOrder() {
 
     set = OrderedSet();
 
-    for (i in 0..100) {
+    for i in 0..100 {
         set.insert(uint(99 - i));
     }
 
     called = 0;
     // Still in correct order
-    for (e in set) {
+    for e in set {
         assert(e == called);
         called++;
     }
