@@ -1,0 +1,5 @@
+// RUN: true
+
+var name = "manifest-nested-sub"
+
+var defines = ["FROM_MANIFEST"]

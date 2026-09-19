@@ -64,7 +64,7 @@ void cx::fetchDependencies(const PackageManifest& manifest) {
     }
 }
 
-std::vector<std::string> cx::getSourceFiles(llvm::StringRef rootDirectory, llvm::StringRef packageManifestPath) {
+std::vector<std::string> cx::getSourceFiles(llvm::StringRef rootDirectory) {
     std::vector<std::string> sourceFiles;
     std::error_code error;
 
@@ -74,7 +74,9 @@ std::vector<std::string> cx::getSourceFiles(llvm::StringRef rootDirectory, llvm:
             break;
         }
 
-        if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != packageManifestPath) {
+        // Package manifests are config, not source, so never compile them. Match by file name:
+        // full paths can't be compared reliably across separator styles (Windows).
+        if (llvm::sys::path::extension(it->path()) == ".cx" && llvm::sys::path::filename(it->path()) != PackageManifest::manifestFileName) {
             sourceFiles.push_back(it->path());
         }
     }

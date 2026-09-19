@@ -12,6 +12,6 @@ namespace cx {
 struct PackageManifest;
 
 void fetchDependencies(const PackageManifest& manifest);
-std::vector<std::string> getSourceFiles(llvm::StringRef rootDirectory, llvm::StringRef packageManifestPath);
+std::vector<std::string> getSourceFiles(llvm::StringRef rootDirectory);
 
 } // namespace cx
