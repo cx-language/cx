@@ -27,8 +27,7 @@ wasm/dist/
 *.exe
 *.pdb
 *.ilk
-examples/asteroids/asteroids
-examples/opengl/opengl
+examples/*/bin/
 
 # Generated documentation
 docs/html/

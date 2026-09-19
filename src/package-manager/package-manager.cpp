@@ -53,9 +53,7 @@ static void checkoutGitRevision(llvm::StringRef path, llvm::StringRef revision) 
     }
 }
 
-void cx::fetchDependencies(llvm::StringRef packageRoot) {
-    PackageManifest manifest(packageRoot.str());
-
+void cx::fetchDependencies(const PackageManifest& manifest) {
     for (auto& dependency : manifest.declaredDependencies) {
         auto path = dependency.getFileSystemPath();
 

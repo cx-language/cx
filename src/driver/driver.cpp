@@ -551,10 +551,66 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     return 0;
 }
 
+static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
+    if (packages.empty()) return;
+
+    auto pkgConfig = llvm::sys::findProgramByName("pkg-config");
+    if (!pkgConfig) {
+        ABORT("couldn't find 'pkg-config'");
+    }
+
+    std::string command = *pkgConfig + " --cflags --libs";
+    for (llvm::StringRef package : packages) {
+        command += " ";
+        command += package;
+    }
+
+    std::string output;
+    if (exec(command.c_str(), output) != 0) {
+        ABORT("'" << command << "' failed");
+    }
+
+    llvm::SmallVector<llvm::StringRef, 16> tokens;
+    llvm::StringRef(output).trim().split(tokens, ' ', -1, false);
+
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        llvm::StringRef token = tokens[i];
+        if (token.starts_with("-D")) {
+            defines.push_back(token.drop_front(2).str());
+        } else if (token.starts_with("-I")) {
+            importSearchPaths.push_back(token.drop_front(2).str());
+        } else if (token.starts_with("-L")) {
+            librarySearchPaths.push_back(token.drop_front(2).str());
+        } else if (token.starts_with("-l")) {
+            libraries.push_back(token.drop_front(2).str());
+        } else if (token.starts_with("-F")) {
+            frameworkSearchPaths.push_back(token.drop_front(2).str());
+        } else if (token == "-framework" && i + 1 < tokens.size()) {
+            frameworks.push_back(tokens[++i].str());
+        } else {
+            cflags.push_back(token.str());
+        }
+    }
+}
+
+static void addManifestBuildFlags(const PackageManifest& manifest) {
+    for (auto& define : manifest.defines) {
+        defines.push_back(define);
+    }
+    for (auto& library : manifest.libraries) {
+        libraries.push_back(library);
+    }
+    for (auto& framework : manifest.frameworks) {
+        frameworks.push_back(framework);
+    }
+    addPkgConfigFlags(manifest.pkgConfigDependencies);
+}
+
 static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
     auto manifestPath = (packageRoot + "/" + PackageManifest::manifestFileName).str();
-    PackageManifest manifest(packageRoot.str());
-    fetchDependencies(packageRoot);
+    PackageManifest manifest(packageRoot.str(), {defines.begin(), defines.end()});
+    fetchDependencies(manifest);
+    addManifestBuildFlags(manifest);
 
     for (auto& targetRootDir : manifest.getTargetRootDirectories()) {
         llvm::StringRef outputFileName;

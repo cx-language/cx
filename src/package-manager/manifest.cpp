@@ -28,12 +28,19 @@ template<typename DeclT, typename DefaultValueT> static auto getConfigValue(Decl
     return decl ? llvm::cast<DeclT>(llvm::cast<VarDecl>(decl)->initializer)->value : defaultValue;
 }
 
-PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::move(packageRoot)) {
+static std::vector<std::string> getStringList(Decl* decl) {
+    if (!decl) return {};
+    auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(decl)->initializer);
+    return map(array->elements, [](Expr* element) { return llvm::cast<StringLiteralExpr>(element)->value; });
+}
+
+PackageManifest::PackageManifest(std::string&& packageRoot, std::vector<std::string> defines) : packageRoot(std::move(packageRoot)) {
     auto manifestPath = this->packageRoot + "/" + manifestFileName;
     if (!llvm::sys::fs::exists(manifestPath)) return;
 
     Module module(manifestFileName);
     CompileOptions options;
+    options.defines = std::move(defines);
     Parser parser(addFileBufferToModule(manifestPath, module), module, options);
     parser.parse();
     // TODO: Type-check package manifest.
@@ -42,6 +49,10 @@ PackageManifest::PackageManifest(std::string&& packageRoot) : packageRoot(std::m
     packageName = getConfigValue<StringLiteralExpr>(symbols.findOne("name"), "");
     multitarget = getConfigValue<BoolLiteralExpr>(symbols.findOne("multitarget"), false);
     outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), "bin");
+    this->defines = getStringList(symbols.findOne("defines"));
+    libraries = getStringList(symbols.findOne("libraries"));
+    frameworks = getStringList(symbols.findOne("frameworks"));
+    pkgConfigDependencies = getStringList(symbols.findOne("pkgConfigDependencies"));
 
     if (auto* dependencies = symbols.findOne("dependencies")) {
         auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(dependencies)->initializer);

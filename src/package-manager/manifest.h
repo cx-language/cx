@@ -20,7 +20,7 @@ struct PackageManifest {
         std::string packageVersion;
     };
 
-    PackageManifest(std::string&& packageRoot);
+    PackageManifest(std::string&& packageRoot, std::vector<std::string> defines = {});
     std::vector<std::string> getTargetRootDirectories() const;
     static const char manifestFileName[];
 
@@ -29,6 +29,10 @@ struct PackageManifest {
     std::vector<Dependency> declaredDependencies;
     bool multitarget = false;
     std::string outputDirectory;
+    std::vector<std::string> defines;
+    std::vector<std::string> libraries;
+    std::vector<std::string> frameworks;
+    std::vector<std::string> pkgConfigDependencies;
 };
 
 } // namespace cx

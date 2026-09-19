@@ -1,0 +1,17 @@
+// RUN: cd %S && %cx run -DEXTRA | %FileCheck -match-full-lines -strict-whitespace --check-prefix=IF %s
+// RUN: cd %S && %cx run | %FileCheck -match-full-lines -strict-whitespace --check-prefix=ELSE %s
+
+// IF:from-if-branch
+// ELSE:from-else-branch
+
+#if FROM_IF_BRANCH
+void main() {
+    println("from-if-branch");
+}
+#endif
+
+#if FROM_ELSE_BRANCH
+void main() {
+    println("from-else-branch");
+}
+#endif

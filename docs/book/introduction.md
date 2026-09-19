@@ -194,8 +194,28 @@ All of the above should result in faster compilation times and increased program
 
 Building a C* project is done with a single command: `cx build`, which works out of the box without a single line of
 build configuration code. It finds all C* source files in the project directory (recursively) and compiles them into an
-executable. Additional build information, such as dependencies, can be declared in a package configuration
+executable. Additional build information, such as dependencies, can be declared in a `package.cx` package configuration
 file. `cx build` will then download or find these dependencies, and link them into the resulting executable.
+
+The configuration file uses plain C* syntax:
+
+```cx
+var name = "myproject"
+var pkgConfigDependencies = ["sdl3"]
+var libraries = ["m"]
+```
+
+Supported settings:
+
+- `name`: the executable name.
+- `dependencies`: C* libraries to fetch from Git, as `(package = "...", version = "...")` entries.
+- `defines`, `libraries`, `frameworks`: extra `-D`, `-l` and (on macOS) `-framework` flags.
+- `pkgConfigDependencies`: system libraries resolved via `pkg-config --cflags --libs`.
+- `multitarget`: build each subdirectory of the project as a separate executable.
+- `outputDirectory`: where to place the executables (`bin` by default).
+
+Each setting can be declared only once, but `#if` conditions (e.g. `#if macOS`) can select settings per platform.
+`cx build` also accepts `-D`, `-I`, `-L`, `-l` and `-framework` flags directly for one-off overrides.
 
 No need to learn a new build system for each project, or manage project-specific build scripts, which is often the case
 with C and C++ projects.

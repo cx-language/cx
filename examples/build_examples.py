@@ -2,6 +2,7 @@
 
 import os
 import platform
+import shutil
 import subprocess
 import sys
 import argparse
@@ -22,9 +23,10 @@ for file in os.listdir("."):
         exit_status = subprocess.call([args.cx, file, "-o", output, "-Werror"])
         os.remove(output)
     elif file not in ignored_dirs and os.path.isdir(file):
-        env = os.environ.copy()
-        env["PATH"] = os.path.dirname(args.cx) + ":" + env["PATH"]
-        exit_status = subprocess.call(["make", "-C", file, "CXFLAGS=" + " ".join(cx_args)], env=env)
+        exit_status = subprocess.call([args.cx, "build"] + cx_args, cwd=file)
+        bin_dir = os.path.join(file, "bin")
+        if os.path.isdir(bin_dir):
+            shutil.rmtree(bin_dir)
     else:
         continue
 

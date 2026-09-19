@@ -1,0 +1,9 @@
+// RUN: true
+
+var name = "manifest-flags"
+
+#if EXTRA
+var defines = ["FROM_IF_BRANCH"]
+#else
+var defines = ["FROM_ELSE_BRANCH"]
+#endif
