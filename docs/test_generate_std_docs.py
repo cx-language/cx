@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from generate_std_docs import (
     STD_CATEGORIES,
+    category_page,
+    category_slug,
     main,
     member_name,
     page_name,
@@ -213,7 +215,9 @@ class IndexTest(unittest.TestCase):
     def setUpClass(cls):
         cls.keepalive, parts = parse_fixture()
         types, functions, constants = parts
-        cls.markdown = render_index([("fixture.cx", types, functions, constants, False)])
+        cls.markdown = render_index(
+            "Standard library reference", [("fixture.cx", types, functions, constants, False)]
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -267,12 +271,12 @@ class TocTest(unittest.TestCase):
             items,
             [
                 '                <li><a href="./std/allocate">allocate</a></li>',
-                '                <li><span class="toc-category">Primitive types</span>\n'
+                '                <li><a href="./std/primitive-types">Primitive types</a>\n'
                 "                    <ul>\n"
                 '                        <li><a href="./std/bool">bool</a></li>\n'
                 "                    </ul>\n"
                 "                </li>",
-                '                <li><span class="toc-category">Containers</span>\n'
+                '                <li><a href="./std/containers">Containers</a>\n'
                 "                    <ul>\n"
                 '                        <li><a href="./std/List">List</a></li>\n'
                 "                    </ul>\n"
@@ -351,25 +355,45 @@ class StdlibTest(unittest.TestCase):
                 self.assertNotIn(path, seen, f"{label}: {path}")
                 seen.add(path)
 
-    def test_category_labels_rendered(self):
+    def test_category_links_rendered(self):
         toc = "\n".join(render_toc_items(self.pages))
-        for label in ["Primitive types", "Ranges &amp; iterators", "Input/output"]:
-            self.assertIn(f'<span class="toc-category">{label}</span>', toc)
+        for label, slug in [
+            ("Primitive types", "primitive-types"),
+            ("Ranges &amp; iterators", "ranges-iterators"),
+            ("Input/output", "input-output"),
+        ]:
+            self.assertIn(f'<a href="./std/{slug}">{label}</a>', toc)
+
+    def test_category_slug(self):
+        self.assertEqual(category_slug("Primitive types"), "primitive-types")
+        self.assertEqual(category_slug("Ranges & iterators"), "ranges-iterators")
+        self.assertEqual(category_slug("Input/output"), "input-output")
+
+    def test_category_pages_dont_collide_with_file_pages(self):
+        file_pages = {page_name(relpath) for relpath in self.by_path}
+        for label, _ in STD_CATEGORIES:
+            self.assertNotIn(category_page(label), file_pages)
 
 
 class StagingTest(unittest.TestCase):
     def test_main_writes_index_pages_and_toc(self):
         with tempfile.TemporaryDirectory() as std_dir, tempfile.TemporaryDirectory() as output_dir:
             Path(std_dir, "fixture.cx").write_text(FIXTURE)
+            Path(std_dir, "bool.cx").write_text("struct bool {\n    bool value;\n}\n")
             self.assertEqual(main(["--std-dir", std_dir, "--output-dir", output_dir]), 0)
             out = Path(output_dir)
             index = (out / "std.md").read_text()
             page = (out / "std/fixture.md").read_text()
+            category = (out / "std/primitive-types.md").read_text()
             toc = (out / "toc.html").read_text()
         self.assertIn("# Standard library reference", index)
         self.assertIn("- [fixture.cx](./std/fixture): ", index)
         self.assertIn("## [struct Widget: Copyable]", page)
+        self.assertIn("# Primitive types", category)
+        self.assertIn("- [bool.cx](./std/bool): `bool`", category)
+        self.assertNotIn("fixture.cx", category)
         self.assertIn('<li><a href="./std/fixture">fixture</a></li>', toc)
+        self.assertIn('<a href="./std/primitive-types">Primitive types</a>', toc)
         self.assertNotIn("<!--STD-PAGES-->", toc)
 
 

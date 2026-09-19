@@ -275,9 +275,9 @@ def render_file_page(relpath, types, functions, constants, conditional):
     return finish(out)
 
 
-def render_index(pages):
+def render_index(title, pages):
     out = [
-        "# Standard library reference",
+        f"# {title}",
         "",
         "Auto-generated from the [standard library sources](https://github.com/emillaine/cx/tree/main/std)",
         "by [generate_std_docs.py](https://github.com/emillaine/cx/blob/main/docs/generate_std_docs.py).",
@@ -340,6 +340,14 @@ STD_CATEGORIES = [
 ]
 
 
+def category_slug(label):
+    return "-".join(label.lower().replace("&", "").replace("/", " ").split())
+
+
+def category_page(label):
+    return "std/" + category_slug(label)
+
+
 def render_toc_items(pages):
     entries = {
         relpath: f'<li><a href="./{page_name(relpath)}">{display_name(relpath)}</a></li>'
@@ -353,7 +361,7 @@ def render_toc_items(pages):
             continue
         nested = "\n".join(f"                        {member}" for member in members)
         items.append(
-            f'<li><span class="toc-category">{html.escape(label)}</span>\n'
+            f'<li><a href="./{category_page(label)}">{html.escape(label)}</a>\n'
             f"                    <ul>\n{nested}\n                    </ul>\n                </li>"
         )
     return [f"                {item}" for item in items]
@@ -376,7 +384,13 @@ def main(argv=None):
     pages = parse_std(pathlib.Path(args.std_dir))
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "std.md").write_text(render_index(pages))
+    (output_dir / "std.md").write_text(render_index("Standard library reference", pages))
+    for label, paths in STD_CATEGORIES:
+        members = [page for page in pages if page[0] in paths]
+        if members:
+            category_path = output_dir / f"{category_page(label)}.md"
+            category_path.parent.mkdir(parents=True, exist_ok=True)
+            category_path.write_text(render_index(label, members))
     for relpath, types, functions, constants, conditional in pages:
         page_path = output_dir / f"{page_name(relpath)}.md"
         page_path.parent.mkdir(parents=True, exist_ok=True)

@@ -332,7 +332,7 @@ th {
     list-style-type: none;
 }
 
-.side-nav a, .side-nav .toc-category {
+.side-nav a {
     color: var(--text-color-subtle);
     padding: 2px 0;
 }
@@ -357,7 +357,7 @@ th {
         display: block;
     }
 
-    .side-nav a, .side-nav .toc-category {
+    .side-nav a {
         display: block;
         padding: 3px 0;
     }
