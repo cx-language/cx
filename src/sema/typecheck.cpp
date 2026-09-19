@@ -123,6 +123,9 @@ void Typechecker::postProcess() {
             case DeclKind::TypeDecl:
                 typecheckTypeDecl(*llvm::cast<TypeDecl>(decl));
                 break;
+            case DeclKind::EnumDecl:
+                typecheckEnumDecl(*llvm::cast<EnumDecl>(decl));
+                break;
             default:
                 llvm_unreachable("invalid deferred decl");
             }

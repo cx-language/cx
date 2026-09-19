@@ -379,7 +379,7 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             }
         }
 
-        Type caseType = typecheckExpr(*switchCase.value);
+        Type caseType = typecheckExpr(*switchCase.value, false, conditionType);
 
         if (auto converted = convert(switchCase.value, conditionType)) {
             switchCase.value = converted;

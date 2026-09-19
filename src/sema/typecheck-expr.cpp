@@ -173,7 +173,7 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     case DeclKind::TypeDecl:
         return llvm::cast<TypeDecl>(decl)->getType();
     case DeclKind::TypeTemplate:
-        llvm_unreachable("cannot refer to generic types yet");
+        ERROR(expr.location, "'" << expr.identifier << "' is not a variable");
     case DeclKind::EnumDecl:
         ERROR(expr.location, "'" << expr.identifier << "' is not a variable");
     case DeclKind::EnumCase:
@@ -778,7 +778,7 @@ bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
         return containsGenericParam(type.getElementType(), genericParam);
 
     case TypeKind::TupleType:
-        llvm_unreachable("unimplemented");
+        return llvm::any_of(type.getTupleElements(), [&](const TupleElement& element) { return containsGenericParam(element.type, genericParam); });
 
     case TypeKind::FunctionType:
         for (Type paramType : type.getParamTypes()) {
@@ -1519,7 +1519,7 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
     Decl* decl;
 
-    if (auto* enumCase = getEnumCase(*expr.callee)) {
+    if (auto* enumCase = getEnumCase(*expr.callee, expectedType, &expr)) {
         decl = enumCase;
         llvm::cast<MemberExpr>(*expr.callee).decl = decl;
     } else if (expr.callee->isMemberExpr()) {
@@ -1594,7 +1594,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
         params = llvm::cast<FunctionType>(variableDecl->type.typeBase)->getParamDecls();
     } else {
         auto type = llvm::cast<EnumCase>(decl)->associatedType;
-        params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
+        if (type) {
+            params = map(type.getTupleElements(), [&](auto& e) { return ParamDecl(e.type, std::string(e.name), false, decl->getLocation()); });
+        }
         validateAndConvertArguments(expr, params, false, decl->getName(), expr.location);
     }
 
@@ -1832,8 +1834,8 @@ Type Typechecker::typecheckSizeofExpr(SizeofExpr& expr) {
     return Type::getUInt64();
 }
 
-Type Typechecker::typecheckMemberExpr(MemberExpr& expr) {
-    if (auto* enumCase = getEnumCase(expr)) {
+Type Typechecker::typecheckMemberExpr(MemberExpr& expr, Type expectedType) {
+    if (auto* enumCase = getEnumCase(expr, expectedType)) {
         checkHasAccess(*enumCase->getEnumDecl(), expr.base->location, AccessLevel::None);
         expr.decl = enumCase;
         return enumCase->type;
@@ -2017,7 +2019,7 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
         type = typecheckSizeofExpr(llvm::cast<SizeofExpr>(expr));
         break;
     case ExprKind::MemberExpr:
-        type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr));
+        type = typecheckMemberExpr(llvm::cast<MemberExpr>(expr), expectedType);
         break;
     case ExprKind::IndexExpr:
         type = typecheckIndexExpr(llvm::cast<IndexExpr>(expr));
@@ -2063,23 +2065,119 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
     return expr.type;
 }
 
-EnumCase* Typechecker::getEnumCase(const Expr& expr) {
-    if (auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr)) {
-        if (auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base)) {
-            auto decls = findDecls(varExpr->identifier);
-            if (decls.size() == 1) {
-                if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(decls.front())) {
-                    auto* enumCase = enumDecl->getCaseByName(memberExpr->member);
-                    if (!enumCase) {
-                        ERROR(expr.location, "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->member << "'");
-                    }
-                    return enumCase;
-                }
+static bool enumTemplateMatchesExpectedType(TypeTemplate& typeTemplate, Type expectedType) {
+    if (auto* expectedDecl = expectedType.getDecl()) {
+        if (expectedDecl->instantiatedFrom == typeTemplate.typeDecl) return true;
+    }
+    return BasicType::get(expectedType.getName(), {}).getDecl() == typeTemplate.typeDecl;
+}
+
+EnumCase* Typechecker::getEnumCase(const Expr& expr, Type expectedType, CallExpr* call) {
+    auto* memberExpr = llvm::dyn_cast<MemberExpr>(&expr);
+    if (!memberExpr) return nullptr;
+    auto* varExpr = llvm::dyn_cast<VarExpr>(memberExpr->base);
+    if (!varExpr) return nullptr;
+    auto decls = findDecls(varExpr->identifier);
+
+    Decl* enumDeclOrTemplate = nullptr;
+    if (decls.size() == 1) {
+        enumDeclOrTemplate = decls.front();
+    } else {
+        // A same-named type or function doesn't prevent enum case access, but a same-named variable takes precedence.
+        for (Decl* decl : decls) {
+            if (decl->isEnumDecl() || (decl->isTypeTemplate() && llvm::cast<TypeTemplate>(decl)->typeDecl->isEnumDecl())) {
+                if (enumDeclOrTemplate) return nullptr; // Ambiguous.
+                enumDeclOrTemplate = decl;
+            } else if (decl->kind != DeclKind::TypeDecl && decl->kind != DeclKind::TypeTemplate && decl->kind != DeclKind::FunctionDecl
+                       && decl->kind != DeclKind::FunctionTemplate) {
+                return nullptr;
             }
         }
+        if (!enumDeclOrTemplate) return nullptr;
+    }
+
+    if (auto* enumDecl = llvm::dyn_cast<EnumDecl>(enumDeclOrTemplate)) {
+        if (call) validateGenericArgCount(0, call->genericArgs, enumDecl->getName(), call->location);
+        auto* enumCase = enumDecl->getCaseByName(memberExpr->member);
+        if (!enumCase) {
+            ERROR(expr.location, "enum '" << enumDecl->getName() << "' has no case named '" << memberExpr->member << "'");
+        }
+        return enumCase;
+    }
+
+    if (auto* typeTemplate = llvm::dyn_cast<TypeTemplate>(enumDeclOrTemplate)) {
+        if (!llvm::isa<EnumDecl>(typeTemplate->typeDecl)) return nullptr;
+        return instantiateEnumCase(*typeTemplate, memberExpr->member, *memberExpr, call, expectedType);
     }
 
     return nullptr;
+}
+
+EnumCase* Typechecker::instantiateEnumCase(TypeTemplate& typeTemplate, llvm::StringRef caseName, const MemberExpr& memberExpr, CallExpr* call,
+                                           Type expectedType) {
+    auto* templateDecl = llvm::cast<EnumDecl>(typeTemplate.typeDecl);
+    auto* templateCase = templateDecl->getCaseByName(caseName);
+    if (!templateCase) {
+        ERROR(memberExpr.location, "enum '" << templateDecl->getName() << "' has no case named '" << caseName << "'");
+    }
+
+    std::vector<Type> inferredGenericArgs;
+    llvm::ArrayRef<Type> genericArgTypes;
+    Type unwrappedExpectedType = expectedType ? expectedType.removeOptional() : Type();
+
+    if (call && !call->genericArgs.empty()) {
+        validateGenericArgCount(typeTemplate.genericParams.size(), call->genericArgs, templateDecl->getName(), call->location);
+        genericArgTypes = call->genericArgs;
+    } else if (unwrappedExpectedType && unwrappedExpectedType.isBasicType() && !unwrappedExpectedType.getGenericArgs().empty()
+               && llvm::none_of(unwrappedExpectedType.getGenericArgs(), [](Type type) { return type.isUnresolvedType(); })
+               && enumTemplateMatchesExpectedType(typeTemplate, unwrappedExpectedType)) {
+        genericArgTypes = unwrappedExpectedType.getGenericArgs();
+    } else if (call && templateCase->associatedType) {
+        auto params = map(templateCase->associatedType.getTupleElements(),
+                          [&](const TupleElement& element) { return ParamDecl(element.type, std::string(element.name), false, templateCase->getLocation()); });
+        if (call->args.size() != params.size()) {
+            // Report the count error; inference can't proceed without matching arguments.
+            validateAndConvertArguments(*call, params, false, templateCase->getName(), call->location);
+            throw CompileError::dependentError();
+        }
+        inferredGenericArgs = inferGenericArgsFromCallArgs(typeTemplate.genericParams, *call, params, /*returnOnError=*/false);
+        if (inferredGenericArgs.empty()) {
+            ERROR(call->location, "can't infer generic parameters, please specify them explicitly");
+        }
+        genericArgTypes = inferredGenericArgs;
+    } else {
+        ERROR(memberExpr.location, "can't infer generic parameters, please specify them explicitly");
+    }
+
+    llvm::StringMap<Type> genericArgs;
+    auto genericArg = genericArgTypes.begin();
+    for (const GenericParamDecl& genericParam : typeTemplate.genericParams) {
+        genericArgs.try_emplace(genericParam.getName(), *genericArg++);
+    }
+
+    auto orderedArgs = map(typeTemplate.genericParams, [&](const GenericParamDecl& genericParam) { return genericArgs.find(genericParam.getName())->second; });
+    auto qualifiedName = getQualifiedTypeName(templateDecl->getName(), orderedArgs);
+    // Same-named instantiations resolve to the first one, mirroring generic struct constructor calls.
+    auto existingDecls = findDecls(qualifiedName);
+    EnumDecl* enumDecl = nullptr;
+    for (Decl* decl : existingDecls) {
+        if (auto* existing = llvm::dyn_cast<EnumDecl>(decl)) {
+            enumDecl = existing;
+            break;
+        }
+    }
+    if (!enumDecl) {
+        if (!existingDecls.empty()) {
+            ERROR(memberExpr.location, "ambiguous reference to '" << qualifiedName << "'");
+        }
+        enumDecl = llvm::cast<EnumDecl>(typeTemplate.instantiate(genericArgs));
+        currentModule->addToSymbolTable(*enumDecl);
+        deferTypechecking(enumDecl);
+    }
+
+    auto* enumCase = enumDecl->getCaseByName(caseName);
+    ASSERT(enumCase);
+    return enumCase;
 }
 
 void Typechecker::setMoved(Expr* expr, bool isMoved) {

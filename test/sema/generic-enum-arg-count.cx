@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: generic-enum-arg-count.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum Result<T> {
+    Ok(T value),
+    Err(int code),
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:22: error: too few arguments to 'Ok', expected 1
+    var x = Result.Ok();
+}
+
+// CHECK-NOT: generic-enum-arg-count.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

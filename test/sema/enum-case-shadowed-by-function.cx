@@ -1,0 +1,13 @@
+// RUN: %cx -typecheck %s
+
+enum E {
+    A(int x),
+}
+
+void E() {
+}
+
+void main() {
+    // A same-named function doesn't prevent enum case access.
+    var v = E.A(x = 1);
+}

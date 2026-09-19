@@ -1,0 +1,14 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: generic-struct-bare-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+struct Box<T> {
+    T value;
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: 'Box' is not a variable
+    var x = Box;
+}
+
+// CHECK-NOT: generic-struct-bare-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:

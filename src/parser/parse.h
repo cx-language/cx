@@ -109,6 +109,7 @@ private:
     IfExpr* parseIfExpr(Expr* condition);
     bool shouldParseVarStmt();
     bool shouldParseGenericArgumentList();
+    bool shouldParseGenericArgumentListAfterMember();
     bool arrowAfterParentheses();
     Expr* parsePostfixExpr();
     UnaryExpr* parsePrefixExpr();
@@ -151,7 +152,8 @@ private:
     TypeTemplate* parseTypeTemplate(AccessLevel accessLevel);
     Token parseTypeHeader(std::vector<Type>& interfaces, std::vector<GenericParamDecl>* genericParams);
     TypeDecl* parseTypeDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
-    EnumDecl* parseEnumDecl(AccessLevel typeAccessLevel);
+    TypeTemplate* parseEnumTemplate(AccessLevel accessLevel);
+    EnumDecl* parseEnumDecl(std::vector<GenericParamDecl>* genericParams, AccessLevel typeAccessLevel);
     ImportDecl* parseImportDecl();
     void parseIfdefBody(std::vector<Decl*>* activeDecls);
     void parseIfdef(std::vector<Decl*>* activeDecls);

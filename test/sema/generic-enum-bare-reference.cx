@@ -1,0 +1,15 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: generic-enum-bare-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
+
+enum Opt<T> {
+    Some(T value),
+    None,
+}
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: 'Opt' is not a variable
+    var x = Opt;
+}
+
+// CHECK-NOT: generic-enum-bare-reference.cx:{{[0-9]+}}:{{[0-9]+}}: {{(warning|error)}}:
