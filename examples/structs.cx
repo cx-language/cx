@@ -1,0 +1,17 @@
+// Structs with default values, named arguments, and methods.
+struct Person {
+    string name;
+    int age = 0;
+
+    void greet() {
+        println("hi, I'm ", name, ", ", age);
+    }
+}
+
+void main() {
+    var ada = Person(name = "Ada");
+    ada.age = 36;
+    var bob = Person(name = "Bob"); // age defaults to 0
+    ada.greet();
+    bob.greet();
+}

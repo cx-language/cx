@@ -1,0 +1,9 @@
+// Filter and transform a list.
+void main() {
+    var doubled = List([0, 1, 2, 3, 4]).filter(isEven).map(n -> n * 2);
+    println(doubled); // [0, 4, 8]
+}
+
+bool isEven(int n) {
+    return n % 2 == 0;
+}

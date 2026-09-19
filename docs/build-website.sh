@@ -118,10 +118,12 @@ if depth:
     template = re.sub(r'(href|src)="(\./)?(?!#|/|[a-zA-Z][a-zA-Z0-9+.-]*:)', r'\1="' + prefix, template)
 
 showcase = [
+    ("Filter and map", "filter-map.cx"),
+    ("Tagged unions", "tagged-union.cx"),
+    ("Null safety", "null-safety.cx"),
+    ("Printable", "printable.cx"),
+    ("Structs", "structs.cx"),
     ("Prime sieve", "sieve.cx"),
-    ("Hello world", "hello.cx"),
-    ("Fibonacci", "fibonacci.cx"),
-    ("FizzBuzz", "fizzbuzz.cx"),
     ("Complex numbers", "complex.cx"),
 ]
 

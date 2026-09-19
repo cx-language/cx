@@ -1,0 +1,15 @@
+// A tagged union: each shape carries its own data.
+enum Shape {
+    Circle(float radius),
+    Rect(float width, float height),
+}
+
+void main() {
+    Shape s = Shape.Circle(radius = 2);
+    switch (s) {
+        case Shape.Circle as c:
+            println("circle: ", 3.14 * c.radius * c.radius);
+        case Shape.Rect as r:
+            println("rect: ", r.width * r.height);
+    }
+}
