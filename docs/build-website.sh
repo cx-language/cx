@@ -123,8 +123,8 @@ showcase = [
     ("Null safety", "null-safety.cx"),
     ("Printable", "printable.cx"),
     ("Structs", "structs.cx"),
-    ("Prime sieve", "sieve.cx"),
-    ("Complex numbers", "complex.cx"),
+    ("Ranges and loops", "ranges.cx"),
+    ("Operator overloading", "operator-overloading.cx"),
 ]
 
 if "##EXAMPLECODE##" in template:
