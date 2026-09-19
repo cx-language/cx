@@ -570,11 +570,13 @@ Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
 Value* IRGenerator::emitLambdaExpr(const LambdaExpr& expr) {
     auto functionDecl = expr.functionDecl;
 
+    auto currentFunctionBackup = currentFunction;
     auto insertBlockBackup = insertBlock;
     auto scopesBackup = std::move(scopes);
 
     emitDecl(*functionDecl);
 
+    currentFunction = currentFunctionBackup;
     scopes = std::move(scopesBackup);
     if (insertBlockBackup) setInsertPoint(insertBlockBackup);
 
