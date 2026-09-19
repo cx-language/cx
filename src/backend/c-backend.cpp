@@ -466,6 +466,21 @@ void CGenerator::codegenGlobalVariable(const GlobalVariable* inst) {
     codegenType(stream, inst->type, true);
     stream << ' ' << inst->name;
     codegenTypeSuffix(stream, inst->type, true);
+    // Only constant expressions are valid C static initializers; anything else keeps a zero initializer.
+    if (inst->value) {
+        switch (inst->value->kind) {
+        case ValueKind::ConstantInt:
+        case ValueKind::ConstantFP:
+        case ValueKind::ConstantBool:
+        case ValueKind::Function:
+        case ValueKind::SizeofInst:
+            stream << " = ";
+            codegenInst(inst->value);
+            break;
+        default:
+            break;
+        }
+    }
     stream << ";\n";
     emittedValues.insert({inst, "(&" + inst->name + ")"});
 }
