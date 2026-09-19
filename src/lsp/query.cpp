@@ -18,39 +18,26 @@ std::string readAllStdin() {
 
 int runQueryProcess() {
     std::string input = readAllStdin();
+    JsonObject envelope;
     try {
-        JsonValue query = parseJson(input);
-        JsonValue result = handleQuery(query);
-        JsonObject envelope;
+        JsonValue result = handleQuery(parseJson(input));
         envelope["ok"] = true;
         envelope["result"] = std::move(result);
-        std::string output = serializeJson(JsonValue(std::move(envelope)));
-        std::fwrite(output.data(), 1, output.size(), stdout);
-        return 0;
     } catch (const JsonParseError& error) {
-        JsonObject envelope;
         envelope["ok"] = false;
         envelope["error"] = std::string(error.what());
-        std::string output = serializeJson(JsonValue(std::move(envelope)));
-        std::fwrite(output.data(), 1, output.size(), stdout);
-        return 0;
     } catch (const std::exception& error) {
         // Never let a compiler crash take down the server: report it as a
         // failed query and let the server turn it into a diagnostic.
-        JsonObject envelope;
         envelope["ok"] = false;
         envelope["error"] = std::string("internal compiler error: ") + error.what();
-        std::string output = serializeJson(JsonValue(std::move(envelope)));
-        std::fwrite(output.data(), 1, output.size(), stdout);
-        return 0;
     } catch (...) {
-        JsonObject envelope;
         envelope["ok"] = false;
         envelope["error"] = "internal compiler error";
-        std::string output = serializeJson(JsonValue(std::move(envelope)));
-        std::fwrite(output.data(), 1, output.size(), stdout);
-        return 0;
     }
+    std::string output = serializeJson(JsonValue(std::move(envelope)));
+    std::fwrite(output.data(), 1, output.size(), stdout);
+    return 0;
 }
 
 } // namespace cx::lsp
