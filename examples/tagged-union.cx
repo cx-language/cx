@@ -7,9 +7,9 @@ enum Shape {
 void main() {
     Shape s = Shape.Circle(radius = 2);
     switch (s) {
-        case Shape.Circle as c:
+        case Circle c:
             println("circle: ", 3.14 * c.radius * c.radius);
-        case Shape.Rect as r:
+        case Rect r:
             println("rect: ", r.width * r.height);
     }
 }

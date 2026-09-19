@@ -1,0 +1,12 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+enum E { A, B(int i) }
+
+int main() {
+    var e = E.B(i = 41);
+    switch (e) {
+        // CHECK: [[@LINE+1]]:21: error: expected ':', got identifier
+        case E.B as eb: return eb.i;
+        default: return 0;
+    }
+}

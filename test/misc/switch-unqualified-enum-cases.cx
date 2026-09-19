@@ -1,0 +1,82 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:red
+// CHECK-NEXT:green
+// CHECK-NEXT:blue
+// CHECK-NEXT:circle 2
+// CHECK-NEXT:rect 3 4
+// CHECK-NEXT:red
+// CHECK-NEXT:green
+// CHECK-NEXT:other
+// CHECK-NEXT:case
+
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+enum Shape {
+    Circle(float radius),
+    Rect(float width, float height),
+}
+
+void plain(Color c) {
+    switch (c) {
+    case Red:
+        println("red");
+    case Green:
+        println("green");
+    case Blue:
+        println("blue");
+    }
+}
+
+void bound() {
+    var s = Shape.Circle(radius = 2);
+    switch (s) {
+    case Circle c:
+        println("circle ", c.radius);
+    case Rect r:
+        println("rect ", r.width, " ", r.height);
+    }
+    s = Shape.Rect(width = 3, height = 4);
+    switch (s) {
+    case Circle c:
+        println("circle ", c.radius);
+    case Rect r:
+        println("rect ", r.width, " ", r.height);
+    }
+}
+
+void mixed(Color c) {
+    switch (c) {
+    case Color.Red:
+        println("red");
+    case Green:
+        println("green");
+    default:
+        println("other");
+    }
+}
+
+void shadowing() {
+    // A bare case name denotes the enum case even when a variable with the same name is in scope.
+    var Red = Color.Blue;
+    switch (Color.Red) {
+    case Red:
+        println("case");
+    default:
+        println("variable");
+    }
+}
+
+void main() {
+    plain(Color.Red);
+    plain(Color.Green);
+    plain(Color.Blue);
+    bound();
+    mixed(Color.Red);
+    mixed(Color.Green);
+    mixed(Color.Blue);
+    shadowing();
+}

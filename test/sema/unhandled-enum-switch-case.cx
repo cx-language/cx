@@ -34,10 +34,33 @@ void baz(Color c) {
     }
 }
 
+void unqualified(Color c) {
+    // CHECK: [[@LINE+1]]:13: warning: enumeration value 'Blue' not handled in switch
+    switch (c) {
+    case Red:
+        break;
+    case Green:
+        break;
+    }
+}
+
+void unqualifiedFullyCovered(Color c) {
+    switch (c) {
+    case Red:
+        break;
+    case Green:
+        break;
+    case Blue:
+        break;
+    }
+}
+
 void main() {
     foo(Color.Red);
     bar(Color.Red);
     baz(Color.Red);
+    unqualified(Color.Red);
+    unqualifiedFullyCovered(Color.Red);
 }
 
 // CHECK-NOT: warning

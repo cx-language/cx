@@ -119,6 +119,17 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
     currentControlStmts.push_back(&stmt);
 
     for (auto& switchCase : stmt.cases) {
+        if (conditionType.isEnumType()) {
+            if (auto* varExpr = llvm::dyn_cast<VarExpr>(switchCase.value)) {
+                auto* enumDecl = llvm::cast<EnumDecl>(conditionType.getDecl());
+                if (enumDecl->getCaseByName(varExpr->identifier)) {
+                    // A bare `case B:` mirrors the qualified `case E.B:`, so desugar to the qualified form.
+                    switchCase.value = makeAST<MemberExpr>(makeAST<VarExpr>(std::string(enumDecl->getName()), varExpr->location),
+                                                           std::string(varExpr->identifier), varExpr->location);
+                }
+            }
+        }
+
         Type caseType = typecheckExpr(*switchCase.value);
 
         if (auto converted = convert(switchCase.value, conditionType)) {
@@ -130,7 +141,14 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         Scope scope(nullptr, &currentModule->symbolTable);
 
         if (auto* associatedValue = switchCase.associatedValue) {
-            auto* enumCase = llvm::cast<EnumCase>(llvm::cast<MemberExpr>(switchCase.value)->decl);
+            auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
+            auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+            if (!enumCase) {
+                ERROR(associatedValue->location, "only enum cases can bind associated values");
+            }
+            if (!enumCase->associatedType) {
+                ERROR(associatedValue->location, "enum case '" << enumCase->getName() << "' has no associated values to bind");
+            }
             associatedValue->type = NOTNULL(enumCase->associatedType);
             typecheckVarDecl(*associatedValue);
         }
