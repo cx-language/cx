@@ -99,7 +99,7 @@ class PageNameTest(unittest.TestCase):
         self.assertEqual(page_name("List.cx"), "std/List")
 
     def test_nested(self):
-        self.assertEqual(page_name("os/gnu.cx"), "std/os/gnu")
+        self.assertEqual(page_name("os/posix.cx"), "std/os/posix")
 
 
 class FixtureTest(unittest.TestCase):
@@ -243,12 +243,12 @@ class FileOrderTest(unittest.TestCase):
 
 class TocTest(unittest.TestCase):
     def test_items_link_to_pages(self):
-        items = render_toc_items([("List.cx", [], {}, [], False), ("os/gnu.cx", [], {}, [], False)])
+        items = render_toc_items([("List.cx", [], {}, [], False), ("os/posix.cx", [], {}, [], False)])
         self.assertEqual(
             items,
             [
                 '                <li><a href="./std/List">List</a></li>',
-                '                <li><a href="./std/os/gnu">os/gnu</a></li>',
+                '                <li><a href="./std/os/posix">os/posix</a></li>',
             ],
         )
 
@@ -268,7 +268,7 @@ class StdlibTest(unittest.TestCase):
         )
 
     def test_os_files_included(self):
-        self.assertIn("os/gnu.cx", self.by_path)
+        self.assertIn("os/posix.cx", self.by_path)
         self.assertIn("os/windows.cx", self.by_path)
 
     def test_known_entries(self):
