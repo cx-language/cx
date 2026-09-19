@@ -227,8 +227,10 @@ jobs:
 
       - name: Build website
         run: |
-          wget --no-verbose https://github.com/jgm/pandoc/releases/download/2.13/pandoc-2.13-1-amd64.deb
-          sudo dpkg -i pandoc-2.13-1-amd64.deb
+          # Pin pandoc: default styles and fenced-code parsing vary
+          # between releases, so CI must build with a known version.
+          wget --no-verbose https://github.com/jgm/pandoc/releases/download/3.11/pandoc-3.11-1-amd64.deb
+          sudo dpkg -i pandoc-3.11-1-amd64.deb
 
           (
             cd docs || exit 1

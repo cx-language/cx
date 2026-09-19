@@ -1,3 +1,4 @@
+#!/bin/sh
 # To develop the website locally, run this script after each change,
 # and serve the generated HTML from the build directory using e.g. 'npx serve'.
 # Or run with --serve to build and serve in one step:
@@ -34,6 +35,14 @@ done
 cd "$(dirname "$0")" || exit
 
 pandoc --version >/dev/null || exit
+
+# Pandoc 2 emits different default styles (notably 'html { font-size: 20px }'),
+# so refuse to generate a subtly wrong-looking site with it.
+major=$(pandoc --version | head -n 1 | cut -d' ' -f2 | cut -d. -f1)
+if [ "${major:-0}" -lt 3 ]; then
+    echo "error: pandoc 3 or newer is required" >&2
+    exit 1
+fi
 
 cd spec || exit
 rm -rf ../build
