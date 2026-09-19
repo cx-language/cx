@@ -3,7 +3,7 @@
 // CHECK:104
 // CHECK-NEXT:7
 // CHECK-NEXT:43
-// CHECK-NEXT:111
+// CHECK-NEXT:151
 // CHECK-NEXT:1
 // CHECK-NEXT:1
 // CHECK-NEXT:11
@@ -47,6 +47,7 @@ struct S {
 
 void nested() {
     var a = 1;
+    a = 41;
     var outer = (int b) -> {
         var inner = (int c) -> a + b + c;
         return inner(100);

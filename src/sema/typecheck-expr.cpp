@@ -32,8 +32,12 @@ void Typechecker::maybeCaptureVariable(VariableDecl& variableDecl) {
     if (variableDecl.kind != DeclKind::VarDecl && variableDecl.kind != DeclKind::ParamDecl) return;
     auto* parent = variableDecl.parent;
     if (!parent || !parent->isFunctionDecl() || parent == currentFunction) return;
-    if (!llvm::is_contained(currentFunction->captures, &variableDecl)) {
-        currentFunction->captures.push_back(&variableDecl);
+    // Capture transitively: every lambda between the use and the owner must capture too,
+    // so codegen can resolve the decl through each intermediate scope.
+    for (FunctionDecl* function = currentFunction; function && function->isLambda() && function != parent; function = function->parentFunction) {
+        if (!llvm::is_contained(function->captures, &variableDecl)) {
+            function->captures.push_back(&variableDecl);
+        }
     }
 }
 
