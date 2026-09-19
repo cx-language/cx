@@ -1,0 +1,130 @@
+// RUN: check_exit_status 0 %cx run -Werror %s
+
+bool approx<T>(T a, T b) {
+    return abs(a - b) < 0.0001;
+}
+
+void main() {
+    testConstants();
+    testTrigonometric();
+    testHyperbolic();
+    testExpLog();
+    testPowSqrt();
+    testRounding();
+    testFloat64();
+    testFloat32();
+}
+
+void testConstants() {
+    assert(approx(pi, 3.14159));
+    assert(approx(e, 2.71828));
+}
+
+void testTrigonometric() {
+    assert(approx(sin(0.0), 0.0));
+    assert(approx(sin(pi / 2), 1.0));
+    assert(approx(cos(0.0), 1.0));
+    assert(approx(cos(pi), -1.0));
+    assert(approx(tan(0.0), 0.0));
+    assert(approx(tan(pi / 4), 1.0));
+    assert(approx(asin(1.0), pi / 2));
+    assert(approx(acos(0.0), pi / 2));
+    assert(approx(atan(1.0), pi / 4));
+    assert(approx(atan2(1.0, 0.0), pi / 2));
+}
+
+void testHyperbolic() {
+    assert(approx(sinh(0.0), 0.0));
+    assert(approx(sinh(1.0), 1.17520));
+    assert(approx(cosh(0.0), 1.0));
+    assert(approx(cosh(1.0), 1.54308));
+    assert(approx(tanh(0.0), 0.0));
+    assert(approx(tanh(1.0), 0.76159));
+}
+
+void testExpLog() {
+    assert(approx(exp(0.0), 1.0));
+    assert(approx(exp(1.0), e));
+    assert(approx(exp2(3.0), 8.0));
+    assert(approx(log(1.0), 0.0));
+    assert(approx(log(e), 1.0));
+    assert(approx(log2(8.0), 3.0));
+    assert(approx(log10(100.0), 2.0));
+}
+
+void testPowSqrt() {
+    assert(approx(pow(2.0, 10.0), 1024.0));
+    assert(approx(sqrt(2.0), 1.41421));
+    assert(approx(cbrt(27.0), 3.0));
+    assert(approx(hypot(3.0, 4.0), 5.0));
+}
+
+void testRounding() {
+    assert(ceil(1.5) == 2.0);
+    assert(ceil(-1.5) == -1.0);
+    assert(floor(1.5) == 1.0);
+    assert(floor(-1.5) == -2.0);
+    assert(trunc(1.9) == 1.0);
+    assert(trunc(-1.9) == -1.0);
+    assert(round(1.5) == 2.0);
+    assert(round(-1.5) == -2.0);
+    assert(fmod(5.5, 2.0) == 1.5);
+}
+
+void testFloat64() {
+    float64 x = sin(float64(0.5));
+    assert(approx(x, 0.47943));
+    float64 y = pi;
+    assert(approx(y, 3.14159));
+    assert(approx(cos(float64(0.5)), 0.87758));
+    assert(approx(tan(float64(0.5)), 0.54630));
+    assert(approx(asin(float64(0.5)), 0.52360));
+    assert(approx(acos(float64(0.5)), 1.04720));
+    assert(approx(atan(float64(1.0)), 0.78540));
+    assert(approx(atan2(float64(1.0), float64(0.0)), 1.57080));
+    assert(approx(sinh(float64(1.0)), 1.17520));
+    assert(approx(cosh(float64(1.0)), 1.54308));
+    assert(approx(tanh(float64(1.0)), 0.76159));
+    assert(approx(exp(float64(1.0)), 2.71828));
+    assert(approx(exp2(float64(3.0)), 8.0));
+    assert(approx(log(float64(e)), 1.0));
+    assert(approx(log2(float64(8.0)), 3.0));
+    assert(approx(log10(float64(100.0)), 2.0));
+    assert(approx(pow(float64(2.0), float64(3.0)), 8.0));
+    assert(approx(sqrt(float64(2.0)), 1.41421));
+    assert(approx(cbrt(float64(27.0)), 3.0));
+    assert(approx(hypot(float64(3.0), float64(4.0)), 5.0));
+    assert(ceil(float64(1.5)) == 2.0);
+    assert(floor(float64(-1.5)) == -2.0);
+    assert(trunc(float64(1.9)) == 1.0);
+    assert(round(float64(1.5)) == 2.0);
+    assert(fmod(float64(5.5), float64(2.0)) == 1.5);
+}
+
+void testFloat32() {
+    float32 x = sin(float32(0.5));
+    assert(approx(x, 0.47943));
+    assert(approx(cos(float32(0.5)), 0.87758));
+    assert(approx(tan(float32(0.5)), 0.54630));
+    assert(approx(asin(float32(0.5)), 0.52360));
+    assert(approx(acos(float32(0.5)), 1.04720));
+    assert(approx(atan(float32(1.0)), 0.78540));
+    assert(approx(atan2(float32(1.0), float32(0.0)), 1.57080));
+    assert(approx(sinh(float32(1.0)), 1.17520));
+    assert(approx(cosh(float32(1.0)), 1.54308));
+    assert(approx(tanh(float32(1.0)), 0.76159));
+    assert(approx(exp(float32(1.0)), 2.71828));
+    assert(approx(exp2(float32(3.0)), 8.0));
+    assert(approx(log(float32(e)), 1.0));
+    assert(approx(log2(float32(8.0)), 3.0));
+    assert(approx(log10(float32(100.0)), 2.0));
+    assert(approx(pow(float32(2.0), float32(3.0)), 8.0));
+    assert(approx(sqrt(float32(2.0)), 1.41421));
+    assert(approx(cbrt(float32(27.0)), 3.0));
+    assert(approx(hypot(float32(3.0), float32(4.0)), 5.0));
+    assert(ceil(float32(1.5)) == 2.0);
+    assert(floor(float32(-1.5)) == -2.0);
+    assert(trunc(float32(1.9)) == 1.0);
+    assert(round(float32(1.5)) == 2.0);
+    assert(fmod(float32(5.5), float32(2.0)) == 1.5);
+}

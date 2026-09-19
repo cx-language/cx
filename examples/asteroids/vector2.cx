@@ -1,5 +1,3 @@
-import "math.h";
-
 struct Vector2: Copyable {
     float x;
     float y;
@@ -10,22 +8,22 @@ struct Vector2: Copyable {
     }
 
     Vector2(float angle) {
-        x = cosf(angle);
-        y = sinf(angle);
+        x = cos(angle);
+        y = sin(angle);
     }
 
     Vector2 rotated(Vector2 origin, float angle) {
         var dx = x - origin.x;
         var dy = y - origin.y;
-        var c = cosf(angle);
-        var s = sinf(angle);
+        var c = cos(angle);
+        var s = sin(angle);
         return Vector2(c * dx - s * dy + origin.x, s * dx + c * dy + origin.y);
     }
 
     float distance(Vector2 other) {
         var dx = x - other.x;
         var dy = y - other.y;
-        return sqrtf(dx * dx + dy * dy);
+        return sqrt(dx * dx + dy * dy);
     }
 }
 

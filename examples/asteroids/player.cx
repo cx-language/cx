@@ -1,5 +1,4 @@
 import "SDL3/SDL.h";
-import "math.h";
 
 const turningSpeed = 0.008;
 const movementSpeed = 0.002;
@@ -55,12 +54,12 @@ struct Player {
             direction -= turningSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_UP) {
-            velocity.x += cosf(direction) * movementSpeed * delta;
-            velocity.y += sinf(direction) * movementSpeed * delta;
+            velocity.x += cos(direction) * movementSpeed * delta;
+            velocity.y += sin(direction) * movementSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_DOWN) {
-            velocity.x -= cosf(direction) * movementSpeed * delta;
-            velocity.y -= sinf(direction) * movementSpeed * delta;
+            velocity.x -= cos(direction) * movementSpeed * delta;
+            velocity.y -= sin(direction) * movementSpeed * delta;
         }
         if isKeyDown(SDL_SCANCODE_SPACE) {
             shootMissile();

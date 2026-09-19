@@ -1,3 +1,2 @@
 var name = "asteroids"
 var pkgConfigDependencies = ["sdl3"]
-var libraries = ["m"]

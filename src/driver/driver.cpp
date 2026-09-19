@@ -455,6 +455,10 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         ccArgs.push_back("-framework");
         ccArgs.push_back(flag.c_str());
     }
+    if (!isMSVC) {
+        // The standard library uses the C math library.
+        ccArgs.push_back("-lm");
+    }
 
     if (isMSVC) {
         ccArgs.push_back("-link");

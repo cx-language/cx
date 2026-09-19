@@ -1,5 +1,4 @@
 import "SDL3/SDL.h";
-import "math.h";
 import "stdlib.h";
 
 const maxRotationSpeed = 0.007;
@@ -23,7 +22,7 @@ struct Asteroid {
 
     Asteroid() {
         position = Vector2(randomFloat(0, width), randomFloat(0, height));
-        var direction = randomFloat(-M_PI, M_PI);
+        var direction = randomFloat(-pi, pi);
         var speed = randomFloat(minSpeed, maxSpeed);
         velocity = Vector2(direction) * speed;
         rotation = 0;
@@ -33,7 +32,7 @@ struct Asteroid {
 
         for i in 0..vertices.size() {
             var offset = 1 + randomFloat(-formVariation, formVariation);
-            var angle = float(i) / float(vertices.size()) * M_PI * 2;
+            var angle = float(i) / float(vertices.size()) * pi * 2;
             vertices[i] = Vector2(angle) * (offset * size);
         }
     }
