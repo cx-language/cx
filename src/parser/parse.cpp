@@ -1152,7 +1152,9 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
     auto params = parseParamList(isExtern ? &isVariadic : nullptr);
     if (isExtern) {
         for (const ParamDecl& param : params) {
-            if (param.isPack) ERROR(param.getLocation(), "extern functions cannot have variadic parameters, use '...' instead");
+            if (param.isPack)
+                ERROR(param.getLocation(), "variadic parameter '" << param.type << "... " << param.getName()
+                                                                  << "' is not allowed in extern functions, use a bare '...' (C-style varargs) instead");
         }
     }
     FunctionProto proto(name.str(), std::move(params), returnType, isVariadic, isExtern);
