@@ -140,6 +140,7 @@ struct ParamDecl : VariableDecl, Movable {
     Location location;
     bool isPublic;
     bool isPack = false;
+    Expr* defaultValue = nullptr;
 };
 
 std::vector<ParamDecl> instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs);

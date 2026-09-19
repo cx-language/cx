@@ -2,20 +2,20 @@
 int main() {
     Foo* foo = alloca Foo
     Bar* bar = alloca Bar
-    void _0 = call _EN4main3Foo4initE(Foo* foo)
-    void _1 = call _EN4main3Bar4initE3int(Bar* bar, int -1)
+    void _0 = call _EN4main3Foo4initE3int(Foo* foo, int 42)
+    void _1 = call _EN4main3Bar4initE3int3int(Bar* bar, int -1, int 42)
     return int 0
 }
 
-void _EN4main3Foo4initE(Foo* this) {
-    int* i = getelementptr this, 0
-    store int 42 to i
+void _EN4main3Foo4initE3int(Foo* this, int i) {
+    int* i_0 = getelementptr this, 0
+    store i to i_0
     return void
 }
 
-void _EN4main3Bar4initE3int(Bar* this, int j) {
-    int* i = getelementptr this, 0
-    store int 42 to i
+void _EN4main3Bar4initE3int3int(Bar* this, int j, int i) {
+    int* i_0 = getelementptr this, 0
+    store i to i_0
     int* j_0 = getelementptr this, 1
     store j to j_0
     return void

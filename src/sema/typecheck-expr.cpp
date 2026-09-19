@@ -730,7 +730,11 @@ static Type replaceUnresolvedGenericParamsWithPlaceholders(Type type, llvm::Arra
 
 std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                             bool returnOnError) {
-    if (call.args.size() != params.size()) return {};
+    if (call.args.size() > params.size()) return {};
+
+    for (size_t i = call.args.size(); i < params.size(); ++i) {
+        if (!params[i].defaultValue) return {};
+    }
 
     std::vector<Type> inferredGenericArgs;
 
@@ -738,7 +742,7 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
         Type genericArg;
         Expr* genericArgValue = nullptr;
 
-        for (auto&& [param, arg] : llvm::zip_first(params, call.args)) {
+        for (auto&& [arg, param] : llvm::zip_first(call.args, params)) {
             Type paramType = param.type;
 
             if (containsGenericParam(paramType, genericParam.getName())) {
@@ -1472,7 +1476,9 @@ Type Typechecker::typecheckCallExpr(CallExpr& expr, Type expectedType) {
 
 ArgumentValidation Typechecker::getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic) {
     if (expr.args.size() < params.size()) {
-        return ArgumentValidation::tooFew();
+        for (size_t i = expr.args.size(); i < params.size(); ++i) {
+            if (!params[i].defaultValue) return ArgumentValidation::tooFew();
+        }
     } else if (!isVariadic && expr.args.size() > params.size()) {
         return ArgumentValidation::tooMany();
     }
@@ -1551,10 +1557,29 @@ void Typechecker::validateAndConvertArguments(CallExpr& expr, llvm::ArrayRef<Par
             if (!arg) continue;
             if (param) arg->value = convert(arg->value, param->type, true);
         }
+        for (size_t i = expr.args.size(); i < params.size(); ++i) {
+            const ParamDecl& param = params[i];
+            ASSERT(param.defaultValue);
+            Expr* defaultArg = param.defaultValue->instantiate({});
+            if (!defaultArg->hasType()) typecheckExpr(*defaultArg, false, param.type);
+            if (Expr* converted = convert(defaultArg, param.type, true)) {
+                defaultArg = converted;
+            } else {
+                ERROR(expr.location, "cannot assign '" << defaultArg->type << "' to '" << param.type << "'");
+            }
+            expr.args.emplace_back(std::string(param.getName()), defaultArg, expr.location);
+        }
         break;
-    case ArgumentValidation::TooFew:
-        REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << (isVariadic ? "at least " : "") << params.size());
+    case ArgumentValidation::TooFew: {
+        size_t requiredParamCount = 0;
+        for (auto& param : params) {
+            if (!param.defaultValue) ++requiredParamCount;
+        }
+        bool hasOptionalParams = requiredParamCount != params.size();
+        REPORT_ERROR(location, "too few arguments to '" << callee << "', expected " << ((isVariadic || hasOptionalParams) ? "at least " : "")
+                                                        << (hasOptionalParams ? requiredParamCount : params.size()));
         break;
+    }
     case ArgumentValidation::TooMany:
         REPORT_ERROR(location, "too many arguments to '" << callee << "', expected " << params.size());
         break;
