@@ -349,6 +349,7 @@ th {
         align-self: start;
         max-height: calc(100vh - 102px);
         overflow: auto;
+        scrollbar-gutter: stable;
         margin: 32px 0 48px;
         padding-right: 8px;
     }
