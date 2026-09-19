@@ -1,0 +1,109 @@
+// RUN: %not %cx -typecheck %s -Wno-unused --error-limit=0 | %FileCheck %s
+
+void takesInt(int i) {}
+
+// CHECK-NOT: {{(warning|error)}}:
+void redundantUnwrap(int? v) {
+    if v {
+        // CHECK: [[@LINE+1]]:18: warning: unwrapping non-optional type 'int' has no effect
+        var x = v!;
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void redundantNullCheck(int? v) {
+    if v {
+        // CHECK: [[@LINE+1]]:14: error: invalid operands 'int' and 'null' to '==' (non-optional type 'int' cannot be null)
+        if v == null {
+        }
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void redundantNegation(int? v) {
+    if v {
+        // CHECK: [[@LINE+1]]:13: error: type 'int' is not convertible to boolean
+        if !v {
+        }
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void useAfterNullAssignment(int? v) {
+    if v {
+        v = null;
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        println("x: ", v);
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void useAfterOptionalAssignment(int? v, int? w) {
+    if v {
+        v = w;
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        println("x: ", v);
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void useAfterBranchAssignment(int? v, bool c) {
+    if v {
+        if c {
+            v = null;
+        }
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        println("x: ", v);
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void inferredVarIsNonOptional(int? v) {
+    if v {
+        var c = v;
+        // CHECK: [[@LINE+1]]:11: error: cannot assign 'null' to 'int'
+        c = null;
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void useAfterLoopAssignment(int? v, bool c) {
+    if v {
+        while c {
+            // CHECK: [[@LINE+1]]:13: error: no matching function 'println(string, int?)'
+            println("x: ", v);
+            v = null;
+        }
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        println("x: ", v);
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void useAfterSwitchAssignment(int? v, int c) {
+    if v {
+        switch c {
+        case 1:
+            v = null;
+        }
+        // CHECK: [[@LINE+1]]:9: error: no matching function 'println(string, int?)'
+        println("x: ", v);
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void useAfterLogicalAnd(int? v, bool y) {
+    var b = v != null && y;
+    // CHECK: [[@LINE+1]]:5: error: no matching function 'println(string, int?)'
+    println("x: ", v);
+}
+
+// CHECK-NOT: {{(warning|error)}}:
+void useInDefer(int? v) {
+    if v {
+        // CHECK: [[@LINE+1]]:15: error: no matching function 'println(string, int?)'
+        defer println("x: ", v);
+    }
+}
+
+// CHECK-NOT: {{(warning|error)}}:

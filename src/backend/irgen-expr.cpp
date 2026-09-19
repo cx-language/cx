@@ -564,6 +564,9 @@ Value* IRGenerator::emitIndexAssignmentExpr(const IndexAssignmentExpr& expr) {
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
+    if (!expr.operand->type.isOptionalType()) {
+        return emitExpr(*expr.operand);
+    }
     return emitOptionalUnwrap(*expr.operand, expr, "assert");
 }
 
@@ -727,9 +730,14 @@ Value* IRGenerator::emitLvalueExpr(const Expr& expr) {
     auto value = emitPlainExpr(expr);
 
     // Handle optionals that have been implicitly unwrapped due to data-flow analysis.
-    if (expr.hasAssignableType() && expr.assignableType.isOptionalType() && !expr.assignableType.getWrappedType().isPointerType()
+    // Pointer-implemented optionals need no access adjustment: the narrowed type is a compile-time view of the same value.
+    if (expr.hasAssignableType() && expr.assignableType.isOptionalType() && !expr.assignableType.getWrappedType().isImplementedAsPointer()
         && expr.type == expr.assignableType.getWrappedType()) {
-        return createGEP(value, optionalValueFieldIndex);
+        if (value->getType()->isPointerType()) {
+            return createGEP(value, optionalValueFieldIndex);
+        }
+        // Function parameters are SSA values, not memory.
+        return createExtractValue(value, optionalValueFieldIndex);
     }
 
     if (value && expr.hasType()) {

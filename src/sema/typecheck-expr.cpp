@@ -34,6 +34,108 @@ void Typechecker::checkLambdaCapture(const VariableDecl& variableDecl, const Var
     }
 }
 
+static VariableDecl* getNarrowableDecl(const VarExpr& varExpr) {
+    auto* decl = varExpr.decl;
+    if (!decl || (decl->kind != DeclKind::VarDecl && decl->kind != DeclKind::ParamDecl)) return nullptr;
+    auto* varDecl = llvm::cast<VariableDecl>(decl);
+    // Globals can be reassigned by any call, so narrowing them without a runtime check is unsound.
+    if (varDecl->isGlobal()) return nullptr;
+    if (!varDecl->type || !varDecl->type.isOptionalType()) return nullptr;
+    return varDecl;
+}
+
+void Typechecker::applyNarrowings(const Expr& condition, bool polarity) {
+    switch (condition.kind) {
+    case ExprKind::VarExpr: {
+        auto* varDecl = getNarrowableDecl(llvm::cast<VarExpr>(condition));
+        if (!varDecl) return;
+        if (polarity) {
+            narrowedTypes[varDecl] = varDecl->type.getWrappedType();
+        } else {
+            narrowedTypes.erase(varDecl);
+        }
+        return;
+    }
+    case ExprKind::BinaryExpr: {
+        auto& binary = llvm::cast<BinaryExpr>(condition);
+        if (binary.op == Token::AndAnd && polarity) {
+            applyNarrowings(binary.getLHS(), true);
+            applyNarrowings(binary.getRHS(), true);
+            return;
+        }
+        if (binary.op == Token::OrOr && !polarity) {
+            applyNarrowings(binary.getLHS(), false);
+            applyNarrowings(binary.getRHS(), false);
+            return;
+        }
+        if (binary.op != Token::Equal && binary.op != Token::NotEqual) return;
+        // Overload resolution may have wrapped the operands in implicit casts (e.g. auto-reference).
+        auto withoutCasts = [](const Expr& expr) {
+            auto* current = &expr;
+            while (auto* cast = llvm::dyn_cast<ImplicitCastExpr>(current))
+                current = cast->operand;
+            return current;
+        };
+        const Expr* lhs = withoutCasts(binary.getLHS());
+        const Expr* rhs = withoutCasts(binary.getRHS());
+        const Expr* operand = nullptr;
+        if (lhs->isNullLiteralExpr() && !rhs->isNullLiteralExpr()) {
+            operand = rhs;
+        } else if (rhs->isNullLiteralExpr() && !lhs->isNullLiteralExpr()) {
+            operand = lhs;
+        } else {
+            return;
+        }
+        auto* varExpr = llvm::dyn_cast<VarExpr>(operand);
+        if (!varExpr) return;
+        auto* varDecl = getNarrowableDecl(*varExpr);
+        if (!varDecl) return;
+        if ((binary.op == Token::NotEqual) == polarity) {
+            narrowedTypes[varDecl] = varDecl->type.getWrappedType();
+        } else {
+            narrowedTypes.erase(varDecl);
+        }
+        return;
+    }
+    case ExprKind::UnaryExpr: {
+        auto& unary = llvm::cast<UnaryExpr>(condition);
+        if (unary.op == Token::Not) {
+            applyNarrowings(unary.getOperand(), !polarity);
+        }
+        return;
+    }
+    default:
+        return;
+    }
+}
+
+void Typechecker::intersectNarrowings(const NarrowMap& other) {
+    for (auto it = narrowedTypes.begin(); it != narrowedTypes.end();) {
+        auto current = it++;
+        if (!other.contains(current->first)) {
+            narrowedTypes.erase(current);
+        }
+    }
+}
+
+void Typechecker::dropNarrowingsForNames(const llvm::StringSet<>& names) {
+    if (names.empty() || narrowedTypes.empty()) return;
+    for (auto it = narrowedTypes.begin(); it != narrowedTypes.end();) {
+        auto current = it++;
+        if (names.contains(current->first->getName())) {
+            narrowedTypes.erase(current);
+        }
+    }
+}
+
+// Restores the optional type of a narrowed expression. Only used where the address
+// (not the value) is consumed: `&x` denotes the whole optional.
+static void unnarrow(Expr& expr) {
+    if (expr.hasAssignableType() && expr.assignableType.isOptionalType() && expr.type == expr.assignableType.getWrappedType()) {
+        expr.type = expr.assignableType;
+    }
+}
+
 Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     auto* decl = findDecl(expr.identifier, expr.location);
     checkHasAccess(*decl, expr.location, AccessLevel::None);
@@ -47,9 +149,15 @@ Type Typechecker::typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly) {
     switch (decl->kind) {
     case DeclKind::VarDecl:
         if (!useIsWriteOnly) checkNotMoved(*decl, expr);
+        if (!useIsWriteOnly) {
+            if (auto narrowed = narrowedTypes.find(decl); narrowed != narrowedTypes.end()) return narrowed->second;
+        }
         return llvm::cast<VarDecl>(decl)->type;
     case DeclKind::ParamDecl:
         if (!useIsWriteOnly) checkNotMoved(*decl, expr);
+        if (!useIsWriteOnly) {
+            if (auto narrowed = narrowedTypes.find(decl); narrowed != narrowedTypes.end()) return narrowed->second;
+        }
         return llvm::cast<ParamDecl>(decl)->type;
     case DeclKind::FunctionDecl:
     case DeclKind::MethodDecl:
@@ -173,6 +281,8 @@ Type Typechecker::typecheckUnaryExpr(UnaryExpr& expr) {
         ERROR(expr.location, "cannot dereference non-pointer type '" << operandType << "'");
 
     case Token::And: // Address-of operation
+        unnarrow(expr.getOperand());
+        operandType = expr.getOperand().type;
         // Allow forming mutable pointers to constants. This is safe because constants will be inlined at the usage site.
         if (expr.isConstant()) {
             operandType = operandType.withMutability(Mutability::Mutable);
@@ -256,6 +366,22 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
         return typecheckBinaryExpr(expr);
     }
 
+    if (op == Token::AndAnd || op == Token::OrOr) {
+        Type leftType = typecheckExpr(expr.getLHS());
+        auto outerNarrowings = narrowedTypes;
+        applyNarrowings(expr.getLHS(), op == Token::AndAnd);
+        Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
+        // The right side may not execute (short-circuit), so only narrowings valid on both paths survive.
+        intersectNarrowings(outerNarrowings);
+        if (!isBuiltinOp(op, leftType, rightType)) {
+            return typecheckCallExpr(expr);
+        }
+        if (leftType.isBool() && rightType.isBool()) {
+            return Type::getBool();
+        }
+        throwInvalidOperandsToBinaryExpr(expr, op);
+    }
+
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
 
@@ -295,13 +421,6 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
 
     if (!isBuiltinOp(op, leftType, rightType)) {
         return typecheckCallExpr(expr);
-    }
-
-    if (op == Token::AndAnd || op == Token::OrOr) {
-        if (leftType.isBool() && rightType.isBool()) {
-            return Type::getBool();
-        }
-        throwInvalidOperandsToBinaryExpr(expr, op);
     }
 
     if (leftType.removeOptional().isPointerType() && rightType.removeOptional().isPointerType()) {
@@ -349,6 +468,14 @@ void Typechecker::typecheckAssignment(BinaryExpr& expr, Location location) {
         rhs = converted;
     } else {
         ERROR(location, "cannot assign '" << rhsType << "' to '" << lhsType << "'");
+    }
+
+    // Assigning a possibly-null value invalidates narrowing; assigning a non-null value preserves it.
+    if (auto* varExpr = llvm::dyn_cast<VarExpr>(lhs)) {
+        auto narrowed = narrowedTypes.find(varExpr->decl);
+        if (narrowed != narrowedTypes.end() && (rhsType.isOptionalType() || rhsType.isNull())) {
+            narrowedTypes.erase(narrowed);
+        }
     }
 
     if (!lhsType.isMutable()) {
@@ -442,7 +569,13 @@ Expr* Typechecker::convert(Expr* expr, Type type, bool allowPointerToTemporary) 
     std::optional<ImplicitCastExpr::Kind> implicitCastKind;
     if (Type convertedType = isImplicitlyConvertible(expr, expr->type, type, allowPointerToTemporary, &implicitCastKind)) {
         if (implicitCastKind) {
-            return makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
+            auto* cast = makeAST<ImplicitCastExpr>(expr, convertedType, *implicitCastKind);
+            if (*implicitCastKind == ImplicitCastExpr::AutoReference && expr->hasAssignableType() && expr->assignableType.isOptionalType()
+                && !expr->assignableType.getWrappedType().isImplementedAsPointer() && expr->type == expr->assignableType.getWrappedType()) {
+                // Preserve narrowing through the reference: the backend derives the payload address from the divergence.
+                cast->assignableType = expr->assignableType;
+            }
+            return cast;
         } else if (convertedType != expr->type) {
             expr->type = convertedType;
 
@@ -1779,7 +1912,8 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
 Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
     Type type = typecheckExpr(*expr.operand);
     if (!type.isOptionalType()) {
-        ERROR(expr.location, "cannot unwrap non-optional type '" << type << "'");
+        WARN(expr.location, "unwrapping non-optional type '" << type << "' has no effect");
+        return type;
     }
     return type.getWrappedType();
 }
@@ -1803,8 +1937,14 @@ Type Typechecker::typecheckLambdaExpr(LambdaExpr& expr, Type expectedType) {
 Type Typechecker::typecheckIfExpr(IfExpr& expr) {
     auto conditionType = typecheckExpr(*expr.condition);
     typecheckImplicitlyBoolConvertibleExpr(conditionType, expr.condition->location);
+    auto outerNarrowings = narrowedTypes;
+    applyNarrowings(*expr.condition, true);
     auto thenType = typecheckExpr(*expr.thenExpr);
+    auto thenNarrowings = narrowedTypes;
+    narrowedTypes = outerNarrowings;
+    applyNarrowings(*expr.condition, false);
     auto elseType = typecheckExpr(*expr.elseExpr);
+    intersectNarrowings(thenNarrowings);
 
     if (auto convertedElse = convert(expr.elseExpr, thenType)) {
         expr.elseExpr = convertedElse;
@@ -1894,6 +2034,13 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
 
     expr.type = type;
     expr.assignableType = type;
+
+    if (expr.kind == ExprKind::VarExpr) {
+        auto* decl = llvm::cast<VarExpr>(expr).decl;
+        if (decl && narrowedTypes.contains(decl)) {
+            expr.assignableType = llvm::cast<VariableDecl>(decl)->type;
+        }
+    }
 
     if (!type.isUndefined()) { // TODO: Don't special-case the 'undefined' type.
         // Expression types derive from already-checked declarations, so rechecking their

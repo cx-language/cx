@@ -1,0 +1,150 @@
+// RUN: check_exit_status 0 %cx run -Werror -Wno-unused %s
+// RUN: %cx run -Werror -Wno-unused %s | %FileCheck -match-full-lines %s
+
+int? findAge(string name) {
+    if name == "ada" return 36;
+    return null;
+}
+
+void takesInt(int i) {
+    assert(i == 36);
+}
+
+void takesIntParam(int? p) {
+    if p {
+        takesInt(p);
+        assert(p == 36);
+    }
+}
+
+struct S {
+    int x;
+}
+
+void takesS(S s) {
+    assert(s.x == 5);
+}
+
+void guardTest(int? v) {
+    if v == null return;
+    takesInt(v);
+}
+
+void breakTest(int? v) {
+    while true {
+        if v == null break;
+        takesInt(v);
+        break;
+    }
+}
+
+void continueTest() {
+    var count = 0;
+    for i in 0..3 {
+        int? v = i == 1 ? null : findAge("ada");
+        if v == null continue;
+        takesInt(v);
+        count += 1;
+    }
+    assert(count == 2);
+}
+
+void whileTest() {
+    int? n = 3;
+    var sum = 0;
+    while n != null {
+        sum += n;
+        if n == 0 {
+            n = null;
+        } else {
+            n = n - 1;
+        }
+    }
+    assert(sum == 6);
+}
+
+void structTest() {
+    S? s = S(x = 5);
+    if s {
+        assert(s.x == 5);
+        takesS(s);
+    }
+}
+
+void switchTest(int? v) {
+    if v {
+        switch v {
+        case 36:
+            println("thirtysix");
+        default:
+            assert(false);
+        }
+    }
+}
+
+void addrTest() {
+    int? z = 0;
+    if z {
+        int?* q = &z;
+        assert(*q != null);
+        assert(*q == 0);
+    }
+}
+
+void main() {
+    int? age = findAge("ada");
+
+    if age {
+        // CHECK: ada is 36
+        println("ada is ", age);
+        assert(age == 36);
+        assert(age + 1 == 37);
+        takesInt(age);
+        var copy = age;
+        copy += 1;
+        assert(copy == 37);
+    }
+
+    if age != null {
+        takesInt(age);
+    }
+
+    if age == null {
+    } else {
+        // CHECK: age is 36
+        println("age is ", age);
+    }
+
+    if !age {
+    } else {
+        takesInt(age);
+    }
+
+    if !(age == null) {
+        takesInt(age);
+    }
+
+    if age != null && age > 0 {
+        takesInt(age);
+    }
+
+    if age == null || age == 36 {
+        // CHECK: 36 or null
+        println("36 or null");
+    }
+
+    var picked = age != null ? age : 0;
+    assert(picked == 36);
+
+    guardTest(findAge("ada"));
+    guardTest(findAge("nobody"));
+    breakTest(findAge("ada"));
+    breakTest(findAge("nobody"));
+    continueTest();
+    whileTest();
+    structTest();
+    // CHECK: thirtysix
+    switchTest(findAge("ada"));
+    addrTest();
+    takesIntParam(findAge("ada"));
+}
