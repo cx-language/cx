@@ -51,4 +51,19 @@
     window.addEventListener("scroll", fitSidebar, {passive: true});
     window.addEventListener("resize", fitSidebar);
     window.addEventListener("DOMContentLoaded", fitSidebar);
+
+    // Keep the sidebar's scroll position across page navigation;
+    // the page itself still starts at the top. Restored again on
+    // load in case the stylesheet wasn't ready at parse time.
+    var sideNav = document.querySelector(".side-nav");
+    function restoreSidebarScroll() {
+        try {
+            if (sessionStorage.sideNavScroll) sideNav.scrollTop = +sessionStorage.sideNavScroll;
+        } catch (e) {}
+    }
+    restoreSidebarScroll();
+    window.addEventListener("load", restoreSidebarScroll);
+    sideNav.addEventListener("scroll", function() {
+        try { sessionStorage.sideNavScroll = sideNav.scrollTop; } catch (e) {}
+    }, {passive: true});
 </script>
