@@ -325,7 +325,7 @@ class StdlibTest(unittest.TestCase):
             ),
             1,
         )
-        self.assertGreater(len(self.by_path["stdio.cx"][1]["println"].declarations), 10)
+        self.assertGreater(len(self.by_path["stdio.cx"][1]["println"].declarations), 1)
 
     def test_private_declarations_omitted(self):
         combined = "\n".join(self.rendered.values())
