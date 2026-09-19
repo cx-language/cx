@@ -19,8 +19,8 @@ void main() {
         println("foo is non-null"); // this is not executed because foo is null
     }
 
-    // This should warn about foo being potentially null, but does currently not due to a bug.
-    // This will also abort at runtime if foo is null.
+    // Uncommenting the following line would warn about foo being potentially null.
+    // It would also abort at runtime since foo is null here.
     // takeInt(foo);
 
     if foo {

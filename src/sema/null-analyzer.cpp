@@ -1,6 +1,7 @@
 #include "null-analyzer.h"
 #include "../ast/decl.h"
 #include "../backend/ir.h"
+#include "../backend/irgen.h"
 
 using namespace cx;
 
@@ -36,6 +37,8 @@ Nullability NullAnalyzer::analyzeNullability_recursive(Value* nullableValue, Ins
                 return analyzeNullability_recursive(cast->value, cast);
             } else if (auto gep = llvm::dyn_cast<ConstGEPInst>(nullableValue)) {
                 return analyzeNullability_recursive(gep->pointer, gep, gep->index);
+            } else if (auto extract = llvm::dyn_cast<ExtractInst>(nullableValue)) {
+                return analyzeNullability_recursive(extract->aggregate, extract);
             }
         }
 
@@ -104,6 +107,26 @@ Nullability NullAnalyzer::analyzeNullability_fromPredecessor(Value* nullableValu
                 return Nullability::IndefiniteNullability;
             }
         }
+
+        // Non-pointer optionals branch directly on the extracted hasValue flag, e.g. `if (opt)`.
+        auto* condition = condBr->condition;
+        bool negated = false;
+
+        if (auto unary = llvm::dyn_cast<UnaryInst>(condition)) {
+            if (unary->op == Token::Not) {
+                condition = unary->operand;
+                negated = true;
+            }
+        }
+
+        if (auto extract = llvm::dyn_cast<ExtractInst>(condition)) {
+            if (extract->index == IRGenerator::optionalHasValueFieldIndex
+                && (extract->aggregate == nullableValue || extract->aggregate->loads(nullableValue, gepIndex))) {
+                if (destination == (negated ? condBr->falseBlock : condBr->trueBlock)) return Nullability::DefinitelyNotNull;
+                if (destination == (negated ? condBr->trueBlock : condBr->falseBlock)) return Nullability::DefinitelyNullable;
+                return Nullability::IndefiniteNullability;
+            }
+        }
     }
 
     return analyzeNullability_recursive(nullableValue, lastInst, gepIndex);
@@ -138,7 +161,11 @@ void NullAnalyzer::analyze(Value* value) {
     }
     case ValueKind::BinaryInst: {
         auto binary = llvm::cast<BinaryInst>(value);
-        if (llvm::isa<ConstantNull>(binary->right) && !llvm::StringRef(binary->name).starts_with("__implicit_unwrap")) {
+        if (llvm::StringRef(binary->name).starts_with("__implicit_unwrap")) {
+            if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNullable) {
+                WARN(binary->getExpr()->location, "value may be null; unwrap it with a postfix '!' to silence this warning");
+            }
+        } else if (llvm::isa<ConstantNull>(binary->right)) {
             ASSERT(binary->op == Token::Equal || binary->op == Token::NotEqual);
             if (binary->getExpr() && analyzeNullability(binary->left, binary) == Nullability::DefinitelyNotNull) {
                 WARN(binary->getExpr()->location, "value cannot be null here; null check can be removed");

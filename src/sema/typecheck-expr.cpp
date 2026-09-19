@@ -564,7 +564,9 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
         return target;
     }
 
-    if (source.isOptionalType() && source.getWrappedType() == target && expr && !expr->isCallExpr()) {
+    // Calls returning optionals implicitly unwrap like any other expression; the null
+    // analyzer warns unless the unwrapped value is proven non-null at the use site.
+    if (source.isOptionalType() && source.getWrappedType() == target && expr) {
         if (implicitCastKind) *implicitCastKind = ImplicitCastExpr::OptionalUnwrap;
         return target;
     }
