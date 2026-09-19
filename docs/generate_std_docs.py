@@ -41,10 +41,11 @@ VARIANT_RE = re.compile(r"(\w+),?$")
 
 
 class Declaration:
-    def __init__(self, signature, doc, source):
+    def __init__(self, signature, doc, source, line):
         self.signature = signature
         self.doc = doc
         self.source = source
+        self.line = line
 
 
 class Group:
@@ -54,9 +55,9 @@ class Group:
         self.name = name
         self.declarations = []
 
-    def add(self, signature, doc, source):
+    def add(self, signature, doc, source, line):
         if signature not in [d.signature for d in self.declarations]:
-            self.declarations.append(Declaration(signature, doc, source))
+            self.declarations.append(Declaration(signature, doc, source, line))
 
     @property
     def sources(self):
@@ -68,16 +69,17 @@ class Group:
 
 
 class Type:
-    def __init__(self, kind, name, header, doc, source):
+    def __init__(self, kind, name, header, doc, source, line):
         self.kind = kind
         self.name = name
         self.header = header
         self.doc = doc
         self.source = source
+        self.line = line
         self.members = {}
 
-    def add_member(self, name, signature, doc, source):
-        self.members.setdefault(name, Group(name)).add(signature, doc, source)
+    def add_member(self, name, signature, doc, source, line):
+        self.members.setdefault(name, Group(name)).add(signature, doc, source, line)
 
 
 def member_name(signature):
@@ -114,18 +116,18 @@ def parse_file(path):
     depth = 0
     doc = []
 
-    def add_free(signature, doc_lines):
+    def add_free(signature, doc_lines, lineno):
         if signature.startswith("const "):
             match = CONST_RE.match(signature)
             if match:
-                constants.append((match.group(1), Declaration(signature, doc_lines, path.name)))
+                constants.append((match.group(1), Declaration(signature, doc_lines, path.name, lineno)))
             return
         name = member_name(signature)
         if name is None:
             return
-        functions.setdefault(name, Group(name)).add(signature, doc_lines, path.name)
+        functions.setdefault(name, Group(name)).add(signature, doc_lines, path.name, lineno)
 
-    for line in path.read_text().splitlines():
+    for lineno, line in enumerate(path.read_text().splitlines(), start=1):
         stripped = line.strip()
         if stripped.startswith("///"):
             doc.append(stripped[3:].removeprefix(" ").rstrip())
@@ -142,25 +144,25 @@ def parse_file(path):
             kind = match.group(1)
             header = code.split("{", 1)[0].rstrip()
             name = header.split(None, 1)[1].split("<", 1)[0].split(":", 1)[0].strip()
-            current = Type(kind, name, header, doc, path.name)
+            current = Type(kind, name, header, doc, path.name, lineno)
             types.append(current)
             doc = []
         elif depth == 0 and current is None:
             if code.startswith(("extern", "const", "typealias")) or "(" in code:
-                add_free(code.split("{", 1)[0].rstrip(), doc)
+                add_free(code.split("{", 1)[0].rstrip(), doc, lineno)
             doc = []
         elif depth == 1 and current is not None and "(" in code:
             signature = code.split("{", 1)[0].rstrip()
             if (name := member_name(signature)) is not None:
-                current.add_member(name, signature, doc, path.name)
+                current.add_member(name, signature, doc, path.name, lineno)
             doc = []
         elif depth == 1 and current is not None and code.endswith(";"):
             if (name := member_name(code)) is not None:
-                current.add_member(name, code, doc, path.name)
+                current.add_member(name, code, doc, path.name, lineno)
             doc = []
         elif depth == 1 and current is not None and current.kind == "enum":
             if (match := VARIANT_RE.match(code)) is not None:
-                current.add_member(match.group(1), match.group(1), doc, path.name)
+                current.add_member(match.group(1), match.group(1), doc, path.name, lineno)
             doc = []
         depth += code.count("{") - code.count("}")
         if depth == 0:
@@ -225,36 +227,53 @@ def heading_text(text):
     return re.sub(r"([\\<>\[\]*_])", r"\\\1", text)
 
 
+def source_url(relpath, line=None):
+    url = f"{SOURCE_URL}/{relpath}"
+    return f"{url}#L{line}" if line is not None else url
+
+
+def heading_link(text, url):
+    return f"[{text}]({url}){{target=\"_blank\"}}"
+
+
 def render_file_page(relpath, types, functions, constants, conditional):
     types = sorted(types, key=lambda t: (t.name.lower(), t.name))
     function_names = sorted(functions, key=by_name)
     constants = sorted(constants, key=lambda c: c[0])
 
-    out = [
-        f"# {display_name(relpath)}",
-        "",
-        f"Auto-generated from [{relpath}]({SOURCE_URL}/{relpath}).",
-        "",
-    ]
+    out = [f"# {heading_link(display_name(relpath), source_url(relpath))}", ""]
     if conditional:
         out += ["*Note: parts of this file are platform-conditional (`#if`).*", ""]
 
     for entry in types:
-        out.append(f"## {heading_text(entry.header)} {{#type-{entry.name}}}")
+        out.append(
+            f"## {heading_link(heading_text(entry.header), source_url(relpath, entry.line))}"
+            f" {{#type-{entry.name}}}"
+        )
         out.append("")
         render_doc(entry.doc, out)
         for name in sorted(entry.members, key=by_name):
-            out.append(f"### {heading_text(name)} {{#{entry.name}-{slug(name)}}}")
+            line = entry.members[name].declarations[0].line
+            out.append(
+                f"### {heading_link(heading_text(name), source_url(relpath, line))}"
+                f" {{#{entry.name}-{slug(name)}}}"
+            )
             out.append("")
             render_group(entry.members[name], out)
 
     for name in function_names:
-        out.append(f"## {heading_text(name)} {{#fn-{slug(name)}}}")
+        line = functions[name].declarations[0].line
+        out.append(
+            f"## {heading_link(heading_text(name), source_url(relpath, line))} {{#fn-{slug(name)}}}"
+        )
         out.append("")
         render_group(functions[name], out)
 
     for name, declaration in constants:
-        out.append(f"## {heading_text(name)} {{#const-{name}}}")
+        out.append(
+            f"## {heading_link(heading_text(name), source_url(relpath, declaration.line))}"
+            f" {{#const-{name}}}"
+        )
         out.append("")
         render_signature(declaration.signature, out)
         render_doc(declaration.doc, out)

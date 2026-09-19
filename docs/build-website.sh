@@ -74,8 +74,8 @@ for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md 
     if [ "$relpath" = "index" ]; then
         title="C* Programming Language"
     else
-        # The first '# ' heading is the section name.
-        title="C* - $(sed -n 's/^# //p' "$file" | head -n 1)"
+        # The first '# ' heading is the section name (unwrap links: '# [List](...)' -> 'List').
+        title="C* - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
     fi
 
     mkdir -p "build/$(dirname "$relpath")"

@@ -113,15 +113,27 @@ class FixtureTest(unittest.TestCase):
         cls.directory.cleanup()
 
     def test_page_title_and_source(self):
-        self.assertIn("# fixture\n", self.markdown)
-        self.assertIn("Auto-generated from [fixture.cx]", self.markdown)
+        self.assertIn(
+            "# [fixture](https://github.com/emillaine/cx/blob/main/std/fixture.cx)"
+            '{target="_blank"}\n',
+            self.markdown,
+        )
+        self.assertNotIn("Auto-generated from", self.markdown)
 
     def test_type_header_and_doc(self):
-        self.assertIn("## struct Widget: Copyable {#type-Widget}", self.markdown)
+        self.assertIn(
+            "## [struct Widget: Copyable](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L2)"
+            '{target="_blank"} {#type-Widget}',
+            self.markdown,
+        )
         self.assertIn("A widget.", self.markdown)
 
     def test_members(self):
-        self.assertIn("### size {#Widget-size}", self.markdown)
+        self.assertIn(
+            "### [size](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L3)"
+            '{target="_blank"} {#Widget-size}',
+            self.markdown,
+        )
         self.assertIn(fenced("int size()"), self.markdown)
         self.assertIn("Returns the size.", self.markdown)
         self.assertIn(fenced("int size;"), self.markdown)
@@ -137,16 +149,33 @@ class FixtureTest(unittest.TestCase):
         self.assertNotIn("Section marker", self.markdown)
 
     def test_operator_slug(self):
-        self.assertIn("## operator== {#fn-operator-eq}", self.markdown)
+        self.assertIn(
+            "## [operator==](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L28)"
+            '{target="_blank"} {#fn-operator-eq}',
+            self.markdown,
+        )
 
     def test_interface_keeps_semicolon(self):
         self.assertIn(fenced("void run();"), self.markdown)
 
     def test_enum_variants(self):
-        self.assertIn("### Red {#Color-Red}", self.markdown)
-        self.assertIn("### Green {#Color-Green}", self.markdown)
+        self.assertIn(
+            "### [Red](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L39)"
+            '{target="_blank"} {#Color-Red}',
+            self.markdown,
+        )
+        self.assertIn(
+            "### [Green](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L40)"
+            '{target="_blank"} {#Color-Green}',
+            self.markdown,
+        )
 
     def test_extern_and_const(self):
+        self.assertIn(
+            "## [answer](https://github.com/emillaine/cx/blob/main/std/fixture.cx#L45)"
+            '{target="_blank"} {#const-answer}',
+            self.markdown,
+        )
         self.assertIn(fenced("extern int puts(const char* str);"), self.markdown)
         self.assertIn(fenced("const int answer = 42;"), self.markdown)
 
@@ -219,11 +248,12 @@ class StdlibTest(unittest.TestCase):
 
     def test_known_entries(self):
         page = self.rendered["List.cx"]
+        base = "https://github.com/emillaine/cx/blob/main/std/List.cx"
         for snippet in [
-            "# List",
-            "## struct List\\<Element\\> {#type-List}",
-            "### push {#List-push}",
-            "### operator\\[\\] {#List-operator-index}",
+            f'# [List]({base}){{target="_blank"}}',
+            f'## [struct List\\<Element\\>]({base}#L2){{target="_blank"}} {{#type-List}}',
+            f'### [push]({base}#L108){{target="_blank"}} {{#List-push}}',
+            f'### [operator\\[\\]]({base}#L77){{target="_blank"}} {{#List-operator-index}}',
             fenced("void push(Element element)"),
             "Adds the given element to the end of the list.",
         ]:
@@ -231,7 +261,13 @@ class StdlibTest(unittest.TestCase):
 
     def test_overloads_grouped(self):
         stdio = self.rendered["stdio.cx"]
-        self.assertEqual(stdio.count("## println {#fn-println}"), 1)
+        self.assertEqual(
+            stdio.count(
+                "## [println](https://github.com/emillaine/cx/blob/main/std/stdio.cx#L2)"
+                '{target="_blank"} {#fn-println}'
+            ),
+            1,
+        )
         self.assertGreater(len(self.by_path["stdio.cx"][1]["println"].declarations), 10)
 
     def test_private_declarations_omitted(self):
@@ -266,7 +302,7 @@ class StagingTest(unittest.TestCase):
             toc = (out / "toc.html").read_text()
         self.assertIn("# Standard library reference", index)
         self.assertIn("- [fixture.cx](./std/fixture): ", index)
-        self.assertIn("## struct Widget: Copyable {#type-Widget}", page)
+        self.assertIn("## [struct Widget: Copyable]", page)
         self.assertIn('<li><a href="./std/fixture">fixture</a></li>', toc)
         self.assertNotIn("<!--STD-PAGES-->", toc)
 
