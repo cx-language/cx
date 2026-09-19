@@ -57,7 +57,7 @@ body {
     padding: 0 24px;
     box-sizing: content-box;
     font-family: var(--sans);
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.65;
     display: grid;
     grid-column-gap: 48px;
