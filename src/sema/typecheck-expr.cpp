@@ -1869,7 +1869,9 @@ Type Typechecker::typecheckExpr(Expr& expr, bool useIsWriteOnly, Type expectedTy
     expr.assignableType = type;
 
     if (!type.isUndefined()) { // TODO: Don't special-case the 'undefined' type.
-        typecheckType(type, AccessLevel::None);
+        // Expression types derive from already-checked declarations, so rechecking their
+        // generic arguments would only duplicate warnings (e.g. inside generic method bodies).
+        typecheckType(type, AccessLevel::None, /*recheckGenericArgs=*/false);
     }
 
     return expr.type;

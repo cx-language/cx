@@ -34,9 +34,11 @@ void m(A* r) {
     a = A();
 }
 
-void o(A*? a) {} // TODO: Here should be a warning
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.cx:[[@LINE+1]]:8: warning: using private type 'A' in public declaration
+void o(A*? a) {}
 
-A*? p() { // TODO: Here should be a warning
+// CHECK-PRIVATE-IN-PUBLIC-DECL: a.cx:[[@LINE+1]]:1: warning: using private type 'A' in public declaration
+A*? p() {
     return null;
 }
 
