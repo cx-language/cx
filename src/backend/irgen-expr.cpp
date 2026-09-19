@@ -589,8 +589,7 @@ Value* IRGenerator::emitTupleElementAccess(const MemberExpr& expr) {
 Value* IRGenerator::emitIndexedAccess(const Expr& base, const Expr& index) {
     auto* value = emitLvalueExpr(base);
 
-    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType()
-        && value->getType()->getPointee()->equals(getIRType(base.type))) {
+    if (value->getType()->isPointerType() && value->getType()->getPointee()->isPointerType() && value->getType()->getPointee()->equals(getIRType(base.type))) {
         value = createLoad(value);
     }
 
