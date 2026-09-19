@@ -1926,7 +1926,7 @@ std::vector<SemanticToken> semanticTokensIn(Module* mainModule, const std::strin
             }
         }
         lines.push_back(current);
-        SemanticCollector collector{filePath, lines, tokens};
+        SemanticCollector collector{filePath, lines, tokens, {}};
         for (auto& sourceFile : mainModule->sourceFiles) {
             for (auto* decl : sourceFile.topLevelDecls)
                 collector.visitDecl(decl);

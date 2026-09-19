@@ -11,8 +11,6 @@ namespace cx {
 
 struct PackageManifest {
     struct Dependency {
-        Dependency(std::string&& packageIdentifier, std::string&& packageVersion)
-        : packageIdentifier(std::move(packageIdentifier)), packageVersion(std::move(packageVersion)) {}
         std::string getGitRepositoryUrl() const;
         std::string getFileSystemPath() const;
 

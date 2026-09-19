@@ -156,8 +156,6 @@ struct GenericParamDecl : Decl {
 };
 
 struct FunctionProto {
-    FunctionProto(std::string&& name, std::vector<ParamDecl>&& params, Type returnType, bool isVarArg, bool isExtern)
-    : name(std::move(name)), params(std::move(params)), returnType(returnType), varArg(isVarArg), external(isExtern) {}
     FunctionProto instantiate(const llvm::StringMap<Type>& genericArgs) const;
 
     std::string name;

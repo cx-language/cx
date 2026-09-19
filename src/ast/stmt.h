@@ -88,8 +88,6 @@ struct IfStmt : Stmt {
 };
 
 struct SwitchCase {
-    SwitchCase(Expr* value, VarDecl* associatedValue, std::vector<Stmt*>&& stmts) : value(value), associatedValue(associatedValue), stmts(std::move(stmts)) {}
-
     Expr* value;
     VarDecl* associatedValue;
     std::vector<Stmt*> stmts;
