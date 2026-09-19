@@ -16,15 +16,18 @@
 // Memory is deliberately leaked (modules, AST nodes, interned types): the OS
 // reclaims it on process exit, just like a normal `cx` invocation.
 
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 #pragma warning(push, 0)
 #include <llvm/ADT/StringMap.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/Support/JSON.h>
+#include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 #include "../ast/location.h"
 #include "../support/utility.h"
-#include "json.h"
 
 namespace cx {
 struct Decl;
@@ -33,6 +36,67 @@ struct Module;
 } // namespace cx
 
 namespace cx::lsp {
+
+// JSON plumbing for queries and LSP messages, on top of LLVM's JSON parser.
+// Values are built with JsonObject/JsonArray and read back through the
+// null-safe findJson/getJson* helpers, which yield nullptr/fallbacks for
+// missing keys and mistyped values instead of crashing on malformed input.
+using JsonValue = llvm::json::Value;
+using JsonObject = llvm::json::Object;
+using JsonArray = llvm::json::Array;
+
+struct JsonParseError : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
+/// Parses one JSON document. Throws JsonParseError on invalid input.
+inline JsonValue parseJson(llvm::StringRef text) {
+    auto parsed = llvm::json::parse(text);
+    if (parsed) return std::move(*parsed);
+    throw JsonParseError("JSON parse error: " + llvm::toString(parsed.takeError()));
+}
+
+/// Serializes a JSON value in compact form.
+inline std::string serializeJson(const JsonValue& value) {
+    std::string out;
+    llvm::raw_string_ostream stream(out);
+    stream << value;
+    stream.flush();
+    return out;
+}
+
+/// Returns the named member, or nullptr if `object` isn't an object or has no such member.
+inline const JsonValue* findJson(const JsonValue& object, llvm::StringRef key) {
+    if (auto* obj = object.getAsObject()) return obj->get(key);
+    return nullptr;
+}
+
+/// Returns the named member if it's an array, nullptr otherwise.
+inline const JsonArray* findJsonArray(const JsonValue& object, llvm::StringRef key) {
+    if (auto* obj = object.getAsObject()) return obj->getArray(key);
+    return nullptr;
+}
+
+inline std::string getJsonString(const JsonValue& object, llvm::StringRef key, const std::string& fallback = "") {
+    if (auto* obj = object.getAsObject()) {
+        if (auto value = obj->getString(key)) return value->str();
+    }
+    return fallback;
+}
+
+inline long long getJsonInt(const JsonValue& object, llvm::StringRef key, long long fallback = 0) {
+    if (auto* obj = object.getAsObject()) {
+        if (auto value = obj->getInteger(key)) return *value;
+    }
+    return fallback;
+}
+
+inline bool getJsonBool(const JsonValue& object, llvm::StringRef key, bool fallback = false) {
+    if (auto* obj = object.getAsObject()) {
+        if (auto value = obj->getBoolean(key)) return *value;
+    }
+    return fallback;
+}
 
 struct LspPosition {
     int line = 0; // 0-based.
