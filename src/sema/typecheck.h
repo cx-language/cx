@@ -4,8 +4,10 @@
 #include <string>
 #include <vector>
 #pragma warning(push, 0)
+#include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/ADT/StringMap.h>
+#include <llvm/ADT/StringSet.h>
 #include <llvm/Support/ErrorOr.h>
 #pragma warning(pop)
 #include "../ast/decl.h"
@@ -52,6 +54,9 @@ struct VariadicGenericArgs {
     std::vector<llvm::StringMap<Type>> packArgs;
     std::vector<Type> cacheKey;
 };
+
+// Variables proven non-null by an enclosing null check, mapped to their unwrapped type.
+using NarrowMap = llvm::DenseMap<Decl*, Type>;
 
 struct Typechecker {
     Typechecker(const CompileOptions& options)
@@ -140,6 +145,10 @@ struct Typechecker {
     void setMoved(Expr* expr, bool isMoved);
     void checkNotMoved(const Decl& decl, const VarExpr& expr);
 
+    void applyNarrowings(const Expr& condition, bool polarity);
+    void intersectNarrowings(const NarrowMap& other);
+    void dropNarrowingsForNames(const llvm::StringSet<>& names);
+
     Module* currentModule;
     SourceFile* currentSourceFile;
     FunctionDecl* currentFunction;
@@ -147,6 +156,7 @@ struct Typechecker {
     std::vector<Stmt*> currentControlStmts;
     llvm::SmallPtrSet<FieldDecl*, 32>* currentInitializedFields;
     llvm::SmallPtrSet<Decl*, 32> movedDecls;
+    NarrowMap narrowedTypes;
     bool isPostProcessing;
     std::vector<Decl*> declsToTypecheck;
     const CompileOptions& options;

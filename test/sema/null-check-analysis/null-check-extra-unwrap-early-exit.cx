@@ -1,10 +1,13 @@
-// RUN: %cx -typecheck %s | %FileCheck %s
+// RUN: %not %cx -typecheck %s -Wno-unused | %FileCheck %s
 
+// CHECK-NOT: {{(warning|error)}}:
 void foo(int*? p) {
     if (p == null) {
         return;
     }
     defer println("foo");
-    // CHECK: [[@LINE+1]]:16: warning: value cannot be null here; null check can be removed
+    // CHECK: [[@LINE+1]]:16: error: cannot unwrap non-optional type 'int*'
     var a = *(p!);
 }
+
+// CHECK-NOT: {{(warning|error)}}:

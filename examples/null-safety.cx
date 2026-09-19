@@ -7,8 +7,7 @@ int? findAge(string name) {
 void main() {
     int? age = findAge("ada");
     if age {
-        int years = age;
-        println("ada is ", years);
+        println("ada is ", age);
     }
     println(findAge("grace")); // null
 }

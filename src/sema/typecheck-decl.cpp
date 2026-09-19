@@ -233,6 +233,7 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
 
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.typechecked) return;
+    llvm::SaveAndRestore saveNarrowings(narrowedTypes, NarrowMap{});
 
     if (decl.hasPack()) {
         ERROR(decl.getPackParam()->getLocation(), "variadic parameter requires a generic function");
