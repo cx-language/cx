@@ -130,15 +130,19 @@ void cx::abort(llvm::StringRef message) {
     exit(1);
 }
 
+static void collectDiagnostic(Location location, const char* severity, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
+    CollectedDiagnostic diagnostic;
+    diagnostic.location = location;
+    diagnostic.severity = severity;
+    diagnostic.message = message.str();
+    diagnostic.notes.assign(notes.begin(), notes.end());
+    diagnosticCollector->push_back(std::move(diagnostic));
+}
+
 void cx::reportError(Location location, llvm::StringRef message, llvm::ArrayRef<Note> notes) {
     errors++;
     if (diagnosticCollector) {
-        CollectedDiagnostic diagnostic;
-        diagnostic.location = location;
-        diagnostic.severity = "error";
-        diagnostic.message = message.str();
-        diagnostic.notes.assign(notes.begin(), notes.end());
-        diagnosticCollector->push_back(std::move(diagnostic));
+        collectDiagnostic(location, "error", message, notes);
         if (diagnosticOptions.errorLimit > 0 && errors > diagnosticOptions.errorLimit) {
             throw CompileError::dependentError();
         }
@@ -171,12 +175,7 @@ void cx::reportWarning(Location location, llvm::StringRef message, llvm::ArrayRe
         reportError(location, message, notes);
     } else {
         if (diagnosticCollector) {
-            CollectedDiagnostic diagnostic;
-            diagnostic.location = location;
-            diagnostic.severity = "warning";
-            diagnostic.message = message.str();
-            diagnostic.notes.assign(notes.begin(), notes.end());
-            diagnosticCollector->push_back(std::move(diagnostic));
+            collectDiagnostic(location, "warning", message, notes);
             return;
         }
         printDiagnostic(location, "warning", llvm::raw_ostream::YELLOW, message);
