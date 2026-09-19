@@ -223,6 +223,10 @@ void Typechecker::typecheckParams(llvm::MutableArrayRef<ParamDecl> params, Acces
 void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     if (decl.typechecked) return;
 
+    if (decl.hasPack()) {
+        ERROR(decl.getPackParam()->getLocation(), "variadic parameter requires a generic function");
+    }
+
     if (decl.isExtern()) {
         Scope scope(&decl, &currentModule->symbolTable);
         llvm::SaveAndRestore setCurrentFunction(currentFunction, &decl);
@@ -325,6 +329,29 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
 
 void Typechecker::typecheckFunctionTemplate(FunctionTemplate& decl) {
     typecheckGenericParamDecls(decl.genericParams, decl.accessLevel);
+
+    FunctionDecl* functionDecl = decl.functionDecl;
+    if (!functionDecl->hasPack()) return;
+
+    auto params = functionDecl->getParams();
+    Type packType = params.back().type;
+
+    for (const GenericParamDecl& genericParam : decl.genericParams) {
+        bool inPack = packType && containsGenericParam(packType, genericParam.getName());
+        bool inFixed = false;
+        for (const ParamDecl& param : params.drop_back()) {
+            if (param.type && containsGenericParam(param.type, genericParam.getName())) {
+                inFixed = true;
+                break;
+            }
+        }
+        if (inPack && inFixed) {
+            ERROR(params.back().getLocation(), "generic parameter '" << genericParam.getName() << "' cannot be used in both fixed and variadic parameters");
+        }
+        if (inPack && functionDecl->getReturnType() && containsGenericParam(functionDecl->getReturnType(), genericParam.getName())) {
+            ERROR(functionDecl->getReturnType().location, "variadic generic parameter '" << genericParam.getName() << "' cannot be used in return type");
+        }
+    }
 }
 
 void Typechecker::typecheckTypeDecl(TypeDecl& decl) {

@@ -1,0 +1,4 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+// CHECK: [[@LINE+1]]:22: error: extern functions cannot have variadic parameters, use '...' instead
+extern void f(int... args);

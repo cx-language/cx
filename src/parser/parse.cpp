@@ -1053,7 +1053,7 @@ std::vector<Stmt*> Parser::parseStmtsUntilOneOf(Token::Kind end1, Token::Kind en
     return stmts;
 }
 
-/// param-decl ::= 'public'? type? id
+/// param-decl ::= 'public'? type? id | 'public'? type '...' id
 ParamDecl Parser::parseParam(bool requireType) {
     bool isPublic = currentToken() == Token::Public;
     if (isPublic) consumeToken();
@@ -1063,8 +1063,16 @@ ParamDecl Parser::parseParam(bool requireType) {
         type = parseType();
     }
 
+    bool isPack = false;
+    if (type && currentToken() == Token::DotDotDot) {
+        consumeToken();
+        isPack = true;
+    }
+
     auto name = parse(Token::Identifier);
-    return ParamDecl(type, name.getString().str(), isPublic, name.location);
+    ParamDecl param(type, name.getString().str(), isPublic, name.location);
+    param.isPack = isPack;
+    return param;
 }
 
 /// param-list ::= '(' params ')'
@@ -1080,6 +1088,9 @@ std::vector<ParamDecl> Parser::parseParamList(bool* isVariadic, bool requireType
             break;
         }
         params.emplace_back(parseParam(requireTypes));
+        if (params.back().isPack && currentToken() != Token::RightParen) {
+            ERROR(params.back().getLocation(), "variadic parameter must be the last parameter");
+        }
         if (currentToken() != Token::RightParen) parse(Token::Comma);
     }
     parse(Token::RightParen);
@@ -1139,6 +1150,11 @@ FunctionDecl* Parser::parseFunctionProto(bool isExtern, TypeDecl* receiverTypeDe
 
     bool isVariadic = false;
     auto params = parseParamList(isExtern ? &isVariadic : nullptr);
+    if (isExtern) {
+        for (const ParamDecl& param : params) {
+            if (param.isPack) ERROR(param.getLocation(), "extern functions cannot have variadic parameters, use '...' instead");
+        }
+    }
     FunctionProto proto(name.str(), std::move(params), returnType, isVariadic, isExtern);
 
     if (receiverTypeDecl) {

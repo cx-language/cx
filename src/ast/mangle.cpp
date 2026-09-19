@@ -128,6 +128,7 @@ std::string cx::mangleFunctionDecl(const FunctionDecl& functionDecl) {
         }
 
         mangleGenericArgs(stream, functionDecl.genericArgs);
+        if (functionDecl.isPackInstantiation) stream << 'V';
         stream << 'E';
 
         for (auto& param : functionDecl.getParams()) {

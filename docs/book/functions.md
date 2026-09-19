@@ -60,6 +60,24 @@ void main() {
 }
 ```
 
+A generic function can take a variable number of arguments with a variadic
+parameter. The variadic parameter must be the last parameter, and each argument
+matching it can have a different type. Inside the function, iterate over the
+parameter with a for loop:
+
+```cs
+void printAll<T: Printable>(T*... args) {
+    for arg in args {
+        print(arg);
+    }
+    print('\n');
+}
+
+void main() {
+    printAll("a", 1, "b", 2); // prints "a1b2"
+}
+```
+
 ## Planned features
 
 - Default parameter values

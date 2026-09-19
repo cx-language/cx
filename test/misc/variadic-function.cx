@@ -1,0 +1,29 @@
+// RUN: %cx run %s | %FileCheck -match-full-lines -strict-whitespace %s
+// RUN: %cx run --backend=c %s | %FileCheck -match-full-lines -strict-whitespace %s
+// CHECK:a1b2
+// CHECK:single
+// CHECK-EMPTY:
+// CHECK:a|12
+
+void printAll<T: Printable>(T*... args) {
+    for arg in args {
+        print(arg);
+    }
+    print('\n');
+}
+
+void printFirstAndRest<T: Printable, U: Printable>(T* first, U*... rest) {
+    print(first);
+    print("|");
+    for arg in rest {
+        print(arg);
+    }
+    print('\n');
+}
+
+void main() {
+    printAll("a", 1, "b", 2);
+    printAll("single");
+    printAll();
+    printFirstAndRest("a", 1, 2);
+}

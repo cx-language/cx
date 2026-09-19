@@ -47,6 +47,12 @@ struct Match {
     bool didConvertArguments;
 };
 
+struct VariadicGenericArgs {
+    llvm::StringMap<Type> fixedArgs;
+    std::vector<llvm::StringMap<Type>> packArgs;
+    std::vector<Type> cacheKey;
+};
+
 struct Typechecker {
     Typechecker(const CompileOptions& options)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
@@ -115,6 +121,8 @@ struct Typechecker {
     Decl* resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, llvm::StringRef callee, Type expectedType);
     std::vector<Type> inferGenericArgsFromCallArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call, llvm::ArrayRef<ParamDecl> params,
                                                    bool returnOnError);
+    std::optional<VariadicGenericArgs> inferVariadicGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
+                                                                llvm::ArrayRef<ParamDecl> params, bool returnOnError);
     ArgumentValidation getArgumentValidationResult(CallExpr& expr, llvm::ArrayRef<ParamDecl> params, bool isVariadic);
     std::optional<Match> matchArguments(CallExpr& expr, Decl* calleeDecl, llvm::ArrayRef<ParamDecl> params = {});
     void validateAndConvertArguments(CallExpr& expr, const Decl& calleeDecl, llvm::StringRef functionName = "", Location location = Location());
@@ -145,5 +153,6 @@ struct Typechecker {
 };
 
 void validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location);
+bool containsGenericParam(Type type, llvm::StringRef genericParam);
 
 } // namespace cx

@@ -617,7 +617,7 @@ Type Typechecker::isImplicitlyConvertible(const Expr* expr, Type source, Type ta
     return Type();
 }
 
-static bool containsGenericParam(Type type, llvm::StringRef genericParam) {
+bool cx::containsGenericParam(Type type, llvm::StringRef genericParam) {
     switch (type.getKind()) {
     case TypeKind::BasicType:
         for (Type genericArg : type.getGenericArgs()) {
@@ -801,6 +801,130 @@ std::vector<Type> Typechecker::inferGenericArgsFromCallArgs(llvm::ArrayRef<Gener
     return inferredGenericArgs;
 }
 
+std::optional<VariadicGenericArgs> Typechecker::inferVariadicGenericArgs(llvm::ArrayRef<GenericParamDecl> genericParams, CallExpr& call,
+                                                                         llvm::ArrayRef<ParamDecl> params, bool returnOnError) {
+    ASSERT(!params.empty() && params.back().isPack);
+    auto fixedParams = params.drop_back();
+    Type packType = params.back().type;
+
+    if (call.args.size() < fixedParams.size()) return std::nullopt;
+    size_t packCount = call.args.size() - fixedParams.size();
+
+    for (size_t i = fixedParams.size(); i < call.args.size(); ++i) {
+        if (!call.args[i].name.empty()) {
+            if (returnOnError) return std::nullopt;
+            ERROR(call.args[i].location, "variadic arguments cannot have labels");
+        }
+    }
+
+    std::vector<const GenericParamDecl*> fixedGenerics, packGenerics;
+    for (auto& genericParam : genericParams) {
+        bool inPack = packType && containsGenericParam(packType, genericParam.getName());
+        bool inFixed = false;
+        for (auto& param : fixedParams) {
+            if (param.type && containsGenericParam(param.type, genericParam.getName())) {
+                inFixed = true;
+                break;
+            }
+        }
+        if (inPack && inFixed) return std::nullopt;
+        if (inPack) {
+            packGenerics.push_back(&genericParam);
+        } else if (inFixed) {
+            fixedGenerics.push_back(&genericParam);
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    VariadicGenericArgs result;
+    result.packArgs.resize(packCount);
+
+    for (auto* genericParam : fixedGenerics) {
+        Type genericArg;
+        Expr* genericArgValue = nullptr;
+
+        for (size_t i = 0; i < fixedParams.size(); ++i) {
+            Type paramType = fixedParams[i].type;
+            if (!paramType || !containsGenericParam(paramType, genericParam->getName())) continue;
+
+            auto* argValue = call.args[i].value;
+            auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(paramType, genericParams);
+            Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
+            Type maybeGenericArg = findGenericArg(argType, paramType, genericParam->getName());
+            if (!maybeGenericArg) continue;
+
+            if (!genericArg) {
+                genericArg = maybeGenericArg;
+                genericArgValue = argValue;
+            } else {
+                Type paramTypeWithGenericArg = paramType.resolve({{genericParam->getName(), genericArg}});
+                Type paramTypeWithMaybeGenericArg = paramType.resolve({{genericParam->getName(), maybeGenericArg}});
+
+                if (isImplicitlyConvertible(argValue, argValue->type, paramTypeWithGenericArg, true)) {
+                    continue;
+                } else if (isImplicitlyConvertible(genericArgValue, genericArgValue->type, paramTypeWithMaybeGenericArg, true)) {
+                    genericArg = maybeGenericArg;
+                    genericArgValue = argValue;
+                } else {
+                    return std::nullopt;
+                }
+            }
+        }
+
+        if (!genericArg) return std::nullopt;
+        result.fixedArgs[genericParam->getName()] = genericArg;
+    }
+
+    for (size_t j = 0; j < packCount; ++j) {
+        auto* argValue = call.args[fixedParams.size() + j].value;
+        auto expectedType = replaceUnresolvedGenericParamsWithPlaceholders(packType, genericParams);
+        Type argType = argValue->hasType() ? argValue->type : typecheckExpr(*argValue, false, expectedType);
+
+        for (auto* genericParam : packGenerics) {
+            Type genericArg = findGenericArg(argType, packType, genericParam->getName());
+            if (!genericArg) return std::nullopt;
+            result.packArgs[j][genericParam->getName()] = genericArg;
+        }
+    }
+
+    auto checkConstraint = [&](const GenericParamDecl& genericParam, Type genericArg) -> bool {
+        if (genericParam.constraints.empty()) return true;
+        ASSERT(genericParam.constraints.size() == 1, "cannot have multiple generic constraints yet");
+        auto* interface = getTypeDecl(*llvm::cast<BasicType>(genericParam.constraints[0].typeBase));
+
+        if (auto basicType = llvm::dyn_cast<BasicType>(genericArg.typeBase)) {
+            auto* typeDecl = getTypeDecl(*basicType);
+            if (typeDecl && typeDecl->hasInterface(*interface)) return true;
+        }
+
+        if (returnOnError) return false;
+        ERROR(call.location, "type '" << genericArg << "' doesn't implement interface '" << interface->getName() << "'");
+    };
+
+    for (auto* genericParam : fixedGenerics) {
+        if (!checkConstraint(*genericParam, result.fixedArgs[genericParam->getName()])) return std::nullopt;
+    }
+    for (size_t j = 0; j < packCount; ++j) {
+        for (auto* genericParam : packGenerics) {
+            if (!checkConstraint(*genericParam, result.packArgs[j][genericParam->getName()])) return std::nullopt;
+        }
+    }
+
+    for (auto& genericParam : genericParams) {
+        auto it = result.fixedArgs.find(genericParam.getName());
+        if (it != result.fixedArgs.end()) result.cacheKey.push_back(it->second);
+    }
+    for (size_t j = 0; j < packCount; ++j) {
+        for (auto& genericParam : genericParams) {
+            auto it = result.packArgs[j].find(genericParam.getName());
+            if (it != result.packArgs[j].end()) result.cacheKey.push_back(it->second);
+        }
+    }
+
+    return result;
+}
+
 void cx::validateGenericArgCount(size_t genericParamCount, llvm::ArrayRef<Type> genericArgs, llvm::StringRef name, Location location) {
     if (genericArgs.size() < genericParamCount) {
         REPORT_ERROR(location, "too few generic arguments to '" << name << "', expected " << genericParamCount);
@@ -964,6 +1088,30 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
             auto* functionTemplate = llvm::cast<FunctionTemplate>(decl);
             auto genericParams = functionTemplate->genericParams;
 
+            if (functionTemplate->functionDecl->hasPack()) {
+                if (!expr.genericArgs.empty()) {
+                    if (decls.size() == 1) {
+                        ERROR(expr.location, "cannot specify generic arguments explicitly for variadic function '" << expr.getFunctionName() << "'");
+                    }
+                    continue;
+                }
+
+                auto variadicArgs = inferVariadicGenericArgs(genericParams, expr, functionTemplate->functionDecl->getParams(), decls.size() != 1);
+                if (!variadicArgs) continue;
+
+                auto* functionDecl = functionTemplate->instantiateVariadic(variadicArgs->fixedArgs, variadicArgs->packArgs, std::move(variadicArgs->cacheKey));
+
+                if (decls.size() == 1) {
+                    validateAndConvertArguments(expr, *functionDecl, callee, expr.callee->location);
+                    deferTypechecking(functionDecl);
+                    return functionDecl;
+                }
+                if (auto match = matchArguments(expr, functionDecl)) {
+                    templateMatches.push_back(*match);
+                }
+                break;
+            }
+
             if (!expr.genericArgs.empty() && expr.genericArgs.size() != genericParams.size()) {
                 if (decls.size() == 1) {
                     validateGenericArgCount(genericParams.size(), expr.genericArgs, expr.getFunctionName(), expr.location);
@@ -1124,6 +1272,21 @@ Decl* Typechecker::resolveOverload(llvm::ArrayRef<Decl*> decls, CallExpr& expr, 
         }
     }
     matches = std::move(uniqueMatches);
+
+    if (matches.size() > 1) {
+        bool hasNonPack = llvm::any_of(matches, [](const Match& match) {
+            auto* functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl);
+            return !functionDecl || !functionDecl->isPackInstantiation;
+        });
+        if (hasNonPack) {
+            std::vector<Match> nonPackMatches;
+            for (auto& match : matches) {
+                auto* functionDecl = llvm::dyn_cast<FunctionDecl>(match.decl);
+                if (!functionDecl || !functionDecl->isPackInstantiation) nonPackMatches.push_back(match);
+            }
+            matches = std::move(nonPackMatches);
+        }
+    }
 
     auto calleeWithGenericArgs = getQualifiedTypeName(callee, expr.genericArgs);
 

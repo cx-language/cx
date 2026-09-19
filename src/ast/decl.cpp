@@ -1,5 +1,6 @@
 #include "decl.h"
 #include <algorithm>
+#include <unordered_set>
 #pragma warning(push, 0)
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -26,6 +27,203 @@ FunctionDecl* FunctionTemplate::instantiate(const llvm::StringMap<Type>& generic
     if (it != instantiations.end()) return it->second;
     auto instantiation = functionDecl->instantiate(genericArgs, orderedGenericArgs);
     return instantiations.emplace(std::move(orderedGenericArgs), instantiation).first->second;
+}
+
+static std::optional<Location> findBreakTargetingPackLoop(llvm::ArrayRef<Stmt*> stmts) {
+    for (Stmt* stmt : stmts) {
+        switch (stmt->kind) {
+        case StmtKind::BreakStmt:
+            return llvm::cast<BreakStmt>(stmt)->location;
+        case StmtKind::IfStmt: {
+            auto* ifStmt = llvm::cast<IfStmt>(stmt);
+            if (auto loc = findBreakTargetingPackLoop(ifStmt->thenBody)) return loc;
+            if (auto loc = findBreakTargetingPackLoop(ifStmt->elseBody)) return loc;
+            break;
+        }
+        case StmtKind::CompoundStmt:
+            if (auto loc = findBreakTargetingPackLoop(llvm::cast<CompoundStmt>(stmt)->body)) return loc;
+            break;
+        default:
+            break;
+        }
+    }
+    return std::nullopt;
+}
+
+static std::optional<Location> findContinueTargetingPackLoop(llvm::ArrayRef<Stmt*> stmts) {
+    for (Stmt* stmt : stmts) {
+        switch (stmt->kind) {
+        case StmtKind::ContinueStmt:
+            return llvm::cast<ContinueStmt>(stmt)->location;
+        case StmtKind::IfStmt: {
+            auto* ifStmt = llvm::cast<IfStmt>(stmt);
+            if (auto loc = findContinueTargetingPackLoop(ifStmt->thenBody)) return loc;
+            if (auto loc = findContinueTargetingPackLoop(ifStmt->elseBody)) return loc;
+            break;
+        }
+        case StmtKind::SwitchStmt: {
+            auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
+            for (auto& switchCase : switchStmt->cases) {
+                if (auto loc = findContinueTargetingPackLoop(switchCase.stmts)) return loc;
+            }
+            if (auto loc = findContinueTargetingPackLoop(switchStmt->defaultStmts)) return loc;
+            break;
+        }
+        case StmtKind::CompoundStmt:
+            if (auto loc = findContinueTargetingPackLoop(llvm::cast<CompoundStmt>(stmt)->body)) return loc;
+            break;
+        default:
+            break;
+        }
+    }
+    return std::nullopt;
+}
+
+static std::vector<Stmt*> unrollPackLoops(llvm::ArrayRef<Stmt*> stmts, llvm::StringRef packName, llvm::ArrayRef<std::string> expandedNames,
+                                          FunctionDecl* parentFunc, Module& module, bool packShadowed) {
+    std::vector<Stmt*> result;
+    bool shadowedHere = packShadowed;
+
+    for (Stmt* stmt : stmts) {
+        switch (stmt->kind) {
+        case StmtKind::VarStmt: {
+            result.push_back(stmt);
+            if (llvm::cast<VarStmt>(stmt)->decl->getName() == packName) shadowedHere = true;
+            break;
+        }
+        case StmtKind::ForEachStmt: {
+            auto* forEach = llvm::cast<ForEachStmt>(stmt);
+            auto* rangeVar = llvm::dyn_cast<VarExpr>(forEach->range);
+            bool isPackLoop = !shadowedHere && rangeVar && rangeVar->identifier == packName;
+
+            if (!isPackLoop) {
+                bool nestedShadowed = shadowedHere || forEach->variable->getName() == packName;
+                forEach->body = unrollPackLoops(forEach->body, packName, expandedNames, parentFunc, module, nestedShadowed);
+                result.push_back(forEach);
+                break;
+            }
+
+            if (auto loc = findBreakTargetingPackLoop(forEach->body)) {
+                ERROR(*loc, "break cannot be used in a loop over a variadic parameter");
+            }
+            if (auto loc = findContinueTargetingPackLoop(forEach->body)) {
+                ERROR(*loc, "continue cannot be used in a loop over a variadic parameter");
+            }
+
+            bool loopVarShadowsPack = forEach->variable->getName() == packName;
+            for (const std::string& expandedName : expandedNames) {
+                auto clonedBody = ::cx::instantiate(forEach->body, llvm::StringMap<Type>());
+                clonedBody = unrollPackLoops(clonedBody, packName, expandedNames, parentFunc, module, loopVarShadowsPack);
+
+                std::vector<Stmt*> iteration;
+                auto* loopVar = makeAST<VarDecl>(Type(), forEach->variable->getName().str(), makeAST<VarExpr>(std::string(expandedName), forEach->location),
+                                                 parentFunc, AccessLevel::None, module, forEach->variable->getLocation());
+                iteration.push_back(makeAST<VarStmt>(loopVar));
+                for (Stmt* cloned : clonedBody)
+                    iteration.push_back(cloned);
+                result.push_back(makeAST<CompoundStmt>(std::move(iteration)));
+            }
+            break;
+        }
+        case StmtKind::IfStmt: {
+            auto* ifStmt = llvm::cast<IfStmt>(stmt);
+            ifStmt->thenBody = unrollPackLoops(ifStmt->thenBody, packName, expandedNames, parentFunc, module, shadowedHere);
+            ifStmt->elseBody = unrollPackLoops(ifStmt->elseBody, packName, expandedNames, parentFunc, module, shadowedHere);
+            result.push_back(ifStmt);
+            break;
+        }
+        case StmtKind::SwitchStmt: {
+            auto* switchStmt = llvm::cast<SwitchStmt>(stmt);
+            for (auto& switchCase : switchStmt->cases) {
+                bool nestedShadowed = shadowedHere || (switchCase.associatedValue && switchCase.associatedValue->getName() == packName);
+                switchCase.stmts = unrollPackLoops(switchCase.stmts, packName, expandedNames, parentFunc, module, nestedShadowed);
+            }
+            switchStmt->defaultStmts = unrollPackLoops(switchStmt->defaultStmts, packName, expandedNames, parentFunc, module, shadowedHere);
+            result.push_back(switchStmt);
+            break;
+        }
+        case StmtKind::WhileStmt: {
+            auto* whileStmt = llvm::cast<WhileStmt>(stmt);
+            whileStmt->body = unrollPackLoops(whileStmt->body, packName, expandedNames, parentFunc, module, shadowedHere);
+            result.push_back(whileStmt);
+            break;
+        }
+        case StmtKind::ForStmt: {
+            auto* forStmt = llvm::cast<ForStmt>(stmt);
+            bool nestedShadowed = shadowedHere || (forStmt->variable && forStmt->variable->decl->getName() == packName);
+            forStmt->body = unrollPackLoops(forStmt->body, packName, expandedNames, parentFunc, module, nestedShadowed);
+            result.push_back(forStmt);
+            break;
+        }
+        case StmtKind::CompoundStmt: {
+            auto* compound = llvm::cast<CompoundStmt>(stmt);
+            compound->body = unrollPackLoops(compound->body, packName, expandedNames, parentFunc, module, shadowedHere);
+            result.push_back(compound);
+            break;
+        }
+        default:
+            result.push_back(stmt);
+            break;
+        }
+    }
+
+    return result;
+}
+
+FunctionDecl* FunctionTemplate::instantiateVariadic(const llvm::StringMap<Type>& fixedArgs, const std::vector<llvm::StringMap<Type>>& packArgs,
+                                                    std::vector<Type>&& cacheKey) {
+    auto it = instantiations.find(cacheKey);
+    if (it != instantiations.end()) return it->second;
+
+    ASSERT(functionDecl->hasPack());
+    ASSERT(!functionDecl->isMethodDecl() || functionDecl->kind == DeclKind::MethodDecl);
+    auto templateParams = functionDecl->getParams();
+    llvm::StringRef packName = templateParams.back().getName();
+    Type packType = templateParams.back().type;
+    Location packLoc = templateParams.back().getLocation();
+
+    std::vector<ParamDecl> expandedParams;
+    expandedParams.reserve(templateParams.size() - 1 + packArgs.size());
+    for (const ParamDecl& param : templateParams.drop_back()) {
+        expandedParams.emplace_back(param.type.resolve(fixedArgs), param.getName().str(), param.isPublic, param.getLocation());
+    }
+
+    std::unordered_set<std::string> usedNames;
+    for (const ParamDecl& param : expandedParams)
+        usedNames.insert(param.getName().str());
+
+    std::vector<std::string> expandedNames;
+    expandedNames.reserve(packArgs.size());
+    for (size_t i = 0; i < packArgs.size(); ++i) {
+        llvm::StringMap<Type> combined = fixedArgs;
+        for (auto& entry : packArgs[i])
+            combined[entry.getKey()] = entry.getValue();
+        Type resolved = packType.resolve(combined);
+        std::string name = packName.str() + "_" + std::to_string(i);
+        while (!usedNames.insert(name).second)
+            name += "_";
+        expandedNames.push_back(name);
+        expandedParams.emplace_back(resolved, std::string(expandedNames.back()), false, packLoc);
+    }
+
+    Type returnType = functionDecl->getReturnType().resolve(fixedArgs);
+    FunctionProto proto(functionDecl->getName().str(), std::move(expandedParams), returnType, false, false);
+
+    FunctionDecl* instantiation;
+    if (auto* methodDecl = llvm::dyn_cast<MethodDecl>(functionDecl)) {
+        instantiation =
+            makeAST<MethodDecl>(std::move(proto), *methodDecl->typeDecl, std::vector<Type>(cacheKey), methodDecl->accessLevel, methodDecl->getLocation());
+    } else {
+        instantiation = makeAST<FunctionDecl>(std::move(proto), std::vector<Type>(cacheKey), functionDecl->accessLevel, *functionDecl->getModule(),
+                                              functionDecl->getLocation());
+    }
+
+    if (functionDecl->body) {
+        auto clonedBody = ::cx::instantiate(*functionDecl->body, fixedArgs);
+        instantiation->body = unrollPackLoops(clonedBody, packName, expandedNames, instantiation, *instantiation->getModule(), false);
+    }
+    instantiation->isPackInstantiation = true;
+    return instantiations.emplace(std::move(cacheKey), instantiation).first->second;
 }
 
 std::string cx::getQualifiedFunctionName(Type receiver, llvm::StringRef name, llvm::ArrayRef<Type> genericArgs) {
@@ -60,6 +258,7 @@ bool FunctionDecl::signatureMatches(const FunctionDecl& other, bool matchReceive
     if (params.size() != otherParams.size()) return false;
     return std::equal(params.begin(), params.end(), otherParams.begin(), [](const ParamDecl& a, const ParamDecl& b) {
         if (a.type != b.type) return false;
+        if (a.isPack != b.isPack) return false;
         if (a.isPublic && b.isPublic && a.getName() != b.getName()) return false;
         return true;
     });
@@ -129,8 +328,11 @@ FieldDecl FieldDecl::instantiate(const llvm::StringMap<Type>& genericArgs, TypeD
 }
 
 std::vector<ParamDecl> cx::instantiateParams(llvm::ArrayRef<ParamDecl> params, const llvm::StringMap<Type>& genericArgs) {
-    return map(params,
-               [&](const ParamDecl& param) { return ParamDecl(param.type.resolve(genericArgs), param.getName().str(), param.isPublic, param.getLocation()); });
+    return map(params, [&](const ParamDecl& param) {
+        ParamDecl result(param.type.resolve(genericArgs), param.getName().str(), param.isPublic, param.getLocation());
+        result.isPack = param.isPack;
+        return result;
+    });
 }
 
 std::string TypeDecl::getQualifiedName() const {
