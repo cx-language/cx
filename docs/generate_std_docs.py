@@ -219,10 +219,6 @@ def finish(out):
     return "\n".join(out).rstrip() + "\n"
 
 
-def by_name(name):
-    return (name.lower(), name)
-
-
 def heading_text(text):
     return re.sub(r"([\\<>\[\]*_])", r"\\\1", text)
 
@@ -237,10 +233,7 @@ def heading_link(text, url):
 
 
 def render_file_page(relpath, types, functions, constants, conditional):
-    types = sorted(types, key=lambda t: (t.name.lower(), t.name))
-    function_names = sorted(functions, key=by_name)
-    constants = sorted(constants, key=lambda c: c[0])
-
+    # Types, functions, constants, and members render in file order.
     out = [f"# {heading_link(display_name(relpath), source_url(relpath))}", ""]
     if conditional:
         out += ["*Note: parts of this file are platform-conditional (`#if`).*", ""]
@@ -252,7 +245,7 @@ def render_file_page(relpath, types, functions, constants, conditional):
         )
         out.append("")
         render_doc(entry.doc, out)
-        for name in sorted(entry.members, key=by_name):
+        for name in entry.members:
             line = entry.members[name].declarations[0].line
             out.append(
                 f"### {heading_link(heading_text(name), source_url(relpath, line))}"
@@ -261,7 +254,7 @@ def render_file_page(relpath, types, functions, constants, conditional):
             out.append("")
             render_group(entry.members[name], out)
 
-    for name in function_names:
+    for name in functions:
         line = functions[name].declarations[0].line
         out.append(
             f"## {heading_link(heading_text(name), source_url(relpath, line))} {{#fn-{slug(name)}}}"
@@ -291,9 +284,9 @@ def render_index(pages):
     ]
     for relpath, types, functions, constants, _ in pages:
         names = (
-            [f"`{t.name}`" for t in sorted(types, key=lambda t: (t.name.lower(), t.name))]
-            + [f"`{n}`" for n in sorted(functions, key=by_name)]
-            + [f"`{n}`" for n, _ in sorted(constants, key=lambda c: c[0])]
+            [f"`{t.name}`" for t in types]
+            + [f"`{n}`" for n in functions]
+            + [f"`{n}`" for n, _ in constants]
         )
         out.append(f"- [{relpath}](./{page_name(relpath)}): " + ", ".join(names))
     out.append("")

@@ -182,6 +182,16 @@ class FixtureTest(unittest.TestCase):
     def test_no_conditional_note(self):
         self.assertNotIn("platform-conditional", self.markdown)
 
+    def test_file_order(self):
+        widget = self.markdown.index("{#type-Widget}")
+        action = self.markdown.index("{#type-Action}")
+        color = self.markdown.index("{#type-Color}")
+        self.assertLess(widget, action)
+        self.assertLess(action, color)
+        size = self.markdown.index("{#Widget-size}")
+        ctor = self.markdown.index("{#Widget-Widget}")
+        self.assertLess(size, ctor)
+
 
 class ConditionalTest(unittest.TestCase):
     def test_if_marked_conditional(self):
@@ -214,6 +224,21 @@ class IndexTest(unittest.TestCase):
     def test_bullet_lists_declarations(self):
         for name in ["`Widget`", "`Action`", "`Color`", "`operator==`", "`puts`", "`answer`"]:
             self.assertIn(name, self.markdown)
+
+    def test_bullet_lists_declarations_in_file_order(self):
+        self.assertLess(self.markdown.index("`Widget`"), self.markdown.index("`Action`"))
+
+
+class FileOrderTest(unittest.TestCase):
+    def test_functions_and_constants_in_file_order(self):
+        with tempfile.TemporaryDirectory() as std_dir:
+            Path(std_dir, "order.cx").write_text(
+                "void zebra() {}\nvoid apple() {}\nconst int zed = 1;\nconst int aardvark = 2;\n"
+            )
+            relpath, types, functions, constants, _ = parse_std(Path(std_dir))[0]
+            markdown = render_file_page(relpath, types, functions, constants, False)
+        self.assertLess(markdown.index("{#fn-zebra}"), markdown.index("{#fn-apple}"))
+        self.assertLess(markdown.index("{#const-zed}"), markdown.index("{#const-aardvark}"))
 
 
 class TocTest(unittest.TestCase):
