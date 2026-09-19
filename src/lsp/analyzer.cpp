@@ -1956,36 +1956,40 @@ std::vector<SemanticToken> semanticTokensIn(Module* mainModule, const std::strin
 
 LspQuery parseLspQuery(const JsonValue& queryJson) {
     LspQuery query;
-    if (!queryJson.isObject()) throw JsonParseError("query must be a JSON object");
-    query.method = queryJson.getString("method");
+    if (!queryJson.getAsObject()) throw JsonParseError("query must be a JSON object");
+    query.method = getJsonString(queryJson, "method");
     if (query.method.empty()) throw JsonParseError("query is missing \"method\"");
-    query.filePath = queryJson.getString("file");
+    query.filePath = getJsonString(queryJson, "file");
     if (query.filePath.empty()) throw JsonParseError("query is missing \"file\"");
-    query.content = queryJson.getString("content");
-    if (auto* docs = queryJson.find("openDocs")) {
-        if (!docs->isObject()) throw JsonParseError("\"openDocs\" must be an object");
-        for (auto& [path, text] : docs->object) {
-            if (!text.isString()) throw JsonParseError("\"openDocs\" values must be strings");
-            query.openDocs[path] = text.str;
+    query.content = getJsonString(queryJson, "content");
+    if (auto* docs = findJson(queryJson, "openDocs")) {
+        auto* docsObj = docs->getAsObject();
+        if (!docsObj) throw JsonParseError("\"openDocs\" must be an object");
+        for (auto& [path, text] : *docsObj) {
+            auto textStr = text.getAsString();
+            if (!textStr) throw JsonParseError("\"openDocs\" values must be strings");
+            query.openDocs[path] = textStr->str();
         }
     }
     auto getStringArray = [](const JsonValue* value, const char* name) {
         std::vector<std::string> out;
         if (!value) return out;
-        if (!value->isArray()) throw JsonParseError(std::string("\"") + name + "\" must be an array");
-        for (auto& item : value->array) {
-            if (!item.isString()) throw JsonParseError(std::string("\"") + name + "\" entries must be strings");
-            out.push_back(item.str);
+        auto* array = value->getAsArray();
+        if (!array) throw JsonParseError(std::string("\"") + name + "\" must be an array");
+        for (auto& item : *array) {
+            auto str = item.getAsString();
+            if (!str) throw JsonParseError(std::string("\"") + name + "\" entries must be strings");
+            out.push_back(str->str());
         }
         return out;
     };
-    query.workspaceFolders = getStringArray(queryJson.find("workspaceFolders"), "workspaceFolders");
-    query.importSearchPaths = getStringArray(queryJson.find("importSearchPaths"), "importSearchPaths");
-    query.defines = getStringArray(queryJson.find("defines"), "defines");
-    if (auto* pos = queryJson.find("position")) {
-        if (!pos->isObject()) throw JsonParseError("\"position\" must be an object");
-        query.position.line = static_cast<int>(pos->getInt("line"));
-        query.position.character = static_cast<int>(pos->getInt("character"));
+    query.workspaceFolders = getStringArray(findJson(queryJson, "workspaceFolders"), "workspaceFolders");
+    query.importSearchPaths = getStringArray(findJson(queryJson, "importSearchPaths"), "importSearchPaths");
+    query.defines = getStringArray(findJson(queryJson, "defines"), "defines");
+    if (auto* pos = findJson(queryJson, "position")) {
+        if (!pos->getAsObject()) throw JsonParseError("\"position\" must be an object");
+        query.position.line = static_cast<int>(getJsonInt(*pos, "line"));
+        query.position.character = static_cast<int>(getJsonInt(*pos, "character"));
     }
     return query;
 }
@@ -1993,46 +1997,42 @@ LspQuery parseLspQuery(const JsonValue& queryJson) {
 namespace {
 
 JsonValue rangeToJson(const LspRange& range) {
-    JsonValue start = JsonValue::objectValue();
-    start.set("line", JsonValue::numberValue(range.start.line));
-    start.set("character", JsonValue::numberValue(range.start.character));
-    JsonValue end = JsonValue::objectValue();
-    end.set("line", JsonValue::numberValue(range.end.line));
-    end.set("character", JsonValue::numberValue(range.end.character));
-    JsonValue out = JsonValue::objectValue();
-    out.set("start", std::move(start));
-    out.set("end", std::move(end));
-    return out;
+    JsonObject start;
+    start["line"] = range.start.line;
+    start["character"] = range.start.character;
+    JsonObject end;
+    end["line"] = range.end.line;
+    end["character"] = range.end.character;
+    JsonObject out;
+    out["start"] = std::move(start);
+    out["end"] = std::move(end);
+    return JsonValue(std::move(out));
 }
 
 JsonValue diagnosticsToJson(const std::vector<LspDiagnostic>& diagnostics) {
-    std::vector<JsonValue> items;
+    JsonArray items;
     for (auto& diagnostic : diagnostics) {
-        JsonValue item = JsonValue::objectValue();
-        item.set("file", JsonValue::stringValue(diagnostic.filePath));
-        item.set("range", rangeToJson(diagnostic.range));
-        item.set("severity", JsonValue::numberValue(diagnostic.severity));
-        item.set("message", JsonValue::stringValue(diagnostic.message));
-        std::vector<JsonValue> notes;
+        JsonObject item;
+        item["file"] = diagnostic.filePath;
+        item["range"] = rangeToJson(diagnostic.range);
+        item["severity"] = diagnostic.severity;
+        item["message"] = diagnostic.message;
+        JsonArray notes;
         for (auto& note : diagnostic.relatedNotes) {
-            JsonValue noteJson = JsonValue::objectValue();
+            JsonObject noteJson;
             if (note.location.isValid() && note.location.file) {
-                JsonValue location = JsonValue::objectValue();
-                location.set("uri", JsonValue::stringValue(pathToUri(note.location.file)));
-                location.set("range", rangeToJson(nameRange(note.location, 1)));
-                noteJson.set("location", std::move(location));
+                JsonObject location;
+                location["uri"] = pathToUri(note.location.file);
+                location["range"] = rangeToJson(nameRange(note.location, 1));
+                noteJson["location"] = std::move(location);
             }
-            noteJson.set("message", JsonValue::stringValue(note.message));
+            noteJson["message"] = note.message;
             notes.push_back(std::move(noteJson));
         }
-        JsonValue notesJson = JsonValue::arrayValue();
-        notesJson.array = std::move(notes);
-        item.set("relatedInformation", std::move(notesJson));
+        item["relatedInformation"] = std::move(notes);
         items.push_back(std::move(item));
     }
-    JsonValue out = JsonValue::arrayValue();
-    out.array = std::move(items);
-    return out;
+    return JsonValue(std::move(items));
 }
 
 } // namespace
@@ -2042,82 +2042,74 @@ JsonValue handleQuery(const JsonValue& queryJson) {
     FrontendResult frontend = runFrontendOnce(query);
     std::vector<LspDiagnostic> diagnostics = toLspDiagnostics(frontend.diagnostics, frontend.filePath, frontend.content);
 
-    JsonValue result = JsonValue::objectValue();
-    result.set("diagnostics", diagnosticsToJson(diagnostics));
+    JsonObject result;
+    result["diagnostics"] = diagnosticsToJson(diagnostics);
 
     if (query.method == "check") {
-        return result;
+        return JsonValue(std::move(result));
     } else if (query.method == "hover") {
         std::string text = hoverAt(frontend.mainModule, query.filePath, query.position);
-        result.set("hover", JsonValue::stringValue(text));
-        return result;
+        result["hover"] = text;
+        return JsonValue(std::move(result));
     } else if (query.method == "definition") {
         std::string targetFile;
         LspRange targetRange;
         if (gotoDefinitionAt(frontend.mainModule, query.filePath, query.position, targetFile, targetRange)) {
-            result.set("found", JsonValue::booleanValue(true));
-            result.set("file", JsonValue::stringValue(targetFile));
-            result.set("range", rangeToJson(targetRange));
+            result["found"] = true;
+            result["file"] = targetFile;
+            result["range"] = rangeToJson(targetRange);
         } else {
-            result.set("found", JsonValue::booleanValue(false));
+            result["found"] = false;
         }
-        return result;
+        return JsonValue(std::move(result));
     } else if (query.method == "completion") {
-        std::vector<JsonValue> items;
+        JsonArray items;
         for (auto& item : completeAt(frontend.mainModule, query.filePath, query.position)) {
-            JsonValue entry = JsonValue::objectValue();
-            entry.set("label", JsonValue::stringValue(item.label));
-            entry.set("kind", JsonValue::stringValue(item.kind));
-            entry.set("detail", JsonValue::stringValue(item.detail));
+            JsonObject entry;
+            entry["label"] = item.label;
+            entry["kind"] = item.kind;
+            entry["detail"] = item.detail;
             items.push_back(std::move(entry));
         }
-        JsonValue array = JsonValue::arrayValue();
-        array.array = std::move(items);
-        result.set("items", std::move(array));
-        return result;
+        result["items"] = std::move(items);
+        return JsonValue(std::move(result));
     } else if (query.method == "documentSymbol") {
-        std::vector<JsonValue> items;
+        JsonArray items;
         for (auto& symbol : documentSymbolsIn(frontend.mainModule, query.filePath)) {
-            JsonValue entry = JsonValue::objectValue();
-            entry.set("name", JsonValue::stringValue(symbol.name));
-            entry.set("kind", JsonValue::stringValue(symbol.kind));
-            entry.set("range", rangeToJson(symbol.range));
-            entry.set("selectionRange", rangeToJson(symbol.selectionRange));
+            JsonObject entry;
+            entry["name"] = symbol.name;
+            entry["kind"] = symbol.kind;
+            entry["range"] = rangeToJson(symbol.range);
+            entry["selectionRange"] = rangeToJson(symbol.selectionRange);
             items.push_back(std::move(entry));
         }
-        JsonValue array = JsonValue::arrayValue();
-        array.array = std::move(items);
-        result.set("symbols", std::move(array));
-        return result;
+        result["symbols"] = std::move(items);
+        return JsonValue(std::move(result));
     } else if (query.method == "references") {
-        std::vector<JsonValue> items;
+        JsonArray items;
         for (auto& [file, range] : referencesTo(frontend.mainModule, query.filePath, query.position)) {
-            JsonValue entry = JsonValue::objectValue();
-            entry.set("file", JsonValue::stringValue(file));
-            entry.set("range", rangeToJson(range));
+            JsonObject entry;
+            entry["file"] = file;
+            entry["range"] = rangeToJson(range);
             items.push_back(std::move(entry));
         }
-        JsonValue array = JsonValue::arrayValue();
-        array.array = std::move(items);
-        result.set("references", std::move(array));
-        return result;
+        result["references"] = std::move(items);
+        return JsonValue(std::move(result));
     } else if (query.method == "semanticTokens") {
-        std::vector<JsonValue> items;
+        JsonArray items;
         for (auto& token : semanticTokensIn(frontend.mainModule, query.filePath, frontend.content)) {
-            JsonValue entry = JsonValue::objectValue();
-            entry.set("line", JsonValue::numberValue(token.line));
-            entry.set("start", JsonValue::numberValue(token.start));
-            entry.set("length", JsonValue::numberValue(token.length));
-            entry.set("type", JsonValue::stringValue(token.type));
-            std::vector<JsonValue> modifiers;
-            if (token.definition) modifiers.push_back(JsonValue::stringValue("definition"));
-            entry.set("modifiers", JsonValue::arrayValue(std::move(modifiers)));
+            JsonObject entry;
+            entry["line"] = token.line;
+            entry["start"] = token.start;
+            entry["length"] = token.length;
+            entry["type"] = token.type;
+            JsonArray modifiers;
+            if (token.definition) modifiers.push_back("definition");
+            entry["modifiers"] = std::move(modifiers);
             items.push_back(std::move(entry));
         }
-        JsonValue array = JsonValue::arrayValue();
-        array.array = std::move(items);
-        result.set("tokens", std::move(array));
-        return result;
+        result["tokens"] = std::move(items);
+        return JsonValue(std::move(result));
     }
     throw JsonParseError("unknown query method: " + query.method);
 }

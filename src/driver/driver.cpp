@@ -241,6 +241,14 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         return isSet;
     };
 
+    // Prints one --print-* section, bracketed with dividers when several
+    // sections are requested.
+    auto printSection = [&](const char* name, auto printBody) {
+        if (printSectionDividers) llvm::outs() << "=== BEGIN " << name << " ===\n";
+        printBody();
+        if (printSectionDividers) llvm::outs() << "=== END " << name << " ===\n";
+    };
+
     if (!specifiedOutputFileName.empty()) {
         buildParams.outputFileName = specifiedOutputFileName;
     }
@@ -261,9 +269,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (errors) return 1;
 
     if (handlePrintOpt(PrintOpt::AST)) {
-        if (printSectionDividers) llvm::outs() << "=== BEGIN AST ===\n";
-        mainModule.print(llvm::outs());
-        if (printSectionDividers) llvm::outs() << "=== END AST ===\n";
+        printSection("AST", [&] { mainModule.print(llvm::outs()); });
         if (!remainingPrintOpts) return 0;
     }
 
@@ -283,16 +289,14 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     if (handlePrintOpt(PrintOpt::IRAll)) {
         handlePrintOpt(PrintOpt::IR);
-        if (printSectionDividers) llvm::outs() << "=== BEGIN IR ===\n";
-        for (auto* module : irGenerator.generatedModules) {
-            module->print(llvm::outs());
-        }
-        if (printSectionDividers) llvm::outs() << "=== END IR ===\n";
+        printSection("IR", [&] {
+            for (auto* module : irGenerator.generatedModules) {
+                module->print(llvm::outs());
+            }
+        });
         if (!remainingPrintOpts) return 0;
     } else if (handlePrintOpt(PrintOpt::IR)) {
-        if (printSectionDividers) llvm::outs() << "=== BEGIN IR ===\n";
-        irGenerator.generatedModules.back()->print(llvm::outs());
-        if (printSectionDividers) llvm::outs() << "=== END IR ===\n";
+        printSection("IR", [&] { irGenerator.generatedModules.back()->print(llvm::outs()); });
         if (!remainingPrintOpts) return 0;
     }
 
@@ -313,9 +317,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         std::string cCode = cGen.finish();
 
         if (handlePrintOpt(PrintOpt::C)) {
-            if (printSectionDividers) llvm::outs() << "=== BEGIN C ===\n";
-            llvm::outs() << cCode << "\n";
-            if (printSectionDividers) llvm::outs() << "=== END C ===\n";
+            printSection("C", [&] { llvm::outs() << cCode << "\n"; });
             if (!remainingPrintOpts) return 0;
         }
 
@@ -339,20 +341,20 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         if (handlePrintOpt(PrintOpt::LLVMAll)) {
             handlePrintOpt(PrintOpt::LLVM);
-            if (printSectionDividers) llvm::outs() << "=== BEGIN LLVM ===\n";
-            for (auto* module : llvmGenerator.generatedModules) {
-                module->setModuleIdentifier("");
-                module->setSourceFileName("");
-                module->print(llvm::outs(), nullptr);
-            }
-            if (printSectionDividers) llvm::outs() << "=== END LLVM ===\n";
+            printSection("LLVM", [&] {
+                for (auto* module : llvmGenerator.generatedModules) {
+                    module->setModuleIdentifier("");
+                    module->setSourceFileName("");
+                    module->print(llvm::outs(), nullptr);
+                }
+            });
             if (!remainingPrintOpts) return 0;
         } else if (handlePrintOpt(PrintOpt::LLVM)) {
-            llvmModule->setModuleIdentifier("");
-            llvmModule->setSourceFileName("");
-            if (printSectionDividers) llvm::outs() << "=== BEGIN LLVM ===\n";
-            llvmModule->print(llvm::outs(), nullptr);
-            if (printSectionDividers) llvm::outs() << "=== END LLVM ===\n";
+            printSection("LLVM", [&] {
+                llvmModule->setModuleIdentifier("");
+                llvmModule->setSourceFileName("");
+                llvmModule->print(llvm::outs(), nullptr);
+            });
             if (!remainingPrintOpts) return 0;
         }
 
@@ -429,32 +431,20 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     for (auto& flag : options.cflags) {
         ccArgs.push_back(flag.c_str());
     }
+    auto addFlaggedArgs = [&](const char* flag, const auto& values) {
+        for (const auto& value : values) {
+            ccArgs.push_back(flag);
+            ccArgs.push_back(value.c_str());
+        }
+    };
     // The generated C code includes the same C headers that were imported,
     // so pass the import search paths to the C compiler as well.
-    for (auto& path : options.importSearchPaths) {
-        ccArgs.push_back("-I");
-        ccArgs.push_back(path.c_str());
-    }
-    for (auto& flag : options.defines) {
-        ccArgs.push_back("-D");
-        ccArgs.push_back(flag.c_str());
-    }
-    for (auto& flag : librarySearchPaths) {
-        ccArgs.push_back("-L");
-        ccArgs.push_back(flag.c_str());
-    }
-    for (auto& flag : libraries) {
-        ccArgs.push_back("-l");
-        ccArgs.push_back(flag.c_str());
-    }
-    for (auto& flag : frameworkSearchPaths) {
-        ccArgs.push_back("-F");
-        ccArgs.push_back(flag.c_str());
-    }
-    for (auto& flag : frameworks) {
-        ccArgs.push_back("-framework");
-        ccArgs.push_back(flag.c_str());
-    }
+    addFlaggedArgs("-I", options.importSearchPaths);
+    addFlaggedArgs("-D", options.defines);
+    addFlaggedArgs("-L", librarySearchPaths);
+    addFlaggedArgs("-l", libraries);
+    addFlaggedArgs("-F", frameworkSearchPaths);
+    addFlaggedArgs("-framework", frameworks);
     if (!isMSVC) {
         // The standard library uses the C math library.
         ccArgs.push_back("-lm");
@@ -475,15 +465,12 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     // don't pollute the executed program's stdout. Stderr stays visible, and
     // the captured output is shown if compilation fails.
     llvm::SmallString<128> ccStdoutLog;
-    bool captureCcOutput = run && useExternalCCompiler
-        && !llvm::sys::fs::createTemporaryFile("cx-cc-stdout", "log", ccStdoutLog);
+    bool captureCcOutput = run && useExternalCCompiler && !llvm::sys::fs::createTemporaryFile("cx-cc-stdout", "log", ccStdoutLog);
     std::vector<std::optional<llvm::StringRef>> ccRedirects;
     if (captureCcOutput) {
         ccRedirects = {std::nullopt, ccStdoutLog.str(), std::nullopt};
     }
-    int ccExitStatus = useExternalCCompiler
-        ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, std::nullopt, ccRedirects)
-        : invokeClang(ccArgs);
+    int ccExitStatus = useExternalCCompiler ? llvm::sys::ExecuteAndWait(ccArgs[0], ccArgStringRefs, std::nullopt, ccRedirects) : invokeClang(ccArgs);
     llvm::sys::fs::remove(tempIntermediateFilePath);
     if (ccExitStatus != 0) {
         if (captureCcOutput) {
@@ -506,11 +493,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         llvm::sys::fs::remove(tempOutputFilePath);
 
         if (isMSVC) {
-            auto path = tempOutputFilePath;
-            llvm::sys::path::replace_extension(path, "ilk");
-            llvm::sys::fs::remove(path);
-            llvm::sys::path::replace_extension(path, "pdb");
-            llvm::sys::fs::remove(path);
+            for (llvm::StringRef extension : {"ilk", "pdb"}) {
+                auto path = tempOutputFilePath;
+                llvm::sys::path::replace_extension(path, extension);
+                llvm::sys::fs::remove(path);
+            }
         }
 
         return executableExitStatus;
@@ -539,17 +526,15 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     renameFile(tempOutputFilePath, outputPathPrefix + buildParams.outputFileName);
 
     if (isMSVC) {
-        auto path = tempOutputFilePath;
         auto outputPath = outputPathPrefix;
         outputPath += buildParams.outputFileName;
 
-        llvm::sys::path::replace_extension(path, "ilk");
-        llvm::sys::path::replace_extension(outputPath, "ilk");
-        renameFile(path, outputPath);
-
-        llvm::sys::path::replace_extension(path, "pdb");
-        llvm::sys::path::replace_extension(outputPath, "pdb");
-        renameFile(path, outputPath);
+        for (llvm::StringRef extension : {"ilk", "pdb"}) {
+            auto path = tempOutputFilePath;
+            llvm::sys::path::replace_extension(path, extension);
+            llvm::sys::path::replace_extension(outputPath, extension);
+            renameFile(path, outputPath);
+        }
     }
 
     return 0;
