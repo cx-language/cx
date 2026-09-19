@@ -9,8 +9,7 @@ struct Person {
 }
 
 void main() {
-    var ada = Person(name = "Ada");
-    ada.age = 36;
+    var ada = Person(name = "Ada", age = 36);
     var bob = Person(name = "Bob"); // age defaults to 0
     ada.greet();
     bob.greet();

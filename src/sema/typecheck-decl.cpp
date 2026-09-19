@@ -462,6 +462,15 @@ void Typechecker::typecheckVarDecl(VarDecl& decl) {
 
 void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     typecheckType(decl.type, std::min(decl.accessLevel, decl.getParentDecl()->accessLevel));
+
+    if (decl.defaultValue) {
+        typecheckExpr(*decl.defaultValue, false, decl.type);
+        if (Expr* converted = convert(decl.defaultValue, decl.type)) {
+            decl.defaultValue = converted;
+        } else {
+            ERROR(decl.defaultValue->location, "cannot assign '" << decl.defaultValue->type << "' to '" << decl.type << "'");
+        }
+    }
 }
 
 void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest) {

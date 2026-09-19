@@ -1,0 +1,16 @@
+// RUN: %cx run %s | %FileCheck %s
+
+struct Person {
+    string name;
+    int age = 0;
+}
+
+void main() {
+    var ada = Person(name = "Ada", age = 36);
+    // CHECK: Ada 36
+    println(ada.name, " ", ada.age);
+
+    var bob = Person(name = "Bob");
+    // CHECK-NEXT: Bob 0
+    println(bob.name, " ", bob.age);
+}
