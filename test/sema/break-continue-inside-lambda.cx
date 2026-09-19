@@ -1,0 +1,44 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+// CHECK-NOT: warning
+
+int loopsInsideLambdasAreFine() {
+    var f = () -> {
+        var sum = 0;
+        for i in 0..10 {
+            if i == 5 {
+                break;
+            }
+            if i == 3 {
+                continue;
+            }
+            sum = sum + i;
+        }
+        return sum;
+    };
+    return f();
+}
+
+void main() {
+    _ = loopsInsideLambdasAreFine();
+    while true {
+        var f = () -> {
+            if true {
+                // CHECK: [[@LINE+1]]:17: error: 'break' is only allowed inside 'while', 'for', and 'switch' statements
+                break;
+            }
+            return 1;
+        };
+        var g = () -> {
+            if true {
+                // CHECK: [[@LINE+1]]:17: error: 'continue' is only allowed inside 'while' and 'for' statements
+                continue;
+            }
+            return 1;
+        };
+        break;
+    }
+}
+
+// CHECK-NOT: error
+// CHECK-NOT: warning

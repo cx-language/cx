@@ -237,6 +237,8 @@ void Typechecker::typecheckFunctionDecl(FunctionDecl& decl) {
     // Lambda bodies are checked inline within the enclosing function; moves they record
     // must not clobber the enclosing move state, which is restored when the body is done.
     llvm::SaveAndRestore saveMovedDecls(movedDecls, movedDecls);
+    // 'break' and 'continue' must not cross function boundaries into enclosing loops or switches.
+    llvm::SaveAndRestore saveControlStmts(currentControlStmts, std::vector<Stmt*>());
 
     if (decl.hasPack()) {
         ERROR(decl.getPackParam()->getLocation(), "variadic parameter requires a generic function");
