@@ -423,6 +423,10 @@ Token Lexer::nextToken() {
                 return Token(it->second, getCurrentLocation(), string);
             }
 
+            if (string.starts_with("__")) {
+                ERROR(getCurrentLocation(), "'__'-prefixed identifiers are reserved for the compiler");
+            }
+
             return Token(Token::Identifier, getCurrentLocation(), string);
         }
     }

@@ -1,0 +1,13 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+void main() {
+    var _ok = 1;
+    _ = _ok;
+}
+
+// CHECK: [[@LINE+1]]:8: error: '__'-prefixed identifiers are reserved for the compiler
+struct __closure0 {
+    int x;
+}
+
+// CHECK-NOT: error
