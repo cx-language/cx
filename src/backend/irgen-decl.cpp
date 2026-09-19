@@ -55,16 +55,18 @@ void IRGenerator::emitFunctionBody(const FunctionDecl& decl, Function& function)
     }
 
     for (auto* captured : decl.captures) {
-        // Captures are per-call copies of the closure's stored values, so unlike regular
-        // locals they get no destructor call here; the stored values are destroyed with the closure.
-        auto inserted = scopes.back().valuesByDecl.try_emplace(captured, &*arg);
+        // Captures spill to allocas so stores, member access, and address-of treat them like
+        // locals. The allocas hold per-call copies, so unlike regular locals they get no
+        // destructor call here; the closure's stored values are destroyed with the closure.
+        auto* spill = createEntryBlockAlloca(captured->type, ("__capture_" + captured->getName()).str());
+        createStore(&*arg++, spill);
+        auto inserted = scopes.back().valuesByDecl.try_emplace(captured, spill);
         ASSERT(inserted.second);
         // Field accesses lower to getThis(); captured `this` must answer those too.
         if (captured->getName() == "this") {
-            auto thisInserted = scopes.back().valuesByDecl.try_emplace(nullptr, &*arg);
+            auto thisInserted = scopes.back().valuesByDecl.try_emplace(nullptr, spill);
             ASSERT(thisInserted.second);
         }
-        ++arg;
     }
 
     for (auto& param : decl.getParams()) {

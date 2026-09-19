@@ -20,6 +20,9 @@
 // CHECK-NEXT:end
 // CHECK-NEXT:deinit 7
 // CHECK-NEXT:3
+// CHECK-NEXT:0
+// CHECK-NEXT:1
+// CHECK-NEXT:1
 
 void capturesParam(int p) {
     var d = 3;
@@ -137,6 +140,40 @@ struct Counter {
     }
 }
 
+struct CopyableCounter: Copyable {
+    int n;
+
+    void bump() {
+        var f = () -> {
+            n = 5;
+        };
+        f();
+    }
+}
+
+void captureStoreIsLocal() {
+    var a = 1;
+    var f = () -> {
+        a = 5;
+    };
+    f();
+    println(a);
+}
+
+struct CopyablePoint: Copyable {
+    int x;
+    int y;
+}
+
+void structFieldStoreIsLocal() {
+    var p = CopyablePoint(x = 1, y = 2);
+    var f = () -> {
+        p.x = 9;
+    };
+    f();
+    println(p.x);
+}
+
 void main() {
     capturesParam(100);
     var s = S(d = 5);
@@ -158,4 +195,9 @@ void main() {
     var c = Counter(n = 0);
     c.bump(3);
     println(c.n);
+    var cc = CopyableCounter(n = 0);
+    cc.bump();
+    println(cc.n);
+    captureStoreIsLocal();
+    structFieldStoreIsLocal();
 }

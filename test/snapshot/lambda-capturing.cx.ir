@@ -17,8 +17,14 @@ void _EN4main13capturesParamE3int(int p) {
 }
 
 int _EN4main9__lambda0E3int(int __capture_p, int __capture_d, int c) {
-    int _0 = c + __capture_p
-    int _1 = _0 + __capture_d
+    int* __capture_p_0 = alloca int
+    int* __capture_d_0 = alloca int
+    store __capture_p to __capture_p_0
+    store __capture_d to __capture_d_0
+    int __capture_p.load = load __capture_p_0
+    int _0 = c + __capture_p.load
+    int __capture_d.load = load __capture_d_0
+    int _1 = _0 + __capture_d.load
     return _1
 }
 
@@ -62,13 +68,22 @@ int _EN4main1S3getE3int(S* this, int c) {
 }
 
 int _EN4main9__lambda2E3int(int __capture_a, int c) {
-    int _0 = c + __capture_a
+    int* __capture_a_0 = alloca int
+    store __capture_a to __capture_a_0
+    int __capture_a.load = load __capture_a_0
+    int _0 = c + __capture_a.load
     return _0
 }
 
 int _EN4main9__lambda1E3int(int __capture_c, S* __capture_this, int x) {
-    int _0 = x + __capture_c
-    int* d = getelementptr __capture_this, 0
+    int* __capture_c_0 = alloca int
+    S** __capture_this_0 = alloca S*
+    store __capture_c to __capture_c_0
+    store __capture_this to __capture_this_0
+    int __capture_c.load = load __capture_c_0
+    int _0 = x + __capture_c.load
+    S* __capture_this.load = load __capture_this_0
+    int* d = getelementptr __capture_this.load, 0
     int d.load = load d
     int _1 = _0 + d.load
     return _1
