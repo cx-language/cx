@@ -564,6 +564,9 @@ Value* IRGenerator::emitIndexAssignmentExpr(const IndexAssignmentExpr& expr) {
 }
 
 Value* IRGenerator::emitUnwrapExpr(const UnwrapExpr& expr) {
+    if (!expr.operand->type.isOptionalType()) {
+        return emitExpr(*expr.operand);
+    }
     return emitOptionalUnwrap(*expr.operand, expr, "assert");
 }
 

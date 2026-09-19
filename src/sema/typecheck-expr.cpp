@@ -1912,7 +1912,8 @@ Type Typechecker::typecheckIndexAssignmentExpr(IndexAssignmentExpr& expr) {
 Type Typechecker::typecheckUnwrapExpr(UnwrapExpr& expr) {
     Type type = typecheckExpr(*expr.operand);
     if (!type.isOptionalType()) {
-        ERROR(expr.location, "cannot unwrap non-optional type '" << type << "'");
+        WARN(expr.location, "unwrapping non-optional type '" << type << "' has no effect");
+        return type;
     }
     return type.getWrappedType();
 }

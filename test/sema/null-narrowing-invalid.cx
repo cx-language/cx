@@ -5,7 +5,7 @@ void takesInt(int i) {}
 // CHECK-NOT: {{(warning|error)}}:
 void redundantUnwrap(int? v) {
     if v {
-        // CHECK: [[@LINE+1]]:18: error: cannot unwrap non-optional type 'int'
+        // CHECK: [[@LINE+1]]:18: warning: unwrapping non-optional type 'int' has no effect
         var x = v!;
     }
 }
