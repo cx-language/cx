@@ -16,12 +16,55 @@
         <li><a href="./interfaces">Interfaces</a></li>
         <li><a href="./generics">Generics</a></li>
         <li><a href="./low-level-programming">Low-level programming</a></li>
-        <li><a href="./std">Standard library</a></li>
+        <li><a href="./std">Standard library</a>
+            <ul>
+                <!--STD-PAGES-->
+            </ul>
+        </li>
     </ul>
 </div>
 
 <script>
-    var currentPage = window.location.pathname.split("/").pop();
-    var link = document.querySelector(".side-nav a[href='./" + currentPage + "']");
-    link.className = "active";
+    var here = window.location.pathname.replace(/\.html$/, "").replace(/\/$/, "");
+    var links = document.querySelectorAll(".side-nav a");
+    for (var i = 0; i < links.length; i++) {
+        var target = new URL(links[i].getAttribute("href"), window.location.href).pathname.replace(/\/$/, "");
+        if (target === here) {
+            links[i].className = "active";
+            break;
+        }
+    }
+
+    // A sticky sidebar can't express "end above the footer" in CSS,
+    // so clamp its height while scrolling instead.
+    var desktop = window.matchMedia("(min-width: 768px)");
+    function fitSidebar() {
+        var sideNav = document.querySelector(".side-nav");
+        var footer = document.querySelector(".site-footer");
+        if (!sideNav || !footer || !desktop.matches) {
+            if (sideNav && !desktop.matches) sideNav.style.maxHeight = "";
+            return;
+        }
+        var room = Math.min(window.innerHeight, footer.getBoundingClientRect().top)
+            - sideNav.getBoundingClientRect().top - 24;
+        sideNav.style.maxHeight = Math.max(160, room) + "px";
+    }
+    window.addEventListener("scroll", fitSidebar, {passive: true});
+    window.addEventListener("resize", fitSidebar);
+    window.addEventListener("DOMContentLoaded", fitSidebar);
+
+    // Keep the sidebar's scroll position across page navigation;
+    // the page itself still starts at the top. Restored again on
+    // load in case the stylesheet wasn't ready at parse time.
+    var sideNav = document.querySelector(".side-nav");
+    function restoreSidebarScroll() {
+        try {
+            if (sessionStorage.sideNavScroll) sideNav.scrollTop = +sessionStorage.sideNavScroll;
+        } catch (e) {}
+    }
+    restoreSidebarScroll();
+    window.addEventListener("load", restoreSidebarScroll);
+    sideNav.addEventListener("scroll", function() {
+        try { sessionStorage.sideNavScroll = sideNav.scrollTop; } catch (e) {}
+    }, {passive: true});
 </script>

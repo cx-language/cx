@@ -42,28 +42,52 @@ mkdir ../build
 # pandoc spec.tex -o ../build/spec.html -s --toc --include-before-body="../top-nav.html" --include-before-body="../toc.html"
 cd ..
 
-for file in book/*.md index.html; do
-    basename=$(basename "$file")
+# Regenerate the standard library reference from the stdlib sources into a
+# staging directory. The generated pages are build products, not versioned.
+rm -rf .generated
+python3 generate_std_docs.py || exit
 
-    case $basename in
-        index.html)
-            toc=""
+for file in book/*.md .generated/*.md .generated/std/*.md .generated/std/*/*.md index.html; do
+    case $file in
+        book/*)
+            relpath="${file#book/}"
+            relpath="${relpath%.md}"
             ;;
-        *)
-            toc=--include-before-body="toc.html"
+        .generated/*)
+            relpath="${file#.generated/}"
+            relpath="${relpath%.md}"
+            ;;
+        index.html)
+            relpath="index"
             ;;
     esac
 
-    basename="${basename%.*}"
+    case $relpath in
+        index)
+            toc=""
+            ;;
+        *)
+            toc=--include-before-body=".generated/toc.html"
+            ;;
+    esac
 
-    if [ "$basename" = "index" ]; then
+    if [ "$relpath" = "index" ]; then
         title="C* Programming Language"
     else
-        # The first '# ' heading is the section name.
-        title="C* - $(sed -n 's/^# //p' "$file" | head -n 1)"
+        # The first '# ' heading is the section name (unwrap links: '# [List](...)' -> 'List').
+        title="C* - $(sed -n 's/^# //p' "$file" | head -n 1 | sed 's/^\[\(.*\)\](.*/\1/')"
     fi
 
-    pandoc "$file" -o "build/$basename.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
+    # The std index page lives at std/index.html: build/std.html would be
+    # shadowed by the build/std/ subpage directory.
+    if [ "$relpath" = "std" ]; then
+        outpath="std/index"
+    else
+        outpath="$relpath"
+    fi
+
+    mkdir -p "build/$(dirname "$outpath")"
+    pandoc "$file" -o "build/$outpath.html" -s --template="template.html" --include-before-body="top-nav.html" $toc --include-after-body="footer.html" --metadata pagetitle="$title"
 
     # Substitute the front-page example code. This must be HTML-escaped:
     # browsers would otherwise parse e.g. List<bool> as an HTML tag, corrupting
@@ -75,15 +99,23 @@ for file in book/*.md index.html; do
     # check_examples) and run in the browser playground: no C header imports,
     # no file system access, and no float-to-int conversions of unbounded
     # values (those trap on WebAssembly). The first entry is shown by default.
-    python3 - "$basename" <<'EOF'
+    python3 - "$outpath" <<'EOF'
 import html
 import json
+import re
 import sys
 
-basename = sys.argv[1]
-path = "build/" + basename + ".html"
+outpath = sys.argv[1]
+path = "build/" + outpath + ".html"
 with open(path) as file:
     template = file.read()
+
+# Pages below the site root resolve sibling links and assets relatively,
+# so prefix them back up to the root (anchors and absolute URLs excluded).
+depth = outpath.count("/")
+if depth:
+    prefix = "../" * depth
+    template = re.sub(r'(href|src)="(\./)?(?!#|/|[a-zA-Z][a-zA-Z0-9+.-]*:)', r'\1="' + prefix, template)
 
 showcase = [
     ("Prime sieve", "sieve.cx"),
@@ -110,7 +142,7 @@ if "##EXAMPLESELECTOR##" in template:
 with open(path, "w") as file:
     file.write(template)
 
-if basename == "index":
+if outpath == "index":
     examples = [{"name": name, "code": open("../examples/" + filename).read()} for name, filename in showcase]
     for example in examples:
         assert "</script" not in example["code"], "example breaks out of playground-examples.js: " + example["name"]

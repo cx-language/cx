@@ -57,7 +57,7 @@ body {
     padding: 0 24px;
     box-sizing: content-box;
     font-family: var(--sans);
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.65;
     display: grid;
     grid-column-gap: 48px;
@@ -326,6 +326,12 @@ th {
     gap: 2px 18px;
 }
 
+.side-nav ul ul {
+    margin: 0;
+    padding-left: 1em;
+    list-style-type: none;
+}
+
 .side-nav a {
     color: var(--text-color-subtle);
     padding: 2px 0;
@@ -343,6 +349,7 @@ th {
         align-self: start;
         max-height: calc(100vh - 102px);
         overflow: auto;
+        scrollbar-gutter: stable;
         margin: 32px 0 48px;
         padding-right: 8px;
     }

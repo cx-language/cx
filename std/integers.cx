@@ -1,26 +1,46 @@
 // TODO: Convert these to static members of the corresponding integer type:
+/// Largest value of type int.
 const int int_max = 2147483647;
+/// Largest value of type int8.
 const int8 int8_max = 127;
+/// Largest value of type int16.
 const int16 int16_max = 32767;
+/// Largest value of type int32.
 const int32 int32_max = 2147483647;
+/// Largest value of type int64.
 const int64 int64_max = 9223372036854775807;
 
+/// Smallest value of type int.
 const int int_min = -2147483648;
+/// Smallest value of type int8.
 const int8 int8_min = -128;
+/// Smallest value of type int16.
 const int16 int16_min = -32768;
+/// Smallest value of type int32.
 const int32 int32_min = -2147483648;
+/// Smallest value of type int64.
 const int64 int64_min = -9223372036854775808;
 
+/// Largest value of type uint.
 const uint uint_max = 4294967295;
+/// Largest value of type uint8.
 const uint8 uint8_max = 255;
+/// Largest value of type uint16.
 const uint16 uint16_max = 65535;
+/// Largest value of type uint32.
 const uint32 uint32_max = 4294967295;
+/// Largest value of type uint64.
 const uint64 uint64_max = 18446744073709551615;
 
+/// Smallest value of type uint.
 const uint uint_min = 0;
+/// Smallest value of type uint8.
 const uint8 uint8_min = 0;
+/// Smallest value of type uint16.
 const uint16 uint16_min = 0;
+/// Smallest value of type uint32.
 const uint32 uint32_min = 0;
+/// Smallest value of type uint64.
 const uint64 uint64_min = 0;
 
 // TODO: Remove code duplication by declaring an 'Integer' interface that implements the 'compare'
@@ -40,155 +60,199 @@ private void printUnsigned(uint64 value, StringBuffer* stream) {
     stream.write(string(result));
 }
 
+/// A signed integer.
 struct int: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(int* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printSigned(int64(this), stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
+/// An 8-bit signed integer.
 struct int8: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(int8* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printSigned(int64(this), stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
+/// A 16-bit signed integer.
 struct int16: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(int16* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printSigned(int64(this), stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
+/// A 32-bit signed integer.
 struct int32: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(int32* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printSigned(int64(this), stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
+/// A 64-bit signed integer.
 struct int64: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(int64* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printSigned(this, stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
 // Not Printable or Hashable for now.
+/// A 128-bit signed integer.
 struct int128: Copyable, Comparable {
+    /// Compares this value to another.
     Ordering compare(int128* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 }
 
+/// An unsigned integer.
 struct uint: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(uint* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printUnsigned(uint64(this), stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
+/// An 8-bit unsigned integer.
 struct uint8: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(uint8* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printUnsigned(uint64(this), stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
+/// A 16-bit unsigned integer.
 struct uint16: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(uint16* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printUnsigned(uint64(this), stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
+/// A 32-bit unsigned integer.
 struct uint32: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(uint32* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printUnsigned(uint64(this), stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }
 }
 
+/// A 64-bit unsigned integer.
 struct uint64: Copyable, Comparable, Printable, Hashable {
+    /// Compares this value to another.
     Ordering compare(uint64* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         printUnsigned(this, stream);
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return this;
     }
 }
 
 // Not Printable or Hashable for now.
+/// A 128-bit unsigned integer.
 struct uint128: Copyable, Comparable {
+    /// Compares this value to another.
     Ordering compare(uint128* other) {
         return this < other ? Ordering.Less : this > other ? Ordering.Greater : Ordering.Equal;
     }

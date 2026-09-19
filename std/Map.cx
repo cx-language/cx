@@ -1,10 +1,16 @@
+/// A key-value pair stored in a map.
 struct MapEntry<Key: Hashable, Value> {
+    /// The entry's key.
     Key key;
+    /// The entry's value.
     Value value;
 }
 
+/// A hash map from keys to values.
 struct Map<Key: Hashable, Value> {
+    /// Hash table buckets.
     List<List<MapEntry<Key, Value>>> hashTable;
+    /// Number of entries.
     int size;
 
     /// Initializes an empty map
@@ -58,10 +64,12 @@ struct Map<Key: Hashable, Value> {
         }
     }
 
+    /// Returns the number of entries.
     int size() {
         return size;
     }
 
+    /// Returns the number of buckets.
     int capacity() {
         return hashTable.size();
     }
@@ -82,6 +90,7 @@ struct Map<Key: Hashable, Value> {
         hashTable = newTable;
     }
 
+    /// Returns the value for the given key, or null.
     Value*? operator[](Key* e) {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
@@ -113,6 +122,7 @@ struct Map<Key: Hashable, Value> {
         return false;
     }
 
+    /// Returns true if the map has no entries.
     bool empty() {
         return size == 0;
     }
@@ -129,6 +139,7 @@ struct Map<Key: Hashable, Value> {
     }
 }
 
+/// Converts a hash into a bucket index.
 int convertHash(uint64 hash) {
     return int(hash) & int_max;
 }

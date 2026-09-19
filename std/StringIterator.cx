@@ -1,20 +1,27 @@
+/// Iterates over the characters of a string.
 struct StringIterator: Copyable, Iterator<char> {
+    /// Pointer to the current character.
     char[*] current;
+    /// Pointer past the last character.
     char[*] end;
 
+    /// Initializes an iterator over the given string.
     StringIterator(string s) {
         current = s.data();
         end = &s.data()[s.size()];
     }
 
+    /// Returns true if there are more characters.
     bool hasValue() {
         return current != end;
     }
 
+    /// Returns the current character.
     char value() {
         return *current;
     }
 
+    /// Advances to the next character.
     void increment() {
         current++;
     }

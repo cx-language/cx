@@ -1,7 +1,10 @@
 /// First-in-first-out data structure
 struct Queue<T> {
+    /// First node.
     Node<T>*? head;
+    /// Last node.
     Node<T>*? tail;
+    /// Number of elements.
     int size;
 
     /// Initialize an empty Queue
@@ -11,6 +14,7 @@ struct Queue<T> {
         size = 0;
     }
 
+    /// Frees all nodes.
     ~Queue() {
         while !empty() {
             var next = head!.next;
@@ -65,10 +69,14 @@ struct Queue<T> {
     }
 }
 
+/// One element of a queue.
 struct Node<T> {
+    /// Next node.
     Node<T>*? next;
+    /// Stored element.
     T value;
 
+    /// Initializes a node holding the given value.
     Node(T val) {
         this.value = val;
         this.next = null;

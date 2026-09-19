@@ -1,20 +1,27 @@
+/// Iterates over the values of a range.
 struct RangeIterator<T>: Copyable, Iterator<T> {
+    /// Current value.
     T current;
+    /// Last value, exclusive.
     T end;
 
+    /// Initializes an iterator over the given range.
     RangeIterator(Range<T> range) {
         current = range.start();
         end = range.end();
     }
 
+    /// Returns true if there are more values.
     bool hasValue() {
         return current != end;
     }
 
+    /// Returns the current value.
     T value() {
         return current;
     }
 
+    /// Advances to the next value.
     void increment() {
         current++;
     }

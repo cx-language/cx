@@ -1,4 +1,6 @@
+/// A type whose values can be hashed for use in maps and sets.
 interface Hashable {
     // TODO: Should probably return int since Map just casts it to int anyway.
+    /// Returns the hash of this value.
     uint64 hash();
 }

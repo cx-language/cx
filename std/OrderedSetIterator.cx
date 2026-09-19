@@ -1,18 +1,24 @@
+/// Iterates over the elements of an ordered set, in order.
 struct OrderedSetIterator<Element>: Copyable, Iterator<Element*> {
+    /// Underlying map iterator.
     OrderedMapIterator<Element, bool> mapIter;
 
+    /// Initializes an iterator over the given set.
     OrderedSetIterator(OrderedSet<Element>* set) {
         this.mapIter = set.map.iterator();
     }
 
+    /// Returns true if there are more elements.
     bool hasValue() {
         return mapIter.hasValue();
     }
 
+    /// Returns the current element.
     Element* value() {
         return mapIter.value().key;
     }
 
+    /// Advances to the next element.
     void increment() {
         mapIter.increment();
     }

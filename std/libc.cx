@@ -1,55 +1,100 @@
 // stdlib.h
+/// Allocates size bytes of memory.
 extern void*? malloc(uint64 size);
+/// Frees memory allocated by malloc.
 extern void free(void*? ptr);
+/// Aborts the program immediately.
 extern never abort();
+/// Exits the program with the given status.
 extern never exit(int status);
 
 // stdio.h
+/// A C file handle.
 struct FILE {}
+/// Prints formatted output to stdout.
 extern int printf(const char* format, ...);
+/// Prints formatted output to the given file.
 extern int fprintf(FILE* file, const char* format, ...);
+/// Prints formatted output into the given string.
 extern int sprintf(char* str, const char* format, ...);
+/// Prints the given string followed by a newline.
 extern int puts(const char* str);
+/// Writes the given string to the file.
 extern int fputs(const char* str, FILE* file);
+/// Writes the given character to the file.
 extern int fputc(int c, FILE* file);
+/// Reads a character from stdin.
 extern int getchar();
+/// Opens the named file.
 extern FILE*? fopen(const char* filename, const char* mode);
 #if Windows
+/// Opens a file descriptor as a file (Windows).
 extern FILE*? _fdopen(int fd, const char* mode);
+/// Opens a file descriptor as a file.
 FILE*? fdopen(int fd, const char* mode) { return _fdopen(fd, mode); }
 #else
+/// Opens a file descriptor as a file.
 extern FILE*? fdopen(int fd, const char* mode);
 #endif
+/// Reads a character from the file.
 extern int fgetc(FILE* file);
+/// Reads elements from the file.
 extern uint64 fread(void* data, uint64 size, uint64 count, FILE* file);
+/// Writes elements to the file.
 extern void fwrite(const void* data, uint64 size, uint64 count, FILE* file);
+/// Moves the file position.
 extern void fseek(FILE* file, int64 offset, int origin);
+/// Returns the current file position.
 extern int64 ftell(FILE* file);
+/// Closes the file.
 extern int fclose(FILE* file);
+/// Flushes buffered output to the file.
 extern int fflush(FILE* file);
+/// Returns true at end of file.
 extern int feof(FILE* file);
+/// Deletes the named file.
 extern int remove(const char* filename);
+/// Pushes a character back onto the file.
 extern int ungetc(int c, FILE* file);
+/// Moves the file position to the start.
 extern void rewind(FILE* file);
+/// Origin for fseek: start of file.
 const SEEK_SET = 0;
+/// Origin for fseek: current position.
 const SEEK_CUR = 1;
+/// Origin for fseek: end of file.
 const SEEK_END = 2;
 
 // string.h
+/// Returns the length of the string.
 extern uint64 strlen(const char* string);
 
 // ctype.h
+/// Returns true if the character is alphanumeric.
 extern int isalnum(int ch);
+/// Returns true if the character is a letter.
 extern int isalpha(int ch);
+/// Returns true if the character is lowercase.
 extern int islower(int ch);
+/// Returns true if the character is uppercase.
 extern int isupper(int ch);
+/// Returns true if the character is a digit.
 extern int isdigit(int ch);
+/// Returns true if the character is a hexadecimal digit.
 extern int isxdigit(int ch);
+/// Returns true if the character is a control character.
 extern int iscntrl(int ch);
+/// Returns true if the character is printable but not a space.
 extern int isgraph(int ch);
+/// Returns true if the character is whitespace.
 extern int isspace(int ch);
+/// Returns true if the character is a blank.
 extern int isblank(int ch);
+/// Returns true if the character is printable.
 extern int isprint(int ch);
+/// Returns true if the character is punctuation.
 extern int ispunct(int ch);
+/// Converts the character to lowercase.
 extern int tolower(int ch);
+/// Converts the character to uppercase.
 extern int toupper(int ch);

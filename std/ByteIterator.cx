@@ -1,22 +1,29 @@
+/// Iterates over the bytes of a string.
 struct ByteIterator: Copyable, Iterator<uint8> {
+    /// Remaining input.
     string stream;
 
+    /// Initializes an iterator over the given string.
     ByteIterator(string stream) {
         this.stream = stream;
     }
 
+    /// Returns true if there are more bytes.
     bool hasValue() {
         return !stream.empty();
     }
 
+    /// Returns the current byte.
     uint8 value() {
         return uint8(stream.front());
     }
 
+    /// Advances to the next byte.
     void increment() {
         stream = stream.substr(1);
     }
 
+    /// Returns itself.
     ByteIterator iterator() {
         return this;
     }

@@ -1,3 +1,4 @@
+/// Returns the absolute value.
 T abs<T>(T value) {
     if value < 0 {
         return -value;
@@ -6,6 +7,7 @@ T abs<T>(T value) {
     }
 }
 
+/// Constrains the value to the given range.
 T clamp<T>(T value, T min, T max) {
     if value < min return min;
     if value > max return max;

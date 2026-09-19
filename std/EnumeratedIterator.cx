@@ -1,27 +1,37 @@
+/// Iterates over elements with their indices.
 struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<Element>> {
+    /// Underlying iterator.
     ArrayIterator<Element> base;
+    /// Current index.
     int index;
 
+    /// Initializes an iterator over the given iterator.
     EnumeratedIterator(ArrayIterator<Element> iterator) {
         base = iterator;
         index = 0;
     }
 
+    /// Returns true if there are more elements.
     bool hasValue() {
         return base.hasValue();
     }
 
+    /// Returns the current element with its index.
     EnumeratedIteratorEntry<Element> value() {
         return EnumeratedIteratorEntry(base.value(), index);
     }
 
+    /// Advances to the next element.
     void increment() {
         base.increment();
         index++;
     }
 }
 
+/// An element with its index.
 struct EnumeratedIteratorEntry<Value>: Copyable {
+    /// The element.
     Value* value;
+    /// The element's index.
     int index;
 }

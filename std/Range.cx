@@ -1,35 +1,47 @@
+/// A half-open range from start to end.
 struct Range<T>: Copyable {
+    /// First value, inclusive.
     T start;
+    /// Last value, exclusive.
     T end;
 
+    /// Initializes a range from start to end.
     Range(T start, T end) {
         this.start = start;
         this.end = end;
     }
 
+    /// Initializes a range from 0 to end.
     Range(T end) {
         init(0, end);
     }
 
     // Returns the number of elements this range contains.
+    /// Returns the number of values in the range.
     T size() {
         return end - start;
     }
 
+    /// Returns the first value.
     T start() {
         return start;
     }
 
+    /// Returns the last value, exclusive.
     T end() {
         return end;
     }
 
+    /// Returns an iterator over the values.
     RangeIterator<T> iterator() {
         return RangeIterator(this);
     }
 
     // TODO: Remove these once implicit into-iterator conversions have been implemented.
+    /// Returns true if all values satisfy the predicate.
     bool all(bool(T) predicate) { return all(iterator(), predicate); }
+    /// Returns true if any value satisfies the predicate.
     bool any(bool(T) predicate) { return any(iterator(), predicate); }
+    /// Returns true if no value satisfies the predicate.
     bool none(bool(T) predicate) { return none(iterator(), predicate); }
 }

@@ -16,6 +16,7 @@ interface Iterator<Element> {
 
 // FIXME: Taking 'it' by value causes a miscompilation that stores 'it' into a value for calling the methods,
 // thus preventing 'it' from being mutated, resulting in an infinite loop.
+/// Returns true if all remaining elements satisfy the predicate.
 bool all<T, I>(I* it, bool(T) predicate) {
     for ; it.hasValue(); it.increment() {
         if !predicate(it.value()) {
@@ -25,6 +26,7 @@ bool all<T, I>(I* it, bool(T) predicate) {
     return true;
 }
 
+/// Returns true if any remaining element satisfies the predicate.
 bool any<T, I>(I* it, bool(T) predicate) {
     for ; it.hasValue(); it.increment() {
         if predicate(it.value()) {
@@ -34,6 +36,7 @@ bool any<T, I>(I* it, bool(T) predicate) {
     return false;
 }
 
+/// Returns true if no remaining element satisfies the predicate.
 bool none<T, I>(I* it, bool(T) predicate) {
     for ; it.hasValue(); it.increment() {
         if predicate(it.value()) {

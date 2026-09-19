@@ -1,25 +1,32 @@
+/// A single character.
 struct char: Copyable, Comparable, Printable, Hashable {
+    /// Returns true if this is a letter.
     bool isAlpha() {
         return (this >= 'A' && this <= 'Z') || (this >= 'a' && this <= 'z');
     }
 
+    /// Returns true if this is a digit.
     bool isDigit() {
         return this >= '0' && this <= '9';
     }
 
+    /// Returns true if this is whitespace.
     bool isWhitespace() {
         return this == ' ' || (this >= char(0x9) && this <= char(0xD));
     }
 
+    /// Compares this value to another.
     Ordering compare(char* other) {
         return int(this).compare(int(other));
     }
 
+    /// Writes this value to the given stream.
     void print(StringBuffer* stream) {
         // TODO: Use char overload of 'write' when it's implemented.
         stream.write(string(this, 1));
     }
 
+    /// Returns the hash of this value.
     uint64 hash() {
         return uint64(this);
     }

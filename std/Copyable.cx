@@ -1,1 +1,2 @@
+/// A type whose values can be copied.
 interface Copyable {}
