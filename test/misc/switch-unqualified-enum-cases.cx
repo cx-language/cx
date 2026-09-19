@@ -8,6 +8,10 @@
 // CHECK-NEXT:green
 // CHECK-NEXT:other
 // CHECK-NEXT:case
+// CHECK-NEXT:eq
+// CHECK-NEXT:eq
+// CHECK-NEXT:ne
+// CHECK-NEXT:ne
 
 enum Color {
     Red,
@@ -31,20 +35,25 @@ void plain(Color c) {
     }
 }
 
-void bound() {
-    var s = Shape.Circle(radius = 2);
+void bound(Shape s) {
     switch (s) {
     case Circle c:
         println("circle ", c.radius);
     case Rect r:
         println("rect ", r.width, " ", r.height);
     }
-    s = Shape.Rect(width = 3, height = 4);
-    switch (s) {
-    case Circle c:
-        println("circle ", c.radius);
-    case Rect r:
-        println("rect ", r.width, " ", r.height);
+}
+
+void equality(Shape s) {
+    if (s == Shape.Circle(radius = 1)) {
+        println("eq");
+    } else {
+        println("ne");
+    }
+    if (s != Shape.Circle(radius = 1)) {
+        println("ne");
+    } else {
+        println("eq");
     }
 }
 
@@ -74,9 +83,12 @@ void main() {
     plain(Color.Red);
     plain(Color.Green);
     plain(Color.Blue);
-    bound();
+    bound(Shape.Circle(radius = 2));
+    bound(Shape.Rect(width = 3, height = 4));
     mixed(Color.Red);
     mixed(Color.Green);
     mixed(Color.Blue);
     shadowing();
+    equality(Shape.Circle(radius = 1));
+    equality(Shape.Rect(width = 1, height = 2));
 }

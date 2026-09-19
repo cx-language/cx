@@ -138,11 +138,15 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
             ERROR(switchCase.value->location, "case value type '" << caseType << "' doesn't match switch condition type '" << conditionType << "'");
         }
 
+        auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
+        auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+        if (!enumCase && !switchCase.value->isConstant()) {
+            ERROR(switchCase.value->location, "case value must be constant");
+        }
+
         Scope scope(nullptr, &currentModule->symbolTable);
 
         if (auto* associatedValue = switchCase.associatedValue) {
-            auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
-            auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
             if (!enumCase) {
                 ERROR(associatedValue->location, "only enum cases can bind associated values");
             }

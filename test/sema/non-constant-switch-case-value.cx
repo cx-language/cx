@@ -1,0 +1,40 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+
+void mutableVariable() {
+    var x = 42;
+    switch (42) {
+        // CHECK: [[@LINE+1]]:14: error: case value must be constant
+        case x: break;
+        default: break;
+    }
+}
+
+void functionParameter(int i) {
+    switch (42) {
+        // CHECK: [[@LINE+1]]:14: error: case value must be constant
+        case i: break;
+        default: break;
+    }
+}
+
+void enumVariable(Color c) {
+    switch (c) {
+        // CHECK: [[@LINE+1]]:14: error: case value must be constant
+        case c: break;
+        default: break;
+    }
+}
+
+void immutableVariable() {
+    const x = 42;
+    switch (42) {
+        case x: break;
+        default: break;
+    }
+}
