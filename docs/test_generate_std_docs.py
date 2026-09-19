@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from generate_std_docs import (
+    STD_CATEGORIES,
     main,
     member_name,
     page_name,
@@ -242,13 +243,40 @@ class FileOrderTest(unittest.TestCase):
 
 
 class TocTest(unittest.TestCase):
-    def test_items_link_to_pages(self):
-        items = render_toc_items([("List.cx", [], {}, [], False), ("os/posix.cx", [], {}, [], False)])
+    def test_uncategorized_pages_render_flat(self):
+        items = render_toc_items(
+            [("allocate.cx", [], {}, [], False), ("os/posix.cx", [], {}, [], False)]
+        )
         self.assertEqual(
             items,
             [
-                '                <li><a href="./std/List">List</a></li>',
+                '                <li><a href="./std/allocate">allocate</a></li>',
                 '                <li><a href="./std/os/posix">os/posix</a></li>',
+            ],
+        )
+
+    def test_categories_render_nested_after_uncategorized(self):
+        items = render_toc_items(
+            [
+                ("List.cx", [], {}, [], False),
+                ("bool.cx", [], {}, [], False),
+                ("allocate.cx", [], {}, [], False),
+            ]
+        )
+        self.assertEqual(
+            items,
+            [
+                '                <li><a href="./std/allocate">allocate</a></li>',
+                '                <li><span class="toc-category">Primitive types</span>\n'
+                "                    <ul>\n"
+                '                        <li><a href="./std/bool">bool</a></li>\n'
+                "                    </ul>\n"
+                "                </li>",
+                '                <li><span class="toc-category">Containers</span>\n'
+                "                    <ul>\n"
+                '                        <li><a href="./std/List">List</a></li>\n'
+                "                    </ul>\n"
+                "                </li>",
             ],
         )
 
@@ -314,6 +342,19 @@ class StdlibTest(unittest.TestCase):
         for relpath, markdown in self.rendered.items():
             ids = re.findall(r"\{#(.*?)\}", markdown)
             self.assertEqual(len(ids), len(set(ids)), relpath)
+
+    def test_categories_reference_known_files_once(self):
+        seen = set()
+        for label, paths in STD_CATEGORIES:
+            for path in paths:
+                self.assertIn(path, self.by_path, f"{label}: {path}")
+                self.assertNotIn(path, seen, f"{label}: {path}")
+                seen.add(path)
+
+    def test_category_labels_rendered(self):
+        toc = "\n".join(render_toc_items(self.pages))
+        for label in ["Primitive types", "Ranges &amp; iterators", "Input/output"]:
+            self.assertIn(f'<span class="toc-category">{label}</span>', toc)
 
 
 class StagingTest(unittest.TestCase):

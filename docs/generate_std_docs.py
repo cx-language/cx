@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import html
 import pathlib
 import re
 import sys
@@ -295,12 +296,67 @@ def render_index(pages):
 
 TOC_PLACEHOLDER = "<!--STD-PAGES-->"
 
+# Sidebar grouping of the stdlib pages. Files listed here render nested
+# under their category; anything else renders directly under the
+# Standard library entry in filename order.
+STD_CATEGORIES = [
+    ("Primitive types", ["bool.cx", "char.cx", "integers.cx", "floats.cx", "never.cx"]),
+    ("Strings", ["string.cx", "StringBuffer.cx"]),
+    (
+        "Containers",
+        [
+            "ArrayRef.cx",
+            "Box.cx",
+            "List.cx",
+            "Map.cx",
+            "Optional.cx",
+            "OrderedMap.cx",
+            "OrderedSet.cx",
+            "Queue.cx",
+            "Set.cx",
+        ],
+    ),
+    (
+        "Ranges & iterators",
+        [
+            "Range.cx",
+            "ClosedRange.cx",
+            "Iterator.cx",
+            "ArrayIterator.cx",
+            "ByteIterator.cx",
+            "ClosedRangeIterator.cx",
+            "EnumeratedIterator.cx",
+            "LineIterator.cx",
+            "MapIterator.cx",
+            "OrderedMapIterator.cx",
+            "OrderedSetIterator.cx",
+            "RangeIterator.cx",
+            "SetIterator.cx",
+            "StringIterator.cx",
+        ],
+    ),
+    ("Interfaces", ["Comparable.cx", "Copyable.cx", "Hashable.cx", "Printable.cx"]),
+    ("Input/output", ["stdio.cx", "FileStream.cx"]),
+]
+
 
 def render_toc_items(pages):
-    return [
-        f'                <li><a href="./{page_name(relpath)}">{display_name(relpath)}</a></li>'
+    entries = {
+        relpath: f'<li><a href="./{page_name(relpath)}">{display_name(relpath)}</a></li>'
         for relpath, *_ in pages
-    ]
+    }
+    categorized = {path for _, paths in STD_CATEGORIES for path in paths}
+    items = [entries[relpath] for relpath, *_ in pages if relpath not in categorized]
+    for label, paths in STD_CATEGORIES:
+        members = [entries[path] for path in paths if path in entries]
+        if not members:
+            continue
+        nested = "\n".join(f"                        {member}" for member in members)
+        items.append(
+            f'<li><span class="toc-category">{html.escape(label)}</span>\n'
+            f"                    <ul>\n{nested}\n                    </ul>\n                </li>"
+        )
+    return [f"                {item}" for item in items]
 
 
 def write_toc(output_dir, pages):

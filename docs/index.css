@@ -342,6 +342,13 @@ th {
     text-decoration: none;
 }
 
+.side-nav .toc-category {
+    display: block;
+    padding: 2px 0;
+    font-weight: 650;
+    color: var(--text-color);
+}
+
 @media screen and (min-width: 768px) {
     .side-nav {
         position: sticky;
