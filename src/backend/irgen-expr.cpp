@@ -711,6 +711,10 @@ Value* IRGenerator::emitExprOrEnumTag(const Expr& expr, Value** enumValue) {
     if (auto* enumDecl = llvm::dyn_cast_or_null<EnumDecl>(expr.type.getDecl())) {
         if (enumDecl->hasAssociatedValues()) {
             auto* value = emitLvalueExpr(expr);
+            if (!value->getType()->isPointerType()) {
+                // Aggregate-typed parameters have no address; spill to a temp so the tag load and associated-value access work.
+                value = createTempAlloca(value);
+            }
             if (enumValue) *enumValue = value;
             return createLoad(createGEP(value, 0, nullptr, value->getName() + ".tag"));
         }
