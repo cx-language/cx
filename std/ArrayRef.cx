@@ -51,7 +51,7 @@ struct ArrayRef<Element>: Copyable {
     }
 
     Element*? find(bool(Element*) predicate) {
-        for var element in this {
+        for element in this {
             if predicate(element) {
                 return element;
             }
@@ -75,7 +75,7 @@ bool operator==<T>(ArrayRef<T> a, ArrayRef<T> b) {
         return false;
     }
 
-    for var i in 0..a.size() {
+    for i in 0..a.size() {
         if a[i] != b[i] {
             return false;
         }

@@ -49,7 +49,7 @@ struct Map<Key: Hashable, Value> {
             return;
         }
 
-        for var i in 0..slot.size() {
+        for i in 0..slot.size() {
             if slot[i].key == *e {
                 slot.removeAt(i);
                 size--;
@@ -71,10 +71,10 @@ struct Map<Key: Hashable, Value> {
         var newCapacity = capacity() * 2;
         var newTable = List(newCapacity, List<MapEntry<Key, Value>>());
 
-        for var i in 0..capacity() {
+        for i in 0..capacity() {
             var slot = &hashTable[i];
 
-            for var el in slot {
+            for el in slot {
                 newTable[convertHash(el.key.hash()) % newCapacity].push(*el);
             }
         }
@@ -86,7 +86,7 @@ struct Map<Key: Hashable, Value> {
         var hashValue = convertHash(e.hash()) % capacity();
         var slot = &hashTable[hashValue];
 
-        for var element in slot {
+        for element in slot {
             if element.key == *e {
                 return element.value;
             }
@@ -104,7 +104,7 @@ struct Map<Key: Hashable, Value> {
             return false;
         }
 
-        for var element in slot {
+        for element in slot {
             if element.key == *e {
                 return true;
             }

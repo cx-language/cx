@@ -14,7 +14,7 @@ interface Iterator<Element> {
 }
 ```
 
-A `for` loop like `for var element in collection` is shorthand for
+A `for` loop like `for element in collection` is shorthand for
 calling `iterator()` on the collection, then repeatedly checking `hasValue()`,
 reading the current element with `value()`, and advancing with `increment()`.
 
@@ -57,7 +57,7 @@ struct CountdownIterator: Copyable, Iterator<int> {
 }
 
 void main() {
-    for var element in Countdown(3) {
+    for element in Countdown(3) {
         println(element); // prints 3 2 1
     }
 }

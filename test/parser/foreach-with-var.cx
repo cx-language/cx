@@ -1,0 +1,7 @@
+// RUN: %not %cx -parse %s | %FileCheck %s
+
+void main() {
+    // CHECK: [[@LINE+1]]:13: error: for-each loop variable must be a bare identifier, write 'for i in ...'
+    for var i in 0..3 {
+    }
+}

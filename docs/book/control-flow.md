@@ -8,17 +8,17 @@ The range may be anything that has an `iterator()` method that returns an [itera
 ```cs
 void main() {
     println("the range can be any collection");
-    for var element in [1, 2, 3] {
+    for element in [1, 2, 3] {
         println(element);
     }
 
     println("or an exclusive numeric range");
-    for var element in 1..3 {
+    for element in 1..3 {
         println(element);
     }
 
     println("or an inclusive numeric range");
-    for var element in 1...3 {
+    for element in 1...3 {
         println(element);
     }
 }

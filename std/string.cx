@@ -53,7 +53,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     // TODO: Do we need 'find(char, int)', because basically the same can be accomplish with `substr(start).find(c)`?
     /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
     int find(char c, int start) {
-        for var i in start..size() {
+        for i in start..size() {
             if characters[i] == c {
                 return i;
             }
@@ -84,7 +84,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     uint64 hash() {
         uint64 hashValue = 5381;
 
-        for var index in 0..characters.size() {
+        for index in 0..characters.size() {
             hashValue = ((hashValue << 5) + hashValue) + uint64(this[index]);
         }
 
@@ -113,7 +113,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
 
         int result = 0;
 
-        for var c in this {
+        for c in this {
             if c >= '0' && c <= '9' {
                 result *= 10;
                 result += int(c - '0');
@@ -129,7 +129,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     StringBuffer escape() {
         var result = StringBuffer();
 
-        for var c in this {
+        for c in this {
             switch (c) {
                 case '\0': result += "\\0";
                 case '\n': result += "\\n";
@@ -147,7 +147,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     // TODO: Return non-allocating iterator instead of allocating a string buffer.
     StringBuffer repeat(int count) {
         var result = StringBuffer(capacity = this.size() * count);
-        for var _ in 0..count {
+        for _ in 0..count {
             result += this;
         }
         return result;
@@ -158,7 +158,7 @@ struct string: Copyable, Comparable, Hashable, Printable {
     }
 
     Ordering compare(string* other) {
-        for var index in 0..min(size(), other.size()) {
+        for index in 0..min(size(), other.size()) {
             if this[index] < other[index] { return Ordering.Less; }
             if this[index] > other[index] { return Ordering.Greater; }
         }
@@ -181,7 +181,7 @@ bool operator==(string a, string b) {
         return false;
     }
 
-    for var index in 0..a.size() {
+    for index in 0..a.size() {
         if a[index] != b[index] {
             return false;
         }

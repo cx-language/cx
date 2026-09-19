@@ -16,7 +16,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
     StringBuffer(string s) {
         characters = List(capacity = s.size() + 1);
 
-        for var ch in s {
+        for ch in s {
             characters.push(ch);
         }
 
@@ -80,7 +80,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     bool write(string s) {
         // TODO: Optimize
-        for var ch in s {
+        for ch in s {
             push(ch);
         }
         return true;
@@ -118,7 +118,7 @@ struct StringBuffer: Comparable, Hashable, Printable {
 
     /// Returns the index of the given character, or the size if it's not found. Starts from `start`.
     int find(char c, int start) {
-        for var i in start..size() {
+        for i in start..size() {
             if characters[i] == c {
                 return i;
             }
@@ -199,11 +199,11 @@ struct StringBuffer: Comparable, Hashable, Printable {
 StringBuffer operator+(string a, string b) {
     var result = StringBuffer();
 
-    for var ch in a {
+    for ch in a {
         result.push(ch);
     }
 
-    for var ch in b {
+    for ch in b {
         result.push(ch);
     }
 
@@ -221,7 +221,7 @@ StringBuffer operator+(string a, char[*] b) {
 StringBuffer operator+(StringBuffer a, string b) {
     var result = a; // TODO: Workaround until parameters can be mutated.
 
-    for var ch in b {
+    for ch in b {
         result.push(ch);
     }
 

@@ -82,7 +82,7 @@ void testListMutatingIteration() {
     a.push(2);
     a.push(3);
 
-    for (var e in a) {
+    for e in a {
         e++;
     }
 
@@ -196,7 +196,7 @@ struct DestructionTester {
 void testElementDestruction() {
     var a = List<DestructionTester>();
 
-    for (var i in 0..50) {
+    for i in 0..50 {
         a.push(DestructionTester());
     }
 

@@ -18,7 +18,7 @@ struct Missile {
         var velocity = Vector2(direction) * missileSpeed;
         position = position + velocity * delta;
 
-        for var i in 0..state.asteroids.size() {
+        for i in 0..state.asteroids.size() {
             var asteroid = state.asteroids[i];
 
             if asteroid.position.distance(position) <= asteroid.size ||

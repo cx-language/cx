@@ -2,7 +2,7 @@
 
 int foo(Range<int> r) {
     var sum = 0;
-    for (var i in r) {
+    for i in r {
         sum += i;
     }
     return sum;

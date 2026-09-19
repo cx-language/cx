@@ -31,7 +31,7 @@ struct Asteroid {
         size = randomFloat(minSize, maxSize);
         vertices = undefined;
 
-        for var i in 0..vertices.size() {
+        for i in 0..vertices.size() {
             var offset = 1 + randomFloat(-formVariation, formVariation);
             var angle = float(i) / float(vertices.size()) * M_PI * 2;
             vertices[i] = Vector2(angle) * (offset * size);
@@ -50,11 +50,11 @@ struct Asteroid {
     }
 
     void render(SDL_Renderer* renderer) {
-        for var i in -1...1 {
-            for var j in -1...1 {
+        for i in -1...1 {
+            for j in -1...1 {
                 var diff = Vector2(float(i) * width, float(j) * height);
 
-                for var k in 0..vertices.size() {
+                for k in 0..vertices.size() {
                     var l = (k + 1) % vertices.size();
                     var a = position + vertices[k] + diff;
                     var b = position + vertices[l] + diff;

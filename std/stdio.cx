@@ -35,7 +35,7 @@ void print<T: Printable>(List<T>* list) {
 void print<T: Printable>(ArrayRef<T> array) {
     print('[');
 
-    for var index in 0..array.size() {
+    for index in 0..array.size() {
         print(array[index]);
 
         if index != array.size() - 1

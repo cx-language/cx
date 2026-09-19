@@ -30,8 +30,8 @@ struct Player {
         b = b.rotated(origin = position, angle = direction);
         c = c.rotated(origin = position, angle = direction);
 
-        for var i in -1...1 {
-            for var j in -1...1 {
+        for i in -1...1 {
+            for j in -1...1 {
                 var diff = Vector2(float(i) * width, float(j) * height);
                 var aa = a + diff;
                 var bb = b + diff;
@@ -42,7 +42,7 @@ struct Player {
             }
         }
 
-        for var missile in missiles {
+        for missile in missiles {
             missile.render(renderer);
         }
     }
@@ -78,7 +78,7 @@ struct Player {
 
         timeSinceLastMissileShot += delta;
 
-        for var missile in missiles {
+        for missile in missiles {
             missile.update(delta, state);
         }
     }
