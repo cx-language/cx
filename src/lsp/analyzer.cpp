@@ -890,12 +890,11 @@ const char* tokenTypeForDecl(const Decl& decl) {
 void collectSyntaxTokens(const std::string& content, std::vector<SemanticToken>& out) {
     // Mirrors the keyword table in lex.cpp; hash-directives highlight as macros.
     static const llvm::StringMap<const char*> keywords = {
-        {"as", "keyword"},     {"break", "keyword"},     {"case", "keyword"},   {"const", "keyword"},     {"continue", "keyword"}, {"default", "keyword"},
-        {"defer", "keyword"},  {"else", "keyword"},      {"enum", "keyword"},   {"extern", "keyword"},    {"false", "keyword"},    {"for", "keyword"},
-        {"if", "keyword"},     {"import", "keyword"},    {"in", "keyword"},     {"interface", "keyword"}, {"null", "keyword"},     {"private", "keyword"},
-        {"public", "keyword"}, {"return", "keyword"},    {"sizeof", "keyword"}, {"struct", "keyword"},    {"switch", "keyword"},   {"this", "keyword"},
-        {"true", "keyword"},   {"undefined", "keyword"}, {"var", "keyword"},    {"while", "keyword"},     {"#if", "macro"},        {"#else", "macro"},
-        {"#endif", "macro"},
+        {"break", "keyword"},     {"case", "keyword"},   {"const", "keyword"},     {"continue", "keyword"}, {"default", "keyword"}, {"defer", "keyword"},
+        {"else", "keyword"},      {"enum", "keyword"},   {"extern", "keyword"},    {"false", "keyword"},    {"for", "keyword"},     {"if", "keyword"},
+        {"import", "keyword"},    {"in", "keyword"},     {"interface", "keyword"}, {"null", "keyword"},     {"private", "keyword"}, {"public", "keyword"},
+        {"return", "keyword"},    {"sizeof", "keyword"}, {"struct", "keyword"},    {"switch", "keyword"},   {"this", "keyword"},    {"true", "keyword"},
+        {"undefined", "keyword"}, {"var", "keyword"},    {"while", "keyword"},     {"#if", "macro"},        {"#else", "macro"},     {"#endif", "macro"},
     };
     auto emit = [&](int line, int start, int length, const char* type) {
         if (length <= 0) return;
@@ -1581,9 +1580,9 @@ bool gotoDefinitionAt(Module* mainModule, const std::string& filePath, LspPositi
 
 std::vector<CompletionItem> completeAt(Module* mainModule, const std::string& filePath, LspPosition pos) {
     std::vector<CompletionItem> items;
-    static const char* keywords[] = {"as",     "break",  "case",   "const",  "continue", "default",   "defer", "else",    "enum",   "extern",
-                                     "false",  "for",    "if",     "import", "in",       "interface", "null",  "private", "public", "return",
-                                     "sizeof", "struct", "switch", "this",   "true",     "undefined", "var",   "while"};
+    static const char* keywords[] = {"break",  "case",   "const",  "continue", "default", "defer",     "else",      "enum",    "extern",
+                                     "false",  "for",    "if",     "import",   "in",      "interface", "null",      "private", "public",
+                                     "return", "sizeof", "struct", "switch",   "this",    "true",      "undefined", "var",     "while"};
     for (auto* kw : keywords)
         items.push_back({kw, "keyword", "keyword"});
 

@@ -1,0 +1,23 @@
+// RUN: %not %cx -typecheck %s | %FileCheck %s
+
+enum E {
+    A,
+    B(int i)
+}
+
+void nonEnumCase() {
+    switch (1) {
+        // CHECK: [[@LINE+1]]:16: error: only enum cases can bind associated values
+        case 0 x: break;
+        default: break;
+    }
+}
+
+void caseWithoutAssociatedValues() {
+    var e = E.A;
+    switch (e) {
+        // CHECK: [[@LINE+1]]:18: error: enum case 'A' has no associated values to bind
+        case E.A x: break;
+        default: break;
+    }
+}

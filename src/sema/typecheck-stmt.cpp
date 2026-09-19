@@ -130,7 +130,14 @@ void Typechecker::typecheckSwitchStmt(SwitchStmt& stmt) {
         Scope scope(nullptr, &currentModule->symbolTable);
 
         if (auto* associatedValue = switchCase.associatedValue) {
-            auto* enumCase = llvm::cast<EnumCase>(llvm::cast<MemberExpr>(switchCase.value)->decl);
+            auto* memberExpr = llvm::dyn_cast<MemberExpr>(switchCase.value);
+            auto* enumCase = memberExpr ? llvm::dyn_cast<EnumCase>(memberExpr->decl) : nullptr;
+            if (!enumCase) {
+                ERROR(associatedValue->location, "only enum cases can bind associated values");
+            }
+            if (!enumCase->associatedType) {
+                ERROR(associatedValue->location, "enum case '" << enumCase->getName() << "' has no associated values to bind");
+            }
             associatedValue->type = NOTNULL(enumCase->associatedType);
             typecheckVarDecl(*associatedValue);
         }
