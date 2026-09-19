@@ -8,9 +8,7 @@ struct MapEntry<Key: Hashable, Value> {
 
 /// A hash map from keys to values.
 struct Map<Key: Hashable, Value> {
-    /// Hash table buckets.
     private List<List<MapEntry<Key, Value>>> hashTable;
-    /// Number of entries.
     private int size;
 
     /// Initializes an empty map
@@ -146,9 +144,7 @@ int convertHash(uint64 hash) {
 
 /// Iterates over the entries of a map.
 struct MapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
-    /// Iterator over the hash table buckets.
     private ArrayIterator<List<MapEntry<Key, Value>>> hashTableIterator;
-    /// Pointer to the current entry.
     private MapEntry<Key, Value>[*] current;
 
     /// Initializes an iterator over the given map.

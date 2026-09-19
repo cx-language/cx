@@ -1,8 +1,6 @@
 /// A non-owning reference to a contiguous array of elements.
 struct ArrayRef<Element>: Copyable {
-    /// Pointer to the first element.
     private Element[*] data;
-    /// Number of elements.
     private int size;
 
     /// Initializes an ArrayRef referring to an empty array.

@@ -1,8 +1,6 @@
 /// Iterates over the values of a closed range.
 struct ClosedRangeIterator<T>: Copyable, Iterator<T> {
-    /// Current value.
     private T current;
-    /// Last value.
     private T end;
 
     /// Initializes an iterator over the given range.

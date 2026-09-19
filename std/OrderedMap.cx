@@ -1,8 +1,6 @@
 /// An ordered key-value container that supports fast insertion, deletion and lookup
 struct OrderedMap<Key, Value> {
-    /// Root of the AVL tree.
     private AVLnode<Key, Value>*? root;
-    /// Number of entries.
     private int size;
 
     /// Initializes an empty map.
@@ -367,15 +365,10 @@ struct OrderedMap<Key, Value> {
 
 /// One node in the AVL tree
 struct AVLnode<Key, Value> {
-    /// The stored key-value pair.
     private MapEntry<Key, Value> entry;
-    /// Right subtree height minus left subtree height.
     private int balance;
-    /// Parent node, or null for the root.
     private AVLnode<Key, Value>*? parent;
-    /// Left subtree.
     private AVLnode<Key, Value>*? left;
-    /// Right subtree.
     private AVLnode<Key, Value>*? right;
 
     /// Initializes a node holding the given key and value.
@@ -401,9 +394,7 @@ struct AVLnode<Key, Value> {
 
 /// Iterates over the entries of an ordered map, in order.
 struct OrderedMapIterator<Key, Value>: Copyable, Iterator<MapEntry<Key, Value>*> {
-    /// Current node.
     private AVLnode<Key, Value>*? current;
-    /// The iterated map.
     private OrderedMap<Key, Value>* map;
 
     /// Initializes an iterator over the given map.

@@ -1,9 +1,7 @@
 // TODO: Convert into enum once generic enums are supported.
 /// A value that may be absent.
 struct Optional<T> {
-    /// Whether a value is present.
     private bool hasValue;
-    /// The contained value, if present.
     private T value;
 
     /// Initializes an empty optional.

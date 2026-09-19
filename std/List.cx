@@ -1,10 +1,7 @@
 /// A resizable array.
 struct List<Element> {
-    /// Backing storage.
     private Element[*] buffer;
-    /// Number of elements.
     private int size;
-    /// Allocated capacity.
     private int capacity;
 
     /// Initializes an empty list.

@@ -1,6 +1,5 @@
 /// Writes formatted output to a file.
 struct OutputFileStream {
-    /// Underlying C file handle.
     private FILE*? file;
 
     /// Opens the given file descriptor for writing.

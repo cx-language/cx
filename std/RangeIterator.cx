@@ -1,8 +1,6 @@
 /// Iterates over the values of a range.
 struct RangeIterator<T>: Copyable, Iterator<T> {
-    /// Current value.
     private T current;
-    /// Last value, exclusive.
     private T end;
 
     /// Initializes an iterator over the given range.

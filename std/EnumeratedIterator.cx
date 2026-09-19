@@ -1,8 +1,6 @@
 /// Iterates over elements with their indices.
 struct EnumeratedIterator<Element>: Copyable, Iterator<EnumeratedIteratorEntry<Element>> {
-    /// Underlying iterator.
     private ArrayIterator<Element> base;
-    /// Current index.
     private int index;
 
     /// Initializes an iterator over the given iterator.

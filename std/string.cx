@@ -1,6 +1,5 @@
 /// A non-owning string view.
 struct string: Copyable, Comparable, Hashable, Printable {
-    /// Character data.
     private ArrayRef<char> characters;
 
     /// Initializes a string of the given length at the given address.

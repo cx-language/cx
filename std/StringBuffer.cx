@@ -1,6 +1,6 @@
 /// A resizable string buffer.
 struct StringBuffer: Comparable, Hashable, Printable {
-    /// Stored characters, including a trailing null.
+    // Stored characters, including a trailing null.
     private List<char> characters;
 
     /// Initializes an empty string.
