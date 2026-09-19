@@ -241,6 +241,14 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         return isSet;
     };
 
+    // Prints one --print-* section, bracketed with dividers when several
+    // sections are requested.
+    auto printSection = [&](const char* name, auto printBody) {
+        if (printSectionDividers) llvm::outs() << "=== BEGIN " << name << " ===\n";
+        printBody();
+        if (printSectionDividers) llvm::outs() << "=== END " << name << " ===\n";
+    };
+
     if (!specifiedOutputFileName.empty()) {
         buildParams.outputFileName = specifiedOutputFileName;
     }
@@ -261,9 +269,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     if (errors) return 1;
 
     if (handlePrintOpt(PrintOpt::AST)) {
-        if (printSectionDividers) llvm::outs() << "=== BEGIN AST ===\n";
-        mainModule.print(llvm::outs());
-        if (printSectionDividers) llvm::outs() << "=== END AST ===\n";
+        printSection("AST", [&] { mainModule.print(llvm::outs()); });
         if (!remainingPrintOpts) return 0;
     }
 
@@ -283,16 +289,14 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
     if (handlePrintOpt(PrintOpt::IRAll)) {
         handlePrintOpt(PrintOpt::IR);
-        if (printSectionDividers) llvm::outs() << "=== BEGIN IR ===\n";
-        for (auto* module : irGenerator.generatedModules) {
-            module->print(llvm::outs());
-        }
-        if (printSectionDividers) llvm::outs() << "=== END IR ===\n";
+        printSection("IR", [&] {
+            for (auto* module : irGenerator.generatedModules) {
+                module->print(llvm::outs());
+            }
+        });
         if (!remainingPrintOpts) return 0;
     } else if (handlePrintOpt(PrintOpt::IR)) {
-        if (printSectionDividers) llvm::outs() << "=== BEGIN IR ===\n";
-        irGenerator.generatedModules.back()->print(llvm::outs());
-        if (printSectionDividers) llvm::outs() << "=== END IR ===\n";
+        printSection("IR", [&] { irGenerator.generatedModules.back()->print(llvm::outs()); });
         if (!remainingPrintOpts) return 0;
     }
 
@@ -313,9 +317,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         std::string cCode = cGen.finish();
 
         if (handlePrintOpt(PrintOpt::C)) {
-            if (printSectionDividers) llvm::outs() << "=== BEGIN C ===\n";
-            llvm::outs() << cCode << "\n";
-            if (printSectionDividers) llvm::outs() << "=== END C ===\n";
+            printSection("C", [&] { llvm::outs() << cCode << "\n"; });
             if (!remainingPrintOpts) return 0;
         }
 
@@ -339,20 +341,20 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
 
         if (handlePrintOpt(PrintOpt::LLVMAll)) {
             handlePrintOpt(PrintOpt::LLVM);
-            if (printSectionDividers) llvm::outs() << "=== BEGIN LLVM ===\n";
-            for (auto* module : llvmGenerator.generatedModules) {
-                module->setModuleIdentifier("");
-                module->setSourceFileName("");
-                module->print(llvm::outs(), nullptr);
-            }
-            if (printSectionDividers) llvm::outs() << "=== END LLVM ===\n";
+            printSection("LLVM", [&] {
+                for (auto* module : llvmGenerator.generatedModules) {
+                    module->setModuleIdentifier("");
+                    module->setSourceFileName("");
+                    module->print(llvm::outs(), nullptr);
+                }
+            });
             if (!remainingPrintOpts) return 0;
         } else if (handlePrintOpt(PrintOpt::LLVM)) {
-            llvmModule->setModuleIdentifier("");
-            llvmModule->setSourceFileName("");
-            if (printSectionDividers) llvm::outs() << "=== BEGIN LLVM ===\n";
-            llvmModule->print(llvm::outs(), nullptr);
-            if (printSectionDividers) llvm::outs() << "=== END LLVM ===\n";
+            printSection("LLVM", [&] {
+                llvmModule->setModuleIdentifier("");
+                llvmModule->setSourceFileName("");
+                llvmModule->print(llvm::outs(), nullptr);
+            });
             if (!remainingPrintOpts) return 0;
         }
 
