@@ -192,12 +192,22 @@ float32 cbrt(float32 x) { return float32(cbrtf(float(x))); }
 
 /// Returns the square root of the sum of the squares of x and y.
 extern float64 hypot(float64 x, float64 y);
+#if Windows
+// UCRT exports _hypotf but not hypotf (an inline wrapper in math.h).
+/// Returns the square root of the sum of the squares of x and y.
+extern float _hypotf(float x, float y);
+/// Returns the square root of the sum of the squares of x and y.
+float hypot(float x, float y) { return _hypotf(x, y); }
+/// Returns the square root of the sum of the squares of x and y.
+float32 hypot(float32 x, float32 y) { return float32(_hypotf(float(x), float(y))); }
+#else
 /// Returns the square root of the sum of the squares of x and y.
 extern float hypotf(float x, float y);
 /// Returns the square root of the sum of the squares of x and y.
 float hypot(float x, float y) { return hypotf(x, y); }
 /// Returns the square root of the sum of the squares of x and y.
 float32 hypot(float32 x, float32 y) { return float32(hypotf(float(x), float(y))); }
+#endif
 
 // Rounding and remainder functions.
 

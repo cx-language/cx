@@ -120,6 +120,10 @@ private:
 
 /// Container for the AST of a whole module, comprised of one or more SourceFiles.
 struct Module {
+    // Keep this constructor rather than aggregate-initializing: `new Module(...)`
+    // would otherwise reference the implicit vector destructor without emitting
+    // it, breaking the link (observed in the WebAssembly build).
+    Module(std::string&& name) : name(std::move(name)) {}
     void addSourceFile(SourceFile&& file) { sourceFiles.emplace_back(std::move(file)); }
 
     std::vector<Module*> getImportedModules() const {
