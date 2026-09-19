@@ -27,12 +27,12 @@ Positions assume UTF-8/ASCII source (one byte per character).
 
 ## Multi-file projects
 
-A multi-file program needs a `package.cx` manifest for cross-file
+A multi-file program needs a `build.cx` file for cross-file
 references to work; without one, each file is checked standalone.
-Conversely, everything under the same `package.cx` target root is
-analyzed as one module, so independent programs sharing a package
-directory report redefinition errors. To keep several programs under
-one manifest, set `multitarget = true` in `package.cx` and give each
+Conversely, everything under the same `build.cx` target root is
+analyzed as one module, so independent programs sharing a target
+root report redefinition errors. To keep several programs under
+one build file, set `multitarget = true` in `build.cx` and give each
 program its own subdirectory (directly under the package root, or
 under `src/`).
 
@@ -58,7 +58,7 @@ For manual configuration, the essentials are:
 
 - command: `cx-lsp`
 - filetypes: `cx` (files ending in `.cx`)
-- root markers: `package.cx`, `.git`
+- root markers: `build.cx`, `.git`
 
 ### Neovim (nvim-lspconfig)
 
@@ -70,7 +70,7 @@ configs.cx_lsp = {
   default_config = {
     cmd = { 'cx-lsp' },
     filetypes = { 'cx' },
-    root_dir = lspconfig.util.root_pattern('package.cx', '.git'),
+    root_dir = lspconfig.util.root_pattern('build.cx', '.git'),
   },
 }
 
@@ -172,13 +172,13 @@ server honors that instead of working around it:
     as that package: the import resolves to the open files rather than
     loading a second copy that would drown the file in duplicate
     "ambiguous reference" errors;
-  - files under a `package.cx` manifest are analyzed as its target root
+  - files under a `build.cx` file are analyzed as its target root
     (found by searching upwards, honoring `multitarget` layouts), so
-    cross-file references work from nested subdirectories too — the manifest
-    is only used to locate the root, dependencies are never fetched;
+    cross-file references work from nested subdirectories too — the build
+    file is only used to locate the root, dependencies are never fetched;
   - anything else is standalone, like `cx file.cx`.
 - Diagnostics are owned by the file being checked: an error in a sibling file
-  surfaces when that sibling (or an importer in the same package) is checked.
+  surfaces when that sibling (or an importer in the same module) is checked.
   Fixing file B clears an error that file A's check attributed to B the next
   time either file is checked.
 - The server handles one query at a time: a slow compilation briefly delays

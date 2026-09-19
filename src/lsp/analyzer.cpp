@@ -18,8 +18,8 @@
 #include "../ast/module.h"
 #include "../ast/stmt.h"
 #include "../ast/type.h"
+#include "../build/config.h"
 #include "../driver/driver.h"
-#include "../package-manager/manifest.h"
 #include "../parser/parse.h"
 #include "../sema/typecheck.h"
 
@@ -142,18 +142,18 @@ std::string readLineFromDisk(const std::string& filePath, int line1Based) {
     return line;
 }
 
-/// Finds the package root containing filePath by walking up from parentDir
-/// looking for a package.cx manifest, or nullopt if the file stands alone.
+/// Finds the build root containing filePath by walking up from parentDir
+/// looking for a build.cx file, or nullopt if the file stands alone.
 /// Only locates the target root (mirroring `cx build` without running it);
 /// dependencies are still resolved via import search paths, never fetched.
-std::optional<std::string> findManifestRoot(const std::string& filePath, const std::string& parentDir) {
+std::optional<std::string> findBuildRoot(const std::string& filePath, const std::string& parentDir) {
     std::string dir = parentDir;
     while (true) {
-        std::string manifestPath = dir + "/" + PackageManifest::manifestFileName;
+        std::string buildFilePath = dir + "/" + BuildConfig::buildFileName;
         bool isFile = false;
-        if (!llvm::sys::fs::is_regular_file(manifestPath, isFile) && isFile) {
-            PackageManifest manifest{std::string(dir)};
-            for (auto& root : manifest.getTargetRootDirectories()) {
+        if (!llvm::sys::fs::is_regular_file(buildFilePath, isFile) && isFile) {
+            BuildConfig config{std::string(dir)};
+            for (auto& root : config.getTargetRootDirectories()) {
                 // Either separator: file paths may use backslashes on Windows
                 // while roots built from URIs use forward slashes.
                 if (filePath == root || llvm::StringRef(filePath).starts_with(root + "/") || llvm::StringRef(filePath).starts_with(root + "\\")) {
@@ -1404,31 +1404,31 @@ FrontendResult runFrontendOnce(const LspQuery& query) {
 
         // Determine which files form the open file's module: an importable
         // package (registered below so the import resolves to it), a
-        // package.cx target root, or just the file itself when standalone.
-        std::optional<std::string> packageDir;
+        // build.cx target root, or just the file itself when standalone.
+        std::optional<std::string> moduleDir;
         bool registerAsStd = false;
         if (!parentDir.empty()) {
             for (llvm::StringRef searchPath : options.importSearchPaths) {
                 auto candidate = (searchPath + "/std").str();
                 if (llvm::sys::fs::is_directory(candidate) && llvm::sys::fs::equivalent(candidate, parentDir)) {
-                    packageDir = parentDir;
+                    moduleDir = parentDir;
                     registerAsStd = true;
                     break;
                 }
             }
             if (!registerAsStd) {
-                packageDir = findManifestRoot(filePath, parentDir);
+                moduleDir = findBuildRoot(filePath, parentDir);
             }
         }
 
         // Main file from memory, siblings from disk or the openDocs overlay.
-        // Package manifests are config, not source, so never load them as code.
+        // Build files are config, not source, so never load them as code.
         std::vector<std::string> siblingPaths;
-        if (packageDir) {
+        if (moduleDir) {
             std::error_code ec;
-            for (llvm::sys::fs::recursive_directory_iterator it(*packageDir, ec), end; it != end && !ec; it.increment(ec)) {
+            for (llvm::sys::fs::recursive_directory_iterator it(*moduleDir, ec), end; it != end && !ec; it.increment(ec)) {
                 if (llvm::sys::path::extension(it->path()) == ".cx" && it->path() != filePath
-                    && llvm::sys::path::filename(it->path()) != PackageManifest::manifestFileName) {
+                    && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName) {
                     siblingPaths.push_back(it->path());
                 }
             }

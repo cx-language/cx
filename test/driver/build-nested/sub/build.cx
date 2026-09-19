@@ -1,0 +1,5 @@
+// RUN: true
+
+var name = "build-nested-sub"
+
+var defines = ["FROM_BUILD_FILE"]

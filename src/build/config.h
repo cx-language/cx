@@ -9,7 +9,7 @@
 
 namespace cx {
 
-struct PackageManifest {
+struct BuildConfig {
     struct Dependency {
         std::string getGitRepositoryUrl() const;
         std::string getFileSystemPath() const;
@@ -18,12 +18,12 @@ struct PackageManifest {
         std::string packageVersion;
     };
 
-    PackageManifest(std::string&& packageRoot, std::vector<std::string> defines = {});
+    BuildConfig(std::string&& rootDirectory, std::vector<std::string> defines = {});
     std::vector<std::string> getTargetRootDirectories() const;
-    static const char manifestFileName[];
+    static const char buildFileName[];
 
-    std::string packageRoot;
-    std::string packageName;
+    std::string rootDirectory;
+    std::string name;
     std::vector<Dependency> declaredDependencies;
     bool multitarget = false;
     std::string outputDirectory;

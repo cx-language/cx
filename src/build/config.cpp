@@ -1,4 +1,4 @@
-#include "manifest.h"
+#include "config.h"
 #include "../ast/module.h"
 #include "../driver/driver.h"
 #include "../parser/parse.h"
@@ -10,13 +10,13 @@
 
 using namespace cx;
 
-const char PackageManifest::manifestFileName[] = "package.cx";
+const char BuildConfig::buildFileName[] = "build.cx";
 
-std::string PackageManifest::Dependency::getGitRepositoryUrl() const {
+std::string BuildConfig::Dependency::getGitRepositoryUrl() const {
     return "https://github.com/" + packageIdentifier + ".git";
 }
 
-std::string PackageManifest::Dependency::getFileSystemPath() const {
+std::string BuildConfig::Dependency::getFileSystemPath() const {
     auto home = llvm::sys::Process::GetEnv("HOME");
     if (!home) {
         ABORT("environment variable HOME not set");
@@ -34,19 +34,19 @@ static std::vector<std::string> getStringList(Decl* decl) {
     return map(array->elements, [](Expr* element) { return llvm::cast<StringLiteralExpr>(element)->value; });
 }
 
-PackageManifest::PackageManifest(std::string&& packageRoot, std::vector<std::string> defines) : packageRoot(std::move(packageRoot)) {
-    auto manifestPath = this->packageRoot + "/" + manifestFileName;
-    if (!llvm::sys::fs::exists(manifestPath)) return;
+BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> defines) : rootDirectory(std::move(rootDirectory)) {
+    auto buildFilePath = this->rootDirectory + "/" + buildFileName;
+    if (!llvm::sys::fs::exists(buildFilePath)) return;
 
-    Module module(manifestFileName);
+    Module module(buildFileName);
     CompileOptions options;
     options.defines = std::move(defines);
-    Parser parser(addFileBufferToModule(manifestPath, module), module, options);
+    Parser parser(addFileBufferToModule(buildFilePath, module), module, options);
     parser.parse();
-    // TODO: Type-check package manifest.
+    // TODO: Type-check build file.
 
     auto& symbols = module.symbolTable;
-    packageName = getConfigValue<StringLiteralExpr>(symbols.findOne("name"), "");
+    name = getConfigValue<StringLiteralExpr>(symbols.findOne("name"), "");
     multitarget = getConfigValue<BoolLiteralExpr>(symbols.findOne("multitarget"), false);
     outputDirectory = getConfigValue<StringLiteralExpr>(symbols.findOne("outputDirectory"), "bin");
     this->defines = getStringList(symbols.findOne("defines"));
@@ -65,13 +65,13 @@ PackageManifest::PackageManifest(std::string&& packageRoot, std::vector<std::str
     }
 }
 
-std::vector<std::string> PackageManifest::getTargetRootDirectories() const {
-    if (!multitarget) return {packageRoot};
+std::vector<std::string> BuildConfig::getTargetRootDirectories() const {
+    if (!multitarget) return {rootDirectory};
 
-    std::string sourceDir = packageRoot;
+    std::string sourceDir = rootDirectory;
     std::error_code error;
 
-    for (llvm::sys::fs::directory_iterator it(packageRoot, error), end; it != end; it.increment(error)) {
+    for (llvm::sys::fs::directory_iterator it(rootDirectory, error), end; it != end; it.increment(error)) {
         if (!llvm::sys::fs::is_directory(it->path())) continue;
         llvm::StringRef dir = llvm::sys::path::filename(it->path());
         if (dir.equals_insensitive("src") || dir.equals_insensitive("source") || dir.equals_insensitive("sources")) {

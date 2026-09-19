@@ -1,6 +1,6 @@
 // RUN: true
 
-var name = "manifest-flags"
+var name = "build-flags"
 
 #if EXTRA
 var defines = ["FROM_IF_BRANCH"]

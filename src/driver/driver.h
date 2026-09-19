@@ -14,7 +14,7 @@ class MemoryBufferRef;
 namespace cx {
 
 struct Module;
-struct PackageManifest;
+struct BuildConfig;
 
 struct CompileOptions {
     bool noUnusedWarnings = false;
@@ -26,7 +26,7 @@ struct CompileOptions {
 
 struct BuildParams {
     llvm::ArrayRef<std::string> filePaths = {};
-    const PackageManifest* manifest = nullptr;
+    const BuildConfig* config = nullptr;
     const char* argv0 = nullptr;
     llvm::StringRef outputDirectory = {};
     std::string outputFileName = {};

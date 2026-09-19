@@ -9,9 +9,9 @@ class StringRef;
 
 namespace cx {
 
-struct PackageManifest;
+struct BuildConfig;
 
-void fetchDependencies(const PackageManifest& manifest);
+void fetchDependencies(const BuildConfig& config);
 std::vector<std::string> getSourceFiles(llvm::StringRef rootDirectory);
 
 } // namespace cx

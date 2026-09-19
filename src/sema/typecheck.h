@@ -22,7 +22,7 @@ template<typename T> class Optional;
 namespace cx {
 
 struct Module;
-struct PackageManifest;
+struct BuildConfig;
 struct SourceFile;
 struct Location;
 struct Type;
@@ -57,12 +57,12 @@ struct Typechecker {
     Typechecker(const CompileOptions& options)
     : currentModule(nullptr), currentSourceFile(nullptr), currentFunction(nullptr), currentStmt(nullptr), currentInitializedFields(nullptr),
       isPostProcessing(false), options(options) {}
-    void typecheckModule(Module& module, const PackageManifest* manifest);
+    void typecheckModule(Module& module, const BuildConfig* config);
 
     Type typecheckExpr(Expr& expr, bool useIsWriteOnly = false, Type expectedType = Type());
     void typecheckVarDecl(VarDecl& decl);
     void typecheckFieldDecl(FieldDecl& decl);
-    void typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest);
+    void typecheckTopLevelDecl(Decl& decl, const BuildConfig* config);
     void typecheckParams(llvm::MutableArrayRef<ParamDecl> params, AccessLevel userAccessLevel);
     void typecheckFunctionDecl(FunctionDecl& decl);
     void typecheckFunctionTemplate(FunctionTemplate& decl);
@@ -84,7 +84,7 @@ struct Typechecker {
     void typecheckTypeDecl(TypeDecl& decl);
     void typecheckTypeTemplate(TypeTemplate& decl);
     void typecheckEnumDecl(EnumDecl& decl);
-    void typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest);
+    void typecheckImportDecl(ImportDecl& decl, const BuildConfig* config);
 
     Type typecheckVarExpr(VarExpr& expr, bool useIsWriteOnly);
     Type typecheckNullLiteralExpr(NullLiteralExpr& expr, Type expectedType);
@@ -133,7 +133,7 @@ struct Typechecker {
     void checkReturnPointerToLocal(const Expr* returnValue) const;
     static void checkHasAccess(const Decl& decl, Location location, AccessLevel userAccessLevel);
     void checkLambdaCapture(const VariableDecl& variableDecl, const VarExpr& varExpr) const;
-    llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName);
+    llvm::ErrorOr<const Module&> importModule(SourceFile* importer, const BuildConfig* config, llvm::StringRef moduleName);
     void deferTypechecking(Decl* decl);
     void postProcess();
 

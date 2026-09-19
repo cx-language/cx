@@ -473,7 +473,7 @@ void Typechecker::typecheckFieldDecl(FieldDecl& decl) {
     }
 }
 
-void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* manifest) {
+void Typechecker::typecheckImportDecl(ImportDecl& decl, const BuildConfig* config) {
     // TODO: Print import search paths as part of the below error messages.
 
     if (decl.target.ends_with(".h")) {
@@ -482,14 +482,14 @@ void Typechecker::typecheckImportDecl(ImportDecl& decl, const PackageManifest* m
             REPORT_ERROR(decl.getLocation(), "couldn't import C header file '" << decl.target << "'");
         }
     } else {
-        auto module = importModule(currentSourceFile, manifest, decl.target);
+        auto module = importModule(currentSourceFile, config, decl.target);
         if (!module) {
             REPORT_ERROR(decl.getLocation(), "couldn't import module '" << decl.target << "': " << module.getError().message());
         }
     }
 }
 
-void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manifest) {
+void Typechecker::typecheckTopLevelDecl(Decl& decl, const BuildConfig* config) {
     switch (decl.kind) {
     case DeclKind::ParamDecl:
         llvm_unreachable("no top-level parameter declarations");
@@ -524,7 +524,7 @@ void Typechecker::typecheckTopLevelDecl(Decl& decl, const PackageManifest* manif
     case DeclKind::FieldDecl:
         llvm_unreachable("no top-level field declarations");
     case DeclKind::ImportDecl:
-        typecheckImportDecl(llvm::cast<ImportDecl>(decl), manifest);
+        typecheckImportDecl(llvm::cast<ImportDecl>(decl), config);
         break;
     }
 }

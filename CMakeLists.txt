@@ -65,7 +65,7 @@ file(GLOB_RECURSE LIBCX_SOURCES CONFIGURE_DEPENDS
     src/ast/*.h src/ast/*.cpp
     src/backend/*.h src/backend/*.cpp
     src/driver/*.h src/driver/*.cpp
-    src/package-manager/*.h src/package-manager/*.cpp
+    src/build/*.h src/build/*.cpp
     src/parser/*.h src/parser/*.cpp
     src/sema/*.h src/sema/*.cpp
     src/support/*.h src/support/*.cpp

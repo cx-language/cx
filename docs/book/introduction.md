@@ -194,7 +194,7 @@ All of the above should result in faster compilation times and increased program
 
 Building a C* project is done with a single command: `cx build`, which works out of the box without a single line of
 build configuration code. It finds all C* source files in the project directory (recursively) and compiles them into an
-executable. Additional build information, such as dependencies, can be declared in a `package.cx` package configuration
+executable. Additional build information, such as dependencies, can be declared in a `build.cx` build configuration
 file. `cx build` will then download or find these dependencies, and link them into the resulting executable.
 
 The configuration file uses plain C* syntax:

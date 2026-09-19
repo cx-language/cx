@@ -29,8 +29,8 @@
 #include "../backend/c-backend.h"
 #include "../backend/irgen.h"
 #include "../backend/llvm.h"
-#include "../package-manager/manifest.h"
-#include "../package-manager/package-manager.h"
+#include "../build/config.h"
+#include "../build/dependencies.h"
 #include "../parser/parse.h"
 #include "../sema/null-analyzer.h"
 #include "../sema/typecheck.h"
@@ -256,7 +256,7 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     for (auto& importedModule : mainModule.getImportedModules()) {
         typechecker.typecheckModule(*importedModule, nullptr);
     }
-    typechecker.typecheckModule(mainModule, buildParams.manifest);
+    typechecker.typecheckModule(mainModule, buildParams.config);
 
     if (errors) return 1;
 
@@ -597,38 +597,38 @@ static void addPkgConfigFlags(llvm::ArrayRef<std::string> packages) {
     }
 }
 
-static void addManifestBuildFlags(const PackageManifest& manifest) {
-    for (auto& define : manifest.defines) {
+static void addConfigBuildFlags(const BuildConfig& config) {
+    for (auto& define : config.defines) {
         defines.push_back(define);
     }
-    for (auto& library : manifest.libraries) {
+    for (auto& library : config.libraries) {
         libraries.push_back(library);
     }
-    for (auto& framework : manifest.frameworks) {
+    for (auto& framework : config.frameworks) {
         frameworks.push_back(framework);
     }
-    addPkgConfigFlags(manifest.pkgConfigDependencies);
+    addPkgConfigFlags(config.pkgConfigDependencies);
 }
 
-static int buildPackage(llvm::StringRef packageRoot, const char* argv0) {
-    PackageManifest manifest(packageRoot.str(), {defines.begin(), defines.end()});
-    fetchDependencies(manifest);
-    addManifestBuildFlags(manifest);
+static int buildDirectory(llvm::StringRef directory, const char* argv0) {
+    BuildConfig config(directory.str(), {defines.begin(), defines.end()});
+    fetchDependencies(config);
+    addConfigBuildFlags(config);
 
-    for (auto& targetRootDir : manifest.getTargetRootDirectories()) {
+    for (auto& targetRootDir : config.getTargetRootDirectories()) {
         llvm::StringRef outputFileName;
-        if (manifest.multitarget || manifest.packageName.empty()) {
+        if (config.multitarget || config.name.empty()) {
             outputFileName = llvm::sys::path::filename(targetRootDir);
         } else {
-            outputFileName = manifest.packageName;
+            outputFileName = config.name;
         }
         auto sourceFiles = getSourceFiles(targetRootDir);
         // TODO: Add support for library packages.
         int exitStatus = buildModuleFromFiles({
             .filePaths = sourceFiles,
-            .manifest = &manifest,
+            .config = &config,
             .argv0 = argv0,
-            .outputDirectory = manifest.outputDirectory,
+            .outputDirectory = config.outputDirectory,
             .outputFileName = outputFileName.str(),
         });
         if (exitStatus != 0) return exitStatus;
@@ -670,7 +670,7 @@ int cx::driverMain(int argc, const char** argv) {
     if (!inputs.empty()) {
         return buildModuleFromFiles({
             .filePaths = inputs,
-            .manifest = nullptr,
+            .config = nullptr,
             .argv0 = argv[0],
             .outputDirectory = ".",
             .outputFileName = "",
@@ -680,7 +680,7 @@ int cx::driverMain(int argc, const char** argv) {
         if (auto error = llvm::sys::fs::current_path(currentPath)) {
             ABORT(error.message());
         }
-        return buildPackage(currentPath, argv[0]);
+        return buildDirectory(currentPath, argv[0]);
     } else if (lspSubcommand) {
         // The server lives in the cx-lsp binary so that every compilation it
         // triggers runs in a fresh process (see src/lsp/). Forward stdio.

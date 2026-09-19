@@ -1,4 +1,4 @@
-#include "package-manager.h"
+#include "dependencies.h"
 #include <string>
 #include <system_error>
 #include <vector>
@@ -11,7 +11,7 @@
 #include <llvm/Support/raw_ostream.h>
 #pragma warning(pop)
 #include "../support/utility.h"
-#include "manifest.h"
+#include "config.h"
 
 using namespace cx;
 
@@ -53,8 +53,8 @@ static void checkoutGitRevision(llvm::StringRef path, llvm::StringRef revision) 
     }
 }
 
-void cx::fetchDependencies(const PackageManifest& manifest) {
-    for (auto& dependency : manifest.declaredDependencies) {
+void cx::fetchDependencies(const BuildConfig& config) {
+    for (auto& dependency : config.declaredDependencies) {
         auto path = dependency.getFileSystemPath();
 
         if (!llvm::sys::fs::exists(path)) {
@@ -74,9 +74,9 @@ std::vector<std::string> cx::getSourceFiles(llvm::StringRef rootDirectory) {
             break;
         }
 
-        // Package manifests are config, not source, so never compile them. Match by file name:
+        // Build files are config, not source, so never compile them. Match by file name:
         // full paths can't be compared reliably across separator styles (Windows).
-        if (llvm::sys::path::extension(it->path()) == ".cx" && llvm::sys::path::filename(it->path()) != PackageManifest::manifestFileName) {
+        if (llvm::sys::path::extension(it->path()) == ".cx" && llvm::sys::path::filename(it->path()) != BuildConfig::buildFileName) {
             sourceFiles.push_back(it->path());
         }
     }

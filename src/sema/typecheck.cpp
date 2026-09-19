@@ -5,8 +5,8 @@
 #include <llvm/Support/SaveAndRestore.h>
 #pragma warning(pop)
 #include "../ast/module.h"
+#include "../build/config.h"
 #include "../driver/driver.h"
-#include "../package-manager/manifest.h"
 #include "../parser/parse.h"
 
 using namespace cx;
@@ -59,7 +59,7 @@ static std::error_code importModuleSourcesInDirectoryRecursively(const llvm::Twi
     return error;
 }
 
-llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, const PackageManifest* manifest, llvm::StringRef moduleName) {
+llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, const BuildConfig* config, llvm::StringRef moduleName) {
     auto it = Module::getAllImportedModulesMap().find(moduleName);
     if (it != Module::getAllImportedModulesMap().end()) {
         if (importer) importer->addImportedModule(it->second);
@@ -69,8 +69,8 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
     auto module = new Module(moduleName.str());
     std::error_code error;
 
-    if (manifest) {
-        for (auto& dependency : manifest->declaredDependencies) {
+    if (config) {
+        for (auto& dependency : config->declaredDependencies) {
             if (dependency.packageIdentifier == moduleName) {
                 error = importModuleSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, options);
                 goto done;
@@ -143,7 +143,7 @@ static void checkUnusedDecls(const Module& module) {
     }
 }
 
-void Typechecker::typecheckModule(Module& module, const PackageManifest* manifest) {
+void Typechecker::typecheckModule(Module& module, const BuildConfig* config) {
     llvm::SaveAndRestore restoreModule(currentModule);
     llvm::SaveAndRestore restoreSourceFile(currentSourceFile);
 
@@ -162,7 +162,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             currentSourceFile = &sourceFile;
 
             try {
-                typecheckImportDecl(*llvm::cast<ImportDecl>(decl), manifest);
+                typecheckImportDecl(*llvm::cast<ImportDecl>(decl), config);
                 postProcess();
             } catch (const CompileError& error) {
                 error.report();
@@ -232,7 +232,7 @@ void Typechecker::typecheckModule(Module& module, const PackageManifest* manifes
             // Imports were already processed in the pre-pass above.
             if (!decl->isVarDecl() && !decl->isImportDecl()) {
                 try {
-                    typecheckTopLevelDecl(*decl, manifest);
+                    typecheckTopLevelDecl(*decl, config);
                     postProcess();
                 } catch (const CompileError& error) {
                     error.report();

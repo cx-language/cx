@@ -424,17 +424,17 @@ def test_package_dedup(cx_lsp):
         )
 
 
-def test_manifest_modes(cx_lsp):
-    # Files under a package.cx manifest are analyzed as its target root
-    # (even from a nested subdirectory); files without a manifest are
+def test_build_file_modes(cx_lsp):
+    # Files under a build.cx file are analyzed as its target root
+    # (even from a nested subdirectory); files without a build file are
     # standalone, like `cx file.cx`.
     with tempfile.TemporaryDirectory() as directory:
-        package = os.path.join(directory, "proj")
-        subdir = os.path.join(package, "sub")
+        root = os.path.join(directory, "proj")
+        subdir = os.path.join(root, "sub")
         os.makedirs(subdir)
-        with open(os.path.join(package, "package.cx"), "w") as file:
+        with open(os.path.join(root, "build.cx"), "w") as file:
             file.write('var name = "testproj"\n')
-        with open(os.path.join(package, "a.cx"), "w") as file:
+        with open(os.path.join(root, "a.cx"), "w") as file:
             file.write("int answer() {\n    return 42;\n}\n")
         nested_path = os.path.join(subdir, "b.cx")
         nested_content = "int doubled() {\n    return answer() * 2;\n}\n"
@@ -443,13 +443,13 @@ def test_manifest_modes(cx_lsp):
 
         result = run_query(cx_lsp, base_query("check", nested_path, nested_content))
         check(
-            "query-manifest-package",
+            "query-build-file",
             result["diagnostics"] == [],
             json.dumps(result["diagnostics"])[:500],
         )
 
         result = run_query(cx_lsp, base_query("hover", nested_path, nested_content, (1, 12)))
-        check("query-manifest-hover", "int answer()" in result.get("hover", ""), result.get("hover", "")[:200])
+        check("query-build-file-hover", "int answer()" in result.get("hover", ""), result.get("hover", "")[:200])
 
     with tempfile.TemporaryDirectory() as directory:
         with open(os.path.join(directory, "c.cx"), "w") as file:
@@ -722,7 +722,7 @@ def main():
             file.write(GOOD_SOURCE)
         test_query_modes(args.cx_lsp, path)
         test_package_dedup(args.cx_lsp)
-        test_manifest_modes(args.cx_lsp)
+        test_build_file_modes(args.cx_lsp)
         test_server([args.cx_lsp], path, "server")
         test_server([args.cx, "lsp"], path, "cx-lsp-subcommand")
 
