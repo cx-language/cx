@@ -259,7 +259,7 @@ class TocTest(unittest.TestCase):
             ],
         )
 
-    def test_categories_render_nested_after_uncategorized(self):
+    def test_categories_render_nested_before_uncategorized(self):
         items = render_toc_items(
             [
                 ("List.cx", [], {}, [], False),
@@ -270,7 +270,6 @@ class TocTest(unittest.TestCase):
         self.assertEqual(
             items,
             [
-                '                <li><a href="./std/allocate">allocate</a></li>',
                 '                <li><a href="./std/primitive-types">Primitive types</a>\n'
                 "                    <ul>\n"
                 '                        <li><a href="./std/bool">bool</a></li>\n'
@@ -281,6 +280,7 @@ class TocTest(unittest.TestCase):
                 '                        <li><a href="./std/List">List</a></li>\n'
                 "                    </ul>\n"
                 "                </li>",
+                '                <li><a href="./std/allocate">allocate</a></li>',
             ],
         )
 

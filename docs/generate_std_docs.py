@@ -354,7 +354,7 @@ def render_toc_items(pages):
         for relpath, *_ in pages
     }
     categorized = {path for _, paths in STD_CATEGORIES for path in paths}
-    items = [entries[relpath] for relpath, *_ in pages if relpath not in categorized]
+    items = []
     for label, paths in STD_CATEGORIES:
         members = [entries[path] for path in paths if path in entries]
         if not members:
@@ -364,6 +364,7 @@ def render_toc_items(pages):
             f'<li><a href="./{category_page(label)}">{html.escape(label)}</a>\n'
             f"                    <ul>\n{nested}\n                    </ul>\n                </li>"
         )
+    items += [entries[relpath] for relpath, *_ in pages if relpath not in categorized]
     return [f"                {item}" for item in items]
 
 
