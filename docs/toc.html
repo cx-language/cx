@@ -25,10 +25,11 @@
 </div>
 
 <script>
-    var page = window.location.pathname.replace(/\/$/, "").split("/").pop().replace(/\.html$/, "");
+    var here = window.location.pathname.replace(/\.html$/, "").replace(/\/$/, "");
     var links = document.querySelectorAll(".side-nav a");
     for (var i = 0; i < links.length; i++) {
-        if (links[i].getAttribute("href").split("/").pop() === page) {
+        var target = new URL(links[i].getAttribute("href"), window.location.href).pathname.replace(/\/$/, "");
+        if (target === here) {
             links[i].className = "active";
             break;
         }
