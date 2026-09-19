@@ -1197,9 +1197,9 @@ FunctionTemplate* Parser::parseFunctionTemplate(TypeDecl* receiverTypeDecl, Acce
     return decl;
 }
 
-/// extern-function-decl ::= 'extern' function-proto ('\n' | ';')
-FunctionDecl* Parser::parseExternFunctionDecl(Type type, llvm::StringRef name, Location location) {
-    auto decl = parseFunctionProto(true, nullptr, AccessLevel::Default, nullptr, type, name, location);
+/// extern-function-decl ::= 'private'? 'extern' function-proto ('\n' | ';')
+FunctionDecl* Parser::parseExternFunctionDecl(AccessLevel accessLevel, Type type, llvm::StringRef name, Location location) {
+    auto decl = parseFunctionProto(true, nullptr, accessLevel, nullptr, type, name, location);
     parseStmtTerminator();
     return decl;
 }
@@ -1473,9 +1473,6 @@ start:
         consumeToken();
         goto start;
     case Token::Extern:
-        if (accessLevel != AccessLevel::Default) {
-            WARN(lookAhead(-1).location, "extern functions cannot have access specifiers");
-        }
         consumeToken();
         return parseTopLevelFunctionOrVariable(true, addToSymbolTable, accessLevel);
     case Token::Struct:
@@ -1522,7 +1519,7 @@ Decl* Parser::parseTopLevelFunctionOrVariable(bool isExtern, bool addToSymbolTab
     switch (currentToken()) {
     case Token::LeftParen:
         if (isExtern) {
-            decl = parseExternFunctionDecl(type, name, location);
+            decl = parseExternFunctionDecl(accessLevel, type, name, location);
         } else {
             decl = parseFunctionDecl(nullptr, accessLevel, false, type, name, location);
         }
