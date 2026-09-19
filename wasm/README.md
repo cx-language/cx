@@ -40,6 +40,13 @@ Prerequisites: Emscripten SDK (`emcc`), CMake, Ninja or Make, Python 3,
 `llvm-ar`, Node.js 20+.
 
 ```sh
+./wasm/build.sh [output-dir]   # everything: cx-wasm.js + .wasm + .data, cc.wasm + wcc-files.zip
+```
+
+`build.sh` runs the two steps below; run them individually to rebuild only
+one half:
+
+```sh
 ./wasm/build-frontend.sh [output-dir]   # cx-wasm.js + .wasm + .data
 ./wasm/build-xcc-dist.sh [output-dir]   # cc.wasm + wcc-files.zip
 ```
