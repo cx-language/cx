@@ -58,8 +58,8 @@ void cx::fetchDependencies(const BuildConfig& config) {
         auto path = dependency.getFileSystemPath();
 
         if (!llvm::sys::fs::exists(path)) {
-            cloneGitRepository(dependency.getGitRepositoryUrl(), path);
-            checkoutGitRevision(path, dependency.packageVersion);
+            cloneGitRepository(dependency.url, path);
+            checkoutGitRevision(path, dependency.version);
         }
     }
 }

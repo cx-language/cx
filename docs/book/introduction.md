@@ -208,7 +208,7 @@ var libraries = ["m"]
 Supported settings:
 
 - `name`: the executable name.
-- `dependencies`: C* libraries to fetch from Git, as `(package = "...", version = "...")` entries.
+- `dependencies`: C* libraries to fetch from Git, as `(package = "...", url = "...", version = "...")` entries, where `package` is the name used by `import` and `url` is any Git URL.
 - `defines`, `libraries`, `frameworks`: extra `-D`, `-l` and (on macOS) `-framework` flags.
 - `pkgConfigDependencies`: system libraries resolved via `pkg-config --cflags --libs`.
 - `multitarget`: build each subdirectory of the project as a separate executable.

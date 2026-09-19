@@ -12,16 +12,12 @@ using namespace cx;
 
 const char BuildConfig::buildFileName[] = "build.cx";
 
-std::string BuildConfig::Dependency::getGitRepositoryUrl() const {
-    return "https://github.com/" + packageIdentifier + ".git";
-}
-
 std::string BuildConfig::Dependency::getFileSystemPath() const {
     auto home = llvm::sys::Process::GetEnv("HOME");
     if (!home) {
         ABORT("environment variable HOME not set");
     }
-    return *home + "/.cx/dependencies/" + packageIdentifier + "@" + packageVersion;
+    return *home + "/.cx/dependencies/" + package + "@" + version;
 }
 
 template<typename DeclT, typename DefaultValueT> static auto getConfigValue(Decl* decl, DefaultValueT defaultValue) {
@@ -32,6 +28,14 @@ static std::vector<std::string> getStringList(Decl* decl) {
     if (!decl) return {};
     auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(decl)->initializer);
     return map(array->elements, [](Expr* element) { return llvm::cast<StringLiteralExpr>(element)->value; });
+}
+
+static const StringLiteralExpr* getRequiredString(const TupleExpr* tuple, llvm::StringRef name) {
+    auto* element = tuple->getElementByName(name);
+    if (!element) {
+        ABORT("dependency is missing required '" << name << "' field (expected '(package = ..., url = ..., version = ...)')");
+    }
+    return llvm::cast<StringLiteralExpr>(element);
 }
 
 BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> defines) : rootDirectory(std::move(rootDirectory)) {
@@ -58,9 +62,10 @@ BuildConfig::BuildConfig(std::string&& rootDirectory, std::vector<std::string> d
         auto* array = llvm::cast<ArrayLiteralExpr>(llvm::cast<VarDecl>(dependencies)->initializer);
         for (auto& element : array->elements) {
             auto* tuple = llvm::cast<TupleExpr>(&*element);
-            auto* package = llvm::cast<StringLiteralExpr>(tuple->getElementByName("package"));
-            auto* version = llvm::cast<StringLiteralExpr>(tuple->getElementByName("version"));
-            declaredDependencies.push_back(Dependency(std::string(package->value), std::string(version->value)));
+            auto* package = getRequiredString(tuple, "package");
+            auto* url = getRequiredString(tuple, "url");
+            auto* version = getRequiredString(tuple, "version");
+            declaredDependencies.push_back(Dependency(std::string(package->value), std::string(url->value), std::string(version->value)));
         }
     }
 }

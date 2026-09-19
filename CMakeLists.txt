@@ -132,7 +132,7 @@ add_test(NAME lsp COMMAND python3 "${PROJECT_SOURCE_DIR}/test/lsp/test_lsp.py" "
 set_tests_properties(lsp PROPERTIES TIMEOUT 600)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure -C $<CONFIG>)
 add_custom_target(update_snapshots ${CMAKE_COMMAND} -E env UPDATE_SNAPSHOTS=1 cmake --build "${CMAKE_BINARY_DIR}" --target check)
-add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api)
+add_dependencies(check cx cx-lsp FileCheck example_embedding test_compile_api test_build_config)
 
 # Tests for the in-memory compilation API (also used by the WebAssembly build).
 add_executable(test_compile_api test/compile-api/test-compile-api.cpp src/wasm/api.cpp)
@@ -142,6 +142,14 @@ target_link_libraries(test_compile_api libcx)
 foreach(test_case hello error struct warning dispatch json)
     add_test(NAME compile-api-${test_case} COMMAND test_compile_api ${test_case})
 endforeach()
+
+# Tests for build.cx dependency parsing.
+add_executable(test_build_config test/build-config/test-build-config.cpp)
+target_include_directories(test_build_config PRIVATE src)
+target_link_libraries(test_build_config libcx)
+add_test(NAME build-config-git-urls COMMAND test_build_config git-urls)
+add_test(NAME build-config-missing-url COMMAND test_build_config missing-url)
+set_tests_properties(build-config-missing-url PROPERTIES PASS_REGULAR_EXPRESSION "missing required 'url'")
 
 # Download the LLVM FileCheck utility for tests.
 set(FILECHECK_SRC_PATH "llvmorg-${LLVM_PACKAGE_VERSION}/llvm/utils/FileCheck/FileCheck.cpp")

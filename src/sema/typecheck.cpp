@@ -71,7 +71,7 @@ llvm::ErrorOr<const Module&> Typechecker::importModule(SourceFile* importer, con
 
     if (config) {
         for (auto& dependency : config->declaredDependencies) {
-            if (dependency.packageIdentifier == moduleName) {
+            if (dependency.package == moduleName) {
                 error = importModuleSourcesInDirectoryRecursively(dependency.getFileSystemPath(), *module, options);
                 goto done;
             }

@@ -11,11 +11,11 @@ namespace cx {
 
 struct BuildConfig {
     struct Dependency {
-        std::string getGitRepositoryUrl() const;
         std::string getFileSystemPath() const;
 
-        std::string packageIdentifier;
-        std::string packageVersion;
+        std::string package;
+        std::string url;
+        std::string version;
     };
 
     BuildConfig(std::string&& rootDirectory, std::vector<std::string> defines = {});
