@@ -1,4 +1,4 @@
-// RUN: %cx -typecheck %s
+// RUN: %not %cx -typecheck %s | %FileCheck %s
 
 struct S {}
 
@@ -12,5 +12,21 @@ void foo(bool b, S s) {
         baz(s);
     }
 
-    bar(s); // TODO: Should warn about 's' being moved
+    // CHECK: [[@LINE+1]]:9: error: use of moved value 's'
+    bar(s);
+}
+
+void singleBranchMoveIsAllowed(bool b, S s, S t) {
+    if (b) {
+        bar(s);
+    }
+    // CHECK-NOT: [[@LINE+1]]:9: error:
+    bar(s);
+
+    if (b) {
+    } else {
+        baz(t);
+    }
+    // CHECK-NOT: [[@LINE+1]]:9: error:
+    baz(t);
 }

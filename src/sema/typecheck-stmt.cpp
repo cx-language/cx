@@ -79,19 +79,34 @@ void Typechecker::typecheckIfStmt(IfStmt& ifStmt) {
     typecheckImplicitlyBoolConvertibleExpr(conditionType, ifStmt.condition->location);
     currentControlStmts.push_back(&ifStmt);
 
+    // A value moved in every branch is moved after the if statement. Moves from only one
+    // branch are discarded: the value may still be live on the other path. An empty else
+    // body moves nothing, so then-only moves never propagate.
+    llvm::SmallPtrSet<Decl*, 32> thenMovedDecls, elseMovedDecls;
+
     {
-        llvm::SaveAndRestore thenMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveMovedDecls(movedDecls);
         for (auto& stmt : ifStmt.thenBody) {
             typecheckStmt(stmt);
         }
+        thenMovedDecls = movedDecls;
     }
 
     {
-        llvm::SaveAndRestore elseMovedDecls(movedDecls);
+        llvm::SaveAndRestore saveMovedDecls(movedDecls);
         for (auto& stmt : ifStmt.elseBody) {
             typecheckStmt(stmt);
         }
+        elseMovedDecls = movedDecls;
     }
+
+    llvm::SmallPtrSet<Decl*, 32> mergedMovedDecls;
+    for (auto* decl : thenMovedDecls) {
+        if (elseMovedDecls.count(decl)) {
+            mergedMovedDecls.insert(decl);
+        }
+    }
+    movedDecls = std::move(mergedMovedDecls);
 
     currentControlStmts.pop_back();
 }
