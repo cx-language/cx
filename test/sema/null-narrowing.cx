@@ -30,6 +30,11 @@ void guardTest(int? v) {
     takesInt(v);
 }
 
+void nullLeftGuardTest(int? v) {
+    if null == v return;
+    takesInt(v);
+}
+
 void breakTest(int? v) {
     while true {
         if v == null break;
@@ -67,6 +72,14 @@ void structTest() {
     S? s = S(x = 5);
     if s {
         assert(s.x == 5);
+        takesS(s);
+    }
+    if s != null {
+        takesS(s);
+    }
+    if null == s {
+        assert(false);
+    } else {
         takesS(s);
     }
 }
@@ -109,10 +122,19 @@ void main() {
         takesInt(age);
     }
 
+    if null != age {
+        takesInt(age);
+    }
+
     if age == null {
     } else {
         // CHECK: age is 36
         println("age is ", age);
+    }
+
+    if null == age {
+    } else {
+        takesInt(age);
     }
 
     if !age {
@@ -136,8 +158,20 @@ void main() {
     var picked = age != null ? age : 0;
     assert(picked == 36);
 
+    var isNonNull = age != null;
+    var isNull = age == null;
+    assert(isNonNull && !isNull);
+
+    int? nobody = findAge("nobody");
+    assert(nobody == null);
+    assert(null == nobody);
+    var nobodyIsNull = nobody == null;
+    assert(nobodyIsNull);
+
     guardTest(findAge("ada"));
     guardTest(findAge("nobody"));
+    nullLeftGuardTest(findAge("ada"));
+    nullLeftGuardTest(findAge("nobody"));
     breakTest(findAge("ada"));
     breakTest(findAge("nobody"));
     continueTest();

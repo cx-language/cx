@@ -247,6 +247,21 @@ Value* IRGenerator::emitBinaryExpr(const BinaryExpr& expr) {
         return emitCallExpr(expr);
     }
 
+    if (expr.op == Token::Equal || expr.op == Token::NotEqual) {
+        // Lower null checks on value-implemented optionals to a hasValue test, matching `if (opt)` and `if (!opt)`.
+        // Pointer-implemented optionals take the generic path below (pointer compared against null).
+        const Expr* optOperand = nullptr;
+        if (expr.getLHS().isNullLiteralExpr() && expr.getRHS().type.isOptionalType()) {
+            optOperand = &expr.getRHS();
+        } else if (expr.getRHS().isNullLiteralExpr() && expr.getLHS().type.isOptionalType()) {
+            optOperand = &expr.getLHS();
+        }
+        if (optOperand && !optOperand->type.isImplementedAsPointer()) {
+            auto* hasValue = createExtractValue(emitExpr(*optOperand), optionalHasValueFieldIndex);
+            return expr.op == Token::NotEqual ? hasValue : createNot(hasValue);
+        }
+    }
+
     switch (expr.op) {
     case Token::AndAnd:
         return emitLogicalAnd(expr.getLHS(), expr.getRHS());

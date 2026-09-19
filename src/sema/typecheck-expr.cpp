@@ -385,6 +385,18 @@ Type Typechecker::typecheckBinaryExpr(BinaryExpr& expr) {
     Type leftType = typecheckExpr(expr.getLHS());
     Type rightType = typecheckExpr(expr.getRHS(), false, leftType);
 
+    if (op == Token::Equal || op == Token::NotEqual) {
+        // Null checks are builtin for all optionals so they don't depend on stdlib comparison operators.
+        if (expr.getLHS().isNullLiteralExpr() && rightType.isOptionalType()) {
+            expr.setLHS(NOTNULL(convert(&expr.getLHS(), rightType)));
+            return Type::getBool();
+        }
+        if (expr.getRHS().isNullLiteralExpr() && leftType.isOptionalType()) {
+            expr.setRHS(NOTNULL(convert(&expr.getRHS(), leftType)));
+            return Type::getBool();
+        }
+    }
+
     if ((op == Token::Equal || op == Token::NotEqual) && leftType.isTupleType() && rightType.isTupleType()) {
         auto leftElements = leftType.getTupleElements();
         auto rightElements = rightType.getTupleElements();

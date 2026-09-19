@@ -1,7 +1,7 @@
 
 %"Optional<int>" = type { i1, i32 }
 
-@0 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:31:18\0A\00", align 1
+@0 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:33:18\0A\00", align 1
 
 define i32 @main() {
   %a = alloca %"Optional<int>", align 8
@@ -10,8 +10,6 @@ define i32 @main() {
   %c = alloca %"Optional<int>", align 8
   %2 = alloca %"Optional<int>", align 8
   %d = alloca %"Optional<int>", align 8
-  %3 = alloca %"Optional<int>", align 8
-  %4 = alloca %"Optional<int>", align 8
   call void @_EN3std8OptionalI3intE4initE(ptr %1)
   %.load = load %"Optional<int>", ptr %1, align 4
   store %"Optional<int>" %.load, ptr %a, align 4
@@ -20,9 +18,10 @@ define i32 @main() {
   %.load1 = load %"Optional<int>", ptr %2, align 4
   store %"Optional<int>" %.load1, ptr %c, align 4
   call void @_EN3std8OptionalI3intE4initE(ptr %d)
-  call void @_EN3std8OptionalI3intE4initE(ptr %3)
-  %5 = call i1 @_EN3stdeqI3intEEPO3intPO3int(ptr %d, ptr %3)
-  br i1 %5, label %if.then, label %if.else
+  %d.load = load %"Optional<int>", ptr %d, align 4
+  %3 = extractvalue %"Optional<int>" %d.load, 0
+  %4 = xor i1 %3, true
+  br i1 %4, label %if.then, label %if.else
 
 if.then:                                          ; preds = %0
   br label %if.end
@@ -31,40 +30,63 @@ if.else:                                          ; preds = %0
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %if.then
-  call void @_EN3std8OptionalI3intE4initE(ptr %4)
-  %6 = call i1 @_EN3stdneI3intEEPO3intPO3int(ptr %d, ptr %4)
-  br i1 %6, label %if.then2, label %if.else3
+  %d.load2 = load %"Optional<int>", ptr %d, align 4
+  %5 = extractvalue %"Optional<int>" %d.load2, 0
+  br i1 %5, label %if.then3, label %if.else4
 
-if.then2:                                         ; preds = %if.end
-  br label %if.end4
+if.then3:                                         ; preds = %if.end
+  br label %if.end5
 
-if.else3:                                         ; preds = %if.end
-  br label %if.end4
+if.else4:                                         ; preds = %if.end
+  br label %if.end5
 
-if.end4:                                          ; preds = %if.else3, %if.then2
-  %d.load = load %"Optional<int>", ptr %d, align 4
-  %7 = extractvalue %"Optional<int>" %d.load, 0
-  br i1 %7, label %if.then5, label %if.else6
+if.end5:                                          ; preds = %if.else4, %if.then3
+  %d.load6 = load %"Optional<int>", ptr %d, align 4
+  %6 = extractvalue %"Optional<int>" %d.load6, 0
+  %7 = xor i1 %6, true
+  br i1 %7, label %if.then7, label %if.else8
 
-if.then5:                                         ; preds = %if.end4
-  br label %if.end7
+if.then7:                                         ; preds = %if.end5
+  br label %if.end9
 
-if.else6:                                         ; preds = %if.end4
-  br label %if.end7
+if.else8:                                         ; preds = %if.end5
+  br label %if.end9
 
-if.end7:                                          ; preds = %if.else6, %if.then5
-  %d.load8 = load %"Optional<int>", ptr %d, align 4
-  %8 = extractvalue %"Optional<int>" %d.load8, 0
-  %9 = xor i1 %8, true
-  br i1 %9, label %if.then9, label %if.else10
+if.end9:                                          ; preds = %if.else8, %if.then7
+  %d.load10 = load %"Optional<int>", ptr %d, align 4
+  %8 = extractvalue %"Optional<int>" %d.load10, 0
+  br i1 %8, label %if.then11, label %if.else12
 
-if.then9:                                         ; preds = %if.end7
-  br label %if.end11
+if.then11:                                        ; preds = %if.end9
+  br label %if.end13
 
-if.else10:                                        ; preds = %if.end7
-  br label %if.end11
+if.else12:                                        ; preds = %if.end9
+  br label %if.end13
 
-if.end11:                                         ; preds = %if.else10, %if.then9
+if.end13:                                         ; preds = %if.else12, %if.then11
+  %d.load14 = load %"Optional<int>", ptr %d, align 4
+  %9 = extractvalue %"Optional<int>" %d.load14, 0
+  br i1 %9, label %if.then15, label %if.else16
+
+if.then15:                                        ; preds = %if.end13
+  br label %if.end17
+
+if.else16:                                        ; preds = %if.end13
+  br label %if.end17
+
+if.end17:                                         ; preds = %if.else16, %if.then15
+  %d.load18 = load %"Optional<int>", ptr %d, align 4
+  %10 = extractvalue %"Optional<int>" %d.load18, 0
+  %11 = xor i1 %10, true
+  br i1 %11, label %if.then19, label %if.else20
+
+if.then19:                                        ; preds = %if.end17
+  br label %if.end21
+
+if.else20:                                        ; preds = %if.end17
+  br label %if.end21
+
+if.end21:                                         ; preds = %if.else20, %if.then19
   ret i32 0
 }
 
@@ -80,47 +102,6 @@ define void @_EN3std8OptionalI3intE4initE3int(ptr %this, i32 %value) {
   %value1 = getelementptr inbounds %"Optional<int>", ptr %this, i32 0, i32 1
   store i32 %value, ptr %value1, align 4
   ret void
-}
-
-define i1 @_EN3stdeqI3intEEPO3intPO3int(ptr %a, ptr %b) {
-  %hasValue = getelementptr inbounds %"Optional<int>", ptr %a, i32 0, i32 0
-  %hasValue.load = load i1, ptr %hasValue, align 1
-  %hasValue1 = getelementptr inbounds %"Optional<int>", ptr %b, i32 0, i32 0
-  %hasValue.load2 = load i1, ptr %hasValue1, align 1
-  %1 = icmp ne i1 %hasValue.load, %hasValue.load2
-  br i1 %1, label %if.then, label %if.else
-
-if.then:                                          ; preds = %0
-  ret i1 false
-
-if.else:                                          ; preds = %0
-  br label %if.end
-
-if.end:                                           ; preds = %if.else
-  %hasValue3 = getelementptr inbounds %"Optional<int>", ptr %b, i32 0, i32 0
-  %hasValue.load4 = load i1, ptr %hasValue3, align 1
-  %2 = xor i1 %hasValue.load4, true
-  br i1 %2, label %if.then5, label %if.else6
-
-if.then5:                                         ; preds = %if.end
-  ret i1 true
-
-if.else6:                                         ; preds = %if.end
-  br label %if.end7
-
-if.end7:                                          ; preds = %if.else6
-  %value = getelementptr inbounds %"Optional<int>", ptr %a, i32 0, i32 1
-  %value.load = load i32, ptr %value, align 4
-  %value8 = getelementptr inbounds %"Optional<int>", ptr %b, i32 0, i32 1
-  %value.load9 = load i32, ptr %value8, align 4
-  %3 = icmp eq i32 %value.load, %value.load9
-  ret i1 %3
-}
-
-define i1 @_EN3stdneI3intEEPO3intPO3int(ptr %a, ptr %b) {
-  %1 = call i1 @_EN3stdeqI3intEEPO3intPO3int(ptr %a, ptr %b)
-  %2 = xor i1 %1, true
-  ret i1 %2
 }
 
 define void @_EN4main1fE() {

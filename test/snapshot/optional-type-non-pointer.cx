@@ -9,6 +9,8 @@ void main() {
 
     if (d == null) {}
     if (d != null) {}
+    if (null == d) {}
+    if (null != d) {}
     if (d) {}
     if (!d) {}
 }
