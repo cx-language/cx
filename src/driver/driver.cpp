@@ -491,11 +491,11 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
         llvm::sys::fs::remove(tempOutputFilePath);
 
         if (isMSVC) {
-            auto path = tempOutputFilePath;
-            llvm::sys::path::replace_extension(path, "ilk");
-            llvm::sys::fs::remove(path);
-            llvm::sys::path::replace_extension(path, "pdb");
-            llvm::sys::fs::remove(path);
+            for (llvm::StringRef extension : {"ilk", "pdb"}) {
+                auto path = tempOutputFilePath;
+                llvm::sys::path::replace_extension(path, extension);
+                llvm::sys::fs::remove(path);
+            }
         }
 
         return executableExitStatus;
@@ -524,17 +524,15 @@ int cx::buildModule(Module& mainModule, BuildParams buildParams) {
     renameFile(tempOutputFilePath, outputPathPrefix + buildParams.outputFileName);
 
     if (isMSVC) {
-        auto path = tempOutputFilePath;
         auto outputPath = outputPathPrefix;
         outputPath += buildParams.outputFileName;
 
-        llvm::sys::path::replace_extension(path, "ilk");
-        llvm::sys::path::replace_extension(outputPath, "ilk");
-        renameFile(path, outputPath);
-
-        llvm::sys::path::replace_extension(path, "pdb");
-        llvm::sys::path::replace_extension(outputPath, "pdb");
-        renameFile(path, outputPath);
+        for (llvm::StringRef extension : {"ilk", "pdb"}) {
+            auto path = tempOutputFilePath;
+            llvm::sys::path::replace_extension(path, extension);
+            llvm::sys::path::replace_extension(outputPath, extension);
+            renameFile(path, outputPath);
+        }
     }
 
     return 0;
