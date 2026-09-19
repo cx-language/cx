@@ -445,6 +445,32 @@ JsonObject buildBaseQuery(ServerState& state, const std::string& method, const O
     return query;
 }
 
+/// Answers a request with `result`.
+void respondWith(const JsonValue& id, JsonValue result) {
+    writeLspMessage(serializeJson(makeResponse(id, std::move(result))));
+}
+
+/// Returns the open document targeted by a textDocument request, or nullptr
+/// when the request names no open document.
+const OpenDocument* findOpenDoc(ServerState& state, const JsonValue& params) {
+    auto* docId = findJson(params, "textDocument");
+    if (!docId) return nullptr;
+    std::string path = uriToPath(getJsonString(*docId, "uri"));
+    auto it = state.openDocs.find(path);
+    if (it == state.openDocs.end()) return nullptr;
+    return &it->second;
+}
+
+JsonObject buildPositionalQuery(ServerState& state, const std::string& method, const OpenDocument& doc, const JsonValue* posJson) {
+    JsonObject query = buildBaseQuery(state, method, doc);
+    JsonObject pos;
+    LspPosition posValue = positionFromJson(posJson);
+    pos["line"] = posValue.line;
+    pos["character"] = posValue.character;
+    query["position"] = std::move(pos);
+    return query;
+}
+
 std::vector<ServerDiagnostic> checkDocument(ServerState& state, const OpenDocument& doc) {
     JsonObject query = buildBaseQuery(state, "check", doc);
     auto result = runQuerySubprocess(state, std::move(query));
@@ -627,13 +653,13 @@ int runServer(const ServerOptions& options) {
             JsonObject result;
             result["capabilities"] = std::move(capabilities);
             result["serverInfo"] = std::move(serverInfo);
-            if (wantResponse) writeLspMessage(serializeJson(makeResponse(*id, JsonValue(std::move(result)))));
+            if (wantResponse) respondWith(*id, JsonValue(std::move(result)));
         } else if (method == "initialized") {
             // No-op.
         } else if (method == "shutdown") {
             state.shutdownRequested = true;
             if (wantResponse) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
+                respondWith(*id, JsonValue(nullptr));
             }
         } else if (method == "exit") {
             return state.shutdownRequested ? 0 : 1;
@@ -676,85 +702,49 @@ int runServer(const ServerOptions& options) {
             state.diagCache.erase(path);
         } else if (method == "textDocument/hover") {
             if (!wantResponse) continue;
-            auto* docId = findJson(*params, "textDocument");
-            auto* posJson = findJson(*params, "position");
-            if (!docId) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
+            const OpenDocument* doc = findOpenDoc(state, *params);
+            if (!doc) {
+                respondWith(*id, JsonValue(nullptr));
                 continue;
             }
-            std::string path = uriToPath(getJsonString(*docId, "uri"));
-            auto it = state.openDocs.find(path);
-            if (it == state.openDocs.end()) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
-                continue;
-            }
-            JsonObject query = buildBaseQuery(state, "hover", it->second);
-            JsonObject pos;
-            LspPosition posValue = positionFromJson(posJson);
-            pos["line"] = posValue.line;
-            pos["character"] = posValue.character;
-            query["position"] = std::move(pos);
+            JsonObject query = buildPositionalQuery(state, "hover", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
             std::string text = result ? getJsonString(*result, "hover") : "";
             if (text.empty()) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
+                respondWith(*id, JsonValue(nullptr));
             } else {
                 JsonObject contents;
                 contents["kind"] = "markdown";
                 contents["value"] = text;
                 JsonObject response;
                 response["contents"] = std::move(contents);
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(std::move(response)))));
+                respondWith(*id, JsonValue(std::move(response)));
             }
         } else if (method == "textDocument/definition") {
             if (!wantResponse) continue;
-            auto* docId = findJson(*params, "textDocument");
-            auto* posJson = findJson(*params, "position");
-            if (!docId) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
+            const OpenDocument* doc = findOpenDoc(state, *params);
+            if (!doc) {
+                respondWith(*id, JsonValue(nullptr));
                 continue;
             }
-            std::string path = uriToPath(getJsonString(*docId, "uri"));
-            auto it = state.openDocs.find(path);
-            if (it == state.openDocs.end()) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
-                continue;
-            }
-            JsonObject query = buildBaseQuery(state, "definition", it->second);
-            JsonObject pos;
-            LspPosition posValue = positionFromJson(posJson);
-            pos["line"] = posValue.line;
-            pos["character"] = posValue.character;
-            query["position"] = std::move(pos);
+            JsonObject query = buildPositionalQuery(state, "definition", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
             if (!result || !getJsonBool(*result, "found")) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
+                respondWith(*id, JsonValue(nullptr));
             } else {
                 JsonObject response;
                 response["uri"] = pathToUri(getJsonString(*result, "file"));
                 if (auto* range = findJson(*result, "range")) response["range"] = *range;
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(std::move(response)))));
+                respondWith(*id, JsonValue(std::move(response)));
             }
         } else if (method == "textDocument/completion") {
             if (!wantResponse) continue;
-            auto* docId = findJson(*params, "textDocument");
-            auto* posJson = findJson(*params, "position");
-            if (!docId) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(JsonArray{}))));
+            const OpenDocument* doc = findOpenDoc(state, *params);
+            if (!doc) {
+                respondWith(*id, JsonValue(JsonArray{}));
                 continue;
             }
-            std::string path = uriToPath(getJsonString(*docId, "uri"));
-            auto it = state.openDocs.find(path);
-            if (it == state.openDocs.end()) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(JsonArray{}))));
-                continue;
-            }
-            JsonObject query = buildBaseQuery(state, "completion", it->second);
-            JsonObject pos;
-            LspPosition posValue = positionFromJson(posJson);
-            pos["line"] = posValue.line;
-            pos["character"] = posValue.character;
-            query["position"] = std::move(pos);
+            JsonObject query = buildPositionalQuery(state, "completion", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
             JsonArray items;
             if (result) {
@@ -768,21 +758,15 @@ int runServer(const ServerOptions& options) {
                     }
                 }
             }
-            writeLspMessage(serializeJson(makeResponse(*id, JsonValue(std::move(items)))));
+            respondWith(*id, JsonValue(std::move(items)));
         } else if (method == "textDocument/documentSymbol") {
             if (!wantResponse) continue;
-            auto* docId = findJson(*params, "textDocument");
-            if (!docId) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(JsonArray{}))));
+            const OpenDocument* doc = findOpenDoc(state, *params);
+            if (!doc) {
+                respondWith(*id, JsonValue(JsonArray{}));
                 continue;
             }
-            std::string path = uriToPath(getJsonString(*docId, "uri"));
-            auto it = state.openDocs.find(path);
-            if (it == state.openDocs.end()) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(JsonArray{}))));
-                continue;
-            }
-            JsonObject query = buildBaseQuery(state, "documentSymbol", it->second);
+            JsonObject query = buildBaseQuery(state, "documentSymbol", *doc);
             auto result = runQuerySubprocess(state, std::move(query));
             JsonArray items;
             if (result) {
@@ -797,27 +781,15 @@ int runServer(const ServerOptions& options) {
                     }
                 }
             }
-            writeLspMessage(serializeJson(makeResponse(*id, JsonValue(std::move(items)))));
+            respondWith(*id, JsonValue(std::move(items)));
         } else if (method == "textDocument/references") {
             if (!wantResponse) continue;
-            auto* docId = findJson(*params, "textDocument");
-            auto* posJson = findJson(*params, "position");
-            if (!docId) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(JsonArray{}))));
+            const OpenDocument* doc = findOpenDoc(state, *params);
+            if (!doc) {
+                respondWith(*id, JsonValue(JsonArray{}));
                 continue;
             }
-            std::string path = uriToPath(getJsonString(*docId, "uri"));
-            auto it = state.openDocs.find(path);
-            if (it == state.openDocs.end()) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(JsonArray{}))));
-                continue;
-            }
-            JsonObject query = buildBaseQuery(state, "references", it->second);
-            JsonObject pos;
-            LspPosition posValue = positionFromJson(posJson);
-            pos["line"] = posValue.line;
-            pos["character"] = posValue.character;
-            query["position"] = std::move(pos);
+            JsonObject query = buildPositionalQuery(state, "references", *doc, findJson(*params, "position"));
             auto result = runQuerySubprocess(state, std::move(query));
             JsonArray items;
             if (result) {
@@ -830,25 +802,19 @@ int runServer(const ServerOptions& options) {
                     }
                 }
             }
-            writeLspMessage(serializeJson(makeResponse(*id, JsonValue(std::move(items)))));
+            respondWith(*id, JsonValue(std::move(items)));
         } else if (method == "textDocument/semanticTokens/full" || method == "textDocument/semanticTokens/range") {
             if (!wantResponse) continue;
-            auto* docId = findJson(*params, "textDocument");
-            if (!docId) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
+            const OpenDocument* doc = findOpenDoc(state, *params);
+            if (!doc) {
+                respondWith(*id, JsonValue(nullptr));
                 continue;
             }
-            std::string path = uriToPath(getJsonString(*docId, "uri"));
-            auto it = state.openDocs.find(path);
-            if (it == state.openDocs.end()) {
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
-                continue;
-            }
-            JsonObject query = buildBaseQuery(state, "semanticTokens", it->second);
+            JsonObject query = buildBaseQuery(state, "semanticTokens", *doc);
             auto result = runQuerySubprocess(state, std::move(query));
             if (!result) {
                 // Null keeps the client's current tokens; empty data would wipe them.
-                writeLspMessage(serializeJson(makeResponse(*id, JsonValue(nullptr))));
+                respondWith(*id, JsonValue(nullptr));
                 continue;
             }
             std::vector<DecodedToken> tokens = decodeSemanticTokens(findJson(*result, "tokens"));
@@ -865,7 +831,7 @@ int runServer(const ServerOptions& options) {
                 }
                 tokens = std::move(filtered);
             }
-            writeLspMessage(serializeJson(makeResponse(*id, encodeSemanticTokens(std::move(tokens)))));
+            respondWith(*id, encodeSemanticTokens(std::move(tokens)));
         } else {
             // Unknown method: per JSON-RPC, only requests get error responses.
             if (wantResponse) {
