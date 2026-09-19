@@ -338,16 +338,16 @@ Type Parser::parseArrayType(Type elementType) {
     case Token::IntegerLiteral: {
         auto arraySize = consumeToken().getIntegerValue().getExtValue();
         parse(Token::RightBracket);
-        return ArrayType::get(elementType, arraySize);
+        return ArrayType::get(elementType, arraySize, elementType.location);
     }
     case Token::RightBracket:
         consumeToken();
-        return BasicType::get("ArrayRef", elementType);
+        return BasicType::get("ArrayRef", elementType, Mutability::Mutable, elementType.location);
 
     case Token::Star:
         consumeToken();
         parse(Token::RightBracket);
-        return ArrayType::get(elementType, ArrayType::UnknownSize);
+        return ArrayType::get(elementType, ArrayType::UnknownSize, elementType.location);
 
     default:
         ERROR(getCurrentLocation(), "non-literal array bounds not implemented yet");
@@ -429,11 +429,11 @@ Type Parser::parseType() {
     while (true) {
         switch (currentToken()) {
         case Token::Star:
-            type = PointerType::get(type, Mutability::Mutable, getCurrentLocation());
+            type = PointerType::get(type, Mutability::Mutable, location);
             consumeToken();
             break;
         case Token::QuestionMark:
-            type = OptionalType::get(type, Mutability::Mutable, getCurrentLocation());
+            type = OptionalType::get(type, Mutability::Mutable, location);
             consumeToken();
             break;
         case Token::LeftParen:

@@ -78,7 +78,7 @@ struct Typechecker {
     void typecheckForStmt(ForStmt& forStmt);
     void typecheckBreakStmt(BreakStmt& breakStmt);
     void typecheckContinueStmt(ContinueStmt& continueStmt);
-    void typecheckType(Type type, AccessLevel userAccessLevel);
+    void typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs = true);
     void typecheckParamDecl(ParamDecl& decl, AccessLevel userAccessLevel);
     void typecheckGenericParamDecls(llvm::ArrayRef<GenericParamDecl> genericParams, AccessLevel userAccessLevel);
     void typecheckTypeDecl(TypeDecl& decl);

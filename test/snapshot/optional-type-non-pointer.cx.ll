@@ -1,11 +1,11 @@
 
 %"Optional<int>" = type { i1, i32 }
 
-@0 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:24:18\0A\00", align 1
-@1 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:25:18\0A\00", align 1
-@2 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:26:16\0A\00", align 1
-@3 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:30:18\0A\00", align 1
-@4 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:32:22\0A\00", align 1
+@0 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:25:18\0A\00", align 1
+@1 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:26:18\0A\00", align 1
+@2 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:27:16\0A\00", align 1
+@3 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:32:18\0A\00", align 1
+@4 = private unnamed_addr constant [53 x i8] c"Unwrap failed at optional-type-non-pointer.cx:35:22\0A\00", align 1
 
 define i32 @main() {
   %a = alloca %"Optional<int>", align 8

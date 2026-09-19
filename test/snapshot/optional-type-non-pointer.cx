@@ -1,4 +1,5 @@
 // RUN: check-snapshots -Wno-unused
+// RUN: %cx -typecheck -Wno-unused %s | %FileCheck %s
 
 void main() {
     int? a = null;
@@ -27,8 +28,10 @@ void f() {
     }
     // if (c) c++; // TODO: Allow postfix incrementing/decrementing an implicitly unwrapped optional.
 
-    takesNonNull(c); // TODO: Should emit warning
+    // CHECK: [[@LINE+1]]:18: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    takesNonNull(c);
     if (c) {
+        // CHECK-NOT: [[@LINE+1]]:22: warning:
         takesNonNull(c);
     }
 }

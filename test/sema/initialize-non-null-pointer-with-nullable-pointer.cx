@@ -1,8 +1,25 @@
-// RUN: %not %cx -typecheck %s | %FileCheck %s
+// RUN: %cx -typecheck %s | %FileCheck %s
 
 extern int*? foo();
 
 void main() {
-    // CHECK: [[@LINE+1]]:17: error: cannot assign 'int*?' to 'int*'
-    int* f = foo(); // TODO: Implicitly unwrap with warning
+    // CHECK: [[@LINE+1]]:17: warning: value may be null; unwrap it with a postfix '!' to silence this warning
+    int* f = foo();
+}
+
+void explicitlyUnwrapped() {
+    // CHECK-NOT: [[@LINE+1]]:17: warning:
+    int* f = foo()!;
+}
+
+void checkedBeforeUnwrap() {
+    int*? x = foo();
+    if (x != null) {
+        // CHECK-NOT: [[@LINE+1]]:18: warning:
+        int* y = x;
+    }
+    if (x) {
+        // CHECK-NOT: [[@LINE+1]]:18: warning:
+        int* z = x;
+    }
 }

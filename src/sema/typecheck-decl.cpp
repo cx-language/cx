@@ -71,13 +71,24 @@ static void checkForInfiniteSize(const TypeDecl& target, llvm::ArrayRef<Type> me
     }
 }
 
-void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
+void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel, bool recheckGenericArgs) {
     switch (type.getKind()) {
     case TypeKind::BasicType: {
         Decl* decl;
         auto* basicType = llvm::cast<BasicType>(type.typeBase);
         if (basicType->decl) {
             decl = basicType->decl;
+
+            // Check generic arguments on repeat uses too: resolving basicType->decl above
+            // skips the lookup below, which would otherwise silence access warnings after
+            // the first use. Type nodes are interned, so the stored arguments carry the
+            // first use's locations; relocate them to the current use. This is exact when
+            // the nested types start where the outer type starts (e.g. 'A' in 'A*?').
+            if (recheckGenericArgs) {
+                for (auto genericArg : basicType->genericArgs) {
+                    typecheckType(genericArg.withLocation(type.location), userAccessLevel);
+                }
+            }
         } else {
             if (basicType->name.empty()) break; // Nothing to type-check.
 
@@ -124,21 +135,21 @@ void Typechecker::typecheckType(Type type, AccessLevel userAccessLevel) {
         break;
     }
     case TypeKind::ArrayType:
-        typecheckType(type.getElementType(), userAccessLevel);
+        typecheckType(type.getElementType(), userAccessLevel, recheckGenericArgs);
         break;
     case TypeKind::TupleType:
         for (auto& element : type.getTupleElements()) {
-            typecheckType(element.type, userAccessLevel);
+            typecheckType(element.type, userAccessLevel, recheckGenericArgs);
         }
         break;
     case TypeKind::FunctionType:
         for (auto paramType : type.getParamTypes()) {
-            typecheckType(paramType, userAccessLevel);
+            typecheckType(paramType, userAccessLevel, recheckGenericArgs);
         }
-        typecheckType(type.getReturnType(), userAccessLevel);
+        typecheckType(type.getReturnType(), userAccessLevel, recheckGenericArgs);
         break;
     case TypeKind::PointerType: {
-        typecheckType(type.getPointee(), userAccessLevel);
+        typecheckType(type.getPointee(), userAccessLevel, recheckGenericArgs);
         break;
     }
     case TypeKind::UnresolvedType:
