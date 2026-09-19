@@ -33,4 +33,22 @@
             break;
         }
     }
+
+    // A sticky sidebar can't express "end above the footer" in CSS,
+    // so clamp its height while scrolling instead.
+    var desktop = window.matchMedia("(min-width: 768px)");
+    function fitSidebar() {
+        var sideNav = document.querySelector(".side-nav");
+        var footer = document.querySelector(".site-footer");
+        if (!sideNav || !footer || !desktop.matches) {
+            if (sideNav && !desktop.matches) sideNav.style.maxHeight = "";
+            return;
+        }
+        var room = Math.min(window.innerHeight, footer.getBoundingClientRect().top)
+            - sideNav.getBoundingClientRect().top - 24;
+        sideNav.style.maxHeight = Math.max(160, room) + "px";
+    }
+    window.addEventListener("scroll", fitSidebar, {passive: true});
+    window.addEventListener("resize", fitSidebar);
+    window.addEventListener("DOMContentLoaded", fitSidebar);
 </script>

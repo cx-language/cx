@@ -351,8 +351,6 @@ th {
         overflow: auto;
         margin: 32px 0 48px;
         padding-right: 8px;
-        /* The sticky box slides under the footer at page bottom; this keeps the last items reachable. */
-        padding-bottom: 100px;
     }
 
     .side-nav > ul {
