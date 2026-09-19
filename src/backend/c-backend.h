@@ -93,6 +93,9 @@ struct CGenerator {
     std::unordered_map<IRType*, std::string> generatedTypeNames;
     std::unordered_set<std::string> alreadyDefinedFunctions;
     std::unordered_map<const Value*, std::string> emittedValues;
+    // Sanitized basic block parameter names claimed in the function currently
+    // being emitted; cleared on entry to codegenFunction.
+    std::unordered_set<std::string> emittedBlockParamNames;
     // Program counter value per basic block, used only in dispatch mode.
     std::unordered_map<const BasicBlock*, int> dispatchBlockIds;
     int valueSuffixCounter = 0;

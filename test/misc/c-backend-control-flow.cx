@@ -11,11 +11,15 @@
 // CHECK-NEXT:200
 // CHECK-NEXT:300
 // CHECK-NEXT:120
+// CHECK-NEXT:50
+// CHECK-NEXT:false
+// CHECK-NEXT:true
 
 // Exercises control flow through both C code generation modes: the default
 // one using gotos and the goto-free dispatch mode (--c-dispatch) used by the
 // web playground toolchain. Short-circuit operators and ternaries use basic
-// block parameters, which the C backend declares with valid identifiers.
+// block parameters, which the C backend declares with valid identifiers,
+// disambiguated when several share a name within one function.
 
 int fib(int n) {
     var a = 0;
@@ -70,6 +74,24 @@ int factorial(int n) {
     return result;
 }
 
+int pick2(int x, int y) {
+    var a = x > 0 ? 10 : 20;
+    var b = y > 0 ? 30 : 40;
+    return a + b;
+}
+
+bool both(bool a, bool b, bool c) {
+    var x = a && b;
+    var y = b && c;
+    return x && y;
+}
+
+bool either(bool a, bool b, bool c) {
+    var x = a || b;
+    var y = b || c;
+    return x || y;
+}
+
 void main() {
     println(fib(10));
     println(sumOdd(10));
@@ -82,4 +104,7 @@ void main() {
     println(classify(2));
     println(classify(9));
     println(factorial(5));
+    println(pick2(5, -5));
+    println(both(true, true, false));
+    println(either(false, false, true));
 }

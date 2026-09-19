@@ -621,6 +621,7 @@ void CGenerator::codegenFunctionPrototype(const Function* function) {
 }
 
 void CGenerator::codegenFunction(const Function* function) {
+    emittedBlockParamNames.clear();
     stream << '\n';
     codegenFunctionPrototype(function);
     if (function->isExtern) {
@@ -659,7 +660,16 @@ const std::string& CGenerator::getBlockParamName(const Parameter* param) {
     if (it != emittedValues.end()) {
         return it->second;
     }
-    return emittedValues.insert({param, sanitizeBlockParamName(param->name)}).first->second;
+    // Several block parameters in one function can share a name (every
+    // ternary produces an "if.result" parameter), so disambiguate repeats
+    // with a numeric suffix.
+    std::string base = sanitizeBlockParamName(param->name);
+    std::string name = base;
+    for (int suffix = 0; emittedBlockParamNames.contains(name); ++suffix) {
+        name = base + std::to_string(suffix);
+    }
+    emittedBlockParamNames.insert(name);
+    return emittedValues.insert({param, std::move(name)}).first->second;
 }
 
 void CGenerator::collectBlockParams(const Function* function) {
